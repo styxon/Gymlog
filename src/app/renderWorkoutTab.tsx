@@ -412,6 +412,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             projectedDaysPerWeek: readyTemplate.daysPerWeek,
             estimatedSessionDuration: readyTemplate.estimatedSessionDuration,
             mismatchNote: setupRecommendation.mismatchNote,
+            language: preferences.appLanguage,
           }, tailoringPreferences).join(' ')
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);

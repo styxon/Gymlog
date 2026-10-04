@@ -24,7 +24,7 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   // work, which is what a shoulder day reaches for when a bar is not free.
   { id: 'accessory_delts', allowedExerciseNames: ['Lateral Raise', 'Rear Delt Fly', 'Upright Barbell Row', 'Cable Lateral Raise', 'Dumbbell Lateral Raise', 'Lateral Raise Superset', 'Cable Front Raise', 'Dumbbell Rear Delt Fly', 'Reverse Pec Deck', 'Face Pull', 'Band Pull-Apart'] },
   { id: 'accessory_core', allowedExerciseNames: ['Cable Crunch', 'Hanging Knee Raise', 'Hanging Leg Raise', 'Toes-to-Bar', 'V-Up', 'Russian Twist', 'Bicycle Crunch'] },
-  { id: 'calves', allowedExerciseNames: ['Calf Raise', 'Standing Calf Raise', 'Seated Calf Raise', 'Single-Leg Calf Raise'] },
+  { id: 'calves', allowedExerciseNames: ['Calf Raise', 'Standing Calf Raise', 'Seated Calf Raise', 'Single-Leg Calf Raise', 'Bodyweight Calf Raise'] },
   { id: 'accessory_hamstrings', allowedExerciseNames: ['Leg Curl', 'Seated Leg Curl', 'Lying Leg Curl', 'Glute Ham Raise', 'Nordic Hamstring Curl (Assisted)'] },
   // These two groups used to list "Mobility Flow", "Sun Salutation Flow",
   // "Breath Reset" and the like: block names, not exercises. Nothing in the

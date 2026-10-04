@@ -74,4 +74,55 @@ module.exports = [
       );
     },
   },
+  {
+    // Bug hunt, 2026-10-04: "Bulgarian Split Squat" opened "Split Squats" (a
+    // jumping bodyweight move) and "Arnold Press" opened the kettlebell version.
+    name: 'demo aliases: Bulgarian Split Squat and Arnold Press open the lift they name',
+    run() {
+      const library = createSeedExerciseLibrary();
+      const names = library.map((item) => item.name);
+      const open = (name) => library[findGuidedLibraryIndex(name, names)];
+
+      const bulgarian = open('Bulgarian Split Squat');
+      assert.equal(bulgarian.name, 'Split Squat with Dumbbells');
+      assert.match(bulgarian.instructions.join(' '), /rear foot elevated/i);
+      assert.ok(!/jump/i.test(bulgarian.instructions.join(' ')));
+
+      assert.equal(open('Arnold Press').name, 'Arnold Dumbbell Press');
+      assert.equal(open('Kettlebell Arnold Press').name, 'Kettlebell Arnold Press');
+
+      // The new targets speak Finnish, step for step.
+      for (const target of [bulgarian, open('Arnold Press')]) {
+        const fi = getExerciseInstructions(target.name, target.instructions, 'fi');
+        assert.equal(fi.length, target.instructions.length, target.name);
+        assert.notDeepEqual(fi, target.instructions, `${target.name} still English`);
+      }
+    },
+  },
+  {
+    name: 'the seated-calf-raise fallback and the bodyweight calves pool need no equipment',
+    run() {
+      const { EQUIPMENT_FALLBACKS, isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools.js');
+      const library = createSeedExerciseLibrary();
+      const fallback = new Map(EQUIPMENT_FALLBACKS).get('seated calf raise');
+      assert.ok(fallback && fallback.length > 0);
+      for (const name of fallback) {
+        const entry = library.find((item) => item.name === name);
+        assert.ok(entry, `${name} is not a library entry`);
+        assert.equal(entry.equipment, 'bodyweight', name);
+        assert.ok(isExerciseAllowedWithEquipment(name, []), `${name} is refused with no equipment`);
+        assert.ok(!/machine/i.test(entry.instructions.join(' ')), `${name}'s steps ask for a machine`);
+      }
+      // The machine the fallback used to land on is now refused without Machines.
+      assert.equal(isExerciseAllowedWithEquipment('Donkey Calf Raises', []), false);
+      assert.equal(isExerciseAllowedWithEquipment('Donkey Calf Raises', ['Machines']), true);
+      for (const name of FOCUS_ACCESSORY_POOL.calves.bodyweight) {
+        if (name === 'Calf Raises - With Bands') continue; // needs a band, which the pool's bodyweight variant already assumes
+        assert.ok(isExerciseAllowedWithEquipment(name, []), `${name} in the bodyweight calves pool needs gear`);
+      }
+      assert.ok(!FOCUS_ACCESSORY_POOL.calves.bodyweight.includes('Donkey Calf Raises'));
+      assert.equal(exerciseNameLabel('fi', 'Bodyweight Calf Raise'), 'Pohjenosto ilman painoa');
+    },
+  },
 ];

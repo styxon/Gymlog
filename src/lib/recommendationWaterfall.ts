@@ -173,7 +173,15 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
         'run_mobility',
         primary,
         byId(FIT_PROGRAM_ID),
-        'wf.run_mobility.primary',
+        // Bug hunt, 2026-10-04: only the run programme puts running first.
+        // At 2 days the pick is the mobility reset and at 5-6 days another
+        // programme, and "running comes first" was printed over plans with no
+        // running in them.
+        primary.programId === RUN_PROGRAM_ID
+          ? 'wf.run_mobility.primary'
+          : primary.familyId === 'joint_friendly'
+            ? 'wf.run_mobility.mobilityPrimary'
+            : 'wf.run_mobility.closestPrimary',
         'wf.run_mobility.alt',
       );
     }

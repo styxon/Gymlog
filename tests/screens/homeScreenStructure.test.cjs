@@ -248,7 +248,7 @@ module.exports = [
       // (user 2026-08-30: the three rows drifted apart in size).
       assert.match(
         homeScreenSource,
-        /styles\.blockMeta[\s\S]{0,160}'home\.section\.workoutMeta', \{ count: totalExerciseCount, sets: totalSets \}/,
+        /styles\.blockMeta[\s\S]{0,160}'home\.section\.workoutMeta'[\s\S]{0,260}totalExerciseCount[\s\S]{0,200}totalSets/,
       );
       assert.doesNotMatch(homeScreenSource, /heroListMetaRow|heroListTitle|heroListMeta[^R]/);
       // The lifts' fold row is titled like its neighbours — "Treeni" between

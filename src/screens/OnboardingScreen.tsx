@@ -2585,7 +2585,7 @@ export function OnboardingScreen({
                   chips never had: a rhythm is only a promise about the week
                   once someone divides it. */}
               <Text style={styles.daysCycleFrequency}>
-                {t(language, 'onb.days.cycleFrequency', {
+                {t(language, cycleOnDays === 1 ? 'onb.days.cycleFrequencyOne' : 'onb.days.cycleFrequency', {
                   on: cycleOnDays,
                   len: cycleOnDays + cycleOffDays,
                   perWeek: formatSessionsPerWeek(cycleSessionsPerWeek(cycleOnDays, cycleOffDays)),

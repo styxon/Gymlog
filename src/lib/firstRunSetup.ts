@@ -352,6 +352,7 @@ export function buildFirstRunRecommendationReasons(
     projectedDaysPerWeek: number;
     estimatedSessionDuration?: number | null;
     mismatchNote?: string | null;
+    language?: AppLanguage;
   },
   tailoringPreferences?: TailoringPreferencesInput | null,
 ) {

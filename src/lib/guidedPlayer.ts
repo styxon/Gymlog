@@ -1091,7 +1091,12 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // Jump" are left unresolved rather than pointed at "Plank" and "Star Jump".
   'chest-supported row': 'dumbbell incline row',
   'chest-supported t-bar row': 'lying t-bar row',
-  'bulgarian split squat': 'split squats',
+  // The rear-foot-elevated dumbbell split squat. "Split Squats" is a jumping
+  // bodyweight move, so a reader who tapped for the demo watched the wrong lift
+  // (bug hunt, 2026-10-04).
+  'bulgarian split squat': 'split squat with dumbbells',
+  // "Arnold Press" matched "Kettlebell Arnold Press" by containment.
+  'arnold press': 'arnold dumbbell press',
   'machine chest press': 'leverage chest press',
   'machine high row': 'leverage high row',
   'hanging knee raise': 'hanging leg raise',

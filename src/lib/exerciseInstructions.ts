@@ -48,6 +48,15 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Ala pyörittää käsiä hitaasti noin 30 senttimetrin ympyröissä. Hengitä normaalisti.',
     'Jatka noin kymmenen sekuntia ja vaihda sitten pyörimissuunta.',
   ],
+  // Added with the "Arnold Press" alias fix (bug hunt, 2026-10-04): the name used
+  // to open the kettlebell version. Five steps, as in the English entry.
+  'Arnold Dumbbell Press': [
+    'Istu selkänojalliselle penkille ja pidä kahta käsipainoa edessäsi rintakorkeudella kämmenet vartaloa kohti ja kyynärpäät koukussa. Kyynärpäät ovat vartalon vieressä, ja alkuasento näyttää käsipainocurlin yläasennolta.',
+    'Nosta käsipainoja ja kierrä samalla kämmeniä, kunnes ne osoittavat eteenpäin.',
+    'Jatka nostoa, kunnes kädet ovat suorina pään yläpuolella. Hengitä ulos tämän vaiheen aikana.',
+    'Pysähdy hetkeksi ylös ja laske käsipainot takaisin alkuasentoon kiertäen kämmenet takaisin kohti itseäsi. Vasen käsi kiertyy vastapäivään ja oikea myötäpäivään. Hengitä sisään laskun aikana.',
+    'Toista suositeltu määrä toistoja.',
+  ],
   'Ball Leg Curl': [
     'Asetu selinmakuulle lattialle ja nosta jalat jumppapallon päälle.',
     'Säädä pallon paikka niin, että nilkat ovat pallon päällä jalkojen ollessa suorina.',
@@ -113,6 +122,11 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso kuminauhan keskellä jalat noin lantion leveydellä ja ota kummastakin päästä kiinni, kädet suorina ja kämmenet eteenpäin.',
     'Pidä kyynärpäät kyljissä ja koukista kädet kohti olkapäitä. Purista hauis tiukaksi yläasennossa.',
     'Laske hitaasti nauhaa vastaan, kunnes kädet ovat taas suorat. Seiso nauhalla leveämmin, jos haluat enemmän vastusta, ja kapeammin, jos vähemmän.',
+  ],
+  'Bodyweight Calf Raise': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja varpaat eteenpäin. Ota tukea seinästä tai kaiteesta, jos tarvitset.',
+    'Nouse varpaille niin korkealle kuin pystyt, polvet suorina mutta ei lukittuina, ja pysähdy hetkeksi ylös.',
+    'Laske kantapäät hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon.',
   ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
@@ -741,6 +755,14 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä sekunnin tauko ja työnnä tanko takaisin ylös ojentajilla. Ojenna kädet ylhäällä, pidä sekunti ja laske hitaasti alas. Laskuvaihe saa kestää vähintään kaksi kertaa noston verran.',
     'Toista ohjelman mukainen määrä toistoja.',
     'Lukitse tanko telineeseen sarjan päätteeksi.',
+  ],
+  // Added with the "Bulgarian Split Squat" alias fix (bug hunt, 2026-10-04): the
+  // name used to open "Split Squats", a jumping bodyweight move. Four steps.
+  'Split Squat with Dumbbells': [
+    'Asetu porrastettuun asentoon niin, että takajalka on koholla ja etujalka edessä.',
+    'Pidä käsipainoa kummassakin kädessä käsivarret sivuilla roikkuen. Tämä on alkuasento.',
+    'Laskeudu koukistamalla polvea ja lonkkaa. Pidä ryhti hyvänä koko liikkeen ajan ja etupolvi jalkaterän linjassa.',
+    'Työnnä alhaalta kantapään kautta ja ojenna polvi ja lonkka takaisin alkuasentoon.',
   ],
   'Split Squats': [
     'Aloita seisoma-asennosta. Hyppää käyntiasentoon toinen jalka edessä ja toinen takana, koukista polvia ja laske lantiota hieman.',

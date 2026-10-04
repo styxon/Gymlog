@@ -103,4 +103,23 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       'Lower slowly against the band until your arms are straight again. Stand further apart on the band for more resistance, closer for less.',
     ],
   },
+  {
+    // The calf raise that needs nothing. The "seated calf raise" fallback and
+    // the bodyweight calves pool pointed at "Donkey Calf Raises", whose own
+    // steps open with "you will need access to a donkey calf raise machine" -
+    // a reader without Machines was handed a machine (bug hunt, 2026-10-04).
+    // Upstream carries no floor-level calf raise.
+    id: 'extra_bodyweight_calf_raise',
+    name: 'Bodyweight Calf Raise',
+    category: 'isolation',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    primaryMuscles: ['calves'],
+    secondaryMuscles: [],
+    instructions: [
+      'Stand tall with your feet hip-width apart, toes pointing forward. Hold a wall or a rail for balance if you need it.',
+      'Rise onto the balls of your feet as high as you can, keeping your knees straight but not locked, and pause for a second at the top.',
+      'Lower your heels slowly until they are level with the floor, or a little below if you stand on a step, and go straight into the next rep.',
+    ],
+  },
 ];

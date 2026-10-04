@@ -86,4 +86,35 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'run_mobility only says running comes first when the pick is the run programme',
+    run() {
+      // Bug hunt, 2026-10-04: the 2-day mobility reset and the 5-6 day mobility
+      // flow were announced with "Running comes first" though neither has a run.
+      const base = { goal: 'run_mobility', goals: ['run_mobility'], trainingEnvironment: 'full_gym', equipment: 'gym' };
+      for (const level of ['beginner', 'advanced']) {
+        for (const daysPerWeek of [2, 3, 4, 5, 6]) {
+          const decision = decisionFor({ ...base, level, daysPerWeek });
+          if (decision.whyPrimary === 'wf.run_mobility.primary') {
+            assert.equal(
+              decision.primaryProgramId,
+              'tpl_3_day_run_mobility_v1',
+              `${level}/${daysPerWeek}: running-first copy on ${decision.primaryProgramId}`,
+            );
+          }
+        }
+      }
+      const reset = decisionFor({ ...base, level: 'advanced', daysPerWeek: 2 });
+      assert.equal(reset.primaryProgramId, 'tpl_2_day_mobility_reset_v1');
+      assert.equal(reset.whyPrimary, 'wf.run_mobility.mobilityPrimary');
+      const flow = decisionFor({ ...base, level: 'advanced', daysPerWeek: 6 });
+      assert.equal(flow.primaryProgramId, 'tpl_gainer_mobility_flow_v1');
+      assert.equal(flow.whyPrimary, 'wf.run_mobility.mobilityPrimary');
+      for (const language of ['en', 'fi']) {
+        for (const key of ['wf.run_mobility.mobilityPrimary', 'wf.run_mobility.closestPrimary']) {
+          assert.ok(!/running comes first|juoksu edellä/i.test(t(language, key)), `${language} ${key}`);
+        }
+      }
+    },
+  },
 ];

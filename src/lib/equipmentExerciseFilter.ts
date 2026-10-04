@@ -56,6 +56,9 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'leg curl', requires: [['Machines']] },
   { pattern: 'leg extension', requires: [['Machines']] },
   { pattern: 'seated calf raise', requires: [['Machines']] },
+  // The library files it as bodyweight, but its steps open with a donkey calf
+  // raise machine (bug hunt, 2026-10-04).
+  { pattern: 'donkey calf', requires: [['Machines']] },
   { pattern: 'preacher curl', requires: [['Bench', 'Machines']] },
   { pattern: 'lateral raise', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'rear delt', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
@@ -196,7 +199,9 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['kettlebell swing', ['Butt Lift (Bridge)']],
   ['leg curl', ['Butt Lift (Bridge)']],
   ['leg extension', ['Bodyweight Squat']],
-  ['seated calf raise', ['Donkey Calf Raises']],
+  // Not "Donkey Calf Raises": its steps start with "you will need access to a
+  // donkey calf raise machine" (bug hunt, 2026-10-04).
+  ['seated calf raise', ['Bodyweight Calf Raise']],
   ['treadmill', ['Trail Running/Walking']],
   ['bike', ['Mountain Climbers']],
   ['chest press', ['Push-Up Wide']],

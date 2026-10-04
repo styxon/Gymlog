@@ -225,7 +225,7 @@ export function TrainingPlanScreen({
   };
 
   const dayCountCaption = (count: number) =>
-    t(language, 'plan.dayCount', { days: count, rest: 7 - count });
+    t(language, count === 1 ? 'plan.dayCountOne' : 'plan.dayCount', { days: count, rest: 7 - count });
 
   const cyclePattern = showCycle
     ? editingSchedule
@@ -313,7 +313,7 @@ export function TrainingPlanScreen({
                 <View style={styles.badgeRow}>
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>
-                      {t(language, 'plan.exerciseCount', { count: planExerciseCount })}
+                      {t(language, planExerciseCount === 1 ? 'plan.exerciseCountOne' : 'plan.exerciseCount', { count: planExerciseCount })}
                     </Text>
                   </View>
                   <View style={styles.badge}>
