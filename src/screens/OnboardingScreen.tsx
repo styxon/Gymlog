@@ -1468,7 +1468,8 @@ export function OnboardingScreen({
           presentation: getReadyTemplatePresentation(template, language),
           recommended: index === 0,
           days: week.days,
-          mins: week.sessionMinutes,
+          // What Home shows once the pick is saved as the reader's copy.
+          mins: week.savedCopySessionMinutes,
           weeks: week.weeks,
           totalWorkouts: week.totalWorkouts,
           focus: buildProgramFocusSplit(week.sessions),

@@ -66,15 +66,23 @@ module.exports = [
       };
       const week = composeProgramWeekForSelection(selection, template.id);
       assert.ok(week);
-      // Costed with the rest the saved copy keeps (onboardingHandoff saves the
-      // high end), so the card and Home after saving agree.
+      // The ready programme as it runs: the low end of each rest, the same as
+      // the Programs cards and Home for a ready plan.
+      assert.equal(week.sessionMinutes, estimateProgrammeSessionMinutes(week.sessions, { availableEquipment: null }));
+      // The copy onboarding saves keeps the high end, so the pick card quotes
+      // that one — and only the pick card does (review of #312).
       assert.equal(
-        week.sessionMinutes,
+        week.savedCopySessionMinutes,
         estimateProgrammeSessionMinutes(week.sessions, { availableEquipment: null, rest: 'max' }),
       );
+      assert.ok(week.savedCopySessionMinutes >= week.sessionMinutes);
       assert.match(
         fs.readFileSync(path.join(root, 'src/app/onboardingHandoff.ts'), 'utf8'),
         /restSeconds: exercise\.restSecondsMax,/,
+      );
+      assert.match(
+        fs.readFileSync(path.join(root, 'src/screens/OnboardingScreen.tsx'), 'utf8'),
+        /mins: week\.savedCopySessionMinutes,/,
       );
       assert.notEqual(week.sessionMinutes, 0);
     },
