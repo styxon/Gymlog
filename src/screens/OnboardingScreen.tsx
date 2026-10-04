@@ -652,7 +652,10 @@ const LOCATION_SELECTION_OPTIONS: Array<{
 // the chosen labels persist to setupEquipmentItems for later exercise filtering.
 const EQUIPMENT_CHIP_CATALOG: Partial<Record<LocationSelectionOptionId, string[]>> = {
   full_gym: ['Barbells', 'Dumbbells', 'Machines', 'Cables', 'Squat rack', 'Bench', 'Kettlebells', 'Cardio machines'],
-  home_gym: ['Dumbbells', 'Barbell & plates', 'Squat rack', 'Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar'],
+  // A treadmill, a bike or a cross-trainer is common at home, so it can be
+  // ticked — but it is not in the defaults below: most homes have none, and a
+  // chip on by default would hand them cardio-machine work (user, 2026-10-04).
+  home_gym: ['Dumbbells', 'Barbell & plates', 'Squat rack', 'Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar', 'Cardio machines'],
   bodyweight_only: ['Pull-up bar', 'Resistance bands', 'Yoga mat'],
 };
 
@@ -1465,7 +1468,8 @@ export function OnboardingScreen({
           presentation: getReadyTemplatePresentation(template, language),
           recommended: index === 0,
           days: week.days,
-          mins: week.sessionMinutes,
+          // What Home shows once the pick is saved as the reader's copy.
+          mins: week.savedCopySessionMinutes,
           weeks: week.weeks,
           totalWorkouts: week.totalWorkouts,
           focus: buildProgramFocusSplit(week.sessions),
@@ -1807,6 +1811,14 @@ export function OnboardingScreen({
 
   function applyEquipmentEnvironment(option: (typeof LOCATION_SELECTION_OPTIONS)[number], items: string[]) {
     if (option.id === 'home_gym') {
+      // Every chip unticked is an answer: nothing. Saved as minimal with no
+      // chips it read as "unknown gear", and the reader was handed dumbbell
+      // work (bug hunt, 2026-10-04).
+      if (items.length === 0) {
+        setEquipment('home');
+        setTrainingEnvironment('bodyweight_only');
+        return;
+      }
       const hasHeavy = items.some((item) => HOME_HEAVY_EQUIPMENT_ITEMS.includes(item));
       setEquipment(hasHeavy ? 'home' : 'minimal');
       setTrainingEnvironment(hasHeavy ? 'home_gym' : 'minimal_equipment');

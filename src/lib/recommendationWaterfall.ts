@@ -1,4 +1,5 @@
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
+import { equipmentCandidatePool } from './programEquipmentFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -136,9 +137,11 @@ function decision(
 export function selectWaterfallDecision(input: RecommendationInput): RecommendationWaterfallDecision {
   const programs = RECOMMENDATION_PROGRAMS;
 
-  // 1. Equipment overrides everything: never send home/minimal users to gym content.
+  // 1. Equipment overrides everything: a home or minimal reader gets what their
+  // own chips can run — the low-equipment shelf, and a gym programme only when
+  // their gear covers it (a home rack and barbell).
   if (input.equipment !== 'gym') {
-    const pool = programs.filter((definition) => definition.equipmentTier === 'low_equipment');
+    const pool = equipmentCandidatePool(programs, input);
     const primary = pickClosest(pool, input);
     if (primary) {
       const remaining = pool.filter((definition) => definition.programId !== primary.programId);
@@ -148,12 +151,15 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
           ? pickClosest(remaining.filter((definition) => definition.styleTags.includes('conditioning')), input)
           : null)
         ?? pickClosest(remaining, input);
+      // A home rack can be handed a barbell programme now, and "nothing in it
+      // needs a gym" would be the wrong sentence for one.
+      const ownGear = primary.equipmentTier !== 'low_equipment';
       return decision(
         'home_equipment',
         primary,
         alternative,
-        'wf.home_equipment.primary',
-        'wf.home_equipment.alt',
+        ownGear ? 'wf.home_gear.primary' : 'wf.home_equipment.primary',
+        ownGear || alternative?.equipmentTier !== 'low_equipment' ? 'wf.home_gear.alt' : 'wf.home_equipment.alt',
       );
     }
   }

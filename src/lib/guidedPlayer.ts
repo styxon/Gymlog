@@ -1060,6 +1060,9 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'romanian deadlift': 'romanian deadlift',
   'barbell row': 'bent over barbell row',
   'hip thrust': 'barbell hip thrust',
+  // The floor bridge. By containment it landed on the barbell bridge, whose
+  // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
+  'glute bridge': 'butt lift (bridge)',
   'lat pulldown': 'wide-grip lat pulldown',
   'pull-up': 'pullups',
   'pull-ups': 'pullups',
@@ -1074,7 +1077,6 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // which is why stripped names are not allowed to use it.
   'rows (bar or rings)': 'inverted row',
   'seated cable row': 'seated cable rows',
-  'glute bridge': 'barbell glute bridge',
   'step-up': 'step-up with knee raise',
   vacuum: 'stomach vacuum',
 

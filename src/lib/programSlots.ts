@@ -9,7 +9,7 @@
  *
  * Three things this cap deliberately does NOT touch:
  *
- * - Ready programs. All 57 stay free and switchable, because the catalog's own
+ * - Ready programs. All 61 stay free and switchable, because the catalog's own
  *   copy invites you to browse and swap, and a cap on choosing would punish
  *   exploring rather than authoring. The funnel is the moment you want a ready
  *   program changed: that duplicates into one of your own, and THAT is the

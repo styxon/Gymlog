@@ -8,6 +8,7 @@ import {
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
 import { isHoldExerciseName } from './holdExercises';
+import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
 
 /**
@@ -406,5 +407,19 @@ export type SupplementalDayKind = keyof typeof SUPPLEMENTAL_DAY_POOL;
  * version is fine. An empty list means the user told us they have nothing.
  */
 export function pickPoolVariant(pool: FocusAccessoryPool, available: string[] | null) {
-  return available !== null && available.length === 0 ? pool.bodyweight : pool.loaded;
+  if (available === null) {
+    return pool.loaded;
+  }
+  if (available.length === 0) {
+    return pool.bodyweight;
+  }
+  // Between the two, each loaded pick has to be one the reader's chips allow;
+  // where it is not, the bodyweight pick in the same place stands in. Any chip
+  // at all used to mean the loaded list whole, so a home rack's recovery day
+  // was an elliptical trainer the equipment pass then removed — twice, on a
+  // six-day week (coverage sweep, 2026-10-04).
+  const picked = pool.loaded.map((name, index) =>
+    isExerciseAllowedWithEquipment(name, available) ? name : pool.bodyweight[index] ?? name,
+  );
+  return [...new Set(picked)];
 }

@@ -52,6 +52,13 @@ export interface ComposedProgramWeek {
   weeks: number;
   totalWorkouts: number;
   sessionMinutes: number;
+  /**
+   * The same week costed on the long end of each rest range — what the copy
+   * onboarding saves keeps (onboardingHandoff), so the pick card quotes what
+   * Home will show after saving. Every other screen quotes sessionMinutes,
+   * the ready programme as it runs (review of #312).
+   */
+  savedCopySessionMinutes: number;
   /** True when the composed week differs from the template's own day count. */
   composed: boolean;
   /** Caution-flag effects applied to this week (P2 truth surface). */
@@ -214,10 +221,11 @@ export function composeProgramWeekForSelection(
     days,
     weeks,
     totalWorkouts: weeks * days,
-    // Home's arithmetic over the week as composed, swaps and all — the card
-    // and the plan it saves quote one number (bug hunt, 2026-10-04).
-    sessionMinutes:
-      estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
+    // Home's arithmetic over the week as composed, swaps and all (bug hunt,
+    // 2026-10-04).
+    sessionMinutes: estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
+    savedCopySessionMinutes:
+      estimateProgrammeSessionMinutes(sessions, { availableEquipment, rest: 'max' }) || template.estimatedSessionDuration,
     composed: days !== template.daysPerWeek,
     cautionRemoved,
     cautionSwapped,

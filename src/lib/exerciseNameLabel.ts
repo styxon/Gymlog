@@ -1294,7 +1294,7 @@ const EXERCISE_NAME_EN: Record<string, string> = {
   'Seated Cable Rows': 'Seated Cable Row',
   'One-Arm Dumbbell Row': 'Single-Arm Dumbbell Row',
   'Reverse Machine Flyes': 'Reverse Pec Deck',
-  'Barbell Glute Bridge': 'Glute Bridge',
+  'Butt Lift (Bridge)': 'Glute Bridge',
   'Triceps Pushdown - Rope Attachment': 'Rope Pushdown',
   'Leverage Chest Press': 'Machine Chest Press',
 };
