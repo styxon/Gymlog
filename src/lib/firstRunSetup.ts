@@ -1,3 +1,4 @@
+import { projectTrainingWeekdays } from './programTrainingDays';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { buildRecommendationReasonLines } from './recommendationExplanation';
 import { buildRecommendationInput } from './recommendationInput';
@@ -310,48 +311,8 @@ export function formatFocusAreaList(focusAreas: SetupFocusArea[]) {
   return formatList(focusAreas.map((area) => getFocusAreaTitle(area)));
 }
 
-function normalizeWeekdays(days: SetupWeekday[]) {
-  return [...new Set(days)].sort((left, right) => WEEKDAY_ORDER.indexOf(left) - WEEKDAY_ORDER.indexOf(right));
-}
-
 function roundToNearestTen(value: number) {
   return Math.round(value / 10) * 10;
-}
-
-function buildCombinationList(days: SetupWeekday[], targetSize: number): SetupWeekday[][] {
-  if (targetSize <= 0) {
-    return [[]];
-  }
-
-  if (days.length < targetSize) {
-    return [];
-  }
-
-  if (targetSize === 1) {
-    return days.map((day) => [day]);
-  }
-
-  const combinations: SetupWeekday[][] = [];
-  days.forEach((day, index) => {
-    const tail = buildCombinationList(days.slice(index + 1), targetSize - 1);
-    tail.forEach((combination) => {
-      combinations.push([day, ...combination]);
-    });
-  });
-  return combinations;
-}
-
-function scoreWeekdayCombination(days: SetupWeekday[]) {
-  const indexes = normalizeWeekdays(days).map((day) => WEEKDAY_ORDER.indexOf(day));
-  const gaps = indexes.map((current, index) => {
-    const next = indexes[(index + 1) % indexes.length];
-    return index === indexes.length - 1 ? next + 7 - current : next - current;
-  });
-  const minGap = Math.min(...gaps);
-  const maxGap = Math.max(...gaps);
-  const gapSpread = maxGap - minGap;
-  const weekdayBias = indexes.reduce((sum, value) => sum + value, 0);
-  return minGap * 100 - gapSpread * 10 - weekdayBias;
 }
 
 function resolveDefaultRhythm(daysPerWeek: number) {
@@ -382,27 +343,7 @@ export function resolveProjectedTrainingDays(
   daysPerWeek: number,
 ) {
   const defaultRhythm = resolveDefaultRhythm(daysPerWeek);
-  if (selection.scheduleMode !== 'self_managed') {
-    return defaultRhythm;
-  }
-
-  const normalizedDays = normalizeWeekdays(selection.availableDays);
-  if (normalizedDays.length < defaultRhythm.length) {
-    return defaultRhythm;
-  }
-
-  if (normalizedDays.length === defaultRhythm.length) {
-    return normalizedDays;
-  }
-
-  const combinations = buildCombinationList(normalizedDays, defaultRhythm.length);
-  if (combinations.length === 0) {
-    return defaultRhythm;
-  }
-
-  return combinations.reduce((best, current) =>
-    scoreWeekdayCombination(current) > scoreWeekdayCombination(best) ? current : best,
-  );
+  return projectTrainingWeekdays(selection, defaultRhythm);
 }
 
 export function buildFirstRunRecommendationReasons(

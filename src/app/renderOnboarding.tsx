@@ -322,6 +322,7 @@ export function renderSetupEditor(deps: SetupEditorDeps): React.ReactNode {
       // height, weight, rhythm (2026-09-17). They get what they entered as
       // basics, and the questions open unanswered.
       initialSelection={setupEditSelection}
+      existingTrainingCycle={preferences.trainingCycle}
       basicsSeed={setupEditSelection ? null : setupBasics}
       initialStage={route.stage ?? (setupSelection ? 'review' : 'location')}
       initialUnitPreference={unitPreference}

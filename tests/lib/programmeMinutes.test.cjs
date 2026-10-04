@@ -115,4 +115,46 @@ module.exports = [
       }
     },
   },
+  {
+    // Bug hunt, 2026-10-04: tpl_3_day_push_pull_legs_v1 with bands only read 35
+    // on the Programs card and 20 on the programme page.
+    name: 'programme minutes: the card quotes the week composed for the reader\'s own gear',
+    run() {
+      const gearSets = [
+        { trainingEnvironment: 'bodyweight_only', equipmentItems: [] },
+        { trainingEnvironment: 'home', equipmentItems: ['bands'] },
+        { trainingEnvironment: 'home', equipmentItems: ['dumbbells'] },
+        { trainingEnvironment: 'home', equipmentItems: ['dumbbells', 'bench'] },
+        { trainingEnvironment: 'gym', equipmentItems: [] },
+      ];
+      const { resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      let differing = 0;
+      let checked = 0;
+      for (const gear of gearSets) {
+        for (const template of WORKOUT_TEMPLATES_V1) {
+          if (template.daysPerWeek < 2 || template.daysPerWeek > 6) continue;
+          const selection = {
+            ...DEFAULT_FIRST_RUN_SELECTION,
+            ...gear,
+            daysPerWeek: template.daysPerWeek,
+            availableDays: [],
+            scheduleMode: 'app_managed',
+            focusAreas: [],
+            cautionFlags: [],
+          };
+          let week = null;
+          try { week = composeProgramWeekForSelection(selection, template.id); } catch { continue; } // seasonal templates have no recommendation profile
+          if (!week || week.days !== template.sessions.length) continue;
+          const availableEquipment = resolveAvailableEquipment(selection);
+          const card = readyTemplateCardMinutes(template, { availableEquipment });
+          assert.equal(card, week.sessionMinutes, `${template.id} ${JSON.stringify(gear)}`);
+          if (card !== readyTemplateCardMinutes(template)) differing += 1;
+          checked += 1;
+        }
+      }
+      assert.ok(checked > 50, `only ${checked} cases`);
+      assert.ok(differing > 0, 'gear never changed a card: the test would pass without the fix');
+    },
+  },
+
 ];
