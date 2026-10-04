@@ -158,6 +158,36 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Every muscle is trained twice a week, once heavier and once with more reps, and progress comes from adding reps before adding weight.',
   },
+  tpl_home_dumbbell_ppl_v1: {
+    summary:
+      'Six days a week at home with a pair of dumbbells: push, pull and legs, each twice, once heavier and once with more reps.',
+    audience:
+      'Experienced lifters training at home with dumbbells who want six sessions a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable, a sturdy table for rows and a chair for dips. No bench.',
+    whyItWorks:
+      'Every muscle is trained twice a week from two directions, and each session is short enough to fit a busy day.',
+  },
+  tpl_home_bodyweight_upper_lower_v1: {
+    summary:
+      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work.',
+    audience:
+      'Anyone training at home without equipment who is past the beginner stage and wants four sessions a week.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+    whyItWorks:
+      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first.',
+  },
+  tpl_home_athletic_5_day_v1: {
+    summary:
+      'Five bodyweight days a week at home: push and core, legs, a full-body circuit, pull and conditioning, and a balance day.',
+    audience:
+      'Anyone training at home without equipment who wants five sessions a week for strength and fitness together.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+    whyItWorks:
+      'Strength days and conditioning days alternate, so no two hard sessions for the same muscles fall back to back.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Four days a week built around skills: handstand and planche, muscle-up and front lever, pistol squats and jumps, plus a skills-and-core day.',

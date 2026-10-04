@@ -141,6 +141,36 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Jokainen lihas treenataan kahdesti viikossa, kerran raskaammin ja kerran useammalla toistolla, ja eteneminen tulee ensin toistoista ja sitten painosta.',
   },
+  tpl_home_dumbbell_ppl_v1: {
+    summary:
+      'Kuusi treeniä viikossa kotona käsipainoparilla: työntö, veto ja jalat kumpikin kahdesti, kerran raskaammin ja kerran useammalla toistolla.',
+    audience:
+      'Kokeneelle treenaajalle, joka treenaa kotona käsipainoilla ja haluaa kuusi treeniä viikossa.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä, tukeva pöytä soutuun ja tuoli dippeihin. Penkkiä ei tarvita.',
+    whyItWorks:
+      'Jokainen lihas treenataan kahdesti viikossa kahdella eri tavalla, ja yksittäinen treeni on niin lyhyt, että se mahtuu kiireiseenkin päivään.',
+  },
+  tpl_home_bodyweight_upper_lower_v1: {
+    summary:
+      'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä.',
+    audience:
+      'Kotona ilman välineitä treenaavalle, joka on aloittelijavaiheen ohi ja haluaa neljä treeniä viikossa.',
+    equipmentProfile:
+      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
+    whyItWorks:
+      'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista.',
+  },
+  tpl_home_athletic_5_day_v1: {
+    summary:
+      'Viisi kehonpainotreeniä viikossa kotona: työntö ja keskivartalo, jalat, koko kehon kiertoharjoitus, veto ja kunto sekä tasapainopäivä.',
+    audience:
+      'Kotona ilman välineitä treenaavalle, joka haluaa viisi treeniä viikossa voimaan ja kuntoon yhdessä.',
+    equipmentProfile:
+      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
+    whyItWorks:
+      'Voima- ja kuntopäivät vuorottelevat, joten samoille lihaksille ei tule kahta raskasta treeniä peräkkäin.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Neljä päivää viikossa taitoliikkeiden ympärillä: käsinseisonta ja planche, muscle-up ja front lever, pistoolikyykky ja hypyt sekä taito- ja keskivartalopäivä.',

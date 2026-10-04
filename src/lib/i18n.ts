@@ -656,6 +656,9 @@ const EN = {
   'prog.sub.tpl_gainer_mobility_flow_v1': 'Daily movement for range, stiffness and recovery.',
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Full-body work that needs no gym and no kit.',
   'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Four days at home with a pair of dumbbells, upper and lower body in turns.',
+  'prog.sub.tpl_home_dumbbell_ppl_v1': 'Six days at home with a pair of dumbbells: push, pull and legs twice.',
+  'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Four bodyweight days, upper and lower body in turns, with no bar.',
+  'prog.sub.tpl_home_athletic_5_day_v1': 'Five bodyweight days at home: strength, conditioning and balance.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Strength, body control and the skills: muscle-up, handstand, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Five sets of five on the big lifts, and add weight when you can.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Power, speed, agility and endurance inside the same week.',
@@ -810,7 +813,9 @@ const EN = {
   'onb.equip.Squat rack': 'Squat rack',
   'onb.equip.Bench': 'Bench',
   'onb.equip.Kettlebells': 'Kettlebells',
-  'onb.equip.Cardio machines': 'Cardio machines',
+  // Named, because a reader at home thinks of their own bike or treadmill,
+  // not of a category (user, 2026-10-04).
+  'onb.equip.Cardio machines': 'Cardio machine (bike, treadmill, cross-trainer)',
   'onb.equip.Barbell & plates': 'Barbell & plates',
   'onb.equip.Resistance bands': 'Resistance bands',
   'onb.equip.Pull-up bar': 'Pull-up bar',
@@ -2989,7 +2994,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 58 ready programmes with level, goal and free text all
+  // The catalog: 61 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4020,6 +4025,9 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_gainer_mobility_flow_v1': 'Päivittäistä liikettä liikkuvuuteen, jäykkyyteen ja palautumiseen.',
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Koko kehon treeni ilman salia ja ilman välineitä.',
   'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Neljä päivää kotona käsipainoparilla, ylä- ja alavartalo vuorotellen.',
+  'prog.sub.tpl_home_dumbbell_ppl_v1': 'Kuusi päivää kotona käsipainoparilla: työntö, veto ja jalat kahdesti.',
+  'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Neljä kehonpainopäivää, ylä- ja alavartalo vuorotellen, ilman tankoa.',
+  'prog.sub.tpl_home_athletic_5_day_v1': 'Viisi kehonpainopäivää kotona: voimaa, kuntoa ja tasapainoa.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Voimaa, kehonhallintaa ja taitoja: muscle-up, käsinseisonta, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Viisi viiden toiston sarjaa perusliikkeillä, ja lisää painoa kun pystyt.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Tehoa, nopeutta, ketteryyttä ja kestävyyttä samalla viikolla.',
@@ -4171,7 +4179,7 @@ const FI: Record<I18nKey, string> = {
   'onb.equip.Squat rack': 'Kyykkyteline',
   'onb.equip.Bench': 'Penkki',
   'onb.equip.Kettlebells': 'Kahvakuulat',
-  'onb.equip.Cardio machines': 'Cardiolaitteet',
+  'onb.equip.Cardio machines': 'Cardiolaite (kuntopyörä, juoksumatto, crosstrainer)',
   'onb.equip.Barbell & plates': 'Tanko & levyt',
   'onb.equip.Resistance bands': 'Vastuskuminauhat',
   'onb.equip.Pull-up bar': 'Leuanvetotanko',
@@ -6154,7 +6162,7 @@ const FI: Record<I18nKey, string> = {
   'programs.sort.days': 'Päivät',
   'programs.sort.length': 'Kesto',
   'programs.sheet.fitsYourWeek': 'SOPII {days} PÄIVÄN VIIKKOOSI',
-  // Katalogi: 58 valmista ohjelmaa, joita taso, tavoite ja vapaa teksti
+  // Katalogi: 61 valmista ohjelmaa, joita taso, tavoite ja vapaa teksti
   // rajaavat yhtä aikaa. Tavoitekiekot ovat taksonomia, eivät suodatin.
   'programCatalog.title': 'Kaikki valmiit ohjelmat',
   'programCatalog.searchPlaceholder': 'Hae {count} ohjelmasta',

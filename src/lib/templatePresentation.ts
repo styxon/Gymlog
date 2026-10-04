@@ -317,6 +317,18 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'Home Dumbbell Upper/Lower',
     tagKeys: ['prog.tag.home', 'prog.tag.upperLower'],
   },
+  tpl_home_dumbbell_ppl_v1: {
+    title: 'Home Dumbbell Push/Pull/Legs',
+    tagKeys: ['prog.tag.home', 'prog.tag.ppl'],
+  },
+  tpl_home_bodyweight_upper_lower_v1: {
+    title: 'Bodyweight Upper/Lower',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.upperLower'],
+  },
+  tpl_home_athletic_5_day_v1: {
+    title: 'Home Athletic',
+    tagKeys: ['prog.tag.home', 'prog.tag.athletic'],
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     title: 'Calisthenics Mastery',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.advanced'],

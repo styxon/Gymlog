@@ -161,4 +161,56 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'home programmes fill the five- and six-day and bodyweight gaps, each runnable as written',
+    run() {
+      const cases = [
+        ['tpl_home_dumbbell_ppl_v1', ['Dumbbells'], 6],
+        ['tpl_home_bodyweight_upper_lower_v1', [], 4],
+        ['tpl_home_athletic_5_day_v1', [], 5],
+      ];
+      for (const [programId, gear, days] of cases) {
+        const template = getWorkoutTemplateById(programId);
+        assert.ok(template, programId);
+        assert.equal(template.sessions.length, days, programId);
+        for (const session of template.sessions) {
+          assert.ok(session.exercises.length >= 5, `${programId} ${session.name}`);
+          const adjusted = applyEquipmentToExercises(session.exercises, gear);
+          assert.deepEqual(adjusted.removed, [], `${programId} ${session.name}`);
+          assert.deepEqual(adjusted.swapped, [], `${programId} ${session.name}`);
+          if (gear.length === 0) {
+            // Nothing at home means nothing to load.
+            for (const exercise of session.exercises) {
+              assert.notEqual(exercise.trackingMode, 'load_and_reps', `${programId}: ${exercise.exerciseName}`);
+            }
+          }
+        }
+      }
+      const reach = [
+        [SETUPS.dumbbellsOnly, 'muscle', 6, 'tpl_home_dumbbell_ppl_v1'],
+        [SETUPS.dumbbellsOnly, 'strength', 6, 'tpl_home_dumbbell_ppl_v1'],
+        [SETUPS.nothing, 'muscle', 4, 'tpl_home_bodyweight_upper_lower_v1'],
+        [SETUPS.nothing, 'general_fitness', 4, 'tpl_home_bodyweight_upper_lower_v1'],
+        [SETUPS.nothing, 'general_fitness', 5, 'tpl_home_athletic_5_day_v1'],
+        [SETUPS.nothing, 'lean_athletic', 5, 'tpl_home_athletic_5_day_v1'],
+        // Six home days of general fitness were a mobility programme.
+        [SETUPS.nothing, 'general', 6, 'tpl_home_athletic_5_day_v1'],
+      ];
+      for (const [setup, goal, days, expected] of reach) {
+        assert.equal(
+          recommend(setup, goal, 'advanced', days).recommendation.featuredProgramId,
+          expected,
+          `${setup.equipmentItems.join('+') || 'nothing'} ${goal} ${days}`,
+        );
+      }
+      // A dumbbell reader after muscle is never sent to the bodyweight
+      // conditioning week.
+      for (const days of [4, 5, 6]) {
+        assert.notEqual(
+          recommend(SETUPS.dumbbellsOnly, 'muscle', 'advanced', days).recommendation.featuredProgramId,
+          'tpl_home_athletic_5_day_v1',
+        );
+      }
+    },
+  },
 ];
