@@ -218,11 +218,17 @@ export function nextTemplateBuilderStep(step: TemplateBuilderStep): TemplateBuil
  * Where Back goes from a step: the step before it, or null when Back should
  * leave the screen. It leaves from the step the path opened on — an edit opens
  * on the days, and Back from there is back to the programme, not into a
- * "choose a base" page that would replace the days it came to edit.
+ * "choose a base" page that would replace the days it came to edit. An edit
+ * that jumped back to rename it or change its day count returns to the days
+ * it opened on, rather than leaving from a step it never walked through.
  */
 export function previousTemplateBuilderStep(step: TemplateBuilderStep, editing: boolean): TemplateBuilderStep | null {
   const index = templateBuilderStepIndex(step);
-  const floor = templateBuilderStepIndex(initialTemplateBuilderStep(editing));
+  const opened = initialTemplateBuilderStep(editing);
+  const floor = templateBuilderStepIndex(opened);
+  if (index < floor) {
+    return opened;
+  }
   return index > floor ? TEMPLATE_BUILDER_STEPS[index - 1] : null;
 }
 
@@ -275,6 +281,18 @@ export function templateDraftSignature(name: string, sessions: SignatureSession[
 }
 
 /**
+ * The days a base made, for baseChoiceDiscardsWork to compare against. Only
+ * the days with lifts in them: an empty day added on the Days step afterwards
+ * holds nothing a new base could take.
+ */
+export function baseSignature(sessions: SignatureSession[]): string {
+  return templateDraftSignature(
+    '',
+    sessions.filter((session) => session.exercises.length > 0),
+  );
+}
+
+/**
  * Whether choosing a base would throw work away.
  *
  * A base replaces the days. Days nobody has put a lift into lose nothing, and
@@ -286,5 +304,5 @@ export function baseChoiceDiscardsWork(sessions: SignatureSession[], lastBaseSig
   if (sessions.every((session) => session.exercises.length === 0)) {
     return false;
   }
-  return lastBaseSignature === null || templateDraftSignature('', sessions) !== lastBaseSignature;
+  return lastBaseSignature === null || baseSignature(sessions) !== lastBaseSignature;
 }

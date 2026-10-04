@@ -7,6 +7,7 @@ const {
   TEMPLATE_BUILDER_STEPS,
   TEMPLATE_DAY_OPTIONS,
   baseChoiceDiscardsWork,
+  baseSignature,
   canJumpToTemplateBuilderStep,
   clampDayCount,
   initialTemplateBuilderStep,
@@ -105,8 +106,11 @@ module.exports = [
       // Not into "choose a base", which would replace the days it came to edit.
       assert.equal(previousTemplateBuilderStep('build', true), null);
       assert.equal(previousTemplateBuilderStep('review', true), 'build');
-      // A step jumped to from the indicator still walks back one at a time.
-      assert.equal(previousTemplateBuilderStep('days', true), null);
+      // A step jumped to from the indicator returns to the days it opened on,
+      // rather than leaving from a step the edit never walked through.
+      assert.equal(previousTemplateBuilderStep('name', true), 'build');
+      assert.equal(previousTemplateBuilderStep('days', true), 'build');
+      assert.equal(previousTemplateBuilderStep('base', true), 'build');
     },
   },
   {
@@ -129,16 +133,18 @@ module.exports = [
       const fromBase = [
         { name: 'Push', exercises: [{ name: 'Bench Press', targetSets: 3, repMin: 6, repMax: 8, restSeconds: 120 }] },
       ];
-      const baseSignature = templateDraftSignature('', fromBase);
+      const lastBase = baseSignature(fromBase);
       // Exactly what the last base made: trying another is browsing.
-      assert.equal(baseChoiceDiscardsWork(fromBase, baseSignature), false);
+      assert.equal(baseChoiceDiscardsWork(fromBase, lastBase), false);
       // A lift added, a day renamed, a prescription changed: the reader's work.
       const added = [{ ...fromBase[0], exercises: [...fromBase[0].exercises, { name: 'Dip' }] }];
-      assert.equal(baseChoiceDiscardsWork(added, baseSignature), true);
+      assert.equal(baseChoiceDiscardsWork(added, lastBase), true);
       const renamed = [{ ...fromBase[0], name: 'Chest day' }];
-      assert.equal(baseChoiceDiscardsWork(renamed, baseSignature), true);
+      assert.equal(baseChoiceDiscardsWork(renamed, lastBase), true);
       const changed = [{ ...fromBase[0], exercises: [{ ...fromBase[0].exercises[0], targetSets: 5 }] }];
-      assert.equal(baseChoiceDiscardsWork(changed, baseSignature), true);
+      assert.equal(baseChoiceDiscardsWork(changed, lastBase), true);
+      // An empty day added after the base holds nothing a new base could take.
+      assert.equal(baseChoiceDiscardsWork([...fromBase, { name: 'Day 2', exercises: [] }], lastBase), false);
       // Lifts with no base behind them (an edited programme) are always the reader's.
       assert.equal(baseChoiceDiscardsWork(fromBase, null), true);
     },

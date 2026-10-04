@@ -31,6 +31,7 @@ import {
   TemplateBuilderStep,
   TemplateDayCount,
   baseChoiceDiscardsWork,
+  baseSignature,
   clampDayCount,
   canJumpToTemplateBuilderStep,
   initialTemplateBuilderStep,
@@ -330,7 +331,7 @@ export function CreateTemplateScreen({
 
   function applyBase(preset: SplitPreset | null) {
     const next = buildBaseSessions(preset, sessions);
-    lastBaseSignature.current = templateDraftSignature('', next);
+    lastBaseSignature.current = baseSignature(next);
     setSessions(next);
     setChosenBase(preset ? preset.id : SCRATCH_BASE);
     goToStep('build');
@@ -791,7 +792,7 @@ export function CreateTemplateScreen({
         <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
           <Text style={styles.cardKicker}>{t(language, 'tpl.name')}</Text>
           <Text style={styles.reviewName}>{templateName.trim() || t(language, 'tpl.namePlaceholder')}</Text>
-          <Text style={styles.stepBody}>
+          <Text style={styles.reviewSummary}>
             {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
               days: sessions.length,
               exercises: totalExercises,
@@ -811,6 +812,13 @@ export function CreateTemplateScreen({
             </CutSurface>
           ))}
         </View>
+        {/* The indicator can bring the reader here after a day was emptied;
+            the quiet Save says why, as Continue does on the days. */}
+        {emptyDayCount > 0 ? (
+          <Text style={styles.blockedHint}>
+            {t(language, emptyDayCount === 1 ? 'tpl.emptyDaysOne' : 'tpl.emptyDaysMany', { count: emptyDayCount })}
+          </Text>
+        ) : null}
         {/* The label holds still while the save runs: the success is the
             programme page that opens after the write resolves, never this
             button. */}
@@ -1124,6 +1132,12 @@ const makeStyles = (theme: Theme) =>
       fontSize: 22,
       fontWeight: '900',
       letterSpacing: -0.5,
+    },
+    reviewSummary: {
+      color: theme.muted,
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: '600',
     },
     reviewList: {
       gap: spacing.sm,
