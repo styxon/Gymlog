@@ -17,6 +17,12 @@ export type AppRoute =
       demoQuestion?: string;
       /** Which moment it is, so the chat can spend it when it truly sends. */
       demoMomentKey?: string;
+      /**
+       * Opened from the new-programme sheet's AI option: the chat asks the
+       * frame of the week before anything else. Cleared once taken, like the
+       * demo question, so a remount or Back cannot start it again.
+       */
+      intent?: 'new_program';
     }
   | {
       tab: 'home';

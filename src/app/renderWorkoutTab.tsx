@@ -1375,7 +1375,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         nameBook={exerciseNameBook}
         onTeachName={(wrote, exercise) => teachExerciseName(wrote, { name: exercise.name, libraryItemId: exercise.id })}
         onPickImage={handlePickProgramImage}
-        onAiAssisted={() => navigate({ tab: 'home', screen: 'ai_chat' })}
+        onAiAssisted={() => navigate({ tab: 'home', screen: 'ai_chat', intent: 'new_program' })}
         onBrowseCatalog={() => navigate({ tab: 'workout', screen: 'catalog' })}
         catalogCount={programsCatalogItems.length}
         proUnlocked={proUnlocked}

@@ -44,6 +44,20 @@ import {
   outlineProgrammeBrief,
   parseProgrammeBrief,
 } from '../lib/programmeBrief';
+import {
+  PROGRAM_INTAKE_EXTRA_MAX_CHARS,
+  PROGRAM_INTAKE_QUESTION_KEYS,
+  ProgramIntakePreferences,
+  ProgramIntakeState,
+  answerProgramIntake,
+  buildProgramIntakeBrief,
+  buildProgramIntakeFrame,
+  currentProgramIntakeStep,
+  programIntakeAnswerText,
+  programIntakeOptions,
+  programIntakePresetValue,
+  startProgramIntake,
+} from '../lib/programIntake';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getFocusAreaLabel } from '../lib/focusAreaPresentation';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
@@ -115,6 +129,16 @@ interface AICoachChatScreenProps {
    * for nothing.
    */
   onDemoQuestionAnswered?: (key: string) => void;
+  /**
+   * Why the chat was opened, when it was opened for something. 'new_program'
+   * comes from the new-programme sheet: the coach asks the frame of the week
+   * before anything else. Carried on the route like the demo question, and
+   * cleared the same way once taken (onIntentConsumed).
+   */
+  intent?: 'new_program' | null;
+  onIntentConsumed?: () => void;
+  /** What the app already knows, preselected in the frame questions. */
+  intakePreferences: ProgramIntakePreferences;
   trainingContext: AICoachTrainingContext;
   intro: CoachChatIntroInput;
   /** Total logged sessions, for the header line and the evidence footer. */
@@ -225,7 +249,18 @@ export interface ChatMessage {
     // coach used to gather the days, the focus and the cautions across five
     // turns and then answer "I cannot build one" — throwing away exactly the
     // brief the composer takes (log 2026-08-26).
-    | { type: 'compose'; brief: string };
+    //
+    // `frame` is set when the brief came from the frame questions: the
+    // answers on one line, said instead of the outline, since the reader has
+    // just given every one of them by tap.
+    | { type: 'compose'; brief: string; frame?: string };
+  /**
+   * A frame question still open, with the answers so far. In the thread
+   * rather than in screen state so it is kept with it: leaving mid-way and
+   * coming back finds the same question waiting. Local — it never reaches
+   * the model and costs no question.
+   */
+  intake?: ProgramIntakeState;
   /**
    * Set when the coach proposed this rather than the typed message. Only those
    * count towards the cooldown: it exists to stop the coach nagging.
@@ -303,6 +338,9 @@ export function AICoachChatScreen({
   demoMomentKey = null,
   onDemoQuestionSent,
   onDemoQuestionAnswered,
+  intent = null,
+  onIntentConsumed,
+  intakePreferences,
   trainingContext,
   intro,
   sessionCount,
@@ -517,7 +555,11 @@ export function AICoachChatScreen({
       }),
     [intro, language, noticed, openingLine, readout],
   );
-  const showReadout = messages.length === 0 && openingRows.length > 0;
+  // A frame question waiting. The opening rows and the quick asks stand down
+  // meanwhile: three other things to tap under a question are three ways to
+  // walk off it.
+  const intakeOpen = useMemo(() => messages.some((message) => message.intake), [messages]);
+  const showReadout = messages.length === 0 && openingRows.length > 0 && !intakeOpen;
 
   /**
    * What the coach has read, and what today is — one line.
@@ -615,7 +657,10 @@ export function AICoachChatScreen({
           // — on a five-day request that sentence ran six lines and the
           // reader could not see what they were agreeing to (#bugs
           // 2026-08-27).
-          return t(language, 'coachChat.compose.outlineAsk');
+          //
+          // From the frame questions, the answers themselves are the line:
+          // every one was just tapped, so there is nothing to read back.
+          return offer.frame ?? t(language, 'coachChat.compose.outlineAsk');
         default:
           return t(language, 'coachChat.measure.pinOffer', { label: measurementLabel(offer.intent) });
       }
@@ -1217,6 +1262,87 @@ export function AICoachChatScreen({
     void send(demoQuestion, true);
   }, [asking, demoMomentKey, demoQuestion, mustAcknowledgeOnline, onDemoQuestionSent, send]);
 
+  /**
+   * The frame questions, started once per hand-off.
+   *
+   * The same shape as the demo question above: the ref stops a re-render
+   * starting them twice, and the route is cleared at once so a remount or a
+   * Back onto this chat cannot start them again over the answers already
+   * given. A half-answered set left in the kept thread is replaced, not
+   * stacked: two open questions would leave one of them unanswerable.
+   */
+  const intentTaken = useRef(false);
+  useEffect(() => {
+    if (intent !== 'new_program' || intentTaken.current) {
+      return;
+    }
+    intentTaken.current = true;
+    onIntentConsumed?.();
+    const intake = startProgramIntake(intakePreferences);
+    const id = `intake:${Date.now()}`;
+    setMessages((current) => [
+      ...current.filter((message) => !message.intake),
+      { id, fromCoach: true, text: t(language, 'programIntake.intro'), intake },
+    ]);
+  }, [intakePreferences, intent, language, onIntentConsumed]);
+
+  const [intakeDraft, setIntakeDraft] = useState('');
+  // The last question's field sits at the foot of the thread, and the
+  // keyboard shrinks the thread from below: follow it up so the field the
+  // reader is typing in stays in view.
+  useEffect(() => {
+    if (keyboardHeight > 0 && intakeOpen) {
+      scrollToEnd();
+    }
+  }, [intakeOpen, keyboardHeight, scrollToEnd]);
+  /**
+   * One answer, by tap. The open question becomes a question asked and an
+   * answer given — ordinary bubbles, so the thread reads back as the
+   * conversation it was — and the next question, or the build offer once
+   * there is none, takes its place. Nothing here calls the model or counts
+   * against the quota: only the build at the end is billed, through the same
+   * compose offer the coach makes in conversation.
+   *
+   * Inside the updater, so a second tap that lands before the re-render
+   * finds the question already answered and does nothing.
+   */
+  const answerIntake = useCallback(
+    (messageId: string, value: string) => {
+      setMessages((current) =>
+        current.flatMap((message): ChatMessage[] => {
+          if (message.id !== messageId || !message.intake) {
+            return [message];
+          }
+          const step = currentProgramIntakeStep(message.intake);
+          const next = answerProgramIntake(message.intake, value);
+          if (step === null || next === message.intake) {
+            return [message];
+          }
+          const nextStep = currentProgramIntakeStep(next);
+          return [
+            ...(message.text ? [{ id: `${message.id}:i`, fromCoach: true, text: message.text }] : []),
+            { id: `${message.id}:q`, fromCoach: true, text: t(language, PROGRAM_INTAKE_QUESTION_KEYS[step]) },
+            { id: `${message.id}:a`, fromCoach: false, text: programIntakeAnswerText(step, value, language) },
+            nextStep
+              ? { id: `${message.id}:n`, fromCoach: true, text: '', intake: next }
+              : {
+                  id: `${message.id}:build`,
+                  fromCoach: true,
+                  text: '',
+                  offer: {
+                    type: 'compose' as const,
+                    brief: buildProgramIntakeBrief(next.answers, language),
+                    frame: buildProgramIntakeFrame(next.answers, language),
+                  },
+                },
+          ];
+        }),
+      );
+      setIntakeDraft('');
+    },
+    [language],
+  );
+
   return (
     <View style={styles.screen}>
       {/* A soft light at the top so the dark field is not flat. Light already
@@ -1415,11 +1541,24 @@ export function AICoachChatScreen({
                   onSave={() => void handleSaveProposal(message.id, message.proposal as ProgrammeProposal)}
                 />
               </View>
+            ) : message.intake ? (
+              <IntakeQuestion
+                key={message.id}
+                intro={message.text}
+                state={message.intake}
+                language={language}
+                styles={styles}
+                placeholderColor={theme.faint}
+                selectionColor={theme.highlight}
+                draft={intakeDraft}
+                onChangeDraft={setIntakeDraft}
+                onAnswer={(value) => answerIntake(message.id, value)}
+              />
             ) : message.offer ? (
               <View key={message.id} style={styles.bubbleRow}>
                 <View style={[styles.coachBubble, styles.offerBubble]}>
                   <Text style={styles.coachText}>{offerBody(message.offer)}</Text>
-                  {message.offer.type === 'compose' ? (
+                  {message.offer.type === 'compose' && !message.offer.frame ? (
                     <ComposeOutline brief={message.offer.brief} language={language} styles={styles} />
                   ) : null}
                   {/* Said before the tap, not at the paywall. Only to readers
@@ -1455,7 +1594,14 @@ export function AICoachChatScreen({
                       }
                       style={({ pressed }) => [styles.offerCta, pressed && styles.pressed]}
                     >
-                      <Text style={styles.offerCtaText}>{t(language, OFFER_CTA_KEYS[message.offer.type])}</Text>
+                      <Text style={styles.offerCtaText}>
+                        {t(
+                          language,
+                          message.offer.type === 'compose' && message.offer.frame
+                            ? 'programIntake.build'
+                            : OFFER_CTA_KEYS[message.offer.type],
+                        )}
+                      </Text>
                     </Pressable>
                   </View>
                 </View>
@@ -1573,7 +1719,7 @@ export function AICoachChatScreen({
         {/* The suggestion rail lives outside the thread's scroll view, so it
             needs its own gate: it sat under the notice as three more things to
             tap instead of reading. */}
-        {mustAcknowledgeOnline ? null : (
+        {mustAcknowledgeOnline || intakeOpen ? null : (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -1701,6 +1847,113 @@ export function AICoachChatScreen({
           return arrived;
         }}
       />
+    </View>
+  );
+}
+
+/**
+ * The open frame question, answered by tapping.
+ *
+ * A known answer is the marked chip, with one line saying where it came from
+ * — the exception is the one worth labelling. It is still a tap: confirming
+ * it is the reader's answer, not the app's. The last question is free text,
+ * with a field of its own rather than the composer below, which on the free
+ * tier and out of quota is a paywall row instead of a field.
+ */
+function IntakeQuestion({
+  intro,
+  state,
+  language,
+  styles,
+  placeholderColor,
+  selectionColor,
+  draft,
+  onChangeDraft,
+  onAnswer,
+}: {
+  intro: string;
+  state: ProgramIntakeState;
+  language: AppLanguage;
+  styles: ReturnType<typeof makeStyles>;
+  placeholderColor: string;
+  selectionColor: string;
+  draft: string;
+  onChangeDraft: (text: string) => void;
+  onAnswer: (value: string) => void;
+}) {
+  const step = currentProgramIntakeStep(state);
+  if (step === null) {
+    return null;
+  }
+  const preset = programIntakePresetValue(state, step);
+  return (
+    <View style={styles.bubbleRow}>
+      <View style={[styles.coachBubble, styles.offerBubble]}>
+        {intro ? <Text style={styles.coachText}>{intro}</Text> : null}
+        <Text style={styles.coachText}>{t(language, PROGRAM_INTAKE_QUESTION_KEYS[step])}</Text>
+        {step === 'extra' ? (
+          <>
+            <TextInput
+              value={draft}
+              onChangeText={onChangeDraft}
+              placeholder={t(language, 'programIntake.extraPlaceholder')}
+              placeholderTextColor={placeholderColor}
+              selectionColor={selectionColor}
+              style={styles.intakeInput}
+              multiline
+              textAlignVertical="top"
+              maxLength={PROGRAM_INTAKE_EXTRA_MAX_CHARS}
+            />
+            <View style={styles.offerActions}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => onAnswer('')}
+                style={({ pressed }) => [styles.offerGhost, pressed && styles.pressed]}
+              >
+                <Text style={styles.offerGhostText}>{t(language, 'programIntake.skip')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !draft.trim() }}
+                disabled={!draft.trim()}
+                onPress={() => onAnswer(draft)}
+                style={({ pressed }) => [styles.offerCta, !draft.trim() && styles.intakeDisabled, pressed && styles.pressed]}
+              >
+                <Text style={styles.offerCtaText}>{t(language, 'programIntake.done')}</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            {preset ? <Text style={styles.offerNote}>{t(language, 'programIntake.preset')}</Text> : null}
+            <View style={styles.intakeChips}>
+              {programIntakeOptions(step).map((option) => {
+                const known = option.value === preset;
+                return (
+                  <Pressable
+                    key={option.value}
+                    accessibilityRole="button"
+                    accessibilityLabel={programIntakeAnswerText(step, option.value, language)}
+                    accessibilityState={{ selected: known }}
+                    onPress={() => onAnswer(option.value)}
+                    style={({ pressed }) => [
+                      styles.quickAsk,
+                      styles.intakeChip,
+                      known && styles.intakeChipKnown,
+                      pressed && styles.pressed,
+                    ]}
+                  >
+                    <Text style={[styles.quickAskText, known && styles.intakeChipKnownText]}>
+                      {known ? '✓ ' : ''}
+                      {t(language, option.labelKey)}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </>
+        )}
+      </View>
     </View>
   );
 }
@@ -2007,6 +2260,38 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 16,
     fontWeight: '700',
     marginTop: 6,
+  },
+  intakeChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  // Wide enough that a one-digit day count is still a comfortable target.
+  intakeChip: {
+    minWidth: 48,
+    alignItems: 'center',
+  },
+  intakeChipKnown: {
+    borderColor: theme.highlight,
+    borderWidth: 1.5,
+  },
+  intakeChipKnownText: {
+    fontWeight: '800',
+  },
+  intakeInput: {
+    minHeight: 64,
+    maxHeight: 132,
+    backgroundColor: theme.surface,
+    borderWidth: 1,
+    borderColor: theme.border,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 15,
+    color: theme.ink,
+  },
+  intakeDisabled: {
+    opacity: 0.45,
   },
   offerGhostText: {
     color: theme.muted,

@@ -449,7 +449,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
                 navigate({ tab: 'workout', screen: 'template', workoutTemplateId: homeActivePlanCard.programId })
             : undefined
         }
-        onAiAssisted={() => navigate({ tab: 'home', screen: 'ai_chat' })}
+        onAiAssisted={() => navigate({ tab: 'home', screen: 'ai_chat', intent: 'new_program' })}
         onBrowseCatalog={() => navigate({ tab: 'workout', screen: 'catalog' })}
         catalogCount={readyProgramCount}
         proUnlocked={proUnlocked}
