@@ -124,9 +124,14 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Laske hitaasti nauhaa vastaan, kunnes kädet ovat taas suorat. Seiso nauhalla leveämmin, jos haluat enemmän vastusta, ja kapeammin, jos vähemmän.',
   ],
   'Bodyweight Calf Raise': [
-    'Seiso ryhdikkäästi jalat lantion leveydellä ja varpaat eteenpäin. Ota tukea seinästä tai kaiteesta, jos tarvitset.',
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja varpaat eteenpäin. Ota tukea seinästä tai kaiteesta, jos tarvitset. Käsipainot käsissä ovat valinnaiset: käytä niitä, jos ohjelmasi kirjaa painon, muuten riittää oma kehonpaino.',
     'Nouse varpaille niin korkealle kuin pystyt, polvet suorina mutta ei lukittuina, ja pysähdy hetkeksi ylös.',
     'Laske kantapäät hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon.',
+  ],
+  'Single-Leg Calf Raise': [
+    'Seiso yhdellä jalalla, toinen jalka irti lattiasta tai nilkan taakse koukistettuna. Ota tukea seinästä tai kaiteesta. Käsipaino vapaassa kädessä on valinnainen: käytä sitä, jos ohjelmasi kirjaa painon, muuten riittää oma kehonpaino.',
+    'Nouse seisovan jalan päkiälle niin korkealle kuin pystyt, polvi suorana mutta ei lukittuna, ja pysähdy hetkeksi ylös.',
+    'Laske kantapää hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon. Tee kaikki toistot yhdellä jalalla ja vaihda sitten.',
   ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',

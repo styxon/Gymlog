@@ -100,7 +100,6 @@ const UNRESOLVED_TODAY = [
   'Side-Lying Leg Raise',
   'Single-Leg Balance Hold',
   'Single-Leg Balance Reach',
-  'Single-Leg Calf Raise',
   'Single-Leg RDL',
   'Single-Leg Romanian Deadlift',
   'Sit-to-Stand (Chair Squat)',

@@ -127,4 +127,87 @@ module.exports = [
       assert.equal(exerciseNameLabel('fi', 'Bodyweight Calf Raise'), 'Pohjenosto ilman painoa');
     },
   },
+  {
+    // Bug hunt, 2026-10-04: "Calf Raise" (26 rows) opened the seated calf
+    // machine, "Standing Calf Raise" (10) the standing machine, and
+    // "Single-Leg Calf Raise" (10) nothing at all.
+    name: 'calf raises: the plain, standing and single-leg names open a demo that needs no machine',
+    run() {
+      const library = createSeedExerciseLibrary();
+      const names = library.map((item) => item.name);
+      for (const name of ['Calf Raise', 'Standing Calf Raise', 'Single-Leg Calf Raise']) {
+        const index = findGuidedLibraryIndex(name, names);
+        assert.ok(index !== null, `${name} resolves to nothing`);
+        assert.equal(library[index].equipment, 'bodyweight', `${name} -> ${library[index].name}`);
+      }
+      // The machines stay reachable under their own names.
+      assert.equal(library[findGuidedLibraryIndex('Seated Calf Raise', names)].name, 'Seated Calf Raise');
+      // Without the extras the alias target is absent and nothing throws.
+      const generatedOnly = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
+      assert.doesNotThrow(() => findGuidedLibraryIndex('Calf Raise', generatedOnly));
+
+      // Gym programmes load the same rows, so both languages say a weight is optional.
+      for (const name of ['Bodyweight Calf Raise', 'Single-Leg Calf Raise']) {
+        const entry = library.find((item) => item.name === name);
+        assert.match(entry.instructions.join(' '), /optional/, name);
+        const fi = getExerciseInstructions(name, entry.instructions, 'fi');
+        assert.equal(fi.length, entry.instructions.length, `${name}: Finnish step count`);
+        assert.match(fi.join(' '), /valinnaiset|valinnainen/, name);
+      }
+      assert.equal(exerciseNameLabel('fi', 'Single-Leg Calf Raise'), 'Yhden jalan pohjenosto');
+    },
+  },
+  {
+    // Bug hunt, 2026-10-04. A prescribed row that its programme lets a reader
+    // do with no equipment must not open a demo that needs gear. The allow-list
+    // is what is still wrong or deliberately accepted; every entry is a reason
+    // to look, and a name that starts resolving correctly must leave it.
+    name: 'catalogue: a row doable with no equipment never opens a demo that needs equipment',
+    run() {
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      const library = createSeedExerciseLibrary();
+      const names = library.map((item) => item.name);
+      const ALLOW = new Map([
+        // Intended: the library has one entry whose steps hold for both
+        // (extraExerciseLibrary), filed under dumbbells because most rows load it.
+        ['Bulgarian Split Squat', 'one entry, steps cover loaded and unloaded'],
+        // A real gym machine; the equipment filter has no rule for it (cardio).
+        ['Stairmaster (Moderate)', 'gym cardio machine, no equipment rule'],
+        // Known mismatches, not fixed here: no bodyweight entry of the same
+        // movement exists, so a demo with gear in its steps is the closest.
+        ['Reverse Lunge', 'only a dumbbell rear lunge exists'],
+        ['Bodyweight Reverse Lunge', 'only a dumbbell rear lunge exists'],
+        ['Walking Lunge', 'contains-match lands on the barbell walking lunge'],
+        ['Glute Bridge Hold', 'aliased on purpose to the barbell glute bridge'],
+        ['Sumo Squat', 'only a dumbbell plie squat exists'],
+        ['Squat', 'contains-match lands on the barbell box squat'],
+        ['Pistol Squat (each leg)', 'only the kettlebell pistol squat exists'],
+        ['Bulgarian Split Squat (Jumping)', 'stripped to the loaded split squat'],
+        ['Sissy Squat', 'only the weighted sissy squat exists'],
+        ['Standing Side Bend', 'only the dumbbell side bend exists'],
+      ]);
+      const rows = new Set();
+      const walk = (value) => {
+        if (Array.isArray(value)) return value.forEach(walk);
+        if (value && typeof value === 'object') {
+          if (typeof value.exerciseName === 'string') rows.add(value.exerciseName);
+          Object.values(value).forEach(walk);
+        }
+      };
+      walk(WORKOUT_TEMPLATES_V1);
+      assert.ok(rows.size > 200, 'the catalogue walk found its rows');
+      const offenders = [];
+      for (const name of rows) {
+        if (!isExerciseAllowedWithEquipment(name, [])) continue;
+        const index = findGuidedLibraryIndex(name, names);
+        if (index === null || library[index].equipment === 'bodyweight') continue;
+        if (!ALLOW.has(name)) offenders.push(`${name} -> ${library[index].name} (${library[index].equipment})`);
+      }
+      assert.deepEqual(offenders, []);
+      for (const name of ALLOW.keys()) {
+        assert.ok(rows.has(name), `allow-list entry ${name} is no longer in the catalogue`);
+      }
+    },
+  },
 ];

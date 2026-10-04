@@ -129,6 +129,11 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     // steps open with "you will need access to a donkey calf raise machine" -
     // a reader without Machines was handed a machine (bug hunt, 2026-10-04).
     // Upstream carries no floor-level calf raise.
+    // It is also where the catalogue's plain "Calf Raise" and "Standing Calf
+    // Raise" land (GUIDED_LIBRARY_ALIASES): those names opened the seated and
+    // standing calf MACHINES, 36 prescribed rows whose reader may own no machine
+    // (bug hunt, 2026-10-04). Gym programmes load the same rows, so the steps
+    // say holding a weight is optional rather than assuming either.
     id: 'extra_bodyweight_calf_raise',
     name: 'Bodyweight Calf Raise',
     category: 'isolation',
@@ -137,9 +142,26 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     primaryMuscles: ['calves'],
     secondaryMuscles: [],
     instructions: [
-      'Stand tall with your feet hip-width apart, toes pointing forward. Hold a wall or a rail for balance if you need it.',
+      'Stand tall with your feet hip-width apart, toes pointing forward. Hold a wall or a rail for balance if you need it. Holding a dumbbell in each hand is optional: do it if your programme logs a weight, otherwise stay with your bodyweight.',
       'Rise onto the balls of your feet as high as you can, keeping your knees straight but not locked, and pause for a second at the top.',
       'Lower your heels slowly until they are level with the floor, or a little below if you stand on a step, and go straight into the next rep.',
+    ],
+  },
+  {
+    // "Single-Leg Calf Raise" (10 prescribed rows) resolved to nothing, so the
+    // reader got no demo at all (bug hunt, 2026-10-04). Its own entry rather
+    // than an alias of the two-leg one, because the steps differ.
+    id: 'extra_single_leg_calf_raise',
+    name: 'Single-Leg Calf Raise',
+    category: 'isolation',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    primaryMuscles: ['calves'],
+    secondaryMuscles: [],
+    instructions: [
+      'Stand on one foot, the other lifted off the floor or hooked behind your ankle. Hold a wall or a rail for balance. Holding a dumbbell in the free hand is optional: do it if your programme logs a weight, otherwise stay with your bodyweight.',
+      'Rise onto the ball of the standing foot as high as you can, keeping the knee straight but not locked, and pause for a second at the top.',
+      'Lower the heel slowly until it is level with the floor, or a little below if you stand on a step, and go straight into the next rep. Finish all reps on one leg, then switch.',
     ],
   },
 ];

@@ -1063,6 +1063,13 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // The floor bridge. By containment it landed on the barbell bridge, whose
   // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
   'glute bridge': 'butt lift (bridge)',
+  // The catalogue's plain calf raises are prescribed to readers with and
+  // without a gym. By containment they opened the seated and standing calf
+  // MACHINES (36 rows): a machine demo under a bodyweight programme. The extra
+  // entry's steps hold for a loaded row too. Where the extras are absent the
+  // target is absent and lookup falls through as before (bug hunt, 2026-10-04).
+  'calf raise': 'bodyweight calf raise',
+  'standing calf raise': 'bodyweight calf raise',
   'lat pulldown': 'wide-grip lat pulldown',
   'pull-up': 'pullups',
   'pull-ups': 'pullups',

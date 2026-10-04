@@ -97,6 +97,39 @@ module.exports = [
     },
   },
   {
+    // Bug hunt, 2026-10-04: no upper bound, so a future-dated weigh-in was "current".
+    name: 'a weigh-in dated after now is not current, heaviest or counted',
+    run() {
+      const now = new Date('2026-08-20T12:00:00.000Z');
+      const stats = buildBodyweightCardStats(
+        [entry('2026-08-13T07:00:00.000Z', 80), entry('2027-08-13T07:00:00.000Z', 95)],
+        now,
+      );
+      assert.deepEqual(stats, { currentKg: 80, heaviestKg: 80, lightestKg: 80, count: 1 });
+      assert.equal(buildBodyweightCardStats([entry('2027-08-13T07:00:00.000Z', 95)], now).count, 0);
+    },
+  },
+  {
+    // Bug hunt, 2026-10-04: the loader clamped to 0..300, so a stored 0 printed
+    // "0 cm" and a stored 300 fed BMI a nonsense divisor.
+    name: 'a stored height outside 100..250 cm loads as not set; a valid one is untouched',
+    run() {
+      const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
+      const { normalizeDatabase } = loadAgainstFake(createFakeAsyncStorage(), (requireDist) =>
+        requireDist('storage/database.js'),
+      );
+      const heightOf = (value) => normalizeDatabase({ preferences: { setupHeightCm: value } }).preferences.setupHeightCm;
+      for (const bad of [0, 50, 99, 251, 300, 9999]) {
+        assert.equal(heightOf(bad), null, String(bad));
+      }
+      for (const good of [100, 120, 181, 230, 250]) {
+        assert.equal(heightOf(good), good, String(good));
+      }
+      assert.equal(heightOf(180.4), 180);
+      assert.equal(normalizeDatabase({ preferences: {} }).preferences.setupHeightCm, null);
+    },
+  },
+  {
     name: 'a single entry is current, heaviest and lightest at once',
     run() {
       const stats = buildBodyweightCardStats([entry('2026-08-13T07:00:00.000Z', 75)]);

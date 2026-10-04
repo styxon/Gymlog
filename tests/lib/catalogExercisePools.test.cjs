@@ -248,8 +248,11 @@ module.exports = [
     run() {
       const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
       const { GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
+      // An alias may point at one of the app's own extras ("bodyweight calf
+      // raise"): the shipped library is generated + extras (bug hunt, 2026-10-04).
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
       const libraryNames = new Set(
-        GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name.trim().toLowerCase()),
+        [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY].map((entry) => entry.name.trim().toLowerCase()),
       );
 
       // A misspelled target is the worst kind of entry: the alias silently

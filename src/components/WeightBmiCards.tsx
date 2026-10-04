@@ -258,7 +258,7 @@ export function WeightBmiCards({
         >
           <Text style={styles.heightLabel}>{t(language, 'bmi.height')}</Text>
           <View style={styles.heightValueRow}>
-            <Text style={styles.heightValue}>{heightCm !== null ? `${Math.round(heightCm)} cm` : '—'}</Text>
+            <Text style={styles.heightValue}>{heightCm !== null && heightCm > 0 ? `${Math.round(heightCm)} cm` : '—'}</Text>
             <EditPencil color={theme.muted} />
           </View>
         </Pressable>

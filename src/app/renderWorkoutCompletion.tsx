@@ -1,6 +1,7 @@
 import React from 'react';
 
 import type { CoachDemoMoment } from '../lib/coachDemoMoments';
+import { t } from '../lib/i18n';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { WorkoutCompletionScreen } from '../screens/WorkoutCompletionScreen';
 import { AppPreferences, SessionFeel } from '../types/models';
@@ -30,6 +31,7 @@ export interface WorkoutCompletionDeps {
   updateCompletedWorkoutSession: (sessionId: string, patch: { feel?: SessionFeel | null }) => Promise<void>;
   workout: { clearCompletedWorkout: () => void };
   leaveFinishedWorkout: (nextRoute: AppRoute) => void;
+  showToast: (message: string) => void;
 }
 
 export function renderWorkoutCompletion(deps: WorkoutCompletionDeps): React.ReactNode {
@@ -46,6 +48,7 @@ export function renderWorkoutCompletion(deps: WorkoutCompletionDeps): React.Reac
     updateCompletedWorkoutSession,
     workout,
     leaveFinishedWorkout,
+    showToast,
   } = deps;
 
   let content: React.ReactNode = null;
@@ -98,7 +101,13 @@ export function renderWorkoutCompletion(deps: WorkoutCompletionDeps): React.Reac
         // wait for the write (it goes through the same serial queue every
         // other database write uses).
         if (feel) {
-          void updateCompletedWorkoutSession(completionSummary.sessionId, { feel });
+          // A commit that fails must not be silent: the reader tapped a verdict
+          // and the screen is leaving, so without this the feel was lost and the
+          // rejection went unhandled (bug hunt, 2026-10-04).
+          void updateCompletedWorkoutSession(completionSummary.sessionId, { feel }).catch((error) => {
+            console.warn('Could not save the session feel', error);
+            showToast(t(preferences.appLanguage, 'toast.entrySaveFailed'));
+          });
         }
         workout.clearCompletedWorkout();
         leaveFinishedWorkout(ROOT_ROUTES.home);
