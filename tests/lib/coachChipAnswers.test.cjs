@@ -30,18 +30,42 @@ function context(overrides = {}) {
   };
 }
 
-/** The chips the app offers with one tap, in both languages. */
-const CHIP_KEYS = ['coach.chip.analyze', 'coach.chip.program', 'coach.chip.protein'];
+const {
+  COACH_QUICK_ASKS_FIRST,
+  COACH_QUICK_ASKS_EARLY,
+  COACH_QUICK_ASKS_ESTABLISHED,
+  coachQuickAskKeys,
+} = require('../../.test-dist/lib/coachQuickAsks.js');
+
+/** A reader who has logged nothing — the one the first chips are for. */
+function emptyContext() {
+  return context({
+    sessionsThisWeek: 0,
+    sessionsLast30Days: 0,
+    recentCompletedSessions: [],
+    trackedLifts: [],
+    latestTopSets: [],
+    fatigue: { signal: 'steady', confident: false, acwr: null, recoveryScore: null, sessionCount7d: 0 },
+  });
+}
 
 module.exports = [
   {
-    name: 'every quick-ask chip gets a real answer, in both languages',
+    name: 'every quick-ask chip gets a real answer, in both languages, at the stage it is offered',
     run() {
-      for (const key of CHIP_KEYS) {
+      // Each set is answered against the reader it is shown to: the first
+      // chips to someone with nothing logged, the later ones to someone with
+      // a session on record.
+      const stages = [
+        [COACH_QUICK_ASKS_FIRST, emptyContext()],
+        [COACH_QUICK_ASKS_EARLY, context()],
+        [COACH_QUICK_ASKS_ESTABLISHED, context()],
+      ];
+      for (const [keys, stageContext] of stages) for (const key of keys) {
         for (const language of ['en', 'fi']) {
           const prompt = t(language, key);
           assert.ok(prompt && prompt !== key, `${key} missing from ${language}`);
-          const answer = buildAiCoachPreviewAnswer(prompt, context(), language);
+          const answer = buildAiCoachPreviewAnswer(prompt, stageContext, language);
           // The app offering a question it cannot answer, and charging one of
           // three weekly questions for the privilege, is the bug this pins.
           assert.notEqual(
@@ -89,6 +113,61 @@ module.exports = [
         screen,
         /if \(proUnlocked && !answer\.unanswered && result\.source !== 'preview'\) \{\s*onQuestionUsed\(\);/,
       );
+    },
+  },
+  {
+    name: 'the quick asks follow the reader: starting, then the next step, then the week',
+    run() {
+      assert.deepEqual(coachQuickAskKeys(0), COACH_QUICK_ASKS_FIRST);
+      assert.deepEqual(coachQuickAskKeys(Number.NaN), COACH_QUICK_ASKS_FIRST);
+      assert.deepEqual(coachQuickAskKeys(1), COACH_QUICK_ASKS_EARLY);
+      assert.deepEqual(coachQuickAskKeys(4), COACH_QUICK_ASKS_EARLY);
+      assert.deepEqual(coachQuickAskKeys(5), COACH_QUICK_ASKS_ESTABLISHED);
+      assert.deepEqual(coachQuickAskKeys(300), COACH_QUICK_ASKS_ESTABLISHED);
+      // Nothing logged, nothing to analyse: the chip that reads the last
+      // session is never offered before there is one.
+      assert.ok(!COACH_QUICK_ASKS_FIRST.includes('coach.chip.analyze'));
+      // Taken out on 2026-10-04 (user): a food question the app cannot read.
+      for (const keys of [COACH_QUICK_ASKS_FIRST, COACH_QUICK_ASKS_EARLY, COACH_QUICK_ASKS_ESTABLISHED]) {
+        assert.ok(!keys.includes('coach.chip.protein'));
+      }
+      // The screen takes them from the stage, not from a fixed list.
+      const shell = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderHomeScreens.tsx'), 'utf8');
+      assert.match(shell, /quickAskKeys=\{coachQuickAskKeys\(database\.workoutSessions\.length\)\}/);
+    },
+  },
+  {
+    name: 'the week answer reads the logged week and says when there is none',
+    run() {
+      const answer = buildAiCoachPreviewAnswer('Miten viikkoni meni?', context(), 'fi');
+      assert.match(answer.takeaway, /2 treeniä/);
+      assert.ok(answer.why.some((line) => line.includes('7 treeniä')), 'the 30-day count it was given');
+      const none = buildAiCoachPreviewAnswer('Miten viikkoni meni?', emptyContext(), 'fi');
+      assert.equal(none.unanswered, true, 'nothing to read costs nothing');
+    },
+  },
+  {
+    name: 'the which-programme answer is for programme questions, not every "suits me"',
+    run() {
+      const programme = buildAiCoachPreviewAnswer('Mikä ohjelma sopii minulle?', emptyContext(), 'fi');
+      assert.equal(programme.takeaway, t('fi', 'coachPreview.whichProgram.takeaway'));
+      for (const [prompt, language] of [
+        ['Mikä liike sopii minulle polvivaivan kanssa?', 'fi'],
+        ['Does the deadlift suit me?', 'en'],
+      ]) {
+        const answer = buildAiCoachPreviewAnswer(prompt, context(), language);
+        assert.notEqual(answer.takeaway, t(language, 'coachPreview.whichProgram.takeaway'), prompt);
+      }
+    },
+  },
+  {
+    name: 'the add-weight steps follow the unit and the decimal comma',
+    run() {
+      const fi = buildAiCoachPreviewAnswer('Milloin lisään painoa?', context(), 'fi');
+      assert.ok(fi.nextSteps.some((line) => line.includes('1–2,5 kg')));
+      const lb = buildAiCoachPreviewAnswer('When do I add weight?', context({ unitPreference: 'lb' }), 'en');
+      assert.ok(lb.nextSteps.some((line) => line.includes('5–10 lb')));
+      assert.ok(!lb.nextSteps.some((line) => line.includes('kg')));
     },
   },
   {
