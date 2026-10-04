@@ -136,7 +136,16 @@ module.exports = [
       assert.equal(climbing.questionKey, 'coach.demo.month1.pace');
 
       const declining = pickDemoQuestion('month1', {
-        lifts: [lift({ weightChangeKg: -5 })],
+        lifts: [
+          lift({
+            weightChangeKg: -5,
+            points: [
+              { sessionId: 'a', performedAt: '2026-05-02', time: Date.parse('2026-05-02'), topSetWeightKg: 85, totalReps: 15 },
+              { sessionId: 'b', performedAt: '2026-05-09', time: Date.parse('2026-05-09'), topSetWeightKg: 82.5, totalReps: 15 },
+              { sessionId: 'c', performedAt: '2026-05-16', time: Date.parse('2026-05-16'), topSetWeightKg: 80, totalReps: 15 },
+            ],
+          }),
+        ],
         fatigueSignal: null,
       });
       assert.equal(declining.questionKey, 'coach.demo.month1.declining');

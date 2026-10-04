@@ -79,6 +79,24 @@ export interface LiftHistory {
   stalledSessions: number;
 }
 
+/**
+ * One point per session, the heaviest top set. LiftHistory keeps a point per
+ * LOG for the charts, so a lift logged twice in one workout (custom
+ * programme, added, swapped) counted as two sessions: "Same top set across 3
+ * sessions" with 2, and a lock offered on a lift trained once (bug hunt,
+ * 2026-10-04). Oldest first, as `points` is.
+ */
+export function sessionBestPoints(lift: Pick<LiftHistory, 'points'>): LiftHistory['points'] {
+  const bySession = new Map<string, LiftHistory['points'][number]>();
+  for (const point of lift.points) {
+    const kept = bySession.get(point.sessionId);
+    if (!kept || point.topSetWeightKg > kept.topSetWeightKg) {
+      bySession.set(point.sessionId, point);
+    }
+  }
+  return [...bySession.values()];
+}
+
 export interface RepsLiftPoint {
   sessionId: string;
   time: number;
