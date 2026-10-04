@@ -394,6 +394,127 @@ function buildPreviewAnswer(
     };
   }
 
+  // The chips a reader sees before their first sessions and while they settle
+  // in (lib/coachQuickAsks). Each one is a question the app asks for them, so
+  // each one has to land here and not on "ask a clearer question" — and
+  // before the context signals, for the reason the last-session one is.
+  if (/mistä (kannattaa|pitäisi|voisin|voin) aloittaa|where (should|do) i start|how do i (get )?start/.test(lower)) {
+    const programmeName = context.programme?.title ?? context.customProgramTitle ?? null;
+    return {
+      takeaway: t(language, 'coachPreview.start.takeaway'),
+      why: [
+        programmeName
+          ? t(language, 'coachPreview.start.whyProgram', { name: programmeName })
+          : t(language, 'coachPreview.start.whyNoProgram'),
+        t(language, 'coachPreview.start.why2'),
+      ],
+      nextSteps: [
+        t(language, 'coachPreview.start.next1'),
+        t(language, 'coachPreview.start.next2'),
+        t(language, 'coachPreview.start.next3'),
+      ],
+      plan: [t(language, 'coachPreview.start.plan1'), t(language, 'coachPreview.start.plan2')],
+      assumptions: [previewAssumption(language)],
+    };
+  }
+
+  // A programme question only: "mikä liike sopii minulle polvivaivan kanssa"
+  // is a lift question and belongs to the branches below.
+  if (namesProgramme(lower) && /sopii minulle|suits me|which program(me)? (should|is right|fits)/.test(lower)) {
+    return {
+      takeaway: t(language, 'coachPreview.whichProgram.takeaway'),
+      why: [
+        t(language, 'coachPreview.whichProgram.why1'),
+        context.recommendedProgramTitle
+          ? t(language, 'coachPreview.whichProgram.whyRecommended', { title: context.recommendedProgramTitle })
+          : t(language, 'coachPreview.program.why2', { count: context.readyProgramCount }),
+      ],
+      nextSteps: [
+        t(language, 'coachPreview.whichProgram.next1'),
+        t(language, 'coachPreview.whichProgram.next2'),
+        t(language, 'coachPreview.whichProgram.next3'),
+      ],
+      plan: [],
+      assumptions: [previewAssumption(language)],
+    };
+  }
+
+  if (hasWordStart(lower, 'aloituspain') || /starting weights?|aloitus ?painot?/.test(lower)) {
+    return {
+      takeaway: t(language, 'coachPreview.startingWeights.takeaway'),
+      why: [t(language, 'coachPreview.startingWeights.why1'), t(language, 'coachPreview.startingWeights.why2')],
+      nextSteps: [
+        t(language, 'coachPreview.startingWeights.next1'),
+        t(language, 'coachPreview.startingWeights.next2'),
+        t(language, 'coachPreview.startingWeights.next3'),
+      ],
+      plan: [],
+      assumptions: [previewAssumption(language)],
+    };
+  }
+
+  if (/milloin (lisään|lisätä|nostan|nostaa) painoa|when (do|should) i (add|increase) (the )?weight/.test(lower)) {
+    const pounds = context.unitPreference === 'lb';
+    return {
+      takeaway: t(language, 'coachPreview.addWeight.takeaway'),
+      why: [
+        t(language, 'coachPreview.addWeight.why1'),
+        topSetLine ?? liftLine ?? t(language, 'coachPreview.addWeight.why2None'),
+      ],
+      nextSteps: [
+        t(language, 'coachPreview.addWeight.next1', { step: applyDecimalSeparator(pounds ? '2.5–5 lb' : '1–2.5 kg') }),
+        t(language, 'coachPreview.addWeight.next2', { step: applyDecimalSeparator(pounds ? '5–10 lb' : '2.5–5 kg') }),
+        t(language, 'coachPreview.addWeight.next3'),
+      ],
+      plan: [],
+      assumptions: [previewAssumption(language)],
+    };
+  }
+
+  if (/miten viikko(ni)? (meni|on mennyt)|how (did|was) my week/.test(lower)) {
+    if (context.sessionsLast30Days === 0) {
+      return {
+        unanswered: true,
+        takeaway: t(language, 'coachPreview.week.noneTakeaway'),
+        why: [],
+        nextSteps: [t(language, 'coachPreview.week.noneNext')],
+        plan: [],
+        assumptions: [previewAssumption(language)],
+      };
+    }
+    const { signal, confident } = context.fatigue;
+    const isHigh = signal === 'elevated' || signal === 'high';
+    return {
+      takeaway:
+        context.sessionsThisWeek === 0
+          ? t(language, 'coachPreview.week.takeawayZero')
+          : t(language, 'coachPreview.week.takeaway', { sessions: sessionsWord(context.sessionsThisWeek, language) }),
+      why: [
+        t(language, 'coachPreview.week.why1', { sessions: sessionsWord(context.sessionsLast30Days, language) }),
+        confident
+          ? t(language, 'coachPreview.week.why2', { signal: signalLabel(signal, language) })
+          : t(language, 'coachPreview.week.why2Thin'),
+        ...(recentSessionLine ? [recentSessionLine] : []),
+      ],
+      // The load reading drives the step only when the window supports it —
+      // the rule the file opens with.
+      nextSteps: [
+        t(
+          language,
+          !confident
+            ? 'coachPreview.start.next3'
+            : isHigh
+              ? 'coachPreview.week.nextHigh'
+              : signal === 'undertrained'
+                ? 'coachPreview.week.nextLow'
+                : 'coachPreview.week.nextOk',
+        ),
+      ],
+      plan: [],
+      assumptions: [previewAssumption(language)],
+    };
+  }
+
   // "How much protein?" — the other chip that matched nothing. Vinha does not
   // track food, and the honest answer says so before it says anything else.
   // Before recovery, too: "protein for recovery" is a food question.
