@@ -363,7 +363,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
         sessionCount={database.workoutSessions.length}
-        quickAskKeys={coachQuickAskKeys(database.workoutSessions.length)}
+        quickAskKeys={coachQuickAskKeys(database.workoutSessions.length, aiCoachTrainingContext.sessionsLast30Days)}
         lastSession={coachLastSession}
         onOpenAnalysis={(sessionId) => navigate({ tab: 'home', screen: 'analysis', sessionId })}
         onOpenPremium={() => navigate({ tab: 'profile', screen: 'premium' })}

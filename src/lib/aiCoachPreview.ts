@@ -79,6 +79,27 @@ function namesProgramme(lower: string): boolean {
   return lower.includes('program') || lower.includes('ohjelma') || lower.includes('split') || lower.includes('treenijako');
 }
 
+/**
+ * A question that carries a complaint: an ache, an injury, a comeback. The
+ * stage chips' answers ("make the first session a light one", "add weight
+ * when the reps are all there") are for a reader with nothing wrong, so a
+ * question with one of these in it is not theirs to answer.
+ */
+const DISCOMFORT_STEMS = [
+  'hurt', 'painful', 'injur', 'ache', 'aching', 'sore', 'recover',
+  'kipu', 'kipe', 'kivu', 'sattu', 'särk', 'vamm', 'loukkaan', 'kuntout', 'toipu',
+];
+
+function mentionsDiscomfort(lower: string): boolean {
+  // 'pain' as a whole word: as a word start it is 'painoa', the add-weight chip itself.
+  return (
+    DISCOMFORT_STEMS.some((stem) => hasWordStart(lower, stem)) ||
+    hasWord(lower, 'pain') ||
+    hasWord(lower, 'pains') ||
+    /bad (back|knee|shoulder)/.test(lower)
+  );
+}
+
 /** Words every kind of lift shares; matching on them is matching on nothing. */
 const SHARED_EXERCISE_WORDS = new Set(['barbell', 'dumbbell', 'kettlebell', 'cable', 'machine', 'smith', 'band', 'press', 'seated', 'standing']);
 
@@ -398,7 +419,10 @@ function buildPreviewAnswer(
   // in (lib/coachQuickAsks). Each one is a question the app asks for them, so
   // each one has to land here and not on "ask a clearer question" — and
   // before the context signals, for the reason the last-session one is.
-  if (/mistä (kannattaa|pitäisi|voisin|voin) aloittaa|where (should|do) i start|how do i (get )?start/.test(lower)) {
+  if (
+    !mentionsDiscomfort(lower) &&
+    /mistä (kannattaa|pitäisi|voisin|voin) aloittaa|where (should|do) i start|how do i (get )?start/.test(lower)
+  ) {
     const programmeName = context.programme?.title ?? context.customProgramTitle ?? null;
     return {
       takeaway: t(language, 'coachPreview.start.takeaway'),
@@ -453,7 +477,10 @@ function buildPreviewAnswer(
     };
   }
 
-  if (/milloin (lisään|lisätä|nostan|nostaa) painoa|when (do|should) i (add|increase) (the )?weight/.test(lower)) {
+  if (
+    !mentionsDiscomfort(lower) &&
+    /milloin (lisään|lisätä|nostan|nostaa) painoa|when (do|should) i (add|increase) (the )?weight/.test(lower)
+  ) {
     const pounds = context.unitPreference === 'lb';
     return {
       takeaway: t(language, 'coachPreview.addWeight.takeaway'),

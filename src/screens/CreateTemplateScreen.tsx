@@ -638,7 +638,7 @@ export function CreateTemplateScreen({
         <Text style={styles.stepBody}>
           {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
             days: sessions.length,
-            exercises: totalExercises,
+            exercises: t(language, totalExercises === 1 ? 'tpl.exerciseOne' : 'tpl.exerciseMany', { count: totalExercises }),
           })}
         </Text>
         <View style={styles.sessionList}>
@@ -795,7 +795,7 @@ export function CreateTemplateScreen({
           <Text style={styles.reviewSummary}>
             {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
               days: sessions.length,
-              exercises: totalExercises,
+              exercises: t(language, totalExercises === 1 ? 'tpl.exerciseOne' : 'tpl.exerciseMany', { count: totalExercises }),
             })}
           </Text>
         </CutSurface>

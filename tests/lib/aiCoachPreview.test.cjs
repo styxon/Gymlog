@@ -329,4 +329,25 @@ module.exports.push(
       assert.doesNotMatch(buildAiCoachPreviewAnswer('My barbell bench is not moving', baseContext(row), 'en').takeaway, /Row/);
     },
   },
+  {
+    name: 'preview routing: a stage chip question that carries a complaint is not answered as the chip',
+    run() {
+      const ctx = baseContext();
+      const start = buildAiCoachPreviewAnswer('Where should I start?', ctx, 'en').takeaway;
+      const addWeight = buildAiCoachPreviewAnswer('Milloin lisään painoa?', ctx, 'fi').takeaway;
+      // The chips themselves still land ("painoa" is not "pain").
+      for (const [prompt, language, chip] of [
+        ['Where should I start? my knee hurts', 'en', start],
+        ['How do I start squatting with a bad back', 'en', start],
+        ['Where do I start my recovery?', 'en', start],
+        ['Mistä kannattaa aloittaa, polveen sattuu', 'fi', start],
+        ['When should I add weight, my shoulder is painful', 'en', addWeight],
+        ['Milloin lisään painoa, olkapää on kipeä', 'fi', addWeight],
+      ]) {
+        assert.notEqual(buildAiCoachPreviewAnswer(prompt, ctx, language).takeaway, chip, prompt);
+      }
+      assert.equal(buildAiCoachPreviewAnswer('Milloin lisään painoa?', ctx, 'fi').takeaway, addWeight);
+      assert.notEqual(buildAiCoachPreviewAnswer('mitä pitäisi tehdä tällä viikolla', ctx, 'fi').takeaway, addWeight);
+    },
+  },
 );

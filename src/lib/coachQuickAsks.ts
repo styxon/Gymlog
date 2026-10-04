@@ -26,15 +26,33 @@ export const COACH_QUICK_ASKS_ESTABLISHED: I18nKey[] = [
   'coach.chip.week',
 ];
 
+/**
+ * A reader with a history who has not trained for a month: "how did my week
+ * go?" has no week to read (the answer says so, and charges nothing), so the
+ * chips are about coming back instead.
+ */
+export const COACH_QUICK_ASKS_RETURNING: I18nKey[] = [
+  'coach.chip.start',
+  'coach.chip.startingWeights',
+  'coach.chip.program',
+];
+
 /** From this many logged workouts on, the reader has a week worth reading. */
 export const ESTABLISHED_SESSION_COUNT = 5;
 
-export function coachQuickAskKeys(sessionCount: number): I18nKey[] {
+/**
+ * @param sessionsLast30Days the coach context's own month count — the one the
+ * week answer reads, so the chip and its answer cannot disagree.
+ */
+export function coachQuickAskKeys(sessionCount: number, sessionsLast30Days?: number): I18nKey[] {
   if (!Number.isFinite(sessionCount) || sessionCount <= 0) {
     return COACH_QUICK_ASKS_FIRST;
   }
   if (sessionCount < ESTABLISHED_SESSION_COUNT) {
     return COACH_QUICK_ASKS_EARLY;
+  }
+  if (sessionsLast30Days === 0) {
+    return COACH_QUICK_ASKS_RETURNING;
   }
   return COACH_QUICK_ASKS_ESTABLISHED;
 }
