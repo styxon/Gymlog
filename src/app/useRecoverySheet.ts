@@ -10,7 +10,7 @@ import {
   type RecoveryActionKind,
 } from '../lib/recoverySheet';
 import { localizeSessionName } from '../lib/sessionNameLabel';
-import { trainsOn, type TrainingSchedule } from '../lib/trainingSchedule';
+import { nearestDayStart, trainsOn, type TrainingSchedule } from '../lib/trainingSchedule';
 import type { PreferencesPatch } from '../state/AppProvider';
 import { AppDatabase, AppPreferences } from '../types/models';
 import { haptics } from '../utils/haptics';
@@ -74,7 +74,7 @@ export function useRecoverySheet(deps: RecoverySheetDeps) {
       // Asked of the rhythm before any rest day, so a day already taken off
       // still reads as one the reader would have trained.
       tomorrowTrains: trainsOn(baseTrainingSchedule, tomorrow),
-      restTomorrowMarked: preferences.restDayStarts.includes(tomorrow.getTime()),
+      restTomorrowMarked: preferences.restDayStarts.some((rest) => nearestDayStart(rest) === tomorrow.getTime()),
       lightenQueued: isLightenPending(preferences.lightNextSession, now),
       language: preferences.appLanguage,
     });
