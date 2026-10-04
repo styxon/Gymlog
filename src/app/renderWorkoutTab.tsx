@@ -20,6 +20,8 @@ import { resolveProgramEquipment } from '../lib/programEquipment';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
 import { getSeasonProgramId, ProgramSeason } from '../lib/programSeasons';
+import { livePlanEntries } from '../lib/planResolvableEntries';
+import { templateSessionsReader } from './planTemplateSessions';
 import { planWeekdayIndexes } from '../lib/programTrainingDays';
 import {
   pickLibraryCollection,
@@ -165,7 +167,7 @@ export interface WorkoutTabDeps {
     workoutTemplateId: string,
     sessionId: string,
   ) => Promise<{ weekSynced: boolean } | null>;
-  handleSaveRhythm: (workoutTemplateId: string, dayIndexes: number[]) => Promise<void>;
+  handleSaveRhythm: (workoutTemplateId: string, dayIndexes: number[]) => Promise<boolean>;
   handleSaveEmphasis: (
     workoutTemplateId: string,
     updates: Parameters<NonNullable<ProgramDetailProps['onSaveEmphasis']>>[0],
@@ -514,9 +516,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         : null;
     // The plan's entries, in stored order — the order the week strip reads
     // both its days and the session on each of them.
-    const detailPlanEntries =
+    const detailPlanEntries = livePlanEntries(
       database.workoutPlans.find((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-        ?.entries ?? [];
+        ?.entries ?? [],
+      templateSessionsReader(database),
+    );
 
     return program ? (
       <ProgramDetailScreen
@@ -745,7 +749,20 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         }
         onSaveRhythm={
           database.workoutPlans.some((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-            ? (dayIndexes) => void handleSaveRhythm(route.workoutTemplateId, dayIndexes)
+            ? (dayIndexes) =>
+                void handleSaveRhythm(route.workoutTemplateId, dayIndexes).then(
+                  (saved) => {
+                    if (!saved) {
+                      void haptics.error();
+                      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                    }
+                  },
+                  (error) => {
+                    console.error('Failed to save the programme rhythm', error);
+                    void haptics.error();
+                    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                  },
+                )
             : undefined
         }
         // The cycle is the app's one schedule, so it is offered exactly where

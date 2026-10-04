@@ -19,6 +19,8 @@ import {
   getSessionsThisWeek,
   getVolumeThisWeekKg,
 } from '../lib/completedSessions';
+import { templateSessionsReader } from '../app/planTemplateSessions';
+import { livePlanEntries } from '../lib/planResolvableEntries';
 import { buildNotificationPlan } from '../lib/notificationPlan';
 import { resolveReminderSchedule } from '../lib/reminderSchedule';
 import { findLatestSessionPr } from '../lib/workoutCompletionSummary';
@@ -103,7 +105,7 @@ export function useScheduledNotifications(database: AppDatabase) {
       database.workoutPlans.find((plan) => plan.id === database.preferences.activePlanId) ?? null;
     return resolveReminderSchedule({
       trainingCycle: database.preferences.trainingCycle,
-      planEntries: activePlan?.entries ?? [],
+      planEntries: livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
       availableDays: setupAvailableDays,
       restDayStarts: database.preferences.restDayStarts,
     });

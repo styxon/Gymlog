@@ -3,6 +3,8 @@ import { Alert, Linking, Platform } from 'react-native';
 
 import type { SignInProvider } from '../features/account/accountAuth';
 import { AccountBackupApi } from '../features/account/useAccountBackup';
+import { livePlanEntries } from '../lib/planResolvableEntries';
+import { templateSessionsReader } from './planTemplateSessions';
 import { buildCancelSurveyAnswer } from '../lib/cancelSurvey';
 import { recordRatingCompleted } from '../lib/ratingPrompt';
 import { storePlatformOf, usesSystemReviewPrompt, writeReviewUrl } from '../lib/storeLinks';
@@ -112,7 +114,7 @@ export interface ProfileTabDeps {
   /** Whether AI-assisted composition opens the chat or the paywall. */
   proUnlocked: boolean;
   exportablePlans: React.ComponentProps<typeof ExportPlanScreen>['plans'];
-  database: Pick<AppDatabase, 'workoutSessions' | 'exerciseLogs' | 'cardioSessions' | 'workoutPlans'>;
+  database: Pick<AppDatabase, 'workoutSessions' | 'exerciseLogs' | 'cardioSessions' | 'workoutPlans' | 'workoutTemplates' | 'exerciseTemplates'>;
   /** The weigh-in log's newest reading, as Home and Progress read it. */
   latestWeighInKg: number | null;
   settingsScrollOffsetRef: React.MutableRefObject<number>;
@@ -249,7 +251,10 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
   const reminderSchedule = () =>
     resolveReminderSchedule({
       trainingCycle: preferences.trainingCycle,
-      planEntries: database.workoutPlans.find((plan) => plan.id === preferences.activePlanId)?.entries ?? [],
+      planEntries: livePlanEntries(
+        database.workoutPlans.find((plan) => plan.id === preferences.activePlanId)?.entries ?? [],
+        templateSessionsReader(database),
+      ),
       availableDays: preferences.setupAvailableDays,
     });
 
