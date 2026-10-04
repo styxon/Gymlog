@@ -41,6 +41,12 @@ export interface RecommendationInput {
    * an answer. See scorePreferenceFit for the single thing it decides.
    */
   ageRange: SetupAgeRange | null;
+  /**
+   * The chips the reader keeps, or null when the setup says nothing about them
+   * (resolveAvailableEquipment). Decides which programmes fit, not just which
+   * shelf they sit on — see programEquipmentFit.
+   */
+  availableEquipment?: string[] | null;
 }
 
 export interface RecommendationProgramDefinition {

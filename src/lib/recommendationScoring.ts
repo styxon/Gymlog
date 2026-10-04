@@ -3,6 +3,7 @@ import { RECOMMENDATION_PROGRAMS, getRecommendationProgramDefinition } from './r
 import { selectWaterfallDecision } from './recommendationWaterfall';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
+import { equipmentCandidatePool } from './programEquipmentFit';
 import type {
   RecommendationCandidate,
   RecommendationConfidence,
@@ -244,11 +245,7 @@ function sumBreakdown(breakdown: RecommendationScoreBreakdown) {
 }
 
 function applyEquipmentFilter(input: RecommendationInput) {
-  if (input.equipment === 'gym') {
-    return RECOMMENDATION_PROGRAMS;
-  }
-
-  return RECOMMENDATION_PROGRAMS.filter((definition) => definition.equipmentTier === 'low_equipment');
+  return equipmentCandidatePool(RECOMMENDATION_PROGRAMS, input);
 }
 
 function stableSortCandidates(candidates: RecommendationCandidate[]) {

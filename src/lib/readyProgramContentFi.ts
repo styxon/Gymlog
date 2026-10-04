@@ -131,6 +131,16 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Kyykky, punnerrus, veto ja lankku toistuvat joka viikko, ja eteneminen tulee toistoista, joten voima ja kunto kasvavat ilman kilon painoja.',
   },
+  tpl_home_dumbbell_upper_lower_v1: {
+    summary:
+      'Neljä treeniä viikossa kotona käsipainoparilla: kaksi ylävartalopäivää ja kaksi alavartalopäivää, kummastakin raskaampi ja toistoisampi versio.',
+    audience:
+      'Kotona käsipainoilla treenaavalle, joka haluaa neljä treeniä viikossa lihasmassaan ja voimaan.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä, ja lattiatilaa. Penkkiä ei tarvita: punnerrukset tehdään lattialla.',
+    whyItWorks:
+      'Jokainen lihas treenataan kahdesti viikossa, kerran raskaammin ja kerran useammalla toistolla, ja eteneminen tulee ensin toistoista ja sitten painosta.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Neljä päivää viikossa taitoliikkeiden ympärillä: käsinseisonta ja planche, muscle-up ja front lever, pistoolikyykky ja hypyt sekä taito- ja keskivartalopäivä.',

@@ -148,6 +148,16 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Squat, push, pull and plank come back every week and progress comes from reps, so strength and fitness build without a kilo of iron.',
   },
+  tpl_home_dumbbell_upper_lower_v1: {
+    summary:
+      'Four days a week at home with a pair of dumbbells: two upper-body days and two lower-body days, each once heavier and once with more reps.',
+    audience:
+      'Anyone training at home with dumbbells who wants four sessions a week for muscle and strength.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable, and some floor space. No bench: the presses are done on the floor.',
+    whyItWorks:
+      'Every muscle is trained twice a week, once heavier and once with more reps, and progress comes from adding reps before adding weight.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Four days a week built around skills: handstand and planche, muscle-up and front lever, pistol squats and jumps, plus a skills-and-core day.',

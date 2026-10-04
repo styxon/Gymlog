@@ -401,6 +401,7 @@ const suites = [
   ...require('./lib/focusEmphasis.test.cjs'),
   ...require('./lib/equipmentExerciseFilter.test.cjs'),
   ...require('./lib/programmeMinutes.test.cjs'),
+  ...require('./lib/programEquipmentFit.test.cjs'),
   ...require('./lib/onboardingStructure.test.cjs'),
   ...require('./screens/homeScreenStructure.test.cjs'),
   ...require('./screens/historyScrollWiring.test.cjs'),

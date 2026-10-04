@@ -31,6 +31,8 @@ const LOW_EQUIPMENT_PROGRAMS = [
   'tpl_gainer_mobility_flow_v1',
   'tpl_gainer_at_home_beginner_v1',
   'tpl_gainer_postpartum_recovery_v1',
+  // Dumbbells only: four days at home (coverage sweep, 2026-10-04).
+  'tpl_home_dumbbell_upper_lower_v1',
 ];
 
 function exerciseNames(template) {

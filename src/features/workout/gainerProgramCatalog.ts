@@ -975,6 +975,52 @@ export const Vinha_WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       ] },
     ],
   },
+  {
+    id: "tpl_home_dumbbell_upper_lower_v1",
+    name: "Home Dumbbell Upper/Lower",
+    goalType: "hypertrophy",
+    level: "intermediate",
+    splitType: "upper_lower",
+    daysPerWeek: 4,
+    estimatedSessionDuration: 45,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "home_db_upper_a", name: "Day 1: Upper (Heavy)", orderIndex: 1, exercises: [
+        { id: "home_db_upper_a_dumbbell_floor_press", exerciseName: "Dumbbell Floor Press", slotId: "primary_home_db_upper_a_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "horizontal_press" },
+        { id: "home_db_upper_a_single_arm_dumbbell_row", exerciseName: "Single-Arm Dumbbell Row", slotId: "secondary_home_db_upper_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "horizontal_pull" },
+        { id: "home_db_upper_a_dumbbell_shoulder_press", exerciseName: "Dumbbell Shoulder Press", slotId: "secondary_home_db_upper_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "vertical_press" },
+        { id: "home_db_upper_a_lateral_raise", exerciseName: "Lateral Raise", slotId: "accessory_home_db_upper_a_4", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "accessory_delts" },
+        { id: "home_db_upper_a_hammer_curl", exerciseName: "Hammer Curl", slotId: "accessory_home_db_upper_a_5", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "accessory_arms", supersetGroup: "ss_home_db_upper_a_ss1" },
+        { id: "home_db_upper_a_triceps_kickback", exerciseName: "Triceps Kickback", slotId: "accessory_home_db_upper_a_6", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "triceps_cable", supersetGroup: "ss_home_db_upper_a_ss1" },
+      ] },
+      { id: "home_db_lower_a", name: "Day 2: Lower (Heavy)", orderIndex: 2, exercises: [
+        { id: "home_db_lower_a_goblet_squat", exerciseName: "Goblet Squat", slotId: "primary_home_db_lower_a_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "squat_pattern" },
+        { id: "home_db_lower_a_stiff_legged_dumbbell_deadlift", exerciseName: "Stiff-Legged Dumbbell Deadlift", slotId: "secondary_home_db_lower_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 90, substitutionGroup: "hinge_pattern" },
+        { id: "home_db_lower_a_bulgarian_split_squat", exerciseName: "Bulgarian Split Squat", slotId: "secondary_home_db_lower_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "single_leg" },
+        { id: "home_db_lower_a_glute_bridge", exerciseName: "Glute Bridge", slotId: "accessory_home_db_lower_a_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_hinge" },
+        { id: "home_db_lower_a_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_home_db_lower_a_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "calves" },
+        { id: "home_db_lower_a_plank", exerciseName: "Plank", slotId: "accessory_home_db_lower_a_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 45, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "home_db_upper_b", name: "Day 3: Upper (Volume)", orderIndex: 3, exercises: [
+        { id: "home_db_upper_b_arnold_press", exerciseName: "Arnold Press", slotId: "primary_home_db_upper_b_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 90, substitutionGroup: "vertical_press" },
+        { id: "home_db_upper_b_dumbbell_row", exerciseName: "Dumbbell Row", slotId: "secondary_home_db_upper_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "horizontal_pull" },
+        { id: "home_db_upper_b_dumbbell_floor_press", exerciseName: "Dumbbell Floor Press", slotId: "secondary_home_db_upper_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "horizontal_press" },
+        { id: "home_db_upper_b_dumbbell_fly", exerciseName: "Dumbbell Fly", slotId: "accessory_home_db_upper_b_4", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "chest_fly" },
+        { id: "home_db_upper_b_dumbbell_curl", exerciseName: "Dumbbell Curl", slotId: "accessory_home_db_upper_b_5", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "accessory_arms", supersetGroup: "ss_home_db_upper_b_ss1" },
+        { id: "home_db_upper_b_push_up_wide", exerciseName: "Push-Up Wide", slotId: "accessory_home_db_upper_b_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_press", supersetGroup: "ss_home_db_upper_b_ss1" },
+      ] },
+      { id: "home_db_lower_b", name: "Day 4: Lower (Volume)", orderIndex: 4, exercises: [
+        { id: "home_db_lower_b_reverse_lunge", exerciseName: "Reverse Lunge", slotId: "primary_home_db_lower_b_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "single_leg" },
+        { id: "home_db_lower_b_goblet_squat", exerciseName: "Goblet Squat", slotId: "secondary_home_db_lower_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "squat_pattern" },
+        { id: "home_db_lower_b_stiff_legged_dumbbell_deadlift", exerciseName: "Stiff-Legged Dumbbell Deadlift", slotId: "secondary_home_db_lower_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 90, substitutionGroup: "hinge_pattern" },
+        { id: "home_db_lower_b_single_leg_rdl", exerciseName: "Single-Leg RDL", slotId: "accessory_home_db_lower_b_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "hinge_pattern", supersetGroup: "ss_home_db_lower_b_ss1" },
+        { id: "home_db_lower_b_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_home_db_lower_b_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "calves", supersetGroup: "ss_home_db_lower_b_ss1" },
+        { id: "home_db_lower_b_dead_bug", exerciseName: "Dead Bug", slotId: "accessory_home_db_lower_b_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+    ],
+  },
 ];
 
 type VinhaRecommendationConfig = Omit<RecommendationProgramDefinition, 'daysPerWeek' | 'estimatedSessionMinutes'> & {
@@ -1191,5 +1237,24 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
     focusAreaTags: ['conditioning', 'legs', 'glutes', 'core'],
     lowFriction: false,
     jointFriendly: true,
+  },
+  {
+    // A home dumbbell week that runs four days. Every home programme topped
+    // out at three or four days of bodyweight or skill work, so a reader at
+    // home asking for four days of muscle got a three-day plan padded with
+    // two-exercise filler days (coverage sweep, 2026-10-04).
+    programId: 'tpl_home_dumbbell_upper_lower_v1',
+    familyId: 'low_equipment',
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    targetGender: 'unisex',
+    supportedGoals: ['muscle', 'strength', 'lean_athletic'],
+    backupGoals: ['general', 'general_fitness'],
+    supportedLevels: ['beginner', 'advanced', 'pro'],
+    styleTags: ['balanced', 'pump'],
+    secondaryOutcomeTags: ['muscle', 'strength'],
+    focusAreaTags: ['chest', 'back', 'shoulders', 'arms', 'legs', 'glutes'],
+    lowFriction: false,
+    jointFriendly: false,
   },
 ];

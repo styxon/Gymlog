@@ -1,5 +1,6 @@
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import { buildRecommendationProfile } from './recommendationProfile';
+import { resolveAvailableEquipment } from './equipmentExerciseFilter';
 import type { RecommendationInput } from '../types/recommendation';
 
 const DEFAULT_SESSION_MINUTES_BY_DAYS: Record<number, number> = {
@@ -41,5 +42,6 @@ export function buildRecommendationInput(selection: FirstRunSetupSelection): Rec
     // and declining it should decide the same thing: nothing.
     ageRange:
       selection.ageRange && selection.ageRange !== 'unspecified' ? selection.ageRange : null,
+    availableEquipment: resolveAvailableEquipment(selection),
   };
 }

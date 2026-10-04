@@ -313,6 +313,10 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'At Home - No Equipment',
     tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
   },
+  tpl_home_dumbbell_upper_lower_v1: {
+    title: 'Home Dumbbell Upper/Lower',
+    tagKeys: ['prog.tag.home', 'prog.tag.upperLower'],
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     title: 'Calisthenics Mastery',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.advanced'],

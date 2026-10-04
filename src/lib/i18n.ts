@@ -655,6 +655,7 @@ const EN = {
   'prog.sub.tpl_gainer_fat_burn_hiit_v1': 'Four days of full-body intervals, nothing longer than it needs to be.',
   'prog.sub.tpl_gainer_mobility_flow_v1': 'Daily movement for range, stiffness and recovery.',
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Full-body work that needs no gym and no kit.',
+  'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Four days at home with a pair of dumbbells, upper and lower body in turns.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Strength, body control and the skills: muscle-up, handstand, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Five sets of five on the big lifts, and add weight when you can.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Power, speed, agility and endurance inside the same week.',
@@ -855,6 +856,8 @@ const EN = {
   'onb.planReady.weekPlan': '{count}-week plan',
   'wf.home_equipment.primary': 'Built for your equipment setup — nothing in it needs a gym.',
   'wf.home_equipment.alt': 'A different rhythm with the same low-equipment start.',
+  'wf.home_gear.primary': 'Built around the gear you said you have at home.',
+  'wf.home_gear.alt': 'A different rhythm with the same gear.',
   'wf.run_mobility.primary': 'Running comes first, with mobility built in.',
   'wf.run_mobility.alt': 'Prefer lifting with your cardio on the side? Start balanced instead.',
   'wf.mobility_first.primary': 'Low-stress movement first — recovery and mobility lead this block.',
@@ -2986,7 +2989,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 57 ready programmes with level, goal and free text all
+  // The catalog: 58 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4016,6 +4019,7 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_gainer_fat_burn_hiit_v1': 'Neljä päivää koko kehon intervalleja, ei minuuttiakaan turhaan.',
   'prog.sub.tpl_gainer_mobility_flow_v1': 'Päivittäistä liikettä liikkuvuuteen, jäykkyyteen ja palautumiseen.',
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Koko kehon treeni ilman salia ja ilman välineitä.',
+  'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Neljä päivää kotona käsipainoparilla, ylä- ja alavartalo vuorotellen.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Voimaa, kehonhallintaa ja taitoja: muscle-up, käsinseisonta, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Viisi viiden toiston sarjaa perusliikkeillä, ja lisää painoa kun pystyt.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Tehoa, nopeutta, ketteryyttä ja kestävyyttä samalla viikolla.',
@@ -4212,6 +4216,8 @@ const FI: Record<I18nKey, string> = {
   'onb.planReady.weekPlan': '{count} viikon ohjelma',
   'wf.home_equipment.primary': 'Rakennettu sinulle — ei vaadi kuntosalia.',
   'wf.home_equipment.alt': 'Eri painotus, yhtä vähän välineitä.',
+  'wf.home_gear.primary': 'Rakennettu niille välineille, jotka kerroit kotona olevan.',
+  'wf.home_gear.alt': 'Eri painotus samoilla välineillä.',
   'wf.run_mobility.primary': 'Juoksu edellä, liikkuvuus mukana.',
   'wf.run_mobility.alt': 'Haluatko mieluummin nostella ja pitää cardion sivussa? Aloita tasapainoisesti.',
   'wf.mobility_first.primary': 'Kevyt liike ensin — palautuminen ja liikkuvuus vetävät tämän jakson.',
@@ -6148,7 +6154,7 @@ const FI: Record<I18nKey, string> = {
   'programs.sort.days': 'Päivät',
   'programs.sort.length': 'Kesto',
   'programs.sheet.fitsYourWeek': 'SOPII {days} PÄIVÄN VIIKKOOSI',
-  // Katalogi: 57 valmista ohjelmaa, joita taso, tavoite ja vapaa teksti
+  // Katalogi: 58 valmista ohjelmaa, joita taso, tavoite ja vapaa teksti
   // rajaavat yhtä aikaa. Tavoitekiekot ovat taksonomia, eivät suodatin.
   'programCatalog.title': 'Kaikki valmiit ohjelmat',
   'programCatalog.searchPlaceholder': 'Hae {count} ohjelmasta',

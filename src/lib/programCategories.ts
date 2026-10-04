@@ -161,6 +161,7 @@ const CONDITIONING_IDS = new Set([
 
 const HOME_IDS = new Set([
   'tpl_2_day_minimal_full_body_v1',
+  'tpl_home_dumbbell_upper_lower_v1',
   'tpl_gainer_at_home_beginner_v1',
 ]);
 
