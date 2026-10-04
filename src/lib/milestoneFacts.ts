@@ -148,8 +148,14 @@ export function getMilestoneFacts(
   // rung is dated by the first session in it, the workout that made the week
   // count, not by its Monday. A session whose date does not parse has no
   // week (the summary drops it the same way) and is left out here.
+  // Runs make a week count too, as in the lifetime summary and Home's streak
+  // (bug hunt, 2026-10-04); oldest first so the week is dated by whichever
+  // activity came first.
   const firstSessionByWeek = new Map<number, string>();
-  for (const session of sessions) {
+  const activities = [...sessions, ...[...getCanonicalCardioSessions(database)].reverse()].sort(
+    (left, right) => timestamp(left.performedAt) - timestamp(right.performedAt),
+  );
+  for (const session of activities) {
     const weekStart = getCalendarWeekStartTimestamp(session.performedAt);
     if (Number.isFinite(weekStart) && !firstSessionByWeek.has(weekStart)) {
       firstSessionByWeek.set(weekStart, session.performedAt);

@@ -1962,6 +1962,7 @@ function VinhaApp() {
       updateCompletedWorkoutSession,
       workout,
       leaveFinishedWorkout,
+      showToast,
     }));
   } else if (route.tab === 'workout') {
     // Every route-pure workout branch. `summary` and `celebration` sit above

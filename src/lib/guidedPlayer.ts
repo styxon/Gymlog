@@ -1063,6 +1063,16 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // The floor bridge. By containment it landed on the barbell bridge, whose
   // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
   'glute bridge': 'butt lift (bridge)',
+  // The catalogue's plain calf raises are prescribed to readers with and
+  // without a gym. By containment they opened the seated and standing calf
+  // MACHINES (36 rows): a machine demo under a bodyweight programme. The extra
+  // entry's steps hold for a loaded row too. Where the extras are absent the
+  // target is absent and lookup falls through as before (bug hunt, 2026-10-04).
+  'calf raise': 'bodyweight calf raise',
+  'standing calf raise': 'bodyweight calf raise',
+  // Named single-leg in brackets, it is the single-leg raise, not the two-leg one.
+  'calf raise (single-leg)': 'single-leg calf raise',
+  'calf raise (each leg)': 'single-leg calf raise',
   'lat pulldown': 'wide-grip lat pulldown',
   'pull-up': 'pullups',
   'pull-ups': 'pullups',
@@ -1240,18 +1250,33 @@ function resolveExactOrAlias(candidate: string, lowerNames: readonly string[]): 
  * "Barbell Bench Press" is contained in "Decline Barbell Bench Press", and
  * "Squat" in "Box Squat". Null when only a substring would place the name.
  */
+/**
+ * Aliases that pick a demo, not a library row to file a lift's history under.
+ * The catalogue's plain calf raise opens the bodyweight raise's steps, but a
+ * gym's loaded calf raise is not that lift: filed under it, the bodyweight
+ * page listed 80 kg sets as its own (review, 2026-10-04).
+ */
+const DEMO_ONLY_ALIASES = new Set(['calf raise', 'standing calf raise']);
+
 export function findFiledLibraryIndex(exerciseName: string, libraryNames: readonly string[]): number | null {
   const normalized = exerciseName.trim().toLowerCase();
   if (!normalized) {
     return null;
   }
   const lowerNames = libraryNames.map((name) => name.trim().toLowerCase());
-  const direct = resolveExactOrAlias(normalized, lowerNames);
+  const filedOnly = (candidate: string) => {
+    if (DEMO_ONLY_ALIASES.has(candidate)) {
+      const exact = lowerNames.indexOf(candidate);
+      return exact >= 0 ? exact : null;
+    }
+    return resolveExactOrAlias(candidate, lowerNames);
+  };
+  const direct = filedOnly(normalized);
   if (direct !== null) {
     return direct;
   }
   const stripped = stripCoachingQualifier(normalized);
-  return stripped ? resolveExactOrAlias(stripped, lowerNames) : null;
+  return stripped ? filedOnly(stripped) : null;
 }
 
 export function findGuidedLibraryIndex(

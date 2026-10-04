@@ -95,6 +95,25 @@ module.exports = [
     },
   },
   {
+    name: 'lifetime week streak counts a cardio-only week like Home does (bug hunt, 2026-10-04)',
+    run() {
+      withHelsinkiClocks(() => {
+        const database = {
+          ...buildDatabase([createSession('s1', '2026-09-22T12:00:00', 1000)]),
+          cardioSessions: [{ id: 'c1', performedAt: '2026-09-29T12:00:00' }],
+        };
+
+        const summary = getLifetimeTrainingSummary(database, new Date(2026, 9, 4, 12, 0, 0));
+
+        assert.equal(summary.currentWeekStreak, 2);
+        assert.equal(summary.bestWeekStreak, 2);
+        assert.equal(summary.weeksActive, 2);
+        assert.equal(summary.sessionCount, 1);
+        assert.equal(summary.totalVolumeKg, 1000);
+      });
+    },
+  },
+  {
     name: 'lifetime summary best streak counts the longest consecutive run, not total active weeks',
     run() {
       // Active weeks: Jun 1, Jun 8 (run of 2), gap on Jun 15, then Jun 22, Jun 29, Jul 6 (run of 3).

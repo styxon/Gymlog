@@ -1003,9 +1003,17 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           ? Math.max(0, Math.min(100, Math.round(input.preferences.setupAge)))
           : fallback.preferences.setupAge,
       setupHeightCm:
-        typeof input?.preferences?.setupHeightCm === 'number' && Number.isFinite(input.preferences.setupHeightCm)
-          ? Math.max(0, Math.min(300, Math.round(input.preferences.setupHeightCm)))
-          : fallback.preferences.setupHeightCm,
+        // The UI allows 120..230. Outside 100..250 is not a height: it is a
+        // stray 0 or a clamped 300 that would print "0 cm" and feed BMI a
+        // nonsense divisor, so it loads as "not set" (bug hunt, 2026-10-04).
+        typeof input?.preferences?.setupHeightCm === 'number' &&
+        Number.isFinite(input.preferences.setupHeightCm) &&
+        Math.round(input.preferences.setupHeightCm) >= 100 &&
+        Math.round(input.preferences.setupHeightCm) <= 250
+          ? Math.round(input.preferences.setupHeightCm)
+          : typeof input?.preferences?.setupHeightCm === 'number'
+            ? null
+            : fallback.preferences.setupHeightCm,
       setupAgeRange:
         input?.preferences?.setupAgeRange === 'unspecified' ||
         input?.preferences?.setupAgeRange === '18' ||

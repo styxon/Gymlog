@@ -64,7 +64,7 @@ function fixtureDatabase() {
     exerciseLibrary: [],
     workoutSessions,
     cardioSessions: [
-      { id: 'c1', activityType: 'run', startedAt: '2026-08-20T06:00:00.000Z', performedAt: '2026-08-20T06:40:00.000Z', durationSec: 2400, distanceKm: 6.2 },
+      { id: 'c1', activityType: 'run', startedAt: '2026-08-04T06:00:00.000Z', performedAt: '2026-08-04T06:40:00.000Z', durationSec: 2400, distanceKm: 6.2 },
     ],
     exerciseLogs,
     bodyweightEntries: [
@@ -183,8 +183,8 @@ module.exports = [
       assert.equal(byKey.has('records-3'), false);
       // The first weigh-in, the first cardio session, 5 km.
       assert.equal(byKey.get('bodyweight-1').reachedAt, '2026-08-03T06:00:00.000Z');
-      assert.equal(byKey.get('cardio-1').reachedAt, '2026-08-20T06:40:00.000Z');
-      assert.equal(byKey.get('distance-5').reachedAt, '2026-08-20T06:40:00.000Z');
+      assert.equal(byKey.get('cardio-1').reachedAt, '2026-08-04T06:40:00.000Z');
+      assert.equal(byKey.get('distance-5').reachedAt, '2026-08-04T06:40:00.000Z');
       assert.equal(byKey.get('hours-1').reachedAt, SESSION_DATES[1]);
 
       // Newest first.
@@ -441,7 +441,8 @@ module.exports = [
         language: 'en',
       });
       assert.equal(rows.upcoming.find((row) => row.key === 'sessions-1').meta, '0 of 1');
-      assert.equal(rows.upcoming.find((row) => row.key === 'streak-2').meta, 'No run to beat yet');
+      // The run is a week of activity, so the best run is one week (bug hunt, 2026-10-04).
+      assert.equal(rows.upcoming.find((row) => row.key === 'streak-2').meta, 'Best run so far: one week');
       // The run they DID log is a rung that fell, and the card says so.
       assert.equal(rows.reached.some((row) => row.key === 'cardio-1'), true);
       const card = milestoneCardRows({

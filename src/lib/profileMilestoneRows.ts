@@ -181,7 +181,9 @@ function describe(
       // strength session is a claim about a week that did not happen.
       const weeksAgo = lifetime.weeksSinceStart - 1;
       const meta =
-        lifetime.weeksSinceStart <= 0
+        // weeksSinceStart now starts at the first run too, so "no strength
+        // session yet" is item.current, not the week count (bug hunt, 2026-10-04).
+        lifetime.weeksSinceStart <= 0 || item.current <= 0
           ? t(language, 'profile.milestone.sessions.metaPlain', { current: item.current, target: item.target })
           : weeksAgo <= 0
             ? t(language, 'profile.milestone.sessions.metaOneWeek', { current: item.current, target: item.target })
