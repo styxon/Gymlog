@@ -146,6 +146,7 @@ const suites = [
   ...require('./lib/exerciseProgressForName.test.cjs'),
   ...require('./lib/liftHistoryIdentity.test.cjs'),
   ...require('./lib/lifetimeSummary.test.cjs'),
+  ...require('./lib/bugHunt20261004Records.test.cjs'),
   ...require('./lib/profileOverview.test.cjs'),
   ...require('./lib/homeStatCards.test.cjs'),
   ...require('./lib/homeStatCardGroups.test.cjs'),

@@ -47,8 +47,9 @@ export function getLifetimeTrainingSummary(
   now: Date = new Date(),
 ): LifetimeTrainingSummary {
   const sessions = getCanonicalCompletedSessions(database);
+  const cardioSessions = getCanonicalCardioSessions(database);
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && cardioSessions.length === 0) {
     return {
       sessionCount: 0,
       totalVolumeKg: 0,
@@ -62,8 +63,14 @@ export function getLifetimeTrainingSummary(
 
   const totalVolumeKg = sessions.reduce((total, session) => total + getSessionVolumeKg(session.totalVolumeKg), 0);
 
+  // Cardio marks a week active too: Home's streak and the training calendar
+  // count every activity, so a lift-only week set made Profile and the
+  // milestones read 1 where Home read 2 (bug hunt, 2026-10-04). Counts and
+  // volume stay lifting-only.
   const activeWeekStarts = [
-    ...new Set(sessions.map((session) => getCalendarWeekStartTimestamp(session.performedAt))),
+    ...new Set(
+      [...sessions, ...cardioSessions].map((session) => getCalendarWeekStartTimestamp(session.performedAt)),
+    ),
   ].sort((left, right) => left - right);
 
   // The longest run of consecutive active weeks, from the shared walk the
@@ -90,7 +97,7 @@ export function getLifetimeTrainingSummary(
   const weeksSinceStart = Math.max(1, Math.round((currentWeekStart - firstWeekStart) / WEEK_MS) + 1);
 
   // sessions are sorted newest-first, so the earliest is the last entry.
-  const firstSessionAt = sessions[sessions.length - 1].performedAt;
+  const firstSessionAt = sessions.length > 0 ? sessions[sessions.length - 1].performedAt : null;
 
   return {
     sessionCount: sessions.length,

@@ -140,7 +140,10 @@ export function getLatestLogForTemplateExercise(database: AppDatabase, exerciseT
   );
 
   return database.exerciseLogs
-    .filter((log) => log.exerciseTemplateId === exerciseTemplateId && !log.skipped)
+    // Unperformed logs (every set skipped, a note-only row, a swap never lifted)
+    // are not sessions of the lift: they read as "Vs –" on Home and a null
+    // latest on the exercise page (bug hunt, 2026-10-04).
+    .filter((log) => log.exerciseTemplateId === exerciseTemplateId && !log.skipped && logRecordedWork(log))
     .map((log) => attachSession(log, sessionsById))
     .filter((log): log is ExerciseLogWithSession => Boolean(log))
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime())[0];
@@ -157,7 +160,9 @@ export function getRecentLogsForExercise(database: AppDatabase, exerciseName: st
 
   return database.exerciseLogs
     .filter((log) => {
-      if (log.skipped) {
+      // Same rule as getTrackedExerciseProgress: a log with no performed reps
+      // is not a session (bug hunt, 2026-10-04).
+      if (log.skipped || !logRecordedWork(log)) {
         return false;
       }
 
@@ -265,11 +270,13 @@ export function getExerciseProgressForName(
 
   const logs = database.exerciseLogs
     .filter((log) => {
-      if (log.skipped) {
+      // An unperformed log would become the "latest" with no top weight
+      // (bug hunt, 2026-10-04).
+      if (log.skipped || !logRecordedWork(log)) {
         return false;
       }
 
-      const name = resolveCanonicalExerciseName(log, exercisesById);
+      const name =resolveCanonicalExerciseName(log, exercisesById);
       const key = normalizeExerciseKey(name);
       let verdict = verdicts.get(key);
       if (verdict === undefined) {
@@ -375,13 +382,13 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
   const sessionsById = Object.fromEntries(
     database.workoutSessions.map((session) => [session.id, session] as const),
   );
-  const grouped = new Map<string, { name: string; logs: ExerciseLogWithSession[] }>();
+  const grouped = new Map<string, { name: string; logs: ExerciseLogWithSession[]; anyTracked: boolean }>();
 
   database.exerciseLogs.forEach((log) => {
     // An exercise that was listed but never performed is not a session on that
     // lift. Without this, a workout you opened and abandoned reads as a day you
     // lifted zero, and the lift's whole trend follows it down.
-    if (!log.tracked || log.skipped || !logRecordedWork(log)) {
+    if (log.skipped || !logRecordedWork(log)) {
       return;
     }
 
@@ -397,11 +404,26 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
     if (existing) {
       existing.logs.push(attachedLog);
       existing.name = name;
+      existing.anyTracked = existing.anyTracked || log.tracked;
       return;
     }
 
-    grouped.set(key, { name, logs: [attachedLog] });
+    grouped.set(key, { name, logs: [attachedLog], anyTracked: log.tracked });
   });
+
+  // Tracking decides which lifts get a row, not which sets count for it. A
+  // heavier performed set is a record whatever the slot's progression
+  // priority was; buildExercisePrLookup (the completion screen's PR badge)
+  // already counts every log, so Records read 100 where the badge read 110
+  // (bug hunt, 2026-10-04). A lift never tracked anywhere still gets no row.
+  const goalKeys = new Set(
+    (database.preferences.strengthGoals ?? []).map((goal) => normalizeExerciseKey(goal.exerciseName.trim())),
+  );
+  for (const [key, group] of [...grouped.entries()]) {
+    if (!group.anyTracked && !goalKeys.has(key)) {
+      grouped.delete(key);
+    }
+  }
 
   /**
    * A lift you have set a TARGET on shows here before you have logged it.
@@ -425,7 +447,7 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
     if (grouped.has(key)) {
       return;
     }
-    grouped.set(key, { name, logs: [] });
+    grouped.set(key, { name, logs: [], anyTracked: false });
   });
 
   return Array.from(grouped.entries())

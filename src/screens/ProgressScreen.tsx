@@ -47,6 +47,7 @@ import {
 } from '../lib/format';
 import { localDateKey, subtractCalendarMonths } from '../lib/completedSessions';
 import { addCardioMinutesByDay } from '../lib/dashboard';
+import { getCombinedActivityMinutes } from '../lib/cardio';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
 import { ProMomentContent, WeeklyReadRow } from '../lib/proInsights';
@@ -949,9 +950,10 @@ export function ProgressScreen({
     const currentMonthCardio = cardioSessions.filter((session) => inMonth(session.performedAt));
 
     const volumeKg = currentMonthSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0);
-    const totalDuration =
-      currentMonthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0) +
-      currentMonthCardio.reduce((sum, session) => sum + Math.round((session.durationSec ?? 0) / 60), 0);
+    const totalDuration = getCombinedActivityMinutes(
+      currentMonthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
+      currentMonthCardio,
+    );
     const counted = currentMonthSessions.length + currentMonthCardio.length;
     const averageDuration = counted ? Math.round(totalDuration / counted) : 0;
 
