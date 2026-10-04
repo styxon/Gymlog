@@ -96,6 +96,58 @@ export function projectTrainingWeekdays(
   );
 }
 
+/**
+ * The placement for a plan that names no weekdays, as it has always been.
+ *
+ * resolveProgramTrainingDays chooses the best-spread days and is what a plan
+ * saved from now on stores (bug hunt, 2026-10-04). A plan saved without
+ * weekday labels has its days derived on every read — Home's strip and the
+ * reminders — and moving that derivation would move a reader's training days
+ * and their reminders on update, with nothing on screen to say why. So the
+ * derivation keeps the stride rule it was saved under.
+ */
+export function resolveDerivedTrainingDays(
+  availableDayIndexes: readonly number[],
+  sessionsPerWeek: number,
+): number[] {
+  const open = [...new Set(availableDayIndexes)]
+    .filter((index) => Number.isInteger(index) && index >= 0 && index <= 6)
+    .sort((left, right) => left - right);
+
+  if (open.length === 0 || sessionsPerWeek <= 0) {
+    // No answer rather than an invented rhythm: the strip shows no training
+    // dots, which is what it did before any of this existed.
+    return [];
+  }
+  if (sessionsPerWeek >= open.length) {
+    return open;
+  }
+
+  // Even spread across the open days, first day always included.
+  const picked: number[] = [];
+  const stride = open.length / sessionsPerWeek;
+  for (let i = 0; i < sessionsPerWeek; i += 1) {
+    const index = Math.min(open.length - 1, Math.round(i * stride));
+    const day = open[index];
+    if (!picked.includes(day)) {
+      picked.push(day);
+    }
+  }
+
+  // Rounding can collide on tight ranges; fill from the remaining open days so
+  // the count always matches what the plan prescribes.
+  for (const day of open) {
+    if (picked.length >= sessionsPerWeek) {
+      break;
+    }
+    if (!picked.includes(day)) {
+      picked.push(day);
+    }
+  }
+
+  return picked.sort((left, right) => left - right);
+}
+
 /** Monday-first index per stored weekday key. */
 export const WEEKDAY_INDEX: Record<string, number> = {
   mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6,

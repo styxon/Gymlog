@@ -969,6 +969,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   // The equipment fallbacks below are prescribed too — a plan swaps onto them
   // when the gear is missing — and they read in English until 2026-10-04.
+  'Bulgarian Split Squat': [
+    'Seiso pitkän askeleen päässä penkistä tai tukevasta tuolista selkä sitä kohti ja nosta takajalan jalkapöytä sen päälle. Pidä käsipainoa kummassakin kädessä, jos ohjelmasi kirjaa painon; muuten pidä kädet lantiolla.',
+    'Laskeudu suoraan alas koukistamalla etupolvea, kunnes takapolvi melkein koskettaa lattiaa. Pidä ylävartalo pystyssä ja etupolvi jalkaterän päällä.',
+    'Työnnä etukantapäällä takaisin ylös.',
+    'Tee kaikki toistot yhdellä jalalla ja vaihda sitten jalkaa.',
+  ],
   'Stiff-Legged Dumbbell Deadlift': [
     'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',
     'Seiso ryhti suorana jalat hartioiden leveydellä tai kapeammin, polvet hieman koukussa.',

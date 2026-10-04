@@ -309,10 +309,10 @@ export function buildRecommendationReasonLines(
   }
 
   if (options.mismatchNote) {
-    reasons.push(options.mismatchNote.replace('This is the closest match right now.', 'Closest match.'));
+    reasons.push(options.mismatchNote);
   }
 
-  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences);
+  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences, language);
   if (tailoringNote) {
     reasons.push(tailoringNote);
   }

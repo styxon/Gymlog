@@ -83,6 +83,25 @@ module.exports = [
         [0, 1, 2, 3, 4, 5],
       );
       assert.ok(week.sessions.every((session) => session.exercises.length > 0));
+      // The refilled day trains what it is named for: an upper-body day gets
+      // upper-body work, not the squats and lunges every refill used to draw
+      // (review, 2026-10-04).
+      const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools.js');
+      const lowerNames = new Set(
+        ['legs', 'glutes', 'hamstrings', 'calves', 'quads'].flatMap((area) => [
+          ...FOCUS_ACCESSORY_POOL[area].bodyweight,
+          ...FOCUS_ACCESSORY_POOL[area].loaded,
+        ]),
+      );
+      const refilled = week.sessions.filter((session) => session.source === 'suggested');
+      assert.ok(refilled.length > 0);
+      for (const session of refilled) {
+        if (!/Legs/.test(session.name)) {
+          for (const exercise of session.exercises) {
+            assert.ok(!lowerNames.has(exercise.exerciseName), `${session.name}: ${exercise.exerciseName}`);
+          }
+        }
+      }
     },
   },
   {

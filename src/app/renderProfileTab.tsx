@@ -934,8 +934,10 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           // database write: that write is the one that makes the app open as
           // reset (onboarding showing), so a kill between the two used to
           // leave a reset-looking app with the old active session and slot
-          // history resurfacing. In this order a kill leaves the old data
-          // standing and the reset simply not done yet (bug hunt, 2026-10-04).
+          // history resurfacing. In this order a kill or a failed database
+          // write leaves the app not reset, with the database intact but the
+          // active session and the "last time" loads already gone — the lesser
+          // loss, and a retry finishes the job (bug hunt, 2026-10-04).
           await workout.resetWorkoutData();
           setCompletionSummary(null);
           setFinishSaveState({ status: 'idle', sessionId: null });

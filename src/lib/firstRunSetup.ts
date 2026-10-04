@@ -363,14 +363,21 @@ export function buildFirstRunRecommendationReasons(
 
 
 
-function buildLowEquipmentMismatchNote(selection: FirstRunSetupSelection) {
-  const base =
-    selection.daysPerWeek === 2
-      ? 'You picked a lighter equipment setup, so this is the cleanest low-equipment starting point.'
-      : 'You picked a lighter equipment setup, so Vinha recommends the closest low-equipment starting point even though the weekly rhythm is lighter than your target.';
+function buildLowEquipmentMismatchNote(
+  selection: FirstRunSetupSelection,
+  featuredDays: number,
+  language: AppLanguage,
+) {
+  // "Lighter than your target" only when it is: the home programmes now run
+  // four to six days, and the sentence used to follow any home pick
+  // (bug hunt, 2026-10-04).
+  const base = t(
+    language,
+    featuredDays < selection.daysPerWeek ? 'mismatch.lowEquipment.lighter' : 'mismatch.lowEquipment.fits',
+  );
 
   return selection.guidanceMode === 'self_directed'
-    ? `${base} You can still use it as the base for your own custom split.`
+    ? `${base} ${t(language, 'mismatch.lowEquipment.selfDirected')}`
     : base;
 }
 
@@ -379,6 +386,7 @@ function buildRecommendationMismatchNote(
   featuredProgramId: string,
   secondaryProgramId: string | null,
   tailoringPreferences?: TailoringPreferencesInput | null,
+  language: AppLanguage = 'en',
 ) {
   const featuredDefinition = getRecommendationProgramDefinition(featuredProgramId);
   const featuredDays = featuredDefinition?.daysPerWeek ?? getWorkoutTemplateById(featuredProgramId)?.daysPerWeek ?? selection.daysPerWeek;
@@ -386,30 +394,32 @@ function buildRecommendationMismatchNote(
   if (selection.goal === 'run_mobility' && featuredProgramId === PROGRAM_IDS.runMobility && selection.daysPerWeek > featuredDays) {
     const secondaryName = secondaryProgramId ? getWorkoutTemplateById(secondaryProgramId)?.name ?? null : null;
     return secondaryName
-      ? `Vinha's closest match is a 3-day run + mobility split. Add a ${secondaryName} session as an optional 4th day if you want extra conditioning.`
-      : "Vinha's closest match is a 3-day run + mobility split.";
+      ? t(language, 'mismatch.runMobility.withExtra', { name: secondaryName })
+      : t(language, 'mismatch.runMobility');
   }
 
   if (selection.equipment !== 'gym' && featuredDefinition?.equipmentTier === 'low_equipment') {
-    return buildLowEquipmentMismatchNote(selection);
+    return buildLowEquipmentMismatchNote(selection, featuredDays, language);
   }
 
   if (featuredDays !== selection.daysPerWeek) {
-    return `Vinha's closest match keeps this start at ${featuredDays} days so the week stays coherent.`;
+    return t(language, 'mismatch.closestDays', { count: featuredDays });
   }
 
-  return buildTailoringRecommendationNote(tailoringPreferences);
+  return buildTailoringRecommendationNote(tailoringPreferences, language);
 }
 
 export function resolveFirstRunRecommendationWithTailoring(
   selection: FirstRunSetupSelection,
   tailoringPreferences?: TailoringPreferencesInput | null,
+  /** The language the mismatch note is written in (bug hunt, 2026-10-04). */
+  language: AppLanguage = 'en',
 ): FirstRunRecommendation {
   const recommendation = recommendPrograms(buildRecommendationInput(selection), tailoringPreferences);
 
   return {
     ...recommendation,
-    mismatchNote: buildRecommendationMismatchNote(selection, recommendation.featuredProgramId, recommendation.secondaryProgramId ?? null, tailoringPreferences),
+    mismatchNote: buildRecommendationMismatchNote(selection, recommendation.featuredProgramId, recommendation.secondaryProgramId ?? null, tailoringPreferences, language),
   };
 }
 

@@ -3,13 +3,14 @@ import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
 import { applyCautionFlagsToExercises, CautionExerciseSwap } from './cautionExerciseFilter';
-import { applyEquipmentToExercises, resolveAvailableEquipment } from './equipmentExerciseFilter';
+import { applyEquipmentToExercises, isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
-import { getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
+import { FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
+import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
 import { collapseRepRange } from './singleRepTarget';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
-import type { SetupWeekday } from '../types/models';
+import type { SetupFocusArea, SetupWeekday } from '../types/models';
 
 /**
  * Days-per-week truth (onboarding truth plan P1).
@@ -129,27 +130,50 @@ function resolveSubstitutionGroup(name: string, role: string, exerciseIndex: num
 
 const REFILL_EXERCISE_COUNT = 3;
 
+/** The accessory pools that train what a day was for. */
+const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
+  push: ['chest', 'shoulders', 'arms', 'core'],
+  pull: ['back', 'arms', 'shoulders', 'core'],
+  upper: ['chest', 'back', 'shoulders', 'arms', 'core'],
+  lower: ['legs', 'glutes', 'hamstrings', 'calves'],
+  general: ['legs', 'chest', 'core', 'back'],
+};
+
 /**
- * Fills a day whose exercises were all removed from the supplemental pools
- * (the same verified names the add-on days use), bodyweight first, through
- * the same equipment and caution filters as everything else — so a refill can
- * never put back what the reader's gear or flags just ruled out. The
- * filters' own removed/swapped bookkeeping for the candidates is discarded:
- * they were never part of the template the reader was shown.
+ * Fills a day whose exercises were all removed, with lifts for what the day
+ * was for: a chest day gets chest and shoulder work before anything generic
+ * (review, 2026-10-04 — every refill was the same dips, rows and plank under
+ * "Chest (Volume)" or "Arms (Heavy)"). Candidates go through the equipment
+ * and caution filters, and the equipment check runs again after caution,
+ * whose swaps are not gear-checked, so a refill never puts back what the
+ * reader's gear or flags ruled out. The filters' removed/swapped bookkeeping
+ * for the candidates is discarded: the reader never saw them.
  */
 function refillEmptiedSession(
   session: ComposedProgramSession,
+  originalNames: readonly string[],
   availableEquipment: string[] | null,
   cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
   selection: FirstRunSetupSelection,
 ): ComposedProgramSession {
+  const focusPools = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map(
+    (area) => FOCUS_ACCESSORY_POOL[area],
+  );
   const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
-  const names = [...new Set([...pools.flatMap((pool) => pool.bodyweight), ...pools.flatMap((pool) => pool.loaded)])];
+  const names = [
+    ...new Set([
+      ...focusPools.flatMap((pool) => pool.bodyweight),
+      ...focusPools.flatMap((pool) => pool.loaded),
+      ...pools.flatMap((pool) => pool.bodyweight),
+      ...pools.flatMap((pool) => pool.loaded),
+    ]),
+  ];
   const candidates = names.map((name, index) => buildComposedFallbackExercise(name, session.id, index));
   const equipped = applyEquipmentToExercises(candidates, availableEquipment);
   const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas);
   const seen = new Set<string>();
   const exercises = adjusted.exercises
+    .filter((exercise) => isExerciseAllowedWithEquipment(exercise.exerciseName, availableEquipment))
     .filter((exercise) => {
       const key = exercise.exerciseName.toLowerCase();
       if (seen.has(key)) {
@@ -239,7 +263,15 @@ export function composeProgramWeekForSelection(
   // which nothing at all survives both filters leaves the week.
   const sessions = filtered
     .map((session) =>
-      session.exercises.length > 0 ? session : refillEmptiedSession(session, availableEquipment, cautionFlags, selection),
+      session.exercises.length > 0
+        ? session
+        : refillEmptiedSession(
+            session,
+            baseSessions.find((entry) => entry.id === session.id)?.exercises.map((exercise) => exercise.exerciseName) ?? [],
+            availableEquipment,
+            cautionFlags,
+            selection,
+          ),
     )
     .filter((session) => session.exercises.length > 0)
     .map((session, index) => ({ ...session, orderIndex: index }));

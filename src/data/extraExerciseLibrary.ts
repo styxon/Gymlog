@@ -104,6 +104,26 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     ],
   },
   {
+    // The rear-foot-elevated split squat, with or without dumbbells. By
+    // containment it opened "Split Squats", a jumping move; aliased to the
+    // dumbbell version, a bodyweight programme's demo then told the reader to
+    // hold dumbbells they do not own (review, 2026-10-04). One entry whose
+    // steps hold for both, filed under dumbbells because most rows load it.
+    id: 'extra_bulgarian_split_squat',
+    name: 'Bulgarian Split Squat',
+    category: 'compound',
+    bodyPart: 'legs',
+    equipment: 'dumbbell',
+    primaryMuscles: ['quadriceps', 'glutes'],
+    secondaryMuscles: ['hamstrings'],
+    instructions: [
+      'Stand a long stride in front of a bench or a sturdy chair, facing away from it, and rest the top of your back foot on it. Hold a dumbbell in each hand if your programme logs a weight; otherwise keep your hands on your hips.',
+      'Lower straight down by bending the front knee until the back knee nearly touches the floor, keeping your torso upright and the front knee over your foot.',
+      'Push through the front heel to stand back up.',
+      'Do every rep on one leg, then switch.',
+    ],
+  },
+  {
     // The calf raise that needs nothing. The "seated calf raise" fallback and
     // the bodyweight calves pool pointed at "Donkey Calf Raises", whose own
     // steps open with "you will need access to a donkey calf raise machine" -

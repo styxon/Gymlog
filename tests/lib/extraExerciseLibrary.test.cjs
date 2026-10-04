@@ -84,9 +84,11 @@ module.exports = [
       const open = (name) => library[findGuidedLibraryIndex(name, names)];
 
       const bulgarian = open('Bulgarian Split Squat');
-      assert.equal(bulgarian.name, 'Split Squat with Dumbbells');
-      assert.match(bulgarian.instructions.join(' '), /rear foot elevated/i);
+      assert.equal(bulgarian.name, 'Bulgarian Split Squat');
+      assert.match(bulgarian.instructions.join(' '), /back foot/i);
       assert.ok(!/jump/i.test(bulgarian.instructions.join(' ')));
+      // Bodyweight programmes prescribe it too: the dumbbells are conditional.
+      assert.match(bulgarian.instructions[0], /if your programme logs a weight/);
 
       assert.equal(open('Arnold Press').name, 'Arnold Dumbbell Press');
       assert.equal(open('Kettlebell Arnold Press').name, 'Kettlebell Arnold Press');

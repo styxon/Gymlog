@@ -54,7 +54,7 @@ module.exports = [
   {
     name: 'reminder schedule: a three-session plan reminds three times, not on every free day',
     run() {
-      const { resolveProgramTrainingDays, WEEKDAY_KEYS } = require('../../.test-dist/lib/programTrainingDays.js');
+      const { resolveDerivedTrainingDays, WEEKDAY_KEYS } = require('../../.test-dist/lib/programTrainingDays.js');
 
       // Free Monday to Friday, running a three-session programme whose days
       // are positional ("Day 1"), so the plan names no weekdays. This fired
@@ -67,7 +67,7 @@ module.exports = [
       assert.equal(days.length, 3, `three sessions, three reminder days (${days.join(', ')})`);
 
       // The same days Home's week strip lights, from the same function.
-      const strip = resolveProgramTrainingDays(
+      const strip = resolveDerivedTrainingDays(
         free.map((day) => WEEKDAY_KEYS.indexOf(day)),
         positional.length,
       ).map((index) => WEEKDAY_KEYS[index]);
@@ -112,6 +112,23 @@ module.exports = [
         /trainingDays=\{\s*preferences\.setupAvailableDays\.length > 0\s*\? preferences\.setupAvailableDays\s*: reminderWeekdays\(reminderSchedule\(\)\)\s*\}/,
       );
       assert.doesNotMatch(tab, /trainingDays=\{preferences\.setupAvailableDays\}/);
+    },
+  },
+  {
+    name: 'a plan with no weekday labels keeps the days it was derived on before the placement change',
+    run() {
+      // Home's strip and the reminders derive these on every read, so a new
+      // placement here would move a reader's training days on update with
+      // nothing on screen to say why (review of the 2026-10-04 bug hunt).
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const { resolveDerivedTrainingDays, resolveProgramTrainingDays } = require('../../.test-dist/lib/programTrainingDays.js');
+      assert.deepEqual(resolveDerivedTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 3]);
+      assert.deepEqual(resolveDerivedTrainingDays([0, 1, 2, 3, 4, 5, 6], 2), [0, 4]);
+      // A plan saved from now on stores the better-spread days instead.
+      assert.deepEqual(resolveProgramTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 4]);
+      const home = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useHomeTrainingSchedule.ts'), 'utf8');
+      assert.match(home, /return resolveDerivedTrainingDays\(open, sessionsPerWeek\);/);
     },
   },
 ];

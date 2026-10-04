@@ -201,6 +201,8 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['leg extension', ['Bodyweight Squat']],
   // Not "Donkey Calf Raises": its steps start with "you will need access to a
   // donkey calf raise machine" (bug hunt, 2026-10-04).
+  // The donkey raise needs its machine too (2026-10-04).
+  ['donkey calf', ['Bodyweight Calf Raise']],
   ['seated calf raise', ['Bodyweight Calf Raise']],
   ['treadmill', ['Trail Running/Walking']],
   ['bike', ['Mountain Climbers']],

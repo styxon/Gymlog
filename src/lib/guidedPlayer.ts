@@ -1091,9 +1091,10 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // Jump" are left unresolved rather than pointed at "Plank" and "Star Jump".
   'chest-supported row': 'dumbbell incline row',
   'chest-supported t-bar row': 'lying t-bar row',
-  // The rear-foot-elevated dumbbell split squat. "Split Squats" is a jumping
-  // bodyweight move, so a reader who tapped for the demo watched the wrong lift
-  // (bug hunt, 2026-10-04).
+  // The app opens its own "Bulgarian Split Squat" (extraExerciseLibrary): an
+  // exact name wins over this alias. Against the generated list alone — where
+  // "Split Squats", a jumping move, would win by containment — the dumbbell
+  // split squat is the closest real lift (bug hunt, 2026-10-04).
   'bulgarian split squat': 'split squat with dumbbells',
   // "Arnold Press" matched "Kettlebell Arnold Press" by containment.
   'arnold press': 'arnold dumbbell press',

@@ -1435,8 +1435,8 @@ export function OnboardingScreen({
     [selection.equipment, tailoringPreferences],
   );
   const recommendation = useMemo(
-    () => resolveFirstRunRecommendationWithTailoring(selection, recommendationTailoringPreferences),
-    [recommendationTailoringPreferences, selection],
+    () => resolveFirstRunRecommendationWithTailoring(selection, recommendationTailoringPreferences, language),
+    [language, recommendationTailoringPreferences, selection],
   );
   const recommendationOptionIds = useMemo(
     () => buildRecommendationOptionIds(recommendation),

@@ -10,7 +10,7 @@
  * days. The screens now ask this, and cannot say anything else.
  */
 import { SetupWeekday } from '../types/models';
-import { planWeekdayIndexes, resolveProgramTrainingDays, WEEKDAY_KEYS } from './programTrainingDays';
+import { planWeekdayIndexes, resolveDerivedTrainingDays, WEEKDAY_KEYS } from './programTrainingDays';
 import { cycleSchedule, TrainingSchedule, weekdaySchedule, withRestDays } from './trainingSchedule';
 
 export interface ReminderScheduleInput {
@@ -45,7 +45,7 @@ function resolveRhythm(input: ReminderScheduleInput): TrainingSchedule {
    * The fallback took every day setup was told the reader had free, so a
    * three-session programme on five free days reminded five times — while
    * Home's week strip, reading the same two facts, lit three dots. The strip
-   * thins with `resolveProgramTrainingDays`; the reminders now ask the same
+   * thins with `resolveDerivedTrainingDays`; the reminders now ask the same
    * function the same question, so the two cannot disagree (2026-09-19).
    *
    * With no plan there is no count to thin to, and every open day is the only
@@ -53,7 +53,7 @@ function resolveRhythm(input: ReminderScheduleInput): TrainingSchedule {
    */
   const open = input.availableDays.map((day) => WEEKDAY_KEYS.indexOf(day)).filter((index) => index >= 0);
   const sessionsPerWeek = input.planEntries.length > 0 ? input.planEntries.length : open.length;
-  return weekdaySchedule(resolveProgramTrainingDays(open, sessionsPerWeek));
+  return weekdaySchedule(resolveDerivedTrainingDays(open, sessionsPerWeek));
 }
 
 /**
