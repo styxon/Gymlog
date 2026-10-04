@@ -119,6 +119,7 @@ const FOCUS_FI: Record<string, string> = {
   'conditioning + mobility day': 'Kunto ja liikkuvuus',
   'recovery + mobility day': 'Palautuminen ja liikkuvuus',
   'easy conditioning day': 'Kevyt kuntopäivä',
+  'upper focus': 'Ylävartalo',
   'lower focus': 'Alavartalo',
   'posterior focus': 'Takaketju',
   'push focus': 'Työntö',

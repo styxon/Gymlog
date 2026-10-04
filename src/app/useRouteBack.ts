@@ -96,6 +96,14 @@ export function useRouteBack(deps: RouteBackDeps): void {
     if (route.tab === 'workout' && route.screen === 'guided') {
       return undefined;
     }
+    // Stands down on the programme builder. It is a path of steps, and back
+    // walks them — Exercises to Base to Days — before it leaves, asking first
+    // when leaving drops work nothing has saved. Its own listener registers
+    // on mount and this one would be newer, so back would have left the
+    // whole path from any step (guided builder, 2026-10-04).
+    if (route.tab === 'workout' && route.screen === 'template') {
+      return undefined;
+    }
     // Stands down for the questionnaire in BOTH of its forms. The setup route
     // is the same OnboardingScreen, which answers back itself, stage by
     // stage — but this listener re-subscribes on every route change, and a

@@ -24,8 +24,24 @@ import {
 import { createId } from '../lib/ids';
 import { resolveQuickLayoutExercises } from '../lib/quickLayoutExercises';
 import { localizeWorkoutFocus } from '../lib/sessionNameLabel';
-
-type TemplateDayCount = 1 | 2 | 3 | 4 | 5;
+import {
+  SplitPreset,
+  TEMPLATE_BUILDER_STEPS,
+  TEMPLATE_DAY_OPTIONS,
+  TemplateBuilderStep,
+  TemplateDayCount,
+  baseChoiceDiscardsWork,
+  clampDayCount,
+  canJumpToTemplateBuilderStep,
+  initialTemplateBuilderStep,
+  laterTemplateBuilderStep,
+  nextTemplateBuilderStep,
+  presetsForDayCount,
+  previousTemplateBuilderStep,
+  templateBuilderStepIndex,
+  templateDraftSignature,
+} from '../lib/templateBuilderSteps';
+import { useHardwareBack } from '../hooks/useHardwareBack';
 
 interface TemplateExerciseState extends ExerciseTemplateDraft {
   localKey: string;
@@ -38,16 +54,6 @@ interface TemplateSessionState {
   exercises: TemplateExerciseState[];
 }
 
-// `names` become stored session names, so they stay English like the rest of
-// the persisted plan data. Only the card's label and description translate.
-interface SplitPreset {
-  id: string;
-  labelKey: I18nKey;
-  descriptionKey: I18nKey;
-  names: string[];
-  previewKeywords: string[];
-}
-
 interface CreateTemplateScreenProps {
   initialDraft: WorkoutTemplateDraft;
   exerciseLibrary: ExerciseLibraryItem[];
@@ -58,100 +64,17 @@ interface CreateTemplateScreenProps {
   onSave: (draft: WorkoutTemplateDraft) => Promise<void> | void;
 }
 
-const DAY_OPTIONS: TemplateDayCount[] = [1, 2, 3, 4, 5];
-
-const SPLIT_PRESETS: Record<TemplateDayCount, SplitPreset[]> = {
-  1: [
-    {
-      id: 'single_full_body',
-      labelKey: 'tpl.fullBody',
-      descriptionKey: 'tpl.fullBodyDesc',
-      names: ['Full Body'],
-      previewKeywords: ['squat', 'bench', 'row'],
-    },
-    {
-      id: 'single_upper',
-      labelKey: 'tpl.upperFocus',
-      descriptionKey: 'tpl.upperFocusDesc',
-      names: ['Upper Focus'],
-      previewKeywords: ['bench', 'pulldown', 'row'],
-    },
-  ],
-  2: [
-    {
-      id: 'upper_lower',
-      labelKey: 'tpl.upperLower',
-      descriptionKey: 'tpl.upperLowerDesc',
-      names: ['Upper', 'Lower'],
-      previewKeywords: ['bench', 'squat'],
-    },
-    {
-      id: 'push_pull',
-      labelKey: 'tpl.pushPull',
-      descriptionKey: 'tpl.pushPullDesc',
-      names: ['Push', 'Pull'],
-      previewKeywords: ['press', 'row', 'pulldown'],
-    },
-  ],
-  3: [
-    {
-      id: 'push_pull_legs',
-      labelKey: 'tpl.ppl',
-      descriptionKey: 'tpl.pplDesc',
-      names: ['Push', 'Pull', 'Legs'],
-      previewKeywords: ['bench', 'row', 'leg'],
-    },
-    {
-      id: 'full_body_abc',
-      labelKey: 'tpl.fullBodyAbc',
-      descriptionKey: 'tpl.fullBodyAbcDesc',
-      names: ['Full Body A', 'Full Body B', 'Full Body C'],
-      previewKeywords: ['squat', 'bench', 'deadlift'],
-    },
-  ],
-  4: [
-    {
-      id: 'upper_lower_heavy_pump',
-      labelKey: 'tpl.upperLowerX2',
-      descriptionKey: 'tpl.upperLowerX2Desc',
-      names: ['Upper Heavy', 'Lower Heavy', 'Upper Pump', 'Lower Pump'],
-      previewKeywords: ['bench', 'squat', 'curl', 'lunge'],
-    },
-    {
-      id: 'body_part_4',
-      labelKey: 'tpl.bodyPartSplit',
-      descriptionKey: 'tpl.bodyPartSplitFour',
-      names: ['Chest / Triceps', 'Back / Biceps', 'Legs / Glutes', 'Shoulders / Arms'],
-      previewKeywords: ['chest', 'back', 'leg', 'shoulder'],
-    },
-  ],
-  5: [
-    {
-      id: 'body_part_5',
-      labelKey: 'tpl.bodyPartSplit',
-      descriptionKey: 'tpl.bodyPartSplitFive',
-      names: ['Chest', 'Back', 'Legs', 'Shoulders', 'Arms'],
-      previewKeywords: ['chest', 'back', 'leg', 'shoulder', 'curl'],
-    },
-    {
-      id: 'strength_5',
-      labelKey: 'tpl.strengthMix',
-      descriptionKey: 'tpl.strengthMixDesc',
-      names: ['Upper Strength', 'Lower Strength', 'Push Volume', 'Pull Volume', 'Legs Volume'],
-      previewKeywords: ['bench', 'squat', 'press', 'row'],
-    },
-  ],
+const STEP_LABEL_KEYS: Record<TemplateBuilderStep, I18nKey> = {
+  name: 'tpl.step.name',
+  days: 'tpl.step.days',
+  base: 'tpl.step.base',
+  build: 'tpl.step.build',
+  review: 'tpl.step.review',
 };
 
-function clampDayCount(value: number): TemplateDayCount {
-  if (value <= 1) {
-    return 1;
-  }
-  if (value >= 5) {
-    return 5;
-  }
-  return value as TemplateDayCount;
-}
+/** The base the reader picked: a layout's id, "scratch", or none yet. */
+type ChosenBase = string | null;
+const SCRATCH_BASE = 'scratch';
 
 /**
  * Session names are stored, not derived — whatever is written here ends up in
@@ -254,9 +177,15 @@ export function CreateTemplateScreen({
   // The add-exercise sheet is a Modal and cannot read this itself.
   const sheetInsets = useSafeAreaInsets();
   const styles = useThemedStyles(makeStyles);
+  const editing = Boolean(initialDraft.id);
 
   const [templateName, setTemplateName] = useState(initialDraft.name);
   const [sessions, setSessions] = useState<TemplateSessionState[]>(() => mapDraftToSessions(initialDraft, language));
+  /**
+   * What the screen opened with, as one string. Leaving with anything else
+   * drops work nothing has saved, and Back asks first.
+   */
+  const [openedSignature] = useState(() => templateDraftSignature(templateName, sessions));
   const [activeSessionKey, setActiveSessionKey] = useState<string | null>(null);
   const [pendingDayDrop, setPendingDayDrop] = useState<{ nextCount: TemplateDayCount; days: number } | null>(null);
   /**
@@ -268,8 +197,19 @@ export function CreateTemplateScreen({
    */
   const lastDayDropCount = useRef(1);
 
+  // The guided path. An edit opens on the days, with every step behind it
+  // already reached.
+  const [step, setStep] = useState<TemplateBuilderStep>(() => initialTemplateBuilderStep(editing));
+  const [furthestStep, setFurthestStep] = useState<TemplateBuilderStep>(editing ? 'review' : 'name');
+  const [chosenBase, setChosenBase] = useState<ChosenBase>(null);
+  /** The days exactly as the last base made them — see baseChoiceDiscardsWork. */
+  const lastBaseSignature = useRef<string | null>(null);
+  const [pendingBase, setPendingBase] = useState<{ preset: SplitPreset | null } | null>(null);
+  const [confirmingLeave, setConfirmingLeave] = useState(false);
+  const scrollRef = useRef<ScrollView>(null);
+
   const sessionCount = clampDayCount(sessions.length);
-  const presets = SPLIT_PRESETS[sessionCount];
+  const presets = presetsForDayCount(sessionCount);
   const libraryById = useMemo(() => new Map(exerciseLibrary.map((item) => [item.id, item] as const)), [exerciseLibrary]);
   const presetPreviewImages = useMemo(
     () =>
@@ -298,6 +238,22 @@ export function CreateTemplateScreen({
         .filter((value): value is string => Boolean(value)) ?? [],
     [activeSession],
   );
+  const hasUnsavedWork = templateDraftSignature(templateName, sessions) !== openedSignature;
+
+  function goToStep(target: TemplateBuilderStep) {
+    setStep(target);
+    setFurthestStep((current) => laterTemplateBuilderStep(current, target));
+    // Each step is its own page; the next one opens at its top, not at the
+    // scroll depth the last one was left at.
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }
+
+  function goToNextStep() {
+    const next = nextTemplateBuilderStep(step);
+    if (next) {
+      goToStep(next);
+    }
+  }
 
   function setSessionCount(nextCount: TemplateDayCount) {
     setSessions((current) => {
@@ -343,31 +299,76 @@ export function CreateTemplateScreen({
    * A layout is days *with lifts in them*. It used to set three names on three
    * empty days and call that "Push / Pull / Legs" — a layout in name only,
    * with every exercise still to be found. Each day the layout names now opens
-   * with the two to four lifts a programme for that focus starts from. A day
-   * the reader has already filled keeps what they put there; only empty days
-   * are filled, so re-applying a layout never overwrites work.
+   * with the two to four lifts a programme for that focus starts from.
+   *
+   * A base replaces the days rather than filling the gaps in them: on a path
+   * where the reader can go back and try another, keeping Push's lifts under a
+   * day renamed "Full Body A" would be neither base. Replacing work that is
+   * the reader's own is asked first (chooseBase).
    */
-  function applyPreset(englishNames: string[]) {
-    setSessions((current) =>
-      englishNames.map((englishName, index) => {
-        const name = localizeWorkoutFocus(englishName, language);
-        const existing = current[index];
-        const base = existing ? { ...existing, name } : { ...createBlankSession(index, language), name };
-        if (base.exercises.length > 0) {
-          return base;
-        }
-        return {
-          ...base,
-          exercises: resolveQuickLayoutExercises(englishName, exerciseLibrary).map(({ name: liftName, item }) => ({
-            ...createExerciseFromLibraryItem(item, defaultRestSeconds),
-            // The catalog's name, not the library variant's: "Back Squat"
-            // translates and matches history the way the ready programmes do.
-            name: liftName,
-          })),
-        };
-      }),
-    );
+  function buildBaseSessions(preset: SplitPreset | null, current: TemplateSessionState[]): TemplateSessionState[] {
+    if (!preset) {
+      return Array.from({ length: current.length || 1 }, (_, index) => ({
+        ...createBlankSession(index, language),
+        id: current[index]?.id,
+      }));
+    }
+    return preset.names.map((englishName, index) => ({
+      ...createBlankSession(index, language),
+      // An edited programme's day keeps its id, as the gap-filling version
+      // did, so its history stays its own.
+      id: current[index]?.id,
+      name: localizeWorkoutFocus(englishName, language),
+      exercises: resolveQuickLayoutExercises(englishName, exerciseLibrary).map(({ name: liftName, item }) => ({
+        ...createExerciseFromLibraryItem(item, defaultRestSeconds),
+        // The catalog's name, not the library variant's: "Back Squat"
+        // translates and matches history the way the ready programmes do.
+        name: liftName,
+      })),
+    }));
   }
+
+  function applyBase(preset: SplitPreset | null) {
+    const next = buildBaseSessions(preset, sessions);
+    lastBaseSignature.current = templateDraftSignature('', next);
+    setSessions(next);
+    setChosenBase(preset ? preset.id : SCRATCH_BASE);
+    goToStep('build');
+  }
+
+  function chooseBase(preset: SplitPreset | null) {
+    if (baseChoiceDiscardsWork(sessions, lastBaseSignature.current)) {
+      setPendingBase({ preset });
+      return;
+    }
+    applyBase(preset);
+  }
+
+  /**
+   * Back walks the path before it leaves it: from Exercises to Base, from
+   * Base to Days. It leaves from the step the screen opened on, and asks
+   * first when leaving would drop work nothing has saved. While a save is on
+   * its way it does nothing; the programme page follows the save.
+   */
+  function handleBack() {
+    if (savingRef.current) {
+      return;
+    }
+    const previous = previousTemplateBuilderStep(step, editing);
+    if (previous) {
+      goToStep(previous);
+      return;
+    }
+    if (hasUnsavedWork) {
+      setConfirmingLeave(true);
+      return;
+    }
+    onBack();
+  }
+
+  // The route-level back listener stands down on this screen (useRouteBack),
+  // so the key walks the steps the way the header's chevron does.
+  useHardwareBack(handleBack);
 
   function updateSessionName(sessionKey: string, nextName: string) {
     setSessions((current) =>
@@ -451,32 +452,53 @@ export function CreateTemplateScreen({
     }
   }
 
-  return (
-    <View style={styles.screen}>
-      <ScreenHeader
-        language={language}
-        title={t(language, initialDraft.id ? 'tpl.editTitle' : 'tpl.createTitle')}
-        subtitle={t(language, 'tpl.subtitle')}
-        onBack={onBack}
-        // Same gate as the button at the bottom: while a day is empty there is
-        // no save action, so the header shows none rather than a word that
-        // does nothing when tapped.
-        rightActionLabel={canSave && !saving ? t(language, 'common.save') : undefined}
-        onRightActionPress={canSave && !saving ? () => void handleSave() : undefined}
-      />
+  const stepIndex = templateBuilderStepIndex(step);
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <CutSurface
-          size="lg"
-          fill={theme.surface}
-          stroke={theme.border}
-          strokeWidth={1}
-          style={[styles.card, styles.topCompactCard]}
-        >
+  function renderStepIndicator() {
+    return (
+      <View style={styles.stepper}>
+        <View style={styles.stepTrack}>
+          {TEMPLATE_BUILDER_STEPS.map((candidate, index) => {
+            const reachable = candidate !== step && canJumpToTemplateBuilderStep(candidate, furthestStep);
+            return (
+              <Pressable
+                key={candidate}
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'tpl.step.a11y', {
+                  index: index + 1,
+                  label: t(language, STEP_LABEL_KEYS[candidate]),
+                })}
+                accessibilityState={{ selected: candidate === step, disabled: !reachable }}
+                disabled={!reachable || saving}
+                hitSlop={{ top: 12, bottom: 12 }}
+                onPress={() => goToStep(candidate)}
+                style={styles.stepSegmentHit}
+              >
+                <View
+                  style={[
+                    styles.stepSegment,
+                    index < stepIndex && styles.stepSegmentDone,
+                    index === stepIndex && styles.stepSegmentCurrent,
+                  ]}
+                />
+              </Pressable>
+            );
+          })}
+        </View>
+        <Text style={styles.stepCounter}>
+          {t(language, 'tpl.step.counter', { index: stepIndex + 1, total: TEMPLATE_BUILDER_STEPS.length })}
+          {' · '}
+          <Text style={styles.stepCounterLabel}>{t(language, STEP_LABEL_KEYS[step])}</Text>
+        </Text>
+      </View>
+    );
+  }
+
+  function renderNameStep() {
+    return (
+      <>
+        <Text style={styles.stepTitle}>{t(language, 'tpl.nameTitle')}</Text>
+        <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
           <Text style={styles.cardKicker}>{t(language, 'tpl.name')}</Text>
           <TextInput
             value={templateName}
@@ -484,85 +506,140 @@ export function CreateTemplateScreen({
             placeholder={t(language, 'tpl.namePlaceholder')}
             placeholderTextColor={theme.faint}
             selectionColor={theme.purple}
+            autoFocus={!editing}
+            returnKeyType="next"
+            onSubmitEditing={goToNextStep}
             style={styles.nameInput}
           />
-          <Text style={styles.supportingTextCompact}>
-            {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
-              days: sessions.length,
-              exercises: totalExercises,
-            })}
-          </Text>
         </CutSurface>
+        <CutButton label={t(language, 'common.continue')} onPress={goToNextStep} variant="primary" size="lg" stretch />
+      </>
+    );
+  }
 
-        <CutSurface
-          size="lg"
-          fill={theme.surface}
-          stroke={theme.border}
-          strokeWidth={1}
-          style={[styles.card, styles.topCompactCard, styles.daysCompactCard]}
-        >
-          <Text style={styles.cardKicker}>{t(language, 'tpl.daysPerWeek')}</Text>
-          <View style={styles.dayRow}>
-            {DAY_OPTIONS.map((option) => {
-              const active = option === sessions.length;
-              return (
-                <Pressable key={option} onPress={() => requestSessionCount(option)}>
-                  <CutSurface
-                    size="chip"
-                    fill={active ? theme.purpleBright : theme.surface}
-                    stroke={active ? undefined : theme.border}
-                    strokeWidth={1}
-                    style={styles.dayChip}
-                  >
-                    <Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>{option}</Text>
-                  </CutSurface>
-                </Pressable>
-              );
-            })}
-          </View>
-        </CutSurface>
+  function renderDaysStep() {
+    return (
+      <>
+        <Text style={styles.stepTitle}>{t(language, 'tpl.daysTitle')}</Text>
+        <View style={styles.dayGrid}>
+          {TEMPLATE_DAY_OPTIONS.map((option) => {
+            const active = option === sessions.length;
+            return (
+              <Pressable
+                key={option}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={t(language, option === 1 ? 'tpl.dayCountOne' : 'tpl.dayCount', { count: option })}
+                onPress={() => requestSessionCount(option)}
+                style={styles.dayTileHit}
+              >
+                <CutSurface
+                  size="md"
+                  fill={active ? theme.purpleFill : theme.surface}
+                  stroke={active ? undefined : theme.border}
+                  strokeWidth={1}
+                  style={styles.dayTile}
+                >
+                  <Text style={[styles.dayTileNumber, active && styles.dayTileTextActive]}>{option}</Text>
+                  <Text style={[styles.dayTileUnit, active && styles.dayTileTextActive]}>
+                    {t(language, option === 1 ? 'tpl.dayUnitOne' : 'tpl.dayUnitMany')}
+                  </Text>
+                </CutSurface>
+              </Pressable>
+            );
+          })}
+        </View>
+        <CutButton label={t(language, 'common.continue')} onPress={goToNextStep} variant="primary" size="lg" stretch />
+      </>
+    );
+  }
 
-        <View style={[styles.card, styles.quickLayoutsCard]}>
-          <Text style={styles.cardKicker}>{t(language, 'tpl.quickLayouts')}</Text>
-          <ScrollView horizontal keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.presetRow}>
-            {presets.map((preset) => {
-              const previewImage = presetPreviewImages[preset.id];
-
-              return (
-                <Pressable key={preset.id} onPress={() => applyPreset(preset.names)} style={styles.presetCard}>
-                  <View style={styles.presetMedia}>
+  function renderBaseStep() {
+    return (
+      <>
+        <Text style={styles.stepTitle}>{t(language, 'tpl.baseTitle')}</Text>
+        <Text style={styles.stepBody}>{t(language, 'tpl.baseBody')}</Text>
+        <View style={styles.baseList}>
+          {presets.map((preset) => {
+            const previewImage = presetPreviewImages[preset.id];
+            const chosen = chosenBase === preset.id;
+            return (
+              <Pressable
+                key={preset.id}
+                accessibilityRole="button"
+                accessibilityState={{ selected: chosen }}
+                onPress={() => chooseBase(preset)}
+              >
+                <CutSurface
+                  size="lg"
+                  fill={theme.surface}
+                  stroke={chosen ? theme.purple : theme.border}
+                  strokeWidth={chosen ? 2 : 1}
+                  style={styles.baseCard}
+                >
+                  <View style={styles.baseMedia}>
                     {previewImage ? (
-                      <Image source={{ uri: previewImage }} style={styles.presetMediaImage} resizeMode="cover" />
+                      <Image source={{ uri: previewImage }} style={styles.baseMediaImage} resizeMode="cover" />
                     ) : (
-                      <View style={styles.presetMediaFallback}>
-                        <Text style={styles.presetMediaFallbackText}>
-                          {t(language, preset.labelKey).slice(0, 1).toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <View style={styles.presetMediaOverlay} />
-                    <View style={styles.presetBadge}>
-                      <Text style={styles.presetBadgeText}>
-                        {t(language, 'tpl.dayCount', { count: preset.names.length })}
+                      <Text style={styles.baseMediaFallbackText}>
+                        {t(language, preset.labelKey).slice(0, 1).toUpperCase()}
                       </Text>
-                    </View>
+                    )}
                   </View>
-
-                  <View style={styles.presetCopy}>
-                    <Text style={styles.presetTitle}>{t(language, preset.labelKey)}</Text>
-                    <Text style={styles.presetBody}>{t(language, preset.descriptionKey)}</Text>
-                    <Text numberOfLines={1} style={styles.presetMeta}>
+                  <View style={styles.baseCopy}>
+                    <Text style={styles.baseTitle}>{t(language, preset.labelKey)}</Text>
+                    <Text style={styles.baseBody}>{t(language, preset.descriptionKey)}</Text>
+                    <Text numberOfLines={2} style={styles.baseMeta}>
                       {/* The days as the reader will see them, not the
                           English tokens they are stored as. */}
                       {preset.names.map((name) => localizeWorkoutFocus(name, language)).join(' · ')}
                     </Text>
                   </View>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+                </CutSurface>
+              </Pressable>
+            );
+          })}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: chosenBase === SCRATCH_BASE }}
+            onPress={() => chooseBase(null)}
+          >
+            <CutSurface
+              size="lg"
+              fill={theme.bg}
+              stroke={chosenBase === SCRATCH_BASE ? theme.purple : theme.border}
+              strokeWidth={chosenBase === SCRATCH_BASE ? 2 : 1}
+              dashed={chosenBase !== SCRATCH_BASE}
+              style={styles.baseCard}
+            >
+              <View style={[styles.baseMedia, styles.scratchMedia]}>
+                <Text style={styles.scratchPlus}>+</Text>
+              </View>
+              <View style={styles.baseCopy}>
+                <Text style={styles.baseTitle}>{t(language, 'tpl.scratch')}</Text>
+                <Text style={styles.baseBody}>
+                  {t(language, sessions.length === 1 ? 'tpl.scratchDescOne' : 'tpl.scratchDescMany', {
+                    count: sessions.length,
+                  })}
+                </Text>
+              </View>
+            </CutSurface>
+          </Pressable>
         </View>
+      </>
+    );
+  }
 
+  function renderBuildStep() {
+    return (
+      <>
+        <Text style={styles.stepTitle}>{t(language, 'tpl.buildTitle')}</Text>
+        <Text style={styles.stepBody}>
+          {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
+            days: sessions.length,
+            exercises: totalExercises,
+          })}
+        </Text>
         <View style={styles.sessionList}>
           {sessions.map((session, index) => (
             <CutSurface
@@ -576,7 +653,7 @@ export function CreateTemplateScreen({
               <View style={styles.sessionHeader}>
                 <View style={styles.sessionHeaderCopy}>
                   <Text style={styles.cardKicker}>{t(language, 'tpl.day', { index: index + 1 })}</Text>
-                  <Text style={styles.sessionCountText}>
+                  <Text style={[styles.sessionCountText, session.exercises.length === 0 && styles.sessionCountEmpty]}>
                     {t(
                       language,
                       session.exercises.length === 1 ? 'tpl.exerciseOne' : 'tpl.exerciseMany',
@@ -689,6 +766,54 @@ export function CreateTemplateScreen({
           ))}
         </View>
 
+        {/* Says why Continue is quiet: an empty day is the one thing that
+            holds the path here. */}
+        {emptyDayCount > 0 ? (
+          <Text style={styles.blockedHint}>
+            {t(language, emptyDayCount === 1 ? 'tpl.emptyDaysOne' : 'tpl.emptyDaysMany', { count: emptyDayCount })}
+          </Text>
+        ) : null}
+        <CutButton
+          label={t(language, 'common.continue')}
+          onPress={canSave ? goToNextStep : undefined}
+          variant={canSave ? 'primary' : 'disabled'}
+          size="lg"
+          stretch
+        />
+      </>
+    );
+  }
+
+  function renderReviewStep() {
+    return (
+      <>
+        <Text style={styles.stepTitle}>{t(language, 'tpl.reviewTitle')}</Text>
+        <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+          <Text style={styles.cardKicker}>{t(language, 'tpl.name')}</Text>
+          <Text style={styles.reviewName}>{templateName.trim() || t(language, 'tpl.namePlaceholder')}</Text>
+          <Text style={styles.stepBody}>
+            {t(language, sessions.length === 1 ? 'tpl.summaryOne' : 'tpl.summaryMany', {
+              days: sessions.length,
+              exercises: totalExercises,
+            })}
+          </Text>
+        </CutSurface>
+        <View style={styles.reviewList}>
+          {sessions.map((session, index) => (
+            <CutSurface key={session.localKey} size="md" fill={theme.surface} style={styles.reviewDay}>
+              <Text style={styles.cardKicker}>{t(language, 'tpl.day', { index: index + 1 })}</Text>
+              <Text style={styles.reviewDayName}>
+                {session.name.trim() || `${t(language, 'tpl.dayWord')} ${index + 1}`}
+              </Text>
+              <Text numberOfLines={3} style={styles.reviewDayLifts}>
+                {session.exercises.map((exercise) => exerciseNameLabel(language, exercise.name)).join(' · ')}
+              </Text>
+            </CutSurface>
+          ))}
+        </View>
+        {/* The label holds still while the save runs: the success is the
+            programme page that opens after the write resolves, never this
+            button. */}
         <CutButton
           label={t(language, 'tpl.save')}
           onPress={canSave && !saving ? () => void handleSave() : undefined}
@@ -696,6 +821,40 @@ export function CreateTemplateScreen({
           size="lg"
           stretch
         />
+      </>
+    );
+  }
+
+  return (
+    <View style={styles.screen}>
+      <ScreenHeader
+        language={language}
+        title={t(language, initialDraft.id ? 'tpl.editTitle' : 'tpl.createTitle')}
+        onBack={handleBack}
+        // Same gate as the button at the bottom: while a day is empty there is
+        // no save action, so the header shows none rather than a word that
+        // does nothing when tapped.
+        rightActionLabel={canSave && !saving ? t(language, 'common.save') : undefined}
+        onRightActionPress={canSave && !saving ? () => void handleSave() : undefined}
+      />
+
+      {renderStepIndicator()}
+
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {step === 'name'
+          ? renderNameStep()
+          : step === 'days'
+            ? renderDaysStep()
+            : step === 'base'
+              ? renderBaseStep()
+              : step === 'build'
+                ? renderBuildStep()
+                : renderReviewStep()}
       </ScrollView>
 
       <AddExerciseSheet
@@ -735,6 +894,39 @@ export function CreateTemplateScreen({
           }
         }}
       />
+
+      {/* A base replaces the days; asked only when the lifts in them are the
+          reader's own rather than what the last base put there. */}
+      <ConfirmDialog
+        language={language}
+        visible={pendingBase !== null}
+        destructive
+        title={t(language, 'tpl.replaceBase.title')}
+        message={t(language, 'tpl.replaceBase.body')}
+        confirmLabel={t(language, 'tpl.replaceBase.confirm')}
+        onCancel={() => setPendingBase(null)}
+        onConfirm={() => {
+          const target = pendingBase;
+          setPendingBase(null);
+          if (target) {
+            applyBase(target.preset);
+          }
+        }}
+      />
+
+      <ConfirmDialog
+        language={language}
+        visible={confirmingLeave}
+        destructive
+        title={t(language, 'tpl.leave.title')}
+        message={t(language, 'tpl.leave.body')}
+        confirmLabel={t(language, 'tpl.leave.confirm')}
+        onCancel={() => setConfirmingLeave(false)}
+        onConfirm={() => {
+          setConfirmingLeave(false);
+          onBack();
+        }}
+      />
     </View>
   );
 }
@@ -757,13 +949,56 @@ const makeStyles = (theme: Theme) =>
       padding: spacing.md,
       gap: spacing.xs,
     },
-    topCompactCard: {
-      paddingTop: spacing.sm,
-      paddingBottom: spacing.sm,
-      gap: 6,
+    // The path's indicator: one segment per step, filled up to where the
+    // reader is. It sits under the header, outside the scroll, so it is the
+    // one thing on every step that does not move.
+    stepper: {
+      paddingHorizontal: spacing.lg,
+      paddingBottom: spacing.md,
+      gap: spacing.xs,
     },
-    daysCompactCard: {
-      paddingBottom: spacing.md - 2,
+    stepTrack: {
+      flexDirection: 'row',
+      gap: spacing.xs,
+    },
+    stepSegmentHit: {
+      flex: 1,
+      paddingVertical: 4,
+    },
+    stepSegment: {
+      height: 6,
+      borderRadius: radii.pill,
+      backgroundColor: theme.border,
+    },
+    stepSegmentDone: {
+      backgroundColor: theme.purple,
+    },
+    stepSegmentCurrent: {
+      backgroundColor: theme.highlight,
+    },
+    stepCounter: {
+      color: theme.muted,
+      fontSize: 12,
+      fontWeight: '800',
+      textTransform: 'uppercase',
+      letterSpacing: 0.6,
+    },
+    stepCounterLabel: {
+      color: theme.ink,
+    },
+    stepTitle: {
+      color: theme.ink,
+      fontSize: 26,
+      lineHeight: 31,
+      fontWeight: '900',
+      letterSpacing: -0.6,
+    },
+    stepBody: {
+      color: theme.muted,
+      fontSize: 14,
+      lineHeight: 20,
+      fontWeight: '600',
+      marginTop: -spacing.sm,
     },
     cardKicker: {
       color: theme.muted,
@@ -773,132 +1008,140 @@ const makeStyles = (theme: Theme) =>
       letterSpacing: 0.6,
     },
     nameInput: {
-      minHeight: 36,
+      minHeight: 52,
       borderRadius: radii.md,
       borderWidth: 1,
       borderColor: theme.border,
       backgroundColor: theme.surfaceSoft,
-      paddingHorizontal: spacing.sm + 2,
+      paddingHorizontal: spacing.md,
       color: theme.ink,
-      fontSize: 17,
+      fontSize: 20,
       fontWeight: '800',
-      letterSpacing: -0.3,
+      letterSpacing: -0.4,
     },
-    supportingTextCompact: {
-      color: theme.muted,
-      fontSize: 11,
-      lineHeight: 14,
-      fontWeight: '600',
-    },
-    dayRow: {
+    dayGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: spacing.xs,
+      justifyContent: 'space-between',
+      rowGap: spacing.sm,
     },
-    dayChip: {
-      width: 40,
-      height: 40,
+    dayTileHit: {
+      width: '31.5%',
+    },
+    dayTile: {
+      height: 92,
       alignItems: 'center',
       justifyContent: 'center',
+      gap: 2,
     },
-    dayChipText: {
+    dayTileNumber: {
       color: theme.ink,
-      fontSize: 13,
-      fontWeight: '800',
-    },
-    dayChipTextActive: {
-      color: '#FFFFFF',
-    },
-    // The one card that is not a CutSurface: it holds a horizontal scroller
-    // that runs to the screen edge, and a cut corner on a container whose
-    // content deliberately overflows it is a shape fighting its own content.
-    quickLayoutsCard: {
-      gap: spacing.sm,
-      paddingVertical: spacing.md,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.surface,
-    },
-    presetRow: {
-      gap: spacing.sm,
-      paddingRight: spacing.lg,
-    },
-    presetCard: {
-      width: 228,
-      borderRadius: radii.lg,
-      borderWidth: 1,
-      borderColor: theme.border,
-      backgroundColor: theme.surface,
-      overflow: 'hidden',
-    },
-    presetMedia: {
-      height: 126,
-      backgroundColor: theme.purpleDark,
-      position: 'relative',
-    },
-    presetMediaImage: {
-      width: '100%',
-      height: '100%',
-    },
-    presetMediaFallback: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.purpleDark,
-    },
-    presetMediaFallbackText: {
-      color: '#FFFFFF',
-      fontSize: 36,
+      fontSize: 34,
+      lineHeight: 38,
       fontWeight: '900',
       letterSpacing: -1,
     },
-    presetMediaOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: 'rgba(17, 17, 17, 0.22)',
-    },
-    presetBadge: {
-      position: 'absolute',
-      top: spacing.sm,
-      left: spacing.sm,
-      minHeight: 28,
-      borderRadius: radii.pill,
-      paddingHorizontal: spacing.sm,
-      alignItems: 'center',
-      justifyContent: 'center',
-      // Sits on the media, which is painted violet in both themes.
-      backgroundColor: 'rgba(255, 255, 255, 0.92)',
-    },
-    presetBadgeText: {
-      color: '#17131F',
+    dayTileUnit: {
+      color: theme.muted,
       fontSize: 12,
       fontWeight: '800',
       textTransform: 'uppercase',
       letterSpacing: 0.5,
     },
-    presetCopy: {
-      paddingHorizontal: spacing.md,
-      paddingTop: spacing.md,
-      paddingBottom: spacing.md,
-      gap: 6,
+    dayTileTextActive: {
+      color: '#FFFFFF',
     },
-    presetTitle: {
+    baseList: {
+      gap: spacing.sm,
+    },
+    baseCard: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.md,
+      padding: spacing.sm,
+      paddingRight: spacing.md,
+    },
+    baseMedia: {
+      width: 76,
+      height: 76,
+      borderRadius: radii.sm,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.purpleDark,
+    },
+    baseMediaImage: {
+      width: '100%',
+      height: '100%',
+    },
+    baseMediaFallbackText: {
+      color: '#FFFFFF',
+      fontSize: 30,
+      fontWeight: '900',
+      letterSpacing: -1,
+    },
+    scratchMedia: {
+      backgroundColor: theme.surfaceSoft,
+    },
+    scratchPlus: {
+      color: theme.purple,
+      fontSize: 34,
+      fontWeight: '700',
+    },
+    baseCopy: {
+      flex: 1,
+      minWidth: 0,
+      gap: 3,
+    },
+    baseTitle: {
       color: theme.ink,
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: '800',
       letterSpacing: -0.3,
     },
-    presetBody: {
+    baseBody: {
       color: theme.muted,
       fontSize: 13,
       lineHeight: 18,
       fontWeight: '600',
     },
-    presetMeta: {
+    baseMeta: {
       color: theme.ink,
       fontSize: 12,
       lineHeight: 16,
       fontWeight: '700',
+    },
+    blockedHint: {
+      color: theme.muted,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '700',
+      textAlign: 'center',
+      marginBottom: -spacing.xs,
+    },
+    reviewName: {
+      color: theme.ink,
+      fontSize: 22,
+      fontWeight: '900',
+      letterSpacing: -0.5,
+    },
+    reviewList: {
+      gap: spacing.sm,
+    },
+    reviewDay: {
+      padding: spacing.md,
+      gap: 3,
+    },
+    reviewDayName: {
+      color: theme.ink,
+      fontSize: 16,
+      fontWeight: '800',
+    },
+    reviewDayLifts: {
+      color: theme.muted,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '600',
     },
     sessionList: {
       gap: spacing.md,
@@ -920,6 +1163,9 @@ const makeStyles = (theme: Theme) =>
       color: theme.muted,
       fontSize: 13,
       fontWeight: '600',
+    },
+    sessionCountEmpty: {
+      color: theme.amberInk,
     },
     sessionRemoveButton: {
       minHeight: 36,

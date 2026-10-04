@@ -1,6 +1,4 @@
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const {
   parseQuickLayoutFocuses,
@@ -8,17 +6,19 @@ const {
   resolveQuickLayoutExercises,
 } = require('../../.test-dist/lib/quickLayoutExercises.js');
 const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+const { SPLIT_PRESETS } = require('../../.test-dist/lib/templateBuilderSteps.js');
 const libraryModule = require('../../.test-dist/data/generatedExerciseLibrary.js');
 
 const LIBRARY = Object.values(libraryModule)[0];
 
-/** Every day name a quick layout can produce, read from the screen that owns them. */
+/** Every day name a quick layout can produce, read from the table that owns them. */
 function presetDayNames() {
-  const source = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'CreateTemplateScreen.tsx'), 'utf8');
   const names = new Set();
-  for (const match of source.matchAll(/names:\s*\[([^\]]+)\]/g)) {
-    for (const item of match[1].matchAll(/'([^']+)'/g)) {
-      names.add(item[1]);
+  for (const presets of Object.values(SPLIT_PRESETS)) {
+    for (const preset of presets) {
+      for (const name of preset.names) {
+        names.add(name);
+      }
     }
   }
   return [...names];
