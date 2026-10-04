@@ -76,7 +76,14 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
       ? Number.parseInt(homeActivePlanCard.sessionsPerWeek, 10) || open.length
       : open.length;
     return resolveDerivedTrainingDays(open, sessionsPerWeek);
-  }, [database.workoutPlans, homeActivePlanCard, preferences.activePlanId, preferences.setupAvailableDays]);
+  }, [
+    database.workoutPlans,
+    database.workoutTemplates,
+    database.exerciseTemplates,
+    homeActivePlanCard,
+    preferences.activePlanId,
+    preferences.setupAvailableDays,
+  ]);
   /**
    * The rhythm every calendar in the app reads.
    *

@@ -30,8 +30,14 @@ module.exports = [
       }
       // Carries and sleds are prescribed by distance, ropes by time, without
       // the name saying so (sweep, 2026-10-04).
-      assert.equal(prescriptionUnitFromName('Farmer\'s Walk'), 'metres');
-      assert.equal(prescriptionUnitFromName('Sled Push'), 'metres');
+      // A loaded carry or sled push moves at a walk: its number is costed as
+      // seconds, not at the sprint rate per metre (review, 2026-10-04).
+      assert.equal(prescriptionUnitFromName('Farmer\'s Walk'), 'seconds');
+      assert.equal(prescriptionUnitFromName('Sled Push'), 'seconds');
+      // The sled lifts are repetitions.
+      assert.equal(prescriptionUnitFromName('Sled Row'), null);
+      assert.equal(prescriptionUnitFromName('Sled Reverse Flye'), null);
+      assert.equal(prescriptionUnitFromName('Sled Overhead Triceps Extension'), null);
       assert.equal(prescriptionUnitFromName('Battle Rope Wave'), 'seconds');
       assert.equal(prescriptionUnitFromName('Battle Rope Slam'), 'seconds');
       const farmer = estimateSessionMinutes({ exercises: [{ name: 'Farmer\'s Walk', sets: 4, reps: 60, restSeconds: 60 }] });

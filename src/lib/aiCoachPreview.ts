@@ -85,9 +85,12 @@ function namesProgramme(lower: string): boolean {
  * when the reps are all there") are for a reader with nothing wrong, so a
  * question with one of these in it is not theirs to answer.
  */
+// Stems that only name a complaint: 'sattu' is also "sattuu olemaan" (happens
+// to be) and 'kivu' also "kivuton" (painless), and "toipunut hyvin" or "once
+// I have recovered" is a reader with nothing wrong (review, 2026-10-04).
 const DISCOMFORT_STEMS = [
-  'hurt', 'painful', 'injur', 'ache', 'aching', 'sore', 'recover',
-  'kipu', 'kipe', 'kivu', 'sattu', 'särk', 'vamm', 'loukkaan', 'kuntout', 'toipu',
+  'hurt', 'painful', 'injur', 'ache', 'aching', 'sore',
+  'kipu', 'kipe', 'kivulia', 'kivulias', 'kivusta', 'kivun', 'särk', 'vamm', 'loukkaan', 'kuntout',
 ];
 
 function mentionsDiscomfort(lower: string): boolean {
@@ -96,6 +99,8 @@ function mentionsDiscomfort(lower: string): boolean {
     DISCOMFORT_STEMS.some((stem) => hasWordStart(lower, stem)) ||
     hasWord(lower, 'pain') ||
     hasWord(lower, 'pains') ||
+    // "polveen sattuu", not "sattuu olemaan" or "sattumalta".
+    /(^|[^\p{L}])sattuu(?! olemaan)/u.test(lower) ||
     /bad (back|knee|shoulder)/.test(lower)
   );
 }

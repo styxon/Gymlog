@@ -339,7 +339,6 @@ module.exports.push(
       for (const [prompt, language, chip] of [
         ['Where should I start? my knee hurts', 'en', start],
         ['How do I start squatting with a bad back', 'en', start],
-        ['Where do I start my recovery?', 'en', start],
         ['Mistä kannattaa aloittaa, polveen sattuu', 'fi', start],
         ['When should I add weight, my shoulder is painful', 'en', addWeight],
         ['Milloin lisään painoa, olkapää on kipeä', 'fi', addWeight],
@@ -347,6 +346,17 @@ module.exports.push(
         assert.notEqual(buildAiCoachPreviewAnswer(prompt, ctx, language).takeaway, chip, prompt);
       }
       assert.equal(buildAiCoachPreviewAnswer('Milloin lisään painoa?', ctx, 'fi').takeaway, addWeight);
+      // Words that look like a complaint and are not one (review, 2026-10-04).
+      const startFi = buildAiCoachPreviewAnswer('Mistä kannattaa aloittaa?', ctx, 'fi').takeaway;
+      for (const [prompt, language, chip] of [
+        ['Mistä kannattaa aloittaa, jos sattuu olemaan vähän aikaa?', 'fi', startFi],
+        ['Mistä kannattaa aloittaa, kun sattumalta löysin salin', 'fi', startFi],
+        ['Milloin lisään painoa jos liike on kivuton', 'fi', addWeight],
+        ['Milloin lisään painoa, olen toipunut hyvin', 'fi', addWeight],
+        ['When should I add weight once I have recovered?', 'en', buildAiCoachPreviewAnswer('When should I add weight?', ctx, 'en').takeaway],
+      ]) {
+        assert.equal(buildAiCoachPreviewAnswer(prompt, ctx, language).takeaway, chip, prompt);
+      }
       assert.notEqual(buildAiCoachPreviewAnswer('mitä pitäisi tehdä tällä viikolla', ctx, 'fi').takeaway, addWeight);
     },
   },

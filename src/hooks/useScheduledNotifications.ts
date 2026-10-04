@@ -114,6 +114,8 @@ export function useScheduledNotifications(database: AppDatabase) {
     database.preferences.trainingCycle,
     database.preferences.restDayStarts,
     database.workoutPlans,
+    database.workoutTemplates,
+    database.exerciseTemplates,
     setupAvailableDays,
   ]);
   const scheduleKey = JSON.stringify(schedule);

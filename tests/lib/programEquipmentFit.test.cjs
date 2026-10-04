@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { programFitsEquipment, equipmentCandidatePool } = require('../../.test-dist/lib/programEquipmentFit.js');
+const { programFitsEquipment, equipmentCandidatePool, GYM_ALWAYS_HAS } = require('../../.test-dist/lib/programEquipmentFit.js');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   resolveFirstRunRecommendationWithTailoring,
@@ -289,7 +289,9 @@ module.exports = [
       subsets.push(['Machines'], ['Dumbbells', 'Bench'], ['Barbells', 'Squat rack', 'Bench'], ['Dumbbells', 'Kettlebells', 'Cardio machines']);
       const failures = [];
       for (const items of subsets) {
-        const anyFits = RECOMMENDATION_PROGRAMS.some((definition) => programFitsEquipment(definition.programId, items));
+        // Every gym has a pull-up bar and bands, though the card has no chips for them.
+        const gym = [...items, ...GYM_ALWAYS_HAS];
+        const anyFits = RECOMMENDATION_PROGRAMS.some((definition) => programFitsEquipment(definition.programId, gym));
         for (const goal of ['strength', 'muscle', 'lean_athletic', 'general_fitness', 'run_mobility']) {
           for (const level of ['beginner', 'advanced']) {
             for (const daysPerWeek of [3, 4, 5]) {
@@ -299,7 +301,7 @@ module.exports = [
                 level,
                 daysPerWeek,
               );
-              if (anyFits && !programFitsEquipment(recommendation.featuredProgramId, items)) {
+              if (anyFits && !programFitsEquipment(recommendation.featuredProgramId, gym)) {
                 failures.push(items.join('+') + ' ' + goal + '/' + level + '/' + daysPerWeek + ': ' + recommendation.featuredProgramId);
               }
             }
@@ -315,6 +317,17 @@ module.exports = [
         3,
       ).recommendation;
       assert.notEqual(noBarbells.featuredProgramId, 'tpl_gainer_strength_5x5_v1');
+      // Unticking a chip the glute and calisthenics programmes do not use
+      // keeps them: their bands and bar are the gym's (review, 2026-10-04).
+      for (const unticked of ['Cardio machines', 'Kettlebells']) {
+        const pool = equipmentCandidatePool(RECOMMENDATION_PROGRAMS, {
+          equipment: 'gym',
+          availableEquipment: FULL_GYM_ITEMS.filter((item) => item !== unticked),
+        }).map((definition) => definition.programId);
+        for (const id of ['tpl_gainer_glute_foundations_v1', 'tpl_gainer_calisthenics_mastery_v1']) {
+          assert.ok(pool.includes(id), unticked + ' unticked dropped ' + id);
+        }
+      }
       // Every default chip, or no list, is still the whole catalog.
       for (const availableEquipment of [FULL_GYM_ITEMS, [...FULL_GYM_ITEMS, 'Pull-up bar'], null, []]) {
         assert.equal(

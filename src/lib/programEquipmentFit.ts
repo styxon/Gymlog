@@ -75,6 +75,9 @@ export function programFitsEquipment(programId: string, available: string[] | nu
  * their own gear can run — and from the whole low-equipment shelf only when
  * nothing fits, so there is always an answer.
  */
+/** Gear every gym has, which the full-gym card does not offer as chips. */
+export const GYM_ALWAYS_HAS: readonly string[] = ['Pull-up bar', 'Resistance bands'];
+
 export function equipmentCandidatePool<T extends { programId: string; equipmentTier: string }>(
   programs: readonly T[],
   input: { equipment: string; availableEquipment?: string[] | null },
@@ -88,7 +91,12 @@ export function equipmentCandidatePool<T extends { programId: string; equipmentT
     if (gymChips === null || gymChips.length === 0 || FULL_GYM_ITEMS.every((item) => gymChips.includes(item))) {
       return [...programs];
     }
-    const gymFitting = programs.filter((definition) => programFitsEquipment(definition.programId, gymChips));
+    // The card never offers a pull-up bar or bands: every gym has them, so
+    // they are read in. Without them unticking Cardio machines dropped the
+    // glute and calisthenics programmes over Banded Hip Thrust and Weighted
+    // Pull-Up (review, 2026-10-04).
+    const withGymBasics = [...new Set([...gymChips, ...GYM_ALWAYS_HAS])];
+    const gymFitting = programs.filter((definition) => programFitsEquipment(definition.programId, withGymBasics));
     return gymFitting.length > 0 ? gymFitting : [...programs];
   }
   const lowTier = programs.filter((definition) => definition.equipmentTier === 'low_equipment');
