@@ -103,4 +103,43 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       'Lower slowly against the band until your arms are straight again. Stand further apart on the band for more resistance, closer for less.',
     ],
   },
+  {
+    // The rear-foot-elevated split squat, with or without dumbbells. By
+    // containment it opened "Split Squats", a jumping move; aliased to the
+    // dumbbell version, a bodyweight programme's demo then told the reader to
+    // hold dumbbells they do not own (review, 2026-10-04). One entry whose
+    // steps hold for both, filed under dumbbells because most rows load it.
+    id: 'extra_bulgarian_split_squat',
+    name: 'Bulgarian Split Squat',
+    category: 'compound',
+    bodyPart: 'legs',
+    equipment: 'dumbbell',
+    primaryMuscles: ['quadriceps', 'glutes'],
+    secondaryMuscles: ['hamstrings'],
+    instructions: [
+      'Stand a long stride in front of a bench or a sturdy chair, facing away from it, and rest the top of your back foot on it. Hold a dumbbell in each hand if your programme logs a weight; otherwise keep your hands on your hips.',
+      'Lower straight down by bending the front knee until the back knee nearly touches the floor, keeping your torso upright and the front knee over your foot.',
+      'Push through the front heel to stand back up.',
+      'Do every rep on one leg, then switch.',
+    ],
+  },
+  {
+    // The calf raise that needs nothing. The "seated calf raise" fallback and
+    // the bodyweight calves pool pointed at "Donkey Calf Raises", whose own
+    // steps open with "you will need access to a donkey calf raise machine" -
+    // a reader without Machines was handed a machine (bug hunt, 2026-10-04).
+    // Upstream carries no floor-level calf raise.
+    id: 'extra_bodyweight_calf_raise',
+    name: 'Bodyweight Calf Raise',
+    category: 'isolation',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    primaryMuscles: ['calves'],
+    secondaryMuscles: [],
+    instructions: [
+      'Stand tall with your feet hip-width apart, toes pointing forward. Hold a wall or a rail for balance if you need it.',
+      'Rise onto the balls of your feet as high as you can, keeping your knees straight but not locked, and pause for a second at the top.',
+      'Lower your heels slowly until they are level with the floor, or a little below if you stand on a step, and go straight into the next rep.',
+    ],
+  },
 ];

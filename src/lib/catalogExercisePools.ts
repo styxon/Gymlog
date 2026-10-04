@@ -300,7 +300,8 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
     loaded: ['Romanian Deadlift', 'Glute Ham Raise'],
   },
   calves: {
-    bodyweight: ['Donkey Calf Raises', 'Calf Raises - With Bands'],
+    // Not "Donkey Calf Raises": that one needs a machine (bug hunt, 2026-10-04).
+    bodyweight: ['Bodyweight Calf Raise', 'Calf Raises - With Bands'],
     loaded: ['Seated Calf Raise', 'Calf Press'],
   },
   legs: {

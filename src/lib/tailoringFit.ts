@@ -1,7 +1,9 @@
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
 import { resolveProgramEquipmentBucket } from './programEquipment';
+import { I18nKey, t } from './i18n';
 import {
+  AppLanguage,
   AppPreferences,
   ExerciseModalityPreference,
   JointSwapBias,
@@ -505,32 +507,39 @@ export function buildTailoringPreferences(
   };
 }
 
-export function buildTailoringRecommendationNote(preferences: TailoringPreferencesInput | null | undefined) {
+export function buildTailoringRecommendationNote(
+  preferences: TailoringPreferencesInput | null | undefined,
+  language: AppLanguage = 'en',
+) {
   if (!preferences) {
     return null;
   }
 
+  // In the reader's language: these were English inside a Finnish
+  // "why it fits" paragraph (bug hunt, 2026-10-04).
   const jointBadges = getJointBiases(preferences);
   if (jointBadges.length) {
-    const labels = jointBadges.map((entry) =>
-      entry.preference === 'prioritize' ? entry.bias.slice(0, -1) : `${entry.bias.slice(0, -1)}-friendly`,
-    );
-
+    const joint = (bias: JointSwapBias) => t(language, `tailor.joint.${bias}` as I18nKey);
     if (jointBadges.length === 1) {
-      return jointBadges[0].preference === 'prioritize'
-        ? `Prioritizes ${labels[0]} options in quick swaps.`
-        : `Keeps ${labels[0]} options closer in quick swaps.`;
+      return t(
+        language,
+        jointBadges[0].preference === 'prioritize' ? 'tailor.note.prioritizeOne' : 'tailor.note.friendlyOne',
+        { joint: joint(jointBadges[0].bias) },
+      );
     }
 
-    return `Ranks ${labels.slice(0, 2).join(' and ')} options higher when the pattern still fits.`;
+    return t(language, 'tailor.note.several', {
+      first: joint(jointBadges[0].bias),
+      second: joint(jointBadges[1].bias),
+    });
   }
 
   if (preferences.setupEquipment === 'home') {
-    return 'Biased toward home-friendly options.';
+    return t(language, 'tailor.note.home');
   }
 
   if (preferences.setupEquipment === 'minimal') {
-    return 'Biased toward lighter-equipment options.';
+    return t(language, 'tailor.note.minimal');
   }
 
   return null;

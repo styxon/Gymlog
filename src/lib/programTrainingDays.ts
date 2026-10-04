@@ -1,3 +1,5 @@
+import type { SetupWeekday } from '../types/models';
+
 /**
  * Which weekdays the calendar marks as training days.
  *
@@ -13,6 +15,98 @@
  */
 
 export function resolveProgramTrainingDays(
+  availableDayIndexes: readonly number[],
+  sessionsPerWeek: number,
+): number[] {
+  const open = [...new Set(availableDayIndexes)]
+    .filter((index) => Number.isInteger(index) && index >= 0 && index <= 6)
+    .sort((left, right) => left - right);
+
+  if (open.length === 0 || sessionsPerWeek <= 0) {
+    // No answer rather than an invented rhythm: the strip shows no training
+    // dots, which is what it did before any of this existed.
+    return [];
+  }
+  if (sessionsPerWeek >= open.length) {
+    return open;
+  }
+
+  // Best-spread subset, scored on the circular gaps so Sunday and Monday count
+  // as neighbours. This replaced a stride-rounding spread that the onboarding
+  // strip did not share: Mon-Fri with 3 sessions was Mon/Wed/Fri on the strip
+  // but Mon/Wed/Thu once saved - two days back to back (bug hunt, 2026-10-04).
+  // One function now decides for the strip, the saved plan, Home and reminders.
+  let best: number[] = [];
+  let bestScore = -Infinity;
+  const visit = (start: number, chosen: number[]) => {
+    if (chosen.length === sessionsPerWeek) {
+      const score = scoreSpread(chosen);
+      if (score > bestScore) {
+        best = [...chosen];
+        bestScore = score;
+      }
+      return;
+    }
+    for (let i = start; i < open.length; i += 1) {
+      chosen.push(open[i]);
+      visit(i + 1, chosen);
+      chosen.pop();
+    }
+  };
+  visit(0, []);
+  return best;
+}
+
+/**
+ * Larger is better: widest smallest gap first, then the most even gaps, then
+ * the earliest days. `days` is ascending.
+ */
+function scoreSpread(days: readonly number[]): number {
+  const gaps = days.map((day, index) =>
+    index === days.length - 1 ? days[0] + 7 - day : days[index + 1] - day,
+  );
+  const min = Math.min(...gaps);
+  const max = Math.max(...gaps);
+  return min * 100 - (max - min) * 10 - days.reduce((sum, value) => sum + value, 0);
+}
+
+/**
+ * The weekdays the onboarding screens show for a questionnaire answer: the
+ * default rhythm unless the reader manages their own days and offered at
+ * least as many as the programme needs, then the same placement the saved plan
+ * uses. Three copies of this lived in firstRunSetup, recommendationProgramme
+ * and recommendationExplanation (bug hunt, 2026-10-04).
+ */
+export function projectTrainingWeekdays(
+  selection: { scheduleMode: string; availableDays: readonly string[] },
+  defaultRhythm: readonly SetupWeekday[],
+): SetupWeekday[] {
+  if (selection.scheduleMode !== 'self_managed') {
+    return [...defaultRhythm];
+  }
+  const indexes = selection.availableDays
+    .map((day) => WEEKDAY_INDEX[day])
+    .filter((index): index is number => index !== undefined);
+  const open = new Set(indexes);
+  if (open.size < defaultRhythm.length) {
+    return [...defaultRhythm];
+  }
+  return resolveProgramTrainingDays(indexes, defaultRhythm.length).map(
+    (index) => WEEKDAY_KEYS[index],
+  );
+}
+
+/**
+ * The placement for a plan that names no weekdays, as it has always been.
+ *
+ * resolveProgramTrainingDays chooses the best-spread days and is what a plan
+ * saved from now on stores (bug hunt, 2026-10-04). A plan saved without
+ * weekday labels has its days derived on every read — Home's strip and the
+ * reminders — and moving that derivation would move a reader's training days
+ * and their reminders on update, with nothing on screen to say why. So the
+ * derivation keeps the stride rule it was saved under.
+ */
+export function resolveDerivedTrainingDays(
   availableDayIndexes: readonly number[],
   sessionsPerWeek: number,
 ): number[] {

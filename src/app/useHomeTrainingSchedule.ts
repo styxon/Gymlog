@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { programmeHistoryIds } from '../lib/programLineage';
-import { planWeekdayIndexes, resolveProgramTrainingDays } from '../lib/programTrainingDays';
+import { planWeekdayIndexes, resolveDerivedTrainingDays } from '../lib/programTrainingDays';
 import { cycleSchedule, weekdaySchedule, withRestDays } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { useHomeActivePlan } from './useHomeActivePlan';
@@ -71,7 +71,7 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
     const sessionsPerWeek = homeActivePlanCard
       ? Number.parseInt(homeActivePlanCard.sessionsPerWeek, 10) || open.length
       : open.length;
-    return resolveProgramTrainingDays(open, sessionsPerWeek);
+    return resolveDerivedTrainingDays(open, sessionsPerWeek);
   }, [database.workoutPlans, homeActivePlanCard, preferences.activePlanId, preferences.setupAvailableDays]);
   /**
    * The rhythm every calendar in the app reads.

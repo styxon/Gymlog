@@ -63,6 +63,29 @@ export function weekdaySchedule(weekdayIndexes: number[]): TrainingSchedule {
   return { kind: 'weekdays', weekdayIndexes: [...weekdayIndexes] };
 }
 
+/**
+ * The cycle the setup will save for a chosen pattern.
+ *
+ * An unchanged pattern keeps the anchor it already has: re-anchoring "2 on, 1
+ * off" to today would silently shift which day of the rhythm today is for a
+ * reader who only re-ran the questions. The save and the setup's preview both
+ * ask this, so the week the preview draws is the week Home shows afterwards
+ * (bug hunt, 2026-10-04: the preview always anchored on today).
+ */
+export function resolveCycleAnchor(
+  pattern: readonly boolean[] | null | undefined,
+  previousCycle: { pattern: boolean[]; anchorDayStart: number } | null | undefined,
+  now: Date,
+): { pattern: boolean[]; anchorDayStart: number } | null {
+  if (!pattern || pattern.length === 0) {
+    return null;
+  }
+  if (previousCycle && previousCycle.pattern.join(',') === pattern.join(',')) {
+    return previousCycle;
+  }
+  return { pattern: [...pattern], anchorDayStart: dayStartOf(now) };
+}
+
 export function cycleSchedule(pattern: boolean[], anchor: Date | number): TrainingSchedule {
   const anchorDayStart = dayStartOf(new Date(anchor));
   // A pattern with no training day in it is not a rhythm, it is a stopped app.

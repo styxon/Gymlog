@@ -929,10 +929,19 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           // is the safety net for. Signed out, the cloud copy survives and
           // the next sign-in offers it back.
           await accountBackup.signOut();
-          await resetAllData();
+          //
+          // The workout bundle (active session + slot history) goes BEFORE the
+          // database write: that write is the one that makes the app open as
+          // reset (onboarding showing), so a kill between the two used to
+          // leave a reset-looking app with the old active session and slot
+          // history resurfacing. In this order a kill or a failed database
+          // write leaves the app not reset, with the database intact but the
+          // active session and the "last time" loads already gone — the lesser
+          // loss, and a retry finishes the job (bug hunt, 2026-10-04).
+          await workout.resetWorkoutData();
           setCompletionSummary(null);
           setFinishSaveState({ status: 'idle', sessionId: null });
-          await workout.resetWorkoutData();
+          await resetAllData();
           // Both wipes have resolved: nobody's data is on this phone, so the
           // accounts it was signed out of have nothing left to ask about. Not
           // earlier — a failed wipe throws above and keeps the marks. A failure

@@ -7,6 +7,7 @@ import {
   FirstRunSetupSelection,
 } from '../lib/firstRunSetup';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
+import { resolveCycleAnchor } from '../lib/trainingSchedule';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import {
@@ -172,12 +173,6 @@ export function buildSetupSelectionFromPreferences(
   };
 }
 
-/** Local midnight, the anchor a training cycle counts from. */
-function localTodayStart(): number {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
 export function buildSetupPreferencePatch(
   selection: FirstRunSetupSelection,
   recommendedProgramId: string | null,
@@ -186,13 +181,8 @@ export function buildSetupPreferencePatch(
   // day of the rhythm today is for a reader who only re-ran the questions.
   previousCycle: AppPreferences['trainingCycle'] = null,
 ): Partial<AppPreferences> {
-  const cyclePattern = selection.trainingCyclePattern ?? null;
   return {
-    trainingCycle: cyclePattern
-      ? previousCycle && previousCycle.pattern.join(',') === cyclePattern.join(',')
-        ? previousCycle
-        : { pattern: cyclePattern, anchorDayStart: localTodayStart() }
-      : null,
+    trainingCycle: resolveCycleAnchor(selection.trainingCyclePattern, previousCycle, new Date()),
     onboardingCompleted: true,
     setupCompleted: true,
     // Only a name the questionnaire carries is written. It has not asked for

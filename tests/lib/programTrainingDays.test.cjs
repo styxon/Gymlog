@@ -104,4 +104,46 @@ module.exports = [
       assert.deepEqual(names(sessionsOnTrainingDays([0, 2, 4], null, sessions)), [[0, 'Day 1'], [2, 'Day 2']]);
     },
   },
+  {
+    // Bug hunt, 2026-10-04: the onboarding strip picked the best-spread subset
+    // while the saved plan used stride rounding. Mon-Fri with 3 sessions was
+    // Mon/Wed/Fri on the strip and Mon/Wed/Thu once saved.
+    name: 'training days: the onboarding strip and the saved plan place every availability the same way',
+    run() {
+      const { resolveProjectedTrainingDays } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { planLabelsForProgramme } = require('../../.test-dist/lib/trainingWeekSync.js');
+      const { projectTrainingWeekdays, WEEKDAY_KEYS: keys } = require('../../.test-dist/lib/programTrainingDays.js');
+      const { DEFAULT_RHYTHM_BY_DAYS } = require('../../.test-dist/lib/firstRunSetup.js');
+
+      assert.deepEqual(resolveProgramTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 4]);
+
+      const sortKeys = (days) => [...days].sort((a, b) => keys.indexOf(a) - keys.indexOf(b));
+      let checked = 0;
+      for (let mask = 1; mask < 128; mask += 1) {
+        const available = keys.filter((_, bit) => (mask >> bit) & 1);
+        for (let sessions = 1; sessions <= 6; sessions += 1) {
+          if (available.length < sessions) {
+            continue; // too few open days: both fall back to the default rhythm
+          }
+          const strip = sessions === 1
+            ? projectTrainingWeekdays({ scheduleMode: 'self_managed', availableDays: available }, ['mon'])
+            : resolveProjectedTrainingDays({ scheduleMode: 'self_managed', availableDays: available }, sessions);
+          const saved = planLabelsForProgramme(sessions, available);
+          assert.deepEqual(sortKeys(strip), sortKeys(saved), `${available.join(',')} x ${sessions}`);
+          assert.equal(strip.length, sessions);
+          checked += 1;
+        }
+      }
+      assert.ok(checked > 400, `only ${checked} cases`);
+
+      // Too few open days: the strip and the saved plan both fall back to the
+      // default rhythm for the count.
+      for (const sessions of [2, 3, 4]) {
+        const strip = resolveProjectedTrainingDays({ scheduleMode: 'self_managed', availableDays: ['tue'] }, sessions);
+        assert.deepEqual(strip, DEFAULT_RHYTHM_BY_DAYS[sessions]);
+        assert.deepEqual(planLabelsForProgramme(sessions, ['tue']), DEFAULT_RHYTHM_BY_DAYS[sessions]);
+      }
+    },
+  },
+
 ];

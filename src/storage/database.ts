@@ -951,6 +951,11 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       selectedSignInMethod:
         input?.preferences?.selectedSignInMethod === 'apple' ||
         input?.preferences?.selectedSignInMethod === 'email' ||
+        // 'local' and 'google' are in the type and 'local' is written by the
+        // onboarding finish; dropping them here reset the reader's choice on
+        // every load (bug hunt, 2026-10-04).
+        input?.preferences?.selectedSignInMethod === 'local' ||
+        input?.preferences?.selectedSignInMethod === 'google' ||
         input?.preferences?.selectedSignInMethod === null
           ? input.preferences.selectedSignInMethod
           : fallback.preferences.selectedSignInMethod,

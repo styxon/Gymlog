@@ -1,4 +1,5 @@
 import { isTimedTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { applyEquipmentToExercises } from './equipmentExerciseFilter';
 import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup, RoutineDrillOverrides } from './homeSessionHero';
 import { estimateSessionMinutes } from './sessionDuration';
@@ -66,10 +67,26 @@ export function estimateProgrammeSessionMinutes(
   return Math.max(5, Math.round(average / 5) * 5);
 }
 
-/** The card number for a ready programme, falling back to the catalog's own. */
+/**
+ * The card number for a ready programme, falling back to the catalog's own.
+ *
+ * With the reader's gear given, the sessions are costed as the week composes
+ * for them: exercises their equipment cannot do are swapped or dropped first,
+ * through the same filter the composer uses. The card used to cost the raw
+ * template while the programme page and Home cost the composed week, and a
+ * bands-only reader saw 35 min on the card and 20 on the page for the same
+ * programme (bug hunt, 2026-10-04). No gear (null) means nothing to filter.
+ */
 export function readyTemplateCardMinutes(
   template: { sessions: ReadonlyArray<{ exercises: ReadonlyArray<WorkoutTemplateExercise> }>; estimatedSessionDuration: number },
   options: ProgrammeMinutesOptions = {},
 ): number {
-  return estimateProgrammeSessionMinutes(template.sessions, options) || template.estimatedSessionDuration;
+  const gear = options.availableEquipment ?? null;
+  const sessions =
+    gear === null
+      ? template.sessions
+      : template.sessions.map((session) => ({
+          exercises: applyEquipmentToExercises([...session.exercises], gear).exercises,
+        }));
+  return estimateProgrammeSessionMinutes(sessions, options) || template.estimatedSessionDuration;
 }

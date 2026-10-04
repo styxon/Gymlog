@@ -1,3 +1,4 @@
+import { projectTrainingWeekdays } from './programTrainingDays';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { buildRecommendationReasonLines } from './recommendationExplanation';
 import { buildRecommendationInput } from './recommendationInput';
@@ -310,48 +311,8 @@ export function formatFocusAreaList(focusAreas: SetupFocusArea[]) {
   return formatList(focusAreas.map((area) => getFocusAreaTitle(area)));
 }
 
-function normalizeWeekdays(days: SetupWeekday[]) {
-  return [...new Set(days)].sort((left, right) => WEEKDAY_ORDER.indexOf(left) - WEEKDAY_ORDER.indexOf(right));
-}
-
 function roundToNearestTen(value: number) {
   return Math.round(value / 10) * 10;
-}
-
-function buildCombinationList(days: SetupWeekday[], targetSize: number): SetupWeekday[][] {
-  if (targetSize <= 0) {
-    return [[]];
-  }
-
-  if (days.length < targetSize) {
-    return [];
-  }
-
-  if (targetSize === 1) {
-    return days.map((day) => [day]);
-  }
-
-  const combinations: SetupWeekday[][] = [];
-  days.forEach((day, index) => {
-    const tail = buildCombinationList(days.slice(index + 1), targetSize - 1);
-    tail.forEach((combination) => {
-      combinations.push([day, ...combination]);
-    });
-  });
-  return combinations;
-}
-
-function scoreWeekdayCombination(days: SetupWeekday[]) {
-  const indexes = normalizeWeekdays(days).map((day) => WEEKDAY_ORDER.indexOf(day));
-  const gaps = indexes.map((current, index) => {
-    const next = indexes[(index + 1) % indexes.length];
-    return index === indexes.length - 1 ? next + 7 - current : next - current;
-  });
-  const minGap = Math.min(...gaps);
-  const maxGap = Math.max(...gaps);
-  const gapSpread = maxGap - minGap;
-  const weekdayBias = indexes.reduce((sum, value) => sum + value, 0);
-  return minGap * 100 - gapSpread * 10 - weekdayBias;
 }
 
 function resolveDefaultRhythm(daysPerWeek: number) {
@@ -382,27 +343,7 @@ export function resolveProjectedTrainingDays(
   daysPerWeek: number,
 ) {
   const defaultRhythm = resolveDefaultRhythm(daysPerWeek);
-  if (selection.scheduleMode !== 'self_managed') {
-    return defaultRhythm;
-  }
-
-  const normalizedDays = normalizeWeekdays(selection.availableDays);
-  if (normalizedDays.length < defaultRhythm.length) {
-    return defaultRhythm;
-  }
-
-  if (normalizedDays.length === defaultRhythm.length) {
-    return normalizedDays;
-  }
-
-  const combinations = buildCombinationList(normalizedDays, defaultRhythm.length);
-  if (combinations.length === 0) {
-    return defaultRhythm;
-  }
-
-  return combinations.reduce((best, current) =>
-    scoreWeekdayCombination(current) > scoreWeekdayCombination(best) ? current : best,
-  );
+  return projectTrainingWeekdays(selection, defaultRhythm);
 }
 
 export function buildFirstRunRecommendationReasons(
@@ -411,6 +352,7 @@ export function buildFirstRunRecommendationReasons(
     projectedDaysPerWeek: number;
     estimatedSessionDuration?: number | null;
     mismatchNote?: string | null;
+    language?: AppLanguage;
   },
   tailoringPreferences?: TailoringPreferencesInput | null,
 ) {
@@ -421,14 +363,21 @@ export function buildFirstRunRecommendationReasons(
 
 
 
-function buildLowEquipmentMismatchNote(selection: FirstRunSetupSelection) {
-  const base =
-    selection.daysPerWeek === 2
-      ? 'You picked a lighter equipment setup, so this is the cleanest low-equipment starting point.'
-      : 'You picked a lighter equipment setup, so Vinha recommends the closest low-equipment starting point even though the weekly rhythm is lighter than your target.';
+function buildLowEquipmentMismatchNote(
+  selection: FirstRunSetupSelection,
+  featuredDays: number,
+  language: AppLanguage,
+) {
+  // "Lighter than your target" only when it is: the home programmes now run
+  // four to six days, and the sentence used to follow any home pick
+  // (bug hunt, 2026-10-04).
+  const base = t(
+    language,
+    featuredDays < selection.daysPerWeek ? 'mismatch.lowEquipment.lighter' : 'mismatch.lowEquipment.fits',
+  );
 
   return selection.guidanceMode === 'self_directed'
-    ? `${base} You can still use it as the base for your own custom split.`
+    ? `${base} ${t(language, 'mismatch.lowEquipment.selfDirected')}`
     : base;
 }
 
@@ -437,6 +386,7 @@ function buildRecommendationMismatchNote(
   featuredProgramId: string,
   secondaryProgramId: string | null,
   tailoringPreferences?: TailoringPreferencesInput | null,
+  language: AppLanguage = 'en',
 ) {
   const featuredDefinition = getRecommendationProgramDefinition(featuredProgramId);
   const featuredDays = featuredDefinition?.daysPerWeek ?? getWorkoutTemplateById(featuredProgramId)?.daysPerWeek ?? selection.daysPerWeek;
@@ -444,30 +394,32 @@ function buildRecommendationMismatchNote(
   if (selection.goal === 'run_mobility' && featuredProgramId === PROGRAM_IDS.runMobility && selection.daysPerWeek > featuredDays) {
     const secondaryName = secondaryProgramId ? getWorkoutTemplateById(secondaryProgramId)?.name ?? null : null;
     return secondaryName
-      ? `Vinha's closest match is a 3-day run + mobility split. Add a ${secondaryName} session as an optional 4th day if you want extra conditioning.`
-      : "Vinha's closest match is a 3-day run + mobility split.";
+      ? t(language, 'mismatch.runMobility.withExtra', { name: secondaryName })
+      : t(language, 'mismatch.runMobility');
   }
 
   if (selection.equipment !== 'gym' && featuredDefinition?.equipmentTier === 'low_equipment') {
-    return buildLowEquipmentMismatchNote(selection);
+    return buildLowEquipmentMismatchNote(selection, featuredDays, language);
   }
 
   if (featuredDays !== selection.daysPerWeek) {
-    return `Vinha's closest match keeps this start at ${featuredDays} days so the week stays coherent.`;
+    return t(language, 'mismatch.closestDays', { count: featuredDays });
   }
 
-  return buildTailoringRecommendationNote(tailoringPreferences);
+  return buildTailoringRecommendationNote(tailoringPreferences, language);
 }
 
 export function resolveFirstRunRecommendationWithTailoring(
   selection: FirstRunSetupSelection,
   tailoringPreferences?: TailoringPreferencesInput | null,
+  /** The language the mismatch note is written in (bug hunt, 2026-10-04). */
+  language: AppLanguage = 'en',
 ): FirstRunRecommendation {
   const recommendation = recommendPrograms(buildRecommendationInput(selection), tailoringPreferences);
 
   return {
     ...recommendation,
-    mismatchNote: buildRecommendationMismatchNote(selection, recommendation.featuredProgramId, recommendation.secondaryProgramId ?? null, tailoringPreferences),
+    mismatchNote: buildRecommendationMismatchNote(selection, recommendation.featuredProgramId, recommendation.secondaryProgramId ?? null, tailoringPreferences, language),
   };
 }
 

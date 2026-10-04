@@ -48,6 +48,15 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Ala pyörittää käsiä hitaasti noin 30 senttimetrin ympyröissä. Hengitä normaalisti.',
     'Jatka noin kymmenen sekuntia ja vaihda sitten pyörimissuunta.',
   ],
+  // Added with the "Arnold Press" alias fix (bug hunt, 2026-10-04): the name used
+  // to open the kettlebell version. Five steps, as in the English entry.
+  'Arnold Dumbbell Press': [
+    'Istu selkänojalliselle penkille ja pidä kahta käsipainoa edessäsi rintakorkeudella kämmenet vartaloa kohti ja kyynärpäät koukussa. Kyynärpäät ovat vartalon vieressä, ja alkuasento näyttää käsipainocurlin yläasennolta.',
+    'Nosta käsipainoja ja kierrä samalla kämmeniä, kunnes ne osoittavat eteenpäin.',
+    'Jatka nostoa, kunnes kädet ovat suorina pään yläpuolella. Hengitä ulos tämän vaiheen aikana.',
+    'Pysähdy hetkeksi ylös ja laske käsipainot takaisin alkuasentoon kiertäen kämmenet takaisin kohti itseäsi. Vasen käsi kiertyy vastapäivään ja oikea myötäpäivään. Hengitä sisään laskun aikana.',
+    'Toista suositeltu määrä toistoja.',
+  ],
   'Ball Leg Curl': [
     'Asetu selinmakuulle lattialle ja nosta jalat jumppapallon päälle.',
     'Säädä pallon paikka niin, että nilkat ovat pallon päällä jalkojen ollessa suorina.',
@@ -113,6 +122,11 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso kuminauhan keskellä jalat noin lantion leveydellä ja ota kummastakin päästä kiinni, kädet suorina ja kämmenet eteenpäin.',
     'Pidä kyynärpäät kyljissä ja koukista kädet kohti olkapäitä. Purista hauis tiukaksi yläasennossa.',
     'Laske hitaasti nauhaa vastaan, kunnes kädet ovat taas suorat. Seiso nauhalla leveämmin, jos haluat enemmän vastusta, ja kapeammin, jos vähemmän.',
+  ],
+  'Bodyweight Calf Raise': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja varpaat eteenpäin. Ota tukea seinästä tai kaiteesta, jos tarvitset.',
+    'Nouse varpaille niin korkealle kuin pystyt, polvet suorina mutta ei lukittuina, ja pysähdy hetkeksi ylös.',
+    'Laske kantapäät hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon.',
   ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
@@ -742,6 +756,14 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Toista ohjelman mukainen määrä toistoja.',
     'Lukitse tanko telineeseen sarjan päätteeksi.',
   ],
+  // Added with the "Bulgarian Split Squat" alias fix (bug hunt, 2026-10-04): the
+  // name used to open "Split Squats", a jumping bodyweight move. Four steps.
+  'Split Squat with Dumbbells': [
+    'Asetu porrastettuun asentoon niin, että takajalka on koholla ja etujalka edessä.',
+    'Pidä käsipainoa kummassakin kädessä käsivarret sivuilla roikkuen. Tämä on alkuasento.',
+    'Laskeudu koukistamalla polvea ja lonkkaa. Pidä ryhti hyvänä koko liikkeen ajan ja etupolvi jalkaterän linjassa.',
+    'Työnnä alhaalta kantapään kautta ja ojenna polvi ja lonkka takaisin alkuasentoon.',
+  ],
   'Split Squats': [
     'Aloita seisoma-asennosta. Hyppää käyntiasentoon toinen jalka edessä ja toinen takana, koukista polvia ja laske lantiota hieman.',
     'Vaihda suuntaa heti laskeutumisen jälkeen: nouse ylös ja hyppää vaihtaen jalkojen paikkaa. Toista 5–10 kertaa kummallakin jalalla.',
@@ -947,6 +969,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   // The equipment fallbacks below are prescribed too — a plan swaps onto them
   // when the gear is missing — and they read in English until 2026-10-04.
+  'Bulgarian Split Squat': [
+    'Seiso pitkän askeleen päässä penkistä tai tukevasta tuolista selkä sitä kohti ja nosta takajalan jalkapöytä sen päälle. Pidä käsipainoa kummassakin kädessä, jos ohjelmasi kirjaa painon; muuten pidä kädet lantiolla.',
+    'Laskeudu suoraan alas koukistamalla etupolvea, kunnes takapolvi melkein koskettaa lattiaa. Pidä ylävartalo pystyssä ja etupolvi jalkaterän päällä.',
+    'Työnnä etukantapäällä takaisin ylös.',
+    'Tee kaikki toistot yhdellä jalalla ja vaihda sitten jalkaa.',
+  ],
   'Stiff-Legged Dumbbell Deadlift': [
     'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',
     'Seiso ryhti suorana jalat hartioiden leveydellä tai kapeammin, polvet hieman koukussa.',

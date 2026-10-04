@@ -779,8 +779,7 @@ module.exports = [
       // old anchor when only the questionnaire was re-run with the same
       // pattern.
       assert.match(handoffSource, /trainingCyclePattern: preferences\.trainingCycle\?\.pattern \?\? null/);
-      assert.match(handoffSource, /previousCycle\.pattern\.join\(','\) === cyclePattern\.join\(','\)/);
-      assert.match(handoffSource, /\{ pattern: cyclePattern, anchorDayStart: localTodayStart\(\) \}/);
+      assert.match(handoffSource, /resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
     },
   },
   {

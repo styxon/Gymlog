@@ -524,6 +524,7 @@ const suites = [
   ...require('./screens/sheetBottomInset.test.cjs'),
   ...require('./screens/finishRouteGuard.test.cjs'),
   ...require('./screens/bugSweep20261001.test.cjs'),
+  ...require('./screens/bugSweep20261004.test.cjs'),
 ];
 
 (async () => {

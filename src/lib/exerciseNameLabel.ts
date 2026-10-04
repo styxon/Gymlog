@@ -39,6 +39,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Hip Thrust': 'Lantionnosto',
   'Barbell Hip Thrust': 'Lantionnosto tangolla',
   'Machine Hip Thrust': 'Lantionnosto laitteessa',
+  'Bodyweight Calf Raise': 'Pohjenosto ilman painoa',
   'Glute Bridge': 'Lantionnosto lattialla',
   'Kettlebell Swing': 'Kahvakuulaheilautus',
   'Band Curl': 'Hauiskääntö kuminauhalla',

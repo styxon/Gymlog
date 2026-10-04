@@ -450,7 +450,7 @@ module.exports = [
     async run() {
       const profile = read('src', 'app', 'renderProfileTab.tsx');
       const handler = profile.slice(profile.indexOf('onResetAllData={async () => {'));
-      const order = ['await accountBackup.signOut();', 'await resetAllData();', 'await workout.resetWorkoutData();', 'await accountBackup.forgetSignedOutAccounts();'].map(
+      const order = ['await accountBackup.signOut();', 'await workout.resetWorkoutData();', 'await resetAllData();', 'await accountBackup.forgetSignedOutAccounts();'].map(
         (needle) => handler.indexOf(needle),
       );
       assert.ok(order.every((at) => at > 0), 'a step of the reset is missing');

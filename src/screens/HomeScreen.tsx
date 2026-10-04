@@ -1548,7 +1548,10 @@ export function HomeScreen({
                   {t(language, 'home.section.workout')}
                 </Text>
                 <Text style={styles.blockMeta} numberOfLines={1}>
-                  {t(language, 'home.section.workoutMeta', { count: totalExerciseCount, sets: totalSets })}
+                  {t(language, 'home.section.workoutMeta', {
+                    exercises: t(language, totalExerciseCount === 1 ? 'tpl.exerciseOne' : 'tpl.exerciseMany', { count: totalExerciseCount }),
+                    sets: t(language, totalSets === 1 ? 'home.section.setOne' : 'home.section.setMany', { count: totalSets }),
+                  })}
                 </Text>
                 {/* The tour rings this glyph, so it needs a view of its own
                     that does not rotate under the measurement. */}

@@ -115,7 +115,9 @@ export function renderOnboardingFlow(deps: OnboardingFlowDeps): React.ReactNode 
          * than a plan nobody chose.
          */
         onStartEmpty={() => {
-          void completeOnboarding({
+          // Returned, so the screen holds its button until the write settles
+          // (bug hunt, 2026-10-04: a double tap ran this twice).
+          return completeOnboarding({
             onboardingCompleted: true,
             setupCompleted: false,
             trainingFirstRunDismissed: false,
@@ -160,7 +162,14 @@ export function renderOnboardingFlow(deps: OnboardingFlowDeps): React.ReactNode 
           // fork straight to the catalogue.
           setOnboardingStep('questionnaire');
         }}
-        onBack={() => setOnboardingStep('path')}
+        onBack={() => {
+          // The abandoned form must not travel on: the ready-pick finish
+          // writes aboutYouValues into the profile (and the weight into a
+          // weigh-in), and the reset effect in App.tsx only fires when the
+          // gate closes (bug hunt, 2026-10-04).
+          setAboutYouValues(null);
+          setOnboardingStep('path');
+        }}
       />
     );
   } else if (onboardingStep === 'ready_catalog') {
@@ -322,6 +331,7 @@ export function renderSetupEditor(deps: SetupEditorDeps): React.ReactNode {
       // height, weight, rhythm (2026-09-17). They get what they entered as
       // basics, and the questions open unanswered.
       initialSelection={setupEditSelection}
+      existingTrainingCycle={preferences.trainingCycle}
       basicsSeed={setupEditSelection ? null : setupBasics}
       initialStage={route.stage ?? (setupSelection ? 'review' : 'location')}
       initialUnitPreference={unitPreference}

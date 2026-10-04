@@ -58,7 +58,7 @@ import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { requestAiCoachAdvice } from '../lib/aiCoachClient';
 import { AI_COACH_MAX_PROMPT_CHARS } from '../lib/aiCoachBudget';
 import { trackEvent } from '../features/analytics/analyticsClient';
-import { cycleSchedule, cycleSessionsPerWeek, patternFromOnOff, trainsOn } from '../lib/trainingSchedule';
+import { cycleSchedule, cycleSessionsPerWeek, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
 import { colors, radii, spacing } from '../theme';
 import { haptics } from '../utils/haptics';
 import {
@@ -79,6 +79,7 @@ import {
   SetupTrainingEnvironment,
   SetupWeekday,
   UnitPreference,
+  AppPreferences,
 } from '../types/models';
 import { AICoachAdvice } from '../types/aiCoach';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -92,6 +93,11 @@ interface OnboardingScreenProps {
   onDismissTip: (tipId: string) => void | Promise<void>;
   mode?: 'first_run' | 'edit';
   initialSelection?: FirstRunSetupSelection | null;
+  /**
+   * The cycle already saved, so the preview anchors where the save will: an
+   * unchanged pattern keeps its anchor (bug hunt, 2026-10-04).
+   */
+  existingTrainingCycle?: AppPreferences['trainingCycle'];
   /**
    * Seeds the first-run questionnaire with the basics collected on the
    * About-you screen (name/gender/age/height/weight) WITHOUT marking the
@@ -1071,6 +1077,7 @@ export function OnboardingScreen({
   readyProgramCount,
   mode = 'first_run',
   initialSelection,
+  existingTrainingCycle = null,
   basicsSeed,
   initialStage,
   tailoringPreferences = null,
@@ -1258,7 +1265,13 @@ export function OnboardingScreen({
   // Anchored on today, which is what onboarding stamps when it writes the
   // cycle, and read through the shared resolver so the strip cannot drift from
   // what Home will draw.
-  const previewCycleSchedule = cycleSchedule(cyclePattern ?? [], new Date());
+  // The anchor the save will write, not always today: a re-run with the same
+  // pattern keeps the old one, and the preview must show Home's week (bug
+  // hunt, 2026-10-04).
+  const previewCycleSchedule = cycleSchedule(
+    cyclePattern ?? [],
+    resolveCycleAnchor(cyclePattern, existingTrainingCycle, new Date())?.anchorDayStart ?? new Date(),
+  );
   const cycleOnDays = cyclePattern ? cyclePattern.filter(Boolean).length : CYCLE_DEFAULT.on;
   const cycleOffDays = cyclePattern ? cyclePattern.length - cycleOnDays : CYCLE_DEFAULT.off;
   const [unitPreference, setUnitPreference] = useState<UnitPreference>(initialUnitPreference);
@@ -1422,8 +1435,8 @@ export function OnboardingScreen({
     [selection.equipment, tailoringPreferences],
   );
   const recommendation = useMemo(
-    () => resolveFirstRunRecommendationWithTailoring(selection, recommendationTailoringPreferences),
-    [recommendationTailoringPreferences, selection],
+    () => resolveFirstRunRecommendationWithTailoring(selection, recommendationTailoringPreferences, language),
+    [language, recommendationTailoringPreferences, selection],
   );
   const recommendationOptionIds = useMemo(
     () => buildRecommendationOptionIds(recommendation),
@@ -2572,7 +2585,7 @@ export function OnboardingScreen({
                   chips never had: a rhythm is only a promise about the week
                   once someone divides it. */}
               <Text style={styles.daysCycleFrequency}>
-                {t(language, 'onb.days.cycleFrequency', {
+                {t(language, cycleOnDays === 1 ? 'onb.days.cycleFrequencyOne' : 'onb.days.cycleFrequency', {
                   on: cycleOnDays,
                   len: cycleOnDays + cycleOffDays,
                   perWeek: formatSessionsPerWeek(cycleSessionsPerWeek(cycleOnDays, cycleOffDays)),
