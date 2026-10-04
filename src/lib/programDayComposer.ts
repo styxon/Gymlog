@@ -7,6 +7,7 @@ import { applyEquipmentToExercises, resolveAvailableEquipment } from './equipmen
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { getCatalogTrackingMode } from './catalogExercisePools';
 import { collapseRepRange } from './singleRepTarget';
+import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type { SetupWeekday } from '../types/models';
 
@@ -213,7 +214,10 @@ export function composeProgramWeekForSelection(
     days,
     weeks,
     totalWorkouts: weeks * days,
-    sessionMinutes: template.estimatedSessionDuration,
+    // Home's arithmetic over the week as composed, swaps and all — the card
+    // and the plan it saves quote one number (bug hunt, 2026-10-04).
+    sessionMinutes:
+      estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
     composed: days !== template.daysPerWeek,
     cautionRemoved,
     cautionSwapped,

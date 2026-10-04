@@ -2724,6 +2724,7 @@ function GuidedPlayer({
   // than the screen the user had just come from.
   const durationMinutes = estimateSessionMinutes({
     exercises: activeExercises.map((exercise) => ({
+      name: exercise.exerciseName,
       sets: exercise.sets.length,
       reps: exercise.sets[0]?.plannedRepsMax ?? 8,
       timed: isTimedTrackingMode(exercise.trackingMode),

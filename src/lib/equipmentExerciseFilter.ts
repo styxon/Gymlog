@@ -15,8 +15,19 @@ type RequirementGroup = string[]; // any-of
 
 interface EquipmentRule {
   pattern: string;
+  /**
+   * Match the whole name, not a part of it. "Deadlift" is a barbell lift but
+   * "Single-Leg Romanian Deadlift" is done with nothing, and a substring rule
+   * cannot tell them apart.
+   */
+  exact?: boolean;
   /** Every group must be satisfied by at least one available item. */
   requires: RequirementGroup[];
+}
+
+/** Whether a rule speaks about this (trimmed, lower-cased) exercise name. */
+export function equipmentRuleMatches(normalizedName: string, rule: { pattern: string; exact?: boolean }): boolean {
+  return rule.exact ? normalizedName === rule.pattern : normalizedName.includes(rule.pattern);
 }
 
 const BARBELL = ['Barbells', 'Barbell & plates'];
@@ -84,6 +95,50 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   // band, and the generic curl rule would otherwise let dumbbells stand in
   // for the band it is named after (2026-09-26).
   { pattern: 'band curl', requires: [['Resistance bands']] },
+  // The catalog's loaded lifts that never say "barbell". With no rule they
+  // passed every equipment check, so the fallbacks below for "deadlift" and
+  // "romanian deadlift" never ran and a dumbbells-only home plan kept a
+  // conventional deadlift (bug hunt, 2026-10-04). Exact where a bodyweight
+  // version shares the words: a single-leg RDL needs nothing.
+  { pattern: 'deadlift', exact: true, requires: [BARBELL] },
+  { pattern: 'conventional deadlift', requires: [BARBELL] },
+  { pattern: 'competition deadlift', requires: [BARBELL] },
+  { pattern: 'deficit deadlift', requires: [BARBELL] },
+  { pattern: 'sumo deadlift', requires: [BARBELL] },
+  { pattern: 'trap bar', requires: [BARBELL] },
+  { pattern: 'romanian deadlift', exact: true, requires: [BARBELL] },
+  // The light one is the postpartum and recovery hinge, done with whatever
+  // weight is in the house; dumbbells come first so that is the chip shown.
+  { pattern: 'romanian deadlift (light)', exact: true, requires: [['Dumbbells', 'Kettlebells', ...BARBELL]] },
+  { pattern: 'good morning', requires: [BARBELL] },
+  { pattern: 'power clean', requires: [BARBELL] },
+  { pattern: 'push press', requires: [BARBELL] },
+  { pattern: 'pendlay row', requires: [BARBELL] },
+  { pattern: 'bent-over row', exact: true, requires: [BARBELL] },
+  { pattern: 'pause squat', requires: [BARBELL, ['Squat rack']] },
+  { pattern: 't-bar row', requires: [[...BARBELL, 'Machines']] },
+  { pattern: 'chest-supported row', requires: [['Dumbbells', 'Machines']] },
+  { pattern: 'arnold press', requires: [['Dumbbells', 'Kettlebells']] },
+  { pattern: 'renegade row', requires: [['Dumbbells', 'Kettlebells']] },
+  { pattern: 'overhead triceps extension', requires: [[...BARBELL, 'Dumbbells', 'Cables', 'Resistance bands']] },
+  { pattern: 'triceps kickback', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
+  { pattern: 'face pull', requires: [['Cables', 'Resistance bands']] },
+  { pattern: 'reverse pec deck', requires: [['Machines']] },
+  { pattern: 'reverse hyperextension', requires: [['Machines']] },
+  // Bar work the pull-up rules above missed by name.
+  { pattern: 'muscle-up', requires: [['Pull-up bar']] },
+  { pattern: 'front lever', requires: [['Pull-up bar']] },
+  { pattern: 'toes-to-bar', requires: [['Pull-up bar']] },
+  { pattern: 'rows (bar or rings)', requires: [['Pull-up bar']] },
+  // Gym floor gear with no chip of its own. "Machines" is the chip that says
+  // the reader trains where these live; a home setup has neither.
+  { pattern: 'battle rope', requires: [['Machines']] },
+  { pattern: 'battling rope', requires: [['Machines']] },
+  { pattern: 'sled', requires: [['Machines']] },
+  { pattern: 'medicine ball', requires: [['Machines']] },
+  { pattern: 'box jump', requires: [['Machines']] },
+  { pattern: 'step-up (high box)', requires: [['Bench', 'Machines']] },
+  { pattern: 'step-up (low box)', requires: [['Bench', 'Machines']] },
 ];
 
 /**
@@ -150,6 +205,31 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['pullup', ['Inverted Row']],
   ['hip thrust', ['Butt Lift (Bridge)']],
   ['cable crunch', ['Plank']],
+  ['good morning', ['Butt Lift (Bridge)']],
+  ['power clean', ['Kettlebell Swing', 'Freehand Jump Squat']],
+  ['push press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
+  ['pendlay row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['bent-over row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['t-bar row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['chest-supported row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['pause squat', ['Goblet Squat', 'Bodyweight Squat']],
+  ['arnold press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
+  ['renegade row', ['Plank']],
+  ['triceps kickback', ['Bench Dips']],
+  ['face pull', ['Band Pull Apart']],
+  ['reverse pec deck', ['Band Pull Apart']],
+  ['reverse hyperextension', ['Butt Lift (Bridge)']],
+  ['muscle-up', ['Pullups', 'Inverted Row']],
+  ['front lever', ['Plank']],
+  ['toes-to-bar', ['Reverse Crunch']],
+  ['rows (bar or rings)', ['Inverted Row']],
+  ['battle rope', ['Mountain Climbers']],
+  ['battling rope', ['Mountain Climbers']],
+  ['sled', ['Mountain Climbers']],
+  ['medicine ball', ['Burpee']],
+  ['box jump', ['Freehand Jump Squat']],
+  ['step-up (high box)', ['Bodyweight Walking Lunge']],
+  ['step-up (low box)', ['Bodyweight Walking Lunge']],
 ];
 
 function normalize(name: string) {
@@ -178,7 +258,7 @@ export function isExerciseAllowedWithEquipment(exerciseName: string, available: 
     return true;
   }
   const normalized = normalize(exerciseName);
-  return EQUIPMENT_RULES.filter((rule) => normalized.includes(rule.pattern)).every((rule) =>
+  return EQUIPMENT_RULES.filter((rule) => equipmentRuleMatches(normalized, rule)).every((rule) =>
     rule.requires.every((group) => group.some((item) => available.includes(item))),
   );
 }

@@ -945,6 +945,51 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pyri laskeutumaan jalat edessäsi ja kurota jaloilla niin pitkälle kuin pystyt.',
     'Mittaa matka lähtöpisteestä laskeutumiskohtaan ja kirjaa tulos ylös.',
   ],
+  // The equipment fallbacks below are prescribed too — a plan swaps onto them
+  // when the gear is missing — and they read in English until 2026-10-04.
+  'Stiff-Legged Dumbbell Deadlift': [
+    'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',
+    'Seiso ryhti suorana jalat hartioiden leveydellä tai kapeammin, polvet hieman koukussa.',
+    'Pidä polvet paikallaan ja laske painot jalkapöytien yläpuolelle taivuttamalla lantiosta selkä suorana, kunnes tunnet venytyksen takareisissä.',
+    'Nouse takaisin pystyyn ojentamalla lantio.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Butt Lift (Bridge)': [
+    'Asetu selinmakuulle kädet kylkien vieressä ja polvet koukussa, jalat noin hartioiden leveydellä.',
+    'Työnnä pääasiassa kantapäillä ja nosta lantio irti lattiasta selkä suorana. Pidä yläasennossa sekunti.',
+    'Laske lantio hitaasti takaisin alas.',
+  ],
+  'Bent Over Two-Dumbbell Row': [
+    'Ota käsipaino kumpaankin käteen kämmenet vartaloa kohti, koukista polvia hieman ja kallista ylävartalo eteen selkä suorana, lähes lattian suuntaiseksi. Pidä pää ylhäällä ja anna painojen roikkua suoraan alaspäin.',
+    'Pidä ylävartalo paikallaan ja vedä painot kylkiin kyynärpäät lähellä vartaloa. Purista yläasennossa lapoja yhteen sekunnin ajan.',
+    'Laske painot hitaasti takaisin alas.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Reverse Plate Curls': [
+    'Seiso suorana ja pidä levypainoa molemmin käsin kämmenet alaspäin, kädet suorina. Tartu levyyn kellotaulun kohdista 11 ja 1.',
+    'Pidä jalat hartioiden leveydellä ja levy lantion edessä.',
+    'Nosta levy hitaasti ylös kyynärpäät kyljissä ja olkavarret paikallaan, kunnes kyynärvarret ja hauikset kohtaavat.',
+    'Pidä sekunti ja laske levy hitaasti takaisin alas.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Donkey Calf Raises': [
+    'Liikkeeseen tarvitaan donkey-pohjenostolaite. Asetu laitteen pehmusteen alle niin, että se on häntäluun kohdalla.',
+    'Ota kiinni sivukahvoista ja aseta päkiät korokkeelle kantapäät reunan yli. Ojenna polvet lukitsematta niitä.',
+    'Nouse päkiöille niin korkealle kuin pystyt polvet paikallaan. Pidä yläasennossa sekunti.',
+    'Laske kantapäät hitaasti alas, kunnes pohkeet venyvät.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Trail Running/Walking': [
+    'Juokse tai kävele maastopolulla hyvissä kengissä. Ylämäessä työ tulee pohkeista ja pakaroista, alamäessä polvet ja nilkat ottavat iskut vastaan: lyhennä askelta, pidä polvet koukussa ja hidasta vauhtia.',
+    'Ylämäki kuormittaa selvästi enemmän kuin tasainen maasto, ja juoksu enemmän kuin kävely.',
+  ],
+  'Reverse Crunch': [
+    'Asetu selinmakuulle jalat suorina ja kädet vartalon vieressä kämmenet lattiassa. Kädet pysyvät paikallaan koko liikkeen ajan.',
+    'Nosta jalat niin, että reidet ovat pystysuorassa ja sääret lattian suuntaisesti jalat yhdessä.',
+    'Tuo polvet kohti rintaa kiertämällä lantiota taaksepäin, kunnes lantio nousee irti lattiasta.',
+    'Pidä sekunti ja laske jalat hallitusti takaisin alkuasentoon.',
+    'Toista ohjelman toistomäärä.',
+  ],
 };
 
 /**

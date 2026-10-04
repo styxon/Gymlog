@@ -1,4 +1,4 @@
-import { EQUIPMENT_RULES_FOR_DISPLAY } from './equipmentExerciseFilter';
+import { EQUIPMENT_RULES_FOR_DISPLAY, equipmentRuleMatches } from './equipmentExerciseFilter';
 import { I18nKey } from './i18n';
 
 /**
@@ -68,7 +68,7 @@ export function resolveProgramEquipment(exerciseNames: readonly string[]): Equip
       continue;
     }
     for (const rule of EQUIPMENT_RULES_FOR_DISPLAY) {
-      if (!normalized.includes(rule.pattern)) {
+      if (!equipmentRuleMatches(normalized, rule)) {
         continue;
       }
       for (const group of rule.requires) {

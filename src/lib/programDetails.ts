@@ -14,6 +14,7 @@ import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgr
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
 import type { AppLanguage } from '../types/models';
 import { removeTrailingZeros } from './format';
+import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 
 export type ProgramDetailSource = 'ready' | 'custom';
 
@@ -207,6 +208,12 @@ export function buildReadyProgramDetail(
   isActivePlan = false,
   /** Held, but some other programme is the one Home leads with. */
   isHeldNotLeading = false,
+  /**
+   * The reader's gear and drill swaps, which decide the warm-up and cool-down
+   * and so the minutes — the same options the Programs cards are given, or the
+   * card and this page quote two numbers for one programme.
+   */
+  minutesOptions: ProgrammeMinutesOptions = {},
 ): ProgramDetailViewModel {
   const goal = titleCase(template.goalType);
   const level = titleCase(template.level);
@@ -235,7 +242,7 @@ export function buildReadyProgramDetail(
       goal,
       level,
       `${daysPerWeek} ${pluralize(daysPerWeek, 'day')}`,
-      `${template.estimatedSessionDuration} min`,
+      `${composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions)} min`,
     ],
     tailoringBadges,
     highlights: insights?.highlights ?? [],

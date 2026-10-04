@@ -1,4 +1,5 @@
 import { getRecommendationProgramDefinition } from './recommendationCatalog';
+import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
 import { formatLiftDisplayLabel } from './displayLabel';
@@ -677,14 +678,19 @@ function buildPlanReadyWeeklySchedule(selection: FirstRunSetupSelection, program
   // own language rather than a word it cannot translate back.
   const rhythmDays = resolveProjectedTrainingDays(selection, plannedDaysPerWeek);
   const rhythm = rhythmDays.map((day) => getWeekdayShortLabel(day));
-  const templateDays = [...template.sessions]
-    .sort((left, right) => left.orderIndex - right.orderIndex)
+  const orderedSessions = [...template.sessions].sort((left, right) => left.orderIndex - right.orderIndex);
+  // Home's number for each day, not the catalog's one figure for every day
+  // (bug hunt, 2026-10-04).
+  const sessionMinutes = estimateProgrammeSessionMinutesList(orderedSessions, {
+    availableEquipment: resolveAvailableEquipment(selection),
+  });
+  const templateDays = orderedSessions
     .map((session, index): RecommendationPlanReadyScheduleDay => ({
       id: session.id,
       weekday: rhythmDays[index] ?? null,
       weekdayLabel: rhythm[index] ?? `Day ${index + 1}`,
       name: session.name,
-      meta: `${template.estimatedSessionDuration} min - ${pluralize(session.exercises.length, 'exercise')}`,
+      meta: `${sessionMinutes[index] || template.estimatedSessionDuration} min - ${pluralize(session.exercises.length, 'exercise')}`,
       keyLifts: session.exercises.slice(0, 2).map((exercise) => formatLiftDisplayLabel(exercise.exerciseName)),
       source: 'template',
       note: null,

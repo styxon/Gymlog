@@ -199,6 +199,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         // Was `exercises × 10 min`, which ignored both sets and rest. Same
         // formula as the guided entry now, so the two screens agree.
         const durationInputs = session.exercises.map((exercise) => ({
+          name: exercise.name,
           slotId: activeRuntimeExercises.get(exercise.id)?.slotId ?? exercise.id,
           role: activeRuntimeExercises.get(exercise.id)?.role ?? 'accessory',
           sets: exercise.targetSets,

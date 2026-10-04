@@ -13,6 +13,8 @@ import {
 import { expandRunningIdsWithSources } from '../lib/programmeCopyLink';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programCoverStyle } from '../lib/programVisualIdentity';
+import { readyTemplateCardMinutes } from '../lib/programmeMinutes';
+import { resolveAvailableEquipment } from '../lib/equipmentExerciseFilter';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { getReadyProgramBlockWeeks } from '../lib/readyProgramDuration';
 import { backfillRecommendations } from '../lib/recommendationBackfill';
@@ -64,6 +66,18 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
   } = deps;
 
   const dismissedTipIds = preferences.dismissedTipIds ?? [];
+  // The cards quote Home's number for a session, warm-up and cool-down for
+  // the reader's own gear included (bug hunt, 2026-10-04).
+  const minutesOptions = useMemo(
+    () => ({
+      availableEquipment: resolveAvailableEquipment({
+        trainingEnvironment: preferences.setupTrainingEnvironment,
+        equipmentItems: preferences.setupEquipmentItems,
+      }),
+      overrides: preferences.routineDrillOverrides,
+    }),
+    [preferences.setupTrainingEnvironment, preferences.setupEquipmentItems, preferences.routineDrillOverrides],
+  );
   /**
    * The full catalog as browse cards, plus the counts each category tile
    * shows.
@@ -81,13 +95,13 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
         goal: formatGoalLabel(template.goalType, preferences.appLanguage),
         blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
         days: template.daysPerWeek,
-        minutes: template.estimatedSessionDuration,
+        minutes: readyTemplateCardMinutes(template, minutesOptions),
         cover: programCoverStyle(template.id, template.name),
         fingerprint: buildProgramFingerprint(template),
         level: template.level,
         weeks: getReadyProgramBlockWeeks(template),
       })),
-    [preferences.appLanguage, workout.templates],
+    [minutesOptions, preferences.appLanguage, workout.templates],
   );
   const programsCategoryCounts = useMemo(
     () => countByCategory(workout.templates),
@@ -204,7 +218,7 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
                 blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
                 why: t(preferences.appLanguage, slot.whyKey, { days: template.daysPerWeek }),
                 days: template.daysPerWeek,
-                minutes: template.estimatedSessionDuration,
+                minutes: readyTemplateCardMinutes(template, minutesOptions),
                 cover: programCoverStyle(template.id, template.name),
                 fingerprint: buildProgramFingerprint(template),
                 level: template.level,
@@ -221,6 +235,7 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
       // while browsing — has to reach it (review, 2026-09-20).
       database.workoutTemplates,
       homeActivePlanCard?.programId,
+      minutesOptions,
       preferences.appLanguage,
       recommendedReadyTemplate,
       setupRecommendation?.waterfall,
