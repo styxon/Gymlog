@@ -39,7 +39,7 @@ module.exports = [
       // And Continue is what acts, for all three.
       const cta = source.slice(source.indexOf('onPress={() => {'), source.indexOf('styles.cta,'));
       assert.match(cta, /if \(selected === 'build'\)[\s\S]{0,80}onGuidedOnboarding\(\)/);
-      assert.match(cta, /if \(selected === 'empty'\)[\s\S]{0,200}onStartEmpty\?\.\(\)/);
+      assert.match(cta, /if \(selected === 'empty'\)[\s\S]{0,400}onStartEmpty\?\.\(\)/);
       assert.match(cta, /onBrowsePrograms\(\)/);
     },
   },

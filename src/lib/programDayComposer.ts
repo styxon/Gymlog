@@ -5,7 +5,7 @@ import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
 import { applyCautionFlagsToExercises, CautionExerciseSwap } from './cautionExerciseFilter';
 import { applyEquipmentToExercises, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
-import { getCatalogTrackingMode } from './catalogExercisePools';
+import { getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { collapseRepRange } from './singleRepTarget';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
@@ -127,6 +127,42 @@ function resolveSubstitutionGroup(name: string, role: string, exerciseIndex: num
   return group?.id ?? `onboarding_${role}_${exerciseIndex + 1}`;
 }
 
+const REFILL_EXERCISE_COUNT = 3;
+
+/**
+ * Fills a day whose exercises were all removed from the supplemental pools
+ * (the same verified names the add-on days use), bodyweight first, through
+ * the same equipment and caution filters as everything else — so a refill can
+ * never put back what the reader's gear or flags just ruled out. The
+ * filters' own removed/swapped bookkeeping for the candidates is discarded:
+ * they were never part of the template the reader was shown.
+ */
+function refillEmptiedSession(
+  session: ComposedProgramSession,
+  availableEquipment: string[] | null,
+  cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
+  selection: FirstRunSetupSelection,
+): ComposedProgramSession {
+  const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
+  const names = [...new Set([...pools.flatMap((pool) => pool.bodyweight), ...pools.flatMap((pool) => pool.loaded)])];
+  const candidates = names.map((name, index) => buildComposedFallbackExercise(name, session.id, index));
+  const equipped = applyEquipmentToExercises(candidates, availableEquipment);
+  const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas);
+  const seen = new Set<string>();
+  const exercises = adjusted.exercises
+    .filter((exercise) => {
+      const key = exercise.exerciseName.toLowerCase();
+      if (seen.has(key)) {
+        return false;
+      }
+      seen.add(key);
+      return true;
+    })
+    .slice(0, REFILL_EXERCISE_COUNT)
+    .map((exercise, index) => buildComposedFallbackExercise(exercise.exerciseName, session.id, index));
+  return { ...session, source: 'suggested', exercises };
+}
+
 export function composeProgramWeekForSelection(
   selection: FirstRunSetupSelection,
   programId: string,
@@ -179,7 +215,7 @@ export function composeProgramWeekForSelection(
   const equipmentRemoved: string[] = [];
   const equipmentSwapped: Array<{ from: string; to: string }> = [];
 
-  const sessions = baseSessions
+  const filtered = baseSessions
     .map((session): ComposedProgramSession => {
       const withEmphasis = [...session.exercises, ...(emphasis.bySessionId.get(session.id) ?? [])];
       // Order matters: equipment first, caution LAST so bans always win —
@@ -195,7 +231,16 @@ export function composeProgramWeekForSelection(
       cautionSwapped.push(...adjusted.swapped);
 
       return { ...session, exercises: adjusted.exercises };
-    })
+    });
+
+  // A day the filters emptied is refilled, not dropped: the chosen day count
+  // is the reader's rhythm, and dropping the day saved a 6-day plan as 5 with
+  // a "Day 6" naming gap and no notice (bug hunt, 2026-10-04). Only a day for
+  // which nothing at all survives both filters leaves the week.
+  const sessions = filtered
+    .map((session) =>
+      session.exercises.length > 0 ? session : refillEmptiedSession(session, availableEquipment, cautionFlags, selection),
+    )
     .filter((session) => session.exercises.length > 0)
     .map((session, index) => ({ ...session, orderIndex: index }));
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -72,7 +72,7 @@ interface StartPathScreenProps {
    * Undefined hides the row entirely — it is an escape hatch from the front
    * door, not a mode every caller of this screen should offer.
    */
-  onStartEmpty?: () => void;
+  onStartEmpty?: () => void | Promise<void>;
   onBack: () => void;
 }
 
@@ -183,6 +183,10 @@ export function StartPathScreen({
   const [manropeLoaded] = useFonts({ Manrope: require('../../assets/fonts/Manrope.ttf') });
   const fontFamily = manropeLoaded ? 'Manrope' : undefined;
   const [selected, setSelected] = useState<StartPath>('build');
+  // A ref, not state: two taps in one frame both see the same render. Held
+  // until the start-empty write settles, released on failure so the retry the
+  // toast invites works (bug hunt, 2026-10-04).
+  const startingEmptyRef = useRef(false);
   // The key goes where the chevron goes: back to Welcome, the one screen
   // where leaving the app is what back should do.
   useHardwareBack(onBack);
@@ -259,7 +263,13 @@ export function StartPathScreen({
             if (selected === 'empty') {
               // Only reachable when the card is on screen, which is the same
               // condition that renders it.
-              onStartEmpty?.();
+              if (startingEmptyRef.current) {
+                return;
+              }
+              startingEmptyRef.current = true;
+              void Promise.resolve(onStartEmpty?.()).finally(() => {
+                startingEmptyRef.current = false;
+              });
               return;
             }
             onBrowsePrograms();
