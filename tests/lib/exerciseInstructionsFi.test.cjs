@@ -18,6 +18,7 @@ const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedE
 const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
 const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+const { EQUIPMENT_FALLBACKS } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
 
 // The extras are library entries too — they exist because the generated file
 // lacks them and `exercise:sync` would erase them. Reading only the generated
@@ -34,6 +35,13 @@ function reachableLibraryEntries() {
       for (const exercise of session.exercises) {
         names.add(exercise.exerciseName);
       }
+    }
+  }
+  // A plan swaps onto these when the reader lacks the gear, so they are
+  // prescribed as surely as the rows above — and five of them were English.
+  for (const [, candidates] of EQUIPMENT_FALLBACKS) {
+    for (const name of candidates) {
+      names.add(name);
     }
   }
 

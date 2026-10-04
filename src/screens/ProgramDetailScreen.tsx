@@ -521,6 +521,7 @@ export function ProgramDetailScreen({
       .map((session) =>
         estimateSessionMinutes({
           exercises: session.exercises.map((exercise) => ({
+            name: exercise.name,
             sets: exercise.sets,
             // The top of the range is what the session is planned for.
             reps: exercise.repMax,

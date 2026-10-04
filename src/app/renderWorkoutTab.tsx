@@ -500,6 +500,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           preferences.appLanguage,
           readyProgramIsMine,
           programIsMine && !programLeads,
+          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides },
         )
       : customTemplate
         ? buildCustomProgramDetail(
@@ -803,6 +804,9 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           [],
           resolveComposedWeekForRoute(route.workoutTemplateId),
           preferences.appLanguage,
+          false,
+          false,
+          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides },
         )
       : customTemplate
         ? buildCustomProgramDetail(customTemplate, programInsightsByTemplateId[route.workoutTemplateId], preferences.appLanguage)

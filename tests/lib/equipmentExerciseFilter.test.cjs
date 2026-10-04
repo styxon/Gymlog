@@ -26,7 +26,117 @@ function exercise(name) {
   };
 }
 
+/**
+ * Catalog names that need gear without saying "barbell", "dumbbell" or any
+ * other word an older rule keyed on. Every one of them passed a plan for a
+ * reader with nothing (bug hunt, 2026-10-04), and the deadlift fallbacks never
+ * ran because the deadlift itself was never refused.
+ */
+const NEEDS_GEAR = [
+  'Deadlift',
+  'Conventional Deadlift',
+  'Competition Deadlift',
+  'Deficit Deadlift',
+  'Sumo Deadlift',
+  'Trap Bar Deadlift',
+  'Romanian Deadlift',
+  'Romanian Deadlift (Light)',
+  'Good Morning',
+  'Power Clean',
+  'Push Press',
+  'Pendlay Row',
+  'Bent-Over Row',
+  'Pause Squat',
+  'T-Bar Row',
+  'Chest-Supported T-Bar Row',
+  'Chest-Supported Row',
+  'Arnold Press',
+  'Renegade Row',
+  'Overhead Triceps Extension',
+  'Triceps Kickback',
+  'Face Pull',
+  'Reverse Pec Deck',
+  'Reverse Hyperextension',
+  'Muscle-Up Progression (Negative)',
+  'Front Lever Tuck Hold',
+  'Toes-to-Bar',
+  'Rows (Bar or Rings)',
+  'Battle Rope Slam',
+  'Battle Rope Wave',
+  'Battling Ropes',
+  'Sled Push',
+  'Medicine Ball Slam',
+  'Box Jump',
+  'Step-Up (High Box)',
+  'Step-Up (Low Box)',
+];
+
 module.exports = [
+  {
+    name: 'equipmentExerciseFilter: lifts that need gear without naming it are refused to a reader with none',
+    run() {
+      const allowedBare = NEEDS_GEAR.filter((name) => isExerciseAllowedWithEquipment(name, []));
+      assert.deepEqual(allowedBare, []);
+      // And each one lands somewhere: a swap or an honest removal, never the
+      // original lift left in place.
+      const adjusted = applyEquipmentToExercises(NEEDS_GEAR.map(exercise), []);
+      for (const item of adjusted.exercises) {
+        assert.equal(isExerciseAllowedWithEquipment(item.exerciseName, []), true, item.exerciseName);
+      }
+    },
+  },
+  {
+    name: 'equipmentExerciseFilter: an exact rule leaves the bodyweight version of the same words alone',
+    run() {
+      for (const name of ['Single-Leg Romanian Deadlift', 'Single-Leg RDL', 'Step-Up', 'Bodyweight Squat', 'Glute Bridge']) {
+        assert.equal(isExerciseAllowedWithEquipment(name, []), true, name);
+      }
+      assert.equal(isExerciseAllowedWithEquipment('Deadlift', ['Barbells']), true);
+      assert.equal(isExerciseAllowedWithEquipment('Romanian Deadlift (Light)', ['Dumbbells']), true);
+      assert.equal(isExerciseAllowedWithEquipment('Romanian Deadlift', ['Dumbbells']), false);
+    },
+  },
+  {
+    name: 'equipmentExerciseFilter: a dumbbells-only home plan carries no bar, rope, sled or box work',
+    run() {
+      // Every ready programme, composed for the reader the hunt found it on:
+      // a home setup with nothing but dumbbells.
+      const available = ['Dumbbells'];
+      let composedCount = 0;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        let week;
+        try {
+          week = composeProgramWeekForSelection(
+            {
+              ...DEFAULT_FIRST_RUN_SELECTION,
+              daysPerWeek: template.daysPerWeek,
+              availableDays: [],
+              scheduleMode: 'app_managed',
+              trainingEnvironment: 'home_gym',
+              equipmentItems: available,
+            },
+            template.id,
+          );
+        } catch (error) {
+          // Seasons are dated events, not something onboarding recommends.
+          if (/Unknown recommendation programme/.test(String(error))) continue;
+          throw error;
+        }
+        if (!week) continue;
+        composedCount += 1;
+        for (const session of week.sessions) {
+          for (const item of session.exercises) {
+            assert.equal(
+              isExerciseAllowedWithEquipment(item.exerciseName, available),
+              true,
+              `${template.id} ${session.name}: ${item.exerciseName}`,
+            );
+          }
+        }
+      }
+      assert.ok(composedCount > 30, `only ${composedCount} programmes composed`);
+    },
+  },
   {
     name: 'equipmentExerciseFilter: chips are the truth, bodyweight setup means no equipment',
     run() {
