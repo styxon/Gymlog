@@ -311,15 +311,19 @@ function parseExperience(brief: string): AiPlannerExperience | null {
   if (labelled === null) {
     return null;
   }
-  const lower = labelled.toLowerCase();
-  if (/alle|under|less than|aloittelija|beginner/.test(lower)) {
+  // Only the unambiguous forms, read from the start of the fragment. A loose
+  // match read "yli vuoden" (more than ONE year) and "en ole kokenut" (not
+  // experienced) as advanced, and "discovered" as "over". Anything else is
+  // no signal, and the stored level stands.
+  const lower = labelled.trim().toLowerCase();
+  if (/^(?:alle|under|less than)\s+(?:a\s+|1\s+|yksi\s+|yhden\s+)?(?:vuo|year)/.test(lower)) {
     return 'beginner';
   }
-  if (/yli|over|more than|kokenut|advanced/.test(lower)) {
-    return 'advanced';
-  }
-  if (/1\s*[–-]\s*3|intermediate/.test(lower)) {
+  if (/^1\s*[–—-]\s*3(?:\s|$)/.test(lower)) {
     return 'intermediate';
+  }
+  if (/^(?:yli|over|more than)\s+(?:3|kolme)\s/.test(lower) || /^3\s*\+/.test(lower)) {
+    return 'advanced';
   }
   return null;
 }

@@ -202,6 +202,47 @@ module.exports = [
     },
   },
   {
+    name: 'programIntake: a labelled experience is read only when it is unambiguous',
+    run() {
+      const read = (text) => parseProgrammeBrief(text).experience;
+      assert.equal(read('Kokemus: alle vuosi.'), 'beginner');
+      assert.equal(read('Experience: under a year.'), 'beginner');
+      assert.equal(read('Kokemus: 1–3 vuotta.'), 'intermediate');
+      assert.equal(read('Experience: 1-3 years.'), 'intermediate');
+      assert.equal(read('Experience: 1—3 years.'), 'intermediate');
+      assert.equal(read('Kokemus: yli 3 vuotta.'), 'advanced');
+      assert.equal(read('Experience: over 3 years.'), 'advanced');
+      assert.equal(read('Kokemus: 3+ vuotta.'), 'advanced');
+      // More than ONE year, a negation, "over" inside a word: no signal, so
+      // the stored level stands rather than a wrong one replacing it.
+      assert.equal(read('Kokemus: yli vuoden.'), null);
+      assert.equal(read('Kokemus: en ole kokenut.'), null);
+      assert.equal(read('Experience: intermediate, discovered it late.'), null);
+      assert.equal(read('Experience: over 30 years.'), null);
+    },
+  },
+  {
+    name: 'programIntake: the free-text answer meets the crisis rule before anything is built from it',
+    run() {
+      // The last answer never goes through send(), so the chat applies
+      // send()'s first rule itself: a reader in trouble is answered offline,
+      // and no build offer carries their words to the composer.
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/AICoachChatScreen.tsx'), 'utf8');
+      const start = screen.indexOf('const answerIntake = useCallback(');
+      assert.ok(start !== -1, 'the chat has an intake answer handler');
+      const handler = screen.slice(start, screen.indexOf('setIntakeDraft(', start));
+      const crisisAt = handler.indexOf("classifyCoachScope(value) === 'crisis'");
+      const offerAt = handler.indexOf('buildProgramIntakeBrief(');
+      assert.ok(crisisAt !== -1, 'the intake answer is classified');
+      assert.ok(offerAt !== -1 && crisisAt < offerAt, 'the crisis check comes before the build offer');
+      assert.ok(/crisisAnswer\s*\?/.test(handler), 'a crisis answer replaces the offer');
+      const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
+      assert.equal(classifyCoachScope('mietin itsemurhaa'), 'crisis');
+    },
+  },
+  {
     name: 'programIntake: the frame is one line of the answers',
     run() {
       const state = answerAll(['muscle', '3', '60', 'gym', 'intermediate', '']);

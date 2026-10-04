@@ -1319,11 +1319,19 @@ export function AICoachChatScreen({
             return [message];
           }
           const nextStep = currentProgramIntakeStep(next);
+          // The last answer is free text, and it never passes through send(),
+          // so send()'s first rule is kept here: a reader in trouble is
+          // answered first, offline, and nothing is built from those words or
+          // sent anywhere with them.
+          const crisis = step === 'extra' && classifyCoachScope(value) === 'crisis';
+          const crisisAnswer = crisis ? buildAiCoachPreviewAnswer(value.trim(), trainingContext, language) : null;
           return [
             ...(message.text ? [{ id: `${message.id}:i`, fromCoach: true, text: message.text }] : []),
             { id: `${message.id}:q`, fromCoach: true, text: t(language, PROGRAM_INTAKE_QUESTION_KEYS[step]) },
             { id: `${message.id}:a`, fromCoach: false, text: programIntakeAnswerText(step, value, language) },
-            nextStep
+            crisisAnswer
+              ? { id: `${message.id}:crisis`, fromCoach: true, text: crisisAnswer.takeaway, advice: crisisAnswer }
+              : nextStep
               ? { id: `${message.id}:n`, fromCoach: true, text: '', intake: next }
               : {
                   id: `${message.id}:build`,
@@ -1340,7 +1348,7 @@ export function AICoachChatScreen({
       );
       setIntakeDraft('');
     },
-    [language],
+    [language, trainingContext],
   );
 
   return (
