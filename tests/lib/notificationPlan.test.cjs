@@ -15,6 +15,7 @@ const {
   buildNotificationPlan,
   parseReminderTime,
   COMEBACK_AFTER_DAYS,
+  comebackGapDays,
   DAILY_CAP_BY_LEVEL,
   REMINDER_HORIZON_DAYS,
 } = require('../../.test-dist/lib/notificationPlan.js');
@@ -265,6 +266,42 @@ module.exports = [
     run() {
       const plan = planWith({ schedule: weekdaySchedule([]) });
       assert.equal(plan.filter((item) => item.category === 'reminder').length, 0);
+    },
+  },
+  {
+    // Bug hunt, 2026-10-04: a flat 5-day nudge fired weekly for a once-a-week plan.
+    name: 'notificationPlan: the comeback nudge waits for a missed planned day',
+    run() {
+      const comebackFor = (schedule, lastSessionAtMs, nowMs) =>
+        planWith({
+          prefs: { sessionReminders: false, weeklySummary: false },
+          schedule,
+          lastSessionAtMs,
+          nowMs,
+        }).filter((item) => item.category === 'comeback');
+
+      // Monday-only plan, trained Mon 2026-06-29: next planned day Mon 07-06
+      // passes, so the nudge is Tue 07-07 (8 days), not Sat 07-04.
+      const mon = comebackFor(weekdaySchedule([0]), at(2026, 6, 29, 18, 0), at(2026, 7, 1, 12, 0));
+      assert.equal(mon.length, 1);
+      assert.equal(mon[0].fireAtMs, at(2026, 7, 7, 17, 30));
+      assert.match(mon[0].body, /8 days/);
+
+      // Mon/Wed/Fri: Wed missed -> day after is 2 days, so the 5-day floor holds.
+      const mwf = comebackFor(weekdaySchedule([0, 2, 4]), at(2026, 6, 29, 18, 0), at(2026, 7, 1, 12, 0));
+      assert.equal(mwf[0].fireAtMs, at(2026, 7, 4, 17, 30));
+
+      // Cycle plan (1 on, 6 off, anchored on the session day): next planned day is 7 days on.
+      const cycle = cycleSchedule([true, false, false, false, false, false, false], new Date(2026, 5, 29));
+      const cyc = comebackFor(cycle, at(2026, 6, 29, 18, 0), at(2026, 7, 1, 12, 0));
+      assert.equal(cyc[0].fireAtMs, at(2026, 7, 7, 17, 30));
+
+      // No schedule: the flat window stays.
+      const none = comebackFor(weekdaySchedule([]), at(2026, 6, 29, 18, 0), at(2026, 7, 1, 12, 0));
+      assert.equal(none[0].fireAtMs, at(2026, 7, 4, 17, 30));
+
+      // Calendar stepping across the late-October DST change.
+      assert.equal(comebackGapDays(weekdaySchedule([0]), new Date(2026, 9, 26, 18, 0)), 8);
     },
   },
   {

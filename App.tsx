@@ -1683,7 +1683,6 @@ function VinhaApp() {
     recommendedReadyTemplate,
     homeActivePlanCard,
     homeTrainingSchedule,
-    lifetimeSummary,
     refreshHomeWidget,
   });
 

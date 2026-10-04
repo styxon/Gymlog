@@ -310,6 +310,32 @@ function buildMeasurementReminders(input: NotificationPlanInput): PlannedNotific
   return reminders;
 }
 
+/**
+ * How many days after the last session the comeback nudge may fire.
+ *
+ * A flat five days told a once-a-week reader "it's been 5 days, no rush" every
+ * single week, before their next planned day was even due (bug hunt,
+ * 2026-10-04). A nudge about a gap only makes sense once a planned day has
+ * actually gone by without a session, so it waits for the day after the first
+ * scheduled day that follows the last session, and never fires earlier than
+ * COMEBACK_AFTER_DAYS. Stepping is by calendar date so a 23- or 25-hour DST
+ * day cannot shift it. With no known schedule there is no planned day to
+ * miss, so the flat window stays.
+ */
+export function comebackGapDays(schedule: TrainingSchedule, lastSession: Date): number {
+  if (!isScheduleKnown(schedule)) {
+    return COMEBACK_AFTER_DAYS;
+  }
+  // An empty cycle has nothing planned; the flat window is the safe answer.
+  for (let offset = 1; offset <= 60; offset += 1) {
+    const day = new Date(lastSession.getFullYear(), lastSession.getMonth(), lastSession.getDate() + offset, 12, 0, 0, 0);
+    if (trainsOn(schedule, day)) {
+      return Math.max(COMEBACK_AFTER_DAYS, offset + 1);
+    }
+  }
+  return COMEBACK_AFTER_DAYS;
+}
+
 function buildComebackNudge(input: NotificationPlanInput): PlannedNotification | null {
   const { prefs, language, nowMs } = input;
   if (!prefs.comebackNudge || input.lastSessionAtMs === null) {
@@ -317,7 +343,9 @@ function buildComebackNudge(input: NotificationPlanInput): PlannedNotification |
   }
 
   const { hour, minute } = parseReminderTime(prefs.reminderTime);
-  const fireAtMs = atLocalTime(new Date(input.lastSessionAtMs), COMEBACK_AFTER_DAYS, hour, minute);
+  const lastSession = new Date(input.lastSessionAtMs);
+  const gapDays = comebackGapDays(input.schedule, lastSession);
+  const fireAtMs = atLocalTime(lastSession, gapDays, hour, minute);
   // Anchored to the last session only: once that moment has passed there is no
   // second nudge, and the next one needs a new session to hang off.
   if (fireAtMs <= nowMs) {
@@ -328,7 +356,7 @@ function buildComebackNudge(input: NotificationPlanInput): PlannedNotification |
     key: 'comeback',
     category: 'comeback',
     title: t(language, 'notif.msg.comebackTitle'),
-    body: t(language, 'notif.msg.comebackBody', { days: COMEBACK_AFTER_DAYS }),
+    body: t(language, 'notif.msg.comebackBody', { days: gapDays }),
     fireAtMs,
   };
 }

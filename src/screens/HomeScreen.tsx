@@ -1130,7 +1130,9 @@ export function HomeScreen({
             {activePlan && nextPlanSession ? (
               <View style={styles.heroProg}>
                 <Text style={styles.heroProgLabel}>
-                  {t(language, 'home.hero.sessionsProgress', { done: sessionsDone, total: sessionsTotal })}
+                  {/* One session logged read "1 sessions logged" to every new user
+                      (bug hunt, 2026-10-04). */}
+                  {t(language, sessionsDone === 1 ? 'home.hero.sessionsProgressOne' : 'home.hero.sessionsProgress', { done: sessionsDone, total: sessionsTotal })}
                 </Text>
                 <View style={styles.heroProgTrack}>
                   <Animated.View style={[styles.heroProgFill, { width: progressFillWidth }]} />
@@ -2207,8 +2209,11 @@ export function HomeScreen({
                 key={session.id}
                 title={localizeSessionName(session.title, language)}
                 meta={t(language, 'home.today.meta', {
-                  exercises: session.exercises.length,
-                  sets: session.totalSets ?? 0,
+                  // Same singular-aware pieces as the workout row above; a
+                  // one-exercise or one-set day read "1 exercises" (bug hunt,
+                  // 2026-10-04).
+                  exercises: t(language, session.exercises.length === 1 ? 'tpl.exerciseOne' : 'tpl.exerciseMany', { count: session.exercises.length }),
+                  sets: t(language, (session.totalSets ?? 0) === 1 ? 'home.section.setOne' : 'home.section.setMany', { count: session.totalSets ?? 0 }),
                 })}
                 state={todayPickDraft === session.id ? 'sel' : isToday ? 'cur' : 'idle'}
                 tag={isToday ? t(language, 'kit.today') : null}

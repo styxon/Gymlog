@@ -196,7 +196,7 @@ module.exports = [
       // rows get the space the padding was holding. Still the biggest thing on
       // this screen by a clear margin; the next-largest heading here is 22.
       assert.match(homeScreenSource, /heroTitle:\s*\{[\s\S]*fontSize: 32/);
-      assert.match(homeScreenSource, /t\(language, 'home\.hero\.sessionsProgress', \{ done: sessionsDone, total: sessionsTotal \}\)/);
+      assert.match(homeScreenSource, /t\(language, sessionsDone === 1 \? 'home\.hero\.sessionsProgressOne' : 'home\.hero\.sessionsProgress', \{ done: sessionsDone, total: sessionsTotal \}\)/);
       // Counts sessions plainly (design frame 15): "of 60" repeated the block
       // total that the programme section's "Week 1 of 12" already carries.
       assert.match(i18nSource, /'home\.hero\.sessionsProgress': '\{done\} sessions logged'/);

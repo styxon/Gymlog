@@ -3,6 +3,7 @@ import {
   getActiveWeekRuns,
   getCalendarWeekStartBefore,
   getCalendarWeekStartTimestamp,
+  getCanonicalCardioSessions,
   getCanonicalCompletedSessions,
 } from './completedSessions';
 
@@ -100,4 +101,15 @@ export function getLifetimeTrainingSummary(
     currentWeekStreak,
     firstSessionAt,
   };
+}
+
+/**
+ * Every workout ever logged, lifting and cardio. getMonthTrainingTotals counts
+ * a run as a workout, so a widget total that left cardio out read "Workouts 12"
+ * for the month beside "Total 0" for all time (bug hunt, 2026-10-04). Profile's
+ * lifetime `sessionCount` stays lifting-only: it sits beside lifting volume and
+ * active weeks and is labelled "Sessions".
+ */
+export function getLifetimeWorkoutCount(database: AppDatabase): number {
+  return getCanonicalCompletedSessions(database).length + getCanonicalCardioSessions(database).length;
 }
