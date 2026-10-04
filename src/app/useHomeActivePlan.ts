@@ -385,7 +385,11 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           sessionsPerWeek: `${rotationEntries.length}`,
           // The week's own sessions added up: the next session's minutes times
           // the count quoted a week of identical days (bug hunt, 2026-10-04).
-          weeklyMinutes: weeklyMinutesLabel(homeSessions.map((session) => session.durationMinutes)),
+          // Days with nothing in them yet cost nothing: the estimate still adds
+          // a warm-up and cool-down to an empty day (review, 2026-10-04).
+          weeklyMinutes: weeklyMinutesLabel(
+            homeSessions.filter((session) => session.exercises.length > 0).map((session) => session.durationMinutes),
+          ),
           sessions: homeSessions,
           nextSession: {
             ...nextSession,

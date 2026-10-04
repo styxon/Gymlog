@@ -65,7 +65,12 @@ module.exports = [
       assert.match(source, /resolveNextPlanEntryIndex\(rotationEntries,/);
       assert.match(source, /planTrainedOnDay\(rotationEntries,/);
       assert.match(source, /rotationEntries\[sessionIndex\]\?\.label/);
-      assert.match(source, /weeklyMinutesLabel\(homeSessions\.map/);
+      // Summed over the days that have something in them: an empty day's
+      // estimate is only its warm-up and cool-down (review, 2026-10-04).
+      assert.match(
+        source,
+        /weeklyMinutesLabel\(\s*homeSessions\.filter\(\(session\) => session\.exercises\.length > 0\)\.map/,
+      );
       assert.doesNotMatch(source, /sortedEntries\[sessionIndex\]/);
       assert.doesNotMatch(source, /estimatedDuration \* sortedEntries/);
     },

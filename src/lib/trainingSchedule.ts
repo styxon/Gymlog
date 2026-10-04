@@ -56,10 +56,15 @@ function dayStartOf(date: Date) {
  * midnight any more: Helsinki's midnight is 21:00 the evening before in
  * London, and re-snapping it with dayStartOf named the day BEFORE, so the
  * cycle shifted a day and rest days stopped matching (bug hunt, 2026-10-04).
- * The calendar date it was saved for is the one nearest it, and a midnight is
- * always within twelve hours of the midnight of the zone reading it back, so
- * half a day on, then floor. For the zone it was saved in this is the
- * identity; storage is unchanged.
+ * The calendar date it was saved for is the one nearest it: half a day on,
+ * then floor. For the zone it was saved in this is the identity; storage is
+ * unchanged.
+ *
+ * The limit, on purpose: an instant cannot tell "7 h west" from "17 h east",
+ * so this holds while the two zones are less than twelve hours apart. From
+ * Finland that is everywhere but the far Pacific; a zone-free day key stored
+ * beside the instant would be the full answer, and was judged not worth a
+ * storage change for that case (review, 2026-10-04).
  */
 export function nearestDayStart(instant: number): number {
   return dayStartOf(new Date(instant + DAY_MS / 2));
