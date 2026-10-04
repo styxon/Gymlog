@@ -49,6 +49,28 @@ function dayStartOf(date: Date) {
 }
 
 /**
+ * The local day start a stored day-start instant stands for.
+ *
+ * A day start is saved as the instant of local midnight, with no zone beside
+ * it. Read in another zone (travel, a new phone) the same instant is not
+ * midnight any more: Helsinki's midnight is 21:00 the evening before in
+ * London, and re-snapping it with dayStartOf named the day BEFORE, so the
+ * cycle shifted a day and rest days stopped matching (bug hunt, 2026-10-04).
+ * The calendar date it was saved for is the one nearest it: half a day on,
+ * then floor. For the zone it was saved in this is the identity; storage is
+ * unchanged.
+ *
+ * The limit, on purpose: an instant cannot tell "7 h west" from "17 h east",
+ * so this holds while the two zones are less than twelve hours apart. From
+ * Finland that is everywhere but the far Pacific; a zone-free day key stored
+ * beside the instant would be the full answer, and was judged not worth a
+ * storage change for that case (review, 2026-10-04).
+ */
+export function nearestDayStart(instant: number): number {
+  return dayStartOf(new Date(instant + DAY_MS / 2));
+}
+
+/**
  * Whole days between two local midnights.
  *
  * Not `(a - b) / DAY_MS`: the day a clock changes is 23 or 25 hours long, and
@@ -87,7 +109,10 @@ export function resolveCycleAnchor(
 }
 
 export function cycleSchedule(pattern: boolean[], anchor: Date | number): TrainingSchedule {
-  const anchorDayStart = dayStartOf(new Date(anchor));
+  // A Date is a moment the caller means in this zone, so its own day. A number
+  // is a stored day start, possibly saved in another zone: keep its date
+  // (nearestDayStart) rather than re-snapping it to the day before.
+  const anchorDayStart = anchor instanceof Date ? dayStartOf(anchor) : nearestDayStart(anchor);
   // A pattern with no training day in it is not a rhythm, it is a stopped app.
   return pattern.some(Boolean)
     ? { kind: 'cycle', pattern: [...pattern], anchorDayStart }
@@ -127,7 +152,7 @@ function weekdayIndexOf(date: Date) {
 /** Where a date falls inside the cycle, counting from the anchor. */
 function cycleOffset(schedule: CycleSchedule, date: Date) {
   const length = schedule.pattern.length;
-  const offset = daysBetween(schedule.anchorDayStart, dayStartOf(date)) % length;
+  const offset = daysBetween(nearestDayStart(schedule.anchorDayStart), dayStartOf(date)) % length;
   // JS keeps the sign of the dividend, so a date before the anchor lands on a
   // negative index — and the day before the anchor is the last day of the
   // previous turn, not an error.
@@ -138,7 +163,9 @@ export function trainsOn(schedule: TrainingSchedule, date: Date): boolean {
   if (!isScheduleKnown(schedule)) {
     return false;
   }
-  if (schedule.restDayStarts?.includes(dayStartOf(date))) {
+  // Compared by calendar date, not by the exact instant: see nearestDayStart.
+  const day = dayStartOf(date);
+  if (schedule.restDayStarts?.some((rest) => nearestDayStart(rest) === day)) {
     return false;
   }
   if (schedule.kind === 'weekdays') {
@@ -169,7 +196,7 @@ export function sessionSlotOn(schedule: TrainingSchedule, date: Date): number | 
 
   const length = schedule.pattern.length;
   const perTurn = schedule.pattern.filter(Boolean).length;
-  const elapsed = daysBetween(schedule.anchorDayStart, dayStartOf(date));
+  const elapsed = daysBetween(nearestDayStart(schedule.anchorDayStart), dayStartOf(date));
   // Turns can be negative for a date before the anchor; floor keeps the count
   // walking backwards in the same direction the calendar does.
   const turns = Math.floor(elapsed / length);

@@ -747,7 +747,7 @@ export interface AppPreferences {
    * made before the session was finished is answered, a pick made after it
    * means "again" (2026-08-26).
    */
-  todaySession: { dayStart: number; sessionId: string; pickedAt: number } | null;
+  todaySession: { dayStart: number; sessionId: string; pickedAt: number; workoutTemplateId?: string | null } | null;
   setupTrainingFeel: TrainingFeelPreference;
   setupWorkoutVariety: WorkoutVarietyPreference;
   setupFreeWeightsPreference: ExerciseModalityPreference;

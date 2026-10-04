@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+const { getLifetimeTrainingSummary, getLifetimeWorkoutCount } = require('../../.test-dist/lib/lifetimeSummary.js');
 
 // Completed log with a single comparable working set so the session counts as
 // "completed" under getCanonicalCompletedSessions.
@@ -112,6 +112,21 @@ module.exports = [
       assert.equal(summary.bestWeekStreak, 3);
       // Jun 1 week through Jul 6 week inclusive spans 6 calendar weeks (one gap week included).
       assert.equal(summary.weeksSinceStart, 6);
+    },
+  },
+  {
+    // Bug hunt, 2026-10-04: the widget showed Workouts 12 (month, lifting + cardio) beside Total 0.
+    name: 'the lifetime workout count includes cardio, like the month total',
+    run() {
+      const cardioSessions = [
+        { id: 'c1', performedAt: '2026-06-02T10:00:00.000Z', durationSec: 1800 },
+        { id: 'c1', performedAt: '2026-06-02T10:00:00.000Z', durationSec: 1800 },
+        { id: 'c2', performedAt: '2026-06-03T10:00:00.000Z', durationSec: 1800 },
+      ];
+      const database = { ...buildDatabase([createSession('s1', '2026-06-01T10:00:00.000Z', 500)]), cardioSessions };
+      assert.equal(getLifetimeWorkoutCount(database), 3, 'one lift + two distinct runs');
+      assert.equal(getLifetimeWorkoutCount({ ...buildDatabase([]), cardioSessions }), 2, 'a runner with no lifts is not zero');
+      assert.equal(getLifetimeWorkoutCount(buildDatabase([])), 0);
     },
   },
 ];

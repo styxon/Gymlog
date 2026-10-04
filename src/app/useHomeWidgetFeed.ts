@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 
 import { getMonthTrainingTotals } from '../lib/dashboard';
+import { getLifetimeWorkoutCount } from '../lib/lifetimeSummary';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { resolveThemeName } from '../lib/themePreference';
 import { buildHomeWidgetPayload } from '../lib/widgetPayload';
@@ -42,7 +43,6 @@ export interface HomeWidgetFeedDeps {
     sessionForecast?: WidgetInput['sessionForecast'];
   } | null;
   homeTrainingSchedule: WidgetInput['schedule'];
-  lifetimeSummary: { sessionCount: number };
   /** From ./modules/home-widget. */
   refreshHomeWidget: () => Promise<boolean>;
 }
@@ -56,7 +56,6 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
     recommendedReadyTemplate,
     homeActivePlanCard,
     homeTrainingSchedule,
-    lifetimeSummary,
     refreshHomeWidget,
   } = deps;
 
@@ -133,7 +132,9 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
         monthTotals: widgetMonthTotals,
         // Every workout ever, not a week streak: the 2x1 counts what you have
         // done, asked for on the home screen 2026-08-20.
-        totalWorkouts: lifetimeSummary.sessionCount,
+        // Lifting plus cardio, like the month figures beside it (bug hunt,
+        // 2026-10-04: a runner saw Workouts 12 this month and Total 0).
+        totalWorkouts: getLifetimeWorkoutCount(database),
       }),
     );
 
@@ -153,7 +154,7 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
     widgetCompletedWorkoutDayStarts,
     widgetMonthTotals,
     widgetSuggestion,
-    lifetimeSummary,
+    database,
   ]);
 
   return { widgetCompletedWorkoutDayStarts };

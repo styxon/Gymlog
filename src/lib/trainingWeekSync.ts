@@ -100,6 +100,14 @@ export function rotateLabelsForNextSession(
   labels: readonly SetupWeekday[],
   nextIndex: number,
   from: Date,
+  /**
+   * Today's session is already done. Then today is gone like any earlier day:
+   * counting it as open put the NEXT session on today's weekday while the
+   * forecast (forecastSlotOn) already moves on to the next training day
+   * (bug hunt, 2026-10-04: Mon/Wed/Fri, session 0 trained Monday, rhythm
+   * edited Monday).
+   */
+  trainedToday = false,
 ): SetupWeekday[] {
   const count = labels.length;
   if (count < 2) {
@@ -108,7 +116,8 @@ export function rotateLabelsForNextSession(
   const week = [...labels].sort((left, right) => WEEKDAY_INDEX[left] - WEEKDAY_INDEX[right]);
   // getDay() is Sunday-first; every weekday index in this app is Monday-first.
   const today = (from.getDay() + 6) % 7;
-  const upcoming = week.findIndex((label) => WEEKDAY_INDEX[label] >= today);
+  const firstOpen = trainedToday ? today + 1 : today;
+  const upcoming = week.findIndex((label) => WEEKDAY_INDEX[label] >= firstOpen);
   // No day left this week means the week wraps to its first day, which is
   // what a week does.
   const start = upcoming === -1 ? 0 : upcoming;

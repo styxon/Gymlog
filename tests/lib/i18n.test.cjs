@@ -116,6 +116,25 @@ module.exports = [
       assert.match(read('src/screens/TrainingPlanScreen.tsx'), /count === 1 \? 'plan\.dayCountOne'/);
       assert.match(read('src/screens/TrainingPlanScreen.tsx'), /planExerciseCount === 1 \? 'plan\.exerciseCountOne'/);
       assert.match(read('src/screens/HomeScreen.tsx'), /totalSets === 1 \? 'home\.section\.setOne'/);
+      // Bug hunt, 2026-10-04: hero counter and the today picker rows said "1 sessions" / "1 exercises".
+      assert.equal(t('en', 'home.hero.sessionsProgressOne', { done: 1 }), '1 session logged');
+      assert.equal(t('fi', 'home.hero.sessionsProgressOne', { done: 1 }), '1 treeni kirjattu');
+      assert.equal(
+        t('en', 'home.today.meta', {
+          exercises: t('en', 'tpl.exerciseOne', { count: 1 }),
+          sets: t('en', 'home.section.setOne', { count: 1 }),
+        }),
+        '1 exercise · 1 set',
+      );
+      assert.equal(
+        t('fi', 'home.today.meta', {
+          exercises: t('fi', 'tpl.exerciseMany', { count: 5 }),
+          sets: t('fi', 'home.section.setMany', { count: 15 }),
+        }),
+        '5 liikettä · 15 sarjaa',
+      );
+      assert.match(read('src/screens/HomeScreen.tsx'), /sessionsDone === 1 \? 'home\.hero\.sessionsProgressOne'/);
+      assert.match(read('src/screens/HomeScreen.tsx'), /session\.exercises\.length === 1 \? 'tpl\.exerciseOne'/);
     },
   },
 ];

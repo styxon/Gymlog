@@ -137,6 +137,25 @@ module.exports = [
     },
   },
   {
+    name: 'a reorder on the day the first session was trained puts the next one on the next training day, not today',
+    run() {
+      // Bug hunt, 2026-10-04: today counted as open although its session was done.
+      const week = [
+        { workoutTemplateId: 't', orderIndex: 0, label: 'mon', workoutTemplateSessionId: 'a' },
+        { workoutTemplateId: 't', orderIndex: 1, label: 'wed', workoutTemplateSessionId: 'b' },
+        { workoutTemplateId: 't', orderIndex: 2, label: 'fri', workoutTemplateSessionId: 'c' },
+      ];
+      const monday = new Date(2026, 8, 14, 18, 0);
+      const logged = [
+        { workoutTemplateId: 't', workoutTemplateSessionId: 'a', performedAt: new Date(2026, 8, 14, 9, 0).toISOString() },
+      ];
+      const turned = reorderPlanWeek(week, ['a', 'c', 'b'], logged, monday);
+      const offered = turned.entries[resolveNextPlanEntryIndex(turned.entries, logged)];
+      assert.equal(offered.workoutTemplateSessionId, 'c');
+      assert.equal(offered.label, 'wed');
+    },
+  },
+  {
     name: 'with nothing logged, the new first session takes the next training day',
     run() {
       const week = [
