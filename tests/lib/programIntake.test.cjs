@@ -135,6 +135,7 @@ module.exports = [
                   assert.equal(signals.goal, GOAL_SIGNAL[goal], label);
                   assert.equal(signals.sessionMinutes, Number(minutes), label);
                   assert.equal(signals.equipment, EQUIPMENT_SIGNAL[equipment], label);
+                  assert.equal(signals.experience, experience, label);
                   // The composer's ceiling is four; five and six are read as asked.
                   assert.equal(signals.daysPerWeek, Math.min(4, Number(days)), label);
                   assert.equal(signals.requestedDaysPerWeek, Number(days) > 4 ? Number(days) : null, label);
@@ -176,7 +177,28 @@ module.exports = [
       // Skipped: nothing added.
       const skipped = answerAll(['strength', '3', '45', 'gym', 'beginner', '   ']);
       assert.equal(skipped.answers.extra, '');
-      assert.ok(buildProgramIntakeBrief(skipped.answers, 'fi').endsWith('Treenannut alle vuoden.'));
+      assert.ok(buildProgramIntakeBrief(skipped.answers, 'fi').endsWith('Kokemus: alle vuosi.'));
+    },
+  },
+  {
+    name: 'programIntake: a word in the free text cannot outrank a tapped goal, place or experience',
+    run() {
+      const cases = [
+        ['fi', 'haluan vahvat jalat, kuminauhat mukana, olen kokenut'],
+        ['en', 'I want to get strong and lean, bands at home, beginner at squats'],
+      ];
+      for (const [language, extra] of cases) {
+        const state = answerAll(['muscle', '3', '60', 'gym', 'intermediate', extra]);
+        const signals = parseProgrammeBrief(buildProgramIntakeBrief(state.answers, language));
+        assert.equal(signals.goal, 'muscle', extra);
+        assert.equal(signals.equipment, 'full_gym', extra);
+        assert.equal(signals.experience, 'intermediate', extra);
+      }
+      // Without the labels the parser behaves as it did for typed briefs:
+      // priority over the whole text, and no experience read from prose.
+      const typed = parseProgrammeBrief('3 päivää, lihasmassaa ja vahvat jalat, olen treenannut yli 3 vuotta');
+      assert.equal(typed.goal, 'strength');
+      assert.equal(typed.experience, null);
     },
   },
   {

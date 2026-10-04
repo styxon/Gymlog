@@ -313,7 +313,10 @@ function asSentence(text: string): string {
  * The brief the composer gets, in the reader's language.
  *
  * Each answer is worded so the brief parser reads it back: the goal word, "N
- * päivää", "N min", the place. 75+ is written as "75 min" and more, since the
+ * päivää", "N min", the place. Goal, place and experience go under a label
+ * ("Tavoite:", "Paikka:", "Kokemus:"), which the parser reads before the rest
+ * of the brief — otherwise a word in the free text could outrank the tap.
+ * 75+ is written as "75 min" and more, since the
  * parser takes the number and a "+" would hide it. The free text goes last,
  * as written, so an injury or a lift in it is read with the same rules as a
  * brief typed in conversation — and the days the parser finds first are the

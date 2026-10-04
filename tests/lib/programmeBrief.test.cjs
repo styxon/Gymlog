@@ -120,6 +120,7 @@ module.exports = [
         sessionMinutes: null,
         goal: null,
         equipment: null,
+        experience: null,
         lifts: [],
         focusBodyParts: [],
         cautions: [],
