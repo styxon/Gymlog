@@ -11,6 +11,22 @@ const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSe
 
 module.exports = [
   {
+    name: "rotateLabelsForNextSession: today's session done, the next one starts on the next training day",
+    run() {
+      // Bug hunt, 2026-10-04. Mon/Wed/Fri, session 0 trained on Monday, rhythm
+      // edited on Monday: next is session 1, and the forecast puts it on
+      // Wednesday. The labels put it on Monday because today counted as open.
+      const monday = new Date(2026, 7, 24, 12);
+      const done = rotateLabelsForNextSession(["mon", "wed", "fri"], 1, monday, true);
+      assert.equal(done[1], "wed", "session 1 sits on Wednesday");
+      // Not trained yet: today is still open, as before.
+      assert.equal(rotateLabelsForNextSession(["mon", "wed", "fri"], 1, monday, false)[1], "mon");
+      // Sunday, trained: nothing left this week, the week wraps to Monday.
+      const sunday = new Date(2026, 7, 30, 12);
+      assert.equal(rotateLabelsForNextSession(["mon", "wed", "sun"], 0, sunday, true)[0], "mon");
+    },
+  },
+  {
     name: 'reads the weekdays a plan names, Monday first and without repeats',
     run() {
       assert.deepEqual(

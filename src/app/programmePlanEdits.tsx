@@ -1,4 +1,4 @@
-import { resolveNextPlanEntryIndex } from '../lib/planRotation';
+import { planTrainedOnDay, resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
 import { planLabelsFromWeekdays, rotateLabelsForNextSession, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
@@ -101,10 +101,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // back Monday-first however they were tapped. Which session lands on which
     // of them is this app's answer, and it is the same one adoption gives:
     // whatever comes next in the rotation takes the first day not yet gone.
+    const completedHere = completedSessionsForTemplate(ordered[0]?.workoutTemplateId);
+    const now = new Date();
     const labels = rotateLabelsForNextSession(
       dayIndexes.map((index) => WEEKDAY_KEYS[index]),
-      resolveNextPlanEntryIndex(ordered, completedSessionsForTemplate(ordered[0]?.workoutTemplateId)),
-      new Date(),
+      resolveNextPlanEntryIndex(ordered, completedHere),
+      now,
+      planTrainedOnDay(ordered, completedHere, new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()),
     );
     const entries = ordered.map((entry, index) => ({ ...entry, label: labels[index] }));
     await upsertWorkoutPlan({
@@ -176,10 +179,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // straight through put session one on the earliest weekday, so a reader
     // who moved a day mid-week was offered one session and shown another one's
     // day beside it.
+    const completedHere = completedSessionsForTemplate(ordered[0]?.workoutTemplateId);
+    const now = new Date();
     const placed = rotateLabelsForNextSession(
       labels,
-      resolveNextPlanEntryIndex(ordered, completedSessionsForTemplate(ordered[0]?.workoutTemplateId)),
-      new Date(),
+      resolveNextPlanEntryIndex(ordered, completedHere),
+      now,
+      planTrainedOnDay(ordered, completedHere, new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()),
     );
     await upsertWorkoutPlan({
       ...plan,
