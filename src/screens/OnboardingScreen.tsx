@@ -652,7 +652,10 @@ const LOCATION_SELECTION_OPTIONS: Array<{
 // the chosen labels persist to setupEquipmentItems for later exercise filtering.
 const EQUIPMENT_CHIP_CATALOG: Partial<Record<LocationSelectionOptionId, string[]>> = {
   full_gym: ['Barbells', 'Dumbbells', 'Machines', 'Cables', 'Squat rack', 'Bench', 'Kettlebells', 'Cardio machines'],
-  home_gym: ['Dumbbells', 'Barbell & plates', 'Squat rack', 'Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar'],
+  // A treadmill, a bike or a cross-trainer is common at home, so it can be
+  // ticked — but it is not in the defaults below: most homes have none, and a
+  // chip on by default would hand them cardio-machine work (user, 2026-10-04).
+  home_gym: ['Dumbbells', 'Barbell & plates', 'Squat rack', 'Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar', 'Cardio machines'],
   bodyweight_only: ['Pull-up bar', 'Resistance bands', 'Yoga mat'],
 };
 
