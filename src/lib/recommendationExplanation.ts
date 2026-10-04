@@ -1,4 +1,5 @@
 import { buildTailoringRecommendationNote, TailoringPreferencesInput } from './tailoringFit';
+import { resolveProgramTrainingDays } from './programTrainingDays';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import { getFocusAreaLabel } from './focusAreaPresentation';
 import { I18nKey, t } from './i18n';
@@ -224,44 +225,6 @@ function normalizeWeekdays(days: SetupWeekday[]) {
   return [...new Set(days)].sort((left, right) => WEEKDAY_ORDER.indexOf(left) - WEEKDAY_ORDER.indexOf(right));
 }
 
-function buildCombinationList(days: SetupWeekday[], targetSize: number): SetupWeekday[][] {
-  if (targetSize <= 0) {
-    return [[]];
-  }
-
-  if (days.length < targetSize) {
-    return [];
-  }
-
-  if (targetSize === 1) {
-    return days.map((day) => [day]);
-  }
-
-  const combinations: SetupWeekday[][] = [];
-  days.forEach((day, index) => {
-    const tail = buildCombinationList(days.slice(index + 1), targetSize - 1);
-    tail.forEach((combination) => {
-      combinations.push([day, ...combination]);
-    });
-  });
-
-  return combinations;
-}
-
-function scoreWeekdayCombination(days: SetupWeekday[]) {
-  const indexes = normalizeWeekdays(days).map((day) => WEEKDAY_ORDER.indexOf(day));
-  const gaps = indexes.map((current, index) => {
-    const next = indexes[(index + 1) % indexes.length];
-    return index === indexes.length - 1 ? next + 7 - current : next - current;
-  });
-  const minGap = Math.min(...gaps);
-  const maxGap = Math.max(...gaps);
-  const gapSpread = maxGap - minGap;
-  const weekdayBias = indexes.reduce((sum, value) => sum + value, 0);
-
-  return minGap * 100 - gapSpread * 10 - weekdayBias;
-}
-
 /**
  * The days the programme will really use, drawn only from the days the reader
  * gave. Bug hunt, 2026-10-04: a private default rhythm used to fill in when the
@@ -282,14 +245,12 @@ function resolveProjectedTrainingDays(
     return normalizedDays;
   }
 
-  const combinations = buildCombinationList(normalizedDays, daysPerWeek);
-  if (combinations.length === 0) {
-    return null;
-  }
-
-  return combinations.reduce((best, current) =>
-    scoreWeekdayCombination(current) > scoreWeekdayCombination(best) ? current : best,
-  );
+  // The one placement the strip, the saved plan and Home all use — a private
+  // scorer here could name different days than the week it explains.
+  return resolveProgramTrainingDays(
+    normalizedDays.map((day) => WEEKDAY_ORDER.indexOf(day)),
+    daysPerWeek,
+  ).map((index) => WEEKDAY_ORDER[index]);
 }
 
 export function buildRecommendationReasonLines(
