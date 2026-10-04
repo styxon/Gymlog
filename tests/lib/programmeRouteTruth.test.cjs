@@ -137,7 +137,7 @@ module.exports = [
       // And every counter reads the programme, not the record holding it.
       assert.match(
         code,
-        /\.\.\.programmeHistoryIds\(activeTemplate\.id, workoutTemplates, templatesRunByOtherPlans\(activeTemplate\.id\)\),/,
+        /programmeHistoryIds\(activeTemplate\.id, workoutTemplates, templatesRunByOtherPlans\(activeTemplate\.id\)\)/,
       );
     },
   },

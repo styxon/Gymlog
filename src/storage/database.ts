@@ -222,11 +222,11 @@ function mergeExerciseLibrary(
  */
 function normalizeTodaySession(
   value: unknown,
-): { dayStart: number; sessionId: string; pickedAt: number } | null {
+): { dayStart: number; sessionId: string; pickedAt: number; workoutTemplateId: string | null } | null {
   if (typeof value !== 'object' || value === null) {
     return null;
   }
-  const raw = value as { dayStart?: unknown; sessionId?: unknown; pickedAt?: unknown };
+  const raw = value as { dayStart?: unknown; sessionId?: unknown; pickedAt?: unknown; workoutTemplateId?: unknown };
   if (typeof raw.dayStart !== 'number' || !Number.isFinite(raw.dayStart) || typeof raw.sessionId !== 'string') {
     return null;
   }
@@ -234,6 +234,10 @@ function normalizeTodaySession(
     ? {
         dayStart: raw.dayStart,
         sessionId: raw.sessionId,
+        // A pick stored before the programme was recorded has none: it applies
+        // to whichever programme leads, as it always did.
+        workoutTemplateId:
+          typeof raw.workoutTemplateId === 'string' && raw.workoutTemplateId ? raw.workoutTemplateId : null,
         // A pick stored before pickedAt existed is treated as made at the
         // start of its day: any completion that day is then later than the
         // pick, which is exactly how those picks already behaved.

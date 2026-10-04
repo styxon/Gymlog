@@ -14,6 +14,7 @@ import {
   type SessionFocusKind,
 } from '../lib/homeSessionHero';
 import { planTrainedOnDay, resolveNextPlanEntryIndex } from '../lib/planRotation';
+import { resolvablePlanEntries, weeklyMinutesLabel } from '../lib/planResolvableEntries';
 import { countSessionsSince, resolveCompletionCard } from '../lib/programCompletion';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
 import { programmeHistoryIds } from '../lib/programLineage';
@@ -173,15 +174,13 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
               repMax: exercise.repsMax,
             })),
           }));
-      const orderedPlanSessions = sortedEntries
-        .map((entry) => {
-          if (entry.workoutTemplateSessionId) {
-            return activeTemplateSessions.find((session) => session.id === entry.workoutTemplateSessionId) ?? null;
-          }
-
-          return activeTemplateSessions[entry.orderIndex] ?? null;
-        })
-        .filter((session): session is NonNullable<typeof session> => Boolean(session));
+      // One list for the rotation, the labels, the forecast and the counts.
+      // An entry naming a session the template lacks is left out of all of
+      // them; filtering only the sessions made the indexes below point at
+      // different rows (bug hunt, 2026-10-04, see planResolvableEntries).
+      const resolvedEntries = resolvablePlanEntries(sortedEntries, activeTemplateSessions);
+      const rotationEntries = resolvedEntries.map((resolved) => resolved.entry);
+      const orderedPlanSessions = resolvedEntries.map((resolved) => resolved.session);
       // The runtime template is where a custom exercise gets its slot id and
       // substitution group; read them from there rather than rebuilding the
       // rule here, so Home and the session cannot disagree about a slot.
@@ -220,7 +219,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         });
         // Weekday truth (P6): surface the plan's own entry label so week rows
         // land on the user's chosen days, not a generic spread.
-        const entryLabel = sortedEntries[sessionIndex]?.label ?? null;
+        const entryLabel = rotationEntries[sessionIndex]?.label ?? null;
 
         return {
           id: session.id,
@@ -258,25 +257,41 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
       // Was `homeSessions[0]`, always. Finishing day 1 offered day 1 again,
       // and the start button logged the wrong session against the plan.
       const completedForTemplate = completedSessionsForTemplate(firstEntry.workoutTemplateId, completedPlanSessions);
-      const nextSessionIndex = resolveNextPlanEntryIndex(sortedEntries, completedForTemplate);
+      const nextSessionIndex = resolveNextPlanEntryIndex(rotationEntries, completedForTemplate);
       // Where the rotation stands, for the calendars: they name days from here
       // on by what Home will offer, not by counting calendar days
       // (trainingSchedule forecastSlotOn).
       const sessionForecast = {
         fromDayStart: todayDayStart,
         nextSlot: nextSessionIndex,
-        trainedToday: planTrainedOnDay(sortedEntries, completedForTemplate, todayDayStart),
+        trainedToday: planTrainedOnDay(rotationEntries, completedForTemplate, todayDayStart),
       };
       // The reader's own answer wins for the day they gave it. The rotation
       // knows what comes next in the programme and cannot know that today is
       // legs — but it is right again tomorrow, so the override is dated rather
       // than sticky, and a stale one is ignored instead of cleared.
+      //
+      // The programme, not the record that happens to hold it: a copy made
+      // by editing one lift is the same programme the reader has been
+      // training, and every counter below reads this set. The pick reads it
+      // too: the catalog reuses session ids across programmes (upper_a in two
+      // of them), so an id alone let a pick made in one programme resolve in
+      // the one the reader switched to, and a same-id session trained in
+      // another programme cancel it (bug hunt, 2026-10-04).
+      const planTemplateIds = new Set([
+        ...sortedEntries.map((entry) => entry.workoutTemplateId),
+        ...(activeTemplate ? [activeTemplate.id] : []),
+        ...(activeTemplate
+          ? programmeHistoryIds(activeTemplate.id, workoutTemplates, templatesRunByOtherPlans(activeTemplate.id))
+          : []),
+      ]);
       const pickedToday = resolveTodaySessionPick({
         pick: preferences.todaySession,
         sessions: homeSessions,
         todayDayStart,
         completed: completedPlanSessions,
         toDayStart: toDayStartMs,
+        templateIds: planTemplateIds,
       });
       // A day named but not yet filled is not a session to offer: its turn
       // goes to the next day that has something in it (2026-09-26). A pick of
@@ -290,14 +305,6 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         (startableIndex === null ? null : homeSessions[startableIndex]) ??
         null;
       if (activeTemplate && nextSession) {
-        const estimatedDuration = Number.parseInt(nextSession.duration.replace(/\D/g, ''), 10) || 20;
-        // The programme, not the record that happens to hold it: a copy made
-        // by editing one lift is the same programme the reader has been
-        // training, and every counter below reads this set.
-        const planTemplateIds = new Set([
-          ...sortedEntries.map((entry) => entry.workoutTemplateId),
-          ...programmeHistoryIds(activeTemplate.id, workoutTemplates, templatesRunByOtherPlans(activeTemplate.id)),
-        ]);
         // Counted from the plan record's own start, not all time. Plan records
         // are only written at onboarding, adoption and restart, so `updatedAt`
         // IS the block boundary — and without it "Uusi kierros" is impossible:
@@ -328,7 +335,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         const programmeBlockWeeks = getProgrammeBlockWeeks(activeTemplate.id, workoutTemplates, getWorkoutTemplateById);
         const planProgress = buildHomePlanProgress({ language: preferences.appLanguage,
           completedSessions: completedSessionCount,
-          sessionsPerWeek: sortedEntries.length,
+          sessionsPerWeek: rotationEntries.length,
           totalWeeks: demoBlockWeeks ?? onboardingBlockWeeks ?? programmeBlockWeeks,
         });
 
@@ -344,7 +351,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           // asking which week a past session filled counts from the same
           // place the hero does.
           blockStartedAt: activeWorkoutPlan.updatedAt,
-          eyebrow: `${sortedEntries.length} day custom plan`,
+          eyebrow: `${rotationEntries.length} day custom plan`,
           goalLabel: formatGoalLabel(preferences.aiPlannerGoal || preferences.setupGoal || 'general'),
           // For a CUSTOM programme the template's name wins, and the plan's
           // copy is only the fallback. Both records hold the name — the plan
@@ -363,7 +370,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
               : activeWorkoutPlan.name || activeTemplate.name,
             'Workout plan',
           ),
-          subtitle: `${sortedEntries.length} workouts in rotation.`,
+          subtitle: `${rotationEntries.length} workouts in rotation.`,
           weekLabel: planProgress.weekLabel,
           progressPercent: planProgress.progressPercent,
           sessionsDone: planProgress.sessionsDone,
@@ -375,8 +382,10 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
             (orderedPlanSessions[0]?.exercises ?? []).map((exercise) => exercise.name),
             exerciseLibrary,
           ),
-          sessionsPerWeek: `${sortedEntries.length}`,
-          weeklyMinutes: `~${estimatedDuration * sortedEntries.length} min`,
+          sessionsPerWeek: `${rotationEntries.length}`,
+          // The week's own sessions added up: the next session's minutes times
+          // the count quoted a week of identical days (bug hunt, 2026-10-04).
+          weeklyMinutes: weeklyMinutesLabel(homeSessions.map((session) => session.durationMinutes)),
           sessions: homeSessions,
           nextSession: {
             ...nextSession,

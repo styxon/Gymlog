@@ -506,12 +506,12 @@ module.exports = [
       // yesterday (2026-09-16).
       assert.match(
         heroCard,
-        /const completedForTemplate = completedSessionsForTemplate\(firstEntry\.workoutTemplateId, completedPlanSessions\);\s*const nextSessionIndex = resolveNextPlanEntryIndex\(sortedEntries, completedForTemplate\);/,
+        /const completedForTemplate = completedSessionsForTemplate\(firstEntry\.workoutTemplateId, completedPlanSessions\);\s*const nextSessionIndex = resolveNextPlanEntryIndex\(rotationEntries, completedForTemplate\);/,
       );
       // "Trained today" for the calendar forecast counts this plan's sessions
       // by the rotation's own match, not any workout logged today (recheck of
       // #224, 2026-09-28).
-      assert.match(heroCard, /trainedToday: planTrainedOnDay\(sortedEntries, completedForTemplate, todayDayStart\),/);
+      assert.match(heroCard, /trainedToday: planTrainedOnDay\(rotationEntries, completedForTemplate, todayDayStart\),/);
       assert.match(heroCard, /equipmentLabel: buildSessionEquipmentLabel\(/);
       assert.match(heroCard, /totalSets: session\.exercises\.reduce/);
       assert.doesNotMatch(homeScreenSource, /planChartBars/);
