@@ -17,6 +17,13 @@ export interface ProgrammeMinutesOptions {
   /** The reader's gear, which decides the warm-up and cool-down drills. */
   availableEquipment?: string[] | null;
   overrides?: RoutineDrillOverrides | null;
+  /**
+   * Which end of the rest range to cost. A ready programme runs on the low
+   * end; the copy onboarding saves keeps the high end (onboardingHandoff), so
+   * the onboarding card has to quote that one or Home reads 5–20 minutes more
+   * than the card promised (bug hunt, 2026-10-04).
+   */
+  rest?: 'min' | 'max';
 }
 
 export function estimateProgrammeSessionMinutesList(
@@ -36,7 +43,7 @@ export function estimateProgrammeSessionMinutesList(
         sets: exercise.sets,
         reps: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
-        restSeconds: exercise.restSecondsMin,
+        restSeconds: options.rest === 'max' ? exercise.restSecondsMax : exercise.restSecondsMin,
         supersetGroup: exercise.supersetGroup ?? null,
       })),
       // Drill durations do not depend on the language, only their labels do.

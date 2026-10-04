@@ -64,7 +64,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_home_dumbbell_upper_lower_v1',
       'tpl_home_dumbbell_ppl_v1',
       'tpl_home_bodyweight_upper_lower_v1',
-      'tpl_home_athletic_5_day_v1',
       'tpl_huge_starter_v1',
       'tpl_3_day_push_pull_legs_v1',
       'tpl_4_day_upper_lower_v1',
@@ -88,6 +87,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
     description: 'Programs that keep practice frequent while recovery stays predictable.',
     recommendedFor: 'General training blocks where you want progression without a very narrow focus.',
     templateIds: [
+      'tpl_home_athletic_5_day_v1',
       'tpl_2_day_minimal_full_body_v1',
       'tpl_2_day_mobility_reset_v1',
       'tpl_2_day_yoga_recovery_v1',

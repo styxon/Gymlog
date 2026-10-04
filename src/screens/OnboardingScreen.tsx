@@ -1810,6 +1810,14 @@ export function OnboardingScreen({
 
   function applyEquipmentEnvironment(option: (typeof LOCATION_SELECTION_OPTIONS)[number], items: string[]) {
     if (option.id === 'home_gym') {
+      // Every chip unticked is an answer: nothing. Saved as minimal with no
+      // chips it read as "unknown gear", and the reader was handed dumbbell
+      // work (bug hunt, 2026-10-04).
+      if (items.length === 0) {
+        setEquipment('home');
+        setTrainingEnvironment('bodyweight_only');
+        return;
+      }
       const hasHeavy = items.some((item) => HOME_HEAVY_EQUIPMENT_ITEMS.includes(item));
       setEquipment(hasHeavy ? 'home' : 'minimal');
       setTrainingEnvironment(hasHeavy ? 'home_gym' : 'minimal_equipment');

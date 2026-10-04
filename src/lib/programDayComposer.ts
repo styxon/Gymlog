@@ -217,7 +217,7 @@ export function composeProgramWeekForSelection(
     // Home's arithmetic over the week as composed, swaps and all — the card
     // and the plan it saves quote one number (bug hunt, 2026-10-04).
     sessionMinutes:
-      estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
+      estimateProgrammeSessionMinutes(sessions, { availableEquipment, rest: 'max' }) || template.estimatedSessionDuration,
     composed: days !== template.daysPerWeek,
     cautionRemoved,
     cautionSwapped,

@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { readyTemplateCardMinutes } from '../lib/programmeMinutes';
 import { LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -385,7 +386,7 @@ export function OnboardingReadyCatalogScreen({
                     accessibilityLabel={t(language, 'catalog.a11y.card', {
                       program: presentation.title,
                       days: template.daysPerWeek,
-                      minutes: template.estimatedSessionDuration,
+                      minutes: readyTemplateCardMinutes(template),
                       level: tierLabelFor(template.level, language),
                     })}
                     onPress={() => setSelectedId((current) => (current === template.id ? null : template.id))}
@@ -419,7 +420,7 @@ export function OnboardingReadyCatalogScreen({
                       </Text>
                       <MetaDot />
                       <Text style={[styles.metaText, { fontFamily }]}>
-                        {t(language, 'catalog.metaMinutes', { minutes: template.estimatedSessionDuration })}
+                        {t(language, 'catalog.metaMinutes', { minutes: readyTemplateCardMinutes(template) })}
                       </Text>
                       <MetaDot />
                       <Text style={[styles.metaText, { fontFamily }]}>{tierLabelFor(template.level, language)}</Text>

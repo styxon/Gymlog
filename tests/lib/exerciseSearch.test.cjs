@@ -295,7 +295,9 @@ module.exports = [
         ['incline press', 'en', 6, ['Barbell Incline Bench Press - Medium Grip', 'Incline Dumbbell Press', 'Incline Cable Chest Press']],
         ['decline press', 'en', 6, ['Decline Smith Press', 'Decline Barbell Bench Press', 'Smith Machine Decline Press']],
         ['hack squat', 'en', 3, ['Hack Squat', 'Barbell Hack Squat', 'Narrow Stance Hack Squats']],
-        ['glute bridge', 'en', 4, ['Barbell Glute Bridge', 'Single Leg Glute Bridge', 'Butt Lift (Bridge)']],
+        // The floor bridge leads since the alias moved to it (2026-10-04):
+        // "glute bridge" in a programme is the one done without a bar.
+        ['glute bridge', 'en', 4, ['Butt Lift (Bridge)', 'Barbell Glute Bridge', 'Single Leg Glute Bridge']],
         ['wrist curl', 'en', 13, ['Cable Wrist Curl', 'Seated Palm-Up Barbell Wrist Curl', 'Palms-Down Wrist Curl Over A Bench']],
         ['preacher curl', 'en', 8, ['Preacher Curl', 'Cable Preacher Curl', 'Zottman Preacher Curl']],
         ['hammer curl', 'en', 6, ['Hammer Curls', 'Incline Hammer Curls', 'Alternate Hammer Curl']],

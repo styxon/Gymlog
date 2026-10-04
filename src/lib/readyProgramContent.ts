@@ -154,7 +154,7 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     audience:
       'Anyone training at home with dumbbells who wants four sessions a week for muscle and strength.',
     equipmentProfile:
-      'A pair of dumbbells, ideally adjustable, and some floor space. No bench: the presses are done on the floor.',
+      'A pair of dumbbells, ideally adjustable, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
     whyItWorks:
       'Every muscle is trained twice a week, once heavier and once with more reps, and progress comes from adding reps before adding weight.',
   },
@@ -164,7 +164,7 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     audience:
       'Experienced lifters training at home with dumbbells who want six sessions a week.',
     equipmentProfile:
-      'A pair of dumbbells, ideally adjustable, a sturdy table for rows and a chair for dips. No bench.',
+      'A pair of dumbbells, ideally adjustable, a sturdy chair or a bench to lean on, and a table for rows. The presses are done on the floor.',
     whyItWorks:
       'Every muscle is trained twice a week from two directions, and each session is short enough to fit a busy day.',
   },
@@ -186,7 +186,7 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'No equipment. A sturdy table for rows and a chair for dips and split squats.',
     whyItWorks:
-      'Strength days and conditioning days alternate, so no two hard sessions for the same muscles fall back to back.',
+      'Strength days and conditioning days alternate, so the week mixes heavier work with faster circuits.',
   },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:

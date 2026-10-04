@@ -213,4 +213,68 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'second bug-hunt round: the home programmes read as written, and the setup says what it means',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const root = path.join(__dirname, '..', '..');
+      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
+      const library = [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
+      const names = library.map((item) => item.name);
+
+      // Two slots of one session must not open the same demo: the PPL pull
+      // day had two rows that were the same library row.
+      for (const programId of [
+        'tpl_home_dumbbell_upper_lower_v1',
+        'tpl_home_dumbbell_ppl_v1',
+        'tpl_home_bodyweight_upper_lower_v1',
+        'tpl_home_athletic_5_day_v1',
+      ]) {
+        for (const session of getWorkoutTemplateById(programId).sessions) {
+          const seen = new Map();
+          for (const exercise of session.exercises) {
+            const index = findGuidedLibraryIndex(exercise.exerciseName, names);
+            if (index === null || index === undefined || index < 0) continue;
+            const entry = library[index].name;
+            assert.ok(
+              !seen.has(entry),
+              `${programId} ${session.name}: ${exercise.exerciseName} and ${seen.get(entry)} are both ${entry}`,
+            );
+            seen.set(entry, exercise.exerciseName);
+          }
+        }
+      }
+
+      // A glute bridge is the floor bridge, not a loaded bar over the legs.
+      assert.equal(library[findGuidedLibraryIndex('Glute Bridge', names)].name, 'Butt Lift (Bridge)');
+
+      // Five days of the dumbbell PPL keep two leg days.
+      const five = composeProgramWeekForSelection(
+        {
+          ...DEFAULT_FIRST_RUN_SELECTION,
+          goal: 'muscle',
+          goals: ['muscle'],
+          level: 'advanced',
+          daysPerWeek: 5,
+          availableDays: [],
+          scheduleMode: 'app_managed',
+          ...SETUPS.dumbbellsOnly,
+        },
+        'tpl_home_dumbbell_ppl_v1',
+      );
+      assert.equal(five.sessions.filter((session) => /Legs/.test(session.name)).length, 2);
+
+      // Home with every chip unticked is "nothing", not "unknown gear".
+      const onboarding = fs.readFileSync(path.join(root, 'src', 'screens', 'OnboardingScreen.tsx'), 'utf8');
+      assert.match(onboarding, /if \(items\.length === 0\) \{\s*setEquipment\('home'\);\s*setTrainingEnvironment\('bodyweight_only'\);/);
+
+      // Onboarding's ready catalog quotes the same minutes as every other card.
+      const readyCatalog = fs.readFileSync(path.join(root, 'src', 'screens', 'OnboardingReadyCatalogScreen.tsx'), 'utf8');
+      assert.doesNotMatch(readyCatalog, /template\.estimatedSessionDuration/);
+      assert.match(readyCatalog, /readyTemplateCardMinutes\(template\)/);
+    },
+  },
 ];

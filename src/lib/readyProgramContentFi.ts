@@ -137,7 +137,7 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     audience:
       'Kotona käsipainoilla treenaavalle, joka haluaa neljä treeniä viikossa lihasmassaan ja voimaan.',
     equipmentProfile:
-      'Käsipainopari, mieluiten säädettävä, ja lattiatilaa. Penkkiä ei tarvita: punnerrukset tehdään lattialla.',
+      'Käsipainopari, mieluiten säädettävä, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla.',
     whyItWorks:
       'Jokainen lihas treenataan kahdesti viikossa, kerran raskaammin ja kerran useammalla toistolla, ja eteneminen tulee ensin toistoista ja sitten painosta.',
   },
@@ -147,7 +147,7 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     audience:
       'Kokeneelle treenaajalle, joka treenaa kotona käsipainoilla ja haluaa kuusi treeniä viikossa.',
     equipmentProfile:
-      'Käsipainopari, mieluiten säädettävä, tukeva pöytä soutuun ja tuoli dippeihin. Penkkiä ei tarvita.',
+      'Käsipainopari, mieluiten säädettävä, tukeva tuoli tai penkki tueksi ja pöytä soutuun. Punnerrukset tehdään lattialla.',
     whyItWorks:
       'Jokainen lihas treenataan kahdesti viikossa kahdella eri tavalla, ja yksittäinen treeni on niin lyhyt, että se mahtuu kiireiseenkin päivään.',
   },
@@ -169,7 +169,7 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
     whyItWorks:
-      'Voima- ja kuntopäivät vuorottelevat, joten samoille lihaksille ei tule kahta raskasta treeniä peräkkäin.',
+      'Voima- ja kuntopäivät vuorottelevat, joten viikossa on sekä raskaampaa työtä että nopeampia kiertoja.',
   },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:

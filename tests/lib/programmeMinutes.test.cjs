@@ -66,7 +66,16 @@ module.exports = [
       };
       const week = composeProgramWeekForSelection(selection, template.id);
       assert.ok(week);
-      assert.equal(week.sessionMinutes, estimateProgrammeSessionMinutes(week.sessions, { availableEquipment: null }));
+      // Costed with the rest the saved copy keeps (onboardingHandoff saves the
+      // high end), so the card and Home after saving agree.
+      assert.equal(
+        week.sessionMinutes,
+        estimateProgrammeSessionMinutes(week.sessions, { availableEquipment: null, rest: 'max' }),
+      );
+      assert.match(
+        fs.readFileSync(path.join(root, 'src/app/onboardingHandoff.ts'), 'utf8'),
+        /restSeconds: exercise\.restSecondsMax,/,
+      );
       assert.notEqual(week.sessionMinutes, 0);
     },
   },
