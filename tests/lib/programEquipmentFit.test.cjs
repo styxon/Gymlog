@@ -277,4 +277,51 @@ module.exports = [
       assert.match(readyCatalog, /readyTemplateCardMinutes\(template\)/);
     },
   },
+  {
+    name: 'equipment fit: unticking a chip on the full-gym card changes the featured programme to one the rest can run',
+    run() {
+      // The chips the full-gym onboarding card starts with (OnboardingScreen).
+      const FULL_GYM_ITEMS = ['Barbells', 'Dumbbells', 'Machines', 'Cables', 'Squat rack', 'Bench', 'Kettlebells', 'Cardio machines'];
+      const subsets = [];
+      for (let i = 0; i < FULL_GYM_ITEMS.length; i += 1) {
+        subsets.push(FULL_GYM_ITEMS.filter((_, k) => k !== i));
+      }
+      subsets.push(['Machines'], ['Dumbbells', 'Bench'], ['Barbells', 'Squat rack', 'Bench'], ['Dumbbells', 'Kettlebells', 'Cardio machines']);
+      const failures = [];
+      for (const items of subsets) {
+        const anyFits = RECOMMENDATION_PROGRAMS.some((definition) => programFitsEquipment(definition.programId, items));
+        for (const goal of ['strength', 'muscle', 'lean_athletic', 'general_fitness', 'run_mobility']) {
+          for (const level of ['beginner', 'advanced']) {
+            for (const daysPerWeek of [3, 4, 5]) {
+              const { recommendation } = recommend(
+                { trainingEnvironment: 'full_gym', equipment: 'gym', equipmentItems: items },
+                goal,
+                level,
+                daysPerWeek,
+              );
+              if (anyFits && !programFitsEquipment(recommendation.featuredProgramId, items)) {
+                failures.push(items.join('+') + ' ' + goal + '/' + level + '/' + daysPerWeek + ': ' + recommendation.featuredProgramId);
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(failures, []);
+      // Gym minus barbells is not handed 5x5.
+      const noBarbells = recommend(
+        { trainingEnvironment: 'full_gym', equipment: 'gym', equipmentItems: FULL_GYM_ITEMS.filter((item) => item !== 'Barbells') },
+        'strength',
+        'advanced',
+        3,
+      ).recommendation;
+      assert.notEqual(noBarbells.featuredProgramId, 'tpl_gainer_strength_5x5_v1');
+      // Every default chip, or no list, is still the whole catalog.
+      for (const availableEquipment of [FULL_GYM_ITEMS, [...FULL_GYM_ITEMS, 'Pull-up bar'], null, []]) {
+        assert.equal(
+          equipmentCandidatePool(RECOMMENDATION_PROGRAMS, { equipment: 'gym', availableEquipment }).length,
+          RECOMMENDATION_PROGRAMS.length,
+        );
+      }
+    },
+  },
 ];

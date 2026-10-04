@@ -170,7 +170,12 @@ module.exports = [
           }
         }
       }
-      assert.deepEqual([...loaded], []);
+      // The runners' programme prescribes these three with an optional weight
+      // (a dial left at zero records bodyweight work truthfully). It reaches a
+      // bar-and-mat reader now that "Nordic Hamstring Curl (Assisted)" and
+      // "Lower Back Curl" are no longer refused for want of a barbell.
+      const optionallyLoaded = new Set(['Bulgarian Split Squat', 'Single-Leg Romanian Deadlift', 'Step-Up']);
+      assert.deepEqual([...loaded].filter((name) => !optionallyLoaded.has(name)), []);
     },
   },
   {

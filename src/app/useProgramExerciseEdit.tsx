@@ -433,6 +433,9 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
               trackedDefault: false,
               orderIndex: exerciseIndex,
               libraryItemId: target && edit.kind === 'replace' ? resolveLibraryItemIdForName(name) : null,
+              // The catalogue row's own mode survives the copy, except for a
+              // lift swapped in, which the library describes.
+              trackingMode: target && edit.kind === 'replace' ? null : exercise.trackingMode,
               // The catalog's own pairing, which since 2026-09-11 is 83 real
               // supersets rather than none. It has to survive the copy: this
               // is the fork a reader's first edit to a ready programme takes.

@@ -1063,6 +1063,11 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // The floor bridge. By containment it landed on the barbell bridge, whose
   // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
   'glute bridge': 'butt lift (bridge)',
+  // The equipment filter allows these with no gear (the name says bodyweight),
+  // so the demo must be the floor bridge, not the barbell hip thrust that
+  // "hip thrust" reaches by containment.
+  'hip thrust (bodyweight)': 'butt lift (bridge)',
+  'hip thrust (bodyweight or light bar)': 'butt lift (bridge)',
   // The catalogue's plain calf raises are prescribed to readers with and
   // without a gym. By containment they opened the seated and standing calf
   // MACHINES (36 rows): a machine demo under a bodyweight programme. The extra

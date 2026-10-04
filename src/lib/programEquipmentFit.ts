@@ -18,6 +18,18 @@ const MAX_REMOVED_PER_WEEK = 1;
 const MAX_REMOVED_PER_SESSION = 1;
 const MAX_SWAPPED_SHARE = 1 / 3;
 
+/** The chips the full-gym onboarding card starts with (OnboardingScreen). */
+export const FULL_GYM_ITEMS: readonly string[] = [
+  'Barbells',
+  'Dumbbells',
+  'Machines',
+  'Cables',
+  'Squat rack',
+  'Bench',
+  'Kettlebells',
+  'Cardio machines',
+];
+
 const cache = new Map<string, boolean>();
 
 export function programFitsEquipment(programId: string, available: string[] | null): boolean {
@@ -57,7 +69,8 @@ export function programFitsEquipment(programId: string, available: string[] | nu
 /**
  * The programmes the recommender may choose from.
  *
- * A gym reader draws from the whole catalog, as before. Anyone else draws
+ * A gym reader with the full set of chips draws from the whole catalog; with
+ * chips unticked, from what the rest can run. Anyone else draws
  * from what fits their chips — the low-equipment shelf and any gym programme
  * their own gear can run — and from the whole low-equipment shelf only when
  * nothing fits, so there is always an answer.
@@ -67,7 +80,16 @@ export function equipmentCandidatePool<T extends { programId: string; equipmentT
   input: { equipment: string; availableEquipment?: string[] | null },
 ): T[] {
   if (input.equipment === 'gym') {
-    return [...programs];
+    // The full-gym card's chips are editable. Unticking Barbells used to change
+    // nothing here, so a gym without barbells was handed 5x5 with eight of nine
+    // lifts swapped (sweep, 2026-10-04). Every default chip, or no list at all,
+    // is still the whole catalog.
+    const gymChips = input.availableEquipment ?? null;
+    if (gymChips === null || gymChips.length === 0 || FULL_GYM_ITEMS.every((item) => gymChips.includes(item))) {
+      return [...programs];
+    }
+    const gymFitting = programs.filter((definition) => programFitsEquipment(definition.programId, gymChips));
+    return gymFitting.length > 0 ? gymFitting : [...programs];
   }
   const lowTier = programs.filter((definition) => definition.equipmentTier === 'low_equipment');
   const available = input.availableEquipment ?? null;

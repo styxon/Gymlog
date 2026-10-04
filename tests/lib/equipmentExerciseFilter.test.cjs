@@ -262,4 +262,54 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'equipment filter: substring rules do not refuse bodyweight work with a gear word in its name',
+    run() {
+      const { resolveProgramEquipment } = require('../../.test-dist/lib/programEquipment');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary');
+      const falseRefusals = [
+        'IT Band and Glute Stretch',
+        'Nordic Hamstring Curl (Assisted)',
+        'Lower Back Curl',
+        'Hip Thrust (Bodyweight)',
+        'Hip Thrust (Bodyweight or Light Bar)',
+      ];
+      for (const name of falseRefusals) {
+        assert.equal(isExerciseAllowedWithEquipment(name, []), true, name);
+        // The programme page reads the same table forwards and must agree.
+        assert.deepEqual(resolveProgramEquipment([name]), [], name);
+      }
+      // Real loaded and banded lifts stay refused.
+      for (const name of ['Barbell Curl', 'Dumbbell Curl', 'Hammer Curl', 'Wrist Curl', 'Leg Curl', 'Band Pull Apart', 'Banded Glute Bridge', 'Hip Thrust', 'Single-Leg Hip Thrust', 'Banded Hip Thrust', 'Band Curl']) {
+        assert.equal(isExerciseAllowedWithEquipment(name, []), false, name);
+      }
+      // Sweep: no catalog or library name that says bodyweight or stretch, or
+      // is one of the unloaded curls, is refused when the reader owns nothing.
+      const names = new Set();
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) for (const item of session.exercises) names.add(item.exerciseName);
+      }
+      for (const item of [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY]) names.add(item.name);
+      const wrong = [...names].filter(
+        (name) =>
+          /bodyweight|stretch|nordic|lower back curl|\bit band\b/i.test(name) && !isExerciseAllowedWithEquipment(name, []),
+      );
+      assert.deepEqual(wrong, []);
+    },
+  },
+  {
+    name: 'equipment filter: the stair machine needs a cardio machine and falls back to walking',
+    run() {
+      for (const name of ['Stairmaster (Moderate)', 'Stairmaster', 'Stair Climber']) {
+        assert.equal(isExerciseAllowedWithEquipment(name, []), false, name);
+        assert.equal(isExerciseAllowedWithEquipment(name, ['Dumbbells']), false, name);
+        assert.equal(isExerciseAllowedWithEquipment(name, ['Cardio machines']), true, name);
+        assert.equal(isExerciseAllowedWithEquipment(name, ['Machines']), true, name);
+      }
+      const adjusted = applyEquipmentToExercises([exercise('Stairmaster (Moderate)')], []);
+      assert.deepEqual(adjusted.removed, []);
+      assert.equal(adjusted.exercises[0].exerciseName, 'Trail Running/Walking');
+    },
+  },
 ];

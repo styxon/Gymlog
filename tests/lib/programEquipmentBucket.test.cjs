@@ -36,6 +36,10 @@ const LOW_EQUIPMENT_PROGRAMS = [
   'tpl_home_dumbbell_ppl_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
+  // A pull-up bar and a floor. It read as full-gym only because "Nordic
+  // Hamstring Curl (Assisted)" and "Lower Back Curl" were refused as barbell
+  // curls, and its page listed Barbells (sweep, 2026-10-04).
+  'tpl_gainer_calisthenics_mastery_v1',
 ];
 
 function exerciseNames(template) {
