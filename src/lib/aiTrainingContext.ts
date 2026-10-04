@@ -45,6 +45,7 @@ import { DEFAULT_BUDGET_LIMITS } from './aiCoachBudget';
 import { buildAiCoachContextText } from './aiCoachSystemContext';
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import { detectPlateaus } from './progressionAnalyzer';
+import { sessionBestPoints } from './trainingHistory';
 import { buildFatigueModel } from './fatigueModel';
 import { getComparableLogSets } from './exerciseLog';
 import {
@@ -448,18 +449,25 @@ function buildHistoryBlock(
     sessionCount: history.sessionCount,
     totalVolumeKg: history.totalVolumeKg,
     sessions,
-    lifts: history.lifts.slice(0, MAX_HISTORY_LIFTS).map((lift) => ({
-      name: lift.name,
-      sessions: lift.points.length,
-      firstWeightKg: lift.first.topSetWeightKg,
-      latestWeightKg: lift.latest.topSetWeightKg,
-      latestReps: lift.latest.topSetReps,
-      bestWeightKg: lift.bestWeightKg,
-      changeKg: lift.weightChangeKg,
-      spanDays: lift.spanDays,
-      stalledSessions: lift.stalledSessions,
-      weightSeriesKg: lift.points.map((point) => point.topSetWeightKg),
-    })),
+    lifts: history.lifts.slice(0, MAX_HISTORY_LIFTS).map((lift) => {
+      // Per session, not per log: a lift logged twice in one workout is one
+      // session, and its 60 then 70 is not ten kilos of progress.
+      const points = sessionBestPoints(lift);
+      const first = points[0] ?? lift.first;
+      const latest = points[points.length - 1] ?? lift.latest;
+      return {
+        name: lift.name,
+        sessions: points.length,
+        firstWeightKg: first.topSetWeightKg,
+        latestWeightKg: latest.topSetWeightKg,
+        latestReps: latest.topSetReps,
+        bestWeightKg: lift.bestWeightKg,
+        changeKg: Math.round((latest.topSetWeightKg - first.topSetWeightKg) * 100) / 100,
+        spanDays: Math.max(0, Math.round((latest.time - first.time) / 86400000)),
+        stalledSessions: lift.stalledSessions,
+        weightSeriesKg: points.map((point) => point.topSetWeightKg),
+      };
+    }),
     liftsNotShown: [
       ...history.lifts.slice(MAX_HISTORY_LIFTS),
       ...history.repsLifts.slice(MAX_HISTORY_LIFTS),

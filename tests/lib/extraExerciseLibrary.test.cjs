@@ -172,14 +172,10 @@ module.exports = [
         // Intended: the library has one entry whose steps hold for both
         // (extraExerciseLibrary), filed under dumbbells because most rows load it.
         ['Bulgarian Split Squat', 'one entry, steps cover loaded and unloaded'],
-        // A real gym machine; the equipment filter has no rule for it (cardio).
-        ['Stairmaster (Moderate)', 'gym cardio machine, no equipment rule'],
         // Known mismatches, not fixed here: no bodyweight entry of the same
         // movement exists, so a demo with gear in its steps is the closest.
         ['Reverse Lunge', 'only a dumbbell rear lunge exists'],
         ['Bodyweight Reverse Lunge', 'only a dumbbell rear lunge exists'],
-        ['Walking Lunge', 'contains-match lands on the barbell walking lunge'],
-        ['Glute Bridge Hold', 'aliased on purpose to the barbell glute bridge'],
         ['Sumo Squat', 'only a dumbbell plie squat exists'],
         ['Squat', 'contains-match lands on the barbell box squat'],
         ['Pistol Squat (each leg)', 'only the kettlebell pistol squat exists'],

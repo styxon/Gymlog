@@ -215,10 +215,18 @@ export interface ExerciseTemplate {
   targetSets: number;
   repMin: number;
   repMax: number;
+  /** Seconds between sets. null = not set (the default applies); 0 = no rest, as stretches are written. */
   restSeconds: number | null;
   trackedDefault: boolean;
   orderIndex: number;
   libraryItemId?: string | null;
+  /**
+   * How the lift is logged, when the writer knew. Onboarding and the ready
+   * programmes know it per row; the library only knows names it spells its
+   * own way, so a saved push-up became a weight dial. Absent or null = derive
+   * it from the library, as before. `normalizeDatabase` validates it on load.
+   */
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
   persistedExerciseTemplateId?: string | null;
   /**
    * Shared by the adjacent exercises done back to back as one superset, and
@@ -929,6 +937,8 @@ export interface ExerciseTemplateDraft {
   restSeconds: number | null;
   trackedDefault: boolean;
   libraryItemId?: string | null;
+  /** See ExerciseTemplate.trackingMode. */
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
   /** Carried through the save so a superset survives an edit to the day. */
   supersetGroup?: string | null;
 }

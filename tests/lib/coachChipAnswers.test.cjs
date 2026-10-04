@@ -34,6 +34,7 @@ const {
   COACH_QUICK_ASKS_FIRST,
   COACH_QUICK_ASKS_EARLY,
   COACH_QUICK_ASKS_ESTABLISHED,
+  COACH_QUICK_ASKS_RETURNING,
   coachQuickAskKeys,
 } = require('../../.test-dist/lib/coachQuickAsks.js');
 
@@ -60,6 +61,8 @@ module.exports = [
         [COACH_QUICK_ASKS_FIRST, emptyContext()],
         [COACH_QUICK_ASKS_EARLY, context()],
         [COACH_QUICK_ASKS_ESTABLISHED, context()],
+        // A history, then a month off.
+        [COACH_QUICK_ASKS_RETURNING, context({ sessionsThisWeek: 0, sessionsLast30Days: 0 })],
       ];
       for (const [keys, stageContext] of stages) for (const key of keys) {
         for (const language of ['en', 'fi']) {
@@ -124,16 +127,22 @@ module.exports = [
       assert.deepEqual(coachQuickAskKeys(4), COACH_QUICK_ASKS_EARLY);
       assert.deepEqual(coachQuickAskKeys(5), COACH_QUICK_ASKS_ESTABLISHED);
       assert.deepEqual(coachQuickAskKeys(300), COACH_QUICK_ASKS_ESTABLISHED);
+      assert.deepEqual(coachQuickAskKeys(300, 4), COACH_QUICK_ASKS_ESTABLISHED);
+      // A history and a month off: the week chip would answer "nothing to
+      // read", so the chips are about coming back (sweep, 2026-10-04).
+      assert.deepEqual(coachQuickAskKeys(300, 0), COACH_QUICK_ASKS_RETURNING);
+      assert.ok(!COACH_QUICK_ASKS_RETURNING.includes('coach.chip.week'));
+      assert.deepEqual(coachQuickAskKeys(3, 0), COACH_QUICK_ASKS_EARLY);
       // Nothing logged, nothing to analyse: the chip that reads the last
       // session is never offered before there is one.
       assert.ok(!COACH_QUICK_ASKS_FIRST.includes('coach.chip.analyze'));
       // Taken out on 2026-10-04 (user): a food question the app cannot read.
-      for (const keys of [COACH_QUICK_ASKS_FIRST, COACH_QUICK_ASKS_EARLY, COACH_QUICK_ASKS_ESTABLISHED]) {
+      for (const keys of [COACH_QUICK_ASKS_FIRST, COACH_QUICK_ASKS_EARLY, COACH_QUICK_ASKS_ESTABLISHED, COACH_QUICK_ASKS_RETURNING]) {
         assert.ok(!keys.includes('coach.chip.protein'));
       }
       // The screen takes them from the stage, not from a fixed list.
       const shell = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderHomeScreens.tsx'), 'utf8');
-      assert.match(shell, /quickAskKeys=\{coachQuickAskKeys\(database\.workoutSessions\.length\)\}/);
+      assert.match(shell, /quickAskKeys=\{coachQuickAskKeys\(database\.workoutSessions\.length, aiCoachTrainingContext\.sessionsLast30Days\)\}/);
     },
   },
   {

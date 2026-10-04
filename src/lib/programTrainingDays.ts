@@ -27,7 +27,13 @@ export function resolveProgramTrainingDays(
     // dots, which is what it did before any of this existed.
     return [];
   }
-  if (sessionsPerWeek >= open.length) {
+  // A count that is not a whole number behaves as resolveDerivedTrainingDays
+  // does with it: NaN or undefined asks for no thinning (every open day), and
+  // 2.5 is three sessions. The subset search below only ever stops at an exact
+  // length, so a fractional or NaN count used to find none and return [].
+  const whole = Math.ceil(sessionsPerWeek);
+  const count = Number.isNaN(whole) ? open.length : whole;
+  if (count >= open.length) {
     return open;
   }
 
@@ -39,7 +45,7 @@ export function resolveProgramTrainingDays(
   let best: number[] = [];
   let bestScore = -Infinity;
   const visit = (start: number, chosen: number[]) => {
-    if (chosen.length === sessionsPerWeek) {
+    if (chosen.length === count) {
       const score = scoreSpread(chosen);
       if (score > bestScore) {
         best = [...chosen];

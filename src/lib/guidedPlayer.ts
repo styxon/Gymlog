@@ -1063,6 +1063,11 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // The floor bridge. By containment it landed on the barbell bridge, whose
   // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
   'glute bridge': 'butt lift (bridge)',
+  // The equipment filter allows these with no gear (the name says bodyweight),
+  // so the demo must be the floor bridge, not the barbell hip thrust that
+  // "hip thrust" reaches by containment.
+  'hip thrust (bodyweight)': 'butt lift (bridge)',
+  'hip thrust (bodyweight or light bar)': 'butt lift (bridge)',
   // The catalogue's plain calf raises are prescribed to readers with and
   // without a gym. By containment they opened the seated and standing calf
   // MACHINES (36 rows): a machine demo under a bodyweight programme. The extra
@@ -1147,7 +1152,12 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'banded hip thrust': 'barbell hip thrust',
   'single-leg hip thrust': 'single leg glute bridge',
   'banded glute bridge': 'barbell glute bridge',
-  'glute bridge hold': 'barbell glute bridge',
+  // The hold is a floor bridge with no load; the demo is the bodyweight one.
+  // Its history is still filed under the barbell bridge (DEMO_ONLY_ALIASES).
+  'glute bridge hold': 'butt lift (bridge)',
+  // The unloaded walking lunge opens the bodyweight lunge's steps, not the
+  // barbell one that containment used to land on.
+  'walking lunge': 'bodyweight walking lunge',
   'cable glute kickback': 'one-legged cable kickback',
   'inchworm to push-up': 'inchworm',
   // "each side" is a prescription, so the qualifier strip refuses this one.
@@ -1256,7 +1266,13 @@ function resolveExactOrAlias(candidate: string, lowerNames: readonly string[]): 
  * gym's loaded calf raise is not that lift: filed under it, the bodyweight
  * page listed 80 kg sets as its own (review, 2026-10-04).
  */
-const DEMO_ONLY_ALIASES = new Set(['calf raise', 'standing calf raise']);
+export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
+  ['calf raise', null],
+  ['standing calf raise', null],
+  ['walking lunge', null],
+  // Filed where it always was, so its history does not move when the demo does.
+  ['glute bridge hold', 'barbell glute bridge'],
+]);
 
 export function findFiledLibraryIndex(exerciseName: string, libraryNames: readonly string[]): number | null {
   const normalized = exerciseName.trim().toLowerCase();
@@ -1267,7 +1283,12 @@ export function findFiledLibraryIndex(exerciseName: string, libraryNames: readon
   const filedOnly = (candidate: string) => {
     if (DEMO_ONLY_ALIASES.has(candidate)) {
       const exact = lowerNames.indexOf(candidate);
-      return exact >= 0 ? exact : null;
+      if (exact >= 0) {
+        return exact;
+      }
+      const filedAs = DEMO_ONLY_ALIASES.get(candidate);
+      const filedIndex = filedAs ? lowerNames.indexOf(filedAs) : -1;
+      return filedIndex >= 0 ? filedIndex : null;
     }
     return resolveExactOrAlias(candidate, lowerNames);
   };

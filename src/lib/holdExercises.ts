@@ -1,5 +1,5 @@
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
-import { findGuidedLibraryIndex } from './guidedPlayer';
+import { DEMO_ONLY_ALIASES, findGuidedLibraryIndex } from './guidedPlayer';
 
 /**
  * Which exercises are a timed position rather than repetitions.
@@ -78,6 +78,12 @@ const libraryAliases = (() => {
   const names = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
   const resolved = new Set<string>();
   for (const holdName of HOLD_EXERCISE_NAMES) {
+    // A demo-only alias borrows a row's pictures; that row is another
+    // movement ("Glute Bridge Hold" opens the plain bridge's steps) and is
+    // not a hold itself.
+    if (DEMO_ONLY_ALIASES.has(normalize(holdName))) {
+      continue;
+    }
     const index = findGuidedLibraryIndex(holdName, names);
     if (index !== null) {
       resolved.add(normalize(names[index]));

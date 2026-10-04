@@ -79,7 +79,7 @@ export function getLifetimeTrainingSummary(
 
   // The longest run of consecutive active weeks, from the shared walk the
   // milestone ladder also reads.
-  const bestWeekStreak = Math.max(1, ...getActiveWeekRuns(activeWeekStarts));
+  const bestWeekStreak = Math.max(0, ...getActiveWeekRuns(activeWeekStarts));
 
   const firstWeekStart = activeWeekStarts[0];
   const currentWeekStart = getCalendarWeekStartTimestamp(now);

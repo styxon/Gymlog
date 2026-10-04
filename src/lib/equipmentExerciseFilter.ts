@@ -21,12 +21,24 @@ interface EquipmentRule {
    * cannot tell them apart.
    */
   exact?: boolean;
+  /**
+   * Names containing any of these are not this rule's business: "IT Band and
+   * Glute Stretch" has no resistance band in it, and "Nordic Hamstring Curl"
+   * is a curl of the body, not of a weight.
+   */
+  unless?: string[];
   /** Every group must be satisfied by at least one available item. */
   requires: RequirementGroup[];
 }
 
 /** Whether a rule speaks about this (trimmed, lower-cased) exercise name. */
-export function equipmentRuleMatches(normalizedName: string, rule: { pattern: string; exact?: boolean }): boolean {
+export function equipmentRuleMatches(
+  normalizedName: string,
+  rule: { pattern: string; exact?: boolean; unless?: string[] },
+): boolean {
+  if (rule.unless?.some((exception) => normalizedName.includes(exception))) {
+    return false;
+  }
   return rule.exact ? normalizedName === rule.pattern : normalizedName.includes(rule.pattern);
 }
 
@@ -62,18 +74,23 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'preacher curl', requires: [['Bench', 'Machines']] },
   { pattern: 'lateral raise', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'rear delt', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
-  { pattern: 'curl', requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
+  { pattern: 'curl', unless: ['nordic hamstring curl', 'lower back curl'], requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
   { pattern: 'treadmill', requires: [['Cardio machines']] },
   { pattern: 'bike', requires: [['Cardio machines']] },
   { pattern: 'rowing machine', requires: [['Cardio machines']] },
   { pattern: 'elliptical', requires: [['Cardio machines']] },
+  // Had no rule, so the steady-cardio slot kept it for a reader with no gear.
+  { pattern: 'stairmaster', requires: [['Cardio machines', 'Machines']] },
+  { pattern: 'stair climber', requires: [['Cardio machines', 'Machines']] },
   { pattern: 'pull-up', requires: [['Pull-up bar']] },
   // The catalog spells it "Pullups", which the hyphenated pattern misses.
   { pattern: 'pullup', requires: [['Pull-up bar']] },
   { pattern: 'chin-up', requires: [['Pull-up bar']] },
   { pattern: 'hanging', requires: [['Pull-up bar']] },
-  { pattern: 'band', requires: [['Resistance bands']] },
-  { pattern: 'hip thrust', requires: [['Bench', ...BARBELL, 'Dumbbells']] },
+  { pattern: 'band', unless: ['it band'], requires: [['Resistance bands']] },
+  // "Hip Thrust (Bodyweight)" is done on the floor; programEquipment already
+  // reads a name that says bodyweight as gear-free, and the filter must agree.
+  { pattern: 'hip thrust', unless: ['bodyweight'], requires: [['Bench', ...BARBELL, 'Dumbbells']] },
   // The weight is the exercise. They were logged as bodyweight, so a plan for
   // someone with no equipment carried weighted dips without asking anything
   // of them; logged with the weight (2026-09-21), they need a weight to hang.
@@ -205,6 +222,8 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['donkey calf', ['Bodyweight Calf Raise']],
   ['seated calf raise', ['Bodyweight Calf Raise']],
   ['treadmill', ['Trail Running/Walking']],
+  ['stairmaster', ['Trail Running/Walking']],
+  ['stair climber', ['Trail Running/Walking']],
   ['bike', ['Mountain Climbers']],
   ['chest press', ['Push-Up Wide']],
   ['hanging leg raise', ['Plank']],

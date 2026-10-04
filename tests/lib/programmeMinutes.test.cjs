@@ -25,9 +25,27 @@ module.exports = [
       assert.equal(prescriptionUnitFromName('Bike HIIT (45s sprint / 15s rest)'), 'seconds');
       assert.equal(prescriptionUnitFromName('Air Bike (30s sprint)'), 'seconds');
       assert.equal(prescriptionUnitFromName('Burpee (20s on / 10s off)'), 'seconds');
-      for (const reps of ['Bench Press', 'Romanian Deadlift', 'Hammer Curl', '10 min walk', 'Farmer\'s Walk']) {
+      for (const reps of ['Bench Press', 'Romanian Deadlift', 'Hammer Curl', '10 min walk', 'Walking Lunge', 'Sledgehammer Strike']) {
         assert.equal(prescriptionUnitFromName(reps), null, reps);
       }
+      // Carries and sleds are prescribed by distance, ropes by time, without
+      // the name saying so (sweep, 2026-10-04).
+      // A loaded carry or sled push moves at a walk: its number is costed as
+      // seconds, not at the sprint rate per metre (review, 2026-10-04).
+      assert.equal(prescriptionUnitFromName('Farmer\'s Walk'), 'seconds');
+      assert.equal(prescriptionUnitFromName('Sled Push'), 'seconds');
+      // The sled lifts are repetitions.
+      assert.equal(prescriptionUnitFromName('Sled Row'), null);
+      assert.equal(prescriptionUnitFromName('Sled Reverse Flye'), null);
+      assert.equal(prescriptionUnitFromName('Sled Overhead Triceps Extension'), null);
+      assert.equal(prescriptionUnitFromName('Battle Rope Wave'), 'seconds');
+      assert.equal(prescriptionUnitFromName('Battle Rope Slam'), 'seconds');
+      const farmer = estimateSessionMinutes({ exercises: [{ name: 'Farmer\'s Walk', sets: 4, reps: 60, restSeconds: 60 }] });
+      const farmerAsReps = estimateSessionMinutes({ exercises: [{ sets: 4, reps: 60, restSeconds: 60 }] });
+      assert.ok(farmer < farmerAsReps, `${farmer} vs ${farmerAsReps}`);
+      const ropes = estimateSessionMinutes({ exercises: [{ name: 'Battle Rope Slam', sets: 6, reps: 45, restSeconds: 30 }] });
+      const ropesAsReps = estimateSessionMinutes({ exercises: [{ sets: 6, reps: 45, restSeconds: 30 }] });
+      assert.ok(ropes < ropesAsReps, `${ropes} vs ${ropesAsReps}`);
 
       // Six 500 m rows were six sets of 500 repetitions: half an hour of work
       // each. As distance they are minutes.

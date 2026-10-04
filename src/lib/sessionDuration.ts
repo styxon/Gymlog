@@ -54,6 +54,15 @@ export function prescriptionUnitFromName(name: string): 'metres' | 'seconds' | n
   if (/\(\d+s\b|\b\d+s on\b|\bhiit\b/.test(lower)) {
     return 'seconds';
   }
+  // Work the catalogues prescribe by distance or time without saying so:
+  // "Farmer's Walk" 4 × 60, "Sled Push" 4 × 40, a battle rope 6 × 45. Costed
+  // as repetitions they were four minutes of "reps" a set (sweep, 2026-10-04).
+  // A loaded carry or sled push moves at a walk, about a second a metre, so
+  // the number is costed as seconds — the metres rate is a sprint's. "Sled
+  // Row" and the other sled lifts are repetitions (review, 2026-10-04).
+  if (/\bfarmer|\bcarry\b|\bsled (?:push|drag|pull)\b|\bbattl(?:e|ing) rope/.test(lower)) {
+    return 'seconds';
+  }
   return null;
 }
 

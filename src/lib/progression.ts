@@ -19,7 +19,14 @@ export interface ExerciseLogWithSession extends ExerciseLog {
 export interface ExerciseProgressSummary {
   key: string;
   name: string;
+  /** The logs the row's story (latest, previous, signal) is told from. */
   logs: ExerciseLogWithSession[];
+  /**
+   * Every performed log of the lift, tracked or not, newest first. The bests
+   * and the Records tab read this one, so a number the finish screen calls a
+   * PR is the number Records shows.
+   */
+  allLogs: ExerciseLogWithSession[];
   latestLog?: ExerciseLogWithSession;
   previousLog?: ExerciseLogWithSession;
   latestWeight: number | null;
@@ -222,6 +229,7 @@ function finalizeExerciseSummary(
     key,
     name,
     logs: sortedLogs,
+    allLogs: sortedLogs,
     latestLog,
     previousLog,
     latestWeight: latestLog ? getTopComparableWeight(latestLog) : null,
@@ -276,7 +284,7 @@ export function getExerciseProgressForName(
         return false;
       }
 
-      const name =resolveCanonicalExerciseName(log, exercisesById);
+      const name = resolveCanonicalExerciseName(log, exercisesById);
       const key = normalizeExerciseKey(name);
       let verdict = verdicts.get(key);
       if (verdict === undefined) {
@@ -477,8 +485,11 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
 function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgressSummary): ExerciseProgressSummary {
   const byReps = trend.bestWeight === null || trend.bestWeight <= 0;
   const latestId = trend.latestLog?.id ?? null;
+  const latestTime = trend.latestLog ? new Date(trend.latestLog.performedAt).getTime() : null;
+  // "Before" means before: a lighter set logged AFTER the latest session
+  // must not make the latest look like a new best.
   const bestValueBefore = everything.logs
-    .filter((log) => log.id !== latestId)
+    .filter((log) => log.id !== latestId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime))
     .reduce<number | null>((best, log) => {
       const value = byReps
         ? getTotalReps(getComparableReps(log)) || null
@@ -490,7 +501,10 @@ function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgr
     }, null);
   return {
     ...trend,
-    bestWeight: everything.bestWeight,
+    allLogs: everything.logs,
+    // The same mode as the rest of the row: a lift the trend reads in reps
+    // does not get a kilo best from a stray weighted set.
+    bestWeight: byReps ? trend.bestWeight : everything.bestWeight,
     bestReps: everything.bestReps,
     bestValueBefore,
   };

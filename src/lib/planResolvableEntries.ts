@@ -39,3 +39,31 @@ export function resolvablePlanEntries<E extends ResolvablePlanEntry, S extends {
 export function weeklyMinutesLabel(sessionMinutes: readonly number[]): string {
   return `~${sessionMinutes.reduce((sum, minutes) => sum + minutes, 0)} min`;
 }
+
+/**
+ * The plan's entries that Home's rotation counts, in the order given.
+ *
+ * Home's card runs over `resolvablePlanEntries`; the week strip, the
+ * reminders and the programme page's rhythm read the plan's raw entries, so an
+ * entry naming a removed session lit a dot, fired a reminder and changed the
+ * derived day count on days Home never offered (bug hunt, 2026-10-04). They
+ * all call this instead. `sessionsFor` returns the sessions of the plan's
+ * template.
+ *
+ * When the template yields no sessions at all there is nothing to judge an
+ * entry against (a catalog programme that left the catalog, a template not
+ * loaded yet), so every entry stays: dropping them all would erase weekdays
+ * the reader named.
+ */
+export function livePlanEntries<E extends ResolvablePlanEntry & { workoutTemplateId?: string | null }, S extends { id: string }>(
+  entries: readonly E[],
+  sessionsFor: (workoutTemplateId: string) => readonly S[],
+): E[] {
+  const templateId = [...entries].sort((left, right) => left.orderIndex - right.orderIndex)[0]?.workoutTemplateId;
+  const sessions = templateId ? sessionsFor(templateId) : [];
+  if (sessions.length === 0) {
+    return [...entries];
+  }
+  const live = new Set(resolvablePlanEntries(entries, sessions).map((resolved) => resolved.entry));
+  return entries.filter((entry) => live.has(entry));
+}

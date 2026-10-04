@@ -301,7 +301,7 @@ module.exports = [
       // history was the bug (#bugs 2026-09-05), and only the screen knows
       // whether there is a history at all.
       assert.match(cards, /hasLoggedWeight \? 'weightCard\.emptyRange' : 'weightCard\.empty'/);
-      assert.match(screen, /hasLoggedWeight=\{bodyweightProgress\.entries\.length > 0\}/);
+      assert.match(screen, /hasLoggedWeight=\{bodyweightStats\.currentKg !== null\}/);
 
       // The chips, and the shape behind them: every range trails now, ending
       // today. 7D was centred, which reached three days back and called it a

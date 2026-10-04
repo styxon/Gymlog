@@ -56,7 +56,7 @@ export function useRecordsAndMilestones(deps: RecordsAndMilestonesDeps) {
       key: summary.key,
       name: summary.name,
       bodyPart: bodyPartByName.get(summary.name.trim().toLowerCase()) ?? null,
-      entries: summary.logs.map((log) => ({
+      entries: summary.allLogs.map((log) => ({
         performedAt: log.performedAt,
         sets: getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps })),
       })),

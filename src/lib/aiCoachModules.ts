@@ -6,6 +6,7 @@ import {
   buildLiftHistories,
   normalizedName,
   previousComparableSession,
+  sessionBestPoints,
   sessionTime,
   sessionVolumeKg,
   topSetOf,
@@ -108,16 +109,24 @@ function buildFocus(
   let best: { name: string; delta: number; latest: number; days: number } | null = null;
 
   for (const lift of buildLiftHistories(sessions, logs)) {
-    if (lift.points.length < 2 || lift.weightChangeKg <= 0) {
+    // Sessions, not logs: one workout with Bench 60 then 70 is not progress.
+    const sessionPoints = sessionBestPoints(lift);
+    if (sessionPoints.length < 2) {
       continue;
     }
-    if (!best || lift.weightChangeKg > best.delta) {
+    const firstPoint = sessionPoints[0];
+    const latestPoint = sessionPoints[sessionPoints.length - 1];
+    const delta = Math.round((latestPoint.topSetWeightKg - firstPoint.topSetWeightKg) * 100) / 100;
+    if (delta <= 0) {
+      continue;
+    }
+    if (!best || delta > best.delta) {
       best = {
         name: lift.name,
-        delta: lift.weightChangeKg,
-        latest: lift.latest.topSetWeightKg,
+        delta,
+        latest: latestPoint.topSetWeightKg,
         // Two sessions on the same day still span a day's worth of training.
-        days: Math.max(1, lift.spanDays),
+        days: Math.max(1, Math.round((latestPoint.time - firstPoint.time) / 86400000)),
       };
     }
   }

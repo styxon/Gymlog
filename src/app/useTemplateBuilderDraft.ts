@@ -70,6 +70,7 @@ export function useTemplateBuilderDraft(deps: TemplateBuilderDraftDeps) {
           restSeconds: exercise.restSeconds,
           trackedDefault: exercise.trackedDefault,
           libraryItemId: exercise.libraryItemId ?? null,
+          trackingMode: exercise.trackingMode ?? null,
           // Carried rather than shown: the editor has no superset controls, and
           // a draft that dropped the field would quietly unpair every superset
           // in the programme the first time somebody renamed a day here.

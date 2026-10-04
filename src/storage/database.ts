@@ -386,6 +386,13 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           trackedDefault: typeof exercise?.trackedDefault === 'boolean' ? exercise.trackedDefault : true,
           orderIndex: typeof exercise?.orderIndex === 'number' ? exercise.orderIndex : 0,
           libraryItemId: liveLibraryItemId(exercise?.libraryItemId),
+          trackingMode:
+            exercise?.trackingMode === 'load_and_reps' ||
+            exercise?.trackingMode === 'reps_first' ||
+            exercise?.trackingMode === 'bodyweight' ||
+            exercise?.trackingMode === 'hold'
+              ? exercise.trackingMode
+              : null,
           persistedExerciseTemplateId:
             typeof exercise?.persistedExerciseTemplateId === 'string' || exercise?.persistedExerciseTemplateId === null
               ? exercise.persistedExerciseTemplateId

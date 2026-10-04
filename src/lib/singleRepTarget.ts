@@ -27,6 +27,16 @@ export function collapseRepRange(exercise: {
 }
 
 /**
+ * The rest a saved row keeps. 0 is a rest of none — a stretch is written that
+ * way — and used to be dropped as "unset", which gave the stretch the
+ * reader's default between sets (card 30 min, Home 35). Only a missing or
+ * negative number is unset.
+ */
+export function savedRestSeconds(restSeconds: number | null | undefined): number | null {
+  return typeof restSeconds === 'number' && Number.isFinite(restSeconds) && restSeconds >= 0 ? restSeconds : null;
+}
+
+/**
  * What a saved programme row prescribes: the reps and the rest the loader
  * reads back, and so the ones the writer has to write.
  *
