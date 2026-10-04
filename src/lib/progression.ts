@@ -382,7 +382,10 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
   const sessionsById = Object.fromEntries(
     database.workoutSessions.map((session) => [session.id, session] as const),
   );
-  const grouped = new Map<string, { name: string; logs: ExerciseLogWithSession[]; anyTracked: boolean }>();
+  const grouped = new Map<
+    string,
+    { name: string; logs: ExerciseLogWithSession[]; trackedLogs: ExerciseLogWithSession[]; anyTracked: boolean }
+  >();
 
   database.exerciseLogs.forEach((log) => {
     // An exercise that was listed but never performed is not a session on that
@@ -403,12 +406,15 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
 
     if (existing) {
       existing.logs.push(attachedLog);
+      if (log.tracked) {
+        existing.trackedLogs.push(attachedLog);
+      }
       existing.name = name;
       existing.anyTracked = existing.anyTracked || log.tracked;
       return;
     }
 
-    grouped.set(key, { name, logs: [attachedLog], anyTracked: log.tracked });
+    grouped.set(key, { name, logs: [attachedLog], trackedLogs: log.tracked ? [attachedLog] : [], anyTracked: log.tracked });
   });
 
   // Tracking decides which lifts get a row, not which sets count for it. A
@@ -447,16 +453,47 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
     if (grouped.has(key)) {
       return;
     }
-    grouped.set(key, { name, logs: [], anyTracked: false });
+    grouped.set(key, { name, logs: [], trackedLogs: [], anyTracked: false });
   });
 
   return Array.from(grouped.entries())
-    .map(([key, value]) => finalizeExerciseSummary(key, value.name, value.logs))
+    .map(([key, value]) => {
+      // The row's story — latest, previous, the signal, the sort — is the
+      // tracked lift's, as before: an untracked accessory set of the same
+      // name done lighter on another day must not flip it to "below last".
+      // Only the bests read every performed set (review, 2026-10-04).
+      const trend = finalizeExerciseSummary(key, value.name, value.trackedLogs.length > 0 ? value.trackedLogs : value.logs);
+      const everything = finalizeExerciseSummary(key, value.name, value.logs);
+      return withBestsFrom(trend, everything);
+    })
     .sort((left, right) => {
       const leftDate = left.latestLog ? new Date(left.latestLog.performedAt).getTime() : 0;
       const rightDate = right.latestLog ? new Date(right.latestLog.performedAt).getTime() : 0;
       return rightDate - leftDate;
     });
+}
+
+/** The trend summary, with its bests and its "best before" read from every performed set. */
+function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgressSummary): ExerciseProgressSummary {
+  const byReps = trend.bestWeight === null || trend.bestWeight <= 0;
+  const latestId = trend.latestLog?.id ?? null;
+  const bestValueBefore = everything.logs
+    .filter((log) => log.id !== latestId)
+    .reduce<number | null>((best, log) => {
+      const value = byReps
+        ? getTotalReps(getComparableReps(log)) || null
+        : getTopComparableWeight(log);
+      if (value === null) {
+        return best;
+      }
+      return best === null || value > best ? value : best;
+    }, null);
+  return {
+    ...trend,
+    bestWeight: everything.bestWeight,
+    bestReps: everything.bestReps,
+    bestValueBefore,
+  };
 }
 
 export function getBodyweightProgress(database: Pick<AppDatabase, 'bodyweightEntries'>): BodyweightProgressSummary {

@@ -120,4 +120,44 @@ module.exports = [
       assert.equal(getCombinedActivityMinutes(40, strides), 55);
     },
   },
+  {
+    name: 'review: the calf-raise demo alias files no history, the single-leg name opens the single-leg raise',
+    run() {
+      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const names = createSeedExerciseLibrary().map((item) => item.name);
+      // The demo: the bodyweight raise.
+      assert.equal(names[findGuidedLibraryIndex('Calf Raise', names)], 'Bodyweight Calf Raise');
+      // The history: a loaded gym calf raise is not filed under the bodyweight
+      // lift's page (review, 2026-10-04).
+      const filed = findFiledLibraryIndex('Calf Raise', names);
+      assert.notEqual(filed === null ? null : names[filed], 'Bodyweight Calf Raise');
+      assert.equal(names[findGuidedLibraryIndex('Calf Raise (Single-Leg)', names)], 'Single-Leg Calf Raise');
+      assert.equal(names[findGuidedLibraryIndex('Seated Calf Raise', names)], 'Seated Calf Raise');
+    },
+  },
+  {
+    name: 'review: a run with an unparseable date does not break the lifetime week count',
+    run() {
+      const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+      const db = {
+        workoutSessions: [
+          { id: 's1', performedAt: '2026-09-22T08:00:00.000Z', status: 'completed', totalVolumeKg: 1000, exercises: [] },
+        ],
+        cardioSessions: [{ id: 'c1', performedAt: 'not a date', durationSec: 1800, kind: 'run' }],
+        exerciseLogs: [],
+      };
+      let summary;
+      try {
+        summary = getLifetimeTrainingSummary(db, new Date('2026-10-04T12:00:00.000Z'));
+      } catch (error) {
+        assert.fail(`threw: ${error}`);
+      }
+      for (const [key, value] of Object.entries(summary)) {
+        if (typeof value === 'number') {
+          assert.ok(!Number.isNaN(value), `${key} is NaN`);
+        }
+      }
+    },
+  },
 ];

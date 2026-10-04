@@ -71,7 +71,11 @@ export function getLifetimeTrainingSummary(
     ...new Set(
       [...sessions, ...cardioSessions].map((session) => getCalendarWeekStartTimestamp(session.performedAt)),
     ),
-  ].sort((left, right) => left - right);
+  ]
+    // A run whose date does not parse has no week; NaN would break the sort
+    // and the "of {total}" count (review, 2026-10-04).
+    .filter((weekStart) => Number.isFinite(weekStart))
+    .sort((left, right) => left - right);
 
   // The longest run of consecutive active weeks, from the shared walk the
   // milestone ladder also reads.
@@ -94,7 +98,9 @@ export function getLifetimeTrainingSummary(
   // 1/168 of a week. It is a count of weeks elapsed, not a week start to look
   // up, so calendar stepping buys nothing — but the rounding is what makes it
   // safe, and floor would be off by one after every change.
-  const weeksSinceStart = Math.max(1, Math.round((currentWeekStart - firstWeekStart) / WEEK_MS) + 1);
+  // No dated activity at all (only runs whose dates do not parse): no weeks.
+  const weeksSinceStart =
+    firstWeekStart === undefined ? 0 : Math.max(1, Math.round((currentWeekStart - firstWeekStart) / WEEK_MS) + 1);
 
   // sessions are sorted newest-first, so the earliest is the last entry.
   const firstSessionAt = sessions.length > 0 ? sessions[sessions.length - 1].performedAt : null;
