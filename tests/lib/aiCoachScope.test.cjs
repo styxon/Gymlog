@@ -107,6 +107,57 @@ module.exports = [
     },
   },
   {
+    name: 'coach scope: the ways people actually type it are caught too (bug hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        // The apostrophe a phone keyboard types by default.
+        'I don’t want to live anymore',
+        'I dont want to live anymore',
+        // Finnish case endings, which a whole-word phrase could not reach.
+        'ajattelen itsemurhasta',
+        'mietin itsemurhaan',
+        'olen ollut itsetuhoinen',
+        'minulla on itsetuhoisia ajatuksia',
+        'viiltelin taas eilen',
+        // First person present, and the softened forms.
+        'tapan itseni',
+        'Minä tapan itseni',
+        'haluan vain kuolla',
+        'haluan vaan kuolla',
+        'toivon että kuolisin',
+        "I'm going to take my own life",
+        'I want to end my own life',
+        'everyone would be better off dead without me',
+        'I wish I were dead',
+        'I want to kill my self',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
+      }
+
+      // The widening must not take gym sentences with it. (Hyperbole that
+      // says the words themselves — "tapan itseni tällä ohjelmalla" — does get
+      // the crisis line; that is the side to be wrong on.)
+      for (const prompt of [
+        'I want to end my workout with core',
+        'how do I end my sets better',
+        'viimeinen sarja meinasi tappaa',
+        'itsevarmuus penkissä puuttuu',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'training', prompt);
+      }
+    },
+  },
+  {
+    name: 'coach scope: the offline coach answers a curly-apostrophe crisis with the crisis line',
+    run() {
+      const answer = buildAiCoachPreviewAnswer('I don’t want to live anymore', CONTEXT, 'en');
+      const crisis = buildAiCoachPreviewAnswer("I don't want to live anymore", CONTEXT, 'en');
+      assert.deepEqual(answer, crisis);
+      const fi = buildAiCoachPreviewAnswer('ajattelen itsemurhasta', CONTEXT, 'fi');
+      assert.match(JSON.stringify(fi), /112|MIELI/);
+    },
+  },
+  {
     name: 'coach scope: the offline coach declines instead of inventing an answer',
     run() {
       const offTopic = buildAiCoachPreviewAnswer('kuka voittaa presidentinvaalit', CONTEXT, 'fi');

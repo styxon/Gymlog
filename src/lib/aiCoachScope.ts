@@ -37,41 +37,65 @@ export type CoachScopeVerdict = 'training' | 'off_topic' | 'crisis';
  */
 const CRISIS_PHRASES = [
   // Finnish
-  'itsemurha',
-  'itsemurhaa',
-  'itsemurhan',
-  'itsetuhoinen',
-  'itsetuhoisia ajatuksia',
+  'tapan itseni',
+  'tapan itteni',
   'tappaa itseni',
   'tappaisin itseni',
-  'viiltelen',
-  'viiltely',
   'en halua elää',
   'en halua enää elää',
   'en jaksa elää',
   'en jaksa enää elää',
   'en halua herätä',
   'haluan kuolla',
+  'haluan vain kuolla',
+  'haluan vaan kuolla',
   'haluaisin kuolla',
+  'toivon että kuolisin',
+  'toivoisin että kuolisin',
   'toivoisin etten heräisi',
   // English
   'suicide',
   'suicidal',
   'kill myself',
+  'kill my self',
   'killing myself',
   'end my life',
+  'end my own life',
   'ending my life',
+  'take my own life',
+  'taking my own life',
   'end it all',
   'ending it all',
   'want to die',
   'wish i was dead',
+  'wish i were dead',
+  'better off dead',
   'do not want to live',
   "don't want to live",
+  'dont want to live',
   'self-harm',
   'self harm',
   'cut myself',
   'cutting myself',
 ];
+
+/**
+ * Finnish words whose every ending names the thing itself.
+ *
+ * A phrase list matched as whole words could not hold Finnish: "itsemurha"
+ * did not catch "ajattelen itsemurhasta" or "mietin itsemurhaan", because the
+ * case ending is part of the word (bug hunt, 2026-10-05). These stems match
+ * from the start of a word with any ending, and none of them begins a word
+ * that means something else.
+ */
+const CRISIS_STEMS_FI = ['itsemurh', 'itsetuho', 'viiltel'];
+
+/**
+ * The apostrophes a phone keyboard types. iOS and Gboard put a curly one in
+ * "don’t" by default, and the list spells it straight, so "I don’t want to
+ * live anymore" went past as a training question (bug hunt, 2026-10-05).
+ */
+const APOSTROPHES = /[‘’ʼ`´]/g;
 
 /**
  * Subjects with no training reading at all.
@@ -132,8 +156,11 @@ function mentionsTraining(text: string): boolean {
 }
 
 export function classifyCoachScope(prompt: string): CoachScopeVerdict {
-  const text = prompt.toLowerCase();
-  if (CRISIS_PHRASES.some((phrase) => hasWord(text, phrase))) {
+  const text = prompt.toLowerCase().replace(APOSTROPHES, "'");
+  if (
+    CRISIS_PHRASES.some((phrase) => hasWord(text, phrase)) ||
+    CRISIS_STEMS_FI.some((stem) => hasWordStart(text, stem))
+  ) {
     return 'crisis';
   }
 

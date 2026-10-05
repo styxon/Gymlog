@@ -1,4 +1,5 @@
 ﻿import { exerciseNameLabel } from './exerciseNameLabel';
+import { isHoldExerciseName } from './holdExercises';
 import { createId } from './ids';
 import {
   ExerciseLibraryItem,
@@ -87,6 +88,20 @@ export function getExerciseTemplateDefaults(item: ExerciseLibraryItem | undefine
       repMax: 8,
       restSeconds: defaultRestSeconds,
       trackedDefault: true,
+    };
+  }
+
+  // Before the category: a plank is filed under core, and core's 12–15 is a
+  // rep range. A hold reads its range as seconds, so a plank picked in "Build
+  // it yourself" asked for 15 s (device walk, 2026-10-05). 30–45 s is what the
+  // ready programmes prescribe most often for a hold.
+  if (isHoldExerciseName(item.name)) {
+    return {
+      targetSets: 3,
+      repMin: 30,
+      repMax: 45,
+      restSeconds: Math.min(defaultRestSeconds, 60),
+      trackedDefault: false,
     };
   }
 
