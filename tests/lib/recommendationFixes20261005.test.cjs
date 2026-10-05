@@ -48,6 +48,12 @@ module.exports = [
         { quality: 'Muscle', pct: 100 },
       ]);
       const mobility = buildProgramFocusSplit([{ exercises: [lift('Standing Forward Fold'), lift('Sphinx Pose')] }]);
+      // A loaded twist and a frog pump are lifting; the stretches named alike are not.
+      assert.deepEqual(buildProgramFocusSplit([{ exercises: [lift('Russian Twist'), lift('Frog Pump')] }]), [{ quality: 'Muscle', pct: 100 }]);
+      assert.deepEqual(
+        buildProgramFocusSplit([{ exercises: [lift('Seated Spinal Twist'), lift('Frog Stretch'), lift('Butterfly Stretch')] }]),
+        [{ quality: 'Mobility', pct: 100 }],
+      );
       assert.deepEqual(mobility, [{ quality: 'Mobility', pct: 100 }]);
       const conditioning = buildProgramFocusSplit([{ exercises: [lift('Ladder Drill'), lift('Pogo Hops'), lift('Treadmill Run')] }]);
       assert.deepEqual(conditioning, [{ quality: 'Conditioning', pct: 100 }]);

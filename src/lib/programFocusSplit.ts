@@ -124,11 +124,10 @@ const MOBILITY_TERMS = [
   'squat hold',
   'wall slide',
   'thread the needle',
-  'twist',
+  // Spinal twists only: a Russian Twist is loaded core work (CI review).
+  'spinal twist',
   'breathing',
   'legs up the wall',
-  'butterfly',
-  'frog',
   'pancake',
 ];
 
