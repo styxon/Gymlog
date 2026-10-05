@@ -188,6 +188,7 @@ const suites = [
   ...require('./lib/legalDocuments.test.cjs'),
   ...require('./lib/accountDeletionPage.test.cjs'),
   ...require('./lib/legalAcceptance.test.cjs'),
+  ...require('./lib/legalLinks.test.cjs'),
   ...require('./lib/transcriptEntry.test.cjs'),
   ...require('./lib/notificationPlan.test.cjs'),
   ...require('./lib/planNotificationSync.test.cjs'),
