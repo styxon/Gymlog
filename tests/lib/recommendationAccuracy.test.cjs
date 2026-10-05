@@ -18,13 +18,29 @@ const { execFileSync } = require('node:child_process');
  *
  * - E2: owns gear, the plan uses none of it, and an eligible plan does.
  * - E3: the week holds a lift the reader's gear cannot do.
+ * - E4: the reader owns a barbell, dumbbells, machines or cables, the plan
+ *   uses none of them, and a programme for their goal and level does.
  * - L1: the plan does not list the reader's level.
  * - S1: a programme written for one gender shown to anyone else.
  * - C1: an area the reader asked to avoid is still loaded.
- * - HARD: any hard criterion, content gaps included (the catalog has no home
- *   strength programme yet, so most of this is supply, not the ranker).
+ * - HARD: any hard criterion, content gaps included. What is left is supply,
+ *   not the ranker.
+ *
+ * New programmes, 2026-10-05: two dumbbell strength programmes left no
+ * dumbbell or no-barbell strength answer without a programme that lists
+ * strength, and two bodyweight strength programmes did the same for a reader
+ * with no gear, a bar, bands, a kettlebell or a mat. Two bodyweight muscle
+ * weeks (2 and 6 days, advanced and pro) and a beginner athletic week for a
+ * home rack closed the last content gaps: HARD 481 -> 114, E2 85 -> 76.
+ *
+ * The bodyweight weeks then beat a barbell or dumbbell week a day or two off,
+ * because they matched the day count: 147 answers left the reader's load unused
+ * (E4). A programme that ignores it now costs two days when another serves the
+ * goal and level with it: E4 147 -> 15, E2 76 -> 32, HARD 114 -> 57. The 15
+ * left are mostly HOME Starter, the two-day base for general fitness, kept on
+ * purpose (firstRunSetup.test.cjs pins it for a two-day gym reader).
  */
-const CEILINGS = { E2: 85, E3: 0, L1: 1, S1: 0, C1: 0, HARD: 481 };
+const CEILINGS = { E2: 32, E3: 0, E4: 15, L1: 0, S1: 0, C1: 0, HARD: 57 };
 
 let cached = null;
 function matrix() {

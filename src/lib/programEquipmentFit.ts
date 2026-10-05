@@ -113,6 +113,70 @@ export function programGearUse(programId: string, available: readonly string[] |
   return share;
 }
 
+/**
+ * The gear that loads a lift. A bar, bands and a mat are not on the list: a
+ * bodyweight week uses them, and owning one is no reason to skip it. Nor are
+ * kettlebells, which no strength or muscle programme is written around.
+ */
+const LOADING_GEAR = ['Barbells', 'Barbell & plates', 'Dumbbells', 'Machines', 'Cables'];
+
+/**
+ * True when the reader owns gear that loads a lift and the programme uses none
+ * of it. The new bodyweight weeks matched the day count exactly and so beat the
+ * barbell or dumbbell week a day or two off: a reader with a barbell and a
+ * rack who asked for strength at five days was handed Calisthenics Strength
+ * over STRONG, and a gym member asking for two muscle days a bodyweight week
+ * (review, 2026-10-05). A gym with every chip passes `null`, which is all of it.
+ */
+export function programIgnoresOwnedLoad(
+  programId: string,
+  input: { equipment: string; availableEquipment?: readonly string[] | null },
+): boolean {
+  const available = input.availableEquipment ?? (input.equipment === 'gym' ? FULL_GYM_ITEMS : []);
+  const owned = available.filter((item) => LOADING_GEAR.includes(item));
+  return owned.length > 0 && programGearUse(programId, owned) === 0;
+}
+
+/**
+ * The programmes in `pool` that leave the reader's load unused while another
+ * in the same pool serves their goal and level and does use it. Only then: when
+ * nothing that uses their barbell serves their goal, the bodyweight week that
+ * does is the right answer, because the goal comes before the gear.
+ */
+export function programsIgnoringOwnedLoad<
+  T extends { programId: string; supportedGoals: readonly string[]; supportedLevels: readonly string[]; familyId: string },
+>(
+  pool: readonly T[],
+  input: {
+    equipment: string;
+    availableEquipment?: readonly string[] | null;
+    goal: string;
+    level: string;
+    secondaryOutcomes: readonly string[];
+  },
+): Set<string> {
+  // Running and mobility need no load, so leaving it unused is the ask.
+  if (input.goal === 'run_mobility') {
+    return new Set();
+  }
+  // So does the mobility week of a reader who ticked mobility as an outcome.
+  // And the minimal two-day base, every setup's two-day answer for its goals.
+  const askedFor = (definition: T) =>
+    (definition.familyId === 'joint_friendly' && input.secondaryOutcomes.includes('mobility'))
+    || (definition.familyId === 'full_body_minimal' && definition.supportedGoals.includes(input.goal));
+  const ignoring = pool.filter(
+    (definition) => !askedFor(definition) && programIgnoresOwnedLoad(definition.programId, input),
+  );
+  const servesWithGear = (definition: T) =>
+    definition.supportedGoals.includes(input.goal)
+    && definition.supportedLevels.includes(input.level)
+    && !programIgnoresOwnedLoad(definition.programId, input);
+  if (ignoring.length === 0 || !pool.some(servesWithGear)) {
+    return new Set();
+  }
+  return new Set(pool.filter((definition) => !askedFor(definition) && !servesWithGear(definition)).map((definition) => definition.programId));
+}
+
 export { GYM_ALWAYS_HAS };
 
 export function equipmentCandidatePool<T extends { programId: string; equipmentTier: string }>(

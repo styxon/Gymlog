@@ -23,6 +23,7 @@ const FOCUS_FI: Record<string, string> = {
   'core & mobility for runners': 'Keskivartalo ja liikkuvuus juoksijalle',
   'lower volume + engine': 'Alavartalon volyymi + kestävyys',
   'full body & balance': 'Koko keho ja tasapaino',
+  'full body & conditioning': 'Koko keho ja kunto',
   'glutes & hamstrings': 'Pakarat ja takareidet',
   'hiit cardio & core': 'HIIT-kestävyys ja keskivartalo',
   'lower body (supported)': 'Alavartalo (tuettuna)',

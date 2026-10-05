@@ -1967,8 +1967,12 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         }),
       });
       // Its working sets only, numbered as done (lib/warmupSets), as the
-      // session's own prefill reads them.
-      const swappedInEntry = swappedInFound ? toWorkingHistoryEntry(swappedInFound, exercise.sets.length) : null;
+      // session's own prefill and the "Last time" panel read them: against the
+      // programme's count, so a set added mid-session does not change which of
+      // last time's sets were warm-ups (review, 2026-10-05).
+      const swappedInEntry = swappedInFound
+        ? toWorkingHistoryEntry(swappedInFound, exercise.sets.filter((set) => !set.addedMidSession).length)
+        : null;
       // Sets logged before this moment were a different lift. Clearing their
       // drafts is not enough on its own: the logger also carries forward from
       // the last COMPLETED set, which walked straight back over the swap and

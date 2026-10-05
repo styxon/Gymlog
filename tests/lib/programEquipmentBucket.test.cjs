@@ -34,8 +34,16 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // Dumbbells only: four days at home (coverage sweep, 2026-10-04).
   'tpl_home_dumbbell_upper_lower_v1',
   'tpl_home_dumbbell_ppl_v1',
+  'tpl_home_dumbbell_strength_v1',
+  'tpl_home_dumbbell_strength_split_v1',
+  'tpl_home_bodyweight_full_body_v1',
+  'tpl_home_bodyweight_ppl_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
+  // Strength with no load: hard variations at low reps. The five-day one asks for
+  // a pull-up bar, and turns its pull-ups into rows without one.
+  'tpl_home_bodyweight_strength_3_day_v1',
+  'tpl_home_calisthenics_strength_5_day_v1',
   // A pull-up bar and a floor. It read as full-gym only because "Nordic
   // Hamstring Curl (Assisted)" and "Lower Back Curl" were refused as barbell
   // curls, and its page listed Barbells (sweep, 2026-10-04).

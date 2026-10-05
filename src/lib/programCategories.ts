@@ -163,8 +163,14 @@ const HOME_IDS = new Set([
   'tpl_2_day_minimal_full_body_v1',
   'tpl_home_dumbbell_upper_lower_v1',
   'tpl_home_dumbbell_ppl_v1',
+  'tpl_home_dumbbell_strength_v1',
+  'tpl_home_dumbbell_strength_split_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
+  'tpl_home_bodyweight_strength_3_day_v1',
+  'tpl_home_calisthenics_strength_5_day_v1',
+  'tpl_home_bodyweight_full_body_v1',
+  'tpl_home_bodyweight_ppl_v1',
   'tpl_gainer_at_home_beginner_v1',
 ]);
 

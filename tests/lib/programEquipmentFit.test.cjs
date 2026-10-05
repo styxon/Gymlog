@@ -141,11 +141,15 @@ module.exports = [
         assert.deepEqual(adjusted.swapped, [], session.name);
       }
       // And it is the answer for the reader it was made for.
-      for (const goal of ['muscle', 'strength']) {
+      // Strength has its own dumbbell programmes since 2026-10-05; muscle is this one.
+      for (const [goal, expected] of [
+        ['muscle', 'tpl_home_dumbbell_upper_lower_v1'],
+        ['strength', 'tpl_home_dumbbell_strength_split_v1'],
+      ]) {
         for (const setup of [SETUPS.dumbbellsOnly, SETUPS.homeDefault]) {
           assert.equal(
             recommend(setup, goal, 'advanced', 4).recommendation.featuredProgramId,
-            'tpl_home_dumbbell_upper_lower_v1',
+            expected,
             `${goal} ${setup.equipmentItems.join('+')}`,
           );
         }
@@ -166,8 +170,13 @@ module.exports = [
     run() {
       const cases = [
         ['tpl_home_dumbbell_ppl_v1', ['Dumbbells'], 6],
+        ['tpl_home_dumbbell_strength_v1', ['Dumbbells'], 3],
+        ['tpl_home_dumbbell_strength_split_v1', ['Dumbbells'], 5],
         ['tpl_home_bodyweight_upper_lower_v1', [], 4],
         ['tpl_home_athletic_5_day_v1', [], 5],
+        ['tpl_home_bodyweight_strength_3_day_v1', [], 3],
+        // Pull-ups need the bar; without one they are rows (tests/lib/recommendationFixes20261005.test.cjs).
+        ['tpl_home_calisthenics_strength_5_day_v1', ['Pull-up bar'], 5],
       ];
       for (const [programId, gear, days] of cases) {
         const template = getWorkoutTemplateById(programId);
@@ -188,7 +197,7 @@ module.exports = [
       }
       const reach = [
         [SETUPS.dumbbellsOnly, 'muscle', 6, 'tpl_home_dumbbell_ppl_v1'],
-        [SETUPS.dumbbellsOnly, 'strength', 6, 'tpl_home_dumbbell_ppl_v1'],
+        [SETUPS.dumbbellsOnly, 'strength', 6, 'tpl_home_dumbbell_strength_split_v1'],
         [SETUPS.nothing, 'muscle', 4, 'tpl_home_bodyweight_upper_lower_v1'],
         [SETUPS.nothing, 'general_fitness', 4, 'tpl_home_bodyweight_upper_lower_v1'],
         [SETUPS.nothing, 'general_fitness', 5, 'tpl_home_athletic_5_day_v1'],
@@ -232,6 +241,8 @@ module.exports = [
         'tpl_home_dumbbell_ppl_v1',
         'tpl_home_bodyweight_upper_lower_v1',
         'tpl_home_athletic_5_day_v1',
+        'tpl_home_bodyweight_strength_3_day_v1',
+        'tpl_home_calisthenics_strength_5_day_v1',
       ]) {
         for (const session of getWorkoutTemplateById(programId).sessions) {
           const seen = new Map();

@@ -151,6 +151,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Jokainen lihas treenataan kahdesti viikossa kahdella eri tavalla, ja yksittäinen treeni on niin lyhyt, että se mahtuu kiireiseenkin päivään.',
   },
+  tpl_home_dumbbell_strength_v1: {
+    summary:
+      'Kolme kokovartalotreeniä viikossa käsipainoparilla: kyykky tai nosto, työntö ja soutu joka kerta, raskaina viiden ja kuuden toiston sarjoina. Lattiapunnerrus, Goblet-kyykky, askelkyykky, maastaveto ja soudut, ja lyhyt lopetus joka päivä.',
+    audience:
+      'Käsipainoja kotona tai salilla ilman tankoja käyttävälle, joka haluaa vahvistua kolmella treenillä viikossa.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä ja riittävän painava viiden toiston sarjoihin, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla.',
+    whyItWorks:
+      'Jokaisessa treenissä on jalat, työntö ja veto viiden tai kuuden toiston sarjoina pitkillä palautuksilla. Kun kaikki sarjat onnistuvat tavoitetoistoilla, paino nousee seuraavalla kerralla.',
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    summary:
+      'Viisi treeniä viikossa käsipainoparilla: kaksi ylävartalopäivää, kaksi alavartalopäivää ja yksi kokovartalopäivä. Lattiapunnerrus, soudut, pystypunnerrus, Goblet-kyykky ja suorin jaloin tehtävä maastaveto raskaina viiden ja kuuden toiston sarjoina.',
+    audience:
+      'Kokeneelle treenaajalle, jolla on käsipainot mutta ei tankoa ja joka haluaa harjoitella voimaa viitenä päivänä viikossa.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä ja riittävän painava viiden toiston sarjoihin, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla.',
+    whyItWorks:
+      'Työntö, veto, kyykky ja nosto saavat kukin kaksi raskasta päivää viikossa, joten jokaista liikettä harjoitellaan usein eikä yksikään treeni veny pitkäksi.',
+  },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
       'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä.',
@@ -161,6 +181,36 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista.',
   },
+  tpl_home_bodyweight_full_body_v1: {
+    summary:
+      'Kaksi kehonpainotreeniä viikossa, joka kerta koko keho. Jalat koholla tehtyjä punnerruksia, leuanvetoja tai soutuja, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä; vaikeampi versio korvaa lisäpainon.',
+    audience:
+      'Aloittelijavaiheen ohittaneelle, joka haluaa kasvattaa lihasta kotona ilman välineitä ja jolla on kaksi päivää viikossa.',
+    equipmentProfile:
+      'Välineitä ei tarvita. Tukeva pöytä soutuun, tuoli tai penkki dippeihin ja askelkyykkyihin sekä leuanvetotanko, jos sellainen on: ilman sitä leuanvedot vaihtuvat soutuun.',
+    whyItWorks:
+      'Jokainen lihas treenataan kahdesti viikossa 8–15 toistolla, ja eteneminen tulee ensin toistoista, sitten vaikeammasta versiosta: jalat koholla, yksi jalka kahden sijaan, hitaampi laskeutuminen.',
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    summary:
+      'Kuusi kehonpainotreeniä viikossa: työntö, jalat sekä veto ja keskivartalo, kaikki kahdesti. Toisella kierroksella liikkeet ovat eri kuin ensimmäisellä.',
+    audience:
+      'Kehonpainotreenaajalle, jolla on kokemusta ja joka haluaa kasvattaa lihasta kotona ilman välineitä kuutena päivänä viikossa.',
+    equipmentProfile:
+      'Välineitä ei tarvita. Tukeva pöytä soutuun, tuoli tai penkki dippeihin ja askelkyykkyihin sekä leuanvetotanko, jos sellainen on: ilman sitä leuanvedot vaihtuvat soutuun.',
+    whyItWorks:
+      'Työntö, veto ja jalat tulevat vastaan kahdesti viikossa, toisella kerralla eri liikkeillä, joten työ jakautuu viikolle eikä kasaudu yhteen treeniin. Ojentajaparit tehdään supersarjoina, jotta työ pysyy tiiviinä.',
+  },
+  tpl_athletic_starter_v1: {
+    summary:
+      'Kolme treeniä viikossa tangolla: alavartalopäivä, ylävartalopäivä ja koko kehon päivä, joka päättyy kuntoharjoitteluun. Kyykky, penkkipunnerrus, soutu, maastaveto, hypyt ja burpeet.',
+    audience:
+      'Aloittelijalle, jolla on tanko, teline ja penkki ja joka haluaa voimaa ja kuntoa samalle viikolle.',
+    equipmentProfile:
+      'Tanko ja levypainot, kyykkyteline ja penkki. Kuntoharjoittelu tehdään kehonpainolla.',
+    whyItWorks:
+      'Muutama iso liike kantaa voimatyön ja lyhyet hyppy- ja burpee-sarjat kuntotyön, joten ensimmäisellä jaksolla harjoitellaan molempia ilman pitkää liikelistaa.',
+  },
   tpl_home_athletic_5_day_v1: {
     summary:
       'Viisi kehonpainotreeniä viikossa kotona: työntö ja keskivartalo, jalat, koko kehon kiertoharjoitus, veto ja kunto sekä tasapainopäivä.',
@@ -170,6 +220,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
       'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
     whyItWorks:
       'Voima- ja kuntopäivät vuorottelevat, joten viikossa on sekä raskaampaa työtä että nopeampia kiertoja.',
+  },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    summary:
+      'Kolme koko kehon päivää viikossa ilman välineitä: vaikeita punnerrus- ja askelkyykkyversioita pienillä toistoilla, soutua pöydän alla ja yhden jalan liikkeitä.',
+    audience:
+      'Kotona ilman välineitä treenaavalle, joka haluaa vahvistua eikä vain kohentaa kuntoa. Aloittelija aloittaa helpommista versioista, joita vaihtovalikko tarjoaa.',
+    equipmentProfile:
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli tai sohva jalkojen korotukseen ja dippeihin sekä jotain, minkä alle jalat saa tuettua nordic-koukistukseen.',
+    whyItWorks:
+      'Vaikea versio kuudella toistolla kuormittaa lihasta kuin lisäpaino: vähän toistoja ja pitkät tauot. Lisää toisto, kun sarjat ovat puhtaita, ja siirry vaikeampaan versioon kahdeksassa.',
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    summary:
+      'Viisi kalisteniikkapäivää viikossa voimaan: planche- ja pike-punnerruksia, pistooli- ja shrimp-kyykkyjä, leuanvetoja ja L-istuntaa pienillä toistoilla ja pitkillä tauoilla.',
+    audience:
+      'Kokeneelle kehonpainotreenaajalle, joka jaksaa jo toistoja punnerruksissa ja leuanvedoissa ja haluaa viisi voimatreeniä viikossa.',
+    equipmentProfile:
+      'Leuanvetotanko leuanvetoihin; ilman sitä ne vaihtuvat soutuun. Pöytä soutuun, tuoli jalkojen korotukseen ja dippeihin, seinä käsilläseisontaan ja jotain, minkä alle jalat saa tuettua nordic-koukistukseen.',
+    whyItWorks:
+      'Jokaista liikettä treenataan kahdesti viikossa vaikealla versiolla: päivän ankkuriliikkeessä enintään viisi toistoa ja pitkät tauot. Lisää toistoja ja siirry sitten vaikeampaan versioon.',
   },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:

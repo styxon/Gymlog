@@ -217,4 +217,64 @@ module.exports = [
       assert.deepEqual([resolved.loadKg, resolved.progressed, resolved.fromLoadKg], [62.5, true, 60]);
     },
   },
+  {
+    name: 'per-set progression: a swap reads last time’s warm-ups against the programme’s count, not one raised by a set added today',
+    run() {
+      // Incline was last done as 40 then 3 × 60: on a three-set slot the 40 is a warm-up.
+      const incline = {
+        ...entry(2, [[40, 10], [60, 8], [60, 8], [60, 8]]),
+        slotId: 'primary_incline_1',
+        exerciseName: 'Incline Bench Press',
+      };
+      const opened = workoutReducer(
+        { ...workoutInitialState, history: { sessions: [], lastSelectedTemplateId: null, slotHistory: { primary_incline_1: [incline] } } },
+        {
+          type: 'session/startFromRuntimeTemplate',
+          payload: {
+            template: {
+              id: 'tpl',
+              name: 'Push',
+              defaultScheduleMode: 'weekday',
+              sessions: [
+                {
+                  id: 'push_a',
+                  name: 'Push A',
+                  orderIndex: 1,
+                  exercises: [
+                    {
+                      id: 'ex_bench',
+                      exerciseName: 'Bench Press',
+                      slotId: SLOT,
+                      role: 'primary',
+                      progressionPriority: 'high',
+                      trackingMode: 'load_and_reps',
+                      sets: 3,
+                      repsMin: 8,
+                      repsMax: 8,
+                      restSecondsMin: 120,
+                      restSecondsMax: 150,
+                      substitutionGroup: 'horizontal_press',
+                    },
+                  ],
+                },
+              ],
+            },
+            sessionOrderIndex: 1,
+            unitPreference: 'kg',
+            progression: { automatedProgressionEnabled: true, setupLevel: 'beginner' },
+          },
+        },
+      );
+      const slotId = opened.activeSession.exercises[0].slotId;
+      // A fourth set added today, then the swap.
+      const added = workoutReducer(opened, { type: 'exercise/addSet', payload: { slotId } });
+      assert.equal(added.activeSession.exercises[0].sets.length, 4);
+      const swapped = workoutReducer(added, {
+        type: 'exercise/swap',
+        payload: { slotId, exerciseName: 'Incline Bench Press', substitutionGroup: 'horizontal_press', unitPreference: 'kg' },
+      });
+      // Set 1 opens on the work, as the "Last time" panel lists it: not on the 40.
+      assert.equal(swapped.activeSession.exercises[0].sets[0].plannedLoadKg, 60);
+    },
+  },
 ];

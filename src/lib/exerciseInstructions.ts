@@ -271,6 +271,13 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Toista ohjelman mukainen määrä toistoja.',
     'Palauta tanko telineeseen sarjan päätteeksi.',
   ],
+  // Added with Bodyweight Full Body (2026-10-05). Four steps, as in the English entry.
+  'Decline Push-Up': [
+    'Asetu vatsalleen lattialle, kädet hieman hartioita leveämmällä, ja työnnä ylävartalo suorien käsien varaan. Nosta jalat laatikolle tai penkille.',
+    'Laskeudu hitaasti, kunnes rinta lähes koskettaa lattiaa.',
+    'Työnnä ylävartalo takaisin ylös ja purista rintalihaksia.',
+    'Pidä lyhyt tauko ylhäällä ja laskeudu uudelleen. Toista ohjelman mukainen määrä toistoja.',
+  ],
   'Deficit Deadlift': [
     'Ota koroke tai levyt, joiden päällä seisot — tavallisesti 3–8 senttimetriä. Asetu tangon taakse niin, että se on jalkaterien keskikohdan päällä, jalat lantion leveydellä. Taivuta lantiosta ja ota tangosta hartioiden levyinen ote. Käytä yliotetta tai raskaissa sarjoissa sekaotetta.',
     'Kun jalat ja ote ovat paikallaan, vedä henkeä, laske lantiota ja koukista polvia, kunnes sääret koskettavat tankoa. Katse eteen, rinta ylös ja selkä kevyessä notkossa. Työnnä kantapäillä ja aloita nosto. Kun tanko ohittaa polvet, vedä lavat yhteen ja työnnä lantio tankoa vasten.',
