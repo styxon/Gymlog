@@ -723,6 +723,40 @@ export const Vinha_WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
   {
+    id: "tpl_athletic_starter_v1",
+    name: "Athletic Starter",
+    goalType: "general",
+    level: "beginner",
+    splitType: "full_body",
+    daysPerWeek: 3,
+    estimatedSessionDuration: 50,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "ath_st_lower", name: "Day 1: Lower Body", orderIndex: 1, exercises: [
+        { id: "ath_st_lower_back_squat", exerciseName: "Back Squat", slotId: "primary_ath_st_lower_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "squat_pattern" },
+        { id: "ath_st_lower_romanian_deadlift", exerciseName: "Romanian Deadlift", slotId: "secondary_ath_st_lower_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "hinge_pattern" },
+        { id: "ath_st_lower_jump_squat", exerciseName: "Jump Squat", slotId: "accessory_ath_st_lower_3", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "jump_plyo" },
+        { id: "ath_st_lower_mountain_climbers", exerciseName: "Mountain Climbers", slotId: "accessory_ath_st_lower_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+        { id: "ath_st_lower_plank", exerciseName: "Plank", slotId: "accessory_ath_st_lower_5", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "ath_st_upper", name: "Day 2: Upper & Core", orderIndex: 2, exercises: [
+        { id: "ath_st_upper_barbell_bench_press", exerciseName: "Barbell Bench Press", slotId: "primary_ath_st_upper_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "horizontal_press" },
+        { id: "ath_st_upper_barbell_row", exerciseName: "Barbell Row", slotId: "secondary_ath_st_upper_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "horizontal_pull" },
+        { id: "ath_st_upper_overhead_press", exerciseName: "Overhead Press", slotId: "secondary_ath_st_upper_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "vertical_press" },
+        { id: "ath_st_upper_plank_shoulder_tap", exerciseName: "Plank Shoulder Tap", slotId: "accessory_ath_st_upper_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 16, repsMax: 16, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "plank_variations" },
+        { id: "ath_st_upper_burpee", exerciseName: "Burpee", slotId: "accessory_ath_st_upper_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "conditioning_circuit" },
+      ] },
+      { id: "ath_st_full", name: "Day 3: Full Body & Conditioning", orderIndex: 3, exercises: [
+        { id: "ath_st_full_deadlift", exerciseName: "Deadlift", slotId: "primary_ath_st_full_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "deadlift_pattern" },
+        { id: "ath_st_full_push_up", exerciseName: "Push-Up", slotId: "secondary_ath_st_full_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "ath_st_full_broad_jump", exerciseName: "Broad Jump", slotId: "accessory_ath_st_full_3", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "jump_plyo" },
+        { id: "ath_st_full_burpee", exerciseName: "Burpee", slotId: "accessory_ath_st_full_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "conditioning_circuit" },
+      ] },
+    ],
+  },
+  {
     id: "tpl_gainer_athlete_conditioning_v1",
     name: "Athlete Conditioning",
     goalType: "general",
@@ -1214,6 +1248,98 @@ export const Vinha_WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
   {
+    id: "tpl_home_bodyweight_full_body_v1",
+    name: "Bodyweight Full Body",
+    goalType: "hypertrophy",
+    level: "intermediate",
+    splitType: "full_body",
+    daysPerWeek: 2,
+    estimatedSessionDuration: 55,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "bw_fb_a", name: "Day 1: Full Body (Push)", orderIndex: 1, exercises: [
+        { id: "bw_fb_a_decline_push_up", exerciseName: "Decline Push-Up", slotId: "primary_bw_fb_a_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "bw_fb_a_pull_up", exerciseName: "Pull-Up", slotId: "secondary_bw_fb_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "vertical_pull" },
+        { id: "bw_fb_a_bulgarian_split_squat", exerciseName: "Bulgarian Split Squat", slotId: "secondary_bw_fb_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "single_leg" },
+        { id: "bw_fb_a_single_leg_rdl", exerciseName: "Single-Leg RDL", slotId: "secondary_bw_fb_a_4", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "hinge_pattern" },
+        { id: "bw_fb_a_pike_push_up_elevated", exerciseName: "Pike Push-Up (Elevated)", slotId: "accessory_bw_fb_a_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_press" },
+        { id: "bw_fb_a_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_bw_fb_a_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "calves" },
+        { id: "bw_fb_a_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_bw_fb_a_7", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "bw_fb_b", name: "Day 2: Full Body (Pull)", orderIndex: 2, exercises: [
+        { id: "bw_fb_b_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "primary_bw_fb_b_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_fb_b_pull_up", exerciseName: "Pull-Up", slotId: "secondary_bw_fb_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "vertical_pull" },
+        { id: "bw_fb_b_push_up_wide", exerciseName: "Push-Up Wide", slotId: "secondary_bw_fb_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "bw_fb_b_sissy_squat", exerciseName: "Sissy Squat", slotId: "secondary_bw_fb_b_4", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "bw_fb_b_nordic_hamstring_curl_assisted", exerciseName: "Nordic Hamstring Curl (Assisted)", slotId: "accessory_bw_fb_b_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "accessory_hamstrings" },
+        { id: "bw_fb_b_triceps_dip_chair", exerciseName: "Triceps Dip (Chair)", slotId: "accessory_bw_fb_b_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "overhead_triceps" },
+        { id: "bw_fb_b_side_plank", exerciseName: "Side Plank", slotId: "accessory_bw_fb_b_7", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "plank_variations" },
+      ] },
+    ],
+  },
+  {
+    id: "tpl_home_bodyweight_ppl_v1",
+    name: "Bodyweight Push/Pull/Legs",
+    goalType: "hypertrophy",
+    level: "intermediate",
+    splitType: "hybrid",
+    daysPerWeek: 6,
+    estimatedSessionDuration: 45,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "bw_ppl_push_1", name: "Day 1: Push", orderIndex: 1, exercises: [
+        { id: "bw_ppl_push_1_decline_push_up", exerciseName: "Decline Push-Up", slotId: "primary_bw_ppl_push_1_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "bw_ppl_push_1_pike_push_up_elevated", exerciseName: "Pike Push-Up (Elevated)", slotId: "secondary_bw_ppl_push_1_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "bw_ppl_push_1_push_up_wide", exerciseName: "Push-Up Wide", slotId: "secondary_bw_ppl_push_1_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_press" },
+        { id: "bw_ppl_push_1_triceps_dip_chair", exerciseName: "Triceps Dip (Chair)", slotId: "accessory_bw_ppl_push_1_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "overhead_triceps", supersetGroup: "ss_bw_ppl_push_1_bw_ppl_push_1_triceps_dip_chair" },
+        { id: "bw_ppl_push_1_diamond_push_up", exerciseName: "Diamond Push-Up", slotId: "accessory_bw_ppl_push_1_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "bodyweight_press", supersetGroup: "ss_bw_ppl_push_1_bw_ppl_push_1_triceps_dip_chair" },
+        { id: "bw_ppl_push_1_plank_shoulder_tap", exerciseName: "Plank Shoulder Tap", slotId: "accessory_bw_ppl_push_1_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 16, repsMax: 16, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "plank_variations" },
+      ] },
+      { id: "bw_ppl_legs_1", name: "Day 2: Legs", orderIndex: 2, exercises: [
+        { id: "bw_ppl_legs_1_bulgarian_split_squat", exerciseName: "Bulgarian Split Squat", slotId: "primary_bw_ppl_legs_1_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "single_leg" },
+        { id: "bw_ppl_legs_1_sissy_squat", exerciseName: "Sissy Squat", slotId: "secondary_bw_ppl_legs_1_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "bw_ppl_legs_1_cossack_squat", exerciseName: "Cossack Squat", slotId: "secondary_bw_ppl_legs_1_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "bw_ppl_legs_1_reverse_lunge", exerciseName: "Reverse Lunge", slotId: "accessory_bw_ppl_legs_1_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "single_leg" },
+        { id: "bw_ppl_legs_1_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_bw_ppl_legs_1_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 4, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "calves" },
+        { id: "bw_ppl_legs_1_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_bw_ppl_legs_1_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "bw_ppl_pull_1", name: "Day 3: Pull & Core", orderIndex: 3, exercises: [
+        { id: "bw_ppl_pull_1_pull_up", exerciseName: "Pull-Up", slotId: "primary_bw_ppl_pull_1_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "vertical_pull" },
+        { id: "bw_ppl_pull_1_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_bw_ppl_pull_1_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_ppl_pull_1_v_up", exerciseName: "V-Up", slotId: "accessory_bw_ppl_pull_1_3", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "accessory_core" },
+        { id: "bw_ppl_pull_1_dead_bug", exerciseName: "Dead Bug", slotId: "accessory_bw_ppl_pull_1_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+        { id: "bw_ppl_pull_1_side_plank", exerciseName: "Side Plank", slotId: "accessory_bw_ppl_pull_1_5", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "plank_variations" },
+      ] },
+      { id: "bw_ppl_push_2", name: "Day 4: Push", orderIndex: 4, exercises: [
+        { id: "bw_ppl_push_2_pseudo_planche_push_up", exerciseName: "Pseudo Planche Push-Up", slotId: "primary_bw_ppl_push_2_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "calisthenics_skills" },
+        { id: "bw_ppl_push_2_pike_push_up", exerciseName: "Pike Push-Up", slotId: "secondary_bw_ppl_push_2_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 75, substitutionGroup: "bodyweight_press" },
+        { id: "bw_ppl_push_2_push_up", exerciseName: "Push-Up", slotId: "secondary_bw_ppl_push_2_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_press" },
+        { id: "bw_ppl_push_2_diamond_push_up", exerciseName: "Diamond Push-Up", slotId: "accessory_bw_ppl_push_2_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "bodyweight_press", supersetGroup: "ss_bw_ppl_push_2_bw_ppl_push_2_diamond_push_up" },
+        { id: "bw_ppl_push_2_triceps_dip_chair", exerciseName: "Triceps Dip (Chair)", slotId: "accessory_bw_ppl_push_2_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "overhead_triceps", supersetGroup: "ss_bw_ppl_push_2_bw_ppl_push_2_diamond_push_up" },
+        { id: "bw_ppl_push_2_plank", exerciseName: "Plank", slotId: "accessory_bw_ppl_push_2_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 45, repsMax: 45, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "bw_ppl_legs_2", name: "Day 5: Legs", orderIndex: 5, exercises: [
+        { id: "bw_ppl_legs_2_single_leg_rdl", exerciseName: "Single-Leg RDL", slotId: "primary_bw_ppl_legs_2_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "hinge_pattern" },
+        { id: "bw_ppl_legs_2_nordic_hamstring_curl_assisted", exerciseName: "Nordic Hamstring Curl (Assisted)", slotId: "secondary_bw_ppl_legs_2_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "accessory_hamstrings" },
+        { id: "bw_ppl_legs_2_single_leg_glute_bridge", exerciseName: "Single Leg Glute Bridge", slotId: "secondary_bw_ppl_legs_2_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_hinge" },
+        { id: "bw_ppl_legs_2_step_up", exerciseName: "Step-Up", slotId: "accessory_bw_ppl_legs_2_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "single_leg" },
+        { id: "bw_ppl_legs_2_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_bw_ppl_legs_2_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "calves" },
+        { id: "bw_ppl_legs_2_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_bw_ppl_legs_2_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "bw_ppl_pull_2", name: "Day 6: Pull & Core", orderIndex: 6, exercises: [
+        { id: "bw_ppl_pull_2_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "primary_bw_ppl_pull_2_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_ppl_pull_2_pull_up", exerciseName: "Pull-Up", slotId: "secondary_bw_ppl_pull_2_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "vertical_pull" },
+        { id: "bw_ppl_pull_2_bird_dog", exerciseName: "Bird Dog", slotId: "accessory_bw_ppl_pull_2_3", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+        { id: "bw_ppl_pull_2_dead_bug", exerciseName: "Dead Bug", slotId: "accessory_bw_ppl_pull_2_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "bodyweight_core" },
+        { id: "bw_ppl_pull_2_side_plank", exerciseName: "Side Plank", slotId: "accessory_bw_ppl_pull_2_5", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 45, restSecondsMax: 45, substitutionGroup: "plank_variations" },
+      ] },
+    ],
+  },
+  {
     id: "tpl_home_athletic_5_day_v1",
     name: "Home Athletic",
     goalType: "general",
@@ -1544,6 +1670,25 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
     jointFriendly: false,
   },
   {
+    // A beginner athletic week for a home rack: a reader with a barbell, a rack
+    // and a bench who asked for lean and athletic at two days was handed STRONG,
+    // which lists strength (recommendation matrix, 2026-10-05). Three days,
+    // because a beginner is held to three anyway.
+    programId: 'tpl_athletic_starter_v1',
+    familyId: 'athletic_recomp',
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    targetGender: 'unisex',
+    supportedGoals: ['lean_athletic'],
+    backupGoals: [],
+    supportedLevels: ['beginner'],
+    styleTags: ['balanced', 'conditioning'],
+    secondaryOutcomeTags: ['conditioning', 'strength'],
+    focusAreaTags: ['legs', 'core', 'conditioning'],
+    lowFriction: false,
+    jointFriendly: false,
+  },
+  {
     programId: 'tpl_gainer_strong_lean_female_v1',
     familyId: 'athletic_recomp',
     equipmentTier: 'full_gym',
@@ -1649,18 +1794,64 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
   {
     // Four bodyweight days with no bar: with nothing at home, four days meant a two-day plan and two filler days. (coverage sweep, 2026-10-04)
     programId: 'tpl_home_bodyweight_upper_lower_v1',
-    familyId: 'low_equipment',
+    familyId: 'mass_hypertrophy',
     equipmentTier: 'low_equipment',
     recoveryDemand: 'moderate',
     targetGender: 'unisex',
-    // Muscle and strength as backups: a reader who owns dumbbells gets the
-    // dumbbell week on a tie, and one who owns nothing still lands here.
-    supportedGoals: ['general_fitness'],
-    backupGoals: ['muscle', 'strength', 'general', 'lean_athletic'],
+    // Muscle is listed outright (2026-10-05): the week is upper and lower in
+    // turns, each trained twice at 10 to 20 reps, which is a hypertrophy layout,
+    // and it was the only four-day answer for a reader with no gear. It was a
+    // backup so a dumbbell reader got the dumbbell week on a tie; the pick weighs
+    // the reader's own gear now, which settles that. The family moved with it:
+    // as low_equipment it shared a cell with Home Dumbbell Upper/Lower and won the
+    // score swap there by a point or two, handing dumbbell readers a plan that
+    // uses none of their gear. Strength stays a backup.
+    supportedGoals: ['general_fitness', 'muscle'],
+    backupGoals: ['strength', 'general', 'lean_athletic'],
     supportedLevels: ['advanced', 'pro'],
     styleTags: ['balanced'],
     secondaryOutcomeTags: ['muscle', 'consistency'],
     focusAreaTags: ['bodyweight', 'chest', 'legs', 'glutes', 'core'],
+    lowFriction: false,
+    jointFriendly: false,
+  },
+  {
+    // Muscle at advanced and pro with no gear (or a bar, bands, a kettlebell or
+    // a mat): the only bodyweight weeks listed general fitness, so a reader asking
+    // to build muscle at home with nothing had no programme at any day count
+    // (recommendation matrix, 2026-10-05). Two days here, six below, and four in
+    // Bodyweight Upper/Lower, which now lists muscle. Not three and five: there a
+    // dumbbell week is a day off, so the exact bodyweight week outbid it for a
+    // reader who owns dumbbells and a bench, and they were handed a plan that
+    // uses none of their gear. On two, four and six the dumbbell weeks sit on the
+    // same days and win on the gear they use.
+    programId: 'tpl_home_bodyweight_full_body_v1',
+    familyId: 'low_equipment',
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    targetGender: 'unisex',
+    supportedGoals: ['muscle'],
+    backupGoals: [],
+    supportedLevels: ['advanced', 'pro'],
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['bodyweight', 'chest', 'back', 'shoulders', 'legs', 'core'],
+    lowFriction: false,
+    jointFriendly: false,
+  },
+  {
+    // Six bodyweight days: push, legs, and pull with core, each twice.
+    programId: 'tpl_home_bodyweight_ppl_v1',
+    familyId: 'low_equipment',
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'high',
+    targetGender: 'unisex',
+    supportedGoals: ['muscle'],
+    backupGoals: [],
+    supportedLevels: ['advanced', 'pro'],
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle'],
+    focusAreaTags: ['bodyweight', 'chest', 'back', 'shoulders', 'arms', 'legs', 'glutes', 'core'],
     lowFriction: false,
     jointFriendly: false,
   },

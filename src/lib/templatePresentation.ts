@@ -333,6 +333,18 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'Bodyweight Upper/Lower',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.upperLower'],
   },
+  tpl_home_bodyweight_full_body_v1: {
+    title: 'Bodyweight Full Body',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.fullBody'],
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    title: 'Bodyweight Push/Pull/Legs',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.ppl'],
+  },
+  tpl_athletic_starter_v1: {
+    title: 'Athletic Starter',
+    tagKeys: ['prog.tag.athletic', 'prog.tag.fullBody'],
+  },
   tpl_home_athletic_5_day_v1: {
     title: 'Home Athletic',
     tagKeys: ['prog.tag.home', 'prog.tag.athletic'],

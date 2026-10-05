@@ -198,6 +198,36 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first.',
   },
+  tpl_home_bodyweight_full_body_v1: {
+    summary:
+      'Two bodyweight days a week, the whole body each time. Decline push-ups, pull-ups or rows, split squats and single-leg work, with the harder variation doing the job of added weight.',
+    audience:
+      'Anyone past the beginner stage who wants to build muscle at home with no equipment and has two days a week.',
+    equipmentProfile:
+      'No equipment is needed. A sturdy table for rows, a chair or bench for dips and split squats, and a pull-up bar if you have one: without it the pull-ups become rows.',
+    whyItWorks:
+      'Every muscle is trained twice a week at 8 to 15 repetitions, and progress comes from reps first, then a harder variation: feet raised, one leg instead of two, a slower lowering.',
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    summary:
+      'Six bodyweight days a week: push, legs, and pull with core, each twice. The second round uses different exercises from the first.',
+    audience:
+      'Experienced bodyweight trainers who want to build muscle at home with no equipment and can train six days a week.',
+    equipmentProfile:
+      'No equipment is needed. A sturdy table for rows, a chair or bench for dips and split squats, and a pull-up bar if you have one: without it the pull-ups become rows.',
+    whyItWorks:
+      'Pushing, pulling and legs each come back twice a week with different exercises the second time, so the work is spread across the week instead of piled into one session. The triceps pairs are supersets to keep it dense.',
+  },
+  tpl_athletic_starter_v1: {
+    summary:
+      'Three sessions a week with a barbell: a lower-body day, an upper-body day and a full-body day that ends in conditioning. Squat, bench press, row, deadlift, jumps and burpees.',
+    audience:
+      'Beginners with a barbell, a rack and a bench who want strength and conditioning in the same week.',
+    equipmentProfile:
+      'A barbell with plates, a squat rack and a bench. The conditioning is bodyweight.',
+    whyItWorks:
+      'A few big lifts carry the strength work and short jump and burpee sets carry the conditioning, so a first block trains both without a long list of exercises.',
+  },
   tpl_home_athletic_5_day_v1: {
     summary:
       'Five bodyweight days a week at home: push and core, legs, a full-body circuit, pull and conditioning, and a balance day.',

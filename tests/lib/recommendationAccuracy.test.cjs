@@ -27,9 +27,12 @@ const { execFileSync } = require('node:child_process');
  * New programmes, 2026-10-05: two dumbbell strength programmes left no
  * dumbbell or no-barbell strength answer without a programme that lists
  * strength, and two bodyweight strength programmes did the same for a reader
- * with no gear, a bar, bands, a kettlebell or a mat.
+ * with no gear, a bar, bands, a kettlebell or a mat. Two bodyweight muscle
+ * weeks (2 and 6 days, advanced and pro) and a beginner athletic week for a
+ * home rack closed the last content gaps: HARD 481 -> 114, E2 85 -> 76. Most
+ * of what is left is gear use (E2), the ranker's to fix.
  */
-const CEILINGS = { E2: 85, E3: 0, L1: 0, S1: 0, C1: 0, HARD: 235 };
+const CEILINGS = { E2: 76, E3: 0, L1: 0, S1: 0, C1: 0, HARD: 114 };
 
 let cached = null;
 function matrix() {

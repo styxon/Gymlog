@@ -181,6 +181,36 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista.',
   },
+  tpl_home_bodyweight_full_body_v1: {
+    summary:
+      'Kaksi kehonpainotreeniä viikossa, joka kerta koko keho. Jalat koholla tehtyjä punnerruksia, leuanvetoja tai soutuja, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä; vaikeampi versio korvaa lisäpainon.',
+    audience:
+      'Aloittelijavaiheen ohittaneelle, joka haluaa kasvattaa lihasta kotona ilman välineitä ja jolla on kaksi päivää viikossa.',
+    equipmentProfile:
+      'Välineitä ei tarvita. Tukeva pöytä soutuun, tuoli tai penkki dippeihin ja askelkyykkyihin sekä leuanvetotanko, jos sellainen on: ilman sitä leuanvedot vaihtuvat soutuun.',
+    whyItWorks:
+      'Jokainen lihas treenataan kahdesti viikossa 8–15 toistolla, ja eteneminen tulee ensin toistoista, sitten vaikeammasta versiosta: jalat koholla, yksi jalka kahden sijaan, hitaampi laskeutuminen.',
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    summary:
+      'Kuusi kehonpainotreeniä viikossa: työntö, jalat sekä veto ja keskivartalo, kaikki kahdesti. Toisella kierroksella liikkeet ovat eri kuin ensimmäisellä.',
+    audience:
+      'Kehonpainotreenaajalle, jolla on kokemusta ja joka haluaa kasvattaa lihasta kotona ilman välineitä kuutena päivänä viikossa.',
+    equipmentProfile:
+      'Välineitä ei tarvita. Tukeva pöytä soutuun, tuoli tai penkki dippeihin ja askelkyykkyihin sekä leuanvetotanko, jos sellainen on: ilman sitä leuanvedot vaihtuvat soutuun.',
+    whyItWorks:
+      'Työntö, veto ja jalat tulevat vastaan kahdesti viikossa, toisella kerralla eri liikkeillä, joten työ jakautuu viikolle eikä kasaudu yhteen treeniin. Ojentajaparit tehdään supersarjoina, jotta työ pysyy tiiviinä.',
+  },
+  tpl_athletic_starter_v1: {
+    summary:
+      'Kolme treeniä viikossa tangolla: alavartalopäivä, ylävartalopäivä ja koko kehon päivä, joka päättyy kuntoharjoitteluun. Kyykky, penkkipunnerrus, soutu, maastaveto, hypyt ja burpeet.',
+    audience:
+      'Aloittelijalle, jolla on tanko, teline ja penkki ja joka haluaa voimaa ja kuntoa samalle viikolle.',
+    equipmentProfile:
+      'Tanko ja levypainot, kyykkyteline ja penkki. Kuntoharjoittelu tehdään kehonpainolla.',
+    whyItWorks:
+      'Muutama iso liike kantaa voimatyön ja lyhyet hyppy- ja burpee-sarjat kuntotyön, joten ensimmäisellä jaksolla harjoitellaan molempia ilman pitkää liikelistaa.',
+  },
   tpl_home_athletic_5_day_v1: {
     summary:
       'Viisi kehonpainotreeniä viikossa kotona: työntö ja keskivartalo, jalat, koko kehon kiertoharjoitus, veto ja kunto sekä tasapainopäivä.',

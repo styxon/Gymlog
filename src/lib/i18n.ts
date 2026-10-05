@@ -665,6 +665,9 @@ const EN = {
   'prog.sub.tpl_home_dumbbell_strength_v1': 'Three full-body days with a pair of dumbbells, heavy sets of five and six.',
   'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Five days with a pair of dumbbells: upper and lower body in turns, heavy sets of five and six.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Four bodyweight days, upper and lower body in turns, with no bar.',
+  'prog.sub.tpl_home_bodyweight_full_body_v1': 'Two bodyweight days, the whole body each time, built on the harder variations.',
+  'prog.sub.tpl_home_bodyweight_ppl_v1': 'Six bodyweight days: push, legs, and pull with core, each twice.',
+  'prog.sub.tpl_athletic_starter_v1': 'Three days of barbell lifts and bodyweight conditioning, built for a first block.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Five bodyweight days at home: strength, conditioning and balance.',
   'prog.sub.tpl_home_bodyweight_strength_3_day_v1': 'Three days with no equipment, built on hard push-up, split-squat and row variations.',
   'prog.sub.tpl_home_calisthenics_strength_5_day_v1': 'Five calisthenics days for strength: planche, pistol and pull-up work at low reps.',
@@ -3074,7 +3077,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 65 ready programmes with level, goal and free text all
+  // The catalog: 68 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4112,6 +4115,9 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_home_dumbbell_strength_v1': 'Kolme kokovartalopäivää käsipainoparilla, raskaita viiden ja kuuden toiston sarjoja.',
   'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Viisi päivää käsipainoparilla, ylä- ja alavartalo vuorotellen. Raskaita viiden toiston sarjoja.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Neljä kehonpainopäivää, ylä- ja alavartalo vuorotellen, ilman tankoa.',
+  'prog.sub.tpl_home_bodyweight_full_body_v1': 'Kaksi kehonpainopäivää, joka kerta koko keho, vaikeammilla variaatioilla.',
+  'prog.sub.tpl_home_bodyweight_ppl_v1': 'Kuusi kehonpainopäivää: työntö, jalat sekä veto ja keskivartalo, kaikki kahdesti.',
+  'prog.sub.tpl_athletic_starter_v1': 'Kolme päivää tankoliikkeitä ja kehonpainolla tehtävää kuntoharjoittelua, ensimmäiselle jaksolle.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Viisi kehonpainopäivää kotona: voimaa, kuntoa ja tasapainoa.',
   'prog.sub.tpl_home_bodyweight_strength_3_day_v1': 'Kolme päivää ilman välineitä, rakennettu vaikeille punnerrus-, askelkyykky- ja soutuversioille.',
   'prog.sub.tpl_home_calisthenics_strength_5_day_v1': 'Viisi kalisteniikkapäivää voimaan: planche-, pistooli- ja leuanvetotyötä pienillä toistoilla.',

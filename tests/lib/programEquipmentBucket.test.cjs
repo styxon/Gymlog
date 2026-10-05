@@ -36,6 +36,8 @@ const LOW_EQUIPMENT_PROGRAMS = [
   'tpl_home_dumbbell_ppl_v1',
   'tpl_home_dumbbell_strength_v1',
   'tpl_home_dumbbell_strength_split_v1',
+  'tpl_home_bodyweight_full_body_v1',
+  'tpl_home_bodyweight_ppl_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
   // Strength with no load: hard variations at low reps. The five-day one asks for

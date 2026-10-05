@@ -36,6 +36,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_4_day_muscle_builder_v1',
       'tpl_gainer_at_home_beginner_v1',
       'tpl_gainer_strength_5x5_v1',
+      'tpl_athletic_starter_v1',
       // "Joint-friendly" describes how it trains, not a condition it treats.
       // That is the line this app holds wherever it touches health: a
       // description of the training passes, a claim about a complaint does not.
@@ -69,6 +70,8 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_home_dumbbell_ppl_v1',
       'tpl_home_bodyweight_upper_lower_v1',
       'tpl_huge_starter_v1',
+      'tpl_home_bodyweight_full_body_v1',
+      'tpl_home_bodyweight_ppl_v1',
       'tpl_3_day_push_pull_legs_v1',
       'tpl_4_day_upper_lower_v1',
       'tpl_4_day_muscle_builder_v1',
