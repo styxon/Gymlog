@@ -92,10 +92,30 @@ const libraryAliases = (() => {
   return resolved;
 })();
 
+/**
+ * A name that says what it is. The library's 873 rows are not on the list
+ * above, and 49 of its stretches and isometrics — "Hamstring Stretch",
+ * "Isometric Wipers" — opened a reps dial when picked in "Build it yourself",
+ * so a 30-second stretch was stored as 12 repetitions (bug hunt, 2026-10-05).
+ * A stretch or an isometric is held, whatever the row is called otherwise —
+ * except a dynamic one, moved through in repetitions, which is how the ready
+ * programmes log "Dynamic Back Stretch" and "Cat Stretch" (the cat-cow). The
+ * agreement test below the list holds the rule to the programmes both ways.
+ */
+const NAMED_HOLD = /\b(stretch|stretches|stretching|isometric)\b/i;
+const MOVED_STRETCH = /\bdynamic\b/i;
+// Named for a stretch or an isometric, moved through in repetitions: the
+// cat-cow, leg swings, and a side-to-side push-up (review, 2026-10-05).
+const REPS_STRETCHES = new Set(['cat stretch', 'iron crosses (stretch)', 'isometric wipers']);
+
+function isNamedHold(normalized: string): boolean {
+  return NAMED_HOLD.test(normalized) && !MOVED_STRETCH.test(normalized) && !REPS_STRETCHES.has(normalized);
+}
+
 /** Whether this exercise is logged in seconds held rather than repetitions. */
 export function isHoldExerciseName(name: string): boolean {
   const normalized = normalize(name);
-  return byName.has(normalized) || libraryAliases.has(normalized);
+  return byName.has(normalized) || libraryAliases.has(normalized) || isNamedHold(normalized);
 }
 
 /** The names this module claims, exposed so a test can check the catalog agrees. */

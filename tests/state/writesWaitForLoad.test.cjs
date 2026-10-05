@@ -74,10 +74,10 @@ module.exports = [
       const persistence = code(read('src', 'features', 'workout', 'workoutPersistence.ts'));
       const load = persistence.slice(persistence.indexOf('export async function loadWorkoutBundle'), persistence.indexOf('export async function saveWorkoutBundle'));
       const parseCatch = load.slice(load.indexOf('catch {'));
-      assert.ok(parseCatch.indexOf('setLargeItem(CORRUPT_STORAGE_KEY, raw)') >= 0, 'the unparseable bundle is not kept');
-      assert.ok(parseCatch.indexOf('setLargeItem(CORRUPT_STORAGE_KEY, raw)') < parseCatch.indexOf('createEmptyWorkoutHistory()'));
+      assert.ok(parseCatch.indexOf('setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw)') >= 0, 'the unparseable bundle is not kept');
+      assert.ok(parseCatch.indexOf('setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw)') < parseCatch.indexOf('createEmptyWorkoutHistory()'));
       const clear = persistence.slice(persistence.indexOf('export async function clearWorkoutBundle'));
-      assert.match(clear, /removeLargeItem\(CORRUPT_STORAGE_KEY\)/);
+      assert.match(clear, /removeCorruptCopies\(CORRUPT_STORAGE_KEY\)/);
     },
   },
   {

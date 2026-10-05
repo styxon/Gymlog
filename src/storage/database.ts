@@ -20,6 +20,7 @@ import { createEmptyDatabase } from '../data/seed';
 import { resolveDeviceLanguage } from './deviceLocale';
 import { clearCoachAdviceMemory } from './coachAdviceMemoryStore';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from './largeItem';
+import { removeCorruptCopies, setAsideCorruptCopy } from './corruptCopies';
 import { normalizeExerciseLog } from '../lib/exerciseLog';
 import { withLoggedSessionTotals } from '../lib/sessionTotals';
 import {
@@ -1412,7 +1413,7 @@ export async function loadDatabase() {
     // empty save below swept the only copy there was. The failure goes up
     // instead: the rows stay as they are, and the load fails the way an
     // unreadable disk does (loadWithRetry, then the storage error screen).
-    await setLargeItem(CORRUPT_STORAGE_KEY, raw);
+    await setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw);
     // The preferences are a row of their own and the blob's corruption is
     // not in them. Opened on defaults instead, the app lost the theme, the
     // notification choices, the trial's start and the coach's counters, and
@@ -1561,7 +1562,7 @@ export async function resetDatabase(
   // goes for a second reason — somebody who asks for their data to be erased is
   // not asking for a copy of it to survive under another name.
   await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
-  await removeLargeItem(CORRUPT_STORAGE_KEY);
+  await removeCorruptCopies(CORRUPT_STORAGE_KEY);
   // And the coach's memory, on its own key for backup reasons but erased by
   // the same request: "delete my data" cannot leave behind what the coach was
   // told to remember about the person asking.

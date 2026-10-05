@@ -398,7 +398,7 @@ export function SubscriptionScreen({
                     : t(language, 'subs.promoNote')}
                 </Text>
               </CutSurface>
-            ) : model.cancelled ? (
+            ) : lifetime ? null : model.cancelled ? (
               <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
                 <Row
                   icon="restore"

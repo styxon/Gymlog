@@ -154,7 +154,16 @@ export type FreshIdTokenResult =
  * the same thing, so opening the app offline quietly signed the reader out,
  * and nothing was backed up again until they noticed.
  */
-export async function getFreshIdToken(): Promise<FreshIdTokenResult> {
+/**
+ * `expectedSub` is the stored account the token is for. The library hands back
+ * whichever Google account it holds, and a sign-in killed between the
+ * provider's success and the account being stored, or a swallowed sign-out,
+ * can leave it holding another one — whose token then backed up this phone's
+ * data into that account's copy, or restored that copy here (bug hunt,
+ * 2026-10-05). Apple's token already refuses a session of another user; this
+ * does the same, as the same answer: that account is signed out here.
+ */
+export async function getFreshIdToken(expectedSub?: string): Promise<FreshIdTokenResult> {
   const module = loadModule();
   if (!module) {
     return { status: 'error' };
@@ -165,7 +174,16 @@ export async function getFreshIdToken(): Promise<FreshIdTokenResult> {
       return { status: 'signed_out' };
     }
     const idToken = response.type === 'success' ? response.data.idToken : null;
-    return idToken ? { status: 'ok', idToken } : { status: 'error' };
+    if (!idToken) {
+      return { status: 'error' };
+    }
+    if (expectedSub !== undefined) {
+      const sub = decodeSubFromIdToken(idToken) ?? response.data.user.id;
+      if (sub !== expectedSub) {
+        return { status: 'signed_out' };
+      }
+    }
+    return { status: 'ok', idToken };
   } catch {
     return { status: 'error' };
   }

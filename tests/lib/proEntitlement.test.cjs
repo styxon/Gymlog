@@ -108,18 +108,18 @@ module.exports = [
       assert.equal(monthly.unlocked, true);
       assert.equal(monthly.purchaseEndsAt, '2026-08-10T09:00:00.000Z');
 
-      // Lifetime has no period left to run, so cancelling ends it at once.
-      assert.equal(
-        isProUnlocked(
-          prefs({
-            mockSubscriptionPurchasedAt: '2026-07-01T09:00:00.000Z',
-            mockSubscriptionTerm: 'lifetime',
-            mockSubscriptionCancelledAt: NOW.toISOString(),
-          }),
-          NOW,
-        ),
-        false,
+      // Lifetime is one payment with nothing running to stop: a cancellation
+      // stamp does not take it away (it did, at once, until the bug hunt of
+      // 2026-10-05 — one tap of End membership locked a lifetime holder out).
+      const cancelledLifetime = resolveProEntitlement(
+        prefs({
+          mockSubscriptionPurchasedAt: '2026-07-01T09:00:00.000Z',
+          mockSubscriptionTerm: 'lifetime',
+          mockSubscriptionCancelledAt: NOW.toISOString(),
+        }),
+        new Date('2099-01-01T00:00:00.000Z'),
       );
+      assert.deepEqual([cancelledLifetime.unlocked, cancelledLifetime.source, cancelledLifetime.purchaseEndsAt], [true, 'purchase', null]);
       // Uncancelled, it never ends.
       assert.equal(
         isProUnlocked(
@@ -216,6 +216,37 @@ module.exports = [
           .automatedProgressionEnabled,
         false,
       );
+    },
+  },
+  {
+    name: 'resume sees a paid, cancelled-but-running subscription under a trial or a promo (bug hunt 2026-10-05)',
+    run() {
+      const { canResumePurchase } = require('../../.test-dist/lib/proEntitlement.js');
+      const now = new Date('2026-10-05T12:00:00.000Z');
+      const paidCancelled = {
+        mockSubscriptionTerm: 'yearly',
+        mockSubscriptionPurchasedAt: '2026-10-01T00:00:00.000Z',
+        mockSubscriptionCancelledAt: '2026-10-02T00:00:00.000Z',
+      };
+      for (const grant of [{ proTrialUntil: '2026-10-10T00:00:00.000Z' }, { promoProUntil: '2026-12-01T00:00:00.000Z' }]) {
+        const both = prefs({ ...paidCancelled, ...grant });
+        assert.equal(resolveProEntitlement(both, now).source === 'purchase', false, 'the grant is still the stated reason');
+        assert.equal(canResumePurchase(both, now), true);
+      }
+      // A lapsed purchase is still not resumable, grant or not.
+      const lapsed = prefs({ ...paidCancelled, mockSubscriptionTerm: 'monthly', mockSubscriptionPurchasedAt: '2026-01-01T00:00:00.000Z', mockSubscriptionCancelledAt: '2026-01-02T00:00:00.000Z', proTrialUntil: '2026-10-10T00:00:00.000Z' });
+      assert.equal(canResumePurchase(lapsed, now), false);
+    },
+  },
+  {
+    name: 'a lifetime holder is offered no End membership, and an old cancellation stamp is not shown',
+    run() {
+      const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
+      const entitlement = { unlocked: true, source: 'purchase', promoUntil: null, purchaseEndsAt: null };
+      const view = resolveSubscriptionView({ entitlement, mockTerm: 'lifetime', mockCancelled: true, purchasedAt: '2026-07-01T09:00:00.000Z' });
+      assert.equal(view.cancelled, false);
+      const screen = require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', 'src', 'screens', 'SubscriptionScreen.tsx'), 'utf8');
+      assert.match(screen, /\) : lifetime \? null : model\.cancelled \? \(/);
     },
   },
 ];

@@ -4,6 +4,7 @@ import { normalizeFreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
 import { normalizeActiveCardioSession } from '../../lib/cardio';
 import { scrubImpossibleSessionLoads } from '../../lib/impossibleLoads';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from '../../storage/largeItem';
+import { removeCorruptCopies, setAsideCorruptCopy } from '../../storage/corruptCopies';
 import { removeWorkoutAsideCopies } from '../../storage/workoutAside';
 import {
   LEGACY_WORKOUT_STORAGE_KEY,
@@ -292,7 +293,7 @@ export async function loadWorkoutBundle() {
     // Same rule as the database's quarantine, including its failure: a copy
     // that could not be written fails the load, and the rows stay as they are,
     // because the save that follows an empty bundle would sweep them.
-    await setLargeItem(CORRUPT_STORAGE_KEY, raw);
+    await setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw);
     return { activeSession: null, history: createEmptyWorkoutHistory(), activeCardio: null } satisfies WorkoutPersistenceBundle;
   }
 }
@@ -305,7 +306,7 @@ export async function saveWorkoutBundle(bundle: WorkoutPersistenceBundle) {
 
 export async function clearWorkoutBundle() {
   await removeLargeItem(STORAGE_KEY);
-  await removeLargeItem(CORRUPT_STORAGE_KEY);
+  await removeCorruptCopies(CORRUPT_STORAGE_KEY);
   // Before the sweep below, which lists keys and can reject: a failed reset
   // must not leave the pre-rename bundle to load again.
   await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
