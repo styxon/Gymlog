@@ -9,10 +9,18 @@ import type { AppLanguage } from '../types/models';
 
 /** Structural subset so both catalog sessions and composed weeks fit. */
 export interface ProgramFocusSessionInput {
-  exercises: Array<{ exerciseName: string; sets: number }>;
+  exercises: Array<{ exerciseName: string; sets: number; repsMax?: number; trackingMode?: string }>;
 }
 
-export type ProgramFocusQuality = 'Strength' | 'Conditioning' | 'Mobility';
+/**
+ * Lifting splits by the reps written for it: Strength is heavy work at six reps
+ * or fewer, Muscle is everything lifted at more. One "Weights" share told a
+ * 5x5 and a pump programme apart by nothing (user, 2026-10-05).
+ */
+export type ProgramFocusQuality = 'Strength' | 'Muscle' | 'Conditioning' | 'Mobility';
+
+/** The most reps a set may ask for and still count as strength work. */
+const STRENGTH_MAX_REPS = 6;
 
 export interface ProgramFocusSegment {
   quality: ProgramFocusQuality;
@@ -22,6 +30,7 @@ export interface ProgramFocusSegment {
 // Fixed color code: same color = same quality everywhere it is rendered.
 export const PROGRAM_FOCUS_COLORS: Record<ProgramFocusQuality, string> = {
   Strength: '#F59E0B',
+  Muscle: '#FB7185',
   Conditioning: '#38BDF8',
   Mobility: '#34D399',
 };
@@ -29,6 +38,7 @@ export const PROGRAM_FOCUS_COLORS: Record<ProgramFocusQuality, string> = {
 // The quality is an identifier and stays English; only the label translates.
 const PROGRAM_FOCUS_LABEL_KEYS: Record<ProgramFocusQuality, I18nKey> = {
   Strength: 'focus.quality.strength',
+  Muscle: 'focus.quality.muscle',
   Conditioning: 'focus.quality.conditioning',
   Mobility: 'focus.quality.mobility',
 };
@@ -40,7 +50,7 @@ export function getProgramFocusQualityLabel(
   return t(language, PROGRAM_FOCUS_LABEL_KEYS[quality]);
 }
 
-const PROGRAM_FOCUS_ORDER: ProgramFocusQuality[] = ['Strength', 'Conditioning', 'Mobility'];
+const PROGRAM_FOCUS_ORDER: ProgramFocusQuality[] = ['Strength', 'Muscle', 'Conditioning', 'Mobility'];
 
 // Matched at the start of a word in the lowercased exercise name. 'walk' is
 // deliberately absent (Walking Lunge is strength work); farmer carries match
@@ -133,15 +143,28 @@ function startsAWord(name: string, term: string): boolean {
   return false;
 }
 
-function classifyExerciseName(name: string): ProgramFocusQuality {
-  const normalized = name.trim().toLowerCase();
+function classifyExercise(exercise: ProgramFocusSessionInput['exercises'][number]): ProgramFocusQuality {
+  const normalized = exercise.exerciseName.trim().toLowerCase();
   if (MOBILITY_TERMS.some((term) => startsAWord(normalized, term))) {
     return 'Mobility';
   }
   if (CONDITIONING_TERMS.some((term) => startsAWord(normalized, term))) {
     return 'Conditioning';
   }
-  return 'Strength';
+  // A hold's number is seconds, not reps: a 30-second plank is not heavy.
+  const heavy =
+    exercise.trackingMode !== 'hold' &&
+    exercise.repsMax !== undefined &&
+    exercise.repsMax > 0 &&
+    exercise.repsMax <= STRENGTH_MAX_REPS;
+  return heavy ? 'Strength' : 'Muscle';
+}
+
+/** The share of the week spent lifting, heavy or not. */
+export function liftingFocusPct(split: ProgramFocusSegment[]): number {
+  return split
+    .filter((segment) => segment.quality === 'Strength' || segment.quality === 'Muscle')
+    .reduce((sum, segment) => sum + segment.pct, 0);
 }
 
 /**
@@ -150,18 +173,18 @@ function classifyExerciseName(name: string): ProgramFocusQuality {
  * Qualities the program does not train are omitted rather than shown as 0%.
  */
 export function buildProgramFocusSplit(sessions: ProgramFocusSessionInput[]): ProgramFocusSegment[] {
-  const weights: Record<ProgramFocusQuality, number> = { Strength: 0, Conditioning: 0, Mobility: 0 };
+  const weights: Record<ProgramFocusQuality, number> = { Strength: 0, Muscle: 0, Conditioning: 0, Mobility: 0 };
 
   for (const session of sessions) {
     for (const exercise of session.exercises) {
-      const quality = classifyExerciseName(exercise.exerciseName);
+      const quality = classifyExercise(exercise);
       weights[quality] += Math.max(1, exercise.sets);
     }
   }
 
   const total = PROGRAM_FOCUS_ORDER.reduce((sum, quality) => sum + weights[quality], 0);
   if (total <= 0) {
-    return [{ quality: 'Strength', pct: 100 }];
+    return [{ quality: 'Muscle', pct: 100 }];
   }
 
   const present = PROGRAM_FOCUS_ORDER.filter((quality) => weights[quality] > 0);

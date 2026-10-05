@@ -24,8 +24,8 @@
  *             (backup-only or none)
  *   G2  SOFT  split vs goal: muscle/strength plan with >10% conditioning+mobility,
  *             or lean_athletic with <15% conditioning
- *   G3  INFO  "Voima/Strength" bar printed for a muscle goal (label is a class of
- *             exercise, not the goal)
+ *   G3  INFO  the bar's lifting disagrees with the goal: a muscle goal whose week
+ *             is mostly heavy (<=6 reps) lifting, or a strength goal mostly lighter
  *   D1  SOFT  programme's own days != answer
  *   D2  HARD  composed week days != answer (beginner cap excluded, see D3)
  *   D3  INFO  beginner asked for >3 days, week capped at 3 by the waterfall
@@ -309,13 +309,15 @@ function evaluate(a, programId, sel, ws) {
   }
 
   // G2 / G3
-  const strengthPct = pct(ws.focus, 'Strength');
+  const heavyPct = pct(ws.focus, 'Strength');
+  const musclePct = pct(ws.focus, 'Muscle');
   const condPct = pct(ws.focus, 'Conditioning');
   const mobPct = pct(ws.focus, 'Mobility');
-  detail.split = `Strength ${strengthPct} / Conditioning ${condPct} / Mobility ${mobPct}`;
+  detail.split = `Strength ${heavyPct} / Muscle ${musclePct} / Conditioning ${condPct} / Mobility ${mobPct}`;
   if ((a.goal === 'muscle' || a.goal === 'strength') && condPct + mobPct > 10) fails.G2 = true;
   if (a.goal === 'lean_athletic' && condPct < 15) fails.G2 = true;
-  if (a.goal === 'muscle') fails.G3 = true;
+  if (a.goal === 'muscle' && heavyPct > musclePct) fails.G3 = true;
+  if (a.goal === 'strength' && musclePct > heavyPct) fails.G3 = true;
 
   // D
   if (def.daysPerWeek !== a.days) fails.D1 = true;

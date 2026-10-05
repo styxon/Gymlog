@@ -45,15 +45,28 @@ module.exports = [
     name: 'recommendation fixes: "run" is a word, not the middle of "Crunch"; holds and drills are what they are',
     run() {
       assert.deepEqual(buildProgramFocusSplit([{ exercises: [lift('Bench Press'), lift('Cable Crunch')] }]), [
-        { quality: 'Strength', pct: 100 },
+        { quality: 'Muscle', pct: 100 },
       ]);
       const mobility = buildProgramFocusSplit([{ exercises: [lift('Standing Forward Fold'), lift('Sphinx Pose')] }]);
       assert.deepEqual(mobility, [{ quality: 'Mobility', pct: 100 }]);
       const conditioning = buildProgramFocusSplit([{ exercises: [lift('Ladder Drill'), lift('Pogo Hops'), lift('Treadmill Run')] }]);
       assert.deepEqual(conditioning, [{ quality: 'Conditioning', pct: 100 }]);
-      // And the label says what it counts.
-      assert.equal(t('fi', 'focus.quality.strength'), 'Painot');
-      assert.equal(t('en', 'focus.quality.strength'), 'Weights');
+    },
+  },
+  {
+    name: 'recommendation fixes: lifting splits into strength and muscle by the reps written for it',
+    run() {
+      const heavy = { ...lift('Back Squat', 5), repsMin: 5, repsMax: 5 };
+      const pump = { ...lift('Dumbbell Curl', 3), repsMin: 12, repsMax: 12 };
+      const plank = { ...lift('Plank', 2), trackingMode: 'hold', repsMin: 5, repsMax: 5 };
+      assert.deepEqual(buildProgramFocusSplit([{ exercises: [heavy, pump, plank] }]), [
+        { quality: 'Strength', pct: 50 },
+        { quality: 'Muscle', pct: 50 },
+      ]);
+      // A 5x5 reads as strength; a plank's five is seconds, not a heavy set.
+      assert.equal(t('fi', 'focus.quality.strength'), 'Voima');
+      assert.equal(t('fi', 'focus.quality.muscle'), 'Lihaskasvu');
+      assert.equal(t('en', 'focus.quality.muscle'), 'Muscle');
     },
   },
   {
