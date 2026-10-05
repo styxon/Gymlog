@@ -448,4 +448,15 @@ module.exports = [
       assert.equal(named.rows[0].day, 'Tuki ja liikkuvuus');
     },
   },
+  {
+    name: 'CSV import: a set count past the editor ceiling is a row to fix, not a programme of 100 000 sets (bug hunt 2026-10-05)',
+    run() {
+      const text = ['Day,Exercise,Sets,Reps', 'Day 1,Bench Press,100000,8', 'Day 1,Barbell Row,12,8', 'Day 1,Back Squat,13,5'].join('\n');
+      const fi = parseCsvProgram(text, LIBRARY, [], 'fi');
+      assert.deepEqual(fi.rows.map((row) => [row.exerciseName, row.sets]), [['Barbell Row', 12]]);
+      assert.deepEqual(fi.errors, ['Rivi 2: enintään 12 sarjaa.', 'Rivi 4: enintään 12 sarjaa.']);
+      const en = parseCsvProgram(text, LIBRARY, [], 'en');
+      assert.equal(en.errors[0], 'Row 2: at most 12 sets.');
+    },
+  },
 ];

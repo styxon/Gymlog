@@ -3,6 +3,7 @@ import { collapseCellWhitespace, splitCsvRecords } from './csvRecords';
 import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
 import { t } from './i18n';
+import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 
 /**
  * CSV program import (design_handoff_programs_redesign):
@@ -374,6 +375,13 @@ export function parseCsvProgram(
     }
     if (!Number.isFinite(sets) || sets <= 0) {
       errors.push(t(language, 'csv.error.sets', { row }));
+      continue;
+    }
+    // The editor's own ceiling. A typo of 100000 imported as a programme that
+    // built 100 000 sets on every start (bug hunt, 2026-10-05); refused like
+    // any other count the reader has to fix, not quietly cut to 12.
+    if (sets > PROGRAM_SETS_RANGE.max) {
+      errors.push(t(language, 'csv.error.setsMax', { row, max: PROGRAM_SETS_RANGE.max }));
       continue;
     }
     if (!reps) {

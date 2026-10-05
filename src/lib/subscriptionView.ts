@@ -244,12 +244,15 @@ export function resolveSubscriptionView(input: {
     // who had renewed, and that was the date the End membership page printed
     // as the day they keep it until.
     const charge = currentPeriodEndAt(mockTerm, chargedFrom, now);
+    // A lifetime purchase cannot be cancelled (proEntitlement): a stamp left
+    // by an older build is not a cancellation to show.
+    const cancelled = mockCancelled && mockTerm !== 'lifetime';
     return {
       state: 'active',
       term: mockTerm,
-      cancelled: mockCancelled,
+      cancelled,
       endsAt: charge,
-      nextChargeAt: mockCancelled ? null : charge,
+      nextChargeAt: cancelled ? null : charge,
       grant: null,
     };
   }

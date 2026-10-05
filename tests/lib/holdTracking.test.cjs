@@ -193,4 +193,31 @@ module.exports = [
       assert.deepEqual(unexplained.sort(), []);
     },
   },
+  {
+    name: 'a stretch or isometric picked from the library is logged in seconds, a dynamic one in reps (bug hunt 2026-10-05)',
+    run() {
+      const path = require('node:path');
+      const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+      const { GENERATED_EXERCISE_LIBRARY } = dist('data/generatedExerciseLibrary.js');
+      const { EXTRA_EXERCISE_LIBRARY } = dist('data/extraExerciseLibrary.js');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = dist('features/workout/customWorkoutAdapter.js');
+      const { getExerciseTemplateDefaults } = dist('lib/exerciseSuggestions.js');
+      const library = [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
+      const modeOf = (item) => {
+        const defaults = getExerciseTemplateDefaults(item, 90);
+        const exercise = { id: 'e', workoutTemplateSessionId: 's', name: item.name, orderIndex: 0, libraryItemId: item.id, trackingMode: null, ...defaults };
+        const runtime = adaptLegacyWorkoutTemplateToRuntimeTemplate({ id: 't', name: 'T' }, [{ id: 's', name: 'S', orderIndex: 0, exercises: [exercise] }], library, 90);
+        return { mode: runtime.sessions[0].exercises[0].trackingMode, repMin: defaults.repMin };
+      };
+      const timed = library.filter((item) => /\b(stretch|isometric)\b/i.test(item.name) && !/\bdynamic\b/i.test(item.name) && item.name.toLowerCase() !== 'cat stretch');
+      assert.ok(timed.length >= 40, `only ${timed.length} timed rows`);
+      const wrong = timed.map((item) => ({ name: item.name, ...modeOf(item) })).filter((row) => row.mode !== 'hold' || row.repMin < 20);
+      assert.deepEqual(wrong, [], 'a stretch or isometric opens a reps dial, or a hold of a few seconds');
+      // Moved through, not held.
+      const dynamic = library.find((item) => /\bdynamic\b.*\bstretch\b/i.test(item.name));
+      if (dynamic) {
+        assert.notEqual(modeOf(dynamic).mode, 'hold', dynamic.name);
+      }
+    },
+  },
 ];

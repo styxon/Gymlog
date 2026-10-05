@@ -74,6 +74,16 @@ export function resolveProEntitlement(
     return { unlocked: true, source: 'trial', promoUntil: trialUntil, purchaseEndsAt: null };
   }
 
+  return resolvePurchaseEntitlement(preferences, now);
+}
+
+/**
+ * The purchase alone, whatever promo or trial runs beside it. Resume asks this
+ * one: a trial checked first hid a paid, cancelled-but-running subscription,
+ * and Resume sent its payer to the paywall to buy it again (bug hunt,
+ * 2026-10-05).
+ */
+function resolvePurchaseEntitlement(preferences: ProPreferences, now: Date): ProEntitlement {
   const purchasedAt = preferences.mockSubscriptionPurchasedAt;
   if (!purchasedAt || Number.isNaN(new Date(purchasedAt).getTime())) {
     return NOT_UNLOCKED;
@@ -86,10 +96,17 @@ export function resolveProEntitlement(
     return { ...purchased, purchaseEndsAt: null };
   }
 
+  // Lifetime is one payment with nothing running to stop. It read as "no
+  // period left", so a cancellation took it away at once — a lifetime holder
+  // lost Pro on one tap of End membership (bug hunt, 2026-10-05). What ends a
+  // lifetime purchase is a refund, which the store reports, not this field.
+  if (preferences.mockSubscriptionTerm === 'lifetime') {
+    return { ...purchased, purchaseEndsAt: null };
+  }
+
   // Cancelled. The period it runs to is the one it was cancelled IN —
   // measured from the cancellation, not from now, or the subscription
-  // would keep renewing after it was cancelled. Lifetime has no period
-  // left to run, so cancelling one takes it away at once.
+  // would keep renewing after it was cancelled.
   const endsAt = currentPeriodEndAt(
     preferences.mockSubscriptionTerm,
     purchasedAt,
@@ -121,7 +138,7 @@ export function isProUnlocked(preferences: ProPreferences, now: Date = new Date(
  * months ago came back permanently.
  */
 export function canResumePurchase(preferences: ProPreferences, now: Date = new Date()): boolean {
-  return resolveProEntitlement(preferences, now).source === 'purchase';
+  return resolvePurchaseEntitlement(preferences, now).source === 'purchase';
 }
 
 type ProgressionPreferences = ProPreferences &

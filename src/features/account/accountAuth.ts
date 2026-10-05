@@ -56,7 +56,7 @@ export async function signInWith(provider: SignInProvider): Promise<SignInResult
 
 /** The fresh token for the account `sub`, from the provider that account signed in with. */
 export async function getFreshIdToken(sub: string): Promise<FreshIdTokenResult> {
-  return sub.startsWith(APPLE_SUB_PREFIX) ? getFreshAppleToken(sub.slice(APPLE_SUB_PREFIX.length)) : getFreshGoogleToken();
+  return sub.startsWith(APPLE_SUB_PREFIX) ? getFreshAppleToken(sub.slice(APPLE_SUB_PREFIX.length)) : getFreshGoogleToken(sub);
 }
 
 /** On coming back to the app: an Apple session inside its renewal window is renewed, backup or not. */
