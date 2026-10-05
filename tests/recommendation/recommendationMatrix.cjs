@@ -18,6 +18,11 @@
  *   E2  HARD  gear use: reader owns gear, plan uses none of it although an
  *             eligible programme (goal+level+gender+gear fit, days +-1) does
  *   E2s SOFT  gear use: plan uses less of the reader's gear than the best eligible
+ *   E4  SOFT  load ignored: reader owns a barbell, dumbbells, machines or cables
+ *             (a gym included), the plan uses none of them, and a programme for
+ *             their goal and level that fits their gear does, at any day count
+ *             (E2 looks only a day either side, and missed bodyweight weeks
+ *             beating a barbell week two days off; review 2026-10-05)
  *   E3  HARD  final week contains a lift the reader's gear cannot do
  *             (caution swaps are not gear-checked)
  *   G1  HARD  goal: programme supportedGoals does not include the answer
@@ -230,6 +235,14 @@ function gearUse(programId, card) {
   const used = gear.filter((item) => needs.includes(item) || (item === 'Barbell & plates' && needs.includes('Barbells')));
   return used.length / gear.length;
 }
+const LOAD = ['Barbells', 'Barbell & plates', 'Dumbbells', 'Machines', 'Cables'];
+function ownedLoad(card) {
+  return gearAvailable(card).filter((item) => LOAD.includes(item));
+}
+function usesAny(programId, items) {
+  const needs = templateNeeds(programId);
+  return items.some((item) => needs.includes(item) || (item === 'Barbell & plates' && needs.includes('Barbells')));
+}
 function focusEquivalent(area) {
   return area === 'legs' ? ['legs', 'quads', 'hamstrings', 'calves'] : ['quads', 'hamstrings', 'calves'].includes(area) ? [area, 'legs'] : [area];
 }
@@ -290,6 +303,18 @@ function evaluate(a, programId, sel, ws) {
     if (best && best.u > mine + 1e-9) {
       fails.E2s = true;
       if (mine === 0) fails.E2 = true;
+    }
+  }
+
+  // E4: owned load left unused while a geared programme for the goal serves
+  if (a.goal !== 'run_mobility') {
+    const load = ownedLoad(a.card);
+    if (load.length > 0 && !usesAny(programId, load)) {
+      const geared = eligiblePrograms(a, sel, 99).find((d) => usesAny(d.programId, load));
+      if (geared) {
+        fails.E4 = true;
+        detail.E4 = `uses none of ${load.join('+')}; ${geared.programId} does`;
+      }
     }
   }
 
@@ -454,7 +479,7 @@ console.log(workedExample());
 console.log('');
 
 // -------------------------------------------------------------------- report
-const CRITERIA = ['E1', 'E2', 'E2s', 'E3', 'G1', 'G2', 'G3', 'D1', 'D2', 'D3', 'D4', 'D5', 'L1', 'S1', 'C1', 'C2', 'F1', 'F2', 'HARD'];
+const CRITERIA = ['E1', 'E2', 'E2s', 'E3', 'E4', 'G1', 'G2', 'G3', 'D1', 'D2', 'D3', 'D4', 'D5', 'L1', 'S1', 'C1', 'C2', 'F1', 'F2', 'HARD'];
 const lines = [];
 const out = (s = '') => lines.push(s);
 const label = (r) =>

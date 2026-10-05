@@ -268,4 +268,47 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'recommendation fixes: a reader who owns a barbell or dumbbells is not handed a week that leaves them unused',
+    run() {
+      const { programIgnoresOwnedLoad } = require('../../.test-dist/lib/programEquipmentFit.js');
+      const featured = (setup, goal, level, daysPerWeek) =>
+        resolveFirstRunRecommendationWithTailoring(
+          {
+            ...DEFAULT_FIRST_RUN_SELECTION,
+            goal,
+            goals: [goal],
+            level,
+            daysPerWeek,
+            availableDays: [],
+            scheduleMode: 'app_managed',
+            ...setup,
+          },
+          null,
+        ).featuredProgramId;
+      const rack = { equipment: 'home', trainingEnvironment: 'home_gym', equipmentItems: ['Barbell & plates', 'Squat rack', 'Bench'] };
+      const dumbbells = { equipment: 'home', trainingEnvironment: 'home_gym', equipmentItems: ['Dumbbells'] };
+      const gymNoMachines = {
+        equipment: 'gym',
+        trainingEnvironment: 'full_gym',
+        equipmentItems: ['Barbells', 'Dumbbells', 'Squat rack', 'Bench', 'Kettlebells', 'Cardio machines'],
+      };
+      // The review's cases: each went to a bodyweight week matching the day count.
+      for (const [setup, goal, level, days] of [
+        [rack, 'strength', 'pro', 5],
+        [rack, 'strength', 'advanced', 6],
+        [dumbbells, 'muscle', 'advanced', 2],
+        [gymNoMachines, 'muscle', 'advanced', 2],
+        [gymNoMachines, 'muscle', 'advanced', 6],
+      ]) {
+        const id = featured(setup, goal, level, days);
+        const input = { equipment: setup.equipment, availableEquipment: setup.equipmentItems };
+        assert.equal(programIgnoresOwnedLoad(id, input), false, `${setup.equipmentItems.join('+')} ${goal} ${level} ${days}d: ${id}`);
+      }
+      // With nothing to load, the bodyweight weeks are still the answer.
+      const nothing = { equipment: 'home', trainingEnvironment: 'bodyweight_only', equipmentItems: [] };
+      assert.equal(featured(nothing, 'strength', 'pro', 5), 'tpl_home_calisthenics_strength_5_day_v1');
+      assert.equal(featured(nothing, 'muscle', 'advanced', 2), 'tpl_home_bodyweight_full_body_v1');
+    },
+  },
 ];

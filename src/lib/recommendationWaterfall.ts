@@ -1,5 +1,5 @@
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
-import { equipmentCandidatePool, programGearUse } from './programEquipmentFit';
+import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -40,6 +40,13 @@ const FOCUS_PROGRAM_BY_AREA: Partial<Record<SetupFocusArea, string>> = {
  */
 const GEAR_USE_WEIGHT = 12;
 
+/**
+ * A programme that leaves the reader's barbell or dumbbells unused while one
+ * that serves their goal uses them: two days' difference, so the geared week a
+ * day or two off still wins (review, 2026-10-05).
+ */
+const IGNORES_OWNED_LOAD = 20;
+
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
   return input.level === 'beginner' ? Math.min(input.daysPerWeek, 3) : input.daysPerWeek;
@@ -56,6 +63,7 @@ function pickClosestWithPenalty(
 ): { definition: RecommendationProgramDefinition; penalty: number } | null {
   let best: RecommendationProgramDefinition | null = null;
   let bestPenalty = Number.POSITIVE_INFINITY;
+  const ignoringLoad = programsIgnoringOwnedLoad(pool, input);
 
   for (const definition of pool) {
     let penalty = Math.abs(definition.daysPerWeek - targetDays) * 10;
@@ -105,6 +113,9 @@ function pickClosestWithPenalty(
     }
     if (input.equipment !== 'gym') {
       penalty -= GEAR_USE_WEIGHT * programGearUse(definition.programId, input.availableEquipment);
+    }
+    if (ignoringLoad.has(definition.programId)) {
+      penalty += IGNORES_OWNED_LOAD;
     }
     if (penalty < bestPenalty) {
       best = definition;

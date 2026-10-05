@@ -3,7 +3,7 @@ import { RECOMMENDATION_PROGRAMS, getRecommendationProgramDefinition } from './r
 import { selectWaterfallDecision } from './recommendationWaterfall';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
-import { equipmentCandidatePool, programGearUse } from './programEquipmentFit';
+import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
 import type {
   RecommendationCandidate,
   RecommendationConfidence,
@@ -86,7 +86,12 @@ function scoreScheduleFit(definition: RecommendationProgramDefinition, input: Re
   return input.daysPerWeek >= 6 ? clampScore(score, -8, 30) : clampScore(score, 0, 20);
 }
 
-function scoreEquipmentFit(definition: RecommendationProgramDefinition, input: RecommendationInput) {
+function scoreEquipmentFit(definition: RecommendationProgramDefinition, input: RecommendationInput, ignoresLoad: boolean) {
+  // A week that leaves the reader's barbell or dumbbells unused while another
+  // that serves their goal uses them (review, 2026-10-05).
+  if (ignoresLoad) {
+    return 0;
+  }
   if (input.equipment === 'gym') {
     return definition.equipmentTier === 'full_gym' ? 15 : 12;
   }
@@ -224,11 +229,15 @@ function scoreContentFit(definition: RecommendationProgramDefinition, input: Rec
   return clampScore(score, -30, 10);
 }
 
-function buildBreakdown(definition: RecommendationProgramDefinition, input: RecommendationInput): RecommendationScoreBreakdown {
+function buildBreakdown(
+  definition: RecommendationProgramDefinition,
+  input: RecommendationInput,
+  ignoresLoad = false,
+): RecommendationScoreBreakdown {
   return {
     goalAlignment: scoreGoalAlignment(definition, input),
     scheduleFit: scoreScheduleFit(definition, input),
-    equipmentFit: scoreEquipmentFit(definition, input),
+    equipmentFit: scoreEquipmentFit(definition, input, ignoresLoad),
     experienceFit: scoreExperienceFit(definition, input),
     genderFit: scoreGenderFit(definition, input),
     preferenceFit: scorePreferenceFit(definition, input),
@@ -394,8 +403,9 @@ export function recommendPrograms(
   const equipmentFiltered = applyEquipmentFilter(input);
   const genderFiltered = equipmentFiltered.filter((definition) => genderAllows(definition, input));
   const filteredPrograms = genderFiltered.length > 0 ? genderFiltered : equipmentFiltered;
+  const ignoringLoad = programsIgnoringOwnedLoad(filteredPrograms, input);
   const scoredCandidates = filteredPrograms.map((definition) => {
-    const breakdown = buildBreakdown(definition, input);
+    const breakdown = buildBreakdown(definition, input, ignoringLoad.has(definition.programId));
 
     return {
       programId: definition.programId,
