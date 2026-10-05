@@ -43,6 +43,8 @@ export interface LastTimeView {
    * from here too, but a different claim from "last time on this slot".
    */
   borrowed?: boolean;
+  /** That session's warm-ups ("+ Warm-up set"), what the button offers again. */
+  warmups?: { loadKg: number; reps: number }[];
 }
 
 /** How many sessions the chart shows, today included. */

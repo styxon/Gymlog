@@ -1,6 +1,7 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupLevel } from '../types/models';
 import { getRollingWindowStart } from './completedSessions';
+import { gatingSets } from './warmupSets';
 
 /**
  * Double progression, as specified (ADR-004 + progression-gating-rules.md).
@@ -133,8 +134,13 @@ function entryLoadKg(entry: WorkoutSlotHistoryEntry): number {
 }
 
 /**
- * A session is progression-ready when every completed working set reached the
- * rep ceiling, enough sets were completed, and nothing was skipped.
+ * A session is progression-ready when every working set up to its heaviest
+ * reached the rep ceiling, enough sets were completed, and nothing was skipped.
+ *
+ * "Up to its heaviest": the lighter sets after the last heaviest one — a drop
+ * or a back-off — are exempt (lib/warmupSets gatingSets). Straight sets and an
+ * ascending pyramid are gated on every set, as they always were. Warm-ups are
+ * not in `entry.sets` here: the caller reads working entries.
  */
 export function isProgressionReadySession(
   entry: WorkoutSlotHistoryEntry,
@@ -147,7 +153,7 @@ export function isProgressionReadySession(
   if (entry.sets.length < targetSets) {
     return false;
   }
-  return entry.sets.every((set) => set.reps >= repsMax);
+  return gatingSets(entry.sets).every((set) => set.reps >= repsMax);
 }
 
 /**
@@ -176,7 +182,7 @@ function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, target
     !entry.skipped &&
     entry.sets.length >= targetSets &&
     entry.sets.length > 0 &&
-    entry.sets.every((set) => set.reps >= repsMax + margin)
+    gatingSets(entry.sets).every((set) => set.reps >= repsMax + margin)
   );
 }
 
@@ -305,7 +311,14 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
 export function resolveProgressedLoadKg(
   input: ProgressionGateInput & {
     automatedProgressionEnabled: boolean;
+    /** This set's own load last time: what it repeats, and what it climbs from. */
     fallbackLoadKg: number;
+    /**
+     * This set's own reps last time, when known. A lighter set after the
+     * heaviest (a drop) that fell short of the programme's floor keeps its
+     * load when the rest climb: the gate exempted it, and it did not earn more.
+     */
+    fallbackReps?: number;
     /**
      * The body area this lift loads, when the reader flagged it in setup
      * (careful or avoid). Null or absent for every other lift.
@@ -360,9 +373,28 @@ export function resolveProgressedLoadKg(
 
   const decision = evaluateProgression(input);
   if (decision.recommendation === 'increase') {
-    // `fromLoadKg` is what the set was carrying before the gate moved it — the
-    // logger shows the difference, so a load the user did not choose can say
-    // where it came from.
+    // Each set climbs from its own load (user, 2026-10-05, "A"): the decision
+    // is about the session, the step is per set. It used to put the heaviest
+    // load plus the step on every set, and a 50/60/70 pyramid came back as
+    // 72.5 × 3. A set with no load of its own opens on the decision's load,
+    // as every set did before.
+    const own = input.fallbackLoadKg;
+    if (own > 0) {
+      const isHeaviest = Math.abs(own - decision.fromLoadKg) < 0.001;
+      if (!isHeaviest && typeof input.fallbackReps === 'number' && input.fallbackReps < input.repsMin) {
+        return { loadKg: own, progressed: false, fromLoadKg: null, heldForFatigue: false, heldForCautionArea: null };
+      }
+      // `fromLoadKg` is what the set was carrying before the gate moved it —
+      // the logger shows the difference, so a load the user did not choose can
+      // say where it came from.
+      return {
+        loadKg: own + decision.incrementKg,
+        progressed: true,
+        fromLoadKg: own,
+        heldForFatigue: false,
+        heldForCautionArea: null,
+      };
+    }
     return {
       loadKg: decision.loadKg,
       progressed: true,

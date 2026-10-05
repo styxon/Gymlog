@@ -209,6 +209,20 @@ export interface WorkoutLiftIdentity {
   trackingMode: WorkoutTrackingMode;
 }
 
+/**
+ * A warm-up set the reader logged with "+ Warm-up set" (user, 2026-10-05).
+ *
+ * Kept apart from `sets`: the working sets are what the programme counts, the
+ * guided steps walk, the rest timer follows and progression reads. A warm-up
+ * is none of those — it is logged, saved (kind 'warmup') and offered again
+ * next time at its own load, and it never progresses.
+ */
+export interface WorkoutWarmupSet {
+  loadKg: number;
+  reps: number;
+  completedAt: string;
+}
+
 export interface WorkoutExerciseInstance {
   /**
    * The highest set index that was already logged when this exercise was
@@ -234,6 +248,8 @@ export interface WorkoutExerciseInstance {
   supersetGroup?: string | null;
   orderIndex: number;
   sets: WorkoutSetInstance[];
+  /** Warm-ups logged before the working sets, in order. Absent: none. */
+  warmups?: WorkoutWarmupSet[];
   status: WorkoutExerciseStatus;
   libraryItemId?: string | null;
   sessionInserted?: boolean;
@@ -359,6 +375,12 @@ export interface WorkoutSlotHistoryEntry {
    * Absent on every ordinary entry and on entries saved before 2026-09-28.
    */
   targetReps?: number;
+  /**
+   * The warm-ups logged with "+ Warm-up set", in order: what the button offers
+   * next time. Never in `sets`, so progression never reads them. Absent on
+   * entries with none and on entries saved before 2026-10-05.
+   */
+  warmups?: { loadKg: number; reps: number }[];
 }
 
 export interface WorkoutSessionSummary {

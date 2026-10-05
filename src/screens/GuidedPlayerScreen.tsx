@@ -98,6 +98,7 @@ import {
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { getExerciseTeaching } from '../lib/exerciseTeaching';
 import { buildExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
+import { toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
@@ -2241,16 +2242,26 @@ function GuidedPlayer({
         requireLoaded: instance ? !isUnloadedTrackingMode(instance.trackingMode) : false,
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
       });
-      const last = resolved?.entry ?? null;
-      if (!last) {
+      const found = resolved?.entry ?? null;
+      if (!found) {
         return null;
       }
+      // The working sets, as the prefill reads them (lib/warmupSets): the
+      // panel listing a warm-up as set 1 above a dial that opens on the work
+      // was two answers to one question (review, 2026-10-05).
+      // Against the programme's count, not the live one: a set added
+      // mid-session must not change which of last time's sets were warm-ups.
+      const last = toWorkingHistoryEntry(
+        found,
+        instance ? instance.sets.filter((set) => !set.addedMidSession).length : found.sets.length,
+      );
       const heaviest = Math.max(...last.sets.map((set) => set.loadKg));
       return {
         performedAt: last.performedAt,
         // Said out loud rather than passed off as this slot's own record —
         // it is a real number, lifted on a different day.
         borrowed: resolved?.borrowed ?? false,
+        warmups: last.warmups,
         sets: last.sets.map((set) => ({
           setIndex: set.setIndex + 1,
           loadKg: set.loadKg,
@@ -3808,6 +3819,11 @@ function GuidedPlayer({
                 void haptics.select();
                 workout.addSet(step.slotId);
               }}
+              onLogWarmup={(loadKg, reps) => {
+                void haptics.select();
+                workout.logWarmup(step.slotId, loadKg, reps);
+              }}
+              onRemoveWarmup={(index) => workout.removeWarmup(step.slotId, index)}
               /**
                * Only when there is a round to take: every lift in the block
                * has more than one set and its last one is still pending. A
@@ -5041,6 +5057,8 @@ function SetStepView({
   onOpenActions,
   onAddSet,
   onRemoveSet,
+  onLogWarmup,
+  onRemoveWarmup,
   panels,
   onOpenSheet,
   onConfirm,
@@ -5060,6 +5078,10 @@ function SetStepView({
   onAddSet: () => void;
   /** Absent when there is no set to take back. */
   onRemoveSet?: (() => void) | null;
+  /** "+ Warm-up set": logs one apart from the working sets. */
+  onLogWarmup: (loadKg: number, reps: number) => void;
+  /** Takes back the logged warm-up at `index`. */
+  onRemoveWarmup: (index: number) => void;
   /** Resolved by the player; null falls back to the plain photo. */
   panels: {
     history: LastTimeView | null;
@@ -5098,8 +5120,53 @@ function SetStepView({
   }, [dial, stepIndex]);
   const logBlocked = dial === 'weight' && weightTextInvalid;
 
+  /**
+   * "+ Warm-up set" (user, 2026-10-05): the screen turns blue and logs a
+   * warm-up instead of the set — kept apart from the working sets, so the
+   * count, the steps and progression never see it. Offered before the first
+   * working set of a loaded lift only: a warm-up is what comes before the
+   * work, and a bodyweight lift or a hold has no load to build up to.
+   */
+  const [warmupMode, setWarmupMode] = useState(false);
+  const warmups = exercise?.warmups ?? [];
+  const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
+  const canWarmUp = !bodyweight && firstSetOpen;
+  const inWarmup = warmupMode && canWarmUp;
+  /**
+   * The set's own numbers while a warm-up borrows the dials: a weight dialled
+   * for set 1 before "+ Warm-up set" comes back after it, not the plan's
+   * (review, 2026-10-05).
+   */
+  const setNumbersRef = useRef<{ reps: number; kg: number } | null>(null);
+  const enterWarmup = () => {
+    setNumbersRef.current = { reps, kg };
+    const offer = warmupOffer(panels?.history?.warmups, warmups.length, target?.loadKg ?? null);
+    setDial(null);
+    setReps(offer.reps);
+    setKg(offer.loadKg ?? 0);
+    setWarmupMode(true);
+  };
+  const leaveWarmup = () => {
+    const kept = setNumbersRef.current;
+    setNumbersRef.current = null;
+    setDial(null);
+    setReps(kept?.reps ?? target?.reps ?? 8);
+    setKg(kept?.kg ?? target?.loadKg ?? 0);
+    setWarmupMode(false);
+  };
+
+  // A warm-up has nothing left to come before once the first set is done:
+  // the dials go back to the set's own numbers rather than log the warm-up's.
+  useEffect(() => {
+    if (!canWarmUp && warmupMode) {
+      leaveWarmup();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canWarmUp]);
+
   useEffect(() => {
     setDial(null);
+    setWarmupMode(false);
     setReps(target?.reps ?? 8);
     setKg(target?.loadKg ?? 0);
     // Re-derive when the step changes — and when the exercise under the step
@@ -5329,6 +5396,12 @@ function SetStepView({
             kello ei voi olla vierekkäin"). It sits on the name row now, where
             nothing grows, and the dots absorb the squeeze here. */}
         <View style={styles.setMetaRow}>
+          {inWarmup ? (
+            <View style={styles.setMetaLeft}>
+              <View style={styles.warmupDot} />
+              <Text style={styles.setCounter}>{t(language, 'guided.warmup.title', { index: warmups.length + 1 })}</Text>
+            </View>
+          ) : (
           <View style={styles.setMetaLeft}>
             <Text style={styles.setCounter}>
               {t(language, 'guided.setOfCount', { index: step.setIndex + 1, count: step.setCount })}
@@ -5388,7 +5461,47 @@ function SetStepView({
               <GPIcon name="plus" size={13} color={theme.green} sw={3} />
             </Pressable>
           </View>
+          )}
         </View>
+
+        {/* The warm-ups logged so far, and the button that adds one. Only on
+            the first working set: once the work has started, a warm-up is not
+            what comes next. A logged one is taken back with its ×. */}
+        {canWarmUp && (warmups.length > 0 || !inWarmup) ? (
+          <View style={styles.warmupRow}>
+            {warmups.map((warmup, index) => (
+              <Pressable
+                key={`${index}-${warmup.completedAt}`}
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.remove', {
+                  index: index + 1,
+                  kg: removeTrailingZeros(warmup.loadKg),
+                  reps: warmup.reps,
+                })}
+                hitSlop={8}
+                onPress={() => onRemoveWarmup(index)}
+                style={styles.warmupChip}
+              >
+                <Text style={styles.warmupChipText}>
+                  {t(language, 'guided.warmup.chip', { kg: removeTrailingZeros(warmup.loadKg), reps: warmup.reps })}
+                </Text>
+                <GPIcon name="x" size={11} color={theme.muted} sw={2.6} />
+              </Pressable>
+            ))}
+            {!inWarmup ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.add')}
+                hitSlop={8}
+                onPress={enterWarmup}
+                style={styles.warmupAdd}
+              >
+                <GPIcon name="plus" size={12} color={theme.blue} sw={3} />
+                <Text style={styles.warmupAddText}>{t(language, 'guided.warmup.add')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
 
         <View style={styles.setTargetArea}>
@@ -5464,8 +5577,9 @@ function SetStepView({
                   so these badges only ever render for an unlocked account — and only
                   when a number moved, which is the one case the user did not choose
                   it themselves. Green adds, red would take away (the gate only
-                  raises today), and the same pair covers reps on bodyweight work. */}
-              {autoDeltaKg !== null && autoDeltaKg !== 0 ? (
+                  raises today), and the same pair covers reps on bodyweight work.
+                  None of them is about a warm-up. */}
+              {inWarmup ? null : autoDeltaKg !== null && autoDeltaKg !== 0 ? (
                 <View style={autoDeltaKg > 0 ? styles.setAutoBadgeUp : styles.setAutoBadgeDown}>
                   <View style={autoDeltaKg > 0 ? null : { transform: [{ rotate: '180deg' }] }}>
                     <GPIcon
@@ -5507,8 +5621,29 @@ function SetStepView({
         </View>
 
         <View style={{ paddingHorizontal: 22 }}>
-          {/* Which set it logs, on the button that logs it. "Kirjaa sarja"
-              was true of all four. */}
+          {inWarmup ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.log')}
+                accessibilityState={{ disabled: logBlocked || kg <= 0 }}
+                // No weight, no warm-up: the store refuses 0 kg, and the
+                // screen must not leave as if it had been saved.
+                disabled={logBlocked || kg <= 0}
+                onPress={() => {
+                  onLogWarmup(kg, reps);
+                  leaveWarmup();
+                }}
+                style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, (logBlocked || kg <= 0) && { opacity: 0.4 }]}
+              >
+                <GPIcon name="check" size={18} color={theme.blue} sw={2.8} />
+                <Text style={styles.warmupLogButtonText}>{t(language, 'guided.warmup.log')}</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={leaveWarmup} style={styles.warmupCancel}>
+                <Text style={styles.warmupCancelText}>{t(language, 'guided.warmup.cancel')}</Text>
+              </Pressable>
+            </>
+          ) : (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
@@ -5529,6 +5664,7 @@ function SetStepView({
               {t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             </Text>
           </Pressable>
+          )}
         </View>
 
         {/* Two buttons, no more (user 2026-08-23): pause, and the menu.
@@ -6354,6 +6490,85 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.greenSoft,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /*
+   * Warm-ups in blue (user, 2026-10-05): set apart from the green of the work
+   * at a glance. Blue edges and ink text, not white on blue — white on the
+   * light theme's #0A84FF falls short of 4.5:1.
+   */
+  warmupDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.blue,
+  },
+  warmupRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 22,
+    marginTop: 8,
+  },
+  warmupChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    // 36 high and 8 of slop each way: the 48 a tap needs (review, 2026-10-05).
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: theme.blue,
+    backgroundColor: theme.surface,
+  },
+  warmupChipText: {
+    color: theme.ink,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  warmupAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: theme.blue,
+  },
+  warmupAddText: {
+    color: theme.ink,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  warmupLogButton: {
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: theme.blue,
+    backgroundColor: theme.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  warmupLogButtonText: {
+    color: theme.ink,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  warmupCancel: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+  },
+  warmupCancelText: {
+    color: theme.muted,
+    fontSize: 14,
+    fontWeight: '700',
   },
   setRoundBtn: {
     width: 60,
