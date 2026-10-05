@@ -76,7 +76,10 @@ function logRows(log: ExerciseLog): Array<{
   completed: boolean;
 }> {
   if (log.sets && log.sets.length > 0) {
+    // Warm-ups ("+ Warm-up set") are not sets of the programme, and their
+    // numbers run below zero: left out, the set column stays 1, 2, 3.
     return [...log.sets]
+      .filter((set) => set.kind !== 'warmup')
       .sort((left, right) => left.orderIndex - right.orderIndex)
       .map((set) => ({
         set: set.orderIndex + 1,

@@ -33,11 +33,13 @@ function byOrder(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[
  * 0, 1, 2 … in the order they were done.
  *
  * A set is inferred to be a warm-up when it came before the first set at the
- * heaviest load and was under 70 % of it — and only as many of them as the
- * session ran past the programme's set count, lightest first. Without that
- * cap a 60/80/100 pyramid on a three-set programme lost its 60 to the rule and
- * held forever on "too few sets" (spec review, 2026-10-05): a session that did
- * exactly what the programme asked has no warm-ups in it to find.
+ * heaviest load and was under 70 % of it — and only in a session that ran past
+ * the programme's set count. A session that did exactly what the programme
+ * asked has no warm-ups in it to find: a 60/80/100 pyramid on a three-set
+ * programme keeps its 60 as work, or it would hold forever on "too few sets"
+ * (spec review, 2026-10-05). Once the session did run over, every such set is
+ * a warm-up, not only as many as it ran over by: 40/60/100/100 on three sets
+ * counted the 60 as set 1 and raised it with an AUTO badge (breaker, same day).
  *
  * Nothing inferred: the entry comes back as it was, set numbers untouched, so
  * every session without a warm-up reads exactly as it did before.
@@ -58,9 +60,7 @@ export function toWorkingHistoryEntry(
   const firstHeavy = ordered.findIndex((set) => Math.abs(set.loadKg - heaviest) < SAME_LOAD_KG);
   const candidates = ordered
     .slice(0, firstHeavy)
-    .filter((set) => set.loadKg > 0 && set.loadKg * 10 < heaviest * WARMUP_SHARE_TENTHS - 1e-9)
-    .sort((left, right) => left.loadKg - right.loadKg || left.setIndex - right.setIndex)
-    .slice(0, cap);
+    .filter((set) => set.loadKg > 0 && set.loadKg * 10 < heaviest * WARMUP_SHARE_TENTHS - 1e-9);
   if (candidates.length === 0) {
     return entry;
   }
@@ -118,8 +118,9 @@ export function warmupOffer(
   index: number,
   workingLoadKg: number | null | undefined,
 ): { loadKg: number | null; reps: number } {
+  // A warm-up of no weight is not one to repeat: the ladder offers a load.
   const repeated = lastWarmups?.[index];
-  if (repeated) {
+  if (repeated && repeated.loadKg > 0) {
     return { loadKg: repeated.loadKg, reps: repeated.reps };
   }
   const rung = WARMUP_LADDER[Math.min(Math.max(0, index), WARMUP_LADDER.length - 1)];

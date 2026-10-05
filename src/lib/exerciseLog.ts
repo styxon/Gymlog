@@ -161,7 +161,9 @@ export function getComparableLogSets(
    */
   const comparableSets = completedSets;
   const workingSets = comparableSets.filter((set) => set.kind === 'working');
-  return workingSets.length > 0 ? workingSets : comparableSets;
+  // The fallback (a log of drop sets only, say) never hands back a warm-up as
+  // work: a log whose only done sets were warm-ups did no work (2026-10-05).
+  return workingSets.length > 0 ? workingSets : comparableSets.filter((set) => set.kind !== 'warmup');
 }
 
 /**

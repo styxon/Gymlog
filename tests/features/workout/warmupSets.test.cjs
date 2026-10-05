@@ -87,6 +87,8 @@ module.exports = [
       // Taken back by position; the last one gone leaves no list.
       state = workoutReducer(state, { type: 'exercise/removeWarmup', payload: { slotId: LIVE, index: 0 } });
       assert.deepEqual(bench(state).warmups.map((w) => w.loadKg), [50]);
+      // Remembered as taken back, so a finish done twice does not bring it back.
+      assert.deepEqual(state.activeSession.takenBackAt, ['2026-10-05T10:00:00.000Z']);
       state = workoutReducer(state, { type: 'exercise/removeWarmup', payload: { slotId: LIVE, index: 0 } });
       assert.equal(bench(state).warmups, undefined);
     },
@@ -95,7 +97,7 @@ module.exports = [
     name: 'warm-up: a weight nobody lifts, broken reps, an unknown lift or a closed session are refused',
     run() {
       const state = started();
-      for (const [load, reps] of [[-5, 10], [601, 10], [Number.NaN, 10], [40, 0], [40, 2.5], [40, 101]]) {
+      for (const [load, reps] of [[-5, 10], [0, 10], [601, 10], [Number.NaN, 10], [40, 0], [40, 2.5], [40, 101]]) {
         assert.equal(warm(state, load, reps), state, `${load} x ${reps}`);
       }
       assert.equal(
@@ -142,6 +144,8 @@ module.exports = [
       assert.deepEqual(warmupOffer(undefined, 2, 100), { loadKg: 85, reps: 3 });
       assert.deepEqual(warmupOffer(undefined, 5, 100), { loadKg: 85, reps: 3 });
       assert.deepEqual(warmupOffer(undefined, 0, null), { loadKg: null, reps: 10 });
+      // A stored 0 kg (an older build accepted one) is not repeated: the ladder.
+      assert.deepEqual(warmupOffer([{ loadKg: 0, reps: 10 }], 0, 60), { loadKg: 30, reps: 10 });
     },
   },
   {
@@ -180,7 +184,10 @@ module.exports = [
         .replace(/\r\n/g, '\n');
       const view = screen.slice(screen.indexOf('function SetStepView('), screen.indexOf('const makeStyles'));
       // Offered: first set, not yet logged, a lift with a load.
-      assert.match(view, /const firstSetOpen = step\.setIndex === 0 && exercise\?\.sets\[0\]\?\.status !== 'completed';/);
+      assert.match(view, /const firstSetOpen = exercise !== null && step\.setIndex === 0 && exercise\.sets\[0\]\?\.status !== 'completed';/);
+      // A weight dialled for set 1 before the warm-up comes back after it.
+      assert.match(view, /setNumbersRef\.current = \{ reps, kg \};/);
+      assert.match(view, /setKg\(kept\?\.kg \?\? target\?\.loadKg \?\? 0\);/);
       assert.match(view, /const canWarmUp = !bodyweight && firstSetOpen;/);
       assert.match(view, /\{canWarmUp && \(warmups\.length > 0 \|\| !inWarmup\) \? \(/);
       // Opened on last time's warm-up or the ladder, never on the working set's numbers.
@@ -195,6 +202,69 @@ module.exports = [
       // The player hands both actions to the store.
       assert.match(screen, /onLogWarmup=\{\(loadKg, reps\) => \{\s*void haptics\.select\(\);\s*workout\.logWarmup\(step\.slotId, loadKg, reps\);/);
       assert.match(screen, /onRemoveWarmup=\{\(index\) => workout\.removeWarmup\(step\.slotId, index\)\}/);
+    },
+  },
+  {
+    name: 'warm-up: a swap before the first working set takes the old lift’s warm-ups with it; after one, they stay with the lift they were for',
+    run() {
+      const swap = (state) =>
+        workoutReducer(state, {
+          type: 'exercise/swap',
+          payload: { slotId: LIVE, exerciseName: 'Dumbbell Bench Press', substitutionGroup: 'horizontal_press', unitPreference: 'kg' },
+        });
+      const before = swap(warm(started(), 60, 10));
+      assert.equal(bench(before).warmups, undefined, 'a barbell warm-up is not the dumbbell lift’s');
+      const [draft] = buildExerciseLogDraftsFromWorkoutSession(logSet(before, 0, 24, 8).activeSession);
+      assert.equal(draft.sets.some((set) => set.kind === 'warmup'), false);
+
+      // Swapped after a logged set: the warm-ups stay, saved under the lift
+      // the slot started as.
+      const after = swap(logSet(warm(started(), 60, 10), 0, 80, 8));
+      assert.deepEqual(bench(after).warmups.map((w) => w.loadKg), [60]);
+      const drafts = buildExerciseLogDraftsFromWorkoutSession(logSet(after, 1, 24, 8).activeSession);
+      const bar = drafts.find((log) => log.exerciseNameSnapshot === 'Bench Press');
+      const dumbbell = drafts.find((log) => log.exerciseNameSnapshot === 'Dumbbell Bench Press');
+      assert.deepEqual(bar.sets.filter((set) => set.kind === 'warmup').map((set) => set.weight), [60]);
+      assert.equal(dumbbell.sets.some((set) => set.kind === 'warmup'), false);
+    },
+  },
+  {
+    name: 'warm-up: a log whose only done sets were warm-ups did no work, and the CSV leaves warm-ups out',
+    run() {
+      const log = normalizeExerciseLog({
+        id: 'l',
+        sessionId: 's',
+        exerciseTemplateId: 'e',
+        exerciseNameSnapshot: 'Bench Press',
+        tracked: true,
+        orderIndex: 0,
+        sets: [
+          { orderIndex: -1, weight: 40, reps: 10, kind: 'warmup', status: 'completed' },
+          { orderIndex: 0, weight: 60, reps: 8, kind: 'working', status: 'skipped' },
+        ],
+      });
+      assert.deepEqual(getComparableLogSets(log), []);
+
+      const { buildWorkoutLogCsv } = require('../../../.test-dist/lib/workoutLogCsvExport');
+      const csv = buildWorkoutLogCsv({
+        sessions: [{ id: 's', workoutTemplateId: 't', workoutNameSnapshot: 'Push', performedAt: '2026-10-05T10:00:00.000Z' }],
+        logs: [
+          normalizeExerciseLog({
+            id: 'l2',
+            sessionId: 's',
+            exerciseTemplateId: 'e',
+            exerciseNameSnapshot: 'Bench Press',
+            tracked: true,
+            orderIndex: 0,
+            sets: [
+              { orderIndex: -1, weight: 40, reps: 10, kind: 'warmup', status: 'completed' },
+              { orderIndex: 0, weight: 60, reps: 8, kind: 'working', status: 'completed' },
+            ],
+          }),
+        ],
+      });
+      assert.doesNotMatch(csv, /,40,/, 'the warm-up is not a row');
+      assert.match(csv, /Bench Press,1,8,60,/);
     },
   },
 ];

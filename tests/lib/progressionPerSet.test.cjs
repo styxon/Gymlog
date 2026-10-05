@@ -146,9 +146,15 @@ module.exports = [
       const below = toWorkingHistoryEntry(entry(1, [[48.9, 8], [70, 8], [70, 8], [70, 8]]), 3);
       assert.deepEqual(below.sets.map((set) => [set.setIndex, set.loadKg]), [[0, 70], [1, 70], [2, 70]]);
 
-      // Two light sets, one over the count: the lighter one is the warm-up.
+      // Over the count, every light set before the work is a warm-up — not only
+      // as many as it ran over by (breaker, 2026-10-05).
       const two = toWorkingHistoryEntry(entry(1, [[30, 10], [40, 10], [70, 8], [70, 8]]), 3);
-      assert.deepEqual(two.sets.map((set) => set.loadKg), [40, 70, 70]);
+      assert.deepEqual(two.sets.map((set) => set.loadKg), [70, 70]);
+      // 40/60/100/100 on three sets: the 60 is not set 1, and it does not climb.
+      const ramp = [[40, 10], [60, 8], [100, 8], [100, 8]];
+      const opened = openWith([entry(2, ramp), entry(4, ramp)]);
+      assert.deepEqual(froms(opened), [undefined, undefined, undefined], 'two working sets of three: no jump, no badge');
+      assert.deepEqual(loads(opened).slice(0, 2), [100, 100]);
 
       // A light set AFTER the heaviest is never a warm-up.
       assert.equal(toWorkingHistoryEntry(entry(1, [[70, 8], [70, 8], [70, 8], [30, 15]]), 3).sets.length, 4);

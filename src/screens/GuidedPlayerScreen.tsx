@@ -98,7 +98,7 @@ import {
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { getExerciseTeaching } from '../lib/exerciseTeaching';
 import { buildExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
-import { warmupOffer } from '../lib/warmupSets';
+import { toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
@@ -2242,10 +2242,14 @@ function GuidedPlayer({
         requireLoaded: instance ? !isUnloadedTrackingMode(instance.trackingMode) : false,
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
       });
-      const last = resolved?.entry ?? null;
-      if (!last) {
+      const found = resolved?.entry ?? null;
+      if (!found) {
         return null;
       }
+      // The working sets, as the prefill reads them (lib/warmupSets): the
+      // panel listing a warm-up as set 1 above a dial that opens on the work
+      // was two answers to one question (review, 2026-10-05).
+      const last = toWorkingHistoryEntry(found, instance?.sets.length ?? found.sets.length);
       const heaviest = Math.max(...last.sets.map((set) => set.loadKg));
       return {
         performedAt: last.performedAt,
@@ -5120,10 +5124,17 @@ function SetStepView({
    */
   const [warmupMode, setWarmupMode] = useState(false);
   const warmups = exercise?.warmups ?? [];
-  const firstSetOpen = step.setIndex === 0 && exercise?.sets[0]?.status !== 'completed';
+  const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
   const canWarmUp = !bodyweight && firstSetOpen;
   const inWarmup = warmupMode && canWarmUp;
+  /**
+   * The set's own numbers while a warm-up borrows the dials: a weight dialled
+   * for set 1 before "+ Warm-up set" comes back after it, not the plan's
+   * (review, 2026-10-05).
+   */
+  const setNumbersRef = useRef<{ reps: number; kg: number } | null>(null);
   const enterWarmup = () => {
+    setNumbersRef.current = { reps, kg };
     const offer = warmupOffer(panels?.history?.warmups, warmups.length, target?.loadKg ?? null);
     setDial(null);
     setReps(offer.reps);
@@ -5131,9 +5142,11 @@ function SetStepView({
     setWarmupMode(true);
   };
   const leaveWarmup = () => {
+    const kept = setNumbersRef.current;
+    setNumbersRef.current = null;
     setDial(null);
-    setReps(target?.reps ?? 8);
-    setKg(target?.loadKg ?? 0);
+    setReps(kept?.reps ?? target?.reps ?? 8);
+    setKg(kept?.kg ?? target?.loadKg ?? 0);
     setWarmupMode(false);
   };
 
@@ -5446,8 +5459,12 @@ function SetStepView({
               <Pressable
                 key={`${index}-${warmup.completedAt}`}
                 accessibilityRole="button"
-                accessibilityLabel={t(language, 'guided.warmup.remove', { index: index + 1 })}
-                hitSlop={6}
+                accessibilityLabel={t(language, 'guided.warmup.remove', {
+                  index: index + 1,
+                  kg: removeTrailingZeros(warmup.loadKg),
+                  reps: warmup.reps,
+                })}
+                hitSlop={8}
                 onPress={() => onRemoveWarmup(index)}
                 style={styles.warmupChip}
               >
@@ -5461,7 +5478,7 @@ function SetStepView({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t(language, 'guided.warmup.add')}
-                hitSlop={6}
+                hitSlop={8}
                 onPress={enterWarmup}
                 style={styles.warmupAdd}
               >
@@ -5595,13 +5612,15 @@ function SetStepView({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t(language, 'guided.warmup.log')}
-                accessibilityState={{ disabled: logBlocked }}
-                disabled={logBlocked}
+                accessibilityState={{ disabled: logBlocked || kg <= 0 }}
+                // No weight, no warm-up: the store refuses 0 kg, and the
+                // screen must not leave as if it had been saved.
+                disabled={logBlocked || kg <= 0}
                 onPress={() => {
                   onLogWarmup(kg, reps);
                   leaveWarmup();
                 }}
-                style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, logBlocked && { opacity: 0.4 }]}
+                style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, (logBlocked || kg <= 0) && { opacity: 0.4 }]}
               >
                 <GPIcon name="check" size={18} color={theme.blue} sw={2.8} />
                 <Text style={styles.warmupLogButtonText}>{t(language, 'guided.warmup.log')}</Text>
@@ -6481,8 +6500,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    // 36 high and 8 of slop each way: the 48 a tap needs (review, 2026-10-05).
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1.5,
     borderColor: theme.blue,
@@ -6497,8 +6518,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 999,
     borderWidth: 1.5,
     borderStyle: 'dashed',

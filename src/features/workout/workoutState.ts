@@ -1608,9 +1608,10 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         return state;
       }
       const { slotId, loadKg, reps, completedAt } = action.payload;
-      // The same bounds a working set is held to: a weight someone could
-      // lift, and a whole number of reps.
-      if (!isLiftableWeight(loadKg) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
+      // The same bounds a working set is held to, and a load: a warm-up is
+      // offered on loaded lifts only, and 0 kg there is no warm-up (it was then
+      // offered back every session — breaker, 2026-10-05).
+      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
         return state;
       }
       const session = cloneSession(state.activeSession);
@@ -1636,6 +1637,9 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       }
       const kept = warmups.filter((_, index) => index !== action.payload.index);
       session.exercises[exerciseIndex].warmups = kept.length > 0 ? kept : undefined;
+      // Remembered as taken back, as set/undo does: a finish done twice merges
+      // with the stored log, which would bring this warm-up back.
+      session.takenBackAt = [...(session.takenBackAt ?? []), warmups[action.payload.index].completedAt];
       session.updatedAt = new Date().toISOString();
       return { ...state, activeSession: session };
     }
@@ -1951,7 +1955,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // the field opens empty. `autoProgressedFromKg` is dropped either way,
       // because the progression gate did not choose a weight for this lift and
       // the badge must not say it did.
-      const swappedInEntry = findLatestEntryForExerciseName(state.history.slotHistory, action.payload.exerciseName, {
+      const swappedInFound = findLatestEntryForExerciseName(state.history.slotHistory, action.payload.exerciseName, {
         requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
         // Same gate as the session's own prefill: the swapped-in lift's weight
         // only carries over from sessions run at reps this slot is asking for.
@@ -1962,6 +1966,9 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           sets: pendingSets.length > 0 ? pendingSets : exercise.sets,
         }),
       });
+      // Its working sets only, numbered as done (lib/warmupSets), as the
+      // session's own prefill reads them.
+      const swappedInEntry = swappedInFound ? toWorkingHistoryEntry(swappedInFound, exercise.sets.length) : null;
       // Sets logged before this moment were a different lift. Clearing their
       // drafts is not enough on its own: the logger also carries forward from
       // the last COMPLETED set, which walked straight back over the swap and
@@ -1976,6 +1983,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           exercise.swappedAfterSetIndex ?? -1,
           ...completedIndexes,
         );
+      } else {
+        // Nothing done yet: the warm-ups were for the lift that is gone. Kept,
+        // they showed as the new lift's, were saved under it and offered for
+        // it next time — a barbell warm-up for a dumbbell lift (review,
+        // 2026-10-05). After a logged set they stay: they belong to the lift
+        // the slot started as, which keeps its own row.
+        exercise.warmups = undefined;
       }
       exercise.sets.forEach((set) => {
         if (set.status !== 'pending') {
