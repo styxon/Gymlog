@@ -151,6 +151,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Jokainen lihas treenataan kahdesti viikossa kahdella eri tavalla, ja yksittäinen treeni on niin lyhyt, että se mahtuu kiireiseenkin päivään.',
   },
+  tpl_home_dumbbell_strength_v1: {
+    summary:
+      'Kolme kokovartalotreeniä viikossa käsipainoparilla: kyykky tai nosto, työntö ja soutu joka kerta, raskaina viiden ja kuuden toiston sarjoina. Lattiapunnerrus, Goblet-kyykky, askelkyykky, maastaveto ja soudut, ja lyhyt lopetus joka päivä.',
+    audience:
+      'Käsipainoja kotona tai salilla ilman tankoja käyttävälle, joka haluaa vahvistua kolmella treenillä viikossa.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä ja riittävän painava viiden toiston sarjoihin, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla.',
+    whyItWorks:
+      'Jokaisessa treenissä on jalat, työntö ja veto viiden tai kuuden toiston sarjoina pitkillä palautuksilla. Kun kaikki sarjat onnistuvat tavoitetoistoilla, paino nousee seuraavalla kerralla.',
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    summary:
+      'Viisi treeniä viikossa käsipainoparilla: kaksi ylävartalopäivää, kaksi alavartalopäivää ja yksi kokovartalopäivä. Lattiapunnerrus, soudut, pystypunnerrus, Goblet-kyykky ja suorin jaloin tehtävä maastaveto raskaina viiden ja kuuden toiston sarjoina.',
+    audience:
+      'Kokeneelle treenaajalle, jolla on käsipainot mutta ei tankoa ja joka haluaa harjoitella voimaa viitenä päivänä viikossa.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä ja riittävän painava viiden toiston sarjoihin, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla.',
+    whyItWorks:
+      'Työntö, veto, kyykky ja nosto saavat kukin kaksi raskasta päivää viikossa, joten jokaista liikettä harjoitellaan usein eikä yksikään treeni veny pitkäksi.',
+  },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
       'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä.',

@@ -662,6 +662,8 @@ const EN = {
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Full-body work that needs no gym and no kit.',
   'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Four days at home with a pair of dumbbells, upper and lower body in turns.',
   'prog.sub.tpl_home_dumbbell_ppl_v1': 'Six days at home with a pair of dumbbells: push, pull and legs twice.',
+  'prog.sub.tpl_home_dumbbell_strength_v1': 'Three full-body days with a pair of dumbbells, heavy sets of five and six.',
+  'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Five days with a pair of dumbbells: upper and lower body in turns, heavy sets of five and six.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Four bodyweight days, upper and lower body in turns, with no bar.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Five bodyweight days at home: strength, conditioning and balance.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Strength, body control and the skills: muscle-up, handstand, planche.',
@@ -3070,7 +3072,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 61 ready programmes with level, goal and free text all
+  // The catalog: 63 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4105,6 +4107,8 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_gainer_at_home_beginner_v1': 'Koko kehon treeni ilman salia ja ilman välineitä.',
   'prog.sub.tpl_home_dumbbell_upper_lower_v1': 'Neljä päivää kotona käsipainoparilla, ylä- ja alavartalo vuorotellen.',
   'prog.sub.tpl_home_dumbbell_ppl_v1': 'Kuusi päivää kotona käsipainoparilla: työntö, veto ja jalat kahdesti.',
+  'prog.sub.tpl_home_dumbbell_strength_v1': 'Kolme kokovartalopäivää käsipainoparilla, raskaita viiden ja kuuden toiston sarjoja.',
+  'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Viisi päivää käsipainoparilla, ylä- ja alavartalo vuorotellen. Raskaita viiden toiston sarjoja.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Neljä kehonpainopäivää, ylä- ja alavartalo vuorotellen, ilman tankoa.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Viisi kehonpainopäivää kotona: voimaa, kuntoa ja tasapainoa.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Voimaa, kehonhallintaa ja taitoja: muscle-up, käsinseisonta, planche.',

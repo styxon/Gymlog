@@ -168,6 +168,26 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Every muscle is trained twice a week from two directions, and each session is short enough to fit a busy day.',
   },
+  tpl_home_dumbbell_strength_v1: {
+    summary:
+      'Three full-body days a week with a pair of dumbbells: a squat or a hinge, a press and a row every day, in heavy sets of five and six. Floor press, goblet squat, split squat, deadlift and rows, with a short finish each day.',
+    audience:
+      'Anyone with dumbbells, at home or in a gym without barbells, who wants to get stronger on three days a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable and heavy enough for sets of five, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
+    whyItWorks:
+      'Every session trains legs, a press and a pull in sets of five or six with long rests. When every set is done at the target reps, the weight goes up next time.',
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    summary:
+      'Five days a week with a pair of dumbbells: two upper-body days, two lower-body days and a full-body day. Floor press, rows, shoulder press, goblet squat and stiff-legged deadlift in heavy sets of five and six.',
+    audience:
+      'Experienced lifters with dumbbells and no barbell who want to train for strength five days a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable and heavy enough for sets of five, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
+    whyItWorks:
+      'Press, pull, squat and hinge each get two heavy days a week, so every lift is practised often and no single session runs long.',
+  },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
       'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work.',

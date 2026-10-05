@@ -53,6 +53,8 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_4_day_powerbuilding_v1',
       'tpl_4_day_strength_size_v1',
       'tpl_strong_elite_v1',
+      'tpl_home_dumbbell_strength_v1',
+      'tpl_home_dumbbell_strength_split_v1',
     ],
   },
   {

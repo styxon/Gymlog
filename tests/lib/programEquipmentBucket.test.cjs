@@ -34,6 +34,8 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // Dumbbells only: four days at home (coverage sweep, 2026-10-04).
   'tpl_home_dumbbell_upper_lower_v1',
   'tpl_home_dumbbell_ppl_v1',
+  'tpl_home_dumbbell_strength_v1',
+  'tpl_home_dumbbell_strength_split_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
   // A pull-up bar and a floor. It read as full-gym only because "Nordic

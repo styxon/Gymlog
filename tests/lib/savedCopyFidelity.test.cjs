@@ -176,6 +176,8 @@ module.exports = [
       const cases = [
         ['tpl_home_dumbbell_upper_lower_v1', ENVIRONMENTS[2], 4],
         ['tpl_home_dumbbell_ppl_v1', ENVIRONMENTS[2], 6],
+        ['tpl_home_dumbbell_strength_v1', ENVIRONMENTS[2], 3],
+        ['tpl_home_dumbbell_strength_split_v1', ENVIRONMENTS[2], 5],
         ['tpl_home_bodyweight_upper_lower_v1', ENVIRONMENTS[1], 4],
         ['tpl_home_athletic_5_day_v1', ENVIRONMENTS[1], 5],
         ['tpl_gainer_at_home_beginner_v1', ENVIRONMENTS[1], 3],

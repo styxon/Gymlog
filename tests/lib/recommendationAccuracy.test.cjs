@@ -21,10 +21,13 @@ const { execFileSync } = require('node:child_process');
  * - L1: the plan does not list the reader's level.
  * - S1: a programme written for one gender shown to anyone else.
  * - C1: an area the reader asked to avoid is still loaded.
- * - HARD: any hard criterion, content gaps included (the catalog has no home
- *   strength programme yet, so most of this is supply, not the ranker).
+ * - HARD: any hard criterion, content gaps included (what is left is supply,
+ *   not the ranker: bodyweight and kettlebell-only strength, muscle at two
+ *   days, general fitness at three). Two dumbbell strength programmes took it
+ *   from 481 to 375 and left no dumbbell or no-barbell strength answer without
+ *   a programme that lists strength.
  */
-const CEILINGS = { E2: 85, E3: 0, L1: 1, S1: 0, C1: 0, HARD: 481 };
+const CEILINGS = { E2: 85, E3: 0, L1: 1, S1: 0, C1: 0, HARD: 375 };
 
 let cached = null;
 function matrix() {

@@ -103,4 +103,59 @@ module.exports = [
       assert.equal(programGearUse('tpl_gainer_at_home_beginner_v1', ['Yoga mat']), 0, 'a mat is not gear');
     },
   },
+  {
+    name: 'recommendation fixes: a reader with only dumbbells who wants strength is featured a dumbbell strength programme',
+    run() {
+      const dist = '../../.test-dist/lib/';
+      const { recommendPrograms } = require(`${dist}recommendationScoring.js`);
+      const { buildRecommendationInput } = require(`${dist}recommendationInput.js`);
+      const { DEFAULT_FIRST_RUN_SELECTION } = require(`${dist}firstRunSetup.js`);
+      const featured = (level, daysPerWeek, equipmentItems = ['Dumbbells']) =>
+        recommendPrograms(
+          buildRecommendationInput({
+            ...DEFAULT_FIRST_RUN_SELECTION,
+            goal: 'strength',
+            goals: ['strength'],
+            level,
+            daysPerWeek,
+            equipment: 'home',
+            trainingEnvironment: 'home_gym',
+            equipmentItems,
+          }),
+        ).featuredProgramId;
+      assert.equal(featured('beginner', 3), 'tpl_home_dumbbell_strength_v1');
+      assert.equal(featured('pro', 5), 'tpl_home_dumbbell_strength_split_v1');
+      // The bench, bands, a bar and a kettlebell do not change the answer.
+      assert.equal(featured('beginner', 3, ['Dumbbells', 'Bench', 'Resistance bands']), 'tpl_home_dumbbell_strength_v1');
+      assert.equal(featured('advanced', 5, ['Dumbbells', 'Pull-up bar', 'Kettlebells']), 'tpl_home_dumbbell_strength_split_v1');
+    },
+  },
+  {
+    name: 'recommendation fixes: the dumbbell strength programmes are strength — fives and sixes, one rep number, long rests',
+    run() {
+      const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+      for (const id of ['tpl_home_dumbbell_strength_v1', 'tpl_home_dumbbell_strength_split_v1']) {
+        const template = getWorkoutTemplateById(id);
+        assert.ok(template, id);
+        assert.equal(template.goalType, 'strength', id);
+        assert.equal(template.sessions.length, template.daysPerWeek, id);
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            if (exercise.trackingMode !== 'hold') {
+              assert.equal(exercise.repsMin, exercise.repsMax, `${id}: ${exercise.exerciseName}`);
+            }
+            if (exercise.role !== 'accessory') {
+              assert.ok(exercise.repsMax <= 6, `${id}: ${exercise.exerciseName} is a main lift above six reps`);
+              assert.ok(exercise.restSecondsMin >= 120, `${id}: ${exercise.exerciseName} rests too little to be heavy`);
+            }
+          }
+        }
+        const definition = getRecommendationProgramDefinition(id);
+        assert.deepEqual(definition.supportedGoals, ['strength'], id);
+        assert.equal(definition.targetGender, 'unisex', id);
+        assert.equal(programGearUse(id, ['Dumbbells']), 1, id);
+      }
+    },
+  },
 ];

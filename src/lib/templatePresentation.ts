@@ -321,6 +321,14 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'Home Dumbbell Push/Pull/Legs',
     tagKeys: ['prog.tag.home', 'prog.tag.ppl'],
   },
+  tpl_home_dumbbell_strength_v1: {
+    title: 'Home Dumbbell Strength',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    title: 'Home Dumbbell Strength Split',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
   tpl_home_bodyweight_upper_lower_v1: {
     title: 'Bodyweight Upper/Lower',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.upperLower'],
