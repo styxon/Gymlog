@@ -1,5 +1,5 @@
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
-import { equipmentCandidatePool } from './programEquipmentFit';
+import { equipmentCandidatePool, programGearUse } from './programEquipmentFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -32,6 +32,14 @@ const FOCUS_PROGRAM_BY_AREA: Partial<Record<SetupFocusArea, string>> = {
   glutes: 'tpl_focus_glutes_program_v1',
 };
 
+/**
+ * What using all of the reader's own gear is worth against a programme that
+ * uses none of it: a little more than one day's difference (10), so a
+ * dumbbell owner is handed the dumbbell programme over the no-equipment one
+ * when both fit their week about as well (recommendation matrix, 2026-10-05).
+ */
+const GEAR_USE_WEIGHT = 12;
+
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
   return input.level === 'beginner' ? Math.min(input.daysPerWeek, 3) : input.daysPerWeek;
@@ -52,7 +60,11 @@ function pickClosestWithPenalty(
   for (const definition of pool) {
     let penalty = Math.abs(definition.daysPerWeek - targetDays) * 10;
     if (!definition.supportedLevels.includes(input.level)) {
-      penalty += 12;
+      // More than any day difference or the gear bonus: a beginner is not
+      // handed a pro programme because it uses their dumbbells, and a pro is
+      // not handed a beginner one (recommendation matrix, 2026-10-05). Was 12,
+      // about one day's worth.
+      penalty += 30;
     }
     if (input.level !== 'beginner' && definition.supportedLevels.includes('beginner')) {
       // Prefer level-targeted programs for experienced users when days tie.
@@ -70,7 +82,9 @@ function pickClosestWithPenalty(
     }
     if (!definition.supportedGoals.includes(input.goal)) {
       // A wrong-goal program must never beat the right goal over a one-day difference.
-      penalty += definition.backupGoals.includes(input.goal) ? 2 : 25;
+      // A backup goal costs more than the gear bonus: the reader's goal comes
+      // before the reader's gear (recommendation matrix, 2026-10-05). Was 2.
+      penalty += definition.backupGoals.includes(input.goal) ? GEAR_USE_WEIGHT + 2 : 25;
     }
     if (
       input.equipment === 'gym'
@@ -88,6 +102,9 @@ function pickClosestWithPenalty(
       // reader who had asked for two days — 15 points of equipment beat 10
       // points of "that is not the week you said you had".
       penalty += 15;
+    }
+    if (input.equipment !== 'gym') {
+      penalty -= GEAR_USE_WEIGHT * programGearUse(definition.programId, input.availableEquipment);
     }
     if (penalty < bestPenalty) {
       best = definition;

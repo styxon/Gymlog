@@ -3,7 +3,7 @@ import { RECOMMENDATION_PROGRAMS, getRecommendationProgramDefinition } from './r
 import { selectWaterfallDecision } from './recommendationWaterfall';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
-import { equipmentCandidatePool } from './programEquipmentFit';
+import { equipmentCandidatePool, programGearUse } from './programEquipmentFit';
 import type {
   RecommendationCandidate,
   RecommendationConfidence,
@@ -91,7 +91,13 @@ function scoreEquipmentFit(definition: RecommendationProgramDefinition, input: R
     return definition.equipmentTier === 'full_gym' ? 15 : 12;
   }
 
-  return definition.equipmentTier === 'low_equipment' ? 15 : 0;
+  // On the low-equipment shelf every programme scored the same 15, so a
+  // dumbbell owner's no-equipment plan tied with the dumbbell one. Using the
+  // gear they own is what sets them apart (recommendation matrix, 2026-10-05).
+  if (definition.equipmentTier !== 'low_equipment') {
+    return 0;
+  }
+  return 10 + Math.round(5 * programGearUse(definition.programId, input.availableEquipment));
 }
 
 function scoreExperienceFit(definition: RecommendationProgramDefinition, input: RecommendationInput) {
@@ -364,11 +370,30 @@ function selectAlternativeCandidates(candidates: RecommendationCandidate[], inpu
   return orderedAlternatives.slice(0, 2);
 }
 
+/**
+ * A programme written for one gender is shown only to that gender (user,
+ * 2026-10-05): a reader who left it unsaid sees neither. The score only took
+ * 4 points off a mismatch, so with some gym chips unticked a female programme
+ * still reached an unspecified reader (recommendation matrix, 2026-10-05).
+ */
+function genderAllows(definition: RecommendationProgramDefinition, input: RecommendationInput) {
+  return definition.targetGender === 'unisex' || definition.targetGender === input.gender;
+}
+
+/** The candidates a reader at this level should see first, in score order. */
+function levelFirst(candidates: RecommendationCandidate[], input: RecommendationInput) {
+  const fits = (candidate: RecommendationCandidate) =>
+    getRecommendationProgramDefinition(candidate.programId)?.supportedLevels.includes(input.level) ?? false;
+  return [...candidates.filter(fits), ...candidates.filter((candidate) => !fits(candidate))];
+}
+
 export function recommendPrograms(
   input: RecommendationInput,
   tailoringPreferences?: TailoringPreferencesInput | null,
 ): RecommendationResult {
-  const filteredPrograms = applyEquipmentFilter(input);
+  const equipmentFiltered = applyEquipmentFilter(input);
+  const genderFiltered = equipmentFiltered.filter((definition) => genderAllows(definition, input));
+  const filteredPrograms = genderFiltered.length > 0 ? genderFiltered : equipmentFiltered;
   const scoredCandidates = filteredPrograms.map((definition) => {
     const breakdown = buildBreakdown(definition, input);
 
@@ -380,7 +405,13 @@ export function recommendPrograms(
     };
   });
 
-  const scoreRankedCandidates = applyTailoringOrdering(stableSortCandidates(scoredCandidates), tailoringPreferences);
+  // The level is a fit, not a preference: when the waterfall's pick is not
+  // among the candidates, the score alone chose, and a beginner was handed a
+  // pro programme four points behind (recommendation matrix, 2026-10-05).
+  const scoreRankedCandidates = levelFirst(
+    applyTailoringOrdering(stableSortCandidates(scoredCandidates), tailoringPreferences),
+    input,
+  );
 
   // Onboarding Rules v2: the waterfall decides which family the user lands in;
   // scoring keeps ranking everything else (alternatives, confidence, tradeoffs).
@@ -392,11 +423,16 @@ export function recommendPrograms(
     const primaryDefinition = getRecommendationProgramDefinition(waterfallPrimary.programId);
     const cellTop = scoreRankedCandidates.find((candidate) => {
       const definition = getRecommendationProgramDefinition(candidate.programId);
+      // And the same answers: the low-equipment and recomp families are
+      // catch-alls, and the swap handed a general-fitness reader the run
+      // programme (recommendation matrix, 2026-10-05).
       return Boolean(
         definition
         && primaryDefinition
         && definition.familyId === primaryDefinition.familyId
-        && definition.daysPerWeek === primaryDefinition.daysPerWeek,
+        && definition.daysPerWeek === primaryDefinition.daysPerWeek
+        && (definition.supportedGoals.includes(input.goal) || !primaryDefinition.supportedGoals.includes(input.goal))
+        && (definition.supportedLevels.includes(input.level) || !primaryDefinition.supportedLevels.includes(input.level)),
       );
     });
     if (cellTop) {

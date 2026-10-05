@@ -68,7 +68,9 @@ module.exports = [
           level: 'pro',
           daysPerWeek: 6,
           equipment: 'gym',
-          trainingEnvironment: 'full_gym',
+          // Home: a gym reads in the pull-up bar and bands every gym has
+          // (2026-10-05), and this needs gear scarce enough to empty days.
+          trainingEnvironment: 'home_gym',
           equipmentItems: ['Cardio machines'],
           cautionFlags: [{ area: 'wrists', level: 'avoid', refinements: [] }],
           availableDays: [],

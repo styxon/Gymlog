@@ -2,6 +2,7 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupCautionFlag, SetupFocusArea } from '../types/models';
 import { trackingModeAfterSwap } from './catalogExercisePools';
 import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } from './cautionAreaMatching';
+import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
 
 export { cautionAreaLoadedBy, exerciseHitsCautionArea } from './cautionAreaMatching';
@@ -150,6 +151,14 @@ export function applyCautionFlagsToExercises(
   exercises: WorkoutTemplateExercise[],
   flags: SetupCautionFlag[],
   focusAreas: SetupFocusArea[] = [],
+  /**
+   * The reader's gear, when known. A careful swap has to be something they
+   * can do: "squat → Box Squat" put a barbell-and-rack lift in a home week
+   * with no gear, and "bench press → Machine Chest Press" a machine there
+   * (1317 of 7200 answer sets, recommendation matrix 2026-10-05). The swap
+   * falls through to the bodyweight one, then keeps the movement as it was.
+   */
+  availableEquipment: string[] | null = null,
 ): CautionAdjustedExercises {
   const seriousFlags = flags.filter((flag) => flag.level !== 'info');
   if (seriousFlags.length === 0) {
@@ -174,9 +183,14 @@ export function applyCautionFlagsToExercises(
 
       for (const flag of matching) {
         const focusOverlap = CAUTION_TO_FOCUS_AREAS[flag.area].some((area) => focusAreas.includes(area));
+        const bodyweight = findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]);
+        const careful = findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
+        const candidates = focusOverlap ? [bodyweight, careful] : [careful, bodyweight];
         const replacement =
-          (focusOverlap ? findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]) : null) ??
-          findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
+          candidates.find(
+            (candidate): candidate is string =>
+              candidate !== null && isExerciseAllowedWithEquipment(candidate, availableEquipment),
+          ) ?? null;
 
         // Never swap into something another flag bans outright. And never
         // swap a hold into a lift: its dose is seconds, and "60–90" carried

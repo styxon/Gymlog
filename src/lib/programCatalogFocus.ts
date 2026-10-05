@@ -1,7 +1,7 @@
 import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
 import { classifySessionFocus } from './homeSessionHero';
 import { I18nKey } from './i18n';
-import { buildProgramFocusSplit } from './programFocusSplit';
+import { buildProgramFocusSplit, liftingFocusPct } from './programFocusSplit';
 
 /**
  * The catalog's FOCUS AREA filter (design: GAINER Ready Catalog v2).
@@ -53,7 +53,7 @@ const MOBILITY_TAG_MIN_PCT = 35;
 /** Focus tags for one template, in the order the filter chips are shown. */
 export function getProgramFocusTags(template: WorkoutTemplateV1): CatalogFocusKey[] {
   const split = buildProgramFocusSplit(template.sessions);
-  const pct = (quality: 'Strength' | 'Conditioning' | 'Mobility') =>
+  const pct = (quality: 'Conditioning' | 'Mobility') =>
     split.find((segment) => segment.quality === quality)?.pct ?? 0;
 
   const tags: CatalogFocusKey[] = [];
@@ -64,7 +64,7 @@ export function getProgramFocusTags(template: WorkoutTemplateV1): CatalogFocusKe
   // third "strength" and would answer the Full body filter. Relative wins on
   // the real catalog too — RUN is 31% strength against 38% mobility, and the
   // design's own hand-written map does not call it a strength program either.
-  const strengthLeads = pct('Strength') >= Math.max(pct('Conditioning'), pct('Mobility'));
+  const strengthLeads = liftingFocusPct(split) >= Math.max(pct('Conditioning'), pct('Mobility'));
 
   if (strengthLeads) {
     const kinds = new Set(

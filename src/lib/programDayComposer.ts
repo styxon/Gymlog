@@ -170,7 +170,7 @@ function refillEmptiedSession(
   ];
   const candidates = names.map((name, index) => buildComposedFallbackExercise(name, session.id, index));
   const equipped = applyEquipmentToExercises(candidates, availableEquipment);
-  const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas);
+  const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas, availableEquipment);
   const seen = new Set<string>();
   const exercises = adjusted.exercises
     .filter((exercise) => isExerciseAllowedWithEquipment(exercise.exerciseName, availableEquipment))
@@ -250,7 +250,7 @@ export function composeProgramWeekForSelection(
 
       // P2: caution flags change the actual movements — avoid removes,
       // careful swaps (bodyweight-first when the area is also a focus).
-      const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas);
+      const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas, availableEquipment);
       cautionRemoved.push(...adjusted.removed);
       cautionSwapped.push(...adjusted.swapped);
 

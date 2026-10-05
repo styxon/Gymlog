@@ -262,16 +262,27 @@ function normalize(name: string) {
   return name.trim().toLowerCase();
 }
 
+/** Gear every gym has, which the full-gym card does not offer as chips. */
+export const GYM_ALWAYS_HAS: readonly string[] = ['Pull-up bar', 'Resistance bands'];
+
 /**
  * `null` = unconstrained (unknown setups stay untouched). Chosen chips are the
  * full truth; a bodyweight-only setup with no chips means "no equipment".
+ *
+ * At a gym, the chips plus what every gym has: the card offers no pull-up bar
+ * or bands, and without them the composer dropped Hanging Knee Raise from nine
+ * programmes and swapped Weighted Pull-Up for Inverted Row in four, for a
+ * reader with a gym card (catalog audit, 2026-10-05). The candidate pool
+ * already read them in; the week did not.
  */
 export function resolveAvailableEquipment(selection: {
   trainingEnvironment?: string | null;
   equipmentItems?: string[];
 }): string[] | null {
   if (selection.equipmentItems && selection.equipmentItems.length > 0) {
-    return selection.equipmentItems;
+    return selection.trainingEnvironment === 'full_gym'
+      ? [...new Set([...selection.equipmentItems, ...GYM_ALWAYS_HAS])]
+      : selection.equipmentItems;
   }
   if (selection.trainingEnvironment === 'bodyweight_only') {
     return [];

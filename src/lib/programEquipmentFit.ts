@@ -1,5 +1,6 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { applyEquipmentToExercises } from './equipmentExerciseFilter';
+import { applyEquipmentToExercises, GYM_ALWAYS_HAS } from './equipmentExerciseFilter';
+import { resolveProgramEquipment } from './programEquipment';
 
 /**
  * Whether a ready programme survives the reader's own gear.
@@ -75,8 +76,44 @@ export function programFitsEquipment(programId: string, available: string[] | nu
  * their own gear can run — and from the whole low-equipment shelf only when
  * nothing fits, so there is always an answer.
  */
-/** Gear every gym has, which the full-gym card does not offer as chips. */
-export const GYM_ALWAYS_HAS: readonly string[] = ['Pull-up bar', 'Resistance bands'];
+/** A barbell is one chip on the home card and another in the exercise rules. */
+const SAME_GEAR: Record<string, string[]> = {
+  'Barbell & plates': ['Barbell & plates', 'Barbells'],
+  Barbells: ['Barbells', 'Barbell & plates'],
+};
+
+const gearUseCache = new Map<string, number>();
+
+/**
+ * How much of the reader's own training gear a programme uses: 0 when none of
+ * it, 1 when all of it. A mat is not counted; it is a floor, not gear.
+ *
+ * Every home programme sits on the one low-equipment shelf, so the pick among
+ * them used to ignore what the reader owns: someone with dumbbells was handed
+ * At Home - No Equipment over the dumbbell programme that fitted (920 of 7200
+ * answer sets, recommendation matrix 2026-10-05). The pick weighs this now.
+ */
+export function programGearUse(programId: string, available: readonly string[] | null | undefined): number {
+  const gear = (available ?? []).filter((item) => item !== 'Yoga mat');
+  if (gear.length === 0) {
+    return 0;
+  }
+  const key = `${programId}|${[...gear].sort().join(',')}`;
+  const cached = gearUseCache.get(key);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const template = getWorkoutTemplateById(programId);
+  const needs = new Set<string>(
+    template ? resolveProgramEquipment(template.sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName))) : [],
+  );
+  const used = gear.filter((item) => (SAME_GEAR[item] ?? [item]).some((name) => needs.has(name)));
+  const share = used.length / gear.length;
+  gearUseCache.set(key, share);
+  return share;
+}
+
+export { GYM_ALWAYS_HAS };
 
 export function equipmentCandidatePool<T extends { programId: string; equipmentTier: string }>(
   programs: readonly T[],

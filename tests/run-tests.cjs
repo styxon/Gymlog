@@ -399,6 +399,8 @@ const suites = [
   ...require('./lib/recommendationBackfill.test.cjs'),
   ...require('./lib/recommendationWaterfall.test.cjs'),
   ...require('./lib/recommendationReach.test.cjs'),
+  ...require('./lib/recommendationAccuracy.test.cjs'),
+  ...require('./lib/recommendationFixes20261005.test.cjs'),
   ...require('./lib/recommendationWaterfallCopy.test.cjs'),
   ...require('./lib/firstRunSetup.test.cjs'),
   ...require('./lib/focusAreaPresentation.test.cjs'),
