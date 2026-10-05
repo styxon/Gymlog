@@ -1265,6 +1265,97 @@ export const Vinha_WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       ] },
     ],
   },
+  {
+    id: "tpl_home_bodyweight_strength_3_day_v1",
+    name: "Bodyweight Strength",
+    goalType: "strength",
+    level: "intermediate",
+    splitType: "full_body",
+    daysPerWeek: 3,
+    estimatedSessionDuration: 45,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "bw_str_a", name: "Day 1: Push & Squat", orderIndex: 1, exercises: [
+        { id: "bw_str_a_decline_push_up", exerciseName: "Decline Push-Up", slotId: "primary_bw_str_a_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "bodyweight_press" },
+        { id: "bw_str_a_bulgarian_split_squat", exerciseName: "Bulgarian Split Squat", slotId: "secondary_bw_str_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "single_leg" },
+        { id: "bw_str_a_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_bw_str_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_str_a_single_leg_glute_bridge", exerciseName: "Single Leg Glute Bridge", slotId: "accessory_bw_str_a_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_hinge" },
+        { id: "bw_str_a_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_bw_str_a_5", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 20, repsMax: 30, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+        { id: "bw_str_a_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_bw_str_a_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "calves" },
+      ] },
+      { id: "bw_str_b", name: "Day 2: Press & Hinge", orderIndex: 2, exercises: [
+        { id: "bw_str_b_pike_push_up", exerciseName: "Pike Push-Up", slotId: "primary_bw_str_b_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "bodyweight_press" },
+        { id: "bw_str_b_single_leg_rdl", exerciseName: "Single-Leg RDL", slotId: "secondary_bw_str_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "hinge_pattern" },
+        { id: "bw_str_b_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_bw_str_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_str_b_cossack_squat", exerciseName: "Cossack Squat", slotId: "secondary_bw_str_b_4", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "bw_str_b_triceps_dip_chair", exerciseName: "Triceps Dip (Chair)", slotId: "accessory_bw_str_b_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "overhead_triceps" },
+        { id: "bw_str_b_plank", exerciseName: "Plank", slotId: "accessory_bw_str_b_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 45, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "bw_str_c", name: "Day 3: Squat & Pull", orderIndex: 3, exercises: [
+        { id: "bw_str_c_diamond_push_up", exerciseName: "Diamond Push-Up", slotId: "primary_bw_str_c_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "bodyweight_press" },
+        { id: "bw_str_c_reverse_lunge", exerciseName: "Reverse Lunge", slotId: "secondary_bw_str_c_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "single_leg" },
+        { id: "bw_str_c_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_bw_str_c_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_pull" },
+        { id: "bw_str_c_nordic_hamstring_curl_assisted", exerciseName: "Nordic Hamstring Curl (Assisted)", slotId: "accessory_bw_str_c_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "accessory_hamstrings" },
+        { id: "bw_str_c_side_plank", exerciseName: "Side Plank", slotId: "accessory_bw_str_c_5", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 20, repsMax: 40, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "plank_variations" },
+        { id: "bw_str_c_dead_bug", exerciseName: "Dead Bug", slotId: "accessory_bw_str_c_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+      ] },
+    ],
+  },
+  {
+    id: "tpl_home_calisthenics_strength_5_day_v1",
+    name: "Calisthenics Strength",
+    goalType: "strength",
+    level: "advanced",
+    splitType: "hybrid",
+    daysPerWeek: 5,
+    estimatedSessionDuration: 50,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: Vinha_PROGRESSION_RULES,
+    sessions: [
+      { id: "cali_str_push_a", name: "Day 1: Push (Planche)", orderIndex: 1, exercises: [
+        { id: "cali_str_push_a_pseudo_planche_push_up", exerciseName: "Pseudo Planche Push-Up", slotId: "primary_cali_str_push_a_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 5, repsMax: 5, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "calisthenics_skills" },
+        { id: "cali_str_push_a_decline_push_up", exerciseName: "Decline Push-Up", slotId: "secondary_cali_str_push_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_press" },
+        { id: "cali_str_push_a_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_cali_str_push_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_pull" },
+        { id: "cali_str_push_a_diamond_push_up", exerciseName: "Diamond Push-Up", slotId: "accessory_cali_str_push_a_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "cali_str_push_a_triceps_dip_chair", exerciseName: "Triceps Dip (Chair)", slotId: "accessory_cali_str_push_a_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "overhead_triceps" },
+        { id: "cali_str_push_a_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_cali_str_push_a_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 20, repsMax: 30, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "cali_str_legs_a", name: "Day 2: Lower Strength", orderIndex: 2, exercises: [
+        { id: "cali_str_legs_a_pistol_squat_each_leg", exerciseName: "Pistol Squat (each leg)", slotId: "primary_cali_str_legs_a_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 4, repsMax: 4, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "cali_str_legs_a_bulgarian_split_squat", exerciseName: "Bulgarian Split Squat", slotId: "secondary_cali_str_legs_a_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "single_leg" },
+        { id: "cali_str_legs_a_single_leg_rdl", exerciseName: "Single-Leg RDL", slotId: "secondary_cali_str_legs_a_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "hinge_pattern" },
+        { id: "cali_str_legs_a_nordic_hamstring_curl_assisted", exerciseName: "Nordic Hamstring Curl (Assisted)", slotId: "accessory_cali_str_legs_a_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "accessory_hamstrings" },
+        { id: "cali_str_legs_a_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_cali_str_legs_a_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "calves" },
+        { id: "cali_str_legs_a_side_plank", exerciseName: "Side Plank", slotId: "accessory_cali_str_legs_a_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 45, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "plank_variations" },
+      ] },
+      { id: "cali_str_pull", name: "Day 3: Pull & Core", orderIndex: 3, exercises: [
+        { id: "cali_str_pull_pull_up", exerciseName: "Pull-Up", slotId: "primary_cali_str_pull_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 5, repsMax: 5, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "vertical_pull" },
+        { id: "cali_str_pull_l_sit_hold", exerciseName: "L-Sit Hold", slotId: "secondary_cali_str_pull_2", role: "secondary", progressionPriority: "medium", trackingMode: "hold", sets: 4, repsMin: 10, repsMax: 20, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "calisthenics_skills" },
+        { id: "cali_str_pull_dragon_flag", exerciseName: "Dragon Flag", slotId: "secondary_cali_str_pull_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 5, repsMax: 5, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "calisthenics_skills" },
+        { id: "cali_str_pull_hollow_body_hold", exerciseName: "Hollow Body Hold", slotId: "accessory_cali_str_pull_4", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 20, repsMax: 40, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+        { id: "cali_str_pull_bird_dog", exerciseName: "Bird Dog", slotId: "accessory_cali_str_pull_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "cali_str_push_b", name: "Day 4: Upper Strength", orderIndex: 4, exercises: [
+        { id: "cali_str_push_b_pike_push_up_elevated", exerciseName: "Pike Push-Up (Elevated)", slotId: "primary_cali_str_push_b_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 5, repsMax: 5, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "bodyweight_press" },
+        { id: "cali_str_push_b_wall_handstand_hold", exerciseName: "Wall Handstand Hold", slotId: "secondary_cali_str_push_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "hold", sets: 5, repsMin: 20, repsMax: 40, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: "calisthenics_skills" },
+        { id: "cali_str_push_b_tuck_planche_hold", exerciseName: "Tuck Planche Hold", slotId: "secondary_cali_str_push_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "hold", sets: 4, repsMin: 10, repsMax: 20, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "calisthenics_skills" },
+        { id: "cali_str_push_b_inverted_row_table", exerciseName: "Inverted Row (Table)", slotId: "secondary_cali_str_push_b_4", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: "bodyweight_pull" },
+        { id: "cali_str_push_b_push_up_wide", exerciseName: "Push-Up Wide", slotId: "accessory_cali_str_push_b_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
+        { id: "cali_str_push_b_plank", exerciseName: "Plank", slotId: "accessory_cali_str_push_b_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 45, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "bodyweight_core" },
+      ] },
+      { id: "cali_str_legs_b", name: "Day 5: Legs & Pull", orderIndex: 5, exercises: [
+        { id: "cali_str_legs_b_shrimp_squat", exerciseName: "Shrimp Squat", slotId: "primary_cali_str_legs_b_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 5, repsMin: 5, repsMax: 5, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "cali_str_legs_b_pull_up", exerciseName: "Pull-Up", slotId: "secondary_cali_str_legs_b_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: "vertical_pull" },
+        { id: "cali_str_legs_b_cossack_squat", exerciseName: "Cossack Squat", slotId: "secondary_cali_str_legs_b_3", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_squat_pattern" },
+        { id: "cali_str_legs_b_single_leg_glute_bridge", exerciseName: "Single Leg Glute Bridge", slotId: "accessory_cali_str_legs_b_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: "bodyweight_hinge" },
+        { id: "cali_str_legs_b_single_leg_calf_raise", exerciseName: "Single-Leg Calf Raise", slotId: "accessory_cali_str_legs_b_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "calves" },
+        { id: "cali_str_legs_b_side_plank", exerciseName: "Side Plank", slotId: "accessory_cali_str_legs_b_6", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 30, repsMax: 45, restSecondsMin: 45, restSecondsMax: 60, substitutionGroup: "plank_variations" },
+      ] },
+    ],
+  },
 ];
 
 type VinhaRecommendationConfig = Omit<RecommendationProgramDefinition, 'daysPerWeek' | 'estimatedSessionMinutes'> & {
@@ -1588,6 +1679,47 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
     styleTags: ['conditioning', 'balanced'],
     secondaryOutcomeTags: ['conditioning', 'consistency'],
     focusAreaTags: ['bodyweight', 'conditioning', 'legs', 'core'],
+    lowFriction: false,
+    jointFriendly: false,
+  },
+  {
+    // Three bodyweight strength days. Strength was a goal no programme served for a
+    // reader with no gear, a pull-up bar, bands or a kettlebell: every strength
+    // programme wanted weights, and the bodyweight ones list it as a backup only
+    // (recommendation matrix, 2026-10-05). Low reps on hard variations with long
+    // rests is strength work without a load, so this one lists strength; it lists
+    // no backup goals, so a muscle or fitness reader is never handed it by default.
+    programId: 'tpl_home_bodyweight_strength_3_day_v1',
+    familyId: 'low_equipment',
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    targetGender: 'unisex',
+    supportedGoals: ['strength'],
+    backupGoals: [],
+    supportedLevels: ['beginner', 'advanced', 'pro'],
+    styleTags: ['heavy'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['bodyweight', 'chest', 'back', 'legs', 'glutes', 'core'],
+    lowFriction: true,
+    jointFriendly: false,
+  },
+  {
+    // The five-day version for readers past the three-day one: planche and pike
+    // push-ups, pistol and shrimp squats, pull-ups (rows with no bar), five reps
+    // or fewer on the lead lift. Five days so it overlaps the three-day one only
+    // at four: a four-day one beat it for a reader with a bar at three days
+    // (more of their gear) but lost the scoring to it, which is a gear-use miss.
+    programId: 'tpl_home_calisthenics_strength_5_day_v1',
+    familyId: 'low_equipment',
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'high',
+    targetGender: 'unisex',
+    supportedGoals: ['strength'],
+    backupGoals: [],
+    supportedLevels: ['advanced', 'pro'],
+    styleTags: ['heavy'],
+    secondaryOutcomeTags: ['strength'],
+    focusAreaTags: ['bodyweight', 'chest', 'shoulders', 'back', 'legs', 'core'],
     lowFriction: false,
     jointFriendly: false,
   },

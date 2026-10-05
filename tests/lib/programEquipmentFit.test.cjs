@@ -174,6 +174,9 @@ module.exports = [
         ['tpl_home_dumbbell_strength_split_v1', ['Dumbbells'], 5],
         ['tpl_home_bodyweight_upper_lower_v1', [], 4],
         ['tpl_home_athletic_5_day_v1', [], 5],
+        ['tpl_home_bodyweight_strength_3_day_v1', [], 3],
+        // Pull-ups need the bar; without one they are rows (tests/lib/recommendationFixes20261005.test.cjs).
+        ['tpl_home_calisthenics_strength_5_day_v1', ['Pull-up bar'], 5],
       ];
       for (const [programId, gear, days] of cases) {
         const template = getWorkoutTemplateById(programId);
@@ -238,6 +241,8 @@ module.exports = [
         'tpl_home_dumbbell_ppl_v1',
         'tpl_home_bodyweight_upper_lower_v1',
         'tpl_home_athletic_5_day_v1',
+        'tpl_home_bodyweight_strength_3_day_v1',
+        'tpl_home_calisthenics_strength_5_day_v1',
       ]) {
         for (const session of getWorkoutTemplateById(programId).sessions) {
           const seen = new Map();

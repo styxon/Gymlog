@@ -39,7 +39,7 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: 'bodyweight_press', allowedExerciseNames: ['Incline Push-Up', 'Push-Up Wide', 'Decline Push-Up', 'Push-Up', 'Wall Push-Up', 'Push-Up (or Knee Push-Up)', 'Push-Up (20s on / 10s off)', 'Diamond Push-Up', 'Pike Push-Up', 'Pike Push-Up (Elevated)'] },
   { id: 'bodyweight_pull', allowedExerciseNames: ['Inverted Row', 'Pull-Up', 'Inverted Row (Table)', 'Rows (Bar or Rings)'] },
   { id: 'bodyweight_core', allowedExerciseNames: ['Plank', 'Mountain Climbers', 'Push Up to Side Plank', 'Hollow Body Hold', 'Dead Bug', 'Dead Bug (Modified)', 'Bird Dog', 'Mountain Climber', 'Mountain Climber (20s on / 10s off)'] },
-  { id: 'bodyweight_hinge', allowedExerciseNames: ['Glute Bridge', 'Single-Leg Glute Bridge', 'Hamstring Walkout'] },
+  { id: 'bodyweight_hinge', allowedExerciseNames: ['Glute Bridge', 'Single-Leg Glute Bridge', 'Single Leg Glute Bridge', 'Hamstring Walkout'] },
   { id: 'chest_fly', allowedExerciseNames: ['Cable Fly', 'Dumbbell Fly', 'Pec Deck', 'Cable Crossover', 'Cable Pullover'] },
   { id: 'barbell_curl', allowedExerciseNames: ['Barbell Curl', 'EZ-Bar Curl', 'Cable Curl', 'Preacher Curl', 'Bicep Curl', 'Dumbbell Bicep Curl', 'Cable Bicep Curl', 'Incline Dumbbell Curl', 'Cable Hammer Curl', 'Band Curl'] },
   { id: 'overhead_triceps', allowedExerciseNames: ['Overhead Triceps Extension', 'Skull Crusher', 'Close-Grip Bench Press', 'Weighted Dips', 'Triceps Dip (Chair)'] },

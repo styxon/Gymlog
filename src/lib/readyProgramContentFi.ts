@@ -191,6 +191,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Voima- ja kuntopäivät vuorottelevat, joten viikossa on sekä raskaampaa työtä että nopeampia kiertoja.',
   },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    summary:
+      'Kolme koko kehon päivää viikossa ilman välineitä: vaikeita punnerrus- ja askelkyykkyversioita pienillä toistoilla, soutua pöydän alla ja yhden jalan liikkeitä.',
+    audience:
+      'Kotona ilman välineitä treenaavalle, joka haluaa vahvistua eikä vain kohentaa kuntoa. Aloittelija aloittaa helpommista versioista, joita vaihtovalikko tarjoaa.',
+    equipmentProfile:
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli tai sohva jalkojen korotukseen ja dippeihin sekä jotain, minkä alle jalat saa tuettua nordic-koukistukseen.',
+    whyItWorks:
+      'Vaikea versio kuudella toistolla kuormittaa lihasta kuin lisäpaino: vähän toistoja ja pitkät tauot. Lisää toisto, kun sarjat ovat puhtaita, ja siirry vaikeampaan versioon kahdeksassa.',
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    summary:
+      'Viisi kalisteniikkapäivää viikossa voimaan: planche- ja pike-punnerruksia, pistooli- ja shrimp-kyykkyjä, leuanvetoja ja L-istuntaa pienillä toistoilla ja pitkillä tauoilla.',
+    audience:
+      'Kokeneelle kehonpainotreenaajalle, joka jaksaa jo toistoja punnerruksissa ja leuanvedoissa ja haluaa viisi voimatreeniä viikossa.',
+    equipmentProfile:
+      'Leuanvetotanko leuanvetoihin; ilman sitä ne vaihtuvat soutuun. Pöytä soutuun, tuoli jalkojen korotukseen ja dippeihin, seinä käsilläseisontaan ja jotain, minkä alle jalat saa tuettua nordic-koukistukseen.',
+    whyItWorks:
+      'Jokaista liikettä treenataan kahdesti viikossa vaikealla versiolla: päivän ankkuriliikkeessä enintään viisi toistoa ja pitkät tauot. Lisää toistoja ja siirry sitten vaikeampaan versioon.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Neljä päivää viikossa taitoliikkeiden ympärillä: käsinseisonta ja planche, muscle-up ja front lever, pistoolikyykky ja hypyt sekä taito- ja keskivartalopäivä.',

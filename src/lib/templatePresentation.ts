@@ -337,6 +337,14 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'Home Athletic',
     tagKeys: ['prog.tag.home', 'prog.tag.athletic'],
   },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    title: 'Bodyweight Strength',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    title: 'Calisthenics Strength',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.strength'],
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     title: 'Calisthenics Mastery',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.advanced'],

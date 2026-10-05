@@ -738,6 +738,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Laske painot hitaasti takaisin alkuasentoon.',
     'Toista suositeltu määrä toistoja.',
   ],
+  'Decline Push-Up': [
+    'Asetu vatsalleen lattialle, kädet noin olkapäitä leveämmällä ja vartalo ylhäällä suorien käsien varassa. Nosta jalat korokkeelle, esimerkiksi tuolille tai penkille.',
+    'Laske itseäsi alas, kunnes rinta melkein koskettaa lattiaa.',
+    'Työnnä ylävartalo takaisin ylös alkuasentoon ja purista rintaa.',
+    'Pidä lyhyt tauko ylhäällä ja toista haluttu määrä toistoja.',
+  ],
   'Single Leg Glute Bridge': [
     'Asetu selinmakuulle jalkaterät lattiassa ja polvet koukussa.',
     'Nosta toinen jalka irti lattiasta ja vedä polvi rintaa kohti.',

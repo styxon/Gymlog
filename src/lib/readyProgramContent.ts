@@ -208,6 +208,26 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Strength days and conditioning days alternate, so the week mixes heavier work with faster circuits.',
   },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    summary:
+      'Three full-body days a week with no equipment: hard push-up and split-squat variations at low reps, rows under a table and single-leg hinges.',
+    audience:
+      'Anyone training at home without equipment who wants to get stronger, not just fitter. Beginners start on the easier variations the swap sheet offers.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows, a chair or couch to raise your feet and for dips, and something to hook your feet under for the Nordic curl.',
+    whyItWorks:
+      'A hard variation at six reps works the muscle the way added weight would: few reps, long rests. Add a rep when the sets are clean, and move to a harder variation at eight.',
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    summary:
+      'Five days a week of calisthenics for strength: planche and pike push-ups, pistol and shrimp squats, pull-ups and L-sits, at low reps with long rests.',
+    audience:
+      'Experienced bodyweight trainers who can already do push-ups and pull-ups for reps and want five strength sessions a week.',
+    equipmentProfile:
+      'A pull-up bar for the pull-ups; without one they become rows. A table for rows, a chair to raise your feet and for dips, a wall for the handstand, and something to hook your feet under for the Nordic curl.',
+    whyItWorks:
+      'Every movement is trained twice a week on a hard variation, with five reps or fewer on the lead lift of the day and long rests. Add reps, then move to a harder variation.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Four days a week built around skills: handstand and planche, muscle-up and front lever, pistol squats and jumps, plus a skills-and-core day.',

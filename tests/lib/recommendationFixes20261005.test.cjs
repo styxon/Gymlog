@@ -6,6 +6,10 @@ const { buildProgramFocusSplit } = require('../../.test-dist/lib/programFocusSpl
 const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching.js');
 const { programGearUse } = require('../../.test-dist/lib/programEquipmentFit.js');
 const { t } = require('../../.test-dist/lib/i18n.js');
+const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../.test-dist/lib/firstRunSetup.js');
+const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
+const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
 
 /**
  * The fixes behind the recommendation accuracy ceilings (2026-10-05), each
@@ -155,6 +159,112 @@ module.exports = [
         assert.deepEqual(definition.supportedGoals, ['strength'], id);
         assert.equal(definition.targetGender, 'unisex', id);
         assert.equal(programGearUse(id, ['Dumbbells']), 1, id);
+      }
+    },
+  },
+  {
+    name: 'bodyweight strength: a strength reader with no gear, a bar, bands, a kettlebell or a mat is handed a strength programme at every level and day count',
+    run() {
+      const BODYWEIGHT_STRENGTH = ['tpl_home_bodyweight_strength_3_day_v1', 'tpl_home_calisthenics_strength_5_day_v1'];
+      const setups = {
+        nothing: { trainingEnvironment: 'bodyweight_only', equipment: 'home', equipmentItems: [] },
+        bar: { trainingEnvironment: 'minimal_equipment', equipment: 'minimal', equipmentItems: ['Pull-up bar'] },
+        bands: { trainingEnvironment: 'minimal_equipment', equipment: 'minimal', equipmentItems: ['Resistance bands'] },
+        kettlebell: { trainingEnvironment: 'minimal_equipment', equipment: 'minimal', equipmentItems: ['Kettlebells'] },
+        barAndBands: { trainingEnvironment: 'minimal_equipment', equipment: 'minimal', equipmentItems: ['Resistance bands', 'Pull-up bar'] },
+        bodyweightMat: {
+          trainingEnvironment: 'bodyweight_only',
+          equipment: 'minimal',
+          equipmentItems: ['Pull-up bar', 'Resistance bands', 'Yoga mat'],
+        },
+      };
+      const featured = (setup, level, daysPerWeek) =>
+        resolveFirstRunRecommendationWithTailoring(
+          {
+            ...DEFAULT_FIRST_RUN_SELECTION,
+            goal: 'strength',
+            goals: ['strength'],
+            level,
+            daysPerWeek,
+            availableDays: [],
+            scheduleMode: 'app_managed',
+            ...setup,
+          },
+          null,
+        ).featuredProgramId;
+
+      // The two answers the matrix named: a beginner for three days, a pro for five.
+      assert.equal(featured(setups.nothing, 'beginner', 3), 'tpl_home_bodyweight_strength_3_day_v1');
+      assert.equal(featured(setups.nothing, 'pro', 5), 'tpl_home_calisthenics_strength_5_day_v1');
+
+      // And all of them. Strength was listed by no programme these readers could run.
+      const misses = [];
+      for (const [name, setup] of Object.entries(setups)) {
+        for (const level of ['beginner', 'advanced', 'pro']) {
+          for (const days of [2, 3, 4, 5, 6]) {
+            const id = featured(setup, level, days);
+            const definition = RECOMMENDATION_PROGRAMS.find((entry) => entry.programId === id);
+            if (!BODYWEIGHT_STRENGTH.includes(id) || !definition.supportedGoals.includes('strength') || !definition.supportedLevels.includes(level)) {
+              misses.push(`${name} ${level}/${days}: ${id}`);
+            }
+          }
+        }
+      }
+      assert.deepEqual(misses, []);
+    },
+  },
+  {
+    name: 'bodyweight strength: the strength claim is the work — lead lifts unloaded, five or six reps, long rests, nothing to buy',
+    run() {
+      for (const id of ['tpl_home_bodyweight_strength_3_day_v1', 'tpl_home_calisthenics_strength_5_day_v1']) {
+        const template = getWorkoutTemplateById(id);
+        assert.equal(template.goalType, 'strength', id);
+        assert.ok(template.sessions.length === template.daysPerWeek, id);
+        const slots = new Set();
+        let primarySets = 0;
+        for (const session of template.sessions) {
+          assert.ok(session.exercises.length >= 5, `${id} ${session.name}`);
+          const primaries = session.exercises.filter((exercise) => exercise.role === 'primary');
+          assert.equal(primaries.length, 1, `${id} ${session.name}`);
+          for (const exercise of session.exercises) {
+            assert.ok(!slots.has(exercise.slotId), `duplicate slot ${exercise.slotId}`);
+            slots.add(exercise.slotId);
+            assert.notEqual(exercise.trackingMode, 'load_and_reps', `${id}: ${exercise.exerciseName} asks for a weight`);
+            if (exercise.trackingMode !== 'hold') {
+              assert.equal(exercise.repsMin, exercise.repsMax, `${id}: ${exercise.exerciseName}`);
+            }
+            if (exercise.role === 'primary') {
+              primarySets += exercise.sets;
+              // Strength is low reps on the hardest variation, with the rest it takes.
+              assert.ok(exercise.trackingMode === 'hold' || exercise.repsMax <= 6, `${id}: ${exercise.exerciseName} ${exercise.repsMax}`);
+              assert.ok(exercise.sets >= 4, `${id}: ${exercise.exerciseName}`);
+              assert.ok(exercise.restSecondsMin >= 90, `${id}: ${exercise.exerciseName}`);
+            }
+          }
+        }
+        assert.ok(primarySets >= 12, `${id} lead-lift sets ${primarySets}`);
+      }
+
+      // Nothing to buy: with no gear at all the three-day week runs as written,
+      // and the five-day one only turns its two pull-ups into rows.
+      const noGear = (id) => getWorkoutTemplateById(id).sessions.map((session) => applyEquipmentToExercises(session.exercises, []));
+      for (const adjusted of noGear('tpl_home_bodyweight_strength_3_day_v1')) {
+        assert.deepEqual(adjusted.removed, []);
+        assert.deepEqual(adjusted.swapped, []);
+      }
+      const swaps = noGear('tpl_home_calisthenics_strength_5_day_v1').flatMap((adjusted) => {
+        assert.deepEqual(adjusted.removed, []);
+        return adjusted.swapped;
+      });
+      assert.deepEqual(swaps, [
+        { from: 'Pull-Up', to: 'Inverted Row' },
+        { from: 'Pull-Up', to: 'Inverted Row' },
+      ]);
+      // A bar keeps the pull-up.
+      for (const session of getWorkoutTemplateById('tpl_home_calisthenics_strength_5_day_v1').sessions) {
+        const adjusted = applyEquipmentToExercises(session.exercises, ['Pull-up bar']);
+        assert.deepEqual(adjusted.removed, []);
+        assert.deepEqual(adjusted.swapped, []);
       }
     },
   },

@@ -666,6 +666,8 @@ const EN = {
   'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Five days with a pair of dumbbells: upper and lower body in turns, heavy sets of five and six.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Four bodyweight days, upper and lower body in turns, with no bar.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Five bodyweight days at home: strength, conditioning and balance.',
+  'prog.sub.tpl_home_bodyweight_strength_3_day_v1': 'Three days with no equipment, built on hard push-up, split-squat and row variations.',
+  'prog.sub.tpl_home_calisthenics_strength_5_day_v1': 'Five calisthenics days for strength: planche, pistol and pull-up work at low reps.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Strength, body control and the skills: muscle-up, handstand, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Five sets of five on the big lifts, and add weight when you can.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Power, speed, agility and endurance inside the same week.',
@@ -3072,7 +3074,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 63 ready programmes with level, goal and free text all
+  // The catalog: 65 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4111,6 +4113,8 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_home_dumbbell_strength_split_v1': 'Viisi päivää käsipainoparilla, ylä- ja alavartalo vuorotellen. Raskaita viiden toiston sarjoja.',
   'prog.sub.tpl_home_bodyweight_upper_lower_v1': 'Neljä kehonpainopäivää, ylä- ja alavartalo vuorotellen, ilman tankoa.',
   'prog.sub.tpl_home_athletic_5_day_v1': 'Viisi kehonpainopäivää kotona: voimaa, kuntoa ja tasapainoa.',
+  'prog.sub.tpl_home_bodyweight_strength_3_day_v1': 'Kolme päivää ilman välineitä, rakennettu vaikeille punnerrus-, askelkyykky- ja soutuversioille.',
+  'prog.sub.tpl_home_calisthenics_strength_5_day_v1': 'Viisi kalisteniikkapäivää voimaan: planche-, pistooli- ja leuanvetotyötä pienillä toistoilla.',
   'prog.sub.tpl_gainer_calisthenics_mastery_v1': 'Voimaa, kehonhallintaa ja taitoja: muscle-up, käsinseisonta, planche.',
   'prog.sub.tpl_gainer_strength_5x5_v1': 'Viisi viiden toiston sarjaa perusliikkeillä, ja lisää painoa kun pystyt.',
   'prog.sub.tpl_gainer_athlete_conditioning_v1': 'Tehoa, nopeutta, ketteryyttä ja kestävyyttä samalla viikolla.',
