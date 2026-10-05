@@ -25,6 +25,7 @@ function defineProgram(
   if (!template) {
     throw new Error(`Unknown recommendation program: ${programId}`);
   }
+  let minutes: number | undefined;
 
   return {
     programId,
@@ -44,7 +45,12 @@ function defineProgram(
     // The minutes the cards and Home show, estimated from the sessions. The
     // hand-written figure is what was scored, and it differed from the card's
     // by 10 minutes or more on 39 of 51 programmes (catalog audit, 2026-10-05).
-    estimatedSessionMinutes: readyTemplateCardMinutes(template),
+    // Worked out on first read, not when the catalog loads: estimating all of
+    // them up front cost every app start tens of milliseconds (review).
+    get estimatedSessionMinutes() {
+      minutes ??= readyTemplateCardMinutes(template);
+      return minutes;
+    },
   };
 }
 
