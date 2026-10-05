@@ -24,6 +24,7 @@ import {
   resolveProgressedReps,
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
+import { toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap, trackingModeAfterSwap } from '../../lib/catalogExercisePools';
 import {
   liftBeforeSwap,
@@ -395,7 +396,7 @@ function resolveNamedHistoryDraft(
     rampTargetReps: undefined,
   };
 
-  const entry = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
+  const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
     // 0 kg is a real answer for bodyweight work and a missing one for a loaded
     // lift — the guided player used to hide the weight field, so zeroes exist.
     requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
@@ -405,6 +406,9 @@ function resolveNamedHistoryDraft(
     // would hide a real "last time" for nothing.
     repWindow: resolveBorrowRepWindow(exercise),
   });
+  // Working sets only, numbered as done: set 1 reads the first working set,
+  // not a warm-up logged before it (lib/warmupSets).
+  const entry = found ? toWorkingHistoryEntry(found, exercise.sets) : null;
   const matched = findHistoricalSetForIndex(entry, setIndex);
   if (!entry || !matched) {
     return blank;
@@ -462,7 +466,10 @@ function resolveHistoricalSetDraft(
   exercise: WorkoutTemplateExercise,
   options: WorkoutSessionMaterializeOptions,
 ): ResolvedSetDraft {
-  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName);
+  // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
+  // an ordinary set neither seeds set 1 nor climbs with the work.
+  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName)
+    .map((entry) => toWorkingHistoryEntry(entry, exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
@@ -510,6 +517,7 @@ function resolveHistoricalSetDraft(
     // never fired on a single set.
     fatigueSignal: options.fatigueSignal,
     fallbackLoadKg: matched.loadKg,
+    fallbackReps: matched.reps,
     // The early jump reads a single session, and only a recent one counts.
     nowMs: options.nowMs ?? Date.now(),
     cautionArea,
