@@ -9,13 +9,13 @@
  *
  * Now it is a tick box with a Continue that waits for it (#bugs 2026-09-22,
  * the user's own pick of the pattern), and what was accepted is stored with
- * the version it was accepted at. The version is `LEGAL_LAST_UPDATED`: when
- * the documents change, the date moves, the stored acceptance no longer
- * matches, and the question is asked again — which is the promise kept.
+ * the version it was accepted at. The version is `LEGAL_VERSION`: when the
+ * documents change, it moves, the stored acceptance no longer matches, and the
+ * question is asked again — which is the promise kept.
  */
 
 export interface LegalAcceptance {
-  /** The `LEGAL_LAST_UPDATED` the reader accepted, "YYYY-MM-DD". */
+  /** The `LEGAL_VERSION` the reader accepted: "YYYY-MM-DD", or with a ".n" suffix. */
   version: string;
   /** ISO timestamp of the tap. */
   acceptedAt: string;

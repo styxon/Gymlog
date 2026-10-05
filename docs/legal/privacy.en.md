@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Updated 6 October 2026*
+*Updated 3 October 2026*
 
 What Vinha stores, what leaves your phone, and what you can do about it.
 

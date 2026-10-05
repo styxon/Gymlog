@@ -166,9 +166,9 @@ module.exports = [
 
       // A restore the disk refuses is reported, on both paths, not swallowed.
       const restoreBranch = resolve.slice(resolve.indexOf("if (choice === 'restore')"));
-      assert.match(restoreBranch, /catch \(error\) \{[\s\S]*?return 'failed';/);
+      assert.match(restoreBranch, /catch \(error\) \{[\s\S]*?return error instanceof RestoreHalfApplied \? 'incomplete' : 'failed';/);
       const settle = hook.slice(hook.indexOf('const settleWithRemote = useCallback('), hook.indexOf('const signIn = useCallback('));
-      assert.match(settle, /try \{\s*fingerprint = await applyRestore\(remote\.payload, generation\);\s*\} catch \(error\) \{[\s\S]*?return \{ kind: 'restore_failed' \};/);
+      assert.match(settle, /try \{\s*fingerprint = await applyRestore\(remote\.payload, generation\);\s*\} catch \(error\) \{[\s\S]*?return \{ kind: error instanceof RestoreHalfApplied \? 'restore_incomplete' : 'restore_failed' \};/);
       const presenter = code(readShell());
       // The reader's own "use the backup": a refused write is said. A landed one is not — the
       // history on screen and the row's timestamp say it (#bugs 2026-10-03).

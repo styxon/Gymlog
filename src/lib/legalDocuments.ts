@@ -78,8 +78,30 @@ function publisher(language: AppLanguage): string {
     : `${name} (sole trader ${holder}, business ID ${businessId}, ${country})`;
 }
 
-/** Bumped whenever the wording changes in a way a user should re-read. */
-export const LEGAL_LAST_UPDATED = '2026-10-06';
+/**
+ * The day the wording last changed, as the documents and the consent sheet
+ * show it. A real date, never ahead of the calendar (tests/lib/legalDocuments
+ * holds it there).
+ */
+export const LEGAL_LAST_UPDATED = '2026-10-03';
+
+/**
+ * What an acceptance is stored against: a string that only ever grows, so a
+ * phone that accepted an earlier wording is asked again (legalAcceptance).
+ *
+ * It used to be the date above. But two changes on one day must both be asked
+ * about, and a date cannot grow twice in a day, so it was bumped a day ahead
+ * each time — four changes on 2–3 October put it at 6 October, and on the 5th
+ * the sheet told readers the terms "changed on 6.10.2026" (bug hunt,
+ * 2026-10-05). Lowering it would stop asking the phones that accepted the
+ * older wordings, so it stays, and the date shown is its own constant now.
+ *
+ * A new wording: LEGAL_LAST_UPDATED becomes the day it ships, and this
+ * becomes that day too — or, while that is not past the current value, the
+ * current value with a suffix ('2026-10-06.1', '.2', …), which still compares
+ * as later.
+ */
+export const LEGAL_VERSION = '2026-10-06';
 
 export type LegalDocumentId = 'privacy' | 'terms';
 

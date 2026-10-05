@@ -1,6 +1,6 @@
 # Käyttöehdot
 
-*Päivitetty 6.10.2026*
+*Päivitetty 3.10.2026*
 
 Vinhan käytön säännöt: terveysvaroitus, miten Pro-laskutus toimii ja mitä lupaamme.
 

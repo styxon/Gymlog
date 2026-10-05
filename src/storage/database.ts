@@ -534,6 +534,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
                 )
                 .map((entry: any) => ({
                   ...entry,
+                  // Home reads it with label.trim() for a weekday plan, so a
+                  // stored null or number was a crash on every launch with
+                  // nothing set aside (bug hunt, 2026-10-05).
+                  label: typeof entry.label === 'string' ? entry.label : '',
                   workoutTemplateSessionId:
                     typeof entry.workoutTemplateSessionId === 'string' && entry.workoutTemplateSessionId.trim().length
                       ? entry.workoutTemplateSessionId

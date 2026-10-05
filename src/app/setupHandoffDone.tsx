@@ -1,7 +1,7 @@
 import type { SignInProvider } from '../features/account/accountAuth';
 import { t } from '../lib/i18n';
 import { acceptLegal } from '../lib/legalAcceptance';
-import { LEGAL_LAST_UPDATED } from '../lib/legalDocuments';
+import { LEGAL_VERSION } from '../lib/legalDocuments';
 import { AppRoute } from '../navigation/routes';
 import { SetupHandoffChoices } from '../screens/SetupHandoffScreen';
 import { AppPreferences } from '../types/models';
@@ -57,7 +57,7 @@ export function createSetupHandoffDone(deps: SetupHandoffDoneDeps) {
     // In the same write as the page closing, so the sheet over the app never
     // opens for a reader who has just ticked the box.
     if (choices.legalAccepted) {
-      patch.legalAcceptance = acceptLegal(LEGAL_LAST_UPDATED, new Date());
+      patch.legalAcceptance = acceptLegal(LEGAL_VERSION, new Date());
     }
     const pinned = [...homePinnedStatCardKeys];
     // The site's name IS its card key, so the dialog's answer goes straight to

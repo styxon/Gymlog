@@ -7,7 +7,7 @@ const {
   legalAcceptanceDue,
   normalizeLegalAcceptance,
 } = require('../../.test-dist/lib/legalAcceptance.js');
-const { LEGAL_LAST_UPDATED, formatLegalDate } = require('../../.test-dist/lib/legalDocuments.js');
+const { LEGAL_LAST_UPDATED, LEGAL_VERSION, formatLegalDate } = require('../../.test-dist/lib/legalDocuments.js');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 // Line endings normalised: a Windows checkout is CRLF.
@@ -45,9 +45,9 @@ module.exports = [
       // A backup from a newer build is not a reason to ask.
       assert.equal(legalAcceptanceDue({ version: '2026-10-01', acceptedAt: 'x' }, '2026-09-16'), null);
 
-      const accepted = acceptLegal(LEGAL_LAST_UPDATED, new Date('2026-09-26T10:00:00Z'));
-      assert.deepEqual(accepted, { version: LEGAL_LAST_UPDATED, acceptedAt: '2026-09-26T10:00:00.000Z' });
-      assert.equal(legalAcceptanceDue(accepted, LEGAL_LAST_UPDATED), null);
+      const accepted = acceptLegal(LEGAL_VERSION, new Date('2026-09-26T10:00:00Z'));
+      assert.deepEqual(accepted, { version: LEGAL_VERSION, acceptedAt: '2026-09-26T10:00:00.000Z' });
+      assert.equal(legalAcceptanceDue(accepted, LEGAL_VERSION), null);
     },
   },
   {
@@ -128,7 +128,7 @@ module.exports = [
       const shell = readAppWiring().split('\r\n').join('\n');
       const owed = between(shell, 'const legalConsentOwed =', ';\n');
       assert.match(owed, /appHydrated && brandSplashDone && !onboardingActive && !setupHandoffActive/);
-      assert.match(owed, /legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_LAST_UPDATED\)/);
+      assert.match(owed, /legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_VERSION\)/);
       // Held on screen while the answer is written: updatePreferences shows
       // the change before the disk has it (CI review of #184).
       assert.match(shell, /const legalConsentDue = legalConsentOwed \?\? legalSheetHeld;/);
@@ -144,7 +144,7 @@ module.exports = [
       assert.match(overlay, /<LegalConsentSheet/);
       assert.match(
         overlay,
-        /onAccept=\{async \(\) => \{\s*setLegalSheetHeld\(legalConsentDue\);\s*try \{\s*await updatePreferences\(\{ legalAcceptance: acceptLegal\(LEGAL_LAST_UPDATED, new Date\(\)\) \}\);\s*\} finally \{[\s\S]*?setLegalSheetHeld\(null\);/,
+        /onAccept=\{async \(\) => \{\s*setLegalSheetHeld\(legalConsentDue\);\s*try \{\s*await updatePreferences\(\{ legalAcceptance: acceptLegal\(LEGAL_VERSION, new Date\(\)\) \}\);\s*\} finally \{[\s\S]*?setLegalSheetHeld\(null\);/,
       );
       // The documents open over it, not instead of it.
       assert.ok(overlay.indexOf('<LegalDocumentScreen') > overlay.indexOf('<LegalConsentSheet'));
@@ -170,7 +170,7 @@ module.exports = [
       const wiring = readAppWiring().split('\r\n').join('\n');
       assert.match(
         wiring,
-        /legalAlreadyAccepted=\{\s*legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_LAST_UPDATED\) === null\s*\}/,
+        /legalAlreadyAccepted=\{\s*legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_VERSION\) === null\s*\}/,
       );
       assert.match(handoff, /legalAccepted: legalChecked,/);
       assert.doesNotMatch(handoff, /handoff\.legal/);
@@ -179,7 +179,7 @@ module.exports = [
       // The handler left App.tsx for src/app in the phase-C split (2026-10-01).
       const shell = readAppWiring().split('\r\n').join('\n');
       const done = between(shell, 'const handleSetupHandoffDone = async', 'await updatePreferences(patch);');
-      assert.match(done, /if \(choices\.legalAccepted\) \{\s*patch\.legalAcceptance = acceptLegal\(LEGAL_LAST_UPDATED, new Date\(\)\);/);
+      assert.match(done, /if \(choices\.legalAccepted\) \{\s*patch\.legalAcceptance = acceptLegal\(LEGAL_VERSION, new Date\(\)\);/);
       // Skipping the hand-off is not accepting.
       // The hand-off's own onSkip, read from where the screen is mounted.
       const handoffAt = wiring.indexOf('<SetupHandoffScreen');

@@ -40,9 +40,10 @@ module.exports = [
       const pending = (draftLoadText, draftRepsText) =>
         createSet({ status: 'pending', draftLoadText, draftRepsText, actualReps: null, actualLoadKg: null });
       assert.equal(canCompleteSet(exercise, pending('100', '8'), 'kg'), true);
-      assert.equal(canCompleteSet(exercise, pending('500', '8'), 'kg'), true);
+      assert.equal(canCompleteSet(exercise, pending('600', '8'), 'kg'), true);
       // What the bar tap used to produce: refused, so the player must not cheer.
-      assert.equal(canCompleteSet(exercise, pending('520', '8'), 'kg'), false);
+      // (The ceiling moved from 500 to 600 kg on 2026-10-05.)
+      assert.equal(canCompleteSet(exercise, pending('620', '8'), 'kg'), false);
       assert.equal(canCompleteSet(exercise, pending('100', '0'), 'kg'), false);
       assert.equal(canCompleteSet(exercise, pending('100', ''), 'kg'), false);
       // An interval bout logs no load, and is still a set.

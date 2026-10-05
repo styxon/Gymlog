@@ -357,7 +357,7 @@ function VinhaApp() {
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.
-  useScheduledNotifications(database);
+  useScheduledNotifications(database, hydrated);
 
   const { navigateToActiveWorkoutRef, finishFromNotificationRef } = useSessionNotifications({
     workout,
