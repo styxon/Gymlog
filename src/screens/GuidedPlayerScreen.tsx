@@ -2249,7 +2249,12 @@ function GuidedPlayer({
       // The working sets, as the prefill reads them (lib/warmupSets): the
       // panel listing a warm-up as set 1 above a dial that opens on the work
       // was two answers to one question (review, 2026-10-05).
-      const last = toWorkingHistoryEntry(found, instance?.sets.length ?? found.sets.length);
+      // Against the programme's count, not the live one: a set added
+      // mid-session must not change which of last time's sets were warm-ups.
+      const last = toWorkingHistoryEntry(
+        found,
+        instance ? instance.sets.filter((set) => !set.addedMidSession).length : found.sets.length,
+      );
       const heaviest = Math.max(...last.sets.map((set) => set.loadKg));
       return {
         performedAt: last.performedAt,
@@ -5149,6 +5154,15 @@ function SetStepView({
     setKg(kept?.kg ?? target?.loadKg ?? 0);
     setWarmupMode(false);
   };
+
+  // A warm-up has nothing left to come before once the first set is done:
+  // the dials go back to the set's own numbers rather than log the warm-up's.
+  useEffect(() => {
+    if (!canWarmUp && warmupMode) {
+      leaveWarmup();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canWarmUp]);
 
   useEffect(() => {
     setDial(null);
