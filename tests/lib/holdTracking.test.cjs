@@ -209,12 +209,17 @@ module.exports = [
         const runtime = adaptLegacyWorkoutTemplateToRuntimeTemplate({ id: 't', name: 'T' }, [{ id: 's', name: 'S', orderIndex: 0, exercises: [exercise] }], library, 90);
         return { mode: runtime.sessions[0].exercises[0].trackingMode, repMin: defaults.repMin };
       };
-      const timed = library.filter((item) => /\b(stretch|isometric)\b/i.test(item.name) && !/\bdynamic\b/i.test(item.name) && item.name.toLowerCase() !== 'cat stretch');
+      const timed = library.filter((item) => /\b(stretch|isometric)\b/i.test(item.name) && !/\bdynamic\b/i.test(item.name) && !['cat stretch', 'iron crosses (stretch)', 'isometric wipers'].includes(item.name.toLowerCase()));
       assert.ok(timed.length >= 40, `only ${timed.length} timed rows`);
       const wrong = timed.map((item) => ({ name: item.name, ...modeOf(item) })).filter((row) => row.mode !== 'hold' || row.repMin < 20);
       assert.deepEqual(wrong, [], 'a stretch or isometric opens a reps dial, or a hold of a few seconds');
       // Moved through, not held.
       const dynamic = library.find((item) => /\bdynamic\b.*\bstretch\b/i.test(item.name));
+      for (const name of ['Isometric Wipers', 'Iron Crosses (stretch)']) {
+        const item = library.find((row) => row.name === name);
+        assert.ok(item, name);
+        assert.notEqual(modeOf(item).mode, 'hold', name);
+      }
       if (dynamic) {
         assert.notEqual(modeOf(dynamic).mode, 'hold', dynamic.name);
       }

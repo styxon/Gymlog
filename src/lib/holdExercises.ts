@@ -104,7 +104,9 @@ const libraryAliases = (() => {
  */
 const NAMED_HOLD = /\b(stretch|stretches|stretching|isometric)\b/i;
 const MOVED_STRETCH = /\bdynamic\b/i;
-const REPS_STRETCHES = new Set(['cat stretch']);
+// Named for a stretch or an isometric, moved through in repetitions: the
+// cat-cow, leg swings, and a side-to-side push-up (review, 2026-10-05).
+const REPS_STRETCHES = new Set(['cat stretch', 'iron crosses (stretch)', 'isometric wipers']);
 
 function isNamedHold(normalized: string): boolean {
   return NAMED_HOLD.test(normalized) && !MOVED_STRETCH.test(normalized) && !REPS_STRETCHES.has(normalized);
