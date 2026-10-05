@@ -58,6 +58,15 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'pistol',
     'box jump',
     'wall sit',
+    // Landings load the knee too: a knee "avoid" still left Burpee, Jumping
+    // Jack and Mountain Climber in the week (recommendation matrix, 2026-10-05).
+    'jump',
+    'jumping',
+    'burpee',
+    'mountain climber',
+    'skater',
+    'pogo',
+    'high knee',
   ],
   elbows: ['curl', 'skull crusher', 'triceps', 'close-grip', 'pushdown', 'dip', 'dippi'],
   wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist'],

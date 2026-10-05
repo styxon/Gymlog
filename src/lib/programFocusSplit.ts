@@ -42,9 +42,14 @@ export function getProgramFocusQualityLabel(
 
 const PROGRAM_FOCUS_ORDER: ProgramFocusQuality[] = ['Strength', 'Conditioning', 'Mobility'];
 
-// Substring matches against lowercased exercise names. 'walk' is deliberately
-// absent (Walking Lunge is strength work); farmer carries match via 'farmer'
-// and 'carry'.
+// Matched at the start of a word in the lowercased exercise name. 'walk' is
+// deliberately absent (Walking Lunge is strength work); farmer carries match
+// via 'farmer' and 'carry'.
+//
+// At the start of a word, not anywhere: as a bare substring 'run' matched
+// inside "Crunch", and every programme with a cable or bicycle crunch showed a
+// conditioning share it does not have — STRONG Starter "Strength 92 /
+// Conditioning 8" (catalog audit, 2026-10-05).
 const CONDITIONING_TERMS = [
   'run',
   'sprint',
@@ -75,6 +80,14 @@ const CONDITIONING_TERMS = [
   'interval',
   'cardio',
   'conditioning',
+  // Drills and plyometrics, which read as strength until 2026-10-05.
+  'drill',
+  'pogo',
+  'hop',
+  'plank jack',
+  'stride',
+  'skater',
+  'shadow box',
 ];
 
 const MOBILITY_TERMS = [
@@ -93,14 +106,39 @@ const MOBILITY_TERMS = [
   'downward',
   'thoracic',
   'couch',
+  // Holds and poses filed as strength until 2026-10-05: Mobility Flow showed
+  // "Strength 42" with 20 of those 24 sets forward folds and squat holds.
+  'fold',
+  'pose',
+  'hip flexor',
+  'squat hold',
+  'wall slide',
+  'thread the needle',
+  'twist',
+  'breathing',
+  'legs up the wall',
+  'butterfly',
+  'frog',
+  'pancake',
 ];
+
+function startsAWord(name: string, term: string): boolean {
+  let from = name.indexOf(term);
+  while (from >= 0) {
+    if (from === 0 || !/[a-z0-9]/.test(name[from - 1])) {
+      return true;
+    }
+    from = name.indexOf(term, from + 1);
+  }
+  return false;
+}
 
 function classifyExerciseName(name: string): ProgramFocusQuality {
   const normalized = name.trim().toLowerCase();
-  if (MOBILITY_TERMS.some((term) => normalized.includes(term))) {
+  if (MOBILITY_TERMS.some((term) => startsAWord(normalized, term))) {
     return 'Mobility';
   }
-  if (CONDITIONING_TERMS.some((term) => normalized.includes(term))) {
+  if (CONDITIONING_TERMS.some((term) => startsAWord(normalized, term))) {
     return 'Conditioning';
   }
   return 'Strength';

@@ -2,6 +2,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { Vinha_PROGRAM_RECOMMENDATIONS } from '../features/workout/gainerProgramCatalog';
 import type { SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome } from '../types/models';
 import type { RecommendationProgramDefinition, TemplateFamilyId } from '../types/recommendation';
+import { readyTemplateCardMinutes } from './programmeMinutes';
 
 function defineProgram(
   programId: string,
@@ -40,7 +41,10 @@ function defineProgram(
     jointFriendly: config.jointFriendly ?? false,
     targetGender: config.targetGender ?? 'unisex',
     daysPerWeek: template.daysPerWeek,
-    estimatedSessionMinutes: template.estimatedSessionDuration,
+    // The minutes the cards and Home show, estimated from the sessions. The
+    // hand-written figure is what was scored, and it differed from the card's
+    // by 10 minutes or more on 39 of 51 programmes (catalog audit, 2026-10-05).
+    estimatedSessionMinutes: readyTemplateCardMinutes(template),
   };
 }
 
@@ -119,8 +123,8 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
   defineProgram('tpl_3_day_upper_lower_lite_v1', {
     familyId: 'athletic_recomp',
-    supportedGoals: ['general', 'lean_athletic', 'general_fitness'],
-    backupGoals: ['strength', 'muscle'],
+    supportedGoals: ['general', 'general_fitness'],
+    backupGoals: ['strength', 'muscle', 'lean_athletic'],
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
@@ -171,7 +175,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['balanced', 'pump', 'heavy'],
+    styleTags: ['balanced', 'pump'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['chest', 'back', 'arms', 'legs'],
   }),
@@ -182,7 +186,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['pump', 'heavy', 'balanced'],
+    styleTags: ['pump', 'balanced'],
     secondaryOutcomeTags: ['muscle', 'strength'],
     focusAreaTags: ['chest', 'back', 'arms', 'legs', 'shoulders'],
   }),
@@ -195,7 +199,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'low',
     styleTags: ['recovery', 'express'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
-    focusAreaTags: ['conditioning'],
+    focusAreaTags: ['mobility'],
     lowFriction: true,
     jointFriendly: true,
   }),
@@ -208,7 +212,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'low',
     styleTags: ['recovery'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
-    focusAreaTags: ['conditioning'],
+    focusAreaTags: ['mobility'],
     lowFriction: true,
     jointFriendly: true,
   }),
@@ -233,7 +237,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'moderate',
     styleTags: ['conditioning', 'balanced'],
     secondaryOutcomeTags: ['conditioning', 'consistency'],
-    focusAreaTags: ['conditioning', 'core', 'legs'],
+    focusAreaTags: ['conditioning', 'legs'],
     lowFriction: true,
   }),
   defineProgram('tpl_huge_starter_v1', {
@@ -289,7 +293,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['pump', 'heavy'],
+    styleTags: ['pump'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['legs', 'quads', 'hamstrings', 'calves'],
   }),
@@ -349,7 +353,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['pump', 'heavy'],
+    styleTags: ['pump'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['chest', 'back', 'arms', 'shoulders'],
   }),
@@ -399,7 +403,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['pump', 'heavy'],
+    styleTags: ['pump'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['chest', 'back', 'legs'],
   }),
@@ -416,12 +420,12 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
   defineProgram('tpl_5_day_upper_lower_full_v1', {
     familyId: 'mass_hypertrophy',
-    supportedGoals: ['muscle', 'strength'],
-    backupGoals: ['general_fitness'],
+    supportedGoals: ['muscle'],
+    backupGoals: ['general_fitness', 'strength'],
     supportedLevels: ['advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
-    styleTags: ['pump', 'heavy'],
+    styleTags: ['pump'],
     secondaryOutcomeTags: ['muscle', 'strength'],
     focusAreaTags: ['back', 'legs', 'chest'],
   }),

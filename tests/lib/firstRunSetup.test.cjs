@@ -612,10 +612,15 @@ module.exports = [
       const { recommendation, reasons, projectedDays, projectedDaysPerWeek } = evaluateHighPriorityScenario(selection);
 
       assert.equal(recommendation.featuredProgramId, 'tpl_4_day_strength_size_v1');
-      // The alternative lane honours the five days that were asked for. It was
-      // the hybrid, whose goals list strength only as a backup; the upper/lower
-      // five-day was registered later and serves strength outright.
-      assert.equal(recommendation.secondaryProgramId, 'tpl_5_day_upper_lower_full_v1');
+      // The alternative lane honours the five days that were asked for. No
+      // five-day programme in the catalog serves strength outright: the
+      // upper/lower five-day was listed as one, with 3 of 59 loaded sets at six
+      // reps or fewer, and is a backup now like the hybrid (catalog audit,
+      // 2026-10-05). Either is the honest five-day alternative.
+      const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+      const alternative = getRecommendationProgramDefinition(recommendation.secondaryProgramId);
+      assert.equal(alternative.daysPerWeek, 5);
+      assert.ok(alternative.backupGoals.includes('strength'), recommendation.secondaryProgramId);
       assert.equal(projectedDaysPerWeek, 4);
       assert.deepEqual(projectedDays, ['mon', 'tue', 'thu', 'sat']);
       assert.match(recommendation.mismatchNote, /closest match.*4 days/i);

@@ -241,6 +241,9 @@ module.exports = [
       const week = composeProgramWeekForSelection(
         {
           ...DEFAULT_FIRST_RUN_SELECTION,
+          // At home: a gym reads in the pull-up bar and bands every gym has
+          // (2026-10-05), and this asks what these three chips alone allow.
+          trainingEnvironment: 'home_gym',
           daysPerWeek: template.daysPerWeek,
           availableDays: [],
           scheduleMode: 'app_managed',
