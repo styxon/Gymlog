@@ -1768,4 +1768,64 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'a restore whose rollback is refused too says it is half done, not "nothing changed" (bug hunt 2026-10-05)',
+    async run() {
+      const quietly = async (work) => {
+        const originalError = console.error;
+        console.error = () => undefined;
+        try {
+          return await work();
+        } finally {
+          console.error = originalError;
+        }
+      };
+      // The first database write (the backup's) lands; the rollback after the
+      // refused history write is refused too — a full disk refuses both.
+      const refuseAfterFirst = () => {
+        let reads = 0;
+        return {
+          get promise() {
+            reads += 1;
+            return reads === 1 ? Promise.resolve() : Promise.reject(new Error('database or disk is full'));
+          },
+          resolve() {},
+        };
+      };
+
+      // A fresh phone's automatic restore.
+      await withHook({ local: database(), cloud: cloudCopy(database({ workoutSessions: workouts(3) })) }, async (env) => {
+        env.app.gates.database = refuseAfterFirst();
+        env.app.historyWriteError = new Error('database or disk is full');
+        assert.equal((await quietly(() => env.api.signIn())).kind, 'restore_incomplete');
+      });
+
+      // The reader's own "use the backup" answer.
+      const mine = database({ workoutSessions: workouts(2).map((row, index) => ({ ...row, id: `mine${index}` })) });
+      await withHook({ local: mine, cloud: cloudCopy(database({ workoutSessions: workouts(5) })) }, async (env) => {
+        assert.equal((await env.api.signIn()).kind, 'choice');
+        await env.settle();
+        env.app.gates.database = refuseAfterFirst();
+        env.app.historyWriteError = new Error('database or disk is full');
+        assert.equal(await quietly(() => env.api.resolveRestoreChoice('restore')), 'incomplete');
+      });
+
+      // A rollback that lands is still the plain failure, and still true.
+      await withHook({ local: database(), cloud: cloudCopy(database({ workoutSessions: workouts(3) })) }, async (env) => {
+        env.app.historyWriteError = new Error('database or disk is full');
+        assert.equal((await quietly(() => env.api.signIn())).kind, 'restore_failed');
+        assert.equal(env.app.database.workoutSessions.length, 0);
+      });
+
+      // And each answer has its own words, in both languages.
+      const outcome = require('node:fs')
+        .readFileSync(path.join(__dirname, '..', '..', '..', 'src', 'app', 'useAccountOutcome.ts'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      assert.match(outcome, /outcome\.kind === 'restore_incomplete'\) \{\s*showToast\(t\(language, 'account\.restore\.incomplete'\)\)/);
+      assert.match(outcome, /result === 'incomplete'\) \{\s*showToast\(t\(language, 'account\.restore\.incomplete'\)\)/);
+      const { t } = require(path.join(DIST, 'lib', 'i18n.js'));
+      assert.match(t('fi', 'account.restore.incomplete'), /osittain/);
+      assert.match(t('en', 'account.restore.incomplete'), /partly/);
+    },
+  },
 ];

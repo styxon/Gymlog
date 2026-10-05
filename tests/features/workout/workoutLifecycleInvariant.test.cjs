@@ -75,7 +75,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  *  3. Starting any catalog day or custom day never throws, yields a session of
  *     unique slots with sets, and one logged set makes it a saveable record.
  *  4. Nothing throws; no number in the session is NaN or infinite; a logged set
- *     has whole reps above zero and a weight that is a number between 0 and 500;
+ *     has whole reps above zero and a weight that is a number between 0 and 600;
  *     values the reducer is meant to refuse are refused; ids are unique.
  *  6. A summary is shown, and the session marked finished, only once the write
  *     has landed on disk.
@@ -704,7 +704,7 @@ function checkSessionSanity(session) {
       indexes.add(set.setIndex);
       if (set.status === 'completed') {
         const okReps = Number.isInteger(set.actualReps) && set.actualReps >= 1;
-        const okKg = typeof set.actualLoadKg === 'number' && Number.isFinite(set.actualLoadKg) && set.actualLoadKg >= 0 && set.actualLoadKg <= 500;
+        const okKg = typeof set.actualLoadKg === 'number' && Number.isFinite(set.actualLoadKg) && set.actualLoadKg >= 0 && set.actualLoadKg <= 600;
         if (!okReps || !okKg) {
           fail('4', `logged set ${exercise.slotId}|${set.setIndex} holds ${set.actualReps} reps at ${set.actualLoadKg} kg`);
         }
@@ -1602,7 +1602,7 @@ const HANDLERS = {
       { reps: '-3', load: '20', why: 'negative reps' },
       { reps: String(ceiling + 1), load: '20', why: 'reps past the dial' },
       { reps: 'abc', load: '20', why: 'reps that are not a number' },
-      ...(loaded ? [{ reps: '8', load: '501', why: 'a weight past 500 kg' }, { reps: '8', load: '-5', why: 'a negative weight' }] : []),
+      ...(loaded ? [{ reps: '8', load: '601', why: 'a weight past 600 kg' }, { reps: '8', load: '-5', why: 'a negative weight' }] : []),
     ];
     const variant = pick(rnd, variants);
     dispatch(proc, { type: 'set/updateDraft', payload: { slotId: exercise.slotId, setIndex: set.setIndex, patch: { repsText: variant.reps, loadText: variant.load } } });
@@ -1629,7 +1629,7 @@ const HANDLERS = {
     const lift = liftOfSet(exercise, set);
     const unloaded = isUnloadedTrackingMode(lift.trackingMode);
     if (rnd() < 0.25) {
-      const bad = pick(rnd, [{ reps: 0, kg: 20 }, { reps: Number.NaN, kg: 20 }, { reps: 8, kg: 501 }, { reps: 8, kg: Number.NaN }, { reps: repsCeilingFor(lift, set) + 1, kg: 20 }]);
+      const bad = pick(rnd, [{ reps: 0, kg: 20 }, { reps: Number.NaN, kg: 20 }, { reps: 8, kg: 601 }, { reps: 8, kg: Number.NaN }, { reps: repsCeilingFor(lift, set) + 1, kg: 20 }]);
       if (unloaded && bad.kg !== 20) {
         return;
       }

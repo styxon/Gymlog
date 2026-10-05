@@ -8,7 +8,7 @@ import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { isTourDue, markTourSeen, resolveTourBeats, resolveTourSurface, TourSurface } from '../lib/firstRunTour';
 import { resolveHomePrompt } from '../lib/homePrompts';
 import { acceptLegal, legalAcceptanceDue } from '../lib/legalAcceptance';
-import { formatLegalDate, LEGAL_LAST_UPDATED, type LegalDocumentId } from '../lib/legalDocuments';
+import { formatLegalDate, LEGAL_VERSION, type LegalDocumentId } from '../lib/legalDocuments';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { rememberServerNotice } from '../lib/serverNotice';
 import { planSetupHandoff } from '../lib/setupHandoff';
@@ -158,7 +158,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
    */
   const legalConsentOwed =
     appHydrated && brandSplashDone && !onboardingActive && !setupHandoffActive
-      ? legalAcceptanceDue(preferences.legalAcceptance, LEGAL_LAST_UPDATED)
+      ? legalAcceptanceDue(preferences.legalAcceptance, LEGAL_VERSION)
       : null;
   const legalConsentDue = legalConsentOwed ?? legalSheetHeld;
   legalConsentDueRef.current = legalConsentDue !== null;
@@ -270,7 +270,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
         onAccept={async () => {
           setLegalSheetHeld(legalConsentDue);
           try {
-            await updatePreferences({ legalAcceptance: acceptLegal(LEGAL_LAST_UPDATED, new Date()) });
+            await updatePreferences({ legalAcceptance: acceptLegal(LEGAL_VERSION, new Date()) });
           } finally {
             // Refused, the preferences are already rolled back and the sheet
             // stays owed; accepted, it goes now — after the write.

@@ -36,8 +36,9 @@ module.exports = [
         kg = stepDialWeight(kg, 1);
       }
       assert.equal(kg, WEIGHT_DIAL_MAX_KG);
-      // And the ceiling is above any lift a reader could actually do.
-      assert.ok(WEIGHT_DIAL_MAX_KG >= 500);
+      // And the ceiling is above any lift a reader could actually do — a
+      // heavy leg press or sled included (bug hunt, 2026-10-05).
+      assert.equal(WEIGHT_DIAL_MAX_KG, 600);
     },
   },
   {
@@ -165,6 +166,19 @@ module.exports = [
       assert.equal(stepDialReps(20, 1, HOLD_DIAL), 25);
       assert.equal(stepDialReps(5, -1, HOLD_DIAL), 5);
       assert.equal(stepDialReps(HOLD_DIAL.max, 1, HOLD_DIAL), HOLD_DIAL.max);
+    },
+  },
+  {
+    name: 'a 550 kg leg press set survives a load: the loader keeps what the dial and an import can write (bug hunt 2026-10-05)',
+    run() {
+      const { normalizeExerciseSets } = require('../../.test-dist/lib/exerciseLog');
+      const kept = normalizeExerciseSets([
+        { orderIndex: 0, weight: 550, reps: 10, status: 'completed' },
+        { orderIndex: 1, weight: 600, reps: 8, status: 'completed' },
+        // Past the ceiling is still an artefact, and still goes.
+        { orderIndex: 2, weight: 5122.5, reps: 5, status: 'completed' },
+      ]);
+      assert.deepEqual(kept.map((set) => set.weight), [550, 600]);
     },
   },
 ];

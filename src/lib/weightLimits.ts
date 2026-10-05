@@ -12,12 +12,14 @@
 /**
  * The heaviest single set the app will hold.
  *
- * Not a guess at anybody's strength: the all-time raw deadlift record is a bit
- * over 500 kg, so this cannot stand between a reader and a lift they actually
- * did. It exists so a stuck button, a fat finger or a typo cannot write a
- * number that breaks every chart it reaches.
+ * Not a guess at anybody's strength. It was 500 kg, the all-time raw deadlift
+ * record, until the bug hunt of 2026-10-05 found the other heavy lifts: a
+ * leg press or a sled goes past 500, a Hevy import carried such sets in, and
+ * the loader then dropped them for good. 600 is past what anyone moves in one
+ * set (user, 2026-10-05). It exists so a stuck button, a fat finger or a typo
+ * cannot write a number that breaks every chart it reaches.
  */
-export const WEIGHT_DIAL_MAX_KG = 500;
+export const WEIGHT_DIAL_MAX_KG = 600;
 
 /**
  * Could a person have lifted this?

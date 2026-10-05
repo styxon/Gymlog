@@ -1755,6 +1755,7 @@ const EN = {
   'account.restore.other.replace.body':
     'Your backup ({cloudContents}) is replaced by the other account’s data ({localContents}), and everything only your backup has is lost.',
   'account.restore.failed': 'Could not restore the backup. Nothing on this phone changed.',
+  'account.restore.incomplete': 'The backup was only partly restored: its programmes and settings are on this phone, its workout history is not. Free up space, then tap Back up now and choose the backup again.',
   // The phone was last signed in to another account and still holds its data
   // (break round, 2026-09-28; user decision: ask before sending it).
   'account.confirmUpload.title': 'Back up this phone’s data?',
@@ -5075,6 +5076,7 @@ const FI: Record<I18nKey, string> = {
   'account.restore.other.replace.body':
     'Varmuuskopiosi ({cloudContents}) korvataan toisen tilin tiedoilla ({localContents}), ja kaikki mikä on vain varmuuskopiossasi katoaa.',
   'account.restore.failed': 'Varmuuskopiota ei voitu palauttaa. Puhelimen tiedot eivät muuttuneet.',
+  'account.restore.incomplete': 'Varmuuskopio palautui vain osittain: sen ohjelmat ja asetukset ovat puhelimessa, treenihistoria ei. Vapauta tilaa, paina Varmuuskopioi nyt ja valitse varmuuskopio uudelleen.',
   'account.confirmUpload.title': 'Varmuuskopioidaanko puhelimen tiedot?',
   'account.confirmUpload.body':
     'Puhelimessa oli kirjauduttuna toinen tili, ja sen tiedot ({localContents}) ovat yhä täällä. Varmuuskopioidaanko ne {account}?',

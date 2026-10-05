@@ -63,6 +63,10 @@ export function useAccountOutcome(deps: AccountOutcomeDeps) {
       showToast(t(language, 'account.restore.failed'));
       return outcome.kind;
     }
+    if (outcome.kind === 'restore_incomplete') {
+      showToast(t(language, 'account.restore.incomplete'));
+      return outcome.kind;
+    }
     if (outcome.kind === 'failed') {
       showToast(t(language, failedKey));
       return outcome.kind;
@@ -170,6 +174,8 @@ export function useAccountOutcome(deps: AccountOutcomeDeps) {
                   showToast(t(language, 'account.sessionEnded'));
                 } else if (result === 'failed') {
                   showToast(t(language, 'account.restore.failed'));
+                } else if (result === 'incomplete') {
+                  showToast(t(language, 'account.restore.incomplete'));
                 }
               });
             },

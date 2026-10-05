@@ -5,6 +5,7 @@ const path = require('node:path');
 const {
   LEGAL_ENTITY,
   LEGAL_LAST_UPDATED,
+  LEGAL_VERSION,
   buildLegalDocument,
   renderLegalDocumentMarkdown,
 } = require('../../.test-dist/lib/legalDocuments.js');
@@ -13,33 +14,34 @@ const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 /**
- * Every wording the documents have gone out with, oldest first, and the date
- * each went out under. Not a lock on the text — a record that makes a change
- * of text carry a change of date.
+ * Every wording the documents have gone out with, oldest first, and the
+ * version each went out under (LEGAL_VERSION, which acceptances are stored
+ * against). Not a lock on the text — a record that makes a change of text
+ * carry a new version, so every reader is asked again.
  *
- * A new wording is a new entry, and its date must be later than the one
- * before, so pasting the new hash under the old date fails. A second edit on
- * the day of the last entry replaces that entry's fingerprint instead: the
- * date already names that day's version. The failing assertion prints what to
- * write here.
+ * A new wording is a new entry, and its version must be later than the one
+ * before, so pasting the new hash under the old version fails. Until
+ * 2026-10-05 the version was the date the documents show, which pushed that
+ * date ahead of the calendar; they are two constants now (legalDocuments.ts).
+ * The failing assertion prints what to write here.
  */
 const LEGAL_TEXT_VERSIONS = [
-  { date: '2026-09-16', fingerprint: 'c52c7814c8a7ba76' },
-  { date: '2026-09-28', fingerprint: '7019c14a32fca330' },
-  { date: '2026-09-29', fingerprint: 'c0f19e9dea408950' },
-  { date: '2026-09-30', fingerprint: '5998cb9be6282a40' },
-  { date: '2026-10-01', fingerprint: 'e3a2198516dc68a3' },
-  { date: '2026-10-02', fingerprint: 'de881a6024122a47' },
+  { version: '2026-09-16', fingerprint: 'c52c7814c8a7ba76' },
+  { version: '2026-09-28', fingerprint: '7019c14a32fca330' },
+  { version: '2026-09-29', fingerprint: 'c0f19e9dea408950' },
+  { version: '2026-09-30', fingerprint: '5998cb9be6282a40' },
+  { version: '2026-10-01', fingerprint: 'e3a2198516dc68a3' },
+  { version: '2026-10-02', fingerprint: 'de881a6024122a47' },
   // From here the fingerprint covers all three renders (android, ios, both) in
   // both languages; the entries above hashed the 'both' text only.
-  { date: '2026-10-03', fingerprint: 'e5d4d3139906bfd2' },
+  { version: '2026-10-03', fingerprint: 'e5d4d3139906bfd2' },
   // Error reports join the usage statistics (same switch, same retention).
-  { date: '2026-10-04', fingerprint: '7444fcea5efd63d0' },
+  { version: '2026-10-04', fingerprint: '7444fcea5efd63d0' },
   // The crash screen's set-aside copy joins the bookkeeping line; account
   // deletion without the app, on the web page.
-  { date: '2026-10-05', fingerprint: '75c46b9081ec08fb' },
+  { version: '2026-10-05', fingerprint: '75c46b9081ec08fb' },
   // The cookie line names the web deletion page's Google sign-in.
-  { date: '2026-10-06', fingerprint: '4e2656f3346bf4e6' },
+  { version: '2026-10-06', fingerprint: '4e2656f3346bf4e6' },
 ];
 
 const IDS = ['privacy', 'terms'];
@@ -895,10 +897,10 @@ module.exports = [
         const before = LEGAL_TEXT_VERSIONS[index - 1];
         const after = LEGAL_TEXT_VERSIONS[index];
         assert.ok(
-          after.date > before.date,
-          `LEGAL_TEXT_VERSIONS: the entry for ${after.date} is not later than the one for ${before.date}. `
-            + 'A new wording needs a new date — bump LEGAL_LAST_UPDATED in src/lib/legalDocuments.ts. '
-            + 'If this is a second change on the same day, replace the last entry’s fingerprint instead of adding one.',
+          after.version > before.version,
+          `LEGAL_TEXT_VERSIONS: the entry for ${after.version} is not later than the one for ${before.version}. `
+            + 'A new wording needs a new LEGAL_VERSION in src/lib/legalDocuments.ts (a second change on one day: '
+            + 'the same day with a ".1", ".2" suffix).',
         );
       }
 
@@ -906,17 +908,31 @@ module.exports = [
       assert.equal(
         fingerprint,
         current.fingerprint,
-        `The legal wording changed (the last recorded version is dated ${current.date}). `
-          + 'Bump LEGAL_LAST_UPDATED in src/lib/legalDocuments.ts, re-run node scripts/export-legal.cjs, and add '
-          + `{ date: '<the new date>', fingerprint: '${fingerprint}' } to the end of LEGAL_TEXT_VERSIONS. `
-          + `A second change on ${current.date} itself replaces that entry’s fingerprint instead.`,
+        `The legal wording changed (the last recorded version is ${current.version}). `
+          + 'Set LEGAL_LAST_UPDATED to today and LEGAL_VERSION past the current one in src/lib/legalDocuments.ts, '
+          + 're-run node scripts/export-legal.cjs, and add '
+          + `{ version: '<the new LEGAL_VERSION>', fingerprint: '${fingerprint}' } to the end of LEGAL_TEXT_VERSIONS.`,
       );
       assert.equal(
-        LEGAL_LAST_UPDATED,
-        current.date,
-        `The documents say ${LEGAL_LAST_UPDATED}, but the last recorded wording is dated ${current.date}. `
-          + 'The date and the record move together: a bumped date without a changed wording has nothing new to '
-          + 'show the reader, and a recorded version under a different date is not the one they see.',
+        LEGAL_VERSION,
+        current.version,
+        `LEGAL_VERSION is ${LEGAL_VERSION}, but the last recorded wording is ${current.version}. `
+          + 'The version and the record move together: a bumped version without a changed wording asks every '
+          + 'reader again about nothing, and a recorded wording under another version is never asked about.',
+      );
+      // The date the reader is shown is a real one: never past the version it
+      // belongs to, and never ahead of the calendar — the sheet said "changed
+      // on 6.10.2026" on the 5th (bug hunt, 2026-10-05).
+      assert.match(LEGAL_LAST_UPDATED, /^\d{4}-\d{2}-\d{2}$/);
+      assert.ok(
+        LEGAL_LAST_UPDATED <= LEGAL_VERSION.slice(0, 10),
+        `LEGAL_LAST_UPDATED ${LEGAL_LAST_UPDATED} is past LEGAL_VERSION ${LEGAL_VERSION}`,
+      );
+      const now = new Date();
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+      assert.ok(
+        LEGAL_LAST_UPDATED <= today,
+        `LEGAL_LAST_UPDATED is ${LEGAL_LAST_UPDATED}, after today (${today}): the documents would say they changed on a day that has not come.`,
       );
     },
   },

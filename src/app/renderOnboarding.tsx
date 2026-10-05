@@ -6,7 +6,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { FirstRunSetupSelection, getFocusAreaTitle } from '../lib/firstRunSetup';
 import { t } from '../lib/i18n';
 import { legalAcceptanceDue } from '../lib/legalAcceptance';
-import { LEGAL_LAST_UPDATED, type LegalDocumentId } from '../lib/legalDocuments';
+import { LEGAL_VERSION, type LegalDocumentId } from '../lib/legalDocuments';
 import type { SetupHandoffPlan } from '../lib/setupHandoff';
 import type { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
@@ -260,7 +260,7 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
       }
       onOpenLegal={(document) => setHandoffLegalDocument(document)}
       legalAlreadyAccepted={
-        legalAcceptanceDue(preferences.legalAcceptance, LEGAL_LAST_UPDATED) === null
+        legalAcceptanceDue(preferences.legalAcceptance, LEGAL_VERSION) === null
       }
     />
     {/* Over the hand-off, never instead of it (2026-09-10). The screen owns
