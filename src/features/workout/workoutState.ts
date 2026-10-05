@@ -105,6 +105,10 @@ export type WorkoutAction =
   | { type: 'set/undo'; payload: { slotId: string; setIndex: number } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
   | { type: 'exercise/removeSet'; payload: { slotId: string } }
+  /** A warm-up set, logged apart from the working sets (WorkoutWarmupSet). */
+  | { type: 'exercise/logWarmup'; payload: { slotId: string; loadKg: number; reps: number; completedAt: string } }
+  /** Takes back the warm-up at `index` of the lift's warm-ups. */
+  | { type: 'exercise/removeWarmup'; payload: { slotId: string; index: number } }
   /**
    * A session logged outside the guided player, remembered for next time.
    *
@@ -215,6 +219,7 @@ function cloneExercise(exercise: WorkoutExerciseInstance): WorkoutExerciseInstan
   return {
     ...exercise,
     sets: exercise.sets.map(cloneSet),
+    ...(exercise.warmups ? { warmups: exercise.warmups.map((warmup) => ({ ...warmup })) } : {}),
   };
 }
 
@@ -1115,6 +1120,8 @@ const CLOSED_SESSION_REFUSES = new Set<WorkoutAction['type']>([
   'set/undo',
   'exercise/addSet',
   'exercise/removeSet',
+  'exercise/logWarmup',
+  'exercise/removeWarmup',
   'exercise/skip',
   'exercise/insertAfter',
   'exercise/swap',
@@ -1593,6 +1600,43 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       updateActiveExercise(session, exerciseIndex, action.payload.setIndex);
       session.updatedAt = new Date().toISOString();
 
+      return { ...state, activeSession: session };
+    }
+
+    case 'exercise/logWarmup': {
+      if (!state.activeSession) {
+        return state;
+      }
+      const { slotId, loadKg, reps, completedAt } = action.payload;
+      // The same bounds a working set is held to: a weight someone could
+      // lift, and a whole number of reps.
+      if (!isLiftableWeight(loadKg) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
+        return state;
+      }
+      const session = cloneSession(state.activeSession);
+      const exerciseIndex = findExerciseIndex(session, slotId);
+      if (exerciseIndex < 0) {
+        return state;
+      }
+      const exercise = session.exercises[exerciseIndex];
+      exercise.warmups = [...(exercise.warmups ?? []), { loadKg, reps, completedAt }];
+      session.updatedAt = completedAt;
+      return { ...state, activeSession: session };
+    }
+
+    case 'exercise/removeWarmup': {
+      if (!state.activeSession) {
+        return state;
+      }
+      const session = cloneSession(state.activeSession);
+      const exerciseIndex = findExerciseIndex(session, action.payload.slotId);
+      const warmups = exerciseIndex < 0 ? undefined : session.exercises[exerciseIndex].warmups;
+      if (!warmups || action.payload.index < 0 || action.payload.index >= warmups.length) {
+        return state;
+      }
+      const kept = warmups.filter((_, index) => index !== action.payload.index);
+      session.exercises[exerciseIndex].warmups = kept.length > 0 ? kept : undefined;
+      session.updatedAt = new Date().toISOString();
       return { ...state, activeSession: session };
     }
 
@@ -2260,7 +2304,8 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
     // One entry per lift the slot held: the sets before a swap are the old
     // lift's history, not the new one's, and the next session of either lift
     // opens on what that lift actually did (lib/liftSegments).
-    const entries = splitExerciseByLift(exercise).map((segment): WorkoutSlotHistoryEntry => ({
+    const warmups = (exercise.warmups ?? []).map(({ loadKg, reps }) => ({ loadKg, reps }));
+    const entries = splitExerciseByLift(exercise).map((segment, segmentIndex): WorkoutSlotHistoryEntry => ({
       slotId: exercise.slotId,
       templateId: session.templateId,
       templateName: session.templateName,
@@ -2282,6 +2327,9 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // The lowered target this session asked for, if it asked for one, so
       // the next can ask one more (lib/progressionGate resolveMissedRepsTarget).
       ...loweredTargetOf(segment),
+      // Warm-ups come before the first working set, so they belong to the lift
+      // the slot started as: the first segment.
+      ...(segmentIndex === 0 && warmups.length > 0 ? { warmups } : {}),
     }));
 
     // Newest first, like the list it joins: the lift the slot ended on leads.

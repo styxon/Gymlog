@@ -92,3 +92,39 @@ export function gatingSets(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotH
   }
   return ordered.slice(0, lastHeavy + 1);
 }
+
+/**
+ * Without a warm-up of last time's to repeat, a ladder up to the first working
+ * set: half of it for ten, 70 % for six, then 85 % for three, and the last rung
+ * again for any past that. Rounded to the 2.5 kg a pair of plates can build.
+ */
+const WARMUP_LADDER: readonly { share: number; reps: number }[] = [
+  { share: 0.5, reps: 10 },
+  { share: 0.7, reps: 6 },
+  { share: 0.85, reps: 3 },
+];
+
+const PLATE_STEP_KG = 2.5;
+
+/**
+ * What "+ Warm-up set" opens on for the warm-up at `index` (0 for the first).
+ *
+ * Last time's warm-up at the same place, as it was done — a warm-up never
+ * progresses (user, 2026-10-05). Otherwise the ladder off the first working
+ * set's load; with no load to climb to, the reps alone and an empty weight.
+ */
+export function warmupOffer(
+  lastWarmups: readonly { loadKg: number; reps: number }[] | undefined,
+  index: number,
+  workingLoadKg: number | null | undefined,
+): { loadKg: number | null; reps: number } {
+  const repeated = lastWarmups?.[index];
+  if (repeated) {
+    return { loadKg: repeated.loadKg, reps: repeated.reps };
+  }
+  const rung = WARMUP_LADDER[Math.min(Math.max(0, index), WARMUP_LADDER.length - 1)];
+  if (typeof workingLoadKg !== 'number' || !(workingLoadKg > 0)) {
+    return { loadKg: null, reps: rung.reps };
+  }
+  return { loadKg: Math.round((workingLoadKg * rung.share) / PLATE_STEP_KG) * PLATE_STEP_KG, reps: rung.reps };
+}

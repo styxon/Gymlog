@@ -71,6 +71,10 @@ interface WorkoutContextValue {
   repeatLastSet: (slotId: string, setIndex: number, unitPreference: UnitPreference) => void;
   undoSet: (slotId: string, setIndex: number) => void;
   addSet: (slotId: string) => void;
+  /** A warm-up set, kept apart from the working sets (WorkoutWarmupSet). */
+  logWarmup: (slotId: string, loadKg: number, reps: number) => void;
+  /** Takes back the warm-up at `index`. */
+  removeWarmup: (slotId: string, index: number) => void;
   /** Takes the last pending set back. Refuses on a logged set or the last one. */
   removeSet: (slotId: string) => void;
   /**
@@ -369,6 +373,12 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
       },
       addSet(slotId) {
         dispatch({ type: 'exercise/addSet', payload: { slotId } });
+      },
+      logWarmup(slotId, loadKg, reps) {
+        dispatch({ type: 'exercise/logWarmup', payload: { slotId, loadKg, reps, completedAt: new Date().toISOString() } });
+      },
+      removeWarmup(slotId, index) {
+        dispatch({ type: 'exercise/removeWarmup', payload: { slotId, index } });
       },
       recordLoggedWorkout(input) {
         dispatch({ type: 'history/recordLogged', payload: input });
