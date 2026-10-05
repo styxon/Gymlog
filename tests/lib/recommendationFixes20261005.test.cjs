@@ -311,4 +311,24 @@ module.exports = [
       assert.equal(featured(nothing, 'muscle', 'advanced', 2), 'tpl_home_bodyweight_full_body_v1');
     },
   },
+  {
+    name: 'recommendation fixes: a programme sold for strength alone spends close to half its week on heavy sets',
+    run() {
+      // STRONG Pro and STRONG Elite listed strength with 29 % of their sets at
+      // six reps or fewer; their growth days now lift at six (user, 2026-10-05).
+      // Powerbuilding lists muscle too and is not held to this.
+      const short = [];
+      for (const definition of RECOMMENDATION_PROGRAMS) {
+        if (!definition.supportedGoals.includes('strength') || definition.supportedGoals.includes('muscle')) {
+          continue;
+        }
+        const split = buildProgramFocusSplit(getWorkoutTemplateById(definition.programId).sessions);
+        const heavy = split.find((segment) => segment.quality === 'Strength')?.pct ?? 0;
+        if (heavy < 45) {
+          short.push(`${definition.programId} ${heavy} %`);
+        }
+      }
+      assert.deepEqual(short, []);
+    },
+  },
 ];

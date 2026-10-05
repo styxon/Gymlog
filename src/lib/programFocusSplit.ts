@@ -93,6 +93,7 @@ const CONDITIONING_TERMS = [
   // Drills and plyometrics, which read as strength until 2026-10-05.
   'drill',
   'pogo',
+  'bound',
   'hop',
   'plank jack',
   'stride',
