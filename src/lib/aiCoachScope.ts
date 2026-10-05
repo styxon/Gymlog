@@ -91,6 +91,12 @@ const CRISIS_PHRASES = [
 const CRISIS_STEMS_FI = ['itsemurh', 'itsetuho', 'viiltel'];
 
 /**
+ * Stems no other Finnish word contains anywhere, so they match inside a
+ * compound too — "lääkeitsemurha", "itsemurhayritys" (review, 2026-10-05).
+ */
+const CRISIS_INFIXES_FI = ['itsemurh', 'itsetuho'];
+
+/**
  * The apostrophes a phone keyboard types. iOS and Gboard put a curly one in
  * "don’t" by default, and the list spells it straight, so "I don’t want to
  * live anymore" went past as a training question (bug hunt, 2026-10-05).
@@ -159,7 +165,8 @@ export function classifyCoachScope(prompt: string): CoachScopeVerdict {
   const text = prompt.toLowerCase().replace(APOSTROPHES, "'");
   if (
     CRISIS_PHRASES.some((phrase) => hasWord(text, phrase)) ||
-    CRISIS_STEMS_FI.some((stem) => hasWordStart(text, stem))
+    CRISIS_STEMS_FI.some((stem) => hasWordStart(text, stem)) ||
+    CRISIS_INFIXES_FI.some((infix) => text.includes(infix))
   ) {
     return 'crisis';
   }

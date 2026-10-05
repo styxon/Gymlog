@@ -119,6 +119,8 @@ module.exports = [
         'olen ollut itsetuhoinen',
         'minulla on itsetuhoisia ajatuksia',
         'viiltelin taas eilen',
+        // Inside a compound.
+        'mietin lääkeitsemurhaa',
         // First person present, and the softened forms.
         'tapan itseni',
         'Minä tapan itseni',
