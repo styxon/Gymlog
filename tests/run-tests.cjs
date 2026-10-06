@@ -552,6 +552,7 @@ const suites = [
   ...require('./storage/loaderSessionTotals.test.cjs'),
   ...require('./storage/storageLoadInvariant.test.cjs'),
   ...require('./storage/trackingAfterCategoryCorrection.test.cjs'),
+  ...require('./storage/minutesModeForOldCopies.test.cjs'),
   ...require('./storage/planEntryLabel.test.cjs'),
   ...require('./storage/corruptCopies.test.cjs'),
   ...require('./screens/oneCount.test.cjs'),

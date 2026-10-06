@@ -7,6 +7,7 @@ import {
   restoreTrackingAfterCategoryCorrection,
   TRACKING_CATEGORY_MIGRATION_ID,
 } from '../lib/trackingCategoryMigration';
+import { MINUTES_MODE_MIGRATION_ID, moveOldCopiesToMinutesMode } from '../lib/minutesModeMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -419,15 +420,22 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       })
     : [];
 
-  // Once per database: a programme saved before the library's category
-  // correction keeps the progression it had (lib/trackingCategoryMigration).
-  // Not on every load — a false a writer stores today is meant.
-  const rawExerciseTemplates = storedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)
-    ? storedExerciseTemplates
-    : restoreTrackingAfterCategoryCorrection(storedExerciseTemplates, exerciseLibrary);
-  const appliedMigrations = storedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)
-    ? storedMigrations
-    : [...storedMigrations, TRACKING_CATEGORY_MIGRATION_ID];
+  // Once per database each, in this order: a programme saved before the
+  // library's category correction keeps the progression it had
+  // (lib/trackingCategoryMigration), and a copy made before steady cardio was
+  // logged in minutes gets the minutes mode the ready programme runs on
+  // (lib/minutesModeMigration). Not on every load — a value a writer stores
+  // today on purpose is meant.
+  let rawExerciseTemplates = storedExerciseTemplates;
+  const appliedMigrations = [...storedMigrations];
+  if (!appliedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)) {
+    rawExerciseTemplates = restoreTrackingAfterCategoryCorrection(rawExerciseTemplates, exerciseLibrary);
+    appliedMigrations.push(TRACKING_CATEGORY_MIGRATION_ID);
+  }
+  if (!appliedMigrations.includes(MINUTES_MODE_MIGRATION_ID)) {
+    rawExerciseTemplates = moveOldCopiesToMinutesMode(rawExerciseTemplates);
+    appliedMigrations.push(MINUTES_MODE_MIGRATION_ID);
+  }
 
   // A stored programme with no id is not a programme. Mapped through the
   // defaults below, a null in the list became one called "Workout" with an

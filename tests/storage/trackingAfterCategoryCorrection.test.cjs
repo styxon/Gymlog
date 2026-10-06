@@ -10,6 +10,7 @@ const { WORKOUT_TEMPLATES_V1 } = require(path.join(DIST, 'features', 'workout', 
 const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require(path.join(DIST, 'features', 'workout', 'customWorkoutAdapter.js'));
 const { buildProgrammeDraft, composeProgrammePreview, resolveLiveProposal } = require(path.join(DIST, 'lib', 'programmeBrief.js'));
 const { TRACKING_CATEGORY_MIGRATION_ID } = require(path.join(DIST, 'lib', 'trackingCategoryMigration.js'));
+const { MINUTES_MODE_MIGRATION_ID } = require(path.join(DIST, "lib", "minutesModeMigration.js"));
 
 /**
  * No one's progression changes with the library's category correction (user
@@ -324,14 +325,14 @@ module.exports = [
         'workout_own:Leg Extensions': true,
         'workout_own:Cable Crunch': false,
       });
-      assert.deepEqual(loaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(loaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
       assert.equal(loaded.workoutTemplates.length, 4);
       // Saved and loaded again: nothing moves.
       await database.saveDatabase(loaded);
       const again = await database.loadDatabase();
       assert.deepEqual(again.exerciseTemplates, loaded.exerciseTemplates);
       assert.deepEqual(again.workoutTemplates, loaded.workoutTemplates);
-      assert.deepEqual(again.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(again.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
     },
   },
   {
@@ -354,7 +355,7 @@ module.exports = [
       };
       const reloaded = database.normalizeDatabase(JSON.parse(JSON.stringify({ ...added, exerciseLibrary: [] })));
       assert.deepEqual(reloaded.exerciseTemplates.map((row) => [row.id, row.trackedDefault]), [['e1', true], ['e2', false]]);
-      assert.deepEqual(reloaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(reloaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
     },
   },
   {
@@ -369,7 +370,7 @@ module.exports = [
         workoutTemplates: [{ id: 't', name: 'T', sessions: [{ id: 's', name: 'A', orderIndex: 0, exerciseIds: ['e1'] }] }],
       });
       assert.equal(loaded.exerciseTemplates[0].trackedDefault, true);
-      assert.deepEqual(loaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(loaded.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
     },
   },
   {
@@ -403,7 +404,7 @@ module.exports = [
         restoredOld.exerciseTemplates.map((row) => [row.name, row.trackedDefault]),
         [['Barbell Curl', true], ['Plank', false]],
       );
-      assert.deepEqual(restoredOld.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(restoredOld.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
 
       // A backup this release uploaded carries the marker through the round
       // trip, and a false a writer stored after the update is not undone.
@@ -416,7 +417,7 @@ module.exports = [
         restoredNew.exerciseTemplates.map((row) => [row.name, row.trackedDefault]),
         [['Barbell Curl', false], ['Plank', false]],
       );
-      assert.deepEqual(restoredNew.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID]);
+      assert.deepEqual(restoredNew.appliedMigrations, [TRACKING_CATEGORY_MIGRATION_ID, MINUTES_MODE_MIGRATION_ID]);
     },
   },
 ];
