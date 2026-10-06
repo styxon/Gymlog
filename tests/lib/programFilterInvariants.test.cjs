@@ -41,7 +41,7 @@ const SETUP_LEVEL_FOR_CATALOG = { beginner: 'beginner', intermediate: 'advanced'
  *   the catalog's goal chip list it, while the recommender scores it for
  *   general fitness only and files it under recovery.
  */
-const KNOWN_GOAL_MISMATCHES = new Set(['tpl_gainer_joint_friendly_v1']);
+const KNOWN_GOAL_MISMATCHES = new Set([]);
 
 module.exports = [
   {
