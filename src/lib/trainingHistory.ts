@@ -1,5 +1,5 @@
 import { getCalendarWeekStartAfter, getRollingWindowStart, localDateKey } from './completedSessions';
-import { getComparableLogSets } from './exerciseLog';
+import { getComparableLogSets, isMinutesLog } from './exerciseLog';
 import { getTotalVolume } from './progression';
 import { ExerciseLog, SetupWeekday, WorkoutSession } from '../types/models';
 import { TrainingSchedule, trainsOn } from './trainingSchedule';
@@ -477,6 +477,11 @@ export function buildRepsLiftHistories(
   for (const log of logs) {
     const time = timeById.get(log.sessionId);
     if (log.skipped || time === undefined || weightedKeys.has(normalizedName(log.exerciseNameSnapshot))) {
+      continue;
+    }
+    // Minutes are not a rep trajectory: a bike ridden 15 then 20 minutes is
+    // not "+5 reps" to the coach (2026-10-06).
+    if (isMinutesLog(log)) {
       continue;
     }
     const sets = getComparableLogSets(log).filter((set) => set.reps > 0);

@@ -42,6 +42,7 @@ import { buildSwapOptionsForSlot } from '../lib/tailoringFit';
 import { buildSwapLibraryMatches, buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { formatPlanSessionTitle, localizeSessionName } from '../lib/sessionNameLabel';
 import { formatClock } from '../lib/restSchedule';
+import { doseUnitSuffix } from '../lib/format';
 import { layout, radii, spacing } from '../theme';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
@@ -651,6 +652,7 @@ export function ProgramDayScreen({
         (exercise.slotId ? sessionSwaps[exercise.slotId] : undefined) ?? exercise.name,
       ),
       timed: exercise.timed,
+      minutes: exercise.minutes,
       index,
       count: session.exercises.length,
     };
@@ -683,11 +685,11 @@ export function ProgramDayScreen({
       : Number.isInteger(seconds / 60)
         ? `${seconds / 60} min`
         : `${formatClock(seconds)} min`;
-  const formatDose = (dose: ProgramPrescription | null, timed: boolean) =>
+  const formatDose = (dose: ProgramPrescription | null, unit: { timed?: boolean; minutes?: boolean }) =>
     dose
       ? `${dose.targetSets} × ${
           dose.repMin === dose.repMax ? dose.repMin : `${dose.repMin}–${dose.repMax}`
-        }${timed ? ' s' : ''}${dose.restSeconds !== null ? ` · ${formatRest(dose.restSeconds)}` : ''}`
+        }${doseUnitSuffix(unit)}${dose.restSeconds !== null ? ` · ${formatRest(dose.restSeconds)}` : ''}`
       : '';
   const tuneChanged = Boolean(
     tuneDraft &&
@@ -1454,8 +1456,8 @@ export function ProgramDayScreen({
         bar={
           <KitBar
             visible={tuneChanged}
-            from={formatDose(tuneStart, tuneRow?.timed ?? false)}
-            to={formatDose(tuneDraft, tuneRow?.timed ?? false)}
+            from={formatDose(tuneStart, tuneRow ?? {})}
+            to={formatDose(tuneDraft, tuneRow ?? {})}
             buttons={[
               {
                 label: t(language, 'kit.saveToDay'),
@@ -1514,7 +1516,7 @@ export function ProgramDayScreen({
                     {tuneDraft.repMin === tuneDraft.repMax
                       ? `${tuneDraft.repMin}`
                       : `${tuneDraft.repMin}–${tuneDraft.repMax}`}
-                    {tuneRow.timed ? ' s' : ''}
+                    {doseUnitSuffix(tuneRow)}
                   </Text>
                   <RoundButton
                     glyph="plus"

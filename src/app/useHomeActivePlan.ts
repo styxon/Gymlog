@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
-import { isTimedTrackingMode } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode } from '../features/workout/workoutTypes';
 import { ONBOARDING_PLAN_PREFIX } from '../lib/activeProgramSet';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
@@ -204,6 +204,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           sets: exercise.targetSets,
           reps: exercise.repMax,
           timed: isTimedTrackingMode(activeRuntimeExercises.get(exercise.id)?.trackingMode ?? 'reps_first'),
+          minutes: isMinutesTrackingMode(activeRuntimeExercises.get(exercise.id)?.trackingMode),
           restSeconds: activeRuntimeExercises.get(exercise.id)?.restSecondsMin ?? 90,
           // Home quotes the same number the entry screen does, so it has to
           // know the same thing about rests: a superset rests once per round.

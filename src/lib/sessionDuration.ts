@@ -77,6 +77,12 @@ export interface DurationExerciseInput {
    * minutes of "work", and a mobility session quoted twice the time it takes.
    */
   timed?: boolean;
+  /**
+   * `reps` is minutes (trackingMode 'duration_minutes'): twenty minutes on a
+   * stair machine is twenty minutes, not twenty reps at 3.5 s — which costed
+   * the bout at a minute and a half.
+   */
+  minutes?: boolean;
   /** Prescribed rest between sets, in seconds. */
   restSeconds: number;
   /** Skipped exercises cost nothing. */
@@ -115,6 +121,9 @@ export function estimateWorkingSetSeconds(reps: number, timed = false, metres = 
 }
 
 function workingSetSecondsFor(exercise: DurationExerciseInput): number {
+  if (exercise.minutes) {
+    return estimateWorkingSetSeconds(exercise.reps * 60, true);
+  }
   const unit = exercise.name ? prescriptionUnitFromName(exercise.name) : null;
   return estimateWorkingSetSeconds(exercise.reps, Boolean(exercise.timed) || unit === 'seconds', unit === 'metres');
 }

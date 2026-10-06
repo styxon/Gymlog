@@ -17,7 +17,7 @@
  * Decided here rather than in the player so it can be tested without mounting
  * a 4000-line screen. Nothing in this file reaches storage, React or the clock.
  */
-import { formatWeight } from './format';
+import { doseUnitSuffix, formatWeight } from './format';
 import { t } from './i18n';
 import { AppLanguage, UnitPreference } from '../types/models';
 
@@ -32,6 +32,8 @@ export interface OverviewExerciseInput {
   repsLabel: string;
   /** A hold logs seconds, so its scheme carries the unit and never a weight. */
   timed: boolean;
+  /** Steady cardio logs minutes: the same, in minutes. */
+  minutes?: boolean;
   loadKg: number | null;
 }
 
@@ -47,8 +49,8 @@ export function buildOverviewScheme(
   language: AppLanguage,
   unitPreference: UnitPreference = 'kg',
 ): string {
-  const plan = `${input.setCount} × ${input.repsLabel}${input.timed ? ' s' : ''}`;
-  if (input.timed || input.loadKg === null || !Number.isFinite(input.loadKg) || input.loadKg <= 0) {
+  const plan = `${input.setCount} × ${input.repsLabel}${doseUnitSuffix(input)}`;
+  if (input.timed || input.minutes || input.loadKg === null || !Number.isFinite(input.loadKg) || input.loadKg <= 0) {
     return plan;
   }
   return `${plan} · ${formatWeight(input.loadKg, unitPreference)}`;
@@ -76,10 +78,15 @@ export function buildOverviewColumns(
   unitPreference: UnitPreference = 'kg',
 ): OverviewColumns {
   const hasLoad = input.loadKg !== null && Number.isFinite(input.loadKg) && input.loadKg > 0;
+  const timeUnit = input.minutes || input.timed;
   return {
     sets: String(input.setCount),
-    reps: input.timed ? '' : input.repsLabel,
-    load: input.timed ? `${input.repsLabel} s` : hasLoad ? formatWeight(input.loadKg as number, unitPreference) : '',
+    reps: timeUnit ? '' : input.repsLabel,
+    load: timeUnit
+      ? `${input.repsLabel}${doseUnitSuffix(input)}`
+      : hasLoad
+        ? formatWeight(input.loadKg as number, unitPreference)
+        : '',
   };
 }
 

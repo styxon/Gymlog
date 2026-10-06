@@ -16,6 +16,11 @@ export interface CsvExportExercise {
   sets: number;
   repMin: number;
   repMax: number;
+  /**
+   * The numbers are minutes (trackingMode 'duration_minutes'): written
+   * "20 min", which the importer reads back as minutes.
+   */
+  minutes?: boolean;
 }
 
 export interface CsvExportSession {
@@ -63,7 +68,8 @@ export function buildProgramCsv(sessions: CsvExportSession[]): string {
       if (!name || !Number.isFinite(sets)) {
         return;
       }
-      lines.push([day, name, String(sets), formatCsvReps(exercise.repMin, exercise.repMax)].join(','));
+      const reps = formatCsvReps(exercise.repMin, exercise.repMax);
+      lines.push([day, name, String(sets), exercise.minutes ? `${reps} min` : reps].join(','));
     });
   });
 

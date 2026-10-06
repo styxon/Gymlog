@@ -1,4 +1,5 @@
 import {
+  isMinutesTrackingMode,
   isTimedTrackingMode,
   WorkoutRole,
   WorkoutRuntimeTemplate,
@@ -13,7 +14,7 @@ import { getRecommendationProgrammeSummary } from './recommendationProgramme';
 import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgramContent';
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
 import type { AppLanguage } from '../types/models';
-import { removeTrailingZeros } from './format';
+import { doseUnitSuffix, removeTrailingZeros } from './format';
 import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 
 export type ProgramDetailSource = 'ready' | 'custom';
@@ -37,6 +38,8 @@ export interface ProgramDetailExerciseItem {
   repMax: number;
   /** A hold is prescribed in seconds, and its stepper has to say so. */
   timed: boolean;
+  /** Steady cardio is prescribed in minutes — "1 × 20 min". */
+  minutes: boolean;
   prescription: string;
   /** "tauko"-less rest range, e.g. "45–105 s" or "1,5–2,5 min". */
   restLabel: string;
@@ -119,8 +122,11 @@ function buildPrescription(
 ) {
   const reps = repsMin === repsMax ? `${repsMin}` : `${repsMin}–${repsMax}`;
   // A hold's numbers are seconds. Without the unit the catalog's own
-  // "Plank 3x30-60" read as sixty repetitions.
-  return isTimedTrackingMode(trackingMode) ? `${sets} × ${reps} s` : `${sets} × ${reps}`;
+  // "Plank 3x30-60" read as sixty repetitions; a bike's are minutes.
+  return `${sets} × ${reps}${doseUnitSuffix({
+    timed: isTimedTrackingMode(trackingMode),
+    minutes: isMinutesTrackingMode(trackingMode),
+  })}`;
 }
 
 /**
@@ -169,6 +175,7 @@ function buildSessionItems(
         repMin: exercise.repsMin,
         repMax: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
+        minutes: isMinutesTrackingMode(exercise.trackingMode),
         prescription: buildPrescription(exercise.repsMin, exercise.repsMax, exercise.sets, exercise.trackingMode),
         restLabel: buildRestLabel(exercise.restSecondsMin, exercise.restSecondsMax),
         restSeconds: exercise.restSecondsMin,

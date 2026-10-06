@@ -6,7 +6,8 @@ import { SimpleLineChart } from '../components/SimpleLineChart';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { countRemainingStatements } from '../lib/exerciseLearning';
-import { getComparableLogSets } from '../lib/exerciseLog';
+import { getComparableLogSets, isMinutesLog } from '../lib/exerciseLog';
+import { isMinutesExerciseName } from '../lib/minutesExercises';
 import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseTeaching';
 import { calendarDaysBetween } from '../lib/completedSessions';
 import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
@@ -275,8 +276,14 @@ export function ExerciseDetailScreen({
    * Home's stat cards filter on `bestWeight > 0` for the same reason. This
    * screen was the one place printing the raw kilogram.
    */
+  // A bike or a stair machine is measured in minutes: "20 min", not "20 reps"
+  // — on the card, the trend and the chart's axis alike.
+  const minutesLift = isMinutesExerciseName(item.name) || logs.some((log) => isMinutesLog(log));
+  const unloadedUnit = minutesLift ? 'min' : t(language, 'exDetail.repsUnit');
   const personalBest = unloaded
-    ? t(language, 'exDetail.bestReps', { count: history?.bestReps ?? 0 })
+    ? minutesLift
+      ? t(language, 'logger.minutesValue', { count: history?.bestReps ?? 0 })
+      : t(language, 'exDetail.bestReps', { count: history?.bestReps ?? 0 })
     : history?.bestWeight != null && history.bestWeight > 0
       ? `${removeTrailingZeros(convertWeightFromKg(history.bestWeight, unitPreference))} ${unitPreference}`
       : '—';
@@ -403,7 +410,7 @@ export function ExerciseDetailScreen({
                         above says "33 toistoa" for an unloaded lift, and this
                         read "+12 kg" beside it (CI review of #147). */}
                     {removeTrailingZeros(trendDelta)}{' '}
-                    {unloaded ? t(language, 'exDetail.repsUnit') : unitPreference}{' '}
+                    {unloaded ? unloadedUnit : unitPreference}{' '}
                     {t(language, 'exDetail.sinceStart')}
                   </Text>
                 ) : null}
@@ -411,7 +418,7 @@ export function ExerciseDetailScreen({
               <SimpleLineChart
                 points={chartPoints}
                 accent={theme.purple}
-                unitLabel={unloaded ? t(language, 'exDetail.repsUnit') : unitPreference}
+                unitLabel={unloaded ? unloadedUnit : unitPreference}
                 emptyLabel={t(language, 'progress.noEntries')}
               />
             </>

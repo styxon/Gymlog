@@ -6,6 +6,7 @@ import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
 import { t } from './i18n';
 import { isHoldExerciseName } from './holdExercises';
+import { MINUTES_DIAL } from './weightDial';
 import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 
 /**
@@ -44,6 +45,8 @@ export interface CsvProgramRow {
   sets: number;
   repMin: number;
   repMax: number;
+  /** The Reps cell said minutes ("20 min"). Absent for every other row. */
+  minutes?: boolean;
   matchedName: string | null;
   libraryItemId: string | null;
   suggestion: string | null;
@@ -132,9 +135,16 @@ function splitCsvLine(line: string, delimiter: string) {
  */
 export const CSV_REPS_MAX = 500;
 export const CSV_HOLD_SECONDS_MAX = 600;
+/** Five hours: the player's minutes dial (MINUTES_DIAL) stops there too. */
+export const CSV_MINUTES_MAX = MINUTES_DIAL.max;
 
-function parseReps(value: string): { repMin: number; repMax: number } | null {
-  const match = value.replace(/\s+/g, '').match(/^(\d+)(?:[-–—x/](\d+))?$/);
+function parseReps(value: string): { repMin: number; repMax: number; minutes: boolean } | null {
+  // "20 min" is minutes — the app's own export writes a bout of steady
+  // cardio that way, and a reader may too. Any other unit is not a number.
+  const minutesMatch = value.match(/^(.*?)\s*min(?:s|utes?|uuttia|uutti)?\.?$/i);
+  const minutes = minutesMatch !== null;
+  const numbers = (minutes ? minutesMatch[1] : value).replace(/\s+/g, '');
+  const match = numbers.match(/^(\d+)(?:[-–—x/](\d+))?$/);
   if (!match) {
     return null;
   }
@@ -143,7 +153,7 @@ function parseReps(value: string): { repMin: number; repMax: number } | null {
   if (!Number.isFinite(first) || first <= 0 || !Number.isFinite(second) || second <= 0) {
     return null;
   }
-  return { repMin: Math.min(first, second), repMax: Math.max(first, second) };
+  return { repMin: Math.min(first, second), repMax: Math.max(first, second), minutes };
 }
 
 function escapeRegExp(value: string) {
@@ -430,7 +440,7 @@ export function parseCsvProgram(
     // is a plank like "Plank" is.
     const match = matchExercise(exerciseName, library, nameBook);
     const isHold = isHoldExerciseName(exerciseName) || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
-    const repsMax = isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
+    const repsMax = reps.minutes ? CSV_MINUTES_MAX : isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
     if (reps.repMax > repsMax) {
       errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
       continue;
@@ -455,6 +465,9 @@ export function parseCsvProgram(
       sets,
       repMin: reps.repMin,
       repMax: reps.repMax,
+      // Only when the cell said so. A bike written "1,20" with no unit is
+      // still minutes by its name, decided where the programme is run.
+      ...(reps.minutes ? { minutes: true } : {}),
       ...match,
     });
   }
@@ -484,9 +497,11 @@ export function buildDraftFromCsvPreview(preview: CsvProgramPreview, programName
       targetSets: row.sets,
       repMin: row.repMin,
       repMax: row.repMax,
-      restSeconds: 90,
+      // A bout of minutes has no rest between sets to speak of.
+      restSeconds: row.minutes ? 0 : 90,
       trackedDefault: true,
       libraryItemId: row.libraryItemId,
+      ...(row.minutes ? { trackingMode: 'duration_minutes' as const } : {}),
     });
     sessionsByDay.set(key, session);
   }
