@@ -68,7 +68,7 @@ export function filterBrowsableExercises<T extends BrowsableExercise>(
   return items.filter((item) => isBrowsableExercise(item) && passesSpecialtyGate(item, options));
 }
 
-type BrowseOptions = { query?: string; type?: ExerciseTypeFilter | string };
+type BrowseOptions = { query?: string; type?: ExerciseTypeFilter };
 
 /**
  * The specialty half of the rule on its own, for the library screen, which
@@ -91,7 +91,7 @@ export const EXERCISE_TYPE_FILTERS: ExerciseTypeFilter[] = ['all', 'compound', '
 
 export function matchesExerciseTypeFilter(
   item: Parameters<typeof exerciseTypeOf>[0],
-  filter: ExerciseTypeFilter | string,
+  filter: ExerciseTypeFilter,
 ): boolean {
   return filter === 'all' || exerciseTypeOf(item) === filter;
 }
@@ -124,6 +124,8 @@ export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
  */
 export function matchesEquipmentFilter(
   item: BrowsableExercise & Pick<ExerciseLibraryItem, 'equipment'> & Partial<Pick<ExerciseLibraryItem, 'sourceEquipment'>>,
+  // A string too: the library screen builds its equipment chips from the
+  // values the rows print, which is the same vocabulary, derived.
   filter: EquipmentFilter | string,
 ): boolean {
   if (filter === 'all') {

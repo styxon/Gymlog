@@ -20,7 +20,7 @@ module.exports = [
     run() {
       // Room for 5 rows of 12: 4 real rows and the "+N" line.
       const fit = fitRunPreview({ count: 12, currentIndex: 3, availableHeight: HEAD + 5 * ROW + 7, headHeight: HEAD, rowHeight: ROW });
-      assert.deepEqual(fit, { start: 3, end: 7, hidden: 8 });
+      assert.deepEqual(fit, { start: 3, end: 7, hidden: 5 });
       // Rows plus the "+N" line never exceed the space.
       const shown = fit.end - fit.start;
       assert.ok(HEAD + (shown + 1) * ROW <= HEAD + 5 * ROW + 7);
@@ -30,8 +30,18 @@ module.exports = [
     name: 'walk-up contents: near the end, done rows fill in from above, the window stays contiguous',
     run() {
       const fit = fitRunPreview({ count: 9, currentIndex: 8, availableHeight: HEAD + 4 * ROW, headHeight: HEAD, rowHeight: ROW });
-      // 4 rows: 3 real and the "+N" line; the last lift and the two before it.
-      assert.deepEqual(fit, { start: 6, end: 9, hidden: 6 });
+      // Nothing comes after the last lift, so no "+N" line: all 4 rows are
+      // real, the last lift and the three before it.
+      assert.deepEqual(fit, { start: 5, end: 9, hidden: 0 });
+      // On lift 7 of 9 the line used to say "+6" for six lifts already done.
+      assert.deepEqual(
+        fitRunPreview({ count: 9, currentIndex: 6, availableHeight: HEAD + 3 * ROW, headHeight: HEAD, rowHeight: ROW }),
+        { start: 6, end: 9, hidden: 0 },
+      );
+      assert.deepEqual(
+        fitRunPreview({ count: 9, currentIndex: 4, availableHeight: HEAD + 3 * ROW, headHeight: HEAD, rowHeight: ROW }),
+        { start: 4, end: 6, hidden: 3 },
+      );
       assert.ok(fit.start <= 8 && 8 < fit.end, 'the current row is always shown');
     },
   },
@@ -80,7 +90,8 @@ module.exports = [
             const lines = shown + (fit.hidden > 0 ? 1 : 0);
             assert.ok(HEAD + lines * ROW <= available, `overflow ${count}/${current}/${available}`);
             assert.ok(fit.start >= 0 && fit.end <= count && shown >= 1);
-            assert.equal(fit.hidden, count - shown);
+            // "+N" is what comes after the window, never what came before it.
+            assert.equal(fit.hidden, count - fit.end);
             if (current >= 0) {
               assert.ok(fit.start <= current && current < fit.end, `current hidden ${count}/${current}/${available}`);
             }

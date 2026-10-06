@@ -32,7 +32,7 @@ export interface RunPreviewWindow {
   start: number;
   /** One past the last row shown. */
   end: number;
-  /** Rows of the session not shown — the "+N" line, 0 when everything fits. */
+  /** Rows after the window — the "+N" line, 0 when nothing is left to come. */
   hidden: number;
 }
 
@@ -57,7 +57,15 @@ export function fitRunPreview({
     return null;
   }
   const anchor = currentIndex >= 0 && currentIndex < count ? currentIndex : 0;
-  const end = Math.min(count, anchor + visible);
-  const start = Math.max(0, end - visible);
-  return { start, end, hidden: count - (end - start) };
+  if (anchor + rows >= count) {
+    // Nothing left after the window, so no "+N" line: its row goes to one
+    // more done row above, and the last rows of the session fill the space.
+    return { start: count - rows, end: count, hidden: 0 };
+  }
+  // "+N muuta" counts what is still to come. The done rows above the window
+  // are not "more": on lift 7 of 9 it said "+6" for six lifts already done
+  // (review, 2026-10-06).
+  const start = anchor;
+  const end = anchor + visible;
+  return { start, end, hidden: count - end };
 }

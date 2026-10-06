@@ -18,7 +18,7 @@ import { rankExerciseMatches } from '../lib/exerciseSearch';
 import { I18nKey, t } from '../lib/i18n';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
 import { displayEquipmentValue, libraryLabel } from '../lib/libraryLabel';
-import { matchesEquipmentFilter, matchesExerciseTypeFilter, passesSpecialtyGate } from '../lib/exerciseBrowseFilter';
+import { ExerciseTypeFilter, matchesEquipmentFilter, matchesExerciseTypeFilter, passesSpecialtyGate } from '../lib/exerciseBrowseFilter';
 import { exerciseRowMetaValues, exerciseTypeOf } from '../lib/exerciseClassification';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
@@ -405,7 +405,7 @@ export function ExerciseLibraryBrowser({
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [bodyPartFilter, setBodyPartFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<ExerciseTypeFilter>('all');
   const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
   /**
    * Tapping the chip you already picked clears it.
@@ -421,7 +421,7 @@ export function ExerciseLibraryBrowser({
    * toggles to it instead of to null — the three filters read `!== 'all'`
    * everywhere, and a null would have to be taught to all of them.
    */
-  function toggleFilter(current: string, option: string): string {
+  function toggleFilter<T extends string>(current: T, option: T): T | 'all' {
     return current === option ? 'all' : option;
   }
   const [toast, setToast] = useState<string | null>(null);
@@ -449,7 +449,7 @@ export function ExerciseLibraryBrowser({
     () => ['all', ...Array.from(new Set(items.map((item) => item.bodyPart))).sort((a, b) => a.localeCompare(b))],
     [items],
   );
-  const categoryOptions = useMemo(
+  const categoryOptions = useMemo<ExerciseTypeFilter[]>(
     () => ['all', ...Array.from(new Set(items.map((item) => exerciseTypeOf(item)))).sort((a, b) => a.localeCompare(b))],
     [items],
   );
