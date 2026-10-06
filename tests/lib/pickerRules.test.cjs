@@ -219,7 +219,8 @@ module.exports = [
       const offenders = [];
       for (const group of WORKOUT_SUBSTITUTION_GROUPS) {
         // Mobility and yoga slots are stretches by design; a stretch is the swap for a stretch.
-        const mobility = /mobility|yoga|stretch/.test(group.id);
+        // Interval and agility slots are drills the same way: a sprint is the swap for a sprint.
+        const mobility = /mobility|yoga|stretch|interval|agility|drill/.test(group.id);
         for (const exerciseName of group.allowedExerciseNames) {
           const index = findGuidedLibraryIndex(exerciseName, libraryNames);
           if (index === null) continue;
