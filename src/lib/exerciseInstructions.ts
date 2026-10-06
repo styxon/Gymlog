@@ -133,6 +133,52 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nouse seisovan jalan päkiälle niin korkealle kuin pystyt, polvi suorana mutta ei lukittuna, ja pysähdy hetkeksi ylös.',
     'Laske kantapää hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon. Tee kaikki toistot yhdellä jalalla ja vaihda sitten.',
   ],
+  // The rows the ready programmes' names reach by alias since the catalog
+  // audit (2026-10-06); each was reached before only by a near-miss name.
+  'EZ-Bar Skullcrusher': [
+    'Ota EZ-tangosta kapea ote, nosta tanko ja käy selällesi penkille kyynärpäät lähellä toisiaan. Kädet osoittavat suoraan kattoa kohti. Tämä on lähtöasento.',
+    'Pidä olkavarret paikallaan ja laske tankoa koukistamalla kyynärpäitä. Hengitä sisään laskun aikana. Pysähdy, kun tanko on suoraan otsan yläpuolella.',
+    'Ojenna kyynärpäät ja nosta tanko takaisin lähtöasentoon uloshengityksellä.',
+    'Toista.',
+  ],
+  'Standing Dumbbell Triceps Extension': [
+    'Seiso jalat noin hartioiden leveydellä ja pidä käsipainoa molemmin käsin. Nosta paino hitaasti pään yläpuolelle, kunnes kädet ovat täysin suorat.',
+    'Paino lepää kämmenillä peukalot sen ympärillä, ja kämmenet osoittavat kattoon. Tämä on lähtöasento.',
+    'Pidä olkavarret lähellä päätä, kyynärpäät sisällä ja pystysuorassa, ja laske painoa kaarella pään taakse, kunnes kyynärvarret koskettavat hauiksia. Vain kyynärvarret liikkuvat, olkavarret pysyvät paikallaan. Hengitä sisään laskun aikana.',
+    'Nosta paino ojentajilla takaisin lähtöasentoon. Hengitä ulos noston aikana.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Close-Grip Barbell Bench Press': [
+    'Käy selällesi tasapenkille. Ota tangosta kapea, noin hartioiden levyinen ote, nosta tanko telineestä ja pidä se suoraan yläpuolellasi kädet suorina. Tämä on lähtöasento.',
+    'Hengitä sisään ja laske tanko hitaasti rintakehän keskiosaan. Pidä kyynärpäät koko ajan lähellä vartaloa, toisin kuin tavallisessa penkkipunnerruksessa, jotta ojentajat tekevät työn.',
+    'Pidä sekunnin tauko ja työnnä tanko ojentajilla takaisin lähtöasentoon uloshengityksellä. Pidä kädet suorina sekunnin ajan ja aloita lasku taas hitaasti: laskun pitäisi kestää vähintään kaksi kertaa niin kauan kuin nousun.',
+    'Toista ohjelman toistomäärä.',
+    'Lopuksi laske tanko takaisin telineeseen.',
+  ],
+  'T-Bar Row with Handle': [
+    'Aseta tangon toinen pää maamiinatelineeseen tai nurkkaan, jotta se ei liiku, ja lisää sopiva paino omaan päähäsi.',
+    'Seiso tangon yläpuolella ja aseta V-kahva tangon ympärille lähelle levyjen lukkoa. Nouse seisomaan lantion ja jalkojen voimalla.',
+    'Ota leveä asento, vie lantio taakse ja pidä rintakehä ylhäällä, kädet suorina. Tämä on lähtöasento.',
+    'Vedä paino ylävatsaa kohti vetämällä lapaluita yhteen ja koukistamalla kyynärpäitä. Älä nykäise painoa tai huijaa liikkeessä.',
+    'Pidä lyhyt tauko ja palaa lähtöasentoon.',
+  ],
+  'Push-Ups - Close Triceps Position': [
+    'Asetu vatsallesi lattialle ja aseta kädet hartioita kapeammalle. Nosta vartalo suorin käsin ylös.',
+    'Hengitä sisään ja laskeudu, kunnes rintakehä melkein koskettaa lattiaa.',
+    'Punnerra ojentajilla ja rintalihaksilla takaisin lähtöasentoon ja purista rintaa. Hengitä ulos noston aikana.',
+    'Pidä sekunnin tauko yläasennossa ja toista ohjelman toistomäärä.',
+  ],
+  'Natural Glute Ham Raise': [
+    'Asetu ylätaljan reisituen tai preacher-penkin luo niin, että nilkat ovat tyynyjen alla, polvet istuimella ja selkä laitetta kohti. Pysy pystyssä hyvässä ryhdissä.',
+    'Tämä on lähtöasento. Laskeudu hallitusti eteenpäin, kunnes polvet ovat lähes suorat.',
+    'Nouse hallitusti takaisin lähtöasentoon.',
+    'Jos toisto ei onnistu, ota apua kuminauhasta, kaverista tai työntämällä korokkeesta.',
+  ],
+  'Side Plank': [
+    'Käy kyljellesi jalat suorina päällekkäin ja nouse alemman kyynärvarren varaan niin, että kyynärpää on suoraan olkapään alla. Helpommassa versiossa koukista polvet ja pidä ne lattiassa.',
+    'Nosta lantio ylös, kunnes vartalo on suora linja päästä jalkoihin (tai polviin), ja pidä se siinä painumatta alas tai kiertymättä eteen.',
+    'Hengitä tasaisesti ja pidä asento ohjelman ajan, laske sitten lantio alas, käänny ja tee sama toisella puolella.',
+  ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
     'Säädä istuin niin, että sääret ovat pystysuorassa liikkeen yläasennossa, ja työnnä kantapäillä lantio ylös.',

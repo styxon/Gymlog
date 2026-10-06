@@ -311,6 +311,7 @@ module.exports = [
         'Side Bridge',
         'Side Lying Groin Stretch',
         'Side Neck Stretch',
+        'Side Plank',
         'Side-Lying Floor Stretch',
         'Spinal Stretch',
         'Standing Biceps Stretch',

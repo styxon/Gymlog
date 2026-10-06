@@ -164,4 +164,23 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       'Lower the heel slowly until it is level with the floor, or a little below if you stand on a step, and go straight into the next rep. Finish all reps on one leg, then switch.',
     ],
   },
+  {
+    // Fourteen ready-programme slots prescribe a side plank (and its
+    // knees-down version), and upstream has none: by containment they opened
+    // "Push Up to Side Plank", a repetition movement through a push-up, under
+    // a 30-45 second hold (catalog audit, 2026-10-06). Its own entry, because
+    // the nearest row describes a different movement.
+    id: 'extra_side_plank',
+    name: 'Side Plank',
+    category: 'core',
+    bodyPart: 'core',
+    equipment: 'bodyweight',
+    primaryMuscles: ['abdominals'],
+    secondaryMuscles: ['glutes', 'shoulders'],
+    instructions: [
+      'Lie on your side with your legs straight and stacked, and prop yourself up on the forearm underneath, elbow directly below the shoulder. For the easier version, bend your knees and keep them on the floor.',
+      'Lift your hips until your body is one straight line from head to feet (or to knees), and keep them there without letting them sag or tip forward.',
+      'Breathe steadily and hold for the prescribed time, then lower your hips, turn over and hold on the other side.',
+    ],
+  },
 ];

@@ -1210,6 +1210,56 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'rowing machine hiit': 'rowing, stationary',
   'rowing machine (500m intervals)': 'rowing, stationary',
   'stationary bike (easy pace)': 'bicycling, stationary',
+
+  // ── The ready programmes' names that only containment placed ───────────
+  //
+  // Walking every slot of every ready programme (catalog audit, 2026-10-06):
+  // 180 slots reached their photo by "the shortest library name containing
+  // this one", and on about half of them that was another lift — "Barbell Bench
+  // Press" opened the DECLINE bench, "Leg Curl" the stability-ball curl,
+  // "Overhead Triceps Extension" a sled, "Close-Grip Bench Press" the Smith
+  // machine, "Bent-Over Row" the reverse grip. Each pair below is the same
+  // movement, checked by hand on the rule of the blocks above; the generic
+  // names whose row is one variant of several are in DEMO_ONLY_ALIASES, so
+  // the photo improves and what a log is filed under does not move.
+  // tests/lib/readyProgrammeAudit.test.cjs holds every slot to exact-or-alias.
+  'barbell bench press': 'barbell bench press - medium grip',
+  'bent-over row': 'bent over barbell row',
+  'bicep curl': 'dumbbell bicep curl',
+  'dumbbell curl': 'dumbbell bicep curl',
+  'box jump': 'front box jump',
+  'cable curl': 'standing biceps cable curl',
+  'cable fly': 'cable crossover',
+  'cable hammer curl': 'cable hammer curls - rope attachment',
+  'cable kickback': 'one-legged cable kickback',
+  'cable row': 'seated cable rows',
+  'cable triceps extension': 'low cable triceps extension',
+  'close-grip bench press': 'close-grip barbell bench press',
+  'dumbbell fly': 'dumbbell flyes',
+  'dumbbell row': 'one-arm dumbbell row',
+  'hammer curl': 'hammer curls',
+  // The prone drill lies face down; the programmes' morning opener stands.
+  'hip circles': 'standing hip circles',
+  'jump squat': 'freehand jump squat',
+  'leg curl': 'lying leg curls',
+  'lying leg curl': 'lying leg curls',
+  'leg extension': 'leg extensions',
+  'medicine ball slam': 'one-arm medicine ball slam',
+  'mountain climber': 'mountain climbers',
+  'overhead triceps extension': 'standing dumbbell triceps extension',
+  'rear delt fly': 'reverse flyes',
+  'renegade row': 'alternating renegade row',
+  'sissy squat': 'weighted sissy squat',
+  'skull crusher': 'ez-bar skullcrusher',
+  't-bar row': 't-bar row with handle',
+  'wrist curl': 'cable wrist curl',
+  // Names the library held under another spelling, unresolved until now.
+  // A diamond push-up is the close-hands push-up; the library's natural
+  // glute-ham raise is the Nordic curl (kneeling, lowered by the hamstrings).
+  // Not the single-leg RDL: the library's one is a kettlebell lift, and the
+  // programmes prescribe it with no weight to a reader who may own none.
+  'diamond push-up': 'push-ups - close triceps position',
+  'nordic hamstring curl': 'natural glute ham raise',
 };
 
 /**
@@ -1272,6 +1322,12 @@ export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
   ['walking lunge', null],
   // Filed where it always was, so its history does not move when the demo does.
   ['glute bridge hold', 'barbell glute bridge'],
+  // A generic name, or a lift done without the row's implement: the row shows
+  // the movement, but it is one variant of several (catalog audit, 2026-10-06).
+  ['leg curl', null],
+  ['rear delt fly', null],
+  ['medicine ball slam', null],
+  ['sissy squat', null],
 ]);
 
 export function findFiledLibraryIndex(exerciseName: string, libraryNames: readonly string[]): number | null {

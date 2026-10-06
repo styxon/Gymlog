@@ -177,7 +177,6 @@ module.exports = [
         ['Reverse Lunge', 'only a dumbbell rear lunge exists'],
         ['Bodyweight Reverse Lunge', 'only a dumbbell rear lunge exists'],
         ['Sumo Squat', 'only a dumbbell plie squat exists'],
-        ['Squat', 'contains-match lands on the barbell box squat'],
         ['Pistol Squat (each leg)', 'only the kettlebell pistol squat exists'],
         ['Bulgarian Split Squat (Jumping)', 'stripped to the loaded split squat'],
         ['Sissy Squat', 'only the weighted sissy squat exists'],
