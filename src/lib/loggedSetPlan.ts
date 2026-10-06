@@ -31,6 +31,8 @@ export interface PlannedSetSource {
   heldForCautionArea?: SetupCautionArea;
   prefilledFromPerformedAt?: string;
   addedMidSession?: boolean;
+  /** An added set a swap re-resolved: its number is the app's again. */
+  plannedBySwap?: boolean;
 }
 
 const BASES: readonly ExerciseLogSetPlanBasis[] = [
@@ -72,7 +74,9 @@ function finite(value: unknown, max: number): number | null {
 function basisOf(set: PlannedSetSource): ExerciseLogSetPlanBasis {
   // First: an added set copies the previous set's weight, which is usually
   // the reader's own — whatever else that set carried, this one is theirs.
-  if (set.addedMidSession) return 'added';
+  // Unless a swap has since re-resolved it from the new lift's history: then
+  // the fields below say what the app put there.
+  if (set.addedMidSession && !set.plannedBySwap) return 'added';
   if (set.autoProgressedFromKg !== undefined || set.autoProgressedFromReps !== undefined) return 'progressed';
   if (set.heldForCautionArea) return 'held_caution';
   if (set.heldForFatigue) return 'held_recovery';

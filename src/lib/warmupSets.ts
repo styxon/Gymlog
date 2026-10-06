@@ -72,6 +72,17 @@ export function toWorkingHistoryEntry(
 }
 
 /**
+ * The programme's set count for a live lift: its sets less the ones the reader
+ * added mid-session. What toWorkingHistoryEntry is read against, so a set
+ * added today does not change which of last time's sets were warm-ups — which
+ * holds only while every added set keeps its mark, a swap included (bug hunt
+ * W11, 2026-10-05).
+ */
+export function programmeSetCount(sets: readonly { addedMidSession?: boolean }[]): number {
+  return sets.filter((set) => !set.addedMidSession).length;
+}
+
+/**
  * The sets that decide whether a session earned more load: every set up to and
  * including the last one at the session's heaviest load. The lighter sets after
  * it — a drop or a back-off, 80/75/70 — are exempt, or a descending pattern
