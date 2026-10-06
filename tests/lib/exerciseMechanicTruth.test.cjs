@@ -152,6 +152,60 @@ module.exports = [
     },
   },
   {
+    name: 'mechanic truth: a new copy is in the progression exactly where the ready programme is, bar the compound lifts a stored flag cannot override',
+    run() {
+      // The ready programme: a slot is tracked unless its priority is low
+      // (workoutAppAdapter.isTrackedExercise). A copy stores that as
+      // trackedDefault, and customWorkoutAdapter tracks a copied row when the
+      // library calls it compound or the flag is true. So a copy agrees with
+      // the original on every row, except a LOW slot whose library row is
+      // compound: the library wins there and the copy tracks what the ready
+      // programme does not. Old copies migrated by trackingCategoryMigration
+      // differ the other way on a handful of low-priority curls and raises —
+      // they keep the tracking they had, which is the rule ("no one's
+      // progression changes"), not a disagreement to fix.
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const nameIndex = new Map();
+      for (const item of library) {
+        if (!nameIndex.has(item.name.trim().toLowerCase())) {
+          nameIndex.set(item.name.trim().toLowerCase(), item);
+        }
+      }
+      let agreeing = 0;
+      const compoundOverride = [];
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            const item = nameIndex.get(exercise.exerciseName.trim().toLowerCase());
+            if (!item) {
+              continue;
+            }
+            const readyTracked = exercise.progressionPriority !== 'low';
+            const copied = runtimeRow(item, {
+              targetSets: exercise.sets,
+              repMin: exercise.repsMin,
+              repMax: exercise.repsMax,
+              restSeconds: exercise.restSecondsMin,
+              libraryItemId: null,
+              name: exercise.exerciseName,
+              trackedDefault: readyTracked,
+            });
+            const copiedTracked = copied.progressionPriority !== 'low';
+            if (copiedTracked === readyTracked) {
+              agreeing += 1;
+            } else {
+              assert.equal(item.category, 'compound', `${exercise.id}: only a compound library row may disagree`);
+              assert.equal(readyTracked, false, `${exercise.id}: the library only ever adds tracking`);
+              compoundOverride.push(exercise.id);
+            }
+          }
+        }
+      }
+      assert.ok(agreeing > 500, `${agreeing} slots agree`);
+      assert.ok(compoundOverride.length > 0 && compoundOverride.length < 60, `${compoundOverride.length} low compound slots are the stored model's limit`);
+    },
+  },
+  {
     name: 'mechanic truth: suggestions score the corrected mechanic (a leg day is offered compound lifts before curls)',
     run() {
       // Read off the source mechanic, which the stored category used to
