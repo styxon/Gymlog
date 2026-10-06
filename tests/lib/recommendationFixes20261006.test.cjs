@@ -390,4 +390,50 @@ module.exports = [
       assert.equal(exerciseHitsCautionArea('Bike HIIT (45s sprint / 15s rest)', 'ankles'), true);
     },
   },
+  {
+    // B14: Athletic Starter's page badge said 35 min, while its "Why it fits"
+    // line worked the week out from the catalog's hand-written 50.
+    name: 'recommendation fixes 10-06: a programme page quotes one session length, the badge and the "why it fits" line alike',
+    run() {
+      const { buildReadyProgramDetail, readyProgramSessionMinutes } = require('../../.test-dist/lib/programDetails.js');
+      const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
+      const { buildFirstRunRecommendationReasons } = require('../../.test-dist/lib/firstRunSetup.js');
+      const gymSelection = { ...DEFAULT_FIRST_RUN_SELECTION, ...gymCard(GYM_ALL), weeklyMinutes: null, availableDays: [] };
+      const optionsFor = [{ availableEquipment: null }, { availableEquipment: [] }, { availableEquipment: [D, B, R] }];
+      const disagreements = [];
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const options of optionsFor) {
+          const minutes = readyProgramSessionMinutes(template, null, options);
+          assert.equal(minutes, readyTemplateCardMinutes(template, options), template.id);
+          const badge = buildReadyProgramDetail(template, undefined, null, [], null, 'en', false, false, options).badges[3];
+          if (badge !== `${minutes} min`) {
+            disagreements.push(`${template.id}: badge ${badge}, minutes ${minutes}`);
+          }
+        }
+      }
+      assert.deepEqual(disagreements, []);
+
+      // The hunt's case, through the explanation the page prints.
+      const starter = WORKOUT_TEMPLATES_V1.find((template) => template.id === 'tpl_athletic_starter_v1');
+      const minutes = readyProgramSessionMinutes(starter, null, { availableEquipment: null });
+      assert.notEqual(minutes, starter.estimatedSessionDuration, 'the hunt case no longer differs; pick another');
+      const reasons = buildFirstRunRecommendationReasons(gymSelection, {
+        projectedDaysPerWeek: starter.daysPerWeek,
+        estimatedSessionDuration: minutes,
+        language: 'en',
+      }).join(' ');
+      const weekly = Math.round(Math.max(60, starter.daysPerWeek * minutes) / 10) * 10;
+      assert.match(reasons, new RegExp(`About ${weekly} min this week`));
+
+      // And the page hands that explanation the page's own minutes, never the
+      // catalog's hand-written number (renderWorkoutTab is not compiled here).
+      const page = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderWorkoutTab.tsx'), 'utf8');
+      assert.doesNotMatch(page, /estimatedSessionDuration: readyTemplate\.estimatedSessionDuration/);
+      assert.match(
+        page,
+        /estimatedSessionDuration: readyProgramSessionMinutes\(readyTemplate, readyComposedWeek, readyProgramMinutesOptions\)/,
+      );
+      assert.match(page, /buildReadyProgramDetail\([\s\S]*?readyComposedWeek,[\s\S]*?readyProgramMinutesOptions,\s*\)/);
+    },
+  },
 ];
