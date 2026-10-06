@@ -396,7 +396,19 @@ function selectAlternativeCandidates(candidates: RecommendationCandidate[], inpu
   });
   const orderedAlternatives = sameDayAlternatives.length > 0 ? [...sameDayAlternatives] : [...remainingCandidates];
 
-  return orderedAlternatives.slice(0, 2);
+  // Programmes that serve the reader's goal (written for it, or as a backup)
+  // ahead of those that do not, score order kept within each. The level gate
+  // above narrowed the pool, and a pro strength reader at home was handed RUN
+  // as the second card because it was the first three-day programme left
+  // (review of B2, 2026-10-06).
+  const servesGoal = (candidate: RecommendationCandidate) => {
+    const definition = getRecommendationProgramDefinition(candidate.programId);
+    return definition ? goalTier(definition, input) > 0 : false;
+  };
+  return [
+    ...orderedAlternatives.filter(servesGoal),
+    ...orderedAlternatives.filter((candidate) => !servesGoal(candidate)),
+  ].slice(0, 2);
 }
 
 /**

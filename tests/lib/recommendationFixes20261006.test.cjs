@@ -157,6 +157,40 @@ module.exports = [
     },
   },
   {
+    // Review of B2: with the pool narrowed to the reader's level, a pro
+    // strength reader at home with a rack was handed RUN as the second card,
+    // the first three-day programme left. A card that does not serve the goal
+    // is offered only when nothing at the level and day count that does is left.
+    name: 'recommendation fixes 10-06: no alternative ignores the goal while one at the level and day count serves it',
+    run() {
+      const offenders = [];
+      for (const { selection, result, label } of answerGrid()) {
+        const { level, goal, daysPerWeek } = selection;
+        const shown = new Set([result.featuredProgramId, result.secondaryProgramId, ...result.alternativeProgramIds]);
+        const servingLeft = result.scoredCandidates.some(
+          (candidate) =>
+            !shown.has(candidate.programId)
+            && definition(candidate.programId).supportedLevels.includes(level)
+            && definition(candidate.programId).daysPerWeek === daysPerWeek
+            && goalTier(candidate.programId, goal) > 0,
+        );
+        if (!servingLeft) {
+          continue;
+        }
+        // The waterfall's own second card is its decision (a gender-targeted
+        // programme, say), held to the level gate above; only the cards the
+        // score fills in are held to this.
+        const waterfallCard = result.waterfall ? result.waterfall.alternativeProgramId : null;
+        for (const programId of result.alternativeProgramIds.filter((id) => id !== waterfallCard)) {
+          if (goalTier(programId, goal) === 0) {
+            offenders.push(`${label}: ${programId}`);
+          }
+        }
+      }
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} alternatives that ignore the goal`);
+    },
+  },
+  {
     // B3: a general-fitness reader at home was handed RUN (run_mobility +
     // general, not general_fitness) because the waterfall's own pick
     // (Runner's Strength) lists general fitness only as a backup, and the
