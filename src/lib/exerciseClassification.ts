@@ -117,7 +117,8 @@ export function exerciseRowMetaValues(
   // that is the one collision to step around; the suite checks every row.
   const type = exerciseTypeOf(item);
   const third = type === item.bodyPart ? exerciseMechanic(item) : type;
-  return [item.bodyPart, displayEquipmentValue(item), third].filter((value): value is string => Boolean(value));
+  const values: Array<string | null> = [item.bodyPart, displayEquipmentValue(item), third];
+  return values.filter((value): value is string => Boolean(value));
 }
 
 // ── source corrections ───────────────────────────────────────────────────

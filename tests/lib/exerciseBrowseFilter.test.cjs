@@ -70,9 +70,10 @@ module.exports = [
       const kept = filterBrowsableExercises(library);
       const hidden = library.length - kept.length;
       assert.ok(hidden >= 40, `hid only ${hidden} of ${library.length}`);
-      // 92 since the ready programmes' own stretches, cone drill and sprint got
-      // rows (2026-10-06): the rule hides them as it should.
-      assert.ok(hidden <= 100, `hid ${hidden} of ${library.length} — too wide`);
+      // 92 once the ready programmes' own stretches, cone drill and sprint got
+      // rows, and the foam-roller rows joined the stretches (2026-10-06): the
+      // rule hides them as it should.
+      assert.ok(hidden <= 115, `hid ${hidden} of ${library.length} — too wide`);
 
       // The lifts a programme is actually built from all survive.
       const names = new Set(kept.map((item) => item.name));

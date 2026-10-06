@@ -19,7 +19,8 @@ import { ExerciseBodyPart, ExerciseEquipment, ExerciseLibraryItem } from '../typ
 import { ExerciseType, exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
 import { displayEquipmentValue } from './libraryLabel';
 
-type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>;
+type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> &
+  Partial<Pick<ExerciseLibraryItem, 'sourceCategory' | 'sourceEquipment'>>;
 
 /**
  * Deliberately narrow. Each pattern names a family that is measured in held
@@ -33,6 +34,8 @@ type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<Exerci
 const NOT_A_LOGGED_SET: RegExp[] = [
   // Mobility. Held, not repped.
   /\bstretch(?:es|ing)?\b/i,
+  // Self-massage on a foam roller ("Calves-SMR"): rolled, not repped.
+  /-smr\b/i,
   // Lab protocols from the source data's plyometric section.
   /\((?:multiple|single) response\)/i,
   // Field drills: the equipment is a cone, and the unit is a run.
@@ -43,6 +46,10 @@ const NOT_A_LOGGED_SET: RegExp[] = [
 
 /** True when the exercise belongs in the picker's default listing. */
 export function isBrowsableExercise(item: BrowsableExercise): boolean {
+  // The foam-roller rows the source names by muscle alone ("Adductor").
+  if (item.sourceEquipment?.trim().toLowerCase() === 'foam roll') {
+    return false;
+  }
   return !NOT_A_LOGGED_SET.some((pattern) => pattern.test(item.name));
 }
 
@@ -104,8 +111,16 @@ export function matchesExerciseTypeFilter(
  * is the storage and planning vocabulary and a sixth value there would have to
  * be threaded through the coach's allowed-equipment sets too.
  */
-export type EquipmentFilter = 'all' | ExerciseEquipment | 'kettlebells';
+export type EquipmentFilter = 'all' | ExerciseEquipment | 'kettlebells' | 'bands' | 'ball';
 
+/**
+ * "Kuminauha" and "Pallo" by the same reasoning (#bugs 2026-10-06): the
+ * library files bands and medicine / exercise balls as bodyweight, and
+ * "Kehonpaino" is what needs nothing in your hands. Foam-roller rows have no
+ * chip: rolling is not a logged set, so the picker does not list them unasked
+ * (exerciseBrowseFilter's NOT_A_LOGGED_SET); the library screen, which builds
+ * its chips from the rows, shows one.
+ */
 export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
   'all',
   'barbell',
@@ -113,6 +128,8 @@ export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
   'kettlebells',
   'machine',
   'cable',
+  'bands',
+  'ball',
   'bodyweight',
 ];
 

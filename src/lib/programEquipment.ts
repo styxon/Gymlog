@@ -1,4 +1,4 @@
-import { EQUIPMENT_RULES_FOR_DISPLAY, equipmentRuleMatches } from './equipmentExerciseFilter';
+import { EQUIPMENT_RULES_FOR_DISPLAY, equipmentRuleMatches, libraryEquipmentRequirement } from './equipmentExerciseFilter';
 import { I18nKey } from './i18n';
 
 /**
@@ -76,6 +76,12 @@ function chipsForExercise(normalized: string): string[] {
     if (equipmentRuleMatches(normalized, rule)) {
       groups.push(...rule.requires.filter((group) => group.length > 0));
     }
+  }
+  // The band or ball a library row needs without naming it — the same
+  // requirement the swap filter reads, so the two directions agree.
+  const fromLibrary = libraryEquipmentRequirement(normalized);
+  if (fromLibrary) {
+    groups.push(fromLibrary);
   }
   const named = NAMED_CHIPS.filter(([word]) => normalized.includes(word)).map(([, chip]) => chip);
   const chosen = new Set<string>();
