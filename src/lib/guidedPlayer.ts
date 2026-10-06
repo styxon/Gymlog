@@ -1358,12 +1358,56 @@ export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
   ['sissy squat', null],
 ]);
 
+/**
+ * The lowercased names of a library array, and every answer already given
+ * against it.
+ *
+ * Both lookups below used to lowercase the whole library (about 900 names) on
+ * every call, and the recommender calls them thousands of times per pass: for
+ * each programme it scores, for each exercise in it, through
+ * resolveCatalogSourceCategory and friends. On the phone that was most of a
+ * 1.6 s render before the splash could lift (startup trace, 2026-10-06). A
+ * name's place in a given library never changes, so it is worked out once per
+ * array. Keyed by the array itself, which every caller holds at module level;
+ * an array built per call simply never hits and is collected with its entry.
+ * The length check keeps a caller that appends to its array from reading a
+ * stale snapshot.
+ */
+const libraryLookupCache = new WeakMap<
+  readonly string[],
+  { size: number; lowerNames: string[]; guided: Map<string, number | null>; filed: Map<string, number | null> }
+>();
+
+function libraryLookup(libraryNames: readonly string[]) {
+  let entry = libraryLookupCache.get(libraryNames);
+  if (!entry || entry.size !== libraryNames.length) {
+    entry = {
+      size: libraryNames.length,
+      lowerNames: libraryNames.map((name) => name.trim().toLowerCase()),
+      guided: new Map(),
+      filed: new Map(),
+    };
+    libraryLookupCache.set(libraryNames, entry);
+  }
+  return entry;
+}
+
 export function findFiledLibraryIndex(exerciseName: string, libraryNames: readonly string[]): number | null {
   const normalized = exerciseName.trim().toLowerCase();
   if (!normalized) {
     return null;
   }
-  const lowerNames = libraryNames.map((name) => name.trim().toLowerCase());
+  const lookup = libraryLookup(libraryNames);
+  const cached = lookup.filed.get(normalized);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const index = resolveFiledLibraryIndex(normalized, lookup.lowerNames);
+  lookup.filed.set(normalized, index);
+  return index;
+}
+
+function resolveFiledLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
   const filedOnly = (candidate: string) => {
     if (DEMO_ONLY_ALIASES.has(candidate)) {
       const exact = lowerNames.indexOf(candidate);
@@ -1386,14 +1430,23 @@ export function findFiledLibraryIndex(exerciseName: string, libraryNames: readon
 
 export function findGuidedLibraryIndex(
   exerciseName: string,
-  libraryNames: string[],
+  libraryNames: readonly string[],
 ): number | null {
   const normalized = exerciseName.trim().toLowerCase();
   if (!normalized) {
     return null;
   }
-  const lowerNames = libraryNames.map((name) => name.trim().toLowerCase());
+  const lookup = libraryLookup(libraryNames);
+  const cached = lookup.guided.get(normalized);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const index = resolveGuidedLibraryIndex(normalized, lookup.lowerNames);
+  lookup.guided.set(normalized, index);
+  return index;
+}
 
+function resolveGuidedLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
   const direct = resolveExactOrAlias(normalized, lowerNames);
   if (direct !== null) {
     return direct;
