@@ -453,21 +453,18 @@ function applyDailyCap(planned: PlannedNotification[], level: NotificationLevel)
   return kept.sort((left, right) => left.fireAtMs - right.fireAtMs);
 }
 
-/** How long before the trial's last moment the warning goes out. */
+/** How many calendar days before the trial's last day the warning goes out. */
 const TRIAL_WARNING_DAYS = 2;
 /**
- * Fixed milliseconds, and deliberately so.
- *
- * The repo's rule is to step calendar dates by date rather than by DAY_MS,
- * because Helsinki's 23- and 25-hour days push a fixed step off local
- * midnight. This is not a calendar step: the trial ends at an instant, and the
- * warning is 48 hours before that instant. A clock change moves the wall-clock
- * time of the notice by an hour and changes nothing about when the trial ends.
+ * The hour of that day it goes out: the morning of a non-training message, the
+ * same hour the record note uses. It used to go out at the trial's own start
+ * clock time, which is whenever the reader happened to tap "start" — 03:00
+ * for somebody who did it after a night shift.
  */
-const TRIAL_DAY_MS = 24 * 60 * 60 * 1000;
+export const TRIAL_WARNING_HOUR = RECORD_HOUR;
 
 /**
- * Two days before the trial ends, once.
+ * Two days before the trial ends, once, at 09:00 local time.
  *
  * Not a training nudge, which is why it survives a training break below: the
  * reader is on holiday, and the trial runs out anyway. It is still subject to
@@ -480,7 +477,10 @@ function buildTrialEndingNote(input: NotificationPlanInput): PlannedNotification
   if (!endsAt || !Number.isFinite(endsAt)) {
     return null;
   }
-  const fireAtMs = endsAt - TRIAL_WARNING_DAYS * TRIAL_DAY_MS;
+  // A calendar step from the day the trial ends, not a fixed number of
+  // milliseconds: a clock change in between would move the notice off the hour.
+  // Always before the end: it is on an earlier local day than the end itself.
+  const fireAtMs = atLocalTime(new Date(endsAt), -TRIAL_WARNING_DAYS, TRIAL_WARNING_HOUR, 0);
   if (fireAtMs <= input.nowMs) {
     return null;
   }
