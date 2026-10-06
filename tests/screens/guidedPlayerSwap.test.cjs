@@ -98,7 +98,7 @@ module.exports = [
       assert.match(playerSource, /step\.type === 'rest' && endsAtRef\.current > Date\.now\(\)/);
       // And a rest that now runs out on its own must not run out behind the
       // "fix the set you just logged" sheet, whose edits commit on Save only.
-      assert.match(playerSource, /const frozen =[^;]*\|\| restEditOpen[^;]*;/);
+      assert.match(playerSource, /const frozen = guidedClockHeld\(\{[^}]*\brestEditOpen,[^}]*\}\);/);
       for (const key of [
         'guided.rest.of',
         'guided.rest.ready',
@@ -695,7 +695,7 @@ module.exports = [
       const sheet = source.slice(source.indexOf('function GPSheet('), source.indexOf('/* ══'));
       assert.ok(sheet.length > 0, 'GPSheet moved');
       // The page.
-      assert.match(sheet, /<Pressable style=\{styles\.sheetScrim\} onPress=\{onClose\}>/);
+      assert.match(sheet, /<Pressable\s*style=\{styles\.sheetScrim\}\s*onPress=\{onClose\}/);
       // The ✕, named for a screen reader.
       assert.match(
         sheet,
@@ -703,7 +703,7 @@ module.exports = [
       );
       // The pull: on the strip that holds the grip AND the title, closing past
       // a distance or a flick, springing back otherwise — on a transform.
-      assert.match(sheet, /<View \{\.\.\.pan\.panHandlers\} style=\{styles\.sheetGrab\}>\s*<View style=\{styles\.sheetHandle\} \/>\s*<View style=\{styles\.sheetTitleRow\}>/);
+      assert.match(sheet, /<View\s*\{\.\.\.pan\.panHandlers\}\s*style=\{styles\.sheetGrab\}\s*onLayout=\{[^\n]*\}\s*>\s*<View style=\{styles\.sheetHandle\} \/>\s*<View style=\{styles\.sheetTitleRow\}>/);
       assert.match(
         sheet,
         /if \(gesture\.dy > SHEET_DISMISS_DRAG \|\| gesture\.vy > SHEET_DISMISS_VELOCITY\) \{\s*onCloseRef\.current\(\);/,

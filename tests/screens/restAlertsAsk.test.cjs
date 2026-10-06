@@ -184,10 +184,8 @@ module.exports = [
       // ask; unfreezing re-runs the step effect, which mirrors the rest.
       // addExerciseOpen joined the list 2026-09-29: the cooldown intro's
       // "Lisää liike" sheet is the same kind of overlay as the others here.
-      assert.match(
-        guided,
-        /const frozen =\s*paused\s*\|\| howtoOpen\s*\|\| exitOpen\s*\|\| pauseSheetOpen\s*\|\| swapOpen\s*\|\| addExerciseOpen\s*\|\| restEditOpen\s*\|\| runSheetHolds\s*\|\| ownBlock !== null\s*\|\| restAsk\.sheetOpen;/,
-      );
+      // The list lives in lib/guidedClockHold since 2026-10-06.
+      assert.match(guided, /const frozen = guidedClockHeld\(\{[^}]*restAlertsAskOpen: restAsk\.sheetOpen,[^}]*\}\);/);
       assert.match(guided, /restAlerts\?: \{ alerts: boolean; warning: boolean; ongoing: boolean; asked: boolean \};/);
     },
   },

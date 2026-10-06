@@ -282,23 +282,44 @@ module.exports = [
     },
   },
   {
-    name: 'guided: the session holds still while its contents sheet is open',
+    name: 'guided: the rest keeps counting while its contents sheet is open',
     run() {
-      // A rest that ran out under an open sheet moved the session on, and the
-      // lift the reader was about to correct vanished from under their thumb
-      // (device, 2026-09-16). The sheet freezes the clock like every other
-      // overlay that asks for attention.
+      // The sheet held the clock from 2026-09-16 (a rest that ran out under it
+      // moved the lift the reader was about to correct). Every lift with a
+      // logged set has its own pencil now, and the reader found the rest
+      // standing still whenever they looked ahead (#bugs 2026-10-06). The
+      // sheet is a list to read; reading it is what a rest is for.
       const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
-      assert.match(player, /const frozen = [^;]*\brunSheetHolds\b[^;]*;/);
-      // Not during an interval, where both halves are the workout: a runner
-      // who glances at the sheet must not find the clock stopped.
-      assert.match(player, /const runSheetHolds = runSheetOpen && !intervalRunning;/);
-      assert.match(
-        player,
-        /const intervalRunning =\s*\(step\.type === 'set' && step\.interval !== undefined\) \|\| \(step\.type === 'rest' && Boolean\(step\.recoveryKind\)\);/,
-      );
-      // The clock honours it.
+      const { guidedClockHeld } = require('../../../.test-dist/lib/guidedClockHold.js');
+      const none = {
+        paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,
+        addExerciseOpen: false, restEditOpen: false, runSheetOpen: false, ownBlockActive: false,
+        restAlertsAskOpen: false,
+      };
+      assert.equal(guidedClockHeld(none), false);
+      assert.equal(guidedClockHeld({ ...none, runSheetOpen: true }), false, 'the contents sheet never holds the clock');
+      // Every other overlay still does, alone.
+      for (const key of Object.keys(none).filter((name) => name !== 'runSheetOpen')) {
+        assert.equal(guidedClockHeld({ ...none, [key]: true }), true, `${key} holds the clock`);
+        assert.equal(guidedClockHeld({ ...none, [key]: true, runSheetOpen: true }), true, `${key} still holds under the sheet`);
+      }
+      // The screen hands the real state to it, the sheet's flag included, and
+      // nothing else in the screen folds the sheet back into the hold.
+      const frozenCall = player.match(/const frozen = guidedClockHeld\(\{[^}]*\}\);/);
+      assert.ok(frozenCall, 'frozen comes from guidedClockHeld');
+      assert.match(frozenCall[0], /\brunSheetOpen,/);
+      assert.doesNotMatch(player, /runSheetHolds/);
+      // The clock honours `frozen` and nothing else: the step effect stops
+      // (and withdraws the OS alert) only on it, so with the sheet open the
+      // deadline stands, the 3-2-1 ticks and the end cue fire, and the OS
+      // alert stays scheduled.
       assert.match(player, /if \(mode !== 'player' \|\| frozen\) \{\s*\/\/ Pausing freezes the leftover time/);
+      assert.match(player, /\}, \[mode, frozen, stepIndex, step\.type, cue, steps, syncRestNotification\]\);/);
+      // Opening and closing the sheet only flips its own flag.
+      const opens = player.match(/setRunSheetOpen\((true|false)\)/g) ?? [];
+      assert.ok(opens.length >= 4);
+      assert.doesNotMatch(player, /setRunSheetOpen\(false\);\s*(?:unpause|setPaused)\(/);
+      assert.doesNotMatch(player, /onClose=\{\(\) => \{\s*setRunSheetOpen\(false\);\s*setPaused/);
 
       // No "Olet tässä" line, in the sheet or the dictionaries.
       assert.doesNotMatch(player, /guided\.runSheet\.here/);
@@ -314,13 +335,22 @@ module.exports = [
       assert.match(player, /<GPIcon name="edit" size=\{17\} color=\{theme\.orange\} sw=\{2\.4\} \/>/);
       assert.match(player, /runEditBtn: \{[^}]*width: 36,\s*height: 36,[^}]*borderColor: theme\.orange,\s*backgroundColor: theme\.orangeSoft,/);
       assert.match(player, /runMember: \{ flexDirection: 'row', alignItems: 'center', gap: 10 \}/);
-      // A long session scrolls: the list is bounded by the screen, because the
-      // sheet's maxHeight does not bound a ScrollView inside it (device,
-      // 2026-09-16 — the last lifts could not be reached).
+      // A long session scrolls (#bugs 2026-10-06, nine lifts and the last
+      // rows below the sheet): GPSheet scrolls the rows itself, bounded by
+      // measured space — the scrim, the sheet's head, the bottom padding with
+      // the safe-area inset read on the screen — not by a guess from the window.
+      assert.doesNotMatch(player, /runSheetListMaxHeight/);
       assert.match(
         player,
-        /const runSheetListMaxHeight = Math\.round\(Math\.min\(windowHeight \* 0\.6, windowHeight \* 0\.78 - 160\)\);/,
+        /<GPSheet\s*title=\{t\(language, 'guided\.runSheet\.title'\)\}[\s\S]*?bottomInset=\{screenInsets\.bottom\}\s*scrollable\s*>\s*\{buildGuidedRunSheet\(stepPlan, stepIndex\)/,
       );
+      assert.match(player, /const bottomPadding = bottomInset \+ 30;/);
+      assert.match(player, /const listMaxHeight = sheetScrollMaxHeight\(\{\s*areaHeight: areaHeight \?\? windowHeight,\s*capFraction: SHEET_CAP_FRACTION,\s*headHeight: headHeight \?\? 81,\s*bottomPadding,\s*\}\);/);
+      assert.match(player, /style=\{styles\.sheetScrim\}\s*onPress=\{onClose\}\s*onLayout=\{\(event\) => setAreaHeight\(/);
+      assert.match(player, /style=\{styles\.sheetGrab\}\s*onLayout=\{\(event\) => setHeadHeight\(/);
+      assert.match(player, /<ScrollView\s*style=\{\[styles\.sheetScroll, \{ maxHeight: listMaxHeight \}\]\}/);
+      assert.match(player, /  sheetScroll: \{ flexGrow: 0, flexShrink: 1 \},/);
+      assert.match(player, /const SHEET_CAP_FRACTION = 0\.78;/);
       // And the sheet it sits in is still capped at the 78 % that bound uses —
       // on the wrapper the drag moves, whose parent is the full-screen scrim.
       // On the sheet itself, inside that content-sized wrapper, the
@@ -333,12 +363,17 @@ module.exports = [
       );
       assert.match(player, /  sheet: \{[^}]*flexShrink: 1,/);
       assert.doesNotMatch(player.match(/  sheet: \{[^}]*\}/)[0], /maxHeight/);
-      // The title lives in the sheet's pull zone now; the list is the first
-      // thing under it.
-      assert.match(
-        player,
-        /<GPSheet\s*title=\{t\(language, 'guided\.runSheet\.title'\)\}[\s\S]*?bottomInset=\{screenInsets\.bottom\}\s*>\s*<ScrollView style=\{\{ flexGrow: 0, maxHeight: runSheetListMaxHeight \}\}>/,
+      const { sheetScrollMaxHeight } = require('../../../.test-dist/lib/sheetScrollBound.js');
+      // A 640 dp phone with a 48 dp button bar: 0.78 × 640 − 81 − 78.
+      assert.equal(sheetScrollMaxHeight({ areaHeight: 640, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 340);
+      // The inset is taken off: the list ends above the button bar.
+      assert.ok(
+        sheetScrollMaxHeight({ areaHeight: 800, capFraction: 0.78, headHeight: 81, bottomPadding: 30 + 48 }) <
+          sheetScrollMaxHeight({ areaHeight: 800, capFraction: 0.78, headHeight: 81, bottomPadding: 30 }),
       );
+      // Unmeasured or absurd input cannot collapse the list.
+      assert.equal(sheetScrollMaxHeight({ areaHeight: 0, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 120);
+      assert.equal(sheetScrollMaxHeight({ areaHeight: Number.NaN, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 120);
       const { lightTheme, darkTheme } = require('../../../.test-dist/theming.js');
       assert.equal(darkTheme.orange, darkTheme.highlight, 'dark keeps the one action orange');
       assert.notEqual(lightTheme.orange, lightTheme.highlight, 'light is orange, not the brand violet');

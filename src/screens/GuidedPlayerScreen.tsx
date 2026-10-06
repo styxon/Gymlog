@@ -132,6 +132,8 @@ import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
+import { guidedClockHeld } from '../lib/guidedClockHold';
+import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
 import { ExerciseLibraryRow, exerciseLibraryRowMeta, getItemImage } from '../components/ExerciseLibraryBrowser';
 import {
   BODY_PART_FILTERS,
@@ -1285,6 +1287,8 @@ const NO_RECENT_EXERCISES: ExerciseLibraryItem[] = [];
 const SHEET_DISMISS_DRAG = 90;
 /** …or how fast it was still moving down when let go. */
 const SHEET_DISMISS_VELOCITY = 0.9;
+/** The sheet's height cap (`sheetFrame`), as a share of the scrim. */
+const SHEET_CAP_FRACTION = 0.78;
 
 function GPSheet({
   title,
@@ -1292,6 +1296,7 @@ function GPSheet({
   onClose,
   bottomInset,
   tall = false,
+  scrollable = false,
   children,
 }: {
   /** Drawn in the grab zone beside the close button, so the title is a handle too. */
@@ -1312,10 +1317,30 @@ function GPSheet({
    * inside this Modal, `useSafeAreaInsets` itself always answers 0.
    */
   bottomInset: number;
+  /**
+   * The children are a list that may be longer than the sheet: GPSheet
+   * scrolls them itself, bounded by MEASURED space — the scrim it stands in,
+   * its own head, its bottom padding with the inset (lib/sheetScrollBound).
+   * The contents sheet's own bound was a guess from the window and lost its
+   * last rows below the sheet on a nine-lift day (#bugs 2026-10-06).
+   */
+  scrollable?: boolean;
   children: React.ReactNode;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { height: windowHeight } = useWindowDimensions();
+  // Measured on layout; the window and the head's usual height stand in for
+  // the first frame only.
+  const [areaHeight, setAreaHeight] = useState<number | null>(null);
+  const [headHeight, setHeadHeight] = useState<number | null>(null);
+  const bottomPadding = bottomInset + 30;
+  const listMaxHeight = sheetScrollMaxHeight({
+    areaHeight: areaHeight ?? windowHeight,
+    capFraction: SHEET_CAP_FRACTION,
+    headHeight: headHeight ?? 81,
+    bottomPadding,
+  });
   // The sheet's own 30 was a guess at the phone's navigation bar, and on a
   // three-button handset the last row and the footnote sat behind it. Measured
   // rather than guessed — reported twice, on two different sheets.
@@ -1357,7 +1382,11 @@ function GPSheet({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.sheetScrim} onPress={onClose}>
+      <Pressable
+        style={styles.sheetScrim}
+        onPress={onClose}
+        onLayout={(event) => setAreaHeight(Math.round(event.nativeEvent.layout.height))}
+      >
         {/* The 78% cap lives on this wrapper, whose parent is the full-screen
             scrim: on the sheet inside it the percentage would resolve against
             a content-sized parent and quietly stop capping anything. */}
@@ -1365,10 +1394,16 @@ function GPSheet({
           style={[styles.sheetFrame, tall ? styles.sheetFrameTall : null, { transform: [{ translateY: dragY }] }]}
         >
           <Pressable
-            style={[styles.sheet, tall ? { flex: 1 } : null, { paddingBottom: bottomInset + 30 }]}
+            style={[styles.sheet, tall ? { flex: 1 } : null, { paddingBottom: bottomPadding }]}
             onPress={() => undefined}
           >
-            <View {...pan.panHandlers} style={styles.sheetGrab}>
+            {/* Measured: the sheet's paddingTop and the grab's -12 margin
+                cancel, so the grab's own height is the whole head. */}
+            <View
+              {...pan.panHandlers}
+              style={styles.sheetGrab}
+              onLayout={(event) => setHeadHeight(Math.round(event.nativeEvent.layout.height))}
+            >
               <View style={styles.sheetHandle} />
               <View style={styles.sheetTitleRow}>
                 <Text style={styles.sheetTitleText}>{title}</Text>
@@ -1383,7 +1418,19 @@ function GPSheet({
                 </Pressable>
               </View>
             </View>
-            {children}
+            {scrollable ? (
+              <ScrollView
+                style={[styles.sheetScroll, { maxHeight: listMaxHeight }]}
+                contentContainerStyle={styles.sheetScrollContent}
+                // Android hides the bar until a scroll starts, and a list
+                // that does not look scrollable was reported as cut off.
+                persistentScrollbar
+              >
+                {children}
+              </ScrollView>
+            ) : (
+              children
+            )}
           </Pressable>
         </Animated.View>
       </Pressable>
@@ -1475,15 +1522,6 @@ function GuidedPlayer({
   const themeName = useThemeName();
   const workout = useWorkoutContext();
   const session = workout.activeSession;
-  // The contents sheet's list is bounded by the screen. The sheet's own
-  // maxHeight does not bound a ScrollView inside it (the swap list learned the
-  // same), so a long session grew past the bottom and the last lifts could not
-  // be reached (device, 2026-09-16).
-  // Also inside the sheet's own cap (78 %) less what sits around the list —
-  // handle, title and bottom padding, about 160 — or on a short screen the
-  // sheet would clip the list's end again.
-  const { height: windowHeight } = useWindowDimensions();
-  const runSheetListMaxHeight = Math.round(Math.min(windowHeight * 0.6, windowHeight * 0.78 - 160));
 
   /**
    * The session clock, derived here rather than ticked into global state.
@@ -1861,16 +1899,21 @@ function GuidedPlayer({
   // `restEditOpen` joined when the rest started running out into the set
   // (review, PR #88): its edits commit on Save only, and a rest that expired
   // behind the sheet would have unmounted a correction half-made.
-  // `runSheetOpen` joined when the sheet began carrying the corrections: a
-  // rest that ran out under an open sheet moved the session on, and the lift
-  // the reader was about to correct vanished from under their thumb
-  // (device, 2026-09-16). Not during intervals, though: there both halves
-  // ARE the workout, and a runner who glances at the sheet mid-bout must not
-  // find the clock stopped.
-  const intervalRunning =
-    (step.type === 'set' && step.interval !== undefined) || (step.type === 'rest' && Boolean(step.recoveryKind));
-  const runSheetHolds = runSheetOpen && !intervalRunning;
-  const frozen = paused || howtoOpen || exitOpen || pauseSheetOpen || swapOpen || addExerciseOpen || restEditOpen || runSheetHolds || ownBlock !== null || restAsk.sheetOpen;
+  // `runSheetOpen` is NOT here, on purpose: the contents sheet is read
+  // during a rest, and the rest keeps counting under it and still ends with
+  // its cue and its OS alert (#bugs 2026-10-06; lib/guidedClockHold).
+  const frozen = guidedClockHeld({
+    paused,
+    howToOpen: howtoOpen,
+    exitOpen,
+    pauseSheetOpen,
+    swapOpen,
+    addExerciseOpen,
+    restEditOpen,
+    runSheetOpen,
+    ownBlockActive: ownBlock !== null,
+    restAlertsAskOpen: restAsk.sheetOpen,
+  });
   // Seconds since the reader said they would do it themselves. Derived from
   // the session clock's tick so it needs no timer of its own.
   const ownElapsedSeconds = ownBlock ? Math.max(0, Math.floor((clockNowMs - ownBlock.startedAt) / 1000)) : 0;
@@ -4353,141 +4396,140 @@ function GuidedPlayer({
           language={language}
           onClose={() => setRunSheetOpen(false)}
           bottomInset={screenInsets.bottom}
+          scrollable
         >
-          <ScrollView style={{ flexGrow: 0, maxHeight: runSheetListMaxHeight }}>
-            {buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
-              const isSuperset = item.members.length > 1;
-              return (
+          {buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
+            const isSuperset = item.members.length > 1;
+            return (
+            <View
+              key={item.groupIndex}
+              style={[styles.runRow, isSuperset && styles.runRowSuperset]}
+            >
+              {/* Two lights running the outline, in opposite directions:
+                  one boundary, two lifts inside it, no rest between them.
+                  The label sits inside that boundary rather than on each
+                  row, because the box is what says "these go together" —
+                  A1/A2 on every line was the same fact stated twice. */}
+              {isSuperset ? (
+                <>
+                  <SupersetBorder radius={14} />
+                  <View style={styles.runSupersetPill}>
+                    <Text style={styles.runSupersetPillText}>
+                      {t(language, 'guided.superset.pill')}
+                    </Text>
+                  </View>
+                </>
+              ) : null}
+              {/* Done / here / to come, as a mark rather than as a colour:
+                  the dark theme flattens the accents into each other. */}
               <View
-                key={item.groupIndex}
-                style={[styles.runRow, isSuperset && styles.runRowSuperset]}
+                style={[
+                  styles.runDot,
+                  item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
+                  item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
+                ]}
               >
-                {/* Two lights running the outline, in opposite directions:
-                    one boundary, two lifts inside it, no rest between them.
-                    The label sits inside that boundary rather than on each
-                    row, because the box is what says "these go together" —
-                    A1/A2 on every line was the same fact stated twice. */}
-                {isSuperset ? (
-                  <>
-                    <SupersetBorder radius={14} />
-                    <View style={styles.runSupersetPill}>
-                      <Text style={styles.runSupersetPillText}>
-                        {t(language, 'guided.superset.pill')}
-                      </Text>
-                    </View>
-                  </>
-                ) : null}
-                {/* Done / here / to come, as a mark rather than as a colour:
-                    the dark theme flattens the accents into each other. */}
-                <View
-                  style={[
-                    styles.runDot,
-                    item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
-                    item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
-                  ]}
-                >
-                  {item.status === 'done' ? <GPIcon name="check" size={11} color="#fff" /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  {/* A superset is several lifts in one row of the sheet, and
-                      each of them gets its name and its logged sets — a pair
-                      drawn as its first lift hides the one you are about to be
-                      asked for. An ordinary lift is a row of exactly one. */}
-                  {item.members.map((member) => {
-                    const lift = member.slotId ? exerciseBySlot.get(member.slotId) : undefined;
-                    // What is still to do, not what was lifted. The line under each name
-                    // carried the logged weights until 2026-09-11, when the reader
-                    // asked for "pelkät tulevat sarjat ja toistot" — a sheet read
-                    // mid-session is read to find out what is coming, and the weight
-                    // you just used is on the screen behind it.
-                    //
-                    // Not inside a superset, though. A set count per lift asks the
-                    // reader to reconcile "4 × 8" with "3 × 10" inside one box, and
-                    // the answer is that the box is four ROUNDS — which the box
-                    // already says, once, on the right (user 2026-09-11: "ehkä
-                    // poistetaan sittenkin molemmat tilastot supersetistä ja se on
-                    // vain 4 kierrosta").
-                    const planSet = lift ? planSetOf(lift.sets) : undefined;
-                    const memberPlan =
-                      !isSuperset && lift && planSet
-                        ? formatSetScheme(
-                            lift.sets.length,
-                            // The lowered target, when there is one — the
-                            // plan says what the dial will open on.
-                            isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
-                            isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
-                            lift.trackingMode,
-                          )
-                        : '';
-                    // The lift's own way back to its numbers: every lift with a
-                    // logged set, on every step, each with its own pencil. It
-                    // was one chip on the current row while resting only, so
-                    // the last set of a lift — followed by a walk-up, not a
-                    // rest — could not be corrected anywhere (#bugs 2026-09-30,
-                    // "viimeistä sarjaa on mahdotonta muokata ... jokaiseen
-                    // liikkeeseen tulee omansa").
-                    const correction = restRoundCorrections([member], exerciseBySlot)[0] ?? null;
-                    // "The set you just logged" only where that is true: the
-                    // round the running rest belongs to.
-                    const justLogged =
-                      correction !== null &&
-                      step.type === 'rest' &&
-                      !step.recoveryKind &&
-                      item.status === 'current';
-                    return (
-                      <View key={member.slotId ?? member.name} style={styles.runMember}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text
-                            style={[
-                              styles.runName,
-                              item.status === 'current' && { color: theme.purple },
-                              item.status === 'done' && { color: theme.muted },
-                            ]}
-                            numberOfLines={2}
-                            accessibilityLabel={exerciseNameLabel(language, member.name)}
-                          >
-                            {exerciseListLabel(language, member.name)}
-                          </Text>
-                          {memberPlan ? <Text style={styles.runPlan}>{memberPlan}</Text> : null}
-                        </View>
-                        {correction ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`${t(language, 'guided.rest.edit')} · ${exerciseNameLabel(language, member.name)}`}
-                            hitSlop={6}
-                            onPress={() => {
-                              setRunSheetOpen(false);
-                              setRestEdit({
-                                slotId: correction.lift.slotId,
-                                setIndex: correction.setIndex,
-                                justLoggedSetIndex: justLogged ? correction.setIndex : -1,
-                              });
-                            }}
-                            // The action colour, on the right where the thumb
-                            // is: the one thing in the sheet that does
-                            // something (device, 2026-09-16).
-                            style={({ pressed }) => [styles.runEditBtn, pressed && { opacity: 0.7 }]}
-                          >
-                            <GPIcon name="edit" size={17} color={theme.orange} sw={2.4} />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                  {/* No "Olet tässä" line: the row's colour and its dot say
-                      it already, and a third line of the same weight made the
-                      one control in the row hard to find (device,
-                      2026-09-16). */}
-                </View>
-                {item.setCount && item.members.length > 1 ? (
-                  <Text style={styles.runMeta}>
-                    {t(language, 'guided.runSheet.rounds', { count: item.setCount })}
-                  </Text>
-                ) : null}
+                {item.status === 'done' ? <GPIcon name="check" size={11} color="#fff" /> : null}
               </View>
-              );
-            })}
-          </ScrollView>
+              <View style={{ flex: 1 }}>
+                {/* A superset is several lifts in one row of the sheet, and
+                    each of them gets its name and its logged sets — a pair
+                    drawn as its first lift hides the one you are about to be
+                    asked for. An ordinary lift is a row of exactly one. */}
+                {item.members.map((member) => {
+                  const lift = member.slotId ? exerciseBySlot.get(member.slotId) : undefined;
+                  // What is still to do, not what was lifted. The line under each name
+                  // carried the logged weights until 2026-09-11, when the reader
+                  // asked for "pelkät tulevat sarjat ja toistot" — a sheet read
+                  // mid-session is read to find out what is coming, and the weight
+                  // you just used is on the screen behind it.
+                  //
+                  // Not inside a superset, though. A set count per lift asks the
+                  // reader to reconcile "4 × 8" with "3 × 10" inside one box, and
+                  // the answer is that the box is four ROUNDS — which the box
+                  // already says, once, on the right (user 2026-09-11: "ehkä
+                  // poistetaan sittenkin molemmat tilastot supersetistä ja se on
+                  // vain 4 kierrosta").
+                  const planSet = lift ? planSetOf(lift.sets) : undefined;
+                  const memberPlan =
+                    !isSuperset && lift && planSet
+                      ? formatSetScheme(
+                          lift.sets.length,
+                          // The lowered target, when there is one — the
+                          // plan says what the dial will open on.
+                          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
+                          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
+                          lift.trackingMode,
+                        )
+                      : '';
+                  // The lift's own way back to its numbers: every lift with a
+                  // logged set, on every step, each with its own pencil. It
+                  // was one chip on the current row while resting only, so
+                  // the last set of a lift — followed by a walk-up, not a
+                  // rest — could not be corrected anywhere (#bugs 2026-09-30,
+                  // "viimeistä sarjaa on mahdotonta muokata ... jokaiseen
+                  // liikkeeseen tulee omansa").
+                  const correction = restRoundCorrections([member], exerciseBySlot)[0] ?? null;
+                  // "The set you just logged" only where that is true: the
+                  // round the running rest belongs to.
+                  const justLogged =
+                    correction !== null &&
+                    step.type === 'rest' &&
+                    !step.recoveryKind &&
+                    item.status === 'current';
+                  return (
+                    <View key={member.slotId ?? member.name} style={styles.runMember}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text
+                          style={[
+                            styles.runName,
+                            item.status === 'current' && { color: theme.purple },
+                            item.status === 'done' && { color: theme.muted },
+                          ]}
+                          numberOfLines={2}
+                          accessibilityLabel={exerciseNameLabel(language, member.name)}
+                        >
+                          {exerciseListLabel(language, member.name)}
+                        </Text>
+                        {memberPlan ? <Text style={styles.runPlan}>{memberPlan}</Text> : null}
+                      </View>
+                      {correction ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${t(language, 'guided.rest.edit')} · ${exerciseNameLabel(language, member.name)}`}
+                          hitSlop={6}
+                          onPress={() => {
+                            setRunSheetOpen(false);
+                            setRestEdit({
+                              slotId: correction.lift.slotId,
+                              setIndex: correction.setIndex,
+                              justLoggedSetIndex: justLogged ? correction.setIndex : -1,
+                            });
+                          }}
+                          // The action colour, on the right where the thumb
+                          // is: the one thing in the sheet that does
+                          // something (device, 2026-09-16).
+                          style={({ pressed }) => [styles.runEditBtn, pressed && { opacity: 0.7 }]}
+                        >
+                          <GPIcon name="edit" size={17} color={theme.orange} sw={2.4} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  );
+                })}
+                {/* No "Olet tässä" line: the row's colour and its dot say
+                    it already, and a third line of the same weight made the
+                    one control in the row hard to find (device,
+                    2026-09-16). */}
+              </View>
+              {item.setCount && item.members.length > 1 ? (
+                <Text style={styles.runMeta}>
+                  {t(language, 'guided.runSheet.rounds', { count: item.setCount })}
+                </Text>
+              ) : null}
+            </View>
+            );
+          })}
         </GPSheet>
       )}
 
@@ -6785,6 +6827,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexShrink: 1,
   },
   sheetFrame: { maxHeight: '78%' },
+  // A long sheet's list (GPSheet `scrollable`): sized to its rows, and given
+  // way to the measured bound rather than overflowing the sheet.
+  sheetScroll: { flexGrow: 0, flexShrink: 1 },
+  sheetScrollContent: { paddingBottom: 6 },
   sheetFrameTall: { height: '90%', maxHeight: '90%' },
   swapSearch: {
     marginBottom: 14,
