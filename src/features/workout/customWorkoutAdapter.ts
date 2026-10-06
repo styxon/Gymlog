@@ -9,6 +9,7 @@ import {
 
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
+import { isMinutesExerciseName } from '../../lib/minutesExercises';
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -45,6 +46,12 @@ function getTrackingMode(exercise: ExerciseTemplate, libraryItem?: ExerciseLibra
   // repetitions while the same plank in a ready program asked for seconds.
   if (isHoldExerciseName(libraryItem?.name ?? exercise.name)) {
     return 'hold';
+  }
+
+  // Before the category check below, which files a bike as cardio and so as
+  // repetitions. Either spelling: the programme's own or the library row's.
+  if (isMinutesExerciseName(exercise.name) || isMinutesExerciseName(libraryItem?.name)) {
+    return 'duration_minutes';
   }
 
   if (libraryItem?.equipment === 'bodyweight') {

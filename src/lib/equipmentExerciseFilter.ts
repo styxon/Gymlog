@@ -1,5 +1,5 @@
-import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { getCatalogTrackingMode } from './catalogExercisePools';
+import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { getCatalogTrackingMode, prescriptionAfterSwap } from './catalogExercisePools';
 
 /**
  * Equipment chips filter the actual exercises (onboarding truth plan P4).
@@ -365,12 +365,28 @@ export function applyEquipmentToExercises(
       taken.add(fallback);
 
       swapped.push({ from: exercise.exerciseName, to: fallback });
+      // A barbell squat that falls back to a bodyweight squat must stop
+      // asking for kilograms. The catalog knows; keyword matching guessed.
+      const trackingMode = getCatalogTrackingMode(fallback);
+      // And minutes mean nothing in another unit: a stair machine's twenty
+      // minutes is not twenty of whatever replaces it, nor a lift's ten reps
+      // ten minutes on a bike. Only across minutes — a carry's seconds have
+      // always stayed with the hold it falls back to.
+      const acrossMinutes = isMinutesTrackingMode(exercise.trackingMode) !== isMinutesTrackingMode(trackingMode);
+      const dose = acrossMinutes
+        ? prescriptionAfterSwap(
+            exercise.trackingMode,
+            trackingMode,
+            { repsMin: exercise.repsMin, repsMax: exercise.repsMax },
+            fallback,
+          )
+        : { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
       return {
         ...exercise,
         exerciseName: fallback,
-        // A barbell squat that falls back to a bodyweight squat must stop
-        // asking for kilograms. The catalog knows; keyword matching guessed.
-        trackingMode: getCatalogTrackingMode(fallback),
+        trackingMode,
+        repsMin: dose.repsMin,
+        repsMax: dose.repsMax,
       };
     })
     .filter((exercise): exercise is WorkoutTemplateExercise => exercise !== null);

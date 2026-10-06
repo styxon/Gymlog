@@ -4,6 +4,7 @@ import { trackingModeAfterSwap } from './catalogExercisePools';
 import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } from './cautionAreaMatching';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
+import { isMinutesExerciseName } from './minutesExercises';
 
 export { cautionAreaLoadedBy, exerciseHitsCautionArea } from './cautionAreaMatching';
 
@@ -226,10 +227,15 @@ export function applyCautionFlagsToExercises(
       // swap a hold into a lift: its dose is seconds, and "60–90" carried
       // onto Box Squat read as 90 squats (2026-09-14). A hold with no hold
       // to go to keeps its place, the same as any unmatched movement.
+      //
+      // The same for a bout of minutes: twenty minutes on a stair machine
+      // carried onto a lift is twenty reps of it (2026-10-06).
       const holdIntoLift =
         replacement !== null &&
-        (exercise.trackingMode === 'hold' || isHoldExerciseName(exercise.exerciseName)) &&
-        !isHoldExerciseName(replacement);
+        (((exercise.trackingMode === 'hold' || isHoldExerciseName(exercise.exerciseName)) &&
+          !isHoldExerciseName(replacement)) ||
+          ((exercise.trackingMode === 'duration_minutes' || isMinutesExerciseName(exercise.exerciseName)) &&
+            !isMinutesExerciseName(replacement)));
       const sameLift = replacement !== null && normalize(replacement) === normalize(exercise.exerciseName);
       if (replacement && !holdIntoLift && !sameLift && !isBannedByAnyAvoid(replacement, seriousFlags)) {
         swapped.push({ from: exercise.exerciseName, to: replacement, area: flag.area });

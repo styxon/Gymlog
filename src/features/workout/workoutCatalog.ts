@@ -607,12 +607,12 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     },
     sessions: [
       session({ id: 'run_mobility_easy', name: 'Day 1: Easy Run', orderIndex: 1, exercises: [
-        ex({ id: 'run_mobility_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'run_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 4, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
+        ex({ id: 'run_mobility_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'run_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 4, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
         ex({ id: 'run_mobility_easy_mobility_flow', exerciseName: "World's Greatest Stretch", slotId: 'reset_1', role: 'secondary', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 45, restSecondsMin: 30, restSecondsMax: 45, substitutionGroup: 'mobility_flow' }),
         ex({ id: 'run_mobility_easy_calf_raise', exerciseName: 'Calf Raise', slotId: 'reset_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 45, substitutionGroup: 'calves' }),
       ] }),
       session({ id: 'run_mobility_tempo', name: 'Day 2: Tempo Run', orderIndex: 2, exercises: [
-        ex({ id: 'run_mobility_tempo_run_blocks', exerciseName: 'Tempo Run Blocks', slotId: 'run_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 5, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
+        ex({ id: 'run_mobility_tempo_run_blocks', exerciseName: 'Tempo Run Blocks', slotId: 'run_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 5, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
         ex({ id: 'run_mobility_tempo_stride_finishers', exerciseName: 'Stride Finishers', slotId: 'run_2', role: 'secondary', progressionPriority: 'low', trackingMode: 'reps_first', sets: 4, repsMin: 3, repsMax: 3, restSecondsMin: 30, restSecondsMax: 45, substitutionGroup: 'running_blocks' }),
         ex({ id: 'run_mobility_tempo_breath_reset', exerciseName: 'Standing Hamstring and Calf Stretch', slotId: 'reset_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 45, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'yoga_flow' }),
       ] }),
@@ -665,13 +665,13 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       session({ id: 'season_summer_push', name: 'Day 1: Push and Easy Run', orderIndex: 1, exercises: [
         ex({ id: 'season_summer_push_pushup', exerciseName: 'Push-Up Wide', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 14, repsMax: 14, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
         ex({ id: 'season_summer_push_shoulder', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'vertical_press' }),
-        ex({ id: 'season_summer_push_run', exerciseName: 'Easy Run Blocks', slotId: 'run_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 4, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
+        ex({ id: 'season_summer_push_run', exerciseName: 'Easy Run Blocks', slotId: 'run_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 4, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
         ex({ id: 'season_summer_push_plank', exerciseName: 'Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 3, repsMin: 30, repsMax: 60, restSecondsMin: 30, restSecondsMax: 45, substitutionGroup: 'bodyweight_core' }),
       ] }),
       session({ id: 'season_summer_pull', name: 'Day 2: Strength and Tempo Run', orderIndex: 2, exercises: [
         ex({ id: 'season_summer_pull_row', exerciseName: 'Inverted Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 14, repsMax: 14, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
         ex({ id: 'season_summer_pull_swing', exerciseName: 'Kettlebell Swing', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 4, repsMin: 18, repsMax: 18, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'explosive_power' }),
-        ex({ id: 'season_summer_pull_run', exerciseName: 'Tempo Run Blocks', slotId: 'run_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 5, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
+        ex({ id: 'season_summer_pull_run', exerciseName: 'Tempo Run Blocks', slotId: 'run_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 5, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
         ex({ id: 'season_summer_pull_hips', exerciseName: 'Kneeling Hip Flexor', slotId: 'reset_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 45, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'mobility_flow' }),
       ] }),
       session({ id: 'season_summer_legs', name: 'Day 3: Legs and Strides', orderIndex: 3, exercises: [

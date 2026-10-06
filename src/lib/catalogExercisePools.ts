@@ -2,12 +2,13 @@ import { EXTRA_EXERCISE_LIBRARY } from '../data/extraExerciseLibrary';
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
 import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import {
-  isTimedTrackingMode,
   isUnloadedTrackingMode,
+  prescriptionUnitOf,
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
 import { isHoldExerciseName } from './holdExercises';
+import { DEFAULT_MINUTES_PRESCRIPTION, isMinutesExerciseName } from './minutesExercises';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
 
@@ -93,11 +94,15 @@ export function resolveCatalogSourceCategory(name: string): string | null {
  * bodyweight keyword but is bodyweight, and asking a bodyweight-only user for
  * kilograms is the specific failure this replaces.
  */
-export function getCatalogTrackingMode(name: string): 'bodyweight' | 'load_and_reps' | 'hold' {
+export function getCatalogTrackingMode(name: string): 'bodyweight' | 'load_and_reps' | 'hold' | 'duration_minutes' {
   // A hold is bodyweight too, so this has to be asked first or every plank
   // would come back as reps.
   if (isHoldExerciseName(name)) {
     return 'hold';
+  }
+  // A bike or a treadmill is filed as a machine, which would ask for a weight.
+  if (isMinutesExerciseName(name)) {
+    return 'duration_minutes';
   }
 
   const key = name.trim().toLowerCase();
@@ -192,9 +197,12 @@ export function isCatalogStapleExercise(name: string | null | undefined): boolea
 function swappedInTrackingMode(
   name: string,
   current: WorkoutTrackingMode,
-): 'bodyweight' | 'load_and_reps' | 'hold' {
+): 'bodyweight' | 'load_and_reps' | 'hold' | 'duration_minutes' {
   if (isHoldExerciseName(name)) {
     return 'hold';
+  }
+  if (isMinutesExerciseName(name)) {
+    return 'duration_minutes';
   }
   const programmeLoaded = programmeLoadedByName.get(name.trim().toLowerCase());
   if (programmeLoaded !== undefined) {
@@ -221,7 +229,7 @@ export function trackingModeAfterSwap(current: WorkoutTrackingMode, exerciseName
   const incoming = swappedInTrackingMode(exerciseName, current);
   const sameKind =
     isUnloadedTrackingMode(incoming) === isUnloadedTrackingMode(current) &&
-    isTimedTrackingMode(incoming) === isTimedTrackingMode(current);
+    prescriptionUnitOf(incoming) === prescriptionUnitOf(current);
   return sameKind ? current : incoming;
 }
 
@@ -246,6 +254,7 @@ function middle<T>(items: T[], by: (item: T) => number): T | null {
 const programmePrescriptions = (() => {
   const rowsByName = new Map<string, SwapPrescription[]>();
   const timed: SwapPrescription[] = [];
+  const minutes: SwapPrescription[] = [];
   const counted: SwapPrescription[] = [];
   for (const template of WORKOUT_TEMPLATES_V1) {
     for (const session of template.sessions) {
@@ -255,7 +264,8 @@ const programmePrescriptions = (() => {
         const rows = rowsByName.get(key) ?? [];
         rows.push(row);
         rowsByName.set(key, rows);
-        (isTimedTrackingMode(exercise.trackingMode) ? timed : counted).push(row);
+        const unit = prescriptionUnitOf(exercise.trackingMode);
+        (unit === 'seconds' ? timed : unit === 'minutes' ? minutes : counted).push(row);
       }
     }
   }
@@ -264,6 +274,10 @@ const programmePrescriptions = (() => {
   return {
     byName,
     timed: middle(timed, (row) => row.repsMax) ?? { repsMin: 30, repsMax: 30 },
+    minutes: middle(minutes, (row) => row.repsMax) ?? {
+      repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+    },
     counted: middle(counted, (row) => row.repsMax) ?? { repsMin: 10, repsMax: 10 },
   };
 })();
@@ -286,12 +300,17 @@ export function prescriptionAfterSwap(
   current: SwapPrescription,
   exerciseName: string,
 ): SwapPrescription {
-  if (isTimedTrackingMode(from) === isTimedTrackingMode(to)) {
+  const toUnit = prescriptionUnitOf(to);
+  if (prescriptionUnitOf(from) === toUnit) {
     return current;
   }
   return (
     programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
-    (isTimedTrackingMode(to) ? programmePrescriptions.timed : programmePrescriptions.counted)
+    (toUnit === 'seconds'
+      ? programmePrescriptions.timed
+      : toUnit === 'minutes'
+        ? programmePrescriptions.minutes
+        : programmePrescriptions.counted)
   );
 }
 

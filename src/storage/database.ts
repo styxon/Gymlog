@@ -22,6 +22,7 @@ import { clearCoachAdviceMemory } from './coachAdviceMemoryStore';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from './largeItem';
 import { removeCorruptCopies, setAsideCorruptCopy } from './corruptCopies';
 import { normalizeExerciseLog } from '../lib/exerciseLog';
+import { readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { withLoggedSessionTotals } from '../lib/sessionTotals';
 import {
   normalizeLearnedExerciseIds,
@@ -387,13 +388,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           trackedDefault: typeof exercise?.trackedDefault === 'boolean' ? exercise.trackedDefault : true,
           orderIndex: typeof exercise?.orderIndex === 'number' ? exercise.orderIndex : 0,
           libraryItemId: liveLibraryItemId(exercise?.libraryItemId),
-          trackingMode:
-            exercise?.trackingMode === 'load_and_reps' ||
-            exercise?.trackingMode === 'reps_first' ||
-            exercise?.trackingMode === 'bodyweight' ||
-            exercise?.trackingMode === 'hold'
-              ? exercise.trackingMode
-              : null,
+          // A mode this build does not know (one written by a newer build, or
+          // a damaged row) is no mode: null derives it from the name, as an
+          // install that never stored one does.
+          trackingMode: readStoredTrackingMode(exercise?.trackingMode),
           persistedExerciseTemplateId:
             typeof exercise?.persistedExerciseTemplateId === 'string' || exercise?.persistedExerciseTemplateId === null
               ? exercise.persistedExerciseTemplateId
