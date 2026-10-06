@@ -326,7 +326,7 @@ module.exports = [
     },
   },
   {
-    name: 'ready programme audit: weekly push/pull and squat/hinge balance stays within 2.5:1, bar the calls left to the user',
+    name: 'ready programme audit: weekly push/pull balance stays within 2:1 and squat/hinge within 2.5:1, bar the 5x5\'s one deadlift',
     run() {
       const PUSH = new Set(['horizontal_press', 'vertical_press', 'bodyweight_press']);
       const PULL = new Set(['horizontal_pull', 'vertical_pull', 'bodyweight_pull', 'cable_machine_row']);
@@ -346,20 +346,22 @@ module.exports = [
         const hinge = count(exercises, HINGE, /kettlebell swing/i);
         // Twelve sets a week is where a ratio starts to mean something: a
         // mobility week's one Cossack squat is not a squat bias.
-        const lopsided = (a, b) => a + b >= 12 && (a > 2.5 * b || b > 2.5 * a);
-        if (lopsided(push, pull)) offenders.push(`${template.id}: push ${push} / pull ${pull}`);
-        if (lopsided(quad, hinge)) offenders.push(`${template.id}: squat ${quad} / hinge ${hinge}`);
+        const lopsided = (a, b, ratio) => a + b >= 12 && (a > ratio * b || b > ratio * a);
+        // Pressing outran pulling 3:1 to 4:1 in the no-equipment, HIIT and
+        // athletic weeks, which pulled with one table row or a renegade row
+        // and pushed with every push-up variation ("lisätään vetoliikkeitä",
+        // user 2026-10-06). Rows were added and push variations traded for
+        // them, and the bound came down from 2.5:1 to 2:1 so the dumbbell and
+        // bodyweight upper/lower and PPL weeks (2.1–2.4:1) came along.
+        if (lopsided(push, pull, 2)) offenders.push(`${template.id}: push ${push} / pull ${pull}`);
+        // Squat/hinge keeps 2.5:1: the glute specialisations hinge twice as
+        // much as they squat on purpose.
+        if (lopsided(quad, hinge, 2.5)) offenders.push(`${template.id}: squat ${quad} / hinge ${hinge}`);
       }
-      // Left to the user (see the audit report): the no-equipment and HIIT
-      // weeks pull with a table row or a renegade row and push with every
-      // push-up variation, Athletic Starter rows once a week against three
-      // presses, and the 5x5 is Starting Strength's single deadlift by design.
+      // The 5x5 is Starting Strength's single deadlift after three days of
+      // squats, by design; adding hinge work would make it another programme.
       assert.deepEqual(offenders.sort(), [
-        'tpl_athletic_starter_v1: push 9 / pull 3',
-        'tpl_gainer_at_home_beginner_v1: push 13 / pull 3',
-        'tpl_gainer_fat_burn_hiit_v1: push 16 / pull 4',
         'tpl_gainer_strength_5x5_v1: squat 15 / hinge 1',
-        'tpl_home_athletic_5_day_v1: push 16 / pull 4',
       ]);
     },
   },
