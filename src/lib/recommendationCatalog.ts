@@ -446,7 +446,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'low',
     styleTags: ['balanced', 'recovery'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
-    focusAreaTags: ['core', 'legs', 'back'],
+    focusAreaTags: ['legs', 'back'],
     lowFriction: true,
     jointFriendly: true,
   }),

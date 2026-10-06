@@ -650,7 +650,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     name: 'Summer Conditioning',
     goalType: 'general',
     level: 'beginner',
-    splitType: 'full_body',
+    splitType: 'hybrid',
     daysPerWeek: 3,
     estimatedSessionDuration: 45,
     progressionModel: 'double_progression',

@@ -411,6 +411,7 @@ const suites = [
   ...require('./lib/recommendationFixes20261006.test.cjs'),
   ...require('./lib/sessionMinutesOneTruth.test.cjs'),
   ...require('./lib/catalogGapProgrammes20261005.test.cjs'),
+  ...require('./lib/readyProgrammeAudit.test.cjs'),
   ...require('./lib/recommendationWaterfallCopy.test.cjs'),
   ...require('./lib/firstRunSetup.test.cjs'),
   ...require('./lib/focusAreaPresentation.test.cjs'),
