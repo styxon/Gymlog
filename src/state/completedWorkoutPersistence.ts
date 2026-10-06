@@ -143,6 +143,7 @@ function buildPersistedLogs(
       templateExerciseId: log.templateExerciseId ?? null,
       notes: log.notes ?? null,
       swappedFrom: log.swappedFrom ?? null,
+      ...(log.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
     }));
 }
 

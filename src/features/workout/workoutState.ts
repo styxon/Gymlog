@@ -9,9 +9,9 @@ import {
 } from '../../lib/cardio';
 import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
-import { isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
-import { HOLD_DIAL, REPS_DIAL } from '../../lib/weightDial';
+import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
@@ -922,7 +922,9 @@ export function repsCeilingFor(
   const dial =
     isTimedTrackingMode(exercise.trackingMode) || parseIntervalScheme(exercise.exerciseName) !== null
       ? HOLD_DIAL.max
-      : REPS_DIAL.max;
+      : isMinutesTrackingMode(exercise.trackingMode)
+        ? MINUTES_DIAL.max
+        : REPS_DIAL.max;
   const planned = set?.plannedRepsMax;
   return typeof planned === 'number' && Number.isFinite(planned) ? Math.max(dial, planned) : dial;
 }

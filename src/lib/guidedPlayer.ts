@@ -521,6 +521,8 @@ export interface GuidedSetTarget {
   reps: number;
   /** `reps` is seconds held, not repetitions — carried so every label agrees. */
   timed?: boolean;
+  /** `reps` is minutes of steady work (trackingMode 'duration_minutes'). */
+  minutes?: boolean;
   loadKg: number | null;
   /**
    * Load this set carried before automated progression raised it, when the
@@ -566,7 +568,11 @@ function formatKg(value: number): string {
 
 export function formatGuidedTarget(target: GuidedSetTarget, language: AppLanguage = 'en'): string {
   if (target.loadKg === null) {
-    return t(language, target.timed ? 'guided.target.seconds' : 'guided.target.reps', { reps: target.reps });
+    return t(
+      language,
+      target.minutes ? 'guided.target.minutes' : target.timed ? 'guided.target.seconds' : 'guided.target.reps',
+      { reps: target.reps },
+    );
   }
   return `${target.reps} × ${formatKg(target.loadKg)} kg`;
 }
@@ -726,8 +732,9 @@ export function resolveGuidedSetTarget(
     )
     .sort((left, right) => right.setIndex - left.setIndex)[0];
 
-  // A hold logs no weight either — its "reps" are seconds.
-  if (trackingMode === 'bodyweight' || trackingMode === 'hold') {
+  // A hold logs no weight either — its "reps" are seconds. Nor does a bout of
+  // minutes on a bike.
+  if (trackingMode === 'bodyweight' || trackingMode === 'hold' || trackingMode === 'duration_minutes') {
     // Bodyweight progresses by reps: the gate's target replaces the template
     // fallback, and the previous completed set still wins — mid-session the
     // day's own numbers are the better prescription.
@@ -741,6 +748,7 @@ export function resolveGuidedSetTarget(
       reps,
       // Set only when true, so a bodyweight target keeps the shape it had.
       ...(trackingMode === 'hold' ? { timed: true } : {}),
+      ...(trackingMode === 'duration_minutes' ? { minutes: true } : {}),
       loadKg: null,
       autoProgressedFromKg: null,
       prefilledFromPerformedAt: null,

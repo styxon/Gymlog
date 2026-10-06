@@ -82,6 +82,7 @@ import { formatLastOwnBlock, OwnBlockPhase, OwnBlockStats } from '../lib/ownBloc
 import { buildWarmupBrief } from '../lib/warmupBrief';
 import {
   HOLD_DIAL,
+  MINUTES_DIAL,
   REPS_DIAL,
   commitDialReps,
   commitDialWeight,
@@ -90,6 +91,15 @@ import {
   stepDialWeight,
 } from '../lib/weightDial';
 import { isLiftableWeight } from '../lib/weightLimits';
+import {
+  minutesToLog,
+  MinutesStopwatch,
+  pauseStopwatch,
+  startStopwatch,
+  stopwatchElapsedMs,
+  STOPPED_STOPWATCH,
+} from '../lib/minutesExercises';
+import { formatCardioDuration } from '../lib/cardio';
 import {
   exerciseCardAccessibilityLabel,
   setFieldAccessibilityLabel,
@@ -151,6 +161,7 @@ import {
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet } from '../lib/liftSegments';
 import {
+  isMinutesTrackingMode,
   isTimedTrackingMode,
   isUnloadedTrackingMode,
   WorkoutExerciseInstance,
@@ -2860,6 +2871,7 @@ function GuidedPlayer({
       sets: exercise.sets.length,
       reps: exercise.sets[0]?.plannedRepsMax ?? 8,
       timed: isTimedTrackingMode(exercise.trackingMode),
+      minutes: isMinutesTrackingMode(exercise.trackingMode),
       restSeconds: exercise.restSecondsMin,
       // A superset rests once per round, not once per lift — see
       // estimateSessionSeconds. Without this the entry screen quotes a session
@@ -2914,6 +2926,7 @@ function GuidedPlayer({
           setCount: exercise.sets.length,
           repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
           timed: isTimedTrackingMode(exercise.trackingMode),
+          minutes: isMinutesTrackingMode(exercise.trackingMode),
           loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
         })),
         language,
@@ -3069,9 +3082,9 @@ function GuidedPlayer({
       todayValue:
         target.loadKg != null && target.loadKg > 0
           ? formatLoadOrRange(todayLoads) ?? formatWeight(target.loadKg, unitPreference)
-          : t(language, target.timed ? 'guided.target.seconds' : 'guided.target.reps', {
-              reps: target.reps,
-            }),
+          : // The unloaded label whatever the load says: a lift with no weight
+            // yet opens at 0 kg, and "8 × 0 kg" is not a target.
+            formatGuidedTarget({ ...target, loadKg: null }, language),
       // A lift that runs into the next one has no rest after it, so the card
       // names what does follow. Quoting the lift's own rest here would be the
       // same promise the day view stopped making — and worse on this screen,
@@ -3301,6 +3314,7 @@ function GuidedPlayer({
                                 setCount: exercise.sets.length,
                                 repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
                                 timed: isTimedTrackingMode(exercise.trackingMode),
+                                minutes: isMinutesTrackingMode(exercise.trackingMode),
                                 loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
                               },
                               unitPreference,
@@ -4082,6 +4096,8 @@ function GuidedPlayer({
               panels={setPanelSource}
               onOpenSheet={() => setSetPanelsOpen(true)}
               onConfirm={confirmSet}
+              // The rest-over cue: the minutes are in, the reader logs them.
+              onMinutesReached={() => cue('rest')}
             />
           )}
 
@@ -5181,6 +5197,7 @@ function SetStepView({
   panels,
   onOpenSheet,
   onConfirm,
+  onMinutesReached,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5209,6 +5226,8 @@ function SetStepView({
     initials: string;
   } | null;
   onConfirm: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
+  /** A bout of minutes reached its prescription on the clock — a cue, nothing logged. */
+  onMinutesReached?: () => void;
 }) {
   const theme = useTheme();
 
@@ -5224,6 +5243,73 @@ function SetStepView({
   const historyChips = panels?.history ? summarizeHistoricalSetChips(panels.history.sets) : null;
   const timed = exercise ? isTimedTrackingMode(exercise.trackingMode) : false;
   const [reps, setReps] = useState(target?.reps ?? 8);
+  /**
+   * A bout of minutes (trackingMode 'duration_minutes' — a bike, a stair
+   * machine, a run block): the set is a clock the reader starts, pauses and
+   * stops, and the dial below logs whole minutes. Left alone, the dial
+   * follows the clock — or the prescription, if the clock never ran — so
+   * twenty minutes ridden logs twenty without a tap (lib/minutesExercises
+   * minutesToLog). Touched, the dial is the reader's number.
+   *
+   * The clock is read off the wall, not ticks, so it keeps counting with the
+   * screen off. It is this screen's alone: leaving the step drops it, as the
+   * set's own dials are dropped.
+   */
+  const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
+  const plannedMinutes = target?.reps ?? 0;
+  const [watch, setWatch] = useState<MinutesStopwatch>(STOPPED_STOPWATCH);
+  const [watchNowMs, setWatchNowMs] = useState(() => Date.now());
+  const minutesChosenRef = useRef(false);
+  const [minutesChosen, setMinutesChosen] = useState(false);
+  const watchRunning = watch.runningSinceMs !== null;
+  useEffect(() => {
+    if (!watchRunning) {
+      return;
+    }
+    const timer = setInterval(() => setWatchNowMs(Date.now()), 500);
+    return () => clearInterval(timer);
+  }, [watchRunning]);
+  const elapsedMs = stopwatchElapsedMs(watch, watchNowMs);
+  const shownMinutes = minutesChosen ? reps : minutesToLog({ plannedMinutes, elapsedMs });
+  const shownMinutesRef = useRef(shownMinutes);
+  shownMinutesRef.current = shownMinutes;
+  const minutesReached = minutesMode && plannedMinutes > 0 && elapsedMs >= plannedMinutes * 60000;
+  const minutesReachedRef = useRef(false);
+  useEffect(() => {
+    if (minutesReached && !minutesReachedRef.current) {
+      minutesReachedRef.current = true;
+      onMinutesReached?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutesReached]);
+  // Pausing the workout pauses the bout: the header's pause means "I have
+  // stopped", and a clock that ran on through it would log the break.
+  useEffect(() => {
+    if (paused) {
+      setWatch((current) => pauseStopwatch(current, Date.now()));
+    }
+  }, [paused]);
+  const toggleWatch = () => {
+    const now = Date.now();
+    setWatchNowMs(now);
+    setWatch((current) => (current.runningSinceMs === null ? startStopwatch(current, now) : pauseStopwatch(current, now)));
+  };
+  /** The first touch of the dial takes it from the clock, from where it stood. */
+  const stepMinutes = (direction: -1 | 1) => {
+    if (!minutesChosenRef.current) {
+      minutesChosenRef.current = true;
+      setMinutesChosen(true);
+      setReps(stepDialReps(shownMinutesRef.current, direction, MINUTES_DIAL));
+      return;
+    }
+    setReps((current) => stepDialReps(current, direction, MINUTES_DIAL));
+  };
+  const commitMinutes = (text: string) => {
+    const base = minutesChosenRef.current ? reps : shownMinutesRef.current;
+    minutesChosenRef.current = true;
+    setMinutesChosen(true);
+    setReps(commitDialReps(text, base, MINUTES_DIAL));
+  };
   const [kg, setKg] = useState(target?.loadKg ?? 0);
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
@@ -5288,6 +5374,10 @@ function SetStepView({
     setWarmupMode(false);
     setReps(target?.reps ?? 8);
     setKg(target?.loadKg ?? 0);
+    setWatch(STOPPED_STOPWATCH);
+    minutesChosenRef.current = false;
+    setMinutesChosen(false);
+    minutesReachedRef.current = false;
     // Re-derive when the step changes — and when the exercise under the step
     // changes, which is what a swap does without moving the index. Keying on
     // stepIndex alone left the old lift's weight sitting in local state after a
@@ -5481,7 +5571,7 @@ function SetStepView({
                   ramp has no one weight to lead with, and the per-set chips
                   below already say the whole thing (decision "a", #bugs
                   2026-09-29). */}
-              {historyChips?.uniform !== false ? (
+              {historyChips?.uniform !== false && !minutesMode ? (
                 <Text style={styles.setExerciseLastLoad}>
                   {/* The same number decides and is shown. Guarding on the
                       FIRST set while printing the heaviest hid a real top set
@@ -5497,7 +5587,9 @@ function SetStepView({
                 {panels.history.sets.map((set, index) => (
                   <View key={set.setIndex} style={styles.setExerciseLastPill}>
                     <Text style={styles.setExerciseLastPillText}>
-                      {historyChips?.chips[index] ?? set.reps}
+                      {minutesMode
+                        ? t(language, 'logger.minutesValue', { count: set.reps })
+                        : historyChips?.chips[index] ?? set.reps}
                     </Text>
                   </View>
                 ))}
@@ -5631,17 +5723,60 @@ function SetStepView({
               buttons behind a tap because a resting thumb once changed a
               number; under the number, the buttons are no longer where a
               thumb rests. Hold a button to run. */}
+          {minutesMode ? (
+            <View style={styles.minutesClock}>
+              <Text style={styles.minutesClockTime} {...RING_CLOCK_FIT}>
+                {formatCardioDuration(elapsedMs / 1000)}
+              </Text>
+              <Text style={styles.minutesClockOf}>
+                {t(language, 'guided.minutes.clockOf', { count: plannedMinutes })}
+              </Text>
+              {minutesReached ? (
+                <Text style={styles.minutesClockDone} accessibilityLiveRegion="polite">
+                  {t(language, 'guided.minutes.done')}
+                </Text>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(
+                  language,
+                  watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start',
+                )}
+                onPress={toggleWatch}
+                style={({ pressed }) => [styles.minutesClockButton, pressed && { opacity: 0.85 }]}
+              >
+                <GPIcon name={watchRunning ? 'pause' : 'play'} size={18} color={theme.ink} sw={2.4} />
+                <Text style={styles.minutesClockButtonText}>
+                  {t(language, watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           <View style={styles.setDialRow}>
             <DialCard
-              label={t(language, timed ? 'guided.seconds' : 'guided.reps')}
-              value={String(reps)}
-              unit={null}
+              label={t(language, minutesMode ? 'guided.minutes' : timed ? 'guided.seconds' : 'guided.reps')}
+              value={String(minutesMode ? shownMinutes : reps)}
+              unit={minutesMode ? 'min' : null}
               open={dial === 'reps'}
               onToggle={() => setDial((current) => (current === 'reps' ? null : 'reps'))}
-              onStep={(direction) => setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))}
-              onCommit={(text) => setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))}
-              downLabel={t(language, timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown')}
-              upLabel={t(language, timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp')}
+              onStep={(direction) =>
+                minutesMode
+                  ? stepMinutes(direction)
+                  : setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              onCommit={(text) =>
+                minutesMode
+                  ? commitMinutes(text)
+                  : setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              downLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesDown' : timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown',
+              )}
+              upLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesUp' : timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp',
+              )}
               editHint={t(language, 'guided.a11y.tapToEdit')}
               wide={bodyweight}
               faint={false}
@@ -5770,7 +5905,9 @@ function SetStepView({
             disabled={logBlocked}
             onPress={() => {
               setDial(null);
-              onConfirm(step.slotId, step.setIndex, reps, bodyweight ? null : kg);
+              // The minutes on the dial — the clock's, the prescription's or
+              // the reader's own — are what was done.
+              onConfirm(step.slotId, step.setIndex, minutesMode ? shownMinutes : reps, bodyweight ? null : kg);
             }}
             style={({ pressed }) => [
               styles.setLogButton,
@@ -6466,6 +6603,42 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Two dials of equal width. Each is a card, so the reps dial no longer
   // floats as a bare headline over a boxed weight — same shape, same weight.
   setDialRow: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  // A bout of minutes: the clock above the dial, on the same card ground.
+  minutesClock: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
+  },
+  minutesClockTime: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    fontSize: 52,
+    fontWeight: '800',
+    letterSpacing: -1.6,
+    color: theme.ink,
+    lineHeight: 58,
+    fontVariant: ['tabular-nums'],
+  },
+  minutesClockOf: { fontSize: 13, fontWeight: '700', color: theme.muted },
+  minutesClockDone: { fontSize: 13, fontWeight: '800', color: theme.ink, textAlign: 'center' },
+  minutesClockButton: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  minutesClockButtonText: { fontSize: 15, fontWeight: '800', color: theme.ink },
   setDialCard: {
     flex: 1,
     minWidth: 0,
