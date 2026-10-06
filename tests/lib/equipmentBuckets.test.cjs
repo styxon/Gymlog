@@ -66,14 +66,14 @@ module.exports = [
   {
     name: 'equipment buckets: "Kuminauha" and "Pallo" list every band and ball row filed as bodyweight, labelled in both languages',
     run() {
-      assert.ok(browse.EQUIPMENT_FILTERS.includes('bands'));
+      assert.ok(browse.EQUIPMENT_FILTERS.includes('band'));
       assert.ok(browse.EQUIPMENT_FILTERS.includes('ball'));
       const filedBodyweight = library.filter((item) => item.equipment === 'bodyweight' && item.sourceCategory !== 'stretching');
       const bands = filedBodyweight.filter(isBand);
       const balls = filedBodyweight.filter(isBall);
       assert.ok(bands.length >= 22, `${bands.length} band rows`);
       assert.ok(balls.length >= 23, `${balls.length} ball rows`);
-      assert.deepEqual(names(bands.filter((item) => !browse.matchesEquipmentFilter(item, 'bands'))), []);
+      assert.deepEqual(names(bands.filter((item) => !browse.matchesEquipmentFilter(item, 'band'))), []);
       assert.deepEqual(names(balls.filter((item) => !browse.matchesEquipmentFilter(item, 'ball'))), []);
       // A loaded lift with bands on the bar keeps its bar.
       assert.equal(displayEquipmentValue(byName('Squat with Bands')), 'barbell');
@@ -84,13 +84,13 @@ module.exports = [
       assert.equal(byName('Band Pull Apart').equipment, 'bodyweight');
       assert.equal(getCatalogTrackingMode('Band Pull Apart'), 'bodyweight');
       // Labels.
-      assert.equal(libraryLabel('bands', 'fi'), 'Kuminauha');
+      assert.equal(libraryLabel('band', 'fi'), 'Kuminauha');
       assert.equal(libraryLabel('ball', 'fi'), 'Pallo');
-      assert.equal(libraryLabel('bands', 'en'), 'Band');
+      assert.equal(libraryLabel('band', 'en'), 'Band');
       assert.equal(libraryLabel('ball', 'en'), 'Ball');
-      const sheet = fs.readFileSync(path.join(__dirname, '../../src/components/AddExerciseSheet.tsx'), 'utf8');
-      assert.match(sheet, /bands: 'lib\.equipment\.bands'/);
-      assert.match(sheet, /ball: 'lib\.equipment\.ball'/);
+      // The add sheet labels its chips through libraryLabel (a parallel
+      // change moved it off its own FACET_KEYS), so the two keys above are
+      // all a new chip needs.
       // The quick-add list's tag says Kehonpaino only for the same rows.
       const empty = fs.readFileSync(path.join(__dirname, '../../src/screens/EmptyWorkoutScreen.tsx'), 'utf8');
       assert.match(empty, /displayEquipmentValue\(item\) === 'bodyweight' \? 'exerciseTag\.bodyweight'/);

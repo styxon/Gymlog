@@ -310,7 +310,7 @@ export function resolveAvailableEquipment(selection: {
  * floor gear, which "Machines" stands for. There is no ball chip to ask.
  */
 const GEAR_BY_DISPLAY_EQUIPMENT: Partial<Record<DisplayEquipmentValue, RequirementGroup>> = {
-  bands: ['Resistance bands'],
+  band: ['Resistance bands'],
   ball: ['Machines'],
 };
 

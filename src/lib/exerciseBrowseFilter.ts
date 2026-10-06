@@ -16,11 +16,10 @@
  * what is *offered*, not what exists.
  */
 import { ExerciseBodyPart, ExerciseEquipment, ExerciseLibraryItem } from '../types/models';
-import { ExerciseType, exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
+import { ExerciseType, exerciseTypeOf, isSpecialtyExercise, isStretchExercise } from './exerciseClassification';
 import { displayEquipmentValue } from './libraryLabel';
 
-type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> &
-  Partial<Pick<ExerciseLibraryItem, 'sourceCategory' | 'sourceEquipment'>>;
+type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>;
 
 /**
  * Deliberately narrow. Each pattern names a family that is measured in held
@@ -32,10 +31,8 @@ type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> &
  * Sled and Bosu work stays for the same reason — people load and log both.
  */
 const NOT_A_LOGGED_SET: RegExp[] = [
-  // Mobility. Held, not repped.
-  /\bstretch(?:es|ing)?\b/i,
-  // Self-massage on a foam roller ("Calves-SMR"): rolled, not repped.
-  /-smr\b/i,
+  // (Stretches, held and not repped, are a type of their own:
+  // isStretchExercise, below.)
   // Lab protocols from the source data's plyometric section.
   /\((?:multiple|single) response\)/i,
   // Field drills: the equipment is a cone, and the unit is a run.
@@ -55,13 +52,20 @@ const NOT_A_LOGGED_SET: RegExp[] = [
   /\bbutt kick\b/i,
 ];
 
-/** True when the exercise belongs in the picker's default listing. */
+/**
+ * True when the exercise belongs in the picker's default listing: not a
+ * stretch, and not one of the families above.
+ *
+ * Stretches are a type of their own (isStretchExercise): every row the source
+ * files as "stretching", not only the ones that say "stretch". The name rule
+ * alone let 72 more — Child's Pose, Arm Circles, 90/90 Hamstring, every
+ * foam-roller "-SMR" row — be offered unasked as sets (picker audit,
+ * 2026-10-06). Where a ready programme prescribes one (Child's Pose, Kneeling
+ * Hip Flexor, Standing Hip Circles…) it is still found by its name — the day,
+ * the player, the demo and the hold tracking resolve names, not this list.
+ */
 export function isBrowsableExercise(item: BrowsableExercise): boolean {
-  // The foam-roller rows the source names by muscle alone ("Adductor").
-  if (item.sourceEquipment?.trim().toLowerCase() === 'foam roll') {
-    return false;
-  }
-  return !NOT_A_LOGGED_SET.some((pattern) => pattern.test(item.name));
+  return !isStretchExercise(item) && !NOT_A_LOGGED_SET.some((pattern) => pattern.test(item.name));
 }
 
 /**
@@ -73,7 +77,8 @@ export function isBrowsableExercise(item: BrowsableExercise): boolean {
  * choosing, and it chooses the things you can log, among normal exercises:
  * the specialty (strongman) movements come only with their own type chip
  * (`type: 'specialty'`), never mixed into a body part or "Laite" (#bugs
- * 2026-10-06).
+ * 2026-10-06), and the stretches the same way with theirs (`type: 'stretch'`,
+ * "Venytykset"; user, 2026-10-06).
  */
 export function filterBrowsableExercises<T extends BrowsableExercise>(
   items: T[],
@@ -83,7 +88,11 @@ export function filterBrowsableExercises<T extends BrowsableExercise>(
     return items;
   }
 
-  return items.filter((item) => isBrowsableExercise(item) && passesSpecialtyGate(item, options));
+  return items.filter(
+    (item) =>
+      (isBrowsableExercise(item) || (options?.type === 'stretch' && isStretchExercise(item))) &&
+      passesSpecialtyGate(item, options),
+  );
 }
 
 type BrowseOptions = { query?: string; type?: ExerciseTypeFilter };
@@ -105,7 +114,15 @@ export function passesSpecialtyGate(item: BrowsableExercise, options?: BrowseOpt
  */
 export type ExerciseTypeFilter = 'all' | ExerciseType;
 
-export const EXERCISE_TYPE_FILTERS: ExerciseTypeFilter[] = ['all', 'compound', 'isolation', 'cardio', 'core', 'specialty'];
+export const EXERCISE_TYPE_FILTERS: ExerciseTypeFilter[] = [
+  'all',
+  'compound',
+  'isolation',
+  'cardio',
+  'core',
+  'stretch',
+  'specialty',
+];
 
 export function matchesExerciseTypeFilter(
   item: Parameters<typeof exerciseTypeOf>[0],
@@ -122,15 +139,15 @@ export function matchesExerciseTypeFilter(
  * is the storage and planning vocabulary and a sixth value there would have to
  * be threaded through the coach's allowed-equipment sets too.
  */
-export type EquipmentFilter = 'all' | ExerciseEquipment | 'kettlebells' | 'bands' | 'ball';
+export type EquipmentFilter = 'all' | ExerciseEquipment | 'kettlebells' | 'band' | 'ball';
 
 /**
  * "Kuminauha" and "Pallo" by the same reasoning (#bugs 2026-10-06): the
  * library files bands and medicine / exercise balls as bodyweight, and
  * "Kehonpaino" is what needs nothing in your hands. Foam-roller rows have no
- * chip: rolling is not a logged set, so the picker does not list them unasked
- * (exerciseBrowseFilter's NOT_A_LOGGED_SET); the library screen, which builds
- * its chips from the rows, shows one.
+ * chip: rolling is not a logged set, and they are stretches, listed by the
+ * "Venytykset" type chip; the library screen, which builds its chips from
+ * the rows, shows one.
  */
 export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
   'all',
@@ -139,7 +156,7 @@ export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
   'kettlebells',
   'machine',
   'cable',
-  'bands',
+  'band',
   'ball',
   'bodyweight',
 ];
@@ -224,16 +241,28 @@ function trainsTheMuscle(
   );
 }
 
+/**
+ * `type` is the type chip beside it. With "Venytykset" on, the reader is
+ * asking for stretches, and "Takareidet" then lists the hamstring stretches —
+ * the one case a muscle chip names what it stretches rather than trains.
+ */
 export function matchesBodyPartFilter(
   item: Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'> &
     Partial<Pick<ExerciseLibraryItem, 'name' | 'category' | 'sourceCategory' | 'sourceEquipment'>>,
   filter: BodyPartFilter,
+  type: ExerciseTypeFilter = 'all',
 ): boolean {
   if (filter === 'all') {
     return true;
   }
   if (isLegMuscleFilter(filter)) {
-    return (item.primaryMuscles ?? []).includes(filter) && trainsTheMuscle(item);
+    if (!(item.primaryMuscles ?? []).includes(filter)) {
+      return false;
+    }
+    if (type === 'stretch') {
+      return typeof item.name === 'string' && isStretchExercise({ ...item, name: item.name });
+    }
+    return trainsTheMuscle(item);
   }
   return item.bodyPart === filter;
 }

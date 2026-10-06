@@ -112,7 +112,7 @@ const GEAR_IN_NAME = [
   ['kettlebells', /\bkettlebells?\b/i],
   ['cable', /\bcable\b|\bpulley\b/i],
   ['machine', /\bmachine\b|\bsmith\b|\bleverage\b/i],
-  ['bands', /\bbands?\b/i],
+  ['band', /\bbands?\b/i],
 ];
 const GEAR_EXCEPTIONS = {
   // A push-up with one hand on a dumbbell for a handle.
@@ -179,7 +179,7 @@ module.exports = [
           // A loaded lift that adds bands or a ball keeps its load; a lift
           // named for a barbell and done on a machine or cable is the
           // machine's ("Smith Machine Bench Press", "V-Bar Pulldown").
-          if (gear === 'bands' && shown !== 'bodyweight') continue;
+          if (gear === 'band' && shown !== 'bodyweight') continue;
           if (gear === 'barbell' && (shown === 'machine' || shown === 'cable')) continue;
           if (gear === 'dumbbell' && shown === 'kettlebells') continue;
           if (/\bit band\b/i.test(item.name)) continue;
@@ -206,6 +206,9 @@ module.exports = [
         if (has(['shoulders'])) return 'shoulders';
         if (has(['biceps', 'forearms'])) return 'biceps';
         if (has(['triceps'])) return 'triceps';
+        // The generator has no body part for the neck and says "full body";
+        // the app files it with the back, beside the traps.
+        if (has(['neck'])) return 'back';
         return 'full body';
       };
       // The app's own rows, filed by hand where two muscles share the work:

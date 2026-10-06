@@ -70,10 +70,11 @@ module.exports = [
       const kept = filterBrowsableExercises(library);
       const hidden = library.length - kept.length;
       assert.ok(hidden >= 40, `hid only ${hidden} of ${library.length}`);
-      // 92 once the ready programmes' own stretches, cone drill and sprint got
-      // rows, and the foam-roller rows joined the stretches (2026-10-06): the
-      // rule hides them as it should.
-      assert.ok(hidden <= 115, `hid ${hidden} of ${library.length} — too wide`);
+      // 90 until every row the source files as stretching (123 of them,
+      // foam-roller rows included) became the "Venytykset" type, hidden
+      // unasked, and the sprint-form drills joined the field drills
+      // (2026-10-06). Specialty rows are hidden by their own gate.
+      assert.ok(hidden <= 180, `hid ${hidden} of ${library.length} — too wide`);
 
       // The lifts a programme is actually built from all survive.
       const names = new Set(kept.map((item) => item.name));
@@ -139,7 +140,7 @@ module.exports = [
       assert.doesNotMatch(sheet, /'all',\s*'(?:chest|back|shoulders|legs|biceps|triceps)'/);
       // The chips' rule and labels are every picker's (lib/exercisePicker).
       const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
-      assert.match(shared, /matchesBodyPartFilter\(item, filters\.bodyPart\)/);
+      assert.match(shared, /matchesBodyPartFilter\(item, filters\.bodyPart, filters\.category\)/);
       const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
       for (const [muscle, fi] of [['quadriceps', 'Etureidet'], ['hamstrings', 'Takareidet'], ['calves', 'Pohkeet']]) {
         assert.equal(exercisePickerLabel(muscle, 'fi'), fi, `no label for ${muscle}`);

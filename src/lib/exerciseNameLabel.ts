@@ -15,6 +15,11 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   // ── Squat pattern ────────────────────────────────────────────────────
   'Back Squat': 'Takakyykky',
   'Barbell Squat': 'Takakyykky',
+  // One name on purpose: the app's lift identity holds the two rows as one
+  // lift (liftIdentity's squat group, the alias table filing "Back Squat" on
+  // the full squat; tests/lib/liftHistoryIdentity.test.cjs), so a
+  // one-row-per-name list showing one of them is right, and the library
+  // keeps both (picker audit, 2026-10-06).
   'Barbell Full Squat': 'Takakyykky',
   'Front Squat': 'Etukyykky',
   'Hack Squat': 'Hack squat',
@@ -394,7 +399,9 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Battling Ropes': 'Battle rope',
   'Sled Push': 'Kelkan työntö',
   "Farmer's Walk": 'Maanviljelijän kävely',
-  'Power Clean': 'Rinnalleveto',
+  // "Voima-", as Power Snatch and Power Clean from Blocks: "Rinnalleveto" is
+  // the clean caught in a full squat, and both are in the library.
+  'Power Clean': 'Voimarinnalleveto',
   'Air Bike (30s sprint)': 'Air bike (30 s veto)',
   'Stationary Bike (Easy Pace)': 'Kuntopyörä (kevyt vauhti)',
   'Recumbent Bike': 'Kuntopyörä selkänojalla',

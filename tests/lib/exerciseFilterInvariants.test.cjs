@@ -244,6 +244,8 @@ module.exports = [
           (item.sourceMechanic === 'isolation' || item.sourceMechanic === 'compound') &&
           (item.category === 'compound' || item.category === 'isolation') &&
           !classification.isSpecialtyExercise(item) &&
+          // A stretch is its own type ("Venytykset"), whatever the mechanic.
+          !classification.isStretchExercise(item) &&
           !browse.matchesExerciseTypeFilter(item, item.sourceMechanic),
       );
       assert.deepEqual(names(wrongMechanic), []);

@@ -43,7 +43,7 @@ export const NO_PICKER_FILTERS: ExercisePickerFilters = { category: 'all', bodyP
 export function matchesExercisePickerFilters(item: ExerciseLibraryItem, filters: ExercisePickerFilters): boolean {
   return (
     matchesExerciseTypeFilter(item, filters.category) &&
-    matchesBodyPartFilter(item, filters.bodyPart) &&
+    matchesBodyPartFilter(item, filters.bodyPart, filters.category) &&
     matchesEquipmentFilter(item, filters.equipment)
   );
 }
@@ -109,6 +109,7 @@ export function exercisePickerLabel(value: string, language: AppLanguage): strin
  */
 const CHIP_KEYS: Partial<Record<string, I18nKey>> = {
   specialty: 'facet.specialty',
+  stretch: 'facet.stretch',
 };
 
 export function exercisePickerChipLabel(value: string, language: AppLanguage): string {

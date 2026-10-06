@@ -38,6 +38,8 @@ const LIBRARY_LABEL_KEYS: Record<string, I18nKey> = {
   isolation: 'lib.category.isolation',
   // Not a stored category: the type exerciseTypeOf gives a strongman row.
   specialty: 'lib.category.specialty',
+  // Not a stored category either: the type exerciseTypeOf gives a stretch.
+  stretch: 'lib.category.stretch',
   // primaryMuscles / secondaryMuscles — the source's seventeen muscle names.
   // Body-part words that double as muscle names (chest, glutes, shoulders,
   // biceps, triceps) already resolve above.
@@ -57,6 +59,9 @@ const LIBRARY_LABEL_KEYS: Record<string, I18nKey> = {
   // normalised `equipment`, because it keeps kettlebells and bands apart from
   // "other".
   bands: 'lib.equipment.bands',
+  // Not a source value: the display bucket for every band row
+  // (displayEquipmentValue), and the "Kuminauha" chip.
+  band: 'lib.equipment.band',
   'body only': 'lib.equipment.bodyOnly',
   'e-z curl bar': 'lib.equipment.ezCurlBar',
   'exercise ball': 'lib.equipment.exerciseBall',
@@ -106,7 +111,7 @@ const LIBRARY_LABEL_KEYS: Record<string, I18nKey> = {
  * does not — so the two rules are different on purpose and should not be
  * merged.
  */
-export type DisplayEquipmentValue = ExerciseEquipment | 'kettlebells' | 'bands' | 'ball' | 'foam roll';
+export type DisplayEquipmentValue = ExerciseEquipment | 'kettlebells' | 'band' | 'ball' | 'foam roll';
 
 const BAND_IN_NAME = /\bbands?\b/i;
 /** The iliotibial band is a body part, not a piece of kit. */
@@ -130,7 +135,7 @@ export function displayEquipmentValue(item: {
   }
   const name = item.name ?? '';
   if (source === 'bands' || (BAND_IN_NAME.test(name) && !NOT_A_BAND.test(name))) {
-    return 'bands';
+    return 'band';
   }
   if (source === 'medicine ball' || source === 'exercise ball' || BALL_IN_NAME.test(name)) {
     return 'ball';

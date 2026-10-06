@@ -87,16 +87,46 @@ export function exerciseMechanic(item: ClassifiedExercise): ExerciseMechanic | n
   return null;
 }
 
-export type ExerciseType = ExerciseMechanic | 'cardio' | 'core' | 'specialty';
+// ── stretches ────────────────────────────────────────────────────────────
+
+const STRETCH_NAME = /\bstretch(?:es|ing)?\b/i;
+const FOAM_ROLLER_NAME = /-smr\b/i;
+
+/**
+ * A stretch: held or rolled, not repped — every row the source files as
+ * "stretching" (Child's Pose, Arm Circles, the foam-roller "-SMR" rows among
+ * them), and any row whose name says stretch or SMR (the app's own rows have
+ * no source category).
+ *
+ * A type of its own, built like the specialty one (user, 2026-10-06): hidden
+ * from every unsearched set list, offered by its own chip ("Venytykset") and
+ * by search. Stretches a ready programme prescribes are found by name where
+ * they are prescribed, as before.
+ */
+export function isStretchExercise(
+  item: Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>,
+): boolean {
+  return (
+    item.sourceCategory?.trim().toLowerCase() === 'stretching' ||
+    STRETCH_NAME.test(item.name) ||
+    FOAM_ROLLER_NAME.test(item.name)
+  );
+}
+
+export type ExerciseType = ExerciseMechanic | 'cardio' | 'core' | 'stretch' | 'specialty';
 
 /**
  * The type chip a row belongs to, exactly one: specialty first (a tyre flip
- * is not "Moninivel" for the purposes of a list), then cardio and core as the
- * library files them, then the mechanic.
+ * is not "Moninivel" for the purposes of a list), then stretch (a lying
+ * hamstring stretch is not "Eristävä", and a core stretch is not core work),
+ * then cardio and core as the library files them, then the mechanic.
  */
 export function exerciseTypeOf(item: ClassifiedExercise): ExerciseType {
   if (isSpecialtyExercise(item)) {
     return 'specialty';
+  }
+  if (isStretchExercise(item)) {
+    return 'stretch';
   }
   if (item.category === 'cardio' || item.category === 'core') {
     return item.category;
@@ -233,9 +263,25 @@ export function withLibraryCorrections<T extends ExerciseLibraryItem>(items: rea
     const correction = rowCorrection(item.name);
     const corrected: T = correction ? { ...item, ...correction } : item;
     const category = correctedCategory(corrected);
-    if (!correction && category === item.category) {
+    const bodyPart = correctedBodyPart(corrected);
+    if (!correction && category === item.category && bodyPart === item.bodyPart) {
       return item;
     }
-    return { ...corrected, category };
+    return { ...corrected, category, bodyPart };
   });
+}
+
+/**
+ * The neck, filed with the back. The generator has no body part for a neck
+ * lift and files all eight under "full body", so "Koko keho" was six neck
+ * exercises and two whole-body ones (picker audit, 2026-10-06). The app files
+ * the traps — the shrugs — under the back, and the neck work is their
+ * neighbour; a body part of its own would be a new stored value and a chip
+ * for five lifts.
+ */
+function correctedBodyPart(item: ExerciseLibraryItem): ExerciseLibraryItem['bodyPart'] {
+  const muscles = item.primaryMuscles ?? [];
+  return item.bodyPart === 'full body' && muscles.length > 0 && muscles.every((muscle) => muscle === 'neck')
+    ? 'back'
+    : item.bodyPart;
 }

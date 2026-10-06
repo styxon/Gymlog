@@ -160,7 +160,7 @@ function resolveAllowedEquipment(equipment: AppPreferences['aiPlannerEquipment']
     case 'minimal':
       allowed.add('dumbbell');
       allowed.add('kettlebells');
-      allowed.add('bands');
+      allowed.add('band');
       allowed.add('foam roll');
       allowed.add('bodyweight');
       break;
@@ -168,7 +168,7 @@ function resolveAllowedEquipment(equipment: AppPreferences['aiPlannerEquipment']
       allowed.add('barbell');
       allowed.add('dumbbell');
       allowed.add('kettlebells');
-      allowed.add('bands');
+      allowed.add('band');
       allowed.add('foam roll');
       allowed.add('bodyweight');
       break;
@@ -179,7 +179,7 @@ function resolveAllowedEquipment(equipment: AppPreferences['aiPlannerEquipment']
       allowed.add('kettlebells');
       allowed.add('machine');
       allowed.add('cable');
-      allowed.add('bands');
+      allowed.add('band');
       allowed.add('ball');
       allowed.add('foam roll');
       allowed.add('bodyweight');
