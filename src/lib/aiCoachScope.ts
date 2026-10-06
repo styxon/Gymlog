@@ -53,6 +53,18 @@ const CRISIS_PHRASES = [
   'toivon että kuolisin',
   'toivoisin että kuolisin',
   'toivoisin etten heräisi',
+  // The spoken and conditional forms, which a phone keyboard types as often
+  // as the written ones (bug hunt, 2026-10-05).
+  'en jaksaisi elää',
+  'en jaksaisi enää elää',
+  'en haluaisi elää',
+  'en haluaisi enää elää',
+  'en halua enää herätä',
+  'en haluu elää',
+  'en haluu enää elää',
+  'haluun kuolla',
+  'haluisin kuolla',
+  'haluaisin vain kuolla',
   // English
   'suicide',
   'suicidal',
@@ -67,6 +79,9 @@ const CRISIS_PHRASES = [
   'end it all',
   'ending it all',
   'want to die',
+  'wanna die',
+  'hang myself',
+  'hanging myself',
   'wish i was dead',
   'wish i were dead',
   'better off dead',
@@ -86,9 +101,12 @@ const CRISIS_PHRASES = [
  * did not catch "ajattelen itsemurhasta" or "mietin itsemurhaan", because the
  * case ending is part of the word (bug hunt, 2026-10-05). These stems match
  * from the start of a word with any ending, and none of them begins a word
- * that means something else.
+ * that means something else. "viillel" is the same verb after consonant
+ * gradation ("olen viillellyt"), and "itsari" the spoken word for itsemurha
+ * ("aion tehdä itsarin") — both went past as training (evening hunt,
+ * 2026-10-05).
  */
-const CRISIS_STEMS_FI = ['itsemurh', 'itsetuho', 'viiltel'];
+const CRISIS_STEMS_FI = ['itsemurh', 'itsetuho', 'viiltel', 'viillel', 'itsari'];
 
 /**
  * Stems no other Finnish word contains anywhere, so they match inside a
@@ -102,6 +120,49 @@ const CRISIS_INFIXES_FI = ['itsemurh', 'itsetuho'];
  * live anymore" went past as a training question (bug hunt, 2026-10-05).
  */
 const APOSTROPHES = /[‘’ʼ`´]/g;
+
+/**
+ * The text a crisis phrase is matched against, reduced to its words.
+ *
+ * Each of these let a listed phrase through as a training question (bug hunt,
+ * 2026-10-05): "Toivon, että kuolisin" has a comma the phrase does not, two
+ * spaces or a line break sit where the phrase has one, a no-break space is
+ * not a space to the phrase, and an "ä" typed as "a" plus a combining mark is
+ * not the "ä" in the list — nor a letter at all to the word boundary.
+ *
+ * So: one composed form, invisible characters gone, every run of punctuation
+ * and space one plain space. Apostrophes and hyphens stay, because "don't"
+ * and "self-harm" are spelled with them.
+ */
+function crisisWords(text: string): string {
+  return text
+    .normalize('NFC')
+    .replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/[^\p{L}\p{N}\p{M}'-]+/gu, ' ')
+    .trim();
+}
+
+/**
+ * Gym sentences that contain a crisis word and mean only the gym.
+ *
+ * Taken out before the crisis lists are read, so the rest of the sentence is
+ * still read: "suicide sprints make me want to die" still gets the line.
+ *
+ * - Suicide sprints (and runs, drills, shuttles) are a conditioning drill.
+ * - The knurling cuts hands; "I cut myself on the bar" is an injury report.
+ *   Only the gym's own objects are excused — "cut myself on my arm" is not.
+ * - "viiltelevä kipu" is a stabbing pain. The participle names the pain; the
+ *   forms that name the act — viiltelin, viiltely, viiltelen — stay in.
+ */
+const GYM_LOOKALIKES: RegExp[] = [
+  /(^|[^\p{L}\p{N}])suicide (sprint|run|drill|shuttle|line)s?(?![\p{L}\p{N}])/gu,
+  /(^|[^\p{L}\p{N}])cut myself on (the|a|my) (knurl\p{L}*|bar|barbell|bars|plate|plates|rack|kettlebell|dumbbell|machine|equipment|j-hooks?|hooks?|safet\p{L}*|pins?|collar|clip)(?![\p{L}\p{N}])/gu,
+  /(^|[^\p{L}\p{N}])viiltelev\p{L}*/gu,
+];
+
+function withoutGymLookalikes(text: string): string {
+  return GYM_LOOKALIKES.reduce((rest, pattern) => rest.replace(pattern, '$1 '), text);
+}
 
 /**
  * Subjects with no training reading at all.
@@ -163,10 +224,11 @@ function mentionsTraining(text: string): boolean {
 
 export function classifyCoachScope(prompt: string): CoachScopeVerdict {
   const text = prompt.toLowerCase().replace(APOSTROPHES, "'");
+  const words = withoutGymLookalikes(crisisWords(text));
   if (
-    CRISIS_PHRASES.some((phrase) => hasWord(text, phrase)) ||
-    CRISIS_STEMS_FI.some((stem) => hasWordStart(text, stem)) ||
-    CRISIS_INFIXES_FI.some((infix) => text.includes(infix))
+    CRISIS_PHRASES.some((phrase) => hasWord(words, phrase)) ||
+    CRISIS_STEMS_FI.some((stem) => hasWordStart(words, stem)) ||
+    CRISIS_INFIXES_FI.some((infix) => words.includes(infix))
   ) {
     return 'crisis';
   }

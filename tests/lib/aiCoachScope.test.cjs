@@ -150,6 +150,68 @@ module.exports = [
     },
   },
   {
+    name: 'coach scope: punctuation, spacing and spoken forms do not hide a crisis (evening hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        // A comma where the phrase has none.
+        'Toivon, että kuolisin',
+        'toivoisin, etten heräisi',
+        // Spacing the phrase does not have.
+        'haluan  kuolla',
+        'haluan\nkuolla',
+        'haluan\tkuolla',
+        'haluan\u00A0kuolla',
+        'en\u00A0halua\u00A0elää',
+        // An ä typed as a plus a combining mark.
+        'en halua ela\u0308a\u0308',
+        'toivon etta\u0308 kuolisin',
+        // An invisible character inside a word.
+        'itse\u200Bmurha',
+        'kill \u00ADmyself',
+        // Spoken and conditional forms.
+        'en jaksaisi elää',
+        'en jaksaisi enää elää',
+        'aion tehdä itsarin',
+        'mietin itsaria',
+        'mä haluun kuolla',
+        'I wanna die',
+        "I'm going to hang myself",
+        'thinking about hanging myself',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', JSON.stringify(prompt));
+      }
+    },
+  },
+  {
+    name: 'coach scope: gym words that contain a crisis word are training (evening hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        'how many suicide sprints should I do after legs',
+        'are suicide runs good conditioning?',
+        'Suicide drills or intervals for basketball',
+        'I cut myself on the knurling, can I still deadlift?',
+        'cut myself on the bar during cleans',
+        'polvessa on viiltelevä kipu kyykyssä',
+        'viiltelevää kipua olkapäässä penkissä',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'training', prompt);
+      }
+
+      // The excuse covers the gym phrase, not the sentence it sits in.
+      for (const prompt of [
+        'suicide sprints make me want to die',
+        'I cut myself on purpose',
+        'I cut myself on my arm again',
+        'viiltelin taas eilen',
+        'olen viillellyt itseäni',
+        'viiltely on alkanut uudestaan',
+        'I keep thinking about suicide',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
+      }
+    },
+  },
+  {
     name: 'coach scope: the offline coach answers a curly-apostrophe crisis with the crisis line',
     run() {
       const answer = buildAiCoachPreviewAnswer('I don’t want to live anymore', CONTEXT, 'en');
