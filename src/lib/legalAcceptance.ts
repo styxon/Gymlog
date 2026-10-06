@@ -84,8 +84,9 @@ export function laterLegalAcceptance(
   if (!left || !right) {
     return left ?? right ?? null;
   }
-  if (compareLegalVersions(left.version, right.version) !== 0) {
-    return compareLegalVersions(left.version, right.version) > 0 ? left : right;
+  const order = compareLegalVersions(left.version, right.version);
+  if (order !== 0) {
+    return order > 0 ? left : right;
   }
   return left.acceptedAt <= right.acceptedAt ? left : right;
 }

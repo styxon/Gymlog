@@ -167,16 +167,44 @@ export function warmupOffer(
   workingLoadKg: number | null | undefined,
 ): { loadKg: number | null; reps: number } {
   const working = typeof workingLoadKg === 'number' && workingLoadKg > 0 ? workingLoadKg : null;
-  // A warm-up of no weight is not one to repeat: the ladder offers a load.
-  const repeated = lastWarmups?.[index];
-  if (repeated && repeated.loadKg > 0 && (working === null || repeated.loadKg < working - SAME_LOAD_KG)) {
-    return { loadKg: repeated.loadKg, reps: repeated.reps };
-  }
-  const at = Math.max(0, index);
   const ladder = warmupLadder(working);
-  if (ladder.length === 0) {
-    return { loadKg: null, reps: WARMUP_LADDER[Math.min(at, WARMUP_LADDER.length - 1)].reps };
+
+  // Each offer is read against the one before it, never lighter: last time's
+  // 60 and 90 against today's deloaded 80 offered 60, then the ladder's 40,
+  // because 90 is no longer below the work; and a ladder rung offered first
+  // could be followed by a lighter warm-up repeated from last time (review,
+  // 2026-10-06). So the offers are walked from the first, and each is the
+  // warm-up repeated, the ladder's rung, the first rung above the offer
+  // before, or that offer again — the first of those not below it.
+  const offerAt = (at: number, before: { loadKg: number | null; reps: number } | null) => {
+    const floor = before?.loadKg ?? 0;
+    // A warm-up of no weight is not one to repeat: the ladder offers a load.
+    const repeated = lastWarmups?.[at];
+    if (
+      repeated
+      && repeated.loadKg > 0
+      && (working === null || repeated.loadKg < working - SAME_LOAD_KG)
+      && repeated.loadKg > floor - SAME_LOAD_KG
+    ) {
+      return { loadKg: repeated.loadKg, reps: repeated.reps };
+    }
+    if (ladder.length === 0) {
+      return { loadKg: null, reps: WARMUP_LADDER[Math.min(at, WARMUP_LADDER.length - 1)].reps };
+    }
+    const placed = ladder[Math.min(at, ladder.length - 1)];
+    if (placed.loadKg > floor - SAME_LOAD_KG) {
+      return placed;
+    }
+    const above = ladder.find((step) => step.loadKg > floor + SAME_LOAD_KG);
+    if (above) {
+      return above;
+    }
+    return before && before.loadKg !== null ? before : placed;
+  };
+
+  let offer: { loadKg: number | null; reps: number } | null = null;
+  for (let at = 0; at <= Math.max(0, index); at += 1) {
+    offer = offerAt(at, offer);
   }
-  const rung = ladder[Math.min(at, ladder.length - 1)];
-  return { loadKg: rung.loadKg, reps: rung.reps };
+  return { loadKg: offer?.loadKg ?? null, reps: offer?.reps ?? WARMUP_LADDER[0].reps };
 }

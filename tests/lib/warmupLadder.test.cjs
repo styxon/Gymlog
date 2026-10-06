@@ -55,6 +55,32 @@ module.exports = [
       assert.deepEqual(warmupOffer([{ loadKg: 60, reps: 5 }], 0, 80), { loadKg: 60, reps: 5 });
       assert.deepEqual(warmupOffer([{ loadKg: 60, reps: 5 }], 0, 60), { loadKg: 30, reps: 10 });
       assert.deepEqual(warmupOffer([{ loadKg: 60, reps: 5 }], 0, 50), { loadKg: 25, reps: 10 });
+      // And a warm-up the deload made too heavy does not drop the next offer
+      // below the one before it: 60 then 90 against 80 offered 60, then 40.
+      const last = [{ loadKg: 60, reps: 5 }, { loadKg: 90, reps: 3 }];
+      assert.deepEqual(warmupOffer(last, 0, 80), { loadKg: 60, reps: 5 });
+      assert.deepEqual(warmupOffer(last, 1, 80), { loadKg: 67.5, reps: 3 });
+    },
+  },
+  {
+    name: 'warm-up offers never step down, whatever last time held (review 2026-10-06)',
+    run() {
+      for (let working = 5; working <= 200; working += 2.5) {
+        for (const first of [0, 20, 40, 60, 100, 150]) {
+          for (const second of [0, 30, 60, 90, 140, 210]) {
+            const last = [{ loadKg: first, reps: 5 }, { loadKg: second, reps: 3 }];
+            const offers = [0, 1, 2].map((index) => warmupOffer(last, index, working).loadKg);
+            for (let index = 1; index < offers.length; index += 1) {
+              if (offers[index] !== null && offers[index - 1] !== null) {
+                assert.ok(
+                  offers[index] >= offers[index - 1],
+                  `${working} kg, last ${first}/${second}: offers ${offers.join(' / ')}`,
+                );
+              }
+            }
+          }
+        }
+      }
     },
   },
 ];

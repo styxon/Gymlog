@@ -484,6 +484,15 @@ module.exports = [
         'Row 5: at most 500 reps (seconds, for a hold).',
         'Row 7: at most 600 reps (seconds, for a hold).',
       ]);
+      // A hold written by its Finnish name is a hold too (review, 2026-10-06).
+      const finnishHold = parseCsvProgram(
+        'Day,Exercise,Sets,Reps\nDay 1,Lankku,3,540',
+        [...LIBRARY, { id: 'lib_plank', name: 'Plank' }],
+        [],
+        'fi',
+      );
+      assert.deepEqual(finnishHold.errors, []);
+      assert.equal(finnishHold.rows[0].repMax, 540);
       const fi = parseCsvProgram('Day,Exercise,Sets,Reps\nDay 1,Bench Press,3,100000', LIBRARY, [], 'fi');
       assert.deepEqual(fi.errors, ['Rivi 2: enintään 500 toistoa (pitoliikkeessä sekuntia).']);
       assert.equal(fi.rows.length, 0);

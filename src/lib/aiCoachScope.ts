@@ -149,13 +149,14 @@ function crisisWords(text: string): string {
  * still read: "suicide sprints make me want to die" still gets the line.
  *
  * - Suicide sprints (and runs, drills, shuttles) are a conditioning drill.
+ *   Not "suicide lines": that is also how a reader asks for a crisis line.
  * - The knurling cuts hands; "I cut myself on the bar" is an injury report.
  *   Only the gym's own objects are excused — "cut myself on my arm" is not.
  * - "viiltelevä kipu" is a stabbing pain. The participle names the pain; the
  *   forms that name the act — viiltelin, viiltely, viiltelen — stay in.
  */
 const GYM_LOOKALIKES: RegExp[] = [
-  /(^|[^\p{L}\p{N}])suicide (sprint|run|drill|shuttle|line)s?(?![\p{L}\p{N}])/gu,
+  /(^|[^\p{L}\p{N}])suicide (sprint|run|drill|shuttle)s?(?![\p{L}\p{N}])/gu,
   /(^|[^\p{L}\p{N}])cut myself on (the|a|my) (knurl\p{L}*|bar|barbell|bars|plate|plates|rack|kettlebell|dumbbell|machine|equipment|j-hooks?|hooks?|safet\p{L}*|pins?|collar|clip)(?![\p{L}\p{N}])/gu,
   /(^|[^\p{L}\p{N}])viiltelev\p{L}*/gu,
 ];

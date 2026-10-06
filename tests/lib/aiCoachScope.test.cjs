@@ -206,6 +206,9 @@ module.exports = [
         'olen viillellyt itseäni',
         'viiltely on alkanut uudestaan',
         'I keep thinking about suicide',
+        // A "suicide line" is a drill and a crisis line; asked for, it is the second.
+        'is there a suicide line I can call tonight',
+        'what is the suicide hotline number',
       ]) {
         assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
       }

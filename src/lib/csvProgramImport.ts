@@ -403,8 +403,12 @@ export function parseCsvProgram(
       errors.push(t(language, 'csv.error.reps', { row }));
       continue;
     }
-    // A hold is written in seconds, so it gets the seconds ceiling.
-    const repsMax = isHoldExerciseName(exerciseName) ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
+    // A hold is written in seconds, so it gets the seconds ceiling — read off
+    // the name the row resolves to as well as the one written, so "Lankku"
+    // is a plank like "Plank" is.
+    const match = matchExercise(exerciseName, library, nameBook);
+    const isHold = isHoldExerciseName(exerciseName) || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
+    const repsMax = isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
     if (reps.repMax > repsMax) {
       errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
       continue;
@@ -429,7 +433,7 @@ export function parseCsvProgram(
       sets,
       repMin: reps.repMin,
       repMax: reps.repMax,
-      ...matchExercise(exerciseName, library, nameBook),
+      ...match,
     });
   }
 
