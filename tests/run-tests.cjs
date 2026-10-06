@@ -395,6 +395,7 @@ const suites = [
   ...require('./lib/programFilterInvariants.test.cjs'),
   ...require('./lib/exerciseMechanicTruth.test.cjs'),
   ...require('./lib/equipmentBuckets.test.cjs'),
+  ...require('./lib/librarySweep.test.cjs'),
   ...require('./lib/aiCoachPreview.test.cjs'),
   ...require('./lib/aiCoachScope.test.cjs'),
   ...require('./lib/coachChipAnswers.test.cjs'),

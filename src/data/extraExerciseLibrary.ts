@@ -92,7 +92,8 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     // kilograms to log — reps only.
     id: 'extra_band_curl',
     name: 'Band Curl',
-    category: 'compound',
+    // A curl is one joint; "compound" here gave it a squat's defaults.
+    category: 'isolation',
     bodyPart: 'biceps',
     equipment: 'bodyweight',
     primaryMuscles: ['biceps'],

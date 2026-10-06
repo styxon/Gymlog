@@ -152,6 +152,56 @@ const MUSCLE_CORRECTIONS: Record<string, Pick<ExerciseLibraryItem, 'primaryMuscl
 };
 
 /**
+ * Mechanics the source files wrongly — found by the name sweep in
+ * tests/lib/librarySweep.test.cjs, which lists the rows it lets stand.
+ *
+ * - Two rows are rows: a kettlebell row and a lying cambered-bar row pull
+ *   with the elbow and the shoulder, as every other row in the source does.
+ * - Flyes, crossovers, curls and the glute kickback move one joint. The
+ *   source calls these eight compound while it calls every other fly, curl
+ *   and kickback isolation, so "Eristävä" missed them and a custom programme
+ *   gave them a squat's defaults.
+ *
+ * Set on `sourceMechanic`, the field every reader of the mechanic asks first
+ * (exerciseMechanic), so the category below and the detail card follow.
+ */
+const MECHANIC_CORRECTIONS: Record<string, ExerciseMechanic> = {
+  'Alternating Kettlebell Row': 'compound',
+  'Lying Cambered Barbell Row': 'compound',
+  'Back Flyes - With Bands': 'isolation',
+  'Cross Over - With Bands': 'isolation',
+  'Decline Dumbbell Flyes': 'isolation',
+  'Incline Dumbbell Flyes': 'isolation',
+  'Incline Dumbbell Flyes - With A Twist': 'isolation',
+  'Drag Curl': 'isolation',
+  'High Cable Curls': 'isolation',
+  'Glute Kickback': 'isolation',
+};
+
+/**
+ * Equipment the source files wrongly. The Smith incline shoulder raise is
+ * done on the Smith machine (its first step), and the source calls it a
+ * barbell lift; every other Smith row is "machine".
+ */
+const EQUIPMENT_CORRECTIONS: Record<string, ExerciseLibraryItem['equipment']> = {
+  'Smith Incline Shoulder Raise': 'machine',
+};
+
+function rowCorrection(name: string): Partial<ExerciseLibraryItem> | null {
+  const muscles = MUSCLE_CORRECTIONS[name];
+  const mechanic = MECHANIC_CORRECTIONS[name];
+  const equipment = EQUIPMENT_CORRECTIONS[name];
+  if (!muscles && !mechanic && !equipment) {
+    return null;
+  }
+  return {
+    ...muscles,
+    ...(mechanic ? { sourceMechanic: mechanic } : null),
+    ...(equipment ? { equipment } : null),
+  };
+}
+
+/**
  * The stored category with the source's mechanic read into it.
  *
  * The generator (scripts/generate_free_exercise_library.mjs, `mapCategory`)
@@ -180,11 +230,12 @@ function correctedCategory(item: ExerciseLibraryItem): ExerciseLibraryItem['cate
  */
 export function withLibraryCorrections<T extends ExerciseLibraryItem>(items: readonly T[]): T[] {
   return items.map((item) => {
-    const correction = MUSCLE_CORRECTIONS[item.name];
-    const category = correctedCategory(item);
+    const correction = rowCorrection(item.name);
+    const corrected: T = correction ? { ...item, ...correction } : item;
+    const category = correctedCategory(corrected);
     if (!correction && category === item.category) {
       return item;
     }
-    return { ...item, ...correction, category };
+    return { ...corrected, category };
   });
 }

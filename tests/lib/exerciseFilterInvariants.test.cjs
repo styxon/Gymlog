@@ -153,6 +153,9 @@ module.exports = [
           !(
             item.sourceEquipment === 'machine' ||
             /\b(sled|prowler)\b/i.test(item.name) ||
+            // The Smith incline shoulder raise, which the source files as a
+            // barbell lift (exerciseClassification's EQUIPMENT_CORRECTIONS).
+            /\bsmith\b/i.test(item.name) ||
             (item.sourceEquipment == null && item.id.startsWith('extra_'))
           ),
       );
