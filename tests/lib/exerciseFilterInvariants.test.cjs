@@ -316,7 +316,7 @@ module.exports = [
       const empty = read('src/screens/EmptyWorkoutScreen.tsx');
       assert.match(empty, /filterBrowsableExercises\(items, \{ query: normalizedQuery \}\)/);
       const player = read('src/screens/GuidedPlayerScreen.tsx');
-      assert.match(player, /filterBrowsableExercises\(exerciseLibrary, \{ query \}\)/);
+      assert.match(player, /filterBrowsableExercises\(exerciseLibrary, \{ query, type: swapFilters\.category \}\)/);
 
       const { t } = require('../../.test-dist/lib/i18n.js');
       assert.equal(t('fi', 'facet.specialty'), 'Erikoisliikkeet');

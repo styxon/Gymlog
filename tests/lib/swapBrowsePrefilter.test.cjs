@@ -90,7 +90,7 @@ module.exports = [
         .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
         .replace(/\r\n/g, '\n');
       // Stretches and drills out until the reader types, like the add sheet.
-      assert.match(player, /const pool = filterBrowsableExercises\(exerciseLibrary, \{ query \}\)\.filter\(/);
+      assert.match(player, /const pool = filterBrowsableExercises\(exerciseLibrary, \{ query, type: swapFilters\.category \}\)\.filter\(/);
       assert.match(player, /orderSwapCandidates\(pool, swapCurrentLibraryItem, popular\)/);
     },
   },
