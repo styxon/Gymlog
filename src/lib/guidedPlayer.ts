@@ -1179,10 +1179,9 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // ones the library does hold under another name. Each pair was checked by
   // hand on the same rule as the block above — SAME MOVEMENT, gear may differ.
   //
-  // What is deliberately not here: the cardio prescriptions (Treadmill HIIT,
-  // Easy Run Blocks), which are dosage rather than lifts and have no library
-  // entry to point at, and the movements the library genuinely lacks (Burpee,
-  // Bird Dog, Nordic Hamstring Curl). A near miss is worse than a blank.
+  // What is deliberately not here: the movements the generated library
+  // genuinely lacks (Burpee, Bird Dog, the run blocks). A near miss is worse
+  // than a blank; they have rows of their own in extraExerciseLibrary now.
   'competition back squat': 'barbell full squat',
   'pause squat': 'barbell full squat',
   'competition deadlift': 'barbell deadlift',
@@ -1268,6 +1267,27 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // programmes prescribe it with no weight to a reader who may own none.
   'diamond push-up': 'push-ups - close triceps position',
   'nordic hamstring curl': 'natural glute ham raise',
+
+  // ── Dosages of the app's own rows (extraExerciseLibrary) ───────────────
+  //
+  // The last 79 names of the ready programmes had no row at all (catalog
+  // audit, 2026-10-06). Each got one, except these: the same movement with
+  // the same equipment, whose name carries a dose the strip refuses to drop
+  // (a time, a distance, "each side") or a variant the row's steps already
+  // teach. The burpee row's steps include the push-up.
+  'burpee (20s on / 10s off)': 'burpee',
+  'burpee with push-up': 'burpee',
+  'pigeon pose (each side)': 'pigeon pose',
+  'treadmill hiit (30s on / 30s off)': 'treadmill hiit',
+  'bike hiit (45s sprint / 15s rest)': 'bike hiit',
+  // A fan bike sprint. Named here because the strip would have reached the
+  // library's "Air Bike", which is the bicycle crunch.
+  'air bike (30s sprint)': 'bike hiit',
+  'sprint 40m': 'sprint',
+  'sprint interval (200m)': 'sprint',
+  // Loaded in one programme and not in the others; the row's steps make the
+  // dumbbell optional, and it is never the library's kettlebell lift.
+  'single-leg romanian deadlift': 'single-leg rdl',
 };
 
 /**

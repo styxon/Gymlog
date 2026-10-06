@@ -107,47 +107,43 @@ module.exports = [
     },
   },
   {
-    name: 'ready programme audit: the names the library has no row for are exactly these, and the list only shrinks',
+    name: 'ready programme audit: every name the programmes prescribe has a library row, reached by its own name or an alias',
     run() {
-      // Content gaps, not mappings: the library holds no bird dog, no hollow
-      // hold, no yoga poses, no run blocks. Each needs a row of its own (with
-      // instructions, in both languages) — pointing it at a near miss would
-      // show the wrong movement, which is worse than none.
+      // Until 2026-10-06 this pinned 79 names with no row at all: the bird
+      // dog, the hollow hold, the yoga poses, the run blocks. "Tehdään kaikki
+      // 79" (user): each got a row of its own in extraExerciseLibrary, with
+      // steps in both languages, or an alias to the row that is the same
+      // movement with the same equipment. The list stays empty.
       const unresolved = [...new Set(slots().map(({ exercise }) => exercise.exerciseName))]
         .filter((name) => findGuidedLibraryIndex(name, LIBRARY_NAMES) === null)
         .sort();
-      assert.deepEqual(unresolved, [
-        '90/90 Hip Stretch', 'Air Bike (30s sprint)', 'Ankle Mobility Drill', 'Banded Fire Hydrant', 'Bike HIIT (45s sprint / 15s rest)',
-        'Bird Dog', 'Box Breathing', 'Burpee (20s on / 10s off)', 'Burpee with Push-Up', 'Butterfly Stretch', 'Cable Abductor', 'Cobra Pose',
-        'Cone Drill (Pro Agility)', 'Cossack Squat', 'Deep Squat Hold', 'Diaphragmatic Breathing', 'Doorway Pec Stretch', 'Dragon Flag',
-        'Easy Run Blocks', 'Frog Pump', 'Frog Pump (Banded)', 'Frog Stretch', 'Front Lever Tuck Hold', 'Glute Bridge March',
-        'Handstand Wall Walk', 'Heel Slide', 'Heel-to-Toe Walk', 'High Knees', 'Hollow Body Hold', 'Jumping Jack', 'L-Sit Hold',
-        'Ladder Drill', 'Lateral Lunge', 'Legs Up the Wall', 'Pelvic Floor Activation (Kegel)', 'Pigeon Pose', 'Pigeon Pose (each side)',
-        'Pike Push-Up', 'Pike Push-Up (Elevated)', 'Plank Jack', 'Plank Shoulder Tap', 'Plank to Pike', 'Plank-Up', 'Pogo Hops',
-        'Pseudo Planche Push-Up', 'Seated Hip Stretch', 'Seated Pancake Stretch', 'Seated Spinal Twist', 'Shoulder Dislocations (PVC)',
-        // The library's one single-leg deadlift is a kettlebell lift; these are
-        // prescribed with no weight, so its photo would be the wrong demo.
-        'Shrimp Squat', 'Side-Lying Leg Raise', 'Single-Leg Balance Hold', 'Single-Leg Balance Reach', 'Single-Leg RDL', 'Single-Leg Romanian Deadlift', 'Sit-to-Stand (Chair Squat)',
-        'Skater Jump', 'Sleeper Stretch', 'Sphinx Pose', 'Spinal Twist (Supine)', 'Sprint 40m', 'Sprint Interval (200m)', 'Standing Band Row',
-        'Standing Forward Fold', 'Standing Hip Abduction', 'Standing Marching', 'Stride Finishers', 'Supported Deep Squat Hold',
-        'Supported Single-Leg Balance', 'Tempo Run Blocks', 'Thoracic Extension on Roller', 'Thread the Needle', 'Toes-to-Bar',
-        'Transverse Abdominis Activation', 'Treadmill HIIT (30s on / 30s off)', 'Tuck Planche Hold', 'V-Up', 'Wall Handstand Hold', 'Wall Slide',
-      ]);
+      assert.deepEqual(unresolved, []);
+      // And every slot gets there without the containment guess.
+      const guessed = slots().filter(({ exercise }) => resolveWithoutGuessing(exercise.exerciseName) === null).map(where);
+      assert.deepEqual(guessed, []);
     },
   },
   {
-    name: 'ready programme audit: the lifts that open steps but no photo are exactly the app\'s own extras',
+    name: 'ready programme audit: a lift that opens steps but no photo opens one of the app\'s own extras',
     run() {
       // extraExerciseLibrary rows carry their own instructions and no image by
-      // design; the player shows the initials panel for them. Pinned so a
-      // prescribed lift does not lose its photo by landing on one unnoticed.
-      const photoless = [...new Set(
+      // design (the user photographs them later); the player shows the
+      // initials panel for them. A generated row reached without a photo
+      // would be a prescribed lift that lost its photo unnoticed.
+      const reached = [...new Set(
         slots()
           .map(({ exercise }) => findGuidedLibraryIndex(exercise.exerciseName, LIBRARY_NAMES))
-          .filter((index) => index !== null && !(LIBRARY[index].imageUrls ?? []).length)
-          .map((index) => LIBRARY[index].name),
-      )].sort();
-      assert.deepEqual(photoless, ['Bodyweight Calf Raise', 'Bulgarian Split Squat', 'Burpee', 'Kettlebell Swing', 'Side Plank', 'Single-Leg Calf Raise']);
+          .filter((index) => index !== null),
+      )].map((index) => LIBRARY[index]);
+      const photolessGenerated = reached
+        .filter((item) => !(item.imageUrls ?? []).length && !item.id.startsWith('extra_'))
+        .map((item) => item.name);
+      assert.deepEqual(photolessGenerated, []);
+      // Every extra the library carries is one a programme prescribes, except
+      // the two that exist for swaps and fallbacks.
+      const reachedIds = new Set(reached.map((item) => item.id));
+      const unprescribedExtras = LIBRARY.filter((item) => item.id.startsWith('extra_') && !reachedIds.has(item.id)).map((item) => item.name).sort();
+      assert.deepEqual(unprescribedExtras, ['Band Curl', 'Machine Hip Thrust']);
     },
   },
   {

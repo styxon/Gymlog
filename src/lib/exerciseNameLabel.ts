@@ -170,6 +170,9 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   Burpee: 'Burpee',
   'Treadmill HIIT (30s on / 30s off)': 'Juoksumatto-HIIT (30 s / 30 s)',
   'Bike HIIT (45s sprint / 15s rest)': 'Pyörä-HIIT (45 s veto / 15 s lepo)',
+  // The app's own rows these two prescriptions open (extraExerciseLibrary).
+  'Treadmill HIIT': 'Juoksumatto-HIIT',
+  'Bike HIIT': 'Pyörä-HIIT',
   'Easy Run Blocks': 'Kevyet juoksublokit',
   'Tempo Run Blocks': 'Tempojuoksublokit',
   'Stride Finishers': 'Askelkiihdytykset',
@@ -267,7 +270,8 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Wall Push-Up': 'Seinäpunnerrus',
   'Push-Up (or Knee Push-Up)': 'Punnerrus (tai polvipunnerrus)',
   'Push-Up (20s on / 10s off)': 'Punnerrus (20 s / 10 s)',
-  'Pseudo Planche Push-Up': 'Planche-punnerrus',
+  // A pseudo planche is a push-up leaning towards one, not the planche itself.
+  'Pseudo Planche Push-Up': 'Pseudo planche -punnerrus',
   'Plank-Up': 'Lankkunousu',
   'Body-Up': 'Lankkunousu',
   'Weighted Dips': 'Lisäpainodipit',
@@ -381,6 +385,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Lateral Bound': 'Sivuloikka',
   'Sprint 40m': 'Sprintti 40 m',
   'Sprint Interval (200m)': 'Sprinttiveto (200 m)',
+  Sprint: 'Sprintti',
   'Cone Drill (Pro Agility)': 'Kartioharjoite (ketteryys)',
   'Ladder Drill': 'Tikasharjoite',
   'Heel-to-Toe Walk': 'Kantapää-varvas-kävely',
