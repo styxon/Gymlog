@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { buildRetiredLibraryIdRemap } from '../lib/legacyLibraryIds';
+import { withLibraryCorrections } from '../lib/exerciseClassification';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -188,6 +189,12 @@ function normalizeTemplateSessions(
     .sort((left: WorkoutTemplateSessionRecord, right: WorkoutTemplateSessionRecord) => left.orderIndex - right.orderIndex);
 }
 
+/**
+ * The seeded library, with any stored row laid over it — and the source
+ * corrections read in again afterwards. A blob written before the library was
+ * stripped on save (April 2026) still carries whole rows, and the overlay put
+ * their stored `category: 'compound'` back over the corrected leg extension.
+ */
 function mergeExerciseLibrary(
   inputLibrary: AppDatabase['exerciseLibrary'] | null | undefined,
   fallbackLibrary: AppDatabase['exerciseLibrary'],
@@ -211,7 +218,7 @@ function mergeExerciseLibrary(
     });
   }
 
-  return Array.from(merged.values());
+  return withLibraryCorrections(Array.from(merged.values()));
 }
 
 /**

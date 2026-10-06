@@ -16,11 +16,14 @@
  *   yokes) sit in the "machine" bucket, because the equipment chips have no
  *   better one, so "Laite" listed them among the leg presses.
  *
- * `category` itself is not rewritten: custom programmes read it for their
- * role, progression priority and rep defaults, and changing what a stored
- * programme does is a different decision from what a filter lists. The type
- * the reader sees and filters by is `exerciseTypeOf`, read from the source's
- * own mechanic.
+ * The type the reader sees and filters by is `exerciseTypeOf`, read from the
+ * source's own mechanic. Since 2026-10-06 `category` agrees with it too:
+ * `withLibraryCorrections` rewrites a compound/isolation category to the
+ * source mechanic where the library is seeded, so custom programmes' role,
+ * progression priority and rep defaults (getExerciseTemplateDefaults,
+ * customWorkoutAdapter), the suggestions and the coach's plan read the same
+ * answer as the chips — one truth, not one function every consumer has to
+ * remember to call.
  */
 import { displayEquipmentValue } from './libraryLabel';
 import type { ExerciseLibraryItem } from '../types/models';
@@ -148,13 +151,39 @@ const MUSCLE_CORRECTIONS: Record<string, Pick<ExerciseLibraryItem, 'primaryMuscl
 };
 
 /**
+ * The stored category with the source's mechanic read into it.
+ *
+ * The generator (scripts/generate_free_exercise_library.mjs, `mapCategory`)
+ * calls every "strength", "powerlifting" and "strongman" row compound before
+ * it reads the mechanic, so 214 isolation lifts — the leg extension, every
+ * curl, lateral raise and fly — were stored as compound. Custom programmes
+ * read the category for their defaults: a leg extension added to your own
+ * programme started at 3 × 6–8 with the full compound rest, as if it were a
+ * squat (#bugs 2026-10-06). Core and cardio are body-part answers the
+ * mechanic does not overrule; a row with no source mechanic keeps its own.
+ */
+function correctedCategory(item: ExerciseLibraryItem): ExerciseLibraryItem['category'] {
+  if (item.category !== 'compound' && item.category !== 'isolation') {
+    return item.category;
+  }
+  const source = item.sourceMechanic?.trim().toLowerCase();
+  return source === 'compound' || source === 'isolation' ? source : item.category;
+}
+
+/**
  * The library as the app reads it: the generated rows with the corrections
- * above. Applied once, where the library is seeded (data/seed.ts), so every
- * screen — chips, swap list, detail card — reads the same muscles.
+ * above. Applied where the library is seeded (data/seed.ts) and again over a
+ * stored library row on load (storage/database.ts), so every screen — chips,
+ * swap list, detail card, a custom programme's defaults — reads the same
+ * muscles and the same mechanic. Idempotent.
  */
 export function withLibraryCorrections<T extends ExerciseLibraryItem>(items: readonly T[]): T[] {
   return items.map((item) => {
     const correction = MUSCLE_CORRECTIONS[item.name];
-    return correction ? { ...item, ...correction } : item;
+    const category = correctedCategory(item);
+    if (!correction && category === item.category) {
+      return item;
+    }
+    return { ...item, ...correction, category };
   });
 }
