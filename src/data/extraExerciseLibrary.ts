@@ -1159,7 +1159,7 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     equipment: 'bodyweight',
     sourceEquipment: 'body only',
     sourceCategory: 'strength',
-    sourceMechanic: 'compound',
+    sourceMechanic: 'isolation',
     sourceLevel: 'beginner',
     primaryMuscles: ['glutes'],
     secondaryMuscles: ['calves', 'quadriceps'],
@@ -1248,6 +1248,12 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
   },
 
   // ── Balance ──────────────────────────────────────────────────────────────
+  // The heel-to-toe walk, standing marching and the single-leg balance reach
+  // are filed isolation in mechanic as in category. The library reads the
+  // mechanic into the category (withLibraryCorrections), and "compound" made
+  // them a squat in a custom programme: 3 × 6–8 with the full rest, and always
+  // in the progression — against the catalogue, which prescribes all three at
+  // low priority (2026-10-06).
   {
     id: 'extra_heel_to_toe_walk',
     name: 'Heel-to-Toe Walk',
@@ -1256,7 +1262,7 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     equipment: 'bodyweight',
     sourceEquipment: 'body only',
     sourceCategory: 'strength',
-    sourceMechanic: 'compound',
+    sourceMechanic: 'isolation',
     sourceLevel: 'beginner',
     primaryMuscles: ['calves'],
     secondaryMuscles: ['abdominals', 'glutes'],
@@ -1274,7 +1280,7 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     equipment: 'bodyweight',
     sourceEquipment: 'body only',
     sourceCategory: 'strength',
-    sourceMechanic: 'compound',
+    sourceMechanic: 'isolation',
     sourceLevel: 'beginner',
     primaryMuscles: ['quadriceps'],
     secondaryMuscles: ['abdominals', 'calves'],

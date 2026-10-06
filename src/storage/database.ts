@@ -2,6 +2,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { buildRetiredLibraryIdRemap } from '../lib/legacyLibraryIds';
 import { withLibraryCorrections } from '../lib/exerciseClassification';
+import {
+  normalizeAppliedMigrations,
+  restoreTrackingAfterCategoryCorrection,
+  TRACKING_CATEGORY_MIGRATION_ID,
+} from '../lib/trackingCategoryMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -368,7 +373,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     return retiredIds[value.trim()] ?? value;
   };
 
-  const rawExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
+  const exerciseLibrary = mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary);
+  const storedMigrations = normalizeAppliedMigrations(input?.appliedMigrations);
+
+  const storedExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
     ? input.exerciseTemplates.map((exercise: any) => {
         const name = typeof exercise?.name === 'string' ? exercise.name : 'Exercise';
         // Programmes saved before 2026-08-25 still carry rep ranges; the
@@ -410,6 +418,16 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         };
       })
     : [];
+
+  // Once per database: a programme saved before the library's category
+  // correction keeps the progression it had (lib/trackingCategoryMigration).
+  // Not on every load — a false a writer stores today is meant.
+  const rawExerciseTemplates = storedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)
+    ? storedExerciseTemplates
+    : restoreTrackingAfterCategoryCorrection(storedExerciseTemplates, exerciseLibrary);
+  const appliedMigrations = storedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)
+    ? storedMigrations
+    : [...storedMigrations, TRACKING_CATEGORY_MIGRATION_ID];
 
   // A stored programme with no id is not a programme. Mapped through the
   // defaults below, a null in the list became one called "Workout" with an
@@ -552,7 +570,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             : [],
         }))
       : [],
-    exerciseLibrary: mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary),
+    exerciseLibrary,
+    // The one-time rewrites this database has had. Absent on every install
+    // written before the first of them, which is what lets that one run.
+    appliedMigrations,
     // An entry that is not an object with an id is not a session. Mapped
     // through the defaults below it became one — "Workout", dated now —
     // so a null or a stray number in a stored array put a workout on

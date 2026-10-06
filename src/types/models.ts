@@ -918,6 +918,13 @@ export interface AppDatabase {
   /** The reader's own exercise vocabulary, learned one correction at a time. */
   exerciseNameBook: ExerciseNameBookEntry[];
   preferences: AppPreferences;
+  /**
+   * The one-time data migrations already applied to this database, by id.
+   * Written by `normalizeDatabase`, which runs each one an install has not
+   * had; optional because a database built in memory (a seed, a test) has
+   * had none until it is loaded. See lib/trackingCategoryMigration.
+   */
+  appliedMigrations?: string[];
 }
 
 export interface WorkoutTemplateDraft {
