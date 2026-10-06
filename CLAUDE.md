@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run start           # Expo dev server (scan QR to open on device)
 npm run android         # Launch on Android emulator / device
 npm run typecheck       # TypeScript type check (no emit)
+npm run typecheck:api   # api/ without strict, as the Vercel deploy compiles it
 npm run test:unit       # Run all unit tests (requires .test-dist to be up to date)
 npm run android:release # Build signed Android APK via Gradle
 npm run release:ios      # Store build for iOS, behind the version guard (scripts/releaseGuard.cjs)
