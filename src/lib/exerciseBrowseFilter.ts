@@ -42,6 +42,17 @@ const NOT_A_LOGGED_SET: RegExp[] = [
   /\bcone\b/i,
   /\bhurdle hops\b/i,
   /\bsprint\b/i,
+  // Sprint and running-form drills: a start, an arm action, a leg cycle
+  // walked through for a few metres. "Takareidet" listed the 3-part start
+  // and the moving claw series among the leg curls (#bugs 2026-10-06). The
+  // jumps, bounds and hops beside them in the source stay: they are done in
+  // sets of reps.
+  /\bdrill\b/i,
+  /\btechnique\b/i,
+  /\bclaw series\b/i,
+  /\bcarioca\b/i,
+  /\bfast skipping\b/i,
+  /\bbutt kick\b/i,
 ];
 
 /** True when the exercise belongs in the picker's default listing. */
@@ -198,15 +209,24 @@ export const BODY_PART_FILTERS: BodyPartFilter[] = [
  * A muscle chip lists the lifts that train the muscle. The source also names
  * a primary muscle for its cardio machines and its stretches — the treadmill,
  * the stationary bike and the kneeling hip-flexor stretch are all
- * "quadriceps" — and none of them is a swap for a squat.
+ * "quadriceps" — and none of them is a swap for a squat. Nor is anything
+ * else that is not a logged set: the sprint-start drills are "hamstrings" in
+ * the source, and a muscle chip lists them under a query no more than it
+ * lists the stretches (#bugs 2026-10-06).
  */
-function trainsTheMuscle(item: Partial<Pick<ExerciseLibraryItem, 'category' | 'sourceCategory'>>): boolean {
-  return item.category !== 'cardio' && item.sourceCategory?.trim().toLowerCase() !== 'stretching';
+function trainsTheMuscle(
+  item: Partial<Pick<ExerciseLibraryItem, 'name' | 'category' | 'sourceCategory' | 'sourceEquipment'>>,
+): boolean {
+  return (
+    item.category !== 'cardio' &&
+    item.sourceCategory?.trim().toLowerCase() !== 'stretching' &&
+    (typeof item.name !== 'string' || isBrowsableExercise({ ...item, name: item.name }))
+  );
 }
 
 export function matchesBodyPartFilter(
   item: Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'> &
-    Partial<Pick<ExerciseLibraryItem, 'category' | 'sourceCategory'>>,
+    Partial<Pick<ExerciseLibraryItem, 'name' | 'category' | 'sourceCategory' | 'sourceEquipment'>>,
   filter: BodyPartFilter,
 ): boolean {
   if (filter === 'all') {
