@@ -7,6 +7,9 @@ const { buildRecommendationInput } = require('../../.test-dist/lib/recommendatio
 const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
 const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
 const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { applyCautionFlagsToExercises, CAUTION_TO_FOCUS_AREAS } = require('../../.test-dist/lib/cautionExerciseFilter.js');
+const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
 
 /**
  * The recommender findings of the 2026-10-05 evening hunt, each held as an
@@ -205,6 +208,88 @@ module.exports = [
       });
       assert.notEqual(result.featuredProgramId, 'tpl_3_day_run_mobility_v1');
       assert.ok(goalTier(result.featuredProgramId, 'general_fitness') > 0, result.featuredProgramId);
+    },
+  },
+  {
+    // B7: a lower day with Back Squat and Front Squat (or one that already
+    // had a Box Squat) came out of a careful knee as Box Squat twice; the
+    // same for Incline Push-Up, Hammer Curl, Leg Press, Inverted Row and
+    // Glute Bridge under the other areas.
+    name: 'recommendation fixes 10-06: a caution swap never puts a lift on a day that already has it',
+    run() {
+      const areas = Object.keys(CAUTION_TO_FOCUS_AREAS);
+      const careful = (area) => ({ area, level: 'careful', refinements: [] });
+      const flagSets = [
+        ...areas.flatMap((area) => [
+          { flags: [careful(area)], focus: [] },
+          // A flagged area that is also a focus swaps bodyweight-first.
+          { flags: [careful(area)], focus: CAUTION_TO_FOCUS_AREAS[area] },
+          { flags: [{ area, level: 'avoid', refinements: [] }], focus: [] },
+        ]),
+        ...areas.flatMap((first, index) =>
+          areas.slice(index + 1).map((second) => ({ flags: [careful(first), careful(second)], focus: [] })),
+        ),
+      ];
+      const gearSets = [null, [], ['Dumbbells'], ['Dumbbells', 'Bench', 'Resistance bands'], ['Barbell & plates', 'Squat rack', 'Bench'], ['Pull-up bar', 'Resistance bands']];
+      const repeated = (names) => names.filter((name, index) => names.indexOf(name) !== index);
+      const offenders = [];
+      let swaps = 0;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const gear of gearSets) {
+            // The composer's order: the gear pass first, then caution.
+            const equipped = applyEquipmentToExercises([...session.exercises], gear).exercises;
+            const already = new Set(repeated(equipped.map((exercise) => exercise.exerciseName.toLowerCase())));
+            for (const { flags, focus } of flagSets) {
+              const result = applyCautionFlagsToExercises(equipped, flags, focus, gear);
+              swaps += result.swapped.length;
+              const twice = repeated(result.exercises.map((exercise) => exercise.exerciseName.toLowerCase()))
+                .filter((name) => !already.has(name));
+              if (twice.length > 0) {
+                offenders.push(`${template.id}/${session.id} ${flags.map((flag) => `${flag.area}:${flag.level}`).join('+')} focus=${focus.join('+') || 'none'} gear=${gear === null ? 'any' : gear.join('+') || 'none'}: ${[...new Set(twice)].join(', ')}`);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(swaps > 1000, `the sweep no longer swaps anything (${swaps})`);
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} days with a lift twice`);
+    },
+  },
+  {
+    name: 'recommendation fixes 10-06: the second squat of a careful-knee day takes the next swap, and keeps its place when none is left',
+    run() {
+      const lift = (exerciseName) => ({
+        id: exerciseName,
+        exerciseName,
+        slotId: exerciseName,
+        role: 'primary',
+        progressionPriority: 'high',
+        trackingMode: 'load_and_reps',
+        sets: 3,
+        repsMin: 8,
+        repsMax: 8,
+        restSecondsMin: 90,
+        restSecondsMax: 90,
+        substitutionGroup: 'x',
+      });
+      const knees = [{ area: 'knees', level: 'careful', refinements: [] }];
+      const names = (result) => result.exercises.map((exercise) => exercise.exerciseName);
+      // Box Squat for the first, the bodyweight one for the second.
+      assert.deepEqual(
+        names(applyCautionFlagsToExercises([lift('Back Squat'), lift('Front Squat')], knees, [], null)),
+        ['Box Squat', 'Bodyweight Squat'],
+      );
+      // A day that already has a Box Squat does not get another.
+      assert.deepEqual(
+        names(applyCautionFlagsToExercises([lift('Back Squat'), lift('Box Squat')], knees, [], null)),
+        ['Bodyweight Squat', 'Box Squat'],
+      );
+      // Both swaps taken: the third squat stays what it was.
+      assert.deepEqual(
+        names(applyCautionFlagsToExercises([lift('Back Squat'), lift('Front Squat'), lift('Hack Squat')], knees, [], null)),
+        ['Box Squat', 'Bodyweight Squat', 'Hack Squat'],
+      );
     },
   },
 ];
