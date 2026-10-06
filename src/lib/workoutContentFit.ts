@@ -1,5 +1,6 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { resolveCatalogSourceCategory } from './catalogExercisePools';
+import { readyTemplateCardMinutes } from './programmeMinutes';
 import { isUnloadedTrackingMode } from '../features/workout/workoutTypes';
 import type { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import type { RecommendationGoalType, RecommendationSetupContext } from './recommendationProfile';
@@ -220,7 +221,7 @@ export function evaluateWorkoutContentFit(programId: string, input: WorkoutConte
   const signals = buildSignals(
     exercises,
     template.sessions.map((session) => session.exercises.length),
-    template.estimatedSessionDuration,
+    readyTemplateCardMinutes(template),
     input,
   );
 

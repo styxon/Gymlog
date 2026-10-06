@@ -154,7 +154,7 @@ module.exports = [
       // The rule itself: back to 'all', which IS the cleared state here —
       // every read is `!== 'all'`, so a null would have to be taught to all
       // three.
-      assert.match(browser, /function toggleFilter\(current: string, option: string\): string \{/);
+      assert.match(browser, /function toggleFilter<T extends string>\(current: T, option: T\): T \| 'all' \{/);
       assert.match(
         browser,
         /return current === option \? 'all' : option;/,

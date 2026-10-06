@@ -1,7 +1,13 @@
 const assert = require('node:assert/strict');
 
 const { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildSessionGuidance } = require('../../.test-dist/lib/sessionGuidance.js');
+const { buildSessionGuidance: buildGuidanceWithMinutes } = require('../../.test-dist/lib/sessionGuidance.js');
+const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
+
+// The duration is handed in (the programme page's own number), so these tests
+// hand it the card's, as the page does with no plan and no gear.
+const buildSessionGuidance = (template, session) =>
+  buildGuidanceWithMinutes(template, session, readyTemplateCardMinutes(template));
 
 // The by-id map was exported from src and read only here.
 const buildSessionGuidanceById = (template) =>
@@ -19,7 +25,8 @@ module.exports = [
       assert.match(guidance.mainFocus, /Bench Press.*Barbell Row/i);
       assert.match(guidance.supportFocus, /Triceps Pushdown/i);
       assert.match(guidance.restGuidance, /150-210 sec.*45-150 sec/i);
-      assert.equal(guidance.estimatedDuration, '60 min');
+      assert.equal(guidance.estimatedDuration, `${readyTemplateCardMinutes(template)} min`);
+      assert.equal(buildGuidanceWithMinutes(template, session, 35).estimatedDuration, '35 min');
       assert.match(guidance.progressionHint, /lower-rep|load/i);
       assert.match(guidance.firstAction, /Bench Press.*first work set/i);
     },

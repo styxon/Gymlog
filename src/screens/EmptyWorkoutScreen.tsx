@@ -29,6 +29,8 @@ import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { rankExerciseMatches } from '../lib/exerciseSearch';
+import { filterBrowsableExercises } from '../lib/exerciseBrowseFilter';
+import { exerciseTypeOf } from '../lib/exerciseClassification';
 import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
 import { parseNumberInput, removeTrailingZeros } from '../lib/format';
 import {
@@ -127,12 +129,16 @@ const TAG_KEYS: Record<string, I18nKey> = {
   isolation: 'exerciseTag.isolation',
   cardio: 'exerciseTag.cardio',
   core: 'exerciseTag.core',
+  specialty: 'lib.category.specialty',
 };
 
 function buildMetaLabel(item: ExerciseLibraryItem, language: AppLanguage) {
   const muscle = bodyPartLabel(language, item.bodyPart);
-  const tagKey = item.equipment === 'bodyweight' ? 'exerciseTag.bodyweight' : TAG_KEYS[item.category];
-  const tag = tagKey ? t(language, tagKey) : item.category;
+  // The type the row is filed by (exerciseTypeOf), not the stored category,
+  // which calls the leg extension compound.
+  const type = exerciseTypeOf(item);
+  const tagKey = type !== 'specialty' && item.equipment === 'bodyweight' ? 'exerciseTag.bodyweight' : TAG_KEYS[type];
+  const tag = tagKey ? t(language, tagKey) : type;
   // Core exercises would otherwise read "Core · Core".
   return tag.toLowerCase() === muscle.toLowerCase() ? muscle : `${muscle} · ${tag}`;
 }
@@ -322,7 +328,9 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
   const matches = useMemo(
     () =>
       rankExerciseMatches(
-        items.filter((item) => matchesMuscleFilter(item.bodyPart, filter)),
+        // What the other pickers offer unasked: no stretches, drills or
+        // strongman implements until the reader types (#bugs 2026-10-06).
+        filterBrowsableExercises(items, { query: normalizedQuery }).filter((item) => matchesMuscleFilter(item.bodyPart, filter)),
         normalizedQuery,
         language,
         (item) => popularOrder.get(item.id),

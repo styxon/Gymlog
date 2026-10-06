@@ -6,6 +6,7 @@ import {
   ExerciseLibraryItem,
 } from '../types/models';
 import { AICoachPlanSchema, AICoachPlannedExercise, AICoachPlannedSession } from '../types/aiCoachPlan';
+import { isSpecialtyExercise } from './exerciseClassification';
 
 type PlannedExerciseVariant = 'warmup' | 'primary' | 'secondary' | 'accessory';
 
@@ -586,8 +587,15 @@ function chooseLibraryExercise(args: {
 
   for (const query of candidates) {
     const normalizedQuery = normalize(query);
+    // A lift the reader named is theirs to have, specialty or not. A slot's
+    // own search word is not a name: "deadlift" must not land on Car Deadlift
+    // or Axle Deadlift (#bugs 2026-10-06, specialty movements).
+    const named = prioritizedMustTerms.includes(query);
     const match = items.find((item) => {
       if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment)) {
+        return false;
+      }
+      if (!named && isSpecialtyExercise(item)) {
         return false;
       }
 
@@ -622,7 +630,7 @@ function chooseLibraryExercise(args: {
   }
 
   const fallback = items.find((item) => {
-    if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment)) {
+    if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment) || isSpecialtyExercise(item)) {
       return false;
     }
 

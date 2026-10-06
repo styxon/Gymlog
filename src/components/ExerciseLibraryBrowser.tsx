@@ -18,6 +18,8 @@ import { rankExerciseMatches } from '../lib/exerciseSearch';
 import { I18nKey, t } from '../lib/i18n';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
 import { displayEquipmentValue, libraryLabel } from '../lib/libraryLabel';
+import { ExerciseTypeFilter, matchesEquipmentFilter, matchesExerciseTypeFilter, passesSpecialtyGate } from '../lib/exerciseBrowseFilter';
+import { exerciseRowMetaValues, exerciseTypeOf } from '../lib/exerciseClassification';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage, ExerciseBodyPart, ExerciseLibraryItem } from '../types/models';
@@ -76,9 +78,14 @@ export function getItemImage(item: ExerciseLibraryItem) {
   return item.imageUrls?.[0] ?? null;
 }
 
-/** "Rinta · Levytanko · Voima" — the line under a library row's name. */
+/**
+ * "Rinta · Tanko · Moninivel" — the line under a library row's name. The
+ * values, and the rule that none repeats, are exerciseRowMetaValues's.
+ */
 export function exerciseLibraryRowMeta(item: ExerciseLibraryItem, language: AppLanguage): string {
-  return `${libraryLabel(item.bodyPart, language)} · ${libraryLabel(displayEquipmentValue(item), language)} · ${libraryLabel(item.category, language)}`;
+  return exerciseRowMetaValues(item)
+    .map((value) => libraryLabel(value, language))
+    .join(' · ');
 }
 
 function useOrderedExercises(items: ExerciseLibraryItem[], filteredItems: ExerciseLibraryItem[], keepOrder = false) {
@@ -398,7 +405,7 @@ export function ExerciseLibraryBrowser({
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [bodyPartFilter, setBodyPartFilter] = useState<string>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all');
+  const [categoryFilter, setCategoryFilter] = useState<ExerciseTypeFilter>('all');
   const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
   /**
    * Tapping the chip you already picked clears it.
@@ -414,7 +421,7 @@ export function ExerciseLibraryBrowser({
    * toggles to it instead of to null — the three filters read `!== 'all'`
    * everywhere, and a null would have to be taught to all of them.
    */
-  function toggleFilter(current: string, option: string): string {
+  function toggleFilter<T extends string>(current: T, option: T): T | 'all' {
     return current === option ? 'all' : option;
   }
   const [toast, setToast] = useState<string | null>(null);
@@ -442,8 +449,8 @@ export function ExerciseLibraryBrowser({
     () => ['all', ...Array.from(new Set(items.map((item) => item.bodyPart))).sort((a, b) => a.localeCompare(b))],
     [items],
   );
-  const categoryOptions = useMemo(
-    () => ['all', ...Array.from(new Set(items.map((item) => item.category))).sort((a, b) => a.localeCompare(b))],
+  const categoryOptions = useMemo<ExerciseTypeFilter[]>(
+    () => ['all', ...Array.from(new Set(items.map((item) => exerciseTypeOf(item)))).sort((a, b) => a.localeCompare(b))],
     [items],
   );
   // Built from the value the rows print, not the stored bucket: a chip that
@@ -465,13 +472,14 @@ export function ExerciseLibraryBrowser({
       if (bodyPartFilter !== 'all' && item.bodyPart !== bodyPartFilter) {
         return false;
       }
-      if (categoryFilter !== 'all' && item.category !== categoryFilter) {
+      if (!matchesExerciseTypeFilter(item, categoryFilter)) {
         return false;
       }
-      if (equipmentFilter !== 'all' && displayEquipmentValue(item) !== equipmentFilter) {
+      if (!matchesEquipmentFilter(item, equipmentFilter)) {
         return false;
       }
-      return true;
+      // Strongman implements under a query or their own chip only.
+      return passesSpecialtyGate(item, { query, type: categoryFilter });
     });
     // Best answer first under a query — see rankExerciseMatches.
     return rankExerciseMatches(filtered, query, language, (item) => popularOrder.get(item.id));

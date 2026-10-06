@@ -148,6 +148,7 @@ function buildSessionItems(
   sessions: WorkoutTemplateSession[],
   sessionStatusById: Record<string, string> = {},
   template?: WorkoutTemplateV1,
+  sessionMinutes = 0,
 ): ProgramDetailSessionItem[] {
   return [...sessions]
     .sort((left, right) => left.orderIndex - right.orderIndex)
@@ -157,7 +158,7 @@ function buildSessionItems(
       orderIndex: session.orderIndex,
       exerciseCount: session.exercises.length,
       preview: buildSessionPreview(session.exercises),
-      guidance: template ? buildSessionGuidance(template, session) : null,
+      guidance: template ? buildSessionGuidance(template, session, sessionMinutes) : null,
       statusLine: sessionStatusById[session.id] ?? null,
       totalSets: session.exercises.reduce((sum, exercise) => sum + exercise.sets, 0),
       exercises: session.exercises.map((exercise) => ({
@@ -240,6 +241,7 @@ export function buildReadyProgramDetail(
   const programmeSummary = getRecommendationProgrammeSummary(template.id);
   const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
   const daysPerWeek = composed ? composed.days : template.daysPerWeek;
+  const sessionMinutes = readyProgramSessionMinutes(template, composedWeek, minutesOptions);
   const detailSessions: WorkoutTemplateSession[] = composed
     ? composed.sessions.map((session) => ({
         id: session.id,
@@ -261,7 +263,7 @@ export function buildReadyProgramDetail(
       goal,
       level,
       `${daysPerWeek} ${pluralize(daysPerWeek, 'day')}`,
-      `${readyProgramSessionMinutes(template, composedWeek, minutesOptions)} min`,
+      `${sessionMinutes} min`,
     ],
     tailoringBadges,
     highlights: insights?.highlights ?? [],
@@ -288,7 +290,7 @@ export function buildReadyProgramDetail(
     ),
     // Home's words, in the reader's language — it was an English literal.
     sessionActionLabel: t(language, 'home.startWorkout'),
-    sessions: buildSessionItems(detailSessions, insights?.sessionStatusById, template),
+    sessions: buildSessionItems(detailSessions, insights?.sessionStatusById, template, sessionMinutes),
     daysPerWeek,
   };
 }

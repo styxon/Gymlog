@@ -90,10 +90,16 @@ module.exports = [
   {
     name: 'guided add-exercise: the sheet freezes the step like every other overlay',
     run() {
-      assert.match(
-        playerSource,
-        /const frozen = paused \|\| howtoOpen \|\| exitOpen \|\| pauseSheetOpen \|\| swapOpen \|\| addExerciseOpen \|\| restEditOpen \|\| runSheetHolds \|\| ownBlock !== null \|\| restAsk\.sheetOpen;/,
-      );
+      // The list moved to lib/guidedClockHold (2026-10-06); the screen hands
+      // it every overlay, this one included.
+      assert.match(playerSource, /const frozen = guidedClockHeld\(\{[^}]*\baddExerciseOpen,[^}]*\}\);/);
+      const { guidedClockHeld } = require('../../.test-dist/lib/guidedClockHold.js');
+      const none = {
+        paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,
+        addExerciseOpen: false, restEditOpen: false, runSheetOpen: false, ownBlockActive: false,
+        restAlertsAskOpen: false,
+      };
+      assert.equal(guidedClockHeld({ ...none, addExerciseOpen: true }), true);
     },
   },
   {

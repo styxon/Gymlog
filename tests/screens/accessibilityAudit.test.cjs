@@ -216,13 +216,15 @@ module.exports = [
       const library = read('src', 'components', 'ExerciseLibraryBrowser.tsx');
       assert.match(library, /hitSlop=\{\{ top: 5, bottom: 5 \}\}\s*onPress=\{\(\) => setBodyPartFilter/);
       assert.match(library, /categoryRail: \{[^}]*paddingBottom: 5,/);
-      // The swap sheet's body-part chips (break round 2026-09-29; always
-      // shown since #bugs 2026-09-30, so the "browse all" link and its 44 dp
-      // minHeight went): the chip rail reaches 44 by the same hitSlop +
-      // padded-row pattern as above.
-      assert.doesNotMatch(player, /swapBrowseToggle/);
-      assert.match(player, /hitSlop=\{\{ top: 5, bottom: 5 \}\}\s*onPress=\{\(\) => setSwapBodyPartFilter\(option\)\}/);
-      assert.match(player, /swapBrowseChipRow: \{[^}]*paddingVertical: 5,/);
+      // The swap sheet's chips (break round 2026-09-29) are the shared
+      // exercise sheet's filter pills since #bugs 2026-10-06: 38 drawn, 44 to
+      // the thumb by the same hitSlop + padded-row pattern as above.
+      assert.doesNotMatch(player, /swapBrowseToggle|swapBrowseChip/);
+      const sheet = read('src', 'components', 'AddExerciseSheet.tsx');
+      assert.match(sheet, /const PILL_SLOP = \{ top: 3, bottom: 3 \} as const;/);
+      assert.match(sheet, /hitSlop=\{PILL_SLOP\}\s*onPress=\{\(\) => onSelect\(option\)\}/);
+      assert.match(sheet, /filterRow: \{[^}]*paddingVertical: PILL_SLOP\.top,\s*marginVertical: -PILL_SLOP\.top,/);
+      assert.match(sheet, /filterPill: \{\s*minHeight: 38,/);
     },
   },
   {

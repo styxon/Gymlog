@@ -192,4 +192,43 @@ module.exports = [
       }
     },
   },
+  {
+    // #bugs 2026-10-06: specialty movements (car deadlift, Conan's wheel,
+    // atlas stones…) are not normal exercises. The composer's slot search
+    // ("deadlift") and its fallback must not land on one. Before the gate,
+    // 400 of these answers got Axle Deadlift.
+    name: 'a composed programme never picks a specialty movement the reader did not name',
+    run() {
+      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { isSpecialtyExercise } = require('../../.test-dist/lib/exerciseClassification.js');
+      const seeded = createSeedExerciseLibrary();
+      const offenders = [];
+      const briefs = [
+        '4 päivää viikossa, voimaa, maastaveto ja kyykky',
+        '3 days a week, deadlift, squat and press, strength',
+        '5 päivää, lihasmassa, jalat painopisteenä',
+        '2 days, full body, conditioning',
+        '6 päivää viikossa, yläkroppa ja selkä',
+      ];
+      for (const goal of ['strength', 'muscle', 'general', 'lean_athletic', 'general_fitness']) {
+        for (const environment of ['full_gym', 'home_gym', 'minimal_equipment', 'bodyweight_only']) {
+          for (const days of [2, 3, 4, 5, 6]) {
+            for (const brief of briefs) {
+              const prefs = { ...preferences, setupGoal: goal, setupTrainingEnvironment: environment, setupDaysPerWeek: days };
+              const proposal = composeProgrammePreview(brief, prefs, seeded);
+              for (const session of proposal.sessions) {
+                for (const exercise of session.exercises) {
+                  const item = seeded.find((entry) => entry.id === exercise.libraryItemId);
+                  if (item && isSpecialtyExercise(item)) {
+                    offenders.push(`${goal} ${environment} ${days}d "${brief}": ${item.name}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} specialty picks`);
+    },
+  },
 ];

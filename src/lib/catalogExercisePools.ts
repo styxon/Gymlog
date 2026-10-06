@@ -129,6 +129,44 @@ const programmeLoadedByName = (() => {
   return loadedByName;
 })();
 
+let stapleLibraryNames: Set<string> | null = null;
+
+/**
+ * Whether a library row is a lift the ready programmes prescribe — resolved
+ * the way the guided player resolves them, so "Back Squat" counts for the
+ * library's "Barbell Full Squat" and "Leg Extension" for "Leg Extensions".
+ *
+ * The ready programmes are the app's own statement of what everyday training
+ * is made of, which the library's 880 rows do not say anywhere: the swap
+ * list ranks these first so the leg extension is not buried under 47 barbell
+ * variants of the squat, snatch and clean when a squat is swapped (#bugs
+ * 2026-10-06, "Reiden ojennus ei vieläkään"). Built on first use and kept.
+ */
+export function isCatalogStapleExercise(name: string | null | undefined): boolean {
+  if (!name) {
+    return false;
+  }
+  if (!stapleLibraryNames) {
+    const names = [...libraryNames, ...EXTRA_EXERCISE_LIBRARY.map((entry) => entry.name)];
+    const prescribed = new Set<string>();
+    for (const template of WORKOUT_TEMPLATES_V1) {
+      for (const session of template.sessions) {
+        for (const exercise of session.exercises) {
+          prescribed.add(exercise.exerciseName);
+        }
+      }
+    }
+    stapleLibraryNames = new Set();
+    for (const prescribedName of prescribed) {
+      const index = findGuidedLibraryIndex(prescribedName, names);
+      if (index !== null) {
+        stapleLibraryNames.add(names[index].trim().toLowerCase());
+      }
+    }
+  }
+  return stapleLibraryNames.has(name.trim().toLowerCase());
+}
+
 /**
  * How a lift is logged when it is swapped into a slot: the way the ready
  * programmes log it, and the library's answer (getCatalogTrackingMode) only

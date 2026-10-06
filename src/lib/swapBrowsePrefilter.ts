@@ -13,7 +13,9 @@
  * split the library's own chips use (LEG_MUSCLE_FILTERS), so a hamstring
  * exercise opens on "Takareidet", not the whole 276-row "Jalat" bucket.
  */
+import { isCatalogStapleExercise } from './catalogExercisePools';
 import { BodyPartFilter, LEG_MUSCLE_FILTERS } from './exerciseBrowseFilter';
+import { exerciseTypeOf } from './exerciseClassification';
 import { displayEquipmentValue } from './libraryLabel';
 import { ExerciseLibraryItem } from '../types/models';
 
@@ -30,7 +32,8 @@ export function resolveSwapBrowsePrefilter(current: SwapBrowseSource | null | un
   return current.bodyPart;
 }
 
-type SwapCandidate = Pick<ExerciseLibraryItem, 'id' | 'category' | 'equipment' | 'sourceEquipment'>;
+type SwapCandidate = Pick<ExerciseLibraryItem, 'id' | 'category' | 'equipment' | 'sourceEquipment'> &
+  Partial<Pick<ExerciseLibraryItem, 'name' | 'sourceCategory' | 'sourceMechanic'>>;
 
 /**
  * The swap sheet's unsearched list, nearest first.
@@ -44,6 +47,18 @@ type SwapCandidate = Pick<ExerciseLibraryItem, 'id' | 'category' | 'equipment' |
  *
  * Without the current lift's library row there is nothing to be near, and
  * the order is popularity alone — what the list did before.
+ *
+ * Above nearness, the lifts the ready programmes prescribe
+ * (isCatalogStapleExercise). The list shows 25 rows, and swapping a barbell
+ * squat filled all 25 with barbell rows — snatches, clean pulls, jerk dip
+ * squats — so the leg extension never reached "Etureidet" at all ("ei
+ * vieläkään", #bugs 2026-10-06). Everyday lifts first, nearest first among
+ * them, then the rest of the library the same way.
+ *
+ * "The same kind of lift" is the type the row prints (exerciseTypeOf), not
+ * the stored category, which calls the leg extension compound — and the same
+ * discipline (trainingDiscipline): a goblet squat's swap list offered an
+ * alternate-leg diagonal bound above the dumbbell lunge, both "compound".
  */
 export function orderSwapCandidates<T extends SwapCandidate>(
   pool: readonly T[],
@@ -51,15 +66,32 @@ export function orderSwapCandidates<T extends SwapCandidate>(
   popularOrder: ReadonlyMap<string, number>,
 ): T[] {
   const equipment = current ? displayEquipmentValue(current) : null;
+  const type = current ? exerciseTypeOf({ ...current, name: current.name ?? '' }) : null;
+  const discipline = current ? trainingDiscipline(current) : null;
   const nearness = (item: T) =>
     current
-      ? (displayEquipmentValue(item) === equipment ? 2 : 0) + (item.category === current.category ? 1 : 0)
+      ? (displayEquipmentValue(item) === equipment ? 2 : 0) +
+        (exerciseTypeOf({ ...item, name: item.name ?? '' }) === type ? 1 : 0) +
+        (trainingDiscipline(item) === discipline ? 1 : 0)
       : 0;
+  const staple = (item: T) => (isCatalogStapleExercise(item.name) ? 1 : 0);
   return [...pool].sort(
     (left, right) =>
+      staple(right) - staple(left) ||
       nearness(right) - nearness(left) ||
       (popularOrder.get(left.id) ?? 1e6) - (popularOrder.get(right.id) ?? 1e6),
   );
+}
+
+/**
+ * The source's discipline, with powerlifting and unfiled rows (the app's own
+ * extras) read as the strength training they are. A plyometric bound, an
+ * Olympic snatch and a squat can share a muscle and a mechanic and still not
+ * be near one another.
+ */
+function trainingDiscipline(item: Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>): string {
+  const source = item.sourceCategory?.trim().toLowerCase();
+  return !source || source === 'powerlifting' ? 'strength' : source;
 }
 
 /**

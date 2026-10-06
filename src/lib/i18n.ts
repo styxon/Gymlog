@@ -1470,6 +1470,7 @@ const EN = {
   'guided.walk.swap': 'Swap exercise',
   'guided.walk.add': 'Add exercise',
   'guided.walk.added': 'Added after this one: {name}',
+  'guided.walk.contentMore': '+{count} more',
   'guided.sheet.tab.learn': 'Learn',
   'guided.sheet.tab.howTo': 'How to',
   'exerciseSheet.expand': 'Expand',
@@ -2869,6 +2870,7 @@ const EN = {
   'facet.machine': 'Machine',
   'facet.cable': 'Cable',
   'facet.bodyweight': 'Bodyweight',
+  'facet.specialty': 'Specialty',
   'sheet.search': 'Search',
   'sheet.searchPlaceholder': 'Search exercises',
   'sheet.clear': 'Clear',
@@ -2884,6 +2886,7 @@ const EN = {
   'sheet.noMatches': 'No matches',
   'sheet.noMatchesBody': 'Adjust the search or filters to widen the results.',
   'sheet.added': 'Added',
+  'sheet.swapAction': 'Swap',
   'sheet.selectedCount': '{count} selected',
   'sheet.addOne': 'Add {count} exercise',
   'sheet.addCount': 'Add {count} exercises',
@@ -3363,6 +3366,7 @@ const EN = {
   'lib.category.cardio': 'Cardio',
   'lib.category.compound': 'Compound',
   'lib.category.isolation': 'Isolation',
+  'lib.category.specialty': 'Specialty',
   // The muscle names the source data uses, plus the equipment words that only
   // the exercise detail card reads from the raw source field. Same reason as
   // above: they were capitalised, never translated. Body-part words that double
@@ -4850,6 +4854,7 @@ const FI: Record<I18nKey, string> = {
   'guided.walk.swap': 'Vaihda liike',
   'guided.walk.add': 'Lisää liike',
   'guided.walk.added': 'Lisätty tämän jälkeen: {name}',
+  'guided.walk.contentMore': '+{count} muuta',
   // "Opettele", not "Opi": this tab is deliberate practice on one lift —
   // three cues and a self-audit — while "Opi" is the name of the section that
   // holds the courses (user 2026-09-04).
@@ -6136,6 +6141,7 @@ const FI: Record<I18nKey, string> = {
   'facet.machine': 'Laite',
   'facet.cable': 'Talja',
   'facet.bodyweight': 'Kehonpaino',
+  'facet.specialty': 'Erikoisliikkeet',
   'sheet.search': 'Haku',
   'sheet.searchPlaceholder': 'Hae liikkeitä',
   'sheet.clear': 'Tyhjennä',
@@ -6151,6 +6157,7 @@ const FI: Record<I18nKey, string> = {
   'sheet.noMatches': 'Ei osumia',
   'sheet.noMatchesBody': 'Muuta hakua tai suodattimia, niin saat lisää tuloksia.',
   'sheet.added': 'Lisätty',
+  'sheet.swapAction': 'Vaihda',
   'sheet.selectedCount': '{count} valittu',
   'sheet.addOne': 'Lisää {count} liike',
   'sheet.addCount': 'Lisää {count} liikettä',
@@ -6592,6 +6599,7 @@ const FI: Record<I18nKey, string> = {
   'lib.category.cardio': 'Kestävyys',
   'lib.category.compound': 'Moninivel',
   'lib.category.isolation': 'Eristävä',
+  'lib.category.specialty': 'Erikoisliike',
   'lib.muscle.abdominals': 'Vatsalihakset',
   'lib.muscle.abductors': 'Loitontajat',
   'lib.muscle.adductors': 'Lähentäjät',
