@@ -250,7 +250,7 @@ module.exports = [
     },
   },
   {
-    name: 'ready programme audit: every focus area a programme is recommended for is trained in it',
+    name: 'ready programme audit: every focus area a programme is recommended for gets six working sets a week',
     run() {
       const AREA = {
         chest: ['horizontal_press', 'chest_fly', 'bodyweight_press'],
@@ -266,6 +266,13 @@ module.exports = [
         mobility: ['mobility_flow', 'yoga_flow', 'spine_mobility', 'hip_mobility', 'shoulder_mobility'],
         conditioning: ['cardio_intervals', 'steady_cardio', 'conditioning_circuit', 'running_blocks', 'jump_plyo', 'explosive_power', 'agility_drills'],
       };
+      // A promised focus area gets at least six working sets a week (user,
+      // 2026-10-06). One exercise of it is not a focus: POWERBUILD promised
+      // arms on four sets of pushdowns and curls, FIT Elite core on three
+      // planks. Where a session had room under the card's minutes the sets
+      // went in; where it had none, the tag went (STRONG Starter chest, FIT
+      // Elite core, Calisthenics Mastery arms).
+      const MIN_WEEKLY_SETS = 6;
       const offenders = [];
       for (const template of WORKOUT_TEMPLATES_V1) {
         const recommendation = recommendationOf(template.id);
@@ -278,8 +285,11 @@ module.exports = [
             continue;
           }
           // A pike push-up is a shoulder press with the floor for a bar.
-          const trains = exercises.some((e) => AREA[area].includes(e.substitutionGroup) || (area === 'shoulders' && /pike push-up/i.test(e.exerciseName)));
-          if (!trains) offenders.push(`${template.id}: tagged ${area}, trains none`);
+          const sets = exercises
+            .filter((e) => AREA[area].includes(e.substitutionGroup) || (area === 'shoulders' && /pike push-up/i.test(e.exerciseName)))
+            .reduce((sum, e) => sum + e.sets, 0);
+          if (sets === 0) offenders.push(`${template.id}: tagged ${area}, trains none`);
+          else if (sets < MIN_WEEKLY_SETS) offenders.push(`${template.id}: tagged ${area}, ${sets} sets a week`);
         }
       }
       // Mobility Flow was tagged conditioning, Joint-Friendly Strength core;
