@@ -794,7 +794,11 @@ export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibr
         const nextSlot = slot.key === 'focus' && focusBodyPart
           ? {
               ...slot,
-              bodyParts: [focusBodyPart],
+              // Mobility reads as "full body", which none of its own words
+              // is filed under (World's Greatest Stretch is a legs row), so
+              // the slot fell through to the first full-body lift — an
+              // isometric neck exercise. Its words decide where it lands.
+              bodyParts: focusBodyPart === 'full body' ? undefined : [focusBodyPart],
               search:
                 focusBodyPart === 'chest'
                   ? ['barbell incline bench press', 'incline dumbbell bench press', 'cable crossover']

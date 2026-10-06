@@ -259,6 +259,11 @@ module.exports = [
               }
       assert.equal(plans, 2025);
       assert.deepEqual([...offenders.entries()], []);
+      // And the mobility focus gets the mobility work its slot names, not
+      // the first full-body row (an isometric neck exercise).
+      const mobility = buildAiCoachPlanSchema({ ...base, setupDaysPerWeek: 1, setupFocusAreas: ['mobility'] }, library);
+      const names1 = mobility.sessions.flatMap((session) => session.exercises).map((exercise) => exercise.name);
+      assert.ok(names1.includes("World's Greatest Stretch"), names1.join(' | '));
     },
   },
   {
