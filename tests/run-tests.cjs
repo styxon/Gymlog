@@ -128,6 +128,7 @@ const suites = [
   ...require('./lib/sessionOverviewRows.test.cjs'),
   ...require('./lib/ownBlockHistory.test.cjs'),
   ...require('./lib/warmupBrief.test.cjs'),
+  ...require('./lib/warmupLadder.test.cjs'),
   ...require('./lib/exerciseSheetHistory.test.cjs'),
   ...require('./lib/sessionMovement.test.cjs'),
   ...require('./lib/holdTracking.test.cjs'),
