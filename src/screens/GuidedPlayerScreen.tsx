@@ -94,6 +94,7 @@ import { isLiftableWeight } from '../lib/weightLimits';
 import {
   minutesToLog,
   MinutesStopwatch,
+  msUntilNextMinutesChange,
   pauseStopwatch,
   startStopwatch,
   stopwatchElapsedMs,
@@ -5180,6 +5181,32 @@ function LoggedSetEditor({
   );
 }
 
+/**
+ * A minutes bout's running clock. It owns the one-second interval that moves
+ * its digits, so the set step around it does not re-render for them: the step
+ * only needs the whole minutes and "the minutes are in" (SetStepView sleeps
+ * until lib/minutesExercises msUntilNextMinutesChange). The time is read off
+ * the stopwatch's wall-clock start, so a tick that comes late shows the right
+ * second, not a lost one.
+ */
+function MinutesClockText({ watch, style }: { watch: MinutesStopwatch; style: React.ComponentProps<typeof Text>['style'] }) {
+  const running = watch.runningSinceMs !== null;
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    setNowMs(Date.now());
+    if (!running) {
+      return;
+    }
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running, watch]);
+  return (
+    <Text style={style} {...RING_CLOCK_FIT}>
+      {formatCardioDuration(stopwatchElapsedMs(watch, nowMs) / 1000)}
+    </Text>
+  );
+}
+
 function SetStepView({
   stepIndex,
   step,
@@ -5262,13 +5289,20 @@ function SetStepView({
   const minutesChosenRef = useRef(false);
   const [minutesChosen, setMinutesChosen] = useState(false);
   const watchRunning = watch.runningSinceMs !== null;
+  // This step re-renders when the clock changes something it shows besides
+  // the seconds — the whole minutes on the dial, "the minutes are in" — and
+  // sleeps in between. A 500 ms state tick here re-rendered the entire set
+  // step (dials, history chips, panels) twice a second for a clock whose
+  // seconds MinutesClockText draws on its own.
   useEffect(() => {
-    if (!watchRunning) {
+    const wait = msUntilNextMinutesChange(watch, Date.now(), plannedMinutes);
+    if (wait === null) {
       return;
     }
-    const timer = setInterval(() => setWatchNowMs(Date.now()), 500);
-    return () => clearInterval(timer);
-  }, [watchRunning]);
+    // A few ms past the moment, so the wake-up lands on the far side of it.
+    const timer = setTimeout(() => setWatchNowMs(Date.now()), wait + 20);
+    return () => clearTimeout(timer);
+  }, [watch, watchNowMs, plannedMinutes]);
   const elapsedMs = stopwatchElapsedMs(watch, watchNowMs);
   const shownMinutes = minutesChosen ? reps : minutesToLog({ plannedMinutes, elapsedMs });
   const shownMinutesRef = useRef(shownMinutes);
@@ -5725,9 +5759,7 @@ function SetStepView({
               thumb rests. Hold a button to run. */}
           {minutesMode ? (
             <View style={styles.minutesClock}>
-              <Text style={styles.minutesClockTime} {...RING_CLOCK_FIT}>
-                {formatCardioDuration(elapsedMs / 1000)}
-              </Text>
+              <MinutesClockText watch={watch} style={styles.minutesClockTime} />
               <Text style={styles.minutesClockOf}>
                 {t(language, 'guided.minutes.clockOf', { count: plannedMinutes })}
               </Text>
@@ -5906,8 +5938,15 @@ function SetStepView({
             onPress={() => {
               setDial(null);
               // The minutes on the dial — the clock's, the prescription's or
-              // the reader's own — are what was done.
-              onConfirm(step.slotId, step.setIndex, minutesMode ? shownMinutes : reps, bodyweight ? null : kg);
+              // the reader's own — are what was done. The clock is read now:
+              // the dial shows the last wake-up's minutes, which can be a
+              // moment behind the tap.
+              const done = !minutesMode
+                ? reps
+                : minutesChosen
+                  ? reps
+                  : minutesToLog({ plannedMinutes, elapsedMs: stopwatchElapsedMs(watch, Date.now()) });
+              onConfirm(step.slotId, step.setIndex, done, bodyweight ? null : kg);
             }}
             style={({ pressed }) => [
               styles.setLogButton,

@@ -150,3 +150,33 @@ export function pauseStopwatch(watch: MinutesStopwatch, nowMs: number): MinutesS
     ? watch
     : { accumulatedMs: stopwatchElapsedMs(watch, nowMs), runningSinceMs: null };
 }
+
+/**
+ * How long until the stopwatch next changes something a reader can read
+ * besides its own seconds: the whole minutes minutesToLog would log (it
+ * switches at the half minute) or the planned minutes being reached. Null
+ * while the watch is stopped — nothing moves.
+ *
+ * The guided player's screen needs those two and no more, so it sleeps until
+ * this moment instead of re-rendering the whole set step on a ticking clock;
+ * the seconds are drawn by a child that owns its own interval.
+ */
+export function msUntilNextMinutesChange(
+  watch: MinutesStopwatch,
+  nowMs: number,
+  plannedMinutes: number,
+): number | null {
+  if (watch.runningSinceMs === null) {
+    return null;
+  }
+  const elapsedMs = stopwatchElapsedMs(watch, nowMs);
+  // Untimed reads as the prescription, so the first moment of time is a
+  // change. From there the dial is never under one minute, so the next change
+  // is the 1:30 mark, and after that each half minute past a whole one.
+  const nextHalfMinute = Math.max(1.5, Math.floor(elapsedMs / 60000 - 0.5) + 1.5);
+  let untilMs = elapsedMs <= 0 ? 1 : nextHalfMinute * 60000 - elapsedMs;
+  if (Number.isFinite(plannedMinutes) && plannedMinutes > 0 && elapsedMs < plannedMinutes * 60000) {
+    untilMs = Math.min(untilMs, plannedMinutes * 60000 - elapsedMs);
+  }
+  return Math.max(1, Math.ceil(untilMs));
+}
