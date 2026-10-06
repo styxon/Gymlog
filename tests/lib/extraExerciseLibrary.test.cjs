@@ -205,4 +205,94 @@ module.exports = [
       }
     },
   },
+  {
+    // "Tehdään kaikki 79" (user, 2026-10-06): every name the ready programmes
+    // prescribe got a row. A row here has no photo to lean on, so what it says
+    // is all the reader gets — in both languages, step for step — and its
+    // filing is what the swap list, the chips and the hold rule read.
+    name: 'extras: every row is named and instructed in both languages, step for step, and filed with real values',
+    run() {
+      const { TRANSLATED_EXERCISE_NAMES } = require('../../.test-dist/lib/exerciseNameLabel.js');
+      const { EXERCISE_INSTRUCTIONS_FI_TABLE } = require('../../.test-dist/lib/exerciseInstructions.js');
+      const { isSpecialtyExercise } = require('../../.test-dist/lib/exerciseClassification.js');
+      const BODY_PARTS = new Set(['chest', 'back', 'shoulders', 'legs', 'biceps', 'triceps', 'core', 'glutes', 'full body']);
+      const EQUIPMENT = new Set(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight']);
+      const CATEGORIES = new Set(['compound', 'isolation', 'cardio', 'core']);
+      const SOURCE_EQUIPMENT = new Set(['body only', 'bands', 'cable', 'machine', 'kettlebells', 'foam roll', 'other']);
+      const SOURCE_CATEGORIES = new Set(['strength', 'stretching', 'plyometrics', 'cardio']);
+      const MUSCLES = new Set(['abdominals', 'abductors', 'adductors', 'biceps', 'calves', 'chest', 'forearms', 'glutes', 'hamstrings', 'lats', 'lower back', 'middle back', 'neck', 'quadriceps', 'shoulders', 'traps', 'triceps']);
+
+      const problems = [];
+      const ids = new Set();
+      for (const item of EXTRA_EXERCISE_LIBRARY) {
+        const at = (what) => problems.push(`${item.name}: ${what}`);
+        if (ids.has(item.id)) at(`duplicate id ${item.id}`);
+        ids.add(item.id);
+        if (!item.name.trim()) at('no English name');
+        if (!TRANSLATED_EXERCISE_NAMES[item.name]?.trim()) at('no Finnish name');
+        const en = item.instructions ?? [];
+        const fi = EXERCISE_INSTRUCTIONS_FI_TABLE[item.name] ?? [];
+        if (en.length < 2) at(`${en.length} English steps`);
+        if (fi.length !== en.length) at(`${en.length} English steps, ${fi.length} Finnish`);
+        if (en.some((step) => !step.trim()) || fi.some((step) => !step.trim())) at('a blank step');
+        if (!BODY_PARTS.has(item.bodyPart)) at(`body part ${item.bodyPart}`);
+        if (!EQUIPMENT.has(item.equipment)) at(`equipment ${item.equipment}`);
+        if (!CATEGORIES.has(item.category)) at(`category ${item.category}`);
+        if (item.sourceEquipment != null && !SOURCE_EQUIPMENT.has(item.sourceEquipment)) at(`source equipment ${item.sourceEquipment}`);
+        if (item.sourceCategory != null && !SOURCE_CATEGORIES.has(item.sourceCategory)) at(`source category ${item.sourceCategory}`);
+        if (!(item.primaryMuscles ?? []).length) at('no primary muscle');
+        for (const muscle of [...(item.primaryMuscles ?? []), ...(item.secondaryMuscles ?? [])]) {
+          if (!MUSCLES.has(muscle)) at(`muscle ${muscle}`);
+        }
+        // Nothing the app adds is a strongman implement.
+        if (isSpecialtyExercise(item)) at('specialty');
+        // No photo yet: a row that gains one has to gain it on purpose.
+        if ((item.imageUrls ?? []).length) at('has a photo');
+      }
+      assert.deepEqual(problems, []);
+    },
+  },
+  {
+    name: 'extras: every ready-programme slot is filed under a row by its own name or an alias, never by a guess',
+    run() {
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { findFiledLibraryIndex, GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
+      const library = createSeedExerciseLibrary();
+      const names = library.map((item) => item.name);
+      const unfiled = [];
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            // The same index the player opens, so the photo and the history agree.
+            const filed = findFiledLibraryIndex(exercise.exerciseName, names);
+            const opened = findGuidedLibraryIndex(exercise.exerciseName, names);
+            if (filed === null && opened === null) unfiled.push(`${template.id}: ${exercise.exerciseName}`);
+          }
+        }
+      }
+      assert.deepEqual(unfiled, []);
+
+      // The aliases into the app's own rows land on a row with steps, and
+      // the dosages land on the movement they dose.
+      const open = (name) => library[findGuidedLibraryIndex(name, names)]?.name;
+      const extras = new Set(EXTRA_EXERCISE_LIBRARY.map((item) => item.name.toLowerCase()));
+      for (const [source, target] of Object.entries(GUIDED_LIBRARY_ALIASES)) {
+        if (!extras.has(target)) continue;
+        assert.ok(library.find((item) => item.name.toLowerCase() === target).instructions.length > 0, `${source} -> ${target}`);
+      }
+      assert.equal(open('Air Bike (30s sprint)'), 'Bike HIIT', 'the fan bike, not the bicycle crunch');
+      assert.equal(open('Air Bike'), 'Air Bike', 'the library\'s own "Air Bike" is untouched');
+      assert.equal(open('Sprint 40m'), 'Sprint');
+      assert.equal(open('Pigeon Pose (each side)'), 'Pigeon Pose');
+      assert.equal(open('Frog Pump (Banded)'), 'Frog Pump');
+      assert.equal(open('Pike Push-Up (Elevated)'), 'Pike Push-Up (Elevated)');
+      // No weight, so not the kettlebell row; the loaded name opens it too.
+      for (const name of ['Single-Leg RDL', 'Single-Leg Romanian Deadlift']) {
+        const row = library.find((item) => item.name === open(name));
+        assert.equal(row.name, 'Single-Leg RDL', name);
+        assert.equal(row.equipment, 'bodyweight', name);
+        assert.ok(!/kettlebell/i.test(row.instructions.join(' ')), name);
+      }
+    },
+  },
 ];
