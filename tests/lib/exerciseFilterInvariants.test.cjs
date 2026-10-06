@@ -8,7 +8,8 @@ const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/work
 const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
 const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
 const classification = require('../../.test-dist/lib/exerciseClassification.js');
-const { getSuggestedExerciseLibraryItems } = require('../../.test-dist/lib/exerciseSuggestions.js');
+const { orderSwapCandidates, resolveSwapBrowsePrefilter } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
+const { getPopularExerciseLibraryOrder, getSuggestedExerciseLibraryItems } = require('../../.test-dist/lib/exerciseSuggestions.js');
 const { displayEquipmentValue, libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
 const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
 
@@ -107,6 +108,40 @@ module.exports = [
         names(unsearched.filter((item) => /\bcalf (raises?|press)\b/i.test(item.name) && !browse.matchesBodyPartFilter(item, 'calves'))),
         [],
       );
+    },
+  },
+  {
+    /**
+     * "Reiden ojennus" was in the quadriceps pool all along — at position 74
+     * of 137 when swapping a barbell squat, behind 47 barbell rows (snatches,
+     * clean pulls, jerk dip squats), and the swap list shows 25. Mirrors the
+     * unsearched list in GuidedPlayerScreen's `swapLibrary`.
+     */
+    name: 'filters: swapping any quadriceps staple shows the leg extension in the first 25 rows',
+    run() {
+      const popular = getPopularExerciseLibraryOrder(library);
+      const SWAP_LIST_ROWS = 25;
+      for (const name of [
+        'Barbell Squat',
+        'Barbell Full Squat',
+        'Front Barbell Squat',
+        'Leg Press',
+        'Hack Squat',
+        'Goblet Squat',
+        'Bulgarian Split Squat',
+        'Barbell Lunge',
+        'Smith Machine Squat',
+      ]) {
+        const current = byName(name);
+        const chip = resolveSwapBrowsePrefilter(current);
+        assert.equal(chip, 'quadriceps', name);
+        const pool = unsearched.filter((item) => item.name !== name && browse.matchesBodyPartFilter(item, chip));
+        const shown = names(orderSwapCandidates(pool, current, popular).slice(0, SWAP_LIST_ROWS));
+        assert.ok(shown.includes('Leg Extensions'), `swapping ${name}: ${shown.join(', ')}`);
+        for (const reported of ['Alternate Leg Diagonal Bound', 'Backward Drag', 'Cable Hip Adduction', 'Cable Deadlifts']) {
+          assert.equal(shown.includes(reported), false, `swapping ${name} shows ${reported}`);
+        }
+      }
     },
   },
   {
