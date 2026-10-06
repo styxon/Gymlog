@@ -366,7 +366,7 @@ module.exports = [
     },
   },
   {
-    name: 'ready programme audit: a split built to rest a half never trains it three days running, bar the glute specialisation',
+    name: 'ready programme audit: a split built to rest a half never trains it three days running',
     run() {
       const offenders = [];
       for (const template of WORKOUT_TEMPLATES_V1) {
@@ -380,10 +380,44 @@ module.exports = [
           }
         }
       }
-      assert.deepEqual(offenders, [
-        // Four lower-body days in five; the user's call whether to reorder.
-        'tpl_gainer_advanced_glutes_v1: glute_volume_pump > quads_hamstrings > glute_finisher',
-      ]);
+      // Advanced Glutes ran heavy glutes, upper, then three lower days in a
+      // row; its four lower days in five now go two, upper, two — heavy then
+      // light either side ("voi muuttaa järjestystä", user 2026-10-06).
+      assert.deepEqual(offenders, []);
+    },
+  },
+  {
+    name: 'ready programme audit: a reader part-way through Advanced Glutes keeps their next session through the reorder',
+    run() {
+      // A plan stores its week as entries that name each session BY ID, in
+      // the order the programme had on the day it was adopted, and the
+      // rotation offers the entry after the last one logged. So the reorder
+      // keeps every id: a plan adopted on the old order resolves every day
+      // and goes on in the order it already had — no session skipped, none
+      // twice. Only a new adoption takes the new order.
+      const { buildProgramWorkoutPlan, buildReadyProgramPlanId } = dist('lib/programAdoption.js');
+      const { resolveNextPlanEntryIndex } = dist('lib/planRotation.js');
+      const id = 'tpl_gainer_advanced_glutes_v1';
+      const template = WORKOUT_TEMPLATES_V1.find((candidate) => candidate.id === id);
+      const OLD_ORDER = ['heavy_glutes_strength', 'upper_body_sculpt', 'glute_volume_pump', 'quads_hamstrings', 'glute_finisher'];
+      const ids = template.sessions.map((session) => session.id);
+      assert.deepEqual([...ids].sort(), [...OLD_ORDER].sort());
+      assert.deepEqual(template.sessions.map((session) => session.orderIndex), ids.map((_, index) => index + 1));
+
+      const plan = buildProgramWorkoutPlan({
+        planId: buildReadyProgramPlanId(id),
+        workoutTemplateId: id,
+        programName: template.name,
+        sessionIds: OLD_ORDER,
+        dayLabels: ['mon', 'tue', 'wed', 'thu', 'fri'],
+        now: '2026-09-28T08:00:00.000Z',
+      });
+      OLD_ORDER.forEach((lastLogged, index) => {
+        const completed = [{ workoutTemplateId: id, workoutTemplateSessionId: lastLogged, performedAt: `2026-10-0${index + 1}T17:00:00.000Z` }];
+        const next = plan.entries[resolveNextPlanEntryIndex(plan.entries, completed)].workoutTemplateSessionId;
+        assert.equal(next, OLD_ORDER[(index + 1) % OLD_ORDER.length], `after ${lastLogged}`);
+        assert.ok(ids.includes(next), `${next} is still a session of the programme`);
+      });
     },
   },
   {
