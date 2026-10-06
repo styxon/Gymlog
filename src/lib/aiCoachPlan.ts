@@ -7,6 +7,7 @@ import {
 } from '../types/models';
 import { AICoachPlanSchema, AICoachPlannedExercise, AICoachPlannedSession } from '../types/aiCoachPlan';
 import { isSpecialtyExercise } from './exerciseClassification';
+import { isBrowsableExercise } from './exerciseBrowseFilter';
 
 type PlannedExerciseVariant = 'warmup' | 'primary' | 'secondary' | 'accessory';
 
@@ -591,11 +592,18 @@ function chooseLibraryExercise(args: {
     // own search word is not a name: "deadlift" must not land on Car Deadlift
     // or Axle Deadlift (#bugs 2026-10-06, specialty movements).
     const named = prioritizedMustTerms.includes(query);
+    // Nor must "hamstring" land on a hamstring stretch: a stretch or drill
+    // fills a slot only when the slot's own word says so ("world's greatest
+    // stretch" in the mobility focus) — the pickers' rule, read off the word.
+    const namesANonSet = named || !isBrowsableExercise({ name: query });
     const match = items.find((item) => {
       if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment)) {
         return false;
       }
       if (!named && isSpecialtyExercise(item)) {
+        return false;
+      }
+      if (!namesANonSet && !isBrowsableExercise(item)) {
         return false;
       }
 
@@ -629,8 +637,17 @@ function chooseLibraryExercise(args: {
     }
   }
 
+  // The app choosing with no word to go on: a set among normal exercises,
+  // never a stretch or a strongman implement. The mobility focus fell through
+  // to here on every one-day plan and handed out Chin To Chest Stretch
+  // (#bugs 2026-10-06, 45 of 2,025 plans).
   const fallback = items.find((item) => {
-    if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment) || isSpecialtyExercise(item)) {
+    if (
+      usedIds.has(item.id) ||
+      !allowedEquipment.has(item.equipment) ||
+      isSpecialtyExercise(item) ||
+      !isBrowsableExercise(item)
+    ) {
       return false;
     }
 
@@ -788,7 +805,7 @@ export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibr
                       : focusBodyPart === 'legs'
                         ? ['leg press', 'walking lunge', 'split squat']
                         : focusBodyPart === 'full body'
-                          ? ['world greatest stretch', 'walking lunge', 'plank']
+                          ? ["world's greatest stretch", 'walking lunge', 'plank']
                         : focusBodyPart === 'glutes'
                           ? ['hip thrust', 'glute bridge', 'walking lunge']
                           : focusBodyPart === 'biceps'
