@@ -359,7 +359,7 @@ module.exports = [
       assert.match(player, /  sheetFrame: \{ maxHeight: '78%' \},/);
       assert.match(
         player,
-        /<Animated\.View\s*style=\{\[styles\.sheetFrame, tall \? styles\.sheetFrameTall : null, \{ transform: \[\{ translateY: dragY \}\] \}\]\}\s*>/,
+        /<Animated\.View\s*style=\{\[styles\.sheetFrame, \{ transform: \[\{ translateY: dragY \}\] \}\]\}\s*>/,
       );
       assert.match(player, /  sheet: \{[^}]*flexShrink: 1,/);
       assert.doesNotMatch(player.match(/  sheet: \{[^}]*\}/)[0], /maxHeight/);

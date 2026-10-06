@@ -51,8 +51,12 @@ module.exports = [
   {
     name: 'guided swap: search, then suggestions, then the whole library',
     run() {
-      assert.match(playerSource, /'guided\.swap\.search'/);
-      assert.match(playerSource, /'guided\.swap\.suggested'/);
+      // The search and the suggestions' heading are the shared sheet's
+      // copy now (lib/exerciseSheetMode, #bugs 2026-10-06).
+      const modeSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'exerciseSheetMode.ts'), 'utf8');
+      assert.match(modeSource, /'guided\.swap\.search'/);
+      assert.match(modeSource, /'guided\.swap\.suggested'/);
+      assert.match(playerSource, /featured=\{\s*swapFeaturedEntries\.length > 0[\s\S]{0,120}exerciseSheetCopy\('swap', language\)\.featuredTitle/);
       assert.match(playerSource, /'guided\.swap\.library'/);
       // The library list is derived and capped: 873 rows inside a sheet is a
       // scroll, not a choice.
@@ -497,7 +501,7 @@ module.exports = [
     run() {
       assert.match(
         playerSource,
-        /swapBodyPart !== 'all'\s*\?\s*libraryLabel\(swapBodyPart, language\)\s*:\s*t\(language, 'guided\.swap\.library'\)/,
+        /title:\s*swapBodyPart !== 'all'\s*\?\s*libraryLabel\(swapBodyPart, language\)\s*:\s*t\(language, 'guided\.swap\.library'\),/,
       );
     },
   },
@@ -712,7 +716,8 @@ module.exports = [
       // Every sheet passes its title in, so every title is part of the strip.
       const openings = source.match(/<GPSheet\b/g) ?? [];
       const titled = source.match(/<GPSheet\s+title=/g) ?? [];
-      assert.ok(openings.length >= 5, 'the player lost its sheets');
+      // Four since the swap sheet became the shared exercise sheet (#bugs 2026-10-06).
+      assert.ok(openings.length >= 4, 'the player lost its sheets');
       assert.equal(titled.length, openings.length, 'a sheet draws its title outside the pull zone');
       assert.doesNotMatch(source, /styles\.sheetTitle\b/);
     },
@@ -765,54 +770,65 @@ module.exports = [
   },
   {
     /**
-     * #bugs 2026-09-30: "saisiko sen saman liikekirjaston missä on ne kuvat
-     * niin tuotua tähän" — the swap sheet's rows are the library's rows, the
-     * picture included, and the sheet is a fixed 90% rather than 55% dragged
-     * to 90% (the reader's call: with pictures the drag is not needed).
+     * #bugs 2026-10-06: "Vaihda liike ja Lisää liike pitäisi olla identtiset,
+     * käyttäen sitä miltä Lisää liike näyttää". The swap sheet was a GPSheet
+     * of picture rows with its own search and chips (#bugs 2026-09-30); it is
+     * the add sheet's card grid now — one component, two modes.
      */
-    name: 'guided swap: the library\'s picture rows, in a sheet 90% tall',
+    name: 'guided swap: the swap sheet is the add sheet, in swap mode',
     run() {
       const source = playerSource.replace(/\r\n/g, '\n');
-      assert.match(
-        source,
-        /import \{ ExerciseLibraryRow, exerciseLibraryRowMeta, getItemImage \} from '\.\.\/components\/ExerciseLibraryBrowser';/,
-      );
-      // Both lists, suggested and library, draw the shared row with a picture.
-      const sheet = source.slice(source.indexOf('{swapOpen && actionExercise && ('), source.indexOf('<AddExerciseSheet'));
-      assert.equal((sheet.match(/<ExerciseLibraryRow\b/g) ?? []).length, 2);
-      assert.match(sheet, /imageUrl=\{item \? getItemImage\(item\) : null\}/);
-      assert.match(sheet, /imageUrl=\{getItemImage\(item\)\}/);
-      assert.doesNotMatch(source, /SwapRow|swapRowText/);
-      // A suggestion is looked up in the library for its picture.
+      const sheet = fs
+        .readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'AddExerciseSheet.tsx'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      // One presentation: AddExerciseSheet draws ExercisePickerSheet, and the
+      // player's swap draws the same component.
+      assert.match(sheet, /export function ExercisePickerSheet\(/);
+      assert.match(sheet, /<ExercisePickerSheet\s+visible=\{visible\}[\s\S]*?mode="add"/);
+      assert.match(source, /<ExercisePickerSheet\s+visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?mode="swap"/);
+      assert.equal((source.match(/<ExercisePickerSheet\b/g) ?? []).length, 1);
+      // The old list is gone: no swap GPSheet, no picture rows, no own search.
+      assert.doesNotMatch(source, /\{swapOpen && actionExercise && \(/);
+      assert.doesNotMatch(source, /ExerciseLibraryRow|swapSearch|swapList|swapBrowseChip|sheetFrameTall/);
+      assert.doesNotMatch(source, /<GPSheet\b[^>]*\btall\b/);
+      // Same search, same three filter groups, same cards in both modes:
+      // the sheet has no mode branch in its layout, only in its copy.
+      assert.match(sheet, /const copy = exerciseSheetCopy\(mode, language, swappedName\);/);
+      assert.equal((sheet.match(/mode === 'swap'|mode === 'add'/g) ?? []).length, 0);
+      for (const group of ['sheet.category', 'sheet.bodyPart', 'sheet.equipment']) {
+        assert.ok(sheet.includes(`t(language, '${group}')`), group);
+      }
+      assert.match(sheet, /options=\{equipmentOptions\}/);
+      // The swap list obeys all three groups through the sheet's one rule.
+      assert.match(source, /matchesExerciseSheetFilters\(item, swapFilters\),/);
+      assert.match(sheet, /export function matchesExerciseSheetFilters\(/);
+      assert.match(sheet, /matchesExerciseSheetFilters\(item, \{ category, bodyPart, equipment \}\)/);
+      // A programme alternative keeps its card, with its picture when the
+      // library holds it (swapSuggestionRows) and its name when it does not.
       assert.match(source, /const swapSuggestionRows = useMemo\(/);
       assert.match(source, /findGuidedLibraryIndex\(getDrillLibraryName\(name\) \?\? name, libraryNames\)/);
-      // Tall: 90%, fixed, and the list fills it rather than a 380 cap.
-      assert.match(sheet, /<GPSheet[\s\S]*?\btall\b[\s\S]*?onClose=/);
-      assert.match(source, /sheetFrameTall: \{ height: '90%', maxHeight: '90%' \},/);
-      assert.match(source, /swapList: \{\s*flex: 1,\s*\}/);
-      // Only the swap sheet is tall; the rest keep the 78% content-sized cap.
-      const openings = source.match(/<GPSheet\b[\s\S]*?onClose=/g) ?? [];
-      assert.ok(openings.length >= 5, 'the player lost its sheets');
-      assert.equal(openings.filter((opening) => /^\s*tall$/m.test(opening)).length, 1);
-      // And the library screen draws the same component.
-      const browser = fs
-        .readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'ExerciseLibraryBrowser.tsx'), 'utf8')
-        .replace(/\r\n/g, '\n');
-      assert.match(browser, /export function ExerciseLibraryRow\(/);
-      // Still a button to a screen reader, as SwapRow was.
-      assert.match(browser, /accessibilityRole=\{onPress \? 'button' : undefined\}/);
-      assert.match(browser, /<ExerciseLibraryRow\s+title=\{exerciseListLabel\(language, item\.name\)\}/);
+      assert.match(sheet, /item: ExerciseLibraryItem \| null;/);
+      // A tap swaps by name, the same applySwap as before.
+      assert.match(source, /onSelect=\{\(entry\) => applySwap\(entry\.name\)\}/);
+      // "Already in this workout" stays under the list, and no empty card
+      // argues with it.
+      assert.match(source, /listNote=\{\s*swapSessionHits\.length > 0/);
+      assert.match(sheet, /ListEmptyComponent=\{\s*listNote \? null :/);
+      // The sheet's own bottom: the inset read on the screen, carried by the
+      // list when there is no commit bar under it.
+      assert.match(source, /<ExercisePickerSheet[\s\S]*?bottomInset=\{screenInsets\.bottom\}/);
+      assert.match(sheet, /footer \? null : \{ paddingBottom: spacing\.xxl \+ bottomInset \}/);
     },
   },
   {
     /**
      * The list opens on the lifts nearest the one being swapped: "filtteröinti
      * siihen liikkeeseen perustuva eli lähin sitä mitä haluu tehdä" (#bugs
-     * 2026-09-29). A bench press swap opened on squats and deadlifts — the
-     * most popular lifts of any body part — with the chips behind a "browse
-     * all" link (device, 2026-09-30).
+     * 2026-09-29). Kept through the move to the shared sheet (2026-10-06):
+     * the body-part pill opens on the lift's own body part, and only a pill
+     * the reader moves becomes theirs.
      */
-    name: 'guided swap: the chips are always there, on the lift\'s own body part until the reader picks',
+    name: 'guided swap: the body-part filter opens on the lift\'s own body part until the reader picks',
     run() {
       const source = playerSource.replace(/\r\n/g, '\n');
       assert.match(source, /useState<BodyPartFilter \| null>\(null\);/);
@@ -820,14 +836,50 @@ module.exports = [
         source,
         /const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart\(swapBodyPartFilter, swapBrowsePrefilter, swapQuery\);/,
       );
-      assert.match(source, /matchesBodyPartFilter\(item, swapBodyPart\),/);
-      assert.match(source, /const selected = swapBodyPart === option;/);
+      assert.match(source, /\(\) => \(\{ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment \}\)/);
+      assert.match(
+        source,
+        /if \(next\.bodyPart !== swapFilters\.bodyPart\) \{\s*setSwapBodyPartFilter\(next\.bodyPart\);\s*\}/,
+      );
       // No link in front of the chips any more, and no key for it.
       assert.doesNotMatch(source, /swapBrowseOpen|guided\.swap\.browseAll/);
       assert.doesNotMatch(i18nSource, /'guided\.swap\.browseAll'/);
-      // Both ways out start the next opening from the lift again.
+      // Both ways out start the next opening from the lift again, all three
+      // groups and the query with it.
       assert.equal((source.match(/setSwapBodyPartFilter\(null\);/g) ?? []).length, 2);
+      assert.equal((source.match(/setSwapCategory\('all'\);/g) ?? []).length, 2);
+      assert.equal((source.match(/setSwapEquipment\('all'\);/g) ?? []).length, 2);
       assert.doesNotMatch(source, /setSwapBodyPartFilter\('all'\)/);
+    },
+  },
+  {
+    name: 'exercise sheet modes: title, card action and note follow the mode in both languages',
+    run() {
+      const { exerciseSheetCopy } = require('../../.test-dist/lib/exerciseSheetMode.js');
+      const fiSwap = exerciseSheetCopy('swap', 'fi', 'Barbell Bench Press - Medium Grip');
+      assert.match(fiSwap.title, /^Vaihda /);
+      assert.ok(fiSwap.title.length > 'Vaihda '.length, 'the swap title names the lift');
+      assert.equal(fiSwap.actionLabel, 'Vaihda');
+      assert.equal(fiSwap.note, 'Jo kirjaamasi sarjat jäävät sille liikkeelle, jolla ne teit.');
+      assert.equal(fiSwap.featuredTitle, 'Ehdotetut');
+
+      const fiAdd = exerciseSheetCopy('add', 'fi');
+      assert.equal(fiAdd.title, 'Lisää liike');
+      assert.equal(fiAdd.actionLabel, 'Lisää');
+      assert.equal(fiAdd.note, null, 'adding touches no logged set, so it says nothing about them');
+      // The same search reads the same in both modes.
+      assert.equal(fiAdd.searchPlaceholder, fiSwap.searchPlaceholder);
+
+      const enSwap = exerciseSheetCopy('swap', 'en', 'Barbell Squat');
+      const enAdd = exerciseSheetCopy('add', 'en');
+      assert.equal(enSwap.actionLabel, 'Swap');
+      assert.equal(enAdd.actionLabel, 'Add');
+      assert.notEqual(enSwap.title, enAdd.title);
+      assert.ok(enSwap.note && enSwap.note.length > 0);
+      // A missing name never prints "undefined".
+      assert.doesNotMatch(exerciseSheetCopy('swap', 'fi', null).title, /undefined/);
+      // The new label exists in both dictionaries.
+      assert.equal((i18nSource.match(/'sheet\.swapAction': '[^']+'/g) ?? []).length, 2);
     },
   },
 ];

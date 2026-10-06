@@ -134,13 +134,15 @@ import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
-import { ExerciseLibraryRow, exerciseLibraryRowMeta, getItemImage } from '../components/ExerciseLibraryBrowser';
 import {
-  BODY_PART_FILTERS,
-  BodyPartFilter,
-  filterBrowsableExercises,
-  matchesBodyPartFilter,
-} from '../lib/exerciseBrowseFilter';
+  ExercisePickerEntry,
+  ExercisePickerFilters,
+  ExercisePickerSheet,
+  SheetEquipmentOption,
+  matchesExerciseSheetFilters,
+} from '../components/AddExerciseSheet';
+import { BodyPartFilter, filterBrowsableExercises } from '../lib/exerciseBrowseFilter';
+import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, orderSwapCandidates, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -1295,20 +1297,11 @@ function GPSheet({
   language,
   onClose,
   bottomInset,
-  tall = false,
   scrollable = false,
   children,
 }: {
   /** Drawn in the grab zone beside the close button, so the title is a handle too. */
   title: string;
-  /**
-   * 90% of the screen, fixed, instead of as tall as the content up to 78%.
-   * For a sheet that is a list to choose from — the swap sheet's picture
-   * rows — where room is rows and a sheet that resizes as the search narrows
-   * would move them under the thumb (#bugs 2026-09-30: no 55→90 drag, straight
-   * to 90).
-   */
-  tall?: boolean;
   /** For the close button's name. */
   language: AppLanguage;
   onClose: () => void;
@@ -1391,10 +1384,10 @@ function GPSheet({
             scrim: on the sheet inside it the percentage would resolve against
             a content-sized parent and quietly stop capping anything. */}
         <Animated.View
-          style={[styles.sheetFrame, tall ? styles.sheetFrameTall : null, { transform: [{ translateY: dragY }] }]}
+          style={[styles.sheetFrame, { transform: [{ translateY: dragY }] }]}
         >
           <Pressable
-            style={[styles.sheet, tall ? { flex: 1 } : null, { paddingBottom: bottomPadding }]}
+            style={[styles.sheet, { paddingBottom: bottomPadding }]}
             onPress={() => undefined}
           >
             {/* Measured: the sheet's paddingTop and the grab's -12 margin
@@ -1866,6 +1859,14 @@ function GuidedPlayer({
    * wherever `swapQuery` is, so every opening starts from the lift again.
    */
   const [swapBodyPartFilter, setSwapBodyPartFilter] = useState<BodyPartFilter | null>(null);
+  /**
+   * The sheet's other two filter groups. The swap sheet is the add sheet now
+   * (#bugs 2026-10-06), so it filters the same three ways; these two open on
+   * "all", reset with the rest, and narrow the candidates the swap already
+   * ordered rather than re-ordering them.
+   */
+  const [swapCategory, setSwapCategory] = useState<ExercisePickerFilters['category']>('all');
+  const [swapEquipment, setSwapEquipment] = useState<SheetEquipmentOption>('all');
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   /** The lift whose final set was just logged — a one-second check-splash
       before the next exercise's walk-up screen. Null = no splash showing. */
@@ -2432,6 +2433,11 @@ function GuidedPlayer({
    * whole library (effectiveSwapBodyPart).
    */
   const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart(swapBodyPartFilter, swapBrowsePrefilter, swapQuery);
+  /** The three groups the sheet draws, as the swap list applies them. */
+  const swapFilters = useMemo<ExercisePickerFilters>(
+    () => ({ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment }),
+    [swapBodyPart, swapCategory, swapEquipment],
+  );
 
   /**
    * Everything else the library holds.
@@ -2454,16 +2460,20 @@ function GuidedPlayer({
     // swap for a bench press, and "Rinnan venytys kädet niskan takana" sat in
     // the chest list (device, 2026-09-30). The add-exercise sheet has hidden
     // them the same way since #bugs 2026-08-26; a query finds them.
-    const pool = filterBrowsableExercises(exerciseLibrary, { query }).filter(
+    // The type chip is passed too: the specialty chip is the one place the
+    // specialty movements are listed without a query (#bugs 2026-10-06).
+    const pool = filterBrowsableExercises(exerciseLibrary, { query, type: swapFilters.category }).filter(
       (item) =>
         item.name !== current &&
         exerciseNameLabel(language, item.name) !== currentLabel &&
         !sessionLiftLabels.has(exerciseNameLabel(language, item.name)) &&
         !suggested.has(exerciseNameLabel(language, item.name)) &&
         // The body-part chip, the lift's own until the reader picks another
-        // (swapBodyPart). Composes with the typed query below rather than
-        // replacing it, like the library screen's own chips do.
-        matchesBodyPartFilter(item, swapBodyPart),
+        // (swapBodyPart), with the sheet's category and equipment chips — the
+        // add sheet's one rule (matchesExerciseSheetFilters). Composes with
+        // the typed query below rather than replacing it, like the library
+        // screen's own chips do.
+        matchesExerciseSheetFilters(item, swapFilters),
     );
     if (!query) {
       // Nearest the lift first — same kit, same kind of lift — then
@@ -2483,11 +2493,31 @@ function GuidedPlayer({
     exerciseLibrary,
     language,
     sessionLiftLabels,
-    swapBodyPart,
     swapCurrentLibraryItem,
+    swapFilters,
     swapSuggestions,
     swapQuery,
   ]);
+
+  /**
+   * The programme's alternatives as the sheet's first cards. The body-part
+   * chip does not reach them — it opens on the lift's own body part, and the
+   * alternatives are the programme's answer whatever chip is on — but a
+   * category or equipment chip does: a reader who taps "Käsipaino" is asking
+   * for dumbbell lifts, and a barbell card above them would argue with the
+   * chip. An alternative the library does not hold cannot be checked, so it
+   * steps aside while one of those two is on.
+   */
+  const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(() => {
+    const narrowed = swapFilters.category !== 'all' || swapFilters.equipment !== 'all';
+    return swapSuggestionRows
+      .filter(({ item }) => !narrowed || (item !== null && matchesExerciseSheetFilters(item, { ...swapFilters, bodyPart: 'all' })))
+      .map(({ name, item }) => ({ key: `suggested-${name}`, name, item }));
+  }, [swapFilters, swapSuggestionRows]);
+  const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
+    () => swapLibrary.map((item) => ({ key: item.id, name: item.name, item })),
+    [swapLibrary],
+  );
 
   const applySwap = (exerciseName: string) => {
     if (!actionExercise) {
@@ -2502,6 +2532,8 @@ function GuidedPlayer({
     setSwapOpen(false);
     setSwapQuery('');
     setSwapBodyPartFilter(null);
+    setSwapCategory('all');
+    setSwapEquipment('all');
     unpause();
   };
 
@@ -4656,127 +4688,67 @@ function GuidedPlayer({
         }}
       />
 
-      {swapOpen && actionExercise && (
-        <GPSheet
-          title={t(language, 'guided.swap.title', {
-            name: exerciseNameLabel(language, actionExercise.exerciseName),
-          })}
-          language={language}
-          tall
-          onClose={() => {
-            setSwapOpen(false);
-            setSwapQuery('');
-            setSwapBodyPartFilter(null);
-            unpause();
-          }}
-          bottomInset={screenInsets.bottom}
-        >
-
-          <TextInput
-            value={swapQuery}
-            onChangeText={setSwapQuery}
-            placeholder={t(language, 'guided.swap.search')}
-            placeholderTextColor={theme.faint}
-            style={styles.swapSearch}
-            autoCorrect={false}
-            returnKeyType="search"
-          />
-
-          <ScrollView style={styles.swapList} keyboardShouldPersistTaps="handled">
-            {swapSuggestions.length > 0 ? (
-              <>
-                <Text style={styles.swapSectionLabel}>{t(language, 'guided.swap.suggested')}</Text>
-                <View style={{ gap: 9 }}>
-                  {swapSuggestionRows.map(({ name, item }) => (
-                    <ExerciseLibraryRow
-                      key={`suggested-${name}`}
-                      title={exerciseListLabel(language, name)}
-                      accessibilityLabel={exerciseNameLabel(language, name)}
-                      meta={item ? exerciseLibraryRowMeta(item, language) : null}
-                      imageUrl={item ? getItemImage(item) : null}
-                      onPress={() => applySwap(name)}
-                    />
-                  ))}
-                </View>
-              </>
-            ) : null}
-
-            {/*
-              The library's own way to narrow this list, always there and
-              already on the lift's own body part (swapBodyPart) — nearest
-              first, the way Ehdotetut already orders it. It sat behind a
-              "Selaa kaikkia liikkeitä" link until #bugs 2026-09-30, and the
-              list under it was the most popular lifts of any body part. It
-              reuses the library screen's chip data and matcher
-              (BODY_PART_FILTERS, matchesBodyPartFilter from
-              exerciseBrowseFilter.ts) rather than a second copy of either.
-            */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.swapBrowseChipRow}
-            >
-              {BODY_PART_FILTERS.map((option) => {
-                const selected = swapBodyPart === option;
-                return (
-                  <Pressable
-                    key={option}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    // 34 drawn, 44 to the thumb — the row's own vertical
-                    // padding holds the slop, the same as CatalogScreen's
-                    // and ExerciseLibraryBrowser's chip rails (accessibility
-                    // audit, 2026-09-21; Android clips a slop to its parent).
-                    hitSlop={{ top: 5, bottom: 5 }}
-                    onPress={() => setSwapBodyPartFilter(option)}
-                    style={[styles.swapBrowseChip, selected && styles.swapBrowseChipActive]}
-                  >
-                    <Text style={[styles.swapBrowseChipText, selected && styles.swapBrowseChipTextActive]}>
-                      {libraryLabel(option, language)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            {/*
-              "All exercises" over a list a chip just narrowed to one body
-              part claimed a completeness the row no longer had (break round
-              2026-09-29). The chip's own label replaces it while one is
-              picked; "guided.swap.library" is only the unfiltered heading.
-            */}
-            <Text style={styles.swapSectionLabel}>
-              {swapBodyPart !== 'all'
-                ? libraryLabel(swapBodyPart, language)
-                : t(language, 'guided.swap.library')}
-            </Text>
-            {swapLibrary.length > 0 ? (
-              <View style={{ gap: 9 }}>
-                {swapLibrary.map((item) => (
-                  <ExerciseLibraryRow
-                    key={item.id}
-                    title={exerciseListLabel(language, item.name)}
-                    accessibilityLabel={exerciseNameLabel(language, item.name)}
-                    meta={exerciseLibraryRowMeta(item, language)}
-                    imageUrl={getItemImage(item)}
-                    onPress={() => applySwap(item.name)}
-                  />
-                ))}
-              </View>
-            ) : swapSessionHits.length > 0 ? null : (
-              <Text style={styles.sheetFootnote}>{t(language, 'guided.swap.noMatch')}</Text>
-            )}
-            {swapSessionHits.length > 0 ? (
-              <Text style={styles.sheetFootnote}>
-                {t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })}
-              </Text>
-            ) : null}
-          </ScrollView>
-
-          <Text style={styles.sheetFootnote}>{t(language, 'guided.swap.footnote')}</Text>
-        </GPSheet>
-      )}
+      {/*
+        "Vaihda liike" is the add sheet, in swap mode (#bugs 2026-10-06:
+        "Vaihda liike ja Lisää liike pitäisi olla identtiset"). The same
+        search, the same three filter groups, the same cards; what differs is
+        said by lib/exerciseSheetMode — the title names the lift, the cards say
+        Vaihda, and the note under the title says the logged sets stay where
+        they were done. What is offered and in what order is still the swap's
+        own: the programme's alternatives first (swapFeaturedEntries), then
+        the library nearest the lift (swapLibrary), the lift's own body part
+        until the reader picks a chip.
+      */}
+      <ExercisePickerSheet
+        visible={swapOpen && Boolean(actionExercise)}
+        bottomInset={screenInsets.bottom}
+        language={language}
+        mode="swap"
+        swappedName={actionExercise?.exerciseName ?? null}
+        search={swapQuery}
+        onSearchChange={setSwapQuery}
+        filters={swapFilters}
+        onFiltersChange={(next) => {
+          // Only a chip the reader actually moved becomes theirs: the lift's
+          // own body part stays the default until then (effectiveSwapBodyPart).
+          if (next.bodyPart !== swapFilters.bodyPart) {
+            setSwapBodyPartFilter(next.bodyPart);
+          }
+          setSwapCategory(next.category);
+          setSwapEquipment(next.equipment);
+        }}
+        featured={
+          swapFeaturedEntries.length > 0
+            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapFeaturedEntries }
+            : null
+        }
+        main={{
+          // "All exercises" over a list a chip just narrowed to one body part
+          // claimed a completeness the row no longer had (break round
+          // 2026-09-29). The chip's own label replaces it while one is picked.
+          title:
+            swapBodyPart !== 'all'
+              ? libraryLabel(swapBodyPart, language)
+              : t(language, 'guided.swap.library'),
+          entries: swapLibraryEntries,
+        }}
+        emptyTitle={t(language, 'guided.swap.noMatch')}
+        emptyBody={null}
+        listNote={
+          swapSessionHits.length > 0
+            ? t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })
+            : null
+        }
+        onSelect={(entry) => applySwap(entry.name)}
+        onClose={() => {
+          setSwapOpen(false);
+          setSwapQuery('');
+          setSwapBodyPartFilter(null);
+          setSwapCategory('all');
+          setSwapEquipment('all');
+          unpause();
+        }}
+      />
 
       {/* The cooldown intro's "Lisää liike": the same library sheet the day
           editor uses, so search and the body-part chips are the ones the
@@ -6831,63 +6803,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // way to the measured bound rather than overflowing the sheet.
   sheetScroll: { flexGrow: 0, flexShrink: 1 },
   sheetScrollContent: { paddingBottom: 6 },
-  sheetFrameTall: { height: '90%', maxHeight: '90%' },
-  swapSearch: {
-    marginBottom: 14,
-    height: 46,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    backgroundColor: theme.bg,
-    paddingHorizontal: 14,
-    color: theme.ink,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  // The rest of a tall sheet between the search and the footnote. It was
-  // capped at 380 while the sheet sized itself to its content; a fixed-height
-  // sheet bounds it instead, and the footnote stays on screen.
-  swapList: {
-    flex: 1,
-  },
-  swapSectionLabel: {
-    marginTop: 14,
-    marginBottom: 8,
-    color: theme.muted,
-    fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
-  // 5 above and below, not 4: the chips' 5 of hitSlop needs to sit inside
-  // this row, or Android clips the slop to it (accessibility audit,
-  // 2026-09-21 pattern).
-  swapBrowseChipRow: {
-    gap: 8,
-    paddingVertical: 5,
-  },
-  swapBrowseChip: {
-    minHeight: 34,
-    paddingHorizontal: 14,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.bg,
-  },
-  swapBrowseChipActive: {
-    backgroundColor: theme.purpleFill,
-    borderColor: theme.purpleFill,
-  },
-  swapBrowseChipText: {
-    color: theme.muted,
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-  swapBrowseChipTextActive: {
-    color: '#FFFFFF',
-  },
   sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: theme.border, alignSelf: 'center', marginBottom: 16 },
   // The pull zone: out to the sheet's edges and up to its top, so a thumb does
   // not have to find the 40 px grip (#bugs 2026-09-30).
@@ -6976,14 +6891,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '700',
     color: theme.faint,
-  },
-  sheetFootnote: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: theme.muted,
-    marginTop: 14,
-    textAlign: 'center',
-    lineHeight: 19,
   },
   howToNumber: {
     width: 26,
