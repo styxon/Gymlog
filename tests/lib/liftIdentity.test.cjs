@@ -147,7 +147,9 @@ module.exports = [
       // from 0 to 2. The numbers are today's, so a floor still fails loudly if
       // a rename takes one back to nothing.
       const GENUINELY_THIN = {
-        'Front Barbell Squat': 8,
+        // 8 until STRONG, a beginner week, traded its front squat for a
+        // second back squat day (user, 2026-10-06).
+        'Front Barbell Squat': 7,
         'Upright Barbell Row': 2,
         'Hack Squat': 5,
       };

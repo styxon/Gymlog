@@ -326,6 +326,27 @@ module.exports = [
     },
   },
   {
+    name: 'ready programme audit: a beginner programme starts on beginner-friendly movements, never one it needs a regression of',
+    run() {
+      // "Aloittelijaohjelmissa aloittelijaystävällisiä liikkeitä" (user,
+      // 2026-10-06). Not the skills above, but movements a first-timer should
+      // reach by way of an easier one of the same pattern: the front-rack
+      // squat after the goblet squat, the renegade row after the row and the
+      // plank, single-leg and box landings after two-footed ones, the push-up
+      // burpee after the burpee, the pike after the plank. STRONG and Fat Burn
+      // HIIT had five of them; each was swapped for its regression.
+      const NOT_A_FIRST_MOVEMENT = new RegExp([
+        'front squat', 'overhead squat', 'zercher', 'good morning', 'push press', '\\bclean\\b', 'kipping',
+        'renegade row', 'plank to pike', 'burpee with push-up', 'archer', 'one-arm', 'sissy squat', 'nordic',
+        'box jump', 'depth jump', 'skater jump', 'lateral bound', '\\(jumping\\)', 'pogo', 'tuck jump', 'single-leg (hop|jump)',
+      ].join('|'), 'i');
+      const offenders = slots()
+        .filter(({ template, exercise }) => template.level === 'beginner' && NOT_A_FIRST_MOVEMENT.test(exercise.exerciseName))
+        .map(where);
+      assert.deepEqual(offenders, []);
+    },
+  },
+  {
     name: 'ready programme audit: weekly push/pull balance stays within 2:1 and squat/hinge within 2.5:1, bar the 5x5\'s one deadlift',
     run() {
       const PUSH = new Set(['horizontal_press', 'vertical_press', 'bodyweight_press']);
