@@ -19,7 +19,9 @@ export interface MovementLogLike {
   exerciseNameSnapshot: string;
   weight: number;
   repsPerSet: number[];
-  sets?: Array<{ weight: number; reps: number; status?: string | null }>;
+  /** A skipped exercise did no work, whatever its rows say. */
+  skipped?: boolean;
+  sets?: Array<{ weight: number; reps: number; status?: string | null; kind?: string | null }>;
 }
 
 function normalizeName(name: string): string {
@@ -27,15 +29,29 @@ function normalizeName(name: string): string {
 }
 
 /**
- * A log's heaviest DONE set, from the per-set rows when it has them. A
+ * A log's heaviest DONE working set, from the per-set rows when it has them. A
  * pending or skipped row is a number typed, not a bar lifted: a 120 left
  * unticked beside a done 100 made the next 105 read "−15 kg" (audit
  * round 4, 2026-09-20).
+ *
+ * A warm-up is not the lift's top set either, and a skipped exercise has none
+ * at all. A lift skipped after its warm-ups saved a log whose only done rows
+ * were the 20 kg warm-ups; read as last time's top, the next session's 80 kg
+ * said "+60 kg" and went up WHAT MOVED (bug hunt W4, 2026-10-05). Such a log
+ * is no session of the lift, and the one before it is compared instead.
+ *
+ * A log with rows is read by its rows only: the flat `weight` is the legacy
+ * pair, for a log saved before rows existed.
  */
 function topOf(log: MovementLogLike): number {
-  const rows = (log.sets ?? []).filter((set) => set.status !== 'pending' && set.status !== 'skipped');
-  if (rows.length > 0) {
-    return rows.reduce((max, set) => Math.max(max, Number.isFinite(set.weight) ? set.weight : 0), 0);
+  if (log.skipped) {
+    return 0;
+  }
+  const sets = log.sets ?? [];
+  if (sets.length > 0) {
+    return sets
+      .filter((set) => set.status !== 'pending' && set.status !== 'skipped' && set.kind !== 'warmup')
+      .reduce((max, set) => Math.max(max, Number.isFinite(set.weight) ? set.weight : 0), 0);
   }
   return Number.isFinite(log.weight) ? log.weight : 0;
 }
