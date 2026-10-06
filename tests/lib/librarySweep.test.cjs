@@ -212,8 +212,9 @@ module.exports = [
         return 'full body';
       };
       // The app's own rows, filed by hand where two muscles share the work:
-      // the swing and the burpee as whole-body work, the split squat with the legs.
-      const ownRows = new Set(['Kettlebell Swing', 'Bulgarian Split Squat', 'Burpee']);
+      // the swing, the burpee and the jumping jack as whole-body work, the split
+      // squat with the legs.
+      const ownRows = new Set(['Kettlebell Swing', 'Bulgarian Split Squat', 'Burpee', 'Jumping Jack']);
       const wrong = library.filter(
         (item) => !ownRows.has(item.name) && bodyPartOf(item.primaryMuscles ?? []) !== item.bodyPart,
       );

@@ -73,8 +73,9 @@ module.exports = [
       // 90 until every row the source files as stretching (123 of them,
       // foam-roller rows included) became the "Venytykset" type, hidden
       // unasked, and the sprint-form drills joined the field drills
-      // (2026-10-06). Specialty rows are hidden by their own gate.
-      assert.ok(hidden <= 180, `hid ${hidden} of ${library.length} — too wide`);
+      // (2026-10-06), and the ready programmes' own stretches and drills got
+      // rows: 189 of 953. Specialty rows are hidden by their own gate.
+      assert.ok(hidden <= 200, `hid ${hidden} of ${library.length} — too wide`);
 
       // The lifts a programme is actually built from all survive.
       const names = new Set(kept.map((item) => item.name));

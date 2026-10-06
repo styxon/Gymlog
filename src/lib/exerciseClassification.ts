@@ -103,9 +103,19 @@ const FOAM_ROLLER_NAME = /-smr\b/i;
  * by search. Stretches a ready programme prescribes are found by name where
  * they are prescribed, as before.
  */
+/**
+ * Rows the source files as stretching that are sets: the crossover reverse
+ * lunge is the curtsy lunge the single-leg swap pool offers, loaded and
+ * counted like any lunge.
+ */
+const SETS_FILED_AS_STRETCHING = new Set(['crossover reverse lunge']);
+
 export function isStretchExercise(
   item: Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>,
 ): boolean {
+  if (SETS_FILED_AS_STRETCHING.has(item.name.trim().toLowerCase())) {
+    return false;
+  }
   return (
     item.sourceCategory?.trim().toLowerCase() === 'stretching' ||
     STRETCH_NAME.test(item.name) ||

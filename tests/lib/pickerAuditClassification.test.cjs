@@ -20,7 +20,13 @@ module.exports = [
   {
     name: 'picker audit: no row the source files as stretching is offered unasked as a set — and a prescribed one is still found',
     run() {
-      assert.deepEqual(names(unsearched.filter((item) => item.sourceCategory === 'stretching')), []);
+      // Less the one set the source files as stretching: the crossover reverse
+      // lunge, the single-leg pool's curtsy lunge (exerciseClassification).
+      const SET_FILED_AS_STRETCHING = 'Crossover Reverse Lunge';
+      assert.deepEqual(
+        names(unsearched.filter((item) => item.sourceCategory === 'stretching' && item.name !== SET_FILED_AS_STRETCHING)),
+        [],
+      );
       for (const name of ["Child's Pose", 'Arm Circles', '90/90 Hamstring', 'Calves-SMR', 'Adductor']) {
         const item = library.find((entry) => entry.name === name);
         assert.ok(item, name);
@@ -61,7 +67,10 @@ module.exports = [
       const { t } = require('../../.test-dist/lib/i18n.js');
       // Judged by the suite's own reading of a row, over the whole library.
       const stretches = library.filter(
-        (item) => item.sourceCategory === 'stretching' || /\bstretch(es|ing)?\b|-smr\b/i.test(item.name),
+        (item) =>
+          (item.sourceCategory === 'stretching' || /\bstretch(es|ing)?\b|-smr\b/i.test(item.name)) &&
+          // A lunge, whatever the source files it as (exerciseClassification).
+          item.name !== 'Crossover Reverse Lunge',
       );
       assert.ok(stretches.length >= 123, `${stretches.length} stretch rows`);
       assert.deepEqual(names(stretches.filter((item) => classification.exerciseTypeOf(item) !== 'stretch')), []);
@@ -119,6 +128,10 @@ module.exports = [
         // One lift by the app's identity (liftIdentity, the alias table and
         // tests/lib/liftHistoryIdentity.test.cjs), one name with it.
         ['Barbell Full Squat', 'Barbell Squat'],
+        // The library's own row and the extra row the ready programmes'
+        // name opens (catalog audit, 2026-10-06): one movement each.
+        ['Side Bridge', 'Side Plank'],
+        ['Body-Up', 'Plank-Up'],
       ].map((pair) => pair.join(' | '));
       for (const language of ['fi', 'en']) {
         const byLabel = new Map();

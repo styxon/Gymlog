@@ -99,6 +99,8 @@ module.exports = [
     run() {
       for (const config of PICKERS.filter((entry) => !entry.listsStretches)) {
         for (const filters of chipSettings(config.chips)) {
+          // "Venytykset" is where a stretch is asked for, like a query.
+          if (filters.category === 'stretch') continue;
           const rows = picker.listPickerExercises(library, { filters, language: 'fi' });
           assert.deepEqual(names(rows.filter(isNotASet)), [], `${config.name} ${JSON.stringify(filters)}`);
         }
@@ -220,7 +222,7 @@ module.exports = [
       for (const group of WORKOUT_SUBSTITUTION_GROUPS) {
         // Mobility and yoga slots are stretches by design; a stretch is the swap for a stretch.
         // Interval and agility slots are drills the same way: a sprint is the swap for a sprint.
-        const mobility = /mobility|yoga|stretch|interval|agility|drill/.test(group.id);
+        const mobility = /mobility|yoga|stretch|interval|agility|drill|breathing|activation/.test(group.id);
         for (const exerciseName of group.allowedExerciseNames) {
           const index = findGuidedLibraryIndex(exerciseName, libraryNames);
           if (index === null) continue;

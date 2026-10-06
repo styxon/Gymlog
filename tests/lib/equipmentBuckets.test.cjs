@@ -92,8 +92,15 @@ module.exports = [
       // change moved it off its own FACET_KEYS), so the two keys above are
       // all a new chip needs.
       // The quick-add list's tag says Kehonpaino only for the same rows.
+      // It prints the shared row words (lib/exercisePicker), so a band row
+      // says Kuminauha there too.
       const empty = fs.readFileSync(path.join(__dirname, '../../src/screens/EmptyWorkoutScreen.tsx'), 'utf8');
-      assert.match(empty, /displayEquipmentValue\(item\) === 'bodyweight' \? 'exerciseTag\.bodyweight'/);
+      assert.match(empty, /exercisePickerRowMeta\(item, language\)/);
+      const { exercisePickerRowMeta } = require('../../.test-dist/lib/exercisePicker.js');
+      const bandRow = library.find((item) => displayEquipmentValue(item) === 'band' && browse.isBrowsableExercise(item));
+      assert.ok(bandRow, 'no band row');
+      assert.match(exercisePickerRowMeta(bandRow, 'fi'), /Kuminauha/);
+      assert.doesNotMatch(exercisePickerRowMeta(bandRow, 'fi'), /Kehonpaino/);
       // The foam-roller rows are rolled, not repped: not offered unasked.
       assert.deepEqual(names(unsearched.filter((item) => displayEquipmentValue(item) === 'foam roll')), []);
     },
