@@ -459,4 +459,53 @@ module.exports = [
       assert.equal(en.errors[0], 'Row 2: at most 12 sets.');
     },
   },
+  {
+    // Sets were capped on 2026-10-05; reps went through at any size (M12, 2026-10-06).
+    name: 'CSV import: a rep count past any sane prescription is a row to fix, and the big numbers the ready catalog ships still import',
+    run() {
+      const text = [
+        'Day,Exercise,Sets,Reps',
+        'Day 1,Bench Press,3,100000',
+        'Day 1,Barbell Row,3,8-100000',
+        'Day 1,Back Squat,3,500',
+        'Day 1,Lat Pulldown,3,501',
+        'Day 1,Plank,3,600',
+        'Day 1,Plank,3,601',
+        'Day 1,Plank,3,30-60',
+      ].join('\n');
+      const en = parseCsvProgram(text, LIBRARY, [], 'en');
+      assert.deepEqual(
+        en.rows.map((row) => [row.exerciseName, row.repMin, row.repMax]),
+        [['Back Squat', 500, 500], ['Plank', 600, 600], ['Plank', 30, 60]],
+      );
+      assert.deepEqual(en.errors, [
+        'Row 2: at most 500 reps (seconds, for a hold).',
+        'Row 3: at most 500 reps (seconds, for a hold).',
+        'Row 5: at most 500 reps (seconds, for a hold).',
+        'Row 7: at most 600 reps (seconds, for a hold).',
+      ]);
+      const fi = parseCsvProgram('Day,Exercise,Sets,Reps\nDay 1,Bench Press,3,100000', LIBRARY, [], 'fi');
+      assert.deepEqual(fi.errors, ['Rivi 2: enintään 500 toistoa (pitoliikkeessä sekuntia).']);
+      assert.equal(fi.rows.length, 0);
+
+      // What the app ships must survive an export and an import: the 500 m
+      // row and the 300 s hold are in the ready catalog.
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            const preview = parseCsvProgram(
+              `Day,Exercise,Sets,Reps\nD,${exercise.exerciseName.replace(/,/g, ' ')},${exercise.sets},${exercise.repsMin}-${exercise.repsMax}`,
+              [],
+              [],
+              'en',
+            );
+            if (preview.errors.some((error) => /at most \d+ reps/.test(error))) {
+              assert.fail(`${template.id}: ${exercise.exerciseName} ${exercise.repsMin}-${exercise.repsMax} is refused by the importer`);
+            }
+          }
+        }
+      }
+    },
+  },
 ];
