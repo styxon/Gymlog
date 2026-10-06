@@ -179,9 +179,16 @@ module.exports = [
           assert.equal(picker.exercisePickerLabel(value, language), libraryLabel(value, language), value);
         }
       }
-      // The Finnish words, so a regression to the sheet's own dictionary shows.
+      // The Finnish words: the add sheet's, kept everywhere (user, 2026-10-06).
       const curl = byName('Alternate Hammer Curl');
-      assert.equal(picker.exercisePickerRowMeta(curl, 'fi'), 'Hauis · Käsipainot · Eristävä');
+      assert.equal(picker.exercisePickerRowMeta(curl, 'fi'), 'Hauis · Käsipaino · Eristävä');
+      const words = (values) => values.map((value) => picker.exercisePickerLabel(value, 'fi'));
+      assert.deepEqual(words(['compound', 'isolation', 'cardio', 'dumbbell', 'cable', 'machine', 'barbell']), [
+        'Perusliike', 'Eristävä', 'Cardio', 'Käsipaino', 'Talja', 'Laite', 'Tanko',
+      ]);
+      // A chip names a group, a row one lift.
+      assert.equal(picker.exercisePickerChipLabel('specialty', 'fi'), 'Erikoisliikkeet');
+      assert.equal(picker.exercisePickerLabel('specialty', 'fi'), 'Erikoisliike');
     },
   },
   {

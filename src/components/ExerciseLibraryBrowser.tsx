@@ -25,7 +25,7 @@ import {
   EquipmentFilter,
   ExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
-import { exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
+import { exercisePickerChipLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
@@ -637,7 +637,7 @@ export function ExerciseLibraryBrowser({
                         style={[styles.filterChip, selected && styles.filterChipSelected]}
                       >
                         <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-                          {libraryLabel(option, language)}
+                          {exercisePickerChipLabel(option, language)}
                         </Text>
                       </Pressable>
                     );
@@ -657,7 +657,7 @@ export function ExerciseLibraryBrowser({
                         style={[styles.filterChip, selected && styles.filterChipSelected]}
                       >
                         <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-                          {libraryLabel(option, language)}
+                          {exercisePickerChipLabel(option, language)}
                         </Text>
                       </Pressable>
                     );

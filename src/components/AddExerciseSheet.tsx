@@ -28,7 +28,7 @@ import {
 import {
   ExercisePickerFilters,
   NO_PICKER_FILTERS,
-  exercisePickerLabel,
+  exercisePickerChipLabel,
   exercisePickerRowLabels,
   listPickerExercises,
 } from '../lib/exercisePicker';
@@ -124,7 +124,7 @@ function FilterPillGroup<T extends string>({
               style={[styles.filterPill, active && styles.filterPillActive]}
             >
               <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
-                {exercisePickerLabel(option, language)}
+                {exercisePickerChipLabel(option, language)}
               </Text>
             </Pressable>
           );
@@ -340,7 +340,7 @@ export function ExercisePickerSheet({
                   style={[styles.quickBodyPartChip, active && styles.quickBodyPartChipActive]}
                 >
                   <Text style={[styles.quickBodyPartChipText, active && styles.quickBodyPartChipTextActive]}>
-                    {exercisePickerLabel(option, language)}
+                    {exercisePickerChipLabel(option, language)}
                   </Text>
                 </Pressable>
               );

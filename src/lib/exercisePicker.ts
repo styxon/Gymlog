@@ -26,6 +26,7 @@ import {
 } from './exerciseBrowseFilter';
 import { exerciseRowMetaValues } from './exerciseClassification';
 import { exerciseNameLabel } from './exerciseNameLabel';
+import { I18nKey, t } from './i18n';
 import { rankExerciseMatches } from './exerciseSearch';
 import { libraryLabel } from './libraryLabel';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
@@ -98,6 +99,21 @@ export function compareByShownName(language: AppLanguage) {
  */
 export function exercisePickerLabel(value: string, language: AppLanguage): string {
   return libraryLabel(value, language);
+}
+
+/**
+ * A filter chip's word. The same as the row's, except where a chip names a
+ * group and the row one lift: "Erikoisliikkeet" on the chip, "Erikoisliike"
+ * under a tyre flip. The add sheet's words are the app's words (user,
+ * 2026-10-06: Perusliike, Cardio, Käsipaino, Talja, Erikoisliikkeet).
+ */
+const CHIP_KEYS: Partial<Record<string, I18nKey>> = {
+  specialty: 'facet.specialty',
+};
+
+export function exercisePickerChipLabel(value: string, language: AppLanguage): string {
+  const key = CHIP_KEYS[value];
+  return key ? t(language, key) : exercisePickerLabel(value, language);
 }
 
 /** The words under a row's name — body part, equipment, type — for a layout that splits them. */

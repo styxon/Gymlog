@@ -29,7 +29,7 @@ import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { BODY_PART_FILTERS, BodyPartFilter } from '../lib/exerciseBrowseFilter';
-import { compareByShownName, exercisePickerLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
+import { compareByShownName, exercisePickerChipLabel, exercisePickerLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
 import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
 import { parseNumberInput, removeTrailingZeros } from '../lib/format';
 import {
@@ -348,7 +348,7 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
           return (
             <Pressable key={option} onPress={() => setFilter(option)} style={[styles.sheetChip, active && styles.sheetChipActive]}>
               <Text style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
-                {exercisePickerLabel(option, language)}
+                {exercisePickerChipLabel(option, language)}
               </Text>
             </Pressable>
           );

@@ -77,7 +77,9 @@ module.exports = [
         assert.doesNotMatch(source, /bodyPartLabel\(|exerciseTag\./, picker);
       }
       const sheet = read(PICKER_FILES['add sheet']);
-      assert.match(sheet, /exercisePickerLabel\(/);
+      assert.match(sheet, /exercisePickerChipLabel\(option, language\)/);
+      assert.match(read(PICKER_FILES['library screen']), /exercisePickerChipLabel\(option, language\)/);
+      assert.match(read(PICKER_FILES['empty workout']), /exercisePickerChipLabel\(option, language\)/);
       assert.match(sheet, /exercisePickerRowLabels\(item, language\)/);
       assert.match(read(PICKER_FILES['empty workout']), /exercisePickerRowMeta\(item, language\)/);
       assert.match(read(PICKER_FILES['library screen']), /exercisePickerRowMeta\(/);
