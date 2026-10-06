@@ -67,6 +67,24 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'skater',
     'pogo',
     'high knee',
+    // And so do running and the other landings: a knee "avoid" still kept
+    // Sprint 40m, Tempo Run Blocks, Stride Finishers and Lateral Bound
+    // (bug hunt, 2026-10-05, B8). Whole words, so "run" is not in "Crunch"
+    // and not in "Runner's Stretch".
+    'run',
+    'jog',
+    'sprint',
+    'stride',
+    'treadmill hiit',
+    'bound',
+    'hop',
+    'leap',
+    'skip',
+    'shuffle',
+    'carioca',
+    'agility',
+    'cone drill',
+    'ladder drill',
   ],
   elbows: ['curl', 'skull crusher', 'triceps', 'close-grip', 'pushdown', 'dip', 'dippi'],
   wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist'],
@@ -120,6 +138,10 @@ export function words(text: string): string[] {
 // exclusion, nothing else in the name is tried.
 const AREA_VETO_PHRASES: Partial<Record<SetupCautionArea, string[]>> = {
   lower_back: ['head on bench', 'chest supported'],
+  // A sprint on a bike is seated, with nothing to land on: "Bike HIIT (45s
+  // sprint / 15s rest)" is what the ankle swap hands a runner, and is the
+  // knee-friendly conditioning, not a run.
+  knees: ['bike'],
 };
 
 const phraseCache = new Map<string, string[]>();

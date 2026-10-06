@@ -98,7 +98,7 @@ import {
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { getExerciseTeaching } from '../lib/exerciseTeaching';
 import { buildExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
-import { toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
+import { programmeSetCount, toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
@@ -2251,10 +2251,7 @@ function GuidedPlayer({
       // was two answers to one question (review, 2026-10-05).
       // Against the programme's count, not the live one: a set added
       // mid-session must not change which of last time's sets were warm-ups.
-      const last = toWorkingHistoryEntry(
-        found,
-        instance ? instance.sets.filter((set) => !set.addedMidSession).length : found.sets.length,
-      );
+      const last = toWorkingHistoryEntry(found, instance ? programmeSetCount(instance.sets) : found.sets.length);
       const heaviest = Math.max(...last.sets.map((set) => set.loadKg));
       return {
         performedAt: last.performedAt,

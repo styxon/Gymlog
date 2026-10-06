@@ -45,6 +45,64 @@ module.exports = [
     },
   },
   {
+    // M15 (2026-10-06): the splitter knew only styxon.fi, so the e-mail
+    // addresses the policy tells a reader to write to, and the authorities'
+    // sites, were plain text.
+    name: 'legal links: e-mail addresses and web addresses are cut out, punctuation left behind',
+    run() {
+      const linked = (text) => splitLegalLinks(text).filter((part) => part.url).map((part) => [part.text, part.url]);
+      assert.deepEqual(linked('Write to privacy@vinha.app.'), [['privacy@vinha.app', 'mailto:privacy@vinha.app']]);
+      assert.deepEqual(linked('(tietosuoja@om.fi), or tietosuoja.fi, or kkv.fi).'), [
+        ['tietosuoja@om.fi', 'mailto:tietosuoja@om.fi'],
+        ['tietosuoja.fi', 'https://tietosuoja.fi'],
+        ['kkv.fi', 'https://kkv.fi'],
+      ]);
+      assert.deepEqual(linked('See https://styxon.fi/vinha-fitness/legal/terms.en, then stop.'), [
+        ['https://styxon.fi/vinha-fitness/legal/terms.en', 'https://styxon.fi/vinha-fitness/legal/terms.en'],
+      ]);
+      // An address's own domain is not a second link inside it.
+      assert.equal(linked('privacy@vinha.app').length, 1);
+      // Not addresses.
+      assert.deepEqual(linked('For example, e.g. version 1.2 of the app, i.e. now.'), []);
+      for (const text of ['', 'privacy@vinha.app', 'a kkv.fi b privacy@vinha.app c']) {
+        assert.equal(splitLegalLinks(text).map((part) => part.text).join(''), text);
+      }
+    },
+  },
+  {
+    // Run over the strings the app really shows, not over a sample written to
+    // suit the splitter: every address-shaped token in them must be a link.
+    name: 'legal links: every e-mail and web address in the real legal texts is a link',
+    run() {
+      const expected = new Map([
+        ['privacy@vinha.app', 'mailto:privacy@vinha.app'],
+        ['tietosuoja@om.fi', 'mailto:tietosuoja@om.fi'],
+        ['tietosuoja.fi', 'https://tietosuoja.fi'],
+        ['kuluttajariita.fi', 'https://kuluttajariita.fi'],
+        ['kkv.fi', 'https://kkv.fi'],
+        ['styxon.fi/vinha-fitness/legal/delete-account.fi', 'https://styxon.fi/vinha-fitness/legal/delete-account.fi'],
+        ['styxon.fi/vinha-fitness/legal/delete-account.en', 'https://styxon.fi/vinha-fitness/legal/delete-account.en'],
+      ]);
+      const seen = new Map();
+      const addressShaped = /[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+|\b(?:[A-Za-z0-9-]+\.)+(?:fi|com|app|eu|org|net|io|dev)\b(?:\/[^\s,;:)]*)?/g;
+      for (const line of everyLine()) {
+        const parts = splitLegalLinks(line);
+        assert.equal(parts.map((part) => part.text).join(''), line, 'nothing of the text is lost');
+        const linkedTexts = new Set(parts.filter((part) => part.url).map((part) => part.text));
+        for (const part of parts) {
+          if (part.url) {
+            seen.set(part.text, part.url);
+          }
+        }
+        for (const match of line.matchAll(addressShaped)) {
+          const token = match[0].replace(/[.:]+$/, '');
+          assert.ok(linkedTexts.has(token), `${token} is in the text but is not a link: ${line}`);
+        }
+      }
+      assert.deepEqual(Object.fromEntries(seen), Object.fromEntries(expected));
+    },
+  },
+  {
     name: 'legal links: every styxon.fi address the documents name is a page the site build writes',
     run() {
       // The pages scripts/build-legal-site.cjs writes, each in both languages.
@@ -53,7 +111,7 @@ module.exports = [
       const found = new Set();
       for (const line of everyLine()) {
         for (const part of splitLegalLinks(line)) {
-          if (part.url) {
+          if (part.url && part.url.startsWith('https:') && new URL(part.url).hostname === 'styxon.fi') {
             found.add(part.url);
           }
         }

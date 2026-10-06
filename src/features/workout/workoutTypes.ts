@@ -156,8 +156,21 @@ export interface WorkoutSetInstance {
    * The reader added this set mid-session. Its opening weight is copied from
    * the set before it — usually what the reader just lifted — so the saved
    * plan must not present it as the app's suggestion.
+   *
+   * Also the one record of which sets are past the programme's count, which
+   * is what tells last time's warm-ups from its work (lib/warmupSets
+   * programmeSetCount) — so a swap keeps it. It used to clear it, and a
+   * session with a set added and the lift swapped read last time's warm-up
+   * as set 1 (bug hunt W11, 2026-10-05).
    */
   addedMidSession?: boolean;
+  /**
+   * An added set whose opening weight a swap re-resolved from the new lift's
+   * own history: the number is the app's now (`borrowed` or `none` in
+   * lib/loggedSetPlan), not the reader's carried-over one. Absent: untouched
+   * by a swap, or added after it.
+   */
+  plannedBySwap?: boolean;
   /**
    * When the prefill came from the same lift in a DIFFERENT slot — another
    * program, another day, an empty workout — this is when that session was

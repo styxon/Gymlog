@@ -72,6 +72,17 @@ export function toWorkingHistoryEntry(
 }
 
 /**
+ * The programme's set count for a live lift: its sets less the ones the reader
+ * added mid-session. What toWorkingHistoryEntry is read against, so a set
+ * added today does not change which of last time's sets were warm-ups — which
+ * holds only while every added set keeps its mark, a swap included (bug hunt
+ * W11, 2026-10-05).
+ */
+export function programmeSetCount(sets: readonly { addedMidSession?: boolean }[]): number {
+  return sets.filter((set) => !set.addedMidSession).length;
+}
+
+/**
  * The sets that decide whether a session earned more load: every set up to and
  * including the last one at the session's heaviest load. The lighter sets after
  * it — a drop or a back-off, 80/75/70 — are exempt, or a descending pattern
@@ -107,25 +118,93 @@ const WARMUP_LADDER: readonly { share: number; reps: number }[] = [
 const PLATE_STEP_KG = 2.5;
 
 /**
+ * The ladder off one working load, as a lifter would load it: every rung on a
+ * plate step, above nothing and below the work, each heavier than the one
+ * before.
+ *
+ * Rounded to the nearest plate step alone, a light load came out wrong: 5 kg
+ * gave 2.5 / 2.5 / 5 — one rung twice, and a "warm-up" at the working weight —
+ * and 2 kg gave 0 / 2.5 / 2.5, nothing and then more than the work (bug hunt
+ * W10, 2026-10-05). So a rung
+ * the rounding lifts to the work steps down a plate, a rung at nothing goes,
+ * and a rung no heavier than the one below it goes too (the first of them
+ * stays, with its higher reps). A light lift gets fewer rungs — 5 kg one,
+ * 10 kg two — and a load of one plate step or less none: there is no warm-up
+ * below it to load, and "+ Warm-up set" opens on an empty weight for the
+ * reader to choose.
+ */
+export function warmupLadder(workingLoadKg: number | null | undefined): { loadKg: number; reps: number }[] {
+  if (typeof workingLoadKg !== 'number' || !Number.isFinite(workingLoadKg) || !(workingLoadKg > 0)) {
+    return [];
+  }
+  const rungs: { loadKg: number; reps: number }[] = [];
+  WARMUP_LADDER.forEach((rung) => {
+    let loadKg = Math.round((workingLoadKg * rung.share) / PLATE_STEP_KG) * PLATE_STEP_KG;
+    while (loadKg > 0 && loadKg > workingLoadKg - SAME_LOAD_KG) {
+      loadKg -= PLATE_STEP_KG;
+    }
+    const below = rungs[rungs.length - 1];
+    if (loadKg > SAME_LOAD_KG && (!below || loadKg > below.loadKg + SAME_LOAD_KG)) {
+      rungs.push({ loadKg, reps: rung.reps });
+    }
+  });
+  return rungs;
+}
+
+/**
  * What "+ Warm-up set" opens on for the warm-up at `index` (0 for the first).
  *
  * Last time's warm-up at the same place, as it was done — a warm-up never
- * progresses (user, 2026-10-05). Otherwise the ladder off the first working
- * set's load; with no load to climb to, the reps alone and an empty weight.
+ * progresses (user, 2026-10-05) — unless it is no lighter than today's work
+ * (a deload, or a slot now holding a lighter lift): a warm-up is below the
+ * work. Otherwise the ladder off the first working set's load (warmupLadder),
+ * its top rung again past its end; with no load to climb to, or one too light
+ * to climb, the reps alone and an empty weight.
  */
 export function warmupOffer(
   lastWarmups: readonly { loadKg: number; reps: number }[] | undefined,
   index: number,
   workingLoadKg: number | null | undefined,
 ): { loadKg: number | null; reps: number } {
-  // A warm-up of no weight is not one to repeat: the ladder offers a load.
-  const repeated = lastWarmups?.[index];
-  if (repeated && repeated.loadKg > 0) {
-    return { loadKg: repeated.loadKg, reps: repeated.reps };
+  const working = typeof workingLoadKg === 'number' && workingLoadKg > 0 ? workingLoadKg : null;
+  const ladder = warmupLadder(working);
+
+  // Each offer is read against the one before it, never lighter: last time's
+  // 60 and 90 against today's deloaded 80 offered 60, then the ladder's 40,
+  // because 90 is no longer below the work; and a ladder rung offered first
+  // could be followed by a lighter warm-up repeated from last time (review,
+  // 2026-10-06). So the offers are walked from the first, and each is the
+  // warm-up repeated, the ladder's rung, the first rung above the offer
+  // before, or that offer again — the first of those not below it.
+  const offerAt = (at: number, before: { loadKg: number | null; reps: number } | null) => {
+    const floor = before?.loadKg ?? 0;
+    // A warm-up of no weight is not one to repeat: the ladder offers a load.
+    const repeated = lastWarmups?.[at];
+    if (
+      repeated
+      && repeated.loadKg > 0
+      && (working === null || repeated.loadKg < working - SAME_LOAD_KG)
+      && repeated.loadKg > floor - SAME_LOAD_KG
+    ) {
+      return { loadKg: repeated.loadKg, reps: repeated.reps };
+    }
+    if (ladder.length === 0) {
+      return { loadKg: null, reps: WARMUP_LADDER[Math.min(at, WARMUP_LADDER.length - 1)].reps };
+    }
+    const placed = ladder[Math.min(at, ladder.length - 1)];
+    if (placed.loadKg > floor - SAME_LOAD_KG) {
+      return placed;
+    }
+    const above = ladder.find((step) => step.loadKg > floor + SAME_LOAD_KG);
+    if (above) {
+      return above;
+    }
+    return before && before.loadKg !== null ? before : placed;
+  };
+
+  let offer: { loadKg: number | null; reps: number } | null = null;
+  for (let at = 0; at <= Math.max(0, index); at += 1) {
+    offer = offerAt(at, offer);
   }
-  const rung = WARMUP_LADDER[Math.min(Math.max(0, index), WARMUP_LADDER.length - 1)];
-  if (typeof workingLoadKg !== 'number' || !(workingLoadKg > 0)) {
-    return { loadKg: null, reps: rung.reps };
-  }
-  return { loadKg: Math.round((workingLoadKg * rung.share) / PLATE_STEP_KG) * PLATE_STEP_KG, reps: rung.reps };
+  return { loadKg: offer?.loadKg ?? null, reps: offer?.reps ?? WARMUP_LADDER[0].reps };
 }

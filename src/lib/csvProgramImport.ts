@@ -3,6 +3,7 @@ import { collapseCellWhitespace, splitCsvRecords } from './csvRecords';
 import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
 import { t } from './i18n';
+import { isHoldExerciseName } from './holdExercises';
 import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 
 /**
@@ -99,6 +100,20 @@ function splitCsvLine(line: string, delimiter: string) {
   cells.push(current.trim());
   return cells;
 }
+
+/**
+ * The largest number a Reps cell may hold.
+ *
+ * The editor's stepper stops at PROGRAM_REPS_RANGE (50), but that ceiling is
+ * for a thumb, and the programmes the app itself ships go past it: a 60 s
+ * plank, a 300 s wall sit, a 200 m sprint, a 500 m row. Exporting those and
+ * importing them again has to work, so the importer's ceiling is the largest
+ * thing the catalog prescribes — 500 for a count or a distance, and 600
+ * seconds for a hold. A typo of 100000 is past both and is refused, like a
+ * sets count over the editor's 12.
+ */
+export const CSV_REPS_MAX = 500;
+export const CSV_HOLD_SECONDS_MAX = 600;
 
 function parseReps(value: string): { repMin: number; repMax: number } | null {
   const match = value.replace(/\s+/g, '').match(/^(\d+)(?:[-–—x/](\d+))?$/);
@@ -388,6 +403,16 @@ export function parseCsvProgram(
       errors.push(t(language, 'csv.error.reps', { row }));
       continue;
     }
+    // A hold is written in seconds, so it gets the seconds ceiling — read off
+    // the name the row resolves to as well as the one written, so "Lankku"
+    // is a plank like "Plank" is.
+    const match = matchExercise(exerciseName, library, nameBook);
+    const isHold = isHoldExerciseName(exerciseName) || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
+    const repsMax = isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
+    if (reps.repMax > repsMax) {
+      errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
+      continue;
+    }
 
     const dayKey = normalizeName(day);
     if (!seenDayKeys.has(dayKey)) {
@@ -408,7 +433,7 @@ export function parseCsvProgram(
       sets,
       repMin: reps.repMin,
       repMax: reps.repMax,
-      ...matchExercise(exerciseName, library, nameBook),
+      ...match,
     });
   }
 

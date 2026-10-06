@@ -9,6 +9,7 @@ const {
   buildLegalDocument,
   renderLegalDocumentMarkdown,
 } = require('../../.test-dist/lib/legalDocuments.js');
+const { compareLegalVersions } = require('../../.test-dist/lib/legalAcceptance.js');
 
 const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -897,7 +898,7 @@ module.exports = [
         const before = LEGAL_TEXT_VERSIONS[index - 1];
         const after = LEGAL_TEXT_VERSIONS[index];
         assert.ok(
-          after.version > before.version,
+          compareLegalVersions(after.version, before.version) > 0,
           `LEGAL_TEXT_VERSIONS: the entry for ${after.version} is not later than the one for ${before.version}. `
             + 'A new wording needs a new LEGAL_VERSION in src/lib/legalDocuments.ts (a second change on one day: '
             + 'the same day with a ".1", ".2" suffix).',

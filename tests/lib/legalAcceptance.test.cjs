@@ -51,6 +51,45 @@ module.exports = [
     },
   },
   {
+    // 2026-10-06.1 (a second change on one day) used to fail the date-only
+    // shape, so the stored acceptance read as malformed and the sheet came
+    // back on every launch; and '.10' sorted before '.9' as a string.
+    name: 'legal acceptance: same-day suffixed versions are accepted and ordered by number',
+    run() {
+      const { compareLegalVersions, laterLegalAcceptance } = require('../../.test-dist/lib/legalAcceptance.js');
+      const stamp = '2026-10-06T10:00:00.000Z';
+      const suffixed = { version: '2026-10-06.1', acceptedAt: stamp };
+      assert.deepEqual(normalizeLegalAcceptance(suffixed), suffixed);
+      assert.equal(legalAcceptanceDue(normalizeLegalAcceptance(suffixed), '2026-10-06.1'), null);
+
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06', acceptedAt: stamp }, '2026-10-06.1'), 'changed');
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.9', acceptedAt: stamp }, '2026-10-06.10'), 'changed');
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.10', acceptedAt: stamp }, '2026-10-06.9'), null);
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.3', acceptedAt: stamp }, '2026-10-06'), null);
+      assert.equal(legalAcceptanceDue({ version: '2026-10-05.7', acceptedAt: stamp }, '2026-10-06'), 'changed');
+
+      assert.equal(compareLegalVersions('2026-10-06', '2026-10-06.0'), 0);
+      assert.ok(compareLegalVersions('2026-10-06.9', '2026-10-06.10') < 0);
+      assert.ok(compareLegalVersions('2026-10-07', '2026-10-06.99') > 0);
+
+      const nine = { version: '2026-10-06.9', acceptedAt: stamp };
+      const ten = { version: '2026-10-06.10', acceptedAt: stamp };
+      assert.deepEqual(laterLegalAcceptance(nine, ten), ten);
+      assert.deepEqual(laterLegalAcceptance(ten, nine), ten);
+
+      // Unknown shapes: no throw, and no loop. A stored value that does not
+      // parse is dropped (asks once, then the answer is a clean version).
+      for (const bad of ['2026-10-06.', '2026-10-06.x', '2026-10-06.1.2', 'v2', '']) {
+        assert.equal(normalizeLegalAcceptance({ version: bad, acceptedAt: stamp }), null, bad);
+        assert.doesNotThrow(() => compareLegalVersions(bad, '2026-10-06'));
+        assert.doesNotThrow(() => legalAcceptanceDue({ version: bad, acceptedAt: stamp }, '2026-10-06'));
+        assert.equal(compareLegalVersions(bad, bad), 0);
+      }
+      const asked = acceptLegal('2026-10-06.12', new Date(stamp));
+      assert.equal(legalAcceptanceDue(normalizeLegalAcceptance(asked), '2026-10-06.12'), null);
+    },
+  },
+  {
     /**
      * A restore keeps the acceptance that covers more. A backup from before
      * the question existed has none, and taking the backup's answer asked a

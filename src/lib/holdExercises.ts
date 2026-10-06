@@ -1,5 +1,5 @@
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
-import { DEMO_ONLY_ALIASES, findGuidedLibraryIndex } from './guidedPlayer';
+import { DEMO_ONLY_ALIASES, findFiledLibraryIndex } from './guidedPlayer';
 
 /**
  * Which exercises are a timed position rather than repetitions.
@@ -61,11 +61,43 @@ const HOLD_EXERCISE_NAMES = [
   "World's Greatest Stretch",
 ] as const;
 
+/**
+ * Library rows that are held, whose names say nothing of it and whose rows the
+ * catalogues never prescribe — so the list above, which the catalogues must
+ * agree with, is not the place for them. Each one's own instructions give a
+ * duration ("Hold for 10-20 seconds") or are a static position (a side bridge
+ * is a side plank). Found by reading all 873 rows against the rule below
+ * (2026-10-06); the SMR foam-roller rows are timed the same way and are caught
+ * by their suffix. Pinned, both ways round, in tests/lib/holdTracking.test.cjs.
+ */
+const LIBRARY_HOLD_NAMES = [
+  '90/90 Hamstring',
+  'Adductor/Groin',
+  'Ankle On The Knee',
+  'Crucifix',
+  'Lying Bent Leg Groin',
+  'Lying Crossover',
+  'Lying Glute',
+  'Lying Hamstring',
+  'Lying Prone Quadriceps',
+  'One Handed Hang',
+  'Overhead Lat',
+  'Overhead Triceps',
+  'Seated Biceps',
+  'Seated Front Deltoid',
+  'Seated Glute',
+  'Seated Hamstring',
+  'Side Bridge',
+  'Standing Hip Flexors',
+  'Standing Toe Touches',
+  'The Straddle',
+] as const;
+
 function normalize(value: string) {
   return value.trim().toLowerCase();
 }
 
-const byName = new Set(HOLD_EXERCISE_NAMES.map(normalize));
+const byName = new Set([...HOLD_EXERCISE_NAMES, ...LIBRARY_HOLD_NAMES].map(normalize));
 
 /**
  * The library names of the holds above, so a user who picks the library's own
@@ -84,7 +116,12 @@ const libraryAliases = (() => {
     if (DEMO_ONLY_ALIASES.has(normalize(holdName))) {
       continue;
     }
-    const index = findGuidedLibraryIndex(holdName, names);
+    // Exact name or alias only. This used to be findGuidedLibraryIndex, which
+    // falls back to "the shortest library name that contains this one" — right
+    // for finding a photo, wrong for deciding what an exercise IS: "Side Plank"
+    // is contained in "Push Up to Side Plank", so the push-up (a repetition
+    // movement) became a 3 x 30-45 s hold (bug hunt, 2026-10-05).
+    const index = findFiledLibraryIndex(holdName, names);
     if (index !== null) {
       resolved.add(normalize(names[index]));
     }
@@ -104,11 +141,16 @@ const libraryAliases = (() => {
  */
 const NAMED_HOLD = /\b(stretch|stretches|stretching|isometric)\b/i;
 const MOVED_STRETCH = /\bdynamic\b/i;
+// A foam-roller row ("Calves-SMR"): pressed on a point of tension for 10-30 s.
+const FOAM_ROLL = /-smr$/i;
 // Named for a stretch or an isometric, moved through in repetitions: the
 // cat-cow, leg swings, and a side-to-side push-up (review, 2026-10-05).
 const REPS_STRETCHES = new Set(['cat stretch', 'iron crosses (stretch)', 'isometric wipers']);
 
 function isNamedHold(normalized: string): boolean {
+  if (FOAM_ROLL.test(normalized)) {
+    return true;
+  }
   return NAMED_HOLD.test(normalized) && !MOVED_STRETCH.test(normalized) && !REPS_STRETCHES.has(normalized);
 }
 

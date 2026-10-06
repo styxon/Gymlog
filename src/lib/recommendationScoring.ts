@@ -364,11 +364,31 @@ function resolveFallbackReason(featuredDefinition: RecommendationProgramDefiniti
   return null;
 }
 
+function fitsLevel(candidate: RecommendationCandidate, input: RecommendationInput) {
+  return getRecommendationProgramDefinition(candidate.programId)?.supportedLevels.includes(input.level) ?? false;
+}
+
+/**
+ * 2 = written for the reader's goal, 1 = the goal is a backup, 0 = neither.
+ * The same three tiers the waterfall and the goal score separate.
+ */
+function goalTier(definition: RecommendationProgramDefinition, input: RecommendationInput) {
+  return definition.supportedGoals.includes(input.goal) ? 2 : definition.backupGoals.includes(input.goal) ? 1 : 0;
+}
+
 function selectAlternativeCandidates(candidates: RecommendationCandidate[], input: RecommendationInput) {
-  const [featuredCandidate, ...remainingCandidates] = candidates;
+  const [featuredCandidate, ...otherCandidates] = candidates;
   if (!featuredCandidate) {
     return [];
   }
+
+  // The level gate the primary pick has (levelFirst), before the day count:
+  // a beginner asking for six days was offered HUGE Elite and HUGE Classic as
+  // the second card because they were the six-day programmes, with twenty
+  // beginner ones in the pool (bug hunt, 2026-10-05, B2). Off-level
+  // programmes are offered only when nothing at the reader's level is left.
+  const levelFitting = otherCandidates.filter((candidate) => fitsLevel(candidate, input));
+  const remainingCandidates = levelFitting.length > 0 ? levelFitting : otherCandidates;
 
   const sameDayAlternatives = remainingCandidates.filter((candidate) => {
     const definition = getRecommendationProgramDefinition(candidate.programId);
@@ -376,7 +396,19 @@ function selectAlternativeCandidates(candidates: RecommendationCandidate[], inpu
   });
   const orderedAlternatives = sameDayAlternatives.length > 0 ? [...sameDayAlternatives] : [...remainingCandidates];
 
-  return orderedAlternatives.slice(0, 2);
+  // Programmes that serve the reader's goal (written for it, or as a backup)
+  // ahead of those that do not, score order kept within each. The level gate
+  // above narrowed the pool, and a pro strength reader at home was handed RUN
+  // as the second card because it was the first three-day programme left
+  // (review of B2, 2026-10-06).
+  const servesGoal = (candidate: RecommendationCandidate) => {
+    const definition = getRecommendationProgramDefinition(candidate.programId);
+    return definition ? goalTier(definition, input) > 0 : false;
+  };
+  return [
+    ...orderedAlternatives.filter(servesGoal),
+    ...orderedAlternatives.filter((candidate) => !servesGoal(candidate)),
+  ].slice(0, 2);
 }
 
 /**
@@ -391,8 +423,7 @@ function genderAllows(definition: RecommendationProgramDefinition, input: Recomm
 
 /** The candidates a reader at this level should see first, in score order. */
 function levelFirst(candidates: RecommendationCandidate[], input: RecommendationInput) {
-  const fits = (candidate: RecommendationCandidate) =>
-    getRecommendationProgramDefinition(candidate.programId)?.supportedLevels.includes(input.level) ?? false;
+  const fits = (candidate: RecommendationCandidate) => fitsLevel(candidate, input);
   return [...candidates.filter(fits), ...candidates.filter((candidate) => !fits(candidate))];
 }
 
@@ -431,29 +462,66 @@ export function recommendPrograms(
     // Tailoring may swap between variants of the same family + weekly rhythm
     // (e.g. the two 4-day STRONG Pro templates), but never change the cell itself.
     const primaryDefinition = getRecommendationProgramDefinition(waterfallPrimary.programId);
-    const cellTop = scoreRankedCandidates.find((candidate) => {
+    const cellCandidates = scoreRankedCandidates.filter((candidate) => {
       const definition = getRecommendationProgramDefinition(candidate.programId);
       // And the same answers: the low-equipment and recomp families are
       // catch-alls, and the swap handed a general-fitness reader the run
       // programme (recommendation matrix, 2026-10-05).
+      //
+      // The goal guard compares tiers, not "lists it or not". It let anything
+      // through once the waterfall's pick did not list the goal outright, so
+      // Runner's Strength (general fitness as a backup) was swapped for RUN
+      // (general fitness nowhere) — bug hunt, 2026-10-05, B3. A swap may keep
+      // or raise how well the pick serves the goal, never lower it.
       return Boolean(
         definition
         && primaryDefinition
         && definition.familyId === primaryDefinition.familyId
         && definition.daysPerWeek === primaryDefinition.daysPerWeek
-        && (definition.supportedGoals.includes(input.goal) || !primaryDefinition.supportedGoals.includes(input.goal))
+        && goalTier(definition, input) >= goalTier(primaryDefinition, input)
         && (definition.supportedLevels.includes(input.level) || !primaryDefinition.supportedLevels.includes(input.level)),
       );
+    });
+    // The variant written for the goal first, then the tailoring's order.
+    const bestTier = Math.max(
+      -1,
+      ...cellCandidates.map((candidate) => {
+        const definition = getRecommendationProgramDefinition(candidate.programId);
+        return definition ? goalTier(definition, input) : -1;
+      }),
+    );
+    const cellTop = cellCandidates.find((candidate) => {
+      const definition = getRecommendationProgramDefinition(candidate.programId);
+      return definition ? goalTier(definition, input) === bestTier : false;
     });
     if (cellTop) {
       waterfallPrimary = cellTop;
     }
   }
-  const waterfallAlternative = waterfallDecision.alternativeProgramId
+  const waterfallAlternativeCandidate = waterfallDecision.alternativeProgramId
     ? scoreRankedCandidates.find((candidate) => candidate.programId === waterfallDecision.alternativeProgramId) ?? null
     : null;
+  // The waterfall's second card answers to the same level gate as the rest
+  // of the alternatives (selectAlternativeCandidates): off the reader's level
+  // it is dropped while anything at their level is left to offer (B2).
+  const waterfallAlternative =
+    waterfallAlternativeCandidate
+    && (fitsLevel(waterfallAlternativeCandidate, input)
+      || !scoreRankedCandidates.some(
+        (candidate) => candidate !== waterfallPrimary && fitsLevel(candidate, input),
+      ))
+      ? waterfallAlternativeCandidate
+      : null;
   const appliedWaterfall = waterfallPrimary
-    ? { ...waterfallDecision, primaryProgramId: waterfallPrimary.programId }
+    ? {
+        ...waterfallDecision,
+        primaryProgramId: waterfallPrimary.programId,
+        // The Programs tab's row reads the second card from here, so a card
+        // the level gate dropped leaves this too, with its reason.
+        ...(waterfallAlternativeCandidate && !waterfallAlternative
+          ? { alternativeProgramId: null, whyAlternative: null }
+          : {}),
+      }
     : null;
   const rankedCandidates = waterfallPrimary
     ? [

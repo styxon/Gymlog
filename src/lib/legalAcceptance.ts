@@ -38,8 +38,33 @@ export function legalAcceptanceDue(
   if (!acceptance) {
     return 'first';
   }
-  // ISO dates compare as strings.
-  return acceptance.version >= currentVersion ? null : 'changed';
+  return compareLegalVersions(acceptance.version, currentVersion) >= 0 ? null : 'changed';
+}
+
+const LEGAL_VERSION_SHAPE = /^(\d{4}-\d{2}-\d{2})(?:\.(\d{1,6}))?$/;
+
+/**
+ * Orders two `LEGAL_VERSION`s: the date first, then the suffix as a number —
+ * a plain string compare puts '2026-10-06.10' before '2026-10-06.9', and a
+ * bare date before the same date with a suffix only by luck of length.
+ *
+ * A value of an unknown shape never throws: it falls back to a string
+ * compare, and equal strings are always equal, so a phone that stored the
+ * current version is never asked again whatever the shape.
+ */
+export function compareLegalVersions(left: string, right: string): number {
+  if (left === right) {
+    return 0;
+  }
+  const a = LEGAL_VERSION_SHAPE.exec(left);
+  const b = LEGAL_VERSION_SHAPE.exec(right);
+  if (!a || !b) {
+    return left < right ? -1 : 1;
+  }
+  if (a[1] !== b[1]) {
+    return a[1] < b[1] ? -1 : 1;
+  }
+  return Math.sign(Number(a[2] ?? 0) - Number(b[2] ?? 0));
 }
 
 /**
@@ -59,8 +84,9 @@ export function laterLegalAcceptance(
   if (!left || !right) {
     return left ?? right ?? null;
   }
-  if (left.version !== right.version) {
-    return left.version > right.version ? left : right;
+  const order = compareLegalVersions(left.version, right.version);
+  if (order !== 0) {
+    return order > 0 ? left : right;
   }
   return left.acceptedAt <= right.acceptedAt ? left : right;
 }
@@ -68,8 +94,6 @@ export function laterLegalAcceptance(
 export function acceptLegal(currentVersion: string, now: Date): LegalAcceptance {
   return { version: currentVersion, acceptedAt: now.toISOString() };
 }
-
-const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * The stored value, trusted only if it has both parts in the right shape.
@@ -83,7 +107,7 @@ export function normalizeLegalAcceptance(raw: unknown): LegalAcceptance | null {
     return null;
   }
   const { version, acceptedAt } = raw as Record<string, unknown>;
-  if (typeof version !== 'string' || !ISO_DAY.test(version)) {
+  if (typeof version !== 'string' || !LEGAL_VERSION_SHAPE.test(version)) {
     return null;
   }
   if (typeof acceptedAt !== 'string' || Number.isNaN(Date.parse(acceptedAt))) {

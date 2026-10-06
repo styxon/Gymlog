@@ -159,14 +159,20 @@ module.exports = [
       const supported = exercise('Supported Deep Squat Hold', { trackingMode: 'hold', repsMin: 20, repsMax: 40 });
 
       for (const focusAreas of [[], ['quads']]) {
-        const result = applyCautionFlagsToExercises([hold, supported], careful, focusAreas);
-        const [first, second] = result.exercises;
+        const result = applyCautionFlagsToExercises([hold], careful, focusAreas);
+        const [first] = result.exercises;
         assert.equal(first.exerciseName, 'Supported Deep Squat Hold', `focus ${focusAreas}`);
         assert.equal(first.trackingMode, 'hold');
         assert.equal(first.repsMax, 90, 'the hold keeps its seconds');
-        // Already the supported version: nothing to swap to, nothing recorded.
-        assert.equal(second.exerciseName, 'Supported Deep Squat Hold');
         assert.deepEqual(result.swapped.map((swap) => swap.from), ['Deep Squat Hold']);
+
+        // Already the supported version: nothing to swap to, nothing recorded.
+        // And a day that has it already does not get it twice — the hold
+        // keeps its place, as one with no swap does (bug hunt 2026-10-05, B7).
+        const both = applyCautionFlagsToExercises([hold, supported], careful, focusAreas);
+        assert.deepEqual(both.exercises.map((item) => item.exerciseName), ['Deep Squat Hold', 'Supported Deep Squat Hold']);
+        assert.equal(both.exercises[0].trackingMode, 'hold');
+        assert.deepEqual(both.swapped, []);
       }
 
       // A hold with no hold to swap to keeps its place rather than becoming a lift.

@@ -572,11 +572,11 @@ module.exports = [
       assert.equal(trialOf(planWith({ proTrialEndsAtMs: null })).length, 0);
       assert.equal(trialOf(planWith({ proTrialEndsAtMs: Number.NaN })).length, 0);
 
-      // Fourteen days out: one notice, two days before the end.
+      // Fourteen days out: one notice, on the morning two days before the end.
       const endsAt = now + 14 * DAY;
       const notices = trialOf(planWith({ proTrialEndsAtMs: endsAt }));
       assert.equal(notices.length, 1);
-      assert.equal(notices[0].fireAtMs, endsAt - 2 * DAY);
+      assert.equal(notices[0].fireAtMs, at(2026, 7, 13, 9, 0));
       assert.ok(notices[0].title.length > 0 && notices[0].body.length > 0);
       // Keyed on the end, so re-planning an unchanged trial schedules the same
       // alarm rather than a second one.
@@ -601,6 +601,43 @@ module.exports = [
       // otherwise would be the lie.
       assert.equal(
         trialOf(planWith({ proTrialEndsAtMs: endsAt, prefs: { pushEnabled: false } })).length,
+        0,
+      );
+    },
+  },
+  {
+    // The warning used to fire at endsAt - 48 h, i.e. at the trial's start
+    // clock time: a trial started at 03:00 woke the reader at 03:00.
+    name: 'notificationPlan: the trial warning goes out in the morning, whatever time the trial started',
+    run() {
+      const trialOf = (plan) => plan.filter((item) => item.category === 'trial');
+      for (const [hour, minute] of [[0, 5], [3, 0], [9, 0], [14, 20], [23, 59]]) {
+        const endsAt = at(2026, 7, 15, hour, minute);
+        const [notice] = trialOf(planWith({ proTrialEndsAtMs: endsAt }));
+        assert.ok(notice, `no notice for a trial ending ${hour}:${minute}`);
+        assert.equal(notice.fireAtMs, at(2026, 7, 13, 9, 0), `trial ending ${hour}:${minute}`);
+        assert.ok(notice.fireAtMs < endsAt);
+      }
+
+      // A clock change inside the two days must not move it off 09:00: the
+      // last Sunday of October 2026 is a 25-hour day in Helsinki.
+      const afterChange = trialOf(planWith({
+        nowMs: at(2026, 10, 20, 12, 0),
+        proTrialEndsAtMs: at(2026, 10, 26, 2, 30),
+      }));
+      assert.equal(afterChange.length, 1);
+      assert.equal(afterChange[0].fireAtMs, at(2026, 10, 24, 9, 0));
+      const aroundChange = trialOf(planWith({
+        nowMs: at(2026, 10, 20, 12, 0),
+        proTrialEndsAtMs: at(2026, 10, 27, 2, 30),
+      }));
+      assert.equal(new Date(aroundChange[0].fireAtMs).getHours(), 9);
+      assert.equal(new Date(aroundChange[0].fireAtMs).getDate(), 25);
+
+      // Its morning has already passed: it fired when it was first scheduled,
+      // and re-planning must not send it again at some other hour.
+      assert.equal(
+        trialOf(planWith({ nowMs: at(2026, 7, 13, 10, 0), proTrialEndsAtMs: at(2026, 7, 15, 20, 0) })).length,
         0,
       );
     },

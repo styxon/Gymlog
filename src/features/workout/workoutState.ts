@@ -24,7 +24,7 @@ import {
   resolveProgressedReps,
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
-import { toWorkingHistoryEntry } from '../../lib/warmupSets';
+import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap, trackingModeAfterSwap } from '../../lib/catalogExercisePools';
 import {
   liftBeforeSwap,
@@ -1971,7 +1971,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // programme's count, so a set added mid-session does not change which of
       // last time's sets were warm-ups (review, 2026-10-05).
       const swappedInEntry = swappedInFound
-        ? toWorkingHistoryEntry(swappedInFound, exercise.sets.filter((set) => !set.addedMidSession).length)
+        ? toWorkingHistoryEntry(swappedInFound, programmeSetCount(exercise.sets))
         : null;
       // Sets logged before this moment were a different lift. Clearing their
       // drafts is not enough on its own: the logger also carries forward from
@@ -2019,7 +2019,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         // holds a number the app chose (or none), and the log must say so:
         // `borrowed` or `none`, not "the reader's own" (lib/loggedSetPlan).
         // A set added after the swap is added afresh and stays `added`.
-        set.addedMidSession = undefined;
+        // The set is still past the programme's count, though, so it keeps
+        // that mark: cleared, the next swap and the "Last time" panel counted
+        // it as the programme's and read last time's warm-up as set 1 (bug
+        // hunt W11, 2026-10-05).
+        if (set.addedMidSession) {
+          set.plannedBySwap = true;
+        }
       });
       session.ui.swapSheetSlotId = null;
       session.updatedAt = new Date().toISOString();

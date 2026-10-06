@@ -15,7 +15,7 @@ import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
 import { findHeldReadyProgrammeCopyId, findReadyProgrammeCopyId } from '../lib/programmeCopyLink';
-import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan } from '../lib/programDetails';
+import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan, readyProgramSessionMinutes } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
@@ -408,11 +408,17 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
   if (route.screen === 'program') {
     const readyTemplate = route.programType === 'ready' ? getWorkoutTemplateById(route.workoutTemplateId) : null;
     const customTemplate = route.programType === 'custom' ? customWorkoutRuntimeMap[route.workoutTemplateId] ?? null : null;
+    // Truth rule: when this is the user's active program, the detail
+    // shows the composed week they actually run, not the raw catalog.
+    const readyComposedWeek = readyTemplate ? resolveComposedWeekForRoute(route.workoutTemplateId) : null;
+    const readyProgramMinutesOptions = { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides };
     const readyProgramFitExplanation =
       readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
         ? buildFirstRunRecommendationReasons(setupSelection, {
             projectedDaysPerWeek: readyTemplate.daysPerWeek,
-            estimatedSessionDuration: readyTemplate.estimatedSessionDuration,
+            // The page's own minutes, not the catalog's hand-written number:
+            // the badge said 35 and this line summed 50 (bug hunt, B14).
+            estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
             mismatchNote: setupRecommendation.mismatchNote,
             language: preferences.appLanguage,
           }, tailoringPreferences).join(' ')
@@ -497,13 +503,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           programInsightsByTemplateId[route.workoutTemplateId],
           readyProgramFitExplanation,
           readyProgramTailoringBadges,
-          // Truth rule: when this is the user's active program, the detail
-          // shows the composed week they actually run, not the raw catalog.
-          resolveComposedWeekForRoute(route.workoutTemplateId),
+          readyComposedWeek,
           preferences.appLanguage,
           readyProgramIsMine,
           programIsMine && !programLeads,
-          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides },
+          readyProgramMinutesOptions,
         )
       : customTemplate
         ? buildCustomProgramDetail(

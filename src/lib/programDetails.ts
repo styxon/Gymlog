@@ -178,6 +178,25 @@ function buildSessionItems(
     }));
 }
 
+/**
+ * The session minutes a ready programme's page quotes — the one number for
+ * everything on that page that talks about time.
+ *
+ * The badge read this while the "Why it fits" line summed the catalog's
+ * hand-written `estimatedSessionDuration`: Athletic Starter's badge said 35
+ * min and its weekly minutes were worked out from 50, and 43 of 68 programmes
+ * were 10+ minutes apart the same way (bug hunt, 2026-10-05, B14). The
+ * composed week when it is the reader's plan, otherwise the Programs card's
+ * own estimate with the same options.
+ */
+export function readyProgramSessionMinutes(
+  template: WorkoutTemplateV1,
+  composedWeek?: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): number {
+  return composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions);
+}
+
 export function buildReadyProgramDetail(
   template: WorkoutTemplateV1,
   insights?: ProgramInsightSummary,
@@ -242,7 +261,7 @@ export function buildReadyProgramDetail(
       goal,
       level,
       `${daysPerWeek} ${pluralize(daysPerWeek, 'day')}`,
-      `${composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions)} min`,
+      `${readyProgramSessionMinutes(template, composedWeek, minutesOptions)} min`,
     ],
     tailoringBadges,
     highlights: insights?.highlights ?? [],
