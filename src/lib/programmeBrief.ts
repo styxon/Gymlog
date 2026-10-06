@@ -1,4 +1,6 @@
 import { buildAiCoachPlanSchema } from './aiCoachPlan';
+import { isSpecialtyExercise } from './exerciseClassification';
+import { exerciseNameLabel } from './exerciseNameLabel';
 import { findGuidedLibraryIndex } from './guidedPlayer';
 import { AICoachPlanSchema } from '../types/aiCoachPlan';
 import {
@@ -394,6 +396,22 @@ export interface ProgrammeProposal {
   unmetLifts: string[];
   /** Live only: names the model returned that resolve to nothing. Dropped, and shown. */
   unresolvedNames: string[];
+  /** Live only: specialty movements the model put in that the brief did not ask for. Dropped, and shown. */
+  specialtyLeftOut?: string[];
+}
+
+/**
+ * Whether the brief asks for this specialty movement: by its name in either
+ * language, or for specialty / strongman work as such. "Missään ohjelmassa ei
+ * saa olla erikoisliikkeitä, eikä AI saa ehdottaa niitä ellei käyttäjä
+ * erikseen kysy" (user, 2026-10-06).
+ */
+export function briefAsksForSpecialty(brief: string, item: Pick<ExerciseLibraryItem, 'name'>): boolean {
+  const text = brief.toLowerCase();
+  if (/strongman|erikoisliik|specialty|special lifts/.test(text)) {
+    return true;
+  }
+  return [item.name, exerciseNameLabel('fi', item.name)].some((name) => text.includes(name.toLowerCase()));
 }
 
 function planToProposal(
@@ -460,6 +478,7 @@ export function resolveLiveProposal(
 ): ProgrammeProposal {
   const names = library.map((item) => item.name);
   const unresolvedNames: string[] = [];
+  const specialtyLeftOut: string[] = [];
   const sessions: ProposedSession[] = [];
   for (const session of raw.sessions) {
     const exercises: ProposedExercise[] = [];
@@ -472,6 +491,12 @@ export function resolveLiveProposal(
         continue;
       }
       const item = library[index];
+      if (isSpecialtyExercise(item) && !briefAsksForSpecialty(brief, item)) {
+        if (!specialtyLeftOut.includes(item.name)) {
+          specialtyLeftOut.push(item.name);
+        }
+        continue;
+      }
       const repsMin = Math.max(1, Math.round(exercise.repsMin || 1));
       exercises.push({
         name: item.name,
@@ -494,7 +519,7 @@ export function resolveLiveProposal(
     const item = name ? library.find((entry) => entry.name === name) : null;
     return !item || !includedIds.has(item.id);
   });
-  return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames };
+  return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames, specialtyLeftOut };
 }
 
 /**
