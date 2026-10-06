@@ -5,11 +5,13 @@ const path = require('node:path');
 const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
 const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
 const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+const { getRecommendationProgramDefinition, RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
 const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
 const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { applyCautionFlagsToExercises, CAUTION_TO_FOCUS_AREAS } = require('../../.test-dist/lib/cautionExerciseFilter.js');
 const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching.js');
+const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
 
 /**
  * The recommender findings of the 2026-10-05 evening hunt, each held as an
@@ -290,6 +292,102 @@ module.exports = [
         names(applyCautionFlagsToExercises([lift('Back Squat'), lift('Front Squat'), lift('Hack Squat')], knees, [], null)),
         ['Box Squat', 'Bodyweight Squat', 'Hack Squat'],
       );
+    },
+  },
+  {
+    // B8: a knee to avoid still left Sprint 40m, Tempo Run Blocks, Stride
+    // Finishers and Lateral Bound in the week. Every landing is a knee load.
+    name: 'recommendation fixes 10-06: a knee to avoid takes running, sprints, bounds and hops out of every programme',
+    run() {
+      // Named here independently of the filter's own word list; a bike
+      // sprint is seated and is the knee-friendly conditioning.
+      const runningOrLanding = (name) =>
+        !/\bbike\b/i.test(name)
+        && /\b(run|running|jog|jogging|sprints?|strides?|bounds?|hops?|hopping|leaps?|skips?|skipping|agility|ladder drill|cone drill)\b/i.test(name);
+      const knees = [{ area: 'knees', level: 'avoid', refinements: [] }];
+      const cards = [gymCard(GYM_ALL), homeCard([]), homeCard([D, B, R]), bodyweightCard([P, R, 'Yoga mat'])];
+      const offenders = [];
+      let weeks = 0;
+      // Every session of every ready programme, through the filter itself.
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of applyCautionFlagsToExercises(session.exercises, knees, [], null).exercises) {
+            if (runningOrLanding(exercise.exerciseName)) {
+              offenders.push(`${template.id}/${session.id}: ${exercise.exerciseName}`);
+            }
+          }
+        }
+      }
+      // And every week onboarding composes, refilled days included.
+      for (const program of RECOMMENDATION_PROGRAMS) {
+        for (const card of cards) {
+          const selection = {
+            ...DEFAULT_FIRST_RUN_SELECTION,
+            ...card,
+            goal: 'general_fitness',
+            goals: ['general_fitness'],
+            daysPerWeek: program.daysPerWeek,
+            cautionFlags: knees,
+            focusAreas: [],
+          };
+          const week = composeProgramWeekForSelection(selection, program.programId);
+          if (!week) {
+            continue;
+          }
+          weeks += 1;
+          for (const session of week.sessions) {
+            for (const exercise of session.exercises) {
+              if (runningOrLanding(exercise.exerciseName)) {
+                offenders.push(`${program.programId} ${card.equipment}:${card.equipmentItems.join('+') || 'none'}: ${exercise.exerciseName}`);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(weeks > 100, `composed only ${weeks} weeks`);
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} runs or landings kept for an avoided knee`);
+    },
+  },
+  {
+    name: 'recommendation fixes 10-06: the knee list names runs and landings, and leaves bikes, rows, walks and crunches alone',
+    run() {
+      const landings = [
+        'Sprint 40m',
+        'Sprint Interval (200m)',
+        'Tempo Run Blocks',
+        'Easy Run Blocks',
+        'Stride Finishers',
+        'Lateral Bound',
+        'Treadmill HIIT (30s on / 30s off)',
+        'Cone Drill (Pro Agility)',
+        'Ladder Drill',
+        'Hurdle Hops',
+        'Running, Treadmill',
+        'Jogging, Treadmill',
+        'Wind Sprints',
+        'Fast Skipping',
+        'Quick Leap',
+      ];
+      for (const name of landings) {
+        assert.equal(exerciseHitsCautionArea(name, 'knees'), true, name);
+      }
+      const notLandings = [
+        'Bike HIIT (45s sprint / 15s rest)',
+        'Air Bike (30s sprint)',
+        'Stationary Bike (Easy Pace)',
+        'Rowing Machine HIIT',
+        'Walking, Treadmill',
+        "Runner's Stretch",
+        'Cable Crunch',
+        'Bicycle Crunch',
+        'Leg Curl',
+        "Farmer's Walk",
+      ];
+      for (const name of notLandings) {
+        assert.equal(exerciseHitsCautionArea(name, 'knees'), false, name);
+      }
+      // The ankle list is its own: a bike sprint still counts there as it did.
+      assert.equal(exerciseHitsCautionArea('Bike HIIT (45s sprint / 15s rest)', 'ankles'), true);
     },
   },
 ];
