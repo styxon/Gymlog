@@ -29,10 +29,11 @@ module.exports = [
       );
       // The heading number only renders for a uniform session — a ramp has no
       // single weight to lead with, and the chips already say the whole thing.
-      assert.match(playerSource, /historyChips\?\.uniform !== false \? \(/);
+      // (A bout of minutes has no weight to lead with either.)
+      assert.match(playerSource, /historyChips\?\.uniform !== false && !minutesMode \? \(/);
       // Each chip reads from the summary, falling back to the plain rep only
       // if for some reason the summary and the history sets disagree in length.
-      assert.match(playerSource, /\{historyChips\?\.chips\[index\] \?\? set\.reps\}/);
+      assert.match(playerSource, /: historyChips\?\.chips\[index\] \?\? set\.reps\}/);
     },
   },
   {

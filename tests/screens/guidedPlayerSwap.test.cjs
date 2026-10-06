@@ -153,11 +153,11 @@ module.exports = [
       // field with one would disagree about the same number.
       assert.match(
         playerSource,
-        /onStep=\{\(direction\) => setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       assert.match(
         playerSource,
-        /onCommit=\{\(text\) => setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       // No "tap to type" line under the buttons: it was in the sketch and
       // struck out on the phone the same day ("napauta ja kirjoita poista nämä").

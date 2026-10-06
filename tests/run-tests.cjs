@@ -135,6 +135,7 @@ const suites = [
   ...require('./lib/exerciseSheetHistory.test.cjs'),
   ...require('./lib/sessionMovement.test.cjs'),
   ...require('./lib/holdTracking.test.cjs'),
+  ...require('./lib/minutesTracking.test.cjs'),
   ...require('./lib/cardio.test.cjs'),
   ...require('./lib/cardioAudit.test.cjs'),
   ...require('./lib/activeWorkout.test.cjs'),
