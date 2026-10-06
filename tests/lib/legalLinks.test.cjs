@@ -111,7 +111,7 @@ module.exports = [
       const found = new Set();
       for (const line of everyLine()) {
         for (const part of splitLegalLinks(line)) {
-          if (part.url && part.url.startsWith('https://styxon.fi')) {
+          if (part.url && part.url.startsWith('https:') && new URL(part.url).hostname === 'styxon.fi') {
             found.add(part.url);
           }
         }
