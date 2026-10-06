@@ -149,6 +149,17 @@ void SplashScreen.preventAutoHideAsync().catch(() => {
   // Native splash may already be controlled by the host app during fast refresh.
 });
 
+/**
+ * The native splash stays up at least this long, counted from when this
+ * module ran rather than from VinhaApp's first commit. The splash has been on
+ * screen since the process started, so the floor still holds, and the first
+ * render (~300 ms on a mid-range phone) now runs inside it instead of being
+ * added after it (startup trace, 2026-10-06). A monotonic clock, and a delay
+ * clamped to the floor, so a wall-clock correction cannot hold the splash up.
+ */
+const MINIMUM_SPLASH_MS = 1200;
+const splashFloorStartedAt = performance.now();
+
 interface NavigationState {
   route: AppRoute;
   history: AppRoute[];
@@ -406,7 +417,11 @@ function VinhaApp() {
   }, [hydrated, workout.hydrated, activeCardio, cardioSessions, settleCardio]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setMinimumSplashElapsed(true), 1200);
+    const remaining = MINIMUM_SPLASH_MS - (performance.now() - splashFloorStartedAt);
+    const timeout = setTimeout(
+      () => setMinimumSplashElapsed(true),
+      Math.min(MINIMUM_SPLASH_MS, Math.max(0, remaining)),
+    );
     return () => clearTimeout(timeout);
   }, []);
 
