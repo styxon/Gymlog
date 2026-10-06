@@ -20,19 +20,21 @@ import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import {
   BODY_PART_FILTERS,
   BodyPartFilter,
+  EQUIPMENT_FILTERS,
+  EXERCISE_TYPE_FILTERS,
+  EquipmentFilter,
+  ExerciseTypeFilter,
   filterBrowsableExercises,
   matchesBodyPartFilter,
+  matchesEquipmentFilter,
+  matchesExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
+import { exerciseTypeOf } from '../lib/exerciseClassification';
 import { rankExerciseMatches } from '../lib/exerciseSearch';
 import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
 import { I18nKey, t } from '../lib/i18n';
 import { displayEquipmentValue } from '../lib/libraryLabel';
-import {
-  AppLanguage,
-  ExerciseCategory,
-  ExerciseEquipment,
-  ExerciseLibraryItem,
-} from '../types/models';
+import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 import { KitBar } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { radii, spacing } from '../theme';
@@ -75,26 +77,11 @@ function sortName(item: ExerciseLibraryItem, language: AppLanguage) {
   return exerciseNameLabel(language, item.name);
 }
 
-const categoryOptions: Array<'all' | ExerciseCategory> = ['all', 'compound', 'isolation', 'cardio', 'core'];
-/**
- * `kettlebells` is not an `ExerciseEquipment` — the library files kettlebells
- * under `dumbbell` — but it is what `displayEquipmentValue` prints on the row,
- * and a chip set that cannot select what the rows say is a filter that argues
- * with its own list. Widened here rather than in the union, because the union
- * is the storage and planning vocabulary and a sixth value there would have to
- * be threaded through the coach's allowed-equipment sets too.
- */
-type SheetEquipmentOption = 'all' | ExerciseEquipment | 'kettlebells';
-
-const equipmentOptions: SheetEquipmentOption[] = [
-  'all',
-  'barbell',
-  'dumbbell',
-  'kettlebells',
-  'machine',
-  'cable',
-  'bodyweight',
-];
+// The chip lists and what they select live in lib/exerciseBrowseFilter, with
+// the kettlebell chip's reasoning and the specialty chip's (#bugs 2026-10-06).
+const categoryOptions = EXERCISE_TYPE_FILTERS;
+type SheetEquipmentOption = EquipmentFilter;
+const equipmentOptions: SheetEquipmentOption[] = EQUIPMENT_FILTERS;
 
 // The library's category / body-part / equipment values are stored English and
 // used for filtering, so only the label is translated.
@@ -104,6 +91,7 @@ const FACET_KEYS: Record<string, I18nKey> = {
   isolation: 'facet.isolation',
   cardio: 'facet.cardio',
   core: 'facet.core',
+  specialty: 'facet.specialty',
   chest: 'facet.chest',
   back: 'facet.back',
   shoulders: 'facet.shoulders',
@@ -204,7 +192,7 @@ export function AddExerciseSheet({
   const searchRef = useRef<TextInput | null>(null);
   const wasVisibleRef = useRef(false);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<'all' | ExerciseCategory>('all');
+  const [category, setCategory] = useState<ExerciseTypeFilter>('all');
   const [bodyPart, setBodyPart] = useState<BodyPartFilter>('all');
   const [equipment, setEquipment] = useState<SheetEquipmentOption>('all');
   const [pendingSelectedIds, setPendingSelectedIds] = useState<string[]>(selectedIds);
@@ -284,14 +272,14 @@ export function AddExerciseSheet({
     // Stretches and cone drills are in the library but are not sets, and they
     // came back alongside the bench press whenever a body part was picked
     // (#bugs 2026-08-26). A typed query lifts the hiding: see the module.
-    const filtered = filterBrowsableExercises(items, { query }).filter((item) => {
-      if (category !== 'all' && item.category !== category) {
+    const filtered = filterBrowsableExercises(items, { query, type: category }).filter((item) => {
+      if (!matchesExerciseTypeFilter(item, category)) {
         return false;
       }
       if (!matchesBodyPartFilter(item, bodyPart)) {
         return false;
       }
-      if (equipment !== 'all' && displayEquipmentValue(item) !== equipment) {
+      if (!matchesEquipmentFilter(item, equipment)) {
         return false;
       }
       return true;
@@ -573,7 +561,7 @@ export function AddExerciseSheet({
                                 {toLabel(item.bodyPart, language)}
                               </Text>
                               <Text numberOfLines={2} style={styles.gridCardMeta}>
-                                {toLabel(item.category, language)} · {toLabel(displayEquipmentValue(item), language)}
+                                {toLabel(exerciseTypeOf(item), language)} · {toLabel(displayEquipmentValue(item), language)}
                               </Text>
                               {!multiSelect ? (
                                 <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
@@ -646,7 +634,7 @@ export function AddExerciseSheet({
                                 {toLabel(item.bodyPart, language)}
                               </Text>
                     <Text numberOfLines={2} style={styles.gridCardMeta}>
-                      {toLabel(item.category, language)} · {toLabel(displayEquipmentValue(item), language)}
+                      {toLabel(exerciseTypeOf(item), language)} · {toLabel(displayEquipmentValue(item), language)}
                     </Text>
                     {!multiSelect ? (
                       <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>

@@ -15,9 +15,11 @@
  * name, and comes back the moment the reader types a query. The rule is about
  * what is *offered*, not what exists.
  */
-import { ExerciseBodyPart, ExerciseLibraryItem } from '../types/models';
+import { ExerciseBodyPart, ExerciseEquipment, ExerciseLibraryItem } from '../types/models';
+import { ExerciseType, exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
+import { displayEquipmentValue } from './libraryLabel';
 
-type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'>;
+type BrowsableExercise = Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>;
 
 /**
  * Deliberately narrow. Each pattern names a family that is measured in held
@@ -48,18 +50,86 @@ export function isBrowsableExercise(item: BrowsableExercise): boolean {
  * The picker's list.
  *
  * With a query the reader has named what they are after, so nothing is
- * withheld — searching "stretch" or "venytys" finds the stretches. With no
- * query the app is the one choosing, and it chooses the things you can log.
+ * withheld — searching "stretch" or "venytys" finds the stretches, and
+ * "autonnosto" finds the car deadlift. With no query the app is the one
+ * choosing, and it chooses the things you can log, among normal exercises:
+ * the specialty (strongman) movements come only with their own type chip
+ * (`type: 'specialty'`), never mixed into a body part or "Laite" (#bugs
+ * 2026-10-06).
  */
 export function filterBrowsableExercises<T extends BrowsableExercise>(
   items: T[],
-  options?: { query?: string },
+  options?: BrowseOptions,
 ): T[] {
   if (options?.query?.trim()) {
     return items;
   }
 
-  return items.filter(isBrowsableExercise);
+  return items.filter((item) => isBrowsableExercise(item) && passesSpecialtyGate(item, options));
+}
+
+type BrowseOptions = { query?: string; type?: ExerciseTypeFilter | string };
+
+/**
+ * The specialty half of the rule on its own, for the library screen, which
+ * lists stretches on purpose (it is where you learn them) but mixes the
+ * strongman implements into nothing either: shown under a query or their own
+ * type chip, hidden otherwise.
+ */
+export function passesSpecialtyGate(item: BrowsableExercise, options?: BrowseOptions): boolean {
+  return Boolean(options?.query?.trim()) || options?.type === 'specialty' || !isSpecialtyExercise(item);
+}
+
+/**
+ * The type chips: what kind of lift, one chip per row (exerciseTypeOf).
+ * Compound and isolation are read from the source's mechanic, not the stored
+ * category — "Eristävä" did not list the leg extension.
+ */
+export type ExerciseTypeFilter = 'all' | ExerciseType;
+
+export const EXERCISE_TYPE_FILTERS: ExerciseTypeFilter[] = ['all', 'compound', 'isolation', 'cardio', 'core', 'specialty'];
+
+export function matchesExerciseTypeFilter(
+  item: Parameters<typeof exerciseTypeOf>[0],
+  filter: ExerciseTypeFilter | string,
+): boolean {
+  return filter === 'all' || exerciseTypeOf(item) === filter;
+}
+
+/**
+ * `kettlebells` is not an `ExerciseEquipment` — the library files kettlebells
+ * under `dumbbell` — but it is what `displayEquipmentValue` prints on the row,
+ * and a chip set that cannot select what the rows say is a filter that argues
+ * with its own list. Widened here rather than in the union, because the union
+ * is the storage and planning vocabulary and a sixth value there would have to
+ * be threaded through the coach's allowed-equipment sets too.
+ */
+export type EquipmentFilter = 'all' | ExerciseEquipment | 'kettlebells';
+
+export const EQUIPMENT_FILTERS: EquipmentFilter[] = [
+  'all',
+  'barbell',
+  'dumbbell',
+  'kettlebells',
+  'machine',
+  'cable',
+  'bodyweight',
+];
+
+/**
+ * An equipment chip lists what the row prints as its equipment — and never a
+ * specialty movement. The car deadlift and Conan's wheel are filed under
+ * "machine" for want of a better bucket; "Laite" listed them among the leg
+ * presses ("nämä eivät ole laitteita", #bugs 2026-10-06).
+ */
+export function matchesEquipmentFilter(
+  item: BrowsableExercise & Pick<ExerciseLibraryItem, 'equipment'> & Partial<Pick<ExerciseLibraryItem, 'sourceEquipment'>>,
+  filter: EquipmentFilter | string,
+): boolean {
+  if (filter === 'all') {
+    return true;
+  }
+  return !isSpecialtyExercise(item) && displayEquipmentValue(item) === filter;
 }
 
 /**
@@ -105,15 +175,26 @@ export const BODY_PART_FILTERS: BodyPartFilter[] = [
   'full body',
 ];
 
+/**
+ * A muscle chip lists the lifts that train the muscle. The source also names
+ * a primary muscle for its cardio machines and its stretches — the treadmill,
+ * the stationary bike and the kneeling hip-flexor stretch are all
+ * "quadriceps" — and none of them is a swap for a squat.
+ */
+function trainsTheMuscle(item: Partial<Pick<ExerciseLibraryItem, 'category' | 'sourceCategory'>>): boolean {
+  return item.category !== 'cardio' && item.sourceCategory?.trim().toLowerCase() !== 'stretching';
+}
+
 export function matchesBodyPartFilter(
-  item: Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'>,
+  item: Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'> &
+    Partial<Pick<ExerciseLibraryItem, 'category' | 'sourceCategory'>>,
   filter: BodyPartFilter,
 ): boolean {
   if (filter === 'all') {
     return true;
   }
   if (isLegMuscleFilter(filter)) {
-    return (item.primaryMuscles ?? []).includes(filter);
+    return (item.primaryMuscles ?? []).includes(filter) && trainsTheMuscle(item);
   }
   return item.bodyPart === filter;
 }

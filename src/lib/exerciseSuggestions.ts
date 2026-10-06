@@ -1,4 +1,5 @@
-﻿import { exerciseNameLabel } from './exerciseNameLabel';
+﻿import { filterBrowsableExercises } from './exerciseBrowseFilter';
+import { exerciseNameLabel } from './exerciseNameLabel';
 import { isHoldExerciseName } from './holdExercises';
 import { createId } from './ids';
 import {
@@ -230,7 +231,10 @@ export function getSuggestedExerciseLibraryItems({
   const preferredBodyParts = new Set(currentItems.map((item) => item.bodyPart));
   const preferredEquipment = new Set(currentItems.map((item) => item.equipment));
 
-  const scored = exerciseLibrary
+  // Offered unasked, so only what the picker offers unasked: no stretches or
+  // field drills, and no strongman implements — a leg-machine day was
+  // suggested the backward sled drag and the car deadlift (#bugs 2026-10-06).
+  const scored = filterBrowsableExercises(exerciseLibrary)
     .filter((item) => !currentIds.has(item.id))
     .map((item) => {
       const recentBonus = recentItems.findIndex((recent) => recent.id === item.id);

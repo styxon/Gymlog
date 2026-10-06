@@ -36,6 +36,8 @@ const LIBRARY_LABEL_KEYS: Record<string, I18nKey> = {
   cardio: 'lib.category.cardio',
   compound: 'lib.category.compound',
   isolation: 'lib.category.isolation',
+  // Not a stored category: the type exerciseTypeOf gives a strongman row.
+  specialty: 'lib.category.specialty',
   // primaryMuscles / secondaryMuscles — the source's seventeen muscle names.
   // Body-part words that double as muscle names (chest, glutes, shoulders,
   // biceps, triceps) already resolve above.

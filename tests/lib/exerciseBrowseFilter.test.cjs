@@ -88,8 +88,9 @@ module.exports = [
       );
       assert.match(sheet, /filterBrowsableExercises/);
       // Applied to the list the reader browses, with the query passed through
-      // so searching still reaches everything.
-      assert.match(sheet, /filterBrowsableExercises\(\s*items,\s*\{ query \}\s*\)/);
+      // so searching still reaches everything, and the type chip so the
+      // specialty chip can list what the default list hides.
+      assert.match(sheet, /filterBrowsableExercises\(\s*items,\s*\{ query, type: category \}\s*\)/);
     },
   },
   {

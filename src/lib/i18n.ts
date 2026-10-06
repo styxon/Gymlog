@@ -2869,6 +2869,7 @@ const EN = {
   'facet.machine': 'Machine',
   'facet.cable': 'Cable',
   'facet.bodyweight': 'Bodyweight',
+  'facet.specialty': 'Specialty',
   'sheet.search': 'Search',
   'sheet.searchPlaceholder': 'Search exercises',
   'sheet.clear': 'Clear',
@@ -3363,6 +3364,7 @@ const EN = {
   'lib.category.cardio': 'Cardio',
   'lib.category.compound': 'Compound',
   'lib.category.isolation': 'Isolation',
+  'lib.category.specialty': 'Specialty',
   // The muscle names the source data uses, plus the equipment words that only
   // the exercise detail card reads from the raw source field. Same reason as
   // above: they were capitalised, never translated. Body-part words that double
@@ -6136,6 +6138,7 @@ const FI: Record<I18nKey, string> = {
   'facet.machine': 'Laite',
   'facet.cable': 'Talja',
   'facet.bodyweight': 'Kehonpaino',
+  'facet.specialty': 'Erikoisliikkeet',
   'sheet.search': 'Haku',
   'sheet.searchPlaceholder': 'Hae liikkeitä',
   'sheet.clear': 'Tyhjennä',
@@ -6592,6 +6595,7 @@ const FI: Record<I18nKey, string> = {
   'lib.category.cardio': 'Kestävyys',
   'lib.category.compound': 'Moninivel',
   'lib.category.isolation': 'Eristävä',
+  'lib.category.specialty': 'Erikoisliike',
   'lib.muscle.abdominals': 'Vatsalihakset',
   'lib.muscle.abductors': 'Loitontajat',
   'lib.muscle.adductors': 'Lähentäjät',
