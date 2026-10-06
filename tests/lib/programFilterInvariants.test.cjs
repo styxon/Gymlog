@@ -37,9 +37,8 @@ const SETUP_LEVEL_FOR_CATALOG = { beginner: 'beginner', intermediate: 'advanced'
  * gainerProgramCatalog), listed rather than fixed here. Each must still be a
  * mismatch: when the catalog is corrected, the entry has to go.
  *
- * - Joint Friendly is `goalType: 'hypertrophy'`, so the "Lihasmassa" tile and
- *   the catalog's goal chip list it, while the recommender scores it for
- *   general fitness only and files it under recovery.
+ * Empty since the catalog audit (2026-10-06) retagged Joint-Friendly Strength
+ * general; it was the one entry.
  */
 const KNOWN_GOAL_MISMATCHES = new Set([]);
 
