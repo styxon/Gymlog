@@ -802,10 +802,10 @@ module.exports = [
         assert.ok(sheet.includes(`t(language, '${group}')`), group);
       }
       assert.match(sheet, /options=\{equipmentOptions\}/);
-      // The swap list obeys all three groups through the sheet's one rule.
-      assert.match(source, /matchesExerciseSheetFilters\(item, swapFilters\),/);
-      assert.match(sheet, /export function matchesExerciseSheetFilters\(/);
-      assert.match(sheet, /matchesExerciseSheetFilters\(item, \{ category, bodyPart, equipment \}\)/);
+      // The swap list obeys all three groups through every picker's one list
+      // (lib/exercisePicker), the add sheet's too.
+      assert.match(source, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
+      assert.match(sheet, /listPickerExercises\(items, \{\s*query: search,\s*filters: \{ category, bodyPart, equipment \}/);
       // A programme alternative keeps its card, with its picture when the
       // library holds it (swapSuggestionRows) and its name when it does not.
       assert.match(source, /const swapSuggestionRows = useMemo\(/);

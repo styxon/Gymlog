@@ -1,7 +1,6 @@
 const assert = require('node:assert/strict');
 
 const {
-  EMPTY_WORKOUT_MUSCLE_FILTERS,
   buildFreestyleFinish,
   canFinishFreestyleSession,
   exerciseInitials,
@@ -10,7 +9,6 @@ const {
   freestyleNextSetTarget,
   freestyleRestSecondsForTick,
   freestyleVolumeKg,
-  matchesMuscleFilter,
   carryForwardFreestyleSet,
   normalizeFreestyleDraftSnapshot: normalizeDraftForSessionId,
   resolveFreestyleSessionId,
@@ -91,22 +89,6 @@ module.exports = [
         carryForwardFreestyleSet([{ kg: '', reps: '12' }]),
         { kg: '', reps: '12' },
       );
-    },
-  },
-  {
-    name: 'muscle filter maps design chips onto library body parts',
-    run() {
-      assert.deepEqual(
-        [...EMPTY_WORKOUT_MUSCLE_FILTERS],
-        ['All', 'Chest', 'Back', 'Shoulders', 'Legs', 'Arms', 'Core'],
-      );
-      assert.equal(matchesMuscleFilter('chest', 'Chest'), true);
-      assert.equal(matchesMuscleFilter('glutes', 'Legs'), true);
-      assert.equal(matchesMuscleFilter('biceps', 'Arms'), true);
-      assert.equal(matchesMuscleFilter('triceps', 'Arms'), true);
-      assert.equal(matchesMuscleFilter('back', 'Chest'), false);
-      assert.equal(matchesMuscleFilter('full body', 'All'), true);
-      assert.equal(matchesMuscleFilter('full body', 'Core'), false);
     },
   },
   {

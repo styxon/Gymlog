@@ -45,7 +45,7 @@ import { StrengthGoalProgress } from '../lib/strengthGoals';
 import type { ProgramSeason } from '../lib/programSeasons';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import type { WorkoutLevel } from '../features/workout/workoutTypes';
-import type { AppLanguage, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
+import type { AppLanguage, ExerciseLibraryItem, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
 import { removeTrailingZeros } from '../lib/format';
 
 // Designed program covers (README "Program Covers"): a per-program hue rendered
@@ -228,7 +228,7 @@ interface ProgramsHomeScreenProps {
   /** Where the padlock leads. */
   onOpenPaywall?: () => void;
   onImportProgram: (draft: WorkoutTemplateDraft) => Promise<boolean | void> | boolean | void;
-  exerciseLibraryEntries: CsvLibraryEntry[];
+  exerciseLibraryEntries: ExerciseLibraryItem[];
   /** The reader's own lift names, for the CSV importer's matcher. */
   nameBook?: readonly ExerciseNameBookEntry[];
   onTeachName?: (wrote: string, exercise: CsvLibraryEntry) => Promise<void> | void;

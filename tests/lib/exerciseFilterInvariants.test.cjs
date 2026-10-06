@@ -303,24 +303,27 @@ module.exports = [
     name: 'filters: every picker reads the shared rules, and the specialty chip is labelled in both languages',
     run() {
       const read = (relative) => fs.readFileSync(path.join(__dirname, '../..', relative), 'utf8');
+      // Every picker composes them through lib/exercisePicker (2026-10-06);
+      // tests/screens/pickerWiring pins each screen's call.
+      const shared = read('src/lib/exercisePicker.ts');
+      assert.match(shared, /matchesExerciseTypeFilter\(item, filters\.category\)/);
+      assert.match(shared, /passesSpecialtyGate\(item, \{ query: typed, type: chips\.category \}\)/);
+      assert.match(shared, /filterBrowsableExercises\(\[\.\.\.items\], \{ query: typed, type: chips\.category \}\)/);
       const sheet = read('src/components/AddExerciseSheet.tsx');
-      assert.match(sheet, /matchesExerciseTypeFilter\(item, category\)/);
       assert.match(sheet, /const categoryOptions = EXERCISE_TYPE_FILTERS;/);
-      assert.match(sheet, /specialty: 'facet\.specialty'/);
       assert.doesNotMatch(sheet, /item\.category !== category/);
-      assert.doesNotMatch(sheet, /toLabel\(item\.category, language\)/);
       const browser = read('src/components/ExerciseLibraryBrowser.tsx');
-      assert.match(browser, /matchesExerciseTypeFilter\(item, categoryFilter\)/);
-      assert.match(browser, /passesSpecialtyGate\(item, \{ query, type: categoryFilter \}\)/);
+      assert.match(browser, /category: categoryFilter/);
       assert.doesNotMatch(browser, /item\.category !== categoryFilter/);
       const empty = read('src/screens/EmptyWorkoutScreen.tsx');
-      assert.match(empty, /filterBrowsableExercises\(items, \{ query: normalizedQuery \}\)/);
+      assert.match(empty, /listPickerExercises\(items, \{\s*query: normalizedQuery,/);
       const player = read('src/screens/GuidedPlayerScreen.tsx');
-      assert.match(player, /filterBrowsableExercises\(exerciseLibrary, \{ query, type: swapFilters\.category \}\)/);
+      assert.match(player, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
 
-      const { t } = require('../../.test-dist/lib/i18n.js');
-      assert.equal(t('fi', 'facet.specialty'), 'Erikoisliikkeet');
-      assert.equal(t('en', 'facet.specialty'), 'Specialty');
+      // One word on the chip and under the row, in both languages.
+      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      assert.equal(exercisePickerLabel('specialty', 'fi'), 'Erikoisliike');
+      assert.equal(exercisePickerLabel('specialty', 'en'), 'Specialty');
     },
   },
 ];

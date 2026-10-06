@@ -127,7 +127,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { exerciseMatchesQuery, oneRowPerShownName, rankExerciseMatches } from '../lib/exerciseSearch';
+import { exerciseMatchesQuery, oneRowPerShownName } from '../lib/exerciseSearch';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
@@ -135,14 +135,9 @@ import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
 import { fitRunPreview } from '../lib/guidedRunPreview';
-import {
-  ExercisePickerEntry,
-  ExercisePickerFilters,
-  ExercisePickerSheet,
-  SheetEquipmentOption,
-  matchesExerciseSheetFilters,
-} from '../components/AddExerciseSheet';
-import { BodyPartFilter, filterBrowsableExercises } from '../lib/exerciseBrowseFilter';
+import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
+import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
+import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, orderSwapCandidates, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { useKeepScreenAwake } from '../utils/keepAwake';
@@ -2513,38 +2508,35 @@ function GuidedPlayer({
     // to swap it for.
     const current = actionExercise?.exerciseName;
     const currentLabel = current ? exerciseNameLabel(language, current) : null;
-    // What can be logged as sets, until the reader types: a stretch is no
-    // swap for a bench press, and "Rinnan venytys kädet niskan takana" sat in
-    // the chest list (device, 2026-09-30). The add-exercise sheet has hidden
-    // them the same way since #bugs 2026-08-26; a query finds them.
-    // The type chip is passed too: the specialty chip is the one place the
-    // specialty movements are listed without a query (#bugs 2026-10-06).
-    const pool = filterBrowsableExercises(exerciseLibrary, { query, type: swapFilters.category }).filter(
+    // Every picker's one list (lib/exercisePicker): what can be logged as
+    // sets until the reader types — a stretch is no swap for a bench press,
+    // and "Rinnan venytys kädet niskan takana" sat in the chest list (device,
+    // 2026-09-30) — the specialty movements only under their own chip
+    // (#bugs 2026-10-06), and the sheet's three chip groups, the body part
+    // the lift's own until the reader picks another (swapBodyPart). Ranked
+    // best answer first under a query, popularity breaking ties — the same
+    // rule as the add sheet, so the two do not disagree.
+    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
+    const pool = listPickerExercises(exerciseLibrary, {
+      query,
+      filters: swapFilters,
+      language,
+      popularity: (item) => popular.get(item.id),
+    }).filter(
       (item) =>
         item.name !== current &&
         exerciseNameLabel(language, item.name) !== currentLabel &&
         !sessionLiftLabels.has(exerciseNameLabel(language, item.name)) &&
-        !suggested.has(exerciseNameLabel(language, item.name)) &&
-        // The body-part chip, the lift's own until the reader picks another
-        // (swapBodyPart), with the sheet's category and equipment chips — the
-        // add sheet's one rule (matchesExerciseSheetFilters). Composes with
-        // the typed query below rather than replacing it, like the library
-        // screen's own chips do.
-        matchesExerciseSheetFilters(item, swapFilters),
+        !suggested.has(exerciseNameLabel(language, item.name)),
     );
     if (!query) {
       // Nearest the lift first — same kit, same kind of lift — then
       // popularity (orderSwapCandidates).
-      const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
       const nearest = orderSwapCandidates(pool, swapCurrentLibraryItem, popular);
       return oneRowPerShownName(nearest, language).slice(0, 25);
     }
-    // Best answer first, popularity breaking ties — the same rule as the
-    // pickers, so the swap sheet does not disagree with them.
-    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
     // One row per shown name, as on Home and the programme day (PR review).
-    const ranked = rankExerciseMatches(pool, query, language, (item) => popular.get(item.id));
-    return oneRowPerShownName(ranked, language).slice(0, 40);
+    return oneRowPerShownName(pool, language).slice(0, 40);
   }, [
     actionExercise,
     exerciseLibrary,
@@ -2568,7 +2560,7 @@ function GuidedPlayer({
   const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(() => {
     const narrowed = swapFilters.category !== 'all' || swapFilters.equipment !== 'all';
     return swapSuggestionRows
-      .filter(({ item }) => !narrowed || (item !== null && matchesExerciseSheetFilters(item, { ...swapFilters, bodyPart: 'all' })))
+      .filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, { ...swapFilters, bodyPart: 'all' })))
       .map(({ name, item }) => ({ key: `suggested-${name}`, name, item }));
   }, [swapFilters, swapSuggestionRows]);
   const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(

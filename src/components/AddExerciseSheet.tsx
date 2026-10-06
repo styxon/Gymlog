@@ -24,17 +24,17 @@ import {
   EXERCISE_TYPE_FILTERS,
   EquipmentFilter,
   ExerciseTypeFilter,
-  filterBrowsableExercises,
-  matchesBodyPartFilter,
-  matchesEquipmentFilter,
-  matchesExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
-import { exerciseTypeOf } from '../lib/exerciseClassification';
-import { rankExerciseMatches } from '../lib/exerciseSearch';
+import {
+  ExercisePickerFilters,
+  NO_PICKER_FILTERS,
+  exercisePickerLabel,
+  exercisePickerRowLabels,
+  listPickerExercises,
+} from '../lib/exercisePicker';
 import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
-import { I18nKey, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { ExerciseSheetMode, exerciseSheetCopy } from '../lib/exerciseSheetMode';
-import { displayEquipmentValue } from '../lib/libraryLabel';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 import { KitBar } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -84,52 +84,12 @@ const categoryOptions = EXERCISE_TYPE_FILTERS;
 export type SheetEquipmentOption = EquipmentFilter;
 const equipmentOptions: SheetEquipmentOption[] = EQUIPMENT_FILTERS;
 
-// The library's category / body-part / equipment values are stored English and
-// used for filtering, so only the label is translated.
-const FACET_KEYS: Record<string, I18nKey> = {
-  all: 'facet.all',
-  compound: 'facet.compound',
-  isolation: 'facet.isolation',
-  cardio: 'facet.cardio',
-  core: 'facet.core',
-  specialty: 'facet.specialty',
-  chest: 'facet.chest',
-  back: 'facet.back',
-  shoulders: 'facet.shoulders',
-  legs: 'facet.legs',
-  biceps: 'facet.biceps',
-  triceps: 'facet.triceps',
-  glutes: 'facet.glutes',
-  'full body': 'facet.fullBody',
-  // The leg split, named as the library's muscle labels name them.
-  quadriceps: 'lib.muscle.quadriceps',
-  hamstrings: 'lib.muscle.hamstrings',
-  calves: 'lib.muscle.calves',
-  barbell: 'facet.barbell',
-  dumbbell: 'facet.dumbbell',
-  machine: 'facet.machine',
-  cable: 'facet.cable',
-  bodyweight: 'facet.bodyweight',
-  // Not a bucket the library normalises to — `displayEquipmentValue` hands it
-  // over so a kettlebell row stops calling itself a dumbbell. Borrowed from the
-  // library dictionary rather than added as a fifth copy of the word.
-  kettlebells: 'lib.equipment.kettlebells',
-};
+// Chips and rows say a value in one word, the library's (exercisePickerLabel):
+// the sheet kept its own dictionary, and a lift the library screen called
+// "Moninivel · Käsipainot" read "Perusliike · Käsipaino" here (#bugs 2026-10-06).
 
 /** 38 drawn, 44 to the thumb. */
 const PILL_SLOP = { top: 3, bottom: 3 } as const;
-
-function toLabel(value: string, language: AppLanguage) {
-  const key = FACET_KEYS[value];
-  if (key) {
-    return t(language, key);
-  }
-
-  return value
-    .split(' ')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
 
 interface FilterPillGroupProps<T extends string> {
   title: string;
@@ -164,7 +124,7 @@ function FilterPillGroup<T extends string>({
               style={[styles.filterPill, active && styles.filterPillActive]}
             >
               <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
-                {toLabel(option, language)}
+                {exercisePickerLabel(option, language)}
               </Text>
             </Pressable>
           );
@@ -183,33 +143,9 @@ export interface ExercisePickerEntry {
   item: ExerciseLibraryItem | null;
 }
 
-export interface ExercisePickerFilters {
-  category: ExerciseTypeFilter;
-  bodyPart: BodyPartFilter;
-  equipment: SheetEquipmentOption;
-}
-
-export const NO_SHEET_FILTERS: ExercisePickerFilters = { category: 'all', bodyPart: 'all', equipment: 'all' };
-
-/**
- * The sheet's three filter groups as one rule, for every list drawn in it —
- * the add flow's own list here, and the swap list the guided player derives
- * (lib/exerciseSheetMode). Which lift belongs to which chip is the library's
- * business (exerciseBrowseFilter, libraryLabel); this only composes them.
- */
-export function matchesExerciseSheetFilters(item: ExerciseLibraryItem, filters: ExercisePickerFilters): boolean {
-  const { category, bodyPart, equipment } = filters;
-  if (!matchesExerciseTypeFilter(item, category)) {
-    return false;
-  }
-  if (!matchesBodyPartFilter(item, bodyPart)) {
-    return false;
-  }
-  if (!matchesEquipmentFilter(item, equipment)) {
-    return false;
-  }
-  return true;
-}
+// The three groups' rule lives in lib/exercisePicker, with every picker's list.
+export type { ExercisePickerFilters };
+export const NO_SHEET_FILTERS: ExercisePickerFilters = NO_PICKER_FILTERS;
 
 interface ExercisePickerSection {
   title: string;
@@ -231,6 +167,8 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
   const styles = useThemedStyles(makeStyles);
   const { item, name } = entry;
   const previewImage = item?.imageUrls?.[0] ?? null;
+  // The library screen's line, split over the card's two: body part, then equipment · type.
+  const rowLabels = item ? exercisePickerRowLabels(item, language) : [];
 
   return (
     <Pressable
@@ -265,10 +203,10 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
         {item ? (
           <>
             <Text numberOfLines={1} style={styles.gridCardBodyPart}>
-              {toLabel(item.bodyPart, language)}
+              {rowLabels[0]}
             </Text>
             <Text numberOfLines={2} style={styles.gridCardMeta}>
-              {toLabel(exerciseTypeOf(item), language)} · {toLabel(displayEquipmentValue(item), language)}
+              {rowLabels.slice(1).join(' · ')}
             </Text>
           </>
         ) : null}
@@ -402,7 +340,7 @@ export function ExercisePickerSheet({
                   style={[styles.quickBodyPartChip, active && styles.quickBodyPartChipActive]}
                 >
                   <Text style={[styles.quickBodyPartChipText, active && styles.quickBodyPartChipTextActive]}>
-                    {toLabel(option, language)}
+                    {exercisePickerLabel(option, language)}
                   </Text>
                 </Pressable>
               );
@@ -635,19 +573,17 @@ export function AddExerciseSheet({
     if (!visible) {
       return [];
     }
-    const query = search.trim().toLowerCase();
-
-    // Stretches and cone drills are in the library but are not sets, and they
-    // came back alongside the bench press whenever a body part was picked
-    // (#bugs 2026-08-26). A typed query lifts the hiding: see the module.
-    const filtered = filterBrowsableExercises(items, { query, type: category }).filter((item) =>
-      matchesExerciseSheetFilters(item, { category, bodyPart, equipment }),
-    );
-    // Best answer first under a query — the lift itself before its variants.
-    // The popularity accessor is what breaks ties: without it "penkki"
-    // answers with Penkkidippi before Penkkipunnerrus, which is the very
-    // complaint the ranking was added for.
-    return rankExerciseMatches(filtered, query, language, (item) => commonStarterOrder.get(item.id));
+    // Every picker's one list (lib/exercisePicker): no stretch, drill or
+    // strongman implement until a query or the specialty chip asks, the three
+    // chip groups, and best answer first under a query. The popularity
+    // accessor breaks ties: without it "penkki" answers with Penkkidippi
+    // before Penkkipunnerrus, the very complaint the ranking was added for.
+    return listPickerExercises(items, {
+      query: search,
+      filters: { category, bodyPart, equipment },
+      language,
+      popularity: (item) => commonStarterOrder.get(item.id),
+    });
   }, [bodyPart, category, commonStarterOrder, equipment, items, language, search, visible]);
 
   const suggestedItems = useMemo(

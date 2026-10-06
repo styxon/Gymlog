@@ -10,33 +10,13 @@ import { getComparableLogSets } from '../lib/exerciseLog';
 import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseTeaching';
 import { calendarDaysBetween } from '../lib/completedSessions';
 import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
-import { I18nKey, t } from '../lib/i18n';
-import { libraryLabel } from '../lib/libraryLabel';
+import { t } from '../lib/i18n';
+import { exerciseMechanic, exerciseTypeOf } from '../lib/exerciseClassification';
+import { exercisePickerLabel } from '../lib/exercisePicker';
 import { ExerciseProgressSummary } from '../lib/progression';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 
-// Muscle and facet names are stored English and used for matching, so only
-// the label translates. Anything unmapped falls through to title case.
-const DETAIL_LABEL_KEYS: Record<string, I18nKey> = {
-  chest: 'facet.chest',
-  back: 'facet.back',
-  shoulders: 'facet.shoulders',
-  legs: 'facet.legs',
-  biceps: 'facet.biceps',
-  triceps: 'facet.triceps',
-  core: 'facet.core',
-  glutes: 'facet.glutes',
-  'full body': 'facet.fullBody',
-  barbell: 'facet.barbell',
-  dumbbell: 'facet.dumbbell',
-  machine: 'facet.machine',
-  cable: 'facet.cable',
-  bodyweight: 'facet.bodyweight',
-  compound: 'facet.compound',
-  isolation: 'facet.isolation',
-  cardio: 'facet.cardio',
-};
 
 interface ExerciseDetailScreenProps {
   item: ExerciseLibraryItem;
@@ -63,15 +43,12 @@ function toLabel(value: string | null | undefined, language: AppLanguage) {
     return '';
   }
 
-  const key = DETAIL_LABEL_KEYS[value.trim().toLowerCase()];
-  if (key) {
-    return t(language, key);
-  }
-
-  // Muscles, the raw source equipment ("kettlebells", "body only") and the
-  // middle source level are not in this screen's own facet map; the shared
-  // library map knows them. Anything neither knows still capitalises itself.
-  return libraryLabel(value, language);
+  // The words every picker's row and chip use (exercisePickerLabel): this page
+  // kept its own map, and said "Perusliike" and "Käsipaino" under a row that
+  // read "Moninivel · Käsipainot" (#bugs 2026-10-06). The muscles, the raw
+  // source equipment ("kettlebells", "body only") and the source levels are
+  // in the same map; anything it does not know capitalises itself.
+  return exercisePickerLabel(value, language);
 }
 
 function formatLastDone(iso: string, language: AppLanguage) {
@@ -236,10 +213,16 @@ export function ExerciseDetailScreen({
   const caution = shouldShowTeachingCaution(teaching?.caution, cautionFlags) ? teaching?.caution : null;
   const remainingChecks = teaching ? countRemainingStatements(teaching.check.length, checkedStatements) : 0;
 
-  const bodyPartLabel = toLabel(item.bodyPart, language) || t(language, 'facet.fullBody');
+  const bodyPartLabel = toLabel(item.bodyPart, language) || exercisePickerLabel('full body', language);
   const equipmentLabel =
-    toLabel(item.sourceEquipment ?? item.equipment, language) || t(language, 'facet.bodyweight');
-  const mechanicLabel = toLabel(item.sourceMechanic ?? item.category, language) || t(language, 'facet.compound');
+    toLabel(item.sourceEquipment ?? item.equipment, language) || exercisePickerLabel('bodyweight', language);
+  // The type the row prints (exerciseTypeOf) — a tyre flip is a specialty
+  // movement here too — and, where it would repeat the body part, the
+  // mechanic instead, as the row does (exerciseRowMetaValues).
+  const rowType = exerciseTypeOf(item);
+  const mechanicLabel =
+    toLabel(rowType === item.bodyPart ? exerciseMechanic(item) ?? rowType : rowType, language) ||
+    exercisePickerLabel('compound', language);
   const levelLabel = toLabel(item.sourceLevel ?? 'beginner', language) || t(language, 'myData.level.beginner');
 
   const primaryMuscles = (item.primaryMuscles ?? []).filter(Boolean);

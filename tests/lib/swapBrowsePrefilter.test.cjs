@@ -89,8 +89,9 @@ module.exports = [
       const player = fs
         .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
         .replace(/\r\n/g, '\n');
-      // Stretches and drills out until the reader types, like the add sheet.
-      assert.match(player, /const pool = filterBrowsableExercises\(exerciseLibrary, \{ query, type: swapFilters\.category \}\)\.filter\(/);
+      // Stretches and drills out until the reader types: the add sheet's one
+      // list (lib/exercisePicker), with the sheet's chips.
+      assert.match(player, /const pool = listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
       assert.match(player, /orderSwapCandidates\(pool, swapCurrentLibraryItem, popular\)/);
     },
   },

@@ -433,6 +433,7 @@ const suites = [
   ...require('./screens/programsHomeStructure.test.cjs'),
   ...require('./screens/programPlanOverview.test.cjs'),
   ...require('./screens/addExerciseSheet.test.cjs'),
+  ...require('./screens/pickerWiring.test.cjs'),
   ...require('./screens/equipmentLabelWiring.test.cjs'),
   ...require('./screens/cardioPlayer.test.cjs'),
   ...require('./screens/cardioAuditWiring.test.cjs'),
