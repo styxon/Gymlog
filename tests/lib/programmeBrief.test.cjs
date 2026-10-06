@@ -231,4 +231,49 @@ module.exports = [
       assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} specialty picks`);
     },
   },
+  {
+    // User, 2026-10-06: no programme may hold a specialty movement, and the
+    // AI must not suggest one unless the reader asks for it.
+    name: 'a live proposal drops specialty movements the brief did not ask for, and says so',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const seeded = createSeedExerciseLibrary();
+      const raw = {
+        title: 'Legs',
+        sessions: [
+          {
+            name: 'Day 1',
+            exercises: [
+              { name: 'Barbell Full Squat', sets: 4, repsMin: 5, repsMax: 5 },
+              { name: 'Atlas Stones', sets: 3, repsMin: 3, repsMax: 5 },
+              { name: 'Car Deadlift', sets: 3, repsMin: 3, repsMax: 5 },
+            ],
+          },
+        ],
+      };
+      const plain = resolveLiveProposal(raw, '3 päivää, jalat ja selkä', seeded, 120);
+      assert.deepEqual(plain.sessions[0].exercises.map((exercise) => exercise.name), ['Barbell Full Squat']);
+      assert.deepEqual(plain.specialtyLeftOut, ['Atlas Stones', 'Car Deadlift']);
+      assert.deepEqual(plain.unresolvedNames, []);
+
+      // Asked for by name, in either language, it stays; asked for as
+      // strongman work, they all do.
+      const named = resolveLiveProposal(raw, 'jalat ja atlas stones', seeded, 120);
+      assert.deepEqual(named.sessions[0].exercises.map((exercise) => exercise.name), ['Barbell Full Squat', 'Atlas Stones']);
+      const strongman = resolveLiveProposal(raw, 'haluan strongman-treeniä', seeded, 120);
+      assert.equal(strongman.sessions[0].exercises.length, 3);
+      assert.deepEqual(strongman.specialtyLeftOut, []);
+
+      // The card says what it left out, and the model is told not to.
+      const card = fs.readFileSync(path.join(__dirname, '../../src/components/ProgrammeProposalCard.tsx'), 'utf8');
+      assert.match(card, /aiCompose\.specialtyLeftOut/);
+      const server = fs.readFileSync(path.join(__dirname, '../../api/ai-coach.ts'), 'utf8');
+      const composer = server.slice(server.indexOf('const COMPOSER_SYSTEM_RULES'), server.indexOf('const AI_COACH_RESPONSE_SCHEMA'));
+      assert.match(composer, /No strongman or specialty movements/);
+      const coach = server.slice(server.indexOf('const COACH_SYSTEM_RULES'));
+      assert.match(coach, /Never suggest a strongman or specialty movement/);
+    },
+  },
 ];
