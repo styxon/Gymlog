@@ -47,8 +47,8 @@ import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import { detectPlateaus } from './progressionAnalyzer';
 import { sessionBestPoints } from './trainingHistory';
 import { buildFatigueModel } from './fatigueModel';
-import { getComparableLogSets, isMinutesLog } from './exerciseLog';
-import { isMinutesExerciseName } from './minutesExercises';
+import { getComparableLogSets } from './exerciseLog';
+import { isMinutesExerciseName, isMinutesLogEntry } from './minutesExercises';
 import {
   buildTrainingHistory,
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -655,7 +655,7 @@ export function buildAiCoachLastSession(
         // programme prescribes next time, so it gets no "next time" rather
         // than the original lift's numbers under its name.
         next: nextFor(nextByLift.get(normalizedName(name))),
-        ...(isMinutesLog(log) ? { unit: 'minutes' as const } : {}),
+        ...(isMinutesLogEntry(log) ? { unit: 'minutes' as const } : {}),
       };
     })
     .filter((exercise) => exercise.name.length > 0 && exercise.sets.length > 0);
@@ -741,7 +741,7 @@ export function buildAiTrainingContext({
   // "latest 0 kg x 20" read as twenty reps of nothing. It reaches the coach
   // in minutes, through the last session.
   const liftProgress = trackedProgress.filter(
-    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isMinutesLog(log)),
+    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isMinutesLogEntry(log)),
   );
   const trackedLifts = liftProgress.slice(0, 3).map((summary) => ({
     key: summary.key,

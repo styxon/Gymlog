@@ -553,6 +553,7 @@ const suites = [
   ...require('./storage/storageLoadInvariant.test.cjs'),
   ...require('./storage/trackingAfterCategoryCorrection.test.cjs'),
   ...require('./storage/minutesModeForOldCopies.test.cjs'),
+  ...require('./lib/minutesLogEntry.test.cjs'),
   ...require('./storage/planEntryLabel.test.cjs'),
   ...require('./storage/corruptCopies.test.cjs'),
   ...require('./screens/oneCount.test.cjs'),

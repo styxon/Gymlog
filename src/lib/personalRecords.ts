@@ -1,6 +1,6 @@
 import { groupByMonth } from './monthGroups';
-import { getComparableLogSets, isMinutesLog } from './exerciseLog';
-import { isMinutesExerciseName } from './minutesExercises';
+import { getComparableLogSets } from './exerciseLog';
+import { isMinutesLogEntry } from './minutesExercises';
 import type { ExerciseLog } from '../types/models';
 
 /**
@@ -89,7 +89,7 @@ export function recordSetsOfLog(
   log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
     Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
 ): RecordSet[] {
-  if (isMinutesLog(log) || isMinutesExerciseName(log.exerciseNameSnapshot)) {
+  if (isMinutesLogEntry(log)) {
     return [];
   }
   return getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps }));

@@ -22,7 +22,7 @@
  * catalogue copy, onboarding's composed week, the CSV importer) stored — so
  * the stored value was a writer's old answer, not a choice. The numbers keep:
  * 1 × 20 and 5 × 4 read the same as minutes, as the ready rows prescribe them.
- * Logs written before are read by name as minutes (lib/exerciseLog
+ * Logs written before are read by name as minutes (lib/minutesExercises
  * isMinutesLogEntry), so history and personal records stay in step.
  *
  * Once per database (`appliedMigrations`, storage/database.ts), like the

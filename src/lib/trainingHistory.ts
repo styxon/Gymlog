@@ -1,5 +1,6 @@
 import { getCalendarWeekStartAfter, getRollingWindowStart, localDateKey } from './completedSessions';
-import { getComparableLogSets, isMinutesLog } from './exerciseLog';
+import { getComparableLogSets } from './exerciseLog';
+import { isMinutesLogEntry } from './minutesExercises';
 import { getTotalVolume } from './progression';
 import { ExerciseLog, SetupWeekday, WorkoutSession } from '../types/models';
 import { TrainingSchedule, trainsOn } from './trainingSchedule';
@@ -481,7 +482,7 @@ export function buildRepsLiftHistories(
     }
     // Minutes are not a rep trajectory: a bike ridden 15 then 20 minutes is
     // not "+5 reps" to the coach (2026-10-06).
-    if (isMinutesLog(log)) {
+    if (isMinutesLogEntry(log)) {
       continue;
     }
     const sets = getComparableLogSets(log).filter((set) => set.reps > 0);

@@ -63,6 +63,29 @@ export function isMinutesExerciseName(name: string | null | undefined): boolean 
   return typeof name === 'string' && byName.has(normalize(name));
 }
 
+/**
+ * Whether a stored log's numbers are minutes.
+ *
+ * The log's own unit says so for anything saved since 2026-10-06; the name
+ * says so for a log saved before the unit existed ("20" on a Stairmaster was
+ * twenty minutes then too, it just carried no unit). Asking only one of the
+ * two let an old log read as twenty reps in one place and twenty minutes in
+ * another, so every reader that has a log asks this. It lives here, not in
+ * exerciseLog, because the name list is here and exerciseLog sits below this
+ * module's imports (weightDial -> format -> exerciseLog).
+ */
+export function isMinutesLogEntry(
+  log: { repsUnit?: unknown; exerciseNameSnapshot?: unknown } | null | undefined,
+): boolean {
+  if (!log) {
+    return false;
+  }
+  if (log.repsUnit === 'minutes') {
+    return true;
+  }
+  return typeof log.exerciseNameSnapshot === 'string' && isMinutesExerciseName(log.exerciseNameSnapshot);
+}
+
 /** The names this module claims, exposed so a test can check the catalogues agree. */
 export const MINUTES_EXERCISE_NAME_LIST: readonly string[] = [...PROGRAMME_MINUTES_NAMES, ...LIBRARY_MINUTES_NAMES];
 
