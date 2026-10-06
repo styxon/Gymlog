@@ -111,6 +111,7 @@ const suites = [
   ...require('./lib/guidedPlayer.test.cjs'),
   ...require('./lib/guidedClockHold.test.cjs'),
   ...require('./lib/sheetScrollBound.test.cjs'),
+  ...require('./lib/guidedRunPreview.test.cjs'),
   ...require('./lib/guidedSetWeightSummary.test.cjs'),
   ...require('./lib/routineDrillSwap.test.cjs'),
   ...require('./lib/exerciseHistoryLookup.test.cjs'),

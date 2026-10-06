@@ -427,7 +427,10 @@ module.exports = [
       // Not inside a superset: a set count per lift there asks the reader to
       // reconcile "4 × 8" with "3 × 10" inside one box whose real unit is
       // rounds (user 2026-09-11).
-      assert.match(playerSource, /const memberPlan =\s*!isSuperset && lift && planSet\s/);
+      // The plan line is one helper since the walk-up lists the same rows
+      // (#bugs 2026-10-06), so the two cannot say different things.
+      assert.match(playerSource, /const memberPlan = !isSuperset \? runPlanLine\(member\.slotId\) : '';/);
+      assert.match(playerSource, /const runPlanLine = \(slotId: string \| null\): string => \{/);
       // Read off the next set still to do. A swap rewrites only the sets
       // ahead, so the first set of a slot swapped mid-way still carries the
       // old lift's reps and lowered target (review of #202, 2026-09-28).
@@ -880,6 +883,46 @@ module.exports = [
       assert.doesNotMatch(exerciseSheetCopy('swap', 'fi', null).title, /undefined/);
       // The new label exists in both dictionaries.
       assert.equal((i18nSource.match(/'sheet\.swapAction': '[^']+'/g) ?? []).length, 2);
+    },
+  },
+  {
+    /**
+     * #bugs 2026-10-06: "Jos mahtuu, olisi hyvä tässäkin ruudussa olla koko
+     * ohjelman sisältö luettavissa." The walk-up lists the contents sheet's
+     * rows in the room under its cards — as many as fit — and never moves
+     * its buttons for them.
+     */
+    name: 'guided walk-up: the workout contents in the room that is left, never at the buttons\' cost',
+    run() {
+      const source = playerSource.replace(/\r\n/g, '\n');
+      const start = source.indexOf("{step.type === 'position' && (");
+      const walk = source.slice(start, source.indexOf('{/* An interval work bout', start));
+      assert.ok(start > 0 && walk.length > 0, 'walk-up moved');
+      // The list lives INSIDE the scroll, and the buttons outside it: the
+      // ScrollView closes before the swap / add / start buttons begin.
+      const scrollEnd = walk.indexOf('</ScrollView>');
+      assert.ok(walk.indexOf('{walkRunFit ? (') < scrollEnd, 'the list is in the scroll area');
+      assert.ok(walk.indexOf("label={t(language, 'guided.walk.startFirst')}") > scrollEnd, 'the start button is outside it');
+      assert.ok(walk.indexOf("label={t(language, 'guided.walk.swap')}") > scrollEnd);
+      // Measured room: the scroll's own height less everything above the list.
+      assert.match(walk, /onLayout=\{\(event\) => setWalkViewportHeight\(Math\.floor\(event\.nativeEvent\.layout\.height\)\)\}/);
+      assert.match(walk, /onLayout=\{\(event\) => setWalkTopHeight\(Math\.ceil\(event\.nativeEvent\.layout\.height\)\)\}/);
+      assert.match(source, /availableHeight: walkViewportHeight - WALK_RUN_CHROME - walkTopHeight,/);
+      assert.match(source, /const WALK_RUN_CHROME = 28 \+ 8 \+ 14;/);
+      assert.match(walk, /contentContainerStyle=\{\{ paddingTop: 28, paddingHorizontal: 24, paddingBottom: 8, gap: 14 \}\}/);
+      // Drawn at the heights the fit was worked out with.
+      assert.match(source, /headHeight: WALK_RUN_HEAD,\s*rowHeight: WALK_RUN_ROW,/);
+      assert.match(source, /walkRunHead: \{ height: WALK_RUN_HEAD,/);
+      assert.match(source, /walkRunRow: \{ height: WALK_RUN_ROW,/);
+      assert.match(walk, /numberOfLines=\{1\}\s*accessibilityLabel=\{item\.members\.map/);
+      // The contents sheet's rows: its builder, its plan line, its rounds.
+      assert.match(source, /const walkRunItems = step\.type === 'position' \? buildGuidedRunSheet\(stepPlan, stepIndex\) : \[\];/);
+      assert.match(walk, /runPlanLine\(item\.members\[0\]\?\.slotId \?\? null\)/);
+      assert.match(walk, /t\(language, 'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
+      // What did not fit is counted, and the whole sheet is one tap away.
+      assert.match(walk, /t\(language, 'guided\.walk\.contentMore', \{ count: walkRunFit\.hidden \}\)/);
+      assert.match(walk, /onPress=\{\(\) => setRunSheetOpen\(true\)\}/);
+      assert.equal((i18nSource.match(/'guided\.walk\.contentMore': '\+\{count\} [^']+'/g) ?? []).length, 2);
     },
   },
 ];

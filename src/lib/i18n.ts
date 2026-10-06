@@ -1470,6 +1470,7 @@ const EN = {
   'guided.walk.swap': 'Swap exercise',
   'guided.walk.add': 'Add exercise',
   'guided.walk.added': 'Added after this one: {name}',
+  'guided.walk.contentMore': '+{count} more',
   'guided.sheet.tab.learn': 'Learn',
   'guided.sheet.tab.howTo': 'How to',
   'exerciseSheet.expand': 'Expand',
@@ -4853,6 +4854,7 @@ const FI: Record<I18nKey, string> = {
   'guided.walk.swap': 'Vaihda liike',
   'guided.walk.add': 'Lisää liike',
   'guided.walk.added': 'Lisätty tämän jälkeen: {name}',
+  'guided.walk.contentMore': '+{count} muuta',
   // "Opettele", not "Opi": this tab is deliberate practice on one lift —
   // three cues and a self-audit — while "Opi" is the name of the section that
   // holds the courses (user 2026-09-04).

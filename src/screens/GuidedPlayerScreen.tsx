@@ -134,6 +134,7 @@ import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
+import { fitRunPreview } from '../lib/guidedRunPreview';
 import {
   ExercisePickerEntry,
   ExercisePickerFilters,
@@ -1289,6 +1290,15 @@ const NO_RECENT_EXERCISES: ExerciseLibraryItem[] = [];
 const SHEET_DISMISS_DRAG = 90;
 /** …or how fast it was still moving down when let go. */
 const SHEET_DISMISS_VELOCITY = 0.9;
+/**
+ * The walk-up's contents list draws its heading and rows at exactly these
+ * heights, so the space they need can be worked out before they are drawn
+ * (lib/guidedRunPreview).
+ */
+const WALK_RUN_HEAD = 28;
+const WALK_RUN_ROW = 30;
+/** The walk-up scroll's own padding (28 top, 8 bottom) and the gap above the list. */
+const WALK_RUN_CHROME = 28 + 8 + 14;
 /** The sheet's height cap (`sheetFrame`), as a share of the scrim. */
 const SHEET_CAP_FRACTION = 0.78;
 
@@ -1797,6 +1807,13 @@ function GuidedPlayer({
    * last one, and a second add landed before the first (#bugs 2026-10-02).
    */
   const [walkAdded, setWalkAdded] = useState<Record<string, WalkAddedLifts>>({});
+  /**
+   * The walk-up's scroll area and everything in it above the contents list,
+   * measured: what is left between them is the room the list may take
+   * (#bugs 2026-10-06, "jos mahtuu … koko ohjelman sisältö luettavissa").
+   */
+  const [walkViewportHeight, setWalkViewportHeight] = useState(0);
+  const [walkTopHeight, setWalkTopHeight] = useState(0);
   /** The slots that existed before a walk-up add, so the one it creates can be found. */
   const walkInsertRef = useRef<{ introSlotId: string; known: Set<string> } | null>(null);
   /**
@@ -2124,6 +2141,46 @@ function GuidedPlayer({
   if (!session) {
     return <View style={{ flex: 1, backgroundColor: theme.bg }} />;
   }
+
+  /**
+   * "4 × 8" for one lift of the contents list: what is still asked of it, not
+   * what was lifted. Shared by the contents sheet and the walk-up's list, so
+   * the two say the same thing about the same lift.
+   */
+  const runPlanLine = (slotId: string | null): string => {
+    const lift = slotId ? exerciseBySlot.get(slotId) : undefined;
+    // Read off the next set still to do (planSetOf): a swap rewrites only
+    // the sets ahead.
+    const planSet = lift ? planSetOf(lift.sets) : undefined;
+    return lift && planSet
+      ? formatSetScheme(
+          lift.sets.length,
+          // The lowered target, when there is one — the plan says what the
+          // dial will open on.
+          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
+          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
+          lift.trackingMode,
+        )
+      : '';
+  };
+
+  /**
+   * The walk-up's slice of the contents: as many rows as the room under its
+   * cards holds, the lift being walked up to first (lib/guidedRunPreview).
+   * Null — no list at all — until both heights are measured, and whenever
+   * not one row fits; the buttons below never give way to it.
+   */
+  const walkRunItems = step.type === 'position' ? buildGuidedRunSheet(stepPlan, stepIndex) : [];
+  const walkRunFit =
+    step.type === 'position' && walkViewportHeight > 0 && walkTopHeight > 0
+      ? fitRunPreview({
+          count: walkRunItems.length,
+          currentIndex: walkRunItems.findIndex((item) => item.status === 'current'),
+          availableHeight: walkViewportHeight - WALK_RUN_CHROME - walkTopHeight,
+          headHeight: WALK_RUN_HEAD,
+          rowHeight: WALK_RUN_ROW,
+        })
+      : null;
 
   const completedSetCount = exercises.reduce(
     (sum, exercise) => sum + exercise.sets.filter((set) => set.status === 'completed').length,
@@ -3669,83 +3726,154 @@ function GuidedPlayer({
                 style={{ flex: 1, minHeight: 0 }}
                 contentContainerStyle={{ paddingTop: 28, paddingHorizontal: 24, paddingBottom: 8, gap: 14 }}
                 showsVerticalScrollIndicator={false}
+                onLayout={(event) => setWalkViewportHeight(Math.floor(event.nativeEvent.layout.height))}
               >
-                {/* No card for the lift that just ended. It was a splash
-                    once, then a card at the top of this screen (2026-09-04),
-                    then two lines of it (2026-09-09) — and then not worth its
-                    room at all: the numbers are in the contents sheet, and
-                    without them the lift coming up, its picture and the swap
-                    all sit higher, with room to press (#bugs 2026-09-30,
-                    "poistetaan tuo mitä on viimeksi tehty se vie liikaa
-                    tilaa"). */}
-                <View style={{ alignItems: 'center', gap: 8 }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: '800', letterSpacing: 2, color: theme.highlight }}>
-                    {t(language, 'guided.nextUp')}
-                  </Text>
-                  {/* One line, the type shrinking to fit rather than the name
-                      wrapping (device, 2026-09-16): a two-line name was the
-                      line that pushed this screen into a scroll, and a walk-up
-                      is read in one glance or not at all. */}
-                  <Text
-                    style={styles.positionName}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.5}
-                    accessibilityLabel={exerciseNameLabel(language, step.exerciseName)}
-                  >
-                    {exerciseListLabel(language, step.exerciseName)}
-                  </Text>
-                </View>
-
-                {/* Bigger. The shape was right and the box was not (user
-                    2026-09-04) — and the screen has the room, having lost a
-                    countdown. A little under the 230 it was, so the whole
-                    walk-up fits without scrolling (device, 2026-09-16). */}
-                <MediaZone
-                  name={step.exerciseName}
-                  library={exerciseLibrary}
-                  height={210}
-                  mode="set"
-                  showActions={false}
-                  fit="cover"
-                  language={language}
-                />
-
-                {/* Two cards, one question each: what you did last time, and
-                    what today asks of you. The plan used to be one line of
-                    small print under the name. Last time on the left, now on
-                    the right — read left to right, from then to today (#bugs
-                    2026-09-30, "Vaihda viimeksi ja nyt paikkaa"). */}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={styles.walkStat}>
-                    {/* "VIIMEKSI", whichever day of the plan it was: the
-                        "ERI PÄIVÄ" second line went on request, here and on
-                        the set card (#bugs 2026-09-30). A screen reader still
-                        hears it on the set card. */}
-                    <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.last')}</Text>
-                    <Text style={styles.walkStatValue}>{walkNext?.lastValue ?? '—'}</Text>
-                    {walkNext?.lastReps ? (
-                      <Text style={styles.walkStatSub}>{walkNext.lastReps}</Text>
-                    ) : null}
-                  </View>
-                  <View style={[styles.walkStat, { borderColor: theme.highlight }]}>
-                    <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.today')}</Text>
-                    <Text style={[styles.walkStatValue, { color: theme.highlight }]}>
-                      {walkNext?.todayValue ?? '—'}
+                {/* Measured as one block, so the contents list below knows the
+                    room that is left (walkRunFit). */}
+                <View
+                  style={{ gap: 14 }}
+                  onLayout={(event) => setWalkTopHeight(Math.ceil(event.nativeEvent.layout.height))}
+                >
+                  {/* No card for the lift that just ended. It was a splash
+                      once, then a card at the top of this screen (2026-09-04),
+                      then two lines of it (2026-09-09) — and then not worth its
+                      room at all: the numbers are in the contents sheet, and
+                      without them the lift coming up, its picture and the swap
+                      all sit higher, with room to press (#bugs 2026-09-30,
+                      "poistetaan tuo mitä on viimeksi tehty se vie liikaa
+                      tilaa"). */}
+                  <View style={{ alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 12.5, fontWeight: '800', letterSpacing: 2, color: theme.highlight }}>
+                      {t(language, 'guided.nextUp')}
                     </Text>
-                    {walkNext?.planLine ? (
-                      <Text style={styles.walkStatSub}>{walkNext.planLine}</Text>
-                    ) : null}
+                    {/* One line, the type shrinking to fit rather than the name
+                        wrapping (device, 2026-09-16): a two-line name was the
+                        line that pushed this screen into a scroll, and a walk-up
+                        is read in one glance or not at all. */}
+                    <Text
+                      style={styles.positionName}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.5}
+                      accessibilityLabel={exerciseNameLabel(language, step.exerciseName)}
+                    >
+                      {exerciseListLabel(language, step.exerciseName)}
+                    </Text>
                   </View>
+
+                  {/* Bigger. The shape was right and the box was not (user
+                      2026-09-04) — and the screen has the room, having lost a
+                      countdown. A little under the 230 it was, so the whole
+                      walk-up fits without scrolling (device, 2026-09-16). */}
+                  <MediaZone
+                    name={step.exerciseName}
+                    library={exerciseLibrary}
+                    height={210}
+                    mode="set"
+                    showActions={false}
+                    fit="cover"
+                    language={language}
+                  />
+
+                  {/* Two cards, one question each: what you did last time, and
+                      what today asks of you. The plan used to be one line of
+                      small print under the name. Last time on the left, now on
+                      the right — read left to right, from then to today (#bugs
+                      2026-09-30, "Vaihda viimeksi ja nyt paikkaa"). */}
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={styles.walkStat}>
+                      {/* "VIIMEKSI", whichever day of the plan it was: the
+                          "ERI PÄIVÄ" second line went on request, here and on
+                          the set card (#bugs 2026-09-30). A screen reader still
+                          hears it on the set card. */}
+                      <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.last')}</Text>
+                      <Text style={styles.walkStatValue}>{walkNext?.lastValue ?? '—'}</Text>
+                      {walkNext?.lastReps ? (
+                        <Text style={styles.walkStatSub}>{walkNext.lastReps}</Text>
+                      ) : null}
+                    </View>
+                    <View style={[styles.walkStat, { borderColor: theme.highlight }]}>
+                      <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.today')}</Text>
+                      <Text style={[styles.walkStatValue, { color: theme.highlight }]}>
+                        {walkNext?.todayValue ?? '—'}
+                      </Text>
+                      {walkNext?.planLine ? (
+                        <Text style={styles.walkStatSub}>{walkNext.planLine}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* The same finding Home's card shows, once, here — so
+                      dismissing that card does not make the lift's own stall
+                      unmentioned the next time it comes up (user 2026-09-29). */}
+                  {walkPlateau ? (
+                    <View style={styles.walkPlateauBanner}>
+                      <Text style={styles.walkPlateauText}>{walkPlateau.headline}</Text>
+                    </View>
+                  ) : null}
                 </View>
 
-                {/* The same finding Home's card shows, once, here — so
-                    dismissing that card does not make the lift's own stall
-                    unmentioned the next time it comes up (user 2026-09-29). */}
-                {walkPlateau ? (
-                  <View style={styles.walkPlateauBanner}>
-                    <Text style={styles.walkPlateauText}>{walkPlateau.headline}</Text>
-                  </View>
+                {/* The whole session, in the room under the cards — when there
+                    is room (#bugs 2026-10-06, "jos mahtuu, olisi hyvä tässäkin
+                    ruudussa olla koko ohjelman sisältö luettavissa"). The same
+                    rows as the contents sheet: done, here, to come, each with
+                    what is still asked of it. As many as fit, the lift coming
+                    up first; the rest are counted on the last line, and a tap
+                    opens the full sheet. On a phone with no room nothing is
+                    drawn and the screen is what it was — the rail under it
+                    still opens the sheet, and the buttons never move. */}
+                {walkRunFit ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint={t(language, 'guided.runSheet.open')}
+                    onPress={() => setRunSheetOpen(true)}
+                    style={({ pressed }) => [styles.walkRun, pressed && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.walkRunHead}>
+                      <Text style={styles.walkRunTitle}>{t(language, 'guided.runSheet.title').toUpperCase()}</Text>
+                      <GPIcon name="chevR" size={14} color={theme.faint} />
+                    </View>
+                    {walkRunItems.slice(walkRunFit.start, walkRunFit.end).map((item) => {
+                      const isSuperset = item.members.length > 1;
+                      const plan = isSuperset
+                        ? item.setCount
+                          ? t(language, 'guided.runSheet.rounds', { count: item.setCount })
+                          : ''
+                        : runPlanLine(item.members[0]?.slotId ?? null);
+                      return (
+                        <View key={item.groupIndex} style={styles.walkRunRow}>
+                          <View
+                            style={[
+                              styles.walkRunDot,
+                              item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
+                              item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
+                            ]}
+                          >
+                            {item.status === 'done' ? <GPIcon name="check" size={9} color="#fff" sw={3} /> : null}
+                          </View>
+                          <Text
+                            style={[
+                              styles.walkRunName,
+                              item.status === 'current' && { color: theme.purple },
+                              item.status === 'done' && { color: theme.muted },
+                            ]}
+                            numberOfLines={1}
+                            accessibilityLabel={item.members.map((member) => exerciseNameLabel(language, member.name)).join(' + ')}
+                          >
+                            {item.members.map((member) => exerciseListLabel(language, member.name)).join(' + ')}
+                          </Text>
+                          {plan ? <Text style={styles.walkRunPlan}>{plan}</Text> : null}
+                        </View>
+                      );
+                    })}
+                    {walkRunFit.hidden > 0 ? (
+                      <View style={styles.walkRunRow}>
+                        <Text style={styles.walkRunMore}>
+                          {t(language, 'guided.walk.contentMore', { count: walkRunFit.hidden })}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
                 ) : null}
               </ScrollView>
               <View style={{ paddingHorizontal: 22, paddingBottom: 14, gap: 10 }}>
@@ -4469,7 +4597,6 @@ function GuidedPlayer({
                     drawn as its first lift hides the one you are about to be
                     asked for. An ordinary lift is a row of exactly one. */}
                 {item.members.map((member) => {
-                  const lift = member.slotId ? exerciseBySlot.get(member.slotId) : undefined;
                   // What is still to do, not what was lifted. The line under each name
                   // carried the logged weights until 2026-09-11, when the reader
                   // asked for "pelkät tulevat sarjat ja toistot" — a sheet read
@@ -4482,18 +4609,7 @@ function GuidedPlayer({
                   // already says, once, on the right (user 2026-09-11: "ehkä
                   // poistetaan sittenkin molemmat tilastot supersetistä ja se on
                   // vain 4 kierrosta").
-                  const planSet = lift ? planSetOf(lift.sets) : undefined;
-                  const memberPlan =
-                    !isSuperset && lift && planSet
-                      ? formatSetScheme(
-                          lift.sets.length,
-                          // The lowered target, when there is one — the
-                          // plan says what the dial will open on.
-                          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
-                          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
-                          lift.trackingMode,
-                        )
-                      : '';
+                  const memberPlan = !isSuperset ? runPlanLine(member.slotId) : '';
                   // The lift's own way back to its numbers: every lift with a
                   // logged set, on every step, each with its own pencil. It
                   // was one chip on the current row while resting only, so
@@ -6682,6 +6798,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 12,
   },
   walkPlateauText: { fontSize: 12.5, fontWeight: '700', color: theme.amberInk, lineHeight: 18 },
+  // The walk-up's contents list. Heading and rows are FIXED heights
+  // (WALK_RUN_HEAD, WALK_RUN_ROW): the room is worked out before they are
+  // drawn, and a row that grew with its text would spill past it.
+  walkRun: { paddingHorizontal: 2 },
+  walkRunHead: { height: WALK_RUN_HEAD, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  walkRunTitle: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.faint },
+  walkRunRow: { height: WALK_RUN_ROW, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  walkRunDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkRunName: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 18, fontWeight: '700', color: theme.ink },
+  walkRunPlan: { fontSize: 12.5, fontWeight: '700', color: theme.muted, fontVariant: ['tabular-nums'] },
+  walkRunMore: { fontSize: 12.5, fontWeight: '700', color: theme.muted, paddingLeft: 26 },
   /* rest screen */
   restRunStrip: {
     marginHorizontal: 20,
