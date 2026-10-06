@@ -1,5 +1,7 @@
 import type { AppLanguage, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
 import { collapseCellWhitespace, splitCsvRecords } from './csvRecords';
+import { isBrowsableExercise } from './exerciseBrowseFilter';
+import { isSpecialtyExercise } from './exerciseClassification';
 import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
 import { t } from './i18n';
@@ -18,6 +20,22 @@ import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 export interface CsvLibraryEntry {
   id: string;
   name: string;
+  /** The library row's source category, so a guess can tell a strongman implement apart. */
+  sourceCategory?: string | null;
+}
+
+/**
+ * Whether a guess may land on this entry — the pickers' unsearched rule. A
+ * guess is the app choosing, and it offered "Conventional Deadlift" as Axle
+ * Deadlift and "Quad Extension" as Quad Stretch (#bugs 2026-10-06). The name
+ * written out, the app's own label or the reader's name book still reach
+ * every row; so does a written name that itself says stretch.
+ */
+function mayGuess(entry: CsvLibraryEntry, writtenNamesANonSet: boolean): boolean {
+  if (isSpecialtyExercise({ name: entry.name, sourceCategory: entry.sourceCategory ?? undefined })) {
+    return false;
+  }
+  return writtenNamesANonSet || isBrowsableExercise(entry);
 }
 
 export interface CsvProgramRow {
@@ -262,12 +280,16 @@ function matchExercise(
 
   const containsMatches: CsvLibraryEntry[] = [];
   let bestOverlap: { entry: CsvLibraryEntry; score: number } | null = null;
+  const writtenNamesANonSet = !isBrowsableExercise({ name: rawName });
 
   for (const entry of library) {
     const entryNormalized = normalizeName(entry.name);
     // Exact match, tolerant of spacing/punctuation ("Dead Lift" === "Deadlift").
     if (entryNormalized === normalized || entryNormalized.replace(/ /g, '') === compact) {
       return { matchedName: entry.name, libraryItemId: entry.id, suggestion: null, viaNameBook: false };
+    }
+    if (!mayGuess(entry, writtenNamesANonSet)) {
+      continue;
     }
     if (
       normalized.length >= 5
