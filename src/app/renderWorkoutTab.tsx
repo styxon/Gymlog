@@ -1143,6 +1143,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         programInsightsByTemplateId={programInsightsByTemplateId}
         recommendedReadyProgramId={recommendedReadyProgramId}
         tailoringPreferences={tailoringPreferences}
+        programAvailableEquipment={availableEquipmentForDrills}
+        programDrillOverrides={preferences.routineDrillOverrides}
         onOpenWorkout={navigateToGuidedWorkout}
         onOpenReadyProgram={handleOpenProgramDetail}
         onStartReadyProgram={handleStartReadyProgram}
