@@ -1,7 +1,8 @@
 const assert = require('node:assert/strict');
 
 const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../.test-dist/lib/firstRunSetup.js');
-const { rankProgrammesForLift } = require('../../.test-dist/lib/goalProgramme.js');
+const { describeGoalCoverage, rankProgrammesForLift } = require('../../.test-dist/lib/goalProgramme.js');
+const { buildTailoringPreferences } = require('../../.test-dist/lib/tailoringFit.js');
 const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
 const { resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
 const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
@@ -29,11 +30,23 @@ const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/work
  */
 const libraryNames = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
 
-/** Three readers that take different branches: gym, home rack, bodyweight. */
+/**
+ * Three readers that take different branches: gym, home rack, bodyweight.
+ * The second also asks for joint-friendly swaps, which the recommender's
+ * tailoring pass resolves exercise by exercise.
+ */
 const READERS = [
-  { goal: 'muscle', level: 'intermediate', daysPerWeek: 4, trainingEnvironment: 'full_gym', equipment: 'gym', equipmentItems: [] },
-  { goal: 'strength', level: 'advanced', daysPerWeek: 3, trainingEnvironment: 'home_gym', equipment: 'home', equipmentItems: ['Barbell & plates', 'Squat rack', 'Bench'] },
-  { goal: 'muscle', level: 'beginner', daysPerWeek: 3, trainingEnvironment: 'bodyweight_only', equipment: 'home', equipmentItems: [] },
+  { goal: 'muscle', level: 'intermediate', daysPerWeek: 4, trainingEnvironment: 'full_gym', equipment: 'gym', equipmentItems: [], swaps: {} },
+  {
+    goal: 'strength',
+    level: 'advanced',
+    daysPerWeek: 3,
+    trainingEnvironment: 'home_gym',
+    equipment: 'home',
+    equipmentItems: ['Barbell & plates', 'Squat rack', 'Bench'],
+    swaps: { setupKneeFriendlySwaps: 'prioritize', setupShoulderFriendlySwaps: 'prefer', setupFreeWeightsPreference: 'prefer' },
+  },
+  { goal: 'muscle', level: 'beginner', daysPerWeek: 3, trainingEnvironment: 'bodyweight_only', equipment: 'home', equipmentItems: [], swaps: {} },
 ];
 
 function fastestMs(work, runs = 5) {
@@ -64,26 +77,36 @@ module.exports = [
           availableDays: [],
           scheduleMode: 'app_managed',
         };
-        const tailoring = { setupEquipment: selection.equipment, setupEquipmentItems: selection.equipmentItems };
+        // As useSetupReadings builds it, from the stored preferences.
+        const tailoring = buildTailoringPreferences({ setupEquipment: reader.equipment, ...reader.swaps });
         const ms = fastestMs(() => resolveFirstRunRecommendationWithTailoring(selection, tailoring, 'fi'));
         assertWithin(`recommendation for a ${reader.level} ${reader.trainingEnvironment} reader`, ms, 25);
       }
     },
   },
   {
-    // useGoalFlow: goalProgrammeSuggestions for a reader with no active programme.
+    // useGoalFlow: goalProgrammeSuggestions, for a reader with no active
+    // programme and for one running a catalog programme.
     name: 'startup budget: a programme suggestion for every strength goal',
     run() {
-      const ms = fastestMs(() => {
-        for (const preset of STRENGTH_GOAL_PRESETS) {
-          rankProgrammesForLift(WORKOUT_TEMPLATES_V1, preset.exerciseName, {
-            preferredOrder: [],
-            libraryNames,
-            reader: { level: 'intermediate', daysPerWeek: 4 },
-          });
-        }
-      });
-      assertWithin('goal programme suggestions', ms, 200);
+      for (const active of [[], WORKOUT_TEMPLATES_V1.slice(0, 1)]) {
+        const ms = fastestMs(() => {
+          for (const preset of STRENGTH_GOAL_PRESETS) {
+            const lift = preset.exerciseName;
+            const coverage = describeGoalCoverage({ exerciseName: lift, targetKg: 1, createdAt: '' }, active, libraryNames);
+            if (coverage.status === 'covered') {
+              rankProgrammesForLift(active, lift, { libraryNames });
+              continue;
+            }
+            rankProgrammesForLift(WORKOUT_TEMPLATES_V1, lift, {
+              preferredOrder: [],
+              libraryNames,
+              reader: { level: 'intermediate', daysPerWeek: 4 },
+            });
+          }
+        });
+        assertWithin(`goal programme suggestions with ${active.length} active programme(s)`, ms, 200);
+      }
     },
   },
   {
