@@ -262,6 +262,12 @@ export function matchesBodyPartFilter(
     if (type === 'stretch') {
       return typeof item.name === 'string' && isStretchExercise({ ...item, name: item.name });
     }
+    // The same with "Cardio" on: the reader asked for machines and runs, and
+    // "Etureidet" then lists the ones that work the quads. Ruling cardio out
+    // here too left that pair empty (swap hunt, 2026-10-07).
+    if (type === 'cardio') {
+      return item.category === 'cardio';
+    }
     return trainsTheMuscle(item);
   }
   return item.bodyPart === filter;

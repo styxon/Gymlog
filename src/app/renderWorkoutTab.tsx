@@ -873,8 +873,16 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // Held for this day of this programme: slot ids repeat across days,
         // so a swap made here is not an answer about any other day.
         sessionSwaps={sessionAdaptationFor(daySessionRef).swaps}
+        // The programme's own lift picked back undoes the swap (withSessionSwap).
         onSwapExercise={(slotId, exerciseName) =>
-          adaptSession(daySessionRef, (current) => withSessionSwap(current, slotId, exerciseName))
+          adaptSession(daySessionRef, (current) =>
+            withSessionSwap(
+              current,
+              slotId,
+              exerciseName,
+              daySession.exercises.find((exercise) => exercise.slotId === slotId)?.name,
+            ),
+          )
         }
         exerciseLibrary={exerciseBrowserItems}
         recentExerciseLibraryItems={recentExerciseBrowserItems}

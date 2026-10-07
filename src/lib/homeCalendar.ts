@@ -1,6 +1,7 @@
 import { SessionFocusKind } from './homeSessionHero';
 import { nextStartableSessionIndex } from './programSessionList';
 import { forecastSlotOn, SessionForecast, TrainingSchedule } from './trainingSchedule';
+import type { SlotDose } from './swapDose';
 import { AppLanguage } from '../types/models';
 
 // Sunday-first, matching Date#getDay().
@@ -135,6 +136,12 @@ export interface HomeDaySessionSummary {
      */
     slotId?: string;
     substitutionGroup?: string;
+    /**
+     * The numbers behind `schemeLabel`, as the session will start on them, so
+     * a row swapped for today can print the swapped lift's dose rather than
+     * the programme's (lib/swapDose).
+     */
+    dose?: SlotDose;
   }>;
 }
 

@@ -16,6 +16,7 @@ import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
 import type { AppLanguage } from '../types/models';
 import { doseUnitSuffix, removeTrailingZeros } from './format';
 import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
+import { doseAfterSwap } from './swapDose';
 
 export type ProgramDetailSource = 'ready' | 'custom';
 
@@ -40,6 +41,8 @@ export interface ProgramDetailExerciseItem {
   timed: boolean;
   /** Steady cardio is prescribed in minutes — "1 × 20 min". */
   minutes: boolean;
+  /** How the row is logged, which a swap for today converts from (lib/swapDose). */
+  trackingMode: WorkoutTrackingMode;
   prescription: string;
   /** "tauko"-less rest range, e.g. "45–105 s" or "1,5–2,5 min". */
   restLabel: string;
@@ -130,6 +133,33 @@ function buildPrescription(
 }
 
 /**
+ * A day's row as today's swap will start it: the swapped lift's dose
+ * (lib/swapDose: numbers in its own unit once the unit changes), or the row as
+ * it is with no swap. The day screen printed the programme's "3 × 8" over a
+ * plank that would open on seconds (swap hunt, 2026-10-07).
+ */
+export function exerciseAfterSessionSwap(
+  exercise: ProgramDetailExerciseItem,
+  swapName: string | null | undefined,
+): Pick<ProgramDetailExerciseItem, 'prescription'> {
+  if (!swapName) {
+    return { prescription: exercise.prescription };
+  }
+  const dose = doseAfterSwap(
+    {
+      trackingMode: exercise.trackingMode,
+      sets: exercise.sets,
+      repsMin: exercise.repMin,
+      repsMax: exercise.repMax,
+    },
+    swapName,
+  );
+  return {
+    prescription: buildPrescription(dose.repsMin, dose.repsMax, dose.sets, dose.trackingMode),
+  };
+}
+
+/**
  * "tauko 45–105 s" / "tauko 1,5–2,5 min" — seconds until the minute reads
  * cleaner, matching the design's day view.
  */
@@ -176,6 +206,7 @@ function buildSessionItems(
         repMax: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
         minutes: isMinutesTrackingMode(exercise.trackingMode),
+        trackingMode: exercise.trackingMode,
         prescription: buildPrescription(exercise.repsMin, exercise.repsMax, exercise.sets, exercise.trackingMode),
         restLabel: buildRestLabel(exercise.restSecondsMin, exercise.restSecondsMax),
         restSeconds: exercise.restSecondsMin,

@@ -24,8 +24,8 @@
  */
 
 import { WorkoutRuntimeTemplate, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { prescriptionAfterSwap, trackingModeAfterSwap } from './catalogExercisePools';
 import { estimateSessionMinutes } from './sessionDuration';
+import { doseAfterSwap, isSameLiftName } from './swapDose';
 
 export interface SessionAdaptation {
   /** Template slot id → the exercise name to do instead. */
@@ -58,18 +58,20 @@ export function hasSessionAdaptation(adaptation: SessionAdaptation | null | unde
  * tracking mode — a pull-up swapped here for a lat pulldown started with no
  * weight dial — and nothing said a swap had happened, so the save filed the
  * pulldown under the programme's pull-up (swap audit, 2026-09-21). The same
- * rules as the player's own swap (trackingModeAfterSwap, prescriptionAfterSwap),
- * so a swap made here and one made there are saved alike.
+ * rule as the player's own swap and "For ever" (doseAfterSwap), so a swap made
+ * here and one made there are saved alike.
  */
 function applySwap(exercise: WorkoutTemplateExercise, name: string): WorkoutTemplateExercise {
-  if (name.trim().toLowerCase() === exercise.exerciseName.trim().toLowerCase()) {
+  if (isSameLiftName(name, exercise.exerciseName)) {
     return exercise;
   }
-  const trackingMode = trackingModeAfterSwap(exercise.trackingMode, name);
-  const { repsMin, repsMax } = prescriptionAfterSwap(
-    exercise.trackingMode,
-    trackingMode,
-    { repsMin: exercise.repsMin, repsMax: exercise.repsMax },
+  const { trackingMode, repsMin, repsMax } = doseAfterSwap(
+    {
+      trackingMode: exercise.trackingMode,
+      sets: exercise.sets,
+      repsMin: exercise.repsMin,
+      repsMax: exercise.repsMax,
+    },
     name,
   );
   return {
@@ -201,7 +203,24 @@ export function spendHeldAdaptation(
   return { ...held, bySession };
 }
 
-export function withSessionSwap(adaptation: SessionAdaptation, slotId: string, exerciseName: string): SessionAdaptation {
+/**
+ * Today's swap on one slot. Picking the programme's own lift back undoes the
+ * swap rather than swapping to it: held, it kept the row marked as swapped
+ * and offered "Keep in programme" for an edit that changed nothing — on a
+ * ready programme a whole copy, and a free programme slot, for X → X (swap
+ * hunt, 2026-10-07).
+ */
+export function withSessionSwap(
+  adaptation: SessionAdaptation,
+  slotId: string,
+  exerciseName: string,
+  programmeName?: string,
+): SessionAdaptation {
+  if (programmeName !== undefined && isSameLiftName(exerciseName, programmeName)) {
+    const swaps = { ...adaptation.swaps };
+    delete swaps[slotId];
+    return { ...adaptation, swaps };
+  }
   return { ...adaptation, swaps: { ...adaptation.swaps, [slotId]: exerciseName } };
 }
 

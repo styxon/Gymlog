@@ -26,7 +26,8 @@ import {
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
 import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
-import { prescriptionAfterSwap, trackingModeAfterSwap } from '../../lib/catalogExercisePools';
+import { prescriptionAfterSwap } from '../../lib/catalogExercisePools';
+import { doseAfterSwap } from '../../lib/swapDose';
 import {
   liftBeforeSwap,
   liftOfSet,
@@ -1987,23 +1988,25 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       dropMinutesClockOfSlot(session, action.payload.slotId);
       // The mode is the incoming lift's. Kept from the old one, a pull-up
       // swapped for a lat pulldown hid the weight dial and saved 0 kg × 12.
-      const previousMode = exercise.trackingMode;
-      exercise.trackingMode = trackingModeAfterSwap(previousMode, action.payload.exerciseName);
       // And the sets still ahead ask for numbers in its unit: seconds of a
-      // hold are not repetitions of a hip thrust.
+      // hold are not repetitions of a hip thrust. One rule with Home's swaps
+      // and "For ever" (lib/swapDose), so the same pick opens on the same dose
+      // wherever it was made.
       const pendingSets = exercise.sets.filter((set) => set.status === 'pending');
-      if (pendingSets.length > 0) {
-        const prescription = prescriptionAfterSwap(
-          previousMode,
-          exercise.trackingMode,
-          { repsMin: pendingSets[0].plannedRepsMin, repsMax: pendingSets[0].plannedRepsMax },
-          action.payload.exerciseName,
-        );
-        pendingSets.forEach((set) => {
-          set.plannedRepsMin = prescription.repsMin;
-          set.plannedRepsMax = prescription.repsMax;
-        });
-      }
+      const dose = doseAfterSwap(
+        {
+          trackingMode: exercise.trackingMode,
+          sets: pendingSets.length,
+          repsMin: pendingSets[0]?.plannedRepsMin ?? 0,
+          repsMax: pendingSets[0]?.plannedRepsMax ?? 0,
+        },
+        action.payload.exerciseName,
+      );
+      exercise.trackingMode = dose.trackingMode;
+      pendingSets.forEach((set) => {
+        set.plannedRepsMin = dose.repsMin;
+        set.plannedRepsMax = dose.repsMax;
+      });
       exercise.substitutionGroup = action.payload.substitutionGroup;
       exercise.status = 'swapped';
       // The prefilled load belongs to the lift you just swapped AWAY from — it
