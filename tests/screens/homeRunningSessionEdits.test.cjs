@@ -55,4 +55,57 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'running session: the programme day offers no swap for its own workout while it runs (hunt 2026-10-08)',
+    run() {
+      // The same held swap, through the other door: Programs → the programme
+      // → the same day. It was held, drawn as swapped on the day and on Home,
+      // and Resume never applied it.
+      const wiring = readAppWiring();
+      const start = wiring.indexOf('      <ProgramDayScreen\n');
+      assert.ok(start !== -1, 'the workout tab renders ProgramDayScreen');
+      const head = wiring.slice(wiring.lastIndexOf('const daySessionRef', start), start);
+      assert.match(
+        head,
+        /const dayIsRunning = isWorkoutInProgressFor\(\s*workout\.activeSession,\s*route\.workoutTemplateId,\s*route\.sessionId,?\s*\);/,
+        'dayIsRunning does not ask about this day\'s own session',
+      );
+      const props = wiring.slice(start, wiring.indexOf('\n      />', start));
+      const at = props.indexOf('\n        onSwapExercise=');
+      assert.ok(at !== -1, 'onSwapExercise is not passed to ProgramDayScreen');
+      assert.match(
+        props.slice(at + '\n        onSwapExercise='.length),
+        /^\{\s*dayIsRunning \? undefined :/,
+        'the day offers a swap while its workout runs',
+      );
+      // And the screen draws no swap control without the callback.
+      const screen = require('node:fs')
+        .readFileSync(require('node:path').join(__dirname, '..', '..', 'src', 'screens', 'ProgramDayScreen.tsx'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      assert.match(screen, /\{exercise\.slotId && onSwapExercise \? \(\s*<Pressable/);
+    },
+  },
+  {
+    name: 'programme day: a row swapped for this time states its dose, it does not open the programme row\'s tune sheet (hunt 2026-10-08)',
+    run() {
+      // The chip showed the swapped lift's 3 × 45 s, the sheet opened on the
+      // programme lift's 3 × 8 reps under the swapped name, and Save rewrote
+      // the programme lift.
+      const screen = require('node:fs')
+        .readFileSync(require('node:path').join(__dirname, '..', '..', 'src', 'screens', 'ProgramDayScreen.tsx'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      assert.match(
+        screen,
+        /const rowCanTune = canTune && !\(exercise\.slotId && sessionSwaps\[exercise\.slotId\]\);/,
+        'the row\'s tunability does not read its held swap',
+      );
+      const branch = screen.indexOf('{rowCanTune ? (');
+      assert.ok(branch !== -1, 'the dose chips are not behind rowCanTune');
+      // Every way into the sheet is inside that branch.
+      const opens = [...screen.matchAll(/openTuneSheet\(exercise\)/g)].map((match) => match.index);
+      assert.ok(opens.length > 0);
+      const plain = screen.indexOf('<Text style={styles.exerciseScheme}>', branch);
+      assert.ok(opens.every((index) => index > branch && index < plain), 'a tune sheet opens outside the rowCanTune branch');
+    },
+  },
 ];

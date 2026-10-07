@@ -727,6 +727,11 @@ export function ProgramDayScreen({
             // The dose today's swap will start on, as the name above it is
             // the swapped lift's.
             const shownDose = exerciseAfterSessionSwap(exercise, exercise.slotId ? sessionSwaps[exercise.slotId] : null);
+            // The sheet tunes the programme's row, not today's swap: on a
+            // swapped row it opened on the old lift's reps under the new
+            // lift's name, and Save rewrote the old lift (hunt 2026-10-08).
+            // The numbers are stated until the swap is kept or picked back.
+            const rowCanTune = canTune && !(exercise.slotId && sessionSwaps[exercise.slotId]);
             return (
             <Animated.View
               key={exercise.id}
@@ -846,7 +851,7 @@ export function ProgramDayScreen({
                     wear the pencil — a chip that edits and a chip that only
                     states, side by side, taught the reader to distrust both. */}
                 <View style={styles.exerciseDose}>
-                  {canTune ? (
+                  {rowCanTune ? (
                     <>
                       <Pressable
                         accessibilityRole="button"

@@ -232,4 +232,37 @@ module.exports = [
       assert.deepEqual([set.plannedRepsMin, set.plannedRepsMax], [before.plannedRepsMin, before.plannedRepsMax]);
     },
   },
+  {
+    name: 'a pre-swap set taken back moves the sets after it one place along the new lift\'s history (hunt 2026-10-08)',
+    run() {
+      const pyramid = {
+        ...historyEntry('old_press', 'Leg Press', 0, 8),
+        sets: [150, 160, 170].map((loadKg, setIndex) => ({ setIndex, loadKg, reps: 8, completedAt: '2026-09-30T09:10:00.000Z' })),
+      };
+      const begin = () => {
+        let state = start({ old_press: [pyramid] });
+        state = log(state, 0, '100', '8', 1);
+        state = log(state, 1, '100', '8', 2);
+        state = swap(state, 'Leg Press');
+        assert.deepEqual([2].map((index) => setOf(state, index).plannedLoadKg), [150], 'precondition');
+        return state;
+      };
+
+      let state = undo(begin(), 1);
+      // Set 1 is the leg press's first set now, set 2 its second.
+      assert.deepEqual([1, 2].map((index) => setOf(state, index).plannedLoadKg), [150, 160]);
+      assert.deepEqual([1, 2].map((index) => setOf(state, index).draftLoadText), ['150', '160']);
+      assert.equal(targetOf(state, 2).loadKg, 160);
+
+      // A weight the reader typed on a later set is theirs, and stays.
+      state = begin();
+      state = workoutReducer(state, {
+        type: 'set/updateDraft',
+        payload: { slotId: slotOf(state), setIndex: 2, patch: { loadText: '155' } },
+      });
+      state = undo(state, 1);
+      assert.equal(setOf(state, 1).plannedLoadKg, 150);
+      assert.equal(setOf(state, 2).draftLoadText, '155');
+    },
+  },
 ];

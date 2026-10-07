@@ -267,4 +267,54 @@ module.exports = [
       assert.match(csv, /Bench Press,1,8,60,/);
     },
   },
+  {
+    name: 'warm-up: a swap that drops the warm-ups takes them back, so a finish done again does not merge them back (hunt 2026-10-08)',
+    run() {
+      const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter');
+      const { persistCompletedWorkoutSessionToDatabase } = require('../../../.test-dist/state/completedWorkoutPersistence');
+      const { createEmptyDatabase } = require('../../../.test-dist/data/seed');
+      const ROW = 'tpl:push_a:secondary_row_1';
+      let state = started();
+      // A second lift, so the first finish has work in it.
+      state = {
+        ...state,
+        activeSession: {
+          ...state.activeSession,
+          exercises: [
+            ...state.activeSession.exercises,
+            { ...bench(state), slotId: ROW, templateExerciseId: 'ex_row', exerciseName: 'Barbell Row', substitutionGroup: 'horizontal_pull' },
+          ],
+        },
+      };
+      const swap = (current, exerciseName) =>
+        workoutReducer(current, {
+          type: 'exercise/swap',
+          payload: { slotId: LIVE, exerciseName, substitutionGroup: 'horizontal_press', unitPreference: 'kg' },
+        });
+      state = swap(state, 'Dumbbell Bench Press');
+      state = warm(state, 20, 10);
+      const drafted = workoutReducer(state, {
+        type: 'set/updateDraft',
+        payload: { slotId: ROW, setIndex: 0, patch: { loadText: '50', repsText: '8' } },
+      });
+      state = workoutReducer(drafted, { type: 'set/complete', payload: { slotId: ROW, setIndex: 0, nowMs: Date.now(), unitPreference: 'kg' } });
+
+      let db = createEmptyDatabase('en');
+      const first = adaptCompletedWorkoutSessionForAppDatabase(state.activeSession, Date.parse('2026-10-05T10:30:00.000Z'));
+      db = persistCompletedWorkoutSessionToDatabase(db, first).database;
+      const warmupsStored = () =>
+        db.exerciseLogs.flatMap((log) => log.sets.filter((set) => set.kind === 'warmup').map(() => log.exerciseNameSnapshot));
+      assert.deepEqual(warmupsStored(), ['Dumbbell Bench Press'], 'precondition: the first finish saved the warm-up');
+
+      // The clear was lost and the session came back; the slot is swapped
+      // again before any working set, so its warm-ups go.
+      state = swap(state, 'Incline Dumbbell Press');
+      assert.equal(bench(state).warmups, undefined);
+      assert.deepEqual(state.activeSession.takenBackAt, ['2026-10-05T10:00:00.000Z']);
+
+      const again = adaptCompletedWorkoutSessionForAppDatabase(state.activeSession, Date.parse('2026-10-05T10:40:00.000Z'));
+      db = persistCompletedWorkoutSessionToDatabase(db, { ...again, mergeStored: true }).database;
+      assert.deepEqual(warmupsStored(), [], 'the stored warm-up of the lift that is gone is not merged back');
+    },
+  },
 ];

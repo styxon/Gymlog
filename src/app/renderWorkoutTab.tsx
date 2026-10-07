@@ -38,6 +38,7 @@ import { toggleTechniqueStatement } from '../lib/exerciseLearning';
 import { getExerciseProgressForName, SameLiftMatcher } from '../lib/progression';
 import { catalogLevelForSetup } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
+import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
 import { AdaptedSessionRef, SessionAdaptation, withSessionSwap } from '../lib/sessionAdaptation';
 import { isReaderNamedSession } from '../lib/sessionNameLabel';
@@ -95,7 +96,11 @@ export interface WorkoutTabDeps {
   setPlanTrainingCycle: (planId: string, cycle: TrainingCycle | null) => Promise<void>;
   unitPreference: UnitPreference;
   database: AppDatabase;
-  workout: { templates: Parameters<typeof resolveProgramAffinity>[1] };
+  workout: {
+    templates: Parameters<typeof resolveProgramAffinity>[1];
+    /** The workout running or paused, if any: a day's held swap cannot reach it. */
+    activeSession: Parameters<typeof isWorkoutInProgressFor>[0];
+  };
   /** The freestyle session in flight, from the workout provider — see FreestyleDraftSnapshot. */
   freestyleDraft: React.ComponentProps<typeof EmptyWorkoutScreen>['freestyleDraft'];
   saveFreestyleDraft: NonNullable<React.ComponentProps<typeof EmptyWorkoutScreen>['onSaveDraft']>;
@@ -836,6 +841,10 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     const dayIndex = daySession ? program!.sessions.findIndex((session) => session.id === route.sessionId) : -1;
     // The same pair the programme page starts this day with.
     const daySessionRef: AdaptedSessionRef = { programId: route.workoutTemplateId, sessionId: route.sessionId };
+    // This day's workout is already running or paused: a swap held here never
+    // reaches it — Resume opens the running workout and applies nothing — so
+    // the rows offer none, as Home's do (bug hunt 2026-10-07, finding 9).
+    const dayIsRunning = isWorkoutInProgressFor(workout.activeSession, route.workoutTemplateId, route.sessionId);
 
     return program && daySession ? (
       <ProgramDayScreen
@@ -858,7 +867,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // so a swap made here is not an answer about any other day.
         sessionSwaps={sessionAdaptationFor(daySessionRef).swaps}
         // The programme's own lift picked back undoes the swap (withSessionSwap).
-        onSwapExercise={(slotId, exerciseName) =>
+        onSwapExercise={dayIsRunning ? undefined : (slotId, exerciseName) =>
           adaptSession(daySessionRef, (current) =>
             withSessionSwap(
               current,
