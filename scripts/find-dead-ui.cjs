@@ -103,10 +103,35 @@ const i18nPath = path.join(SRC, 'lib', 'i18n.ts');
 const i18nText = fs.readFileSync(i18nPath, 'utf8');
 const enBlock = i18nText.slice(i18nText.indexOf('const EN = {'), i18nText.indexOf('\n} as const;'));
 const enKeys = [...enBlock.matchAll(/^\s{2}'([^']+)':/gm)].map((match) => match[1]);
+// i18n.ts reads keys too — bodyPartLabel's table, storedValueLabel's
+// 'onb.equip.' prefix — so its code counts as a reader; only the two
+// dictionaries (the definitions themselves) are left out. Skipping the whole
+// file reported 59 live keys as dead (i18n sweep, 2026-10-07).
+const fiStart = i18nText.indexOf('const FI: Record<I18nKey, string> = {');
+const i18nCode = [
+  i18nText.slice(0, i18nText.indexOf('const EN = {')),
+  i18nText.slice(i18nText.indexOf('\n} as const;'), fiStart),
+  fiStart >= 0 ? i18nText.slice(i18nText.indexOf('\n};', fiStart)) : '',
+].join('\n');
 const otherText = [...sources.entries()]
   .filter(([file]) => file !== i18nPath)
   .map(([, text]) => text)
+  .concat(i18nCode)
   .join('\n');
+
+// A prefix handed over as a plain string ('onb.equip.') and joined to a value
+// later, where no template shows it. Like the template-prefix rule below, it
+// answers for the whole family: a dead key under a live prefix is not seen.
+const literalPrefixes = [...otherText.matchAll(/['"`]([A-Za-z][\w]*(?:\.[\w]+)*\.)['"`]/g)].map((match) => match[1]);
+
+// A template with the variable anywhere in the key, not only at the end:
+// `catalog.collection.${key}.label`, `prog.custom.${shape.slug}.title`. Only
+// templates whose fixed text reads like a key — `${a}${b}` would match all.
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const keyTemplates = [...otherText.matchAll(/`([^`\n]*\$\{[^`\n]*)`/g)]
+  .map((match) => match[1].split(/\$\{[^}]*\}/))
+  .filter((parts) => /^[A-Za-z]\w*\./.test(parts[0]) || /\.\w+$/.test(parts[parts.length - 1]))
+  .map((parts) => new RegExp(`^${parts.map(escapeRegExp).join('.+?')}$`));
 
 for (const key of enKeys) {
   // Some keys are built dynamically (`logger.effort.${effort}`); treat a hit on
@@ -116,6 +141,12 @@ for (const key of enKeys) {
     continue;
   }
   if (prefix && otherText.includes('`' + prefix)) {
+    continue;
+  }
+  if (literalPrefixes.some((literal) => key.startsWith(literal) && key.length > literal.length)) {
+    continue;
+  }
+  if (keyTemplates.some((pattern) => pattern.test(key))) {
     continue;
   }
   findings.i18n.push({ file: i18nPath, name: key });

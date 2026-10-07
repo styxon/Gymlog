@@ -4,17 +4,17 @@ import { I18nKey, t } from './i18n';
 export interface ReadyProgramCollection {
   key: string;
   label: string;
-  description: string;
-  recommendedFor: string;
   templateIds: string[];
 }
 
-/** Copy for a collection, resolved in the reader's language. */
+/**
+ * Copy for a collection, resolved in the reader's language. The heading is all
+ * a collection says: a description and a "recommended for" line were written
+ * and translated, and no screen ever showed them (i18n sweep, 2026-10-07).
+ */
 export function getReadyProgramCollectionCopy(collectionKey: string, language: AppLanguage = 'en') {
   return {
     label: t(language, `catalog.collection.${collectionKey}.label` as I18nKey),
-    description: t(language, `catalog.collection.${collectionKey}.description` as I18nKey),
-    recommendedFor: t(language, `catalog.collection.${collectionKey}.recommendedFor` as I18nKey),
   };
 }
 
@@ -22,8 +22,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'starter',
     label: 'Starter picks',
-    description: 'Simple, repeatable programs for getting momentum fast.',
-    recommendedFor: 'New lifters, comeback phases, and anyone who wants low-friction structure.',
     templateIds: [
       'tpl_2_day_minimal_full_body_v1',
       'tpl_2_day_beginner_strength_v1',
@@ -46,8 +44,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'strength',
     label: 'Build strength',
-    description: 'Programs built around heavier anchor lifts and clearer performance targets.',
-    recommendedFor: 'Lifters who care most about the numbers on squat, press, and hinge patterns.',
     templateIds: [
       'tpl_2_day_beginner_strength_v1',
       'tpl_3_day_strength_base_v1',
@@ -63,8 +59,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'muscle',
     label: 'Build muscle',
-    description: 'Higher weekly volume and more specialization without losing progression rails.',
-    recommendedFor: 'Hypertrophy-focused lifters who want upper/lower or hybrid splits.',
     templateIds: [
       'tpl_home_dumbbell_upper_lower_v1',
       'tpl_home_dumbbell_ppl_v1',
@@ -91,8 +85,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'balanced',
     label: 'Balanced weekly rhythm',
-    description: 'Programs that keep practice frequent while recovery stays predictable.',
-    recommendedFor: 'General training blocks where you want progression without a very narrow focus.',
     templateIds: [
       'tpl_home_athletic_5_day_v1',
       'tpl_2_day_minimal_full_body_v1',
@@ -111,8 +103,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'advanced',
     label: 'Advanced splits',
-    description: 'High-frequency, high-volume programs for lifters who recover well and train five or six days per week.',
-    recommendedFor: 'Experienced lifters looking for maximum weekly volume and specialization.',
     templateIds: [
       'tpl_4_day_ppl_plus_v1',
       'tpl_5_day_ppl_v1',
@@ -130,8 +120,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'fatloss',
     label: 'Lose fat',
-    description: 'Programs that keep strength work in place while conditioning finishers drive real energy expenditure.',
-    recommendedFor: 'Anyone whose main goal is dropping fat without losing muscle.',
     templateIds: [
       'tpl_shred_v1',
       'tpl_gainer_lean_shred_v1',
@@ -143,8 +131,6 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
   {
     key: 'focus',
     label: 'Muscle group focus',
-    description: 'Specialisation programs that train one muscle group twice a week, plus single-session blocks you can add to any week.',
-    recommendedFor: 'Lifters who want to specialize or add volume beyond their main program.',
     templateIds: [
       'tpl_focus_chest_program_v1',
       'tpl_focus_back_program_v1',
