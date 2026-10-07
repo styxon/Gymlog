@@ -49,6 +49,43 @@ module.exports = [
     },
   },
   {
+    name: 'an imported warm-up at the start does not push the working sets to 2 and 3',
+    run() {
+      // A Hevy import stores sets by their position among ALL sets, so its
+      // warm-up takes orderIndex 0 and the working sets 1 and 2. The app's own
+      // warm-ups run below zero instead. Either way the Set column counts the
+      // working sets from 1.
+      const sets = (warmupIndex, firstWorking) => [
+        { orderIndex: warmupIndex, weight: 40, reps: 10, kind: 'warmup', outcome: null, status: 'completed' },
+        { orderIndex: firstWorking, weight: 60, reps: 8, kind: 'working', outcome: null, status: 'completed' },
+        { orderIndex: firstWorking + 1, weight: 60, reps: 7, kind: 'working', outcome: null, status: 'completed' },
+      ];
+      for (const [warmupIndex, firstWorking] of [[0, 1], [-1, 0]]) {
+        const csv = buildWorkoutLogCsv({
+          sessions: [SESSIONS[0]],
+          logs: [
+            {
+              id: 'l1',
+              sessionId: 's1',
+              exerciseNameSnapshot: 'Bench',
+              weight: 60,
+              repsPerSet: [],
+              orderIndex: 0,
+              tracked: true,
+              sets: sets(warmupIndex, firstWorking),
+            },
+          ],
+        });
+        // The header has no set-type column, so a warm-up row would read as
+        // a working set: warm-ups stay out of the file.
+        assert.deepEqual(csv.split('\n').slice(1), [
+          '2026-03-01,Push A,Bench,1,8,60,yes',
+          '2026-03-01,Push A,Bench,2,7,60,yes',
+        ]);
+      }
+    },
+  },
+  {
     name: 'the export survives the shape older logs were stored in',
     run() {
       // Entries from before per-set records carry only repsPerSet and one
