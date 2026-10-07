@@ -38,7 +38,9 @@ export interface ProgramIntakeState {
    * answer by itself: the reader still taps, so a stale onboarding value
    * cannot slip into the brief unseen.
    */
-  preset: Pick<ProgramIntakeAnswers, 'goal' | 'days' | 'equipment' | 'experience'>;
+  preset: Pick<ProgramIntakeAnswers, 'goal' | 'days' | 'minutes' | 'equipment' | 'experience' | 'extra'>;
+  /** True when the preset is the reader's own earlier answers ("Edit"), not the profile. */
+  editing?: boolean;
 }
 
 export interface ProgramIntakeOption {
@@ -212,9 +214,34 @@ export function startProgramIntake(preferences: ProgramIntakePreferences): Progr
     preset: {
       goal: presetGoal(preferences),
       days: presetDays(preferences),
+      // Session length is not stored anywhere the spec trusts: asked fresh.
+      minutes: null,
       equipment: presetEquipment(preferences),
       experience: presetExperience(preferences),
+      extra: null,
     },
+  };
+}
+
+/**
+ * The same questions again, from "Edit" on the build offer (user,
+ * 2026-10-07). Each earlier answer is offered as the choice to confirm, the
+ * way the profile's values are on the first pass, so changing one answer is
+ * five confirming taps rather than six choices made from scratch. Nothing is
+ * answered until tapped again.
+ */
+export function editProgramIntake(answers: ProgramIntakeAnswers): ProgramIntakeState {
+  return {
+    answers: { ...EMPTY_ANSWERS },
+    preset: {
+      goal: answers.goal,
+      days: answers.days,
+      minutes: answers.minutes,
+      equipment: answers.equipment,
+      experience: answers.experience,
+      extra: answers.extra,
+    },
+    editing: true,
   };
 }
 
@@ -225,7 +252,8 @@ export function currentProgramIntakeStep(state: ProgramIntakeState): ProgramInta
 
 /** The option the app already knows for a step, if it offers one. */
 export function programIntakePresetValue(state: ProgramIntakeState, step: ProgramIntakeStep): string | null {
-  if (step === 'goal' || step === 'days' || step === 'equipment' || step === 'experience') {
+  // The free text is not a choice: an earlier one is put back in the field instead.
+  if (step !== 'extra') {
     const value = state.preset[step];
     return value === null || value === undefined ? null : String(value);
   }
