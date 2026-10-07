@@ -89,6 +89,18 @@ const MANY_WORDS = foldedSet([
 ]);
 const isMany = (word: string) => (/^\d+$/.test(word) ? Number(word) >= 10 : MANY_WORDS.has(word));
 
+/**
+ * A slot that reads any count: what a count of whole packs is counted in.
+ * "I took 2 packs of paracetamol" is twenty pills or more (K1 review,
+ * 2026-10-08).
+ */
+const COUNT = '#count';
+const COUNT_WORDS = foldedSet([
+  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'few', 'couple', 'several', 'yksi', 'yhden',
+  'kaksi', 'kaks', 'kolme', 'neljä', 'viisi', 'kuusi', 'seitsemän', 'kahdeksan', 'yhdeksän', 'pari', 'monta', 'useamman',
+]);
+const isCount = (word: string) => /^\d+$/.test(word) || isMany(word) || COUNT_WORDS.has(word);
+
 // Shared slots. Each list holds the forms a reader types, not a grammar.
 
 /** Finnish "not", spoken forms included: "emmä halua elää", "enkä jaksa". */
@@ -133,6 +145,12 @@ const FI_PILLS_COUNTED = [
   'parasetamolia', 'ibuprofeenia',
 ];
 
+/** What a pack or a handful of is: "kaksi pakkausta buranaa". */
+const FI_PILLS_PARTITIVE = [
+  'pillereitä', 'unipillereitä', 'lääkkeitä', 'unilääkkeitä', 'särkylääkkeitä', 'tabletteja', 'kapseleita', 'buranaa',
+  'panadolia', 'parasetamolia', 'ibuprofeenia',
+];
+
 /** Killing, hanging, shooting, drowning, poisoning: the Finnish verb a reader uses of themselves. */
 const FI_METHOD_VERBS = [
   'hirttää', 'hirtän', 'hirttäisin', 'hirttäis', 'hirtin', 'hirttämään', 'hirttänyt', 'hirttäny',
@@ -159,12 +177,28 @@ const FI_JUMP_FROM = [
  * Closed, on purpose: a sentence that stops at "kaiken", or goes on with
  * anything else, is the crisis.
  */
-const FI_QUIT_HABITS = [
+const FI_QUIT_HABITS = foldedSet([
   'sokerin', 'herkuttelun', 'herkut', 'herkkujen', 'karkin', 'karkkien', 'alkoholin', 'juomisen', 'syömisen',
   'napostelun', 'treenin', 'treenaamisen', 'treenit', 'kardion', 'juoksemisen', 'muun', 'turhan', 'roskaruoan',
   'roskaruuan', 'pikaruoan', 'kahvin', 'mässäilyn', 'tupakoinnin', 'nuuskan', 'energiajuomien', 'lisäravinteiden',
   'somen', 'pelaamisen', 'muut', 'ylimääräisen', 'ylimääräiset',
-];
+]);
+
+/**
+ * What makes a genitive the object of a postposition rather than of
+ * "lopettaa": "lopetan kaiken treenin jälkeen" ends everything after
+ * training (K1 review, 2026-10-08). "ennen" only where it ends the sentence:
+ * "lopetan kaiken sokerin ennen kisoja" is a diet, "ennen" going with
+ * "kisoja".
+ */
+const FI_POSTPOSITIONS = foldedSet(['jälkeen', 'jälkeenkin', 'jälkee', 'aikana', 'takia', 'takii', 'vuoksi', 'perään', 'myötä']);
+
+/** Whether "lopetan kaiken" goes on into a habit it quits, and only that. */
+function quitsAHabit(rest: readonly CrisisWord[]): boolean {
+  if (!FI_QUIT_HABITS.has(rest[0]?.word ?? '')) return false;
+  const next = rest[1]?.word;
+  return next === undefined || !(FI_POSTPOSITIONS.has(next) || (next === 'ennen' && rest.length === 2));
+}
 
 /** "olen väsynyt elämään dieetillä" is a long cut. */
 const FI_LIVING_ON = ['dieetillä', 'dieetissä', 'kanalla', 'riisillä', 'salaatilla', 'proteiinilla', 'rahkalla'];
@@ -177,6 +211,17 @@ const EN_INTENT = [
   'want to', 'wanna', 'wanted to', 'wanting to', 'going to', 'gonna', 'i will', "i'll", 'ready to', 'about to',
   'plan to', 'planning to', 'decided to', 'need to', 'have to', 'try to', 'tried to', 'trying to', 'would like to',
   "i'd like to", 'id like to', 'should', 'could', 'might',
+];
+
+/**
+ * A wish to die, as "want to" and its neighbours say it. Not "going to" or
+ * "gonna": "I'm gonna die on leg day" is leg day. Nor "about to": "I'm about
+ * to die on this set" is the set.
+ */
+const EN_WISH_TO = [
+  'want to', 'wanna', 'wanting to', 'wanted to', 'wish i could', 'would like to', "i'd like to", 'id like to', 'need to',
+  'deserve to', 'should', 'ready to', 'might as well', 'all i want is to', 'all i wanna do is', 'praying to', 'pray to',
+  'long to',
 ];
 
 const EN_THINKING = ['thinking about', 'think about', 'thought about', 'thinking of', 'thought of'];
@@ -281,9 +326,20 @@ function namesMethodAt(words: readonly CrisisWord[], i: number): boolean {
   );
 }
 
+/**
+ * Whether a list holds the word at `i`, or the hyphened word it starts: the
+ * reading that splits "i-want-to-die" splits "pull-up" too, and "end it with
+ * pull-ups" went to the crisis line (K1 review, 2026-10-08). "pull ups" typed
+ * with a space is the same exercise.
+ */
+function holdsAt(list: ReadonlySet<string> | readonly string[], words: readonly CrisisWord[], i: number): boolean {
+  const has = (word: string) => ('has' in list ? list.has(word) : list.includes(word));
+  return has(words[i].word) || (i + 1 < words.length && has(`${words[i].word}-${words[i + 1].word}`));
+}
+
 /** Whether the words from `i` name an exercise: "dips", "a jump rope", "a glute bridge". */
 function namesExerciseAt(words: readonly CrisisWord[], i: number): boolean {
-  if (END_IT_EXERCISES.has(words[i].word)) return true;
+  if (holdsAt(END_IT_EXERCISES, words, i)) return true;
   if (END_IT_EXERCISE_PHRASES.some((phrase) => startsAt(words, i, phrase))) return true;
   return END_IT_METHOD.has(words[i].word) && !namesMethodAt(words, i);
 }
@@ -298,7 +354,7 @@ function countsSetsAt(words: readonly CrisisWord[], i: number): boolean {
 function namesWithAt(words: readonly CrisisWord[], i: number): boolean {
   return (
     END_IT_UNITS.has(words[i].word) ||
-    END_IT_WITH_WORDS.has(words[i].word) ||
+    holdsAt(END_IT_WITH_WORDS, words, i) ||
     END_IT_WITH_PHRASES.some((phrase) => startsAt(words, i, phrase)) ||
     namesExerciseAt(words, i)
   );
@@ -358,7 +414,7 @@ function namesTheGymAt(words: readonly CrisisWord[], i: number): boolean {
   return (
     namesWithAt(words, i) ||
     startsAt(words, i, ['leg', 'day']) ||
-    GYM_WORDS_EN.includes(word) ||
+    holdsAt(GYM_WORDS_EN, words, i) ||
     [...GYM_STEMS_FI, ...GYM_STEMS_FI_MORE].some((stem) => word.startsWith(folded(stem)))
   );
 }
@@ -418,6 +474,30 @@ function ratherTheGym(rest: readonly CrisisWord[]): boolean {
   if (rest.length < 2 || (rest[0].word !== 'than' && rest[0].word !== 'kuin')) return false;
   if (rest.some(({ word }) => RATHER_LIVING.has(word))) return false;
   return [1, 2, 3, 4].some((i) => i < rest.length && namesTheGymAt(rest, i));
+}
+
+/**
+ * What a life is lived on when it is a diet, a budget or short sleep: "on
+ * chicken and rice", "on 1500 calories", "off protein shakes", "on 5 hours
+ * of sleep".
+ */
+const LIVING_ON_FOOD = foldedSet([
+  'chicken', 'rice', 'broccoli', 'oats', 'oatmeal', 'eggs', 'egg', 'tuna', 'salad', 'salads', 'pasta', 'bread',
+  'potatoes', 'protein', 'shakes', 'shake', 'carbs', 'calories', 'calorie', 'kcal', 'cals', 'macros', 'diet', 'diets',
+  'cut', 'bulk', 'keto', 'fasting', 'coffee', 'caffeine', 'pre-workout', 'preworkout', 'supplements', 'takeout',
+  'takeaway', 'junk', 'ramen', 'noodles', 'sugar', 'food', 'meals', 'snacks', 'sleep', 'paycheck', 'wage', 'budget',
+  'salary', 'savings', 'leftovers',
+]);
+
+/**
+ * Whether "tired of living" and "can't live" go on into a diet: "on" or "off"
+ * and a food, a budget or sleep within four words. A bare "on" let "tired of
+ * living on this earth" and "sick of living off other people" out (K1
+ * review, 2026-10-08).
+ */
+function livesOnADiet(rest: readonly CrisisWord[]): boolean {
+  const on = rest[0]?.word === 'out' && rest[1]?.word === 'of' ? 2 : ['on', 'off'].includes(rest[0]?.word ?? '') ? 1 : 0;
+  return on > 0 && [0, 1, 2, 3].some((k) => on + k < rest.length && holdsAt(LIVING_ON_FOOD, rest, on + k));
 }
 
 /** The supplements and food a gym "overdoses" on. */
@@ -516,6 +596,17 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     ['', 'vain', 'vaan', 'jo'],
     ['kuolisin', 'olisin kuollut', 'olisin kuollu', 'oisin kuollut', 'oisin kuollu', 'en heräisi', 'en heräis', 'joku tappaisi minut', 'joku tappais mut'],
   ],
+  [['olisinpa', 'oisinpa', 'olispa', 'oispa'], ['', 'jo', 'vain', 'vaan'], ['kuollut', 'kuollu', 'kuolleena']],
+  [['kuolisinpa', 'kuolispa', 'kuolisimpa']],
+  // The FI twin of "I wish I'd never been born".
+  [
+    ['kunpa', 'kumpa', 'jospa', 'toivon', 'toivoisin', 'toivoin', 'toivon vain'],
+    ['', 'vain', 'vaan', 'jo'],
+    ['en', 'etten', 'että en', 'et en'],
+    ['olisi', 'olis', 'ois'],
+    ['', 'ikinä', 'koskaan'],
+    ['syntynyt', 'syntyny'],
+  ],
   // "kuolisin mieluummin kuin jättäisin jalkapäivän väliin" is leg day.
   {
     slots: [['olisin', 'oisin'], ['mieluummin', 'mieluimmin', 'mielummin', 'ennemmin', 'jo'], ['kuollut', 'kuollu', 'kuolleena']],
@@ -530,7 +621,7 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   // Everything, not a habit: "lopetan kaiken sokerin" is a diet.
   {
     slots: [['lopettaa', 'lopetan', 'lopettaisin', 'lopettais', 'lopetin', 'lopettamaan'], ['kaiken', 'tämän kaiken', 'tän kaiken']],
-    unlessFollowedBy: FI_QUIT_HABITS,
+    inTheGym: quitsAHabit,
   },
   [
     [...FI_WANT, 'toivon', 'toivoisin'],
@@ -544,10 +635,10 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   [['pitäis', 'pitäisi', 'pitäs', 'kannattais', 'kannattaisi'], ['', 'vain', 'vaan', 'vaa', 'jo'], ['kuolla']],
   [['olen', 'oon', 'olisin', 'oisin', 'olin'], ['', 'jo', 'vihdoin'], ['valmis kuolemaan', 'valmis kuoleen', 'valmis kuolee']],
   {
-    slots: [['kyllästynyt', 'kyllästyny', 'väsynyt', 'väsyny'], ['elämään', 'elämiseen', 'olemaan elossa', 'olemassaoloon']],
+    slots: [['kyllästynyt', 'kyllästyny', 'väsynyt', 'väsyny'], ['elämään', 'elämääni', 'elämiseen', 'olemaan elossa', 'olemassaoloon']],
     unlessFollowedBy: FI_LIVING_ON,
   },
-  [['vihaan'], ['elämistä', 'olla elossa', 'olemassaoloa', 'olemassaoloani']],
+  [['vihaan'], ['elämistä', 'elämääni', 'olla elossa', 'olemassaoloa', 'olemassaoloani']],
   [
     ['tappakaa', 'tappakaa nyt', 'tappakaa jo', 'joku tappakoon', 'joku tappaisi', 'joku tappais', 'tappaisko joku', 'tappaiskohan joku', 'joku vois tappaa', 'joku voisi tappaa'],
     ['minut', 'mut', 'mua', 'minua'],
@@ -576,6 +667,19 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     unlessFollowedBy: FI_WHOLE_PACK_FOOD,
   },
   [FI_SWALLOW, ['överit', 'överin', 'överi']],
+  // Packs counted: "otin kaksi pakkausta buranaa".
+  [
+    FI_SWALLOW,
+    ['', 'jotain', 'ainakin', 'yli', 'melkein', 'noin'],
+    [COUNT],
+    ['pakkausta', 'pakettia', 'purkkia', 'levyä', 'liuskaa', 'purkillista', 'rasiaa', 'laatikkoa'],
+    FI_PILLS_PARTITIVE,
+  ],
+  // "onko 20 panadolia tappava", "montako buranaa on kuolettava annos".
+  {
+    slots: [[...FI_PILLS_COUNTED, ...FI_PILLS_PARTITIVE]],
+    thenInSentence: ['tappava', 'tappavaa', 'tappavan', 'kuolettava', 'kuolettavaa', 'hengenvaarallinen', 'hengenvaarallista', 'kuolemaan'],
+  },
   // The single act. Not the verb alone: "polvessa viiltää" is a sharp pain.
   [
     ['viiltää', 'viillän', 'viillät', 'viilsin', 'viilsi', 'viiltäisin', 'viiltäis', 'viiltämään', 'viiltänyt', 'viiltäny', 'viillellä'],
@@ -627,10 +731,10 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     ['live', 'be alive', 'exist', 'stay alive', 'keep living', 'go on living'],
   ],
   [["i'd rather not", 'id rather not', 'i would rather not'], ['live', 'be alive', 'exist', 'be here', 'wake up']],
-  // "I can't live without the gym" is a gym.
+  // "I can't live without the gym" is a gym, and "on 1500 calories" a diet.
   {
     slots: [["can't", 'cant', 'cannot', 'can not'], ['live', 'keep living', 'go on living', 'stay alive']],
-    unlessFollowedBy: ['without', 'on', 'off', 'near', 'far'],
+    inTheGym: (rest) => ['without', 'near', 'far'].includes(rest[0]?.word ?? '') || livesOnADiet(rest),
   },
   // "I don't want to be here at 6am" is an early session, and "I don't want
   // to wake up sore" a sore morning.
@@ -639,16 +743,15 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     inTheGym: (rest) => hereForTheSession(rest) || wakesForTheSession(rest),
   },
   [['wish'], ["i'd never been born", 'id never been born', 'i had never been born', 'i was never born', 'i were never born']],
-  // Not "going to" or "gonna": "I'm gonna die on leg day" is leg day. Nor
-  // "about to": "I'm about to die on this set" is the set.
+  [EN_WISH_TO, ['', 'just'], ['die', 'be dead', 'stop existing', 'disappear forever', 'not exist', 'not be alive', 'cease to exist']],
+  // "I need to stop living on takeout" is a diet.
+  { slots: [EN_WISH_TO, ['', 'just'], ['stop living']], inTheGym: livesOnADiet },
   [
     [
-      'want to', 'wanna', 'wanting to', 'wanted to', 'wish i could', 'would like to', "i'd like to", 'id like to', 'need to',
-      'deserve to', 'should', 'ready to', 'might as well', 'all i want is to', 'all i wanna do is', 'praying to', 'pray to',
-      'long to',
+      'never should have been born', "never should've been born", 'never shouldve been born', 'should never have been born',
+      "should've never been born", 'shouldve never been born', "shouldn't have been born", 'shouldnt have been born',
+      'should not have been born',
     ],
-    ['', 'just'],
-    ['die', 'be dead', 'stop existing', 'disappear forever', 'not exist', 'not be alive', 'cease to exist'],
   ],
   // "I'd rather die than skip leg day" is leg day; "than live like this" is
   // not.
@@ -673,13 +776,13 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   ],
   // "I want it to end with a finisher" is the session.
   { slots: [['want', 'wish', 'need'], ['it to end', 'it to be over']], inTheGym: endsASession },
-  // "tired of living on chicken and rice" is a diet.
+  // "tired of living on chicken and rice" is a diet; "on this earth" is not.
   {
     slots: [
       ['tired of', 'sick of', 'done with', 'done', 'sick and tired of', 'hate', 'hating'],
-      ['living', 'being alive', 'existing', 'life', 'this life', 'my existence'],
+      ['living', 'being alive', 'existing', 'life', 'this life', 'my life', 'my existence'],
     ],
-    unlessFollowedBy: ['on', 'off', 'out of'],
+    inTheGym: livesOnADiet,
   },
   [
     [
@@ -765,6 +868,18 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     slots: [EN_SWALLOW, ['', 'like', 'about', 'around', 'over', 'almost', 'nearly', 'maybe', 'at least'], [MANY], ['', 'of my', 'of the', 'of'], EN_PILLS],
     unlessFollowedBy: ['of creatine', 'of fish', 'of vitamin', 'of vitamins', 'of magnesium', 'of zinc', 'of caffeine', 'of omega'],
   },
+  // Packs counted: "I took 2 packs of paracetamol", "I took 3 boxes of pills".
+  [
+    EN_SWALLOW,
+    ['', 'a', 'like', 'about', 'around', 'over', 'almost', 'nearly', 'maybe', 'at least'],
+    [COUNT],
+    [
+      'pack of', 'packs of', 'packet of', 'packets of', 'box of', 'boxes of', 'strip of', 'strips of', 'bottle of',
+      'bottles of', 'blister of', 'blisters of', 'sheet of', 'sheets of',
+    ],
+    ['', 'my', 'the'],
+    EN_PILLS,
+  ],
   // "I swallowed the whole bottle", whatever follows — "...before my parents
   // got home", "...and lay down" (review, 2026-10-07). Not "the whole bottle
   // of water": what it is a bottle of, if it is pills, is the row above.
@@ -779,8 +894,15 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     slots: [['how many', 'how much', 'how high', 'how deep', 'how far']],
     thenInSentence: [
       'to die', 'die', 'would kill me', 'will kill me', 'could kill me', 'kills you', 'kill you', 'kill me', 'to kill myself',
-      'be fatal', 'is fatal', 'be lethal', 'is lethal', 'to overdose', 'to od', 'for an overdose',
+      'be fatal', 'is fatal', 'be lethal', 'is lethal', 'to overdose', 'to od', 'for an overdose', 'lethal', 'fatal',
+      'deadly', 'overdose', 'an overdose', 'kill a person', 'kill someone', 'kill somebody', 'kill a human', 'kill people',
     ],
+  },
+  // "what amount of paracetamol is lethal", "is 20 tylenol lethal". Not "kill
+  // me": "my meds make me tired, leg day will kill me" is leg day.
+  {
+    slots: [EN_PILLS],
+    thenInSentence: ['lethal', 'fatal', 'deadly', 'kill a person', 'kill someone', 'kill somebody', 'to die'],
   },
   [['enough'], ['to die', 'to kill me', 'to kill myself']],
   [
@@ -872,7 +994,11 @@ interface CrisisPhrase {
 const CRISIS_PHRASES: readonly CrisisPhrase[] = CRISIS_PATTERNS.flatMap((pattern) => {
   const { slots, unlessFollowedBy = [], inTheGym = null, thenInSentence = [] } =
     'slots' in pattern ? pattern : { slots: pattern };
-  const unless = unlessFollowedBy.map((option) => words(folded(option)));
+  // A hyphened excuse is read spaced too, as the hyphen-split reading has it:
+  // "in pre-workout" is "in pre workout" (K1 review, 2026-10-08).
+  const unless = [...new Set(unlessFollowedBy.flatMap((option) => [option, option.replace(/-/g, ' ')]))].map((option) =>
+    words(folded(option)),
+  );
   const then = thenInSentence.map((option) => words(folded(option)));
   return expand(slots).map((phrase) => ({ phrase: phrase.map(folded), unless, inTheGym, then }));
 });
@@ -942,16 +1068,17 @@ function besideOnKeyboard(a: string, b: string): boolean {
 /**
  * Words that are words in their own right, each one slip from a slot word
  * (`typoOf`), and said in the gym: "I don't want to lie" is not "live",
- * "I didn't want to love running" not "live", "I almost shit myself" not
- * "shot", "I'm sending it" not "ending it", "jump off the rower" not
- * "tower", "arm myself" not "harm", "olla tällä dieetillä" not "olla
- * täällä", "kaikkien pitää kuolla joskus" not "pitäs", "20 pulls on the erg"
- * not pills. Found by reading every word of the app's texts, docs and tests
- * against the slot words (K1 hunt, 2026-10-08).
+ * "I didn't want to love running" not "live", "stop loving junk food" not
+ * "stop living", "I almost shit myself" not "shot", "I'm sending it" not
+ * "ending it", "jump off the rower" not "tower", "arm myself" not "harm",
+ * "olla tällä dieetillä" not "olla täällä", "kaikkien pitää kuolla joskus"
+ * not "pitäs", "20 pulls on the erg" not pills. Found by reading every word
+ * of the app's texts, docs and tests against the slot words (K1 hunt,
+ * 2026-10-08).
  */
 const NOT_TYPOS = foldedSet([
-  'lie', 'lies', 'love', 'loved', 'loves', 'her', 'shit', 'exit', 'pull', 'pulls', 'send', 'sends', 'sending', 'rower',
-  'rowers', 'arm', 'armed', 'night', 'hug', 'pay', 'paying', 'tällä', 'pitää',
+  'lie', 'lies', 'love', 'loved', 'loves', 'loving', 'her', 'shit', 'exit', 'pull', 'pulls', 'send', 'sends', 'sending',
+  'rower', 'rowers', 'arm', 'armed', 'night', 'hug', 'pay', 'paying', 'tällä', 'pitää',
 ]);
 
 /**
@@ -1093,7 +1220,8 @@ function looseReading(word: string): CrisisWord['loose'] {
 
 const reads = (token: CrisisWord | undefined, listed: string) =>
   token !== undefined &&
-  (token.word === listed || (listed === MANY ? isMany(token.word) : (token.loose?.(listed) ?? false)));
+  (token.word === listed ||
+    (listed === MANY ? isMany(token.word) : listed === COUNT ? isCount(token.word) : (token.loose?.(listed) ?? false)));
 
 /**
  * The words read for a crisis, fillers out, each marked if a sentence ends
@@ -1351,8 +1479,8 @@ function namesCrisis(text: string): boolean {
  * - "kofeiinin yliannostus" is a bad pre-workout, as "overdosed on caffeine"
  *   is. Folded, as every reading is.
  */
-const GYM_OBJECTS = '(knurl\\p{L}*|bar|barbell|bars|plate|plates|rack|kettlebell|dumbbell|machine|equipment|j-hooks?|hooks?|safet\\p{L}*|pins?|collar|clip)';
-const OVERDOSED_ON_FI = '(kofeiini|kreatiini|proteiini|kahvi|nikotiini|energiajuoma|pre-?workout|vitamiini|magnesium)';
+const GYM_OBJECTS = '(knurl\\p{L}*|bar|barbell|bars|plate|plates|rack|kettlebell|dumbbell|machine|equipment|j[- ]?hooks?|hooks?|safet\\p{L}*|pins?|collar|clip)';
+const OVERDOSED_ON_FI = '(kofeiini|kreatiini|proteiini|kahvi|nikotiini|energiajuoma|pre[- ]?workout|vitamiini|magnesium)';
 const GYM_LOOKALIKES: RegExp[] = [
   /(^|[^\p{L}\p{N}])suicide[ -](sprint|run|drill|shuttle|grip)\p{L}*(?![\p{L}\p{N}])/gu,
   /(^|[^\p{L}\p{N}])(do|doing|did|done|run|running|ran) suicides(?![\p{L}\p{N}])/gu,
