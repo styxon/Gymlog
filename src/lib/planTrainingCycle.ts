@@ -65,18 +65,22 @@ export function withPlanTrainingCycle<P extends CyclePlan>(
 /**
  * A plan written over one with the same id, keeping that one's rhythm.
  *
- * Most writes rebuild a plan record from its parts (new days, a new week) and
- * name no rhythm at all. Read as "none", every such write would quietly put the
- * programme back on its own week. Only a record that says `null` clears it.
+ * Whatever the record says. Most writes rebuild a plan from a copy read at
+ * render (new days, a new week, a restart), and the loader puts the field on
+ * every plan, so that copy names the rhythm as it stood then. Letting it win
+ * undid a rhythm changed since: Profile's Done turns a 3-on-1-off rhythm off
+ * and writes the new weekdays in the same tap, and the weekday write put the
+ * rhythm back (bug hunt 2026-10-07). The rhythm moves only through its own
+ * write (withPlanTrainingCycle), or with a plan replaced whole.
  */
 export function keepPlanTrainingCycle<P extends { trainingCycle?: TrainingCycle | null }>(
   next: P,
   previous: { trainingCycle?: TrainingCycle | null } | null | undefined,
 ): P {
-  if (next.trainingCycle !== undefined || !previous?.trainingCycle) {
+  if (!previous || (next.trainingCycle ?? null) === (previous.trainingCycle ?? null)) {
     return next;
   }
-  return { ...next, trainingCycle: previous.trainingCycle };
+  return { ...next, trainingCycle: previous.trainingCycle ?? null };
 }
 
 /**

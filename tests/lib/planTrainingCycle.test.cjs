@@ -131,7 +131,7 @@ module.exports = [
     },
   },
   {
-    name: 'plan rhythm: a plan rebuilt under its own id keeps its rhythm unless it says null',
+    name: 'plan rhythm: a plan rebuilt under its own id keeps its rhythm, whatever the record says',
     run() {
       const stored = plan('custom_plan_mine', 'wt_mine', { trainingCycle: MINE });
       const db = database({ plans: [stored], activePlanId: 'custom_plan_mine' });
@@ -143,13 +143,85 @@ module.exports = [
       assert.deepEqual(kept.workoutPlans[0].trainingCycle, MINE);
       assert.equal(kept.workoutPlans[0].entries.length, 2);
 
-      const cleared = workoutPlanRepository.upsert(db, { ...rebuilt, trainingCycle: null });
-      assert.equal(cleared.workoutPlans[0].trainingCycle, null);
+      // Naming one does not set it either: a rebuilt record names the rhythm
+      // it was read with, and the rhythm moves only through its own write.
+      const named = workoutPlanRepository.upsert(db, { ...rebuilt, trainingCycle: null });
+      assert.deepEqual(named.workoutPlans[0].trainingCycle, MINE);
+      const other = workoutPlanRepository.upsert(db, { ...rebuilt, trainingCycle: OTHER });
+      assert.deepEqual(other.workoutPlans[0].trainingCycle, MINE);
 
       // A new plan has nothing to inherit.
       const added = workoutPlanRepository.upsert(db, plan('ready_plan_tpl_6', 'tpl_6'));
       assert.equal(planTrainingCycle(added.workoutPlans.find((item) => item.id === 'ready_plan_tpl_6')), null);
       assert.equal(keepPlanTrainingCycle(rebuilt, null), rebuilt);
+    },
+  },
+  {
+    // Profile -> Training plan -> Edit: the reader switches a 3-on-1-off
+    // rhythm to weekdays and picks the days, and Done makes two writes in one
+    // tick. The rhythm lands first; the days are then written over a copy of
+    // the plan read at render, which still held the old rhythm, and put it
+    // back (bug hunt 2026-10-07).
+    name: 'plan rhythm: a plan read before a rhythm edit cannot undo it when written back',
+    run() {
+      // As the loader hands plans out: the field is always there, null when none.
+      const rendered = database({
+        plans: [plan('custom_plan_mine', 'wt_mine', { trainingCycle: MINE })],
+        activePlanId: 'custom_plan_mine',
+      });
+      const stale = rendered.workoutPlans[0];
+      const relabel = (from) => ({ ...from, entries: from.entries.map((entry) => ({ ...entry, label: 'Wed' })) });
+
+      // Turned off, then the weekdays written from the render's copy.
+      const off = { ...rendered, workoutPlans: withPlanTrainingCycle(rendered.workoutPlans, 'custom_plan_mine', null) };
+      const afterDays = workoutPlanRepository.upsert(off, relabel(stale));
+      assert.equal(afterDays.workoutPlans[0].trainingCycle, null, 'the rhythm the reader just turned off stays off');
+      assert.equal(afterDays.workoutPlans[0].entries[0].label, 'Wed', 'and the days they picked are written');
+
+      // The other way round: a rhythm turned on survives the copy that says none.
+      const plain = database({
+        plans: [plan('custom_plan_mine', 'wt_mine', { trainingCycle: null })],
+        activePlanId: 'custom_plan_mine',
+      });
+      const staleNone = plain.workoutPlans[0];
+      const on = { ...plain, workoutPlans: withPlanTrainingCycle(plain.workoutPlans, 'custom_plan_mine', OTHER) };
+      assert.deepEqual(workoutPlanRepository.upsert(on, relabel(staleNone)).workoutPlans[0].trainingCycle, OTHER);
+
+      // A restart writes the same copy with a new boundary, and keeps it too.
+      const restarted = workoutPlanRepository.upsert(off, { ...stale, updatedAt: '2026-10-07T00:00:00.000Z' });
+      assert.equal(restarted.workoutPlans[0].trainingCycle, null);
+      assert.equal(restarted.workoutPlans[0].updatedAt, '2026-10-07T00:00:00.000Z');
+    },
+  },
+  {
+    // A rerun of the questionnaire builds a new programme on the id of the one
+    // it replaces, and the rhythm it chose, or none, is part of it.
+    name: 'plan rhythm: a plan replaced whole takes the rhythm it was built with',
+    run() {
+      const db = database({
+        plans: [plan('onboarding_plan_wt', 'wt', { trainingCycle: MINE })],
+        activePlanId: 'onboarding_plan_wt',
+      });
+      const rebuilt = plan('onboarding_plan_wt', 'wt', { trainingCycle: OTHER });
+      assert.deepEqual(workoutPlanRepository.replace(db, rebuilt).workoutPlans[0].trainingCycle, OTHER);
+      assert.equal(
+        workoutPlanRepository.replace(db, { ...rebuilt, trainingCycle: null }).workoutPlans[0].trainingCycle,
+        null,
+      );
+      // New, it is added, and nothing else moves.
+      const added = workoutPlanRepository.replace(db, plan('onboarding_plan_wt2', 'wt2', { trainingCycle: OTHER }));
+      assert.equal(added.workoutPlans.length, 2);
+      assert.deepEqual(added.workoutPlans.find((item) => item.id === 'onboarding_plan_wt').trainingCycle, MINE);
+
+      // The onboarding finish writes its plan this way, inside its one lock.
+      const provider = strip(read('src/state/AppProvider.tsx'));
+      const finish = provider.slice(
+        provider.indexOf('function saveOnboardingResult('),
+        provider.indexOf('function upsertWorkoutPlan('),
+      );
+      assert.ok(finish.length > 0, 'saveOnboardingResult is where it was');
+      assert.match(finish, /const withPlan = workoutPlanRepository\.replace\(/);
+      assert.doesNotMatch(finish, /workoutPlanRepository\.upsert\(/);
     },
   },
   {

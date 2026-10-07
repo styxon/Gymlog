@@ -95,6 +95,21 @@ export const workoutPlanRepository = {
         : [plan, ...database.workoutPlans],
     };
   },
+  /**
+   * A plan written whole, its rhythm included: a programme that is new even
+   * when it lands on the id of the one it replaces (a rerun of onboarding).
+   * Every other write goes through `upsert`, which keeps the stored rhythm.
+   */
+  replace(database: AppDatabase, plan: WorkoutPlan): AppDatabase {
+    const existing = database.workoutPlans.some((item) => item.id === plan.id);
+
+    return {
+      ...database,
+      workoutPlans: existing
+        ? database.workoutPlans.map((item) => (item.id === plan.id ? plan : item))
+        : [plan, ...database.workoutPlans],
+    };
+  },
   /** Every plan in `planIds` gone; the rest untouched. */
   removeMany(database: AppDatabase, planIds: readonly string[]): AppDatabase {
     if (planIds.length === 0) {
