@@ -6,6 +6,7 @@ const {
   buildProgramIntakeBrief,
   buildProgramIntakeFrame,
   currentProgramIntakeStep,
+  editProgramIntake,
   programIntakeAnswerText,
   programIntakeOptions,
   programIntakePresetValue,
@@ -263,6 +264,81 @@ module.exports = [
       assert.equal(programIntakeAnswerText('goal', 'fat_loss', 'fi'), 'Rasvanpudotus');
       assert.equal(programIntakeAnswerText('extra', '  ', 'fi'), 'Ohita');
       assert.equal(programIntakeAnswerText('extra', 'kyykky mukaan', 'en'), 'kyykky mukaan');
+    },
+  },
+  {
+    name: 'programIntake: a chat opened to build a programme shows no analysis link, opening rows or quick asks',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/AICoachChatScreen.tsx'), 'utf8');
+      // Seeded from the route on the first render, so nothing flashes in
+      // before the intake effect runs, and held for the whole visit.
+      assert.match(screen, /useState\(intent === 'new_program'\)/);
+      assert.match(screen, /const programmeOnly = buildingProgramme \|\| intakeOpen;/);
+      const effect = screen.slice(screen.indexOf('const intentTaken = useRef(false);'));
+      assert.ok(
+        effect.indexOf('setBuildingProgramme(true)') !== -1 &&
+          effect.indexOf('setBuildingProgramme(true)') < effect.indexOf('startProgramIntake('),
+        'the hand-off also raises the flag for a chat that was already open',
+      );
+      // Each of the three surfaces is gated on the flag, not on the open
+      // question alone: the quick asks used to come back with the build offer.
+      assert.match(screen, /const showReadout = [^;]*!programmeOnly;/);
+      assert.match(screen, /\{lastSession && !programmeOnly \? \(/);
+      assert.match(screen, /\{mustAcknowledgeOnline \|\| programmeOnly \? null : \(\s*<ScrollView\s+horizontal/);
+    },
+  },
+  {
+    name: 'programIntake: "Edit" asks again with every earlier answer as the choice to confirm',
+    run() {
+      const first = answerAll(['muscle', '6', '45', 'gym', 'advanced', 'polvi kipeä']);
+      const again = editProgramIntake(first.answers);
+      // Nothing answered on the reader's behalf: the first question is open.
+      assert.equal(currentProgramIntakeStep(again), 'goal');
+      assert.equal(again.editing, true);
+      assert.equal(programIntakePresetValue(again, 'goal'), 'muscle');
+      assert.equal(programIntakePresetValue(again, 'days'), '6');
+      // Asked fresh on the first pass, but the reader has answered it now.
+      assert.equal(programIntakePresetValue(again, 'minutes'), '45');
+      assert.equal(programIntakePresetValue(again, 'equipment'), 'gym');
+      assert.equal(programIntakePresetValue(again, 'experience'), 'advanced');
+      // The free text is put back in the field, not offered as a chip.
+      assert.equal(programIntakePresetValue(again, 'extra'), null);
+      assert.equal(again.preset.extra, 'polvi kipeä');
+      // Confirming every choice gives back the same answers, so the same week.
+      const confirmed = ['goal', 'days', 'minutes', 'equipment', 'experience'].reduce(
+        (state, step) => answerProgramIntake(state, programIntakePresetValue(state, step)),
+        again,
+      );
+      const done = answerProgramIntake(confirmed, again.preset.extra);
+      assert.deepEqual(done.answers, first.answers);
+      assert.equal(buildProgramIntakeBrief(done.answers, 'fi'), buildProgramIntakeBrief(first.answers, 'fi'));
+      // The first pass still reads as the profile's values.
+      assert.ok(!startProgramIntake(BLANK_PREFERENCES).editing);
+    },
+  },
+  {
+    name: 'programIntake: the build offer says Edit, not No, and a catalog match opens the programme at once',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/AICoachChatScreen.tsx'), 'utf8');
+      // The intake's offer keeps its answers, for Edit to ask with.
+      assert.match(screen, /frame: buildProgramIntakeFrame\(next\.answers, language\),[\s\S]{0,200}answers: next\.answers,/);
+      // Edit stands where "No" stood on that offer; other offers keep "No".
+      const gate = screen.indexOf("{message.offer.type === 'compose' && message.offer.frame ? (");
+      const edit = screen.indexOf('editIntake(message.id,', gate);
+      const editLabel = screen.indexOf("'programIntake.edit'", gate);
+      const no = screen.indexOf("'coachChat.measure.skip'", gate);
+      assert.ok(gate !== -1 && gate < edit && edit < editLabel && editLabel < no, 'Edit first, "No" only in the else');
+      assert.ok(no - gate < 2000, 'both in the same offer row');
+      assert.match(screen, /state\.editing \? 'programIntake\.presetEdit' : 'programIntake\.preset'/);
+      // The catalog answer navigates in the same branch that finds it, before
+      // anything else can run: no card to tap first.
+      const branch = screen.slice(screen.indexOf('if (match && title) {'));
+      const opened = branch.indexOf('onOpenProgramme(match.programId);');
+      assert.ok(opened !== -1 && opened < branch.indexOf('return;'), 'the programme opens before the branch returns');
     },
   },
 ];

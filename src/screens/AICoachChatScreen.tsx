@@ -47,12 +47,14 @@ import {
 import {
   PROGRAM_INTAKE_EXTRA_MAX_CHARS,
   PROGRAM_INTAKE_QUESTION_KEYS,
+  ProgramIntakeAnswers,
   ProgramIntakePreferences,
   ProgramIntakeState,
   answerProgramIntake,
   buildProgramIntakeBrief,
   buildProgramIntakeFrame,
   currentProgramIntakeStep,
+  editProgramIntake,
   programIntakeAnswerText,
   programIntakeOptions,
   programIntakePresetValue,
@@ -253,7 +255,7 @@ export interface ChatMessage {
     // `frame` is set when the brief came from the frame questions: the
     // answers on one line, said instead of the outline, since the reader has
     // just given every one of them by tap.
-    | { type: 'compose'; brief: string; frame?: string };
+    | { type: 'compose'; brief: string; frame?: string; answers?: ProgramIntakeAnswers };
   /**
    * A frame question still open, with the answers so far. In the thread
    * rather than in screen state so it is kept with it: leaving mid-way and
@@ -559,7 +561,14 @@ export function AICoachChatScreen({
   // meanwhile: three other things to tap under a question are three ways to
   // walk off it.
   const intakeOpen = useMemo(() => messages.some((message) => message.intake), [messages]);
-  const showReadout = messages.length === 0 && openingRows.length > 0 && !intakeOpen;
+  // Opened from "New programme → AI-assisted": the visit is for the week, from
+  // the first question to the build, so the analysis link, the opening rows
+  // and the quick asks stay down the whole time, not only while a question is
+  // open (user, 2026-10-07). Read from the route on the first render, before
+  // the effect below hands the intent back, so none of them flashes in first.
+  const [buildingProgramme, setBuildingProgramme] = useState(intent === 'new_program');
+  const programmeOnly = buildingProgramme || intakeOpen;
+  const showReadout = messages.length === 0 && openingRows.length > 0 && !programmeOnly;
 
   /**
    * What the coach has read, and what today is — one line.
@@ -700,6 +709,10 @@ export function AICoachChatScreen({
           const match = matchProgrammeToBrief(signals);
           const title = match ? catalogProgrammeTitle(match.programId) : null;
           if (match && title) {
+            // Straight to the programme: a coach line explaining the composer's
+            // limit, and a card with a button to look, were two steps between
+            // "Build the week" and the week (user, 2026-10-07). The card stays
+            // in the thread, so Back shows where the build led.
             setMessages((current) =>
               current.map((message) =>
                 message.id === messageId
@@ -714,6 +727,7 @@ export function AICoachChatScreen({
                   : message,
               ),
             );
+            onOpenProgramme(match.programId);
             return;
           }
         }
@@ -831,6 +845,7 @@ export function AICoachChatScreen({
       onEnableWeighInReminder,
       onLogMeasurement,
       onOpenMeasure,
+      onOpenProgramme,
       onPinStatCard,
       onSetGoal,
       onOpenPremium,
@@ -1277,6 +1292,8 @@ export function AICoachChatScreen({
       return;
     }
     intentTaken.current = true;
+    // Also here, for a chat already mounted when the hand-off arrives.
+    setBuildingProgramme(true);
     onIntentConsumed?.();
     const intake = startProgramIntake(intakePreferences);
     const id = `intake:${Date.now()}`;
@@ -1341,6 +1358,9 @@ export function AICoachChatScreen({
                     type: 'compose' as const,
                     brief: buildProgramIntakeBrief(next.answers, language),
                     frame: buildProgramIntakeFrame(next.answers, language),
+                    // Kept for "Edit", which asks the same questions again
+                    // with these as the choices to confirm.
+                    answers: next.answers,
                   },
                 },
           ];
@@ -1350,6 +1370,37 @@ export function AICoachChatScreen({
     },
     [language, trainingContext],
   );
+
+  /**
+   * "Edit" on the build offer: the questions again, each earlier answer the
+   * choice to confirm. The offer gives way to the first question, and the
+   * answers already in the thread stay as the record of the first pass. An
+   * offer resumed from before answers were kept starts from the profile.
+   */
+  const editIntake = useCallback(
+    (messageId: string, answers: ProgramIntakeAnswers | undefined) => {
+      const intake = answers ? editProgramIntake(answers) : startProgramIntake(intakePreferences);
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId ? { id: `intake:${Date.now()}`, fromCoach: true, text: '', intake } : message,
+        ),
+      );
+      setIntakeDraft('');
+    },
+    [intakePreferences],
+  );
+
+  // The free-text question, reached on an edit, starts from what was written
+  // the first time. Set once the step opens, after the answer before it has
+  // cleared the field, and not again while the reader types.
+  const openIntake = useMemo(() => messages.find((message) => message.intake)?.intake ?? null, [messages]);
+  const openIntakeStep = openIntake ? currentProgramIntakeStep(openIntake) : null;
+  const extraPreset = openIntake?.preset.extra ?? '';
+  useEffect(() => {
+    if (openIntakeStep === 'extra' && extraPreset) {
+      setIntakeDraft(extraPreset);
+    }
+  }, [extraPreset, openIntakeStep]);
 
   return (
     <View style={styles.screen}>
@@ -1487,7 +1538,7 @@ export function AICoachChatScreen({
           {/* The written analysis is Pro (the Pro page's table says so), so a
               free user gets the link and the reason, not a dead end. It is a
               link rather than a card: one sentence does not need a surface. */}
-          {lastSession ? (
+          {lastSession && !programmeOnly ? (
             <Pressable
               accessibilityRole="button"
               onPress={() => (proUnlocked ? onOpenAnalysis(lastSession.id) : onOpenPremium())}
@@ -1576,20 +1627,35 @@ export function AICoachChatScreen({
                     <Text style={styles.offerNote}>{t(language, 'coachChat.compose.pro')}</Text>
                   ) : null}
                   <View style={styles.offerActions}>
-                    <Pressable
-                      accessibilityRole="button"
-                      onPress={() =>
-                        void resolveOfferOnce(
-                          message.id,
-                          message.offer as NonNullable<ChatMessage['offer']>,
-                          false,
-                          message.suggestionKind,
-                        )
-                      }
-                      style={({ pressed }) => [styles.offerGhost, pressed && styles.pressed]}
-                    >
-                      <Text style={styles.offerGhostText}>{t(language, 'coachChat.measure.skip')}</Text>
-                    </Pressable>
+                    {/* After the frame questions the choice is to change an
+                        answer or build, not to walk away: "No" left the reader
+                        with nothing on screen (user, 2026-10-07). */}
+                    {message.offer.type === 'compose' && message.offer.frame ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() =>
+                          editIntake(message.id, (message.offer as { answers?: ProgramIntakeAnswers }).answers)
+                        }
+                        style={({ pressed }) => [styles.offerGhost, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.offerGhostText}>{t(language, 'programIntake.edit')}</Text>
+                      </Pressable>
+                    ) : (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() =>
+                          void resolveOfferOnce(
+                            message.id,
+                            message.offer as NonNullable<ChatMessage['offer']>,
+                            false,
+                            message.suggestionKind,
+                          )
+                        }
+                        style={({ pressed }) => [styles.offerGhost, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.offerGhostText}>{t(language, 'coachChat.measure.skip')}</Text>
+                      </Pressable>
+                    )}
                     <Pressable
                       accessibilityRole="button"
                       onPress={() =>
@@ -1727,7 +1793,7 @@ export function AICoachChatScreen({
         {/* The suggestion rail lives outside the thread's scroll view, so it
             needs its own gate: it sat under the notice as three more things to
             tap instead of reading. */}
-        {mustAcknowledgeOnline || intakeOpen ? null : (
+        {mustAcknowledgeOnline || programmeOnly ? null : (
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -1933,7 +1999,11 @@ function IntakeQuestion({
           </>
         ) : (
           <>
-            {preset ? <Text style={styles.offerNote}>{t(language, 'programIntake.preset')}</Text> : null}
+            {preset ? (
+              <Text style={styles.offerNote}>
+                {t(language, state.editing ? 'programIntake.presetEdit' : 'programIntake.preset')}
+              </Text>
+            ) : null}
             <View style={styles.intakeChips}>
               {programIntakeOptions(step).map((option) => {
                 const known = option.value === preset;
