@@ -1093,6 +1093,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     return (
       <GuidedPlayerScreen
         keepScreenAwake={preferences.keepScreenAwakeDuringWorkout}
+        defaultRestSeconds={preferences.defaultRestSeconds}
         unitPreference={unitPreference}
         availableEquipment={availableEquipmentForDrills}
         routineDrillOverrides={preferences.routineDrillOverrides}
