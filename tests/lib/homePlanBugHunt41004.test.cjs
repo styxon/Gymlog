@@ -187,9 +187,10 @@ module.exports = [
       const edits = src('app', 'programmePlanEdits.tsx');
       const body = edits.slice(edits.indexOf('async function handleSaveRhythm'), edits.indexOf('The weekday picker in Profile'));
       assert.doesNotMatch(body, /plan\.entries\.length !== dayIndexes\.length/);
-      assert.match(body, /livePlanEntries\(allOrdered, templateSessionsReader\(database\)\)/);
-      assert.match(body, /ordered\.length !== dayIndexes\.length/);
-      assert.match(body, /allOrdered\.map\(/, 'dead entries are written back untouched');
+      // The live entries are counted and relabelled, dead ones written back
+      // untouched, by the shared placement (planWeekdayPlacement.test.cjs).
+      assert.match(body, /placeWeekdaysOnPlan\(\s*plan\.entries,\s*templateSessionsReader\(database\),\s*\(liveCount\) => \(liveCount === dayIndexes\.length \?/);
+      assert.match(body, /if \(!entries\) \{\s*return false;\s*\}/);
       assert.match(body, /return true;/);
       const tab = src('app', 'renderWorkoutTab.tsx');
       assert.match(tab, /handleSaveRhythm\(route\.workoutTemplateId, dayIndexes\)\.then\(\s*\(saved\) => \{\s*if \(!saved\) \{[^}]*toast\.planSaveFailed/);

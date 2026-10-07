@@ -1,12 +1,12 @@
 import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planForTemplate } from '../lib/planTrainingCycle';
-import { planTrainedOnDay, resolveNextPlanEntryIndex } from '../lib/planRotation';
+import { placeWeekdaysOnPlan } from '../lib/planWeekdayPlacement';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { t } from '../lib/i18n';
 import { SetCountChange, setCountChanges, setCountToastParts } from '../lib/setCountChanges';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
-import { planLabelsFromWeekdays, rotateLabelsForNextSession, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
+import { planLabelsFromWeekdays, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
 import type { useAppContext } from '../state/AppProvider';
 import { SetupDaysPerWeek, SetupWeekday } from '../types/models';
 import { haptics } from '../utils/haptics';
@@ -115,27 +115,21 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     if (!plan) {
       return false;
     }
-    const allOrdered = [...plan.entries].sort((left, right) => left.orderIndex - right.orderIndex);
-    const ordered = livePlanEntries(allOrdered, templateSessionsReader(database));
-    if (ordered.length !== dayIndexes.length) {
-      return false;
-    }
     // The strip is a set of days, not a per-session assignment — it hands them
     // back Monday-first however they were tapped. Which session lands on which
     // of them is this app's answer, and it is the same one adoption gives:
     // whatever comes next in the rotation takes the first day not yet gone.
-    const completedHere = completedSessionsForTemplate(ordered[0]?.workoutTemplateId);
-    const now = new Date();
-    const labels = rotateLabelsForNextSession(
-      dayIndexes.map((index) => WEEKDAY_KEYS[index]),
-      resolveNextPlanEntryIndex(ordered, completedHere),
-      now,
-      planTrainedOnDay(ordered, completedHere, new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()),
+    // One day per live entry, or nothing is written.
+    const entries = placeWeekdaysOnPlan(
+      plan.entries,
+      templateSessionsReader(database),
+      (liveCount) => (liveCount === dayIndexes.length ? dayIndexes.map((index) => WEEKDAY_KEYS[index]) : null),
+      completedSessionsForTemplate,
+      new Date(),
     );
-    const labelByEntryId = new Map(ordered.map((entry, index) => [entry.id, labels[index]] as const));
-    const entries = allOrdered.map((entry) =>
-      labelByEntryId.has(entry.id) ? { ...entry, label: labelByEntryId.get(entry.id) as string } : entry,
-    );
+    if (!entries) {
+      return false;
+    }
     await upsertWorkoutPlan({
       ...plan,
       entries,
@@ -193,30 +187,29 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     if (!plan) {
       return;
     }
-    const ordered = [...plan.entries].sort((left, right) => left.orderIndex - right.orderIndex);
-    const labels = planLabelsFromWeekdays(ordered.length, days);
-    if (!labels) {
+    // Same rule as adoption and as the rhythm strip: the session that comes
+    // next takes the first training day that has not gone. Writing the spread
+    // straight through put session one on the earliest weekday, so a reader
+    // who moved a day mid-week was offered one session and shown another one's
+    // day beside it. And the days are spread over the live entries only, as
+    // the strip does: counting a dead one wrote nothing for a two-session
+    // programme given two days (re-hunt, 2026-10-07).
+    const entries = placeWeekdaysOnPlan(
+      plan.entries,
+      templateSessionsReader(database),
+      (liveCount) => planLabelsFromWeekdays(liveCount, days),
+      completedSessionsForTemplate,
+      new Date(),
+    );
+    if (!entries) {
       // Fewer days chosen than the programme has sessions. The availability is
       // stored — reminders follow it — and the rhythm the reader already has is
       // left alone rather than replaced by a week they did not choose.
       return;
     }
-    // Same rule as adoption and as the rhythm strip: the session that comes
-    // next takes the first training day that has not gone. Writing the spread
-    // straight through put session one on the earliest weekday, so a reader
-    // who moved a day mid-week was offered one session and shown another one's
-    // day beside it.
-    const completedHere = completedSessionsForTemplate(ordered[0]?.workoutTemplateId);
-    const now = new Date();
-    const placed = rotateLabelsForNextSession(
-      labels,
-      resolveNextPlanEntryIndex(ordered, completedHere),
-      now,
-      planTrainedOnDay(ordered, completedHere, new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()),
-    );
     await upsertWorkoutPlan({
       ...plan,
-      entries: ordered.map((entry, index) => ({ ...entry, label: placed[index] })),
+      entries,
       // Untouched on purpose: the plan record's own boundary is what the week
       // counter counts from, so moving days must not restart the block.
       updatedAt: plan.updatedAt,

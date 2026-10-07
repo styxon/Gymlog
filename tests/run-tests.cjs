@@ -514,6 +514,7 @@ const suites = [
   ...require('./integration/planRotationAdvances.test.cjs'),
   ...require('./lib/programTrainingDays.test.cjs'),
   ...require('./lib/trainingWeekSync.test.cjs'),
+  ...require('./lib/planWeekdayPlacement.test.cjs'),
   ...require('./lib/restSchedule.test.cjs'),
   ...require('./lib/restActionBus.test.cjs'),
   ...require('./screens/summaryBackExit.test.cjs'),
