@@ -57,22 +57,20 @@ export function hasSessionAdaptation(adaptation: SessionAdaptation | null | unde
  * The name alone was not the lift. The slot kept the programmed lift's
  * tracking mode — a pull-up swapped here for a lat pulldown started with no
  * weight dial — and nothing said a swap had happened, so the save filed the
- * pulldown under the programme's pull-up (swap audit, 2026-09-21). The mode
- * follows the player's own swap (trackingModeAfterSwap). The dose is
- * doseAfterSwap, the rule "For ever" writes into the programme and the row
- * prints before the start, so both scope buttons give one prescription.
+ * pulldown under the programme's pull-up (swap audit, 2026-09-21). The same
+ * rule as the player's own swap and "For ever" (doseAfterSwap), so a swap made
+ * here and one made there are saved alike.
  */
 function applySwap(exercise: WorkoutTemplateExercise, name: string): WorkoutTemplateExercise {
   if (isSameLiftName(name, exercise.exerciseName)) {
     return exercise;
   }
-  const { trackingMode, sets, repsMin, repsMax } = doseAfterSwap(
+  const { trackingMode, repsMin, repsMax } = doseAfterSwap(
     {
       trackingMode: exercise.trackingMode,
       sets: exercise.sets,
       repsMin: exercise.repsMin,
       repsMax: exercise.repsMax,
-      supersetGroup: exercise.supersetGroup,
     },
     name,
   );
@@ -80,7 +78,6 @@ function applySwap(exercise: WorkoutTemplateExercise, name: string): WorkoutTemp
     ...exercise,
     exerciseName: name,
     trackingMode,
-    sets,
     repsMin,
     repsMax,
     sourceExerciseName: exercise.sourceExerciseName ?? exercise.exerciseName,

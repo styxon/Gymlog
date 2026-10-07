@@ -133,17 +133,17 @@ function buildPrescription(
 }
 
 /**
- * A day's row as today's swap will start it: the swapped lift's sets and dose
- * (lib/swapDose: its own default once the unit changes), or the row as it is
- * with no swap. The day screen printed the programme's "3 × 8" over a plank
- * that would open on seconds (swap hunt, 2026-10-07).
+ * A day's row as today's swap will start it: the swapped lift's dose
+ * (lib/swapDose: numbers in its own unit once the unit changes), or the row as
+ * it is with no swap. The day screen printed the programme's "3 × 8" over a
+ * plank that would open on seconds (swap hunt, 2026-10-07).
  */
 export function exerciseAfterSessionSwap(
   exercise: ProgramDetailExerciseItem,
   swapName: string | null | undefined,
-): Pick<ProgramDetailExerciseItem, 'sets' | 'prescription'> {
+): Pick<ProgramDetailExerciseItem, 'prescription'> {
   if (!swapName) {
-    return { sets: exercise.sets, prescription: exercise.prescription };
+    return { prescription: exercise.prescription };
   }
   const dose = doseAfterSwap(
     {
@@ -151,12 +151,10 @@ export function exerciseAfterSessionSwap(
       sets: exercise.sets,
       repsMin: exercise.repMin,
       repsMax: exercise.repMax,
-      supersetGroup: exercise.supersetGroup ?? null,
     },
     swapName,
   );
   return {
-    sets: dose.sets,
     prescription: buildPrescription(dose.repsMin, dose.repsMax, dose.sets, dose.trackingMode),
   };
 }

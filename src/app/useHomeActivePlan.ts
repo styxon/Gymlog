@@ -257,7 +257,6 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
               sets: exercise.targetSets,
               repsMin: exercise.repMin,
               repsMax: exercise.repMax,
-              supersetGroup: activeRuntimeExercises.get(exercise.id)?.supersetGroup ?? null,
             },
           })),
         };

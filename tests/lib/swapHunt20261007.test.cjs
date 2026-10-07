@@ -5,9 +5,10 @@ const path = require('node:path');
 const { applyProgramSessionEdit } = require('../../.test-dist/lib/programSessionEdit.js');
 const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
 const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { getExerciseTemplateDefaults } = require('../../.test-dist/lib/exerciseSuggestions.js');
 const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
 const { doseAfterSwap } = require('../../.test-dist/lib/swapDose.js');
+require('../helpers/reactNativeStub.cjs').installReactNativeStub();
+const { workoutReducer } = require('../../.test-dist/features/workout/workoutState.js');
 const {
   applySessionAdaptation,
   EMPTY_SESSION_ADAPTATION,
@@ -36,7 +37,6 @@ const { matchesBodyPartFilter } = require('../../.test-dist/lib/exerciseBrowseFi
 const library = createSeedExerciseLibrary();
 const libraryNames = library.map((item) => item.name);
 const itemNamed = (name) => library[findGuidedLibraryIndex(name, libraryNames)];
-const addSheetDefault = (name) => getExerciseTemplateDefaults(itemNamed(name), 90);
 const read = (file) => fs.readFileSync(path.join(__dirname, '../..', file), 'utf8').replace(/\r\n/g, '\n');
 
 function storedRow(name, sets, repMin, repMax, trackingMode, overrides = {}) {
@@ -93,21 +93,59 @@ const CROSS_UNIT = [
   { from: storedRow('Barbell Full Squat', 3, 8, 8, null), to: 'Bicycling, Stationary', unit: 'minutes' },
 ];
 
+const EMPTY_WORKOUT = {
+  hydrated: true,
+  isRestoring: false,
+  activeSession: null,
+  activeCardio: null,
+  freestyleDraft: null,
+  completionSummary: null,
+  history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null },
+};
+
+function startWorkout(template) {
+  return workoutReducer(EMPTY_WORKOUT, {
+    type: 'session/startFromRuntimeTemplate',
+    payload: { template, sessionOrderIndex: 1, unitPreference: 'kg' },
+  });
+}
+
+/** The player's slot for a template slot (its id is prefixed on start). */
+function playerSlot(state, slotId) {
+  return state.activeSession.exercises.find((exercise) => exercise.slotId.endsWith(`:${slotId}`));
+}
+
+/** What a started slot asks for: "3x45-45 seconds". */
+function openedOn(exercise) {
+  const pending = exercise.sets.filter((set) => set.status === 'pending');
+  const doses = new Set(pending.map((set) => `${set.plannedRepsMin}-${set.plannedRepsMax}`));
+  assert.equal(doses.size, 1, `${exercise.exerciseName}: ${[...doses]}`);
+  return `${pending.length}x${[...doses][0]} ${prescriptionUnitOf(exercise.trackingMode)}`;
+}
+
+/** The first ready-programme row with this name, on its own day. */
+function catalogRow(name) {
+  for (const template of WORKOUT_TEMPLATES_V1) {
+    for (const session of template.sessions) {
+      const exercise = session.exercises.find((item) => item.exerciseName === name);
+      if (exercise) {
+        return { template: { ...template, sessions: [session] }, exercise };
+      }
+    }
+  }
+  throw new Error(`no catalogue row ${name}`);
+}
+
 module.exports = [
   {
-    name: 'swap hunt 10-07: a lift kept for ever in another unit starts on its own add-sheet default',
+    name: "swap hunt 10-07: a lift kept for ever in another unit takes its own numbers and keeps the slot's sets",
     run() {
       for (const { from, to, unit } of CROSS_UNIT) {
         const kept = keepForEver(from, to);
-        const expected = addSheetDefault(to);
-        assert.deepEqual(
-          [kept.targetSets, kept.repMin, kept.repMax],
-          [expected.targetSets, expected.repMin, expected.repMax],
-          `${from.name} -> ${to}`,
-        );
-        // The rest is the slot's.
+        // The slot's set count and rest stay.
+        assert.equal(kept.targetSets, from.targetSets, `${from.name} -> ${to}`);
         assert.equal(kept.restSeconds, 75);
-        // And the session reads those numbers in the incoming lift's unit.
+        // And the session reads the numbers in the incoming lift's unit.
         const started = runtimeOf([kept]).sessions[0].exercises[0];
         assert.equal(prescriptionUnitOf(started.trackingMode), unit, `${from.name} -> ${to}`);
       }
@@ -117,21 +155,88 @@ module.exports = [
           const kept = keepForEver(from, to);
           return `${kept.targetSets}x${kept.repMin}-${kept.repMax}`;
         }),
-        ['3x12-15', '3x30-45', '1x8-12'],
+        ['3x12-12', '3x45-45', '3x5-5'],
       );
 
       // Within a unit nothing moves: a squat kept as a leg press is 3 × 8.
       const press = keepForEver(storedRow('Barbell Full Squat', 3, 8, 8, null), 'Leg Press');
       assert.deepEqual([press.targetSets, press.repMin, press.repMax], [3, 8, 8]);
-      // A superset counts in rounds, so the block's set count stays.
-      const paired = keepForEver(storedRow('Barbell Full Squat', 4, 8, 8, null, { supersetGroup: 'g1' }), 'Bicycling, Stationary');
+      // A 4-set plank and a 2-set slot keep their counts across units too,
+      // and so does a superset's round count.
+      assert.equal(keepForEver(storedRow('Plank', 4, 20, 40, 'hold'), 'Dead Bug').targetSets, 4);
+      assert.equal(keepForEver(storedRow('Mountain Climbers', 2, 40, 40, null), 'Plank').targetSets, 2);
+      const paired = keepForEver(
+        storedRow('Barbell Full Squat', 4, 8, 8, null, { supersetGroup: 'g1' }),
+        'Bicycling, Stationary',
+      );
       assert.equal(paired.targetSets, 4);
-      assert.deepEqual([paired.repMin, paired.repMax], [8, 12]);
     },
   },
   {
-    name: 'swap hunt 10-07: "Just this time" and "For ever" give one prescription for the same pick',
+    name: 'swap hunt 10-07: the player, "Just this time", "For ever" and the day row give one dose for one pick',
     run() {
+      const cases = [
+        ['Back Squat', 'Plank', '3x45-45 seconds'],
+        ['Back Squat', 'Bicycling, Stationary', '3x5-5 minutes'],
+        ['Plank', 'Dead Bug', '4x12-12 reps'],
+        ['Mountain Climbers', 'Plank', '2x45-45 seconds'],
+        ['Back Squat', 'Leg Press', '3x8-8 reps'],
+      ];
+      for (const [from, to, expected] of cases) {
+        const { template, exercise } = catalogRow(from);
+        const label = `${from} -> ${to}`;
+
+        // The player's own swap, mid-session.
+        const running = startWorkout(template);
+        const player = playerSlot(
+          workoutReducer(running, {
+            type: 'exercise/swap',
+            payload: {
+              slotId: playerSlot(running, exercise.slotId).slotId,
+              exerciseName: to,
+              substitutionGroup: exercise.substitutionGroup,
+              unitPreference: 'kg',
+            },
+          }),
+          exercise.slotId,
+        );
+        assert.equal(player.exerciseName, to, label);
+        assert.equal(openedOn(player), expected, label);
+
+        // Home's or the day's "Just this time", applied at the start.
+        const held = playerSlot(
+          startWorkout(applySessionAdaptation(template, withSessionSwap(EMPTY_SESSION_ADAPTATION, exercise.slotId, to))),
+          exercise.slotId,
+        );
+        assert.equal(openedOn(held), expected, label);
+        assert.equal(held.trackingMode, player.trackingMode, label);
+
+        // "For ever" on a ready programme: its copy takes the catalogue row
+        // through doseAfterSwap (asserted on the source below), and Home's
+        // row prints the same call on the same numbers.
+        const copied = doseAfterSwap(
+          { trackingMode: exercise.trackingMode, sets: exercise.sets, repsMin: exercise.repsMin, repsMax: exercise.repsMax },
+          to,
+        );
+        assert.equal(
+          `${copied.sets}x${copied.repsMin}-${copied.repsMax} ${prescriptionUnitOf(copied.trackingMode)}`,
+          expected,
+          label,
+        );
+
+        // The programme day's row before the start.
+        const row = buildCustomProgramDetail(template).sessions[0].exercises.find(
+          (item) => item.slotId === exercise.slotId,
+        );
+        const [first] = player.sets;
+        const range =
+          first.plannedRepsMin === first.plannedRepsMax
+            ? `${first.plannedRepsMin}`
+            : `${first.plannedRepsMin}–${first.plannedRepsMax}`;
+        const suffix = player.trackingMode === 'hold' ? ' s' : player.trackingMode === 'duration_minutes' ? ' min' : '';
+        assert.equal(exerciseAfterSessionSwap(row, to).prescription, `${row.sets} × ${range}${suffix}`, label);
+      }
+
       // A custom programme: the held swap applied at the start, against the
       // row kept for ever and started.
       for (const { from, to } of CROSS_UNIT) {
@@ -147,31 +252,8 @@ module.exports = [
         );
       }
 
-      // A ready programme: its copy takes the catalogue row through the same
-      // rule (doseAfterSwap), so the held swap and the copy agree too.
-      const template = WORKOUT_TEMPLATES_V1.find((item) =>
-        item.sessions.some((session) => session.exercises.some((exercise) => exercise.exerciseName === 'Back Squat')),
-      );
-      const session = template.sessions.find((item) => item.exercises.some((exercise) => exercise.exerciseName === 'Back Squat'));
-      const squat = session.exercises.find((exercise) => exercise.exerciseName === 'Back Squat');
-      for (const to of ['Plank', 'Bicycling, Stationary', 'Leg Press']) {
-        const today = applySessionAdaptation(
-          { ...template, sessions: [session] },
-          withSessionSwap(EMPTY_SESSION_ADAPTATION, squat.slotId, to),
-        ).sessions[0].exercises.find((exercise) => exercise.slotId === squat.slotId);
-        const copied = doseAfterSwap(
-          { trackingMode: squat.trackingMode, sets: squat.sets, repsMin: squat.repsMin, repsMax: squat.repsMax, supersetGroup: squat.supersetGroup ?? null },
-          to,
-        );
-        assert.deepEqual([today.sets, today.repsMin, today.repsMax, today.trackingMode], [copied.sets, copied.repsMin, copied.repsMax, copied.trackingMode], to);
-      }
-      const plank = applySessionAdaptation({ ...template, sessions: [session] }, withSessionSwap(EMPTY_SESSION_ADAPTATION, squat.slotId, 'Plank'))
-        .sessions[0].exercises.find((exercise) => exercise.slotId === squat.slotId);
-      assert.equal(plank.trackingMode, 'hold');
-      assert.ok(plank.repsMin >= 20, `${plank.repsMin}-${plank.repsMax} s`);
-
-      // And the ready copy is built that way: the swapped row's sets and
-      // numbers come from doseAfterSwap, not the catalogue row.
+      // And the ready copy is built that way: the swapped row's numbers come
+      // from doseAfterSwap, not the catalogue row.
       const edit = read('src/app/useProgramExerciseEdit.tsx');
       const copy = edit.slice(edit.indexOf('const draft = buildDuplicatedCustomProgramDraft('));
       assert.match(copy, /const swapped =\s*target && edit\.kind === 'replace'\s*\?\s*doseAfterSwap\(\s*\{\s*trackingMode: exercise\.trackingMode,\s*sets: exercise\.sets,\s*repsMin: exercise\.repsMin,\s*repsMax: exercise\.repsMax,/);
@@ -199,30 +281,30 @@ module.exports = [
         const range = started.repsMin === started.repsMax ? `${started.repsMin}` : `${started.repsMin}–${started.repsMax}`;
         const suffix = started.trackingMode === 'hold' ? ' s' : started.trackingMode === 'duration_minutes' ? ' min' : '';
         assert.equal(shown.prescription, `${started.sets} × ${range}${suffix}`, to);
-        assert.equal(shown.sets, started.sets, to);
+        assert.equal(started.sets, squat.sets, to);
         assert.notEqual(shown.prescription, squat.prescription, to);
       }
       // No swap, no change.
-      assert.deepEqual(exerciseAfterSessionSwap(squat, undefined), { sets: squat.sets, prescription: squat.prescription });
+      assert.deepEqual(exerciseAfterSessionSwap(squat, undefined), { prescription: squat.prescription });
       // A plank (seconds) swapped for a dead bug reads repetitions.
       const plankDay = buildCustomProgramDetail(WORKOUT_TEMPLATES_V1.find((item) => item.id === 'tpl_2_day_minimal_full_body_v1'));
       const plank = plankDay.sessions.flatMap((session) => session.exercises).find((exercise) => exercise.name === 'Plank');
       assert.equal(plank.prescription, '4 × 20–40 s');
       assert.doesNotMatch(exerciseAfterSessionSwap(plank, 'Dead Bug').prescription, / s$/);
 
-      // Home's row and its set count, and the day page's chips and count,
-      // print the swapped dose.
+      // Home's row and the day page's chips print the swapped dose; the set
+      // counts are the programme's, as a swap keeps them.
       const home = read('src/screens/HomeScreen.tsx');
       assert.match(home, /const swappedDose = swappedName && exercise\.dose \? doseAfterSwap\(exercise\.dose, swappedName\) : null;/);
       assert.match(home, /\{dropped \? t\(language, 'home\.swapSheet\.droppedToday'\) : rowScheme\}/);
-      assert.match(home, /swappedName && exercise\.dose \? doseAfterSwap\(exercise\.dose, swappedName\)\.sets : exercise\.targetSets \?\? 0/);
+      assert.match(home, /plannedExercises\.reduce\(\(sum, exercise\) => sum \+ \(exercise\.targetSets \?\? 0\), 0\)/);
       const plan = read('src/app/useHomeActivePlan.ts');
       assert.match(plan, /dose: \{\s*trackingMode: activeRuntimeExercises\.get\(exercise\.id\)\?\.trackingMode \?\? 'reps_first',\s*sets: exercise\.targetSets,\s*repsMin: exercise\.repMin,\s*repsMax: exercise\.repMax,/);
       const dayScreen = read('src/screens/ProgramDayScreen.tsx');
       assert.match(dayScreen, /const shownDose = exerciseAfterSessionSwap\(exercise, exercise\.slotId \? sessionSwaps\[exercise\.slotId\] : null\);/);
       assert.equal((dayScreen.match(/\{shownDose\.prescription\}/g) ?? []).length, 2);
       assert.doesNotMatch(dayScreen, /\{exercise\.prescription\}/);
-      assert.match(dayScreen, /sum \+ exerciseAfterSessionSwap\(exercise, exercise\.slotId \? sessionSwaps\[exercise\.slotId\] : null\)\.sets/);
+      assert.match(dayScreen, /count=\{`\$\{session\.totalSets\} \$\{t\(language, 'detail\.day\.sets'\)/);
     },
   },
   {

@@ -682,17 +682,9 @@ export function HomeScreen({
     (exercise) => !(exercise.slotId && sessionDrops.includes(exercise.slotId)),
   );
   const totalExerciseCount = plannedExercises.length;
-  // A lift swapped in across units starts on its own set count (a bike is one
-  // bout), and the header counts what will be done.
   const totalSets =
     nextPlanSession && nextPlanSession.exercises.every((exercise) => typeof exercise.targetSets === 'number')
-      ? plannedExercises.reduce((sum, exercise) => {
-          const swappedName = exercise.slotId ? sessionSwaps[exercise.slotId] : undefined;
-          return (
-            sum +
-            (swappedName && exercise.dose ? doseAfterSwap(exercise.dose, swappedName).sets : exercise.targetSets ?? 0)
-          );
-        }, 0)
+      ? plannedExercises.reduce((sum, exercise) => sum + (exercise.targetSets ?? 0), 0)
       : nextPlanSession?.totalSets ?? 0;
   // The greeting line and the rule above it are gone (user 2026-08-25): the
   // header is the wordmark, the PRO pill and the date. The greeting rotation
@@ -1589,9 +1581,9 @@ export function HomeScreen({
               {(workoutListOpen ? nextPlanSession.exercises : []).map((exercise, index) => {
                 const swappedName = exercise.slotId ? sessionSwaps[exercise.slotId] : undefined;
                 // The dose the session will open on: the programme's numbers
-                // while the unit holds, the swapped lift's own default when
-                // it does not — a squat at 3 × 8 swapped for a plank starts
-                // on seconds, and the row says so (lib/swapDose).
+                // while the unit holds, the swapped lift's own in its unit
+                // when it does not — a squat at 3 × 8 swapped for a plank
+                // starts on seconds, and the row says so (lib/swapDose).
                 const swappedDose = swappedName && exercise.dose ? doseAfterSwap(exercise.dose, swappedName) : null;
                 const rowScheme = swappedDose
                   ? formatSetScheme(swappedDose.sets, swappedDose.repsMin, swappedDose.repsMax, swappedDose.trackingMode)

@@ -141,7 +141,7 @@ export interface HomeDaySessionSummary {
      * a row swapped for today can print the swapped lift's dose rather than
      * the programme's (lib/swapDose).
      */
-    dose?: SlotDose & { supersetGroup: string | null };
+    dose?: SlotDose;
   }>;
 }
 

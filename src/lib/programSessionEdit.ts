@@ -326,15 +326,14 @@ export function applyProgramSessionEdit(
           // are the prescription, and a swap is a different way to train it,
           // not a different dose. Across units the numbers mean nothing — a
           // 45-second plank kept as crunches asked for 45 crunches — and the
-          // incoming lift starts on its own default, the same one today's
-          // swap starts on (lib/swapDose). Rest stays the slot's.
+          // reps take the incoming lift's own, as today's swap and the
+          // player's do (lib/swapDose). Sets and rest stay the slot's.
           const dose = doseAfterSwap(
             {
               trackingMode: storedTrackingMode(exercise),
               sets: exercise.targetSets,
               repsMin: exercise.repMin,
               repsMax: exercise.repMax,
-              supersetGroup: exercise.supersetGroup ?? null,
             },
             edit.exerciseName,
           );
@@ -349,7 +348,6 @@ export function applyProgramSessionEdit(
             ...toDraftExercise(exercise),
             id: makeExerciseId(),
             name: edit.exerciseName,
-            targetSets: dose.sets,
             repMin: dose.repsMin,
             repMax: dose.repsMax,
             libraryItemId: edit.libraryItemId,

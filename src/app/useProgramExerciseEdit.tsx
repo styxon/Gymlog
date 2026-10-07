@@ -419,8 +419,8 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
             const name =
               target && edit.kind === 'replace' ? edit.exerciseName : exercise.exerciseName;
             // The catalog's dose unless this row is the one being re-dosed,
-            // or a lift swapped in across units, which starts on its own
-            // default as the custom path's swap does (lib/swapDose).
+            // or a lift swapped in across units, whose reps are its own as
+            // the custom path's swap makes them (lib/swapDose).
             // Rest rides along on the same rule the custom path uses
             // (applyProgramSessionEdit): a number overrides, null leaves the
             // catalog's own value alone.
@@ -432,7 +432,6 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
                       sets: exercise.sets,
                       repsMin: exercise.repsMin,
                       repsMax: exercise.repsMax,
-                      supersetGroup: exercise.supersetGroup ?? null,
                     },
                     edit.exerciseName,
                   )

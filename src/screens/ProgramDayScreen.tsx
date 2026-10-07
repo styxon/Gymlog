@@ -1079,13 +1079,7 @@ export function ProgramDayScreen({
           styles={styles}
           theme={theme}
           title={t(language, 'detail.day.exercises')}
-          // Counted as the rows print them: a lift swapped in across units
-          // brings its own set count.
-          count={`${session.exercises.reduce(
-            (sum, exercise) =>
-              sum + exerciseAfterSessionSwap(exercise, exercise.slotId ? sessionSwaps[exercise.slotId] : null).sets,
-            0,
-          )} ${t(language, 'detail.day.sets').toLowerCase()}`}
+          count={`${session.totalSets} ${t(language, 'detail.day.sets').toLowerCase()}`}
           open={openSections.exercises}
           onToggle={() => setOpenSections((current) => ({ ...current, exercises: !current.exercises }))}
         >
