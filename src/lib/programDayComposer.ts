@@ -1,14 +1,12 @@
-import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { DEFAULT_MINUTES_PRESCRIPTION } from './minutesExercises';
+import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
 import { applyCautionFlagsToExercises, CautionExerciseSwap } from './cautionExerciseFilter';
 import { applyEquipmentToExercises, isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
-import { FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
+import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
-import { collapseRepRange } from './singleRepTarget';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type { SetupFocusArea, SetupWeekday } from '../types/models';
@@ -84,15 +82,15 @@ export function buildComposedFallbackExercise(
   exerciseIndex: number,
 ): WorkoutTemplateExercise {
   const role = exerciseIndex === 0 ? 'primary' : exerciseIndex < 3 ? 'secondary' : 'accessory';
-  // One rep number, decided by the loader's own rule — a plank's 20–40 is
-  // seconds and stays a bracket. See buildEmphasisExercise for what a range
-  // written here did to the saved programme.
-  const plank = name.toLowerCase().includes('plank');
-  const reps = collapseRepRange({ name, repMin: plank ? 20 : 10, repMax: plank ? 40 : 15 });
   const trackingMode = getFallbackTrackingMode(name);
-  // A trail run or a recumbent bike is one bout of minutes. Its numbers were
-  // a lift's — three sets of twelve "reps" of trail running, with a rest.
-  const minutes = isMinutesTrackingMode(trackingMode);
+  // Dosed in the slot's own unit (composedSlotDose): a trail run or a
+  // recumbent bike is one bout of minutes, not three sets of twelve "reps"
+  // with a rest, and a stretch is held for seconds a stretch is held for.
+  const dose = composedSlotDose(name, trackingMode, {
+    sets: exerciseIndex === 0 ? 3 : 2,
+    restSecondsMin: exerciseIndex === 0 ? 75 : 45,
+    restSecondsMax: exerciseIndex === 0 ? 120 : 75,
+  });
 
   return {
     id: `${sessionId}_exercise_${exerciseIndex + 1}`,
@@ -101,11 +99,7 @@ export function buildComposedFallbackExercise(
     role,
     progressionPriority: exerciseIndex === 0 ? 'high' : exerciseIndex < 3 ? 'medium' : 'low',
     trackingMode,
-    sets: minutes ? DEFAULT_MINUTES_PRESCRIPTION.sets : exerciseIndex === 0 ? 3 : 2,
-    repsMin: minutes ? DEFAULT_MINUTES_PRESCRIPTION.minutes : reps.repMin,
-    repsMax: minutes ? DEFAULT_MINUTES_PRESCRIPTION.minutes : reps.repMax,
-    restSecondsMin: minutes ? 0 : exerciseIndex === 0 ? 75 : 45,
-    restSecondsMax: minutes ? 0 : exerciseIndex === 0 ? 120 : 75,
+    ...dose,
     substitutionGroup: resolveSubstitutionGroup(name, role, exerciseIndex),
   };
 }

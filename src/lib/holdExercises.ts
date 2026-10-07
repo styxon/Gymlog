@@ -162,3 +162,10 @@ export function isHoldExerciseName(name: string): boolean {
 
 /** The names this module claims, exposed so a test can check the catalog agrees. */
 export const HOLD_EXERCISE_NAME_LIST: readonly string[] = HOLD_EXERCISE_NAMES;
+
+/**
+ * What a hold is prescribed at when nothing else says: 30–45 s, what the ready
+ * programmes prescribe most often for a hold. Used where a slot is built from
+ * a name alone — a reps default there asked for a 10–15 s stretch.
+ */
+export const DEFAULT_HOLD_SECONDS = { min: 30, max: 45 } as const;
