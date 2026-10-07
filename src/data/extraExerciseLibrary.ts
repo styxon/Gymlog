@@ -1512,4 +1512,22 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       'Walk back to the start and recover fully before the next stride.',
     ],
   },
+  {
+    // The careful-shoulders swap for an overhead press. It named this lift,
+    // and the library had no row for it: no steps, and nothing for the
+    // equipment check to read (bug hunt, 2026-10-07).
+    id: 'extra_landmine_press',
+    name: 'Landmine Press',
+    category: 'compound',
+    bodyPart: 'shoulders',
+    equipment: 'barbell',
+    sourceCategory: 'strength',
+    primaryMuscles: ['shoulders'],
+    secondaryMuscles: ['chest', 'triceps'],
+    instructions: [
+      'Set one end of a barbell in a landmine attachment or a corner and load the other end. Stand facing it and hold the loaded end at your shoulder in one hand.',
+      'Brace your trunk and press the bar up and forward until the arm is straight. The bar moves on an arc in front of you, so the shoulder never has to reach straight overhead.',
+      'Lower it back to the shoulder under control. Finish the set, then switch hands.',
+    ],
+  },
 ];

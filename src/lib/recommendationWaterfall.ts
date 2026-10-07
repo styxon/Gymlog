@@ -1,4 +1,4 @@
-import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
+import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
 import type { I18nKey } from './i18n';
 import type {
@@ -163,7 +163,13 @@ function decision(
 }
 
 export function selectWaterfallDecision(input: RecommendationInput): RecommendationWaterfallDecision {
-  const programs = RECOMMENDATION_PROGRAMS;
+  // A stretching-only week is an answer only for a reader who asked for one.
+  // Step 9 let the mobility flow win "Lose weight" at five gym days on day
+  // count alone, and step 1 gave it to a bands-only home reader for using the
+  // band (bug hunt, 2026-10-07).
+  const programs = readerAskedForRecovery(input)
+    ? RECOMMENDATION_PROGRAMS
+    : RECOMMENDATION_PROGRAMS.filter((definition) => !isRecoveryOnlyProgram(definition));
 
   // 1. Equipment overrides everything: a home or minimal reader gets what their
   // own chips can run — the low-equipment shelf, and a gym programme only when

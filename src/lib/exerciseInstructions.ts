@@ -179,6 +179,11 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nosta lantio ylös, kunnes vartalo on suora linja päästä jalkoihin (tai polviin), ja pidä se siinä painumatta alas tai kiertymättä eteen.',
     'Hengitä tasaisesti ja pidä asento ohjelman ajan, laske sitten lantio alas, käänny ja tee sama toisella puolella.',
   ],
+  'Landmine Press': [
+    'Aseta levytangon toinen pää landmine-telineeseen tai nurkkaan ja lisää painot toiseen päähän. Seiso tankoa kohti ja pidä painotettua päätä yhdellä kädellä olkapään edessä.',
+    'Jännitä keskivartalo ja punnerra tanko ylös ja eteen, kunnes käsi on suora. Tanko kulkee kaarella edessäsi, joten olkapään ei tarvitse ojentua suoraan pään yli.',
+    'Laske tanko hallitusti takaisin olkapäälle. Tee sarja loppuun ja vaihda kättä.',
+  ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
     'Säädä istuin niin, että sääret ovat pystysuorassa liikkeen yläasennossa, ja työnnä kantapäillä lantio ylös.',

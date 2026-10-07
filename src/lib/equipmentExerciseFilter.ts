@@ -53,6 +53,10 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'box squat', requires: [BARBELL, ['Squat rack']] },
   { pattern: 'bench press', requires: [BARBELL, ['Bench']] },
   { pattern: 'barbell', requires: [BARBELL] },
+  // A barbell with one end in a corner. With no rule the careful-shoulders
+  // swap handed Landmine Press to a reader whose only gear was dumbbells
+  // (bug hunt, 2026-10-07).
+  { pattern: 'landmine', requires: [BARBELL] },
   // The band skull crusher is done with the band alone (the band rule below).
   { pattern: 'skull crusher', unless: ['band skull crusher'], requires: [[...BARBELL, 'Dumbbells']] },
   { pattern: 'overhead press', requires: [[...BARBELL, 'Dumbbells']] },

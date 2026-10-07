@@ -1,9 +1,15 @@
 import { rankProgramIdsByTailoring, TailoringPreferencesInput } from './tailoringFit';
-import { RECOMMENDATION_PROGRAMS, getRecommendationProgramDefinition } from './recommendationCatalog';
+import {
+  RECOMMENDATION_PROGRAMS,
+  getRecommendationProgramDefinition,
+  isRecoveryOnlyProgram,
+  readerAskedForRecovery,
+} from './recommendationCatalog';
 import { selectWaterfallDecision } from './recommendationWaterfall';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
+import type { I18nKey } from './i18n';
 import type {
   RecommendationCandidate,
   RecommendationConfidence,
@@ -377,6 +383,13 @@ function goalTier(definition: RecommendationProgramDefinition, input: Recommenda
   return definition.supportedGoals.includes(input.goal) ? 2 : definition.backupGoals.includes(input.goal) ? 1 : 0;
 }
 
+/** The waterfall's home reason for a programme, chosen as step 1 chooses it. */
+function homeEquipmentReason(programId: string): I18nKey {
+  return getRecommendationProgramDefinition(programId)?.equipmentTier !== 'low_equipment'
+    ? 'wf.home_gear.primary'
+    : 'wf.home_equipment.primary';
+}
+
 function selectAlternativeCandidates(candidates: RecommendationCandidate[], input: RecommendationInput) {
   const [featuredCandidate, ...otherCandidates] = candidates;
   if (!featuredCandidate) {
@@ -422,10 +435,23 @@ function genderAllows(definition: RecommendationProgramDefinition, input: Recomm
   return definition.targetGender === 'unisex' || definition.targetGender === input.gender;
 }
 
-/** The candidates a reader at this level should see first, in score order. */
+/**
+ * The candidates a reader at this level should see first, in score order.
+ *
+ * Within each level, a stretching-only week goes after the rest unless the
+ * reader asked for one (readerAskedForRecovery). When the waterfall's pick is
+ * not among the candidates the score alone chooses, and a gym member with only
+ * dumbbells ticked who asked for general fitness at five days was handed the
+ * five-day mobility flow (bug hunt, 2026-10-07).
+ */
 function levelFirst(candidates: RecommendationCandidate[], input: RecommendationInput) {
-  const fits = (candidate: RecommendationCandidate) => fitsLevel(candidate, input);
-  return [...candidates.filter(fits), ...candidates.filter((candidate) => !fits(candidate))];
+  const askedForRecovery = readerAskedForRecovery(input);
+  const rank = (candidate: RecommendationCandidate) => {
+    const definition = getRecommendationProgramDefinition(candidate.programId);
+    const recoveryOnly = !askedForRecovery && definition !== null && isRecoveryOnlyProgram(definition);
+    return (fitsLevel(candidate, input) ? 0 : 2) + (recoveryOnly ? 1 : 0);
+  };
+  return [0, 1, 2, 3].flatMap((tier) => candidates.filter((candidate) => rank(candidate) === tier));
 }
 
 export function recommendPrograms(
@@ -475,13 +501,26 @@ export function recommendPrograms(
       // Runner's Strength (general fitness as a backup) was swapped for RUN
       // (general fitness nowhere) — bug hunt, 2026-10-05, B3. A swap may keep
       // or raise how well the pick serves the goal, never lower it.
+      //
+      // The gear the same way. Away from a gym the tailoring order puts the
+      // low-equipment variant first, and a home reader with a barbell, a rack
+      // and dumbbells had SHRED, the waterfall's pick, swapped for RUN, which
+      // uses none of it, under "built around the gear you said you have at
+      // home" (bug hunt, 2026-10-07). A swap keeps or raises how much of the
+      // reader's gear the week uses, and does not leave their load unused
+      // where the pick did not.
       return Boolean(
         definition
         && primaryDefinition
         && definition.familyId === primaryDefinition.familyId
         && definition.daysPerWeek === primaryDefinition.daysPerWeek
         && goalTier(definition, input) >= goalTier(primaryDefinition, input)
-        && (definition.supportedLevels.includes(input.level) || !primaryDefinition.supportedLevels.includes(input.level)),
+        && (definition.supportedLevels.includes(input.level) || !primaryDefinition.supportedLevels.includes(input.level))
+        && (input.equipment === 'gym'
+          || programGearUse(definition.programId, input.availableEquipment)
+            >= programGearUse(primaryDefinition.programId, input.availableEquipment))
+        && (!ignoringLoad.has(definition.programId) || ignoringLoad.has(primaryDefinition.programId))
+        && (!isRecoveryOnlyProgram(definition) || isRecoveryOnlyProgram(primaryDefinition)),
       );
     });
     // The variant written for the goal first, then the tailoring's order.
@@ -507,7 +546,8 @@ export function recommendPrograms(
   // advanced, four days put powerbuilding first and second, and the reader
   // saw one card where there were two (review, 2026-10-07). The two trade
   // places then. The reasons stay: they speak of the cell ("built around your
-  // gear", "a different rhythm with the same gear"), which both share.
+  // gear", "a different rhythm with the same gear"), which both share; only
+  // the home reason follows the tier of the programme it is printed over.
   const promotedSecond = Boolean(waterfallSecond && waterfallSecond === waterfallPrimary && waterfallPick !== waterfallPrimary);
   const waterfallAlternativeCandidate = promotedSecond ? waterfallPick : waterfallSecond;
   // The waterfall's second card answers to the same level gate as the rest
@@ -526,6 +566,11 @@ export function recommendPrograms(
         ...waterfallDecision,
         primaryProgramId: waterfallPrimary.programId,
         ...(promotedSecond && waterfallPick ? { alternativeProgramId: waterfallPick.programId } : {}),
+        // The home reason names the tier ("built around your gear", "nothing
+        // in it needs a gym"), so it follows a swap that changed the tier.
+        ...(waterfallDecision.rule === 'home_equipment' && waterfallPrimary !== waterfallPick
+          ? { whyPrimary: homeEquipmentReason(waterfallPrimary.programId) }
+          : {}),
         // The Programs tab's row reads the second card from here, so a card
         // the level gate dropped leaves this too, with its reason.
         ...(waterfallAlternativeCandidate && !waterfallAlternative
