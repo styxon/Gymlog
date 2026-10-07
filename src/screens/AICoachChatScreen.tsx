@@ -718,20 +718,24 @@ export function AICoachChatScreen({
             // limit, and a card with a button to look, were two steps between
             // "Build the week" and the week (user, 2026-10-07). The card stays
             // in the thread, so Back shows where the build led.
-            setMessages((current) =>
-              current.map((message) =>
-                message.id === messageId
-                  ? {
-                      id: `${messageId}:catalog`,
-                      fromCoach: true,
-                      text: t(language, 'coachChat.compose.catalogLead', {
-                        asked: signals.requestedDaysPerWeek ?? match.daysPerWeek,
-                      }),
-                      catalog: { programId: match.programId, title, daysPerWeek: match.daysPerWeek },
-                    }
-                  : message,
-              ),
+            const next = messagesRef.current.map((message) =>
+              message.id === messageId
+                ? {
+                    id: `${messageId}:catalog`,
+                    fromCoach: true,
+                    text: t(language, 'coachChat.compose.catalogLead', {
+                      asked: signals.requestedDaysPerWeek ?? match.daysPerWeek,
+                    }),
+                    catalog: { programId: match.programId, title, daysPerWeek: match.daysPerWeek },
+                  }
+                : message,
             );
+            setMessages(next);
+            // Published here rather than by the effect that watches the
+            // thread: opening the programme unmounts this screen in the same
+            // commit, so that effect never sees the card, and Back restored
+            // the build offer it replaced (CI review, 2026-10-07).
+            onMemoryChange({ lastActiveAt: new Date().toISOString(), messages: next, turns: conversation.current });
             onOpenProgramme(match.programId);
             return;
           }
@@ -849,6 +853,7 @@ export function AICoachChatScreen({
       onComposeProgramme,
       onEnableWeighInReminder,
       onLogMeasurement,
+      onMemoryChange,
       onOpenMeasure,
       onOpenProgramme,
       onPinStatCard,

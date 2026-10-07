@@ -349,6 +349,10 @@ module.exports = [
       const branch = screen.slice(screen.indexOf('if (match && title) {'));
       const opened = branch.indexOf('onOpenProgramme(match.programId);');
       assert.ok(opened !== -1 && opened < branch.indexOf('return;'), 'the programme opens before the branch returns');
+      // The card is published before the screen goes: the effect that keeps
+      // the thread never runs once opening the programme has unmounted it.
+      const published = branch.indexOf('onMemoryChange({ lastActiveAt: new Date().toISOString(), messages: next,');
+      assert.ok(published !== -1 && published < opened, 'the thread with the card is kept before navigating');
     },
   },
 ];
