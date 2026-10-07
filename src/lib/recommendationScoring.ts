@@ -198,6 +198,7 @@ function scoreContentFit(definition: RecommendationProgramDefinition, input: Rec
   const fit = evaluateWorkoutContentFit(definition.programId, {
     goalType: input.profile.goalType,
     setupContext: input.profile.setupContext,
+    availableEquipment: input.availableEquipment ?? null,
   });
 
   if (fit.issues.length > 0) {

@@ -65,6 +65,14 @@ const CRISIS_PHRASES = [
   'haluun kuolla',
   'haluisin kuolla',
   'haluaisin vain kuolla',
+  // The word orders and the other verb (review, 2026-10-07): "enää" moves,
+  // and "tahtoa" says what "haluta" does.
+  'en enää halua elää',
+  'en enää haluu elää',
+  'en enää jaksa elää',
+  'en tahdo elää',
+  'en tahdo enää elää',
+  'en enää tahdo elää',
   // English
   'suicide',
   'suicidal',
@@ -88,6 +96,18 @@ const CRISIS_PHRASES = [
   'do not want to live',
   "don't want to live",
   'dont want to live',
+  // Review, 2026-10-07. Not "want to end it": that is also how a reader
+  // closes a session with a finisher. Not a bare "take my life" either: "this
+  // programme will take my life back" is a training sentence.
+  'do not wanna live',
+  "don't wanna live",
+  'dont wanna live',
+  'want to take my life',
+  'wanna take my life',
+  'going to take my life',
+  'gonna take my life',
+  'want to be dead',
+  'wanna be dead',
   'self-harm',
   'self harm',
   'cut myself',

@@ -4,6 +4,7 @@ const {
   buildProgrammeDraft,
   composeProgrammePreview,
   hasProgrammeBriefOutline,
+  liveProposalOrPreview,
   outlineProgrammeBrief,
   parseProgrammeBrief,
   resolveLiveProposal,
@@ -266,6 +267,25 @@ module.exports = [
       assert.equal(strongman.sessions[0].exercises.length, 3);
       assert.deepEqual(strongman.specialtyLeftOut, []);
 
+      // A brief that refuses them is not a request for them (review 2026-10-07:
+      // "ei erikoisliikkeitä" kept Atlas Stones).
+      for (const refusal of [
+        '3 päivää, ei erikoisliikkeitä',
+        'jalat, en halua strongman-liikkeitä',
+        'legs, no strongman or specialty lifts please',
+        "legs without specialty stuff, and don't add atlas stones",
+        'jalat ilman atlas stonesia',
+      ]) {
+        const refused = resolveLiveProposal(raw, refusal, seeded, 120);
+        assert.deepEqual(refused.specialtyLeftOut, ['Atlas Stones', 'Car Deadlift'], refusal);
+      }
+      // A refusal in one clause does not cancel a request in another.
+      const mixed = resolveLiveProposal(raw, 'ei koneita. haluan atlas stones', seeded, 120);
+      assert.deepEqual(mixed.specialtyLeftOut, ['Car Deadlift']);
+      // An emphatic request is still a request.
+      const only = resolveLiveProposal(raw, 'nothing but strongman, 4 days', seeded, 120);
+      assert.deepEqual(only.specialtyLeftOut, []);
+
       // The card says what it left out, and the model is told not to.
       const card = fs.readFileSync(path.join(__dirname, '../../src/components/ProgrammeProposalCard.tsx'), 'utf8');
       assert.match(card, /aiCompose\.specialtyLeftOut/);
@@ -274,6 +294,39 @@ module.exports = [
       assert.match(composer, /No strongman or specialty movements/);
       const coach = server.slice(server.indexOf('const COACH_SYSTEM_RULES'));
       assert.match(coach, /Never suggest a strongman or specialty movement/);
+    },
+  },
+  {
+    // Review 2026-10-07: when nothing in the live answer resolved, the
+    // preview week replaced it and dropped the specialty list the card
+    // promises never to hide.
+    name: 'a live answer with nothing usable falls back to the preview and keeps what it was refused',
+    run() {
+      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const seeded = createSeedExerciseLibrary();
+      const raw = {
+        title: 'Strongman',
+        sessions: [{ name: 'Day 1', exercises: [
+          { name: 'Atlas Stones', sets: 3, repsMin: 3, repsMax: 5 },
+          { name: 'Moon Squat Deluxe', sets: 3, repsMin: 5, repsMax: 5 },
+        ] }],
+      };
+      const brief = '3 päivää, koko keho';
+      const resolved = resolveLiveProposal(raw, brief, seeded, 120);
+      assert.equal(resolved.sessions.length, 0);
+      const preview = composeProgrammePreview(brief, createSeedDatabase().preferences, seeded);
+      const shown = liveProposalOrPreview(resolved, () => preview);
+      assert.equal(shown.source, 'preview');
+      assert.ok(shown.sessions.length > 0);
+      assert.deepEqual(shown.specialtyLeftOut, ['Atlas Stones']);
+      assert.deepEqual(shown.unresolvedNames, ['Moon Squat Deluxe']);
+
+      // A usable answer is itself, untouched.
+      const usable = resolveLiveProposal(
+        { title: 'Legs', sessions: [{ name: 'Day 1', exercises: [{ name: 'Barbell Full Squat', sets: 4, repsMin: 5, repsMax: 5 }] }] },
+        brief, seeded, 120,
+      );
+      assert.equal(liveProposalOrPreview(usable, () => { throw new Error('preview not needed'); }), usable);
     },
   },
 ];

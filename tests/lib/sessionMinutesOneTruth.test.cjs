@@ -11,6 +11,7 @@ const {
   getReadyProgramTimeBucket,
 } = require('../../.test-dist/lib/workoutDiscovery.js');
 const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
+const { evaluateWorkoutContentFit } = require('../../.test-dist/lib/workoutContentFit.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 
@@ -53,6 +54,14 @@ module.exports = [
           // and filters by it.
           surfaces.plansScreen = buildReadyDiscoveryItem(template, getReadyProgramContent(template.id), options).minutes;
 
+          // The recommender's "over N minutes" signal, costed with the same
+          // gear (review 2026-10-07: it costed the ungeared template).
+          surfaces.contentFit = evaluateWorkoutContentFit(template.id, {
+            goalType: 'fat_loss',
+            setupContext: 'full_gym',
+            availableEquipment: options.availableEquipment,
+          }).signals.averageSessionMinutes;
+
           for (const [surface, value] of Object.entries(surfaces)) {
             const expected = typeof value === 'string' ? `${card} min` : card;
             if (value !== expected) {
@@ -62,6 +71,11 @@ module.exports = [
         }
       }
       assert.deepEqual(disagreements, []);
+
+      // And the recommender hands content-fit the reader's gear, or the
+      // signal is costed ungeared whatever content-fit can do with it.
+      const scoring = fs.readFileSync(path.join(ROOT, 'src', 'lib', 'recommendationScoring.ts'), 'utf8');
+      assert.match(scoring, /evaluateWorkoutContentFit\([^)]*availableEquipment: input\.availableEquipment/);
     },
   },
   {

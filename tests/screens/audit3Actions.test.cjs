@@ -39,11 +39,12 @@ module.exports = [
       const home = strip(read('src', 'app', 'renderHomeScreens.tsx'));
       // An answer that arrived with nothing usable falls back to the
       // deterministic composer, exactly as an answer that never arrived does.
-      assert.match(home, /if \(resolved\.sessions\.length > 0\) \{\s*return resolved;\s*\}/);
       // Carrying the names it could not place: they are the one thing the
       // discarded answer knew that the composer does not, and the card that
       // lists them would otherwise be empty in the very case it exists for.
-      assert.match(home, /unresolvedNames: resolved\.unresolvedNames,/);
+      // The rule lives in lib/programmeBrief (liveProposalOrPreview, tested in
+      // tests/lib/programmeBrief); the screen must go through it.
+      assert.match(home, /return liveProposalOrPreview\(resolved, \(\) => composeProgrammePreview\(/);
       // And nothing with no days is saved, whatever produced it: the provider
       // would fabricate one empty session out of it.
       assert.match(home, /if \(proposal\.sessions\.length === 0\) \{\s*showToast\(t\(preferences\.appLanguage, 'toast\.aiBuildFailed'\)\);\s*return;\s*\}/);

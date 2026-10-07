@@ -177,6 +177,14 @@ module.exports = [
         'I wanna die',
         "I'm going to hang myself",
         'thinking about hanging myself',
+        // Word order, the other verb, "wanna" (review 2026-10-07).
+        'En enää halua elää',
+        'en tahdo enää elää',
+        'en enää jaksa elää',
+        "I don't wanna live anymore",
+        'I do not wanna live',
+        'I want to take my life',
+        'I just want to be dead',
       ]) {
         assert.equal(classifyCoachScope(prompt), 'crisis', JSON.stringify(prompt));
       }
@@ -193,6 +201,10 @@ module.exports = [
         'cut myself on the bar during cleans',
         'polvessa on viiltelevä kipu kyykyssä',
         'viiltelevää kipua olkapäässä penkissä',
+        // Review 2026-10-07: the new phrases must not catch these.
+        'this programme will take my life back after the injury',
+        'I want to end it with a finisher today',
+        'deadlifts make me feel alive, I want to be deadlifting forever',
       ]) {
         assert.equal(classifyCoachScope(prompt), 'training', prompt);
       }
