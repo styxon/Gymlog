@@ -97,6 +97,7 @@ function normalize(value: string) {
   return value.trim().toLowerCase();
 }
 
+const listedHolds = new Set(HOLD_EXERCISE_NAMES.map(normalize));
 const byName = new Set([...HOLD_EXERCISE_NAMES, ...LIBRARY_HOLD_NAMES].map(normalize));
 
 /**
@@ -158,6 +159,17 @@ function isNamedHold(normalized: string): boolean {
 export function isHoldExerciseName(name: string): boolean {
   const normalized = normalize(name);
   return byName.has(normalized) || libraryAliases.has(normalized) || isNamedHold(normalized);
+}
+
+/**
+ * Whether a name is a hold only since 2026-10-05: through the name rule or the
+ * library's own list, not the original list or its library spellings. Before
+ * that day such a row opened a reps dial, so what a programme stored for it
+ * was repetitions (lib/holdSecondsMigration).
+ */
+export function isHoldSinceNameRule(name: string): boolean {
+  const normalized = normalize(name);
+  return isHoldExerciseName(name) && !listedHolds.has(normalized) && !libraryAliases.has(normalized);
 }
 
 /** The names this module claims, exposed so a test can check the catalog agrees. */

@@ -570,6 +570,7 @@ const suites = [
   ...require('./features/workout/workoutLifecycleInvariant2.test.cjs'),
   ...require('./storage/storageLoadInvariant2.test.cjs'),
   ...require('./storage/minutesLegacyPlausible.test.cjs'),
+  ...require('./storage/holdSecondsForOldStretches.test.cjs'),
   ...require('./lib/setCountChanges.test.cjs'),
   ...require('./storage/planEntryLabel.test.cjs'),
   ...require('./storage/corruptCopies.test.cjs'),
