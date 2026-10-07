@@ -190,7 +190,9 @@ module.exports = [
           swaps += 1;
           const shown = getRecommendationProgramDefinition(result.featuredProgramId);
           const why = `${label} ${JSON.stringify(preferences)}: ${pick} -> ${result.featuredProgramId}`;
-          if (programGearUse(result.featuredProgramId, available) < programGearUse(pick, available)) {
+          // Running and mobility asked for a week that leaves the load
+          // unused, so the swap to the running week is not held to the gear.
+          if (goal !== 'run_mobility' && programGearUse(result.featuredProgramId, available) < programGearUse(pick, available)) {
             offenders.push(`${why} uses less gear`);
           }
           // The home reason names the tier of the programme it is printed over.
@@ -213,6 +215,18 @@ module.exports = [
       );
       assert.equal(result.featuredProgramId, 'tpl_shred_v1');
       assert.equal(result.waterfall.whyPrimary, 'wf.home_gear.primary');
+
+      // Running and mobility keeps the running week, not a strength week
+      // with no running in it, under the no-gym reason (review, 2026-10-07).
+      const dumbbellsBenchBands = GEAR.find((card) => card.id === 'home[Dumbbells+Bench+Resistance bands]');
+      for (const gender of GENDERS) {
+        const runner = resolveFirstRunRecommendationWithTailoring(
+          selection({ goal: 'run_mobility', level: 'advanced', days: 3, gear: dumbbellsBenchBands, gender }),
+          neutralTailoring(dumbbellsBenchBands),
+        );
+        assert.equal(runner.featuredProgramId, 'tpl_3_day_run_mobility_v1', gender);
+        assert.equal(runner.waterfall.whyPrimary, 'wf.home_equipment.primary', gender);
+      }
     },
   },
   {

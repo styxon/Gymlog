@@ -508,7 +508,9 @@ export function recommendPrograms(
       // uses none of it, under "built around the gear you said you have at
       // home" (bug hunt, 2026-10-07). A swap keeps or raises how much of the
       // reader's gear the week uses, and does not leave their load unused
-      // where the pick did not.
+      // where the pick did not. Not for running and mobility: leaving the load
+      // unused is the ask there (programsIgnoringOwnedLoad), and the swap to
+      // the running week is the one the reader wants.
       return Boolean(
         definition
         && primaryDefinition
@@ -517,6 +519,7 @@ export function recommendPrograms(
         && goalTier(definition, input) >= goalTier(primaryDefinition, input)
         && (definition.supportedLevels.includes(input.level) || !primaryDefinition.supportedLevels.includes(input.level))
         && (input.equipment === 'gym'
+          || input.goal === 'run_mobility'
           || programGearUse(definition.programId, input.availableEquipment)
             >= programGearUse(primaryDefinition.programId, input.availableEquipment))
         && (!ignoringLoad.has(definition.programId) || ignoringLoad.has(primaryDefinition.programId))
