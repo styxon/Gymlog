@@ -12,6 +12,11 @@
  *
  * --live posts to $AI_COACH_API_URL with $AI_COACH_APP_KEY (the endpoint refuses
  * calls without it) and costs real money, one call per case.
+ *
+ *   node scripts/eval-ai-coach.cjs --live --only crisis-,heavy-
+ *
+ * runs the cases whose id starts with one of the prefixes — the crisis set on
+ * its own, after a change to the server's crisis rule.
  */
 const { AI_COACH_EVAL_CASES } = require('../.test-dist/lib/aiCoachEvalCases.js');
 const { scoreCase, scoreRun, formatRunReport } = require('../.test-dist/lib/aiCoachEval.js');
@@ -21,10 +26,26 @@ const live = process.argv.includes('--live');
 const endpoint = process.env.AI_COACH_API_URL;
 
 /**
+ * `--only a,b` or `--only=a,b`. A flag that is there but says nothing stops
+ * the run: ignored, it would spend the whole paid set on a typo.
+ */
+function readOnlyPrefixes(argv) {
+  const at = argv.findIndex((arg) => arg === '--only' || arg.startsWith('--only='));
+  if (at < 0) return [];
+  const value = argv[at].startsWith('--only=') ? argv[at].slice('--only='.length) : argv[at + 1];
+  const prefixes = (value ?? '').split(',').map((prefix) => prefix.trim()).filter(Boolean);
+  if (prefixes.length === 0 || prefixes.some((prefix) => prefix.startsWith('--'))) {
+    throw new Error('--only needs case id prefixes, e.g. --only crisis-,heavy-');
+  }
+  return prefixes;
+}
+
+/**
  * The endpoint allows 12 requests per 10 minutes from one address, and a phone
- * on the same network shares them. A nine-case run fits — until a slow call is
- * retried, and then it does not: the previous run spent thirteen requests on
- * nine cases and stopped on the tenth.
+ * on the same network shares them. The full set (22 cases since the crisis
+ * cases, 2026-10-07) never fits one window, and even a nine-case run did not
+ * once a slow call was retried: thirteen requests on nine cases, stopped on
+ * the tenth.
  *
  * So the runner counts what it spends and waits for the window rather than
  * walking into the wall. One slot is held back for a retry.
@@ -119,9 +140,13 @@ async function answerFor(evalCase, retry = false) {
 }
 
 async function main() {
+  const onlyPrefixes = readOnlyPrefixes(process.argv);
   const results = [];
   const skipped = [];
   for (const evalCase of AI_COACH_EVAL_CASES) {
+    if (onlyPrefixes.length > 0 && !onlyPrefixes.some((prefix) => evalCase.id.startsWith(prefix))) {
+      continue;
+    }
     // The preview is a keyword mock with no branch for a goal or a body
     // measurement. Scoring those cases offline would move the number for
     // reasons that have nothing to do with the prompt.
@@ -131,6 +156,15 @@ async function main() {
     }
     const answer = await answerFor(evalCase);
     results.push(scoreCase(evalCase, answer));
+  }
+
+  // Nothing scored is not a pass. A prefix that matches nothing, or a live-only
+  // set run offline, used to print SCORE 100% (0/0) and exit 0.
+  if (results.length === 0) {
+    throw new Error(
+      `no case was scored${onlyPrefixes.length > 0 ? ` for --only ${onlyPrefixes.join(',')}` : ''}` +
+        (skipped.length > 0 ? ` (${skipped.length} live only — add --live)` : ''),
+    );
   }
 
   const run = scoreRun(results);

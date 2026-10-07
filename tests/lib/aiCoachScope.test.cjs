@@ -234,6 +234,8 @@ module.exports = [
         'en tahdo enää elää',
         'en haluaisi olla enää elossa',
         'en halua olla olemassa',
+        // Found writing the server's crisis eval (2026-10-07).
+        'muuten en jaksaisi enää olla olemassa',
         'en jaksa enää tätä elämää',
         'mä haluun vaan kuolla',
         'tahdon kuolla',
