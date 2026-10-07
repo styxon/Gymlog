@@ -27,6 +27,9 @@ function programmeNames(programId) {
   return getWorkoutTemplateById(programId).sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
 }
 
+/** What "no leg day" keeps out (owner decision, 2026-10-07). */
+const LEG_WORK = ['squat', 'deadlift', 'lunge', 'leg press', 'leg curl', 'leg extension', 'calf'];
+
 /**
  * The bug hunt of 2026-10-07 (findings 16–22): the brief parser read a
  * refusal outside its three-word window as a request, a pain word anywhere in
@@ -35,8 +38,8 @@ function programmeNames(programId) {
  * opened a ready programme holding the very lift the brief kept out.
  *
  * One row per brief. `lifts` is the exact ask; `refused` are lifts that must
- * be on the avoid list; `focus` / `cautions` exact; `goal`, `equipment`,
- * `days` exact when given.
+ * be on the avoid list and `kept` terms that must not; `focus` / `cautions`
+ * exact; `goal`, `equipment`, `days`, `requested` exact when given.
  */
 const TABLE = [
   // Refusals, the long way round (#18).
@@ -148,6 +151,216 @@ const TABLE = [
   { brief: '12 days of rest then 3 days a week', days: 3 },
   // A count with a day unit outranks a bare "2 kertaa" before it.
   { brief: 'Penkkiä 2 kertaa, treeniä 4 päivää viikossa', days: 4 },
+
+  // Re-hunt of 2026-10-07. A refusal about fitness, experience or injuries
+  // reaches no further than the polite ask after "ja" / "and" (R2 #6).
+  { brief: 'En ole kovin hyvässä kunnossa ja haluaisin kyykkyä ja penkkiä', lifts: ['Back Squat', 'Bench Press'], kept: ['back squat', 'bench press'] },
+  { brief: "I'm not very fit and would like squats and bench", lifts: ['Back Squat', 'Bench Press'] },
+  { brief: "I'm not in great shape and would love to do deadlifts", lifts: ['Deadlift'] },
+  { brief: "I don't have much experience and I'd like to do squats", lifts: ['Back Squat'] },
+  { brief: 'En ole treenannut pitkään aikaan ja haluaisin tehdä maastavetoa', lifts: ['Deadlift'] },
+  { brief: 'Ei vammoja ja haluaisin maastavetoa', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: 'No injuries and would like deadlifts', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: "I have no pain and I'd like to deadlift", lifts: ['Deadlift'] },
+  { brief: 'No deadlifts and lots of squats', lifts: ['Back Squat'], refused: ['deadlift'] },
+  { brief: 'Ei maastavetoa ja paljon kyykkyä', lifts: ['Back Squat'], refused: ['deadlift'] },
+  { brief: 'No bench and more squats', lifts: ['Back Squat'], refused: ['bench press'] },
+  { brief: "I don't have a gym and would like to train at home with dumbbells", equipment: 'minimal' },
+  { brief: 'En käy salilla ja treenaan kotona käsipainoilla', equipment: 'minimal' },
+  { brief: "Not much time and I'd like to lose weight", goal: 'fat_loss' },
+  { brief: 'En ehdi paljon ja haluaisin laihtua', goal: 'fat_loss' },
+  { brief: 'En ole koskaan treenannut ja haluaisin lihasta', goal: 'muscle' },
+  { brief: 'En ole kovin notkea ja haluaisin keskittyä jalkoihin', focus: ['legs'] },
+  { brief: "I'd rather not do deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: "I'd prefer no deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: 'En haluaisi maastavetoa', lifts: [], refused: ['deadlift'] },
+  // Two negations that govern the same lift insist on it (R2 #8).
+  { brief: "Don't skip deadlifts", lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: 'Älä jätä maastavetoa pois', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: "Don't leave out squats", lifts: ['Back Squat'] },
+  { brief: 'Do not remove the bench press', lifts: ['Bench Press'] },
+  { brief: 'I never skip squats', lifts: ['Back Squat'] },
+  { brief: "No way I'm skipping deadlifts", lifts: ['Deadlift'] },
+  { brief: "I can't live without squats", lifts: ['Back Squat'] },
+  { brief: "Can't do without bench press", lifts: ['Bench Press'] },
+  { brief: 'Never without squats', lifts: ['Back Squat'] },
+  { brief: 'En voi elää ilman kyykkyä', lifts: ['Back Squat'] },
+  { brief: 'Ilman kyykkyä ei ole ohjelmaa', lifts: ['Back Squat'] },
+  { brief: 'Ei ohjelmaa ilman maastavetoa', lifts: ['Deadlift'] },
+  { brief: 'There is no programme without the bench press', lifts: ['Bench Press'] },
+  { brief: 'Kyykkyä ei saa unohtaa', lifts: ['Back Squat'] },
+  { brief: "Don't forget the deadlifts", lifts: ['Deadlift'] },
+  { brief: 'Deadlifts should not be skipped', lifts: ['Deadlift'] },
+  // …and one negation alone is still a refusal, two coordinated ones both.
+  { brief: 'Ei kyykkyä eikä maastavetoa', lifts: [], refused: ['back squat', 'deadlift'] },
+  { brief: 'No deadlifts and skip squats', lifts: [], refused: ['back squat', 'deadlift'] },
+  // Refusals after or around the lift, and swaps (R2 #9).
+  { brief: 'Deadlifts should not be in the programme', lifts: [], refused: ['deadlift'] },
+  { brief: 'Deadlifts should be excluded', lifts: [], refused: ['deadlift'] },
+  { brief: "Deadlifts aren't my thing", lifts: [], refused: ['deadlift'] },
+  { brief: 'Maastaveto ei kuulu ohjelmaan', lifts: [], refused: ['deadlift'] },
+  { brief: 'Maastaveto ei ole mun juttu', lifts: [], refused: ['deadlift'] },
+  { brief: 'Maastavedosta en välitä', lifts: [], refused: ['deadlift'] },
+  { brief: 'Squats yes, deadlifts no', lifts: ['Back Squat'], refused: ['deadlift'] },
+  { brief: 'Deadlifts no', lifts: [], refused: ['deadlift'] },
+  { brief: 'deadlifts? no thanks', lifts: [], refused: ['deadlift'] },
+  { brief: 'Maastavetoa? Ei kiitos', lifts: [], refused: ['deadlift'] },
+  { brief: 'Drop the deadlifts', lifts: [], refused: ['deadlift'] },
+  { brief: 'Ditch the bench press', lifts: [], refused: ['bench press'] },
+  { brief: 'Cut deadlifts', lifts: [], refused: ['deadlift'], goal: null },
+  { brief: 'Unohda maastaveto', lifts: [], refused: ['deadlift'] },
+  { brief: 'Skippaa maastaveto', lifts: [], refused: ['deadlift'] },
+  { brief: "I wouldn't do deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: 'Instead of squats give me leg press', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Leg press instead of squats', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Rather leg press than squats', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Mieluummin jalkaprässiä kuin kyykkyä', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Replace deadlifts with hip thrusts', lifts: ['Hip Thrust'], refused: ['deadlift'] },
+  { brief: 'Swap bench for push-ups', lifts: ['Pushups'], refused: ['bench press'] },
+  { brief: 'Jalkaprässi kyykyn sijaan', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Kyykyn tilalle jalkaprässi', lifts: ['Leg Press'], refused: ['back squat'] },
+  { brief: 'Penkin sijasta punnerruksia', lifts: ['Pushups'], refused: ['bench press'] },
+  // …and what still asks.
+  { brief: "I wouldn't mind some deadlifts", lifts: ['Deadlift'] },
+  { brief: "I can't wait to start deadlifting", lifts: ['Deadlift'] },
+  { brief: 'Squats no matter what', lifts: ['Back Squat'] },
+  { brief: 'Not just squats, also deadlifts', lifts: ['Back Squat', 'Deadlift'] },
+  { brief: 'Not only bench but also overhead press', lifts: ['Bench Press', 'Overhead Press'] },
+  { brief: 'Ei pelkkää kyykkyä vaan myös maastavetoa', lifts: ['Back Squat', 'Deadlift'] },
+  { brief: "I don't know how to deadlift, teach me", lifts: ['Deadlift'] },
+  { brief: 'Weight loss is not the goal, strength is', goal: 'strength' },
+  // Never done is not refused (owner decision, 2026-10-07).
+  { brief: "I've never squatted before", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'En ole koskaan tehnyt kyykkyä', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'I have never done deadlifts', lifts: ['Deadlift'], kept: ['deadlift'] },
+  // An injury in everyday words is a caution, never a focus (R2 #10).
+  { brief: 'Bad knees', cautions: ['knee'], focus: [] },
+  { brief: 'Huono polvi', cautions: ['knee'], focus: [] },
+  { brief: 'Polvivaiva', cautions: ['knee'], focus: [] },
+  { brief: 'Polvessa vaivaa', cautions: ['knee'], focus: [] },
+  { brief: 'Knee problems', cautions: ['knee'], focus: [] },
+  { brief: 'Ongelmia polven kanssa', cautions: ['knee'], focus: [] },
+  { brief: 'Had knee surgery last year', cautions: ['knee'], focus: [] },
+  { brief: 'Polvi leikattu viime vuonna', cautions: ['knee'], focus: [] },
+  { brief: 'Knee aches', cautions: ['knee'], focus: [] },
+  { brief: 'Polvi oireilee', cautions: ['knee'], focus: [] },
+  { brief: 'I have a bad back', cautions: ['back'], focus: [] },
+  { brief: 'Selkä vaivaa', cautions: ['back'], focus: [] },
+  { brief: 'Selkävaivoja', cautions: ['back'], focus: [] },
+  { brief: 'Olkapää jumissa', cautions: ['shoulder'], focus: [] },
+  { brief: 'Penkki on jumissa, haluan penkkiä', lifts: ['Bench Press'], cautions: [] },
+  { brief: 'Tennis elbow', cautions: ['elbow'], focus: [] },
+  { brief: 'No squats because of my knee', lifts: [], cautions: ['knee'], refused: ['back squat'], focus: [] },
+  { brief: 'Polven takia ei kyykkyä', lifts: [], cautions: ['knee'], refused: ['back squat'], focus: [] },
+  { brief: 'Selän takia ei maastavetoa', lifts: [], cautions: ['back'], refused: ['deadlift'], focus: [] },
+  // A lift named where it hurts is kept out, not asked or ignored.
+  { brief: 'Kyykky sattuu polveen', lifts: [], cautions: ['knee'], refused: ['back squat'], focus: [] },
+  { brief: 'Maastaveto sattuu selkään', lifts: [], cautions: ['back'], refused: ['deadlift'], focus: [] },
+  { brief: 'Bench hurts my shoulder', lifts: [], cautions: ['shoulder'], refused: ['bench press'] },
+  { brief: 'Polvi sattuu, penkki mukaan', lifts: ['Bench Press'], cautions: ['knee'] },
+  // "kipu" inside "penkkipunnerrus" is no pain, "bad at" no injury.
+  { brief: 'Haluan penkkipunnerrusta ja kyykkyä', lifts: ['Back Squat', 'Bench Press'], cautions: [] },
+  { brief: 'Penkkipunnerrus ja rinta painopisteenä', lifts: ['Bench Press'], cautions: [], focus: ['chest'] },
+  { brief: "I'm bad at squats, teach me", lifts: ['Back Squat'], cautions: [] },
+  // Pain scoped past "ja" / "and" / "but" (R2 #11).
+  { brief: 'Polvi kipeä ja haluan rintaa', cautions: ['knee'], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Knee hurts and I want chest focus', cautions: ['knee'], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Polvi kipeä ja rinta painopisteenä', cautions: ['knee'], focus: ['chest'] },
+  { brief: 'No knee pain but my shoulder hurts', cautions: ['shoulder'] },
+  { brief: 'Ei kipuja polvessa mutta olkapää kipeä', cautions: ['shoulder'] },
+  { brief: "Shoulder doesn't hurt anymore but the knee does", cautions: ['knee'], focus: [] },
+  { brief: 'Polvi ei ole kipeä mutta selkä on', cautions: ['back'], focus: [] },
+  { brief: 'Knee pain is gone, shoulder still hurts', cautions: ['shoulder'] },
+  { brief: 'Polvi ei ole enää kipeä, kyykkyä saa tehdä', cautions: [], focus: [], lifts: ['Back Squat'] },
+  { brief: 'Selkä kipeä ja penkki mukaan', lifts: ['Bench Press'], cautions: ['back'] },
+  { brief: 'Olkapää ja polvi kipeät', cautions: ['knee', 'shoulder'], focus: [] },
+  { brief: 'Olkapää kipeä ja polvi kipeä', cautions: ['knee', 'shoulder'], focus: [] },
+  { brief: 'Kyykky sattuu polveen ja selkään', cautions: ['back', 'knee'], focus: [] },
+  { brief: 'Selkä kunnossa ja polvi kipeä', cautions: ['knee'], focus: [] },
+  { brief: 'Knee and shoulder hurt', cautions: ['knee', 'shoulder'], focus: [] },
+  { brief: 'My shoulder hurts in bench and overhead press', lifts: [], cautions: ['shoulder'], refused: ['bench press', 'overhead press'] },
+  { brief: 'Haluan kyykkyä vaikka polvi on vähän kipeä', lifts: ['Back Squat'], cautions: ['knee'] },
+  { brief: "My shoulder isn't 100% and hurts in bench", lifts: [], cautions: ['shoulder'], refused: ['bench press'] },
+  // Finnish cases in both consonant grades (R2 #12).
+  { brief: 'Haluan kyykyt ja penkin mukaan', lifts: ['Back Squat', 'Bench Press'] },
+  { brief: 'Kyykyt ja maastavedot pakollisia', lifts: ['Back Squat', 'Deadlift'] },
+  { brief: 'En pidä kyykystä', lifts: [], refused: ['back squat'] },
+  { brief: 'Haluan raskaan kyykyn', lifts: ['Back Squat'] },
+  { brief: 'Aloittelija en ole, haluan raskaan kyykyn', lifts: ['Back Squat'] },
+  { brief: 'En ole koskaan käynyt salilla, haluaisin oppia kyykyn', lifts: ['Back Squat'] },
+  { brief: 'Kulmasoudut mukaan', lifts: ['Barbell Row'] },
+  { brief: 'Tankosoudun haluan pitää', lifts: ['Barbell Row'] },
+  { brief: 'Dipit mukaan', lifts: ['Dips - Triceps Version'] },
+  { brief: 'Leuanvedot ja penkit', lifts: ['Bench Press', 'Pullups'] },
+  { brief: 'Penkissä painot nousee, haluan penkkiä', lifts: ['Bench Press'] },
+  { brief: 'Etukyykyt mukaan', lifts: [] },
+  { brief: 'Haluan isommat hauikset', focus: ['arms'] },
+  { brief: 'Haluan isommat hauikset ja rinnan', focus: ['chest', 'arms'] },
+  { brief: 'Pakaroita ja reiden takaosaa', focus: ['legs', 'glutes'] },
+  { brief: 'Selän takia', cautions: ['back'], focus: [] },
+  // Goals and days, read as words, not inside other words (R2 #13).
+  { brief: 'Treenaan kuntosalilla 3 kertaa viikossa', goal: null, equipment: 'full_gym', days: 3 },
+  { brief: 'Yleiskunto, ohjelmassa saa olla juoksua', goal: 'fitness' },
+  { brief: 'Haluan että ohjelmassa on kyykky', goal: null, lifts: ['Back Squat'] },
+  { brief: '3 päivää, power clean mukaan', goal: null, days: 3 },
+  { brief: 'I get fatigue easily, 3 days', goal: null, days: 3 },
+  { brief: "Fat loss isn't my goal", goal: null },
+  { brief: 'Laihdutus ei ole tavoite, voima on', goal: 'strength' },
+  { brief: 'Lihasmassaa, 4 päivää', goal: 'muscle', days: 4 },
+  { brief: 'I want to cut', goal: 'fat_loss' },
+  { brief: 'Get lean', goal: 'fat_loss' },
+  { brief: '3 times a week', days: 3 },
+  { brief: '3 times per week', days: 3 },
+  { brief: '5 times a week, chest focus', days: 4, requested: 5, focus: ['chest'] },
+  { brief: '3 kertaa viikossa', days: 3 },
+  { brief: 'Kolmesti viikossa', days: 3 },
+  // No leg day keeps the leg work out (owner decision, 2026-10-07).
+  { brief: 'no leg day', focus: [], refused: LEG_WORK },
+  { brief: 'Ei jalkapäivää', focus: [], refused: LEG_WORK },
+  { brief: 'skip legs', focus: [], refused: LEG_WORK },
+  { brief: 'jalat pois', focus: [], refused: LEG_WORK },
+  { brief: 'Ilman jalkatreeniä', focus: [], refused: LEG_WORK },
+  { brief: 'No leg day, but I want deadlifts', lifts: ['Deadlift'], refused: ['squat', 'lunge', 'leg press'], kept: ['deadlift'] },
+  { brief: 'Never skip leg day', focus: ['legs'], kept: LEG_WORK },
+  { brief: 'No leg press', refused: ['leg press'], kept: ['squat', 'deadlift', 'lunge'] },
+  { brief: 'Legs and glutes, please', kept: LEG_WORK },
+
+  // Review of the re-hunt fix (2026-10-08). An English pain word starts a
+  // word, and "vaivaton" is no trouble.
+  { brief: 'I want coaching on squats and bench', lifts: ['Back Squat', 'Bench Press'], cautions: [], kept: ['back squat', 'bench press'] },
+  { brief: 'My coaches want more squats', lifts: ['Back Squat'], cautions: [], kept: ['back squat'] },
+  { brief: 'Teaching myself to squat', lifts: ['Back Squat'], cautions: [] },
+  { brief: 'Attending a gym, extending my bench', lifts: ['Bench Press'], cautions: [] },
+  { brief: 'Haluan vaivattoman ohjelman jossa kyykkyä', lifts: ['Back Squat'], cautions: [] },
+  { brief: 'Haluan vaivattoman ohjelman jossa kyykkyä ja rintaa', lifts: ['Back Squat'], cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Polven vaivat', cautions: ['knee'], focus: [] },
+  { brief: 'Knee tendinitis', cautions: ['knee'], focus: [] },
+  // The leg day is refused only from within its own "ja" / "and"; never
+  // done and never missed refuse nothing.
+  { brief: 'Ei juoksua ja jalat painopisteenä', focus: ['legs'], kept: LEG_WORK },
+  { brief: 'No knee pain and legs focus', focus: ['legs'], cautions: [], kept: LEG_WORK },
+  { brief: 'Ilman koneita ja jalkoja paljon', kept: LEG_WORK },
+  { brief: 'Kotona ei ole laitteita ja jalkoja haluan treenata', kept: LEG_WORK },
+  { brief: 'No running and legs', kept: LEG_WORK },
+  { brief: 'I never miss leg day', kept: LEG_WORK },
+  { brief: "I've never trained legs", kept: LEG_WORK },
+  { brief: 'En ole koskaan treenannut jalkoja', kept: LEG_WORK },
+  { brief: 'I miss squats', lifts: ['Back Squat'] },
+  // An ask anywhere in the "ja" stretch after an opening negation, or a
+  // modifier before the lift, makes it a fresh statement.
+  { brief: 'No cardio and heavy squats', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: "I don't have much time and squats are my favourite", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Ei aikaa paljon ja maastaveto tärkein', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: 'En ole kovin hyvässä kunnossa ja kyykkyä haluaisin', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'No deadlifts and squats', lifts: [], refused: ['back squat', 'deadlift'] },
+  { brief: "I don't want deadlifts and squats are not my favourite", lifts: [], refused: ['back squat', 'deadlift'] },
+  // "jättää", "poistaa", "miss" negated insist, and the first two alone refuse.
+  { brief: 'Kyykkyä ei saa jättää pois', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Ei saa jättää kyykkyä pois', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Never miss squats', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Kyykkyä en halua poistaa', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Haluan poistaa maastavedon', lifts: [], refused: ['deadlift'] },
+  { brief: 'Consider removing deadlifts', lifts: [], refused: ['deadlift'] },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -172,11 +385,13 @@ module.exports = [
         };
         if (row.lifts) check('lifts', [...signals.lifts].sort(), [...row.lifts].sort());
         for (const term of row.refused ?? []) check(`avoids ${term}`, avoids(signals, term), true);
+        for (const term of row.kept ?? []) check(`keeps ${term}`, avoids(signals, term), false);
         if (row.focus) check('focus', signals.focusBodyParts, row.focus);
         if (row.cautions) check('cautions', [...signals.cautions].sort(), [...row.cautions].sort());
         if ('goal' in row) check('goal', signals.goal, row.goal);
         if ('equipment' in row) check('equipment', signals.equipment, row.equipment);
         if ('days' in row) check('days', signals.daysPerWeek, row.days);
+        if ('requested' in row) check('requested', signals.requestedDaysPerWeek, row.requested);
       }
       assert.deepEqual(failures, []);
     },
@@ -221,6 +436,107 @@ module.exports = [
       const press = composeProgrammePreview('3 days a week. No shoulder pain, I want overhead press.', preferences, library);
       assert.deepEqual(press.signals.cautions, []);
       assert.deepEqual(press.unmetLifts, []);
+    },
+  },
+  {
+    // Re-hunt R2 #6, #8–#13 and the leg-day decision, as the composed week shows them.
+    name: 'brief negation: the re-hunt briefs compose the week the reader asked for',
+    run() {
+      const week = (brief) => weekNames(composeProgrammePreview(`3 days a week. ${brief}`, preferences, library));
+      const has = (names, pattern) => names.some((name) => pattern.test(name));
+      // #6: the polite ask after an opening negation is in the week.
+      for (const brief of ['Ei vammoja ja haluaisin maastavetoa.', 'No injuries and would like deadlifts.']) {
+        const names = week(brief);
+        assert.ok(has(names, /deadlift/i), `${brief}: ${names.join(', ')}`);
+      }
+      const both = week('En ole kovin hyvässä kunnossa ja haluaisin kyykkyä ja penkkiä.');
+      assert.ok(both.includes('Barbell Full Squat') && has(both, /^Barbell Bench Press/), both.join(', '));
+      // #8: insisted on twice over, the deadlift stays — the default Romanian one too.
+      for (const brief of ["Don't skip deadlifts.", 'Älä jätä maastavetoa pois.']) {
+        const names = week(brief);
+        assert.ok(names.includes('Barbell Deadlift'), `${brief}: ${names.join(', ')}`);
+        assert.ok(names.includes('Romanian Deadlift'), `${brief}: ${names.join(', ')}`);
+      }
+      // #9: refused after the name or swapped out, the lift is not forced in.
+      for (const brief of ['Deadlifts should not be in the programme.', 'Replace deadlifts with hip thrusts.']) {
+        const names = week(brief);
+        assert.ok(!has(names, /deadlift/i), `${brief}: ${names.join(', ')}`);
+      }
+      const swapped = composeProgrammePreview('3 days a week. Instead of squats give me leg press.', preferences, library);
+      assert.deepEqual(swapped.signals.lifts, ['Leg Press']);
+      assert.ok(!weekNames(swapped).includes('Barbell Full Squat'), weekNames(swapped).join(', '));
+      // #10: bad knees keep the lunges out, and a lift that hurts is not in the week.
+      assert.ok(!has(week('Bad knees.'), /lunge/i), week('Bad knees.').join(', '));
+      assert.ok(!week('Kyykky sattuu polveen.').includes('Barbell Full Squat'), week('Kyykky sattuu polveen.').join(', '));
+      assert.ok(!has(week('Maastaveto sattuu selkään.'), /deadlift/i), week('Maastaveto sattuu selkään.').join(', '));
+      // #11: the chest asked for after "ja" keeps its bench.
+      assert.ok(has(week('Polvi kipeä ja haluan rintaa.'), /bench press/i), week('Polvi kipeä ja haluan rintaa.').join(', '));
+      assert.ok(!has(week("Shoulder doesn't hurt anymore but the knee does."), /lunge/i));
+      // #12: the weak grade is read.
+      const inflected = week('Haluan kyykyt ja penkin mukaan.');
+      assert.ok(inflected.includes('Barbell Full Squat') && has(inflected, /^Barbell Bench Press/), inflected.join(', '));
+      // #13: "kuntosalilla" leaves a stored goal alone.
+      const stored = { ...preferences, aiPlannerGoal: 'muscle' };
+      assert.equal(
+        composeProgrammePreview('Treenaan kuntosalilla 3 kertaa viikossa', stored, library).signals.goal,
+        null,
+      );
+      // Owner decision: no leg day keeps squats, deadlifts, lunges, presses, curls and calves out.
+      for (const brief of ['No leg day.', 'Ei jalkapäivää.', 'Jalat pois.']) {
+        const legWork = week(brief).filter((name) => /squat|deadlift|lunge|leg press|leg curl|leg extension|calf/i.test(name));
+        assert.deepEqual(legWork, [], brief);
+      }
+      // Review of the fix: legs asked for after "ja", never missed or never
+      // trained keep their leg work.
+      for (const brief of ['Ei juoksua ja jalat painopisteenä.', 'No knee pain and legs focus.', 'I never miss leg day.', "I've never trained legs."]) {
+        const names = week(brief);
+        assert.ok(has(names, /squat/i) && has(names, /deadlift/i) && has(names, /lunge/i), `${brief}: ${names.join(', ')}`);
+      }
+      // "coaching" is no pain, and the lifts asked for after a refusal, insisted
+      // on twice over or polite at the end of the clause are in the week.
+      for (const brief of [
+        'I want coaching on squats and bench.',
+        'Kyykkyä ei saa jättää pois.',
+        'Never miss squats.',
+        'En ole kovin hyvässä kunnossa ja kyykkyä haluaisin.',
+        'No cardio and heavy squats.',
+      ]) {
+        const names = week(brief);
+        assert.ok(names.includes('Barbell Full Squat'), `${brief}: ${names.join(', ')}`);
+      }
+      assert.ok(has(week('I want coaching on squats and bench.'), /^Barbell Bench Press/), week('I want coaching on squats and bench.').join(', '));
+    },
+  },
+  {
+    // Re-hunt R2 #9, #10, #13: the catalog shortcut reads the same brief.
+    name: 'brief negation: the re-hunt briefs pick no ready programme holding what they keep out',
+    run() {
+      for (const brief of [
+        '6 päivää viikossa, maastaveto ei kuulu ohjelmaan',
+        '5 days a week, deadlifts should not be in the programme',
+        '5 days a week, I have a bad back',
+        '6 days a week, no leg day',
+      ]) {
+        const signals = parseProgrammeBrief(brief);
+        assert.ok(signals.avoidTerms.includes('deadlift'), brief);
+        const match = matchProgrammeToBrief(signals);
+        const deadlifts = match ? programmeNames(match.programId).filter((name) => /deadlift/i.test(name)) : [];
+        assert.deepEqual(deadlifts, [], `${brief} → ${match?.programId}`);
+      }
+      // "5 times a week" is five days, and the shortcut answers it like "5 days a week".
+      const times = parseProgrammeBrief('5 times a week, chest focus');
+      assert.equal(times.requestedDaysPerWeek, 5);
+      assert.equal(shouldOfferCatalogInstead(times), true);
+      // "kuntosalilla" is no fitness goal, so the catalog is not filtered to one.
+      assert.equal(parseProgrammeBrief('Treenaan kuntosalilla 5 kertaa viikossa, painotus rinta').goal, null);
+      // A specialty insisted on, or asked for after a polite "I'd like", is asked for.
+      assert.equal(briefAsksForSpecialty("No machines and I'd like tire flips", { name: 'Tire Flip' }), true);
+      assert.equal(briefAsksForSpecialty("Don't leave out the tire flips", { name: 'Tire Flip' }), true);
+      assert.equal(briefAsksForSpecialty('Älä jätä strongman-liikkeitä pois', { name: 'Yoke Walk' }), true);
+      assert.equal(briefAsksForSpecialty('Ei strongman-liikkeitä', { name: 'Yoke Walk' }), false);
+      // A refused list stays refused; only an ask in its stretch turns it.
+      assert.equal(briefAsksForSpecialty('Ilman koneita ja strongmania', { name: 'Yoke Walk' }), false);
+      assert.equal(briefAsksForSpecialty('Ei koneita ja strongman tärkein', { name: 'Yoke Walk' }), true);
     },
   },
   {
