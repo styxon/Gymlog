@@ -64,6 +64,25 @@ const TABLE = [
   { brief: 'I hate dips', lifts: [], refused: ['dips'] },
   { brief: 'Without deadlifts', lifts: [], refused: ['deadlift'] },
   { brief: 'Kyykky ei onnistu polven takia', lifts: [], refused: ['back squat'], focus: [] },
+  // A refusal reaches no further than its clause: "so", an ask verb and a cap
+  // turn it (review of the #18 fix).
+  { brief: "I don't have a lot of time so focus on squats and bench", lifts: ['Back Squat', 'Bench Press'] },
+  { brief: "I'm not experienced so I want to learn squats", lifts: ['Back Squat'] },
+  { brief: 'No more than 45 minutes with squats and deadlifts', lifts: ['Back Squat', 'Deadlift'] },
+  { brief: "I don't have much time I want squats", lifts: ['Back Squat'] },
+  { brief: "I don't have much time so squats and deadlifts only", lifts: ['Back Squat', 'Deadlift'] },
+  { brief: 'Ei maastavetoa koska kyykky riittää', lifts: ['Back Squat'], refused: ['deadlift'] },
+  { brief: 'No deadlifts because squats are enough', lifts: ['Back Squat'], refused: ['deadlift'] },
+  { brief: "I don't really want to learn deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: "I'm not so keen on deadlifts", lifts: [], refused: ['deadlift'] },
+  // "must not be left out" is an ask, not a refusal.
+  { brief: 'Maastaveto ei saa jäädä pois', lifts: ['Deadlift'] },
+  { brief: 'Kyykky ei saa puuttua ohjelmasta', lifts: ['Back Squat'] },
+  { brief: 'Haluan että kyykky ei jää pois', lifts: ['Back Squat'] },
+  { brief: 'Penkki ei voi puuttua', lifts: ['Bench Press'] },
+  { brief: 'Maastaveto jää pois', lifts: [], refused: ['deadlift'] },
+  { brief: 'Kyykkyä en jättäisi pois', lifts: ['Back Squat'] },
+  { brief: 'Kyykkyä älä jätä pois', lifts: ['Back Squat'] },
   // …and what is NOT a refusal (#339 fix 1 stays fixed).
   { brief: 'En ole tehnyt maastavetoa, haluan oppia', lifts: ['Deadlift'] },
   { brief: 'Never done deadlifts, want to learn', lifts: ['Deadlift'] },
@@ -86,6 +105,18 @@ const TABLE = [
   { brief: 'Polvi, olkapää ja selkä kipeitä', cautions: ['knee', 'back', 'shoulder'], focus: [] },
   { brief: 'Olkapää kipeä, varsinkin penkissä', lifts: [], cautions: ['shoulder'] },
   { brief: 'Knee hurts.', cautions: ['knee'] },
+  // A refused lift and then the reason: the "can't" is the lift's, the pain
+  // stands (review of the #21 fix).
+  { brief: "I can't squat because my knee hurts", lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: 'Kyykky ei onnistu koska polvi on kipeä', lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: 'En pysty kyykkäämään koska polvi on kipeä', cautions: ['knee'] },
+  { brief: "I don't squat because my knee hurts", lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: 'I avoid running since my knee is sore', cautions: ['knee'] },
+  // …and with no "because" between, the negation is still the lift's.
+  { brief: 'En pysty kyykkäämään polvi kipeä', cautions: ['knee'] },
+  { brief: "I can't squat my knee hurts", lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: 'Ei kyykkyä polvi kipeä', lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: "I don't have any knee pain", cautions: [] },
   // Goals, places and body parts named only to rule them out (#22).
   { brief: 'I want to build muscle, not lose weight', goal: 'muscle' },
   { brief: "Strength, I'm not trying to cut", goal: 'strength' },
@@ -166,6 +197,26 @@ module.exports = [
       const kept = composeProgrammePreview('3 days a week. Sore knee, keep the deadlift.', preferences, library);
       assert.deepEqual(kept.signals.lifts, ['Deadlift']);
       assert.ok(weekNames(kept).includes('Barbell Deadlift'), weekNames(kept).join(', '));
+      // A refusal before the reason keeps the knee caution, and with it the
+      // lunges out of the week (review of the #21 fix).
+      for (const brief of [
+        '3 päivää viikossa. Kyykky ei onnistu koska polvi on kipeä.',
+        "3 days a week. I can't squat because my knee hurts.",
+      ]) {
+        const knee = composeProgrammePreview(brief, preferences, library);
+        assert.deepEqual(knee.signals.cautions, ['knee'], brief);
+        const lunges = weekNames(knee).filter((name) => /lunge/i.test(name));
+        assert.deepEqual(lunges, [], `${brief}: ${weekNames(knee).join(', ')}`);
+      }
+      // "must not be left out" keeps the lift in the week.
+      const insisted = weekNames(composeProgrammePreview('3 päivää viikossa. Maastaveto ei saa jäädä pois.', preferences, library));
+      assert.ok(insisted.includes('Barbell Deadlift'), insisted.join(', '));
+      // An ask after "so" is in the week, not on the avoid list.
+      const focused = weekNames(
+        composeProgrammePreview("3 days a week. I don't have a lot of time so focus on squats and bench.", preferences, library),
+      );
+      assert.ok(focused.includes('Barbell Full Squat'), focused.join(', '));
+      assert.ok(focused.some((name) => /^Barbell Bench Press/.test(name)), focused.join(', '));
       // Negated pain does not strip the lift the reader asked for.
       const press = composeProgrammePreview('3 days a week. No shoulder pain, I want overhead press.', preferences, library);
       assert.deepEqual(press.signals.cautions, []);
