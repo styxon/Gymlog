@@ -3,7 +3,7 @@ import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
 import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getCatalogTrackingMode } from './catalogExercisePools';
 import { DisplayEquipmentValue, displayEquipmentValue } from './libraryLabel';
-import { doseAfterSwap } from './swapDose';
+import { doseAfterGearFallback } from './swapDose';
 
 /**
  * Equipment chips filter the actual exercises (onboarding truth plan P4).
@@ -427,12 +427,15 @@ export function applyEquipmentToExercises(
       // is a swap, so it takes the swap rule's dose (doseAfterSwap). Only the
       // mode stays the catalog's: the gear is missing, so the library's
       // "bodyweight" is the truth here. Both rules agree on the unit, as both
-      // ask the hold and minutes lists first, so the dose is the same.
-      const dose = doseAfterSwap(exercise, fallback);
+      // ask the hold and minutes lists first, so the dose is the same. Into
+      // minutes the bout count goes with it: a treadmill HIIT at 8 × 30 s was
+      // eight five-minute walks (bug hunt, 2026-10-08).
+      const dose = doseAfterGearFallback(exercise, fallback);
       return {
         ...exercise,
         exerciseName: fallback,
         trackingMode,
+        sets: dose.sets,
         repsMin: dose.repsMin,
         repsMax: dose.repsMax,
       };

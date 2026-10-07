@@ -346,7 +346,10 @@ module.exports = [
               }
               crossed += 1;
               const dose = doseAfterSwap(row, after.exerciseName);
-              if (after.repsMin !== dose.repsMin || after.repsMax !== dose.repsMax || after.sets !== row.sets) {
+              // Into minutes the bout count is the incoming lift's own too
+              // (the suite below); every other crossing keeps the slot's sets.
+              const setsKept = unitOf(after.trackingMode) === 'minutes' || after.sets === row.sets;
+              if (after.repsMin !== dose.repsMin || after.repsMax !== dose.repsMax || !setsKept) {
                 wrong.push(`${template.id}: ${row.exerciseName} ${row.repsMin}-${row.repsMax} -> ${after.exerciseName} ${after.repsMin}-${after.repsMax}`);
               }
             }
@@ -355,6 +358,67 @@ module.exports = [
       }
       assert.ok(crossed > 0, 'the sweep reached no fallback that changes unit');
       assert.deepEqual([...new Set(wrong)], []);
+    },
+  },
+  {
+    name: "equipment filter: an interval that falls back to a bout of minutes takes the bout's own count, not the interval's",
+    run() {
+      const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises');
+      const { estimateProgrammeSessionMinutesList } = require('../../.test-dist/lib/programmeMinutes');
+      // SHRED's "Treadmill HIIT 8 × 30 s" with the cardio machines unticked
+      // became "Trail Running/Walking 8 × 5 min": eight 30-second intervals
+      // read as eight five-minute bouts, Day 1 at 80 min against 45 (bug
+      // hunt, 2026-10-08).
+      const unitOf = (mode) => (mode === 'hold' ? 'seconds' : mode === 'duration_minutes' ? 'minutes' : 'reps');
+      const kits = [[], ['Dumbbells'], ['Resistance bands'], ['Kettlebell'], ['Pull-up bar'], ['Dumbbells', 'Bench'],
+        ['Barbells', 'Dumbbells', 'Machines', 'Cables', 'Squat rack', 'Bench', 'Kettlebells']];
+      const wrong = [];
+      let crossed = 0;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const kit of kits) {
+            for (const row of session.exercises) {
+              const [after] = applyEquipmentToExercises([row], kit).exercises;
+              if (!after || unitOf(after.trackingMode) !== 'minutes' || unitOf(row.trackingMode) === 'minutes') {
+                continue;
+              }
+              crossed += 1;
+              if (after.sets * after.repsMax > DEFAULT_MINUTES_PRESCRIPTION.minutes) {
+                wrong.push(`${template.id}: ${row.exerciseName} ${row.sets}x${row.repsMax} -> ${after.exerciseName} ${after.sets}x${after.repsMax} min`);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(crossed > 0, 'the sweep reached no fallback into minutes');
+      assert.deepEqual([...new Set(wrong)], []);
+
+      // The finding's case through the composer: SHRED for a lean beginner
+      // at a gym, with and without the cardio machines.
+      const gym = ['Barbells', 'Dumbbells', 'Machines', 'Cables', 'Squat rack', 'Bench', 'Kettlebells', 'Cardio machines'];
+      const week = (equipmentItems) => {
+        const setup = {
+          ...DEFAULT_FIRST_RUN_SELECTION,
+          goal: 'lean_athletic',
+          goals: ['lean_athletic'],
+          level: 'beginner',
+          daysPerWeek: 3,
+          equipment: 'gym',
+          trainingEnvironment: 'full_gym',
+          equipmentItems,
+        };
+        const composed = composeProgramWeekForSelection(setup, 'tpl_shred_v1');
+        return {
+          composed,
+          minutes: estimateProgrammeSessionMinutesList(composed.sessions, { availableEquipment: resolveAvailableEquipment(setup) }),
+        };
+      };
+      const ticked = week(gym);
+      const unticked = week(gym.filter((item) => item !== 'Cardio machines'));
+      const bout = unticked.composed.sessions[0].exercises.find((item) => item.trackingMode === 'duration_minutes');
+      assert.ok(bout, 'Day 1 keeps a conditioning bout');
+      assert.ok(bout.sets * bout.repsMax <= DEFAULT_MINUTES_PRESCRIPTION.minutes, `${bout.exerciseName} ${bout.sets}x${bout.repsMax}`);
+      assert.ok(unticked.minutes[0] <= ticked.minutes[0] + 15, `Day 1 ${unticked.minutes[0]} min against ${ticked.minutes[0]}`);
     },
   },
 ];

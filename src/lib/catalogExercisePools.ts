@@ -239,6 +239,10 @@ export interface SwapPrescription {
   repsMax: number;
 }
 
+interface ProgrammeRow extends SwapPrescription {
+  sets: number;
+}
+
 function middle<T>(items: T[], by: (item: T) => number): T | null {
   if (items.length === 0) {
     return null;
@@ -253,14 +257,14 @@ function middle<T>(items: T[], by: (item: T) => number): T | null {
  * timed and counted rows over all of them, for a name none of them writes.
  */
 const programmePrescriptions = (() => {
-  const rowsByName = new Map<string, SwapPrescription[]>();
-  const timed: SwapPrescription[] = [];
-  const minutes: SwapPrescription[] = [];
-  const counted: SwapPrescription[] = [];
+  const rowsByName = new Map<string, ProgrammeRow[]>();
+  const timed: ProgrammeRow[] = [];
+  const minutes: ProgrammeRow[] = [];
+  const counted: ProgrammeRow[] = [];
   for (const template of WORKOUT_TEMPLATES_V1) {
     for (const session of template.sessions) {
       for (const exercise of session.exercises) {
-        const row = { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
+        const row = { sets: exercise.sets, repsMin: exercise.repsMin, repsMax: exercise.repsMax };
         const key = exercise.exerciseName.trim().toLowerCase();
         const rows = rowsByName.get(key) ?? [];
         rows.push(row);
@@ -270,18 +274,31 @@ const programmePrescriptions = (() => {
       }
     }
   }
-  const byName = new Map<string, SwapPrescription>();
+  const byName = new Map<string, ProgrammeRow>();
   rowsByName.forEach((rows, key) => byName.set(key, middle(rows, (row) => row.repsMax)!));
   return {
     byName,
-    timed: middle(timed, (row) => row.repsMax) ?? { repsMin: 30, repsMax: 30 },
+    timed: middle(timed, (row) => row.repsMax) ?? { sets: 3, repsMin: 30, repsMax: 30 },
     minutes: middle(minutes, (row) => row.repsMax) ?? {
+      sets: DEFAULT_MINUTES_PRESCRIPTION.sets,
       repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
       repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
     },
-    counted: middle(counted, (row) => row.repsMax) ?? { repsMin: 10, repsMax: 10 },
+    counted: middle(counted, (row) => row.repsMax) ?? { sets: 3, repsMin: 10, repsMax: 10 },
   };
 })();
+
+/** The row the programmes write for this name, or for its kind of set. */
+function programmeRowFor(exerciseName: string, unit: ReturnType<typeof prescriptionUnitOf>): ProgrammeRow {
+  return (
+    programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
+    (unit === 'seconds'
+      ? programmePrescriptions.timed
+      : unit === 'minutes'
+        ? programmePrescriptions.minutes
+        : programmePrescriptions.counted)
+  );
+}
 
 /**
  * The numbers a slot asks for after a swap that turns seconds into
@@ -305,14 +322,32 @@ export function prescriptionAfterSwap(
   if (prescriptionUnitOf(from) === toUnit) {
     return current;
   }
-  return (
-    programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
-    (toUnit === 'seconds'
-      ? programmePrescriptions.timed
-      : toUnit === 'minutes'
-        ? programmePrescriptions.minutes
-        : programmePrescriptions.counted)
-  );
+  const { repsMin, repsMax } = programmeRowFor(exerciseName, toUnit);
+  return { repsMin, repsMax };
+}
+
+/**
+ * How many bouts a slot asks for once a lift timed in minutes takes the place
+ * of one that was not: the count the programmes write beside the minutes
+ * prescriptionAfterSwap gives it (one row's pair), and the slot's own count
+ * for any other swap.
+ *
+ * A set count belongs to its unit as much as the reps do. SHRED's treadmill
+ * HIIT at 8 × 30 s fell back to "Trail Running/Walking 8 × 5 min" with the
+ * cardio machines unticked: forty minutes in place of eight, Day 1 at 80 min
+ * against 45 (bug hunt, 2026-10-08).
+ */
+export function boutsAfterSwap(
+  from: WorkoutTrackingMode,
+  to: WorkoutTrackingMode,
+  currentSets: number,
+  exerciseName: string,
+): number {
+  const toUnit = prescriptionUnitOf(to);
+  if (toUnit !== 'minutes' || prescriptionUnitOf(from) === toUnit) {
+    return currentSets;
+  }
+  return programmeRowFor(exerciseName, toUnit).sets;
 }
 
 export interface ComposedSlotDose {

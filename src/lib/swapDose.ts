@@ -19,7 +19,7 @@
  */
 
 import { WorkoutTrackingMode } from '../features/workout/workoutTypes';
-import { prescriptionAfterSwap, trackingModeAfterSwap } from './catalogExercisePools';
+import { boutsAfterSwap, prescriptionAfterSwap, trackingModeAfterSwap } from './catalogExercisePools';
 
 export interface SlotDose {
   trackingMode: WorkoutTrackingMode;
@@ -42,4 +42,19 @@ export function doseAfterSwap(current: SlotDose, exerciseName: string): SlotDose
     exerciseName,
   );
   return { trackingMode, sets: current.sets, repsMin, repsMax };
+}
+
+/**
+ * The dose a programme slot asks for when the reader's gear lacks its lift and
+ * the equipment fallback puts another in (applyEquipmentToExercises).
+ *
+ * The swap rule, and one step more: into minutes the bout count is the
+ * incoming lift's own as well (boutsAfterSwap). A reader's swap keeps the
+ * slot's sets, as the session it opens on has them; nobody chose this one,
+ * and eight 30-second intervals read as eight five-minute walks (bug hunt,
+ * 2026-10-08).
+ */
+export function doseAfterGearFallback(current: SlotDose, exerciseName: string): SlotDose {
+  const dose = doseAfterSwap(current, exerciseName);
+  return { ...dose, sets: boutsAfterSwap(current.trackingMode, dose.trackingMode, current.sets, exerciseName) };
 }

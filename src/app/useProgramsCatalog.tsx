@@ -11,9 +11,8 @@ import {
   type ProgramCategoryKey,
 } from '../lib/programCategories';
 import { expandRunningIdsWithSources } from '../lib/programmeCopyLink';
-import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programCoverStyle } from '../lib/programVisualIdentity';
-import { programmeCardMinutes, resolveReaderComposedWeek } from '../lib/programDetails';
+import { programmeCardWeek, resolveReaderComposedWeek } from '../lib/programDetails';
 import { resolveAvailableEquipment } from '../lib/equipmentExerciseFilter';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { getReadyProgramBlockWeeks } from '../lib/readyProgramDuration';
@@ -111,18 +110,22 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
    */
   const programsCatalogItems = useMemo<ProgramsExploreItem[]>(
     () =>
-      workout.templates.map((template, index) => ({
-        id: template.id,
-        name: formatWorkoutDisplayLabel(template.name),
-        goal: formatGoalLabel(template.goalType, preferences.appLanguage),
-        blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
-        days: template.daysPerWeek,
-        minutes: programmeCardMinutes(template, readerComposedWeek, minutesOptions),
-        cover: programCoverStyle(template.id, template.name),
-        fingerprint: buildProgramFingerprint(template),
-        level: template.level,
-        weeks: getReadyProgramBlockWeeks(template),
-      })),
+      workout.templates.map((template) => {
+        // Days, minutes and bars from one week, the page's (bug hunt, 2026-10-08).
+        const week = programmeCardWeek(template, readerComposedWeek, minutesOptions);
+        return {
+          id: template.id,
+          name: formatWorkoutDisplayLabel(template.name),
+          goal: formatGoalLabel(template.goalType, preferences.appLanguage),
+          blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
+          days: week.days,
+          minutes: week.minutes,
+          cover: programCoverStyle(template.id, template.name),
+          fingerprint: week.fingerprint,
+          level: template.level,
+          weeks: getReadyProgramBlockWeeks(template),
+        };
+      }),
     [minutesOptions, preferences.appLanguage, readerComposedWeek, workout.templates],
   );
   const programsCategoryCounts = useMemo(
@@ -232,21 +235,23 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
       })
         .map((slot) => {
           const template = byId.get(slot.templateId);
-          return template
-            ? {
-                id: template.id,
-                name: formatWorkoutDisplayLabel(template.name),
-                goal: formatGoalLabel(template.goalType, preferences.appLanguage),
-                blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
-                why: t(preferences.appLanguage, slot.whyKey, { days: template.daysPerWeek }),
-                days: template.daysPerWeek,
-                minutes: programmeCardMinutes(template, readerComposedWeek, minutesOptions),
-                cover: programCoverStyle(template.id, template.name),
-                fingerprint: buildProgramFingerprint(template),
-                level: template.level,
-                weeks: getReadyProgramBlockWeeks(template),
-              }
-            : null;
+          if (!template) {
+            return null;
+          }
+          const week = programmeCardWeek(template, readerComposedWeek, minutesOptions);
+          return {
+            id: template.id,
+            name: formatWorkoutDisplayLabel(template.name),
+            goal: formatGoalLabel(template.goalType, preferences.appLanguage),
+            blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
+            why: t(preferences.appLanguage, slot.whyKey, { days: week.days }),
+            days: week.days,
+            minutes: week.minutes,
+            cover: programCoverStyle(template.id, template.name),
+            fingerprint: week.fingerprint,
+            level: template.level,
+            weeks: getReadyProgramBlockWeeks(template),
+          };
         })
         .filter((item): item is NonNullable<typeof item> => Boolean(item));
     },

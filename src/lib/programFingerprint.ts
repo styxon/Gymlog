@@ -1,5 +1,3 @@
-import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
-
 /**
  * A program's week, drawn as bars.
  *
@@ -21,8 +19,13 @@ import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
  * days per week, visible at a glance.
  */
 
-/** Heights in 0..1, one per session, in program order. */
-export function buildProgramFingerprint(template: WorkoutTemplateV1): number[] {
+/**
+ * Heights in 0..1, one per session, in program order. Any week will do: a
+ * card draws the reader's composed week when its page shows that one.
+ */
+export function buildProgramFingerprint(
+  template: { sessions: ReadonlyArray<{ exercises: ReadonlyArray<{ sets: number }> }> },
+): number[] {
   const sets = template.sessions.map((session) =>
     session.exercises.reduce((total, exercise) => total + Math.max(0, exercise.sets), 0),
   );

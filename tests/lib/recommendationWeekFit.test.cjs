@@ -16,13 +16,16 @@ const { localizeSessionName } = require(dist + 'lib/sessionNameLabel.js');
 const { resolveAvailableEquipment } = require(dist + 'lib/equipmentExerciseFilter.js');
 const { readyTemplateCardMinutes } = require(dist + 'lib/programmeMinutes.js');
 const {
+  buildReadyProgramDetail,
   programmeCardMinutes,
+  programmeCardWeek,
   readyProgramSessionMinutes,
   resolveReaderComposedWeek,
 } = require(dist + 'lib/programDetails.js');
 const { EXTRA_EXERCISE_LIBRARY } = require(dist + 'data/extraExerciseLibrary.js');
 const { getWorkoutTemplateById } = require(dist + 'features/workout/workoutCatalog.js');
-const { splitsShortWeek } = require(dist + 'lib/recommendationWeekFit.js');
+const { focusProgrammeLosesItsPoint, splitsShortWeek } = require(dist + 'lib/recommendationWeekFit.js');
+const { buildRecommendationInput } = require(dist + 'lib/recommendationInput.js');
 
 /**
  * What the recommender hands over has to survive being composed for the
@@ -283,6 +286,57 @@ module.exports = [
     },
   },
   {
+    name: 'week fit: the programme page promises run work only over a week that holds runs, in both languages',
+    run() {
+      // "Run work with mobility." sat over Mobility Reset and Mobility Flow,
+      // whose card says there is no running in them (bug hunt, 2026-10-08).
+      const RUN_LINE = { en: /\bRun work\b/, fi: /Juoksua ja liikkuvuutta/ };
+      const runsIn = (programId) => getWorkoutTemplateById(programId).sessions
+        .some((session) => session.exercises.some((exercise) => /\bRun\b/.test(exercise.exerciseName)));
+      let withRuns = 0;
+      let withoutRuns = 0;
+      for (const level of ['beginner', 'advanced', 'pro']) {
+        for (const daysPerWeek of [2, 3, 4, 5, 6]) {
+          for (const gear of GEARS) {
+            for (const cautionFlags of [[], [{ area: 'knees', level: 'avoid' }]]) {
+              const setup = selection({ goal: 'run_mobility', level, daysPerWeek, gear, cautionFlags });
+              const recommendation = resolveFirstRunRecommendationWithTailoring(setup, null);
+              const programId = recommendation.featuredProgramId;
+              const runs = runsIn(programId) && cautionFlags.length === 0;
+              for (const language of ['en', 'fi']) {
+                const lines = buildFirstRunRecommendationReasons(setup, {
+                  projectedDaysPerWeek: getWorkoutTemplateById(programId).daysPerWeek,
+                  mismatchNote: recommendation.mismatchNote,
+                  language,
+                  programId,
+                }).join(' ');
+                const label = `${level}/${daysPerWeek}/${gear.id}/${cautionFlags.length ? 'knees' : 'free'}/${language}: ${programId}`;
+                if (runs) {
+                  assert.match(lines, RUN_LINE[language], `${label}: ${lines}`);
+                } else {
+                  assert.doesNotMatch(lines, RUN_LINE[language], `${label}: ${lines}`);
+                }
+              }
+              if (runs) {
+                withRuns += 1;
+              } else if (!runsIn(programId)) {
+                withoutRuns += 1;
+              }
+            }
+          }
+        }
+      }
+      assert.ok(withRuns > 0 && withoutRuns > 0, `${withRuns} weeks with runs, ${withoutRuns} without`);
+      // The finding's case by name.
+      const reset = selection({ goal: 'run_mobility', level: 'beginner', daysPerWeek: 2 });
+      assert.equal(resolveFirstRunRecommendationWithTailoring(reset, null).featuredProgramId, 'tpl_2_day_mobility_reset_v1');
+      assert.doesNotMatch(
+        buildFirstRunRecommendationReasons(reset, { projectedDaysPerWeek: 2, programId: 'tpl_2_day_mobility_reset_v1' }).join(' '),
+        /\bRun\b/,
+      );
+    },
+  },
+  {
     name: 'week fit: each run stand-in is a library row that plays as minutes, with steps and a name in Finnish',
     run() {
       for (const name of STAND_INS) {
@@ -312,6 +366,59 @@ module.exports = [
         );
         assert.notEqual(avoided.featuredProgramId, 'tpl_focus_arms_program_v1', level);
         assert.notEqual(avoided.waterfall?.whyPrimary, 'wf.muscle_focus.primary', level);
+      }
+    },
+  },
+  {
+    name: 'week fit: no chooser features a specialisation block the avoid flags strip, home lane and score ranking included',
+    run() {
+      // Only the muscle-focus lane asked the guard. A home gym with arms focus
+      // and elbows avoided got the arms block from the home lane, and a gym
+      // with machines and cables only got it from the score ranking after the
+      // focus lane had turned it down (bug hunt, 2026-10-08).
+      const gears = [
+        ...GEARS,
+        { id: 'gym-machines-cables', equipment: 'gym', trainingEnvironment: 'full_gym', equipmentItems: ['Machines', 'Cables'] },
+        { id: 'home-db-bar-bench-bands', equipment: 'home', trainingEnvironment: 'home_gym', equipmentItems: ['Dumbbells', 'Barbell & plates', 'Bench', 'Resistance bands'] },
+        { id: 'home-rack-db', equipment: 'home', trainingEnvironment: 'home_gym', equipmentItems: ['Dumbbells', 'Barbell & plates', 'Squat rack', 'Bench'] },
+      ];
+      let checked = 0;
+      let focusBlocks = 0;
+      for (const level of ['advanced', 'pro']) {
+        for (const daysPerWeek of [2, 3, 4]) {
+          for (const gear of gears) {
+            for (const focusAreas of [[], ['arms'], ['chest'], ['back'], ['legs'], ['glutes']]) {
+              for (const area of ['elbows', 'knees', 'shoulders', 'lower_back', 'wrists']) {
+                const setup = selection({ goal: 'muscle', level, daysPerWeek, gear, focusAreas, cautionFlags: [{ area, level: 'avoid' }] });
+                const recommendation = resolveFirstRunRecommendationWithTailoring(setup, null);
+                checked += 1;
+                if (recommendation.featuredProgramId.startsWith('tpl_focus_')) {
+                  focusBlocks += 1;
+                }
+                assert.ok(
+                  !focusProgrammeLosesItsPoint(recommendation.featuredProgramId, buildRecommendationInput(setup)),
+                  `${level}/${daysPerWeek}/${gear.id}/${focusAreas}/${area}: ${recommendation.featuredProgramId} (${recommendation.waterfall?.rule ?? 'score ranking'})`,
+                );
+              }
+            }
+          }
+        }
+      }
+      assert.equal(checked, 2 * 3 * gears.length * 6 * 5);
+      // The guard still lets a block through when the flag leaves its days whole.
+      assert.ok(focusBlocks > 0, 'some specialisation block is still featured');
+
+      // The finding's cases by name.
+      const machinesCables = gears[gears.length - 3];
+      const homeBench = gears[gears.length - 2];
+      const homeRack = gears[gears.length - 1];
+      for (const [gear, focusAreas, area, blocked] of [
+        [homeBench, ['arms'], 'elbows', 'tpl_focus_arms_program_v1'],
+        [machinesCables, ['arms'], 'elbows', 'tpl_focus_arms_program_v1'],
+        [homeRack, [], 'knees', 'tpl_focus_glutes_program_v1'],
+      ]) {
+        const setup = selection({ goal: 'muscle', level: 'advanced', daysPerWeek: 3, gear, focusAreas, cautionFlags: [{ area, level: 'avoid' }] });
+        assert.notEqual(resolveFirstRunRecommendationWithTailoring(setup, null).featuredProgramId, blocked, `${gear.id}/${area}`);
       }
     },
   },
@@ -371,6 +478,59 @@ module.exports = [
       // The sweep reaches the readers the finding was about: flags or focus
       // move the week's minutes off the gear-only estimate.
       assert.ok(differsFromGear >= 10, `only ${differsFromGear} cards differ from the gear-only estimate`);
+    },
+  },
+  {
+    name: 'week fit: the Programs card quotes the days and session bars of the week whose minutes it quotes, as the page does',
+    run() {
+      // The card took its minutes from the reader's composed week and its days
+      // from the catalog: a strength beginner who asked for four days read
+      // "3 days · ~35 min" on the card and "4 days" on the page (bug hunt,
+      // 2026-10-08). One week behind every number on both.
+      let held = 0;
+      let differsFromCatalog = 0;
+      for (const goal of ['strength', 'muscle', 'general_fitness', 'run_mobility', 'lean_athletic']) {
+        for (const level of ['beginner', 'advanced', 'pro']) {
+          for (const daysPerWeek of [2, 3, 4, 5, 6]) {
+            for (const gear of [GEARS[0], GEARS[3], GEARS[4], GEARS[7]]) {
+              const setup = selection({ goal, level, daysPerWeek, gear });
+              const label = `${goal}/${level}/${daysPerWeek}/${gear.id}`;
+              const { featuredProgramId } = resolveFirstRunRecommendationWithTailoring(setup, null);
+              const template = getWorkoutTemplateById(featuredProgramId);
+              const options = { availableEquipment: resolveAvailableEquipment(setup), overrides: null };
+              const composed = composeProgramWeekForSelection(setup, featuredProgramId);
+              const context = {
+                recommendedProgramId: featuredProgramId,
+                setupSelection: setup,
+                workoutTemplates: [],
+                workoutPlans: [{
+                  entries: composed.sessions.map((session) => ({ workoutTemplateId: featuredProgramId, workoutTemplateSessionId: session.id })),
+                }],
+              };
+              const readerWeek = resolveReaderComposedWeek(featuredProgramId, context);
+              assert.ok(readerWeek, label);
+              const page = buildReadyProgramDetail(template, undefined, null, [], readerWeek, 'en', false, false, options);
+              const card = programmeCardWeek(template, readerWeek, options);
+              assert.equal(card.days, page.daysPerWeek, `${label} ${featuredProgramId}`);
+              assert.ok(page.badges.includes(`${card.minutes} min`), `${label}: ${card.minutes} against ${page.badges}`);
+              assert.equal(card.minutes, programmeCardMinutes(template, readerWeek, options), label);
+              assert.equal(card.fingerprint.length, page.sessions.length, `${label}: one bar per day on the page`);
+              held += 1;
+              if (card.days !== template.daysPerWeek) {
+                differsFromCatalog += 1;
+              }
+
+              // Every other card has nothing composed behind it: the catalog's.
+              const other = getWorkoutTemplateById(featuredProgramId === RUN ? 'tpl_3_day_full_body_v1' : RUN);
+              const otherCard = programmeCardWeek(other, readerWeek, options);
+              assert.equal(otherCard.days, other.daysPerWeek, label);
+              assert.equal(otherCard.fingerprint.length, other.sessions.length, label);
+            }
+          }
+        }
+      }
+      assert.equal(held, 5 * 3 * 5 * 4);
+      assert.ok(differsFromCatalog >= 10, `only ${differsFromCatalog} composed weeks differ from the catalog's day count`);
     },
   },
 ];

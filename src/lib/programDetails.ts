@@ -19,6 +19,7 @@ import type { AppLanguage, WorkoutPlan } from '../types/models';
 import { doseUnitSuffix, removeTrailingZeros } from './format';
 import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 import { doseAfterSwap } from './swapDose';
+import { buildProgramFingerprint } from './programFingerprint';
 
 export type ProgramDetailSource = 'ready' | 'custom';
 
@@ -253,6 +254,40 @@ export function programmeCardMinutes(
   return readyProgramSessionMinutes(template, readerWeek?.programId === template.id ? readerWeek : null, minutesOptions);
 }
 
+/**
+ * The week a ready programme's page shows: the composed one when it holds
+ * sessions, otherwise the catalog's. Its days and its session list.
+ */
+function readyProgramWeek(template: WorkoutTemplateV1, composedWeek?: ComposedProgramWeek | null) {
+  const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
+  return composed
+    ? { days: composed.days, sessions: composed.sessions }
+    : { days: template.daysPerWeek, sessions: template.sessions };
+}
+
+/**
+ * Everything a card quotes about a ready programme's week, from the week its
+ * page shows: the days, the minutes and one bar per session.
+ *
+ * The card took its minutes from the reader's composed week and its days from
+ * the catalog: a strength beginner who asked for four days read "3 days ·
+ * ~35 min" on the card and "4 days" on the page, and the ladder's weekly load
+ * multiplied the two (bug hunt, 2026-10-08).
+ */
+export function programmeCardWeek(
+  template: WorkoutTemplateV1,
+  readerWeek: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): { days: number; minutes: number; fingerprint: number[] } {
+  const own = readerWeek?.programId === template.id ? readerWeek : null;
+  const week = readyProgramWeek(template, own);
+  return {
+    days: week.days,
+    minutes: programmeCardMinutes(template, readerWeek, minutesOptions),
+    fingerprint: buildProgramFingerprint(week),
+  };
+}
+
 export interface ReaderComposedWeekContext {
   /** The programme the questionnaire handed the reader. */
   recommendedProgramId: string | null | undefined;
@@ -351,7 +386,7 @@ export function buildReadyProgramDetail(
   const content = getReadyProgramContent(template.id, language);
   const programmeSummary = getRecommendationProgrammeSummary(template.id);
   const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
-  const daysPerWeek = composed ? composed.days : template.daysPerWeek;
+  const daysPerWeek = readyProgramWeek(template, composed).days;
   const sessionMinutes = readyProgramSessionMinutes(template, composedWeek, minutesOptions);
   const detailSessions: WorkoutTemplateSession[] = composed
     ? composed.sessions.map((session) => ({
