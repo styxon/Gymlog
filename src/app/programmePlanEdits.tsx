@@ -2,6 +2,9 @@ import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planForTemplate } from '../lib/planTrainingCycle';
 import { planTrainedOnDay, resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { toDraftExercise } from '../lib/programSessionEdit';
+import { exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { t } from '../lib/i18n';
+import { SetCountChange, setCountChanges, setCountToastParts } from '../lib/setCountChanges';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
 import { planLabelsFromWeekdays, rotateLabelsForNextSession, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
 import type { useAppContext } from '../state/AppProvider';
@@ -34,6 +37,8 @@ export interface ProgrammePlanEditsDeps {
   updatePreferences: AppContextValue['updatePreferences'];
   upsertWorkoutPlan: AppContextValue['upsertWorkoutPlan'];
   editWorkoutTemplateSessions: AppContextValue['editWorkoutTemplateSessions'];
+  /** VinhaApp's hoisted showToast. */
+  showToast: (message: string) => void;
   /** VinhaApp's hoisted adoption of a ready programme. */
   handleAdoptReadyProgram: (workoutTemplateId: string, options?: { lead?: boolean }) => Promise<boolean>;
   completedSessionsForTemplate: ReturnType<typeof createProgrammeStarts>['completedSessionsForTemplate'];
@@ -46,6 +51,7 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     updatePreferences,
     upsertWorkoutPlan,
     editWorkoutTemplateSessions,
+    showToast,
     handleAdoptReadyProgram,
     completedSessionsForTemplate,
   } = deps;
@@ -225,20 +231,64 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
       return;
     }
     const setsByExerciseId = new Map(updates.map((update) => [update.exerciseId, update.sets]));
-    await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => ({
-      kind: 'save',
-      sessions: sessions.map((session) => ({
-        id: session.id,
-        name: session.name,
-        exercises: session.exercises.map((exercise) => ({
-          ...toDraftExercise(exercise),
-          targetSets: setsByExerciseId.get(exercise.id) ?? exercise.targetSets,
-        })),
-      })),
-    }));
-    // The emphasis is visible on the rows it changed; a toast on top said the
-    // same thing more slowly (user 2026-08-26).
+    // Read off the days the write itself reads, so the line names what this
+    // save changed and not what a stale copy of the programme would have.
+    let changes: SetCountChange[] = [];
+    let result: Awaited<ReturnType<typeof editWorkoutTemplateSessions>>;
+    try {
+      result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => {
+        changes = setCountChanges(sessions, setsByExerciseId);
+        return {
+          kind: 'save',
+          sessions: sessions.map((session) => ({
+            id: session.id,
+            name: session.name,
+            exercises: session.exercises.map((exercise) => ({
+              ...toDraftExercise(exercise),
+              targetSets: setsByExerciseId.get(exercise.id) ?? exercise.targetSets,
+            })),
+          })),
+        };
+      });
+    } catch (error) {
+      // The sheet has closed on the new split; a write that failed says so
+      // rather than leave the reader believing it held.
+      console.error('Could not save the programme emphasis', error);
+      showToast(t(preferences.appLanguage, 'toast.emphasisSaveFailed'));
+      return;
+    }
+    if (!result.saved) {
+      return;
+    }
     void haptics.success();
+    // The sliders move set counts on rows the sheet does not show, so the
+    // save names them: "Hip thrust 4 → 5 sets" is the one moment the reader
+    // sees which lift changed (#to-do 2026-09-29). A save that moved no count
+    // says nothing — the bars on the page already show the new split, and a
+    // toast repeating them is what the reader asked to be rid of (2026-08-26).
+    if (changes.length > 0) {
+      showToast(setCountToast(changes));
+    }
+  }
+
+  function setCountToast(changes: readonly SetCountChange[]): string {
+    const language = preferences.appLanguage;
+    const label = (change: SetCountChange) => exerciseNameLabel(language, change.name);
+    if (changes.length === 1) {
+      const [change] = changes;
+      // "1 sarja", not "1 sarjaa": Finnish takes the partitive only after 2+.
+      return change.to === 1
+        ? t(language, 'toast.setCountChangedOne', { name: label(change), from: change.from })
+        : t(language, 'toast.setCountChanged', { name: label(change), from: change.from, to: change.to });
+    }
+    const { named, more } = setCountToastParts(changes);
+    const items = named.map((change) =>
+      t(language, 'toast.setCountChangedItem', { name: label(change), from: change.from, to: change.to }),
+    );
+    if (more > 0) {
+      items.push(t(language, 'toast.setCountChangedMore', { count: more }));
+    }
+    return t(language, 'toast.setCountChangedMany', { list: items.join(', ') });
   }
 
   async function handleCompletionRestart(planId: string) {

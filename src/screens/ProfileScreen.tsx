@@ -11,7 +11,7 @@ import { formatCompactVolume, formatWeight } from '../lib/format';
 import { LifetimeTrainingSummary } from '../lib/lifetimeSummary';
 import { MilestoneLedger } from '../lib/milestoneFacts';
 import { milestoneCardFooter, milestoneCardRows } from '../lib/profileMilestoneRows';
-import { bodyPartLabel, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { inviteMessage, storeListingUrl, storePlatformOf } from '../lib/storeLinks';
 import {
   formatRecordWhenLabel,
