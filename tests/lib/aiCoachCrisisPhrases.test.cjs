@@ -657,10 +657,18 @@ module.exports = [
       assert.match(server, /import \{ classifyCoachScope \} from '\.\.\/src\/lib\/aiCoachScope';/);
       const handler = server.slice(server.indexOf('input = parseBody(req.body);'));
       // Read up to the question's own limit, so the body's size does not
-      // decide what the check costs (review, 2026-10-07).
-      assert.match(handler, /const readForCrisis = input\.prompt\.slice\(0, BUDGET_LIMITS\.maxPromptChars\);/);
-      const crisisAt = handler.indexOf("classifyCoachScope(readForCrisis) === 'crisis'");
-      assert.ok(crisisAt > 0, 'the chat handler reads the question for a crisis');
+      // decide what the check costs (review, 2026-10-07) — and every history
+      // question with it, since those reach the model too (2026-10-08).
+      const finder = server.slice(server.indexOf('function findCrisisText('), server.indexOf('function parseBody('));
+      assert.match(finder, /input\.prompt\.slice\(0, BUDGET_LIMITS\.maxPromptChars\)/);
+      assert.match(finder, /\(input\.history \?\? \[\]\)\.map\(\(turn\) => turn\.question\)/);
+      assert.match(finder, /classifyCoachScope\(text\) === 'crisis'/);
+      const crisisAt = handler.indexOf('const readForCrisis = findCrisisText(input);');
+      assert.ok(crisisAt > 0, 'the chat handler reads the request for a crisis');
+      // For a compose brief too: the order below held while the condition
+      // let every brief past it (F1 crisis hunt, 2026-10-08).
+      const condition = handler.slice(crisisAt, handler.indexOf('{', handler.indexOf('if (', crisisAt)));
+      assert.doesNotMatch(condition, /mode/);
       assert.ok(crisisAt < handler.indexOf('checkRateLimit(ip)'), 'before the rate limit');
       assert.ok(crisisAt < handler.indexOf('requestClaudeProgramme(input)'), 'before the composer');
       assert.ok(crisisAt < handler.indexOf('requestClaude(input)'), 'before the model');

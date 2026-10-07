@@ -29,6 +29,7 @@ import { formatShortDate } from '../lib/format';
 import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoachContextReadout, buildCoachNoticed, buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachOpeningRows } from '../lib/coachChat';
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
 import { appendCoachTurn } from '../lib/coachConversation';
+import { isCoachCrisisTurn } from '../lib/coachCrisisTurn';
 import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -1101,10 +1102,18 @@ export function AICoachChatScreen({
         // Kept even when the answer was a follow-up question: without it the
         // reader's reply to that question would arrive with no antecedent,
         // which is the exact failure this exists to fix.
-        conversation.current = appendCoachTurn(conversation.current, {
-          question: trimmed,
-          takeaway: answer.takeaway,
-        });
+        //
+        // Not a crisis answer, though. The branch at the top of send() never
+        // appends its own, but a server whose filter is newer than this
+        // build's answers with the same crisis answer, and appending that sent
+        // the message back to the model with the next question (F1 crisis
+        // hunt, 2026-10-08).
+        if (!isCoachCrisisTurn({ question: trimmed, takeaway: answer.takeaway })) {
+          conversation.current = appendCoachTurn(conversation.current, {
+            question: trimmed,
+            takeaway: answer.takeaway,
+          });
+        }
         // And the long memory, on a narrower rule than the thread above. The
         // thread keeps a clarifying question so the reader's reply has an
         // antecedent; the memory keeps only advice, so an answer that asked

@@ -519,6 +519,20 @@ function sanitizeHistory(value: unknown): AICoachConversationTurn[] {
   return clean.slice(-MAX_HISTORY_TURNS);
 }
 
+/**
+ * The first text in a request that reads as a crisis, or null.
+ *
+ * The question up to its own limit — a longer one is refused by the budget
+ * before the model, so nothing past it is ever sent — and each history
+ * question, already clipped by sanitizeHistory. The takeaways are the
+ * coach's own words, not the reader's.
+ */
+function findCrisisText(input: ParsedBody): string | null {
+  const texts = [input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars), ...(input.history ?? []).map((turn) => turn.question)];
+  const crisis = texts.find((text) => classifyCoachScope(text) === 'crisis');
+  return crisis === undefined ? null : crisis;
+}
+
 function parseBody(body: unknown): ParsedBody | null {
   const parsed = typeof body === 'string' ? JSON.parse(body) : body;
   if (!parsed || typeof parsed !== 'object') {
@@ -1449,8 +1463,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   // model's budget, and this runs before the rate limit, so a megabyte of
   // starred words was seconds of function time for anyone to ask for
   // (review, 2026-10-07). The phone's composer stops at that limit anyway.
-  const readForCrisis = input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars);
-  if (input.mode === 'advice' && classifyCoachScope(readForCrisis) === 'crisis') {
+  //
+  // Every text the model would read, not just the new question (F1 crisis
+  // hunt, 2026-10-08). Every build appended the turn this answered, so the
+  // crisis came back as `history` on the next question and went to the model
+  // as a user message; and a compose brief carries the intake's free-text
+  // answer to a composer whose rules have no crisis line at all. A compose
+  // answer here holds no proposal, so an older build composes on the device.
+  const readForCrisis = findCrisisText(input);
+  if (readForCrisis !== null) {
     res.status(200).json(createSuccess(buildAiCoachPreviewAnswer(readForCrisis, input.context, input.language), 'preview'));
     return;
   }
