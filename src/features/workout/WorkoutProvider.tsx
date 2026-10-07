@@ -70,7 +70,7 @@ interface WorkoutContextValue {
   /** Correct a set that is already logged, without moving the session on. */
   editLoggedSet: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
   repeatLastSet: (slotId: string, setIndex: number, unitPreference: UnitPreference) => void;
-  undoSet: (slotId: string, setIndex: number) => void;
+  undoSet: (slotId: string, setIndex: number, unitPreference: UnitPreference) => void;
   addSet: (slotId: string) => void;
   /** A warm-up set, kept apart from the working sets (WorkoutWarmupSet). */
   logWarmup: (slotId: string, loadKg: number, reps: number) => void;
@@ -371,8 +371,8 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
       repeatLastSet(slotId, setIndex, unitPreference) {
         dispatch({ type: 'set/repeatLast', payload: { slotId, setIndex, nowMs: Date.now(), unitPreference } });
       },
-      undoSet(slotId, setIndex) {
-        dispatch({ type: 'set/undo', payload: { slotId, setIndex } });
+      undoSet(slotId, setIndex, unitPreference) {
+        dispatch({ type: 'set/undo', payload: { slotId, setIndex, unitPreference } });
       },
       addSet(slotId) {
         dispatch({ type: 'exercise/addSet', payload: { slotId } });

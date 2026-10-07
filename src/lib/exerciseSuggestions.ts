@@ -84,6 +84,20 @@ function shouldTrackByDefault(item?: ExerciseLibraryItem) {
   return item.category === 'compound';
 }
 
+/**
+ * The rest a lift added mid-session starts from, before its kind trims it
+ * (getExerciseTemplateDefaults): the rest of the lift it is added after, so it
+ * keeps the session's rhythm, when that lift rests between sets at all. A bout
+ * of minutes, a 1 × 20 finisher and the first half of a superset rest 0, and a
+ * 3 × 6–8 bench added after one rested 0 — the player's 15 s floor (re-hunt
+ * R4, 2026-10-07). Otherwise the reader's own default rest.
+ */
+export function restSecondsForAddedLift(anchorRestSeconds: number | null | undefined, defaultRestSeconds: number): number {
+  return typeof anchorRestSeconds === 'number' && Number.isFinite(anchorRestSeconds) && anchorRestSeconds > 0
+    ? anchorRestSeconds
+    : defaultRestSeconds;
+}
+
 export function getExerciseTemplateDefaults(item: ExerciseLibraryItem | undefined, defaultRestSeconds: number) {
   if (!item) {
     return {

@@ -141,7 +141,7 @@ import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
 import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
-import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
+import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder, restSecondsForAddedLift } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
@@ -220,11 +220,10 @@ const SPLASH_MS = 2300;
 const SET_DOT_CAP = 9;
 
 /**
- * The rest a mid-workout add falls back to when there is no last exercise to
- * inherit one from — a cooldown-only session with no main block, added after
- * (recheck round 2026-09-29). Same number `AppProvider` seeds a fresh
- * install's preferences with, so a lift added here without one rests the
- * same as any lift would before the reader ever set a preference.
+ * The rest a mid-workout add falls back to when there is no rest to inherit —
+ * a cooldown-only session with no main block (recheck round 2026-09-29), or a
+ * last exercise that rests 0 — and no `defaultRestSeconds` was passed. Same
+ * number `AppProvider` seeds a fresh install's preferences with.
  */
 const NO_ANCHOR_DEFAULT_REST_SECONDS = 120;
 
@@ -311,6 +310,8 @@ interface GuidedPlayerScreenProps {
   soundCuesEnabled: boolean;
   /** Keep the display on for the whole guided session. */
   keepScreenAwake?: boolean;
+  /** The reader's default rest, for a lift added mid-session with no rest to inherit. */
+  defaultRestSeconds?: number;
   onToggleSoundCues: (next: boolean) => void;
   entryEyebrow: string;
   /**
@@ -1505,6 +1506,7 @@ function GuidedPlayer({
   plateauNotice,
   soundCuesEnabled,
   keepScreenAwake = false,
+  defaultRestSeconds = NO_ANCHOR_DEFAULT_REST_SECONDS,
   onToggleSoundCues,
   entryEyebrow,
   ownBlockStats = {},
@@ -2715,10 +2717,7 @@ function GuidedPlayer({
       ? exercises.find((exercise) => exercise.slotId === addExerciseAfterSlot.anchor) ?? null
       : null;
     const anchor = afterCurrent ?? exercises[exercises.length - 1] ?? null;
-    const defaults = getExerciseTemplateDefaults(
-      item,
-      anchor ? anchor.restSecondsMin : NO_ANCHOR_DEFAULT_REST_SECONDS,
-    );
+    const defaults = getExerciseTemplateDefaults(item, restSecondsForAddedLift(anchor?.restSecondsMin, defaultRestSeconds));
     if (afterCurrent && addExerciseAfterSlot) {
       // Stays on this lift: no jump, and the intro says where it went.
       const introSlotId = addExerciseAfterSlot.intro;
@@ -2747,7 +2746,7 @@ function GuidedPlayer({
     const target = getGuidedBackTargetIndex(steps, stepIndex);
     const targetStep = steps[target];
     if (targetStep?.type === 'set' && isSetCompleted(targetStep.slotId, targetStep.setIndex)) {
-      workout.undoSet(targetStep.slotId, targetStep.setIndex);
+      workout.undoSet(targetStep.slotId, targetStep.setIndex, unitPreference);
     }
     goTo(target);
   };

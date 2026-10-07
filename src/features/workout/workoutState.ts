@@ -104,7 +104,7 @@ export type WorkoutAction =
   | { type: 'set/editLogged'; payload: { slotId: string; setIndex: number; reps: number; loadKg: number | null } }
   | { type: 'set/recordEffort'; payload: { slotId: string; setIndex: number; effort: WorkoutSetEffort } }
   | { type: 'set/repeatLast'; payload: { slotId: string; setIndex: number; nowMs: number; unitPreference: 'kg' | 'lb' } }
-  | { type: 'set/undo'; payload: { slotId: string; setIndex: number } }
+  | { type: 'set/undo'; payload: { slotId: string; setIndex: number; unitPreference: 'kg' | 'lb' } }
   /** The bout's stopwatch started or paused (null: none on the clock). */
   | { type: 'session/setMinutesClock'; payload: { clock: SessionMinutesClock | null } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
@@ -382,6 +382,79 @@ export function resolveInstanceBorrowRepWindow(
     repsMin: first.plannedRepsMin,
     repsMax: first.plannedRepsMax,
   });
+}
+
+/**
+ * The last time the lift the slot holds now was done, for the weight of a set
+ * re-planned for it: the sets still ahead when a lift is swapped in
+ * (exercise/swap), and a set logged before the swap once it is taken back
+ * (set/undo).
+ */
+function findCurrentLiftEntry(
+  history: WorkoutHistoryStore,
+  exercise: WorkoutExerciseInstance,
+): WorkoutSlotHistoryEntry | null {
+  const pendingSets = exercise.sets.filter((set) => set.status === 'pending');
+  const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
+    requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
+    // Same gate as the session's own prefill: the swapped-in lift's weight
+    // only carries over from sessions run at reps this slot is asking for.
+    // Asked of the sets still ahead: a set logged before the swap carries
+    // the old lift's prescription.
+    repWindow: resolveInstanceBorrowRepWindow({
+      trackingMode: exercise.trackingMode,
+      sets: pendingSets.length > 0 ? pendingSets : exercise.sets,
+    }),
+  });
+  // Its working sets only, numbered as done (lib/warmupSets), as the
+  // session's own prefill and the "Last time" panel read them: against the
+  // programme's count, so a set added mid-session does not change which of
+  // last time's sets were warm-ups (review, 2026-10-05).
+  return found ? toWorkingHistoryEntry(found, programmeSetCount(exercise.sets)) : null;
+}
+
+/**
+ * One pending set's weight and badges, re-resolved for the lift the slot holds
+ * now. The prefilled load belongs to the lift swapped AWAY from — it came from
+ * this slot's history, and a leg-press weight is not a front-squat weight. If
+ * the new lift was done before — anywhere — that weight appears, otherwise the
+ * field opens empty. `autoProgressedFromKg` is dropped either way, because the
+ * progression gate did not choose a weight for this lift and the badge must
+ * not say it did.
+ */
+function replanSetForCurrentLift(
+  exercise: WorkoutExerciseInstance,
+  set: WorkoutSetInstance,
+  entry: WorkoutSlotHistoryEntry | null,
+  unitPreference: 'kg' | 'lb',
+) {
+  // By its place within the new lift, which is how that lift's history
+  // numbers it — not by its place in the slot (review of #170).
+  const historical = findHistoricalSetForIndex(entry, setIndexWithinLift(exercise, set));
+  set.draftLoadText = historical ? formatWeightInputValue(historical.loadKg, unitPreference) : '';
+  set.plannedLoadKg = historical?.loadKg;
+  set.autoProgressedFromKg = undefined;
+  // So do the gate's holds: a badge on the new lift would name a
+  // decision nobody made about it.
+  set.heldForFatigue = undefined;
+  set.heldForCautionArea = undefined;
+  // The rep target the gate picked belongs to the swapped-away lift too.
+  set.plannedTargetReps = undefined;
+  set.autoProgressedFromReps = undefined;
+  set.rampTargetReps = undefined;
+  set.prefilledFromPerformedAt = historical ? entry?.performedAt : undefined;
+  // A set the reader added was theirs only while it carried the weight
+  // of the set before it. Re-resolved from the new lift's history it
+  // holds a number the app chose (or none), and the log must say so:
+  // `borrowed` or `none`, not "the reader's own" (lib/loggedSetPlan).
+  // A set added after the swap is added afresh and stays `added`.
+  // The set is still past the programme's count, though, so it keeps
+  // that mark: cleared, the next swap and the "Last time" panel counted
+  // it as the programme's and read last time's warm-up as set 1 (bug
+  // hunt W11, 2026-10-05).
+  if (set.addedMidSession) {
+    set.plannedBySwap = true;
+  }
 }
 
 function resolveNamedHistoryDraft(
@@ -1610,7 +1683,17 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       }
       // Asked before the stamp is cleared: whether this set was the lift the
       // slot was swapped away from.
-      const wasLiftBeforeSwap = set.status === 'completed' && liftBeforeSwap(exercise, set) !== null;
+      const loggedBeforeSwap = set.status === 'completed' ? liftBeforeSwap(exercise, set) : null;
+      const wasLiftBeforeSwap = loggedBeforeSwap !== null;
+      // The sets that are still the old lift once this one is not: the line
+      // the swap drew is under the last of them, or gone with them. Read
+      // before the stamp is cleared, so a set from before the stamp, which
+      // only the line marks, still counts.
+      const stillBeforeSwap = wasLiftBeforeSwap
+        ? exercise.sets
+            .filter((item) => item !== set && item.status === 'completed' && liftBeforeSwap(exercise, item) !== null)
+            .map((item) => item.setIndex)
+        : [];
       set.status = 'pending';
       set.actualLoadKg = undefined;
       set.actualReps = undefined;
@@ -1619,6 +1702,31 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // Taken back, it is done again as whatever the slot holds now — the
       // lift it was logged as before a swap no longer answers for it.
       set.loggedAs = undefined;
+      if (loggedBeforeSwap) {
+        // So it asks for what that lift asks for, as the sets the swap found
+        // still ahead do: reps of a squat are not seconds of a plank, and a
+        // squat's 100 kg is not a leg press's weight (re-hunt R3, 2026-10-07).
+        // The numbers move as a set added after the swap's do (exercise/addSet).
+        const planned = prescriptionAfterSwap(
+          loggedBeforeSwap.trackingMode,
+          exercise.trackingMode,
+          { repsMin: set.plannedRepsMin, repsMax: set.plannedRepsMax },
+          exercise.exerciseName,
+        );
+        set.plannedRepsMin = planned.repsMin;
+        set.plannedRepsMax = planned.repsMax;
+        // What was typed for the old lift, in its unit.
+        set.draftRepsText = '';
+        replanSetForCurrentLift(
+          exercise,
+          set,
+          findCurrentLiftEntry(state.history, exercise),
+          action.payload.unitPreference,
+        );
+        // With no set left as the old lift above it, the line kept the set
+        // logged again here from carrying its weight to the next one.
+        exercise.swappedAfterSetIndex = stillBeforeSwap.length > 0 ? Math.max(...stillBeforeSwap) : undefined;
+      }
       // The last set of the lift swapped away is taken back, so that lift has
       // no row left, and its warm-ups (logged before its first set, so for
       // it) went to the lift that replaced it: a barbell warm-up saved under
@@ -2009,32 +2117,10 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       });
       exercise.substitutionGroup = action.payload.substitutionGroup;
       exercise.status = 'swapped';
-      // The prefilled load belongs to the lift you just swapped AWAY from — it
-      // came from this slot's history, and a leg-press weight is not a front-
-      // squat weight. Sets already logged keep what was actually done; the ones
-      // still ahead are re-resolved for the lift you are actually about to do:
-      // if you have squatted before — anywhere — that weight appears, otherwise
-      // the field opens empty. `autoProgressedFromKg` is dropped either way,
-      // because the progression gate did not choose a weight for this lift and
-      // the badge must not say it did.
-      const swappedInFound = findLatestEntryForExerciseName(state.history.slotHistory, action.payload.exerciseName, {
-        requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
-        // Same gate as the session's own prefill: the swapped-in lift's weight
-        // only carries over from sessions run at reps this slot is asking for.
-        // Asked of the sets still ahead: a set logged before the swap carries
-        // the old lift's prescription.
-        repWindow: resolveInstanceBorrowRepWindow({
-          trackingMode: exercise.trackingMode,
-          sets: pendingSets.length > 0 ? pendingSets : exercise.sets,
-        }),
-      });
-      // Its working sets only, numbered as done (lib/warmupSets), as the
-      // session's own prefill and the "Last time" panel read them: against the
-      // programme's count, so a set added mid-session does not change which of
-      // last time's sets were warm-ups (review, 2026-10-05).
-      const swappedInEntry = swappedInFound
-        ? toWorkingHistoryEntry(swappedInFound, programmeSetCount(exercise.sets))
-        : null;
+      // Sets already logged keep what was actually done; the ones still ahead
+      // are re-resolved for the lift you are actually about to do
+      // (replanSetForCurrentLift).
+      const swappedInEntry = findCurrentLiftEntry(state.history, exercise);
       // Sets logged before this moment were a different lift. Clearing their
       // drafts is not enough on its own: the logger also carries forward from
       // the last COMPLETED set, which walked straight back over the swap and
@@ -2058,35 +2144,8 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         exercise.warmups = undefined;
       }
       exercise.sets.forEach((set) => {
-        if (set.status !== 'pending') {
-          return;
-        }
-        // By its place within the new lift, which is how that lift's history
-        // numbers it — not by its place in the slot (review of #170).
-        const historical = findHistoricalSetForIndex(swappedInEntry, setIndexWithinLift(exercise, set));
-        set.draftLoadText = historical ? formatWeightInputValue(historical.loadKg, action.payload.unitPreference) : '';
-        set.plannedLoadKg = historical?.loadKg;
-        set.autoProgressedFromKg = undefined;
-        // So do the gate's holds: a badge on the new lift would name a
-        // decision nobody made about it.
-        set.heldForFatigue = undefined;
-        set.heldForCautionArea = undefined;
-        // The rep target the gate picked belongs to the swapped-away lift too.
-        set.plannedTargetReps = undefined;
-        set.autoProgressedFromReps = undefined;
-        set.rampTargetReps = undefined;
-        set.prefilledFromPerformedAt = historical ? swappedInEntry?.performedAt : undefined;
-        // A set the reader added was theirs only while it carried the weight
-        // of the set before it. Re-resolved from the new lift's history it
-        // holds a number the app chose (or none), and the log must say so:
-        // `borrowed` or `none`, not "the reader's own" (lib/loggedSetPlan).
-        // A set added after the swap is added afresh and stays `added`.
-        // The set is still past the programme's count, though, so it keeps
-        // that mark: cleared, the next swap and the "Last time" panel counted
-        // it as the programme's and read last time's warm-up as set 1 (bug
-        // hunt W11, 2026-10-05).
-        if (set.addedMidSession) {
-          set.plannedBySwap = true;
+        if (set.status === 'pending') {
+          replanSetForCurrentLift(exercise, set, swappedInEntry, action.payload.unitPreference);
         }
       });
       session.ui.swapSheetSlotId = null;
