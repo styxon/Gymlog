@@ -1,3 +1,4 @@
+import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { programFitsEquipment } from './programEquipmentFit';
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import type { ProgrammeBriefSignals } from './programmeBrief';
@@ -130,6 +131,13 @@ const CATALOG_LEVEL: Record<AiPlannerExperience, SetupLevel> = {
 };
 
 /**
+ * The gear the intake's "Koti (käsipainot)" means, as the onboarding chips
+ * spell it. A band comes with any equipment at all, as the composer reads
+ * 'minimal' (aiCoachPlan).
+ */
+const DUMBBELL_HOME_ITEMS: readonly string[] = ['Dumbbells', 'Resistance bands'];
+
+/**
  * Whether the reader could run this programme at all: their gear, their
  * level. The score only weighed days, focus and goal, so a beginner at home
  * with no equipment who tapped five days was opened straight into an
@@ -140,13 +148,43 @@ function fitsReader(signals: ProgrammeBriefSignals, definition: RecommendationPr
   if (signals.experience && !definition.supportedLevels.includes(CATALOG_LEVEL[signals.experience])) {
     return false;
   }
-  if (signals.equipment === 'home_gym' || signals.equipment === 'minimal') {
+  if (holdsAvoidedLift(signals, definition.programId)) {
+    return false;
+  }
+  if (signals.equipment === 'home_gym') {
     return definition.equipmentTier === 'low_equipment';
+  }
+  if (signals.equipment === 'minimal') {
+    return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, [...DUMBBELL_HOME_ITEMS]);
   }
   if (signals.equipment === 'bodyweight') {
     return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, []);
   }
   return true;
+}
+
+/**
+ * Whether the programme holds a lift the brief keeps out: one it refused
+ * ("ei maastavetoa") or one a caution rules out ("olkapää kipeä" → overhead
+ * press). The composer drops those through its avoid list; the ready
+ * programme opened in its place kept them, so "6 päivää, ei maastavetoa"
+ * opened a week with Romanian deadlifts in it (bug hunt, 2026-10-07). Such a
+ * programme is no answer, and the composer builds the week instead.
+ */
+function holdsAvoidedLift(signals: ProgrammeBriefSignals, programId: string): boolean {
+  if (signals.avoidTerms.length === 0) {
+    return false;
+  }
+  const template = getWorkoutTemplateById(programId);
+  if (!template) {
+    return true;
+  }
+  return template.sessions.some((session) =>
+    session.exercises.some((exercise) => {
+      const name = exercise.exerciseName.toLowerCase();
+      return signals.avoidTerms.some((term) => name.includes(term));
+    }),
+  );
 }
 
 /**

@@ -80,12 +80,15 @@ export interface ProgrammeBriefSignals {
  * `avoid`: the lift as the composer's avoid terms, which it matches inside
  * library names — the library's own words, since "back squat" and "overhead
  * press" are in no name there (Barbell Full Squat, Standing Military Press).
+ * The catalog's own words too, since a ready programme is checked against the
+ * same list before it is opened in place of the build (briefProgrammeMatch):
+ * its squat is "Back Squat".
  */
 const LIFT_KEYWORDS: ReadonlyArray<{ pattern: RegExp; lift: string; exclude?: RegExp; avoid: readonly string[] }> = [
   { pattern: /penkki|penkkipunnerru|bench/i, lift: 'Bench Press', avoid: ['bench press'] },
   // Plain squat only: goblet, front and split squats are their own lifts, and
   // a brief naming one of those must not be read as a back squat.
-  { pattern: /(?:^|[^a-zäö-])(?:taka)?kyykky|(?:back |barbell )?squat/i, lift: 'Back Squat', avoid: ['barbell squat', 'barbell full squat'], exclude: /goblet|etukyykky|front|split|bulgarian|askel/i },
+  { pattern: /(?:^|[^a-zäö-])(?:taka)?kyykky|(?:back |barbell )?squat/i, lift: 'Back Squat', avoid: ['barbell squat', 'barbell full squat', 'back squat'], exclude: /goblet|etukyykky|front|split|bulgarian|askel/i },
   { pattern: /maastave|\bmave\b|deadlift/i, lift: 'Deadlift', avoid: ['deadlift'] },
   { pattern: /pystypunnerru|overhead|\bohp\b|military|olkapääpunnerru|shoulder press/i, lift: 'Overhead Press', avoid: ['military press', 'overhead press', 'shoulder press'] },
   { pattern: /kulmasoutu|tankosoutu|barbell row|bent[- ]over row/i, lift: 'Barbell Row', avoid: ['barbell row'] },
@@ -119,7 +122,10 @@ const BODY_PART_KEYWORDS: ReadonlyArray<{ pattern: RegExp; part: SetupFocusArea;
     pattern: /olkap[äa]|hartia|shoulder|delts?\b/i,
     part: 'shoulders',
     caution: 'shoulder',
-    avoid: ['overhead press', 'shoulder press', 'upright row', 'behind the neck', 'dips'],
+    // The presses overhead by their other names too: a ready programme with
+    // "Seated Dumbbell Press" or a thruster was opened for "olkapää kipeä"
+    // (bug hunt, 2026-10-07).
+    avoid: ['overhead press', 'shoulder press', 'upright row', 'behind the neck', 'dips', 'seated dumbbell press', 'kettlebell seated press', 'arnold', 'push press', 'thruster'],
   },
   {
     pattern: /jala|jalka|reisi|reidet|legs?\b|quads?\b|hamstring/i,
@@ -175,6 +181,15 @@ const BODY_PART_KEYWORDS: ReadonlyArray<{ pattern: RegExp; part: SetupFocusArea;
 // it, and a brief that says "penkki painopisteenä" is the opposite of a caution.
 const PAIN = /kipe|kipu|s[äa]rke|vamma|(?:^|\s)arka|hurt|(?:^|\s)pain(?:ful|s)?(?=\s|$|[.,!?])|sore|injur|tender|ei kest/i;
 
+/** "knees are fine", "selkä kunnossa": the body part is named to say it needs nothing. */
+const HEALTHY = /(?:^|\s)(?:fine|ok|okay|healthy|kunnossa|terveet?)(?=\s|$|[.,!?])/i;
+
+/**
+ * A clause that goes on about the pain before it: "olkapää kipeä, varsinkin
+ * penkissä" names the bench as where it hurts, not as a lift to put in.
+ */
+const PAIN_CONTINUES = /^(?:varsinkin|etenkin|erityisesti|lähinnä|kun|especially|particularly|mostly|when|during|in|with)(?=\s|$)/i;
+
 const FINNISH_NUMBERS: Record<string, number> = {
   yksi: 1,
   yhden: 1,
@@ -207,11 +222,107 @@ function splitSentences(brief: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * The clauses of a sentence. "Polvi kipeä, penkki mukaan" — the intake's own
+ * placeholder — is a caution and a request: read as one painful sentence, the
+ * bench was dropped, and so was the "ei maastavetoa" after "olkapää kipeä,"
+ * (bug hunt, 2026-10-07).
+ */
+function splitClauses(sentence: string): string[] {
+  return sentence
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/** The words that deny a pain itself: "no shoulder pain", "polvi ei ole kipeä", "knee doesn't hurt". */
+const PAIN_NEGATORS = new Set([
+  'ei', 'eikä', 'en', 'enkä', 'eivät', 'ilman',
+  'no', 'not', 'nor', 'never', 'without', 'nothing', "don't", 'dont', "doesn't", 'doesnt', "isn't", "aren't",
+]);
+
+/**
+ * Whether the clause denies the pain at `index`. Only a negator that governs
+ * the pain does: "I can't squat because my knee hurts", "kyykky ei onnistu
+ * koska polvi on kipeä" negate the lift, and read as denying the pain they
+ * dropped the knee caution (review, 2026-10-07). The "because" turns the
+ * clause (wordsBefore); a negation of a verb ("en pysty", "ei onnistu") or
+ * with a lift between ("ei kyykkyä polvi kipeä") is the lift's, not the
+ * pain's.
+ */
+function painDenied(text: string, index: number): boolean {
+  const before = wordsBefore(text, index);
+  for (let at = before.length - 1; at >= 0; at -= 1) {
+    if (!PAIN_NEGATORS.has(before[at])) {
+      continue;
+    }
+    if (TRAILING_REFUSAL_VERBS.has(before[at + 1] ?? '')) {
+      return false;
+    }
+    const between = before.slice(at + 1).join(' ');
+    return !LIFT_KEYWORDS.some((entry) => entry.pattern.test(between));
+  }
+  return false;
+}
+
+/**
+ * Which clauses say something hurts. A pain word the clause denies is none:
+ * "no shoulder pain", "ei polvikipuja", "no injuries". A bare list item takes
+ * the pain of the clause it leads into ("polvi, olkapää ja selkä kipeitä"),
+ * and a clause that goes on about the pain shares it.
+ */
+function painfulClauses(clauses: readonly string[]): boolean[] {
+  const painful = clauses.map((clause) => {
+    const lower = clause.toLowerCase();
+    return [...lower.matchAll(new RegExp(PAIN.source, 'gi'))].some((match) => !painDenied(lower, match.index ?? 0));
+  });
+  for (let index = clauses.length - 2; index >= 0; index -= 1) {
+    const clause = clauses[index];
+    if (
+      !painful[index] &&
+      painful[index + 1] &&
+      clause.split(/\s+/).length <= 2 &&
+      BODY_PART_KEYWORDS.some((entry) => entry.pattern.test(clause))
+    ) {
+      painful[index] = true;
+    }
+  }
+  for (let index = 1; index < clauses.length; index += 1) {
+    if (!painful[index] && painful[index - 1] && PAIN_CONTINUES.test(clauses[index])) {
+      painful[index] = true;
+    }
+  }
+  return painful;
+}
+
+/** The days a number names, or null when it is no count of days in a week. */
+function weekDays(value: string): number | null {
+  const days = Number(value);
+  return days >= 1 && days <= 7 ? days : null;
+}
+
 /** What the brief asked for, uncapped — null when it named no number. */
 function parseRequestedDays(brief: string): number | null {
-  const lower = brief.toLowerCase();
-  const numeric = lower.match(/(\d)\s*(?:x|×|krt|kertaa|kerta|pv|päiv|day|d\b|treeni|sessio|session|treenipäiv)/);
-  let days: number | null = numeric ? Number(numeric[1]) : null;
+  // "5x5" and "3x10" are sets by reps, not days: read as the first "x", a
+  // "5x5 voimaohjelma, 3 päivää viikossa" opened a five-day programme
+  // (bug hunt, 2026-10-07).
+  const lower = brief.toLowerCase().replace(/\d+\s*[x×]\s*\d+(?![\d\s]*min)/g, ' ');
+  // A number with a day or per-week unit outranks a bare "4x" or "3 treeniä"
+  // earlier in the brief; two digits, so "12 days" is not read as 2.
+  const explicit = /(?:^|\D)(\d{1,2})\s*(?:päiv|pv\b|days?\b|treenipäiv|(?:x|×|krt|kertaa)\s*(?:viikossa|vko|a week|per week|\/\s*(?:vko|wk|week)))/g;
+  const loose = /(?:^|\D)(\d{1,2})\s*(?:x|×|krt|kertaa|kerta|pv|päiv|day|d\b|treeni|sessio|session|treenipäiv)/g;
+  let days: number | null = null;
+  for (const pattern of [explicit, loose]) {
+    for (const match of lower.matchAll(pattern)) {
+      days = weekDays(match[1]);
+      if (days !== null) {
+        break;
+      }
+    }
+    if (days !== null) {
+      break;
+    }
+  }
   if (days === null) {
     for (const [word, value] of Object.entries(FINNISH_NUMBERS)) {
       // No \b: JavaScript's word boundary is ASCII, and "neljä" ends in a
@@ -274,21 +385,22 @@ function parseGoal(brief: string): AiPlannerGoal | null {
   return fromLabel ?? readGoal(brief);
 }
 
+/** The goals in the order a brief naming more than one is read. */
+const GOAL_KEYWORDS: ReadonlyArray<{ goal: AiPlannerGoal; pattern: RegExp }> = [
+  { goal: 'fat_loss', pattern: /rasva|laihdu|painonpudo|pudottaa|kiinte|fat|lean|cut\b|lose weight/g },
+  { goal: 'strength', pattern: /voima|vahv|maksimi|strength|strong|1rm/g },
+  { goal: 'muscle', pattern: /massa|lihas|kokoa|kasvat|hypertrof|muscle|size|bigger|bulk/g },
+  { goal: 'fitness', pattern: /kunto|yleiskunto|jaksa|fitness|conditioning|health|terveys/g },
+];
+
+/**
+ * A goal the brief names only to rule it out is no goal: "build muscle, not
+ * lose weight" was read as fat loss, because that keyword is checked first
+ * (bug hunt, 2026-10-07).
+ */
 function readGoal(text: string): AiPlannerGoal | null {
   const lower = text.toLowerCase();
-  if (/rasva|laihdu|painonpudo|pudottaa|kiinte|fat|lean|cut\b|lose weight/.test(lower)) {
-    return 'fat_loss';
-  }
-  if (/voima|vahv|maksimi|strength|strong|1rm/.test(lower)) {
-    return 'strength';
-  }
-  if (/massa|lihas|kokoa|kasvat|hypertrof|muscle|size|bigger|bulk/.test(lower)) {
-    return 'muscle';
-  }
-  if (/kunto|yleiskunto|jaksa|fitness|conditioning|health|terveys/.test(lower)) {
-    return 'fitness';
-  }
-  return null;
+  return GOAL_KEYWORDS.find((entry) => asksFor(lower, entry.pattern))?.goal ?? null;
 }
 
 function parseEquipment(brief: string): AiPlannerEquipment | null {
@@ -297,21 +409,37 @@ function parseEquipment(brief: string): AiPlannerEquipment | null {
   return fromLabel ?? readEquipment(brief);
 }
 
+/**
+ * The place as the planner's equipment answer. A place the brief negates is
+ * no answer: "no gym access" was read as a full gym. Dumbbells with no bar or
+ * gym beside them are the 'minimal' set, not a home gym — the intake's "Koti
+ * (käsipainot)" composed a week of barbell lifts, because 'home_gym' carries
+ * a barbell (bug hunt, 2026-10-07).
+ */
 function readEquipment(text: string): AiPlannerEquipment | null {
   const lower = text.toLowerCase();
-  if (/kehonpaino|ilman välineitä|ei välineitä|bodyweight|no equipment|calisthenic/.test(lower)) {
+  // These name the absence themselves, so they are read as written.
+  if (
+    /ilman välineitä|ei välineitä|no equipment|without equipment/.test(lower) ||
+    asksFor(lower, /kehonpaino|bodyweight|calisthenic/g)
+  ) {
     return 'bodyweight';
   }
-  if (/kuminauh|vastuskumi|band/.test(lower) && !/sali|gym/.test(lower)) {
+  const gym = asksFor(lower, /salilla|sali\b|kuntosali|gym/g);
+  if (asksFor(lower, /kuminauh|vastuskumi|band/g) && !gym) {
     return 'minimal';
   }
-  if (/kotisali|kotona|home/.test(lower)) {
+  if (
+    asksFor(lower, /käsipaino|dumbbell/g) &&
+    !gym &&
+    !asksFor(lower, /(?:^|\s)(?:levy)?tan[gk]|barbell|rack|teline|kotisali|home gym/g)
+  ) {
+    return 'minimal';
+  }
+  if (asksFor(lower, /kotisali|kotona|home/g)) {
     return 'home_gym';
   }
-  if (/salilla|sali\b|kuntosali|gym/.test(lower)) {
-    return 'full_gym';
-  }
-  return null;
+  return gym ? 'full_gym' : null;
 }
 
 function parseExperience(brief: string): AiPlannerExperience | null {
@@ -350,41 +478,51 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
   const refusedLifts: (typeof LIFT_KEYWORDS)[number][] = [];
 
   for (const sentence of splitSentences(brief)) {
-    const painful = PAIN.test(sentence);
-    for (const entry of BODY_PART_KEYWORDS) {
-      if (!entry.pattern.test(sentence)) {
-        continue;
-      }
-      if (painful) {
-        if (!cautions.includes(entry.caution)) {
-          cautions.push(entry.caution);
+    const clauses = splitClauses(sentence);
+    const painful = painfulClauses(clauses);
+    clauses.forEach((clause, index) => {
+      const lower = clause.toLowerCase();
+      for (const entry of BODY_PART_KEYWORDS) {
+        if (!entry.pattern.test(clause)) {
+          continue;
         }
-        for (const term of entry.avoid) {
-          if (!avoidTerms.includes(term)) {
-            avoidTerms.push(term);
+        if (painful[index]) {
+          if (!cautions.includes(entry.caution)) {
+            cautions.push(entry.caution);
           }
+          for (const term of entry.avoid) {
+            if (!avoidTerms.includes(term)) {
+              avoidTerms.push(term);
+            }
+          }
+        } else if (
+          // "no leg day", "älä keskity rintaan", "knees are fine" name the
+          // part to say it is not the point (bug hunt, 2026-10-07).
+          !HEALTHY.test(clause) &&
+          asksFor(lower, new RegExp(entry.pattern.source, 'gi')) &&
+          !focusBodyParts.includes(entry.part)
+        ) {
+          focusBodyParts.push(entry.part);
         }
-      } else if (!focusBodyParts.includes(entry.part)) {
-        focusBodyParts.push(entry.part);
       }
-    }
-    if (!painful) {
       for (const entry of LIFT_KEYWORDS) {
-        if (entry.exclude?.test(sentence) || !entry.pattern.test(sentence)) {
+        if (entry.exclude?.test(clause) || !entry.pattern.test(clause)) {
           continue;
         }
         // "ilman maastavetoa", "no deadlifts", "älä laita leuanvetoja" name
         // the lift to keep it out. Read as a request, the composer forced in
-        // the very lift the reader refused (review, 2026-10-07).
-        if (asksFor(sentence.toLowerCase(), new RegExp(entry.pattern.source, 'gi'))) {
-          if (!lifts.includes(entry.lift)) {
+        // the very lift the reader refused (review, 2026-10-07). A lift in a
+        // painful clause is where it hurts, never an ask — but "I can't
+        // squat because my knee hurts" still refuses it.
+        if (asksFor(lower, new RegExp(entry.pattern.source, 'gi'))) {
+          if (!painful[index] && !lifts.includes(entry.lift)) {
             lifts.push(entry.lift);
           }
         } else if (!refusedLifts.includes(entry)) {
           refusedLifts.push(entry);
         }
       }
-    }
+    });
   }
   for (const entry of refusedLifts) {
     if (lifts.includes(entry.lift)) {
@@ -546,45 +684,175 @@ const SPECIALTY_IMPLEMENTS: Readonly<Record<string, RegExp>> = {
   'yoke walk': /\byoke/,
 };
 
-/** Words that, a few words before a mention in the same clause, refuse it: "ei erikoisliikkeitä", "no strongman". */
+/**
+ * Words that, anywhere before a mention in the same clause, refuse it: "ei
+ * erikoisliikkeitä", "no strongman", "I don't want to do deadlifts", "en
+ * todellakaan halua tehdä maastavetoa". The last three words were read
+ * before, and the "don't" of the longer phrasings fell outside them — the
+ * refused lift was put in the week as a main lift (bug hunt, 2026-10-07).
+ */
 const REFUSAL_WORDS = new Set([
-  'ei', 'eikä', 'en', 'älä', 'ilman', 'paitsi', 'inhoan', 'vihaan',
-  'no', 'not', 'without', 'avoid', 'never', 'skip', 'except', "don't", 'dont', 'hate', 'dislike',
+  'ei', 'eikä', 'en', 'enkä', 'eivät', 'älä', 'älkää', 'ilman', 'paitsi', 'inhoan', 'vihaan',
+  'vältä', 'vältän', 'välttää', 'välttäisin', 'poista', 'jätä', 'pois',
+  'no', 'not', 'nor', 'without', 'avoid', 'avoiding', 'never', 'skip', 'skipping', 'except', 'exclude', 'remove',
+  "don't", 'dont', "won't", "can't", 'cant', 'cannot', 'unable', 'nothing', 'hate', 'dislike',
 ]);
 
-/** A word right after a mention that refuses it: "maastaveto pois". */
+/** A word just after a mention that refuses it: "maastaveto pois", "maastaveto kokonaan pois". */
 const TRAILING_REFUSAL_WORDS = new Set(['pois']);
 
-/** "dippejä en halua", "maastavetoa ei kiitos": the refusal after the mention. */
-const TRAILING_REFUSAL_VERBS = new Set(['halua', 'haluu', 'kiitos', 'tarvitse']);
+/** The Finnish negation verb, after the mention: "maastavetoa ei saa olla". */
+const TRAILING_NEGATORS = new Set(['ei', 'en', 'eivät', 'enkä']);
+
+/**
+ * "dippejä en halua", "maastavetoa ei kiitos", "maastaveto ei sovi minulle",
+ * "kyykky ei onnistu", "erikoisliikkeet eivät kiinnosta": the refusal after
+ * the mention. Not "ole": "kyykky ei ole ongelma" is no refusal.
+ */
+const TRAILING_REFUSAL_VERBS = new Set([
+  'halua', 'haluu', 'kiitos', 'tarvitse', 'saa', 'sovi', 'onnistu', 'käy', 'kiinnosta', 'pysty', 'voi', 'tee', 'jaksa',
+]);
 
 /**
  * Words that turn a clause round, so a refusal before them does not reach
  * past them: "ei koneita vaan strongman" asks for strongman — the usual
  * Finnish way to — and so does "no machines but strongman" (CI review of
- * #332, 2026-10-07). Not "ja" / "and": "ilman koneita ja strongmania" refuses
- * both.
+ * #332, 2026-10-07). Not "ja" / "and" alone: "ilman koneita ja strongmania"
+ * refuses both — only when a fresh ask follows it (FRESH_ASK).
  */
-const CONTRAST_WORDS = new Set(['vaan', 'mutta', 'but', 'instead', 'rather']);
+const CONTRAST_WORDS = new Set(['vaan', 'mutta', 'but', 'instead', 'rather', 'joten', 'siksi', 'therefore']);
 
-/** Whether some mention matched by `pattern` is not refused by a word just before it. */
+/**
+ * "so" turns the clause like "joten" — "I don't have a lot of time so focus
+ * on squats" refused the squats it asked for (review, 2026-10-07) — but not
+ * right after a refusal, where it is "not so keen on deadlifts".
+ */
+const SO = 'so';
+
+/**
+ * A reason starts a clause of its own: in "I can't squat because my knee
+ * hurts" the "can't" is the squat's, and read as reaching the pain it dropped
+ * the knee caution (review, 2026-10-07). Not "as" ("no deadlifts as well as
+ * squats") and not the postposition "takia", which follows its reason.
+ */
+const CAUSAL_WORDS = new Set(['because', 'since', 'koska', 'kun', 'sillä']);
+
+/** After "ja" / "and", a new request: "en halua koneita ja haluan maastavetoa". */
+const FRESH_ASK = new Set(['haluan', 'lisää', 'pidä', 'i', 'keep', 'add', 'include', 'want', 'focus', 'learn']);
+
+/**
+ * An ask verb no refusal governs turns the clause on its own: "I don't have
+ * much time I want squats". Governed means a refusal, or an ask verb itself
+ * governed, in the two words before it: "don't want", "don't really want",
+ * "would not want to learn", "älä lisää".
+ */
+const ASK_VERBS = new Set(['haluan', 'lisää', 'pidä', 'keep', 'add', 'include', 'want', 'focus', 'learn']);
+
+/** A word as the refusal sets spell it: lower case, one apostrophe, no punctuation round it. */
+function normalizeWord(word: string): string {
+  return word
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/^[^\p{L}\p{N}']+|[^\p{L}\p{N}']+$/gu, '');
+}
+
+/** The index of the last word that turns the clause round, -1 for none. */
+function lastTurn(words: readonly string[]): number {
+  let turn = -1;
+  const governedAsks = new Set<number>();
+  words.forEach((word, at) => {
+    if (ASK_VERBS.has(word)) {
+      const from = Math.max(turn + 1, at - 2);
+      const governed = words
+        .slice(from, at)
+        .some((earlier, offset) => REFUSAL_WORDS.has(earlier) || governedAsks.has(from + offset));
+      if (governed) {
+        governedAsks.add(at);
+      } else {
+        turn = at;
+      }
+      return;
+    }
+    if (
+      CONTRAST_WORDS.has(word) ||
+      CAUSAL_WORDS.has(word) ||
+      (word === SO && !REFUSAL_WORDS.has(words[at - 1] ?? '')) ||
+      ((word === 'ja' || word === 'and') && FRESH_ASK.has(words[at + 1] ?? ''))
+    ) {
+      turn = at;
+    }
+  });
+  return turn;
+}
+
+/** The clause's words before `index`, from the last turn on. */
+function wordsBefore(text: string, index: number): string[] {
+  const clause = text.slice(0, index).split(/[.,;:!?\n]/).pop() ?? '';
+  const words = clause.split(/\s+/).map(normalizeWord).filter(Boolean);
+  return words.slice(lastTurn(words) + 1);
+}
+
+/** The clause's words after `index`, up to the next turn — the rest of the mentioned word left out. */
+function wordsAfter(text: string, index: number): string[] {
+  const clause = text.slice(index).split(/[.,;:!?\n]/)[0].replace(/^[\p{L}\p{N}-]*/u, '');
+  const words = clause.split(/\s+/).map(normalizeWord).filter(Boolean);
+  const turn = words.findIndex((word) => CONTRAST_WORDS.has(word) || CAUSAL_WORDS.has(word) || word === SO);
+  return turn === -1 ? words : words.slice(0, turn);
+}
+
+/**
+ * Whether a refusal before `index` in its clause reaches the mention there.
+ * "leave" refuses only as "leave out"; "no problem with", "en ole tehnyt",
+ * "never done" refuse nothing.
+ */
+function refusedBefore(text: string, index: number, after: readonly string[] = []): boolean {
+  const before = wordsBefore(text, index);
+  return before.some((word, at) => {
+    const refusal = REFUSAL_WORDS.has(word) || (word === 'leave' && (before[at + 1] === 'out' || after[0] === 'out'));
+    return (
+      refusal &&
+      !NOT_AN_OBJECTION.has(before[at + 1] ?? '') &&
+      !(COMPARATIVES.has(before[at + 1] ?? '') && before[at + 2] === 'than') &&
+      !before.slice(at + 1).some((later) => NOT_YET_DONE.has(later))
+    );
+  });
+}
+
+/**
+ * After a negator and its verb, the lift must stay: "maastaveto ei saa jäädä
+ * pois", "penkki ei voi puuttua". Read as "ei saa" + "pois", the very lift
+ * the reader insisted on was avoided (review, 2026-10-07).
+ */
+const MUST_STAY = new Set(['puuttua', 'puutu', 'jäädä', 'jää', 'unohtua', 'unohdu']);
+
+/** Whether the words after a mention refuse it: "maastaveto pois", "penkkiä ei", "bench is not for me". */
+function refusedAfter(after: readonly string[]): boolean {
+  const negator = after.slice(0, 2).findIndex((word) => TRAILING_NEGATORS.has(word));
+  if (negator !== -1 && after.slice(negator + 1, negator + 3).some((word) => MUST_STAY.has(word))) {
+    return false;
+  }
+  // "pois" refuses unless a negation before it turns it round: "kyykky ei jää pois".
+  const away = after.slice(0, 3).findIndex((word) => TRAILING_REFUSAL_WORDS.has(word));
+  if (away !== -1 && !after.slice(0, away).some((word) => TRAILING_NEGATORS.has(word) || word === 'älä')) {
+    return true;
+  }
+  if (negator !== -1) {
+    const verbs = after.slice(negator + 1, negator + 3);
+    // A bare clause-final "ei": "Penkkiä ei."
+    if (verbs.length === 0 || verbs.some((word) => TRAILING_REFUSAL_VERBS.has(word))) {
+      return true;
+    }
+  }
+  // One word of the lift's name may come first: "bench press is not for me".
+  return /^(?:[\p{L}-]+\s+)?(?:(?:is|are)\s+)?(?:not|isn't|aren't)\s+for\s+me(?:\s|$)/u.test(after.join(' '));
+}
+
+/** Whether some mention matched by `pattern` (global) is not refused in its own clause. */
 function asksFor(text: string, pattern: RegExp): boolean {
   for (const match of text.matchAll(pattern)) {
-    const clause = text.slice(0, match.index).split(/[.,;:!?\n]/).pop() ?? '';
-    const words = clause.split(/\s+/).filter(Boolean);
-    const turn = words.reduce((last, word, index) => (CONTRAST_WORDS.has(word) ? index : last), -1);
-    const before = words.slice(turn + 1).slice(-3).map((word) => word.replace(/[’']/g, "'"));
-    const refused = before.some(
-      (word, index) =>
-        REFUSAL_WORDS.has(word) &&
-        !NOT_AN_OBJECTION.has(before[index + 1] ?? '') &&
-        !before.slice(index + 1).some((later) => NOT_YET_DONE.has(later)),
-    );
-    const after = text.slice((match.index ?? 0) + match[0].length).match(/^[\p{L}\p{N}-]*\s+([\p{L}]+)(?:\s+([\p{L}]+))?/u);
-    const refusedAfter =
-      after !== null &&
-      (TRAILING_REFUSAL_WORDS.has(after[1]) || ((after[1] === 'en' || after[1] === 'ei') && TRAILING_REFUSAL_VERBS.has(after[2] ?? '')));
-    if (!refused && !refusedAfter) {
+    const index = match.index ?? 0;
+    const after = wordsAfter(text, index + match[0].length);
+    if (!refusedBefore(text, index, after) && !refusedAfter(after)) {
       return true;
     }
   }
@@ -595,7 +863,13 @@ function asksFor(text: string, pattern: RegExp): boolean {
  * The word after a refusal word that turns it into a yes: "no problem with
  * strongman", "ei haittaa", "en pelkää strongmania", "don't mind".
  */
-const NOT_AN_OBJECTION = new Set(['problem', 'problems', 'worries', 'mind', 'haittaa', 'pelkää', 'haittais', 'haittaisi']);
+const NOT_AN_OBJECTION = new Set(['problem', 'problems', 'worries', 'mind', 'haittaa', 'pelkää', 'haittais', 'haittaisi', 'ongelmaa']);
+
+/**
+ * A refusal word, one of these and "than" is a cap, not a refusal: "no more
+ * than 45 minutes with squats" refused the squats (review, 2026-10-07).
+ */
+const COMPARATIVES = new Set(['more', 'less', 'longer', 'fewer']);
 
 /**
  * A refusal word followed by one of these says what the reader has not done

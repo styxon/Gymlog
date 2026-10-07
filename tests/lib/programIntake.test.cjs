@@ -32,7 +32,10 @@ function answerAll(values, preferences = BLANK_PREFERENCES) {
 }
 
 const GOAL_SIGNAL = { muscle: 'muscle', strength: 'strength', fat_loss: 'fat_loss', fitness: 'fitness' };
-const EQUIPMENT_SIGNAL = { gym: 'full_gym', home_dumbbells: 'home_gym', bodyweight: 'bodyweight' };
+// Dumbbells at home are the planner's 'minimal' set: 'home_gym' carries a
+// barbell, and composed a barbell week under "Koti (käsipainot)" (bug hunt,
+// 2026-10-07).
+const EQUIPMENT_SIGNAL = { gym: 'full_gym', home_dumbbells: 'minimal', bodyweight: 'bodyweight' };
 
 module.exports = [
   {
