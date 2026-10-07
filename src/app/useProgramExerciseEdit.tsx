@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
+import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { addActiveProgram, removeActiveProgram } from '../lib/activeProgramSet';
 import { buildDuplicatedCustomProgramDraft } from '../lib/customProgramDuplication';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
@@ -568,7 +569,8 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
         dayLabels: planLabelsForProgramme(sessionIds.length, preferences.setupAvailableDays, new Date()),
         now: replacedPlan?.updatedAt ?? new Date().toISOString(),
       });
-      await upsertWorkoutPlan(plan);
+      // And its rhythm: a new id, so the plan write cannot carry it over.
+      await upsertWorkoutPlan({ ...plan, trainingCycle: planTrainingCycle(replacedPlan) });
       // The copy takes the ready programme's place rather than joining it —
       // the reader had one programme before this and must have one after. Only
       // when the ready one was actually running: editing a day of a programme

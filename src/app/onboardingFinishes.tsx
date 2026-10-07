@@ -10,6 +10,7 @@ import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/ai
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { FirstRunSetupSelection, isSetupDaysPerWeek } from '../lib/firstRunSetup';
+import { leadPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { buildProgramWorkoutPlan, buildReadyProgramPlanId } from '../lib/programAdoption';
@@ -366,7 +367,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
     const saved = await saveOnboardingOrExplain({
       preferences: {
         onboardingCompleted: true,
-        ...buildSetupPreferencePatch(selection, recommendedProgramId, preferences.trainingCycle),
+        ...buildSetupPreferencePatch(selection, recommendedProgramId),
       },
       // A new run of the questionnaire writes over the programme the last run
       // made, unless the reader has changed it since.
@@ -379,6 +380,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
           workoutTemplateId,
           sessionIds,
           preferences.appLanguage,
+          leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId),
         ),
       activate: (planId, current) => {
         const next = activateOnboardingPlan(current, planId, resolveActiveProgramCap(resolveProEntitlement(current).unlocked));
@@ -458,7 +460,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
     const saved = await saveOnboardingOrExplain({
       preferences: {
         onboardingCompleted: true,
-        ...buildSetupPreferencePatch(selection, recommendedProgramId, preferences.trainingCycle),
+        ...buildSetupPreferencePatch(selection, recommendedProgramId),
       },
       // A new run of the questionnaire writes over the programme the last run
       // made, unless the reader has changed it since.
@@ -471,6 +473,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
           workoutTemplateId,
           sessionIds,
           preferences.appLanguage,
+          leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId),
         ),
       activate: (planId, current) => {
         const next = activateOnboardingPlan(current, planId, resolveActiveProgramCap(resolveProEntitlement(current).unlocked));

@@ -18,7 +18,7 @@ import { SetupHandoffChoices, SetupHandoffScreen } from '../screens/SetupHandoff
 import { StartPathScreen } from '../screens/StartPathScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import type { PreferencesPatch } from '../state/AppProvider';
-import { AppPreferences, SetupCautionFlag, UnitPreference } from '../types/models';
+import { AppPreferences, SetupCautionFlag, TrainingCycle, UnitPreference } from '../types/models';
 
 type OnboardingStep = 'path' | 'about' | 'questionnaire' | 'ready_catalog';
 
@@ -293,6 +293,8 @@ export interface SetupEditorDeps {
   setupEditSelection: FirstRunSetupSelection | null;
   setupBasics: Partial<FirstRunSetupSelection>;
   setupSelection: FirstRunSetupSelection | null;
+  /** The lead programme's rhythm: the one the questions seed and replace. */
+  leadTrainingCycle: TrainingCycle | null;
   unitPreference: UnitPreference;
   tailoringPreferences: TailoringPreferencesInput;
   workout: { templates: unknown[] };
@@ -310,6 +312,7 @@ export function renderSetupEditor(deps: SetupEditorDeps): React.ReactNode {
     setupEditSelection,
     setupBasics,
     setupSelection,
+    leadTrainingCycle,
     unitPreference,
     tailoringPreferences,
     workout,
@@ -331,7 +334,9 @@ export function renderSetupEditor(deps: SetupEditorDeps): React.ReactNode {
       // height, weight, rhythm (2026-09-17). They get what they entered as
       // basics, and the questions open unanswered.
       initialSelection={setupEditSelection}
-      existingTrainingCycle={preferences.trainingCycle}
+      // The lead programme's rhythm: the one the questions seed and the one
+      // they replace, so an unchanged pattern keeps its anchor.
+      existingTrainingCycle={leadTrainingCycle}
       basicsSeed={setupEditSelection ? null : setupBasics}
       initialStage={route.stage ?? (setupSelection ? 'review' : 'location')}
       initialUnitPreference={unitPreference}

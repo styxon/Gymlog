@@ -4,6 +4,7 @@ import { Alert, Linking, Platform } from 'react-native';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { AccountBackupApi } from '../features/account/useAccountBackup';
 import { livePlanEntries } from '../lib/planResolvableEntries';
+import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
 import { buildCancelSurveyAnswer } from '../lib/cancelSurvey';
 import { recordRatingCompleted } from '../lib/ratingPrompt';
@@ -54,7 +55,7 @@ import { SettingsScreen } from '../screens/SettingsScreen';
 import { SubscriptionScreen } from '../screens/SubscriptionScreen';
 import { TrainingBreakScreen } from '../screens/TrainingBreakScreen';
 import { TrainingPlanScreen } from '../screens/TrainingPlanScreen';
-import { AppDatabase, AppPreferences, SetupWeekday, WorkoutTemplateDraft } from '../types/models';
+import { AppDatabase, AppPreferences, SetupWeekday, TrainingCycle, WorkoutTemplateDraft } from '../types/models';
 import type { PreferencesPatch } from '../state/AppProvider';
 import { CompletionSummaryState } from './workoutCompletionState';
 import { createUnlessAtLimit } from './programLimitGuard';
@@ -76,6 +77,8 @@ export interface ProfileTabDeps {
   resetToRoute: (route: AppRoute) => void;
   preferences: AppPreferences;
   updatePreferences: (patch: PreferencesPatch) => Promise<unknown>;
+  /** One programme's rhythm set or cleared, on its own plan. */
+  setPlanTrainingCycle: (planId: string, cycle: TrainingCycle | null) => Promise<void>;
   coachProUnlocked: boolean;
   proCoachSpecimen: React.ComponentProps<typeof PremiumUnlockScreen>['coachSpecimen'];
   proEntitlement: React.ComponentProps<typeof SubscriptionScreen>['entitlement'];
@@ -198,6 +201,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
     resetToRoute,
     preferences,
     updatePreferences,
+    setPlanTrainingCycle,
     coachProUnlocked,
     proCoachSpecimen,
     proEntitlement,
@@ -248,13 +252,11 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
    * reminders. They read `setupAvailableDays` alone, and said "No training
    * days" to a reader whose cycle or plan the reminders were following.
    */
+  const leadPlan = database.workoutPlans.find((plan) => plan.id === preferences.activePlanId) ?? null;
   const reminderSchedule = () =>
     resolveReminderSchedule({
-      trainingCycle: preferences.trainingCycle,
-      planEntries: livePlanEntries(
-        database.workoutPlans.find((plan) => plan.id === preferences.activePlanId)?.entries ?? [],
-        templateSessionsReader(database),
-      ),
+      trainingCycle: planTrainingCycle(leadPlan),
+      planEntries: livePlanEntries(leadPlan?.entries ?? [], templateSessionsReader(database)),
       availableDays: preferences.setupAvailableDays,
     });
 
@@ -440,14 +442,24 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
             ? preferences.setupAvailableDays
             : reminderWeekdays(reminderSchedule())
         }
-        trainingCycle={preferences.trainingCycle}
+        // The lead programme's rhythm: this screen is the reader's own week,
+        // and that is the programme it follows.
+        trainingCycle={planTrainingCycle(leadPlan)}
         exerciseLibrary={exerciseBrowserItems}
         nameBook={exerciseNameBook}
         onTeachName={(wrote, exercise) => teachExerciseName(wrote, { name: exercise.name, libraryItemId: exercise.id })}
         onPickImage={handlePickProgramImage}
         onBack={() => navigateBack(ROOT_ROUTES.profile)}
         onChangeTrainingDays={(days) => void handleChangeTrainingDays(days)}
-        onChangeTrainingCycle={(cycle) => void updatePreferences({ trainingCycle: cycle })}
+        onChangeTrainingCycle={
+          leadPlan
+            ? (cycle) =>
+                void setPlanTrainingCycle(leadPlan.id, cycle).catch((error) => {
+                  console.error('Failed to save the training rhythm', error);
+                  showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                })
+            : undefined
+        }
         onEditCustomPlan={
           homeActivePlanCard?.programType === 'custom'
             ? () =>

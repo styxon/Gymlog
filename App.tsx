@@ -9,6 +9,7 @@ import { AppShell } from './src/components/AppShell';
 import { isWorkoutInProgress } from './src/lib/activeWorkout';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
 import { settleSavedCardioRun } from './src/lib/cardio';
+import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
 import { formatTime, pluralize } from './src/lib/format';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
@@ -208,6 +209,7 @@ function VinhaApp() {
     getWorkoutTemplateSessionsFresh,
     programSlots,
     upsertWorkoutPlan,
+    setPlanTrainingCycle,
     saveOnboardingResult,
     deleteWorkoutTemplate,
     forgetHeldProgramme,
@@ -1487,6 +1489,8 @@ function VinhaApp() {
   const { availableEquipmentForDrills, routineBlockSeconds, routineSecondsForExercises } = useRoutineBlockCosts({
     preferences,
   });
+  // The lead programme's rhythm: the reader's calendar, and what setup reopens on.
+  const leadTrainingCycle = leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId);
   const {
     setupSelection,
     latestWeighInKg,
@@ -1498,6 +1502,7 @@ function VinhaApp() {
   } = useSetupReadings({
     preferences,
     bodyweightProgress,
+    leadTrainingCycle,
   });
   const {
     homeActivePlanCard,
@@ -1900,6 +1905,7 @@ function VinhaApp() {
     });
   } else if (route.tab === 'profile' && route.screen === 'setup') {
     content = renderSetupEditor({
+      leadTrainingCycle,
       route,
       preferences,
       setupEditSelection,
@@ -1985,6 +1991,7 @@ function VinhaApp() {
     // state was just cleared the module returns null here and the dashboard
     // fallback below catches it — the same drop-through the old chain had.
     content = inWorkoutArea(renderWorkoutTab({
+      setPlanTrainingCycle,
       onStopProgram: handleStopProgram,
       onResumeProgram: handleResumeProgram,
       onSwitchActiveProgram: handleSwitchActiveProgram,
@@ -2114,6 +2121,7 @@ function VinhaApp() {
     // gate above already claimed — the module's ProfileScreen fallback never
     // sees it. Branch order inside the module mirrors the old chain exactly.
     content = renderProfileTab({
+      setPlanTrainingCycle,
       route,
       readyProgramCount: workout.templates.length,
       proUnlocked: proEntitlement.unlocked,

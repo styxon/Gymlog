@@ -1,4 +1,5 @@
 import { livePlanEntries } from '../lib/planResolvableEntries';
+import { planForTemplate } from '../lib/planTrainingCycle';
 import { planTrainedOnDay, resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
@@ -99,8 +100,11 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
    * Returns false when nothing was written, so the caller can say so.
    */
   async function handleSaveRhythm(workoutTemplateId: string, dayIndexes: number[]): Promise<boolean> {
-    const plan = database.workoutPlans.find(
-      (item) => item.entries[0]?.workoutTemplateId === workoutTemplateId,
+    // The plan the page reads, rhythm and weekdays alike: the one the reader
+    // is on when several hold this programme (planForTemplate).
+    const plan = planForTemplate(
+      { plans: database.workoutPlans, activePlanId: preferences.activePlanId, activePlanIds: preferences.activePlanIds },
+      workoutTemplateId,
     );
     if (!plan) {
       return false;

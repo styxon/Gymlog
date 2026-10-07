@@ -5,6 +5,7 @@ import { resolveDeviceLanguage } from '../storage/deviceLocale';
 import { findSavedCardioRun, mergeContinuedCardioRun } from '../lib/cardio';
 import { createId } from '../lib/ids';
 import { preferencesForRestore } from '../lib/accountBackup';
+import { moveTrainingCycleToLeadPlan, withPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { withPendingAiLogDeletion, withoutAiLogDeletions } from '../lib/aiLogDeletion';
 import { isProUnlocked } from '../lib/proEntitlement';
 import {
@@ -58,6 +59,7 @@ import {
   MeasurementKind,
   MeasurementUnit,
   SessionFeel,
+  TrainingCycle,
   UnitPreference,
   WorkoutPlan,
   WorkoutTemplateDraft,
@@ -116,6 +118,11 @@ interface AppContextValue {
   completeOnboarding: (patch?: Partial<AppPreferences>) => Promise<void>;
   upsertWorkoutTemplate: (draft: WorkoutTemplateDraft) => Promise<string>;
   upsertWorkoutPlan: (plan: WorkoutPlan) => Promise<void>;
+  /**
+   * One programme's rhythm set or cleared (null = its own week). Only that
+   * plan moves: no other programme's rhythm, and not which one is active.
+   */
+  setPlanTrainingCycle: (planId: string, cycle: TrainingCycle | null) => Promise<void>;
   /**
    * A held programme gone for good: it stops running and every plan that
    * holds it is removed. Logged sessions stay. The programme itself is
@@ -765,6 +772,16 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     });
   }
 
+  function setPlanTrainingCycle(planId: string, cycle: TrainingCycle | null) {
+    return runExclusive(async () => {
+      const current = databaseRef.current;
+      if (!current.workoutPlans.some((plan) => plan.id === planId)) {
+        throw new Error(`No plan ${planId} to set a rhythm on`);
+      }
+      await commit({ ...current, workoutPlans: withPlanTrainingCycle(current.workoutPlans, planId, cycle) });
+    });
+  }
+
   function renameWorkoutTemplate(workoutTemplateId: string, nextName: string) {
     return runExclusive(async () => {
       const current = databaseRef.current;
@@ -1348,10 +1365,12 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       // counted in the running set as a load counts it. commit writes the
       // preferences key too: the split-key would otherwise override the
       // restored preferences on the next load.
-      const next: AppDatabase = {
+      // A backup from before rhythms moved onto the programme carries the old
+      // app-wide one; it goes onto the lead the way a load moves it.
+      const next: AppDatabase = moveTrainingCycleToLeadPlan({
         ...restored,
         preferences: preferencesForRestore(restored.preferences, databaseRef.current.preferences, restored.workoutPlans),
-      };
+      });
       await commit(next);
       return next;
     });
@@ -1404,6 +1423,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       ),
       upsertWorkoutTemplate,
       upsertWorkoutPlan,
+      setPlanTrainingCycle,
       forgetHeldProgramme,
       saveOnboardingResult,
       renameWorkoutTemplate,

@@ -80,6 +80,7 @@ import {
   SetupWeekday,
   UnitPreference,
   AppPreferences,
+  TrainingCycle,
 } from '../types/models';
 import { AICoachAdvice } from '../types/aiCoach';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -97,7 +98,7 @@ interface OnboardingScreenProps {
    * The cycle already saved, so the preview anchors where the save will: an
    * unchanged pattern keeps its anchor (bug hunt, 2026-10-04).
    */
-  existingTrainingCycle?: AppPreferences['trainingCycle'];
+  existingTrainingCycle?: TrainingCycle | null;
   /**
    * Seeds the first-run questionnaire with the basics collected on the
    * About-you screen (name/gender/age/height/weight) WITHOUT marking the
@@ -413,9 +414,10 @@ const TRAINING_DAY_COUNT_OPTIONS: SetupDaysPerWeek[] = [2, 3, 4, 5, 6];
 /**
  * Repeating on/off rhythms the days step offers under the weekday picker
  * (user 2026-08-23): a cycle is for the reader whose training week has no
- * fixed days — every other day, two on one off. Choosing one persists as
- * preferences.trainingCycle, which overrides the weekday list everywhere a
- * calendar day is marked training or rest.
+ * fixed days — every other day, two on one off. Choosing one persists on the
+ * programme the questions build (WorkoutPlan.trainingCycle), which overrides
+ * the weekday list everywhere that programme's calendar days are marked
+ * training or rest.
  */
 /**
  * How far the location-stage top pane steps down from the safe-area edge:

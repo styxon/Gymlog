@@ -778,8 +778,8 @@ module.exports = [
       // The handoff persists the pattern anchored at today — and keeps the
       // old anchor when only the questionnaire was re-run with the same
       // pattern.
-      assert.match(handoffSource, /trainingCyclePattern: preferences\.trainingCycle\?\.pattern \?\? null/);
-      assert.match(handoffSource, /resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
+      assert.match(handoffSource, /trainingCyclePattern: leadCycle\?\.pattern \?\? null/);
+      assert.match(handoffSource, /trainingCycle: resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
     },
   },
   {

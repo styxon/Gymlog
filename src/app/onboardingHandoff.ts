@@ -15,6 +15,7 @@ import {
   AppPreferences,
   SetupEquipment,
   SetupTrainingEnvironment,
+  TrainingCycle,
   WorkoutTemplateDraft,
 } from '../types/models';
 
@@ -65,6 +66,9 @@ function getDefaultTrainingEnvironment(equipment: SetupEquipment): SetupTraining
 export function buildSetupBasicsFromPreferences(
   preferences: AppPreferences,
   latestWeighInKg: number | null = null,
+  // The lead programme's rhythm (WorkoutPlan.trainingCycle): the one the
+  // questionnaire last set, and the one the reader's calendar follows.
+  leadCycle: TrainingCycle | null = null,
 ): Partial<FirstRunSetupSelection> {
   return {
     gender: preferences.setupGender ?? DEFAULT_FIRST_RUN_SELECTION.gender,
@@ -79,7 +83,7 @@ export function buildSetupBasicsFromPreferences(
       preferences.setupAvailableDays.length > 0
         ? preferences.setupAvailableDays
         : DEFAULT_FIRST_RUN_SELECTION.availableDays,
-    trainingCyclePattern: preferences.trainingCycle?.pattern ?? null,
+    trainingCyclePattern: leadCycle?.pattern ?? null,
     automatedProgression: preferences.automatedProgressionEnabled,
     cautionFlags: preferences.setupCautionFlags,
   };
@@ -87,13 +91,14 @@ export function buildSetupBasicsFromPreferences(
 
 /**
  * Every preference the two builders above and below read — the memo key the
- * shell rebuilds the setup selection on.
+ * shell rebuilds the setup selection on — and the lead programme's rhythm,
+ * which they are handed beside the preferences.
  *
- * The key used to be a hand-kept list beside the memo, and it had dropped
- * `trainingCycle`: a rhythm set or removed on the plan screen left setup
- * seeded with the old one, and the next run of the questions wrote the old
- * one back (2026-09-17). A test reads which fields the builders touch and
- * holds this list to them.
+ * The key used to be a hand-kept list beside the memo, and it had dropped the
+ * rhythm: a rhythm set or removed on the plan screen left setup seeded with
+ * the old one, and the next run of the questions wrote the old one back
+ * (2026-09-17). A test reads which fields the builders touch and holds this
+ * list to them.
  */
 const SETUP_SEED_PREFERENCE_KEYS = [
   'automatedProgressionEnabled',
@@ -119,17 +124,17 @@ const SETUP_SEED_PREFERENCE_KEYS = [
   'setupSecondaryOutcomes',
   'setupTrainingEnvironment',
   'setupWeeklyMinutes',
-  'trainingCycle',
   'unitPreference',
 ] as const satisfies readonly (keyof AppPreferences)[];
 
-export function buildSetupSeedKey(preferences: AppPreferences): string {
-  return JSON.stringify(SETUP_SEED_PREFERENCE_KEYS.map((key) => preferences[key]));
+export function buildSetupSeedKey(preferences: AppPreferences, leadCycle: TrainingCycle | null = null): string {
+  return JSON.stringify([...SETUP_SEED_PREFERENCE_KEYS.map((key) => preferences[key]), leadCycle]);
 }
 
 export function buildSetupSelectionFromPreferences(
   preferences: AppPreferences,
   latestWeighInKg: number | null = null,
+  leadCycle: TrainingCycle | null = null,
 ): FirstRunSetupSelection | null {
   if (
     !preferences.setupCompleted ||
@@ -140,7 +145,7 @@ export function buildSetupSelectionFromPreferences(
     return null;
   }
 
-  const basics = buildSetupBasicsFromPreferences(preferences, latestWeighInKg);
+  const basics = buildSetupBasicsFromPreferences(preferences, latestWeighInKg, leadCycle);
 
   return {
     ...basics,
@@ -176,13 +181,10 @@ export function buildSetupSelectionFromPreferences(
 export function buildSetupPreferencePatch(
   selection: FirstRunSetupSelection,
   recommendedProgramId: string | null,
-  // The cycle already in preferences, so an unchanged pattern keeps its
-  // anchor: re-anchoring "2 on, 1 off" to today would silently shift which
-  // day of the rhythm today is for a reader who only re-ran the questions.
-  previousCycle: AppPreferences['trainingCycle'] = null,
 ): Partial<AppPreferences> {
+  // No rhythm here: it goes on the programme the questions build
+  // (buildSavedOnboardingWorkoutPlan), not on every programme the reader has.
   return {
-    trainingCycle: resolveCycleAnchor(selection.trainingCyclePattern, previousCycle, new Date()),
     onboardingCompleted: true,
     setupCompleted: true,
     // Only a name the questionnaire carries is written. It has not asked for
@@ -288,6 +290,11 @@ export function buildSavedOnboardingWorkoutPlan(
   workoutTemplateId: string,
   sessionIds: string[],
   language: AppLanguage,
+  // The lead programme's rhythm before this run, so an unchanged pattern
+  // keeps its anchor: re-anchoring "2 on, 1 off" to today would silently
+  // shift which day of the rhythm today is for a reader who only re-ran the
+  // questions.
+  previousCycle: TrainingCycle | null = null,
 ) {
   /**
    * The same weekdays adoption would give, placed the same way.
@@ -322,6 +329,8 @@ export function buildSavedOnboardingWorkoutPlan(
       orderIndex: index,
     })),
     isActive: true,
+    // The rhythm the questions chose is this programme's, and only its.
+    trainingCycle: resolveCycleAnchor(selection.trainingCyclePattern, previousCycle, new Date()),
     createdAt: timestamp,
     updatedAt: timestamp,
   };

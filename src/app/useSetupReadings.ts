@@ -4,7 +4,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { resolveFirstRunRecommendationWithTailoring } from '../lib/firstRunSetup';
 import type { getBodyweightProgress } from '../lib/progression';
 import { buildTailoringPreferences } from '../lib/tailoringFit';
-import type { AppPreferences } from '../types/models';
+import type { AppPreferences, TrainingCycle } from '../types/models';
 import {
   buildSetupBasicsFromPreferences,
   buildSetupSeedKey,
@@ -29,10 +29,12 @@ export interface SetupReadingsDeps {
   preferences: AppPreferences;
   /** The weigh-in log's progress; its latest weight seeds the questionnaire. */
   bodyweightProgress: ReturnType<typeof getBodyweightProgress>;
+  /** The lead programme's rhythm, which the questionnaire opens on. */
+  leadTrainingCycle: TrainingCycle | null;
 }
 
 export function useSetupReadings(deps: SetupReadingsDeps) {
-  const { preferences, bodyweightProgress } = deps;
+  const { preferences, bodyweightProgress, leadTrainingCycle } = deps;
 
   // Both used to depend on the whole preferences object, so a theme or sound
   // toggle handed them a new object and they rebuilt — and everything
@@ -41,21 +43,24 @@ export function useSetupReadings(deps: SetupReadingsDeps) {
   // chain was the ~4.9s behind every settings switch. A key over the fields
   // each one actually reads is what "changed" should have meant all along —
   // kept beside the builders, where a test holds it to what they read.
-  const setupSelectionKey = buildSetupSeedKey(preferences);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const setupSelection = useMemo(() => buildSetupSelectionFromPreferences(preferences), [setupSelectionKey]);
+  const setupSelectionKey = buildSetupSeedKey(preferences, leadTrainingCycle);
+  const setupSelection = useMemo(
+    () => buildSetupSelectionFromPreferences(preferences, null, leadTrainingCycle),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [setupSelectionKey],
+  );
   // What the setup questionnaire opens on: the same answers, with the weight
   // from the weigh-in log rather than what setup was last told. Only the
   // questionnaire — the recommendation and the composed onboarding week stay
   // on `setupSelection`, so a weigh-in never reshapes a running programme.
   const latestWeighInKg = bodyweightProgress.latest?.weight ?? null;
   const setupEditSelection = useMemo(
-    () => buildSetupSelectionFromPreferences(preferences, latestWeighInKg),
+    () => buildSetupSelectionFromPreferences(preferences, latestWeighInKg, leadTrainingCycle),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [setupSelectionKey, latestWeighInKg],
   );
   const setupBasics = useMemo(
-    () => buildSetupBasicsFromPreferences(preferences, latestWeighInKg),
+    () => buildSetupBasicsFromPreferences(preferences, latestWeighInKg, leadTrainingCycle),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [setupSelectionKey, latestWeighInKg],
   );

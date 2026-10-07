@@ -92,7 +92,8 @@ module.exports = [
       const out = normalizeDatabase({
         workoutPlans: [null, 'plan', {}, { id: '', entries: [entry] }, { ...plan, entries: [null, {}, { id: 'e0', workoutTemplateId: '' }, entry] }],
       });
-      assert.deepEqual(out.workoutPlans, [{ ...plan, entries: [entry] }]);
+      // A plan from before rhythms moved onto it reads as its own week.
+      assert.deepEqual(out.workoutPlans, [{ ...plan, trainingCycle: null, entries: [entry] }]);
 
       const { hasLocalDataWorthKeeping } = require(path.join(DIST, 'lib', 'accountBackup.js'));
       assert.equal(hasLocalDataWorthKeeping(normalizeDatabase({ workoutPlans: [null] })), false);

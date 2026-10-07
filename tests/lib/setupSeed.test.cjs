@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 
 const {
+  buildSavedOnboardingWorkoutPlan,
   buildSetupBasicsFromPreferences,
   buildSetupPreferencePatch,
   buildSetupSeedKey,
@@ -49,11 +50,13 @@ function completedPreferences(overrides = {}) {
     automatedProgressionEnabled: false,
     setupWeeklyMinutes: 180,
     setupAvailableDays: ['mon', 'tue', 'thu', 'sat'],
-    trainingCycle: { pattern: [true, true, false], anchorDayStart: 1_700_000_000_000 },
     unitPreference: 'kg',
     ...overrides,
   });
 }
+
+/** The lead programme's rhythm, handed to the builders beside the preferences. */
+const LEAD_CYCLE = { pattern: [true, true, false], anchorDayStart: 1_700_000_000_000 };
 
 /** Every property a builder touches, read through a proxy. */
 function fieldsRead(build, preferences) {
@@ -82,7 +85,9 @@ module.exports = [
         // The early return reads the gate and nothing else.
         ...fieldsRead(buildSetupSelectionFromPreferences, basePreferences()),
       ]);
-      assert.ok(read.has('trainingCycle'), 'the cycle is one of the fields read');
+      // The app-wide rhythm is gone: the lead programme's comes in beside
+      // the preferences (2026-10-07).
+      assert.ok(!read.has('trainingCycle'), 'the old app-wide rhythm is not read');
       assert.ok(read.size >= 20, `the proxy saw the builders' reads (${read.size})`);
 
       const baseKey = buildSetupSeedKey(completed);
@@ -96,9 +101,10 @@ module.exports = [
       }
 
       // The case that shipped: a rhythm set or removed on the plan screen.
+      assert.notEqual(buildSetupSeedKey(completed, LEAD_CYCLE), baseKey);
       assert.notEqual(
-        buildSetupSeedKey(completedPreferences({ trainingCycle: null })),
-        baseKey,
+        buildSetupSeedKey(completed, LEAD_CYCLE),
+        buildSetupSeedKey(completed, { ...LEAD_CYCLE, pattern: [true, false] }),
       );
       // And a theme switch still rebuilds nothing.
       assert.equal(buildSetupSeedKey(completedPreferences({ darkThemeEnabled: true })), baseKey);
@@ -118,15 +124,15 @@ module.exports = [
         setupCurrentWeightKg: 64.2,
         bodyweightGoalKg: 60,
         automatedProgressionEnabled: false,
-        trainingCycle: { pattern: [true, false], anchorDayStart: 1_700_000_000_000 },
         setupCautionFlags: [{ area: 'shoulders', level: 'avoid' }],
       });
-      assert.equal(buildSetupSelectionFromPreferences(stored), null);
+      const leadCycle = { pattern: [true, false], anchorDayStart: 1_700_000_000_000 };
+      assert.equal(buildSetupSelectionFromPreferences(stored, null, leadCycle), null);
 
-      const basics = buildSetupBasicsFromPreferences(stored);
+      const basics = buildSetupBasicsFromPreferences(stored, null, leadCycle);
       // What the questionnaire hands on when it asks none of these.
       const answered = { ...DEFAULT_FIRST_RUN_SELECTION, ...basics };
-      const patch = buildSetupPreferencePatch(answered, 'tpl_3_day_strength_base_v1', stored.trainingCycle);
+      const patch = buildSetupPreferencePatch(answered, 'tpl_3_day_strength_base_v1');
 
       assert.equal(patch.setupGender, 'female');
       assert.equal(patch.setupAgeRange, '41_plus');
@@ -135,8 +141,11 @@ module.exports = [
       assert.equal(patch.bodyweightGoalKg, 60);
       assert.equal(patch.automatedProgressionEnabled, false);
       assert.deepEqual(patch.setupCautionFlags, [{ area: 'shoulders', level: 'avoid' }]);
-      // The same rhythm, with its anchor: not re-stamped, not cleared.
-      assert.equal(patch.trainingCycle, stored.trainingCycle);
+      // The same rhythm, with its anchor: not re-stamped, not cleared — and on
+      // the programme the questions build, not on the preferences.
+      assert.equal('trainingCycle' in patch, false);
+      const plan = buildSavedOnboardingWorkoutPlan(answered, 'wt_1', ['s1', 's2'], 'fi', leadCycle);
+      assert.equal(plan.trainingCycle, leadCycle);
     },
   },
   {
@@ -192,7 +201,8 @@ module.exports = [
       assert.equal(patch.setupAgeRange, null);
       assert.equal(patch.setupHeightCm, null);
       assert.equal(patch.setupCurrentWeightKg, null);
-      assert.equal(patch.trainingCycle, null);
+      assert.equal('trainingCycle' in patch, false);
+      assert.equal(buildSavedOnboardingWorkoutPlan({ ...DEFAULT_FIRST_RUN_SELECTION, ...basics }, 'wt_1', ['s1'], 'fi').trainingCycle, null);
 
       // A finished setup with no band stays without one as well.
       const selection = buildSetupSelectionFromPreferences(completedPreferences({ setupAgeRange: null }));
@@ -205,7 +215,7 @@ module.exports = [
     run() {
       const stored = completedPreferences();
       const selection = buildSetupSelectionFromPreferences(stored);
-      const patch = buildSetupPreferencePatch(selection, null, stored.trainingCycle);
+      const patch = buildSetupPreferencePatch(selection, null);
       // Byte for byte — the old capitaliser made this "Santeri YlÖNen".
       assert.equal(patch.profileName ?? stored.profileName, 'Santeri Ylönen');
       assert.equal(buildSetupPreferencePatch({ ...selection, profileName: 'äijä öljynen' }, null).profileName, 'äijä öljynen');

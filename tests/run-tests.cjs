@@ -343,6 +343,7 @@ const suites = [
   ...require('./lib/workoutCompleteView.test.cjs'),
   ...require('./lib/homeCalendar.test.cjs'),
   ...require('./lib/trainingSchedule.test.cjs'),
+  ...require('./lib/planTrainingCycle.test.cjs'),
   ...require('./lib/trainingScheduleZones.test.cjs'),
   ...require('./lib/homePlanBugHunt41004.test.cjs'),
   ...require('./lib/trainingWeekLoad.test.cjs'),

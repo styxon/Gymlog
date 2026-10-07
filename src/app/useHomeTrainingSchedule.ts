@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import { leadPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { programmeHistoryIds } from '../lib/programLineage';
 import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planWeekdayIndexes, resolveDerivedTrainingDays } from '../lib/programTrainingDays';
@@ -26,7 +27,7 @@ import { getEndOfWeek, getStartOfWeek } from './workoutCompletionState';
 export interface HomeTrainingScheduleDeps {
   /** The whole database: the plan records, and what the done-this-week memo is keyed on. */
   database: AppDatabase;
-  /** The reader's preferences: the lead plan, the available days, the cycle and the rest days. */
+  /** The reader's preferences: the lead plan, the available days and the rest days. */
   preferences: AppPreferences;
   /** Home's hero card, as useHomeActivePlan builds it. */
   homeActivePlanCard: ReturnType<typeof useHomeActivePlan>['homeActivePlanCard'];
@@ -147,11 +148,17 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
     database.workoutPlans,
   ]);
 
-  /** The rhythm as chosen, before any day taken off. */
-  const baseTrainingSchedule = useMemo(() => {
-    const cycle = preferences.trainingCycle;
-    return cycle ? cycleSchedule(cycle.pattern, cycle.anchorDayStart) : weekdaySchedule(homeTrainingDayIndexes);
-  }, [homeTrainingDayIndexes, preferences.trainingCycle]);
+  /**
+   * The rhythm as chosen, before any day taken off: the lead programme's own
+   * cycle when it has one. Another programme's cycle is that programme's, and
+   * the reader's calendar never follows it (user 2026-10-07).
+   */
+  const leadCycle = leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId);
+  const baseTrainingSchedule = useMemo(
+    () =>
+      leadCycle ? cycleSchedule(leadCycle.pattern, leadCycle.anchorDayStart) : weekdaySchedule(homeTrainingDayIndexes),
+    [homeTrainingDayIndexes, leadCycle],
+  );
   /**
    * The rhythm every calendar draws: the chosen one, with the days the reader
    * took off from the recovery sheet (2026-09-26). One place, so Home, the

@@ -81,8 +81,8 @@ module.exports = [
       // Only the questionnaire reads the log's weight. The recommendation and
       // the composed onboarding week stay on the stored answers.
       const shell = strip(readAppWiring().replace(/\r\n/g, '\n'));
-      assert.match(shell, /const setupSelection = useMemo\(\(\) => buildSetupSelectionFromPreferences\(preferences\), \[setupSelectionKey\]\);/);
-      assert.match(shell, /buildSetupSelectionFromPreferences\(preferences, latestWeighInKg\),\s*\[setupSelectionKey, latestWeighInKg\],/);
+      assert.match(shell, /const setupSelection = useMemo\(\s*\(\) => buildSetupSelectionFromPreferences\(preferences, null, leadTrainingCycle\),\s*\[setupSelectionKey\],\s*\);/);
+      assert.match(shell, /buildSetupSelectionFromPreferences\(preferences, latestWeighInKg, leadTrainingCycle\),\s*\[setupSelectionKey, latestWeighInKg\],/);
       const app = strip(read('App.tsx').replace(/\r\n/g, '\n'));
       // The setup route's render moved to src/app/renderOnboarding.tsx
       // (phase C, 2026-10-01), so the editor is looked for over the shell.

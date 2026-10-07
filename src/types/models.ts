@@ -249,12 +249,37 @@ export interface WorkoutPlanEntry {
   orderIndex: number;
 }
 
+/**
+ * A rhythm that does not fit inside a week, e.g. two days on and one off.
+ *
+ * `pattern` is read cyclically from `anchorDayStart` (a local midnight):
+ * `[true, true, false]` is two on, one off.
+ */
+export interface TrainingCycle {
+  pattern: boolean[];
+  anchorDayStart: number;
+}
+
 export interface WorkoutPlan {
   id: string;
   name: string;
   mode: WorkoutPlanMode;
   entries: WorkoutPlanEntry[];
   isActive: boolean;
+  /**
+   * This programme's own rhythm, when the reader set one on it.
+   *
+   * When set, it OVERRIDES the weekday list everywhere this programme's
+   * calendar days are marked as training or rest: the weekday list cannot
+   * express a period other than seven, so the two would disagree on most days.
+   * Null or missing = the programme's own week.
+   *
+   * Per programme, not per reader (user 2026-10-07): a single preference made
+   * every programme in the app show the reader's own 3-on-1-off rhythm, a
+   * six-day ready programme included, and changing it on one changed them all.
+   * Missing on every plan written before 2026-10-07; see planTrainingCycle.
+   */
+  trainingCycle?: TrainingCycle | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -717,18 +742,14 @@ export interface AppPreferences {
   setupWeeklyMinutes: number | null;
   setupAvailableDays: SetupWeekday[];
   /**
-   * A rhythm that does not fit inside a week, e.g. two days on and one off.
+   * Where the reader's rhythm used to live, for every programme at once.
    *
-   * When set, this OVERRIDES `setupAvailableDays` everywhere a calendar day is
-   * marked as training or rest: the weekday list cannot express a period other
-   * than seven, so the two would disagree on most days. Availability stays as
-   * written because the recommender and reminders still read it as "days I
-   * could train".
-   *
-   * `pattern` is read cyclically from `anchorDayStart` (a local midnight):
-   * `[true, true, false]` is two on, one off. Null = plain weekdays.
+   * @deprecated Moved to the plan it belongs to (WorkoutPlan.trainingCycle).
+   * Kept only so an old install or an old backup can be read: the load and
+   * the restore move it onto the lead programme and write null here
+   * (moveTrainingCycleToLeadPlan). Nothing reads it after that.
    */
-  trainingCycle: { pattern: boolean[]; anchorDayStart: number } | null;
+  trainingCycle: TrainingCycle | null;
   /**
    * Which drill the reader put in which warm-up / cool-down slot.
    *

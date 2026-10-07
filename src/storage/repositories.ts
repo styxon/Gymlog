@@ -1,5 +1,6 @@
 import { normalizeExerciseLog } from '../lib/exerciseLog';
 import { buildWorkoutTemplateSessions } from '../lib/workoutTemplateSessions';
+import { keepPlanTrainingCycle } from '../lib/planTrainingCycle';
 import {
   AppDatabase,
   BodyweightEntry,
@@ -90,7 +91,7 @@ export const workoutPlanRepository = {
     return {
       ...database,
       workoutPlans: existing
-        ? database.workoutPlans.map((item) => (item.id === plan.id ? plan : item))
+        ? database.workoutPlans.map((item) => (item.id === plan.id ? keepPlanTrainingCycle(plan, item) : item))
         : [plan, ...database.workoutPlans],
     };
   },

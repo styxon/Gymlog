@@ -104,7 +104,7 @@ module.exports = [
       assert.match(tab, /scheduleKnown=\{isScheduleKnown\(reminderSchedule\(\)\)\}/);
       assert.match(
         tab,
-        /resolveReminderSchedule\(\{\s*trainingCycle: preferences\.trainingCycle,\s*planEntries: livePlanEntries\(\s*database\.workoutPlans\.find\(\(plan\) => plan\.id === preferences\.activePlanId\)\?\.entries \?\? \[\],\s*templateSessionsReader\(database\),\s*\),\s*availableDays: preferences\.setupAvailableDays,\s*\}\)/,
+        /const leadPlan = database\.workoutPlans\.find\(\(plan\) => plan\.id === preferences\.activePlanId\) \?\? null;\s*const reminderSchedule = \(\) =>\s*resolveReminderSchedule\(\{\s*trainingCycle: planTrainingCycle\(leadPlan\),\s*planEntries: livePlanEntries\(leadPlan\?\.entries \?\? \[\], templateSessionsReader\(database\)\),\s*availableDays: preferences\.setupAvailableDays,\s*\}\)/,
       );
       // The plan screen shows the days reminders follow when setup left none.
       assert.match(
