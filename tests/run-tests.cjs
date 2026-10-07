@@ -562,6 +562,7 @@ const suites = [
   ...require('./lib/minutesClockSchedule.test.cjs'),
   ...require('./features/workout/minutesClockKept.test.cjs'),
   ...require('./storage/minutesLegacyPlausible.test.cjs'),
+  ...require('./lib/setCountChanges.test.cjs'),
   ...require('./storage/planEntryLabel.test.cjs'),
   ...require('./storage/corruptCopies.test.cjs'),
   ...require('./screens/oneCount.test.cjs'),

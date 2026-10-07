@@ -452,6 +452,10 @@ const EN = {
   // The write that turns Pro on was refused, so the unlock screen is not shown.
   'toast.proUnlockFailed': 'Pro did not turn on. Try again.',
   'toast.lastExerciseInDay': 'That is the day\'s last exercise — remove the whole day from the programme instead',
+  'toast.setCountChanged': '{name} {from} → {to} sets',
+  'toast.setCountChangedItem': '{name} {from} → {to}',
+  'toast.setCountChangedMany': 'Sets changed: {list}',
+  'toast.setCountChangedMore': '+{count} more',
   'toast.ownProgrammeVersion': 'You already have your own version of this programme — opening it, so you can see what you change',
   // Was an English literal inside App.tsx, shown in a Finnish app.
   'toast.cardioSaveFailed': 'Could not save cardio session',
@@ -3974,6 +3978,10 @@ const FI: Record<I18nKey, string> = {
   'premium.purchaseUnavailable': 'Ostaminen ei ole vielä käytössä tässä versiossa',
   'toast.proUnlockFailed': 'Pro ei mennyt päälle. Yritä uudelleen.',
   'toast.lastExerciseInDay': 'Tämä on päivän viimeinen liike — poista mieluummin koko päivä ohjelmasta',
+  'toast.setCountChanged': '{name} {from} → {to} sarjaa',
+  'toast.setCountChangedItem': '{name} {from} → {to}',
+  'toast.setCountChangedMany': 'Sarjat muuttuivat: {list}',
+  'toast.setCountChangedMore': '+{count} muuta',
   'toast.ownProgrammeVersion': 'Sinulla on tästä ohjelmasta oma versio — avataan se, niin näet mitä muutat',
   'toast.cardioSaveFailed': 'Cardio-treeniä ei voitu tallentaa',
   'toast.deleteFailed': 'Treeniä ei voitu poistaa',
