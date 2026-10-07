@@ -31,7 +31,7 @@ import {
 } from '../lib/homeSessionHero';
 import { I18nKey, t } from '../lib/i18n';
 import { useDragHold } from '../hooks/useDragHold';
-import { ProgramDetailSessionItem } from '../lib/programDetails';
+import { exerciseAfterSessionSwap, ProgramDetailSessionItem } from '../lib/programDetails';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetPositions } from '../lib/supersetGrouping';
 import { SupersetBorder } from '../components/SupersetBorder';
 import {
@@ -731,6 +731,9 @@ export function ProgramDayScreen({
                 : 0;
             const superset = supersets[index] ?? null;
             const linkedToNext = superset?.hasNextInGroup === true;
+            // The dose today's swap will start on, as the name above it is
+            // the swapped lift's.
+            const shownDose = exerciseAfterSessionSwap(exercise, exercise.slotId ? sessionSwaps[exercise.slotId] : null);
             return (
             <Animated.View
               key={exercise.id}
@@ -858,7 +861,7 @@ export function ProgramDayScreen({
                         onPress={() => openTuneSheet(exercise)}
                         style={({ pressed }) => [styles.doseChip, pressed && styles.swapOptionPressed]}
                       >
-                        <Text style={styles.doseChipText}>{exercise.prescription}</Text>
+                        <Text style={styles.doseChipText}>{shownDose.prescription}</Text>
                         <PencilGlyph theme={theme} />
                       </Pressable>
                       {/* No rest follows a lift you run straight out of, so the
@@ -888,7 +891,7 @@ export function ProgramDayScreen({
                     </>
                   ) : (
                     <>
-                      <Text style={styles.exerciseScheme}>{exercise.prescription}</Text>
+                      <Text style={styles.exerciseScheme}>{shownDose.prescription}</Text>
                       <Text style={styles.exerciseRest} numberOfLines={1}>
                         {linkedToNext
                           ? t(language, 'detail.day.supersetNext')
@@ -1076,7 +1079,13 @@ export function ProgramDayScreen({
           styles={styles}
           theme={theme}
           title={t(language, 'detail.day.exercises')}
-          count={`${session.totalSets} ${t(language, 'detail.day.sets').toLowerCase()}`}
+          // Counted as the rows print them: a lift swapped in across units
+          // brings its own set count.
+          count={`${session.exercises.reduce(
+            (sum, exercise) =>
+              sum + exerciseAfterSessionSwap(exercise, exercise.slotId ? sessionSwaps[exercise.slotId] : null).sets,
+            0,
+          )} ${t(language, 'detail.day.sets').toLowerCase()}`}
           open={openSections.exercises}
           onToggle={() => setOpenSections((current) => ({ ...current, exercises: !current.exercises }))}
         >

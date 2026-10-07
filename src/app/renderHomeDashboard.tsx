@@ -216,8 +216,16 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
         }
       }}
       sessionSwaps={homeSessionAdaptation.swaps}
+      // The programme's own lift picked back undoes the swap (withSessionSwap).
       onSwapSessionExercise={(slotId, exerciseName) =>
-        adaptHomeSession((current) => withSessionSwap(current, slotId, exerciseName))
+        adaptHomeSession((current) =>
+          withSessionSwap(
+            current,
+            slotId,
+            exerciseName,
+            homeActivePlanCard?.nextSession?.exercises.find((exercise) => exercise.slotId === slotId)?.name,
+          ),
+        )
       }
       sessionDrops={homeSessionAdaptation.drops}
       onDropSessionExercise={(slotId) => adaptHomeSession((current) => withSessionDrop(current, slotId))}

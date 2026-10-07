@@ -252,6 +252,13 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
             ),
             slotId: activeRuntimeExercises.get(exercise.id)?.slotId,
             substitutionGroup: activeRuntimeExercises.get(exercise.id)?.substitutionGroup,
+            dose: {
+              trackingMode: activeRuntimeExercises.get(exercise.id)?.trackingMode ?? 'reps_first',
+              sets: exercise.targetSets,
+              repsMin: exercise.repMin,
+              repsMax: exercise.repMax,
+              supersetGroup: activeRuntimeExercises.get(exercise.id)?.supersetGroup ?? null,
+            },
           })),
         };
       });
