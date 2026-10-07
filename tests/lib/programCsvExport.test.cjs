@@ -136,6 +136,113 @@ module.exports = [
     },
   },
   {
+    name: 'programCsvExport: every ready programme exported and imported again keeps each row in its own unit (bug hunt 2026-10-08)',
+    run() {
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { isMinutesTrackingMode, prescriptionUnitOf } = require('../../.test-dist/features/workout/workoutTypes.js');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
+      const { parseIntervalScheme } = require('../../.test-dist/lib/intervalScheme.js');
+      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const library = createSeedExerciseLibrary();
+      const entries = library.map((item) => ({ id: item.id, name: item.name, sourceCategory: item.sourceCategory }));
+      const dayKey = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+      const offenders = [];
+      const unlinked = new Set();
+      const seen = new Map();
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        // The rows usePlanReadouts hands the export for a ready programme.
+        const catalogueRows = template.sessions.flatMap((session) => session.exercises);
+        const csv = buildProgramCsv(template.sessions.map((session) => ({
+          name: session.name,
+          exercises: session.exercises.map((exercise) => ({
+            name: exercise.exerciseName,
+            sets: exercise.sets,
+            repMin: exercise.repsMin,
+            repMax: exercise.repsMax,
+            minutes: isMinutesTrackingMode(exercise.trackingMode),
+          })),
+        })));
+        const preview = parseCsvProgram(csv, entries);
+        assert.deepEqual(preview.errors, [], template.id);
+        assert.equal(preview.rows.length, catalogueRows.length, template.id);
+        const draft = buildDraftFromCsvPreview(preview, template.name);
+
+        // Run the draft the way a saved custom programme runs.
+        const sessions = draft.sessions.map((session, sessionIndex) => ({
+          id: `s${sessionIndex}`,
+          name: session.name,
+          orderIndex: sessionIndex,
+          exercises: session.exercises.map((exercise, index) => ({
+            ...exercise,
+            id: `s${sessionIndex}_e${index}`,
+            workoutTemplateId: 't',
+            workoutTemplateSessionId: `s${sessionIndex}`,
+            orderIndex: index,
+            trackingMode: exercise.trackingMode ?? null,
+            supersetGroup: null,
+          })),
+        }));
+        const runtime = adaptLegacyWorkoutTemplateToRuntimeTemplate(
+          { id: 't', name: draft.name, origin: 'authored' },
+          sessions,
+          library,
+          90,
+        );
+
+        // The draft keeps linked rows in order, one session per day name.
+        const sessionOrder = [];
+        const filled = new Map();
+        preview.rows.forEach((row, index) => {
+          const original = catalogueRows[index];
+          if (!row.matchedName) {
+            unlinked.add(original.exerciseName);
+            return;
+          }
+          const key = dayKey(row.day);
+          if (!filled.has(key)) {
+            filled.set(key, 0);
+            sessionOrder.push(key);
+          }
+          const imported = runtime.sessions[sessionOrder.indexOf(key)].exercises[filled.get(key)];
+          filled.set(key, filled.get(key) + 1);
+
+          const interval = parseIntervalScheme(original.exerciseName);
+          const drift = [];
+          if (prescriptionUnitOf(imported.trackingMode) !== prescriptionUnitOf(original.trackingMode)) {
+            drift.push(`${prescriptionUnitOf(original.trackingMode)} -> ${prescriptionUnitOf(imported.trackingMode)}`);
+          }
+          if (JSON.stringify(parseIntervalScheme(imported.exerciseName)) !== JSON.stringify(interval)) {
+            drift.push(`interval lost as "${imported.exerciseName}"`);
+          }
+          if (interval && imported.restSecondsMin !== interval.recoverySeconds) {
+            drift.push(`rest ${imported.restSecondsMin} s, not the ${interval.recoverySeconds} s off-phase`);
+          }
+          if ([imported.sets, imported.repsMin, imported.repsMax].join() !== [original.sets, original.repsMin, original.repsMax].join()) {
+            drift.push(`${original.sets}x${original.repsMin}-${original.repsMax} -> ${imported.sets}x${imported.repsMin}-${imported.repsMax}`);
+          }
+          if (drift.length && !seen.has(original.exerciseName)) {
+            seen.set(original.exerciseName, true);
+            offenders.push(`${template.id} / ${original.exerciseName}: ${drift.join(', ')}`);
+          }
+        });
+      }
+
+      assert.deepEqual(offenders, []);
+      // Generic names the player files under no one row (DEMO_ONLY_ALIASES)
+      // come back as a suggestion for the reader to confirm. Pinned, so a
+      // new one fails here instead of quietly dropping out of the import.
+      assert.deepEqual([...unlinked].sort(), [
+        'Calf Raise',
+        'Leg Curl',
+        'Medicine Ball Slam',
+        'Rear Delt Fly',
+        'Sissy Squat',
+        'Walking Lunge',
+      ]);
+    },
+  },
+  {
     name: 'programCsvExport: the list summary counts only days that carry exercises',
     run() {
       assert.deepEqual(summarizeExportSessions(SESSIONS), { dayCount: 2, exerciseCount: 3 });

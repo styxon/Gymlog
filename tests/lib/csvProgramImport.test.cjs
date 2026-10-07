@@ -521,6 +521,46 @@ module.exports = [
     },
   },
   {
+    name: 'csv import: a variant written in brackets is never linked as the base lift (bug hunt 2026-10-08)',
+    run() {
+      const library = seedLibrary();
+      const parse = (name) => parseCsvProgram(`Day,Exercise,Sets,Reps\nA,"${name}",3,8`, library).rows[0];
+
+      // Strong and Hevy write the equipment or the variant in brackets. The
+      // player's qualifier strip dropped it and filed every one of these under
+      // the base lift — linked, with nothing for the reader to confirm.
+      for (const [written, base] of [
+        ['Bench Press (Dumbbell)', 'Barbell Bench Press - Medium Grip'],
+        ['Bench Press (Incline)', 'Barbell Bench Press - Medium Grip'],
+        ['Bench Press (Close Grip)', 'Barbell Bench Press - Medium Grip'],
+        ['Bench Press (Smith Machine)', 'Barbell Bench Press - Medium Grip'],
+        ['Deadlift (Trap Bar)', 'Barbell Deadlift'],
+        ['Deadlift (Romanian)', 'Barbell Deadlift'],
+        ['Deadlift (Sumo)', 'Barbell Deadlift'],
+        ['Overhead Press (Dumbbell)', 'Standing Military Press'],
+        ['Pull-Up (Assisted)', 'Pullups'],
+      ]) {
+        const row = parse(written);
+        assert.equal(row.matchedName, null, `${written} is left for the reader, not linked as ${row.matchedName}`);
+        assert.equal(row.libraryItemId, null, written);
+        assert.notEqual(row.suggestion, base, `${written} is not offered as ${base}`);
+      }
+      assert.equal(parse('Bench Press (Dumbbell)').suggestion, 'Dumbbell Bench Press');
+      assert.equal(parse('Deadlift (Romanian)').suggestion, 'Romanian Deadlift');
+
+      // The ready programmes' own cues still link: the app's export writes
+      // them, and each was checked by hand against the library.
+      for (const [written, filed] of [
+        ['Seated Cable Row (Wide)', 'Seated Cable Rows'],
+        ['Goblet Squat (Light)', 'Goblet Squat'],
+        ['Glute Bridge (Banded)', 'Butt Lift (Bridge)'],
+        ['Side Plank (Knees Down)', 'Side Plank'],
+      ]) {
+        assert.equal(parse(written).matchedName, filed, written);
+      }
+    },
+  },
+  {
     name: 'csv import: a name only contained in one library name is offered, never linked as that lift (bug hunt 2026-10-07)',
     run() {
       const library = seedLibrary();
@@ -632,7 +672,7 @@ module.exports = [
         ],
       );
       const [plank, plankRange, run, stair] = buildDraftFromCsvPreview(preview, 'Imported').sessions[0].exercises;
-      assert.equal(plank.trackingMode, undefined, 'a hold is not switched to minutes');
+      assert.equal(plank.trackingMode, 'hold', 'a hold is held for seconds, not switched to minutes');
       assert.equal(plank.restSeconds, 90);
       assert.equal(plankRange.repMax, 120);
       assert.equal(run.trackingMode, 'duration_minutes');
