@@ -4,6 +4,7 @@ import * as Notifications from 'expo-notifications';
 
 import { emitRestAction } from '../hooks/useRestEndAlert';
 import { IDLE_NUDGE_MINUTES, idleNudgeAtMs } from '../lib/restSchedule';
+import { minutesBoutDueMs } from '../lib/minutesExercises';
 import {
   ACTION_EXTEND_30,
   ACTION_EXTEND_60,
@@ -202,9 +203,15 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
     [workout.activeSession?.exercises],
   );
   /**
+   * A bout of minutes on the clock: started or paused is the reader being
+   * there, and a running one is due back only when its minutes are in.
+   */
+  const minutesClock = workout.activeSession?.minutesClock ?? null;
+  const boutDueMs = minutesBoutDueMs(minutesClock);
+  /**
    * When the reader was last there: a logged set, "Still going", the app
    * back in front, a new session, a resume from a pause, the nudge switched
-   * on. The nudge is timed from this, not from
+   * on, a bout's clock started or paused. The nudge is timed from this, not from
    * whatever re-ran its effect — a rename or a language switch re-words the
    * nudge but must not push it back (review of #bugs 2026-10-01). Declared
    * before the nudge's effect, so it has run when that one reads it.
@@ -213,6 +220,10 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
   useEffect(() => {
     lastActivityAtRef.current = Date.now();
   }, [activeSessionId, activeSessionStatus, completedSetCount, activityTick, preferences.notificationPrefs.idleNudge]);
+  // A bout's clock started or paused is the reader being there too.
+  useEffect(() => {
+    lastActivityAtRef.current = Date.now();
+  }, [minutesClock?.runningSinceMs, minutesClock?.accumulatedMs]);
   useEffect(() => {
     if (!activeSessionId || activeSessionStatus !== 'active' || !preferences.notificationPrefs.idleNudge) {
       void cancelIdleNudge();
@@ -223,7 +234,9 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
       formatWorkoutDisplayLabel(workout.activeSession?.templateName ?? ''),
       language,
     );
-    const atMs = idleNudgeAtMs(lastActivityAtRef.current);
+    // A ride on the clock is not idle: the 25 minutes count from the end of
+    // its prescription, not from the last logged set (#bugs 2026-10-06).
+    const atMs = idleNudgeAtMs(Math.max(lastActivityAtRef.current, boutDueMs ?? 0));
     if (atMs <= Date.now()) {
       // Its time has passed: it went already, or the app was away. Re-wording
       // it now would only send it a second time.
@@ -245,6 +258,7 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
     workout.activeSession?.templateName,
     preferences.notificationPrefs.idleNudge,
     preferences.appLanguage,
+    boutDueMs,
   ]);
 
   // After a cold start the session comes back from stored timestamps: elapsed

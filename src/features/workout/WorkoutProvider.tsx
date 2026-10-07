@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { FreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
+import type { SessionMinutesClock } from '../../lib/minutesExercises';
 import { AppState } from 'react-native';
 import { StorageLoadFailedScreen } from '../../components/StorageLoadFailedScreen';
 import { trackEvent } from '../analytics/analyticsClient';
@@ -77,6 +78,8 @@ interface WorkoutContextValue {
   removeWarmup: (slotId: string, index: number) => void;
   /** Takes the last pending set back. Refuses on a logged set or the last one. */
   removeSet: (slotId: string) => void;
+  /** Keeps a bout's stopwatch on the session (null: none on the clock). */
+  setMinutesClock: (clock: SessionMinutesClock | null) => void;
   /**
    * File a session logged outside the player, so the next set of those lifts
    * opens on what was actually done. See the 'history/recordLogged' action.
@@ -388,6 +391,9 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
       },
       removeSet(slotId) {
         dispatch({ type: 'exercise/removeSet', payload: { slotId } });
+      },
+      setMinutesClock(clock) {
+        dispatch({ type: 'session/setMinutesClock', payload: { clock } });
       },
       skipExercise(slotId, reason) {
         dispatch({ type: 'exercise/skip', payload: { slotId, reason } });

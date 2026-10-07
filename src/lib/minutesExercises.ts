@@ -152,6 +152,88 @@ export function pauseStopwatch(watch: MinutesStopwatch, nowMs: number): MinutesS
 }
 
 /**
+ * A bout's stopwatch as the session keeps it, with the set it belongs to.
+ *
+ * The clock used to live in the set screen's state alone, so anything that
+ * mounted the screen again — Android killing the app twenty minutes into a
+ * ride with the screen off, the player leaving and coming back — started it
+ * from nothing, and the dial logged the prescription instead of the minutes
+ * ridden (#bugs 2026-10-06). Kept on the session, it comes back with the
+ * session, and the wall-clock start keeps it right across the gap.
+ *
+ * The set is named three ways: slot, set index and the exercise under the
+ * slot, because a swap keeps the slot and the index and puts a different bout
+ * there, whose clock is not this one.
+ */
+export interface SessionMinutesClock extends MinutesStopwatch {
+  slotId: string;
+  setIndex: number;
+  exerciseName: string;
+  /** The bout's prescription, so the idle nudge can wait for it (minutesBoutDueMs). */
+  plannedMinutes: number;
+}
+
+/** A stored clock made safe to read; anything unusable is no clock. */
+export function normalizeSessionMinutesClock(input: unknown): SessionMinutesClock | null {
+  if (typeof input !== 'object' || input === null) {
+    return null;
+  }
+  const value = input as Record<string, unknown>;
+  const finite = (candidate: unknown): candidate is number =>
+    typeof candidate === 'number' && Number.isFinite(candidate);
+  if (
+    typeof value.slotId !== 'string' ||
+    typeof value.exerciseName !== 'string' ||
+    !finite(value.setIndex) ||
+    value.setIndex < 0 ||
+    !finite(value.accumulatedMs) ||
+    (value.runningSinceMs !== null && !finite(value.runningSinceMs))
+  ) {
+    return null;
+  }
+  return {
+    slotId: value.slotId,
+    setIndex: Math.floor(value.setIndex),
+    exerciseName: value.exerciseName,
+    accumulatedMs: Math.max(0, value.accumulatedMs),
+    runningSinceMs: value.runningSinceMs as number | null,
+    plannedMinutes: finite(value.plannedMinutes) && value.plannedMinutes > 0 ? value.plannedMinutes : 0,
+  };
+}
+
+/** The session's clock if it is this set's, else a stopped one: a new set starts at zero. */
+export function stopwatchForSet(
+  clock: SessionMinutesClock | null | undefined,
+  set: { slotId: string; setIndex: number; exerciseName: string },
+): MinutesStopwatch {
+  if (
+    !clock ||
+    clock.slotId !== set.slotId ||
+    clock.setIndex !== set.setIndex ||
+    clock.exerciseName !== set.exerciseName
+  ) {
+    return STOPPED_STOPWATCH;
+  }
+  return { accumulatedMs: clock.accumulatedMs, runningSinceMs: clock.runningSinceMs };
+}
+
+/**
+ * When a running bout's prescription runs out — the moment the reader is due
+ * back at the phone. Null while the clock is stopped, or when there is none.
+ *
+ * The idle nudge ("still training?") is timed from the reader's last sign of
+ * life, and a running clock is one that lasts: a 40-minute ride logs nothing
+ * for 40 minutes, so the nudge fired 25 minutes into it (#bugs 2026-10-06).
+ * Timed from this instead, it waits for the bout to be over.
+ */
+export function minutesBoutDueMs(clock: SessionMinutesClock | null | undefined): number | null {
+  if (!clock || clock.runningSinceMs === null) {
+    return null;
+  }
+  return clock.runningSinceMs + Math.max(0, clock.plannedMinutes * 60000 - clock.accumulatedMs);
+}
+
+/**
  * How long until the stopwatch next changes something a reader can read
  * besides its own seconds: the whole minutes minutesToLog would log (it
  * switches at the half minute) or the planned minutes being reached. Null

@@ -11,6 +11,7 @@ import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
+import type { SessionMinutesClock } from '../../lib/minutesExercises';
 import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
@@ -103,6 +104,8 @@ export type WorkoutAction =
   | { type: 'set/recordEffort'; payload: { slotId: string; setIndex: number; effort: WorkoutSetEffort } }
   | { type: 'set/repeatLast'; payload: { slotId: string; setIndex: number; nowMs: number; unitPreference: 'kg' | 'lb' } }
   | { type: 'set/undo'; payload: { slotId: string; setIndex: number } }
+  /** The bout's stopwatch started or paused (null: none on the clock). */
+  | { type: 'session/setMinutesClock'; payload: { clock: SessionMinutesClock | null } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
   | { type: 'exercise/removeSet'; payload: { slotId: string } }
   /** A warm-up set, logged apart from the working sets (WorkoutWarmupSet). */
@@ -1385,6 +1388,14 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       set.completedAt = new Date(action.payload.nowMs).toISOString();
       set.edited = true;
       set.loggedAs = currentLiftOf(exercise);
+      // The bout is logged: its clock has nothing more to keep.
+      if (
+        session.minutesClock &&
+        session.minutesClock.slotId === action.payload.slotId &&
+        session.minutesClock.setIndex === action.payload.setIndex
+      ) {
+        session.minutesClock = null;
+      }
       // The pause time run so far, so a workout that ends at this set takes
       // off only these (workoutSecondsUntil).
       session.pausedMsAtLastSet =
@@ -1625,6 +1636,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       exercise.warmups = [...(exercise.warmups ?? []), { loadKg, reps, completedAt }];
       session.updatedAt = completedAt;
       return { ...state, activeSession: session };
+    }
+
+    case 'session/setMinutesClock': {
+      if (!state.activeSession) {
+        return state;
+      }
+      return { ...state, activeSession: { ...state.activeSession, minutesClock: action.payload.clock } };
     }
 
     case 'exercise/removeWarmup': {

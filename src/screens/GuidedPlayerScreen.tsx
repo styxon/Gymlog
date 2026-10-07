@@ -96,9 +96,10 @@ import {
   MinutesStopwatch,
   msUntilNextMinutesChange,
   pauseStopwatch,
+  SessionMinutesClock,
   startStopwatch,
   stopwatchElapsedMs,
-  STOPPED_STOPWATCH,
+  stopwatchForSet,
 } from '../lib/minutesExercises';
 import { formatCardioDuration } from '../lib/cardio';
 import {
@@ -4065,6 +4066,8 @@ function GuidedPlayer({
               onConfirm={confirmSet}
               // The rest-over cue: the minutes are in, the reader logs them.
               onMinutesReached={() => cue('rest')}
+              minutesClock={workout.activeSession?.minutesClock ?? null}
+              onMinutesClockChange={workout.setMinutesClock}
             />
           )}
 
@@ -5191,6 +5194,8 @@ function SetStepView({
   onOpenSheet,
   onConfirm,
   onMinutesReached,
+  minutesClock,
+  onMinutesClockChange,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5221,6 +5226,10 @@ function SetStepView({
   onConfirm: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
   /** A bout of minutes reached its prescription on the clock — a cue, nothing logged. */
   onMinutesReached?: () => void;
+  /** The bout's stopwatch as the session keeps it; read when the set opens. */
+  minutesClock?: SessionMinutesClock | null;
+  /** The stopwatch started or paused, for the session to keep. */
+  onMinutesClockChange?: (clock: SessionMinutesClock) => void;
 }) {
   const theme = useTheme();
 
@@ -5245,12 +5254,30 @@ function SetStepView({
    * minutesToLog). Touched, the dial is the reader's number.
    *
    * The clock is read off the wall, not ticks, so it keeps counting with the
-   * screen off. It is this screen's alone: leaving the step drops it, as the
-   * set's own dials are dropped.
+   * screen off. Every start and pause is kept on the session, so a screen
+   * mounted again — Android killing the app mid-ride — opens on the clock
+   * where it stood, still running, instead of at zero (#bugs 2026-10-06).
    */
   const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
   const plannedMinutes = target?.reps ?? 0;
-  const [watch, setWatch] = useState<MinutesStopwatch>(STOPPED_STOPWATCH);
+  const keptWatch = () =>
+    stopwatchForSet(minutesClock, { slotId: step.slotId, setIndex: step.setIndex, exerciseName: step.exerciseName });
+  /** A clock that comes back already past the prescription has given its cue. */
+  const reachedOnArrival = (kept: MinutesStopwatch) =>
+    plannedMinutes > 0 && stopwatchElapsedMs(kept, Date.now()) >= plannedMinutes * 60000;
+  const [watch, setWatch] = useState<MinutesStopwatch>(keptWatch);
+  const keepWatch = (next: MinutesStopwatch) => {
+    setWatch(next);
+    if (minutesMode) {
+      onMinutesClockChange?.({
+        slotId: step.slotId,
+        setIndex: step.setIndex,
+        exerciseName: step.exerciseName,
+        plannedMinutes,
+        ...next,
+      });
+    }
+  };
   const [watchNowMs, setWatchNowMs] = useState(() => Date.now());
   const minutesChosenRef = useRef(false);
   const [minutesChosen, setMinutesChosen] = useState(false);
@@ -5274,7 +5301,10 @@ function SetStepView({
   const shownMinutesRef = useRef(shownMinutes);
   shownMinutesRef.current = shownMinutes;
   const minutesReached = minutesMode && plannedMinutes > 0 && elapsedMs >= plannedMinutes * 60000;
-  const minutesReachedRef = useRef(false);
+  const minutesReachedRef = useRef<boolean | null>(null);
+  if (minutesReachedRef.current === null) {
+    minutesReachedRef.current = reachedOnArrival(watch);
+  }
   useEffect(() => {
     if (minutesReached && !minutesReachedRef.current) {
       minutesReachedRef.current = true;
@@ -5285,14 +5315,15 @@ function SetStepView({
   // Pausing the workout pauses the bout: the header's pause means "I have
   // stopped", and a clock that ran on through it would log the break.
   useEffect(() => {
-    if (paused) {
-      setWatch((current) => pauseStopwatch(current, Date.now()));
+    if (paused && watch.runningSinceMs !== null) {
+      keepWatch(pauseStopwatch(watch, Date.now()));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused]);
   const toggleWatch = () => {
     const now = Date.now();
     setWatchNowMs(now);
-    setWatch((current) => (current.runningSinceMs === null ? startStopwatch(current, now) : pauseStopwatch(current, now)));
+    keepWatch(watch.runningSinceMs === null ? startStopwatch(watch, now) : pauseStopwatch(watch, now));
   };
   /** The first touch of the dial takes it from the clock, from where it stood. */
   const stepMinutes = (direction: -1 | 1) => {
@@ -5374,10 +5405,12 @@ function SetStepView({
     setWarmupMode(false);
     setReps(target?.reps ?? 8);
     setKg(target?.loadKg ?? 0);
-    setWatch(STOPPED_STOPWATCH);
+    const kept = keptWatch();
+    setWatch(kept);
+    setWatchNowMs(Date.now());
     minutesChosenRef.current = false;
     setMinutesChosen(false);
-    minutesReachedRef.current = false;
+    minutesReachedRef.current = reachedOnArrival(kept);
     // Re-derive when the step changes — and when the exercise under the step
     // changes, which is what a swap does without moving the index. Keying on
     // stepIndex alone left the old lift's weight sitting in local state after a
