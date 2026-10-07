@@ -8,6 +8,12 @@ import type { RecommendationGoalType, RecommendationSetupContext } from './recom
 export interface WorkoutContentFitInput {
   goalType: RecommendationGoalType;
   setupContext: RecommendationSetupContext;
+  /**
+   * The reader's gear, so the session length is the one their card prints
+   * (readyTemplateCardMinutes). Without it a bands-only reader's card said
+   * about 20 minutes while this judged the ungeared 35 (review, 2026-10-07).
+   */
+  availableEquipment?: string[] | null;
 }
 
 export interface WorkoutContentFitSignals {
@@ -221,7 +227,7 @@ export function evaluateWorkoutContentFit(programId: string, input: WorkoutConte
   const signals = buildSignals(
     exercises,
     template.sessions.map((session) => session.exercises.length),
-    readyTemplateCardMinutes(template),
+    readyTemplateCardMinutes(template, { availableEquipment: input.availableEquipment ?? null }),
     input,
   );
 

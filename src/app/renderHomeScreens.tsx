@@ -8,7 +8,7 @@ import { isAiCoachLiveConfigured, requestProgrammeComposition } from '../lib/aiC
 import { randomLogId } from '../lib/aiCoachLogId';
 import { recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
-import { buildProgrammeDraft, composeProgrammePreview, resolveLiveProposal } from '../lib/programmeBrief';
+import { buildProgrammeDraft, composeProgrammePreview, liveProposalOrPreview, resolveLiveProposal } from '../lib/programmeBrief';
 import { recordSuggestionAccepted, recordSuggestionRejected } from '../lib/coachSuggestions';
 import { t } from '../lib/i18n';
 import { ProgramLimitReachedError } from '../lib/programSlots';
@@ -169,17 +169,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
        * live answer that never arrived; an answer that arrived with nothing
        * usable in it leaves the reader in the same place.
        */
-      if (resolved.sessions.length > 0) {
-        return resolved;
-      }
-      // The names it could not place come with it. They are the one thing the
-      // discarded answer knew that the composer does not, and the card that
-      // lists them (ProgrammeProposalCard) would otherwise have nothing to
-      // list in exactly the case the list is for.
-      return {
-        ...composeProgrammePreview(brief, preferences, exerciseLibrary),
-        unresolvedNames: resolved.unresolvedNames,
-      };
+      return liveProposalOrPreview(resolved, () => composeProgrammePreview(brief, preferences, exerciseLibrary));
     }
     return composeProgrammePreview(brief, preferences, exerciseLibrary);
   }

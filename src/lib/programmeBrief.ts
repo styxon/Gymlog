@@ -478,10 +478,45 @@ export interface ProgrammeProposal {
  */
 export function briefAsksForSpecialty(brief: string, item: Pick<ExerciseLibraryItem, 'name'>): boolean {
   const text = brief.toLowerCase();
-  if (/strongman|erikoisliik|specialty|special lifts/.test(text)) {
+  if (asksFor(text, /strongman|erikoisliik|specialty|special lifts/g)) {
     return true;
   }
-  return [item.name, exerciseNameLabel('fi', item.name)].some((name) => text.includes(name.toLowerCase()));
+  return [item.name, exerciseNameLabel('fi', item.name)].some((name) =>
+    asksFor(text, new RegExp(escapeRegExp(name.toLowerCase()), 'g')),
+  );
+}
+
+/** Words that, a few words before a mention in the same clause, refuse it: "ei erikoisliikkeitä", "no strongman". */
+const REFUSAL_WORDS = new Set([
+  'ei', 'eikä', 'en', 'älä', 'ilman', 'paitsi',
+  'no', 'not', 'without', 'avoid', 'never', 'skip', 'except', "don't", 'dont',
+]);
+
+/**
+ * Words that turn a clause round, so a refusal before them does not reach
+ * past them: "ei koneita vaan strongman" asks for strongman — the usual
+ * Finnish way to — and so does "no machines but strongman" (CI review of
+ * #332, 2026-10-07). Not "ja" / "and": "ilman koneita ja strongmania" refuses
+ * both.
+ */
+const CONTRAST_WORDS = new Set(['vaan', 'mutta', 'but', 'instead', 'rather']);
+
+/** Whether some mention matched by `pattern` is not refused by a word just before it. */
+function asksFor(text: string, pattern: RegExp): boolean {
+  for (const match of text.matchAll(pattern)) {
+    const clause = text.slice(0, match.index).split(/[.,;:!?\n]/).pop() ?? '';
+    const words = clause.split(/\s+/).filter(Boolean);
+    const turn = words.reduce((last, word, index) => (CONTRAST_WORDS.has(word) ? index : last), -1);
+    const before = words.slice(turn + 1).slice(-3);
+    if (!before.some((word) => REFUSAL_WORDS.has(word.replace(/[’']/g, "'")))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function planToProposal(
@@ -594,6 +629,24 @@ export function resolveLiveProposal(
     return !item || !includedIds.has(item.id);
   });
   return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames, specialtyLeftOut };
+}
+
+/**
+ * The resolved live answer, or the preview composer's week when nothing in
+ * the answer resolved. What the discarded answer knew that the composer does
+ * not comes with it: the names it could not place, and the specialty
+ * movements it was refused — or a card that promises "never silently" lists
+ * nothing in exactly the case the list is for (review, 2026-10-07).
+ */
+export function liveProposalOrPreview(resolved: ProgrammeProposal, preview: () => ProgrammeProposal): ProgrammeProposal {
+  if (resolved.sessions.length > 0) {
+    return resolved;
+  }
+  return {
+    ...preview(),
+    unresolvedNames: resolved.unresolvedNames,
+    specialtyLeftOut: resolved.specialtyLeftOut,
+  };
 }
 
 /**

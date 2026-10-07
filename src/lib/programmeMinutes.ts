@@ -83,11 +83,34 @@ export function readyTemplateCardMinutes(
   options: ProgrammeMinutesOptions = {},
 ): number {
   const gear = options.availableEquipment ?? null;
-  const sessions =
-    gear === null
-      ? template.sessions
-      : template.sessions.map((session) => ({
-          exercises: applyEquipmentToExercises([...session.exercises], gear).exercises,
-        }));
+  const sessions = gear === null ? template.sessions : sessionsForGear(template, gear);
   return estimateProgrammeSessionMinutes(sessions, options) || template.estimatedSessionDuration;
+}
+
+type TemplateSessions = ReadonlyArray<{ exercises: ReadonlyArray<WorkoutTemplateExercise> }>;
+
+/**
+ * The equipment filter's answer per template and gear list. The Programs card
+ * and the recommender's content-fit signal both cost every catalog programme
+ * with the reader's gear on a cold start; without this the second pass redid
+ * the filter for all 68 (review, 2026-10-07). Keyed by the template object,
+ * so a template that is replaced is a new key.
+ */
+const equippedSessionsCache = new WeakMap<object, Map<string, TemplateSessions>>();
+
+function sessionsForGear(template: { sessions: TemplateSessions }, gear: string[]): TemplateSessions {
+  const key = gear.join('\u0000');
+  let byGear = equippedSessionsCache.get(template);
+  if (!byGear) {
+    byGear = new Map();
+    equippedSessionsCache.set(template, byGear);
+  }
+  let sessions = byGear.get(key);
+  if (!sessions) {
+    sessions = template.sessions.map((session) => ({
+      exercises: applyEquipmentToExercises([...session.exercises], gear).exercises,
+    }));
+    byGear.set(key, sessions);
+  }
+  return sessions;
 }
