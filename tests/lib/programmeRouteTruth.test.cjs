@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
@@ -71,9 +73,16 @@ module.exports = [
       // the other.
       const uses = code.match(/resolveComposedWeekForRoute\(route\.workoutTemplateId\)/g) ?? [];
       assert.equal(uses.length, 2, 'both the programme page and the day page ask the resolver');
+      // The resolver is programDetails' rule, the one the Programs cards ask
+      // too (#37), and the rule passes the plan gate.
       assert.match(
         code,
-        /const resolveComposedWeekForRoute = \(workoutTemplateId: string\) => \{[\s\S]{0,900}composedWeekMatchesPlan\(composed\.sessions\.map\(\(session\) => session\.id\), planSessionIds\)/,
+        /const resolveComposedWeekForRoute = \(workoutTemplateId: string\) =>\s*resolveReaderComposedWeek\(workoutTemplateId, \{/,
+      );
+      const details = strip(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'programDetails.ts'), 'utf8'));
+      assert.match(
+        details,
+        /export function resolveReaderComposedWeek\([\s\S]{0,900}composedWeekMatchesPlan\(composed\.sessions\.map\(\(session\) => session\.id\), planSessionIds\)/,
       );
       // And nothing composes a week for a page without passing that gate.
       assert.doesNotMatch(

@@ -13,9 +13,13 @@ import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
-import { composeProgramWeekForSelection } from '../lib/programDayComposer';
-import { findHeldReadyProgrammeCopyId, findReadyProgrammeCopyId } from '../lib/programmeCopyLink';
-import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan, readyProgramSessionMinutes } from '../lib/programDetails';
+import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
+import {
+  buildCustomProgramDetail,
+  buildReadyProgramDetail,
+  readyProgramSessionMinutes,
+  resolveReaderComposedWeek,
+} from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
@@ -378,36 +382,15 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
    * programme is adopted, the plan's days are the truth; before that, the
    * composed week is what the reader was shown and promised.
    */
-  const resolveComposedWeekForRoute = (workoutTemplateId: string) => {
-    if (preferences.recommendedProgramId !== workoutTemplateId || !setupSelection) {
-      return null;
-    }
-    /*
-     * And only while the composed week is the only version of it.
-     *
-     * Onboarding saves what it composed as a programme of the reader's own,
-     * and that copy is what they train. This page is the catalog
-     * programme's page: its day editor and its adopt button work on the
-     * original. Showing the copy's week here made a page whose days and
-     * whose buttons disagreed — the reader tapped a day they had been
-     * shown on Home and edited something else (audit round 4, 2026-09-20).
-     * The copy has a page of its own, which is where its week belongs.
-     */
-    if (findReadyProgrammeCopyId(workoutTemplateId, database.workoutTemplates)) {
-      return null;
-    }
-    const composed = composeProgramWeekForSelection(setupSelection, workoutTemplateId);
-    if (!composed) {
-      return null;
-    }
-    const planSessionIds = database.workoutPlans
-      .flatMap((plan) => plan.entries)
-      .filter((entry) => entry.workoutTemplateId === workoutTemplateId)
-      .map((entry) => entry.workoutTemplateSessionId);
-    return composedWeekMatchesPlan(composed.sessions.map((session) => session.id), planSessionIds)
-      ? composed
-      : null;
-  };
+  // The rule lives in programDetails, so the Programs card quotes the week
+  // this page draws (bug hunt, 2026-10-07, #37).
+  const resolveComposedWeekForRoute = (workoutTemplateId: string) =>
+    resolveReaderComposedWeek(workoutTemplateId, {
+      recommendedProgramId: preferences.recommendedProgramId,
+      setupSelection,
+      workoutTemplates: database.workoutTemplates,
+      workoutPlans: database.workoutPlans,
+    });
 
   if (route.screen === 'program') {
     const readyTemplate = route.programType === 'ready' ? getWorkoutTemplateById(route.workoutTemplateId) : null;
@@ -425,6 +408,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
             mismatchNote: setupRecommendation.mismatchNote,
             language: preferences.appLanguage,
+            programId: readyTemplate.id,
           }, tailoringPreferences).join(' ')
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);

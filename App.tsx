@@ -1755,6 +1755,7 @@ function VinhaApp() {
     catalogScreenItems,
     programsCategoryMembers,
     programsRecommendations,
+    readerComposedWeek,
   } = useProgramsCatalog({
     preferences,
     workout,
@@ -1763,6 +1764,7 @@ function VinhaApp() {
     recommendedReadyTemplate,
     activeProgramTemplateIds,
     database,
+    setupSelection,
   });
   /**
    * The rotating hero's slides, and the counts they promise.
@@ -1820,6 +1822,7 @@ function VinhaApp() {
     customWorkoutRuntimeMap,
     programsRecommendations,
     showToast,
+    readerComposedWeek,
   });
   const { programsCustomItems } = useProgramsCustomItems({
     customWorkouts,

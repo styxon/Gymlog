@@ -43,5 +43,6 @@ export function buildRecommendationInput(selection: FirstRunSetupSelection): Rec
     ageRange:
       selection.ageRange && selection.ageRange !== 'unspecified' ? selection.ageRange : null,
     availableEquipment: resolveAvailableEquipment(selection),
+    cautionFlags: selection.cautionFlags ?? [],
   };
 }

@@ -44,8 +44,14 @@ const { execFileSync } = require('node:child_process');
  * for one, in the recommender and in the matrix's eligible set alike. The
  * mobility flow uses a band, so every band owner not handed it counted as E2:
  * E2 32 -> 6, HARD 57 -> 31, measured the same on the code before the fix.
+ *
+ * Owner, 2026-10-07 (#34): a two-day reader is handed a week that fits two
+ * days, not a split cut to two. Calisthenics Mastery cut to Push and Pull
+ * stopped winning for a dumbbell-and-bar owner, and a geared week exactly two
+ * days off now beats one that ignores the gear instead of tying it: the
+ * dumbbell upper/lower wins those four answers, E4 15 -> 13.
  */
-const CEILINGS = { E2: 6, E3: 0, E4: 15, L1: 0, S1: 0, C1: 0, HARD: 31 };
+const CEILINGS = { E2: 6, E3: 0, E4: 13, L1: 0, S1: 0, C1: 0, HARD: 31 };
 
 let cached = null;
 function matrix() {

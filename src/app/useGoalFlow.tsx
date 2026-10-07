@@ -24,7 +24,8 @@ import { STRENGTH_GOAL_PRESETS } from '../lib/strengthGoalPresets';
 import { resolveGoalProgress, upsertStrengthGoal } from '../lib/strengthGoals';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { LiftHistory } from '../lib/trainingHistory';
-import { readyTemplateCardMinutes } from '../lib/programmeMinutes';
+import { programmeCardMinutes } from '../lib/programDetails';
+import type { ComposedProgramWeek } from '../lib/programDayComposer';
 import { resolveAvailableEquipment } from '../lib/equipmentExerciseFilter';
 import { AppRoute } from '../navigation/routes';
 import type { ProgramsExploreItem } from '../screens/ProgramsHomeScreen';
@@ -74,6 +75,8 @@ export interface GoalFlowDeps {
   programsRecommendations: ProgramsExploreItem[];
   /** VinhaApp's showToast: a failed write is said, not swallowed. */
   showToast: (message: string) => void;
+  /** The reader's composed week of their own programme (useProgramsCatalog), for its minutes. */
+  readerComposedWeek: ComposedProgramWeek | null;
 }
 
 export function useGoalFlow(deps: GoalFlowDeps) {
@@ -91,6 +94,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
     customWorkoutRuntimeMap,
     programsRecommendations,
     showToast,
+    readerComposedWeek,
   } = deps;
 
   const libraryNames = useMemo(() => exerciseLibrary.map((item) => item.name), [exerciseLibrary]);
@@ -260,7 +264,8 @@ export function useGoalFlow(deps: GoalFlowDeps) {
         templateId: template.id,
         programmeName: getReadyTemplatePresentation(template, preferences.appLanguage).title,
         daysPerWeek: template.daysPerWeek,
-        minutes: readyTemplateCardMinutes(template, {
+        // The programme page's number, the reader's own week included (#37).
+        minutes: programmeCardMinutes(template, readerComposedWeek, {
           availableEquipment: resolveAvailableEquipment({
             trainingEnvironment: preferences.setupTrainingEnvironment,
             equipmentItems: preferences.setupEquipmentItems,
@@ -280,6 +285,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
       preferences.setupTrainingEnvironment,
       preferences.setupEquipmentItems,
       preferences.routineDrillOverrides,
+      readerComposedWeek,
     ],
   );
 

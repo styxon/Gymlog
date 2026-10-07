@@ -6,6 +6,7 @@ import {
   readerAskedForRecovery,
 } from './recommendationCatalog';
 import { selectWaterfallDecision } from './recommendationWaterfall';
+import { programRunStandInKind } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
@@ -390,6 +391,24 @@ function homeEquipmentReason(programId: string): I18nKey {
     : 'wf.home_equipment.primary';
 }
 
+/**
+ * The reason over a programme whose runs the reader's knee or ankle flag turns
+ * into walks or rides, or null when it still runs.
+ *
+ * Whatever lane picked it: "Running comes first" was printed over a week of
+ * stretches for a reader who avoids their knees, and a home reader whose RUN
+ * was all walks was told only that nothing in it needed a gym (bug hunt,
+ * 2026-10-07, #35). The walks are the thing they did not ask for and need to
+ * know about.
+ */
+function runStandInReason(programId: string, input: RecommendationInput): I18nKey | null {
+  const kind = programRunStandInKind(programId, input);
+  if (kind === 'ride') {
+    return 'wf.run_mobility.ridePrimary';
+  }
+  return kind === 'walk' ? 'wf.run_mobility.walkPrimary' : null;
+}
+
 function selectAlternativeCandidates(candidates: RecommendationCandidate[], input: RecommendationInput) {
   const [featuredCandidate, ...otherCandidates] = candidates;
   if (!featuredCandidate) {
@@ -564,6 +583,7 @@ export function recommendPrograms(
       ))
       ? waterfallAlternativeCandidate
       : null;
+  const standInReason = waterfallPrimary ? runStandInReason(waterfallPrimary.programId, input) : null;
   const appliedWaterfall = waterfallPrimary
     ? {
         ...waterfallDecision,
@@ -579,6 +599,7 @@ export function recommendPrograms(
         ...(waterfallAlternativeCandidate && !waterfallAlternative
           ? { alternativeProgramId: null, whyAlternative: null }
           : {}),
+        ...(standInReason ? { whyPrimary: standInReason } : {}),
       }
     : null;
   const rankedCandidates = waterfallPrimary

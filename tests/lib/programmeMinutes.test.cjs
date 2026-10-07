@@ -113,7 +113,10 @@ module.exports = [
       for (const file of ['src/app/useProgramsCatalog.tsx', 'src/app/useGoalFlow.tsx']) {
         const source = read(file);
         assert.doesNotMatch(source, /minutes: template\.estimatedSessionDuration/, file);
-        assert.match(source, /readyTemplateCardMinutes\(template/, file);
+        // The page's own number: the reader's composed week for their own
+        // programme, the gear estimate for the rest (#37).
+        assert.match(source, /minutes: programmeCardMinutes\(template, readerComposedWeek, /, file);
+        assert.doesNotMatch(source.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, ''), /readyTemplateCardMinutes\(/, file);
       }
       // The programme page: the composed week when it is the reader's plan,
       // otherwise the same options the cards get, so the two agree.

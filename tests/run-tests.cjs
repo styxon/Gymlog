@@ -424,6 +424,7 @@ const suites = [
   ...require('./lib/recommendationWaterfall.test.cjs'),
   ...require('./lib/recommendationReach.test.cjs'),
   ...require('./lib/recommendationAccuracy.test.cjs'),
+  ...require('./lib/recommendationWeekFit.test.cjs'),
   ...require('./lib/recommendationFixes20261005.test.cjs'),
   ...require('./lib/recommendationFixes20261006.test.cjs'),
   ...require('./lib/recommenderSweep20261007.test.cjs'),

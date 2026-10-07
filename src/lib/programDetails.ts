@@ -8,12 +8,14 @@ import {
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { t } from './i18n';
-import { ComposedProgramWeek } from './programDayComposer';
+import { ComposedProgramWeek, composeProgramWeekForSelection } from './programDayComposer';
+import { findReadyProgrammeCopyId, ProgrammeCopyTemplate } from './programmeCopyLink';
+import type { FirstRunSetupSelection } from './firstRunSetup';
 import { ProgramInsightSummary } from './programInsights';
 import { getRecommendationProgrammeSummary } from './recommendationProgramme';
 import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgramContent';
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
-import type { AppLanguage } from '../types/models';
+import type { AppLanguage, WorkoutPlan } from '../types/models';
 import { doseUnitSuffix, removeTrailingZeros } from './format';
 import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 import { doseAfterSwap } from './swapDose';
@@ -234,6 +236,77 @@ export function readyProgramSessionMinutes(
   minutesOptions: ProgrammeMinutesOptions = {},
 ): number {
   return composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions);
+}
+
+/**
+ * The minutes a card quotes for a ready programme: the page's number.
+ *
+ * `readerWeek` is the reader's composed week (resolveReaderComposedWeek) and
+ * counts only for its own programme; every other card has nothing composed
+ * behind its page either, and both quote the gear estimate.
+ */
+export function programmeCardMinutes(
+  template: WorkoutTemplateV1,
+  readerWeek: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): number {
+  return readyProgramSessionMinutes(template, readerWeek?.programId === template.id ? readerWeek : null, minutesOptions);
+}
+
+export interface ReaderComposedWeekContext {
+  /** The programme the questionnaire handed the reader. */
+  recommendedProgramId: string | null | undefined;
+  setupSelection: FirstRunSetupSelection | null;
+  /** The reader's own templates: a copy of the programme has a page of its own. */
+  workoutTemplates: readonly ProgrammeCopyTemplate[];
+  workoutPlans: ReadonlyArray<Pick<WorkoutPlan, 'entries'>>;
+}
+
+/**
+ * The week the reader runs of this ready programme, composed for their days,
+ * flags, focus and gear, or null when the catalog's own week is the answer.
+ *
+ * Only the questionnaire's programme, only while the reader has no copy of
+ * it, and only while the plan's days are the composed ones.
+ *
+ * The programme page, the Programs cards and the goal proposal all read the
+ * reader's week through this. The cards used to cost the catalog week for
+ * gear alone, so with the knees avoided a card read 40 min and the page 30
+ * for the same programme (bug hunt, 2026-10-07, #37).
+ */
+export function resolveReaderComposedWeek(
+  templateId: string,
+  context: ReaderComposedWeekContext,
+): ComposedProgramWeek | null {
+  const { recommendedProgramId, setupSelection } = context;
+  if (recommendedProgramId !== templateId || !setupSelection) {
+    return null;
+  }
+  /*
+   * And only while the composed week is the only version of it.
+   *
+   * Onboarding saves what it composed as a programme of the reader's own,
+   * and that copy is what they train. The programme page is the catalog
+   * programme's page: its day editor and its adopt button work on the
+   * original. Showing the copy's week there made a page whose days and
+   * whose buttons disagreed — the reader tapped a day they had been
+   * shown on Home and edited something else (audit round 4, 2026-09-20).
+   * The copy has a page of its own, which is where its week belongs.
+   */
+  if (findReadyProgrammeCopyId(templateId, context.workoutTemplates)) {
+    return null;
+  }
+  const composed = composeProgramWeekForSelection(setupSelection, templateId);
+  if (!composed) {
+    return null;
+  }
+  const planSessionIds = context.workoutPlans
+    .flatMap((plan) => plan.entries)
+    .filter((entry) => entry.workoutTemplateId === templateId)
+    .map((entry) => entry.workoutTemplateSessionId);
+  return composedWeekMatchesPlan(composed.sessions.map((session) => session.id), planSessionIds)
+    ? composed
+    : null;
 }
 
 export function buildReadyProgramDetail(

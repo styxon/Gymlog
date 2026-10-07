@@ -37,12 +37,17 @@ module.exports = [
     name: 'onboarding: the catalog page shows the catalog once the copy exists, and the lookup finds copies made before the link',
     run() {
       const tab = read('src', 'app', 'renderWorkoutTab.tsx');
-      const resolver = tab.slice(
-        tab.indexOf('const resolveComposedWeekForRoute = (workoutTemplateId: string) => {'),
+      // The page asks the rule the Programs cards ask (#37), and the rule
+      // steps aside once a copy exists.
+      assert.match(
+        tab,
+        /const resolveComposedWeekForRoute = \(workoutTemplateId: string\) =>\s*resolveReaderComposedWeek\(workoutTemplateId, \{/,
       );
+      const details = read('src', 'lib', 'programDetails.ts');
+      const resolver = details.slice(details.indexOf('export function resolveReaderComposedWeek('));
       assert.match(
         resolver.slice(0, resolver.indexOf('const composed =')),
-        /if \(findReadyProgrammeCopyId\(workoutTemplateId, database\.workoutTemplates\)\) \{\s*return null;/,
+        /\n  if \(findReadyProgrammeCopyId\(templateId, context\.workoutTemplates\)\) \{\s*return null;/,
         "a page whose programme the reader has copied shows the catalog's own week",
       );
 
