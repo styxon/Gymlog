@@ -324,6 +324,43 @@ const TABLE = [
   { brief: 'Never skip leg day', focus: ['legs'], kept: LEG_WORK },
   { brief: 'No leg press', refused: ['leg press'], kept: ['squat', 'deadlift', 'lunge'] },
   { brief: 'Legs and glutes, please', kept: LEG_WORK },
+
+  // Review of the re-hunt fix (2026-10-08). An English pain word starts a
+  // word, and "vaivaton" is no trouble.
+  { brief: 'I want coaching on squats and bench', lifts: ['Back Squat', 'Bench Press'], cautions: [], kept: ['back squat', 'bench press'] },
+  { brief: 'My coaches want more squats', lifts: ['Back Squat'], cautions: [], kept: ['back squat'] },
+  { brief: 'Teaching myself to squat', lifts: ['Back Squat'], cautions: [] },
+  { brief: 'Attending a gym, extending my bench', lifts: ['Bench Press'], cautions: [] },
+  { brief: 'Haluan vaivattoman ohjelman jossa kyykkyä', lifts: ['Back Squat'], cautions: [] },
+  { brief: 'Haluan vaivattoman ohjelman jossa kyykkyä ja rintaa', lifts: ['Back Squat'], cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Polven vaivat', cautions: ['knee'], focus: [] },
+  { brief: 'Knee tendinitis', cautions: ['knee'], focus: [] },
+  // The leg day is refused only from within its own "ja" / "and"; never
+  // done and never missed refuse nothing.
+  { brief: 'Ei juoksua ja jalat painopisteenä', focus: ['legs'], kept: LEG_WORK },
+  { brief: 'No knee pain and legs focus', focus: ['legs'], cautions: [], kept: LEG_WORK },
+  { brief: 'Ilman koneita ja jalkoja paljon', kept: LEG_WORK },
+  { brief: 'Kotona ei ole laitteita ja jalkoja haluan treenata', kept: LEG_WORK },
+  { brief: 'No running and legs', kept: LEG_WORK },
+  { brief: 'I never miss leg day', kept: LEG_WORK },
+  { brief: "I've never trained legs", kept: LEG_WORK },
+  { brief: 'En ole koskaan treenannut jalkoja', kept: LEG_WORK },
+  { brief: 'I miss squats', lifts: ['Back Squat'] },
+  // An ask anywhere in the "ja" stretch after an opening negation, or a
+  // modifier before the lift, makes it a fresh statement.
+  { brief: 'No cardio and heavy squats', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: "I don't have much time and squats are my favourite", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Ei aikaa paljon ja maastaveto tärkein', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: 'En ole kovin hyvässä kunnossa ja kyykkyä haluaisin', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'No deadlifts and squats', lifts: [], refused: ['back squat', 'deadlift'] },
+  { brief: "I don't want deadlifts and squats are not my favourite", lifts: [], refused: ['back squat', 'deadlift'] },
+  // "jättää", "poistaa", "miss" negated insist, and the first two alone refuse.
+  { brief: 'Kyykkyä ei saa jättää pois', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Ei saa jättää kyykkyä pois', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Never miss squats', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Kyykkyä en halua poistaa', lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Haluan poistaa maastavedon', lifts: [], refused: ['deadlift'] },
+  { brief: 'Consider removing deadlifts', lifts: [], refused: ['deadlift'] },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -449,6 +486,25 @@ module.exports = [
         const legWork = week(brief).filter((name) => /squat|deadlift|lunge|leg press|leg curl|leg extension|calf/i.test(name));
         assert.deepEqual(legWork, [], brief);
       }
+      // Review of the fix: legs asked for after "ja", never missed or never
+      // trained keep their leg work.
+      for (const brief of ['Ei juoksua ja jalat painopisteenä.', 'No knee pain and legs focus.', 'I never miss leg day.', "I've never trained legs."]) {
+        const names = week(brief);
+        assert.ok(has(names, /squat/i) && has(names, /deadlift/i) && has(names, /lunge/i), `${brief}: ${names.join(', ')}`);
+      }
+      // "coaching" is no pain, and the lifts asked for after a refusal, insisted
+      // on twice over or polite at the end of the clause are in the week.
+      for (const brief of [
+        'I want coaching on squats and bench.',
+        'Kyykkyä ei saa jättää pois.',
+        'Never miss squats.',
+        'En ole kovin hyvässä kunnossa ja kyykkyä haluaisin.',
+        'No cardio and heavy squats.',
+      ]) {
+        const names = week(brief);
+        assert.ok(names.includes('Barbell Full Squat'), `${brief}: ${names.join(', ')}`);
+      }
+      assert.ok(has(week('I want coaching on squats and bench.'), /^Barbell Bench Press/), week('I want coaching on squats and bench.').join(', '));
     },
   },
   {
@@ -478,6 +534,9 @@ module.exports = [
       assert.equal(briefAsksForSpecialty("Don't leave out the tire flips", { name: 'Tire Flip' }), true);
       assert.equal(briefAsksForSpecialty('Älä jätä strongman-liikkeitä pois', { name: 'Yoke Walk' }), true);
       assert.equal(briefAsksForSpecialty('Ei strongman-liikkeitä', { name: 'Yoke Walk' }), false);
+      // A refused list stays refused; only an ask in its stretch turns it.
+      assert.equal(briefAsksForSpecialty('Ilman koneita ja strongmania', { name: 'Yoke Walk' }), false);
+      assert.equal(briefAsksForSpecialty('Ei koneita ja strongman tärkein', { name: 'Yoke Walk' }), true);
     },
   },
   {
