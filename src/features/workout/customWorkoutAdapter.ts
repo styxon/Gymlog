@@ -9,7 +9,7 @@ import {
 
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
-import { isMinutesExerciseName } from '../../lib/minutesExercises';
+import { readsAsMinutesByName } from '../../lib/minutesExercises';
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -49,8 +49,11 @@ function getTrackingMode(exercise: ExerciseTemplate, libraryItem?: ExerciseLibra
   }
 
   // Before the category check below, which files a bike as cardio and so as
-  // repetitions. Either spelling: the programme's own or the library row's.
-  if (isMinutesExerciseName(exercise.name) || isMinutesExerciseName(libraryItem?.name)) {
+  // repetitions. Either spelling: the programme's own or the library row's —
+  // and only when the row's numbers could be minutes: a rower written 3 × 500
+  // is metres, and stays the count the category below gives it.
+  const prescribed = [exercise.repMin, exercise.repMax];
+  if (readsAsMinutesByName(exercise.name, prescribed) || readsAsMinutesByName(libraryItem?.name, prescribed)) {
     return 'duration_minutes';
   }
 

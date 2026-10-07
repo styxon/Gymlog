@@ -7,7 +7,12 @@ import {
   restoreTrackingAfterCategoryCorrection,
   TRACKING_CATEGORY_MIGRATION_ID,
 } from '../lib/trackingCategoryMigration';
-import { MINUTES_MODE_MIGRATION_ID, moveOldCopiesToMinutesMode } from '../lib/minutesModeMigration';
+import {
+  IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID,
+  MINUTES_MODE_MIGRATION_ID,
+  moveOldCopiesToMinutesMode,
+  undoImplausibleMinutesMode,
+} from '../lib/minutesModeMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -436,6 +441,12 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
   if (!appliedMigrations.includes(MINUTES_MODE_MIGRATION_ID)) {
     rawExerciseTemplates = moveOldCopiesToMinutesMode(rawExerciseTemplates);
     appliedMigrations.push(MINUTES_MODE_MIGRATION_ID);
+  }
+  // A row the first minutes run moved by name alone, whose numbers are no
+  // bout of minutes (lib/minutesModeMigration undoImplausibleMinutesMode).
+  if (!appliedMigrations.includes(IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID)) {
+    rawExerciseTemplates = undoImplausibleMinutesMode(rawExerciseTemplates);
+    appliedMigrations.push(IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID);
   }
 
   // A stored programme with no id is not a programme. Mapped through the

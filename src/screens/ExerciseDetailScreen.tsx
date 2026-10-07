@@ -6,8 +6,8 @@ import { SimpleLineChart } from '../components/SimpleLineChart';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { countRemainingStatements } from '../lib/exerciseLearning';
-import { getComparableLogSets, isMinutesLog } from '../lib/exerciseLog';
-import { isMinutesExerciseName } from '../lib/minutesExercises';
+import { getComparableLogSets } from '../lib/exerciseLog';
+import { isMinutesExerciseName, isMinutesLogEntry } from '../lib/minutesExercises';
 import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseTeaching';
 import { calendarDaysBetween } from '../lib/completedSessions';
 import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
@@ -277,8 +277,10 @@ export function ExerciseDetailScreen({
    * screen was the one place printing the raw kilogram.
    */
   // A bike or a stair machine is measured in minutes: "20 min", not "20 reps"
-  // — on the card, the trend and the chart's axis alike.
-  const minutesLift = isMinutesExerciseName(item.name) || logs.some((log) => isMinutesLog(log));
+  // — on the card, the trend and the chart's axis alike. Its logs say so when
+  // there are any: a rower logged at 500 before the unit existed was metres,
+  // and printed "500 min" when the name alone decided (#bugs 2026-10-07).
+  const minutesLift = hasHistory ? logs.some((log) => isMinutesLogEntry(log)) : isMinutesExerciseName(item.name);
   const unloadedUnit = minutesLift ? 'min' : t(language, 'exDetail.repsUnit');
   const personalBest = unloaded
     ? minutesLift
