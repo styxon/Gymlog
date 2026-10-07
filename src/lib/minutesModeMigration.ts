@@ -29,17 +29,24 @@
  * category rule: a later writer that stores another mode for one of these names
  * on purpose is not undone on the next load.
  */
-import { isMinutesExerciseName } from './minutesExercises';
+import { isMinutesExerciseName, readsAsMinutesByName } from './minutesExercises';
 import type { ExerciseTemplate } from '../types/models';
 
 /** The marker a database carries once the rule above has run over it. */
 export const MINUTES_MODE_MIGRATION_ID = 'minutes-mode-for-old-copies-2026-10-06';
 
-type ModeRow = Pick<ExerciseTemplate, 'name' | 'trackingMode'>;
+type ModeRow = Pick<ExerciseTemplate, 'name' | 'trackingMode'> & Partial<Pick<ExerciseTemplate, 'repMin' | 'repMax'>>;
+
+/** The row's prescribed numbers, for readsAsMinutesByName. */
+function prescribedCounts(exercise: ModeRow): number[] {
+  return [exercise.repMin, exercise.repMax].filter((count): count is number => typeof count === 'number');
+}
 
 export function moveOldCopiesToMinutesMode<T extends ModeRow>(exercises: readonly T[]): T[] {
   return exercises.map((exercise) => {
-    if (!isMinutesExerciseName(exercise.name)) {
+    // Only a row whose numbers could be minutes: a rower kept at 3 × 500 is
+    // metres (#bugs 2026-10-07).
+    if (!readsAsMinutesByName(exercise.name, prescribedCounts(exercise))) {
       return exercise;
     }
     const mode = exercise.trackingMode;
@@ -47,5 +54,33 @@ export function moveOldCopiesToMinutesMode<T extends ModeRow>(exercises: readonl
       return exercise;
     }
     return { ...exercise, trackingMode: 'duration_minutes' as const };
+  });
+}
+
+/**
+ * The first run of the rule above (2026-10-06) went by the name alone, so a
+ * library cardio row prescribed in numbers no bout of minutes could be — a
+ * rower at 3 × 500, metres — was moved to minutes and asked for 500 minutes
+ * (#bugs 2026-10-07, the #330 trade-off). Those rows go back to no stored
+ * mode: the library derives one for them as it did before minutes existed
+ * (customWorkoutAdapter.getTrackingMode, which now asks the same question).
+ *
+ * Only rows the first run could have written: a minutes name off the
+ * library's list (the ready programmes' own rows were minutes all along) with
+ * a prescription past LEGACY_MINUTES_PLAUSIBLE_MAX. Once per database, like
+ * the rule above.
+ */
+export const IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID = 'implausible-minutes-undone-2026-10-07';
+
+export function undoImplausibleMinutesMode<T extends ModeRow>(exercises: readonly T[]): T[] {
+  return exercises.map((exercise) => {
+    if (
+      exercise.trackingMode !== 'duration_minutes' ||
+      !isMinutesExerciseName(exercise.name) ||
+      readsAsMinutesByName(exercise.name, prescribedCounts(exercise))
+    ) {
+      return exercise;
+    }
+    return { ...exercise, trackingMode: null };
   });
 }

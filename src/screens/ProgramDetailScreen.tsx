@@ -1415,25 +1415,26 @@ export function ProgramDetailScreen({
                 </CutSurface>
               ))}
             </View>
-            {availableEquipment !== null ? (
-              <View style={[styles.gymNote, missingGear.length === 0 && styles.gymNoteOk]}>
+            {/* Only the gap is worth a line. A gym that has everything is the
+                normal case, and a green "all there" note under every
+                programme said nothing the reader did not already assume. */}
+            {availableEquipment !== null && missingGear.length > 0 ? (
+              <View style={styles.gymNote}>
                 <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
                   <Path
-                    d={missingGear.length === 0 ? 'M4 12.5l5 5 11-11' : 'M12 4l9 16H3z M12 10v4M12 17v.01'}
-                    stroke={missingGear.length === 0 ? theme.green : theme.amber}
+                    d="M12 4l9 16H3z M12 10v4M12 17v.01"
+                    stroke={theme.amber}
                     strokeWidth={2.3}
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                 </Svg>
-                <Text style={[styles.gymNoteText, missingGear.length === 0 && styles.gymNoteTextOk]}>
-                  {missingGear.length === 0
-                    ? t(language, 'detail.equipmentOk')
-                    : t(language, 'detail.equipmentMissing', {
-                        items: missingGear
-                          .map((chip) => t(language, EQUIPMENT_CHIP_KEYS[chip] ?? 'detail.equipment'))
-                          .join(', '),
-                      })}
+                <Text style={styles.gymNoteText}>
+                  {t(language, 'detail.equipmentMissing', {
+                    items: missingGear
+                      .map((chip) => t(language, EQUIPMENT_CHIP_KEYS[chip] ?? 'detail.equipment'))
+                      .join(', '),
+                  })}
                 </Text>
               </View>
             ) : null}
@@ -1814,19 +1815,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 13,
     paddingVertical: 12,
   },
-  gymNoteOk: {
-    borderColor: theme.green,
-    backgroundColor: theme.greenSoft,
-  },
   gymNoteText: {
     flex: 1,
     color: theme.amberInk,
     fontSize: 12.5,
     lineHeight: 18,
     fontWeight: '700',
-  },
-  gymNoteTextOk: {
-    color: theme.greenInk,
   },
   ruleCard: {
     borderRadius: radii.lg,

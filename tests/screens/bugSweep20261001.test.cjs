@@ -83,7 +83,9 @@ module.exports = [
     run() {
       const source = read('src', 'app', 'useSessionNotifications.ts');
       assert.match(source, /lastActivityAtRef\.current = Date\.now\(\);\s*\}, \[activeSessionId, activeSessionStatus, completedSetCount, activityTick, preferences\.notificationPrefs\.idleNudge\]\);/);
-      assert.match(source, /const atMs = idleNudgeAtMs\(lastActivityAtRef\.current\);/);
+      // A running bout of minutes can only push it later (#bugs 2026-10-06,
+      // tests/features/workout/minutesClockKept.test.cjs).
+      assert.match(source, /const atMs = idleNudgeAtMs\(Math\.max\(lastActivityAtRef\.current, boutDueMs \?\? 0\)\);/);
       // The activity effect is declared before the nudge's, so it has run.
       assert.ok(source.indexOf('lastActivityAtRef.current = Date.now();') < source.indexOf('const atMs = idleNudgeAtMs('));
     },

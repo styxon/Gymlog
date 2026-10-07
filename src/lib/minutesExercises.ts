@@ -58,9 +58,67 @@ function normalize(value: string) {
 
 const byName = new Set<string>([...PROGRAMME_MINUTES_NAMES, ...LIBRARY_MINUTES_NAMES].map(normalize));
 
+const byProgrammeName = new Set<string>(PROGRAMME_MINUTES_NAMES.map(normalize));
+
 /** Whether this exercise is logged in minutes rather than repetitions. */
 export function isMinutesExerciseName(name: string | null | undefined): boolean {
   return typeof name === 'string' && byName.has(normalize(name));
+}
+
+/**
+ * The longest single bout a number written without a unit is believed to be
+ * minutes for. Two hours on a rower or an elliptical is already rare; "500"
+ * or "2000" on one is metres, and "250" on a bike is calories or watts.
+ */
+export const LEGACY_MINUTES_PLAUSIBLE_MAX = 120;
+
+/**
+ * Activities done outdoors for hours: a long ride or a hike runs well past two
+ * hours, and nothing on them shows metres to type in. Their line is the dial's
+ * own ceiling (review, 2026-10-07).
+ */
+const LONG_BOUT_NAMES = new Set<string>(['Bicycling', 'Trail Running/Walking', 'Skating'].map(normalize));
+
+/** The most a number written with no unit on this name is believed to be in minutes. */
+function legacyMinutesMaxFor(name: string): number {
+  return LONG_BOUT_NAMES.has(normalize(name)) ? MINUTES_DIAL.max : LEGACY_MINUTES_PLAUSIBLE_MAX;
+}
+
+/**
+ * Whether numbers written with no unit, on an exercise with this name, read
+ * as minutes.
+ *
+ * The ready programmes' own rows (Stairmaster (Moderate), the run blocks)
+ * always do: the catalogue prescribed them in minutes before the unit
+ * existed. The library's cardio machines were logged as repetitions until
+ * 2026-10-06, so a reader typed whatever the machine showed — minutes, but
+ * also metres or calories. Read by the name alone, a rower logged at 500
+ * showed "500 min", and a programme row of 3 × 500 asked for 500 minutes
+ * (#bugs 2026-10-07, the #330 trade-off). Those read as minutes only when
+ * every number is one a bout of minutes could be; otherwise they stay the
+ * plain count they were saved as.
+ */
+export function readsAsMinutesByName(
+  name: string | null | undefined,
+  counts: readonly number[],
+): boolean {
+  if (!isMinutesExerciseName(name)) {
+    return false;
+  }
+  if (byProgrammeName.has(normalize(name as string))) {
+    return true;
+  }
+  const max = legacyMinutesMaxFor(name as string);
+  return counts.every((count) => !Number.isFinite(count) || count <= max);
+}
+
+/** The numbers a stored log wrote per set: its sets' when it has them, else repsPerSet. */
+function loggedCounts(log: { sets?: unknown; repsPerSet?: unknown }): number[] {
+  const fromSets = Array.isArray(log.sets)
+    ? log.sets.map((set) => (set && typeof set === 'object' ? (set as { reps?: unknown }).reps : undefined))
+    : [];
+  const source = fromSets.length > 0 ? fromSets : Array.isArray(log.repsPerSet) ? log.repsPerSet : [];
+  return source.filter((count): count is number => typeof count === 'number' && Number.isFinite(count));
 }
 
 /**
@@ -68,14 +126,19 @@ export function isMinutesExerciseName(name: string | null | undefined): boolean 
  *
  * The log's own unit says so for anything saved since 2026-10-06; the name
  * says so for a log saved before the unit existed ("20" on a Stairmaster was
- * twenty minutes then too, it just carried no unit). Asking only one of the
- * two let an old log read as twenty reps in one place and twenty minutes in
- * another, so every reader that has a log asks this. It lives here, not in
- * exerciseLog, because the name list is here and exerciseLog sits below this
- * module's imports (weightDial -> format -> exerciseLog).
+ * twenty minutes then too, it just carried no unit) — when its numbers could
+ * be minutes at all (readsAsMinutesByName: "500" on a rower is metres).
+ * Asking only one of the two let an old log read as twenty reps in one place
+ * and twenty minutes in another, so every reader that has a log asks this. It
+ * lives here, not in exerciseLog, because the name list is here and
+ * exerciseLog sits below this module's imports (weightDial -> format ->
+ * exerciseLog).
  */
 export function isMinutesLogEntry(
-  log: { repsUnit?: unknown; exerciseNameSnapshot?: unknown } | null | undefined,
+  log:
+    | { repsUnit?: unknown; exerciseNameSnapshot?: unknown; sets?: unknown; repsPerSet?: unknown }
+    | null
+    | undefined,
 ): boolean {
   if (!log) {
     return false;
@@ -83,7 +146,9 @@ export function isMinutesLogEntry(
   if (log.repsUnit === 'minutes') {
     return true;
   }
-  return typeof log.exerciseNameSnapshot === 'string' && isMinutesExerciseName(log.exerciseNameSnapshot);
+  return (
+    typeof log.exerciseNameSnapshot === 'string' && readsAsMinutesByName(log.exerciseNameSnapshot, loggedCounts(log))
+  );
 }
 
 /** The names this module claims, exposed so a test can check the catalogues agree. */
@@ -149,6 +214,88 @@ export function pauseStopwatch(watch: MinutesStopwatch, nowMs: number): MinutesS
   return watch.runningSinceMs === null
     ? watch
     : { accumulatedMs: stopwatchElapsedMs(watch, nowMs), runningSinceMs: null };
+}
+
+/**
+ * A bout's stopwatch as the session keeps it, with the set it belongs to.
+ *
+ * The clock used to live in the set screen's state alone, so anything that
+ * mounted the screen again — Android killing the app twenty minutes into a
+ * ride with the screen off, the player leaving and coming back — started it
+ * from nothing, and the dial logged the prescription instead of the minutes
+ * ridden (#bugs 2026-10-06). Kept on the session, it comes back with the
+ * session, and the wall-clock start keeps it right across the gap.
+ *
+ * The set is named three ways: slot, set index and the exercise under the
+ * slot, because a swap keeps the slot and the index and puts a different bout
+ * there, whose clock is not this one.
+ */
+export interface SessionMinutesClock extends MinutesStopwatch {
+  slotId: string;
+  setIndex: number;
+  exerciseName: string;
+  /** The bout's prescription, so the idle nudge can wait for it (minutesBoutDueMs). */
+  plannedMinutes: number;
+}
+
+/** A stored clock made safe to read; anything unusable is no clock. */
+export function normalizeSessionMinutesClock(input: unknown): SessionMinutesClock | null {
+  if (typeof input !== 'object' || input === null) {
+    return null;
+  }
+  const value = input as Record<string, unknown>;
+  const finite = (candidate: unknown): candidate is number =>
+    typeof candidate === 'number' && Number.isFinite(candidate);
+  if (
+    typeof value.slotId !== 'string' ||
+    typeof value.exerciseName !== 'string' ||
+    !finite(value.setIndex) ||
+    value.setIndex < 0 ||
+    !finite(value.accumulatedMs) ||
+    (value.runningSinceMs !== null && !finite(value.runningSinceMs))
+  ) {
+    return null;
+  }
+  return {
+    slotId: value.slotId,
+    setIndex: Math.floor(value.setIndex),
+    exerciseName: value.exerciseName,
+    accumulatedMs: Math.max(0, value.accumulatedMs),
+    runningSinceMs: value.runningSinceMs as number | null,
+    plannedMinutes: finite(value.plannedMinutes) && value.plannedMinutes > 0 ? value.plannedMinutes : 0,
+  };
+}
+
+/** The session's clock if it is this set's, else a stopped one: a new set starts at zero. */
+export function stopwatchForSet(
+  clock: SessionMinutesClock | null | undefined,
+  set: { slotId: string; setIndex: number; exerciseName: string },
+): MinutesStopwatch {
+  if (
+    !clock ||
+    clock.slotId !== set.slotId ||
+    clock.setIndex !== set.setIndex ||
+    clock.exerciseName !== set.exerciseName
+  ) {
+    return STOPPED_STOPWATCH;
+  }
+  return { accumulatedMs: clock.accumulatedMs, runningSinceMs: clock.runningSinceMs };
+}
+
+/**
+ * When a running bout's prescription runs out — the moment the reader is due
+ * back at the phone. Null while the clock is stopped, or when there is none.
+ *
+ * The idle nudge ("still training?") is timed from the reader's last sign of
+ * life, and a running clock is one that lasts: a 40-minute ride logs nothing
+ * for 40 minutes, so the nudge fired 25 minutes into it (#bugs 2026-10-06).
+ * Timed from this instead, it waits for the bout to be over.
+ */
+export function minutesBoutDueMs(clock: SessionMinutesClock | null | undefined): number | null {
+  if (!clock || clock.runningSinceMs === null) {
+    return null;
+  }
+  return clock.runningSinceMs + Math.max(0, clock.plannedMinutes * 60000 - clock.accumulatedMs);
 }
 
 /**

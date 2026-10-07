@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { normalizeFreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
 
 import { normalizeActiveCardioSession } from '../../lib/cardio';
+import { normalizeSessionMinutesClock } from '../../lib/minutesExercises';
 import { scrubImpossibleSessionLoads } from '../../lib/impossibleLoads';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from '../../storage/largeItem';
@@ -183,6 +184,9 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
   return {
     ...input,
     takenBackAt,
+    // Absent rather than null when there is none, so a session stored before
+    // the clock existed comes back exactly as it was written.
+    minutesClock: normalizeSessionMinutesClock(input.minutesClock) ?? undefined,
     exercises,
     restTimer: { ...IDLE_REST_TIMER, ...(isObject(input.restTimer) ? input.restTimer : {}) },
     ui: {

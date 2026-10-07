@@ -11,6 +11,7 @@ import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
+import { pauseStopwatch, type SessionMinutesClock } from '../../lib/minutesExercises';
 import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
@@ -103,6 +104,8 @@ export type WorkoutAction =
   | { type: 'set/recordEffort'; payload: { slotId: string; setIndex: number; effort: WorkoutSetEffort } }
   | { type: 'set/repeatLast'; payload: { slotId: string; setIndex: number; nowMs: number; unitPreference: 'kg' | 'lb' } }
   | { type: 'set/undo'; payload: { slotId: string; setIndex: number } }
+  /** The bout's stopwatch started or paused (null: none on the clock). */
+  | { type: 'session/setMinutesClock'; payload: { clock: SessionMinutesClock | null } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
   | { type: 'exercise/removeSet'; payload: { slotId: string } }
   /** A warm-up set, logged apart from the working sets (WorkoutWarmupSet). */
@@ -1222,6 +1225,10 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         return state;
       }
       const pausedAt = new Date().toISOString();
+      // A bout on the clock stops with the workout, whether or not its set is
+      // the screen in front: a clock left running through the pause logged
+      // the break as minutes ridden.
+      const clock = state.activeSession.minutesClock;
       return {
         ...state,
         activeSession: {
@@ -1229,6 +1236,9 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           status: 'paused',
           pausedAt,
           updatedAt: pausedAt,
+          ...(clock && clock.runningSinceMs !== null
+            ? { minutesClock: { ...clock, ...pauseStopwatch(clock, Date.parse(pausedAt)) } }
+            : {}),
         },
       };
     }
@@ -1385,6 +1395,14 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       set.completedAt = new Date(action.payload.nowMs).toISOString();
       set.edited = true;
       set.loggedAs = currentLiftOf(exercise);
+      // The bout is logged: its clock has nothing more to keep.
+      if (
+        session.minutesClock &&
+        session.minutesClock.slotId === action.payload.slotId &&
+        session.minutesClock.setIndex === action.payload.setIndex
+      ) {
+        session.minutesClock = null;
+      }
       // The pause time run so far, so a workout that ends at this set takes
       // off only these (workoutSecondsUntil).
       session.pausedMsAtLastSet =
@@ -1627,6 +1645,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       return { ...state, activeSession: session };
     }
 
+    case 'session/setMinutesClock': {
+      if (!state.activeSession) {
+        return state;
+      }
+      return { ...state, activeSession: { ...state.activeSession, minutesClock: action.payload.clock } };
+    }
+
     case 'exercise/removeWarmup': {
       if (!state.activeSession) {
         return state;
@@ -1856,6 +1881,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       }
 
       const exercise = session.exercises[exerciseIndex];
+      dropMinutesClockOfSlot(session, action.payload.slotId);
       exercise.sets = exercise.sets.map((set) =>
         set.status === 'completed'
           ? set
@@ -1928,6 +1954,8 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       });
       exercise.sourceExerciseName = exercise.sourceExerciseName ?? exercise.exerciseName;
       exercise.exerciseName = action.payload.exerciseName;
+      // The bout that was on the clock is not the lift that replaces it.
+      dropMinutesClockOfSlot(session, action.payload.slotId);
       // The mode is the incoming lift's. Kept from the old one, a pull-up
       // swapped for a lat pulldown hid the weight dial and saved 0 kg × 12.
       const previousMode = exercise.trackingMode;
@@ -2271,6 +2299,17 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
 
     default:
       return state;
+  }
+}
+
+/**
+ * A bout's clock goes with its lift: skipped or swapped away, a clock left
+ * running on the session held the idle nudge back for minutes nobody was
+ * riding (review, 2026-10-07).
+ */
+function dropMinutesClockOfSlot(session: WorkoutSessionRuntime, slotId: string) {
+  if (session.minutesClock && session.minutesClock.slotId === slotId) {
+    session.minutesClock = null;
   }
 }
 

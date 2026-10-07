@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
-import { isMinutesExerciseName } from '../lib/minutesExercises';
+import { readsAsMinutesByName } from '../lib/minutesExercises';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
@@ -88,7 +88,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
           // not — the same order the programme is run in (customWorkoutAdapter).
           minutes: exercise.trackingMode
             ? isMinutesTrackingMode(exercise.trackingMode)
-            : isMinutesExerciseName(exercise.name),
+            : readsAsMinutesByName(exercise.name, [exercise.repMin, exercise.repMax]),
         })),
       })),
     }));

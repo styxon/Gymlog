@@ -6,8 +6,8 @@ import { SimpleLineChart } from '../components/SimpleLineChart';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { countRemainingStatements } from '../lib/exerciseLearning';
-import { getComparableLogSets, isMinutesLog } from '../lib/exerciseLog';
-import { isMinutesExerciseName } from '../lib/minutesExercises';
+import { getComparableLogSets } from '../lib/exerciseLog';
+import { isMinutesExerciseName, isMinutesLogEntry } from '../lib/minutesExercises';
 import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseTeaching';
 import { calendarDaysBetween } from '../lib/completedSessions';
 import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
@@ -238,6 +238,25 @@ export function ExerciseDetailScreen({
   const hasHistory = logs.length > 0;
 
   const unloaded = (history?.bestWeight ?? 0) <= 0 && (history?.bestReps ?? 0) > 0;
+  // A bike or a stair machine is measured in minutes: "20 min", not "20 reps"
+  // — on the card, the trend and the chart's axis alike. Its logs say so when
+  // there are any: a rower logged at 500 before the unit existed was metres,
+  // and printed "500 min" when the name alone decided (#bugs 2026-10-07).
+  const minutesLift = hasHistory ? logs.some((log) => isMinutesLogEntry(log)) : isMinutesExerciseName(item.name);
+  // Only the logs in minutes speak for a minutes lift: an old count of 500
+  // beside them is not a 500-minute best, nor a point on the minutes line.
+  const unitLogs = useMemo(
+    () => (minutesLift ? logs.filter((log) => isMinutesLogEntry(log)) : logs),
+    [logs, minutesLift],
+  );
+  const bestMinutes = useMemo(
+    () =>
+      unitLogs.reduce(
+        (best, log) => Math.max(best, ...getComparableLogSets(log).map((set) => set.reps ?? 0)),
+        0,
+      ),
+    [unitLogs],
+  );
   /*
    * The same rule for the line: an unloaded lift plots the reps it actually
    * did, rather than a row of zeroes with a date under each one.
@@ -249,13 +268,13 @@ export function ExerciseDetailScreen({
    */
   const chartPoints = useMemo(
     () =>
-      [...logs].reverse().map((log) => ({
+      [...unitLogs].reverse().map((log) => ({
         label: formatShortDate(log.performedAt, language),
         value: unloaded
           ? getComparableLogSets(log).reduce((sum, set) => sum + (set.reps ?? 0), 0)
           : convertWeightFromKg(log.weight, unitPreference),
       })),
-    [language, logs, unloaded, unitPreference],
+    [language, unitLogs, unloaded, unitPreference],
   );
 
   const trendDelta = useMemo(() => {
@@ -276,13 +295,10 @@ export function ExerciseDetailScreen({
    * Home's stat cards filter on `bestWeight > 0` for the same reason. This
    * screen was the one place printing the raw kilogram.
    */
-  // A bike or a stair machine is measured in minutes: "20 min", not "20 reps"
-  // — on the card, the trend and the chart's axis alike.
-  const minutesLift = isMinutesExerciseName(item.name) || logs.some((log) => isMinutesLog(log));
   const unloadedUnit = minutesLift ? 'min' : t(language, 'exDetail.repsUnit');
   const personalBest = unloaded
     ? minutesLift
-      ? t(language, 'logger.minutesValue', { count: history?.bestReps ?? 0 })
+      ? t(language, 'logger.minutesValue', { count: bestMinutes })
       : t(language, 'exDetail.bestReps', { count: history?.bestReps ?? 0 })
     : history?.bestWeight != null && history.bestWeight > 0
       ? `${removeTrailingZeros(convertWeightFromKg(history.bestWeight, unitPreference))} ${unitPreference}`

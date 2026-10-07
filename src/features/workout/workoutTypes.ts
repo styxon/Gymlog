@@ -5,6 +5,7 @@ import type { SetupCautionArea, SetupCautionFlag, SetupLevel, UnitPreference } f
 import type { FreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
 import type { ProgressionFatigueSignal } from '../../lib/progressionGate';
 import type { ActiveCardioSession } from '../../lib/cardio';
+import type { SessionMinutesClock } from '../../lib/minutesExercises';
 
 export type WorkoutGoalType = 'strength' | 'hypertrophy' | 'general';
 export type WorkoutLevel = 'beginner' | 'intermediate' | 'advanced';
@@ -395,6 +396,13 @@ export interface WorkoutSessionRuntime {
    * unless its moment is here, which says the reader took it back. Absent: none taken back.
    */
   takenBackAt?: string[];
+  /**
+   * The stopwatch of the bout of minutes in progress, with the set it belongs
+   * to (lib/minutesExercises SessionMinutesClock). On the session, not the set
+   * screen, so a screen mounted again — the app killed mid-ride — picks the
+   * clock up where it was. Absent or null: no bout on the clock.
+   */
+  minutesClock?: SessionMinutesClock | null;
   activePlanMode: DefaultScheduleMode;
   exercises: WorkoutExerciseInstance[];
   restTimer: WorkoutRestTimerState;
