@@ -17,82 +17,174 @@ import { hasWord, hasWordStart } from './wordMatch';
  */
 export type CoachScopeVerdict = 'training' | 'off_topic' | 'crisis';
 
+type CrisisSlots = readonly (readonly string[])[];
+
+/**
+ * A row of slots, and — for the few phrases the gym says too — what the next
+ * word decides.
+ *
+ * "I'm going to take my life" and "this programme will take my life back"
+ * share three words, and so do "I want to end it" and "I want to end it with
+ * a finisher". A word list cannot hold either pair apart. What does is what
+ * comes after, inside the same sentence:
+ *
+ * - `unlessFollowedBy`: crisis, unless the sentence goes on with one of these.
+ * - `closing`: crisis only when the sentence stops there — or goes on with a
+ *   word that only says when (`CRISIS_CLOSING_TAIL`), or turns ("but",
+ *   "because": `CRISIS_CLOSING_TURNS`).
+ *
+ * A comma, a line break and a dash end a sentence here as much as a full stop
+ * does: a phone types "I want to end it, nothing matters" (review,
+ * 2026-10-07).
+ */
+type CrisisPattern = CrisisSlots | { slots: CrisisSlots; unlessFollowedBy?: readonly string[]; closing?: true };
+
 /**
  * Said plainly enough that no training reading survives.
  *
- * Whole phrases, matched as whole words. Both halves of that matter, and the
- * first review of this file found why (PR #124):
+ * Whole words, in order. Both halves of that matter, and the first review of
+ * this file found why (PR #124):
  *
  * - Substring matching put "want to die" inside "I want to diet for summer",
  *   so a question about a deficit got a crisis line. Every phrase here is
- *   matched with a boundary on both sides.
+ *   matched word for word.
  * - "hurt myself" and "satuttaa itseäni" are how a gym injury is reported —
  *   "I hurt myself deadlifting, what can I still train?" — so they are not
  *   here at all. What names the thing itself is: self-harm, cutting,
  *   itsetuhoisuus.
  *
- * The near-misses are listed rather than pattern-matched, because a phrase
- * list is something a person can read and argue with. "en halua elää" and
- * "en halua enää elää" are one word apart and both go in.
+ * Each pattern is a row of slots, and every way through the slots is a
+ * phrase. This used to be a list of whole sentences, and three bug hunts in a
+ * row found the same hole in it: a sentence one word or one word order away
+ * from a listed one — "en enää halua elää" beside "en halua enää elää", "I
+ * don't wanna live" beside "I don't want to live" (#317, #325, review
+ * 2026-10-07). Each fix listed the sentence it was shown, and the next hunt
+ * found its neighbour. Slots hold the verb forms a reader types, and the
+ * words that only colour a sentence (`CRISIS_FILLERS`) are not read at all,
+ * so where "enää" or "really" sits no longer decides anything.
+ *
+ * An empty option makes a slot optional. "vain" and "just" are written into
+ * the slots where they colour a crisis ("haluan vain kuolla", "I want to just
+ * die") rather than dropped everywhere, because elsewhere they turn the
+ * sentence round: "I don't want to just exist, I want to get strong" is a
+ * training goal (review, 2026-10-07).
  */
-const CRISIS_PHRASES = [
+const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   // Finnish
-  'tapan itseni',
-  'tapan itteni',
-  'tappaa itseni',
-  'tappaisin itseni',
-  'en halua elää',
-  'en halua enää elää',
-  'en jaksa elää',
-  'en jaksa enää elää',
-  'en halua herätä',
-  'haluan kuolla',
-  'haluan vain kuolla',
-  'haluan vaan kuolla',
-  'haluaisin kuolla',
-  'toivon että kuolisin',
-  'toivoisin että kuolisin',
-  'toivoisin etten heräisi',
-  // The spoken and conditional forms, which a phone keyboard types as often
-  // as the written ones (bug hunt, 2026-10-05).
-  'en jaksaisi elää',
-  'en jaksaisi enää elää',
-  'en haluaisi elää',
-  'en haluaisi enää elää',
-  'en halua enää herätä',
-  'en haluu elää',
-  'en haluu enää elää',
-  'haluun kuolla',
-  'haluisin kuolla',
-  'haluaisin vain kuolla',
-  // English
-  'suicide',
-  'suicidal',
-  'kill myself',
-  'kill my self',
-  'killing myself',
-  'end my life',
-  'end my own life',
-  'ending my life',
-  'take my own life',
-  'taking my own life',
-  'end it all',
-  'ending it all',
-  'want to die',
-  'wanna die',
-  'hang myself',
-  'hanging myself',
-  'wish i was dead',
-  'wish i were dead',
-  'better off dead',
-  'do not want to live',
-  "don't want to live",
-  'dont want to live',
-  'self-harm',
-  'self harm',
-  'cut myself',
-  'cutting myself',
+  [['en'], ['halua', 'haluu', 'haluis', 'haluais', 'haluaisi', 'tahdo', 'tahtois', 'tahtoisi'], ['elää', 'herätä', 'olla elossa', 'olla olemassa']],
+  // Not "herätä" here: "en jaksa herätä aamutreeniin" is a tired reader.
+  [['en'], ['jaksa', 'jaksais', 'jaksaisi'], ['elää', 'elämää', 'olla elossa']],
+  [['haluan', 'haluun', 'haluaisin', 'haluisin', 'tahdon', 'tahtoisin'], ['', 'vain', 'vaan', 'vaa'], ['kuolla', 'olla kuollut']],
+  [['tapan', 'tappaa', 'tappaan', 'tappaisin', 'tappamaan'], ['itseni', 'itteni', 'ittein']],
+  [['toivon', 'toivoisin', 'toivoin'], ['', 'vain', 'vaan'], ['että kuolisin', 'et kuolisin', 'etten heräisi', 'etten heräis', 'että en heräisi']],
+  // Not "päättää päiväni": that is also ending the day with a stretch.
+  [['päättää', 'päätän', 'päättäisin', 'lopettaa', 'lopetan', 'lopettaisin'], ['elämäni']],
+  // English. Not "kms": in a training app that is kilometres.
+  [['suicide', 'suicidal', 'self-harm', 'self harm']],
+  [["don't", 'dont', 'do not', 'no longer'], ['want to', 'wanna', 'wish to'], ['live', 'be alive', 'exist']],
+  [['want to', 'wanna', 'wanting to', 'wish i could'], ['', 'just'], ['die', 'be dead']],
+  [['kill', 'killing', 'hang', 'hanging', 'unalive', 'unaliving'], ['myself', 'my self']],
+  [['cut', 'cutting'], ['myself']],
+  [['end', 'ending'], ['my life', 'it all']],
+  [['wish i was', 'wish i were', 'better off'], ['dead']],
+  {
+    slots: [['take', 'taking'], ['my life']],
+    // Not a bare "in": "in the next few days" is a when (review, 2026-10-07).
+    unlessFollowedBy: ['back', 'to', 'into', 'over', 'seriously', 'more', 'forward', 'apart', 'in my hands', 'in hand'],
+  },
+  {
+    // Not a bare "will": "this set will end it." is a set.
+    slots: [['want to', 'wanna', 'going to', 'gonna', 'i will', "i'll", 'ready to', 'thinking about', 'think about', 'thought about'], ['', 'just'], ['end it', 'ending it']],
+    closing: true,
+  },
 ];
+
+/** Words that may stand after a closing phrase and still let it close. */
+const CRISIS_CLOSING_TAIL = new Set(['now', 'tonight', 'today', 'soon', 'already', 'forever', 'lately']);
+
+/** Words that turn a sentence, so the phrase before them closed it. */
+const CRISIS_CLOSING_TURNS = new Set(['but', 'because', 'cause', 'cuz', 'mutta', 'koska']);
+
+/**
+ * Words that colour a sentence and never change what it says.
+ *
+ * Not read at all, wherever they sit — "en enää halua elää", "en halua enää
+ * elää" and "en halua elää enää" are one sentence. "own" is here so "end my
+ * own life" is "end my life"; the pronouns because spoken Finnish puts one
+ * in the middle ("en mä jaksa elää").
+ */
+const CRISIS_FILLERS = new Set([
+  'enää', 'enään', 'ihan', 'oikeasti', 'oikeesti', 'edes', 'yhtään', 'kyllä', 'tätä',
+  'minä', 'mä', 'mää', 'mie',
+  'really', 'even', 'ever', 'honestly', 'truly', 'actually', 'literally', 'anymore', 'own', 'still',
+]);
+
+const words = (option: string) => (option ? option.split(' ') : []);
+
+/** Every way through a row of slots, as word lists. */
+function expand(slots: CrisisSlots): string[][] {
+  return slots.reduce<string[][]>(
+    (phrases, slot) => phrases.flatMap((phrase) => slot.map((option) => [...phrase, ...words(option)])),
+    [[]],
+  );
+}
+
+const CRISIS_PHRASES = CRISIS_PATTERNS.flatMap((pattern) => {
+  const { slots, unlessFollowedBy = [], closing = false } = 'slots' in pattern ? pattern : { slots: pattern };
+  const unless = unlessFollowedBy.map(words);
+  return expand(slots).map((phrase) => ({ phrase, unless, closing }));
+});
+
+/** A sentence end, between words. */
+const CLAUSE_END = '.';
+
+/** A word of the reader's, and whether a sentence ends after it. */
+interface CrisisWord {
+  word: string;
+  closes: boolean;
+}
+
+/**
+ * The words read for a crisis, fillers out, each marked if a sentence ends
+ * after it. Quote marks come off the ends of a word — "‘I want to die’" is
+ * typed with the curly quotes the apostrophe fold straightens (review,
+ * 2026-10-07) — and the apostrophe inside "don't" stays.
+ */
+function crisisTokens(text: string): CrisisWord[] {
+  const tokens: CrisisWord[] = [];
+  for (const raw of text.split(' ')) {
+    if (raw === CLAUSE_END) {
+      if (tokens.length > 0) tokens[tokens.length - 1].closes = true;
+      continue;
+    }
+    const word = raw.replace(/^['-]+|['-]+$/g, '');
+    if (!/[\p{L}\p{N}]/u.test(word) || CRISIS_FILLERS.has(word)) continue;
+    tokens.push({ word, closes: false });
+  }
+  if (tokens.length > 0) tokens[tokens.length - 1].closes = true;
+  return tokens;
+}
+
+function startsAt(tokens: readonly CrisisWord[], at: number, phrase: readonly string[]): boolean {
+  return phrase.length > 0 && phrase.every((word, i) => tokens[at + i]?.word === word);
+}
+
+function saysCrisis(text: string): boolean {
+  const tokens = crisisTokens(text);
+  return CRISIS_PHRASES.some(({ phrase, unless, closing }) =>
+    tokens.some((_, at) => {
+      if (!startsAt(tokens, at, phrase)) return false;
+      const last = at + phrase.length - 1;
+      if (tokens[last].closes) return true;
+      const next = last + 1;
+      if (closing) {
+        if (CRISIS_CLOSING_TURNS.has(tokens[next].word)) return true;
+        return CRISIS_CLOSING_TAIL.has(tokens[next].word) && tokens[next].closes;
+      }
+      return !unless.some((after) => startsAt(tokens, next, after));
+    }),
+  );
+}
 
 /**
  * Finnish words whose every ending names the thing itself.
@@ -132,13 +224,16 @@ const APOSTROPHES = /[‘’ʼ`´]/g;
  *
  * So: one composed form, invisible characters gone, every run of punctuation
  * and space one plain space. Apostrophes and hyphens stay, because "don't"
- * and "self-harm" are spelled with them.
+ * and "self-harm" are spelled with them, and a sentence end — a full stop, a
+ * comma, a line break, a dash between words — stays as a word of its own,
+ * `CLAUSE_END`, for the phrases the next word decides.
  */
 function crisisWords(text: string): string {
   return text
     .normalize('NFC')
     .replace(/[\u00AD\u200B-\u200D\u2060\uFEFF]/g, '')
-    .replace(/[^\p{L}\p{N}\p{M}'-]+/gu, ' ')
+    .replace(/[.!?\u2026;:,\n\r\u2013\u2014]+|\s-+\s/g, ` ${CLAUSE_END} `)
+    .replace(/[^\p{L}\p{N}\p{M}'.-]+/gu, ' ')
     .trim();
 }
 
@@ -227,7 +322,7 @@ export function classifyCoachScope(prompt: string): CoachScopeVerdict {
   const text = prompt.toLowerCase().replace(APOSTROPHES, "'");
   const words = withoutGymLookalikes(crisisWords(text));
   if (
-    CRISIS_PHRASES.some((phrase) => hasWord(words, phrase)) ||
+    saysCrisis(words) ||
     CRISIS_STEMS_FI.some((stem) => hasWordStart(words, stem)) ||
     CRISIS_INFIXES_FI.some((infix) => words.includes(infix))
   ) {

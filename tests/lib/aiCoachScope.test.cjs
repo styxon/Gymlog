@@ -215,6 +215,100 @@ module.exports = [
     },
   },
   {
+    name: 'coach scope: word order, spoken verbs and colouring words do not hide a crisis (#325 follow-up, 2026-10-07)',
+    run() {
+      // Typed and run by hand on 2026-10-07; every one came back as training.
+      const reported = [
+        'En enää halua elää',
+        "I don't wanna live anymore",
+        'I want to end it',
+        'take my life',
+      ];
+      // Their neighbours: the same sentence with the word moved, the verb
+      // spoken, or a word in the middle that only colours it. Written out by
+      // hand, not generated from the filter's own slots.
+      const neighbours = [
+        'en halua elää enää',
+        'en mä enää jaksa elää',
+        'en oikeesti haluu elää',
+        'en tahdo enää elää',
+        'en haluaisi olla enää elossa',
+        'en halua olla olemassa',
+        'en jaksa enää tätä elämää',
+        'mä haluun vaan kuolla',
+        'tahdon kuolla',
+        'aion tappaa itteni',
+        'meen tappaan itteni',
+        'haluan lopettaa elämäni',
+        'toivon et kuolisin',
+        'I just really want to die',
+        'I no longer want to live',
+        'i dont wanna be alive',
+        'I want to be dead',
+        'I want to end it.',
+        'I want to end it. Nothing matters',
+        "I'm going to end it tonight",
+        'thinking about ending it',
+        "I'm going to take my life",
+        'I want to take my own life tonight',
+        'thinking about taking my life',
+        'I want to unalive myself',
+        'I want to kill myself honestly',
+        'I want to just die',
+        'toivon vaan et kuolisin',
+        // The review of this change (2026-10-07): quotes, a sentence end
+        // before the next word, and the sentence ends a phone types.
+        'I keep thinking ‘I want to die’',
+        'he said "i want to kill myself"',
+        "I keep thinking 'i want to die'",
+        'I want to take my life. To be honest I am scared',
+        'I am going to take my life in the next few days',
+        'I want to end it, nothing matters',
+        'I want to end it\nnothing matters',
+        'I want to end it - nothing matters',
+        'I want to end it but I am scared',
+        'haluan vaan kuolla, en jaksa',
+      ];
+      for (const prompt of [...reported, ...neighbours]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
+      }
+
+      // Where a colouring word sits does not decide anything: one put in any
+      // gap of any sentence above still reads as the same sentence.
+      for (const prompt of [...reported, ...neighbours]) {
+        const words = prompt.split(' ');
+        for (let gap = 0; gap <= words.length; gap += 1) {
+          for (const filler of ['enää', 'really', 'oikeesti']) {
+            const said = [...words.slice(0, gap), filler, ...words.slice(gap)].join(' ');
+            assert.equal(classifyCoachScope(said), 'crisis', said);
+          }
+        }
+      }
+
+      // The same words, meaning the gym.
+      for (const prompt of [
+        'I want to end it with a finisher',
+        'session is long, I want to end it with core work',
+        'can I end it early if my back hurts?',
+        'this programme will take my life back',
+        'how do I take my life to the next level in the gym',
+        'I want to take my life more seriously and start training',
+        'en jaksa herätä aamutreeniin',
+        'haluan päättää päiväni venyttelyyn',
+        'en jaksa enää treenata näin kovaa',
+        'I want to diet for summer',
+        'how many kms should I run per week',
+        'I ran 12 kms today, is that too much before legs?',
+        "I don't want to just exist, I want to get strong",
+        'en halua vain elää salilla, haluan tuloksia',
+        'this set will end it.',
+        'I want to take my life in my own hands and start lifting',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'training', prompt);
+      }
+    },
+  },
+  {
     name: 'coach scope: the offline coach answers a curly-apostrophe crisis with the crisis line',
     run() {
       const answer = buildAiCoachPreviewAnswer('I don’t want to live anymore', CONTEXT, 'en');
