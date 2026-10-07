@@ -214,11 +214,14 @@ module.exports = [
       // suggestion to pick from or correct, never silently substituted.
       assert.notEqual(ambiguous.rows[0].suggestion, null);
 
-      // Unambiguous is still accepted: exactly one entry contains the term.
+      // One entry containing the term is a guess too: offered, not taken.
+      // "Cable Row" was the only name inside "Upright Cable Row" (bug hunt,
+      // 2026-10-07).
       const NARROW = [{ id: 'ex_ohp', name: 'Overhead Press' }];
       const single = parseCsvProgram('Day,Exercise,Sets,Reps\nDay 1,Press,3,5', NARROW);
-      assert.equal(single.rows[0].matchedName, 'Overhead Press');
-      assert.equal(single.rows[0].libraryItemId, 'ex_ohp');
+      assert.equal(single.rows[0].matchedName, null);
+      assert.equal(single.rows[0].libraryItemId, null);
+      assert.equal(single.rows[0].suggestion, 'Overhead Press');
 
       // Whole words, not merely a run of the same letters: "Pull Up" is not
       // "Pull Ups" ("up" inside "ups" is not "up").
@@ -517,4 +520,142 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'csv import: a name only contained in one library name is offered, never linked as that lift (bug hunt 2026-10-07)',
+    run() {
+      const library = seedLibrary();
+      const parse = (name) => parseCsvProgram(`Day,Exercise,Sets,Reps\nA,"${name}",3,10`, library).rows[0];
+
+      // Each was linked, confidently, to the one library name it contains —
+      // the row's photo, history and swaps followed a different lift. In the
+      // generated library alone, with no row of their own to be filed under,
+      // they are offered for the reader to confirm.
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const generated = GENERATED_EXERCISE_LIBRARY.map((item) => ({
+        id: item.id,
+        name: item.name,
+        sourceCategory: item.sourceCategory,
+      }));
+      for (const [written, offered] of [
+        ['Plank Jack', 'Plank'],
+        ['Air Bike (30s sprint)', 'Air Bike'],
+        ['Single-Leg Romanian Deadlift', 'Romanian Deadlift'],
+      ]) {
+        const row = parseCsvProgram(`Day,Exercise,Sets,Reps\nA,"${written}",3,10`, generated).rows[0];
+        assert.equal(row.matchedName, null, `${written} is a guess, left for the reader`);
+        assert.equal(row.libraryItemId, null, written);
+        assert.equal(row.suggestion, offered, written);
+      }
+
+      // The alias table the player files names under answers first: a cable
+      // row is the seated one, not "Upright Cable Row"; a fan bike sprint is
+      // not the ab exercise "Air Bike"; the one-leg RDL is not the two-leg lift.
+      for (const [written, filed] of [
+        ['Cable Row', 'Seated Cable Rows'],
+        ['Bent-Over Row', 'Bent Over Barbell Row'],
+        ['Reverse Lunge', 'Dumbbell Rear Lunge'],
+        ['Air Bike (30s sprint)', 'Bike HIIT'],
+        ['Single-Leg Romanian Deadlift', 'Single-Leg RDL'],
+      ]) {
+        assert.equal(parse(written).matchedName, filed, written);
+      }
+
+      // Singular and plural are the same lift, written either way — the alias
+      // table knows some, and the rest are folded.
+      assert.equal(parse('Leg Extension').matchedName, 'Leg Extensions');
+      assert.equal(parse('Seated Cable Row').libraryItemId, 'free_seated_cable_rows');
+      const plurals = [
+        { id: 'lib_sled', name: 'Prowler Sled Pushes' },
+        { id: 'lib_yoke', name: 'Yoke Walk Carries' },
+        { id: 'lib_curl', name: 'Banded Curl' },
+      ];
+      const folded = parseCsvProgram(
+        'Day,Exercise,Sets,Reps\nA,Prowler Sled Push,3,10\nA,Yoke Walk Carry,3,10\nA,Banded Curls,3,10',
+        plurals,
+      );
+      assert.deepEqual(
+        folded.rows.map((row) => [row.libraryItemId, row.suggestion]),
+        [['lib_sled', null], ['lib_yoke', null], ['lib_curl', null]],
+      );
+    },
+  },
+  {
+    name: "csv import: the app's own programme names come back as the lift the player files them under",
+    run() {
+      const { findFiledLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const library = seedLibrary();
+      const names = library.map((entry) => entry.name);
+      const written = new Set();
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            written.add(exercise.exerciseName);
+          }
+        }
+      }
+      const wrong = [];
+      for (const name of written) {
+        const filed = findFiledLibraryIndex(name, names);
+        if (filed === null) {
+          continue;
+        }
+        const quoted = `"${name.replace(/"/g, '""')}"`;
+        const row = parseCsvProgram(`Day,Exercise,Sets,Reps\nA,${quoted},3,10`, library).rows[0];
+        if (row.libraryItemId !== library[filed].id) {
+          wrong.push(`${name} => ${row.matchedName} (filed under ${library[filed].name})`);
+        }
+      }
+      assert.deepEqual(wrong, []);
+    },
+  },
+  {
+    name: 'csv import: a multi-set minutes row gets a rest, and a hold written in minutes stays a hold in seconds',
+    run() {
+      const library = [
+        { id: 'lib_plank', name: 'Plank' },
+        { id: 'lib_run', name: 'Easy Run Blocks' },
+        { id: 'lib_stair', name: 'Stairmaster' },
+      ];
+      const preview = parseCsvProgram(
+        'Day,Exercise,Sets,Reps\nA,Plank,3,1 min\nA,Plank,3,1-2 min\nA,Easy Run Blocks,4,5 min\nA,Stairmaster,1,20 min',
+        library,
+      );
+      assert.deepEqual(preview.errors, []);
+      assert.deepEqual(
+        preview.rows.map((row) => [row.exerciseName, row.repMin, row.repMax, row.minutes === true]),
+        [
+          ['Plank', 60, 60, false],
+          ['Plank', 60, 120, false],
+          ['Easy Run Blocks', 5, 5, true],
+          ['Stairmaster', 20, 20, true],
+        ],
+      );
+      const [plank, plankRange, run, stair] = buildDraftFromCsvPreview(preview, 'Imported').sessions[0].exercises;
+      assert.equal(plank.trackingMode, undefined, 'a hold is not switched to minutes');
+      assert.equal(plank.restSeconds, 90);
+      assert.equal(plankRange.repMax, 120);
+      assert.equal(run.trackingMode, 'duration_minutes');
+      assert.equal(stair.restSeconds, 0, 'one steady bout still has no rest');
+
+      // Four blocks of running get the rest the ready catalogue gives its own
+      // multi-set minutes blocks, not 0.
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const blocks = WORKOUT_TEMPLATES_V1.flatMap((template) =>
+        template.sessions.flatMap((session) =>
+          session.exercises.filter((exercise) => exercise.trackingMode === 'duration_minutes' && exercise.sets > 1),
+        ),
+      );
+      assert.ok(blocks.length > 0);
+      const low = Math.min(...blocks.map((exercise) => exercise.restSecondsMin));
+      const high = Math.max(...blocks.map((exercise) => exercise.restSecondsMax));
+      assert.ok(low > 0);
+      assert.ok(run.restSeconds >= low && run.restSeconds <= high, `rest ${run.restSeconds} outside ${low}-${high}`);
+    },
+  },
 ];
+
+function seedLibrary() {
+  const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+  return createSeedExerciseLibrary().map((item) => ({ id: item.id, name: item.name, sourceCategory: item.sourceCategory }));
+}

@@ -4,6 +4,7 @@ import { isBrowsableExercise } from './exerciseBrowseFilter';
 import { isSpecialtyExercise } from './exerciseClassification';
 import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
+import { findFiledLibraryIndex } from './guidedPlayer';
 import { t } from './i18n';
 import { isHoldExerciseName } from './holdExercises';
 import { MINUTES_DIAL } from './weightDial';
@@ -137,6 +138,13 @@ export const CSV_REPS_MAX = 500;
 export const CSV_HOLD_SECONDS_MAX = 600;
 /** Five hours: the player's minutes dial (MINUTES_DIAL) stops there too. */
 export const CSV_MINUTES_MAX = MINUTES_DIAL.max;
+/**
+ * The rest between minutes blocks ("Easy Run Blocks, 4, 5 min"): the middle
+ * of the 45–75 s the ready catalogue prescribes for its own. The importer gave
+ * every minutes row 0, which only fits a single steady bout (bug hunt,
+ * 2026-10-07).
+ */
+export const CSV_MINUTES_BLOCK_REST_SECONDS = 60;
 
 function parseReps(value: string): { repMin: number; repMax: number; minutes: boolean } | null {
   // "20 min" is minutes — the app's own export writes a bout of steady
@@ -248,9 +256,32 @@ function isRoleWord(value: string) {
   return ROLE_WORDS.has(foldLabel(value));
 }
 
+/**
+ * One word's singular, so "Leg Extension" is the library's "Leg Extensions"
+ * and "Seated Cable Row" its "Seated Cable Rows". Applied to both sides, so a
+ * fold that is not quite English ("abs" -> "ab") still compares like with like.
+ */
+function singularWord(word: string) {
+  if (word.length <= 2 || /(ss|us|is)$/.test(word)) {
+    return word;
+  }
+  if (word.endsWith('ies')) {
+    return `${word.slice(0, -3)}y`;
+  }
+  if (/(ch|sh|x|ss)es$/.test(word)) {
+    return word.slice(0, -2);
+  }
+  return word.endsWith('s') ? word.slice(0, -1) : word;
+}
+
+function foldPlural(normalized: string) {
+  return normalized.split(' ').map(singularWord).join(' ');
+}
+
 function matchExercise(
   rawName: string,
   library: CsvLibraryEntry[],
+  libraryNames: readonly string[],
   nameBook: readonly ExerciseNameBookEntry[],
 ) {
   const normalized = normalizeName(rawName);
@@ -274,7 +305,19 @@ function matchExercise(
     };
   }
 
+  // The row the player files this name under: the library's own name or the
+  // alias table's hand-checked answer, never a substring. The app's own
+  // export writes catalogue names such as "Air Bike (30s sprint)", and only
+  // this table knows that is the fan bike, not the library's ab exercise.
+  const filedIndex = findFiledLibraryIndex(rawName, libraryNames);
+  const filed = filedIndex === null ? null : library[filedIndex];
+  if (filed) {
+    return { matchedName: filed.name, libraryItemId: filed.id, suggestion: null, viaNameBook: false };
+  }
+
   const compact = normalized.replace(/ /g, '');
+  const folded = foldPlural(normalized);
+  const foldedCompact = folded.replace(/ /g, '');
 
   // The app's own name for the lift, in either language, before guessing —
   // but after a library name written out exactly, which is never a label for
@@ -289,6 +332,7 @@ function matchExercise(
   }
 
   const containsMatches: CsvLibraryEntry[] = [];
+  let pluralMatch: CsvLibraryEntry | null = null;
   let bestOverlap: { entry: CsvLibraryEntry; score: number } | null = null;
   const writtenNamesANonSet = !isBrowsableExercise({ name: rawName });
 
@@ -297,6 +341,14 @@ function matchExercise(
     // Exact match, tolerant of spacing/punctuation ("Dead Lift" === "Deadlift").
     if (entryNormalized === normalized || entryNormalized.replace(/ /g, '') === compact) {
       return { matchedName: entry.name, libraryItemId: entry.id, suggestion: null, viaNameBook: false };
+    }
+    // The same name but for a plural. Kept until the loop ends, so an exact
+    // match further down still wins.
+    if (!pluralMatch) {
+      const entryFolded = foldPlural(entryNormalized);
+      if (entryFolded === folded || entryFolded.replace(/ /g, '') === foldedCompact) {
+        pluralMatch = entry;
+      }
     }
     if (!mayGuess(entry, writtenNamesANonSet)) {
       continue;
@@ -313,16 +365,20 @@ function matchExercise(
     }
   }
 
+  if (pluralMatch) {
+    return { matchedName: pluralMatch.name, libraryItemId: pluralMatch.id, suggestion: null, viaNameBook: false };
+  }
+
   // A generic name — "Deadlift", "Pull Up", "Press" — is a whole-word
   // substring of dozens of more specific library entries. Taking the first
   // one found used to turn a photographed or CSV "Deadlift" into e.g.
   // "Romanian Deadlift" or a machine variant with no way for the reader to
-  // notice (#bugs). A contains-match is only trustworthy when it names
-  // exactly one entry; an ambiguous one falls through to the ordinary
-  // suggestion path below, same as any other near-miss.
+  // notice (#bugs). Even exactly one is a guess: "Cable Row" is only inside
+  // "Upright Cable Row", a shoulder lift, and "Plank Jack" only contains
+  // "Plank" (bug hunt, 2026-10-07). It is offered for the reader to confirm,
+  // like any other near-miss; an ambiguous one falls through to the overlap.
   if (containsMatches.length === 1) {
-    const match = containsMatches[0];
-    return { matchedName: match.name, libraryItemId: match.id, suggestion: null, viaNameBook: false };
+    return { matchedName: null, libraryItemId: null, suggestion: containsMatches[0].name, viaNameBook: false };
   }
   if (bestOverlap && bestOverlap.score >= 0.5) {
     return { matchedName: null, libraryItemId: null, suggestion: bestOverlap.entry.name, viaNameBook: false };
@@ -396,6 +452,7 @@ export function parseCsvProgram(
     };
   }
 
+  const libraryNames = library.map((entry) => entry.name);
   const rows: CsvProgramRow[] = [];
   const seenDayKeys = new Set<string>();
   const skippedDayKeys = new Set<string>();
@@ -414,7 +471,7 @@ export function parseCsvProgram(
     // not one is the reader's to fix, like a missing name.
     const setsText = (cells[setsIndex] ?? '').trim();
     const sets = /^\d+$/.test(setsText) ? Number(setsText) : Number.NaN;
-    const reps = parseReps((cells[repsIndex] ?? '').trim());
+    const parsedReps = parseReps((cells[repsIndex] ?? '').trim());
 
     if (!day || !exerciseName) {
       errors.push(t(language, 'csv.error.missing', { row }));
@@ -431,15 +488,20 @@ export function parseCsvProgram(
       errors.push(t(language, 'csv.error.setsMax', { row, max: PROGRAM_SETS_RANGE.max }));
       continue;
     }
-    if (!reps) {
+    if (!parsedReps) {
       errors.push(t(language, 'csv.error.reps', { row }));
       continue;
     }
     // A hold is written in seconds, so it gets the seconds ceiling — read off
     // the name the row resolves to as well as the one written, so "Lankku"
     // is a plank like "Plank" is.
-    const match = matchExercise(exerciseName, library, nameBook);
+    const match = matchExercise(exerciseName, library, libraryNames, nameBook);
     const isHold = isHoldExerciseName(exerciseName) || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
+    // Checked before the minutes: "Plank, 3, 1 min" is a 60 s hold, not a
+    // minutes bout (bug hunt, 2026-10-07).
+    const reps = isHold && parsedReps.minutes
+      ? { repMin: parsedReps.repMin * 60, repMax: parsedReps.repMax * 60, minutes: false }
+      : parsedReps;
     const repsMax = reps.minutes ? CSV_MINUTES_MAX : isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
     if (reps.repMax > repsMax) {
       errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
@@ -497,8 +559,9 @@ export function buildDraftFromCsvPreview(preview: CsvProgramPreview, programName
       targetSets: row.sets,
       repMin: row.repMin,
       repMax: row.repMax,
-      // A bout of minutes has no rest between sets to speak of.
-      restSeconds: row.minutes ? 0 : 90,
+      // One bout of minutes has no rest to speak of; several are blocks, and
+      // rest like the catalogue's own.
+      restSeconds: row.minutes ? (row.sets > 1 ? CSV_MINUTES_BLOCK_REST_SECONDS : 0) : 90,
       trackedDefault: true,
       libraryItemId: row.libraryItemId,
       ...(row.minutes ? { trackingMode: 'duration_minutes' as const } : {}),
