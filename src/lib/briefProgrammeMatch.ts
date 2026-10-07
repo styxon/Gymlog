@@ -1,8 +1,10 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
+import { mapSetupEquipment } from './aiCoachPlan';
 import { programFitsEquipment } from './programEquipmentFit';
+import { applyBriefToPreferences } from './programmeBrief';
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import type { ProgrammeBriefSignals } from './programmeBrief';
-import type { AiPlannerExperience, AiPlannerGoal, SetupLevel } from '../types/models';
+import type { AiPlannerEquipment, AiPlannerExperience, AiPlannerGoal, AppPreferences, SetupLevel } from '../types/models';
 import type { RecommendationProgramDefinition } from '../types/recommendation';
 
 /**
@@ -69,6 +71,7 @@ const GOAL_WEIGHT = 12;
 
 export function matchProgrammeToBrief(
   signals: ProgrammeBriefSignals,
+  preferences: AppPreferences,
   programs: readonly RecommendationProgramDefinition[] = RECOMMENDATION_PROGRAMS,
 ): BriefProgrammeMatch | null {
   // The ASK, not the capped number: matching on the cap would find a four-day
@@ -79,9 +82,10 @@ export function matchProgrammeToBrief(
     return null;
   }
 
+  const reader = readerOf(signals, preferences);
   let best: BriefProgrammeMatch | null = null;
   for (const definition of programs) {
-    if (!fitsReader(signals, definition)) {
+    if (!fitsReader(signals, reader, definition)) {
       continue;
     }
     const days = wantedDays !== null && definition.daysPerWeek === wantedDays;
@@ -137,30 +141,58 @@ const CATALOG_LEVEL: Record<AiPlannerExperience, SetupLevel> = {
  */
 const DUMBBELL_HOME_ITEMS: readonly string[] = ['Dumbbells', 'Resistance bands'];
 
+/** The reader a programme has to fit: their gear, and their level when one is known. */
+interface BriefReader {
+  equipment: AiPlannerEquipment;
+  level: SetupLevel | null;
+}
+
+/**
+ * The brief laid on the stored profile, by the same merge the composers use
+ * (programmeBrief.applyBriefToPreferences): what the brief says wins, and
+ * where it is silent the profile answers (owner, 2026-10-07). A typed "5
+ * päivää viikossa" from a beginner training at home was matched as if
+ * nothing were known about them. The gear is read as the composer reads it,
+ * a gym when nothing is stored; a level nothing names does not filter.
+ */
+function readerOf(signals: ProgrammeBriefSignals, preferences: AppPreferences): BriefReader {
+  const merged = applyBriefToPreferences(preferences, signals, []);
+  return {
+    equipment: mapSetupEquipment(merged),
+    level: merged.aiPlannerExperience ? CATALOG_LEVEL[merged.aiPlannerExperience] : merged.setupLevel,
+  };
+}
+
 /**
  * Whether the reader could run this programme at all: their gear, their
  * level. The score only weighed days, focus and goal, so a beginner at home
  * with no equipment who tapped five days was opened straight into an
- * advanced full-gym programme (review, 2026-10-07). What the brief does not
- * say does not filter.
+ * advanced full-gym programme (review, 2026-10-07).
+ *
+ * A gym reader is matched to gym programmes only. Every gear tier used to
+ * pass for them, which showed once an avoided lift emptied the five- and
+ * six-day gym programmes: "6 days a week at the gym, no deadlifts" opened a
+ * home bodyweight week, and a sore shoulder at five days the mobility flow
+ * (re-hunt, 2026-10-07). No gym programme left is an answer — the composer
+ * builds the trimmed week.
  */
-function fitsReader(signals: ProgrammeBriefSignals, definition: RecommendationProgramDefinition): boolean {
-  if (signals.experience && !definition.supportedLevels.includes(CATALOG_LEVEL[signals.experience])) {
+function fitsReader(signals: ProgrammeBriefSignals, reader: BriefReader, definition: RecommendationProgramDefinition): boolean {
+  if (reader.level && !definition.supportedLevels.includes(reader.level)) {
     return false;
   }
   if (holdsAvoidedLift(signals, definition.programId)) {
     return false;
   }
-  if (signals.equipment === 'home_gym') {
-    return definition.equipmentTier === 'low_equipment';
+  switch (reader.equipment) {
+    case 'home_gym':
+      return definition.equipmentTier === 'low_equipment';
+    case 'minimal':
+      return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, [...DUMBBELL_HOME_ITEMS]);
+    case 'bodyweight':
+      return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, []);
+    case 'full_gym':
+      return definition.equipmentTier === 'full_gym';
   }
-  if (signals.equipment === 'minimal') {
-    return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, [...DUMBBELL_HOME_ITEMS]);
-  }
-  if (signals.equipment === 'bodyweight') {
-    return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, []);
-  }
-  return true;
 }
 
 /**

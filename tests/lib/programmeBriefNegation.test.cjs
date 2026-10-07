@@ -640,7 +640,7 @@ module.exports = [
             for (const goal of ['', ' Goal: build muscle.', ' Tavoite: voima.']) {
               const brief = `${days} päivää viikossa${extra}.${place}${goal}`;
               const signals = parseProgrammeBrief(brief);
-              const match = matchProgrammeToBrief(signals);
+              const match = matchProgrammeToBrief(signals, preferences);
               if (!match) {
                 continue;
               }
@@ -664,18 +664,18 @@ module.exports = [
       for (const brief of ['5 päivää viikossa, olkapää kipeä', '6 päivää viikossa, ei maastavetoa', '5 days a week, no deadlifts, no overhead press']) {
         const signals = parseProgrammeBrief(brief);
         assert.ok(signals.avoidTerms.length > 0, brief);
-        const match = matchProgrammeToBrief(signals);
+        const match = matchProgrammeToBrief(signals, preferences);
         assert.ok(!['tpl_5_day_hybrid_v1', 'tpl_6_day_ppl_v1'].includes(match?.programId), `${brief} → ${match?.programId}`);
       }
       // A sore shoulder keeps out the presses overhead by any of their names.
       for (const brief of ['5 päivää viikossa, olkapää kipeä', '5 days a week, my shoulder hurts', '6 päivää viikossa, olkapää kipeä']) {
-        const match = matchProgrammeToBrief(parseProgrammeBrief(brief));
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), preferences);
         const overhead = match ? programmeNames(match.programId).filter((name) => /overhead|shoulder press|seated dumbbell press|arnold|push press|thruster|military/i.test(name)) : [];
         assert.deepEqual(overhead, [], `${brief} → ${match?.programId}`);
       }
       // A refused squat keeps out the catalog's "Back Squat", not only the library's names.
       for (const brief of ['5 päivää viikossa, ei kyykkyä', "6 days a week, I don't want to do squats"]) {
-        const match = matchProgrammeToBrief(parseProgrammeBrief(brief));
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), preferences);
         const squats = match ? programmeNames(match.programId).filter((name) => /back squat/i.test(name)) : [];
         assert.deepEqual(squats, [], `${brief} → ${match?.programId}`);
       }
@@ -685,14 +685,15 @@ module.exports = [
       const calisthenics = RECOMMENDATION_PROGRAMS.filter((definition) => definition.programId === 'tpl_gainer_calisthenics_mastery_v1');
       assert.equal(calisthenics.length, 1);
       const plain = parseProgrammeBrief('4 päivää viikossa. Tavoite: lihasmassa.');
-      assert.equal(matchProgrammeToBrief({ ...plain, equipment: 'bodyweight' }, calisthenics), null);
+      assert.equal(matchProgrammeToBrief({ ...plain, equipment: 'bodyweight' }, preferences, calisthenics), null);
       assert.equal(
-        matchProgrammeToBrief(parseProgrammeBrief('4 päivää viikossa. Tavoite: lihasmassa. Paikka: kotona, käsipainot.'), calisthenics),
+        matchProgrammeToBrief(parseProgrammeBrief('4 päivää viikossa. Tavoite: lihasmassa. Paikka: kotona, käsipainot.'), preferences, calisthenics),
         null,
       );
-      assert.equal(matchProgrammeToBrief(plain, calisthenics)?.programId, 'tpl_gainer_calisthenics_mastery_v1');
+      // A reader stored as training at home, whose brief does not say otherwise, can take it.
+      assert.equal(matchProgrammeToBrief(plain, { ...preferences, setupEquipment: 'home' }, calisthenics)?.programId, 'tpl_gainer_calisthenics_mastery_v1');
       // With nothing kept out, the shortcut still answers.
-      assert.equal(matchProgrammeToBrief(parseProgrammeBrief('6 päivää lihasmassaa')).programId, 'tpl_6_day_ppl_v1');
+      assert.equal(matchProgrammeToBrief(parseProgrammeBrief('6 päivää lihasmassaa'), preferences).programId, 'tpl_6_day_ppl_v1');
       assert.ok(RECOMMENDATION_PROGRAMS.length > 0);
     },
   },
@@ -702,7 +703,7 @@ module.exports = [
     run() {
       const signals = parseProgrammeBrief('5 days a week, build muscle, not trying to lose weight');
       assert.equal(signals.goal, 'muscle');
-      assert.notEqual(matchProgrammeToBrief(signals)?.programId, 'tpl_shred_elite_v1');
+      assert.notEqual(matchProgrammeToBrief(signals, preferences)?.programId, 'tpl_shred_elite_v1');
       assert.equal(parseProgrammeBrief('5 päivää viikossa, voimaa, ei rasvanpudotusta').goal, 'strength');
     },
   },

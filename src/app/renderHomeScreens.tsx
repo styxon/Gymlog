@@ -358,6 +358,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           replaceRoute({ tab: 'home', screen: 'ai_chat' });
         }}
         intakePreferences={preferences}
+        preferences={preferences}
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
         sessionCount={database.workoutSessions.length}
