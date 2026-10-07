@@ -137,6 +137,13 @@ function pickClosestWithPenalty(
       // whole muscle week (bug hunt, 2026-10-07, #34).
       penalty += SHORT_WEEK_SPLIT;
     }
+    if (focusProgrammeLosesItsPoint(definition.programId, input)) {
+      // A specialisation block the avoid flags strip, as in the focus lane.
+      // Asked only there, the home lane still handed a home gym with elbows
+      // avoided the arms block, one lateral raise on Arms (Heavy) (bug hunt,
+      // 2026-10-08).
+      penalty += SHORT_WEEK_SPLIT;
+    }
     if (penalty < bestPenalty) {
       best = definition;
       bestPenalty = penalty;

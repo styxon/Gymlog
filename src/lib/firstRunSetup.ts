@@ -5,7 +5,7 @@ import { buildRecommendationInput } from './recommendationInput';
 import { getRecommendationProgramDefinition } from './recommendationCatalog';
 import { recommendPrograms } from './recommendationScoring';
 import { runStandInKind } from './cautionExerciseFilter';
-import { programRunStandInKind } from './recommendationWeekFit';
+import { programRunWork } from './recommendationWeekFit';
 import { resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildTailoringRecommendationNote, TailoringPreferencesInput } from './tailoringFit';
 import { t } from './i18n';
@@ -357,15 +357,18 @@ export function buildFirstRunRecommendationReasons(
     estimatedSessionDuration?: number | null;
     mismatchNote?: string | null;
     language?: AppLanguage;
-    /** The programme the lines are about, so they can say its runs are walks. */
+    /**
+     * The programme the lines are about, so they can say its runs are walks,
+     * or leave runs unsaid where it has none.
+     */
     programId?: string | null;
   },
   tailoringPreferences?: TailoringPreferencesInput | null,
 ) {
-  const runStandIn = options.programId
-    ? programRunStandInKind(options.programId, buildRecommendationInput(selection))
+  const runWork = options.programId
+    ? programRunWork(options.programId, buildRecommendationInput(selection))
     : null;
-  return buildRecommendationReasonLines(selection, { ...options, runStandIn }, tailoringPreferences);
+  return buildRecommendationReasonLines(selection, { ...options, runWork }, tailoringPreferences);
 }
 
 

@@ -166,17 +166,33 @@ export function focusProgrammeLosesItsPoint(programId: string, input: Recommenda
   });
 }
 
+/** What a programme's runs are for the reader, or 'none' when it holds no runs. */
+export type ProgramRunWork = 'run' | RunStandInKind | 'none';
+
 /**
- * What this programme's runs become for the reader, or null when they still
- * run (or it has none). The same rule the composer swaps by, so a reason line
- * can say "walks" exactly when the week holds walks.
+ * Whether this programme's week runs, walks or rides for the reader, or holds
+ * no runs at all; null for a programme the catalog does not know. The same
+ * rule the composer swaps by, so a reason line can say "walks" exactly when
+ * the week holds walks, and "run work" only when it holds runs: the line sat
+ * over Mobility Reset, whose card says there is no running in it (bug hunt,
+ * 2026-10-08).
  */
-export function programRunStandInKind(programId: string, input: RecommendationInput): RunStandInKind | null {
-  const kind = runStandInKind(input.cautionFlags ?? [], input.availableEquipment ?? null);
-  if (!kind) {
+export function programRunWork(programId: string, input: RecommendationInput): ProgramRunWork | null {
+  const template = getWorkoutTemplateById(programId);
+  if (!template) {
     return null;
   }
-  const template = getWorkoutTemplateById(programId);
-  const hasRuns = Boolean(template?.sessions.some((session) => session.exercises.some(isMinutesRun)));
-  return hasRuns ? kind : null;
+  if (!template.sessions.some((session) => session.exercises.some(isMinutesRun))) {
+    return 'none';
+  }
+  return runStandInKind(input.cautionFlags ?? [], input.availableEquipment ?? null) ?? 'run';
+}
+
+/**
+ * What this programme's runs become for the reader, or null when they still
+ * run (or it has none).
+ */
+export function programRunStandInKind(programId: string, input: RecommendationInput): RunStandInKind | null {
+  const work = programRunWork(programId, input);
+  return work === 'walk' || work === 'ride' ? work : null;
 }

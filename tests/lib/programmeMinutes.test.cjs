@@ -126,15 +126,35 @@ module.exports = [
       // programme, the gear estimate for the rest (#37). Every card site, by
       // count: one site passing the week beside another passing null passed
       // a single match (review, 2026-10-08).
-      for (const [file, sites] of [['src/app/useProgramsCatalog.tsx', 2], ['src/app/useGoalFlow.tsx', 1]]) {
+      //
+      // The Programs cards read days, minutes and bars off one week
+      // (programmeCardWeek), whose minutes are programmeCardMinutes': the
+      // card's days came from the catalog beside the composed week's minutes
+      // (bug hunt, 2026-10-08).
+      for (const [file, sites, card] of [
+        ['src/app/useProgramsCatalog.tsx', 2, /^week\.minutes,$/],
+        ['src/app/useGoalFlow.tsx', 1, /^programmeCardMinutes\(template, readerComposedWeek, /],
+      ]) {
         const source = stripComments(read(file));
         const minutesValues = [...source.matchAll(/\bminutes:\s*(.*)/g)].map((match) => match[1].trim());
         assert.equal(minutesValues.length, sites, `${file}: ${minutesValues.join(' | ')}`);
         for (const value of minutesValues) {
-          assert.match(value, /^programmeCardMinutes\(template, readerComposedWeek, /, `${file}: minutes: ${value}`);
+          assert.match(value, card, `${file}: minutes: ${value}`);
         }
         assert.doesNotMatch(source, /readyTemplateCardMinutes\(/, file);
       }
+      const cards = stripComments(read('src/app/useProgramsCatalog.tsx'));
+      assert.equal(
+        (cards.match(/const week = programmeCardWeek\(template, readerComposedWeek, minutesOptions\);/g) ?? []).length,
+        2,
+        'every Programs card site reads its week',
+      );
+      const daysValues = [...cards.matchAll(/\bdays:\s*([^,}\n]*)/g)].map((match) => match[1].trim());
+      assert.ok(daysValues.length >= 3, daysValues.join(' | '));
+      for (const value of daysValues) {
+        assert.equal(value, 'week.days', `useProgramsCatalog days: ${value}`);
+      }
+      assert.match(read('src/lib/programDetails.ts'), /minutes: programmeCardMinutes\(template, readerWeek, minutesOptions\),/);
       // And the week is the page's: the resolver the programme page calls
       // (renderWorkoutTab), from the same context, handed on as it is.
       const pageContext =
