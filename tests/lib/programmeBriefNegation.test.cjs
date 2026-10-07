@@ -519,7 +519,7 @@ module.exports = [
       ]) {
         const signals = parseProgrammeBrief(brief);
         assert.ok(signals.avoidTerms.includes('deadlift'), brief);
-        const match = matchProgrammeToBrief(signals);
+        const match = matchProgrammeToBrief(signals, preferences);
         const deadlifts = match ? programmeNames(match.programId).filter((name) => /deadlift/i.test(name)) : [];
         assert.deepEqual(deadlifts, [], `${brief} → ${match?.programId}`);
       }
