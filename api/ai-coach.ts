@@ -3,6 +3,7 @@ import { del, list, put } from '@vercel/blob';
 import { readAnswerExtras, withoutExampleRepeats } from '../src/lib/aiCoachAnswerExtras';
 import { localizeAdviceDecimals } from '../src/lib/aiCoachAnswerDecimals';
 import { buildAiCoachPreviewAnswer } from '../src/lib/aiCoachPreview';
+import { classifyCoachScope } from '../src/lib/aiCoachScope';
 import { buildAiCoachContextText } from '../src/lib/aiCoachSystemContext';
 import { normalizeAiCoachTrainingContext } from '../src/lib/aiTrainingContext';
 import { AI_COACH_DEBUG_TRANSCRIPTS } from '../src/lib/aiCoachDebug';
@@ -1431,6 +1432,21 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
 
   if (!input) {
     res.status(400).json(createError({ code: 'BAD_REQUEST', message: 'Prompt and context are required.' }, undefined, undefined, 'preview'));
+    return;
+  }
+
+  // A reader in trouble, answered here with the phone's own classifier and
+  // its own crisis answer. The phone already does this before it sends, but
+  // only with the filter of the build it runs: an installed build from before
+  // a widening still sends what the newer filter catches (A6 hunt,
+  // 2026-10-07). So the newest filter stands here too — before the rate
+  // limit, which must not stand between a reader and the number, and before
+  // the model, whose crisis rule is then the net for what is said sideways.
+  // Marked 'preview' because no model wrote it: the app charges no question
+  // for it and does not remember it as advice. Not kept either — the reader
+  // agreed to keep what they asked the coach, and the coach was not asked.
+  if (input.mode === 'advice' && classifyCoachScope(input.prompt) === 'crisis') {
+    res.status(200).json(createSuccess(buildAiCoachPreviewAnswer(input.prompt, input.context, input.language), 'preview'));
     return;
   }
 
