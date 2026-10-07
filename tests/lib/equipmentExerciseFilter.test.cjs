@@ -315,4 +315,46 @@ module.exports = [
       assert.equal(adjusted.exercises[0].exerciseName, 'Trail Running/Walking');
     },
   },
+  {
+    name: "equipment filter: a rep lift that falls back to a hold takes the hold's own seconds, not its rep count",
+    run() {
+      const { doseAfterSwap } = require('../../.test-dist/lib/swapDose');
+      // Cable crunch at 2 x 15 with dumbbells only became a 15-second plank:
+      // the rep number was carried over as seconds (re-hunt, 2026-10-07).
+      const crunch = { ...exercise('Cable Crunch'), trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15 };
+      const adjusted = applyEquipmentToExercises([crunch], ['Dumbbells']);
+      const plank = adjusted.exercises[0];
+      assert.equal(plank.exerciseName, 'Plank');
+      assert.equal(plank.trackingMode, 'hold');
+      const expected = doseAfterSwap(crunch, 'Plank');
+      assert.notEqual(expected.repsMax, 15);
+      assert.deepEqual([plank.sets, plank.repsMin, plank.repsMax], [2, expected.repsMin, expected.repsMax]);
+
+      // Every catalog row and every kit: whenever a fallback changes what the
+      // numbers count, the slot takes the swap rule's dose, never the old one.
+      const unitOf = (mode) => (mode === 'hold' ? 'seconds' : mode === 'duration_minutes' ? 'minutes' : 'reps');
+      const kits = [[], ['Dumbbells'], ['Resistance bands'], ['Kettlebell'], ['Pull-up bar'], ['Dumbbells', 'Bench']];
+      const wrong = [];
+      let crossed = 0;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const kit of kits) {
+            for (const row of session.exercises) {
+              const [after] = applyEquipmentToExercises([row], kit).exercises;
+              if (!after || after.exerciseName === row.exerciseName || unitOf(after.trackingMode) === unitOf(row.trackingMode)) {
+                continue;
+              }
+              crossed += 1;
+              const dose = doseAfterSwap(row, after.exerciseName);
+              if (after.repsMin !== dose.repsMin || after.repsMax !== dose.repsMax || after.sets !== row.sets) {
+                wrong.push(`${template.id}: ${row.exerciseName} ${row.repsMin}-${row.repsMax} -> ${after.exerciseName} ${after.repsMin}-${after.repsMax}`);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(crossed > 0, 'the sweep reached no fallback that changes unit');
+      assert.deepEqual([...new Set(wrong)], []);
+    },
+  },
 ];

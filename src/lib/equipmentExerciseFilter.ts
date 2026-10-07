@@ -1,8 +1,9 @@
 import { EXTRA_EXERCISE_LIBRARY } from '../data/extraExerciseLibrary';
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
-import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { getCatalogTrackingMode, prescriptionAfterSwap } from './catalogExercisePools';
+import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { getCatalogTrackingMode } from './catalogExercisePools';
 import { DisplayEquipmentValue, displayEquipmentValue } from './libraryLabel';
+import { doseAfterSwap } from './swapDose';
 
 /**
  * Equipment chips filter the actual exercises (onboarding truth plan P4).
@@ -420,19 +421,14 @@ export function applyEquipmentToExercises(
       // A barbell squat that falls back to a bodyweight squat must stop
       // asking for kilograms. The catalog knows; keyword matching guessed.
       const trackingMode = getCatalogTrackingMode(fallback);
-      // And minutes mean nothing in another unit: a stair machine's twenty
-      // minutes is not twenty of whatever replaces it, nor a lift's ten reps
-      // ten minutes on a bike. Only across minutes — a carry's seconds have
-      // always stayed with the hold it falls back to.
-      const acrossMinutes = isMinutesTrackingMode(exercise.trackingMode) !== isMinutesTrackingMode(trackingMode);
-      const dose = acrossMinutes
-        ? prescriptionAfterSwap(
-            exercise.trackingMode,
-            trackingMode,
-            { repsMin: exercise.repsMin, repsMax: exercise.repsMax },
-            fallback,
-          )
-        : { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
+      // And the numbers mean nothing in another unit: a stair machine's twenty
+      // minutes is not twenty of whatever replaces it, nor a cable crunch's
+      // fifteen reps a fifteen-second plank (re-hunt, 2026-10-07). A fallback
+      // is a swap, so it takes the swap rule's dose (doseAfterSwap). Only the
+      // mode stays the catalog's: the gear is missing, so the library's
+      // "bodyweight" is the truth here. Both rules agree on the unit, as both
+      // ask the hold and minutes lists first, so the dose is the same.
+      const dose = doseAfterSwap(exercise, fallback);
       return {
         ...exercise,
         exerciseName: fallback,
