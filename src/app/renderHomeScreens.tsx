@@ -154,7 +154,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
       signal,
     );
     if (live) {
-      const resolved = resolveLiveProposal(live, brief, exerciseLibrary, preferences.defaultRestSeconds);
+      const resolved = resolveLiveProposal(live, brief, exerciseLibrary, preferences.defaultRestSeconds, preferences);
       /*
        * A week whose every lift the library does not know is not a week.
        *

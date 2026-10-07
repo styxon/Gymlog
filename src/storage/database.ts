@@ -13,6 +13,7 @@ import {
   moveOldCopiesToMinutesMode,
   undoImplausibleMinutesMode,
 } from '../lib/minutesModeMigration';
+import { HOLD_SECONDS_MIGRATION_ID, moveOldStretchesToHoldSeconds } from '../lib/holdSecondsMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -447,6 +448,12 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
   if (!appliedMigrations.includes(IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID)) {
     rawExerciseTemplates = undoImplausibleMinutesMode(rawExerciseTemplates);
     appliedMigrations.push(IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID);
+  }
+  // A stretch stored at a reps count before its name became a hold is
+  // prescribed the editor's hold default (lib/holdSecondsMigration).
+  if (!appliedMigrations.includes(HOLD_SECONDS_MIGRATION_ID)) {
+    rawExerciseTemplates = moveOldStretchesToHoldSeconds(rawExerciseTemplates, exerciseLibrary);
+    appliedMigrations.push(HOLD_SECONDS_MIGRATION_ID);
   }
 
   // A stored programme with no id is not a programme. Mapped through the

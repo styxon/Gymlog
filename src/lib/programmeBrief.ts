@@ -1,4 +1,4 @@
-import { buildAiCoachPlanSchema } from './aiCoachPlan';
+import { buildAiCoachPlanSchema, fitsPlannerEquipment, isAvoidedByPlannerLimits, plannerLimits } from './aiCoachPlan';
 import { exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { findGuidedLibraryIndex } from './guidedPlayer';
@@ -629,6 +629,24 @@ export interface ProgrammeProposal {
   unresolvedNames: string[];
   /** Live only: specialty movements the model put in that the brief did not ask for. Dropped, and shown. */
   specialtyLeftOut?: string[];
+  /**
+   * Live only: lifts whose name carries a term the brief avoids — a lift it
+   * refused, or one that loads the area it says hurts. Dropped, and shown.
+   */
+  briefLeftOut?: string[];
+  /** Live only: lifts that need gear the reader does not have. Dropped, and shown. */
+  gearLeftOut?: string[];
+}
+
+/**
+ * Whether the week on the card is not the whole answer it was built from:
+ * something was dropped by the library or the brief. The card then says the
+ * check took lifts out instead of reading as a week that passed it whole.
+ */
+export function proposalLeftSomethingOut(proposal: ProgrammeProposal): boolean {
+  return [proposal.unresolvedNames, proposal.specialtyLeftOut, proposal.briefLeftOut, proposal.gearLeftOut].some(
+    (list) => (list?.length ?? 0) > 0,
+  );
 }
 
 /**
@@ -941,16 +959,28 @@ export interface LiveProgrammeProposal {
  * The sweep. Every name the model returned goes through the library alias
  * matcher; what does not resolve is dropped and listed. A session left with
  * no exercises is dropped too — an empty day is not a day.
+ *
+ * Then the brief, as the preview composer reads it: the brief laid over the
+ * stored preferences (applyBriefToPreferences) gives the same avoid terms
+ * and gear (aiCoachPlan.plannerLimits). A lift that carries an avoided term
+ * or needs gear the reader lacks is dropped and listed — the model is told
+ * the same in its prompt, and this is what holds when it does not listen
+ * (bug hunt, 2026-10-07: "Ei maastavetoa." kept Barbell Deadlift).
  */
 export function resolveLiveProposal(
   raw: LiveProgrammeProposal,
   brief: string,
   library: ExerciseLibraryItem[],
   defaultRestSeconds: number,
+  preferences: AppPreferences,
 ): ProgrammeProposal {
   const names = library.map((item) => item.name);
+  const signals = parseProgrammeBrief(brief);
+  const limits = plannerLimits(applyBriefToPreferences(preferences, signals, library));
   const unresolvedNames: string[] = [];
   const specialtyLeftOut: string[] = [];
+  const briefLeftOut: string[] = [];
+  const gearLeftOut: string[] = [];
   const sessions: ProposedSession[] = [];
   for (const session of raw.sessions) {
     const exercises: ProposedExercise[] = [];
@@ -966,6 +996,18 @@ export function resolveLiveProposal(
       if (isSpecialtyExercise(item) && !briefAsksForSpecialty(brief, item)) {
         if (!specialtyLeftOut.includes(item.name)) {
           specialtyLeftOut.push(item.name);
+        }
+        continue;
+      }
+      // The preview composer's own test, on the week the coach wrote.
+      const leftOut = isAvoidedByPlannerLimits(item, limits)
+        ? briefLeftOut
+        : !fitsPlannerEquipment(item, limits)
+          ? gearLeftOut
+          : null;
+      if (leftOut) {
+        if (!leftOut.includes(item.name)) {
+          leftOut.push(item.name);
         }
         continue;
       }
@@ -985,22 +1027,32 @@ export function resolveLiveProposal(
       sessions.push({ name: session.name, focus: session.focus ?? '', exercises });
     }
   }
-  const signals = parseProgrammeBrief(brief);
   const includedIds = new Set(sessions.flatMap((session) => session.exercises.map((exercise) => exercise.libraryItemId)));
   const unmetLifts = signals.lifts.filter((lift) => {
     const name = resolveLiftToLibraryName(lift, library);
     const item = name ? library.find((entry) => entry.name === name) : null;
     return !item || !includedIds.has(item.id);
   });
-  return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames, specialtyLeftOut };
+  return {
+    source: 'live',
+    title: raw.title.trim() || 'Vinha AI',
+    sessions,
+    signals,
+    unmetLifts,
+    unresolvedNames,
+    specialtyLeftOut,
+    briefLeftOut,
+    gearLeftOut,
+  };
 }
 
 /**
  * The resolved live answer, or the preview composer's week when nothing in
  * the answer resolved. What the discarded answer knew that the composer does
  * not comes with it: the names it could not place, and the specialty
- * movements it was refused — or a card that promises "never silently" lists
- * nothing in exactly the case the list is for (review, 2026-10-07).
+ * movements, avoided lifts and missing gear it was refused — or a card that
+ * promises "never silently" lists nothing in exactly the case the list is for
+ * (review, 2026-10-07).
  */
 export function liveProposalOrPreview(resolved: ProgrammeProposal, preview: () => ProgrammeProposal): ProgrammeProposal {
   if (resolved.sessions.length > 0) {
@@ -1010,6 +1062,8 @@ export function liveProposalOrPreview(resolved: ProgrammeProposal, preview: () =
     ...preview(),
     unresolvedNames: resolved.unresolvedNames,
     specialtyLeftOut: resolved.specialtyLeftOut,
+    briefLeftOut: resolved.briefLeftOut,
+    gearLeftOut: resolved.gearLeftOut,
   };
 }
 
