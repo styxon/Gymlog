@@ -84,6 +84,21 @@ const FI_WANT = [
 
 const FI_WANT_COLOUR = ['', 'vain', 'vaan', 'vaa', 'jo', 'nyt', 'nyt vain', 'nyt vaan', 'jo vain', 'jo vaan'];
 
+/** "otan kaikki pillerit", "nielin koko purkin": taking, eating, swallowing. */
+const FI_SWALLOW = [
+  'otan', 'ottaa', 'ottaisin', 'otin', 'ottamaan', 'syön', 'syödä', 'söin', 'syömään', 'nielen', 'niellä', 'nielin',
+  'vedän', 'vetää', 'vedin', 'popsin', 'popsia',
+];
+
+/** What a whole pack of is food or a supplement: "koko levyn suklaata". */
+const FI_WHOLE_PACK_FOOD = [
+  'vettä', 'proteiinia', 'proteiinijauhetta', 'jauhetta', 'kreatiinia', 'vitamiineja', 'vitamiinia', 'magnesiumia',
+  'kalaöljyä', 'kofeiinia', 'kahvia', 'karkkia', 'karkkeja', 'suklaata', 'jäätelöä', 'sipsejä', 'keksejä', 'rahkaa',
+  'maitoa', 'mehua', 'jogurttia', 'patukoita', 'proteiinipatukoita', 'pre-workoutia', 'preworkoutia', 'energiajuomaa',
+  'energiajuomia', 'pähkinöitä', 'hiutaleita', 'kaurahiutaleita', 'riisiä', 'pastaa', 'leipää', 'munia', 'kananmunia',
+  'tonnikalaa', 'raejuustoa', 'juustoa', 'purkkaa', 'pizzaa',
+];
+
 /** "myself", and the ways a thumb types it. */
 const EN_SELF = ['myself', 'my self', 'meself', 'myselfs', 'myslef', 'mysef'];
 
@@ -126,33 +141,61 @@ const METHOD_EXERCISE_AFTER = new Set([
 
 /**
  * The session, as "end it with", "on" and "after" go on into it: "with dips",
- * "on a PR", "after 3 sets". A closed list, on purpose. 4ff438f1 read
+ * "on deadlifts", "after 3 sets". Closed lists, on purpose. 4ff438f1 read
  * anything that was not a listed method as the session, and "end it with a
  * gunshot", "on friday" and "after 3 days" went past as training (re-hunt,
- * 2026-10-07): a method list is never finished, and an exercise this list
- * misses costs only a false alarm. Not "train", "car" or "bridge", which are
+ * 2026-10-07): a method list is never finished, and an exercise these lists
+ * miss costs only a false alarm. Not "train", "car" or "bridge", which are
  * how a crisis says it, nor a bare "minutes", "failure" or "note".
  */
-const END_IT_SESSION_WORDS = new Set([
-  'set', 'sets', 'superset', 'supersets', 'dropset', 'dropsets', 'rep', 'reps', 'round', 'rounds', 'lap', 'laps', 'km',
-  'miles', 'finisher', 'finishers', 'burnout', 'amrap', 'emom', 'hiit', 'tabata', 'circuit', 'circuits', 'cooldown',
-  'warmup', 'warm-up', 'stretch', 'stretches', 'stretching', 'mobility', 'yoga', 'cardio', 'conditioning', 'core', 'abs',
-  'workout', 'session', 'exercise', 'exercises', 'deload', 'accessories', 'accessory', 'isolation', 'pump', 'pr', 'pb',
-  'rpe', 'sprint', 'sprints', 'run', 'jog', 'rowing', 'bike', 'cycling', 'treadmill', 'elliptical', 'erg', 'stairmaster',
+
+/** What a session is counted in: "after 3 sets", "with a drop set". */
+const END_IT_UNITS = new Set([
+  'set', 'sets', 'superset', 'supersets', 'dropset', 'dropsets', 'rep', 'reps', 'round', 'rounds', 'lap', 'laps',
+]);
+
+/** The exercises by name: "with dips", "on deadlifts", "after squats". */
+const END_IT_EXERCISES = new Set([
   'dips', 'dip', 'squat', 'squats', 'deadlift', 'deadlifts', 'bench', 'press', 'presses', 'curl', 'curls', 'row', 'rows',
   'pullup', 'pullups', 'pull-up', 'pull-ups', 'chinup', 'chinups', 'chin-up', 'chin-ups', 'pushup', 'pushups', 'push-up',
   'push-ups', 'burpee', 'burpees', 'lunge', 'lunges', 'crunch', 'crunches', 'situp', 'situps', 'sit-up', 'sit-ups',
   'plank', 'planks', 'raises', 'extensions', 'flyes', 'flies', 'shrugs', 'cleans', 'snatch', 'snatches', 'thruster',
-  'thrusters', 'swings', 'kettlebell', 'kettlebells', 'dumbbell', 'dumbbells', 'barbell', 'pulldown', 'pulldowns',
-  'pushdown', 'pushdowns', 'kickbacks', 'climbers', 'carries', 'farmer', 'farmers', 'glute', 'glutes', 'calves', 'calf',
-  'hamstrings', 'quads', 'biceps', 'triceps', 'arms', 'legs', 'chest', 'shoulders', 'skipping',
+  'thrusters', 'swings', 'pulldown', 'pulldowns', 'pushdown', 'pushdowns', 'kickbacks', 'climbers', 'carries', 'sprint',
+  'sprints', 'skipping',
 ]);
 
-/** Sessions said in two words: "a heavy single", "a high note". */
-const END_IT_SESSION_PHRASES = [
-  ['heavy', 'single'], ['high', 'note'], ['good', 'note'], ['positive', 'note'], ['strong', 'note'], ['cool', 'down'],
-  ['warm', 'up'], ['box', 'jumps'], ['jumping', 'jacks'],
-];
+/**
+ * The rest of what "end it with" may go on into: "with a finisher", "with
+ * core work", "with a run". Not after "on" or "after": "on a good note" and
+ * "after this session" are how a farewell is said too (review, 2026-10-07).
+ */
+const END_IT_WITH_WORDS = new Set([
+  'km', 'miles', 'finisher', 'finishers', 'burnout', 'amrap', 'emom', 'hiit', 'tabata', 'circuit', 'circuits',
+  'cooldown', 'warmup', 'warm-up', 'stretch', 'stretches', 'stretching', 'mobility', 'yoga', 'cardio', 'conditioning',
+  'core', 'abs', 'workout', 'session', 'exercise', 'exercises', 'deload', 'accessories', 'accessory', 'isolation', 'pump',
+  'pr', 'pb', 'rpe', 'run', 'jog', 'rowing', 'bike', 'cycling', 'treadmill', 'elliptical', 'erg', 'stairmaster',
+  'kettlebell', 'kettlebells', 'dumbbell', 'dumbbells', 'barbell', 'farmer', 'farmers', 'glute', 'glutes', 'calves',
+  'calf', 'hamstrings', 'quads', 'biceps', 'triceps', 'arms', 'legs', 'chest', 'shoulders',
+]);
+
+/** Exercises said in two words: "a heavy single", "box jumps". */
+const END_IT_EXERCISE_PHRASES = [['heavy', 'single'], ['box', 'jumps'], ['jumping', 'jacks']];
+
+/** Parts of a session said in two words, after "with" only. */
+const END_IT_WITH_PHRASES = [['cool', 'down'], ['warm', 'up']];
+
+/** What counts the sets in "after 3 sets", "after this set". */
+const END_IT_COUNT = new Set([
+  'this', 'that', 'the', 'these', 'those', 'next', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten',
+  'few', 'couple',
+]);
+
+/**
+ * The words of a farewell. With any of them in the sentence, "end it" is the
+ * crisis, whatever else is there: "after my last workout", "with one final
+ * set", "after one more run" (review, 2026-10-07).
+ */
+const END_IT_FAREWELL = [['last'], ['final'], ['one', 'more']];
 
 /** What ends a session and nothing else: "early", "here", "for today". */
 const END_IT_SESSION = [
@@ -168,42 +211,73 @@ function namesMethodAt(words: readonly CrisisWord[], i: number): boolean {
   );
 }
 
-/** Whether the words from `i` name the session: "dips", "a jump rope", "a high note". */
-function namesSessionAt(words: readonly CrisisWord[], i: number): boolean {
-  if (END_IT_SESSION_WORDS.has(words[i].word)) return true;
-  if (END_IT_SESSION_PHRASES.some((phrase) => startsAt(words, i, phrase))) return true;
+/** Whether the words from `i` name an exercise: "dips", "a jump rope", "a glute bridge". */
+function namesExerciseAt(words: readonly CrisisWord[], i: number): boolean {
+  if (END_IT_EXERCISES.has(words[i].word)) return true;
+  if (END_IT_EXERCISE_PHRASES.some((phrase) => startsAt(words, i, phrase))) return true;
   return END_IT_METHOD.has(words[i].word) && !namesMethodAt(words, i);
 }
+
+/** Whether the word at `i` counts sets: "3 sets", "this set", "three rounds". */
+function countsSetsAt(words: readonly CrisisWord[], i: number): boolean {
+  const count = words[i - 1]?.word ?? '';
+  return END_IT_UNITS.has(words[i].word) && (/^\d+$/.test(count) || END_IT_COUNT.has(count));
+}
+
+/** Whether the words from `i` name the session as "end it with" says it. */
+function namesWithAt(words: readonly CrisisWord[], i: number): boolean {
+  return (
+    END_IT_UNITS.has(words[i].word) ||
+    END_IT_WITH_WORDS.has(words[i].word) ||
+    END_IT_WITH_PHRASES.some((phrase) => startsAt(words, i, phrase)) ||
+    namesExerciseAt(words, i)
+  );
+}
+
+/** What each word may go on into, within three words of it. */
+const END_IT_GOES_ON = new Map<string, (words: readonly CrisisWord[], i: number) => boolean>([
+  ['with', namesWithAt],
+  ['on', (words, i) => namesExerciseAt(words, i) || ['pr', 'pb'].includes(words[i].word)],
+  ['after', (words, i) => countsSetsAt(words, i) || namesExerciseAt(words, i)],
+]);
 
 /**
  * Whether what follows "end it", in its sentence, ends a session.
  *
- * Only these do: "early", "here", "for today" and the like; and "with", "on"
- * or "after" with a session word among the three words after it — "with
- * dips", "with a heavy single", "on a PR", "after 3 sets", "after squats" —
- * and no method anywhere after it. Everything else is the crisis:
- * "tomorrow", "for good", "on friday", "with a gunshot", "after 3 days", "by
- * jumping", "and be gone", and a "with" the sentence ends after ("with 💊").
- * A when is read past: "I'm ending it now with stretching" is a session,
- * "I'm ending it now" is not.
+ * Only the owner's closed set does (2026-10-07): "early", "here", "for
+ * today" and the like; "with" and a set, an exercise or a session part
+ * ("with dips", "with a finisher", "with core work"); "on" and an exercise
+ * or a PR; "after" and a count of sets or an exercise ("after 3 sets",
+ * "after squats"). The word must come within three words, and no method may
+ * follow anywhere. Everything else is the crisis: "tomorrow", "for good",
+ * "on friday", "on a high note", "with a gunshot", "after 3 days", "after
+ * this session", "by jumping", "and be gone", a "with" the sentence ends
+ * after ("with 💊"), and a "last", "final" or "one more" anywhere. A when is
+ * read past: "I'm ending it now with stretching" is a session, "I'm ending
+ * it now" is not.
  */
 function endsASession(rest: readonly CrisisWord[]): boolean {
+  if (rest.some((_, i) => END_IT_FAREWELL.some((farewell) => startsAt(rest, i, farewell)))) return false;
   let at = 0;
   while (at < rest.length && END_IT_WHEN.has(rest[at].word)) at += 1;
   const goesOn = rest.slice(at);
   if (goesOn.length === 0) return false;
-  if (!['with', 'on', 'after'].includes(goesOn[0].word)) {
+  const namesSession = END_IT_GOES_ON.get(goesOn[0].word);
+  if (!namesSession) {
     return END_IT_SESSION.some((session) => startsAt(goesOn, 0, session.split(' ')));
   }
   if (goesOn.some((_, i) => i > 0 && namesMethodAt(goesOn, i))) return false;
-  return [1, 2, 3].some((i) => i < goesOn.length && namesSessionAt(goesOn, i));
+  return [1, 2, 3].some((i) => i < goesOn.length && namesSession(goesOn, i));
 }
 
 /** The supplements and food a gym "overdoses" on. */
-const OVERDOSE_ON_FOOD = [
-  'on caffeine', 'on coffee', 'on carbs', 'on protein', 'on creatine', 'on pre', 'on pre-workout', 'on preworkout',
-  'on sugar', 'on cardio', 'on volume', 'on chocolate', 'on candy', 'on pizza',
+const OVERDOSE_FOOD = [
+  'caffeine', 'coffee', 'carbs', 'protein', 'creatine', 'pre', 'pre-workout', 'preworkout', 'sugar', 'cardio', 'volume',
+  'chocolate', 'candy', 'pizza',
 ];
+
+/** "overdosed on caffeine", "an overdose of caffeine". */
+const OVERDOSE_ON_FOOD = OVERDOSE_FOOD.flatMap((food) => [`on ${food}`, `of ${food}`]);
 
 /**
  * What a reader takes every one of. With "all", "every" or a bottle in front,
@@ -211,8 +285,9 @@ const OVERDOSE_ON_FOOD = [
  * before training", "otan lääkkeet aamulla" (owner's call, 2026-10-07).
  */
 const EN_PILLS = [
-  'pills', 'pill', 'meds', 'medication', 'medications', 'medicine', 'sleeping pills', 'painkillers', 'pain killers',
-  'tablets', 'antidepressants', 'tylenol', 'paracetamol', 'ibuprofen', 'advil', 'aspirin', 'xanax', 'insulin',
+  'pills', 'pill', 'meds', 'med', 'medication', 'medications', 'medicine', 'sleeping pills', 'painkillers', 'pain killers',
+  'tablets', 'tablet', 'capsules', 'capsule', 'antidepressants', 'tylenol', 'paracetamol', 'ibuprofen', 'advil',
+  'aspirin', 'xanax', 'insulin',
 ];
 
 const EN_SWALLOW = [
@@ -294,18 +369,26 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   ],
   // Every pill, whatever comes after it. A routine is said without "kaikki"
   // ("otan lääkkeet aamulla"); with it, a "when" did not make a routine of
-  // it — "ennen kuin kukaan tulee kotiin" (re-hunt, 2026-10-07).
+  // it — "ennen kuin kukaan tulee kotiin" (re-hunt, 2026-10-07). "these"
+  // and "my" sit on either side of "kaikki": "otan kaikki nää pillerit",
+  // "otan mun kaikki lääkkeet" (review, 2026-10-07).
   [
-    ['otan', 'ottaa', 'ottaisin', 'otin', 'ottamaan', 'syön', 'syödä', 'söin', 'syömään', 'nielen', 'niellä', 'nielin', 'vedän', 'vetää', 'vedin', 'popsin', 'popsia'],
-    ['kaikki'],
-    ['', 'mun', 'minun', 'ne'],
-    ['pillerit', 'pillerini', 'lääkkeet', 'lääkkeeni', 'unilääkkeet', 'unilääkkeeni', 'tabletit', 'tablettini', 'särkylääkkeet', 'särkylääkkeeni', 'buranat', 'panadolit'],
+    FI_SWALLOW,
+    ['kaikki', 'mun kaikki', 'minun kaikki', 'ne kaikki', 'nämä kaikki', 'nää kaikki', 'noi kaikki', 'nuo kaikki'],
+    ['', 'mun', 'minun', 'ne', 'nämä', 'nää', 'noi', 'nuo', 'nämä mun', 'nää mun'],
+    ['pillerit', 'pillerini', 'lääkkeet', 'lääkkeeni', 'unilääkkeet', 'unilääkkeeni', 'tabletit', 'tablettini', 'kapselit', 'kapselini', 'särkylääkkeet', 'särkylääkkeeni', 'buranat', 'panadolit'],
   ],
   [
-    ['otan', 'ottaa', 'otin', 'syön', 'syödä', 'söin', 'nielen', 'niellä', 'nielin', 'vedän', 'vetää', 'vedin', 'popsin', 'popsia'],
-    ['koko purkin', 'koko purkillisen', 'purkillisen', 'kourallisen', 'koko paketin', 'koko pakkauksen', 'koko levyn'],
+    FI_SWALLOW,
+    ['purkillisen', 'kourallisen'],
     ['pillereitä', 'lääkkeitä', 'unilääkkeitä', 'tabletteja', 'särkylääkkeitä', 'buranaa', 'panadolia', 'parasetamolia', 'ibuprofeenia'],
   ],
+  // The whole pack, said or not what of — "nielin koko purkin." — unless it
+  // is food or a supplement: "söin koko levyn suklaata".
+  {
+    slots: [FI_SWALLOW, ['koko purkin', 'koko purkillisen', 'koko paketin', 'koko pakkauksen', 'koko levyn']],
+    unlessFollowedBy: FI_WHOLE_PACK_FOOD,
+  },
   // English. Not "kms": in a training app that is kilometres.
   [['suicide', 'suicidal', 'self-harm', 'self harm']],
   [
@@ -356,6 +439,12 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     slots: [EN_THINKING, ['poisoning myself', 'overdosing', 'taking an overdose']],
     unlessFollowedBy: OVERDOSE_ON_FOOD,
   },
+  // The act itself needs no lead: "I'm overdosing tonight", "tonight I
+  // overdose", "I've taken an overdose" (review, 2026-10-07). What it is on
+  // still decides: "I overdosed on caffeine".
+  { slots: [['overdosing', 'overdosed']], unlessFollowedBy: OVERDOSE_ON_FOOD },
+  { slots: [['i'], ['', 'just'], ['overdose', 'od']], unlessFollowedBy: OVERDOSE_ON_FOOD },
+  { slots: [['take', 'taking', 'took', 'taken', 'had'], ['an overdose', 'a overdose', 'an od']], unlessFollowedBy: OVERDOSE_ON_FOOD },
   // Every pill, or the whole bottle, whoever says it and whatever follows.
   // 4ff438f1 let the lead, a "before" clause or a question after it make a
   // dose of it, and "I'll take all my pills tonight", "...before my parents
@@ -364,15 +453,21 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   [
     EN_SWALLOW,
     [
-      'all my', 'all the', 'all of my', 'all of the', 'all', 'every', 'every single', 'every last', 'every one of my',
+      'all my', 'all the', 'all of my', 'all of the', 'all', 'all these', 'all those', 'all of these', 'all of those',
+      'every', 'every single', 'every last', 'every one of my', 'every one of these', 'every one of those',
       'a bottle of', 'a whole bottle of', 'the whole bottle of', 'my whole bottle of', 'an entire bottle of',
       'the entire bottle of', 'a full bottle of',
     ],
     ['', 'my'],
     EN_PILLS,
   ],
-  // "I swallowed the whole bottle." Not "the whole bottle of water".
-  { slots: [EN_SWALLOW, ['the whole bottle', 'a whole bottle', 'the entire bottle', 'an entire bottle']], closing: true },
+  // "I swallowed the whole bottle", whatever follows — "...before my parents
+  // got home", "...and lay down" (review, 2026-10-07). Not "the whole bottle
+  // of water": what it is a bottle of, if it is pills, is the row above.
+  {
+    slots: [EN_SWALLOW, ['the whole bottle', 'a whole bottle', 'the entire bottle', 'an entire bottle']],
+    unlessFollowedBy: ['of'],
+  },
   [['slit', 'slitting', 'cut', 'cutting', 'slice', 'slicing', 'slash', 'slashing', 'open', 'opening'], ['my wrists', 'my wrist', 'my throat', 'my veins']],
   [
     [

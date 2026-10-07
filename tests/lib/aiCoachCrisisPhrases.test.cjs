@@ -236,6 +236,26 @@ const CRISIS = {
     "I'll end it after a couple of days",
     "I want to end it sooner",
   ],
+  // Review of the re-hunt fix (2026-10-07): "on" a note and "after" a
+  // session are how a farewell is said too, and "last", "final" and "one
+  // more" are the farewell wherever they sit.
+  endItFarewell: [
+    "I'm going to end it after my last workout",
+    "I'm going to end it after one last workout",
+    "I'm going to end it after this session",
+    'I want to end it on a good note',
+    "I'm going to end it on a high note",
+    'I want to end it with one final set',
+    "I'll end it with one last run",
+    "I'll end it after one more set",
+    "I'll end it with my last set",
+    "I'll end it after the workout",
+    "I'll end it after my session",
+    // "after" and a count of sets, not "sets" said as a verb.
+    "I'll end it after the sun sets",
+    "I'm going to end it after my mum sets off",
+    "I'll end it after everyone rounds up the kids",
+  ],
   // The owner's call (2026-10-07): a crisis must never reach the model, so
   // "end it" is training only in a closed set of phrasings. These are gym
   // talk outside that set, and they get the line; widening the set is the
@@ -247,6 +267,10 @@ const CRISIS = {
     "I'm ending it by stretching",
     "I'll end it at 5 sets",
     "I'll end it with some rope work",
+    'I want to end it on a high note',
+    "I'll end it on a high note",
+    "I'm going to end it after cooldown",
+    "I'll end it after a run",
   ],
   // Every pill, the whole bottle: crisis whatever the lead, the clause after
   // it or the question that follows (re-hunt, 2026-10-07).
@@ -279,6 +303,38 @@ const CRISIS = {
     'otan kaikki pillerini jälkeen riidan',
     'aion ottaa kaikki mun lääkkeet',
     'söin koko purkin buranaa',
+    // Review of the re-hunt fix (2026-10-07): the bare whole bottle with a
+    // clause after it, the neighbours of "all my", and the overdose said
+    // without a lead.
+    'I swallowed the whole bottle before my parents got home',
+    'I took the whole bottle and lay down',
+    "I'm going to take the whole bottle before anyone gets home",
+    "I'll take all these pills",
+    "I'm going to take all those pills",
+    'take all of these pills',
+    'I will take all of those pills',
+    'I took every one of these pills',
+    "I'll take every tablet",
+    "I'll take every med",
+    "I'm going to swallow all the capsules",
+    "I'm overdosing tonight",
+    'tonight I overdose',
+    'I took an overdose',
+    "I've taken an overdose",
+    "I'll overdose today",
+    'I overdosed last night',
+    'otan kaikki nämä pillerit',
+    'otan kaikki nää pillerit',
+    'otan kaikki noi lääkkeet',
+    'otan kaikki nuo lääkkeet',
+    'otan nää kaikki pillerit',
+    'otan mun kaikki lääkkeet',
+    'otan kaikki nämä mun lääkkeet',
+    'aion ottaa koko purkin',
+    'nielin koko purkin.',
+    'otin koko purkin.',
+    'nielin koko purkin ennen kuin kukaan tuli kotiin',
+    'söin koko paketin unilääkkeitä',
   ],
   // A dose said with "all" or "every" is read as the crisis it can be: the
   // routine is said without them (owner's call, 2026-10-07).
@@ -387,6 +443,11 @@ const TRAINING = [
   'I take my medication with breakfast, can I lift after?',
   'I drank a whole bottle of water before training',
   'I took the whole bottle of water to the gym',
+  'I swallowed the whole bottle of water during the session',
+  'I overdosed on pre-workout yesterday, can I train?',
+  'is an overdose of creatine possible?',
+  'söin koko levyn suklaata',
+  'otin koko purkin kreatiinia mukaan salille',
   'otan lääkkeet aamulla',
   'otan lääkkeeni aina ennen treeniä',
   'otin lääkkeet, voinko treenata?',
@@ -423,7 +484,6 @@ const TRAINING = [
   'jalkapäivä melkein tappoi',
   // "end it" and "take my life" meaning the session and the year.
   'I want to end it with a finisher',
-  'I want to end it on a high note',
   'I want to end it on a PR',
   'session is long, I want to end it with core work',
   'I will end it with stretching',
@@ -454,12 +514,9 @@ const TRAINING = [
   "I'll end it after squats",
   "My knee hurts, I'm going to end it after squats",
   "I'll end it after deadlifts and go home",
-  "I'm going to end it after cooldown",
-  "I'll end it after a run",
   "I'll end it after three rounds",
   "I'll end it with a drop set",
   "I'll end it with burpees",
-  "I'll end it on a high note",
   "I'll end it with floor presses",
   'I will take my life back',
   'how do I take my life to the next level in the gym',
