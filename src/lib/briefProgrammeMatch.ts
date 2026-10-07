@@ -1,5 +1,7 @@
+import { programFitsEquipment } from './programEquipmentFit';
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import type { ProgrammeBriefSignals } from './programmeBrief';
+import type { AiPlannerExperience, AiPlannerGoal, SetupLevel } from '../types/models';
 import type { RecommendationProgramDefinition } from '../types/recommendation';
 
 /**
@@ -78,14 +80,22 @@ export function matchProgrammeToBrief(
 
   let best: BriefProgrammeMatch | null = null;
   for (const definition of programs) {
+    if (!fitsReader(signals, definition)) {
+      continue;
+    }
     const days = wantedDays !== null && definition.daysPerWeek === wantedDays;
     const focus = focusOverlap(signals, definition);
-    const goal = Boolean(
-      signals.goal &&
-        ((definition.supportedGoals as unknown as string[]).includes(signals.goal) ||
-          (definition.backupGoals as unknown as string[]).includes(signals.goal)),
-    );
+    const catalogGoals = [...(definition.supportedGoals as unknown as string[]), ...(definition.backupGoals as unknown as string[])];
+    const goal = Boolean(signals.goal && CATALOG_GOALS[signals.goal].some((name) => catalogGoals.includes(name)));
 
+    // A programme opened in place of the build has to be the week that was
+    // asked for: the days and the goal said, not a two-day base or a
+    // mobility flow that only won because nothing else fit the reader
+    // (review, 2026-10-07). Nothing left is an answer too — the composer
+    // builds the trimmed week and says so.
+    if ((wantedDays !== null && !days) || (signals.goal && !goal)) {
+      continue;
+    }
     const score = (days ? DAYS_WEIGHT : 0) + focus.length * FOCUS_WEIGHT + (goal ? GOAL_WEIGHT : 0);
     if (score === 0) {
       continue;
@@ -99,6 +109,44 @@ export function matchProgrammeToBrief(
   }
 
   return best;
+}
+
+/**
+ * The brief's goal in the catalog's words. Compared as they were, "fat_loss"
+ * and "fitness" matched no programme's goal at all.
+ */
+const CATALOG_GOALS: Record<AiPlannerGoal, readonly string[]> = {
+  strength: ['strength'],
+  muscle: ['muscle'],
+  fat_loss: ['lean_athletic'],
+  fitness: ['general_fitness', 'general'],
+};
+
+/** The intake's experience answer on the catalog's level scale (aiCoachPlan maps the other way). */
+const CATALOG_LEVEL: Record<AiPlannerExperience, SetupLevel> = {
+  beginner: 'beginner',
+  intermediate: 'advanced',
+  advanced: 'pro',
+};
+
+/**
+ * Whether the reader could run this programme at all: their gear, their
+ * level. The score only weighed days, focus and goal, so a beginner at home
+ * with no equipment who tapped five days was opened straight into an
+ * advanced full-gym programme (review, 2026-10-07). What the brief does not
+ * say does not filter.
+ */
+function fitsReader(signals: ProgrammeBriefSignals, definition: RecommendationProgramDefinition): boolean {
+  if (signals.experience && !definition.supportedLevels.includes(CATALOG_LEVEL[signals.experience])) {
+    return false;
+  }
+  if (signals.equipment === 'home_gym' || signals.equipment === 'minimal') {
+    return definition.equipmentTier === 'low_equipment';
+  }
+  if (signals.equipment === 'bodyweight') {
+    return definition.equipmentTier === 'low_equipment' && programFitsEquipment(definition.programId, []);
+  }
+  return true;
 }
 
 /**

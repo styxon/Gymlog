@@ -153,7 +153,11 @@ const COMPOSER_SYSTEM_RULES = [
   '',
   '# Names - these outrank everything',
   '- Use only the common English gym name of a real exercise (the app translates). Never invent, brand, or compound names. If unsure whether an exercise exists under a name, choose a more common exercise instead.',
-  '- Only equipment the context says the user has.',
+  // The intake's tapped answer is in the brief ("Where: at home, dumbbells.",
+  // "Paikka: sali."), and the stored context is what onboarding recorded,
+  // possibly months ago. Ranked the other way, a gym reader who tapped home
+  // was given a gym week (review, 2026-10-07).
+  '- Only equipment the user has: what the brief says ("Where:" / "Paikka:"), or what the context says when the brief does not say. The same for their experience ("Experience:" / "Kokemus:").',
   '- No strongman or specialty movements — car deadlift, Conan\'s wheel, atlas stones, tyre flips, yoke, log lift, keg load, axle deadlift, harness or backward sled drags, sledgehammer swings — unless the brief asks for one by name or asks for strongman work.',
   '',
   '# Do not',

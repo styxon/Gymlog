@@ -76,21 +76,26 @@ export interface ProgrammeBriefSignals {
   avoidTerms: string[];
 }
 
-const LIFT_KEYWORDS: ReadonlyArray<{ pattern: RegExp; lift: string; exclude?: RegExp }> = [
-  { pattern: /penkki|penkkipunnerru|bench/i, lift: 'Bench Press' },
+/**
+ * `avoid`: the lift as the composer's avoid terms, which it matches inside
+ * library names — the library's own words, since "back squat" and "overhead
+ * press" are in no name there (Barbell Full Squat, Standing Military Press).
+ */
+const LIFT_KEYWORDS: ReadonlyArray<{ pattern: RegExp; lift: string; exclude?: RegExp; avoid: readonly string[] }> = [
+  { pattern: /penkki|penkkipunnerru|bench/i, lift: 'Bench Press', avoid: ['bench press'] },
   // Plain squat only: goblet, front and split squats are their own lifts, and
   // a brief naming one of those must not be read as a back squat.
-  { pattern: /(?:^|[^a-zäö-])(?:taka)?kyykky|(?:back |barbell )?squat/i, lift: 'Back Squat', exclude: /goblet|etukyykky|front|split|bulgarian|askel/i },
-  { pattern: /maastave|\bmave\b|deadlift/i, lift: 'Deadlift' },
-  { pattern: /pystypunnerru|overhead|\bohp\b|military|olkapääpunnerru|shoulder press/i, lift: 'Overhead Press' },
-  { pattern: /kulmasoutu|tankosoutu|barbell row|bent[- ]over row/i, lift: 'Barbell Row' },
-  { pattern: /leuanve|leukoja|leuat|pull[- ]?ups?|chin[- ]?ups?/i, lift: 'Pullups' },
-  { pattern: /lantionnosto|hip thrust/i, lift: 'Hip Thrust' },
-  { pattern: /jalkapr[äa]ssi|leg press/i, lift: 'Leg Press' },
+  { pattern: /(?:^|[^a-zäö-])(?:taka)?kyykky|(?:back |barbell )?squat/i, lift: 'Back Squat', avoid: ['barbell squat', 'barbell full squat'], exclude: /goblet|etukyykky|front|split|bulgarian|askel/i },
+  { pattern: /maastave|\bmave\b|deadlift/i, lift: 'Deadlift', avoid: ['deadlift'] },
+  { pattern: /pystypunnerru|overhead|\bohp\b|military|olkapääpunnerru|shoulder press/i, lift: 'Overhead Press', avoid: ['military press', 'overhead press', 'shoulder press'] },
+  { pattern: /kulmasoutu|tankosoutu|barbell row|bent[- ]over row/i, lift: 'Barbell Row', avoid: ['barbell row'] },
+  { pattern: /leuanve|leukoja|leuat|pull[- ]?ups?|chin[- ]?ups?/i, lift: 'Pullups', avoid: ['pullup', 'pull-up', 'chin-up'] },
+  { pattern: /lantionnosto|hip thrust/i, lift: 'Hip Thrust', avoid: ['hip thrust'] },
+  { pattern: /jalkapr[äa]ssi|leg press/i, lift: 'Leg Press', avoid: ['leg press'] },
   // "punnerrus" alone is the push-up; "penkkipunnerrus" and "pystypunnerrus"
   // carry their own prefix and are matched above.
-  { pattern: /(?:^|[^a-zäö])punnerru|push[- ]?ups?/i, lift: 'Pushups' },
-  { pattern: /dipp|\bdips?\b/i, lift: 'Dips - Triceps Version' },
+  { pattern: /(?:^|[^a-zäö])punnerru|push[- ]?ups?/i, lift: 'Pushups', avoid: ['pushup', 'push-up'] },
+  { pattern: /dipp|\bdips?\b/i, lift: 'Dips - Triceps Version', avoid: ['dips'] },
 ];
 
 const BODY_PART_KEYWORDS: ReadonlyArray<{ pattern: RegExp; part: SetupFocusArea; caution: string; avoid: string[] }> = [
@@ -342,6 +347,7 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
   const focusBodyParts: SetupFocusArea[] = [];
   const cautions: string[] = [];
   const avoidTerms: string[] = [];
+  const refusedLifts: (typeof LIFT_KEYWORDS)[number][] = [];
 
   for (const sentence of splitSentences(brief)) {
     const painful = PAIN.test(sentence);
@@ -364,12 +370,29 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
     }
     if (!painful) {
       for (const entry of LIFT_KEYWORDS) {
-        if (entry.exclude?.test(sentence)) {
+        if (entry.exclude?.test(sentence) || !entry.pattern.test(sentence)) {
           continue;
         }
-        if (entry.pattern.test(sentence) && !lifts.includes(entry.lift)) {
-          lifts.push(entry.lift);
+        // "ilman maastavetoa", "no deadlifts", "älä laita leuanvetoja" name
+        // the lift to keep it out. Read as a request, the composer forced in
+        // the very lift the reader refused (review, 2026-10-07).
+        if (asksFor(sentence.toLowerCase(), new RegExp(entry.pattern.source, 'gi'))) {
+          if (!lifts.includes(entry.lift)) {
+            lifts.push(entry.lift);
+          }
+        } else if (!refusedLifts.includes(entry)) {
+          refusedLifts.push(entry);
         }
+      }
+    }
+  }
+  for (const entry of refusedLifts) {
+    if (lifts.includes(entry.lift)) {
+      continue;
+    }
+    for (const term of entry.avoid) {
+      if (!avoidTerms.includes(term)) {
+        avoidTerms.push(term);
       }
     }
   }
@@ -481,16 +504,59 @@ export function briefAsksForSpecialty(brief: string, item: Pick<ExerciseLibraryI
   if (asksFor(text, /strongman|erikoisliik|specialty|special lifts/g)) {
     return true;
   }
-  return [item.name, exerciseNameLabel('fi', item.name)].some((name) =>
-    asksFor(text, new RegExp(escapeRegExp(name.toLowerCase()), 'g')),
-  );
+  if (
+    [item.name, exerciseNameLabel('fi', item.name)].some((name) =>
+      asksFor(text, new RegExp(escapeRegExp(name.toLowerCase()), 'g')),
+    )
+  ) {
+    return true;
+  }
+  const implement = SPECIALTY_IMPLEMENTS[item.name.trim().toLowerCase()];
+  return implement ? asksFor(text, new RegExp(implement.source, 'g')) : false;
 }
+
+/**
+ * The implement each specialty movement is asked for by. The full name alone
+ * missed how people write: "atlas stone" (Atlas Stones), "Atlas-kiviä",
+ * "tyre flips" (Tire Flip), "yoke carries" (Yoke Walk), "sledgehammer work"
+ * — each a request the composer then dropped (review, 2026-10-07). A stem,
+ * so the Finnish cases match too ("renkaan", "moukarilla", "tukkia").
+ */
+const SPECIALTY_IMPLEMENTS: Readonly<Record<string, RegExp>> = {
+  'atlas stone trainer': /atlas/,
+  'atlas stones': /atlas/,
+  'axle deadlift': /\baxle|paksu(?:lla)? tango/,
+  'backward drag': /sled drag|reen ?ved|reen ?veto|\bdrags?\b/,
+  'bear crawl sled drags': /sled drag|reen ?ved|reen ?veto|\bdrags?\b/,
+  'car deadlift': /car deadlift|auton ?nost/,
+  'circus bell': /circus|sirkuskuul/,
+  "conan's wheel": /conan/,
+  crucifix: /crucifix|ristiinpit/,
+  'forward drag with press': /sled drag|reen ?ved|reen ?veto|\bdrags?\b/,
+  'heavy bag thrust': /heavy bag|nyrkkeilysäk|nyrkkeilysak/,
+  'keg load': /\bkegs?\b|tynnyr/,
+  'log lift': /\blog (?:lift|press)|tukki|tukin|tukkia/,
+  'power stairs': /power stairs|voimaporta/,
+  'rickshaw carry': /rickshaw|riksa/,
+  'rickshaw deadlift': /rickshaw|riksa/,
+  'sandbag load': /sandbag|hiekkasäk|hiekkasak/,
+  'sled drag - harness': /sled drag|reen ?ved|reen ?veto|valjai|harness/,
+  'sledgehammer swings': /sledgehammer|moukari/,
+  'tire flip': /\btires?\b|\btyres?\b|tire flip|tyre flip|rengas|renkaa/,
+  'yoke walk': /\byoke/,
+};
 
 /** Words that, a few words before a mention in the same clause, refuse it: "ei erikoisliikkeitä", "no strongman". */
 const REFUSAL_WORDS = new Set([
-  'ei', 'eikä', 'en', 'älä', 'ilman', 'paitsi',
-  'no', 'not', 'without', 'avoid', 'never', 'skip', 'except', "don't", 'dont',
+  'ei', 'eikä', 'en', 'älä', 'ilman', 'paitsi', 'inhoan', 'vihaan',
+  'no', 'not', 'without', 'avoid', 'never', 'skip', 'except', "don't", 'dont', 'hate', 'dislike',
 ]);
+
+/** A word right after a mention that refuses it: "maastaveto pois". */
+const TRAILING_REFUSAL_WORDS = new Set(['pois']);
+
+/** "dippejä en halua", "maastavetoa ei kiitos": the refusal after the mention. */
+const TRAILING_REFUSAL_VERBS = new Set(['halua', 'haluu', 'kiitos', 'tarvitse']);
 
 /**
  * Words that turn a clause round, so a refusal before them does not reach
@@ -507,13 +573,37 @@ function asksFor(text: string, pattern: RegExp): boolean {
     const clause = text.slice(0, match.index).split(/[.,;:!?\n]/).pop() ?? '';
     const words = clause.split(/\s+/).filter(Boolean);
     const turn = words.reduce((last, word, index) => (CONTRAST_WORDS.has(word) ? index : last), -1);
-    const before = words.slice(turn + 1).slice(-3);
-    if (!before.some((word) => REFUSAL_WORDS.has(word.replace(/[’']/g, "'")))) {
+    const before = words.slice(turn + 1).slice(-3).map((word) => word.replace(/[’']/g, "'"));
+    const refused = before.some(
+      (word, index) =>
+        REFUSAL_WORDS.has(word) &&
+        !NOT_AN_OBJECTION.has(before[index + 1] ?? '') &&
+        !before.slice(index + 1).some((later) => NOT_YET_DONE.has(later)),
+    );
+    const after = text.slice((match.index ?? 0) + match[0].length).match(/^[\p{L}\p{N}-]*\s+([\p{L}]+)(?:\s+([\p{L}]+))?/u);
+    const refusedAfter =
+      after !== null &&
+      (TRAILING_REFUSAL_WORDS.has(after[1]) || ((after[1] === 'en' || after[1] === 'ei') && TRAILING_REFUSAL_VERBS.has(after[2] ?? '')));
+    if (!refused && !refusedAfter) {
       return true;
     }
   }
   return false;
 }
+
+/**
+ * The word after a refusal word that turns it into a yes: "no problem with
+ * strongman", "ei haittaa", "en pelkää strongmania", "don't mind".
+ */
+const NOT_AN_OBJECTION = new Set(['problem', 'problems', 'worries', 'mind', 'haittaa', 'pelkää', 'haittais', 'haittaisi']);
+
+/**
+ * A refusal word followed by one of these says what the reader has not done
+ * yet, not what they refuse: "en ole tehnyt maastavetoa", "never done
+ * deadlifts, want to learn". Read as a refusal, the lift they came to learn
+ * was avoided.
+ */
+const NOT_YET_DONE = new Set(['tehnyt', 'tehny', 'kokeillut', 'kokeillu', 'osaa', 'done', 'tried', 'did']);
 
 function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

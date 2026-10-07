@@ -503,6 +503,9 @@ function rowOfItsOwn(storedLog: ExerciseLog): ExerciseLogDraft {
     templateExerciseId: storedLog.templateExerciseId ?? null,
     notes: storedLog.notes ?? null,
     swappedFrom: storedLog.swappedFrom ?? null,
+    // Its sets' unit with it: without it a stored "30 min" came back as 30
+    // reps for any lift the minutes list does not name (review, 2026-10-07).
+    ...(storedLog.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
   };
 }
 

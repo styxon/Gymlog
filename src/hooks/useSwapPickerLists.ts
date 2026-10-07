@@ -8,7 +8,7 @@ import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { findGuidedLibraryIndex } from '../lib/guidedPlayer';
 import { t } from '../lib/i18n';
 import { libraryLabel } from '../lib/libraryLabel';
-import { effectiveSwapBodyPart, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
+import { effectiveSwapBodyPart, effectiveSwapCategory, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 
@@ -44,14 +44,15 @@ export function useSwapPickerLists({
 }: SwapPickerListsInput) {
   /** The reader's body-part chip; null means the lift's own (effectiveSwapBodyPart). */
   const [bodyPartPick, setBodyPartPick] = useState<BodyPartFilter | null>(null);
-  const [category, setCategory] = useState<ExercisePickerFilters['category']>('all');
+  /** The reader's type chip; null means the lift's own (effectiveSwapCategory). */
+  const [categoryPick, setCategoryPick] = useState<ExercisePickerFilters['category'] | null>(null);
   const [equipment, setEquipment] = useState<SheetEquipmentOption>('all');
   // Cleared whenever the sheet closes, however it closed (a pick, the close
   // button, hardware back): it never opens on the last lift's chips.
   useEffect(() => {
     if (currentName === null) {
       setBodyPartPick(null);
-      setCategory('all');
+      setCategoryPick(null);
       setEquipment('all');
     }
   }, [currentName]);
@@ -71,11 +72,11 @@ export function useSwapPickerLists({
   const currentItem = useMemo(() => (currentName ? libraryRow(currentName) : null), [currentName, libraryRow]);
   const filters = useMemo<ExercisePickerFilters>(
     () => ({
-      category,
+      category: effectiveSwapCategory(categoryPick, currentItem, query),
       bodyPart: effectiveSwapBodyPart(bodyPartPick, resolveSwapBrowsePrefilter(currentItem), query),
       equipment,
     }),
-    [bodyPartPick, category, currentItem, equipment, query],
+    [bodyPartPick, categoryPick, currentItem, equipment, query],
   );
 
   const alternativeRows = useMemo(
@@ -84,12 +85,15 @@ export function useSwapPickerLists({
   );
   const featuredEntries = useMemo<ExercisePickerEntry[]>(
     () =>
-      narrowSwapAlternatives(alternativeRows, filters).map(({ name, item }) => ({
+      // The type chip reaches the cards only when the reader moved it: the
+      // stretch default narrows the library, not the programme's own answer
+      // (a core slot filed as a stretch kept none of its four).
+      narrowSwapAlternatives(alternativeRows, { ...filters, category: categoryPick ?? 'all' }).map(({ name, item }) => ({
         key: `suggested-${name}`,
         name,
         item,
       })),
-    [alternativeRows, filters],
+    [alternativeRows, categoryPick, filters],
   );
   const libraryEntries = useMemo<ExercisePickerEntry[]>(() => {
     if (!currentName || !exerciseLibrary) {
@@ -115,7 +119,9 @@ export function useSwapPickerLists({
     if (next.bodyPart !== filters.bodyPart) {
       setBodyPartPick(next.bodyPart);
     }
-    setCategory(next.category);
+    if (next.category !== filters.category) {
+      setCategoryPick(next.category);
+    }
     setEquipment(next.equipment);
   };
   return { filters, onFiltersChange, featuredEntries, libraryEntries, libraryTitle };

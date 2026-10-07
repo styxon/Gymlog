@@ -846,7 +846,8 @@ module.exports = [
         source,
         /const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart\(swapBodyPartFilter, swapBrowsePrefilter, swapQuery\);/,
       );
-      assert.match(source, /\(\) => \(\{ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment \}\)/);
+      // The type chip opens on the lift's own too when it is a stretch (review, 2026-10-07).
+      assert.match(source, /category: effectiveSwapCategory\(swapCategoryPick, swapCurrentLibraryItem, swapQuery\),\s*bodyPart: swapBodyPart,\s*equipment: swapEquipment,/);
       assert.match(
         source,
         /if \(next\.bodyPart !== swapFilters\.bodyPart\) \{\s*setSwapBodyPartFilter\(next\.bodyPart\);\s*\}/,
@@ -857,7 +858,7 @@ module.exports = [
       // Both ways out start the next opening from the lift again, all three
       // groups and the query with it.
       assert.equal((source.match(/setSwapBodyPartFilter\(null\);/g) ?? []).length, 2);
-      assert.equal((source.match(/setSwapCategory\('all'\);/g) ?? []).length, 2);
+      assert.equal((source.match(/setSwapCategoryPick\(null\);/g) ?? []).length, 2);
       assert.equal((source.match(/setSwapEquipment\('all'\);/g) ?? []).length, 2);
       assert.doesNotMatch(source, /setSwapBodyPartFilter\('all'\)/);
     },
