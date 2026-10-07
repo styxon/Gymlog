@@ -10,7 +10,8 @@ const read = (...parts) =>
 const sheet = read('src', 'components', 'AddExerciseSheet.tsx');
 const dayScreen = read('src', 'screens', 'ProgramDayScreen.tsx');
 const homeScreen = read('src', 'screens', 'HomeScreen.tsx');
-const swapSearch = read('src', 'lib', 'swapShortlist.ts');
+const swapSearch = read('src', 'lib', 'swapPickerLists.ts');
+const swapHook = read('src', 'hooks', 'useSwapPickerLists.ts');
 const labels = read('src', 'lib', 'exerciseNameLabel.ts');
 
 const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
@@ -62,12 +63,14 @@ module.exports = [
       // ...which every picker's list hands to the ranker (lib/exercisePicker).
       const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
       assert.match(shared, /return rankExerciseMatches\(narrowed, typed, language, popularity\);/);
-      // Both swap sheets hand the order to the shared swap search, and it
-      // hands it on to the ranker.
-      assert.match(swapSearch, /\(item\) => popularOrder\?\.get\(item\.id\),/);
+      // Every swap sheet hands the order to the shared swap list, and it hands
+      // it on to every picker's list (2026-10-07: Home and the programme day
+      // through useSwapPickerLists).
+      assert.match(swapSearch, /popularity: \(item\) => popularOrder\.get\(item\.id\),/);
+      assert.match(swapHook, /const popularOrder = useMemo\(\(\) => getPopularExerciseLibraryOrder\(exerciseLibrary \?\? \[\]\), \[exerciseLibrary\]\)/);
+      assert.match(swapHook, /\n\s*popularOrder,\n/);
       for (const screen of [dayScreen, homeScreen]) {
-        assert.match(screen, /popularOrder: swapPopularOrder,/);
-        assert.match(screen, /const swapPopularOrder = useMemo\(\(\) => getPopularExerciseLibraryOrder\(exerciseLibrary \?\? \[\]\), \[exerciseLibrary\]\)/);
+        assert.match(screen, /useSwapPickerLists\(\{/);
       }
 
       // The behaviour the accessor buys, proved rather than asserted about.

@@ -8,7 +8,19 @@ const {
   rankExerciseMatches,
 } = require('../../.test-dist/lib/exerciseSearch.js');
 const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { buildSwapLibraryMatches, buildSwapShortlist, sessionLiftsMatchingQuery } = require('../../.test-dist/lib/swapShortlist.js');
+const { buildSwapShortlist, sessionLiftsMatchingQuery } = require('../../.test-dist/lib/swapShortlist.js');
+const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+// Every swap sheet's library search since 2026-10-07: no chips, nothing being swapped.
+const swapSearch = (items, query, language, { excludeNames = [], popularOrder = new Map() } = {}) =>
+  buildSwapPickerLibrary(items, {
+    query,
+    filters: { category: 'all', bodyPart: 'all', equipment: 'all' },
+    language,
+    currentName: null,
+    currentItem: null,
+    excludeNames,
+    popularOrder,
+  });
 const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
 const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
 
@@ -19,7 +31,7 @@ const library = Object.values(require('../../.test-dist/data/generatedExerciseLi
 
 const popular = getPopularExerciseLibraryOrder(library);
 const labels = (query) =>
-  buildSwapLibraryMatches(library, query, 'fi', { popularOrder: popular }).map((item) => exerciseNameLabel('fi', item.name));
+  swapSearch(library, query, 'fi', { popularOrder: popular }).map((item) => exerciseNameLabel('fi', item.name));
 const matches = (query) =>
   library.filter((item) => exerciseMatchesQuery(buildExerciseSearchHaystack(item, 'fi'), query));
 
@@ -144,8 +156,8 @@ module.exports = [
       // The session stores "Bench Press"; the library row is "Barbell Bench
       // Press - Medium Grip". Both read "Penkkipunnerrus".
       assert.equal(exerciseNameLabel('fi', 'Bench Press'), exerciseNameLabel('fi', 'Barbell Bench Press - Medium Grip'));
-      const found = buildSwapLibraryMatches(library, 'penkkipunnerrus', 'fi', {
-        exclude: ['Chest-Supported Row', 'Bench Press'],
+      const found = swapSearch(library, 'penkkipunnerrus', 'fi', {
+        excludeNames: ['Chest-Supported Row', 'Bench Press'],
         popularOrder: popular,
       }).map((item) => exerciseNameLabel('fi', item.name));
       assert.ok(!found.includes('Penkkipunnerrus'), found.join(' | '));

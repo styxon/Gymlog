@@ -138,7 +138,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { exerciseMatchesQuery, oneRowPerShownName } from '../lib/exerciseSearch';
+import { exerciseMatchesQuery } from '../lib/exerciseSearch';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
@@ -148,9 +148,10 @@ import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
 import { fitRunPreview } from '../lib/guidedRunPreview';
 import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
 import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
-import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from '../lib/exercisePicker';
+import { ExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
-import { effectiveSwapBodyPart, orderSwapCandidates, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
+import { effectiveSwapBodyPart, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
+import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
 import {
@@ -2504,77 +2505,42 @@ function GuidedPlayer({
   );
 
   /**
-   * Everything else the library holds.
-   *
-   * Capped while there is no query: 873 rows inside a sheet is a scroll, not a
-   * choice. Typing lifts the cap to something a reader can still read through.
+   * Everything else the library holds, nearest the lift first — the same
+   * list Home's swap draws (lib/swapPickerLists).
    */
   const swapLibrary = useMemo(() => {
-    const query = swapQuery.trim();
-    // By the name on screen: a library row that reads the same as a row in
-    // Suggested above it is the same row twice (PR review).
-    const suggested = new Set(swapSuggestions.map((name) => exerciseNameLabel(language, name)));
-    // Matched on the displayed name as well as the stored one: the plan may
-    // hold "Barbell Squat" where the library holds "Back Squat", and both read
-    // "Takakyykky" — so the lift you are standing at was offered as something
-    // to swap it for.
-    const current = actionExercise?.exerciseName;
-    const currentLabel = current ? exerciseNameLabel(language, current) : null;
-    // Every picker's one list (lib/exercisePicker): what can be logged as
-    // sets until the reader types — a stretch is no swap for a bench press,
-    // and "Rinnan venytys kädet niskan takana" sat in the chest list (device,
-    // 2026-09-30) — the specialty movements only under their own chip
-    // (#bugs 2026-10-06), and the sheet's three chip groups, the body part
-    // the lift's own until the reader picks another (swapBodyPart). Ranked
-    // best answer first under a query, popularity breaking ties — the same
-    // rule as the add sheet, so the two do not disagree.
-    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
-    const pool = listPickerExercises(exerciseLibrary, {
-      query,
+    // The session's lifts and the Suggested cards above: a library row that
+    // reads the same as one of them is the same row twice (PR review).
+    return buildSwapPickerLibrary(exerciseLibrary, {
+      query: swapQuery,
       filters: swapFilters,
       language,
-      popularity: (item) => popular.get(item.id),
-    }).filter(
-      (item) =>
-        item.name !== current &&
-        exerciseNameLabel(language, item.name) !== currentLabel &&
-        !sessionLiftLabels.has(exerciseNameLabel(language, item.name)) &&
-        !suggested.has(exerciseNameLabel(language, item.name)),
-    );
-    if (!query) {
-      // Nearest the lift first — same kit, same kind of lift — then
-      // popularity (orderSwapCandidates).
-      const nearest = orderSwapCandidates(pool, swapCurrentLibraryItem, popular);
-      return oneRowPerShownName(nearest, language).slice(0, 25);
-    }
-    // One row per shown name, as on Home and the programme day (PR review).
-    return oneRowPerShownName(pool, language).slice(0, 40);
+      currentName: actionExercise?.exerciseName ?? null,
+      currentItem: swapCurrentLibraryItem,
+      excludeNames: [...exercises.map((exercise) => exercise.exerciseName), ...swapSuggestions],
+      popularOrder: getPopularExerciseLibraryOrder(exerciseLibrary),
+    });
   }, [
     actionExercise,
     exerciseLibrary,
+    exercises,
     language,
-    sessionLiftLabels,
     swapCurrentLibraryItem,
     swapFilters,
     swapSuggestions,
     swapQuery,
   ]);
 
-  /**
-   * The programme's alternatives as the sheet's first cards. The body-part
-   * chip does not reach them — it opens on the lift's own body part, and the
-   * alternatives are the programme's answer whatever chip is on — but a
-   * category or equipment chip does: a reader who taps "Käsipaino" is asking
-   * for dumbbell lifts, and a barbell card above them would argue with the
-   * chip. An alternative the library does not hold cannot be checked, so it
-   * steps aside while one of those two is on.
-   */
-  const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(() => {
-    const narrowed = swapFilters.category !== 'all' || swapFilters.equipment !== 'all';
-    return swapSuggestionRows
-      .filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, { ...swapFilters, bodyPart: 'all' })))
-      .map(({ name, item }) => ({ key: `suggested-${name}`, name, item }));
-  }, [swapFilters, swapSuggestionRows]);
+  /** The programme's alternatives as the sheet's first cards, under its chips (narrowSwapAlternatives). */
+  const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(
+    () =>
+      narrowSwapAlternatives(swapSuggestionRows, swapFilters).map(({ name, item }) => ({
+        key: `suggested-${name}`,
+        name,
+        item,
+      })),
+    [swapFilters, swapSuggestionRows],
+  );
   const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
     () => swapLibrary.map((item) => ({ key: item.id, name: item.name, item })),
     [swapLibrary],

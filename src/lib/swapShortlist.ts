@@ -1,5 +1,5 @@
 import { exerciseNameLabel } from './exerciseNameLabel';
-import { exerciseMatchesQuery, normalizeSearchText, oneRowPerShownName, rankExerciseMatches } from './exerciseSearch';
+import { exerciseMatchesQuery, normalizeSearchText } from './exerciseSearch';
 import { TailoredSwapOption } from './tailoringFit';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 
@@ -83,7 +83,8 @@ export interface SwapShortlist {
  * in another order name the same lift, while "Glute Bridge Hold" keeps a word
  * the others do not have and stays its own row.
  */
-function identityKey(name: string): string {
+/** Two spellings of one lift share this: lowercased, punctuation gone, words sorted. */
+export function identityKey(name: string): string {
   if (typeof name !== 'string') return '';
   return name
     .toLowerCase()
@@ -170,66 +171,6 @@ export function buildSwapShortlist(
     // told a pool holds nine when two of them were the same lift twice.
     total: seen.size,
   };
-}
-
-/** Room for the lift itself and a handful of its neighbours. */
-const MAX_LIBRARY_MATCHES = 12;
-
-export interface SwapLibraryMatchOptions {
-  /**
-   * Names already on screen or already in the session: the lift being
-   * swapped, the shortlist rows, and every other lift in today's session.
-   * Matched on identity, so the other spelling of one of them is left out too.
-   */
-  exclude?: readonly string[];
-  /** Library id → popularity rank (lower is more popular); breaks ties. */
-  popularOrder?: ReadonlyMap<string, number>;
-}
-
-/**
- * What the swap search reaches once the shortlist runs out.
- *
- * The shortlist is the slot's substitution group — lifts that are valid HERE,
- * which is the right default and the wrong search. A reader who types
- * "penkki" into the swap for a cable row is naming the lift they want, and it
- * is theirs to choose rather than the pool's to rank: "haku kentällä voisi
- * löytää kaikki liikkeet nimittäin haluisin penkkipunnerruksen tähän mutta
- * sitä ei saa" (#bugs 2026-09-23). The same was fixed on the programme day
- * after 2026-08-26 and stayed unfixed on Home, because each screen carried its
- * own copy of it.
- *
- * Empty until something is typed: without a query the shortlist is the answer.
- */
-export function buildSwapLibraryMatches<T extends ExerciseLibraryItem>(
-  library: readonly T[],
-  query: string,
-  language: AppLanguage,
-  { exclude = [], popularOrder }: SwapLibraryMatchOptions = {},
-): T[] {
-  if (!query.trim()) {
-    return [];
-  }
-  const excluded = new Set(exclude.map(identityKey));
-  // And by the name the reader sees: a session holding "Bench Press" was
-  // offered the library's "Barbell Bench Press - Medium Grip" — different
-  // words, both "Penkkipunnerrus" on screen (emulator, 2026-09-27).
-  const excludedLabels = new Set(exclude.map((name) => normalizeSearchText(exerciseNameLabel(language, name))));
-  // Best answer first — twelve rows is not room for the lift itself to sit
-  // behind its variants. Popularity breaks ties; without it "penkki" answers
-  // with Penkkidippi before Penkkipunnerrus.
-  return oneRowPerShownName(
-    rankExerciseMatches(
-      library.filter(
-      (item) =>
-        !excluded.has(identityKey(item.name)) &&
-        !excludedLabels.has(normalizeSearchText(exerciseNameLabel(language, item.name))),
-    ),
-      query,
-      language,
-      (item) => popularOrder?.get(item.id),
-    ),
-    language,
-  ).slice(0, MAX_LIBRARY_MATCHES);
 }
 
 /**

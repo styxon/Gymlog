@@ -13,13 +13,14 @@ import {
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { AddExerciseSheet } from '../components/AddExerciseSheet';
+import { AddExerciseSheet, ExercisePickerSheet } from '../components/AddExerciseSheet';
+import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
+import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { KitBar, KitGroupLabel, KitRow, KitSearch, KitSheet } from '../components/sheetKit';
+import { KitBar, KitRow, KitSheet } from '../components/sheetKit';
 import { CutSurface } from '../components/CutSurface';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { hyphenateFinnish } from '../lib/finnishHyphenation';
-import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import {
   classifySessionFocus,
   getDefaultCooldown,
@@ -39,7 +40,7 @@ import {
   stepProgramPrescription,
 } from '../lib/programSessionEdit';
 import { buildSwapOptionsForSlot } from '../lib/tailoringFit';
-import { buildSwapLibraryMatches, buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { formatPlanSessionTitle, localizeSessionName } from '../lib/sessionNameLabel';
 import { formatClock } from '../lib/restSchedule';
 import { doseUnitSuffix } from '../lib/format';
@@ -424,6 +425,7 @@ export function ProgramDayScreen({
       setAddSheetOpen(false);
       setSwapSlotId(null);
       setSwapQuery('');
+      setSwapPickName(null);
       setTuneExerciseId(null);
       setTuneDraft(null);
       setTuneStart(null);
@@ -465,32 +467,30 @@ export function ProgramDayScreen({
   }, [session.exercises, swapSlotId, sessionSwaps, tailoringPreferences, swapQuery, language]);
 
   /**
-   * What the search box reaches once the shortlist runs out.
-   *
-   * The shortlist is the slot's substitution group, six rows of it. That is
-   * the right default and the wrong search: typing "taka" returned "Tälle
-   * paikalle ei ole vaihtoehtoa — ohjelma määrää tämän liikkeen", which is a
-   * sentence about the pool being empty, read as a sentence about the app
-   * having nothing ("ei pysty hakemaan todellisuudessa mitään ainoastaan ne 6
-   * mitä ehdotetaan", #bugs 2026-08-26). With a query typed, the whole library
-   * is on offer — a named lift is the reader's decision, not a suggestion to
-   * be ranked.
+   * The swap sheet is the guided player's (#bugs 2026-10-06; owner, 2026-10-07:
+   * that sheet everywhere). The slot's shortlist is the first cards, the
+   * library nearest the lift under them, through the same chips as the
+   * player and Home (useSwapPickerLists).
    */
-  const swapPopularOrder = useMemo(() => getPopularExerciseLibraryOrder(exerciseLibrary ?? []), [exerciseLibrary]);
-  const swapLibraryMatches = useMemo(() => {
-    if (!swapRow || !exerciseLibrary) {
-      return [];
-    }
-    return buildSwapLibraryMatches(exerciseLibrary, swapQuery, language, {
-      exclude: [
-        swapRow.currentName,
-        ...swapRow.shortlist.variations.map((option) => option.exerciseName),
-        ...swapRow.shortlist.related.map((option) => option.exerciseName),
-        ...session.exercises.map((item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name),
-      ],
-      popularOrder: swapPopularOrder,
-    });
-  }, [exerciseLibrary, language, session.exercises, sessionSwaps, swapPopularOrder, swapQuery, swapRow]);
+  const swapAlternatives = useMemo(
+    () =>
+      swapRow
+        ? [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => option.exerciseName)
+        : [],
+    [swapRow],
+  );
+  const swapSessionLifts = useMemo(
+    () => session.exercises.map((item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name),
+    [session.exercises, sessionSwaps],
+  );
+  const swapPicker = useSwapPickerLists({
+    exerciseLibrary,
+    currentName: swapRow?.currentName ?? null,
+    alternatives: swapAlternatives,
+    sessionLifts: swapSessionLifts,
+    query: swapQuery,
+    language,
+  });
   // Left out of both lists on purpose, and named so the reader knows why the
   // lift they typed is not there (#bugs 2026-09-27).
   const swapSessionHits = useMemo(
@@ -1281,120 +1281,37 @@ export function ProgramDayScreen({
         </ScrollView>
       </KitSheet>
 
-      <KitSheet
+      {/* The guided player's sheet in swap mode — the same search, chips and
+          cards (#bugs 2026-10-06; owner, 2026-10-07: everywhere). A tap picks,
+          and the bar asks once — just this time, or for ever — after there is
+          something to answer it about. Nothing is logged on a planned day, so
+          the player's note on logged sets is left off. */}
+      <ExercisePickerSheet
         visible={swapRow !== null}
-        onClose={closeSwapSheet}
-        title={t(language, 'kit.swapTitle')}
-        context={exerciseNameLabel(language, swapRow?.currentName ?? '')}
         bottomInset={insets.bottom}
-        closeLabel={t(language, 'common.close')}
-        barUp={swapPickName !== null}
-        bar={
-          <KitBar
-            visible={swapPickName !== null}
-            from={exerciseListLabel(language, swapRow?.currentName ?? '')}
-            to={swapPickName ? exerciseListLabel(language, swapPickName) : ''}
-            fromLabel={exerciseNameLabel(language, swapRow?.currentName ?? '')}
-            toLabel={swapPickName ? exerciseNameLabel(language, swapPickName) : ''}
-            buttons={[
-              {
-                label: t(language, 'kit.justThisTime'),
-                kind: 'p',
-                onPress: () => {
-                  if (swapRow && swapPickName) {
-                    onSwapExercise?.(swapRow.slotId, swapPickName);
-                  }
-                  closeSwapSheet();
-                },
-              },
-              ...(swapRow?.exerciseId && onKeepSwap
-                ? [
-                    {
-                      label: t(language, 'kit.forEver'),
-                      kind: 'd' as const,
-                      onPress: () => {
-                        if (swapRow?.exerciseId && swapPickName) {
-                          onKeepSwap(swapRow.exerciseId, swapPickName);
-                        }
-                        closeSwapSheet();
-                      },
-                    },
-                  ]
-                : []),
-            ]}
-            clearLabel={t(language, 'kit.pickAnother')}
-            onClear={() => setSwapPickName(null)}
-            bottomInset={insets.bottom}
-          />
+        language={language}
+        mode="swap"
+        swappedName={swapRow?.currentName ?? null}
+        subtitle={null}
+        search={swapQuery}
+        onSearchChange={setSwapQuery}
+        filters={swapPicker.filters}
+        onFiltersChange={swapPicker.onFiltersChange}
+        featured={
+          swapPicker.featuredEntries.length > 0
+            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapPicker.featuredEntries }
+            : null
         }
-      >
-        {/* The shortlist is deliberately six rows and the pool behind it is
-            not: a reader who knows what they want should not have to be
-            offered it (#bugs 2026-08-26). */}
-        <KitSearch
-          value={swapQuery}
-          onChangeText={setSwapQuery}
-          placeholder={t(language, 'home.swapSheet.search')}
-        />
-        <ScrollView
-          style={styles.swapList}
-          contentContainerStyle={styles.kitListPad}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {swapRow && swapRow.shortlist.total === 0 && swapLibraryMatches.length === 0 ? (
-            swapSessionHits.length > 0 ? null : (
-              <Text style={styles.swapEmpty}>
-                {t(language, swapQuery.trim() ? 'home.swapSheet.noMatches' : 'home.swapSheet.empty')}
-              </Text>
-            )
-          ) : (
-            ([
-              { key: 'home.swapSheet.variations' as const, rows: swapRow?.shortlist.variations ?? [] },
-              { key: 'home.swapSheet.related' as const, rows: swapRow?.shortlist.related ?? [] },
-              {
-                key: 'home.swapSheet.library' as const,
-                rows: swapLibraryMatches.map((item) => ({
-                  exerciseName: item.name,
-                  reason: null,
-                  score: 0,
-                })),
-              },
-            ]).map((section) =>
-              section.rows.length === 0 ? null : (
-                <View key={section.key}>
-                  {/* Named only when there is more than one group — one
-                      heading over the whole list labels nothing. */}
-                  {[
-                    swapRow?.shortlist.variations.length ?? 0,
-                    swapRow?.shortlist.related.length ?? 0,
-                    swapLibraryMatches.length,
-                  ].filter((count) => count > 0).length > 1 ? (
-                    <KitGroupLabel>{t(language, section.key)}</KitGroupLabel>
-                  ) : null}
-                  {section.rows.map((option) => (
-                    <KitRow
-                      key={option.exerciseName}
-                      title={exerciseListLabel(language, option.exerciseName)}
-                      accessibilityLabel={exerciseNameLabel(language, option.exerciseName)}
-                      titleLines={2}
-                      state={swapPickName === option.exerciseName ? 'sel' : 'idle'}
-                      onPress={() =>
-                        setSwapPickName((current) =>
-                          current === option.exerciseName ? null : option.exerciseName,
-                        )
-                      }
-                    />
-                  ))}
-                </View>
-              ),
-            )
-          )}
-          {swapSessionHits.length > 0 ? (
-            <Text style={styles.swapEmpty}>
-              {t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })}
-            </Text>
-          ) : null}
+        main={{ title: swapPicker.libraryTitle, entries: swapPicker.libraryEntries }}
+        emptyTitle={t(language, 'guided.swap.noMatch')}
+        emptyBody={null}
+        listNote={
+          swapSessionHits.length > 0 ? t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') }) : null
+        }
+        pickedName={swapPickName}
+        onSelect={(entry) => setSwapPickName((current) => (current === entry.name ? null : entry.name))}
+        listFooter={
+          <View style={styles.swapActions}>
             {/* A swap answers today. This makes it the programme's answer —
                 offered only once there is a swap to keep. */}
             {swapRow?.exerciseId && sessionSwaps[swapRow.slotId] && onKeepSwap ? (
@@ -1434,8 +1351,49 @@ export function ProgramDayScreen({
                 <Text style={styles.swapRemoveNote}>{t(language, 'home.swapSheet.removeNote')}</Text>
               </Pressable>
             ) : null}
-        </ScrollView>
-      </KitSheet>
+          </View>
+        }
+        footer={
+          swapRow && swapPickName !== null ? (
+            <KitBar
+              visible
+              floating={false}
+              from={exerciseListLabel(language, swapRow.currentName)}
+              to={exerciseListLabel(language, swapPickName)}
+              fromLabel={exerciseNameLabel(language, swapRow.currentName)}
+              toLabel={exerciseNameLabel(language, swapPickName)}
+              buttons={[
+                {
+                  label: t(language, 'kit.justThisTime'),
+                  kind: 'p',
+                  onPress: () => {
+                    onSwapExercise?.(swapRow.slotId, swapPickName);
+                    closeSwapSheet();
+                  },
+                },
+                ...(swapRow.exerciseId && onKeepSwap
+                  ? [
+                      {
+                        label: t(language, 'kit.forEver'),
+                        kind: 'd' as const,
+                        onPress: () => {
+                          if (swapRow.exerciseId) {
+                            onKeepSwap(swapRow.exerciseId, swapPickName);
+                          }
+                          closeSwapSheet();
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+              clearLabel={t(language, 'kit.pickAnother')}
+              onClear={() => setSwapPickName(null)}
+              bottomInset={insets.bottom}
+            />
+          ) : null
+        }
+        onClose={closeSwapSheet}
+      />
 
       {/*
         Sets and reps — the numbers the catalog decided and the reader could
@@ -2127,6 +2085,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   // Below the replacements and behind a rule: a different kind of answer, and
   // not one that should sit where a mis-tap in the list lands.
+  /** The swap sheet's keep and remove, under the cards rather than among them. */
+  swapActions: { marginTop: 4 },
   swapRemove: {
     marginTop: 12,
     paddingTop: 14,
@@ -2225,20 +2185,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 21,
     fontWeight: '800',
     marginBottom: 10,
-  },
-  // Shrinks so the actions under it stay on screen, grows into whatever the
-  // taller sheet leaves over.
-  swapList: {
-    flexGrow: 0,
-    flexShrink: 1,
-    minHeight: 0,
-  },
-  swapEmpty: {
-    color: theme.muted,
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '600',
-    paddingVertical: 12,
   },
   swapOption: {
     borderRadius: radii.md,

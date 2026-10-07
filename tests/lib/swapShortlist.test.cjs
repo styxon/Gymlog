@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildSwapLibraryMatches, buildSwapShortlist, movementHead } = require('../../.test-dist/lib/swapShortlist.js');
+const { buildSwapShortlist, movementHead } = require('../../.test-dist/lib/swapShortlist.js');
 const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.js');
 
 // Line endings normalised: a Windows checkout is CRLF, and the App.tsx anchor
@@ -144,14 +144,15 @@ module.exports = [
       // could not be pressed at all. The ceiling lives on the kit's shell now
       // (a sheet never takes the whole screen) plus the sheet's own capped
       // scroller — the actions scroll WITH the list, reachable at its end.
-      assert.match(home, /adaptOptsScroll: \{\s*\n\s*maxHeight: 300,/);
-      assert.match(home, /style=\{styles\.adaptOptsScroll\}/);
+      // Both swaps are the picker sheet (2026-10-07): their actions are the
+      // list's footer, so they scroll with the cards and land at the end.
+      assert.match(read('src/components/AddExerciseSheet.tsx'), /\{listFooter\}/);
       assert.match(read('src/components/sheetKit.tsx'), /maxHeight: '86%'/);
       for (const source of [home, day]) {
+        assert.match(source, /listFooter=\{\s*<View style=\{styles\.swapActions\}>/);
         assert.match(source, /buildSwapShortlist\(/);
-        // Headings only when both halves exist: one heading over the whole
-        // list labels nothing.
-        assert.match(source, /shortlist\.variations\.length[\s\S]{0,80}shortlist\.related\.length/);
+        // The shortlist is the first cards: variations, then related.
+        assert.match(source, /\[\.\.\.swapRow\.shortlist\.variations, \.\.\.swapRow\.shortlist\.related\]/);
       }
     },
   },
@@ -186,30 +187,36 @@ module.exports = [
       const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
       const popularOrder = getPopularExerciseLibraryOrder(library);
 
-      // Nothing typed, nothing added: the shortlist is the answer.
-      assert.deepEqual(buildSwapLibraryMatches(library, '   ', 'fi', { popularOrder }), []);
+      // Every swap sheet's library list since 2026-10-07 (lib/swapPickerLists).
+      const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+      const search = (query, language, excludeNames = []) =>
+        buildSwapPickerLibrary(library, {
+          query,
+          filters: { category: 'all', bodyPart: 'all', equipment: 'all' },
+          language,
+          currentName: null,
+          currentItem: null,
+          excludeNames,
+          popularOrder,
+        });
+
+      // Nothing typed: the nearest lifts under the cards, capped — the sheet
+      // the guided player draws, not an empty list under a search field.
+      const unsearched = search('   ', 'fi');
+      assert.ok(unsearched.length > 0 && unsearched.length <= 25);
 
       // The report's own case: a row being swapped, "penkki" typed.
-      const matches = buildSwapLibraryMatches(library, 'penkki', 'fi', {
-        exclude: ['Seated Cable Rows'],
-        popularOrder,
-      });
+      const matches = search('penkki', 'fi', ['Seated Cable Rows']);
       assert.equal(matches[0]?.name, 'Barbell Bench Press - Medium Grip', 'the bench press is not the first answer');
-      assert.ok(matches.length <= 12, 'the list is a search result, not the library');
+      assert.ok(matches.length <= 40, 'the list is a search result, not the library');
 
       // What is already on screen or in the session is not offered twice —
       // matched on identity, so the other spelling of it is left out too.
-      const excluded = buildSwapLibraryMatches(library, 'penkki', 'fi', {
-        exclude: ['medium grip bench press - barbell'],
-        popularOrder,
-      });
+      const excluded = search('penkki', 'fi', ['medium grip bench press - barbell']);
       assert.ok(!excluded.some((item) => item.name === 'Barbell Bench Press - Medium Grip'));
 
       // English works too: the library is English underneath.
-      assert.equal(
-        buildSwapLibraryMatches(library, 'bench press', 'en', { popularOrder })[0]?.name,
-        'Barbell Bench Press - Medium Grip',
-      );
+      assert.equal(search('bench press', 'en')[0]?.name, 'Barbell Bench Press - Medium Grip');
     },
   },
   {
@@ -246,11 +253,16 @@ module.exports = [
         'Home is not handed the library',
       );
 
+      // Both list the library under their cards through the player's list
+      // (2026-10-07, useSwapPickerLists), which a query searches whole, and
+      // both say so when nothing matches.
+      const hook = read('src/hooks/useSwapPickerLists.ts');
+      assert.match(hook, /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query,/);
       for (const screen of ['src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
         const source = read(screen);
-        assert.match(source, /buildSwapLibraryMatches\(exerciseLibrary, swapQuery, language,/, `${screen} does not search the library`);
-        assert.match(source, /'home\.swapSheet\.library'/, `${screen} does not draw the library section`);
-        assert.match(source, /'home\.swapSheet\.noMatches'/, `${screen} says nothing when nothing matches`);
+        assert.match(source, /useSwapPickerLists\(\{\s*exerciseLibrary,[\s\S]{0,300}query: swapQuery,/, `${screen} does not search the library`);
+        assert.match(source, /main=\{\{ title: swapPicker\.libraryTitle, entries: swapPicker\.libraryEntries \}\}/, `${screen} does not draw the library`);
+        assert.match(source, /emptyTitle=\{t\(language, 'guided\.swap\.noMatch'\)\}/, `${screen} says nothing when nothing matches`);
       }
     },
   },

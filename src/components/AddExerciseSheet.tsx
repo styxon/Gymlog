@@ -159,11 +159,13 @@ interface ExerciseCardProps {
   selected: boolean;
   multiSelect: boolean;
   actionLabel: string;
+  /** What a selected card's pill says: "Lisätty" once added, "Valittu" while a pick waits for its question. */
+  selectedLabel: string;
   language: AppLanguage;
   onPress: () => void;
 }
 
-function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLabel, language, onPress }: ExerciseCardProps) {
+function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLabel, selectedLabel, language, onPress }: ExerciseCardProps) {
   const styles = useThemedStyles(makeStyles);
   const { item, name } = entry;
   const previewImage = item?.imageUrls?.[0] ?? null;
@@ -213,7 +215,7 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
         {!multiSelect ? (
           <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
             <Text style={[styles.gridActionText, selected && styles.gridActionTextSelected]}>
-              {selected ? t(language, 'sheet.added') : actionLabel}
+              {selected ? selectedLabel : actionLabel}
             </Text>
           </View>
         ) : null}
@@ -233,7 +235,8 @@ interface ExercisePickerSheetProps {
   swappedName?: string | null;
   /** Overrides for callers outside the guided player (the day editor, the template builder). */
   title?: string;
-  subtitle?: string;
+  /** Null says nothing under the title, where the mode's note does not apply (Home's swap: no set is logged yet). */
+  subtitle?: string | null;
   actionLabel?: string;
   search: string;
   onSearchChange: (value: string) => void;
@@ -251,8 +254,16 @@ interface ExercisePickerSheetProps {
   emptyBody?: string | null;
   selectedIds?: string[];
   multiSelect?: boolean;
+  /**
+   * A pick that waits for a question before it is applied (Home's swap: just
+   * this time, or for ever). Its card is selected by name — a programme
+   * alternative may have no library row — and says "Valittu".
+   */
+  pickedName?: string | null;
   onSelect: (entry: ExercisePickerEntry) => void;
-  /** The commit bar, for the multi-select picker. */
+  /** Under the list, after its note: actions that are not a pick (Home's drop, keep and remove). */
+  listFooter?: React.ReactNode;
+  /** The commit bar, for the multi-select picker and Home's scope question. */
   footer?: React.ReactNode;
   onClose: () => void;
 }
@@ -289,7 +300,9 @@ export function ExercisePickerSheet({
   emptyBody,
   selectedIds = NOTHING_SELECTED,
   multiSelect = false,
+  pickedName = null,
   onSelect,
+  listFooter = null,
   footer = null,
   onClose,
 }: ExercisePickerSheetProps) {
@@ -297,9 +310,11 @@ export function ExercisePickerSheet({
   const styles = useThemedStyles(makeStyles);
   const copy = exerciseSheetCopy(mode, language, swappedName);
   const sheetTitle = title ?? copy.title;
-  const sheetSubtitle = subtitle ?? copy.note;
+  const sheetSubtitle = subtitle === undefined ? copy.note : subtitle;
   const cardAction = actionLabel ?? copy.actionLabel;
-  const isSelected = (entry: ExercisePickerEntry) => (entry.item ? selectedIds.includes(entry.item.id) : false);
+  const isSelected = (entry: ExercisePickerEntry) =>
+    pickedName !== null ? entry.name === pickedName : entry.item ? selectedIds.includes(entry.item.id) : false;
+  const selectedLabel = t(language, pickedName !== null ? 'sheet.picked' : 'sheet.added');
 
   const listHeader = (
     <>
@@ -388,6 +403,7 @@ export function ExercisePickerSheet({
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
                 actionLabel={cardAction}
+                selectedLabel={selectedLabel}
                 language={language}
                 onPress={() => onSelect(entry)}
               />
@@ -454,13 +470,21 @@ export function ExercisePickerSheet({
                 </View>
               )
             }
-            ListFooterComponent={listNote ? <Text style={styles.listNote}>{listNote}</Text> : null}
+            ListFooterComponent={
+              listNote || listFooter ? (
+                <>
+                  {listNote ? <Text style={styles.listNote}>{listNote}</Text> : null}
+                  {listFooter}
+                </>
+              ) : null
+            }
             renderItem={({ item: entry }) => (
               <ExerciseCard
                 entry={entry}
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
                 actionLabel={cardAction}
+                selectedLabel={selectedLabel}
                 language={language}
                 onPress={() => onSelect(entry)}
               />

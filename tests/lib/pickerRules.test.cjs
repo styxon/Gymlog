@@ -8,7 +8,18 @@ const classification = require('../../.test-dist/lib/exerciseClassification.js')
 const picker = require('../../.test-dist/lib/exercisePicker.js');
 const { libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
 const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { buildSwapLibraryMatches } = require('../../.test-dist/lib/swapShortlist.js');
+const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+// Every swap sheet's library search since 2026-10-07: no chips, nothing being swapped.
+const swapSearch = (items, query, language, { excludeNames = [], popularOrder = new Map() } = {}) =>
+  buildSwapPickerLibrary(items, {
+    query,
+    filters: { category: 'all', bodyPart: 'all', equipment: 'all' },
+    language,
+    currentName: null,
+    currentItem: null,
+    excludeNames,
+    popularOrder,
+  });
 const {
   getPopularExerciseLibraryItems,
   getSuggestedExerciseLibraryItems,
@@ -158,8 +169,8 @@ module.exports = [
             found.slice(0, 5).some((item) => shown(item) === wanted),
             `${language} "${query}": ${names(found.slice(0, 5)).join(', ')}`,
           );
-          // The programme day's and Home's swap search.
-          const swapFound = buildSwapLibraryMatches(library, query, language);
+          // Every swap sheet's search (player, Home, programme day).
+          const swapFound = swapSearch(library, query, language);
           assert.ok(swapFound.some((item) => shown(item) === wanted), `swap ${language} "${query}"`);
         }
       }

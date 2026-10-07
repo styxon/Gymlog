@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AppleSignInButton } from '../components/AppleSignInButton';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { KitBar, KitGroupLabel, KitRow, KitSearch, KitSheet } from '../components/sheetKit';
+import { KitBar, KitRow, KitSheet } from '../components/sheetKit';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from 'react-native-svg';
 
 import { CardioIcon } from '../components/CardioIcon';
@@ -49,8 +49,10 @@ import {
 import { AnimatedGreeting } from '../components/AnimatedGreeting';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { buildSwapLibraryMatches, buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
-import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
+import { buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
+import { ExercisePickerSheet } from '../components/AddExerciseSheet';
+import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
 import { localizeSessionFocus, localizeSessionName, localizeWorkoutFocus } from '../lib/sessionNameLabel';
 import { weekdayCodeForDate, weekdayLabel } from '../lib/planWeekdays';
 import { I18nKey, t } from '../lib/i18n';
@@ -793,27 +795,30 @@ export function HomeScreen({
   }, [nextPlanSession, swapSlotId, sessionSwaps, tailoringPreferences, swapQuery, language]);
 
   /**
-   * The whole library, once something is typed. The shortlist is the slot's
-   * substitution group — "penkkipunnerrus" was nowhere in it for a cable row,
-   * and a reader who names a lift has made the choice (#bugs 2026-09-23).
+   * The swap sheet is the guided player's (#bugs 2026-10-06; owner, 2026-10-07:
+   * that sheet everywhere). The slot's shortlist is the first cards, the
+   * library nearest the lift under them, through the same chips as the
+   * player and the programme day (useSwapPickerLists).
    */
-  const swapPopularOrder = useMemo(() => getPopularExerciseLibraryOrder(exerciseLibrary ?? []), [exerciseLibrary]);
-  const swapLibraryMatches = useMemo(() => {
-    if (!swapRow.currentName || !exerciseLibrary) {
-      return [];
-    }
-    return buildSwapLibraryMatches(exerciseLibrary, swapQuery, language, {
-      exclude: [
-        swapRow.currentName,
-        ...swapRow.shortlist.variations.map((option) => option.exerciseName),
-        ...swapRow.shortlist.related.map((option) => option.exerciseName),
-        ...(nextPlanSession?.exercises ?? []).map(
-          (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
-        ),
-      ],
-      popularOrder: swapPopularOrder,
-    });
-  }, [exerciseLibrary, language, nextPlanSession, sessionSwaps, swapPopularOrder, swapQuery, swapRow]);
+  const swapAlternatives = useMemo(
+    () => [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => option.exerciseName),
+    [swapRow.shortlist],
+  );
+  const swapSessionLifts = useMemo(
+    () =>
+      (nextPlanSession?.exercises ?? []).map(
+        (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
+      ),
+    [nextPlanSession, sessionSwaps],
+  );
+  const swapPicker = useSwapPickerLists({
+    exerciseLibrary,
+    currentName: swapRow.currentName || null,
+    alternatives: swapAlternatives,
+    sessionLifts: swapSessionLifts,
+    query: swapQuery,
+    language,
+  });
   // Left out of both lists on purpose, and named so the reader knows why the
   // lift they typed is not there (#bugs 2026-09-27).
   const swapSessionHits = useMemo(
@@ -2240,124 +2245,43 @@ export function HomeScreen({
         </ScrollView>
       </KitSheet>
 
-      {/* Swap sheet for one row of today's plan — same pool and same ranking
-          as the player's, so the two surfaces cannot offer different lists.
-
-          On the sheet kit: one tap target per row, and the scope question —
-          just this time, or for ever — is asked once, in the bar, after there
-          is something to answer it about. The per-row "Keep" button this
-          replaces was a second target hiding a second meaning. */}
-      <KitSheet
+      {/* Swap sheet for one row of today's plan: the guided player's sheet in
+          swap mode — the same search, three chip groups and cards (#bugs
+          2026-10-06; review 2026-10-07: Home kept its own list). What Home
+          adds is the scope question: a tap picks, and the bar asks once —
+          just this time, or for ever — after there is something to answer it
+          about. The per-row "Keep" button this replaced was a second target
+          hiding a second meaning. The note on logged sets is the player's,
+          and nothing is logged yet here, so the title stands alone. */}
+      <ExercisePickerSheet
         visible={swapSlotId !== null}
-        onClose={closeSwapSheet}
-        title={t(language, 'kit.swapTitle')}
-        context={exerciseNameLabel(language, swapRow.currentName)}
         bottomInset={insets.bottom}
-        closeLabel={t(language, 'common.close')}
-        barUp={swapPickName !== null}
-        reduceMotion={reduceMotion}
-        bar={
-          <KitBar
-            visible={swapPickName !== null}
-            from={exerciseListLabel(language, swapRow.currentName)}
-            to={swapPickName ? exerciseListLabel(language, swapPickName) : ''}
-            fromLabel={exerciseNameLabel(language, swapRow.currentName)}
-            toLabel={swapPickName ? exerciseNameLabel(language, swapPickName) : ''}
-            buttons={[
-              {
-                label: t(language, 'kit.justThisTime'),
-                kind: 'p',
-                onPress: () => {
-                  if (swapSlotId && swapPickName) {
-                    onSwapSessionExercise?.(swapSlotId, swapPickName);
-                  }
-                  closeSwapSheet();
-                },
-              },
-              ...(swapRow.exerciseId && onKeepSwapInProgram
-                ? [
-                    {
-                      label: t(language, 'kit.forEver'),
-                      kind: 'd' as const,
-                      onPress: () => {
-                        if (swapPickName) {
-                          onKeepSwapInProgram(swapRow.exerciseId as string, swapPickName);
-                        }
-                        closeSwapSheet();
-                      },
-                    },
-                  ]
-                : []),
-            ]}
-            clearLabel={t(language, 'kit.pickAnother')}
-            onClear={() => setSwapPickName(null)}
-            bottomInset={insets.bottom}
-            reduceMotion={reduceMotion}
-          />
+        language={language}
+        mode="swap"
+        swappedName={swapRow.currentName}
+        subtitle={null}
+        search={swapQuery}
+        onSearchChange={setSwapQuery}
+        filters={swapPicker.filters}
+        onFiltersChange={swapPicker.onFiltersChange}
+        featured={
+          swapPicker.featuredEntries.length > 0
+            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapPicker.featuredEntries }
+            : null
         }
-      >
-        {/* A search, because the shortlist is deliberately six rows and the
-            pool behind it is not: a reader who knows what they want should
-            not have to be offered it (#bugs 2026-08-26). Typing widens the
-            search back over the whole pool. */}
-        <KitSearch
-          value={swapQuery}
-          onChangeText={setSwapQuery}
-          placeholder={t(language, 'home.swapSheet.search')}
-        />
-        {/* The list scrolls; the actions below it do not. With nine rows
-            the sheet grew past the screen and "Poista ohjelmasta" could
-            not be reached at all (user 2026-08-26). */}
-        <ScrollView
-          style={styles.adaptOptsScroll}
-          contentContainerStyle={styles.kitListPad}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* The programme day's sheet says why it is empty, and so does this
-              one: with nothing typed and no swap for the lift, the sheet was
-              a search bar over nothing (audit 8, 2026-09-26). */}
-          {swapRow.shortlist.total === 0 && swapLibraryMatches.length === 0 && swapSessionHits.length === 0 ? (
-            <Text style={styles.swapEmpty}>
-              {t(language, swapQuery.trim() ? 'home.swapSheet.noMatches' : 'home.swapSheet.empty')}
-            </Text>
-          ) : null}
-          {([
-            { key: 'home.swapSheet.variations' as const, rows: swapRow.shortlist.variations.map((option) => option.exerciseName) },
-            { key: 'home.swapSheet.related' as const, rows: swapRow.shortlist.related.map((option) => option.exerciseName) },
-            { key: 'home.swapSheet.library' as const, rows: swapLibraryMatches.map((item) => item.name) },
-          ]).map((section) =>
-            section.rows.length === 0 ? null : (
-              <View key={section.key}>
-                {/* Named only when there is more than one group — one heading
-                    over the whole list labels nothing. */}
-                {[
-                  swapRow.shortlist.variations.length,
-                  swapRow.shortlist.related.length,
-                  swapLibraryMatches.length,
-                ].filter((count) => count > 0).length > 1 ? (
-                  <KitGroupLabel>{t(language, section.key)}</KitGroupLabel>
-                ) : null}
-                {section.rows.map((exerciseName) => (
-                  <KitRow
-                    key={exerciseName}
-                    title={exerciseListLabel(language, exerciseName)}
-                    accessibilityLabel={exerciseNameLabel(language, exerciseName)}
-                    titleLines={2}
-                    state={swapPickName === exerciseName ? 'sel' : 'idle'}
-                    onPress={() =>
-                      setSwapPickName((current) => (current === exerciseName ? null : exerciseName))
-                    }
-                  />
-                ))}
-              </View>
-            ),
-          )}
-          {swapSessionHits.length > 0 ? (
-            <Text style={styles.swapEmpty}>
-              {t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })}
-            </Text>
-          ) : null}
+        main={{ title: swapPicker.libraryTitle, entries: swapPicker.libraryEntries }}
+        // The player's words: with the library under the cards, an empty list
+        // means the search or a chip found nothing — not that the slot has no
+        // swap, which "home.swapSheet.empty" said when the shortlist was all.
+        emptyTitle={t(language, 'guided.swap.noMatch')}
+        emptyBody={null}
+        listNote={
+          swapSessionHits.length > 0 ? t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') }) : null
+        }
+        pickedName={swapPickName}
+        onSelect={(entry) => setSwapPickName((current) => (current === entry.name ? null : entry.name))}
+        listFooter={
+          <View style={styles.swapActions}>
             {/* A swap made yesterday's answer today's. This turns it into the
                 programme's answer — offered here rather than as a mode above
                 the list, because before choosing there is nothing to keep. */}
@@ -2427,8 +2351,50 @@ export function HomeScreen({
                 <Text style={styles.adaptDropNote}>{t(language, 'home.swapSheet.removeNote')}</Text>
               </Pressable>
             ) : null}
-        </ScrollView>
-      </KitSheet>
+          </View>
+        }
+        footer={
+          swapPickName !== null ? (
+            <KitBar
+              visible
+              floating={false}
+              from={exerciseListLabel(language, swapRow.currentName)}
+              to={exerciseListLabel(language, swapPickName)}
+              fromLabel={exerciseNameLabel(language, swapRow.currentName)}
+              toLabel={exerciseNameLabel(language, swapPickName)}
+              buttons={[
+                {
+                  label: t(language, 'kit.justThisTime'),
+                  kind: 'p',
+                  onPress: () => {
+                    if (swapSlotId) {
+                      onSwapSessionExercise?.(swapSlotId, swapPickName);
+                    }
+                    closeSwapSheet();
+                  },
+                },
+                ...(swapRow.exerciseId && onKeepSwapInProgram
+                  ? [
+                      {
+                        label: t(language, 'kit.forEver'),
+                        kind: 'd' as const,
+                        onPress: () => {
+                          onKeepSwapInProgram(swapRow.exerciseId as string, swapPickName);
+                          closeSwapSheet();
+                        },
+                      },
+                    ]
+                  : []),
+              ]}
+              clearLabel={t(language, 'kit.pickAnother')}
+              onClear={() => setSwapPickName(null)}
+              bottomInset={insets.bottom}
+              reduceMotion={reduceMotion}
+            />
+          ) : null
+        }
+        onClose={closeSwapSheet}
+      />
 
       {/* Paywall moment sheet: the plateau conclusion, on the user's own
           numbers. The comparison table lives on the full Pro page. */}
@@ -3473,13 +3439,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // The kit's lists carry their own horizontal padding: the sheet shell pads
   // only its header, so a full-bleed list can scroll under it.
   kitListPad: { paddingHorizontal: 18, paddingBottom: 6 },
-  swapEmpty: {
-    color: theme.muted,
-    fontSize: 13,
-    lineHeight: 19,
-    fontWeight: '600',
-    paddingVertical: 12,
-  },
   todayList: {
     marginTop: 4,
     // Capped so a six-session program cannot push the list off the sheet and
@@ -3599,11 +3558,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 18,
   },
   adaptPrimaryText: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2, color: '#FFFFFF' },
-  // The list scrolls under a ceiling so the actions below it always land on
-  // screen. Nine rows used to push "Poista ohjelmasta" past the bottom edge.
-  adaptOptsScroll: {
-    maxHeight: 300,
-  },
   adaptOptGroup: {
     color: theme.faint,
     fontSize: 11,
@@ -3615,6 +3569,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Separated from the replacement rows by a rule. The two answers are then
   // told apart by colour, because they differ in how far they reach: orange is
   // the app's "you can press this", red is the one that does not come back.
+  /** The swap sheet's drop, keep and remove, under the cards rather than among them. */
+  swapActions: { marginTop: 4 },
   adaptDrop: {
     marginTop: 10,
     paddingTop: 12,

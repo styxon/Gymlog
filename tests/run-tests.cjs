@@ -393,6 +393,7 @@ const suites = [
   ...require('./lib/exerciseBrowseFilter.test.cjs'),
   ...require('./lib/swapShortlist.test.cjs'),
   ...require('./lib/swapBrowsePrefilter.test.cjs'),
+  ...require('./lib/swapPickerLists.test.cjs'),
   ...require('./lib/exerciseFilterInvariants.test.cjs'),
   ...require('./lib/pickerRules.test.cjs'),
   ...require('./lib/programFilterInvariants.test.cjs'),

@@ -322,8 +322,9 @@ module.exports = [
       assert.doesNotMatch(browser, /item\.category !== categoryFilter/);
       const empty = read('src/screens/EmptyWorkoutScreen.tsx');
       assert.match(empty, /listPickerExercises\(items, \{\s*query: normalizedQuery,/);
-      const player = read('src/screens/GuidedPlayerScreen.tsx');
-      assert.match(player, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
+      // The swap list (player and Home) lives in lib/swapPickerLists since 2026-10-07.
+      const swapLists = read('src/lib/swapPickerLists.ts');
+      assert.match(swapLists, /listPickerExercises\(library, \{\s*query: typed,\s*filters,/);
 
       // One word on the chip and under the row, in both languages.
       const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
