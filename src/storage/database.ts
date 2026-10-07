@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { buildRetiredLibraryIdRemap } from '../lib/legacyLibraryIds';
+import { withLibraryCorrections } from '../lib/exerciseClassification';
+import {
+  normalizeAppliedMigrations,
+  restoreTrackingAfterCategoryCorrection,
+  TRACKING_CATEGORY_MIGRATION_ID,
+} from '../lib/trackingCategoryMigration';
+import { MINUTES_MODE_MIGRATION_ID, moveOldCopiesToMinutesMode } from '../lib/minutesModeMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -22,6 +29,7 @@ import { clearCoachAdviceMemory } from './coachAdviceMemoryStore';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from './largeItem';
 import { removeCorruptCopies, setAsideCorruptCopy } from './corruptCopies';
 import { normalizeExerciseLog } from '../lib/exerciseLog';
+import { readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { withLoggedSessionTotals } from '../lib/sessionTotals';
 import {
   normalizeLearnedExerciseIds,
@@ -187,6 +195,12 @@ function normalizeTemplateSessions(
     .sort((left: WorkoutTemplateSessionRecord, right: WorkoutTemplateSessionRecord) => left.orderIndex - right.orderIndex);
 }
 
+/**
+ * The seeded library, with any stored row laid over it — and the source
+ * corrections read in again afterwards. A blob written before the library was
+ * stripped on save (April 2026) still carries whole rows, and the overlay put
+ * their stored `category: 'compound'` back over the corrected leg extension.
+ */
 function mergeExerciseLibrary(
   inputLibrary: AppDatabase['exerciseLibrary'] | null | undefined,
   fallbackLibrary: AppDatabase['exerciseLibrary'],
@@ -210,7 +224,7 @@ function mergeExerciseLibrary(
     });
   }
 
-  return Array.from(merged.values());
+  return withLibraryCorrections(Array.from(merged.values()));
 }
 
 /**
@@ -360,7 +374,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     return retiredIds[value.trim()] ?? value;
   };
 
-  const rawExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
+  const exerciseLibrary = mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary);
+  const storedMigrations = normalizeAppliedMigrations(input?.appliedMigrations);
+
+  const storedExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
     ? input.exerciseTemplates.map((exercise: any) => {
         const name = typeof exercise?.name === 'string' ? exercise.name : 'Exercise';
         // Programmes saved before 2026-08-25 still carry rep ranges; the
@@ -387,13 +404,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           trackedDefault: typeof exercise?.trackedDefault === 'boolean' ? exercise.trackedDefault : true,
           orderIndex: typeof exercise?.orderIndex === 'number' ? exercise.orderIndex : 0,
           libraryItemId: liveLibraryItemId(exercise?.libraryItemId),
-          trackingMode:
-            exercise?.trackingMode === 'load_and_reps' ||
-            exercise?.trackingMode === 'reps_first' ||
-            exercise?.trackingMode === 'bodyweight' ||
-            exercise?.trackingMode === 'hold'
-              ? exercise.trackingMode
-              : null,
+          // A mode this build does not know (one written by a newer build, or
+          // a damaged row) is no mode: null derives it from the name, as an
+          // install that never stored one does.
+          trackingMode: readStoredTrackingMode(exercise?.trackingMode),
           persistedExerciseTemplateId:
             typeof exercise?.persistedExerciseTemplateId === 'string' || exercise?.persistedExerciseTemplateId === null
               ? exercise.persistedExerciseTemplateId
@@ -405,6 +419,23 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         };
       })
     : [];
+
+  // Once per database each, in this order: a programme saved before the
+  // library's category correction keeps the progression it had
+  // (lib/trackingCategoryMigration), and a copy made before steady cardio was
+  // logged in minutes gets the minutes mode the ready programme runs on
+  // (lib/minutesModeMigration). Not on every load — a value a writer stores
+  // today on purpose is meant.
+  let rawExerciseTemplates = storedExerciseTemplates;
+  const appliedMigrations = [...storedMigrations];
+  if (!appliedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)) {
+    rawExerciseTemplates = restoreTrackingAfterCategoryCorrection(rawExerciseTemplates, exerciseLibrary);
+    appliedMigrations.push(TRACKING_CATEGORY_MIGRATION_ID);
+  }
+  if (!appliedMigrations.includes(MINUTES_MODE_MIGRATION_ID)) {
+    rawExerciseTemplates = moveOldCopiesToMinutesMode(rawExerciseTemplates);
+    appliedMigrations.push(MINUTES_MODE_MIGRATION_ID);
+  }
 
   // A stored programme with no id is not a programme. Mapped through the
   // defaults below, a null in the list became one called "Workout" with an
@@ -547,7 +578,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             : [],
         }))
       : [],
-    exerciseLibrary: mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary),
+    exerciseLibrary,
+    // The one-time rewrites this database has had. Absent on every install
+    // written before the first of them, which is what lets that one run.
+    appliedMigrations,
     // An entry that is not an object with an id is not a session. Mapped
     // through the defaults below it became one — "Workout", dated now —
     // so a null or a stray number in a stored array put a workout on

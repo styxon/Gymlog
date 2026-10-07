@@ -244,6 +244,7 @@ export function buildExerciseLogsForCompletedSession(sessionId: string, drafts: 
     templateExerciseId: draft.templateExerciseId,
     notes: draft.notes,
     swappedFrom: draft.swappedFrom,
+    ...(draft.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
   }));
 }
 

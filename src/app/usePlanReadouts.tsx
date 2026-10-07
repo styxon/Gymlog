@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
+import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
+import { isMinutesExerciseName } from '../lib/minutesExercises';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
@@ -82,6 +84,11 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
           sets: exercise.targetSets,
           repMin: exercise.repMin,
           repMax: exercise.repMax,
+          // The stored mode when the writer knew it, the name when it did
+          // not — the same order the programme is run in (customWorkoutAdapter).
+          minutes: exercise.trackingMode
+            ? isMinutesTrackingMode(exercise.trackingMode)
+            : isMinutesExerciseName(exercise.name),
         })),
       })),
     }));
@@ -102,6 +109,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
               sets: exercise.sets,
               repMin: exercise.repsMin,
               repMax: exercise.repsMax,
+              minutes: isMinutesTrackingMode(exercise.trackingMode),
             })),
           })),
         });

@@ -162,8 +162,10 @@ module.exports = [
       assert.doesNotMatch(screen, /\(log\.sets \?\? \[\]\)\.reduce/);
       // The unit follows the measure everywhere on the screen, not only on the
       // card: "33 toistoa" sat beside a trend reading "+12 kg" and a kg axis.
-      assert.match(screen, /\{unloaded \? t\(language, 'exDetail\.repsUnit'\) : unitPreference\}\{' '\}/);
-      assert.match(screen, /unitLabel=\{unloaded \? t\(language, 'exDetail\.repsUnit'\) : unitPreference\}/);
+      // A bout of minutes says "min" in the same places (2026-10-06).
+      assert.match(screen, /const unloadedUnit = minutesLift \? 'min' : t\(language, 'exDetail\.repsUnit'\);/);
+      assert.match(screen, /\{unloaded \? unloadedUnit : unitPreference\}\{' '\}/);
+      assert.match(screen, /unitLabel=\{unloaded \? unloadedUnit : unitPreference\}/);
       /*
        * Every line in the block, not the ones that were easy.
        *

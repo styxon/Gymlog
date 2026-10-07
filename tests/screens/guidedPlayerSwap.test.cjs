@@ -153,11 +153,11 @@ module.exports = [
       // field with one would disagree about the same number.
       assert.match(
         playerSource,
-        /onStep=\{\(direction\) => setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       assert.match(
         playerSource,
-        /onCommit=\{\(text\) => setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       // No "tap to type" line under the buttons: it was in the sketch and
       // struck out on the phone the same day ("napauta ja kirjoita poista nämä").
@@ -802,10 +802,10 @@ module.exports = [
         assert.ok(sheet.includes(`t(language, '${group}')`), group);
       }
       assert.match(sheet, /options=\{equipmentOptions\}/);
-      // The swap list obeys all three groups through the sheet's one rule.
-      assert.match(source, /matchesExerciseSheetFilters\(item, swapFilters\),/);
-      assert.match(sheet, /export function matchesExerciseSheetFilters\(/);
-      assert.match(sheet, /matchesExerciseSheetFilters\(item, \{ category, bodyPart, equipment \}\)/);
+      // The swap list obeys all three groups through every picker's one list
+      // (lib/exercisePicker), the add sheet's too.
+      assert.match(source, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
+      assert.match(sheet, /listPickerExercises\(items, \{\s*query: search,\s*filters: \{ category, bodyPart, equipment \}/);
       // A programme alternative keeps its card, with its picture when the
       // library holds it (swapSuggestionRows) and its name when it does not.
       assert.match(source, /const swapSuggestionRows = useMemo\(/);

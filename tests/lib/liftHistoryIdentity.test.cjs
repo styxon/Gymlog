@@ -236,12 +236,15 @@ module.exports = [
       // become one. Found by /code-review on this change, each against the
       // real library.
       const substringOnly = [
-        ['Barbell Bench Press', 'Decline Barbell Bench Press'],
+        // "Barbell Bench Press" was the first example until the catalog audit
+        // (2026-10-06) gave it its alias; the leg curl's alias is demo-only, so
+        // the photo moved and the page still takes nothing from it.
+        ['Chest Press', 'Cable Chest Press'],
         ['Squat', 'Box Squat'],
         ['Pull Up', 'Weighted Pull Ups'],
         ['Push Up', 'Push Up to Side Plank'],
         ['Lunge', 'Lunge Sprint'],
-        ['Leg Curl', 'Ball Leg Curl'],
+        ['Leg Curl', 'Lying Leg Curls'],
         ['Calf Raise', 'Seated Calf Raise'],
         ['Shoulder Press', 'Cable Shoulder Press'],
       ];

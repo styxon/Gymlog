@@ -2,9 +2,9 @@
  * Pure domain logic for the freestyle Empty Workout screen (HG redesign).
  *
  * The screen keeps a small local draft state (exercises + typed sets); this
- * module owns everything derivable from it: the add-sheet muscle filter, the
- * letter-tile initials, and the finish payload (template draft + completion
- * summary) handed to App.tsx on save.
+ * module owns everything derivable from it: the letter-tile initials and the
+ * finish payload (template draft + completion summary) handed to App.tsx on
+ * save. The add sheet's list is every picker's (lib/exercisePicker).
  */
 import { parseNumberInput } from './format';
 import { createId } from './ids';
@@ -21,39 +21,7 @@ import {
 } from './workoutCompletionSummary';
 import { buildPersistedSessionNames } from './workoutEditorNaming';
 import { buildSupersetRuns, isSupersetLinked, normalizeSupersetGroups } from './supersetGrouping';
-import { AppDatabase, ExerciseBodyPart, ExerciseLog, ExerciseLogDraft, ExerciseLogSet, WorkoutTemplateDraft } from '../types/models';
-
-// ── add-sheet muscle filter ──────────────────────────────────────────────
-
-/** Chip order from the design handoff (empty-workout.jsx). */
-export const EMPTY_WORKOUT_MUSCLE_FILTERS = [
-  'All',
-  'Chest',
-  'Back',
-  'Shoulders',
-  'Legs',
-  'Arms',
-  'Core',
-] as const;
-
-export type EmptyWorkoutMuscleFilter = (typeof EMPTY_WORKOUT_MUSCLE_FILTERS)[number];
-
-const FILTER_BODY_PARTS: Record<Exclude<EmptyWorkoutMuscleFilter, 'All'>, ExerciseBodyPart[]> = {
-  Chest: ['chest'],
-  Back: ['back'],
-  Shoulders: ['shoulders'],
-  Legs: ['legs', 'glutes'],
-  Arms: ['biceps', 'triceps'],
-  Core: ['core'],
-};
-
-export function matchesMuscleFilter(bodyPart: ExerciseBodyPart, filter: EmptyWorkoutMuscleFilter) {
-  if (filter === 'All') {
-    return true;
-  }
-
-  return FILTER_BODY_PARTS[filter].includes(bodyPart);
-}
+import { AppDatabase, ExerciseLog, ExerciseLogDraft, ExerciseLogSet, WorkoutTemplateDraft } from '../types/models';
 
 // ── letter tiles ─────────────────────────────────────────────────────────
 

@@ -21,6 +21,7 @@ export interface WarmupBriefExercise {
   setCount: number;
   repsLabel: string;
   timed: boolean;
+  minutes?: boolean;
   loadKg: number | null;
 }
 
@@ -66,6 +67,7 @@ export function buildWarmupBrief(
               setCount: first.setCount,
               repsLabel: first.repsLabel,
               timed: first.timed,
+              minutes: first.minutes,
               loadKg: first.loadKg,
             },
             language,

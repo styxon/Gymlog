@@ -110,6 +110,10 @@ function buildFirstAction(exercises: WorkoutTemplateExercise[]) {
     return `Start with ${firstPrimary.exerciseName} and keep the first round easy.`;
   }
 
+  if (firstPrimary.trackingMode === 'duration_minutes') {
+    return `Start ${firstPrimary.exerciseName} at a steady pace and log the minutes you did.`;
+  }
+
   if (isTimedTrackingMode(firstPrimary.trackingMode)) {
     return `Start with ${firstPrimary.exerciseName} and hold the position rather than chasing the clock.`;
   }

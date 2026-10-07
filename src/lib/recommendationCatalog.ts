@@ -77,7 +77,10 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'moderate',
     styleTags: ['heavy', 'express'],
     secondaryOutcomeTags: ['consistency', 'strength'],
-    focusAreaTags: ['legs', 'chest', 'back'],
+    // Chest went (user, 2026-10-06: a promised area gets six sets a week).
+    // Four sets of bench were all it had, and both days sit at the top of the
+    // card's 40 minutes, so there was no room for more.
+    focusAreaTags: ['legs', 'back'],
     lowFriction: true,
   }),
   defineProgram('tpl_3_day_strength_base_v1', {
@@ -339,7 +342,10 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'high',
     styleTags: ['balanced', 'conditioning'],
     secondaryOutcomeTags: ['conditioning', 'strength'],
-    focusAreaTags: ['core', 'legs', 'back'],
+    // Core went (user, 2026-10-06: a promised area gets six sets a week). It
+    // had three sets of plank, and three more would have taken the short day
+    // over the card's 35 minutes.
+    focusAreaTags: ['legs', 'back'],
   }),
   defineProgram('tpl_shred_elite_v1', {
     familyId: 'athletic_recomp',
@@ -396,7 +402,10 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'moderate',
     styleTags: ['balanced', 'pump'],
     secondaryOutcomeTags: ['muscle', 'consistency'],
-    focusAreaTags: ['core', 'arms', 'chest', 'back'],
+    // Arms went (user, 2026-10-06: a promised area gets six sets a week).
+    // Four sets of weighted dips were the only arm work, and every day already
+    // runs at or over the card's 55 minutes.
+    focusAreaTags: ['core', 'chest', 'back'],
   }),
 
   // ── The high-frequency middle of HUGE ───────────────────────────────────
@@ -446,7 +455,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'low',
     styleTags: ['balanced', 'recovery'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
-    focusAreaTags: ['core', 'legs', 'back'],
+    focusAreaTags: ['legs', 'back'],
     lowFriction: true,
     jointFriendly: true,
   }),

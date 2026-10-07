@@ -6,6 +6,7 @@ import {
 } from './completedSessions';
 import { getSessionDurationMinutes } from './dashboard';
 import { getComparableLogSets } from './exerciseLog';
+import { isMinutesLogEntry } from './minutesExercises';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import {
   MILESTONE_FAMILIES,
@@ -132,7 +133,8 @@ export function getMilestoneFacts(
         continue;
       }
       sets += comparable.length;
-      reps += comparable.reduce((sum, set) => sum + set.reps, 0);
+      // A log of minutes counts its sets, not its minutes as repetitions.
+      reps += isMinutesLogEntry(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
       seenExercises.add(log.exerciseNameSnapshot.trim().toLowerCase());
     }
     timelines.reps.push({ at, total: reps });

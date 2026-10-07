@@ -1,4 +1,7 @@
 import { groupByMonth } from './monthGroups';
+import { getComparableLogSets } from './exerciseLog';
+import { isMinutesLogEntry } from './minutesExercises';
+import type { ExerciseLog } from '../types/models';
 
 /**
  * Your bests, and when you set them.
@@ -70,6 +73,26 @@ export interface PersonalRecord {
   previous: number | null;
   /** Set within the freshness window — drives the "UUSI" badge. */
   fresh: boolean;
+}
+
+/**
+ * The sets a log offers the records: its comparable sets, as a record reads
+ * them — and none at all for minutes.
+ *
+ * Twenty minutes on a bike is a dose, not a repetition count, and its weight
+ * is zero: read as a set it was a "20 reps" record that a longer ride would
+ * "beat" (2026-10-06). The log's own unit says so for anything saved since;
+ * the name says so for a log saved before the unit existed, so a record the
+ * old reading made does not survive it.
+ */
+export function recordSetsOfLog(
+  log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
+): RecordSet[] {
+  if (isMinutesLogEntry(log)) {
+    return [];
+  }
+  return getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps }));
 }
 
 /** How recent a record has to be to read as new. */

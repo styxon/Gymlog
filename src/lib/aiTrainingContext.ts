@@ -48,6 +48,7 @@ import { detectPlateaus } from './progressionAnalyzer';
 import { sessionBestPoints } from './trainingHistory';
 import { buildFatigueModel } from './fatigueModel';
 import { getComparableLogSets } from './exerciseLog';
+import { isMinutesExerciseName, isMinutesLogEntry } from './minutesExercises';
 import {
   buildTrainingHistory,
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -654,6 +655,7 @@ export function buildAiCoachLastSession(
         // programme prescribes next time, so it gets no "next time" rather
         // than the original lift's numbers under its name.
         next: nextFor(nextByLift.get(normalizedName(name))),
+        ...(isMinutesLogEntry(log) ? { unit: 'minutes' as const } : {}),
       };
     })
     .filter((exercise) => exercise.name.length > 0 && exercise.sets.length > 0);
@@ -735,7 +737,13 @@ export function buildAiTrainingContext({
       noteCount: session.noteCount ?? 0,
     }));
 
-  const trackedLifts = trackedProgress.slice(0, 3).map((summary) => ({
+  // A bout of minutes is not a lift with a weight and reps to report: its
+  // "latest 0 kg x 20" read as twenty reps of nothing. It reaches the coach
+  // in minutes, through the last session.
+  const liftProgress = trackedProgress.filter(
+    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isMinutesLogEntry(log)),
+  );
+  const trackedLifts = liftProgress.slice(0, 3).map((summary) => ({
     key: summary.key,
     name: summary.name,
     latestWeight: summary.latestWeight,
@@ -743,7 +751,7 @@ export function buildAiTrainingContext({
     latestReps: summary.latestReps,
   }));
 
-  const latestTopSets = trackedProgress.slice(0, 3).map((summary) => ({
+  const latestTopSets = liftProgress.slice(0, 3).map((summary) => ({
     exerciseName: summary.name,
     weight: summary.latestWeight,
     reps: summary.latestReps,
@@ -1258,6 +1266,7 @@ function normalizeLastSession(input: unknown): AICoachLastSession | null {
         ...(typeof streak === 'number' && Number.isInteger(streak) && streak >= 1 && streak <= 1000
           ? { sessionsAtThisWeight: streak }
           : {}),
+        ...(exercise?.unit === 'minutes' ? { unit: 'minutes' as const } : {}),
       };
     })
     .filter((exercise) => exercise.name.length > 0 && exercise.sets.length > 0);

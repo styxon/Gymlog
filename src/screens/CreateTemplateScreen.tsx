@@ -13,7 +13,7 @@ import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
 import { formatRepRange } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
-import { libraryLabel } from '../lib/libraryLabel';
+import { exercisePickerRowMeta } from '../lib/exercisePicker';
 import { layout, radii, spacing } from '../theme';
 import {
   AppLanguage,
@@ -711,7 +711,9 @@ export function CreateTemplateScreen({
                             </Text>
                             <Text numberOfLines={1} style={styles.exerciseMeta}>
                               {libraryItem
-                                ? `${libraryLabel(libraryItem.bodyPart, language)} · ${libraryLabel(libraryItem.equipment, language)}`
+                                ? // Every picker's line, so the row says what the sheet said
+                                  // when it was picked — kettlebell rows included.
+                                  exercisePickerRowMeta(libraryItem, language)
                                 : t(language, 'tpl.setsReps', {
                                     sets: exercise.targetSets,
                                     // "12-12 toistoa" — the row printed both

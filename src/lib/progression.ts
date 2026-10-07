@@ -8,7 +8,7 @@
   WorkoutSession,
   WorkoutTemplate,
 } from '../types/models';
-import { getComparableLogSets, logRecordedWork } from './exerciseLog';
+import { getComparableLogSets, isMinutesLog, logRecordedWork } from './exerciseLog';
 import { t } from './i18n';
 
 export interface ExerciseLogWithSession extends ExerciseLog {
@@ -131,12 +131,22 @@ export function getCompletedSetCount(logs: readonly Pick<ExerciseLog, 'weight' |
   return logs.reduce((sum, log) => sum + (log.skipped ? 0 : getComparableLogSets(log).length), 0);
 }
 
-export function getTotalVolume(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {
+/**
+ * Kilograms moved: weight × reps. A log of minutes has none — twenty minutes
+ * is not twenty reps of anything, and whatever stands in its weight column
+ * (nothing, from the player) is not a load that was lifted twenty times.
+ */
+export function getTotalVolume(
+  log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>,
+) {
+  if (isMinutesLog(log)) {
+    return 0;
+  }
   return getComparableLogSets(log).reduce((sum, set) => sum + set.weight * set.reps, 0);
 }
 
 export function getSessionTotalVolume(
-  logs: readonly Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>[],
+  logs: readonly (Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>)[],
 ) {
   return logs.reduce((sum, log) => sum + (log.skipped ? 0 : getTotalVolume(log)), 0);
 }

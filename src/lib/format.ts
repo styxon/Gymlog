@@ -1,7 +1,7 @@
-﻿import { getComparableLogSets } from './exerciseLog';
+﻿import { getComparableLogSets, isMinutesLog } from './exerciseLog';
 // i18n imports nothing from here, so this cannot close a cycle.
 import { t } from './i18n';
-import { isTimedTrackingMode, WorkoutTrackingMode } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode, WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { AppLanguage, ExerciseLog, UnitPreference } from '../types/models';
 
 // The app is kg-only. The unit-preference params are kept on these signatures
@@ -151,7 +151,19 @@ export function formatSetScheme(
   trackingMode: WorkoutTrackingMode,
 ) {
   const range = formatRepRange(repMin, repMax);
-  return isTimedTrackingMode(trackingMode) ? `${sets} × ${range} s` : `${sets} × ${range}`;
+  return `${sets} × ${range}${doseUnitSuffix({
+    timed: isTimedTrackingMode(trackingMode),
+    minutes: isMinutesTrackingMode(trackingMode),
+  })}`;
+}
+
+/**
+ * The unit a dose's number is written with: " s" for a hold, " min" for a
+ * bout of minutes, nothing for repetitions — "1 × 20 min", "3 × 45 s",
+ * "4 × 8". The same in both languages.
+ */
+export function doseUnitSuffix(unit: { timed?: boolean; minutes?: boolean }): string {
+  return unit.minutes ? ' min' : unit.timed ? ' s' : '';
 }
 
 export function formatReps(repsPerSet: number[]) {
@@ -159,7 +171,7 @@ export function formatReps(repsPerSet: number[]) {
 }
 
 export function formatLogSetSummary(
-  log?: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> | null,
+  log?: (Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>) | null,
   unitPreference: UnitPreference = 'kg',
 ) {
   if (!log || log.skipped) {
@@ -169,6 +181,12 @@ export function formatLogSetSummary(
   const sets = getComparableLogSets(log);
   if (sets.length === 0) {
     return '-';
+  }
+
+  // Minutes carry no weight: "20 min", or "5, 5, 5, 5 min" for blocks. A
+  // "0 kg - 20" here read as twenty reps of nothing.
+  if (isMinutesLog(log)) {
+    return `${sets.map((set) => set.reps).join(', ')} min`;
   }
 
   const usesSingleWeight = sets.every((set) => Math.abs(set.weight - sets[0].weight) < 0.0001);
@@ -188,7 +206,7 @@ export function formatLogSetSummary(
  *   chip.
  */
 export function formatLogResult(
-  log?: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> | null,
+  log?: (Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>) | null,
   unitPreference: UnitPreference = 'kg',
   language: AppLanguage = 'en',
 ) {

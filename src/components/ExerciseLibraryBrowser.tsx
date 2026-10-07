@@ -14,15 +14,21 @@ import Svg, { Circle, Path } from 'react-native-svg';
 import { VinhaIcon, VinhaIconName } from './VinhaIcon';
 import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
-import { rankExerciseMatches } from '../lib/exerciseSearch';
 import { I18nKey, t } from '../lib/i18n';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
-import { displayEquipmentValue, libraryLabel } from '../lib/libraryLabel';
-import { ExerciseTypeFilter, matchesEquipmentFilter, matchesExerciseTypeFilter, passesSpecialtyGate } from '../lib/exerciseBrowseFilter';
-import { exerciseRowMetaValues, exerciseTypeOf } from '../lib/exerciseClassification';
+import { libraryLabel } from '../lib/libraryLabel';
+import {
+  BODY_PART_FILTERS,
+  BodyPartFilter,
+  EQUIPMENT_FILTERS,
+  EXERCISE_TYPE_FILTERS,
+  EquipmentFilter,
+  ExerciseTypeFilter,
+} from '../lib/exerciseBrowseFilter';
+import { exercisePickerChipLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
-import { AppLanguage, ExerciseBodyPart, ExerciseLibraryItem } from '../types/models';
+import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 
 // Card is 180 wide with a 1px border → 178 content width for the photo.
 const CARD_IMAGE_WIDTH = 178;
@@ -50,8 +56,12 @@ function formatCompactBodyPartLabel(raw: string, language: AppLanguage = 'en') {
   return libraryLabel(raw, language);
 }
 
-function getBodyPartIcon(bodyPart: ExerciseBodyPart | 'all'): VinhaIconName {
+function getBodyPartIcon(bodyPart: BodyPartFilter): VinhaIconName {
   switch (bodyPart) {
+    case 'quadriceps':
+    case 'hamstrings':
+    case 'calves':
+      return 'legs';
     case 'chest':
       return 'chest';
     case 'back':
@@ -79,13 +89,11 @@ export function getItemImage(item: ExerciseLibraryItem) {
 }
 
 /**
- * "Rinta · Tanko · Moninivel" — the line under a library row's name. The
- * values, and the rule that none repeats, are exerciseRowMetaValues's.
+ * "Rinta · Tanko · Moninivel" — the line under a library row's name, the same
+ * words as every picker's (exercisePickerRowMeta).
  */
 export function exerciseLibraryRowMeta(item: ExerciseLibraryItem, language: AppLanguage): string {
-  return exerciseRowMetaValues(item)
-    .map((value) => libraryLabel(value, language))
-    .join(' · ');
+  return exercisePickerRowMeta(item, language);
 }
 
 function useOrderedExercises(items: ExerciseLibraryItem[], filteredItems: ExerciseLibraryItem[], keepOrder = false) {
@@ -167,7 +175,7 @@ function CategoryIcon({ option, color }: { option: string; color: string }) {
   if (option === 'all') {
     return <ListIcon color={color} size={14} />;
   }
-  return <VinhaIcon name={getBodyPartIcon(option as ExerciseBodyPart)} color={color} size={14} />;
+  return <VinhaIcon name={getBodyPartIcon(option as BodyPartFilter)} color={color} size={14} />;
 }
 
 // Explicit numeric width/height (not '%' or absoluteFill): images nested in the
@@ -404,9 +412,9 @@ export function ExerciseLibraryBrowser({
   const styles = useThemedStyles(makeStyles);
   const [search, setSearch] = useState('');
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [bodyPartFilter, setBodyPartFilter] = useState<string>('all');
+  const [bodyPartFilter, setBodyPartFilter] = useState<BodyPartFilter>('all');
   const [categoryFilter, setCategoryFilter] = useState<ExerciseTypeFilter>('all');
-  const [equipmentFilter, setEquipmentFilter] = useState<string>('all');
+  const [equipmentFilter, setEquipmentFilter] = useState<EquipmentFilter>('all');
   /**
    * Tapping the chip you already picked clears it.
    *
@@ -445,45 +453,32 @@ export function ExerciseLibraryBrowser({
     toastTimer.current = setTimeout(() => setToast(null), 1700);
   };
 
-  const bodyPartOptions = useMemo(
-    () => ['all', ...Array.from(new Set(items.map((item) => item.bodyPart))).sort((a, b) => a.localeCompare(b))],
-    [items],
-  );
-  const categoryOptions = useMemo<ExerciseTypeFilter[]>(
-    () => ['all', ...Array.from(new Set(items.map((item) => exerciseTypeOf(item)))).sort((a, b) => a.localeCompare(b))],
-    [items],
-  );
-  // Built from the value the rows print, not the stored bucket: a chip that
-  // says "Käsipainot" must not return 54 rows that say "Kahvakuula", and there
-  // has to be a chip that selects them. The options are derived from the data,
-  // so the kettlebell chip appears on its own once the value does.
-  const equipmentOptions = useMemo(
-    // Kept on one line with its two neighbours: the guard in
-    // tests/screens/addExerciseSheet.test.cjs counts all three option lists to
-    // prove 'all' is still the first chip in every row.
-    () => ['all', ...Array.from(new Set(items.map((item) => displayEquipmentValue(item)))).sort((a, b) => a.localeCompare(b))],
-    [items],
-  );
+  // Every picker's chips (lib/exerciseBrowseFilter). These were derived from
+  // the stored values, so the body parts had no "Etureidet" — the leg
+  // extension sat somewhere in 276 "Jalat" rows (#bugs 2026-10-06) — and the
+  // order was the alphabet of the English keys. The equipment chips select
+  // by the value the rows print, kettlebells included (displayEquipmentValue).
+  const bodyPartOptions = BODY_PART_FILTERS;
+  const categoryOptions = EXERCISE_TYPE_FILTERS;
+  const equipmentOptions = EQUIPMENT_FILTERS;
 
   const query = search.trim().toLowerCase();
   const popularOrder = useMemo(() => getPopularExerciseLibraryOrder(items), [items]);
-  const filteredItems = useMemo(() => {
-    const filtered = items.filter((item) => {
-      if (bodyPartFilter !== 'all' && item.bodyPart !== bodyPartFilter) {
-        return false;
-      }
-      if (!matchesExerciseTypeFilter(item, categoryFilter)) {
-        return false;
-      }
-      if (!matchesEquipmentFilter(item, equipmentFilter)) {
-        return false;
-      }
-      // Strongman implements under a query or their own chip only.
-      return passesSpecialtyGate(item, { query, type: categoryFilter });
-    });
-    // Best answer first under a query — see rankExerciseMatches.
-    return rankExerciseMatches(filtered, query, language, (item) => popularOrder.get(item.id));
-  }, [items, language, query, popularOrder, bodyPartFilter, categoryFilter, equipmentFilter]);
+  // Every picker's one list (lib/exercisePicker), best answer first under a
+  // query. This screen alone lists the stretches unasked — it is where you
+  // learn them — and the strongman implements still only under a query or
+  // their own chip.
+  const filteredItems = useMemo(
+    () =>
+      listPickerExercises(items, {
+        query,
+        filters: { category: categoryFilter, bodyPart: bodyPartFilter, equipment: equipmentFilter },
+        language,
+        popularity: (item) => popularOrder.get(item.id),
+        listsStretches: true,
+      }),
+    [items, language, query, popularOrder, bodyPartFilter, categoryFilter, equipmentFilter],
+  );
 
   const { commonOrder, orderedItems } = useOrderedExercises(items, filteredItems, query.length > 0);
   const hasModalFilters = categoryFilter !== 'all' || equipmentFilter !== 'all';
@@ -642,7 +637,7 @@ export function ExerciseLibraryBrowser({
                         style={[styles.filterChip, selected && styles.filterChipSelected]}
                       >
                         <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-                          {libraryLabel(option, language)}
+                          {exercisePickerChipLabel(option, language)}
                         </Text>
                       </Pressable>
                     );
@@ -662,7 +657,7 @@ export function ExerciseLibraryBrowser({
                         style={[styles.filterChip, selected && styles.filterChipSelected]}
                       >
                         <Text style={[styles.filterChipText, selected && styles.filterChipTextSelected]}>
-                          {libraryLabel(option, language)}
+                          {exercisePickerChipLabel(option, language)}
                         </Text>
                       </Pressable>
                     );

@@ -1,4 +1,5 @@
-import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { DEFAULT_MINUTES_PRESCRIPTION } from './minutesExercises';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
@@ -88,6 +89,10 @@ export function buildComposedFallbackExercise(
   // written here did to the saved programme.
   const plank = name.toLowerCase().includes('plank');
   const reps = collapseRepRange({ name, repMin: plank ? 20 : 10, repMax: plank ? 40 : 15 });
+  const trackingMode = getFallbackTrackingMode(name);
+  // A trail run or a recumbent bike is one bout of minutes. Its numbers were
+  // a lift's — three sets of twelve "reps" of trail running, with a rest.
+  const minutes = isMinutesTrackingMode(trackingMode);
 
   return {
     id: `${sessionId}_exercise_${exerciseIndex + 1}`,
@@ -95,12 +100,12 @@ export function buildComposedFallbackExercise(
     slotId: `${role}_${exerciseIndex + 1}`,
     role,
     progressionPriority: exerciseIndex === 0 ? 'high' : exerciseIndex < 3 ? 'medium' : 'low',
-    trackingMode: getFallbackTrackingMode(name),
-    sets: exerciseIndex === 0 ? 3 : 2,
-    repsMin: reps.repMin,
-    repsMax: reps.repMax,
-    restSecondsMin: exerciseIndex === 0 ? 75 : 45,
-    restSecondsMax: exerciseIndex === 0 ? 120 : 75,
+    trackingMode,
+    sets: minutes ? DEFAULT_MINUTES_PRESCRIPTION.sets : exerciseIndex === 0 ? 3 : 2,
+    repsMin: minutes ? DEFAULT_MINUTES_PRESCRIPTION.minutes : reps.repMin,
+    repsMax: minutes ? DEFAULT_MINUTES_PRESCRIPTION.minutes : reps.repMax,
+    restSecondsMin: minutes ? 0 : exerciseIndex === 0 ? 75 : 45,
+    restSecondsMax: minutes ? 0 : exerciseIndex === 0 ? 120 : 75,
     substitutionGroup: resolveSubstitutionGroup(name, role, exerciseIndex),
   };
 }

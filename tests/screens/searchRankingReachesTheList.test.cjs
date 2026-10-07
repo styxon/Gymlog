@@ -58,7 +58,10 @@ module.exports = [
     run() {
       // Four call sites passed the accessor and two did not; a tie then fell
       // through to shortest name.
-      assert.match(sheet, /rankExerciseMatches\(filtered, query, language, \(item\) => commonStarterOrder\.get\(item\.id\)\)/);
+      assert.match(sheet, /popularity: \(item\) => commonStarterOrder\.get\(item\.id\),/);
+      // ...which every picker's list hands to the ranker (lib/exercisePicker).
+      const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
+      assert.match(shared, /return rankExerciseMatches\(narrowed, typed, language, popularity\);/);
       // Both swap sheets hand the order to the shared swap search, and it
       // hands it on to the ranker.
       assert.match(swapSearch, /\(item\) => popularOrder\?\.get\(item\.id\),/);

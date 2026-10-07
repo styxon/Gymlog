@@ -178,8 +178,15 @@ module.exports = [
       }
 
       // And 'all' stays the first chip in every row, so the explicit reset is
-      // still there for anyone who does not try the toggle.
-      assert.equal((browser.match(/\(\) => \['all', \.\.\.Array\.from/g) ?? []).length, 3);
+      // still there for anyone who does not try the toggle. The rows are the
+      // pickers' shared chip lists now (2026-10-06), each opening on 'all'.
+      for (const list of ['BODY_PART_FILTERS', 'EXERCISE_TYPE_FILTERS', 'EQUIPMENT_FILTERS']) {
+        assert.match(browser, new RegExp(`Options = ${list};`), list);
+      }
+      const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
+      for (const list of [browse.BODY_PART_FILTERS, browse.EXERCISE_TYPE_FILTERS, browse.EQUIPMENT_FILTERS]) {
+        assert.equal(list[0], 'all');
+      }
     },
   },
 ];

@@ -1,4 +1,5 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
+import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupLevel } from '../types/models';
 import { getRollingWindowStart } from './completedSessions';
 import { gatingSets } from './warmupSets';
@@ -198,6 +199,12 @@ function countedSessions(history: readonly WorkoutSlotHistoryEntry[]): number {
   return history.filter((entry) => entry.sets.length > 0).length;
 }
 
+/** No load to gate: bodyweight, a hold, a bout of minutes (workoutTypes). */
+function isUnloadedMode(trackingMode: string | undefined): boolean {
+  const mode = readStoredTrackingMode(trackingMode);
+  return mode !== null && isUnloadedTrackingMode(mode);
+}
+
 export function evaluateProgression(input: ProgressionGateInput): ProgressionDecision {
   const { history, repsMin, repsMax, targetSets, fatigueSignal, trackingMode } = input;
   const params = PROGRESSION_LEVEL_PARAMS[getProgressionTier(input.level)];
@@ -209,7 +216,10 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   // Bodyweight progresses by reps and variation, never by load (ADR-004 §What
   // This Model Does Not Cover).
   // A hold progresses in seconds, and there is no load to add either way.
-  if (trackingMode === 'bodyweight' || trackingMode === 'hold') {
+  // Nor does a bout of minutes, which the app never moves on its own: the
+  // programme's minutes are the dose, and the reader logs what they did
+  // (2026-10-06 — the conservative choice; see lib/minutesExercises).
+  if (isUnloadedMode(trackingMode)) {
     return { recommendation: 'silent' };
   }
   if (countedSessions(history) < params.minSessions) {
@@ -632,7 +642,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   if (!input.automatedProgressionEnabled || !(repsMin > 0) || !(targetSets > 0)) {
     return null;
   }
-  if (trackingMode === 'bodyweight' || trackingMode === 'hold') {
+  if (isUnloadedMode(trackingMode)) {
     return null;
   }
   // The newest entry that logged something — the same reading the set
@@ -724,7 +734,7 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   if (!input.automatedProgressionEnabled || !entry || entry.skipped) {
     return null;
   }
-  if (trackingMode === 'bodyweight' || trackingMode === 'hold') {
+  if (isUnloadedMode(trackingMode)) {
     return null;
   }
   if (typeof input.nowMs === 'number' && Number.isFinite(input.nowMs)) {

@@ -70,7 +70,12 @@ module.exports = [
       const kept = filterBrowsableExercises(library);
       const hidden = library.length - kept.length;
       assert.ok(hidden >= 40, `hid only ${hidden} of ${library.length}`);
-      assert.ok(hidden <= 90, `hid ${hidden} of ${library.length} — too wide`);
+      // 90 until every row the source files as stretching (123 of them,
+      // foam-roller rows included) became the "Venytykset" type, hidden
+      // unasked, and the sprint-form drills joined the field drills
+      // (2026-10-06), and the ready programmes' own stretches and drills got
+      // rows: 189 of 953. Specialty rows are hidden by their own gate.
+      assert.ok(hidden <= 200, `hid ${hidden} of ${library.length} — too wide`);
 
       // The lifts a programme is actually built from all survive.
       const names = new Set(kept.map((item) => item.name));
@@ -86,11 +91,13 @@ module.exports = [
         path.join(__dirname, '../../src/components/AddExerciseSheet.tsx'),
         'utf8',
       );
-      assert.match(sheet, /filterBrowsableExercises/);
-      // Applied to the list the reader browses, with the query passed through
-      // so searching still reaches everything, and the type chip so the
-      // specialty chip can list what the default list hides.
-      assert.match(sheet, /filterBrowsableExercises\(\s*items,\s*\{ query, type: category \}\s*\)/);
+      // Through every picker's one list (lib/exercisePicker, 2026-10-06),
+      // which applies it with the query passed through so searching still
+      // reaches everything, and the type chip so the specialty chip can list
+      // what the default list hides.
+      assert.match(sheet, /listPickerExercises\(items, \{\s*query: search,\s*filters: \{ category, bodyPart, equipment \}/);
+      const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
+      assert.match(shared, /filterBrowsableExercises\(\[\.\.\.items\], \{ query: typed, type: chips\.category \}\)/);
     },
   },
   {
@@ -132,9 +139,12 @@ module.exports = [
       assert.match(sheet, /BODY_PART_FILTERS\.map\(/, 'the quick row');
       assert.match(sheet, /options=\{BODY_PART_FILTERS\}/, 'the full filter');
       assert.doesNotMatch(sheet, /'all',\s*'(?:chest|back|shoulders|legs|biceps|triceps)'/);
-      assert.match(sheet, /matchesBodyPartFilter\(item, bodyPart\)/);
-      for (const muscle of ['quadriceps', 'hamstrings', 'calves']) {
-        assert.ok(sheet.includes(`${muscle}: 'lib.muscle.${muscle}'`), `no label for ${muscle}`);
+      // The chips' rule and labels are every picker's (lib/exercisePicker).
+      const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
+      assert.match(shared, /matchesBodyPartFilter\(item, filters\.bodyPart, filters\.category\)/);
+      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      for (const [muscle, fi] of [['quadriceps', 'Etureidet'], ['hamstrings', 'Takareidet'], ['calves', 'Pohkeet']]) {
+        assert.equal(exercisePickerLabel(muscle, 'fi'), fi, `no label for ${muscle}`);
       }
     },
   },

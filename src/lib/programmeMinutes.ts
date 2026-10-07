@@ -1,4 +1,4 @@
-import { isTimedTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { applyEquipmentToExercises } from './equipmentExerciseFilter';
 import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup, RoutineDrillOverrides } from './homeSessionHero';
@@ -44,6 +44,7 @@ export function estimateProgrammeSessionMinutesList(
         sets: exercise.sets,
         reps: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
+        minutes: isMinutesTrackingMode(exercise.trackingMode),
         restSeconds: options.rest === 'max' ? exercise.restSecondsMax : exercise.restSecondsMin,
         supersetGroup: exercise.supersetGroup ?? null,
       })),

@@ -1,7 +1,8 @@
 import { buildAiCoachPlanSchema } from './aiCoachPlan';
-import { isSpecialtyExercise } from './exerciseClassification';
+import { exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { findGuidedLibraryIndex } from './guidedPlayer';
+import { isHoldExerciseName } from './holdExercises';
 import { AICoachPlanSchema } from '../types/aiCoachPlan';
 import {
   AiPlannerDaysPerWeek,
@@ -379,6 +380,16 @@ export interface ProposedExercise {
   repsMin: number;
   repsMax: number;
   restSeconds: number;
+  /**
+   * Whether the lift is in the progression ("Ei seurannassa" when not). Stored
+   * as the programme's `trackedDefault`, which decides for every lift the
+   * library does not call compound (customWorkoutAdapter). The saved
+   * programme wrote a flat false here, and that only went unnoticed while the
+   * library filed every curl and raise as compound; with the category
+   * following the source mechanic (2026-10-06), a coach's curl day would have
+   * had no lift in the trend. See `liveExerciseTracked` and `planToProposal`.
+   */
+  tracked: boolean;
 }
 
 export interface ProposedSession {
@@ -432,6 +443,9 @@ function planToProposal(
         repsMin: exercise.repsMin,
         repsMax: exercise.repsMax,
         restSeconds: exercise.restSeconds,
+        // The plan's own answer: its warm-ups and accessory slots are out of
+        // the trend, its primary and secondary lifts are in it.
+        tracked: exercise.tracked,
       })),
   }));
   const includedIds = new Set(sessions.flatMap((session) => session.exercises.map((exercise) => exercise.libraryItemId)));
@@ -506,6 +520,7 @@ export function resolveLiveProposal(
         repsMax: Math.max(repsMin, Math.round(exercise.repsMax || repsMin)),
         restSeconds:
           exercise.restSeconds && exercise.restSeconds > 0 ? Math.round(exercise.restSeconds) : defaultRestSeconds,
+        tracked: liveExerciseTracked(item),
       });
     }
     if (exercises.length > 0) {
@@ -520,6 +535,27 @@ export function resolveLiveProposal(
     return !item || !includedIds.has(item.id);
   });
   return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames, specialtyLeftOut };
+}
+
+/**
+ * Whether a lift the live coach returned is in the progression.
+ *
+ * The live answer names lifts and doses, not roles, so the plan cannot say
+ * which of its lifts are accessories; the library decides. A strength lift —
+ * compound, or an isolation lift such as a curl or a leg curl — is tracked: on
+ * a coach's arm day the curl IS the main lift, and before 2026-10-06 every one
+ * of them was tracked through the library's old all-compound filing. A
+ * stretch, a hold, core and cardio work are not, as they were not then.
+ * (The preview composer's plan does name roles; its own `tracked` is used.)
+ */
+export function liveExerciseTracked(item: ExerciseLibraryItem): boolean {
+  if (item.category === 'compound') {
+    return true;
+  }
+  if (isHoldExerciseName(item.name) || exerciseTypeOf(item) === 'stretch') {
+    return false;
+  }
+  return item.category === 'isolation';
 }
 
 /**
@@ -545,7 +581,8 @@ export function buildProgrammeDraft(proposal: ProgrammeProposal, existingNames: 
         repMin: exercise.repsMin,
         repMax: exercise.repsMax,
         restSeconds: exercise.restSeconds,
-        trackedDefault: false,
+        // The proposal's own answer — see ProposedExercise.tracked.
+        trackedDefault: exercise.tracked === true,
         libraryItemId: exercise.libraryItemId,
       })),
     })),

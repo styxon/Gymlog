@@ -16,11 +16,14 @@
  *   yokes) sit in the "machine" bucket, because the equipment chips have no
  *   better one, so "Laite" listed them among the leg presses.
  *
- * `category` itself is not rewritten: custom programmes read it for their
- * role, progression priority and rep defaults, and changing what a stored
- * programme does is a different decision from what a filter lists. The type
- * the reader sees and filters by is `exerciseTypeOf`, read from the source's
- * own mechanic.
+ * The type the reader sees and filters by is `exerciseTypeOf`, read from the
+ * source's own mechanic. Since 2026-10-06 `category` agrees with it too:
+ * `withLibraryCorrections` rewrites a compound/isolation category to the
+ * source mechanic where the library is seeded, so custom programmes' role,
+ * progression priority and rep defaults (getExerciseTemplateDefaults,
+ * customWorkoutAdapter), the suggestions and the coach's plan read the same
+ * answer as the chips — one truth, not one function every consumer has to
+ * remember to call.
  */
 import { displayEquipmentValue } from './libraryLabel';
 import type { ExerciseLibraryItem } from '../types/models';
@@ -84,16 +87,56 @@ export function exerciseMechanic(item: ClassifiedExercise): ExerciseMechanic | n
   return null;
 }
 
-export type ExerciseType = ExerciseMechanic | 'cardio' | 'core' | 'specialty';
+// ── stretches ────────────────────────────────────────────────────────────
+
+const STRETCH_NAME = /\bstretch(?:es|ing)?\b/i;
+const FOAM_ROLLER_NAME = /-smr\b/i;
+
+/**
+ * A stretch: held or rolled, not repped — every row the source files as
+ * "stretching" (Child's Pose, Arm Circles, the foam-roller "-SMR" rows among
+ * them), and any row whose name says stretch or SMR (the app's own rows have
+ * no source category).
+ *
+ * A type of its own, built like the specialty one (user, 2026-10-06): hidden
+ * from every unsearched set list, offered by its own chip ("Venytykset") and
+ * by search. Stretches a ready programme prescribes are found by name where
+ * they are prescribed, as before.
+ */
+/**
+ * Rows the source files as stretching that are sets: the crossover reverse
+ * lunge is the curtsy lunge the single-leg swap pool offers, loaded and
+ * counted like any lunge.
+ */
+const SETS_FILED_AS_STRETCHING = new Set(['crossover reverse lunge']);
+
+export function isStretchExercise(
+  item: Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>>,
+): boolean {
+  if (SETS_FILED_AS_STRETCHING.has(item.name.trim().toLowerCase())) {
+    return false;
+  }
+  return (
+    item.sourceCategory?.trim().toLowerCase() === 'stretching' ||
+    STRETCH_NAME.test(item.name) ||
+    FOAM_ROLLER_NAME.test(item.name)
+  );
+}
+
+export type ExerciseType = ExerciseMechanic | 'cardio' | 'core' | 'stretch' | 'specialty';
 
 /**
  * The type chip a row belongs to, exactly one: specialty first (a tyre flip
- * is not "Moninivel" for the purposes of a list), then cardio and core as the
- * library files them, then the mechanic.
+ * is not "Moninivel" for the purposes of a list), then stretch (a lying
+ * hamstring stretch is not "Eristävä", and a core stretch is not core work),
+ * then cardio and core as the library files them, then the mechanic.
  */
 export function exerciseTypeOf(item: ClassifiedExercise): ExerciseType {
   if (isSpecialtyExercise(item)) {
     return 'specialty';
+  }
+  if (isStretchExercise(item)) {
+    return 'stretch';
   }
   if (item.category === 'cardio' || item.category === 'core') {
     return item.category;
@@ -114,7 +157,8 @@ export function exerciseRowMetaValues(
   // that is the one collision to step around; the suite checks every row.
   const type = exerciseTypeOf(item);
   const third = type === item.bodyPart ? exerciseMechanic(item) : type;
-  return [item.bodyPart, displayEquipmentValue(item), third].filter((value): value is string => Boolean(value));
+  const values: Array<string | null> = [item.bodyPart, displayEquipmentValue(item), third];
+  return values.filter((value): value is string => Boolean(value));
 }
 
 // ── source corrections ───────────────────────────────────────────────────
@@ -148,13 +192,106 @@ const MUSCLE_CORRECTIONS: Record<string, Pick<ExerciseLibraryItem, 'primaryMuscl
 };
 
 /**
+ * Mechanics the source files wrongly — found by the name sweep in
+ * tests/lib/librarySweep.test.cjs, which lists the rows it lets stand.
+ *
+ * - Two rows are rows: a kettlebell row and a lying cambered-bar row pull
+ *   with the elbow and the shoulder, as every other row in the source does.
+ * - Flyes, crossovers, curls and the glute kickback move one joint. The
+ *   source calls these eight compound while it calls every other fly, curl
+ *   and kickback isolation, so "Eristävä" missed them and a custom programme
+ *   gave them a squat's defaults.
+ *
+ * Set on `sourceMechanic`, the field every reader of the mechanic asks first
+ * (exerciseMechanic), so the category below and the detail card follow.
+ */
+const MECHANIC_CORRECTIONS: Record<string, ExerciseMechanic> = {
+  'Alternating Kettlebell Row': 'compound',
+  'Lying Cambered Barbell Row': 'compound',
+  'Back Flyes - With Bands': 'isolation',
+  'Cross Over - With Bands': 'isolation',
+  'Decline Dumbbell Flyes': 'isolation',
+  'Incline Dumbbell Flyes': 'isolation',
+  'Incline Dumbbell Flyes - With A Twist': 'isolation',
+  'Drag Curl': 'isolation',
+  'High Cable Curls': 'isolation',
+  'Glute Kickback': 'isolation',
+};
+
+/**
+ * Equipment the source files wrongly. The Smith incline shoulder raise is
+ * done on the Smith machine (its first step), and the source calls it a
+ * barbell lift; every other Smith row is "machine".
+ */
+const EQUIPMENT_CORRECTIONS: Record<string, ExerciseLibraryItem['equipment']> = {
+  'Smith Incline Shoulder Raise': 'machine',
+};
+
+function rowCorrection(name: string): Partial<ExerciseLibraryItem> | null {
+  const muscles = MUSCLE_CORRECTIONS[name];
+  const mechanic = MECHANIC_CORRECTIONS[name];
+  const equipment = EQUIPMENT_CORRECTIONS[name];
+  if (!muscles && !mechanic && !equipment) {
+    return null;
+  }
+  return {
+    ...muscles,
+    ...(mechanic ? { sourceMechanic: mechanic } : null),
+    ...(equipment ? { equipment } : null),
+  };
+}
+
+/**
+ * The stored category with the source's mechanic read into it.
+ *
+ * The generator (scripts/generate_free_exercise_library.mjs, `mapCategory`)
+ * calls every "strength", "powerlifting" and "strongman" row compound before
+ * it reads the mechanic, so 214 isolation lifts — the leg extension, every
+ * curl, lateral raise and fly — were stored as compound. Custom programmes
+ * read the category for their defaults: a leg extension added to your own
+ * programme started at 3 × 6–8 with the full compound rest, as if it were a
+ * squat (#bugs 2026-10-06). Core and cardio are body-part answers the
+ * mechanic does not overrule; a row with no source mechanic keeps its own.
+ */
+function correctedCategory(item: ExerciseLibraryItem): ExerciseLibraryItem['category'] {
+  if (item.category !== 'compound' && item.category !== 'isolation') {
+    return item.category;
+  }
+  const source = item.sourceMechanic?.trim().toLowerCase();
+  return source === 'compound' || source === 'isolation' ? source : item.category;
+}
+
+/**
  * The library as the app reads it: the generated rows with the corrections
- * above. Applied once, where the library is seeded (data/seed.ts), so every
- * screen — chips, swap list, detail card — reads the same muscles.
+ * above. Applied where the library is seeded (data/seed.ts) and again over a
+ * stored library row on load (storage/database.ts), so every screen — chips,
+ * swap list, detail card, a custom programme's defaults — reads the same
+ * muscles and the same mechanic. Idempotent.
  */
 export function withLibraryCorrections<T extends ExerciseLibraryItem>(items: readonly T[]): T[] {
   return items.map((item) => {
-    const correction = MUSCLE_CORRECTIONS[item.name];
-    return correction ? { ...item, ...correction } : item;
+    const correction = rowCorrection(item.name);
+    const corrected: T = correction ? { ...item, ...correction } : item;
+    const category = correctedCategory(corrected);
+    const bodyPart = correctedBodyPart(corrected);
+    if (!correction && category === item.category && bodyPart === item.bodyPart) {
+      return item;
+    }
+    return { ...corrected, category, bodyPart };
   });
+}
+
+/**
+ * The neck, filed with the back. The generator has no body part for a neck
+ * lift and files all eight under "full body", so "Koko keho" was six neck
+ * exercises and two whole-body ones (picker audit, 2026-10-06). The app files
+ * the traps — the shrugs — under the back, and the neck work is their
+ * neighbour; a body part of its own would be a new stored value and a chip
+ * for five lifts.
+ */
+function correctedBodyPart(item: ExerciseLibraryItem): ExerciseLibraryItem['bodyPart'] {
+  const muscles = item.primaryMuscles ?? [];
+  return item.bodyPart === 'full body' && muscles.length > 0 && muscles.every((muscle) => muscle === 'neck')
+    ? 'back'
+    : item.bodyPart;
 }

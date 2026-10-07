@@ -82,6 +82,7 @@ import { formatLastOwnBlock, OwnBlockPhase, OwnBlockStats } from '../lib/ownBloc
 import { buildWarmupBrief } from '../lib/warmupBrief';
 import {
   HOLD_DIAL,
+  MINUTES_DIAL,
   REPS_DIAL,
   commitDialReps,
   commitDialWeight,
@@ -90,6 +91,16 @@ import {
   stepDialWeight,
 } from '../lib/weightDial';
 import { isLiftableWeight } from '../lib/weightLimits';
+import {
+  minutesToLog,
+  MinutesStopwatch,
+  msUntilNextMinutesChange,
+  pauseStopwatch,
+  startStopwatch,
+  stopwatchElapsedMs,
+  STOPPED_STOPWATCH,
+} from '../lib/minutesExercises';
+import { formatCardioDuration } from '../lib/cardio';
 import {
   exerciseCardAccessibilityLabel,
   setFieldAccessibilityLabel,
@@ -127,7 +138,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { exerciseMatchesQuery, oneRowPerShownName, rankExerciseMatches } from '../lib/exerciseSearch';
+import { exerciseMatchesQuery, oneRowPerShownName } from '../lib/exerciseSearch';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
@@ -135,14 +146,9 @@ import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
 import { fitRunPreview } from '../lib/guidedRunPreview';
-import {
-  ExercisePickerEntry,
-  ExercisePickerFilters,
-  ExercisePickerSheet,
-  SheetEquipmentOption,
-  matchesExerciseSheetFilters,
-} from '../components/AddExerciseSheet';
-import { BodyPartFilter, filterBrowsableExercises } from '../lib/exerciseBrowseFilter';
+import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
+import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
+import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, orderSwapCandidates, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { useKeepScreenAwake } from '../utils/keepAwake';
@@ -156,6 +162,7 @@ import {
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet } from '../lib/liftSegments';
 import {
+  isMinutesTrackingMode,
   isTimedTrackingMode,
   isUnloadedTrackingMode,
   WorkoutExerciseInstance,
@@ -2513,38 +2520,35 @@ function GuidedPlayer({
     // to swap it for.
     const current = actionExercise?.exerciseName;
     const currentLabel = current ? exerciseNameLabel(language, current) : null;
-    // What can be logged as sets, until the reader types: a stretch is no
-    // swap for a bench press, and "Rinnan venytys kädet niskan takana" sat in
-    // the chest list (device, 2026-09-30). The add-exercise sheet has hidden
-    // them the same way since #bugs 2026-08-26; a query finds them.
-    // The type chip is passed too: the specialty chip is the one place the
-    // specialty movements are listed without a query (#bugs 2026-10-06).
-    const pool = filterBrowsableExercises(exerciseLibrary, { query, type: swapFilters.category }).filter(
+    // Every picker's one list (lib/exercisePicker): what can be logged as
+    // sets until the reader types — a stretch is no swap for a bench press,
+    // and "Rinnan venytys kädet niskan takana" sat in the chest list (device,
+    // 2026-09-30) — the specialty movements only under their own chip
+    // (#bugs 2026-10-06), and the sheet's three chip groups, the body part
+    // the lift's own until the reader picks another (swapBodyPart). Ranked
+    // best answer first under a query, popularity breaking ties — the same
+    // rule as the add sheet, so the two do not disagree.
+    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
+    const pool = listPickerExercises(exerciseLibrary, {
+      query,
+      filters: swapFilters,
+      language,
+      popularity: (item) => popular.get(item.id),
+    }).filter(
       (item) =>
         item.name !== current &&
         exerciseNameLabel(language, item.name) !== currentLabel &&
         !sessionLiftLabels.has(exerciseNameLabel(language, item.name)) &&
-        !suggested.has(exerciseNameLabel(language, item.name)) &&
-        // The body-part chip, the lift's own until the reader picks another
-        // (swapBodyPart), with the sheet's category and equipment chips — the
-        // add sheet's one rule (matchesExerciseSheetFilters). Composes with
-        // the typed query below rather than replacing it, like the library
-        // screen's own chips do.
-        matchesExerciseSheetFilters(item, swapFilters),
+        !suggested.has(exerciseNameLabel(language, item.name)),
     );
     if (!query) {
       // Nearest the lift first — same kit, same kind of lift — then
       // popularity (orderSwapCandidates).
-      const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
       const nearest = orderSwapCandidates(pool, swapCurrentLibraryItem, popular);
       return oneRowPerShownName(nearest, language).slice(0, 25);
     }
-    // Best answer first, popularity breaking ties — the same rule as the
-    // pickers, so the swap sheet does not disagree with them.
-    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
     // One row per shown name, as on Home and the programme day (PR review).
-    const ranked = rankExerciseMatches(pool, query, language, (item) => popular.get(item.id));
-    return oneRowPerShownName(ranked, language).slice(0, 40);
+    return oneRowPerShownName(pool, language).slice(0, 40);
   }, [
     actionExercise,
     exerciseLibrary,
@@ -2568,7 +2572,7 @@ function GuidedPlayer({
   const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(() => {
     const narrowed = swapFilters.category !== 'all' || swapFilters.equipment !== 'all';
     return swapSuggestionRows
-      .filter(({ item }) => !narrowed || (item !== null && matchesExerciseSheetFilters(item, { ...swapFilters, bodyPart: 'all' })))
+      .filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, { ...swapFilters, bodyPart: 'all' })))
       .map(({ name, item }) => ({ key: `suggested-${name}`, name, item }));
   }, [swapFilters, swapSuggestionRows]);
   const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
@@ -2868,6 +2872,7 @@ function GuidedPlayer({
       sets: exercise.sets.length,
       reps: exercise.sets[0]?.plannedRepsMax ?? 8,
       timed: isTimedTrackingMode(exercise.trackingMode),
+      minutes: isMinutesTrackingMode(exercise.trackingMode),
       restSeconds: exercise.restSecondsMin,
       // A superset rests once per round, not once per lift — see
       // estimateSessionSeconds. Without this the entry screen quotes a session
@@ -2922,6 +2927,7 @@ function GuidedPlayer({
           setCount: exercise.sets.length,
           repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
           timed: isTimedTrackingMode(exercise.trackingMode),
+          minutes: isMinutesTrackingMode(exercise.trackingMode),
           loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
         })),
         language,
@@ -3077,9 +3083,9 @@ function GuidedPlayer({
       todayValue:
         target.loadKg != null && target.loadKg > 0
           ? formatLoadOrRange(todayLoads) ?? formatWeight(target.loadKg, unitPreference)
-          : t(language, target.timed ? 'guided.target.seconds' : 'guided.target.reps', {
-              reps: target.reps,
-            }),
+          : // The unloaded label whatever the load says: a lift with no weight
+            // yet opens at 0 kg, and "8 × 0 kg" is not a target.
+            formatGuidedTarget({ ...target, loadKg: null }, language),
       // A lift that runs into the next one has no rest after it, so the card
       // names what does follow. Quoting the lift's own rest here would be the
       // same promise the day view stopped making — and worse on this screen,
@@ -3309,6 +3315,7 @@ function GuidedPlayer({
                                 setCount: exercise.sets.length,
                                 repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
                                 timed: isTimedTrackingMode(exercise.trackingMode),
+                                minutes: isMinutesTrackingMode(exercise.trackingMode),
                                 loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
                               },
                               unitPreference,
@@ -4090,6 +4097,8 @@ function GuidedPlayer({
               panels={setPanelSource}
               onOpenSheet={() => setSetPanelsOpen(true)}
               onConfirm={confirmSet}
+              // The rest-over cue: the minutes are in, the reader logs them.
+              onMinutesReached={() => cue('rest')}
             />
           )}
 
@@ -5172,6 +5181,32 @@ function LoggedSetEditor({
   );
 }
 
+/**
+ * A minutes bout's running clock. It owns the one-second interval that moves
+ * its digits, so the set step around it does not re-render for them: the step
+ * only needs the whole minutes and "the minutes are in" (SetStepView sleeps
+ * until lib/minutesExercises msUntilNextMinutesChange). The time is read off
+ * the stopwatch's wall-clock start, so a tick that comes late shows the right
+ * second, not a lost one.
+ */
+function MinutesClockText({ watch, style }: { watch: MinutesStopwatch; style: React.ComponentProps<typeof Text>['style'] }) {
+  const running = watch.runningSinceMs !== null;
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    setNowMs(Date.now());
+    if (!running) {
+      return;
+    }
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running, watch]);
+  return (
+    <Text style={style} {...RING_CLOCK_FIT}>
+      {formatCardioDuration(stopwatchElapsedMs(watch, nowMs) / 1000)}
+    </Text>
+  );
+}
+
 function SetStepView({
   stepIndex,
   step,
@@ -5189,6 +5224,7 @@ function SetStepView({
   panels,
   onOpenSheet,
   onConfirm,
+  onMinutesReached,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5217,6 +5253,8 @@ function SetStepView({
     initials: string;
   } | null;
   onConfirm: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
+  /** A bout of minutes reached its prescription on the clock — a cue, nothing logged. */
+  onMinutesReached?: () => void;
 }) {
   const theme = useTheme();
 
@@ -5232,6 +5270,80 @@ function SetStepView({
   const historyChips = panels?.history ? summarizeHistoricalSetChips(panels.history.sets) : null;
   const timed = exercise ? isTimedTrackingMode(exercise.trackingMode) : false;
   const [reps, setReps] = useState(target?.reps ?? 8);
+  /**
+   * A bout of minutes (trackingMode 'duration_minutes' — a bike, a stair
+   * machine, a run block): the set is a clock the reader starts, pauses and
+   * stops, and the dial below logs whole minutes. Left alone, the dial
+   * follows the clock — or the prescription, if the clock never ran — so
+   * twenty minutes ridden logs twenty without a tap (lib/minutesExercises
+   * minutesToLog). Touched, the dial is the reader's number.
+   *
+   * The clock is read off the wall, not ticks, so it keeps counting with the
+   * screen off. It is this screen's alone: leaving the step drops it, as the
+   * set's own dials are dropped.
+   */
+  const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
+  const plannedMinutes = target?.reps ?? 0;
+  const [watch, setWatch] = useState<MinutesStopwatch>(STOPPED_STOPWATCH);
+  const [watchNowMs, setWatchNowMs] = useState(() => Date.now());
+  const minutesChosenRef = useRef(false);
+  const [minutesChosen, setMinutesChosen] = useState(false);
+  const watchRunning = watch.runningSinceMs !== null;
+  // This step re-renders when the clock changes something it shows besides
+  // the seconds — the whole minutes on the dial, "the minutes are in" — and
+  // sleeps in between. A 500 ms state tick here re-rendered the entire set
+  // step (dials, history chips, panels) twice a second for a clock whose
+  // seconds MinutesClockText draws on its own.
+  useEffect(() => {
+    const wait = msUntilNextMinutesChange(watch, Date.now(), plannedMinutes);
+    if (wait === null) {
+      return;
+    }
+    // A few ms past the moment, so the wake-up lands on the far side of it.
+    const timer = setTimeout(() => setWatchNowMs(Date.now()), wait + 20);
+    return () => clearTimeout(timer);
+  }, [watch, watchNowMs, plannedMinutes]);
+  const elapsedMs = stopwatchElapsedMs(watch, watchNowMs);
+  const shownMinutes = minutesChosen ? reps : minutesToLog({ plannedMinutes, elapsedMs });
+  const shownMinutesRef = useRef(shownMinutes);
+  shownMinutesRef.current = shownMinutes;
+  const minutesReached = minutesMode && plannedMinutes > 0 && elapsedMs >= plannedMinutes * 60000;
+  const minutesReachedRef = useRef(false);
+  useEffect(() => {
+    if (minutesReached && !minutesReachedRef.current) {
+      minutesReachedRef.current = true;
+      onMinutesReached?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutesReached]);
+  // Pausing the workout pauses the bout: the header's pause means "I have
+  // stopped", and a clock that ran on through it would log the break.
+  useEffect(() => {
+    if (paused) {
+      setWatch((current) => pauseStopwatch(current, Date.now()));
+    }
+  }, [paused]);
+  const toggleWatch = () => {
+    const now = Date.now();
+    setWatchNowMs(now);
+    setWatch((current) => (current.runningSinceMs === null ? startStopwatch(current, now) : pauseStopwatch(current, now)));
+  };
+  /** The first touch of the dial takes it from the clock, from where it stood. */
+  const stepMinutes = (direction: -1 | 1) => {
+    if (!minutesChosenRef.current) {
+      minutesChosenRef.current = true;
+      setMinutesChosen(true);
+      setReps(stepDialReps(shownMinutesRef.current, direction, MINUTES_DIAL));
+      return;
+    }
+    setReps((current) => stepDialReps(current, direction, MINUTES_DIAL));
+  };
+  const commitMinutes = (text: string) => {
+    const base = minutesChosenRef.current ? reps : shownMinutesRef.current;
+    minutesChosenRef.current = true;
+    setMinutesChosen(true);
+    setReps(commitDialReps(text, base, MINUTES_DIAL));
+  };
   const [kg, setKg] = useState(target?.loadKg ?? 0);
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
@@ -5296,6 +5408,10 @@ function SetStepView({
     setWarmupMode(false);
     setReps(target?.reps ?? 8);
     setKg(target?.loadKg ?? 0);
+    setWatch(STOPPED_STOPWATCH);
+    minutesChosenRef.current = false;
+    setMinutesChosen(false);
+    minutesReachedRef.current = false;
     // Re-derive when the step changes — and when the exercise under the step
     // changes, which is what a swap does without moving the index. Keying on
     // stepIndex alone left the old lift's weight sitting in local state after a
@@ -5489,7 +5605,7 @@ function SetStepView({
                   ramp has no one weight to lead with, and the per-set chips
                   below already say the whole thing (decision "a", #bugs
                   2026-09-29). */}
-              {historyChips?.uniform !== false ? (
+              {historyChips?.uniform !== false && !minutesMode ? (
                 <Text style={styles.setExerciseLastLoad}>
                   {/* The same number decides and is shown. Guarding on the
                       FIRST set while printing the heaviest hid a real top set
@@ -5505,7 +5621,9 @@ function SetStepView({
                 {panels.history.sets.map((set, index) => (
                   <View key={set.setIndex} style={styles.setExerciseLastPill}>
                     <Text style={styles.setExerciseLastPillText}>
-                      {historyChips?.chips[index] ?? set.reps}
+                      {minutesMode
+                        ? t(language, 'logger.minutesValue', { count: set.reps })
+                        : historyChips?.chips[index] ?? set.reps}
                     </Text>
                   </View>
                 ))}
@@ -5639,17 +5757,58 @@ function SetStepView({
               buttons behind a tap because a resting thumb once changed a
               number; under the number, the buttons are no longer where a
               thumb rests. Hold a button to run. */}
+          {minutesMode ? (
+            <View style={styles.minutesClock}>
+              <MinutesClockText watch={watch} style={styles.minutesClockTime} />
+              <Text style={styles.minutesClockOf}>
+                {t(language, 'guided.minutes.clockOf', { count: plannedMinutes })}
+              </Text>
+              {minutesReached ? (
+                <Text style={styles.minutesClockDone} accessibilityLiveRegion="polite">
+                  {t(language, 'guided.minutes.done')}
+                </Text>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(
+                  language,
+                  watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start',
+                )}
+                onPress={toggleWatch}
+                style={({ pressed }) => [styles.minutesClockButton, pressed && { opacity: 0.85 }]}
+              >
+                <GPIcon name={watchRunning ? 'pause' : 'play'} size={18} color={theme.ink} sw={2.4} />
+                <Text style={styles.minutesClockButtonText}>
+                  {t(language, watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           <View style={styles.setDialRow}>
             <DialCard
-              label={t(language, timed ? 'guided.seconds' : 'guided.reps')}
-              value={String(reps)}
-              unit={null}
+              label={t(language, minutesMode ? 'guided.minutes' : timed ? 'guided.seconds' : 'guided.reps')}
+              value={String(minutesMode ? shownMinutes : reps)}
+              unit={minutesMode ? 'min' : null}
               open={dial === 'reps'}
               onToggle={() => setDial((current) => (current === 'reps' ? null : 'reps'))}
-              onStep={(direction) => setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))}
-              onCommit={(text) => setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))}
-              downLabel={t(language, timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown')}
-              upLabel={t(language, timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp')}
+              onStep={(direction) =>
+                minutesMode
+                  ? stepMinutes(direction)
+                  : setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              onCommit={(text) =>
+                minutesMode
+                  ? commitMinutes(text)
+                  : setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              downLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesDown' : timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown',
+              )}
+              upLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesUp' : timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp',
+              )}
               editHint={t(language, 'guided.a11y.tapToEdit')}
               wide={bodyweight}
               faint={false}
@@ -5778,7 +5937,16 @@ function SetStepView({
             disabled={logBlocked}
             onPress={() => {
               setDial(null);
-              onConfirm(step.slotId, step.setIndex, reps, bodyweight ? null : kg);
+              // The minutes on the dial — the clock's, the prescription's or
+              // the reader's own — are what was done. The clock is read now:
+              // the dial shows the last wake-up's minutes, which can be a
+              // moment behind the tap.
+              const done = !minutesMode
+                ? reps
+                : minutesChosen
+                  ? reps
+                  : minutesToLog({ plannedMinutes, elapsedMs: stopwatchElapsedMs(watch, Date.now()) });
+              onConfirm(step.slotId, step.setIndex, done, bodyweight ? null : kg);
             }}
             style={({ pressed }) => [
               styles.setLogButton,
@@ -6474,6 +6642,42 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Two dials of equal width. Each is a card, so the reps dial no longer
   // floats as a bare headline over a boxed weight — same shape, same weight.
   setDialRow: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  // A bout of minutes: the clock above the dial, on the same card ground.
+  minutesClock: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
+  },
+  minutesClockTime: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    fontSize: 52,
+    fontWeight: '800',
+    letterSpacing: -1.6,
+    color: theme.ink,
+    lineHeight: 58,
+    fontVariant: ['tabular-nums'],
+  },
+  minutesClockOf: { fontSize: 13, fontWeight: '700', color: theme.muted },
+  minutesClockDone: { fontSize: 13, fontWeight: '800', color: theme.ink, textAlign: 'center' },
+  minutesClockButton: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  minutesClockButtonText: { fontSize: 15, fontWeight: '800', color: theme.ink },
   setDialCard: {
     flex: 1,
     minWidth: 0,

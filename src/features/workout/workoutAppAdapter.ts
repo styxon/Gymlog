@@ -1,5 +1,11 @@
 import { ExerciseLogDraft, ExerciseLogSet } from '../../types/models';
-import { WorkoutExerciseInstance, WorkoutSessionRuntime, WorkoutSetStatus, WorkoutTrackingMode } from './workoutTypes';
+import {
+  isMinutesTrackingMode,
+  WorkoutExerciseInstance,
+  WorkoutSessionRuntime,
+  WorkoutSetStatus,
+  WorkoutTrackingMode,
+} from './workoutTypes';
 import { sessionLastActiveMs, workoutSecondsUntil } from '../../lib/sessionClock';
 import { LiftSegment, splitExerciseByLift } from '../../lib/liftSegments';
 import { buildLoggedSetPlan } from '../../lib/loggedSetPlan';
@@ -268,6 +274,9 @@ function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLo
         templateExerciseId: exercise.templateExerciseId,
         notes: lift.notes,
         swappedFrom: lift.segment.swappedFrom,
+        // The unit is the lift's own, set by set: a slot swapped from a bike
+        // to a lift mid-way saves two logs, and only the bike's is minutes.
+        ...(isMinutesTrackingMode(lift.segment.trackingMode) ? { repsUnit: 'minutes' as const } : {}),
       }) satisfies ExerciseLogDraft,
   );
 }

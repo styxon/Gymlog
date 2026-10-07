@@ -34,6 +34,7 @@ const ALLOWED = {
   EXERCISE_TEACHING_TABLES: 'Both teaching tables, exposed for the sweep that keeps every swap pointing at a real library lift and never at itself.',
   EXERCISE_COLLECTION_TABLES: 'Both collection tables, exposed for the sweep that keeps every course entry pointing at a lift the reader can open.',
   HOLD_EXERCISE_NAME_LIST: 'The hold list, exposed for the test that keeps the catalog data and this list one truth in both directions.',
+  MINUTES_EXERCISE_NAME_LIST: 'The minutes list, exposed for the same both-ways agreement test (tests/lib/minutesTracking.test.cjs).',
   EMPTY_SESSION_ADAPTATION: 'The empty value, pinned so its shape cannot drift.',
   fingerprintsMatch: 'Exposed for the test that keeps fingerprints distinct.',
   isCatalogExercise: 'Pool membership, pinned so the catalog and the filters cannot diverge.',

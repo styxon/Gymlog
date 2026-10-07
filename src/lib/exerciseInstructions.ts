@@ -133,6 +133,52 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nouse seisovan jalan päkiälle niin korkealle kuin pystyt, polvi suorana mutta ei lukittuna, ja pysähdy hetkeksi ylös.',
     'Laske kantapää hitaasti lattian tasolle tai hieman sen alle, jos seisot askelmalla, ja jatka suoraan seuraavaan toistoon. Tee kaikki toistot yhdellä jalalla ja vaihda sitten.',
   ],
+  // The rows the ready programmes' names reach by alias since the catalog
+  // audit (2026-10-06); each was reached before only by a near-miss name.
+  'EZ-Bar Skullcrusher': [
+    'Ota EZ-tangosta kapea ote, nosta tanko ja käy selällesi penkille kyynärpäät lähellä toisiaan. Kädet osoittavat suoraan kattoa kohti. Tämä on lähtöasento.',
+    'Pidä olkavarret paikallaan ja laske tankoa koukistamalla kyynärpäitä. Hengitä sisään laskun aikana. Pysähdy, kun tanko on suoraan otsan yläpuolella.',
+    'Ojenna kyynärpäät ja nosta tanko takaisin lähtöasentoon uloshengityksellä.',
+    'Toista.',
+  ],
+  'Standing Dumbbell Triceps Extension': [
+    'Seiso jalat noin hartioiden leveydellä ja pidä käsipainoa molemmin käsin. Nosta paino hitaasti pään yläpuolelle, kunnes kädet ovat täysin suorat.',
+    'Paino lepää kämmenillä peukalot sen ympärillä, ja kämmenet osoittavat kattoon. Tämä on lähtöasento.',
+    'Pidä olkavarret lähellä päätä, kyynärpäät sisällä ja pystysuorassa, ja laske painoa kaarella pään taakse, kunnes kyynärvarret koskettavat hauiksia. Vain kyynärvarret liikkuvat, olkavarret pysyvät paikallaan. Hengitä sisään laskun aikana.',
+    'Nosta paino ojentajilla takaisin lähtöasentoon. Hengitä ulos noston aikana.',
+    'Toista ohjelman toistomäärä.',
+  ],
+  'Close-Grip Barbell Bench Press': [
+    'Käy selällesi tasapenkille. Ota tangosta kapea, noin hartioiden levyinen ote, nosta tanko telineestä ja pidä se suoraan yläpuolellasi kädet suorina. Tämä on lähtöasento.',
+    'Hengitä sisään ja laske tanko hitaasti rintakehän keskiosaan. Pidä kyynärpäät koko ajan lähellä vartaloa, toisin kuin tavallisessa penkkipunnerruksessa, jotta ojentajat tekevät työn.',
+    'Pidä sekunnin tauko ja työnnä tanko ojentajilla takaisin lähtöasentoon uloshengityksellä. Pidä kädet suorina sekunnin ajan ja aloita lasku taas hitaasti: laskun pitäisi kestää vähintään kaksi kertaa niin kauan kuin nousun.',
+    'Toista ohjelman toistomäärä.',
+    'Lopuksi laske tanko takaisin telineeseen.',
+  ],
+  'T-Bar Row with Handle': [
+    'Aseta tangon toinen pää maamiinatelineeseen tai nurkkaan, jotta se ei liiku, ja lisää sopiva paino omaan päähäsi.',
+    'Seiso tangon yläpuolella ja aseta V-kahva tangon ympärille lähelle levyjen lukkoa. Nouse seisomaan lantion ja jalkojen voimalla.',
+    'Ota leveä asento, vie lantio taakse ja pidä rintakehä ylhäällä, kädet suorina. Tämä on lähtöasento.',
+    'Vedä paino ylävatsaa kohti vetämällä lapaluita yhteen ja koukistamalla kyynärpäitä. Älä nykäise painoa tai huijaa liikkeessä.',
+    'Pidä lyhyt tauko ja palaa lähtöasentoon.',
+  ],
+  'Push-Ups - Close Triceps Position': [
+    'Asetu vatsallesi lattialle ja aseta kädet hartioita kapeammalle. Nosta vartalo suorin käsin ylös.',
+    'Hengitä sisään ja laskeudu, kunnes rintakehä melkein koskettaa lattiaa.',
+    'Punnerra ojentajilla ja rintalihaksilla takaisin lähtöasentoon ja purista rintaa. Hengitä ulos noston aikana.',
+    'Pidä sekunnin tauko yläasennossa ja toista ohjelman toistomäärä.',
+  ],
+  'Natural Glute Ham Raise': [
+    'Asetu ylätaljan reisituen tai preacher-penkin luo niin, että nilkat ovat tyynyjen alla, polvet istuimella ja selkä laitetta kohti. Pysy pystyssä hyvässä ryhdissä.',
+    'Tämä on lähtöasento. Laskeudu hallitusti eteenpäin, kunnes polvet ovat lähes suorat.',
+    'Nouse hallitusti takaisin lähtöasentoon.',
+    'Jos toisto ei onnistu, ota apua kuminauhasta, kaverista tai työntämällä korokkeesta.',
+  ],
+  'Side Plank': [
+    'Käy kyljellesi jalat suorina päällekkäin ja nouse alemman kyynärvarren varaan niin, että kyynärpää on suoraan olkapään alla. Helpommassa versiossa koukista polvet ja pidä ne lattiassa.',
+    'Nosta lantio ylös, kunnes vartalo on suora linja päästä jalkoihin (tai polviin), ja pidä se siinä painumatta alas tai kiertymättä eteen.',
+    'Hengitä tasaisesti ja pidä asento ohjelman ajan, laske sitten lantio alas, käänny ja tee sama toisella puolella.',
+  ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
     'Säädä istuin niin, että sääret ovat pystysuorassa liikkeen yläasennossa, ja työnnä kantapäillä lantio ylös.',
@@ -1029,6 +1075,369 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Tuo polvet kohti rintaa kiertämällä lantiota taaksepäin, kunnes lantio nousee irti lattiasta.',
     'Pidä sekunti ja laske jalat hallitusti takaisin alkuasentoon.',
     'Toista ohjelman toistomäärä.',
+  ],
+
+  // ── The app's own rows for the last 79 programme names (catalog audit,
+  // 2026-10-06) — see extraExerciseLibrary.ts. Step for step with the English.
+  '90/90 Hip Stretch': [
+    'Istu lattialle niin, että etujalka on koukussa 90 asteen kulmassa edessäsi sääri vartalon poikki ja takajalka 90 asteen kulmassa sivulla takanasi.',
+    'Istu ryhdikkäästi ja kallistu lantiosta eteenpäin etusäären yli, kunnes tunnet venytyksen syvällä etujalan pakarassa. Pidä selkä pitkänä äläkä pyöristä sitä.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja vaihda sitten puolta.',
+  ],
+  'Box Breathing': [
+    'Istu tai makaa mukavasti toinen käsi vatsan päällä ja anna hartioiden rentoutua.',
+    'Hengitä nenän kautta sisään neljään laskien, pidätä neljä, hengitä hitaasti ulos neljään laskien ja pidätä tyhjänä neljä. Tämä on yksi laatikko.',
+    'Toista laatikkoa ohjelman ajan. Jos neljä tuntuu pitkältä, laske kolmeen; kaikki neljä vaihetta pysyvät yhtä pitkinä.',
+  ],
+  'Butterfly Stretch': [
+    'Istu lattialle, koukista polvet ja paina jalkapohjat yhteen. Vedä kantapäät niin lähelle kuin on mukavaa.',
+    'Ota kiinni nilkoista, istu ryhdikkäästi ja anna polvien laskeutua kohti lattiaa. Syvemmän venytyksen saat kallistumalla lantiosta eteen selkä pitkänä.',
+    'Pidä asento ohjelman ajan ja hengitä rauhallisesti. Älä paina polvia alas käsillä.',
+  ],
+  'Cobra Pose': [
+    'Käy vatsallesi jalat suorina, jalkapöydät lattiassa ja kämmenet hartioiden alla, kyynärpäät lähellä kylkiä.',
+    'Paina käsillä lattiaa ja nosta rintakehä irti lattiasta. Pidä lantio lattiassa ja hartiat kaukana korvista. Nouse vain niin korkealle kuin alaselälle on mukavaa; kyynärpäät saavat jäädä koukkuun.',
+    'Pidä asento ohjelman ajan tasaisesti hengittäen ja laskeudu sitten hitaasti alas.',
+  ],
+  'Deep Squat Hold': [
+    'Seiso jalat hieman lantiota leveämmällä ja varpaat hieman ulospäin.',
+    'Laskeudu kantapäiden väliin niin syvälle kuin pystyt kantapäät lattiassa ja rintakehä ylhäällä. Paina kyynärpäillä kevyesti polvien sisäpuolia.',
+    'Pidä ala-asento ohjelman ajan rauhallisesti hengittäen ja nouse sitten ylös jaloilla.',
+  ],
+  'Doorway Pec Stretch': [
+    'Seiso oviaukossa ja aseta kyynärvarsi karmia vasten, kyynärpää hartian korkeudella ja 90 asteen kulmassa.',
+    'Astu saman puolen jalalla eteen ja käännä rintakehää kevyesti poispäin kädestä, kunnes tunnet venytyksen rinnan ja olkapään etuosassa.',
+    'Pidä asento ohjelman ajan nostamatta hartioita ja vaihda sitten kättä.',
+  ],
+  'Frog Stretch': [
+    'Asetu alustalle konttausasentoon ja liu\'uta polvet leveälle niin, että nilkat ovat polvien linjassa ja jalkaterät osoittavat ulos.',
+    'Laskeudu kyynärvarsien varaan ja vie lantiota hitaasti taakse kohti kantapäitä, kunnes tunnet venytyksen reisien sisäpinnoissa.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen. Kevennä, jos tunnet venytyksen polvissa etkä nivusissa.',
+  ],
+  'Front Lever Tuck Hold': [
+    'Roiku leuanvetotangossa yliotteella kädet hartioiden leveydellä ja vedä polvet tiukasti rintaa vasten.',
+    'Paina suorilla käsillä tankoa kohti lantiota ja kallistu taaksepäin, kunnes selkä on vaakatasossa ja polvet ovat koukussa vartalon alla.',
+    'Pidä asento ohjelman ajan lapaluut alas ja taakse vedettyinä ja laskeudu sitten hallitusti.',
+  ],
+  'Hollow Body Hold': [
+    'Käy selällesi kädet pään yläpuolella ja jalat suorina ja paina alaselkä tiukasti lattiaa vasten.',
+    'Nosta hartiat, kädet ja jalat muutaman sentin irti lattiasta niin, että vartalo muodostaa loivan kaaren kuin banaani. Pidä alaselkä lattiassa koko ajan.',
+    'Pidä asento ohjelman ajan tasaisesti hengittäen. Helpota koukistamalla polvet tai tuomalla kädet vartalon viereen.',
+  ],
+  'L-Sit Hold': [
+    'Istu kahden rinnakkaisen tangon, dippikahvojen tai tukevien tuolien väliin, tai lattialle kämmenet lattiassa lantion vieressä.',
+    'Ojenna kädet, paina hartiat alas ja nosta vartalo irti alustasta. Nosta suorat jalat eteen lattian suuntaisiksi.',
+    'Pidä asento ohjelman ajan. Helpota koukistamalla polvet rintaa kohti.',
+  ],
+  'Legs Up the Wall': [
+    'Istu kyljittäin lähelle seinää ja heilauta jalat seinää vasten samalla kun käyt selällesi, niin että lantio on lähellä seinää ja jalat lepäävät suorina seinää pitkin.',
+    'Anna käsien levätä vartalon vieressä kämmenet ylöspäin ja rentouta jalat kokonaan seinää vasten.',
+    'Pysy asennossa ohjelman ajan rauhallisesti hengittäen. Tule pois koukistamalla polvet, kierähtämällä kyljelle ja nousemalla istumaan.',
+  ],
+  'Pigeon Pose': [
+    'Tuo konttausasennosta toinen polvi eteen saman puolen ranteen taakse ja aseta sääri poikittain eteesi. Liu\'uta toinen jalka suoraksi taakse.',
+    'Suorista lantio lattiaa kohti ja istu ryhdikkäästi, kävelytä sitten kädet eteen ja laske rintakehä etujalan päälle niin pitkälle kuin on mukavaa. Venytys tuntuu etujalan pakarassa.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja vaihda sitten puolta. Laita tyyny etulonkan alle, jos se ei ylety lattiaan.',
+  ],
+  'Seated Hip Stretch': [
+    'Istu ryhdikkäästi tukevalla tuolilla molemmat jalat lattialla ja nosta toisen jalan nilkka vastakkaisen polven päälle.',
+    'Pidä selkä pitkänä ja kallistu lantiosta hieman eteen, kunnes tunnet venytyksen ristissä olevan jalan pakarassa ja lonkan ulkosivulla. Paina polvea kevyesti kädellä alas, jos haluat lisää.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja vaihda sitten puolta.',
+  ],
+  'Seated Pancake Stretch': [
+    'Istu lattialla jalat suorina ja niin leveässä haara-asennossa kuin on mukavaa, varpaat ja polvilumpiot ylöspäin.',
+    'Istu ryhdikkäästi ja kallistu lantiosta eteenpäin selkä pitkänä. Kävelytä kädet eteen, kunnes tunnet venytyksen reisien sisäpinnoissa ja takareisissä.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja anna periksi hieman lisää jokaisella uloshengityksellä.',
+  ],
+  'Seated Spinal Twist': [
+    'Istu lattialla jalat suorina. Koukista toinen polvi ja nosta jalkaterä toisen jalan yli lattialle vastakkaisen polven viereen.',
+    'Istu ryhdikkäästi ja kierrä rintakehää koukussa olevan polven suuntaan. Aseta saman puolen käsi lattialle taaksesi ja halaa polvea toisella kädellä tai vie kyynärpää sen ulkopuolelle.',
+    'Kasva pidemmäksi jokaisella sisäänhengityksellä ja kierrä hieman lisää uloshengityksellä. Pidä asento ohjelman ajan ja vaihda sitten puolta.',
+  ],
+  'Single-Leg Balance Hold': [
+    'Seiso ryhdikkäästi seinän tai tuolin vieressä niin, että voit ottaa siitä tarvittaessa tukea, ja siirrä paino toiselle jalalle.',
+    'Nosta toinen jalka irti lattiasta polvi koukussa. Pidä seisovan jalan polvi pehmeänä, lantio suorassa ja katse yhdessä pisteessä edessäsi.',
+    'Pidä asento ohjelman ajan ja vaihda sitten jalkaa. Vaikeuta ottamalla käsi irti tuesta tai sulkemalla silmät.',
+  ],
+  'Sleeper Stretch': [
+    'Käy kyljellesi alempi käsi edessäsi, kyynärpää 90 asteen kulmassa hartian korkeudella ja sormet ylöspäin.',
+    'Paina ylemmällä kädellä alemman käden kyynärvartta kevyesti kohti lattiaa, kunnes tunnet venytyksen olkapään takaosassa. Pidä lapaluu paikallaan alustaa vasten.',
+    'Pidä asento ohjelman ajan väkisin painamatta, käänny sitten ja venytä toinen olkapää.',
+  ],
+  'Sphinx Pose': [
+    'Käy vatsallesi jalat suorina ja jalkapöydät lattiassa.',
+    'Nouse kyynärvarsien varaan kyynärpäät hartioiden alla, rintakehä ylhäällä ja hartiat alas kaukana korvista. Lantio pysyy lattiassa.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja anna alaselän rentoutua, laskeudu sitten alas.',
+  ],
+  'Spinal Twist (Supine)': [
+    'Käy selällesi kädet sivuilla hartioiden korkeudella ja polvet koukussa, jalkapohjat lattiassa.',
+    'Anna molempien polvien laskeutua hitaasti toiselle puolelle hartioiden pysyessä lattiassa. Käännä pää toiseen suuntaan, jos niska sallii.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen, nosta sitten polvet takaisin ylös ja laske ne toiselle puolelle.',
+  ],
+  'Standing Forward Fold': [
+    'Seiso jalat lantion leveydellä ja polvet hieman koukussa.',
+    'Taivuta lantiosta eteenpäin ja anna ylävartalon roikkua kohti lattiaa pää ja kädet rentoina. Ota kiinni kyynärpäistä tai lepuuta kädet sääriä tai lattiaa vasten.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen. Nouse hitaasti ylös polvet koukussa ja selkä nikama kerrallaan rullaten.',
+  ],
+  'Supported Deep Squat Hold': [
+    'Seiso tukevan tuen edessä, josta voit pitää kiinni, kuten ovenkarmin, kaiteen tai painavan tuolin selkänojan. Jalat ovat hieman lantiota leveämmällä ja varpaat hieman ulospäin.',
+    'Pidä kiinni tuesta ja laskeudu kantapäiden väliin niin syvälle kuin on mukavaa, rintakehä ylhäällä ja kantapäät lattiassa. Anna tuen kantaa painostasi niin paljon kuin tarvitset.',
+    'Pidä asento ohjelman ajan rauhallisesti hengittäen ja nouse sitten ylös tuen avulla.',
+  ],
+  'Supported Single-Leg Balance': [
+    'Seiso kylki seinään, työtasoon tai tukevan tuolin selkänojaan päin ja lepuuta toista kättä sen päällä.',
+    'Siirrä paino tukea lähempänä olevalle jalalle ja nosta toinen jalka juuri irti lattiasta. Pidä lantio suorassa ja seisovan jalan polvi pehmeänä.',
+    'Pidä asento ohjelman ajan ottaen tuesta niin vähän apua kuin pystyt, käänny sitten ja seiso toisella jalalla.',
+  ],
+  'Tuck Planche Hold': [
+    'Asetu polvillesi lattialle ja aseta kämmenet lantion viereen sormet ulos tai hieman taaksepäin, kädet suorina. Punnerrustelineet keventävät ranteiden kuormaa.',
+    'Kallista hartioita käsien yli eteen, pyöristä yläselkä ja vedä polvet tiukasti rintaa vasten samalla kun nostat jalat irti lattiasta. Tasapainottele suorien käsien varassa.',
+    'Pidä asento ohjelman ajan ja laske jalat sitten hallitusti alas. Kallistu vähemmän, jos kädet eivät pysy suorina.',
+  ],
+  'Wall Handstand Hold': [
+    'Aseta kämmenet lattialle hartioiden leveydelle noin kämmenen mitan päähän seinästä, sormet harallaan.',
+    'Potkaise jalat yksi kerrallaan ylös, kunnes kantapäät nojaavat seinään. Kädet ovat suorina ja lukittuina ja pää käsien välissä. Voit myös kävellä jalat seinää pitkin ylös vatsa seinään päin, mikä on helpompi hallita.',
+    'Työnnä lattiaa poispäin, jännitä vatsa ja pakarat ja pidä asento ohjelman ajan. Tule alas jalka kerrallaan.',
+  ],
+  'Ankle Mobility Drill': [
+    'Asetu toispolviasentoon seinään päin, etujalan jalkapohja lattiassa muutaman sentin päässä seinästä.',
+    'Pidä kantapää lattiassa ja vie etupolvea varpaiden yli kohti seinää ja takaisin. Siirrä jalkaa kauemmas seinästä, kun polvi ylettyy siihen helposti.',
+    'Tee kaikki toistot yhdellä nilkalla ja vaihda sitten.',
+  ],
+  'Diaphragmatic Breathing': [
+    'Käy selällesi polvet koukussa tai istu mukavasti, toinen käsi rintakehällä ja toinen vatsalla.',
+    'Hengitä hitaasti nenän kautta sisään niin, että vatsalla oleva käsi nousee ja kylkiluut laajenevat sivuille, mutta rintakehällä oleva käsi pysyy lähes paikallaan.',
+    'Hengitä hitaasti suun kautta ulos ja anna vatsan laskea. Jokainen kokonainen hengitys on yksi toisto.',
+  ],
+  'Shoulder Dislocations (PVC)': [
+    'Seiso ryhdikkäästi ja pidä muoviputkea, harjanvartta tai kuminauhaa leveällä yliotteella reisien edessä kädet suorina.',
+    'Pidä kädet suorina ja vie keppi pään yli taakse niin pitkälle kuin se menee, kohti alaselkää.',
+    'Tuo keppi pään yli takaisin eteen. Levennä otetta, jos joudut koukistamaan kyynärpäitä, ja kavenna sitä vähitellen olkapäiden avautuessa.',
+  ],
+  'Thoracic Extension on Roller': [
+    'Istu lattialle foam roller -rulla takanasi ja käy selällesi niin, että rulla on poikittain yläselän alla lapaluiden alapuolella. Polvet ovat koukussa, jalkapohjat lattiassa ja kädet tukevat päätä kyynärpäät eteenpäin.',
+    'Pidä lantio lattiassa ja anna yläselän ojentua taaksepäin rullan yli, sitten kaarru takaisin ylös. Liike tapahtuu vain yläselässä, ei alaselässä.',
+    'Siirrä rullaa muutaman toiston jälkeen muutama sentti ylemmäs ja toista. Älä koskaan vie rullaa alaselän kohdalle.',
+  ],
+  'Thread the Needle': [
+    'Asetu konttausasentoon kädet hartioiden alla ja polvet lantion alla.',
+    'Pujota toinen käsi kämmen ylöspäin vartalon alta lattiaa pitkin vastakkaiselle puolelle ja laske sen puolen olkapää ja pään sivu lattiaan yläselän kiertyessä.',
+    'Palaa ja avaa sama käsi kohti kattoa katseella kättä seuraten. Tee kaikki toistot yhdellä puolella ja vaihda sitten.',
+  ],
+  'Wall Slide': [
+    'Seiso selkä, pää ja pakarat seinää vasten jalat pienen askeleen päässä siitä. Nosta kädet maalitolppa-asentoon: kyynärpäät hartioiden korkeudella 90 asteen kulmassa ja kyynärvarsien ja käsien selät seinää vasten.',
+    'Liu\'uta käsiä seinää pitkin ylös niin pitkälle kuin pystyt pitäen kyynärvarret, alaselän ja pään seinässä.',
+    'Liu\'uta kädet takaisin maalitolppa-asentoon ja vedä lapaluita alas ja yhteen.',
+  ],
+  'Bird Dog': [
+    'Asetu konttausasentoon kädet hartioiden alla ja polvet lantion alla, selkä suorana.',
+    'Ojenna toinen käsi suoraan eteen ja vastakkainen jalka suoraan taakse, kunnes ne ovat vartalon linjassa. Pidä lantio suorassa lattiaan nähden äläkä päästä selkää notkolle.',
+    'Pidä sekunnin tauko, tuo käsi ja jalka takaisin alle ja toista toisella kädellä ja jalalla. Jatka vuorotellen.',
+  ],
+  'Dragon Flag': [
+    'Käy selällesi penkille ja ota molemmin käsin kiinni penkistä tai pään takana olevasta pylväästä.',
+    'Jännitä koko vartalo ja nosta lantio ja jalat ylös, kunnes olet yläselän varassa ja vartalo on suora linja hartioista varpaisiin.',
+    'Laske suoraa vartaloa hitaasti kohti penkkiä taittumatta lantiosta, pysähdy juuri sen yläpuolelle ja nosta takaisin ylös. Helpota koukistamalla polvet tai tekemällä pelkkä laskuvaihe.',
+  ],
+  'Heel Slide': [
+    'Käy selällesi polvet koukussa ja jalkapohjat lattiassa. Hengitä ulos ja vedä alavatsaa kevyesti sisään pitäen selkä luonnollisessa asennossa.',
+    'Pidä jännitys ja liu\'uta toista kantapäätä hitaasti lattiaa pitkin, kunnes jalka on suora. Älä päästä alaselkää notkolle tai lantiota keinumaan.',
+    'Liu\'uta jalka takaisin alkuun ja toista toisella jalalla. Jatka vuorotellen.',
+  ],
+  'Pelvic Floor Activation (Kegel)': [
+    'Käy selällesi polvet koukussa tai istu mukavasti ja rentouta vatsa, pakarat ja reidet.',
+    'Purista ja nosta lantionpohjan lihaksia kevyesti ylöspäin, ikään kuin pidättäisit virtsaa ja ilmaa yhtä aikaa. Pidä muutama sekunti ja hengitä normaalisti.',
+    'Päästä kokonaan irti ja lepää yhtä kauan kuin pidit ennen seuraavaa toistoa. Jos tunnet kipua tai painon tunnetta, lopeta ja kysy fysioterapeutilta.',
+  ],
+  'Plank Jack': [
+    'Aloita lankusta suorin käsin, kädet hartioiden alla, vartalo suorana ja jalat yhdessä.',
+    'Hyppää jalat leveälle ja takaisin yhteen kuin haaraperushypyssä samalla kun lantio pysyy tasossa ja ylävartalo paikallaan.',
+    'Pidä tasainen rytmi. Jokainen ulos ja sisään on yksi toisto.',
+  ],
+  'Plank Shoulder Tap': [
+    'Aloita lankusta suorin käsin, kädet hartioiden alla ja jalat hieman lantiota leveämmällä.',
+    'Nosta toinen käsi ja kosketa vastakkaista olkapäätä, laske käsi takaisin. Pidä lantio paikallaan ja tasossa äläkä päästä sitä heilumaan sivulta toiselle.',
+    'Toista toisella kädellä. Jokainen kosketus on yksi toisto.',
+  ],
+  'Plank to Pike': [
+    'Aloita lankusta suorin käsin, vartalo suorana linjana päästä kantapäihin.',
+    'Pidä jalat suorina ja nosta lantio ylös ja taakse niin, että vartalo muodostaa ylösalaisen V:n ja hartiat pysyvät käsien yläpuolella tai hieman niiden takana.',
+    'Laske lantio hallitusti takaisin lankkuun päästämättä sitä notkolle. Tämä on yksi toisto.',
+  ],
+  'Plank-Up': [
+    'Aloita kyynärnojalankusta kyynärpäät hartioiden alla ja vartalo suorana.',
+    'Aseta toinen kämmen lattialle ja punnerra ylös, sitten toinen, kunnes olet lankussa suorin käsin.',
+    'Laskeudu takaisin kyynärvarsille käsi kerrallaan. Pidä lantio paikallaan koko ajan ja aloita seuraava toisto toisella kädellä.',
+  ],
+  'Toes-to-Bar': [
+    'Roiku leuanvetotangossa yliotteella kädet noin hartioiden leveydellä ja suorina.',
+    'Jännitä vatsa, paina tankoa suorin käsin alaspäin ja nosta jalat, kunnes varpaat koskettavat tankoa. Pidä jalat niin suorina kuin pystyt.',
+    'Laske jalat hitaasti heilumatta ja aloita seuraava toisto paikallaan roikkuen. Helpota tuomalla polvet rintaan.',
+  ],
+  'Transverse Abdominis Activation': [
+    'Käy selällesi polvet koukussa ja jalkapohjat lattiassa ja aseta sormenpäät lonkkaluiden sisäpuolelle.',
+    'Hengitä ulos ja vedä alavatsaa kevyesti kohti selkärankaa kuin vetäisit tiukkojen housujen vetoketjun kiinni, kunnes tunnet lihaksen jännittyvän sormien alla. Selkä ja lantio eivät liiku.',
+    'Pidä muutama sekunti normaalisti hengittäen ja rentouta sitten kokonaan. Jokainen sisäänveto on yksi toisto.',
+  ],
+  'V-Up': [
+    'Käy selällesi jalat suorina ja kädet suorina pään yläpuolella lattiassa.',
+    'Nosta yhdellä liikkeellä suorat jalat ja ylävartalo yhtä aikaa ylös ja kurota käsillä kohti varpaita niin, että tasapainoilet istuinluiden varassa ja vartalo muodostaa V:n.',
+    'Laskeudu hitaasti takaisin alkuasentoon. Helpota koukistamalla polvet.',
+  ],
+  'Banded Fire Hydrant': [
+    'Laita minikuminauha jalkoihin polvien yläpuolelle ja asetu konttausasentoon kädet hartioiden alla ja polvet lantion alla.',
+    'Pidä polvi 90 asteen kulmassa ja nosta toinen jalka sivulle nauhaa vastaan, kunnes reisi on suunnilleen lantion korkeudella. Pidä selkä suorana ja paino tasaisesti molemmilla käsillä.',
+    'Laske hallitusti ja toista. Tee kaikki toistot yhdellä puolella ja vaihda sitten.',
+  ],
+  'Cable Abductor': [
+    'Kiinnitä nilkkamansetti alataljaan ja laitteesta kauempana olevaan nilkkaan. Seiso kylki laitteeseen päin ja ota tukea rungosta.',
+    'Pidä jalka suorana ja ylävartalo pystyssä ja vie jalka sivulle poispäin laitteesta niin pitkälle kuin pystyt kallistumatta.',
+    'Palauta jalka hitaasti, kunnes paino melkein koskettaa pinoa. Tee kaikki toistot yhdellä jalalla ja vaihda sitten.',
+  ],
+  'Cossack Squat': [
+    'Seiso jalat noin kaksi kertaa hartioiden leveydellä ja varpaat hieman ulospäin.',
+    'Siirrä paino toiselle puolelle ja kyykkää sen jalan päälle kantapää lattiassa, samalla kun toinen jalka suoristuu ja sen varpaat kääntyvät kattoa kohti. Pidä rintakehä ylhäällä ja ojenna kädet eteen tasapainon tueksi.',
+    'Työnnä koukussa olevalla jalalla takaisin keskelle ja kyykkää toiselle puolelle. Jatka vuorotellen.',
+  ],
+  'Frog Pump': [
+    'Käy selällesi, paina jalkapohjat yhteen ja anna polvien laskeutua leveälle, kantapäät lähellä pakaroita. Kuminauhaversiossa laita minikuminauha jalkoihin polvien yläpuolelle.',
+    'Paina jalkaterien ulkosyrjillä ja purista pakarat nostaessasi lantion reisien linjaan ilman että alaselkä notkahtaa.',
+    'Laske lantio lattiaan ja jatka suoraan seuraavaan toistoon.',
+  ],
+  'Glute Bridge March': [
+    'Käy selällesi polvet koukussa ja jalkapohjat lattiassa lantion leveydellä, kädet vartalon vieressä.',
+    'Purista pakarat ja nosta lantio siltaan niin, että vartalo on suora linja hartioista polviin.',
+    'Pidä lantio suorassa ja ylhäällä ja nosta toinen jalka muutaman sentin irti lattiasta, laske se ja nosta sitten toinen. Jokainen nosto on yksi toisto; laske lantio alas, kun sarja on tehty.',
+  ],
+  'Handstand Wall Walk': [
+    'Aloita punnerrusasennosta jalkapohjat seinän juuressa.',
+    'Kävele jaloilla seinää pitkin ylös ja käsillä taaksepäin kohti seinää lyhyin askelin, kunnes rintakehä on lähellä seinää ja kädet ovat suorina pään yläpuolella. Pidä vatsa ja pakarat jännittyneinä.',
+    'Kävele kädet takaisin ulos ja jalat alas hallitusti punnerrusasentoon. Tämä on yksi toisto.',
+  ],
+  'Lateral Lunge': [
+    'Seiso ryhdikkäästi jalat yhdessä. Pidä käsipainoa rinnan edessä, jos ohjelmasi kirjaa painon; muuten ota kädet yhteen eteesi.',
+    'Ota pitkä askel sivulle ja vie lantio taakse sen jalan päälle koukistaen polvea, samalla kun toinen jalka pysyy suorana. Pidä molemmat jalkaterät eteenpäin ja rintakehä ylhäällä.',
+    'Ponnista koukussa olevalla jalalla takaisin seisomaan ja astu sitten toiselle puolelle. Jatka vuorotellen.',
+  ],
+  'Pike Push-Up': [
+    'Aloita punnerrusasennosta, kävele sitten jalat lähemmäs käsiä ja nosta lantio korkealle niin, että vartalo muodostaa ylösalaisen V:n ja pää on käsien välissä.',
+    'Koukista kyynärpäät ja laske päälakea kohti lattiaa juuri käsien eteen. Kyynärpäät osoittavat taakse eivätkä sivuille.',
+    'Punnerra takaisin ylös, kunnes kädet ovat suorat. Pidä lantio korkealla koko ajan.',
+  ],
+  'Pike Push-Up (Elevated)': [
+    'Nosta jalat penkille, laatikolle tai tukevalle tuolille ja kävele käsillä kohti sitä, kunnes lantio on korkealla hartioiden yläpuolella ja ylävartalo lähes pystyssä.',
+    'Koukista kyynärpäät ja laske päälakea kohti lattiaa juuri käsien eteen, kyynärpäät taaksepäin.',
+    'Punnerra takaisin ylös, kunnes kädet ovat suorat. Mitä korkeammalla jalat ovat, sitä lähempänä liike on käsilläseisontapunnerrusta.',
+  ],
+  'Pseudo Planche Push-Up': [
+    'Aloita punnerrusasennosta kädet käännettyinä ulos tai hieman taakse ja aseta ne alimpien kylkiluiden viereen eikä hartioiden alle.',
+    'Kallista hartioita käsien yli eteen ja pidä kallistus, kun lasket rintakehää kohti lattiaa. Kyynärpäät pysyvät lähellä vartaloa ja vartalo suorana.',
+    'Punnerra takaisin ylös kallistus säilyttäen. Kallistu vähemmän, jos ranteet aristavat.',
+  ],
+  'Shrimp Squat': [
+    'Seiso yhdellä jalalla ja koukista toinen polvi niin, että jalkaterä on takanasi. Ota sen nilkasta kiinni saman puolen kädellä tai anna sen olla vapaana.',
+    'Laskeudu hitaasti koukistamalla seisovaa polvea, kunnes takapolvi koskettaa lattiaa. Kallista rintakehää eteen tasapainon vuoksi ja pidä seisovan jalan kantapää lattiassa.',
+    'Työnnä seisovalla jalalla takaisin ylös. Tee kaikki toistot yhdellä jalalla ja vaihda sitten. Laita tyyny takapolven alle ja ota tarvittaessa tukea seinästä.',
+  ],
+  'Side-Lying Leg Raise': [
+    'Käy kyljellesi jalat suorina päällekkäin, pää alemman käden varassa ja ylempi käsi lattiassa edessäsi.',
+    'Pidä ylemmän jalan varpaat eteenpäin eikä ylöspäin ja nosta jalka noin 45 asteen kulmaan kiertämättä lantiota taakse.',
+    'Laske jalka hitaasti ja toista. Tee kaikki toistot yhdellä puolella ja käänny sitten.',
+  ],
+  'Single-Leg Balance Reach': [
+    'Seiso yhdellä jalalla polvi pehmeänä, kädet lanteilla tai sivuilla.',
+    'Säilytä tasapaino ja kurota vapaalla jalalla eteen ja kosketa kevyesti lattiaa, sitten sivulle ja sitten taakse. Koukista seisovaa polvea sitä enemmän, mitä kauemmas kurotat.',
+    'Palaa jokaisen kosketuksen jälkeen ryhdikkääseen seisoma-asentoon. Tee kaikki toistot yhdellä jalalla ja vaihda sitten.',
+  ],
+  'Single-Leg RDL': [
+    'Seiso yhdellä jalalla polvi pehmeänä. Pidä käsipainoa vastakkaisessa kädessä, jos ohjelmasi kirjaa painon; muuten ojenna kädet eteen tai pidä ne lanteilla.',
+    'Taivuta lantiosta eteen ja anna vapaan jalan nousta suorana taakse, kunnes vartalo ja takajalka ovat lähes lattian suuntaiset. Pidä selkä suorana ja lantio suorassa lattiaan nähden.',
+    'Työnnä seisovan jalan lonkka eteen ja nouse ylös. Tee kaikki toistot yhdellä jalalla ja vaihda sitten. Ota toisella kädellä tukea seinästä, jos tasapaino on se, mikä pysäyttää.',
+  ],
+  'Sit-to-Stand (Chair Squat)': [
+    'Istu tukevan tuolin etuosassa jalkapohjat lattiassa lantion leveydellä ja hieman polvien takana. Ristitä kädet rinnalle tai ojenna ne eteen.',
+    'Kallista rintakehää eteen ja nouse seisomaan kantapäillä työntäen, ilman käsiä jos pystyt, kunnes seisot suorana.',
+    'Istu takaisin alas hitaasti ja hallitusti ja kosketa istuinta kevyesti ennen seuraavaa toistoa.',
+  ],
+  'Standing Band Row': [
+    'Kiinnitä kuminauha rinnan korkeudelle ovikiinnikkeeseen tai tukevaan pylvääseen ja ota kummastakin päästä kiinni. Astu taaksepäin, kunnes nauha kiristyy. Kädet ovat suorina, jalat lantion leveydellä ja polvet pehmeinä.',
+    'Vedä kädet kohti alimpia kylkiluita kyynärpäät lähellä kylkiä ja purista lapaluut yhteen liikkeen lopussa.',
+    'Anna käsien ojentua hitaasti nauhaa vastaan. Astu kauemmas, jos haluat enemmän vastusta, ja lähemmäs, jos vähemmän.',
+  ],
+  'Standing Hip Abduction': [
+    'Seiso ryhdikkäästi seinän tai tuolin vieressä ja ota siitä kevyesti tukea. Paino on tukea lähempänä olevalla jalalla.',
+    'Pidä vartalo pystyssä ja varpaat eteenpäin ja nosta ulompi jalka suorana sivulle niin pitkälle kuin pystyt kallistumatta.',
+    'Laske jalka hitaasti ja toista. Tee kaikki toistot yhdellä puolella ja käänny sitten. Minikuminauha polvien yläpuolella tai nilkkapaino vaikeuttaa liikettä.',
+  ],
+  'Heel-to-Toe Walk': [
+    'Seiso ryhdikkäästi seinän tai työtason vieressä, josta voit ottaa tarvittaessa tukea.',
+    'Astu eteen ja aseta toisen jalan kantapää suoraan toisen jalan varpaiden eteen kuin kävelisit viivaa pitkin. Katso eteenpäin äläkä jalkoihisi.',
+    'Jatka askel kerrallaan ohjelman askelmäärä, käänny sitten ja kävele takaisin.',
+  ],
+  'Standing Marching': [
+    'Seiso ryhdikkäästi seinän tai tuolin selkänojan vieressä, josta voit ottaa tarvittaessa tukea, jalat lantion leveydellä.',
+    'Nosta toinen polvi noin lantion korkeudelle seisoen ryhdikkäästi toisella jalalla, laske jalka pehmeästi ja nosta toinen polvi.',
+    'Pidä hidas ja tasainen rytmi kallistumatta taakse. Jokainen polvennosto on yksi toisto.',
+  ],
+  'Cone Drill (Pro Agility)': [
+    'Aseta kolme kartiota riviin viiden metrin välein. Aloita keskimmäiseltä kartiolta matalasta valmiusasennosta kasvot eteenpäin.',
+    'Juokse viisi metriä toiselle sivulle ja kosketa viivaa, käänny ja juokse kymmenen metriä kauimmaiselle kartiolle ja kosketa viivaa, käänny sitten ja juokse takaisin keskikartion ohi.',
+    'Kävele takaisin alkuun ja palaudu kunnolla ennen seuraavaa vetoa. Vaihda puolta, jolle lähdet ensin.',
+  ],
+  'High Knees': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja kädet koukussa kylkien vieressä.',
+    'Juokse paikallaan ja nosta kumpikin polvi vuorotellen noin lantion korkeudelle. Laskeudu pehmeästi päkiöille ja heiluta käsiä jalkojen tahdissa.',
+    'Pidä nopea ja tasainen rytmi koko sarjan ajan ja pysy pystyssä kallistumatta taakse.',
+  ],
+  'Jumping Jack': [
+    'Seiso ryhdikkäästi jalat yhdessä ja kädet vartalon vieressä.',
+    'Hyppää jalat hieman hartioita leveämmälle ja heilauta samalla kädet sivujen kautta pään yläpuolelle.',
+    'Hyppää jalat takaisin yhteen kun kädet laskeutuvat, laskeudu pehmeästi ja pidä tasainen rytmi.',
+  ],
+  'Ladder Drill': [
+    'Aseta ketteryystikkaat maahan tai merkitse teipillä tai liidulla rivi noin 40 sentin ruutuja.',
+    'Juokse tikkaiden läpi nopein ja kevein askelin niin, että molemmat jalat käyvät jokaisessa ruudussa. Pysy päkiöillä ja heiluta käsiä.',
+    'Kävele takaisin alkuun ja lähde uudelleen. Kun perusaskel sujuu, kokeile sivuttaisaskeleita tai sisään-ulos-kuviota samalla vauhdilla.',
+  ],
+  'Pogo Hops': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja polvet lähes suorina.',
+    'Pompi päkiöiden varassa ylös ja alas pääasiassa nilkoilla, polvet lähes suorina ja maakosketus niin lyhyenä kuin pystyt.',
+    'Laskeudu kevyesti ja hiljaa ja pidä tasainen rytmi. Jokainen maakosketus on yksi toisto.',
+  ],
+  'Skater Jump': [
+    'Seiso yhdellä jalalla polvi pehmeänä ja toinen jalka nostettuna taakse.',
+    'Hyppää seisovalta jalalta sivulle ja laskeudu pehmeästi toiselle jalalle. Vie vapaa jalka laskeutuvan jalan taakse ja heilauta kädet vartalon poikki tasapainon tueksi.',
+    'Pysäytä alastulo hetkeksi ja hyppää takaisin toiselle puolelle. Jokainen alastulo on yksi toisto.',
+  ],
+  'Bike HIIT': [
+    'Säädä air bike tai kuntopyörä niin, että polvi jää polkimen ala-asennossa hieman koukkuun, ja lämmittele muutama minuutti kevyesti.',
+    'Polje jokainen työjakso niin kovaa kuin jaksat pitää koko jakson ajan; air bikella työnnä ja vedä myös kahvoja. Ohjelma antaa työ- ja lepoajat, esimerkiksi 45 sekuntia kovaa ja 15 sekuntia kevyesti.',
+    'Polje jaksojen välissä hitaasti lepoajan verran ja lähde sitten uudelleen. Lopuksi polje muutama minuutti kevyesti.',
+  ],
+  'Treadmill HIIT': [
+    'Lämmittele juoksumatolla muutama minuutti kävellen ja kevyesti hölkäten ja katso, missä ovat nopeuspainikkeet ja hätäpysäytys.',
+    'Juokse jokainen työjakso lujaa vauhdilla, jonka jaksat pitää koko jakson ajan. Ohjelma antaa työ- ja lepoajat, esimerkiksi 30 sekuntia kumpaakin.',
+    'Hidasta lepojaksoksi kävelyyn tai seiso jalat maton sivureunoilla sen pyöriessä, astu sitten takaisin matolle ja lähde uudelleen. Lopuksi kävele muutama minuutti.',
+  ],
+  Sprint: [
+    'Lämmittele ensin kunnolla: kevyttä hölkkää, jalkojen heilautuksia ja muutama vähitellen kiihtyvä veto.',
+    'Lähde seisovalta lähdöltä ja juokse ohjelman matka, esimerkiksi 40 tai 200 metriä. Työskentele polvilla ja käsillä ja pysy päkiöillä. Juokse lyhyet vedot täysillä ja pidemmät kovimmalla vauhdilla, jonka jaksat maaliin asti.',
+    'Kävele takaisin tai lepää kunnolla vetojen välissä, jotta jokainen veto on yhtä nopea kuin ensimmäinen.',
+  ],
+  'Easy Run Blocks': [
+    'Lämmittele muutama minuutti reippaasti kävellen tai hyvin kevyesti hölkäten.',
+    'Juokse jokainen blokki kevyesti, juttelutahtia: pystyt puhumaan kokonaisin lausein. Sarjan luku on blokin pituus minuutteina.',
+    'Kävele tai seiso blokkien välissä ohjelman lepoajan ja aloita sitten seuraava. Hidasta mieluummin kuin pysähdy, jos vauhti alkaa tuntua raskaalta.',
+  ],
+  'Tempo Run Blocks': [
+    'Lämmittele ensin noin kymmenen minuuttia kevyesti juosten.',
+    'Juokse jokainen blokki reippaasti mutta hallitusti, vauhdilla jota jaksaisit noin tunnin: hengitys on syvää ja tiheää, ja pystyt sanomaan vain muutaman sanan kerrallaan. Sarjan luku on blokin pituus minuutteina.',
+    'Hölkkää tai kävele kevyesti blokkien välissä ohjelman lepoajan ja lopeta muutamaan minuuttiin kevyttä juoksua.',
+  ],
+  'Stride Finishers': [
+    'Etsi juoksun lopuksi tasainen noin 80–100 metrin pätkä.',
+    'Kiihdytä tasaisesti ensimmäisen puoliskon aikana noin 90 prosenttiin huippuvauhdistasi, pidä vauhti muutaman sekunnin ajan hartiat rentoina ja askel nopeana ja hidasta sitten vähitellen.',
+    'Kävele takaisin alkuun ja palaudu kunnolla ennen seuraavaa kiihdytystä.',
   ],
 };
 

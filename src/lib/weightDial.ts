@@ -92,6 +92,8 @@ export function isLoggableTypedWeight(text: string, { max = WEIGHT_DIAL_MAX_KG }
 export const REPS_DIAL = { min: 1, step: 1, max: 300 } as const;
 /** A hold's dial counts seconds in fives; half an hour is past any hold. */
 export const HOLD_DIAL = { min: 5, step: 5, max: 1800 } as const;
+/** Steady cardio's dial counts whole minutes; five hours is past any bout. */
+export const MINUTES_DIAL = { min: 1, step: 1, max: 300 } as const;
 
 interface RepsDialBounds {
   min: number;

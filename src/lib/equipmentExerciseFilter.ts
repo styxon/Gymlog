@@ -1,5 +1,8 @@
-import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { getCatalogTrackingMode } from './catalogExercisePools';
+import { EXTRA_EXERCISE_LIBRARY } from '../data/extraExerciseLibrary';
+import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
+import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { getCatalogTrackingMode, prescriptionAfterSwap } from './catalogExercisePools';
+import { DisplayEquipmentValue, displayEquipmentValue } from './libraryLabel';
 
 /**
  * Equipment chips filter the actual exercises (onboarding truth plan P4).
@@ -50,7 +53,8 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'box squat', requires: [BARBELL, ['Squat rack']] },
   { pattern: 'bench press', requires: [BARBELL, ['Bench']] },
   { pattern: 'barbell', requires: [BARBELL] },
-  { pattern: 'skull crusher', requires: [[...BARBELL, 'Dumbbells']] },
+  // The band skull crusher is done with the band alone (the band rule below).
+  { pattern: 'skull crusher', unless: ['band skull crusher'], requires: [[...BARBELL, 'Dumbbells']] },
   { pattern: 'overhead press', requires: [[...BARBELL, 'Dumbbells']] },
   { pattern: 'dumbbell', requires: [['Dumbbells']] },
   { pattern: 'goblet', requires: [['Dumbbells', 'Kettlebells']] },
@@ -130,7 +134,8 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   // The light one is the postpartum and recovery hinge, done with whatever
   // weight is in the house; dumbbells come first so that is the chip shown.
   { pattern: 'romanian deadlift (light)', exact: true, requires: [['Dumbbells', 'Kettlebells', ...BARBELL]] },
-  { pattern: 'good morning', requires: [BARBELL] },
+  // The band good mornings stand on the band; no bar.
+  { pattern: 'good morning', unless: ['band good morning'], requires: [BARBELL] },
   { pattern: 'power clean', requires: [BARBELL] },
   { pattern: 'push press', requires: [BARBELL] },
   { pattern: 'pendlay row', requires: [BARBELL] },
@@ -290,11 +295,54 @@ export function resolveAvailableEquipment(selection: {
   return null;
 }
 
+/**
+ * What a library row's own equipment asks for, beyond what its name says.
+ *
+ * The rules above read names, and most band and ball rows say what they use —
+ * but the library files every one of them as bodyweight, and the ones that do
+ * not say it ("Monster Walk" is a band walk; "Overhead Slam" and "Supine
+ * Chest Throw" are medicine-ball throws) passed for a reader with no gear at
+ * all (#bugs 2026-10-06, "kuminauhaliikkeet kehonpainona"). Exact library
+ * names only: a catalogue name that merely resolves to a band row — "Skull
+ * Crusher" finds the band skull crusher by containment — is not one.
+ *
+ * Balls take the chip the rules above already give the medicine ball: gym
+ * floor gear, which "Machines" stands for. There is no ball chip to ask.
+ */
+const GEAR_BY_DISPLAY_EQUIPMENT: Partial<Record<DisplayEquipmentValue, RequirementGroup>> = {
+  band: ['Resistance bands'],
+  ball: ['Machines'],
+};
+
+let libraryGearByName: Map<string, RequirementGroup> | null = null;
+
+export function libraryEquipmentRequirement(normalizedName: string): RequirementGroup | null {
+  if (!libraryGearByName) {
+    libraryGearByName = new Map();
+    for (const item of [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY]) {
+      // A stretch is never refused for its gear word (the suite's sweep):
+      // "Chest Stretch on Stability Ball" is a chest stretch with a prop.
+      if (item.sourceCategory?.trim().toLowerCase() === 'stretching') {
+        continue;
+      }
+      const group = GEAR_BY_DISPLAY_EQUIPMENT[displayEquipmentValue(item)];
+      if (group) {
+        libraryGearByName.set(normalize(item.name), group);
+      }
+    }
+  }
+  return libraryGearByName.get(normalizedName) ?? null;
+}
+
 export function isExerciseAllowedWithEquipment(exerciseName: string, available: string[] | null): boolean {
   if (available === null) {
     return true;
   }
   const normalized = normalize(exerciseName);
+  const fromLibrary = libraryEquipmentRequirement(normalized);
+  if (fromLibrary && !fromLibrary.some((item) => available.includes(item))) {
+    return false;
+  }
   return EQUIPMENT_RULES.filter((rule) => equipmentRuleMatches(normalized, rule)).every((rule) =>
     rule.requires.every((group) => group.some((item) => available.includes(item))),
   );
@@ -365,12 +413,28 @@ export function applyEquipmentToExercises(
       taken.add(fallback);
 
       swapped.push({ from: exercise.exerciseName, to: fallback });
+      // A barbell squat that falls back to a bodyweight squat must stop
+      // asking for kilograms. The catalog knows; keyword matching guessed.
+      const trackingMode = getCatalogTrackingMode(fallback);
+      // And minutes mean nothing in another unit: a stair machine's twenty
+      // minutes is not twenty of whatever replaces it, nor a lift's ten reps
+      // ten minutes on a bike. Only across minutes — a carry's seconds have
+      // always stayed with the hold it falls back to.
+      const acrossMinutes = isMinutesTrackingMode(exercise.trackingMode) !== isMinutesTrackingMode(trackingMode);
+      const dose = acrossMinutes
+        ? prescriptionAfterSwap(
+            exercise.trackingMode,
+            trackingMode,
+            { repsMin: exercise.repsMin, repsMax: exercise.repsMax },
+            fallback,
+          )
+        : { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
       return {
         ...exercise,
         exerciseName: fallback,
-        // A barbell squat that falls back to a bodyweight squat must stop
-        // asking for kilograms. The catalog knows; keyword matching guessed.
-        trackingMode: getCatalogTrackingMode(fallback),
+        trackingMode,
+        repsMin: dose.repsMin,
+        repsMax: dose.repsMax,
       };
     })
     .filter((exercise): exercise is WorkoutTemplateExercise => exercise !== null);

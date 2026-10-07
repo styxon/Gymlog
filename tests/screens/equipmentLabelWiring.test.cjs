@@ -25,13 +25,14 @@ module.exports = [
   {
     name: 'equipment label: both browse surfaces print the displayed value, not the stored bucket',
     run() {
+      // Both print every picker's row line (lib/exercisePicker), built from
+      // exerciseRowMetaValues, which reads the displayed value
+      // (tests/lib/exerciseFilterInvariants).
       const sheet = read('src/components/AddExerciseSheet.tsx');
-      assert.match(sheet, /import \{[^}]*displayEquipmentValue[^}]*\} from '\.\.\/lib\/libraryLabel'/);
-      assert.match(sheet, /Label\(displayEquipmentValue\(item\), language\)/, 'the sheet labels item.equipment directly');
-      // The library row's line is built from exerciseRowMetaValues, which
-      // reads the displayed value (tests/lib/exerciseFilterInvariants).
+      assert.match(sheet, /exercisePickerRowLabels\(item, language\)/, 'the sheet labels item.equipment directly');
       const browser = read('src/components/ExerciseLibraryBrowser.tsx');
-      assert.match(browser, /exerciseRowMetaValues\(item\)\s*\.map\(\(value\) => libraryLabel\(value, language\)\)/);
+      assert.match(browser, /return exercisePickerRowMeta\(item, language\);/);
+      assert.match(read('src/lib/exercisePicker.ts'), /exerciseRowMetaValues\(item\)\.map\(\(value\) => exercisePickerLabel\(value, language\)\)/);
       assert.match(read('src/lib/exerciseClassification.ts'), /item\.bodyPart, displayEquipmentValue\(item\)/);
     },
   },
@@ -40,12 +41,15 @@ module.exports = [
     run() {
       // A chip built from `item.equipment` while the row prints something else
       // is a filter that argues with its own list.
+      // Both screens offer the shared chip list and filter through every
+      // picker's one list (lib/exercisePicker).
       const browser = read('src/components/ExerciseLibraryBrowser.tsx');
-      assert.match(browser, /items\.map\(\(item\) => displayEquipmentValue\(item\)\)/);
-      assert.match(browser, /matchesEquipmentFilter\(item, equipmentFilter\)/);
+      assert.match(browser, /const equipmentOptions = EQUIPMENT_FILTERS;/);
+      assert.match(browser, /equipment: equipmentFilter/);
+      assert.match(read('src/lib/exercisePicker.ts'), /matchesEquipmentFilter\(item, filters\.equipment\)/);
 
       const sheet = read('src/components/AddExerciseSheet.tsx');
-      assert.match(sheet, /matchesEquipmentFilter\(item, equipment\)/);
+      assert.match(sheet, /filters: \{ category, bodyPart, equipment \}/);
       // Both select by the displayed value (and never a specialty movement).
       const filter = read('src/lib/exerciseBrowseFilter.ts');
       assert.match(filter, /!isSpecialtyExercise\(item\) && displayEquipmentValue\(item\) === filter/);
@@ -53,7 +57,9 @@ module.exports = [
       // has to be named in it explicitly or there is no chip to tap.
       assert.match(sheet, /const equipmentOptions: SheetEquipmentOption\[\] = EQUIPMENT_FILTERS;/);
       assert.match(filter, /export const EQUIPMENT_FILTERS: EquipmentFilter\[\] = \[[^\]]*'kettlebells'/s);
-      assert.match(sheet, /kettlebells: 'lib\.equipment\.kettlebells'/);
+      // Labelled by the one label function, which knows the word.
+      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      assert.equal(exercisePickerLabel('kettlebells', 'fi'), 'Kahvakuula');
     },
   },
   {

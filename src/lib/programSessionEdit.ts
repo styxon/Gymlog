@@ -29,7 +29,7 @@ export interface ProgramSessionExerciseSnapshot {
   restSeconds: number | null;
   trackedDefault: boolean;
   libraryItemId?: string | null;
-  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
   /** The superset this lift is part of — see src/lib/supersetGrouping.ts. */
   supersetGroup?: string | null;
 }
@@ -53,7 +53,7 @@ export interface ProgramSessionDayDraft {
     restSeconds: number | null;
     trackedDefault: boolean;
     libraryItemId: string | null;
-    trackingMode: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
+    trackingMode: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
     supersetGroup: string | null;
   }>;
 }

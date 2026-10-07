@@ -226,7 +226,7 @@ export interface ExerciseTemplate {
    * own way, so a saved push-up became a weight dial. Absent or null = derive
    * it from the library, as before. `normalizeDatabase` validates it on load.
    */
-  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
   persistedExerciseTemplateId?: string | null;
   /**
    * Shared by the adjacent exercises done back to back as one superset, and
@@ -395,6 +395,15 @@ export interface ExerciseLog {
   templateExerciseId?: string | null;
   notes?: string | null;
   swappedFrom?: string | null;
+  /**
+   * What the sets' `reps` count, when it is not repetitions: 'minutes' for a
+   * lift logged by time (trackingMode 'duration_minutes' — a bike, a stair
+   * machine, a run block). Absent on every other log and on every log saved
+   * before 2026-10-06, which were all saved as repetitions and stay that way.
+   * Written from the slot's own mode at save, so the record says what was
+   * logged rather than leaving a reader to guess from the name.
+   */
+  repsUnit?: 'minutes';
 }
 
 export interface BodyweightEntry {
@@ -909,6 +918,13 @@ export interface AppDatabase {
   /** The reader's own exercise vocabulary, learned one correction at a time. */
   exerciseNameBook: ExerciseNameBookEntry[];
   preferences: AppPreferences;
+  /**
+   * The one-time data migrations already applied to this database, by id.
+   * Written by `normalizeDatabase`, which runs each one an install has not
+   * had; optional because a database built in memory (a seed, a test) has
+   * had none until it is loaded. See lib/trackingCategoryMigration.
+   */
+  appliedMigrations?: string[];
 }
 
 export interface WorkoutTemplateDraft {
@@ -938,7 +954,7 @@ export interface ExerciseTemplateDraft {
   trackedDefault: boolean;
   libraryItemId?: string | null;
   /** See ExerciseTemplate.trackingMode. */
-  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | null;
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
   /** Carried through the save so a superset survives an edit to the day. */
   supersetGroup?: string | null;
 }
@@ -959,4 +975,6 @@ export interface ExerciseLogDraft {
   templateExerciseId?: string | null;
   notes?: string | null;
   swappedFrom?: string | null;
+  /** See ExerciseLog.repsUnit. */
+  repsUnit?: 'minutes';
 }

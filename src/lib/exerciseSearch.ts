@@ -32,6 +32,11 @@ export function buildExerciseSearchHaystack(
   return [
     item.name,
     exerciseNameLabel(language, item.name),
+    // The Finnish name whatever the app's language: the gym this app is for
+    // says "reiden ojennus", and a reader with the app in English typed it
+    // and found nothing (#bugs 2026-10-06). The English name is the stored
+    // one, already above, so Finnish finds the English too.
+    ...(language === 'fi' ? [] : [exerciseNameLabel('fi', item.name)]),
     ...facets,
     ...facets.map((facet) => libraryLabel(facet, language)),
     ...(item.primaryMuscles ?? []),

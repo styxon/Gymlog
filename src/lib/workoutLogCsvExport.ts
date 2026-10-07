@@ -1,6 +1,7 @@
 import { CardioSession, ExerciseLog, WorkoutSession } from '../types/models';
 import { getCardioActivity } from './cardio';
 import { localDateKey } from './completedSessions';
+import { isMinutesLog } from './exerciseLog';
 
 /**
  * Every set you have ever logged, as text you can take away.
@@ -70,6 +71,31 @@ export interface WorkoutLogCsvInput {
  * one shape is one migration away from losing someone's first season.
  */
 function logRows(log: ExerciseLog): Array<{
+  set: number;
+  reps: number | string | null;
+  weight: number | null;
+  completed: boolean;
+}> {
+  // Minutes go out as "20 min" in the Reps column — the unit beside the
+  // number, so nobody reads a bike's twenty minutes as twenty reps — and with
+  // no weight, which a bout of minutes never had. Every other row is
+  // exactly as it was: a bare number a spreadsheet can sum.
+  if (isMinutesLog(log)) {
+    return logRowsOf(log).map((row) => ({
+      ...row,
+      reps: row.reps === null ? null : formatCsvMinutes(row.reps),
+      weight: null,
+    }));
+  }
+  return logRowsOf(log);
+}
+
+/** "20 min" — what a minutes row's Reps cell holds. */
+export function formatCsvMinutes(minutes: number): string {
+  return `${minutes} min`;
+}
+
+function logRowsOf(log: ExerciseLog): Array<{
   set: number;
   reps: number | null;
   weight: number | null;

@@ -1687,6 +1687,19 @@ function oldDataKept(label, raw, got) {
         if (DERIVED_ON_LOAD.has(field) || value === null || value === undefined || field === 'sets' || field === 'sessions' || field === 'entries' || field === 'exerciseIds' || field === 'updatedAt' || field === 'swappedFrom' || field === 'exerciseTemplateId' || field === 'status' || field === 'workoutNameSnapshot' || field === 'activityType' || field === 'sessionNotes') {
           continue;
         }
+        // The one rewrite a load makes on purpose: a programme saved before
+        // the library's category correction keeps its lifts in the progression
+        // (lib/trackingCategoryMigration) — false to true, on exactly the rows
+        // its rule names, and nothing else.
+        if (
+          name === 'exerciseTemplates' &&
+          field === 'trackedDefault' &&
+          value === false &&
+          found?.trackedDefault === true &&
+          dist.tracking.restoreTrackingAfterCategoryCorrection([{ ...found, trackedDefault: false }], got.exerciseLibrary)[0].trackedDefault === true
+        ) {
+          continue;
+        }
         const diff = firstDiff(clean(value), clean(found[field]), `${name} "${row[key]}".${field}`);
         if (diff) {
           bad(`3: ${label}: ${diff}`);
@@ -2041,7 +2054,7 @@ async function withWorld(run) {
         stubModule('@react-native-google-signin/google-signin', googleModule);
         stubModule('expo-apple-authentication', { isAvailableAsync: async () => false });
         global.fetch = fakeFetch;
-        dist = { accountBackup: require_('lib/accountBackup.js'), seed: require_('data/seed.js') };
+        dist = { accountBackup: require_('lib/accountBackup.js'), seed: require_('data/seed.js'), tracking: require_('lib/trackingCategoryMigration.js') };
         REAL_THRESHOLD = dist.accountBackup.ACCOUNT_BACKUP_COMPRESS_ABOVE_CHARS;
         world = freshWorld();
         handler = loadApiModule('api/backup.ts', { '@vercel/blob': blobModule }).default;
