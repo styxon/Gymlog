@@ -13,16 +13,18 @@ const read = (relative) => fs.readFileSync(path.join(__dirname, '../..', relativ
  *
  * Inventory (2026-10-06):
  *   AddExerciseSheet         — programme builder, programme day, guided add
- *   GuidedPlayerScreen       — the swap sheet (same component, swap mode)
+ *   lib/swapPickerLists      — the swap sheet's list (same component, swap
+ *                              mode), for the guided player and, since
+ *                              2026-10-07, Home
  *   EmptyWorkoutScreen       — the free workout's add sheet
  *   ExerciseLibraryBrowser   — the exercise library screen
  *   NewProgramSheet          — the import's "which lift did you mean" list
- * Home's and the programme day's swap search go through buildSwapLibraryMatches,
+ * The programme day's swap search goes through buildSwapLibraryMatches,
  * whose ranking is the same rankExerciseMatches (pinned in pickerRules).
  */
 const PICKER_FILES = {
   'add sheet': 'src/components/AddExerciseSheet.tsx',
-  'guided swap': 'src/screens/GuidedPlayerScreen.tsx',
+  'swap lists': 'src/lib/swapPickerLists.ts',
   'empty workout': 'src/screens/EmptyWorkoutScreen.tsx',
   'library screen': 'src/components/ExerciseLibraryBrowser.tsx',
   'import teach list': 'src/components/NewProgramSheet.tsx',
@@ -34,12 +36,20 @@ module.exports = [
     run() {
       for (const [picker, file] of Object.entries(PICKER_FILES)) {
         const source = read(file);
-        assert.match(source, /from '\.\.\/lib\/exercisePicker'/, `${picker} does not import the shared list`);
+        assert.match(source, /from '(?:\.\.\/lib\/|\.\/)exercisePicker'/, `${picker} does not import the shared list`);
         assert.match(source, /listPickerExercises\(/, `${picker} composes its own list`);
         // No picker reaches past the rule to the pieces it composes.
         assert.doesNotMatch(source, /filterBrowsableExercises\(|passesSpecialtyGate\(|matchesBodyPartFilter\(/, picker);
         // Nor filters by the stored body part, which has no leg muscles.
         assert.doesNotMatch(source, /\bitem\.bodyPart (?:===|!==) /, `${picker} filters by the stored body part`);
+      }
+      // Both swap sheets draw the shared picker over the shared swap list, so
+      // what a swap offers does not depend on where it was opened (2026-10-07).
+      for (const screen of ['src/screens/GuidedPlayerScreen.tsx', 'src/screens/HomeScreen.tsx']) {
+        const source = read(screen);
+        assert.match(source, /<ExercisePickerSheet\b[\s\S]{0,300}mode="swap"/, `${screen} has its own swap sheet`);
+        assert.match(source, /buildSwapPickerLibrary\(/, `${screen} composes its own swap list`);
+        assert.match(source, /narrowSwapAlternatives\(/, `${screen} narrows its alternatives its own way`);
       }
     },
   },

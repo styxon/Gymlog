@@ -45,8 +45,10 @@ module.exports = [
       const fs = require('node:fs');
       const path = require('node:path');
       const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8');
-      // A swap row shows "KP" and a screen reader says "käsipainoilla".
-      for (const file of ['src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
+      // A swap row shows "KP" and a screen reader says "käsipainoilla". Home's
+      // swap draws the add sheet's cards since 2026-10-07, checked below.
+      assert.match(read('src/screens/HomeScreen.tsx'), /<ExercisePickerSheet[\s\S]{0,200}mode="swap"/);
+      for (const file of ['src/screens/ProgramDayScreen.tsx']) {
         assert.match(
           read(file),
           /title=\{exerciseListLabel\(language, [^)]+\)\}\s*accessibilityLabel=\{exerciseNameLabel\(language, [^)]+\)\}/,

@@ -175,10 +175,10 @@ module.exports = [
     name: 'swap sheet: Home says why it is empty, as the programme day does',
     run() {
       const home = strip(read('src', 'screens', 'HomeScreen.tsx'));
-      assert.match(
-        home,
-        /\{swapRow\.shortlist\.total === 0 && swapLibraryMatches\.length === 0 && swapSessionHits\.length === 0 \? \(\s*<Text style=\{styles\.swapEmpty\}>\s*\{t\(language, swapQuery\.trim\(\) \? 'home\.swapSheet\.noMatches' : 'home\.swapSheet\.empty'\)\}/,
-      );
+      // Home's swap is the player's sheet (2026-10-07): the library sits under
+      // the cards, so an empty list means the search or a chip found nothing,
+      // and it says so in the player's words.
+      assert.match(home, /emptyTitle=\{t\(language, 'guided\.swap\.noMatch'\)\}/);
       // …unless the search hit a lift already in the session: then the sheet
       // names it instead of saying the library has nothing (#bugs 2026-09-27).
       assert.match(home, /t\(language, 'swap\.alreadyInSession', \{ names: swapSessionHits\.join\(', '\) \}\)/);

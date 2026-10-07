@@ -144,10 +144,13 @@ module.exports = [
       // could not be pressed at all. The ceiling lives on the kit's shell now
       // (a sheet never takes the whole screen) plus the sheet's own capped
       // scroller — the actions scroll WITH the list, reachable at its end.
-      assert.match(home, /adaptOptsScroll: \{\s*\n\s*maxHeight: 300,/);
-      assert.match(home, /style=\{styles\.adaptOptsScroll\}/);
+      // Home's swap is the picker sheet (2026-10-07): its actions are the
+      // list's footer, so they scroll with the cards and land at the end.
+      assert.match(home, /listFooter=\{\s*<View style=\{styles\.swapActions\}>/);
+      assert.match(read('src/components/AddExerciseSheet.tsx'), /\{listFooter\}/);
+      assert.match(home, /buildSwapShortlist\(/);
       assert.match(read('src/components/sheetKit.tsx'), /maxHeight: '86%'/);
-      for (const source of [home, day]) {
+      for (const source of [day]) {
         assert.match(source, /buildSwapShortlist\(/);
         // Headings only when both halves exist: one heading over the whole
         // list labels nothing.
@@ -246,7 +249,14 @@ module.exports = [
         'Home is not handed the library',
       );
 
-      for (const screen of ['src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
+      // Home lists the library under its cards through the player's list
+      // (2026-10-07), which a query searches whole.
+      assert.match(
+        read('src/screens/HomeScreen.tsx'),
+        /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query: swapQuery,/,
+        'Home does not search the library',
+      );
+      for (const screen of ['src/screens/ProgramDayScreen.tsx']) {
         const source = read(screen);
         assert.match(source, /buildSwapLibraryMatches\(exerciseLibrary, swapQuery, language,/, `${screen} does not search the library`);
         assert.match(source, /'home\.swapSheet\.library'/, `${screen} does not draw the library section`);

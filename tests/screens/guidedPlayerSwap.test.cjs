@@ -60,9 +60,12 @@ module.exports = [
       assert.match(playerSource, /'guided\.swap\.library'/);
       // The library list is derived and capped: 873 rows inside a sheet is a
       // scroll, not a choice.
+      // The list moved to lib/swapPickerLists (2026-10-07), shared with Home.
       assert.match(playerSource, /const swapLibrary = useMemo/);
-      assert.match(playerSource, /\.slice\(0, 25\)/);
-      assert.match(playerSource, /\.slice\(0, 40\)/);
+      assert.match(playerSource, /buildSwapPickerLibrary\(exerciseLibrary, \{/);
+      const listsSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'swapPickerLists.ts'), 'utf8');
+      assert.match(listsSource, /const UNSEARCHED_CAP = 25;/);
+      assert.match(listsSource, /const SEARCHED_CAP = 40;/);
       // And an empty search says so rather than drawing nothing.
       assert.match(playerSource, /'guided\.swap\.noMatch'/);
     },
@@ -804,7 +807,11 @@ module.exports = [
       assert.match(sheet, /options=\{equipmentOptions\}/);
       // The swap list obeys all three groups through every picker's one list
       // (lib/exercisePicker), the add sheet's too.
-      assert.match(source, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
+      assert.match(source, /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query: swapQuery,\s*filters: swapFilters,/);
+      assert.match(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'swapPickerLists.ts'), 'utf8'),
+        /listPickerExercises\(library, \{\s*query: typed,\s*filters,/,
+      );
       assert.match(sheet, /listPickerExercises\(items, \{\s*query: search,\s*filters: \{ category, bodyPart, equipment \}/);
       // A programme alternative keeps its card, with its picture when the
       // library holds it (swapSuggestionRows) and its name when it does not.

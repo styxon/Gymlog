@@ -91,8 +91,19 @@ module.exports = [
         .replace(/\r\n/g, '\n');
       // Stretches and drills out until the reader types: the add sheet's one
       // list (lib/exercisePicker), with the sheet's chips.
-      assert.match(player, /const pool = listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
-      assert.match(player, /orderSwapCandidates\(pool, swapCurrentLibraryItem, popular\)/);
+      // Since 2026-10-07 through lib/swapPickerLists, which Home's swap uses too.
+      const lists = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'swapPickerLists.ts'), 'utf8');
+      assert.match(lists, /const pool = listPickerExercises\(library, \{\s*query: typed,\s*filters,/);
+      assert.match(lists, /orderSwapCandidates\(pool, currentItem, popularOrder\)/);
+      const home = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'HomeScreen.tsx'), 'utf8');
+      for (const [screen, source, current] of [
+        ['player', player, 'swapCurrentLibraryItem'],
+        ['home', home, 'swapCurrentItem'],
+      ]) {
+        assert.match(source, /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query: swapQuery,\s*filters: swapFilters,/, screen);
+        assert.match(source, new RegExp(`currentItem: ${current},`), screen);
+        assert.match(source, /effectiveSwapBodyPart\(/, screen);
+      }
     },
   },
   {
