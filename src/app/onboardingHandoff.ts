@@ -7,6 +7,7 @@ import {
   FirstRunSetupSelection,
 } from '../lib/firstRunSetup';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
+import { resolveCycleAnchor } from '../lib/trainingSchedule';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import {
@@ -172,12 +173,6 @@ export function buildSetupSelectionFromPreferences(
   };
 }
 
-/** Local midnight, the anchor a training cycle counts from. */
-function localTodayStart(): number {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-}
-
 export function buildSetupPreferencePatch(
   selection: FirstRunSetupSelection,
   recommendedProgramId: string | null,
@@ -186,13 +181,8 @@ export function buildSetupPreferencePatch(
   // day of the rhythm today is for a reader who only re-ran the questions.
   previousCycle: AppPreferences['trainingCycle'] = null,
 ): Partial<AppPreferences> {
-  const cyclePattern = selection.trainingCyclePattern ?? null;
   return {
-    trainingCycle: cyclePattern
-      ? previousCycle && previousCycle.pattern.join(',') === cyclePattern.join(',')
-        ? previousCycle
-        : { pattern: cyclePattern, anchorDayStart: localTodayStart() }
-      : null,
+    trainingCycle: resolveCycleAnchor(selection.trainingCyclePattern, previousCycle, new Date()),
     onboardingCompleted: true,
     setupCompleted: true,
     // Only a name the questionnaire carries is written. It has not asked for
@@ -272,6 +262,10 @@ export function buildSavedOnboardingPlan(
         repMax: exercise.repsMax,
         restSeconds: exercise.restSecondsMax,
         trackedDefault: true,
+        // How the composed week logs this row. The saved copy is read back by
+        // library name, and the library spells push-ups, bird dogs and skater
+        // jumps its own way, so they came back with a weight dial.
+        trackingMode: exercise.trackingMode,
         // The composed week pairs lifts the way the catalogue prescribes
         // them; the saved programme dropped the id, so a programme built by
         // onboarding — most programmes — never ran a superset (2026-09-14).

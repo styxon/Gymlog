@@ -1,5 +1,8 @@
-import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { getCatalogTrackingMode } from './catalogExercisePools';
+import { EXTRA_EXERCISE_LIBRARY } from '../data/extraExerciseLibrary';
+import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
+import { isMinutesTrackingMode, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { getCatalogTrackingMode, prescriptionAfterSwap } from './catalogExercisePools';
+import { DisplayEquipmentValue, displayEquipmentValue } from './libraryLabel';
 
 /**
  * Equipment chips filter the actual exercises (onboarding truth plan P4).
@@ -15,8 +18,31 @@ type RequirementGroup = string[]; // any-of
 
 interface EquipmentRule {
   pattern: string;
+  /**
+   * Match the whole name, not a part of it. "Deadlift" is a barbell lift but
+   * "Single-Leg Romanian Deadlift" is done with nothing, and a substring rule
+   * cannot tell them apart.
+   */
+  exact?: boolean;
+  /**
+   * Names containing any of these are not this rule's business: "IT Band and
+   * Glute Stretch" has no resistance band in it, and "Nordic Hamstring Curl"
+   * is a curl of the body, not of a weight.
+   */
+  unless?: string[];
   /** Every group must be satisfied by at least one available item. */
   requires: RequirementGroup[];
+}
+
+/** Whether a rule speaks about this (trimmed, lower-cased) exercise name. */
+export function equipmentRuleMatches(
+  normalizedName: string,
+  rule: { pattern: string; exact?: boolean; unless?: string[] },
+): boolean {
+  if (rule.unless?.some((exception) => normalizedName.includes(exception))) {
+    return false;
+  }
+  return rule.exact ? normalizedName === rule.pattern : normalizedName.includes(rule.pattern);
 }
 
 const BARBELL = ['Barbells', 'Barbell & plates'];
@@ -27,7 +53,8 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'box squat', requires: [BARBELL, ['Squat rack']] },
   { pattern: 'bench press', requires: [BARBELL, ['Bench']] },
   { pattern: 'barbell', requires: [BARBELL] },
-  { pattern: 'skull crusher', requires: [[...BARBELL, 'Dumbbells']] },
+  // The band skull crusher is done with the band alone (the band rule below).
+  { pattern: 'skull crusher', unless: ['band skull crusher'], requires: [[...BARBELL, 'Dumbbells']] },
   { pattern: 'overhead press', requires: [[...BARBELL, 'Dumbbells']] },
   { pattern: 'dumbbell', requires: [['Dumbbells']] },
   { pattern: 'goblet', requires: [['Dumbbells', 'Kettlebells']] },
@@ -45,21 +72,29 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'leg curl', requires: [['Machines']] },
   { pattern: 'leg extension', requires: [['Machines']] },
   { pattern: 'seated calf raise', requires: [['Machines']] },
+  // The library files it as bodyweight, but its steps open with a donkey calf
+  // raise machine (bug hunt, 2026-10-04).
+  { pattern: 'donkey calf', requires: [['Machines']] },
   { pattern: 'preacher curl', requires: [['Bench', 'Machines']] },
   { pattern: 'lateral raise', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'rear delt', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
-  { pattern: 'curl', requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
+  { pattern: 'curl', unless: ['nordic hamstring curl', 'lower back curl'], requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
   { pattern: 'treadmill', requires: [['Cardio machines']] },
   { pattern: 'bike', requires: [['Cardio machines']] },
   { pattern: 'rowing machine', requires: [['Cardio machines']] },
   { pattern: 'elliptical', requires: [['Cardio machines']] },
+  // Had no rule, so the steady-cardio slot kept it for a reader with no gear.
+  { pattern: 'stairmaster', requires: [['Cardio machines', 'Machines']] },
+  { pattern: 'stair climber', requires: [['Cardio machines', 'Machines']] },
   { pattern: 'pull-up', requires: [['Pull-up bar']] },
   // The catalog spells it "Pullups", which the hyphenated pattern misses.
   { pattern: 'pullup', requires: [['Pull-up bar']] },
   { pattern: 'chin-up', requires: [['Pull-up bar']] },
   { pattern: 'hanging', requires: [['Pull-up bar']] },
-  { pattern: 'band', requires: [['Resistance bands']] },
-  { pattern: 'hip thrust', requires: [['Bench', ...BARBELL, 'Dumbbells']] },
+  { pattern: 'band', unless: ['it band'], requires: [['Resistance bands']] },
+  // "Hip Thrust (Bodyweight)" is done on the floor; programEquipment already
+  // reads a name that says bodyweight as gear-free, and the filter must agree.
+  { pattern: 'hip thrust', unless: ['bodyweight'], requires: [['Bench', ...BARBELL, 'Dumbbells']] },
   // The weight is the exercise. They were logged as bodyweight, so a plan for
   // someone with no equipment carried weighted dips without asking anything
   // of them; logged with the weight (2026-09-21), they need a weight to hang.
@@ -84,6 +119,51 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   // band, and the generic curl rule would otherwise let dumbbells stand in
   // for the band it is named after (2026-09-26).
   { pattern: 'band curl', requires: [['Resistance bands']] },
+  // The catalog's loaded lifts that never say "barbell". With no rule they
+  // passed every equipment check, so the fallbacks below for "deadlift" and
+  // "romanian deadlift" never ran and a dumbbells-only home plan kept a
+  // conventional deadlift (bug hunt, 2026-10-04). Exact where a bodyweight
+  // version shares the words: a single-leg RDL needs nothing.
+  { pattern: 'deadlift', exact: true, requires: [BARBELL] },
+  { pattern: 'conventional deadlift', requires: [BARBELL] },
+  { pattern: 'competition deadlift', requires: [BARBELL] },
+  { pattern: 'deficit deadlift', requires: [BARBELL] },
+  { pattern: 'sumo deadlift', requires: [BARBELL] },
+  { pattern: 'trap bar', requires: [BARBELL] },
+  { pattern: 'romanian deadlift', exact: true, requires: [BARBELL] },
+  // The light one is the postpartum and recovery hinge, done with whatever
+  // weight is in the house; dumbbells come first so that is the chip shown.
+  { pattern: 'romanian deadlift (light)', exact: true, requires: [['Dumbbells', 'Kettlebells', ...BARBELL]] },
+  // The band good mornings stand on the band; no bar.
+  { pattern: 'good morning', unless: ['band good morning'], requires: [BARBELL] },
+  { pattern: 'power clean', requires: [BARBELL] },
+  { pattern: 'push press', requires: [BARBELL] },
+  { pattern: 'pendlay row', requires: [BARBELL] },
+  { pattern: 'bent-over row', exact: true, requires: [BARBELL] },
+  { pattern: 'pause squat', requires: [BARBELL, ['Squat rack']] },
+  { pattern: 't-bar row', requires: [[...BARBELL, 'Machines']] },
+  { pattern: 'chest-supported row', requires: [['Dumbbells', 'Machines']] },
+  { pattern: 'arnold press', requires: [['Dumbbells', 'Kettlebells']] },
+  { pattern: 'renegade row', requires: [['Dumbbells', 'Kettlebells']] },
+  { pattern: 'overhead triceps extension', requires: [[...BARBELL, 'Dumbbells', 'Cables', 'Resistance bands']] },
+  { pattern: 'triceps kickback', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
+  { pattern: 'face pull', requires: [['Cables', 'Resistance bands']] },
+  { pattern: 'reverse pec deck', requires: [['Machines']] },
+  { pattern: 'reverse hyperextension', requires: [['Machines']] },
+  // Bar work the pull-up rules above missed by name.
+  { pattern: 'muscle-up', requires: [['Pull-up bar']] },
+  { pattern: 'front lever', requires: [['Pull-up bar']] },
+  { pattern: 'toes-to-bar', requires: [['Pull-up bar']] },
+  { pattern: 'rows (bar or rings)', requires: [['Pull-up bar']] },
+  // Gym floor gear with no chip of its own. "Machines" is the chip that says
+  // the reader trains where these live; a home setup has neither.
+  { pattern: 'battle rope', requires: [['Machines']] },
+  { pattern: 'battling rope', requires: [['Machines']] },
+  { pattern: 'sled', requires: [['Machines']] },
+  { pattern: 'medicine ball', requires: [['Machines']] },
+  { pattern: 'box jump', requires: [['Machines']] },
+  { pattern: 'step-up (high box)', requires: [['Bench', 'Machines']] },
+  { pattern: 'step-up (low box)', requires: [['Bench', 'Machines']] },
 ];
 
 /**
@@ -141,8 +221,14 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['kettlebell swing', ['Butt Lift (Bridge)']],
   ['leg curl', ['Butt Lift (Bridge)']],
   ['leg extension', ['Bodyweight Squat']],
-  ['seated calf raise', ['Donkey Calf Raises']],
+  // Not "Donkey Calf Raises": its steps start with "you will need access to a
+  // donkey calf raise machine" (bug hunt, 2026-10-04).
+  // The donkey raise needs its machine too (2026-10-04).
+  ['donkey calf', ['Bodyweight Calf Raise']],
+  ['seated calf raise', ['Bodyweight Calf Raise']],
   ['treadmill', ['Trail Running/Walking']],
+  ['stairmaster', ['Trail Running/Walking']],
+  ['stair climber', ['Trail Running/Walking']],
   ['bike', ['Mountain Climbers']],
   ['chest press', ['Push-Up Wide']],
   ['hanging leg raise', ['Plank']],
@@ -150,22 +236,58 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['pullup', ['Inverted Row']],
   ['hip thrust', ['Butt Lift (Bridge)']],
   ['cable crunch', ['Plank']],
+  ['good morning', ['Butt Lift (Bridge)']],
+  ['power clean', ['Kettlebell Swing', 'Freehand Jump Squat']],
+  ['push press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
+  ['pendlay row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['bent-over row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['t-bar row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['chest-supported row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
+  ['pause squat', ['Goblet Squat', 'Bodyweight Squat']],
+  ['arnold press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
+  ['renegade row', ['Plank']],
+  ['triceps kickback', ['Bench Dips']],
+  ['face pull', ['Band Pull Apart']],
+  ['reverse pec deck', ['Band Pull Apart']],
+  ['reverse hyperextension', ['Butt Lift (Bridge)']],
+  ['muscle-up', ['Pullups', 'Inverted Row']],
+  ['front lever', ['Plank']],
+  ['toes-to-bar', ['Reverse Crunch']],
+  ['rows (bar or rings)', ['Inverted Row']],
+  ['battle rope', ['Mountain Climbers']],
+  ['battling rope', ['Mountain Climbers']],
+  ['sled', ['Mountain Climbers']],
+  ['medicine ball', ['Burpee']],
+  ['box jump', ['Freehand Jump Squat']],
+  ['step-up (high box)', ['Bodyweight Walking Lunge']],
+  ['step-up (low box)', ['Bodyweight Walking Lunge']],
 ];
 
 function normalize(name: string) {
   return name.trim().toLowerCase();
 }
 
+/** Gear every gym has, which the full-gym card does not offer as chips. */
+export const GYM_ALWAYS_HAS: readonly string[] = ['Pull-up bar', 'Resistance bands'];
+
 /**
  * `null` = unconstrained (unknown setups stay untouched). Chosen chips are the
  * full truth; a bodyweight-only setup with no chips means "no equipment".
+ *
+ * At a gym, the chips plus what every gym has: the card offers no pull-up bar
+ * or bands, and without them the composer dropped Hanging Knee Raise from nine
+ * programmes and swapped Weighted Pull-Up for Inverted Row in four, for a
+ * reader with a gym card (catalog audit, 2026-10-05). The candidate pool
+ * already read them in; the week did not.
  */
 export function resolveAvailableEquipment(selection: {
   trainingEnvironment?: string | null;
   equipmentItems?: string[];
 }): string[] | null {
   if (selection.equipmentItems && selection.equipmentItems.length > 0) {
-    return selection.equipmentItems;
+    return selection.trainingEnvironment === 'full_gym'
+      ? [...new Set([...selection.equipmentItems, ...GYM_ALWAYS_HAS])]
+      : selection.equipmentItems;
   }
   if (selection.trainingEnvironment === 'bodyweight_only') {
     return [];
@@ -173,12 +295,55 @@ export function resolveAvailableEquipment(selection: {
   return null;
 }
 
+/**
+ * What a library row's own equipment asks for, beyond what its name says.
+ *
+ * The rules above read names, and most band and ball rows say what they use —
+ * but the library files every one of them as bodyweight, and the ones that do
+ * not say it ("Monster Walk" is a band walk; "Overhead Slam" and "Supine
+ * Chest Throw" are medicine-ball throws) passed for a reader with no gear at
+ * all (#bugs 2026-10-06, "kuminauhaliikkeet kehonpainona"). Exact library
+ * names only: a catalogue name that merely resolves to a band row — "Skull
+ * Crusher" finds the band skull crusher by containment — is not one.
+ *
+ * Balls take the chip the rules above already give the medicine ball: gym
+ * floor gear, which "Machines" stands for. There is no ball chip to ask.
+ */
+const GEAR_BY_DISPLAY_EQUIPMENT: Partial<Record<DisplayEquipmentValue, RequirementGroup>> = {
+  band: ['Resistance bands'],
+  ball: ['Machines'],
+};
+
+let libraryGearByName: Map<string, RequirementGroup> | null = null;
+
+export function libraryEquipmentRequirement(normalizedName: string): RequirementGroup | null {
+  if (!libraryGearByName) {
+    libraryGearByName = new Map();
+    for (const item of [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY]) {
+      // A stretch is never refused for its gear word (the suite's sweep):
+      // "Chest Stretch on Stability Ball" is a chest stretch with a prop.
+      if (item.sourceCategory?.trim().toLowerCase() === 'stretching') {
+        continue;
+      }
+      const group = GEAR_BY_DISPLAY_EQUIPMENT[displayEquipmentValue(item)];
+      if (group) {
+        libraryGearByName.set(normalize(item.name), group);
+      }
+    }
+  }
+  return libraryGearByName.get(normalizedName) ?? null;
+}
+
 export function isExerciseAllowedWithEquipment(exerciseName: string, available: string[] | null): boolean {
   if (available === null) {
     return true;
   }
   const normalized = normalize(exerciseName);
-  return EQUIPMENT_RULES.filter((rule) => normalized.includes(rule.pattern)).every((rule) =>
+  const fromLibrary = libraryEquipmentRequirement(normalized);
+  if (fromLibrary && !fromLibrary.some((item) => available.includes(item))) {
+    return false;
+  }
+  return EQUIPMENT_RULES.filter((rule) => equipmentRuleMatches(normalized, rule)).every((rule) =>
     rule.requires.every((group) => group.some((item) => available.includes(item))),
   );
 }
@@ -248,12 +413,28 @@ export function applyEquipmentToExercises(
       taken.add(fallback);
 
       swapped.push({ from: exercise.exerciseName, to: fallback });
+      // A barbell squat that falls back to a bodyweight squat must stop
+      // asking for kilograms. The catalog knows; keyword matching guessed.
+      const trackingMode = getCatalogTrackingMode(fallback);
+      // And minutes mean nothing in another unit: a stair machine's twenty
+      // minutes is not twenty of whatever replaces it, nor a lift's ten reps
+      // ten minutes on a bike. Only across minutes — a carry's seconds have
+      // always stayed with the hold it falls back to.
+      const acrossMinutes = isMinutesTrackingMode(exercise.trackingMode) !== isMinutesTrackingMode(trackingMode);
+      const dose = acrossMinutes
+        ? prescriptionAfterSwap(
+            exercise.trackingMode,
+            trackingMode,
+            { repsMin: exercise.repsMin, repsMax: exercise.repsMax },
+            fallback,
+          )
+        : { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
       return {
         ...exercise,
         exerciseName: fallback,
-        // A barbell squat that falls back to a bodyweight squat must stop
-        // asking for kilograms. The catalog knows; keyword matching guessed.
-        trackingMode: getCatalogTrackingMode(fallback),
+        trackingMode,
+        repsMin: dose.repsMin,
+        repsMax: dose.repsMax,
       };
     })
     .filter((exercise): exercise is WorkoutTemplateExercise => exercise !== null);

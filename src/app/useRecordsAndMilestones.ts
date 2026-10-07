@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
-import { getComparableLogSets } from '../lib/exerciseLog';
 import { LifetimeTrainingSummary } from '../lib/lifetimeSummary';
 import { buildMilestoneLedger, getMilestoneFacts } from '../lib/milestoneFacts';
-import { firstRecordDates, RecordSource, resolveRecords } from '../lib/personalRecords';
+import { firstRecordDates, RecordSource, recordSetsOfLog, resolveRecords } from '../lib/personalRecords';
 import { findPlateauDetection } from '../lib/proInsights';
 import { ExerciseProgressSummary, getLiftHistoryByName } from '../lib/progression';
 import { LiftHistory } from '../lib/trainingHistory';
@@ -56,9 +55,10 @@ export function useRecordsAndMilestones(deps: RecordsAndMilestonesDeps) {
       key: summary.key,
       name: summary.name,
       bodyPart: bodyPartByName.get(summary.name.trim().toLowerCase()) ?? null,
-      entries: summary.logs.map((log) => ({
+      entries: summary.allLogs.map((log) => ({
         performedAt: log.performedAt,
-        sets: getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps })),
+        // Minutes never hold a record (recordSetsOfLog).
+        sets: recordSetsOfLog(log),
       })),
     });
   }, [exerciseBrowserItems]);

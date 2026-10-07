@@ -60,8 +60,16 @@ export function collapseToLatestPerDay(entries: readonly BodyweightEntry[]): Bod
   return [...byDay.entries()].sort(([left], [right]) => left - right).map(([, entry]) => entry);
 }
 
-export function buildBodyweightCardStats(entries: readonly BodyweightEntry[]): BodyweightCardStats {
-  const usable = collapseToLatestPerDay(entries);
+export function buildBodyweightCardStats(
+  entries: readonly BodyweightEntry[],
+  now: Date = new Date(),
+): BodyweightCardStats {
+  // Nothing after `now`: a weigh-in with a future date (a mistyped year, a
+  // device clock that was ahead) would otherwise be "current" for good.
+  // buildWeightWindow and the AI context already stop at now (bug hunt,
+  // 2026-10-04).
+  const nowMs = now.getTime();
+  const usable = collapseToLatestPerDay(entries.filter((entry) => Date.parse(entry.recordedAt) <= nowMs));
   if (usable.length === 0) {
     return { currentKg: null, heaviestKg: null, lightestKg: null, count: 0 };
   }

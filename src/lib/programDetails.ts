@@ -1,4 +1,5 @@
 import {
+  isMinutesTrackingMode,
   isTimedTrackingMode,
   WorkoutRole,
   WorkoutRuntimeTemplate,
@@ -13,7 +14,8 @@ import { getRecommendationProgrammeSummary } from './recommendationProgramme';
 import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgramContent';
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
 import type { AppLanguage } from '../types/models';
-import { removeTrailingZeros } from './format';
+import { doseUnitSuffix, removeTrailingZeros } from './format';
+import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 
 export type ProgramDetailSource = 'ready' | 'custom';
 
@@ -36,6 +38,8 @@ export interface ProgramDetailExerciseItem {
   repMax: number;
   /** A hold is prescribed in seconds, and its stepper has to say so. */
   timed: boolean;
+  /** Steady cardio is prescribed in minutes — "1 × 20 min". */
+  minutes: boolean;
   prescription: string;
   /** "tauko"-less rest range, e.g. "45–105 s" or "1,5–2,5 min". */
   restLabel: string;
@@ -118,8 +122,11 @@ function buildPrescription(
 ) {
   const reps = repsMin === repsMax ? `${repsMin}` : `${repsMin}–${repsMax}`;
   // A hold's numbers are seconds. Without the unit the catalog's own
-  // "Plank 3x30-60" read as sixty repetitions.
-  return isTimedTrackingMode(trackingMode) ? `${sets} × ${reps} s` : `${sets} × ${reps}`;
+  // "Plank 3x30-60" read as sixty repetitions; a bike's are minutes.
+  return `${sets} × ${reps}${doseUnitSuffix({
+    timed: isTimedTrackingMode(trackingMode),
+    minutes: isMinutesTrackingMode(trackingMode),
+  })}`;
 }
 
 /**
@@ -147,6 +154,7 @@ function buildSessionItems(
   sessions: WorkoutTemplateSession[],
   sessionStatusById: Record<string, string> = {},
   template?: WorkoutTemplateV1,
+  sessionMinutes = 0,
 ): ProgramDetailSessionItem[] {
   return [...sessions]
     .sort((left, right) => left.orderIndex - right.orderIndex)
@@ -156,7 +164,7 @@ function buildSessionItems(
       orderIndex: session.orderIndex,
       exerciseCount: session.exercises.length,
       preview: buildSessionPreview(session.exercises),
-      guidance: template ? buildSessionGuidance(template, session) : null,
+      guidance: template ? buildSessionGuidance(template, session, sessionMinutes) : null,
       statusLine: sessionStatusById[session.id] ?? null,
       totalSets: session.exercises.reduce((sum, exercise) => sum + exercise.sets, 0),
       exercises: session.exercises.map((exercise) => ({
@@ -167,6 +175,7 @@ function buildSessionItems(
         repMin: exercise.repsMin,
         repMax: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
+        minutes: isMinutesTrackingMode(exercise.trackingMode),
         prescription: buildPrescription(exercise.repsMin, exercise.repsMax, exercise.sets, exercise.trackingMode),
         restLabel: buildRestLabel(exercise.restSecondsMin, exercise.restSecondsMax),
         restSeconds: exercise.restSecondsMin,
@@ -175,6 +184,25 @@ function buildSessionItems(
         supersetGroup: exercise.supersetGroup ?? null,
       })),
     }));
+}
+
+/**
+ * The session minutes a ready programme's page quotes — the one number for
+ * everything on that page that talks about time.
+ *
+ * The badge read this while the "Why it fits" line summed the catalog's
+ * hand-written `estimatedSessionDuration`: Athletic Starter's badge said 35
+ * min and its weekly minutes were worked out from 50, and 43 of 68 programmes
+ * were 10+ minutes apart the same way (bug hunt, 2026-10-05, B14). The
+ * composed week when it is the reader's plan, otherwise the Programs card's
+ * own estimate with the same options.
+ */
+export function readyProgramSessionMinutes(
+  template: WorkoutTemplateV1,
+  composedWeek?: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): number {
+  return composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions);
 }
 
 export function buildReadyProgramDetail(
@@ -207,6 +235,12 @@ export function buildReadyProgramDetail(
   isActivePlan = false,
   /** Held, but some other programme is the one Home leads with. */
   isHeldNotLeading = false,
+  /**
+   * The reader's gear and drill swaps, which decide the warm-up and cool-down
+   * and so the minutes — the same options the Programs cards are given, or the
+   * card and this page quote two numbers for one programme.
+   */
+  minutesOptions: ProgrammeMinutesOptions = {},
 ): ProgramDetailViewModel {
   const goal = titleCase(template.goalType);
   const level = titleCase(template.level);
@@ -214,6 +248,7 @@ export function buildReadyProgramDetail(
   const programmeSummary = getRecommendationProgrammeSummary(template.id);
   const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
   const daysPerWeek = composed ? composed.days : template.daysPerWeek;
+  const sessionMinutes = readyProgramSessionMinutes(template, composedWeek, minutesOptions);
   const detailSessions: WorkoutTemplateSession[] = composed
     ? composed.sessions.map((session) => ({
         id: session.id,
@@ -235,7 +270,7 @@ export function buildReadyProgramDetail(
       goal,
       level,
       `${daysPerWeek} ${pluralize(daysPerWeek, 'day')}`,
-      `${template.estimatedSessionDuration} min`,
+      `${sessionMinutes} min`,
     ],
     tailoringBadges,
     highlights: insights?.highlights ?? [],
@@ -262,7 +297,7 @@ export function buildReadyProgramDetail(
     ),
     // Home's words, in the reader's language — it was an English literal.
     sessionActionLabel: t(language, 'home.startWorkout'),
-    sessions: buildSessionItems(detailSessions, insights?.sessionStatusById, template),
+    sessions: buildSessionItems(detailSessions, insights?.sessionStatusById, template, sessionMinutes),
     daysPerWeek,
   };
 }

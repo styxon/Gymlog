@@ -20,19 +20,22 @@ import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import {
   BODY_PART_FILTERS,
   BodyPartFilter,
-  filterBrowsableExercises,
-  matchesBodyPartFilter,
+  EQUIPMENT_FILTERS,
+  EXERCISE_TYPE_FILTERS,
+  EquipmentFilter,
+  ExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
-import { rankExerciseMatches } from '../lib/exerciseSearch';
-import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
-import { I18nKey, t } from '../lib/i18n';
-import { displayEquipmentValue } from '../lib/libraryLabel';
 import {
-  AppLanguage,
-  ExerciseCategory,
-  ExerciseEquipment,
-  ExerciseLibraryItem,
-} from '../types/models';
+  ExercisePickerFilters,
+  NO_PICKER_FILTERS,
+  exercisePickerChipLabel,
+  exercisePickerRowLabels,
+  listPickerExercises,
+} from '../lib/exercisePicker';
+import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
+import { t } from '../lib/i18n';
+import { ExerciseSheetMode, exerciseSheetCopy } from '../lib/exerciseSheetMode';
+import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 import { KitBar } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { radii, spacing } from '../theme';
@@ -75,69 +78,18 @@ function sortName(item: ExerciseLibraryItem, language: AppLanguage) {
   return exerciseNameLabel(language, item.name);
 }
 
-const categoryOptions: Array<'all' | ExerciseCategory> = ['all', 'compound', 'isolation', 'cardio', 'core'];
-/**
- * `kettlebells` is not an `ExerciseEquipment` — the library files kettlebells
- * under `dumbbell` — but it is what `displayEquipmentValue` prints on the row,
- * and a chip set that cannot select what the rows say is a filter that argues
- * with its own list. Widened here rather than in the union, because the union
- * is the storage and planning vocabulary and a sixth value there would have to
- * be threaded through the coach's allowed-equipment sets too.
- */
-type SheetEquipmentOption = 'all' | ExerciseEquipment | 'kettlebells';
+// The chip lists and what they select live in lib/exerciseBrowseFilter, with
+// the kettlebell chip's reasoning and the specialty chip's (#bugs 2026-10-06).
+const categoryOptions = EXERCISE_TYPE_FILTERS;
+export type SheetEquipmentOption = EquipmentFilter;
+const equipmentOptions: SheetEquipmentOption[] = EQUIPMENT_FILTERS;
 
-const equipmentOptions: SheetEquipmentOption[] = [
-  'all',
-  'barbell',
-  'dumbbell',
-  'kettlebells',
-  'machine',
-  'cable',
-  'bodyweight',
-];
+// Chips and rows say a value in one word, the library's (exercisePickerLabel):
+// the sheet kept its own dictionary, and a lift the library screen called
+// "Moninivel · Käsipainot" read "Perusliike · Käsipaino" here (#bugs 2026-10-06).
 
-// The library's category / body-part / equipment values are stored English and
-// used for filtering, so only the label is translated.
-const FACET_KEYS: Record<string, I18nKey> = {
-  all: 'facet.all',
-  compound: 'facet.compound',
-  isolation: 'facet.isolation',
-  cardio: 'facet.cardio',
-  core: 'facet.core',
-  chest: 'facet.chest',
-  back: 'facet.back',
-  shoulders: 'facet.shoulders',
-  legs: 'facet.legs',
-  biceps: 'facet.biceps',
-  triceps: 'facet.triceps',
-  glutes: 'facet.glutes',
-  'full body': 'facet.fullBody',
-  // The leg split, named as the library's muscle labels name them.
-  quadriceps: 'lib.muscle.quadriceps',
-  hamstrings: 'lib.muscle.hamstrings',
-  calves: 'lib.muscle.calves',
-  barbell: 'facet.barbell',
-  dumbbell: 'facet.dumbbell',
-  machine: 'facet.machine',
-  cable: 'facet.cable',
-  bodyweight: 'facet.bodyweight',
-  // Not a bucket the library normalises to — `displayEquipmentValue` hands it
-  // over so a kettlebell row stops calling itself a dumbbell. Borrowed from the
-  // library dictionary rather than added as a fifth copy of the word.
-  kettlebells: 'lib.equipment.kettlebells',
-};
-
-function toLabel(value: string, language: AppLanguage) {
-  const key = FACET_KEYS[value];
-  if (key) {
-    return t(language, key);
-  }
-
-  return value
-    .split(' ')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-}
+/** 38 drawn, 44 to the thumb. */
+const PILL_SLOP = { top: 3, bottom: 3 } as const;
 
 interface FilterPillGroupProps<T extends string> {
   title: string;
@@ -165,17 +117,360 @@ function FilterPillGroup<T extends string>({
           return (
             <Pressable
               key={option}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+              hitSlop={PILL_SLOP}
               onPress={() => onSelect(option)}
               style={[styles.filterPill, active && styles.filterPillActive]}
             >
               <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
-                {toLabel(option, language)}
+                {exercisePickerChipLabel(option, language)}
               </Text>
             </Pressable>
           );
         })}
       </View>
     </View>
+  );
+}
+
+/** One card of the sheet: a library row, or a programme name the library does not hold. */
+export interface ExercisePickerEntry {
+  key: string;
+  /** The stored name; the card prints its list label. */
+  name: string;
+  /** Null for a programme alternative with no library row: name only, no picture. */
+  item: ExerciseLibraryItem | null;
+}
+
+// The three groups' rule lives in lib/exercisePicker, with every picker's list.
+export type { ExercisePickerFilters };
+export const NO_SHEET_FILTERS: ExercisePickerFilters = NO_PICKER_FILTERS;
+
+interface ExercisePickerSection {
+  title: string;
+  subtitle?: string | null;
+  entries: ExercisePickerEntry[];
+}
+
+interface ExerciseCardProps {
+  entry: ExercisePickerEntry;
+  featured?: boolean;
+  selected: boolean;
+  multiSelect: boolean;
+  actionLabel: string;
+  language: AppLanguage;
+  onPress: () => void;
+}
+
+function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLabel, language, onPress }: ExerciseCardProps) {
+  const styles = useThemedStyles(makeStyles);
+  const { item, name } = entry;
+  const previewImage = item?.imageUrls?.[0] ?? null;
+  // The library screen's line, split over the card's two: body part, then equipment · type.
+  const rowLabels = item ? exercisePickerRowLabels(item, language) : [];
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${actionLabel} · ${exerciseNameLabel(language, name)}`}
+      accessibilityState={{ selected }}
+      onPress={onPress}
+      style={[styles.gridCard, featured && styles.featuredCard, selected && styles.gridCardSelected]}
+    >
+      <View style={styles.gridCardMedia}>
+        {previewImage ? (
+          <Image source={{ uri: previewImage }} style={styles.gridCardImage} resizeMode="cover" />
+        ) : (
+          <View style={styles.gridCardImageFallback}>
+            <Text style={styles.gridCardImageFallbackText}>{name.charAt(0).toUpperCase()}</Text>
+          </View>
+        )}
+
+        {multiSelect ? (
+          <View style={[styles.gridCheckBadge, selected && styles.gridCheckBadgeActive]}>
+            <Text style={[styles.gridCheckBadgeText, selected && styles.gridCheckBadgeTextActive]}>
+              {selected ? '✓' : '+'}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
+      <View style={styles.gridCardCopy}>
+        <Text numberOfLines={3} style={styles.gridCardTitle} accessibilityLabel={exerciseNameLabel(language, name)}>
+          {exerciseListLabel(language, name)}
+        </Text>
+        {item ? (
+          <>
+            <Text numberOfLines={1} style={styles.gridCardBodyPart}>
+              {rowLabels[0]}
+            </Text>
+            <Text numberOfLines={2} style={styles.gridCardMeta}>
+              {rowLabels.slice(1).join(' · ')}
+            </Text>
+          </>
+        ) : null}
+        {!multiSelect ? (
+          <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
+            <Text style={[styles.gridActionText, selected && styles.gridActionTextSelected]}>
+              {selected ? t(language, 'sheet.added') : actionLabel}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </Pressable>
+  );
+}
+
+interface ExercisePickerSheetProps {
+  visible: boolean;
+  /** Read OUTSIDE the modal by the screen that opens it — see the footer below. */
+  bottomInset: number;
+  language: AppLanguage;
+  /** What a tap does. The copy that differs between the modes comes from lib/exerciseSheetMode. */
+  mode: ExerciseSheetMode;
+  /** Swap mode: the lift being replaced, for the title. */
+  swappedName?: string | null;
+  /** Overrides for callers outside the guided player (the day editor, the template builder). */
+  title?: string;
+  subtitle?: string;
+  actionLabel?: string;
+  search: string;
+  onSearchChange: (value: string) => void;
+  searchRef?: React.Ref<TextInput>;
+  filters: ExercisePickerFilters;
+  onFiltersChange: (next: ExercisePickerFilters) => void;
+  /** The multi-select picker's single horizontal body-part row instead of the three groups. */
+  quickBodyPartOnly?: boolean;
+  /** Cards above the main list: "popular" when adding, the programme's own alternatives when swapping. */
+  featured?: ExercisePickerSection | null;
+  main: ExercisePickerSection;
+  /** A line under the list, e.g. the swap's "already in this workout". Replaces the empty card when set. */
+  listNote?: string | null;
+  emptyTitle?: string;
+  emptyBody?: string | null;
+  selectedIds?: string[];
+  multiSelect?: boolean;
+  onSelect: (entry: ExercisePickerEntry) => void;
+  /** The commit bar, for the multi-select picker. */
+  footer?: React.ReactNode;
+  onClose: () => void;
+}
+
+/**
+ * The exercise sheet itself — search, filters, a two-column card grid.
+ *
+ * Shared by adding and swapping (#bugs 2026-10-06, "Vaihda liike ja Lisää
+ * liike pitäisi olla identtiset"): the guided player's swap sheet was a list
+ * of picture rows with its own search field and chips, and now draws this.
+ * It holds no list logic of its own — each caller derives what it lists
+ * (the add flow below, the swap's candidates in the guided player) and hands
+ * the sheet its search and filters to drive.
+ */
+export function ExercisePickerSheet({
+  visible,
+  bottomInset,
+  language,
+  mode,
+  swappedName = null,
+  title,
+  subtitle,
+  actionLabel,
+  search,
+  onSearchChange,
+  searchRef,
+  filters,
+  onFiltersChange,
+  quickBodyPartOnly = false,
+  featured = null,
+  main,
+  listNote = null,
+  emptyTitle,
+  emptyBody,
+  selectedIds = NOTHING_SELECTED,
+  multiSelect = false,
+  onSelect,
+  footer = null,
+  onClose,
+}: ExercisePickerSheetProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const copy = exerciseSheetCopy(mode, language, swappedName);
+  const sheetTitle = title ?? copy.title;
+  const sheetSubtitle = subtitle ?? copy.note;
+  const cardAction = actionLabel ?? copy.actionLabel;
+  const isSelected = (entry: ExercisePickerEntry) => (entry.item ? selectedIds.includes(entry.item.id) : false);
+
+  const listHeader = (
+    <>
+      <View style={styles.searchCard}>
+        <Text style={styles.searchLabel}>{t(language, 'sheet.search')}</Text>
+        <View style={styles.searchRow}>
+          <TextInput
+            ref={searchRef}
+            value={search}
+            onChangeText={onSearchChange}
+            placeholder={copy.searchPlaceholder}
+            placeholderTextColor={theme.faint}
+            style={styles.searchInput}
+            selectionColor={theme.purple}
+            autoCorrect={false}
+            returnKeyType="search"
+          />
+          {search.length > 0 ? (
+            <Pressable accessibilityRole="button" onPress={() => onSearchChange('')} style={styles.clearButton}>
+              <Text style={styles.clearButtonText}>{t(language, 'sheet.clear')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </View>
+
+      {quickBodyPartOnly ? (
+        <View style={styles.quickBodyPartGroup}>
+          <Text style={styles.filterTitle}>{t(language, 'sheet.bodyPart')}</Text>
+          <ScrollView horizontal keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickBodyPartRow}>
+            {BODY_PART_FILTERS.map((option) => {
+              const active = option === filters.bodyPart;
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => onFiltersChange({ ...filters, bodyPart: option })}
+                  style={[styles.quickBodyPartChip, active && styles.quickBodyPartChipActive]}
+                >
+                  <Text style={[styles.quickBodyPartChipText, active && styles.quickBodyPartChipTextActive]}>
+                    {exercisePickerChipLabel(option, language)}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : (
+        <>
+          <FilterPillGroup
+            title={t(language, 'sheet.category')}
+            options={categoryOptions}
+            selected={filters.category}
+            language={language}
+            onSelect={(category) => onFiltersChange({ ...filters, category })}
+          />
+          <FilterPillGroup
+            title={t(language, 'sheet.bodyPart')}
+            options={BODY_PART_FILTERS}
+            selected={filters.bodyPart}
+            language={language}
+            onSelect={(bodyPart) => onFiltersChange({ ...filters, bodyPart })}
+          />
+          <FilterPillGroup
+            title={t(language, 'sheet.equipment')}
+            options={equipmentOptions}
+            selected={filters.equipment}
+            language={language}
+            onSelect={(equipment) => onFiltersChange({ ...filters, equipment })}
+          />
+        </>
+      )}
+
+      {featured && featured.entries.length > 0 ? (
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{featured.title}</Text>
+            {featured.subtitle ? <Text style={styles.sectionSubtitle}>{featured.subtitle}</Text> : null}
+          </View>
+          <View style={styles.featuredGrid}>
+            {featured.entries.map((entry) => (
+              <ExerciseCard
+                key={entry.key}
+                entry={entry}
+                featured
+                selected={isSelected(entry)}
+                multiSelect={multiSelect}
+                actionLabel={cardAction}
+                language={language}
+                onPress={() => onSelect(entry)}
+              />
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{main.title}</Text>
+          {main.subtitle ? <Text style={styles.sectionSubtitle}>{main.subtitle}</Text> : null}
+        </View>
+      </View>
+    </>
+  );
+
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <View style={styles.overlay}>
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no" />
+        <View style={styles.sheet}>
+          <View style={styles.handle} />
+          <View style={styles.header}>
+            <View style={styles.headerCopy}>
+              <Text style={styles.headerTitle}>{sheetTitle}</Text>
+              {sheetSubtitle ? <Text style={styles.headerSubtitle}>{sheetSubtitle}</Text> : null}
+            </View>
+            <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
+              <Text style={styles.closeButtonText}>{t(language, 'common.close')}</Text>
+            </Pressable>
+          </View>
+
+          {/* `flex: 1, minHeight: 0` is what keeps the footer on screen.
+              Without it the list is laid out at its content height — hundreds
+              of exercises — inside a sheet capped at 92% with overflow hidden,
+              so "Lisää N liikettä" was pushed past the sheet's own bottom edge
+              and clipped away. It looked like a button hidden behind the phone's
+              system bar, and padding it up did nothing, because it was never on
+              screen to begin with (user 2026-08-26, second report). */}
+          <FlatList
+            style={styles.grid}
+            data={main.entries}
+            keyExtractor={(entry) => entry.key}
+            numColumns={2}
+            initialNumToRender={12}
+            maxToRenderPerBatch={16}
+            windowSize={8}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+            columnWrapperStyle={styles.gridRow}
+            // Without a footer bar the list runs to the sheet's bottom edge, so
+            // it carries the button-bar inset itself: the last cards sat under
+            // the phone's buttons in single-select mode.
+            contentContainerStyle={[styles.content, footer ? null : { paddingBottom: spacing.xxl + bottomInset }]}
+            ListHeaderComponent={listHeader}
+            ListEmptyComponent={
+              listNote ? null : (
+                <View style={styles.emptyCard}>
+                  <Text style={styles.emptyTitle}>{emptyTitle ?? t(language, 'sheet.noMatches')}</Text>
+                  {emptyBody !== null ? (
+                    <Text style={styles.emptyText}>{emptyBody ?? t(language, 'sheet.noMatchesBody')}</Text>
+                  ) : null}
+                </View>
+              )
+            }
+            ListFooterComponent={listNote ? <Text style={styles.listNote}>{listNote}</Text> : null}
+            renderItem={({ item: entry }) => (
+              <ExerciseCard
+                entry={entry}
+                selected={isSelected(entry)}
+                multiSelect={multiSelect}
+                actionLabel={cardAction}
+                language={language}
+                onPress={() => onSelect(entry)}
+              />
+            )}
+          />
+
+          {footer}
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -197,14 +492,13 @@ export function AddExerciseSheet({
   onSelectItem,
   onConfirmSelection,
 }: AddExerciseSheetProps) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const sheetTitle = title ?? t(language, 'editor.addExercise');
   const addLabel = actionLabel ?? t(language, 'editor.add');
   const searchRef = useRef<TextInput | null>(null);
   const wasVisibleRef = useRef(false);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState<'all' | ExerciseCategory>('all');
+  const [category, setCategory] = useState<ExerciseTypeFilter>('all');
   const [bodyPart, setBodyPart] = useState<BodyPartFilter>('all');
   const [equipment, setEquipment] = useState<SheetEquipmentOption>('all');
   const [pendingSelectedIds, setPendingSelectedIds] = useState<string[]>(selectedIds);
@@ -279,28 +573,17 @@ export function AddExerciseSheet({
     if (!visible) {
       return [];
     }
-    const query = search.trim().toLowerCase();
-
-    // Stretches and cone drills are in the library but are not sets, and they
-    // came back alongside the bench press whenever a body part was picked
-    // (#bugs 2026-08-26). A typed query lifts the hiding: see the module.
-    const filtered = filterBrowsableExercises(items, { query }).filter((item) => {
-      if (category !== 'all' && item.category !== category) {
-        return false;
-      }
-      if (!matchesBodyPartFilter(item, bodyPart)) {
-        return false;
-      }
-      if (equipment !== 'all' && displayEquipmentValue(item) !== equipment) {
-        return false;
-      }
-      return true;
+    // Every picker's one list (lib/exercisePicker): no stretch, drill or
+    // strongman implement until a query or the specialty chip asks, the three
+    // chip groups, and best answer first under a query. The popularity
+    // accessor breaks ties: without it "penkki" answers with Penkkidippi
+    // before Penkkipunnerrus, the very complaint the ranking was added for.
+    return listPickerExercises(items, {
+      query: search,
+      filters: { category, bodyPart, equipment },
+      language,
+      popularity: (item) => commonStarterOrder.get(item.id),
     });
-    // Best answer first under a query — the lift itself before its variants.
-    // The popularity accessor is what breaks ties: without it "penkki"
-    // answers with Penkkidippi before Penkkipunnerrus, which is the very
-    // complaint the ranking was added for.
-    return rankExerciseMatches(filtered, query, language, (item) => commonStarterOrder.get(item.id));
   }, [bodyPart, category, commonStarterOrder, equipment, items, language, search, visible]);
 
   const suggestedItems = useMemo(
@@ -418,313 +701,114 @@ export function AddExerciseSheet({
     return orderedItems.filter((item) => !popularItemIds.has(item.id));
   }, [orderedItems, popularItemIds, showSuggestedOrdering]);
 
-  const listHeader = (
-    <>
-      <View style={styles.searchCard}>
-        <Text style={styles.searchLabel}>{t(language, 'sheet.search')}</Text>
-        <View style={styles.searchRow}>
-          <TextInput
-            ref={searchRef}
-            value={search}
-            onChangeText={setSearch}
-            placeholder={t(language, 'sheet.searchPlaceholder')}
-            placeholderTextColor={theme.faint}
-            style={styles.searchInput}
-            selectionColor={theme.purple}
-          />
-          {search.length > 0 ? (
-            <Pressable onPress={() => setSearch('')} style={styles.clearButton}>
-              <Text style={styles.clearButtonText}>{t(language, 'sheet.clear')}</Text>
-            </Pressable>
-          ) : null}
-        </View>
-      </View>
-
-      {multiSelect ? (
-        <View style={styles.quickBodyPartGroup}>
-          <Text style={styles.filterTitle}>{t(language, 'sheet.bodyPart')}</Text>
-          <ScrollView horizontal keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickBodyPartRow}>
-            {BODY_PART_FILTERS.map((option) => {
-              const active = option === bodyPart;
-              return (
-                <Pressable
-                  key={option}
-                  onPress={() => setBodyPart(option)}
-                  style={[styles.quickBodyPartChip, active && styles.quickBodyPartChipActive]}
-                >
-                  <Text style={[styles.quickBodyPartChipText, active && styles.quickBodyPartChipTextActive]}>
-                    {toLabel(option, language)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
-      ) : (
-        <>
-          <FilterPillGroup
-            title={t(language, 'sheet.category')}
-            options={categoryOptions}
-            selected={category}
-            language={language}
-            onSelect={setCategory}
-          />
-          <FilterPillGroup
-            title={t(language, 'sheet.bodyPart')}
-            options={BODY_PART_FILTERS}
-            selected={bodyPart}
-            language={language}
-            onSelect={setBodyPart}
-          />
-          <FilterPillGroup
-            title={t(language, 'sheet.equipment')}
-            options={equipmentOptions}
-            selected={equipment}
-            language={language}
-            onSelect={setEquipment}
-          />
-        </>
-      )}
-    </>
-  );
+  const featuredEntries = useMemo(() => popularItems.map(toEntry), [popularItems]);
+  const mainEntries = useMemo(() => mainItems.map(toEntry), [mainItems]);
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.handle} />
-          <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <Text style={styles.headerTitle}>{sheetTitle}</Text>
-              {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
-            </View>
-            <Pressable onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>{t(language, 'common.close')}</Text>
-            </Pressable>
+    <ExercisePickerSheet
+      visible={visible}
+      bottomInset={bottomInset}
+      language={language}
+      mode="add"
+      title={sheetTitle}
+      subtitle={subtitle}
+      actionLabel={addLabel}
+      search={search}
+      onSearchChange={setSearch}
+      searchRef={searchRef}
+      filters={{ category, bodyPart, equipment }}
+      onFiltersChange={(next) => {
+        setCategory(next.category);
+        setBodyPart(next.bodyPart);
+        setEquipment(next.equipment);
+      }}
+      quickBodyPartOnly={multiSelect}
+      featured={
+        featuredEntries.length > 0
+          ? { title: t(language, 'sheet.popular'), subtitle: t(language, 'sheet.popularSub'), entries: featuredEntries }
+          : null
+      }
+      main={{
+        title: showSuggestedOrdering ? t(language, 'sheet.allExercises') : listTitle,
+        subtitle: showSuggestedOrdering ? t(language, 'sheet.available', { count: mainItems.length }) : listSubtitle,
+        entries: mainEntries,
+      }}
+      selectedIds={effectiveSelectedIds}
+      multiSelect={multiSelect}
+      onSelect={(entry) => {
+        if (entry.item) {
+          handleSelectItem(entry.item);
+        }
+      }}
+      onClose={onClose}
+      footer={
+        multiSelect ? (
+          /* The sheet is anchored to the bottom edge and its footer padding
+             was a fixed number, so on a phone with system buttons the confirm
+             button sat behind them — and "Lisää N liikettä" is the only way
+             anything gets added at all ("nappi häviää alas... mitään
+             liikkeitä ei voi lisätä", #bugs 2026-08-26). The bar's height is
+             only known at runtime. */
+          /**
+           * The system-button bar's height comes in as a prop, measured by
+           * the screen that opens this.
+           *
+           * A Modal is its own native window, and inside one this app gets
+           * zero for the bottom inset three different ways: from the root
+           * provider, from a provider added inside the modal, and from
+           * `initialWindowMetrics`. All three were tried on the emulator
+           * with three-button navigation and the confirm button stayed half
+           * under the bar (#bugs 2026-08-28; the same button, "fixed" on
+           * 26.8 with `insets.bottom + spacing.lg`, which was the first of
+           * the three). Outside the modal the same hook returns the right
+           * number — the tab bar has always sat above the buttons — so the
+           * caller reads it there and hands it over.
+           */
+          <View style={[styles.footer, { paddingBottom: bottomInset + spacing.lg }]}>
+            {/* The kit's commit bar, in flow (design frame 07): it exists
+                only once something is picked, prints the whole edit on one
+                line — the day on the left, the pick on the right — and one
+                orange button writes. The "valitse liikkeitä" placeholder
+                row went with it: a bar that is not there says the same
+                thing without saying anything. */}
+            <KitBar
+              floating={false}
+              visible={pendingSelectedIds.length > 0}
+              from={subtitle ?? sheetTitle}
+              to={
+                pendingSelectedIds.length === 1
+                  ? exerciseNameLabel(
+                      language,
+                      items.find((item) => item.id === pendingSelectedIds[0])?.name ?? '',
+                    )
+                  : t(language, 'sheet.selectedCount', { count: pendingSelectedIds.length })
+              }
+              buttons={[
+                {
+                  label:
+                    confirmActionLabel ??
+                    t(
+                      language,
+                      pendingSelectedIds.length === 1 ? 'sheet.addOne' : 'sheet.addCount',
+                      { count: pendingSelectedIds.length },
+                    ),
+                  kind: 'p',
+                  onPress: handleConfirmSelection,
+                },
+              ]}
+              clearLabel={t(language, 'sheet.clear')}
+              onClear={() => setPendingSelectedIds([])}
+              bottomInset={0}
+            />
           </View>
-
-          {/* `flex: 1, minHeight: 0` is what keeps the footer on screen.
-              Without it the list is laid out at its content height — hundreds
-              of exercises — inside a sheet capped at 92% with overflow hidden,
-              so "Lisää N liikettä" was pushed past the sheet's own bottom edge
-              and clipped away. It looked like a button hidden behind the phone's
-              system bar, and padding it up did nothing, because it was never on
-              screen to begin with (user 2026-08-26, second report). */}
-          <FlatList
-            style={styles.grid}
-            data={mainItems}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            initialNumToRender={12}
-            maxToRenderPerBatch={16}
-            windowSize={8}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            columnWrapperStyle={styles.gridRow}
-            contentContainerStyle={styles.content}
-            ListHeaderComponent={
-              <>
-                {listHeader}
-                {popularItems.length > 0 ? (
-                  <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>{t(language, 'sheet.popular')}</Text>
-                      <Text style={styles.sectionSubtitle}>{t(language, 'sheet.popularSub')}</Text>
-                    </View>
-                    <View style={styles.featuredGrid}>
-                      {popularItems.map((item) => {
-                        const selected = effectiveSelectedIds.includes(item.id);
-                        const previewImage = item.imageUrls?.[0] ?? null;
-
-                        return (
-                          <Pressable
-                            key={item.id}
-                            onPress={() => handleSelectItem(item)}
-                            style={[styles.gridCard, styles.featuredCard, selected && styles.gridCardSelected]}
-                          >
-                            <View style={styles.gridCardMedia}>
-                              {previewImage ? (
-                                <Image source={{ uri: previewImage }} style={styles.gridCardImage} resizeMode="cover" />
-                              ) : (
-                                <View style={styles.gridCardImageFallback}>
-                                  <Text style={styles.gridCardImageFallbackText}>{item.name.charAt(0).toUpperCase()}</Text>
-                                </View>
-                              )}
-
-                              {multiSelect ? (
-                                <View style={[styles.gridCheckBadge, selected && styles.gridCheckBadgeActive]}>
-                                  <Text style={[styles.gridCheckBadgeText, selected && styles.gridCheckBadgeTextActive]}>
-                                    {selected ? '\u2713' : '+'}
-                                  </Text>
-                                </View>
-                              ) : null}
-                            </View>
-
-                            <View style={styles.gridCardCopy}>
-                              <Text
-                                numberOfLines={3}
-                                style={styles.gridCardTitle}
-                                accessibilityLabel={exerciseNameLabel(language, item.name)}
-                              >
-                                {exerciseListLabel(language, item.name)}
-                              </Text>
-                              <Text numberOfLines={1} style={styles.gridCardBodyPart}>
-                                {toLabel(item.bodyPart, language)}
-                              </Text>
-                              <Text numberOfLines={2} style={styles.gridCardMeta}>
-                                {toLabel(item.category, language)} · {toLabel(displayEquipmentValue(item), language)}
-                              </Text>
-                              {!multiSelect ? (
-                                <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
-                                  <Text style={[styles.gridActionText, selected && styles.gridActionTextSelected]}>
-                                    {selected ? t(language, 'sheet.added') : addLabel}
-                                  </Text>
-                                </View>
-                              ) : null}
-                            </View>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-                ) : null}
-
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>
-                      {showSuggestedOrdering ? t(language, 'sheet.allExercises') : listTitle}
-                    </Text>
-                    <Text style={styles.sectionSubtitle}>
-                      {showSuggestedOrdering
-                        ? t(language, 'sheet.available', { count: mainItems.length })
-                        : listSubtitle}
-                    </Text>
-                  </View>
-                </View>
-              </>
-            }
-            ListEmptyComponent={
-              <View style={styles.emptyCard}>
-                <Text style={styles.emptyTitle}>{t(language, 'sheet.noMatches')}</Text>
-                <Text style={styles.emptyText}>{t(language, 'sheet.noMatchesBody')}</Text>
-              </View>
-            }
-            renderItem={({ item }) => {
-              const selected = effectiveSelectedIds.includes(item.id);
-              const previewImage = item.imageUrls?.[0] ?? null;
-
-              return (
-                <Pressable onPress={() => handleSelectItem(item)} style={[styles.gridCard, selected && styles.gridCardSelected]}>
-                  <View style={styles.gridCardMedia}>
-                    {previewImage ? (
-                      <Image source={{ uri: previewImage }} style={styles.gridCardImage} resizeMode="cover" />
-                    ) : (
-                      <View style={styles.gridCardImageFallback}>
-                        <Text style={styles.gridCardImageFallbackText}>{item.name.charAt(0).toUpperCase()}</Text>
-                      </View>
-                    )}
-
-                    {multiSelect ? (
-                      <View style={[styles.gridCheckBadge, selected && styles.gridCheckBadgeActive]}>
-                        <Text style={[styles.gridCheckBadgeText, selected && styles.gridCheckBadgeTextActive]}>
-                          {selected ? '\u2713' : '+'}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-
-                  <View style={styles.gridCardCopy}>
-                    <Text
-                      numberOfLines={3}
-                      style={styles.gridCardTitle}
-                      accessibilityLabel={exerciseNameLabel(language, item.name)}
-                    >
-                                {exerciseListLabel(language, item.name)}
-                              </Text>
-                    <Text numberOfLines={1} style={styles.gridCardBodyPart}>
-                                {toLabel(item.bodyPart, language)}
-                              </Text>
-                    <Text numberOfLines={2} style={styles.gridCardMeta}>
-                      {toLabel(item.category, language)} · {toLabel(displayEquipmentValue(item), language)}
-                    </Text>
-                    {!multiSelect ? (
-                      <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
-                        <Text style={[styles.gridActionText, selected && styles.gridActionTextSelected]}>
-                          {selected ? t(language, 'sheet.added') : addLabel}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                </Pressable>
-              );
-            }}
-          />
-
-          {multiSelect ? (
-            /* The sheet is anchored to the bottom edge and its footer padding
-               was a fixed number, so on a phone with system buttons the confirm
-               button sat behind them — and "Lisää N liikettä" is the only way
-               anything gets added at all ("nappi häviää alas... mitään
-               liikkeitä ei voi lisätä", #bugs 2026-08-26). The bar's height is
-               only known at runtime. */
-            /**
-             * The system-button bar's height comes in as a prop, measured by
-             * the screen that opens this.
-             *
-             * A Modal is its own native window, and inside one this app gets
-             * zero for the bottom inset three different ways: from the root
-             * provider, from a provider added inside the modal, and from
-             * `initialWindowMetrics`. All three were tried on the emulator
-             * with three-button navigation and the confirm button stayed half
-             * under the bar (#bugs 2026-08-28; the same button, "fixed" on
-             * 26.8 with `insets.bottom + spacing.lg`, which was the first of
-             * the three). Outside the modal the same hook returns the right
-             * number — the tab bar has always sat above the buttons — so the
-             * caller reads it there and hands it over.
-             */
-            <View style={[styles.footer, { paddingBottom: bottomInset + spacing.lg }]}>
-              {/* The kit's commit bar, in flow (design frame 07): it exists
-                  only once something is picked, prints the whole edit on one
-                  line — the day on the left, the pick on the right — and one
-                  orange button writes. The "valitse liikkeitä" placeholder
-                  row went with it: a bar that is not there says the same
-                  thing without saying anything. */}
-              <KitBar
-                floating={false}
-                visible={pendingSelectedIds.length > 0}
-                from={subtitle ?? sheetTitle}
-                to={
-                  pendingSelectedIds.length === 1
-                    ? exerciseNameLabel(
-                        language,
-                        items.find((item) => item.id === pendingSelectedIds[0])?.name ?? '',
-                      )
-                    : t(language, 'sheet.selectedCount', { count: pendingSelectedIds.length })
-                }
-                buttons={[
-                  {
-                    label:
-                      confirmActionLabel ??
-                      t(
-                        language,
-                        pendingSelectedIds.length === 1 ? 'sheet.addOne' : 'sheet.addCount',
-                        { count: pendingSelectedIds.length },
-                      ),
-                    kind: 'p',
-                    onPress: handleConfirmSelection,
-                  },
-                ]}
-                clearLabel={t(language, 'sheet.clear')}
-                onClear={() => setPendingSelectedIds([])}
-                bottomInset={0}
-              />
-            </View>
-          ) : null}
-        </View>
-      </View>
-    </Modal>
+        ) : null
+      }
+    />
   );
+}
+
+function toEntry(item: ExerciseLibraryItem): ExercisePickerEntry {
+  return { key: item.id, name: item.name, item };
 }
 
 const makeStyles = (theme: Theme) => StyleSheet.create({
@@ -854,10 +938,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  // Padded by the pills' slop and pulled back by the same, so a 38 dp pill
+  // reaches 44 to the thumb and Android does not clip the slop to the row
+  // (accessibility audit, 2026-09-21 pattern). The gap between wrapped
+  // rows (10) is wider than two slops, so they never overlap.
   filterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
+    paddingVertical: PILL_SLOP.top,
+    marginVertical: -PILL_SLOP.top,
   },
   filterPill: {
     minHeight: 38,
@@ -1091,6 +1181,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontSize: 13,
     fontWeight: '600',
+  },
+  listNote: {
+    color: theme.muted,
+    fontSize: 13,
+    fontWeight: '600',
+    lineHeight: 19,
+    textAlign: 'center',
   },
   footer: {
     // The kit bar inside brings its own border, surface and horizontal

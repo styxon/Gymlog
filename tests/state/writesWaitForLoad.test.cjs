@@ -74,10 +74,10 @@ module.exports = [
       const persistence = code(read('src', 'features', 'workout', 'workoutPersistence.ts'));
       const load = persistence.slice(persistence.indexOf('export async function loadWorkoutBundle'), persistence.indexOf('export async function saveWorkoutBundle'));
       const parseCatch = load.slice(load.indexOf('catch {'));
-      assert.ok(parseCatch.indexOf('setLargeItem(CORRUPT_STORAGE_KEY, raw)') >= 0, 'the unparseable bundle is not kept');
-      assert.ok(parseCatch.indexOf('setLargeItem(CORRUPT_STORAGE_KEY, raw)') < parseCatch.indexOf('createEmptyWorkoutHistory()'));
+      assert.ok(parseCatch.indexOf('setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw)') >= 0, 'the unparseable bundle is not kept');
+      assert.ok(parseCatch.indexOf('setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw)') < parseCatch.indexOf('createEmptyWorkoutHistory()'));
       const clear = persistence.slice(persistence.indexOf('export async function clearWorkoutBundle'));
-      assert.match(clear, /removeLargeItem\(CORRUPT_STORAGE_KEY\)/);
+      assert.match(clear, /removeCorruptCopies\(CORRUPT_STORAGE_KEY\)/);
     },
   },
   {
@@ -166,9 +166,9 @@ module.exports = [
 
       // A restore the disk refuses is reported, on both paths, not swallowed.
       const restoreBranch = resolve.slice(resolve.indexOf("if (choice === 'restore')"));
-      assert.match(restoreBranch, /catch \(error\) \{[\s\S]*?return 'failed';/);
+      assert.match(restoreBranch, /catch \(error\) \{[\s\S]*?return error instanceof RestoreHalfApplied \? 'incomplete' : 'failed';/);
       const settle = hook.slice(hook.indexOf('const settleWithRemote = useCallback('), hook.indexOf('const signIn = useCallback('));
-      assert.match(settle, /try \{\s*fingerprint = await applyRestore\(remote\.payload, generation\);\s*\} catch \(error\) \{[\s\S]*?return \{ kind: 'restore_failed' \};/);
+      assert.match(settle, /try \{\s*fingerprint = await applyRestore\(remote\.payload, generation\);\s*\} catch \(error\) \{[\s\S]*?return \{ kind: error instanceof RestoreHalfApplied \? 'restore_incomplete' : 'restore_failed' \};/);
       const presenter = code(readShell());
       // The reader's own "use the backup": a refused write is said. A landed one is not — the
       // history on screen and the row's timestamp say it (#bugs 2026-10-03).

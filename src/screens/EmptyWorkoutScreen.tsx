@@ -28,12 +28,11 @@ import { SupersetBorder } from '../components/SupersetBorder';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
-import { rankExerciseMatches } from '../lib/exerciseSearch';
+import { BODY_PART_FILTERS, BodyPartFilter } from '../lib/exerciseBrowseFilter';
+import { compareByShownName, exercisePickerChipLabel, exercisePickerLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
 import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
 import { parseNumberInput, removeTrailingZeros } from '../lib/format';
 import {
-  EMPTY_WORKOUT_MUSCLE_FILTERS,
-  EmptyWorkoutMuscleFilter,
   FreestyleExerciseDraft,
   FreestyleFinishSummary,
   buildFreestyleFinish,
@@ -45,14 +44,13 @@ import {
   freestyleNextSetTarget,
   freestyleRestSecondsForTick,
   freestyleVolumeKg,
-  matchesMuscleFilter,
   FreestyleDraftSnapshot,
   FreestyleExerciseSnapshot,
   resolveFreestyleDraftStart,
   resolveFreestyleSessionId,
 } from '../lib/emptyWorkoutSession';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryItems, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
-import { bodyPartLabel, I18nKey, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { createId } from '../lib/ids';
 import { ExercisePrLookup } from '../lib/workoutCompletionSummary';
 import { Theme, useTheme, useThemedStyles, aw3ForTheme, useAW3 } from '../theming';
@@ -122,19 +120,14 @@ interface EmptyWorkoutScreenProps {
   onOpenSystemSettings?: () => void;
 }
 
-const TAG_KEYS: Record<string, I18nKey> = {
-  compound: 'exerciseTag.compound',
-  isolation: 'exerciseTag.isolation',
-  cardio: 'exerciseTag.cardio',
-  core: 'exerciseTag.core',
-};
-
+/**
+ * The line under a lift's name, in the sheet and on the workout's card: the
+ * library's words (exercisePickerRowMeta), as in every other picker. This
+ * screen said "Hauikset" where the others said "Hauis", and "Kehonpaino" in
+ * the type's place (#bugs 2026-10-06).
+ */
 function buildMetaLabel(item: ExerciseLibraryItem, language: AppLanguage) {
-  const muscle = bodyPartLabel(language, item.bodyPart);
-  const tagKey = item.equipment === 'bodyweight' ? 'exerciseTag.bodyweight' : TAG_KEYS[item.category];
-  const tag = tagKey ? t(language, tagKey) : item.category;
-  // Core exercises would otherwise read "Core · Core".
-  return tag.toLowerCase() === muscle.toLowerCase() ? muscle : `${muscle} · ${tag}`;
+  return exercisePickerRowMeta(item, language);
 }
 
 function createSet(carry: { kg: string; reps: string } = { kg: '', reps: '' }) {
@@ -272,16 +265,6 @@ interface AddSheetProps {
   onAdd: (items: ExerciseLibraryItem[]) => void;
 }
 
-const FILTER_LABEL_KEYS: Record<EmptyWorkoutMuscleFilter, I18nKey> = {
-  All: 'emptyWorkout.filter.all',
-  Chest: 'bodyPart.chest',
-  Back: 'bodyPart.back',
-  Shoulders: 'bodyPart.shoulders',
-  Legs: 'bodyPart.legs',
-  Arms: 'emptyWorkout.filter.arms',
-  Core: 'bodyPart.core',
-};
-
 function SelectTogglePill({ selected }: { selected: boolean }) {
   const theme = useTheme();
 
@@ -301,13 +284,15 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
   const AW3 = useAW3();
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [filter, setFilter] = useState<EmptyWorkoutMuscleFilter>('All');
+  // The pickers' body-part chips, "Etureidet" and the arms among them: this
+  // sheet had six of its own, and no way to the leg extension but "Jalat".
+  const [filter, setFilter] = useState<BodyPartFilter>('all');
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     if (!visible) {
       setSelectedIds([]);
-      setFilter('All');
+      setFilter('all');
       setQuery('');
     }
   }, [visible]);
@@ -321,12 +306,14 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
   // that also contain "ylätalja". See rankExerciseMatches.
   const matches = useMemo(
     () =>
-      rankExerciseMatches(
-        items.filter((item) => matchesMuscleFilter(item.bodyPart, filter)),
-        normalizedQuery,
+      // Every picker's one list (lib/exercisePicker): no stretches, drills or
+      // strongman implements until the reader types (#bugs 2026-10-06).
+      listPickerExercises(items, {
+        query: normalizedQuery,
+        filters: { bodyPart: filter },
         language,
-        (item) => popularOrder.get(item.id),
-      ),
+        popularity: (item) => popularOrder.get(item.id),
+      }),
     [filter, items, language, normalizedQuery, popularOrder],
   );
 
@@ -341,7 +328,8 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
   const listItems = useMemo(() => {
     const rest = matches.filter((item) => !popularIds.has(item.id));
     // Alphabet is for browsing; a query already put the best answer first.
-    return normalizedQuery ? rest : rest.sort((left, right) => left.name.localeCompare(right.name));
+    // By the name on screen, as the add sheet sorts — not the stored English.
+    return normalizedQuery ? rest : rest.sort(compareByShownName(language));
   }, [matches, normalizedQuery, popularIds]);
 
   const confirm = () => {
@@ -355,12 +343,12 @@ function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomIn
   const listHeader = (
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sheetChipRow}>
-        {EMPTY_WORKOUT_MUSCLE_FILTERS.map((option) => {
+        {BODY_PART_FILTERS.map((option) => {
           const active = option === filter;
           return (
             <Pressable key={option} onPress={() => setFilter(option)} style={[styles.sheetChip, active && styles.sheetChipActive]}>
               <Text style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
-                {t(language, FILTER_LABEL_KEYS[option])}
+                {exercisePickerChipLabel(option, language)}
               </Text>
             </Pressable>
           );
@@ -1394,7 +1382,7 @@ export function EmptyWorkoutScreen({
                         {exerciseListLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
                       </Text>
                       <Text numberOfLines={1} style={styles.quickRowMeta}>
-                        {bodyPartLabel(language, item.bodyPart)}
+                        {exercisePickerLabel(item.bodyPart, language)}
                       </Text>
                     </View>
                     <View style={styles.quickRowPlus}>

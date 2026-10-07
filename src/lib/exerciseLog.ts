@@ -161,7 +161,9 @@ export function getComparableLogSets(
    */
   const comparableSets = completedSets;
   const workingSets = comparableSets.filter((set) => set.kind === 'working');
-  return workingSets.length > 0 ? workingSets : comparableSets;
+  // The fallback (a log of drop sets only, say) never hands back a warm-up as
+  // work: a log whose only done sets were warm-ups did no work (2026-10-05).
+  return workingSets.length > 0 ? workingSets : comparableSets.filter((set) => set.kind !== 'warmup');
 }
 
 /**
@@ -274,6 +276,22 @@ export function logRecordsSwap(log: { swappedFrom?: unknown; exerciseNameSnapsho
   return from !== '' && from !== named;
 }
 
+/**
+ * The unit a log's reps are in, when it is not repetitions — checked, and
+ * carried only when present. A log saved before 2026-10-06, or one carrying a
+ * unit this build does not know, has none and reads as repetitions, which is
+ * how it was saved. Spread rather than set, so a log of reps stays the exact
+ * shape it was stored in.
+ */
+function repsUnitOf(log: { repsUnit?: unknown }): { repsUnit?: 'minutes' } {
+  return log.repsUnit === 'minutes' ? { repsUnit: 'minutes' } : {};
+}
+
+/** Whether a log's reps are minutes (see ExerciseLog.repsUnit). */
+export function isMinutesLog(log: { repsUnit?: unknown } | null | undefined): boolean {
+  return log?.repsUnit === 'minutes';
+}
+
 export function normalizeExerciseLog(log: Partial<ExerciseLog> | null | undefined): ExerciseLog | null {
   if (
     !log ||
@@ -316,6 +334,7 @@ export function normalizeExerciseLog(log: Partial<ExerciseLog> | null | undefine
       typeof log.templateExerciseId === 'string' || log.templateExerciseId === null ? log.templateExerciseId : null,
     notes: typeof log.notes === 'string' ? log.notes.trim() || null : null,
     swappedFrom,
+    ...repsUnitOf(log),
   };
 }
 
@@ -346,5 +365,6 @@ export function normalizeExerciseLogDraft(log: ExerciseLogDraft) {
       typeof log.templateExerciseId === 'string' || log.templateExerciseId === null ? log.templateExerciseId : null,
     notes: typeof log.notes === 'string' ? log.notes.trim() || null : null,
     swappedFrom,
+    ...repsUnitOf(log),
   };
 }

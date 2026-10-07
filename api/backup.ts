@@ -597,6 +597,10 @@ async function purgeOldRevocations(): Promise<void> {
  * SESSION_EXPIRED. A session that does not verify at all (a bad mac, a
  * malformed token — which is also what a wrong BACKUP_PATH_SECRET looks like)
  * stays INVALID_TOKEN, which signs nobody out.
+ *
+ * Test a refusal with `verdict.ok === false`, never `!verdict.ok`: Vercel
+ * compiles api/ without `strict`, and there `!` does not narrow this union —
+ * the deploy log fills with type errors that only `npm run typecheck:api` shows.
  */
 type SessionVerdict =
   | { ok: true; sub: string }
@@ -784,7 +788,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
         return;
       }
     }
-    if (!current.ok) {
+    if (current.ok === false) {
       res.status(401).json(refusalBody(current));
       return;
     }
@@ -804,7 +808,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       }
       current = INVALID_SESSION;
     }
-    if (!current.ok) {
+    if (current.ok === false) {
       res.status(401).json(refusalBody(current));
       return;
     }
@@ -854,7 +858,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     if (token.startsWith(APPLE_SESSION_PREFIX)) {
       const verdict = await verifyAppleSession(token, pathSecret);
       identity = verdict.ok ? { sub: verdict.sub } : null;
-      if (!verdict.ok) {
+      if (verdict.ok === false) {
         refusal = verdict;
       }
     } else {
@@ -965,7 +969,7 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             clearTimeout(timer);
           }
         }
-        if (again && !again.ok && again.error === 'SESSION_REVOKED') {
+        if (again && again.ok === false && again.error === 'SESSION_REVOKED') {
           if (written.etag) {
             try {
               await del(pathname, { ifMatch: written.etag });

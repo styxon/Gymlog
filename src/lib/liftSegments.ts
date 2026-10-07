@@ -4,6 +4,7 @@ import type {
   WorkoutSetInstance,
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
+import { readStoredTrackingMode } from '../features/workout/workoutTypes';
 
 /**
  * Which lift each set of one exercise slot was.
@@ -73,7 +74,6 @@ type LiftIdentityExercise = Pick<
   'exerciseName' | 'trackingMode' | 'sourceExerciseName' | 'swappedAfterSetIndex'
 >;
 
-const TRACKING_MODES: readonly WorkoutTrackingMode[] = ['load_and_reps', 'reps_first', 'bodyweight', 'hold'];
 
 function normalizeName(name: string) {
   return name.trim().toLowerCase();
@@ -94,9 +94,7 @@ function readStamp(value: unknown): WorkoutLiftIdentity | null {
   }
   return {
     exerciseName: exerciseName.trim(),
-    trackingMode: TRACKING_MODES.includes(trackingMode as WorkoutTrackingMode)
-      ? (trackingMode as WorkoutTrackingMode)
-      : 'load_and_reps',
+    trackingMode: readStoredTrackingMode(trackingMode) ?? 'load_and_reps',
   };
 }
 

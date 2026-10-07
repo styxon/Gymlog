@@ -148,6 +148,19 @@ export function getCardioMinutes(sessions: Array<Pick<CardioSession, 'durationSe
 }
 
 /**
+ * Strength minutes plus the runs' minutes, the runs rounded once over their
+ * total. The Progress month card rounded each run, so ten 90-second strides
+ * added 20 minutes to the month's total and average, not 15 (bug hunt,
+ * 2026-10-04).
+ */
+export function getCombinedActivityMinutes(
+  strengthMinutes: number,
+  cardioSessions: Array<Pick<CardioSession, 'durationSec'>>,
+): number {
+  return strengthMinutes + getCardioMinutes(cardioSessions);
+}
+
+/**
  * The stored run this save is, when it is already stored.
  *
  * The finish saves first and clears the live run with a write nobody awaits; when that write is

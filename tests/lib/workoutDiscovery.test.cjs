@@ -10,12 +10,15 @@ const {
 const { getPreferredReadyEquipmentFilter } = require('../../.test-dist/lib/tailoringFit.js');
 const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
+const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
 
 function createItem(templateId) {
   const template = getWorkoutTemplateById(templateId);
   return {
     template,
     content: getReadyProgramContent(templateId),
+    // The card's number, as the plans screen builds it.
+    minutes: readyTemplateCardMinutes(template),
   };
 }
 
@@ -53,7 +56,9 @@ module.exports = [
         query: 'power',
         goal: 'strength',
         level: 'intermediate',
-        time: 'balanced',
+        // The card says 40 min for Powerbuilding (the catalog's hand-written 60
+        // said "balanced"), and the filter follows the card.
+        time: 'short',
         equipment: 'full_gym',
       });
 

@@ -1,4 +1,4 @@
-import { EQUIPMENT_RULES_FOR_DISPLAY } from './equipmentExerciseFilter';
+import { EQUIPMENT_RULES_FOR_DISPLAY, equipmentRuleMatches, libraryEquipmentRequirement } from './equipmentExerciseFilter';
 import { I18nKey } from './i18n';
 
 /**
@@ -48,6 +48,57 @@ export const EQUIPMENT_CHIP_KEYS: Record<string, I18nKey> = {
   'Yoga mat': 'equip.mat',
 };
 
+const FURNITURE = new Set(['Bench', 'Squat rack', 'Pull-up bar']);
+
+/** The chip a name says it is done with, when it names one. */
+const NAMED_CHIPS: Array<[string, string]> = [
+  ['dumbbell', 'Dumbbells'],
+  ['kettlebell', 'Kettlebells'],
+  ['band', 'Resistance bands'],
+  ['barbell', 'Barbells'],
+  ['cable', 'Cables'],
+  ['machine', 'Machines'],
+];
+
+/**
+ * One chip per requirement group for one exercise.
+ *
+ * Each group is a list of alternatives, and the first used to be taken
+ * whatever the name said: a dumbbell curl matched the generic curl rule
+ * (barbell, dumbbells or band) and listed a barbell, so a dumbbells-only
+ * programme was filed as needing a gym (2026-10-04). An alternative the name
+ * itself names wins; then one another group of the same exercise already
+ * needs; only then the first.
+ */
+function chipsForExercise(normalized: string): string[] {
+  const groups: string[][] = [];
+  for (const rule of EQUIPMENT_RULES_FOR_DISPLAY) {
+    if (equipmentRuleMatches(normalized, rule)) {
+      groups.push(...rule.requires.filter((group) => group.length > 0));
+    }
+  }
+  // The band or ball a library row needs without naming it — the same
+  // requirement the swap filter reads, so the two directions agree.
+  const fromLibrary = libraryEquipmentRequirement(normalized);
+  if (fromLibrary) {
+    groups.push(fromLibrary);
+  }
+  const named = NAMED_CHIPS.filter(([word]) => normalized.includes(word)).map(([, chip]) => chip);
+  const chosen = new Set<string>();
+  // Groups with a single way to satisfy them decide first, so the others can
+  // lean on what is already required.
+  const ordered = [...groups].sort((left, right) => left.length - right.length);
+  for (const group of ordered) {
+    // Furniture leads its group on purpose: a hip thrust needs the bench
+    // whichever weight is on the hips, so a bench-first group keeps its bench.
+    const pick = FURNITURE.has(group[0])
+      ? group[0]
+      : group.find((item) => named.includes(item)) ?? group.find((item) => chosen.has(item)) ?? group[0];
+    chosen.add(pick);
+  }
+  return [...chosen];
+}
+
 /**
  * The gear a list of exercises requires, deduplicated and ordered.
  *
@@ -67,15 +118,8 @@ export function resolveProgramEquipment(exerciseNames: readonly string[]): Equip
     if (normalized.includes('bodyweight')) {
       continue;
     }
-    for (const rule of EQUIPMENT_RULES_FOR_DISPLAY) {
-      if (!normalized.includes(rule.pattern)) {
-        continue;
-      }
-      for (const group of rule.requires) {
-        if (group.length > 0) {
-          needed.add(group[0]);
-        }
-      }
+    for (const chip of chipsForExercise(normalized)) {
+      needed.add(chip);
     }
   }
 

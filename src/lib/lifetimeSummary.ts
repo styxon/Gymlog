@@ -3,6 +3,7 @@ import {
   getActiveWeekRuns,
   getCalendarWeekStartBefore,
   getCalendarWeekStartTimestamp,
+  getCanonicalCardioSessions,
   getCanonicalCompletedSessions,
 } from './completedSessions';
 
@@ -46,8 +47,9 @@ export function getLifetimeTrainingSummary(
   now: Date = new Date(),
 ): LifetimeTrainingSummary {
   const sessions = getCanonicalCompletedSessions(database);
+  const cardioSessions = getCanonicalCardioSessions(database);
 
-  if (sessions.length === 0) {
+  if (sessions.length === 0 && cardioSessions.length === 0) {
     return {
       sessionCount: 0,
       totalVolumeKg: 0,
@@ -61,13 +63,23 @@ export function getLifetimeTrainingSummary(
 
   const totalVolumeKg = sessions.reduce((total, session) => total + getSessionVolumeKg(session.totalVolumeKg), 0);
 
+  // Cardio marks a week active too: Home's streak and the training calendar
+  // count every activity, so a lift-only week set made Profile and the
+  // milestones read 1 where Home read 2 (bug hunt, 2026-10-04). Counts and
+  // volume stay lifting-only.
   const activeWeekStarts = [
-    ...new Set(sessions.map((session) => getCalendarWeekStartTimestamp(session.performedAt))),
-  ].sort((left, right) => left - right);
+    ...new Set(
+      [...sessions, ...cardioSessions].map((session) => getCalendarWeekStartTimestamp(session.performedAt)),
+    ),
+  ]
+    // A run whose date does not parse has no week; NaN would break the sort
+    // and the "of {total}" count (review, 2026-10-04).
+    .filter((weekStart) => Number.isFinite(weekStart))
+    .sort((left, right) => left - right);
 
   // The longest run of consecutive active weeks, from the shared walk the
   // milestone ladder also reads.
-  const bestWeekStreak = Math.max(1, ...getActiveWeekRuns(activeWeekStarts));
+  const bestWeekStreak = Math.max(0, ...getActiveWeekRuns(activeWeekStarts));
 
   const firstWeekStart = activeWeekStarts[0];
   const currentWeekStart = getCalendarWeekStartTimestamp(now);
@@ -86,10 +98,12 @@ export function getLifetimeTrainingSummary(
   // 1/168 of a week. It is a count of weeks elapsed, not a week start to look
   // up, so calendar stepping buys nothing — but the rounding is what makes it
   // safe, and floor would be off by one after every change.
-  const weeksSinceStart = Math.max(1, Math.round((currentWeekStart - firstWeekStart) / WEEK_MS) + 1);
+  // No dated activity at all (only runs whose dates do not parse): no weeks.
+  const weeksSinceStart =
+    firstWeekStart === undefined ? 0 : Math.max(1, Math.round((currentWeekStart - firstWeekStart) / WEEK_MS) + 1);
 
   // sessions are sorted newest-first, so the earliest is the last entry.
-  const firstSessionAt = sessions[sessions.length - 1].performedAt;
+  const firstSessionAt = sessions.length > 0 ? sessions[sessions.length - 1].performedAt : null;
 
   return {
     sessionCount: sessions.length,
@@ -100,4 +114,15 @@ export function getLifetimeTrainingSummary(
     currentWeekStreak,
     firstSessionAt,
   };
+}
+
+/**
+ * Every workout ever logged, lifting and cardio. getMonthTrainingTotals counts
+ * a run as a workout, so a widget total that left cardio out read "Workouts 12"
+ * for the month beside "Total 0" for all time (bug hunt, 2026-10-04). Profile's
+ * lifetime `sessionCount` stays lifting-only: it sits beside lifting volume and
+ * active weeks and is labelled "Sessions".
+ */
+export function getLifetimeWorkoutCount(database: AppDatabase): number {
+  return getCanonicalCompletedSessions(database).length + getCanonicalCardioSessions(database).length;
 }

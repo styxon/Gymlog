@@ -15,6 +15,11 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   // ── Squat pattern ────────────────────────────────────────────────────
   'Back Squat': 'Takakyykky',
   'Barbell Squat': 'Takakyykky',
+  // One name on purpose: the app's lift identity holds the two rows as one
+  // lift (liftIdentity's squat group, the alias table filing "Back Squat" on
+  // the full squat; tests/lib/liftHistoryIdentity.test.cjs), so a
+  // one-row-per-name list showing one of them is right, and the library
+  // keeps both (picker audit, 2026-10-06).
   'Barbell Full Squat': 'Takakyykky',
   'Front Squat': 'Etukyykky',
   'Hack Squat': 'Hack squat',
@@ -39,6 +44,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Hip Thrust': 'Lantionnosto',
   'Barbell Hip Thrust': 'Lantionnosto tangolla',
   'Machine Hip Thrust': 'Lantionnosto laitteessa',
+  'Bodyweight Calf Raise': 'Pohjenosto ilman painoa',
   'Glute Bridge': 'Lantionnosto lattialla',
   'Kettlebell Swing': 'Kahvakuulaheilautus',
   'Band Curl': 'Hauiskääntö kuminauhalla',
@@ -169,6 +175,9 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   Burpee: 'Burpee',
   'Treadmill HIIT (30s on / 30s off)': 'Juoksumatto-HIIT (30 s / 30 s)',
   'Bike HIIT (45s sprint / 15s rest)': 'Pyörä-HIIT (45 s veto / 15 s lepo)',
+  // The app's own rows these two prescriptions open (extraExerciseLibrary).
+  'Treadmill HIIT': 'Juoksumatto-HIIT',
+  'Bike HIIT': 'Pyörä-HIIT',
   'Easy Run Blocks': 'Kevyet juoksublokit',
   'Tempo Run Blocks': 'Tempojuoksublokit',
   'Stride Finishers': 'Askelkiihdytykset',
@@ -266,7 +275,8 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Wall Push-Up': 'Seinäpunnerrus',
   'Push-Up (or Knee Push-Up)': 'Punnerrus (tai polvipunnerrus)',
   'Push-Up (20s on / 10s off)': 'Punnerrus (20 s / 10 s)',
-  'Pseudo Planche Push-Up': 'Planche-punnerrus',
+  // A pseudo planche is a push-up leaning towards one, not the planche itself.
+  'Pseudo Planche Push-Up': 'Pseudo planche -punnerrus',
   'Plank-Up': 'Lankkunousu',
   'Body-Up': 'Lankkunousu',
   'Weighted Dips': 'Lisäpainodipit',
@@ -380,6 +390,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Lateral Bound': 'Sivuloikka',
   'Sprint 40m': 'Sprintti 40 m',
   'Sprint Interval (200m)': 'Sprinttiveto (200 m)',
+  Sprint: 'Sprintti',
   'Cone Drill (Pro Agility)': 'Kartioharjoite (ketteryys)',
   'Ladder Drill': 'Tikasharjoite',
   'Heel-to-Toe Walk': 'Kantapää-varvas-kävely',
@@ -388,7 +399,9 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Battling Ropes': 'Battle rope',
   'Sled Push': 'Kelkan työntö',
   "Farmer's Walk": 'Maanviljelijän kävely',
-  'Power Clean': 'Rinnalleveto',
+  // "Voima-", as Power Snatch and Power Clean from Blocks: "Rinnalleveto" is
+  // the clean caught in a full squat, and both are in the library.
+  'Power Clean': 'Voimarinnalleveto',
   'Air Bike (30s sprint)': 'Air bike (30 s veto)',
   'Stationary Bike (Easy Pace)': 'Kuntopyörä (kevyt vauhti)',
   'Recumbent Bike': 'Kuntopyörä selkänojalla',
@@ -1294,7 +1307,7 @@ const EXERCISE_NAME_EN: Record<string, string> = {
   'Seated Cable Rows': 'Seated Cable Row',
   'One-Arm Dumbbell Row': 'Single-Arm Dumbbell Row',
   'Reverse Machine Flyes': 'Reverse Pec Deck',
-  'Barbell Glute Bridge': 'Glute Bridge',
+  'Butt Lift (Bridge)': 'Glute Bridge',
   'Triceps Pushdown - Rope Attachment': 'Rope Pushdown',
   'Leverage Chest Press': 'Machine Chest Press',
 };

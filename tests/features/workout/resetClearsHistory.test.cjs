@@ -57,8 +57,8 @@ module.exports = [
       const handler = profile.slice(at, profile.indexOf('}}', at));
       assert.ok(handler.indexOf('await resetAllData()') >= 0, 'the database reset is awaited');
       assert.ok(
-        handler.indexOf('await workout.resetWorkoutData()') > handler.indexOf('await resetAllData()'),
-        'the workout record is reset, awaited, after the database',
+        handler.indexOf('await workout.resetWorkoutData()') < handler.indexOf('await resetAllData()'),
+        'the workout record is reset, awaited, before the database write that makes the app look reset',
       );
       assert.doesNotMatch(handler, /clearCompletedWorkout\(\)/, 'clearing only the completed session keeps the history');
 

@@ -1,5 +1,11 @@
 import { ExerciseLogDraft, ExerciseLogSet } from '../../types/models';
-import { WorkoutExerciseInstance, WorkoutSessionRuntime, WorkoutSetStatus, WorkoutTrackingMode } from './workoutTypes';
+import {
+  isMinutesTrackingMode,
+  WorkoutExerciseInstance,
+  WorkoutSessionRuntime,
+  WorkoutSetStatus,
+  WorkoutTrackingMode,
+} from './workoutTypes';
 import { sessionLastActiveMs, workoutSecondsUntil } from '../../lib/sessionClock';
 import { LiftSegment, splitExerciseByLift } from '../../lib/liftSegments';
 import { buildLoggedSetPlan } from '../../lib/loggedSetPlan';
@@ -222,13 +228,42 @@ function adaptSetToLogSet(set: WorkoutExerciseInstance['sets'][number]): Exercis
   };
 }
 
+/**
+ * The warm-ups, as log sets of kind 'warmup' ahead of the work.
+ *
+ * Numbered below zero (-n … -1): the working sets keep the numbers they were
+ * logged under, which the merge of a finish done twice and the plan of each
+ * set are keyed by. Kind 'warmup' keeps them out of volume, set counts and
+ * records (lib/exerciseLog getComparableLogSets) without a reader having to
+ * know they exist.
+ */
+function adaptWarmupsToLogSets(exercise: WorkoutExerciseInstance): ExerciseLogDraft['sets'] {
+  const warmups = exercise.warmups ?? [];
+  return warmups.map((warmup, index) => ({
+    orderIndex: index - warmups.length,
+    weight: warmup.loadKg,
+    reps: warmup.reps,
+    kind: 'warmup' as const,
+    outcome: 'completed' as const,
+    status: 'completed' as const,
+    effort: null,
+    completedAt: warmup.completedAt,
+    skippedReason: null,
+  }));
+}
+
 function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLogDraft[] {
   return savedLifts(exercise).map(
-    (lift) =>
+    (lift, liftIndex) =>
       ({
         exerciseTemplateId: lift.exerciseTemplateId,
         exerciseNameSnapshot: lift.exerciseName,
-        sets: sortByOrderIndex(lift.segment.sets.map(adaptSetToLogSet)),
+        // Warm-ups come before the first working set: they belong to the lift
+        // the slot started as.
+        sets: [
+          ...(liftIndex === 0 ? adaptWarmupsToLogSets(exercise) : []),
+          ...sortByOrderIndex(lift.segment.sets.map(adaptSetToLogSet)),
+        ],
         tracked: isTrackedExercise(exercise),
         orderIndex: exercise.orderIndex,
         skipped: lift.skipped,
@@ -239,6 +274,9 @@ function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLo
         templateExerciseId: exercise.templateExerciseId,
         notes: lift.notes,
         swappedFrom: lift.segment.swappedFrom,
+        // The unit is the lift's own, set by set: a slot swapped from a bike
+        // to a lift mid-way saves two logs, and only the bike's is minutes.
+        ...(isMinutesTrackingMode(lift.segment.trackingMode) ? { repsUnit: 'minutes' as const } : {}),
       }) satisfies ExerciseLogDraft,
   );
 }

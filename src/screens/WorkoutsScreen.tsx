@@ -20,6 +20,7 @@ import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { getCustomTemplatePresentation } from '../lib/templatePresentation';
 import { getRecommendationProgramDefinition } from '../lib/recommendationCatalog';
 import {
+  buildReadyDiscoveryItem,
   filterAndSortReadyDiscoveryItems,
   ReadyDiscoveryItem,
   ReadyEquipmentFilter,
@@ -51,6 +52,13 @@ interface WorkoutsScreenProps {
   onCreateWorkout: () => void;
   recommendedReadyProgramId?: string | null;
   tailoringPreferences?: TailoringPreferencesInput | null;
+  /**
+   * The reader's gear and drill swaps, which the Programs cards cost sessions
+   * with. The same options here, or this screen quotes a second number for
+   * the same programme.
+   */
+  programAvailableEquipment?: string[] | null;
+  programDrillOverrides?: Record<string, string> | null;
   language?: AppLanguage;
 }
 
@@ -268,6 +276,8 @@ export function WorkoutsScreen({
   onCreateWorkout,
   recommendedReadyProgramId,
   tailoringPreferences = null,
+  programAvailableEquipment = null,
+  programDrillOverrides = null,
   language = 'en',
 }: WorkoutsScreenProps) {
   const theme = useTheme();
@@ -318,11 +328,13 @@ export function WorkoutsScreen({
     return [];
   }, [activeSession, primaryCustomWorkout, recommendedKickoffSession]);
   const readyDiscoveryItems = useMemo(() => {
-    return templates.map((template) => ({
-      template,
-      content: getReadyProgramContent(template.id),
-    }));
-  }, [templates]);
+    return templates.map((template) =>
+      buildReadyDiscoveryItem(template, getReadyProgramContent(template.id), {
+        availableEquipment: programAvailableEquipment,
+        overrides: programDrillOverrides,
+      }),
+    );
+  }, [programAvailableEquipment, programDrillOverrides, templates]);
   const filteredReadyItems = useMemo(
     () => {
       return filterAndSortReadyDiscoveryItems(
@@ -602,7 +614,7 @@ export function WorkoutsScreen({
                               <CalendarBlank size={14} color="#7B7196" weight="bold" />
                               <Text style={styles.readyTemplateDuration}>{template.sessions.length} sessions</Text>
                               <Clock size={14} color="#7B7196" weight="bold" />
-                              <Text style={styles.readyTemplateDuration}>{template.estimatedSessionDuration} min</Text>
+                              <Text style={styles.readyTemplateDuration}>{item.minutes} min</Text>
                             </View>
                           </View>
                         </Pressable>

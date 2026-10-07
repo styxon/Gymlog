@@ -7,7 +7,7 @@ const {
   legalAcceptanceDue,
   normalizeLegalAcceptance,
 } = require('../../.test-dist/lib/legalAcceptance.js');
-const { LEGAL_LAST_UPDATED, formatLegalDate } = require('../../.test-dist/lib/legalDocuments.js');
+const { LEGAL_LAST_UPDATED, LEGAL_VERSION, formatLegalDate } = require('../../.test-dist/lib/legalDocuments.js');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 // Line endings normalised: a Windows checkout is CRLF.
@@ -45,9 +45,48 @@ module.exports = [
       // A backup from a newer build is not a reason to ask.
       assert.equal(legalAcceptanceDue({ version: '2026-10-01', acceptedAt: 'x' }, '2026-09-16'), null);
 
-      const accepted = acceptLegal(LEGAL_LAST_UPDATED, new Date('2026-09-26T10:00:00Z'));
-      assert.deepEqual(accepted, { version: LEGAL_LAST_UPDATED, acceptedAt: '2026-09-26T10:00:00.000Z' });
-      assert.equal(legalAcceptanceDue(accepted, LEGAL_LAST_UPDATED), null);
+      const accepted = acceptLegal(LEGAL_VERSION, new Date('2026-09-26T10:00:00Z'));
+      assert.deepEqual(accepted, { version: LEGAL_VERSION, acceptedAt: '2026-09-26T10:00:00.000Z' });
+      assert.equal(legalAcceptanceDue(accepted, LEGAL_VERSION), null);
+    },
+  },
+  {
+    // 2026-10-06.1 (a second change on one day) used to fail the date-only
+    // shape, so the stored acceptance read as malformed and the sheet came
+    // back on every launch; and '.10' sorted before '.9' as a string.
+    name: 'legal acceptance: same-day suffixed versions are accepted and ordered by number',
+    run() {
+      const { compareLegalVersions, laterLegalAcceptance } = require('../../.test-dist/lib/legalAcceptance.js');
+      const stamp = '2026-10-06T10:00:00.000Z';
+      const suffixed = { version: '2026-10-06.1', acceptedAt: stamp };
+      assert.deepEqual(normalizeLegalAcceptance(suffixed), suffixed);
+      assert.equal(legalAcceptanceDue(normalizeLegalAcceptance(suffixed), '2026-10-06.1'), null);
+
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06', acceptedAt: stamp }, '2026-10-06.1'), 'changed');
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.9', acceptedAt: stamp }, '2026-10-06.10'), 'changed');
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.10', acceptedAt: stamp }, '2026-10-06.9'), null);
+      assert.equal(legalAcceptanceDue({ version: '2026-10-06.3', acceptedAt: stamp }, '2026-10-06'), null);
+      assert.equal(legalAcceptanceDue({ version: '2026-10-05.7', acceptedAt: stamp }, '2026-10-06'), 'changed');
+
+      assert.equal(compareLegalVersions('2026-10-06', '2026-10-06.0'), 0);
+      assert.ok(compareLegalVersions('2026-10-06.9', '2026-10-06.10') < 0);
+      assert.ok(compareLegalVersions('2026-10-07', '2026-10-06.99') > 0);
+
+      const nine = { version: '2026-10-06.9', acceptedAt: stamp };
+      const ten = { version: '2026-10-06.10', acceptedAt: stamp };
+      assert.deepEqual(laterLegalAcceptance(nine, ten), ten);
+      assert.deepEqual(laterLegalAcceptance(ten, nine), ten);
+
+      // Unknown shapes: no throw, and no loop. A stored value that does not
+      // parse is dropped (asks once, then the answer is a clean version).
+      for (const bad of ['2026-10-06.', '2026-10-06.x', '2026-10-06.1.2', 'v2', '']) {
+        assert.equal(normalizeLegalAcceptance({ version: bad, acceptedAt: stamp }), null, bad);
+        assert.doesNotThrow(() => compareLegalVersions(bad, '2026-10-06'));
+        assert.doesNotThrow(() => legalAcceptanceDue({ version: bad, acceptedAt: stamp }, '2026-10-06'));
+        assert.equal(compareLegalVersions(bad, bad), 0);
+      }
+      const asked = acceptLegal('2026-10-06.12', new Date(stamp));
+      assert.equal(legalAcceptanceDue(normalizeLegalAcceptance(asked), '2026-10-06.12'), null);
     },
   },
   {
@@ -128,7 +167,7 @@ module.exports = [
       const shell = readAppWiring().split('\r\n').join('\n');
       const owed = between(shell, 'const legalConsentOwed =', ';\n');
       assert.match(owed, /appHydrated && brandSplashDone && !onboardingActive && !setupHandoffActive/);
-      assert.match(owed, /legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_LAST_UPDATED\)/);
+      assert.match(owed, /legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_VERSION\)/);
       // Held on screen while the answer is written: updatePreferences shows
       // the change before the disk has it (CI review of #184).
       assert.match(shell, /const legalConsentDue = legalConsentOwed \?\? legalSheetHeld;/);
@@ -144,7 +183,7 @@ module.exports = [
       assert.match(overlay, /<LegalConsentSheet/);
       assert.match(
         overlay,
-        /onAccept=\{async \(\) => \{\s*setLegalSheetHeld\(legalConsentDue\);\s*try \{\s*await updatePreferences\(\{ legalAcceptance: acceptLegal\(LEGAL_LAST_UPDATED, new Date\(\)\) \}\);\s*\} finally \{[\s\S]*?setLegalSheetHeld\(null\);/,
+        /onAccept=\{async \(\) => \{\s*setLegalSheetHeld\(legalConsentDue\);\s*try \{\s*await updatePreferences\(\{ legalAcceptance: acceptLegal\(LEGAL_VERSION, new Date\(\)\) \}\);\s*\} finally \{[\s\S]*?setLegalSheetHeld\(null\);/,
       );
       // The documents open over it, not instead of it.
       assert.ok(overlay.indexOf('<LegalDocumentScreen') > overlay.indexOf('<LegalConsentSheet'));
@@ -170,7 +209,7 @@ module.exports = [
       const wiring = readAppWiring().split('\r\n').join('\n');
       assert.match(
         wiring,
-        /legalAlreadyAccepted=\{\s*legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_LAST_UPDATED\) === null\s*\}/,
+        /legalAlreadyAccepted=\{\s*legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_VERSION\) === null\s*\}/,
       );
       assert.match(handoff, /legalAccepted: legalChecked,/);
       assert.doesNotMatch(handoff, /handoff\.legal/);
@@ -179,7 +218,7 @@ module.exports = [
       // The handler left App.tsx for src/app in the phase-C split (2026-10-01).
       const shell = readAppWiring().split('\r\n').join('\n');
       const done = between(shell, 'const handleSetupHandoffDone = async', 'await updatePreferences(patch);');
-      assert.match(done, /if \(choices\.legalAccepted\) \{\s*patch\.legalAcceptance = acceptLegal\(LEGAL_LAST_UPDATED, new Date\(\)\);/);
+      assert.match(done, /if \(choices\.legalAccepted\) \{\s*patch\.legalAcceptance = acceptLegal\(LEGAL_VERSION, new Date\(\)\);/);
       // Skipping the hand-off is not accepting.
       // The hand-off's own onSkip, read from where the screen is mounted.
       const handoffAt = wiring.indexOf('<SetupHandoffScreen');

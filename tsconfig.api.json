@@ -1,0 +1,16 @@
+{
+  // api/ the way the Vercel deploy compiles it: without `strict`. Type errors
+  // there do not fail the deploy — they only scroll past in its log — so CI
+  // checks this instead (npm run typecheck:api). Code that passes strict can
+  // still fail here: `!x.ok` does not narrow a union without strictNullChecks.
+  "compilerOptions": {
+    "strict": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true
+  },
+  "include": ["api/**/*.ts"]
+}

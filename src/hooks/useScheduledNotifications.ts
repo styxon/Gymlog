@@ -19,13 +19,22 @@ import {
   getSessionsThisWeek,
   getVolumeThisWeekKg,
 } from '../lib/completedSessions';
+import { templateSessionsReader } from '../app/planTemplateSessions';
+import { livePlanEntries } from '../lib/planResolvableEntries';
 import { buildNotificationPlan } from '../lib/notificationPlan';
 import { resolveReminderSchedule } from '../lib/reminderSchedule';
 import { findLatestSessionPr } from '../lib/workoutCompletionSummary';
 import { AppDatabase } from '../types/models';
 import { syncPlannedNotifications } from '../utils/appNotifications';
 
-export function useScheduledNotifications(database: AppDatabase) {
+/**
+ * `hydrated` is the database load having landed. Until it has, `database` is
+ * `createEmptyDatabase()`, whose `pushEnabled` is false — and planning from it
+ * cancelled every pending reminder on every cold start, re-arming them only
+ * once the real data arrived. A launch that died or failed to load in between
+ * left the reader with none (bug hunt, 2026-10-05).
+ */
+export function useScheduledNotifications(database: AppDatabase, hydrated: boolean) {
   const { notificationPrefs, appLanguage, setupAvailableDays, trainingBreak } = database.preferences;
   const [foregroundTick, setForegroundTick] = useState(0);
   const queueRef = useRef<Promise<unknown>>(Promise.resolve());
@@ -103,7 +112,7 @@ export function useScheduledNotifications(database: AppDatabase) {
       database.workoutPlans.find((plan) => plan.id === database.preferences.activePlanId) ?? null;
     return resolveReminderSchedule({
       trainingCycle: database.preferences.trainingCycle,
-      planEntries: activePlan?.entries ?? [],
+      planEntries: livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
       availableDays: setupAvailableDays,
       restDayStarts: database.preferences.restDayStarts,
     });
@@ -112,6 +121,8 @@ export function useScheduledNotifications(database: AppDatabase) {
     database.preferences.trainingCycle,
     database.preferences.restDayStarts,
     database.workoutPlans,
+    database.workoutTemplates,
+    database.exerciseTemplates,
     setupAvailableDays,
   ]);
   const scheduleKey = JSON.stringify(schedule);
@@ -130,6 +141,9 @@ export function useScheduledNotifications(database: AppDatabase) {
   }, [database.preferences.proTrialUntil]);
 
   useEffect(() => {
+    if (!hydrated) {
+      return;
+    }
     const plan = buildNotificationPlan({
       nowMs: Date.now(),
       prefs: notificationPrefs,
@@ -178,5 +192,6 @@ export function useScheduledNotifications(database: AppDatabase) {
     signals.weekVolumeKg,
     prKey,
     foregroundTick,
+    hydrated,
   ]);
 }

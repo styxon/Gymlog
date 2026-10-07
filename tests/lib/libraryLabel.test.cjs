@@ -93,11 +93,18 @@ module.exports = [
       assert.deepEqual(mislabelled, [], `still reads as a dumbbell: ${mislabelled.join(', ')}`);
 
       assert.equal(libraryLabel(displayEquipmentValue(kettlebells[0]), 'fi'), 'Kahvakuula');
-      // Everything else keeps its bucket: the rule is one case, not a general
-      // preference for the raw source field (199 bodyweight rows would become
-      // "Other" and "Body only").
+      // Everything else keeps its bucket: the rule names its cases (kettlebells;
+      // and, filed as bodyweight, bands, balls and the foam roller — #bugs
+      // 2026-10-06), not a general preference for the raw source field (199
+      // bodyweight rows would become "Other" and "Body only").
       const foamRoll = seeded.find((item) => (item.sourceEquipment ?? '') === 'foam roll');
-      assert.equal(displayEquipmentValue(foamRoll), 'bodyweight');
+      assert.equal(displayEquipmentValue(foamRoll), 'foam roll');
+      for (const source of ['body only', 'other']) {
+        const plain = seeded.find(
+          (item) => item.sourceEquipment === source && item.equipment === 'bodyweight' && !/band|ball|-smr/i.test(item.name),
+        );
+        assert.equal(displayEquipmentValue(plain), 'bodyweight', source);
+      }
     },
   },
   {

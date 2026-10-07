@@ -5,7 +5,7 @@ import { formatShortDate, formatWeight } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { t } from './i18n';
 import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
-import { LiftHistory, normalizedName, stalledRunPoints } from './trainingHistory';
+import { LiftHistory, normalizedName, sessionBestPoints, stalledRunPoints } from './trainingHistory';
 import { AppLanguage, SetupCautionFlag, SetupLevel } from '../types/models';
 
 /**
@@ -26,6 +26,8 @@ import { AppLanguage, SetupCautionFlag, SetupLevel } from '../types/models';
 
 /** Same threshold the coach context uses: three sessions at one top set. */
 export const PLATEAU_STALL_SESSIONS = 3;
+
+export { sessionBestPoints };
 
 export interface PlateauDetection {
   liftKey: string;
@@ -331,7 +333,7 @@ export function buildPlateauMoment(
   level: SetupLevel | null | undefined,
 ): ProMomentContent {
   const liftLabel = exerciseNameLabel(language, lift.name);
-  const bars = lastBars(lift.points.map((point) => point.topSetWeightKg));
+  const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
   const horizon = horizonStepKg(lift, level);
   return {
     eyebrow: t(language, 'pro.sheet.plateau.eyebrow', { lift: liftLabel.toUpperCase() }),
@@ -355,7 +357,7 @@ export function buildNextSessionMoment(
   level: SetupLevel | null | undefined,
 ): ProMomentContent {
   const liftLabel = exerciseNameLabel(language, lift.name);
-  const bars = lastBars(lift.points.map((point) => point.topSetWeightKg));
+  const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
   const climbed = lift.weightChangeKg > 0;
   const horizon = horizonStepKg(lift, level);
   return {
@@ -368,7 +370,7 @@ export function buildNextSessionMoment(
           to: formatWeight(lift.latest.topSetWeightKg, 'kg'),
           weeks: Math.max(1, Math.round(lift.spanDays / 7)),
         })
-      : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: lift.points.length }),
+      : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
     bars,
     nextValue: nextStepKg(lift, level),
     horizonValue: horizon.kg,
@@ -394,7 +396,7 @@ export function pickCompletionLift(
   // lift in line instead.
   const candidates = lifts.filter(
     (lift) =>
-      lift.points.length >= 2 && lift.latest.topSetWeightKg > 0 && !isLiftHeldForCaution(lift, cautionFlags),
+      sessionBestPoints(lift).length >= 2 && lift.latest.topSetWeightKg > 0 && !isLiftHeldForCaution(lift, cautionFlags),
   );
   return candidates[0] ?? null;
 }
@@ -431,10 +433,10 @@ export function buildWeeklyRead(
   const rows: WeeklyReadRow[] = [];
 
   for (const lift of lifts.slice(0, 2)) {
-    if (lift.points.length < 3) {
+    if (sessionBestPoints(lift).length < 3) {
       continue;
     }
-    const bars = normalizedBars(lastBars(lift.points.map((point) => point.topSetWeightKg)));
+    const bars = normalizedBars(lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg)));
     const name = exerciseNameLabel(language, lift.name);
     // A lift held for a flagged area is not "stalled" and gets no "move up"
     // fix; its status is still read from the weights, as for any other lift.
@@ -480,7 +482,7 @@ export function buildWeeklyRead(
         tone: 'green',
         name,
         status: t(language, 'pro.read.steady'),
-        meta: t(language, 'pro.read.steadyMeta', { count: lift.points.length }),
+        meta: t(language, 'pro.read.steadyMeta', { count: sessionBestPoints(lift).length }),
         bars,
         locked: null,
       });

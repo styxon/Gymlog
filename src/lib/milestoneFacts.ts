@@ -6,6 +6,7 @@ import {
 } from './completedSessions';
 import { getSessionDurationMinutes } from './dashboard';
 import { getComparableLogSets } from './exerciseLog';
+import { isMinutesLogEntry } from './minutesExercises';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import {
   MILESTONE_FAMILIES,
@@ -132,7 +133,8 @@ export function getMilestoneFacts(
         continue;
       }
       sets += comparable.length;
-      reps += comparable.reduce((sum, set) => sum + set.reps, 0);
+      // A log of minutes counts its sets, not its minutes as repetitions.
+      reps += isMinutesLogEntry(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
       seenExercises.add(log.exerciseNameSnapshot.trim().toLowerCase());
     }
     timelines.reps.push({ at, total: reps });
@@ -148,8 +150,14 @@ export function getMilestoneFacts(
   // rung is dated by the first session in it, the workout that made the week
   // count, not by its Monday. A session whose date does not parse has no
   // week (the summary drops it the same way) and is left out here.
+  // Runs make a week count too, as in the lifetime summary and Home's streak
+  // (bug hunt, 2026-10-04); oldest first so the week is dated by whichever
+  // activity came first.
   const firstSessionByWeek = new Map<number, string>();
-  for (const session of sessions) {
+  const activities = [...sessions, ...[...getCanonicalCardioSessions(database)].reverse()].sort(
+    (left, right) => timestamp(left.performedAt) - timestamp(right.performedAt),
+  );
+  for (const session of activities) {
     const weekStart = getCalendarWeekStartTimestamp(session.performedAt);
     if (Number.isFinite(weekStart) && !firstSessionByWeek.has(weekStart)) {
       firstSessionByWeek.set(weekStart, session.performedAt);

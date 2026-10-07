@@ -222,7 +222,7 @@ module.exports = [
       const empty = between(app, 'onStartEmpty={() => {', 'onBrowsePrograms=');
       assert.match(
         empty,
-        /void completeOnboarding\(\{[\s\S]*?\}\)\s*\.then\(\(\) => \{\s*trackEvent\('onboarding_completed', \{ path: 'empty' \}\);\s*navigate\(\{ tab: 'home', screen: 'dashboard' \}\);\s*\}\)\s*\.catch\(\(error\) => \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.startEmptyFailed'\)\);/,
+        /return completeOnboarding\(\{[\s\S]*?\}\)\s*\.then\(\(\) => \{\s*trackEvent\('onboarding_completed', \{ path: 'empty' \}\);\s*navigate\(\{ tab: 'home', screen: 'dashboard' \}\);\s*\}\)\s*\.catch\(\(error\) => \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.startEmptyFailed'\)\);/,
       );
 
       for (const key of ['toast.startEmptyFailed', 'toast.limitationsSaveFailed']) {

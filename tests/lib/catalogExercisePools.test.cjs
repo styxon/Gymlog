@@ -248,8 +248,11 @@ module.exports = [
     run() {
       const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
       const { GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
+      // An alias may point at one of the app's own extras ("bodyweight calf
+      // raise"): the shipped library is generated + extras (bug hunt, 2026-10-04).
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
       const libraryNames = new Set(
-        GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name.trim().toLowerCase()),
+        [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY].map((entry) => entry.name.trim().toLowerCase()),
       );
 
       // A misspelled target is the worst kind of entry: the alias silently
@@ -323,7 +326,11 @@ module.exports = [
     run() {
       const pool = FOCUS_ACCESSORY_POOL.glutes;
       assert.deepEqual(pickPoolVariant(pool, []), pool.bodyweight);
-      assert.deepEqual(pickPoolVariant(pool, ['Barbells', 'Bench']), pool.loaded);
+      assert.deepEqual(pickPoolVariant(pool, ['Barbells', 'Bench', 'Cables']), pool.loaded);
+      // Some gear is not all gear: the cable kickback needs a cable, so a
+      // barbell and a bench keep the hip thrust and take the bodyweight
+      // kickback in its place (coverage sweep, 2026-10-04).
+      assert.deepEqual(pickPoolVariant(pool, ['Barbells', 'Bench']), ['Barbell Hip Thrust', 'Glute Kickback']);
       // null means the setup never said, so nothing is assumed missing.
       assert.deepEqual(pickPoolVariant(pool, null), pool.loaded);
     },

@@ -40,9 +40,10 @@ module.exports = [
         ]),
       ]);
 
+      // The lifts are written at 8-12 reps: muscle work, not heavy strength.
       assert.deepEqual(
         split.map((segment) => segment.quality),
-        ['Strength', 'Conditioning', 'Mobility'],
+        ['Muscle', 'Conditioning', 'Mobility'],
       );
       assert.equal(split.reduce((sum, segment) => sum + segment.pct, 0), 100);
       // 6 / 4 / 2 of 12 sets = 50 / 33.3 / 16.7
@@ -52,7 +53,7 @@ module.exports = [
     },
   },
   {
-    name: 'programFocusSplit: strength-only program omits missing qualities',
+    name: 'programFocusSplit: lifting-only program omits missing qualities',
     run() {
       const split = buildProgramFocusSplit([
         session('Day 1', [
@@ -61,11 +62,11 @@ module.exports = [
         ]),
       ]);
 
-      assert.deepEqual(split, [{ quality: 'Strength', pct: 100 }]);
+      assert.deepEqual(split, [{ quality: 'Muscle', pct: 100 }]);
     },
   },
   {
-    name: 'programFocusSplit: walking lunge is strength, farmer carry and jumps are conditioning',
+    name: 'programFocusSplit: walking lunge is lifting, farmer carry and jumps are conditioning',
     run() {
       const split = buildProgramFocusSplit([
         session('Day 1', [
@@ -77,17 +78,18 @@ module.exports = [
 
       assert.deepEqual(
         split.map((segment) => segment.quality),
-        ['Strength', 'Conditioning'],
+        ['Muscle', 'Conditioning'],
       );
       assert.equal(split[0].pct, 50);
       assert.equal(split[1].pct, 50);
     },
   },
   {
-    name: 'programFocusSplit: empty program falls back to full strength, colors are fixed',
+    name: 'programFocusSplit: empty program falls back to full lifting, colors are fixed',
     run() {
-      assert.deepEqual(buildProgramFocusSplit([]), [{ quality: 'Strength', pct: 100 }]);
+      assert.deepEqual(buildProgramFocusSplit([]), [{ quality: 'Muscle', pct: 100 }]);
       assert.equal(PROGRAM_FOCUS_COLORS.Strength, '#F59E0B');
+      assert.equal(PROGRAM_FOCUS_COLORS.Muscle, '#FB7185');
       assert.equal(PROGRAM_FOCUS_COLORS.Conditioning, '#38BDF8');
       assert.equal(PROGRAM_FOCUS_COLORS.Mobility, '#34D399');
     },

@@ -12,6 +12,7 @@ import {
 import { OwnBlockStats } from '../lib/ownBlockHistory';
 import { GENERATED_EXERCISE_LIBRARY } from './generatedExerciseLibrary';
 import { EXTRA_EXERCISE_LIBRARY } from './extraExerciseLibrary';
+import { withLibraryCorrections } from '../lib/exerciseClassification';
 
 const DEFAULT_PREFERENCES = {
   // 'en' is the STRUCTURAL fallback, not the answer. A first install resolves
@@ -173,7 +174,9 @@ const DEFAULT_PREFERENCES = {
 export function createSeedExerciseLibrary(): ExerciseLibraryItem[] {
   // The extras last: they exist because the generated library lacks them, so
   // they can never shadow it, and `exercise:sync` cannot wipe them.
-  return [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
+  // The source's muscle errors are corrected here, once, so every chip and
+  // card reads the same muscles (lib/exerciseClassification).
+  return withLibraryCorrections([...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY]);
 }
 
 function sessionRecord(id: string, name: string, orderIndex: number, exerciseIds: string[]) {

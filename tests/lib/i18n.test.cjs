@@ -37,7 +37,7 @@ module.exports = [
       assert.equal(t('en', 'home.hero.sessionsProgress', { done: 2, total: 8 }), '2 sessions logged');
       assert.equal(t('fi', 'home.hero.sessionsProgress', { done: 2, total: 8 }), '2 treeniä kirjattu');
       assert.equal(
-        t('en', 'home.section.workoutMeta', { count: 4, sets: 11 }),
+        t('en', 'home.section.workoutMeta', { exercises: '4 exercises', sets: '11 sets' }),
         '4 exercises · 11 sets',
       );
       // Unknown placeholders stay literal rather than rendering "undefined".
@@ -75,6 +75,66 @@ module.exports = [
       }
       const english = I18N_KEYS.map((key) => t('en', key));
       assert.equal(english.filter((text) => /\bWarmup\b/.test(text)).length, 0, 'English writes Warm-up');
+    },
+  },
+  {
+    // Bug hunt, 2026-10-04: these four printed "1 days", "1 exercises" and
+    // Finnish "1 päivää" / "1 liikettä · 1 sarjaa". The screens now pick the
+    // One key at a count of 1; this holds the copy and the screen wiring.
+    name: 'i18n: singular counts have their own copy, and the screens pick it',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8');
+      const expected = {
+        en: {
+          'onb.days.cycleFrequencyOne': [{ len: 3, perWeek: '2.3' }, 'You train 1 day out of every 3, about 2.3 a week.'],
+          'plan.dayCountOne': [{ days: 1, rest: 6 }, '1 training day · 6 rest'],
+          'plan.exerciseCountOne': [{ count: 1 }, '1 exercise'],
+          'home.section.setOne': [{ count: 1 }, '1 set'],
+        },
+        fi: {
+          'onb.days.cycleFrequencyOne': [{ len: 3, perWeek: '2,3' }, 'Treenaat yhtenä päivänä 3 päivän kierrossa, noin 2,3 kertaa viikossa.'],
+          'plan.dayCountOne': [{ days: 1, rest: 6 }, '1 treenipäivä · 6 lepoa'],
+          'plan.exerciseCountOne': [{ count: 1 }, '1 liike'],
+          'home.section.setOne': [{ count: 1 }, '1 sarja'],
+        },
+      };
+      for (const language of ['en', 'fi']) {
+        for (const [key, [vars, text]] of Object.entries(expected[language])) {
+          assert.equal(t(language, key, vars), text, `${language} ${key}`);
+        }
+        assert.equal(
+          t(language, 'home.section.workoutMeta', {
+            exercises: t(language, 'tpl.exerciseOne', { count: 1 }),
+            sets: t(language, 'home.section.setOne', { count: 1 }),
+          }),
+          language === 'en' ? '1 exercise · 1 set' : '1 liike · 1 sarja',
+        );
+      }
+      assert.match(read('src/screens/OnboardingScreen.tsx'), /cycleOnDays === 1 \? 'onb\.days\.cycleFrequencyOne'/);
+      assert.match(read('src/screens/TrainingPlanScreen.tsx'), /count === 1 \? 'plan\.dayCountOne'/);
+      assert.match(read('src/screens/TrainingPlanScreen.tsx'), /planExerciseCount === 1 \? 'plan\.exerciseCountOne'/);
+      assert.match(read('src/screens/HomeScreen.tsx'), /totalSets === 1 \? 'home\.section\.setOne'/);
+      // Bug hunt, 2026-10-04: hero counter and the today picker rows said "1 sessions" / "1 exercises".
+      assert.equal(t('en', 'home.hero.sessionsProgressOne', { done: 1 }), '1 session logged');
+      assert.equal(t('fi', 'home.hero.sessionsProgressOne', { done: 1 }), '1 treeni kirjattu');
+      assert.equal(
+        t('en', 'home.today.meta', {
+          exercises: t('en', 'tpl.exerciseOne', { count: 1 }),
+          sets: t('en', 'home.section.setOne', { count: 1 }),
+        }),
+        '1 exercise · 1 set',
+      );
+      assert.equal(
+        t('fi', 'home.today.meta', {
+          exercises: t('fi', 'tpl.exerciseMany', { count: 5 }),
+          sets: t('fi', 'home.section.setMany', { count: 15 }),
+        }),
+        '5 liikettä · 15 sarjaa',
+      );
+      assert.match(read('src/screens/HomeScreen.tsx'), /sessionsDone === 1 \? 'home\.hero\.sessionsProgressOne'/);
+      assert.match(read('src/screens/HomeScreen.tsx'), /session\.exercises\.length === 1 \? 'tpl\.exerciseOne'/);
     },
   },
 ];

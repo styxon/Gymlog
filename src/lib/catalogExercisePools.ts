@@ -2,12 +2,14 @@ import { EXTRA_EXERCISE_LIBRARY } from '../data/extraExerciseLibrary';
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
 import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import {
-  isTimedTrackingMode,
   isUnloadedTrackingMode,
+  prescriptionUnitOf,
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
 import { isHoldExerciseName } from './holdExercises';
+import { DEFAULT_MINUTES_PRESCRIPTION, isMinutesExerciseName } from './minutesExercises';
+import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
 
 /**
@@ -92,11 +94,15 @@ export function resolveCatalogSourceCategory(name: string): string | null {
  * bodyweight keyword but is bodyweight, and asking a bodyweight-only user for
  * kilograms is the specific failure this replaces.
  */
-export function getCatalogTrackingMode(name: string): 'bodyweight' | 'load_and_reps' | 'hold' {
+export function getCatalogTrackingMode(name: string): 'bodyweight' | 'load_and_reps' | 'hold' | 'duration_minutes' {
   // A hold is bodyweight too, so this has to be asked first or every plank
   // would come back as reps.
   if (isHoldExerciseName(name)) {
     return 'hold';
+  }
+  // A bike or a treadmill is filed as a machine, which would ask for a weight.
+  if (isMinutesExerciseName(name)) {
+    return 'duration_minutes';
   }
 
   const key = name.trim().toLowerCase();
@@ -128,6 +134,44 @@ const programmeLoadedByName = (() => {
   return loadedByName;
 })();
 
+let stapleLibraryNames: Set<string> | null = null;
+
+/**
+ * Whether a library row is a lift the ready programmes prescribe — resolved
+ * the way the guided player resolves them, so "Back Squat" counts for the
+ * library's "Barbell Full Squat" and "Leg Extension" for "Leg Extensions".
+ *
+ * The ready programmes are the app's own statement of what everyday training
+ * is made of, which the library's 880 rows do not say anywhere: the swap
+ * list ranks these first so the leg extension is not buried under 47 barbell
+ * variants of the squat, snatch and clean when a squat is swapped (#bugs
+ * 2026-10-06, "Reiden ojennus ei vieläkään"). Built on first use and kept.
+ */
+export function isCatalogStapleExercise(name: string | null | undefined): boolean {
+  if (!name) {
+    return false;
+  }
+  if (!stapleLibraryNames) {
+    const names = [...libraryNames, ...EXTRA_EXERCISE_LIBRARY.map((entry) => entry.name)];
+    const prescribed = new Set<string>();
+    for (const template of WORKOUT_TEMPLATES_V1) {
+      for (const session of template.sessions) {
+        for (const exercise of session.exercises) {
+          prescribed.add(exercise.exerciseName);
+        }
+      }
+    }
+    stapleLibraryNames = new Set();
+    for (const prescribedName of prescribed) {
+      const index = findGuidedLibraryIndex(prescribedName, names);
+      if (index !== null) {
+        stapleLibraryNames.add(names[index].trim().toLowerCase());
+      }
+    }
+  }
+  return stapleLibraryNames.has(name.trim().toLowerCase());
+}
+
 /**
  * How a lift is logged when it is swapped into a slot: the way the ready
  * programmes log it, and the library's answer (getCatalogTrackingMode) only
@@ -153,9 +197,12 @@ const programmeLoadedByName = (() => {
 function swappedInTrackingMode(
   name: string,
   current: WorkoutTrackingMode,
-): 'bodyweight' | 'load_and_reps' | 'hold' {
+): 'bodyweight' | 'load_and_reps' | 'hold' | 'duration_minutes' {
   if (isHoldExerciseName(name)) {
     return 'hold';
+  }
+  if (isMinutesExerciseName(name)) {
+    return 'duration_minutes';
   }
   const programmeLoaded = programmeLoadedByName.get(name.trim().toLowerCase());
   if (programmeLoaded !== undefined) {
@@ -182,7 +229,7 @@ export function trackingModeAfterSwap(current: WorkoutTrackingMode, exerciseName
   const incoming = swappedInTrackingMode(exerciseName, current);
   const sameKind =
     isUnloadedTrackingMode(incoming) === isUnloadedTrackingMode(current) &&
-    isTimedTrackingMode(incoming) === isTimedTrackingMode(current);
+    prescriptionUnitOf(incoming) === prescriptionUnitOf(current);
   return sameKind ? current : incoming;
 }
 
@@ -207,6 +254,7 @@ function middle<T>(items: T[], by: (item: T) => number): T | null {
 const programmePrescriptions = (() => {
   const rowsByName = new Map<string, SwapPrescription[]>();
   const timed: SwapPrescription[] = [];
+  const minutes: SwapPrescription[] = [];
   const counted: SwapPrescription[] = [];
   for (const template of WORKOUT_TEMPLATES_V1) {
     for (const session of template.sessions) {
@@ -216,7 +264,8 @@ const programmePrescriptions = (() => {
         const rows = rowsByName.get(key) ?? [];
         rows.push(row);
         rowsByName.set(key, rows);
-        (isTimedTrackingMode(exercise.trackingMode) ? timed : counted).push(row);
+        const unit = prescriptionUnitOf(exercise.trackingMode);
+        (unit === 'seconds' ? timed : unit === 'minutes' ? minutes : counted).push(row);
       }
     }
   }
@@ -225,6 +274,10 @@ const programmePrescriptions = (() => {
   return {
     byName,
     timed: middle(timed, (row) => row.repsMax) ?? { repsMin: 30, repsMax: 30 },
+    minutes: middle(minutes, (row) => row.repsMax) ?? {
+      repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+    },
     counted: middle(counted, (row) => row.repsMax) ?? { repsMin: 10, repsMax: 10 },
   };
 })();
@@ -247,12 +300,17 @@ export function prescriptionAfterSwap(
   current: SwapPrescription,
   exerciseName: string,
 ): SwapPrescription {
-  if (isTimedTrackingMode(from) === isTimedTrackingMode(to)) {
+  const toUnit = prescriptionUnitOf(to);
+  if (prescriptionUnitOf(from) === toUnit) {
     return current;
   }
   return (
     programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
-    (isTimedTrackingMode(to) ? programmePrescriptions.timed : programmePrescriptions.counted)
+    (toUnit === 'seconds'
+      ? programmePrescriptions.timed
+      : toUnit === 'minutes'
+        ? programmePrescriptions.minutes
+        : programmePrescriptions.counted)
   );
 }
 
@@ -299,7 +357,8 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
     loaded: ['Romanian Deadlift', 'Glute Ham Raise'],
   },
   calves: {
-    bodyweight: ['Donkey Calf Raises', 'Calf Raises - With Bands'],
+    // Not "Donkey Calf Raises": that one needs a machine (bug hunt, 2026-10-04).
+    bodyweight: ['Bodyweight Calf Raise', 'Calf Raises - With Bands'],
     loaded: ['Seated Calf Raise', 'Calf Press'],
   },
   legs: {
@@ -406,5 +465,19 @@ export type SupplementalDayKind = keyof typeof SUPPLEMENTAL_DAY_POOL;
  * version is fine. An empty list means the user told us they have nothing.
  */
 export function pickPoolVariant(pool: FocusAccessoryPool, available: string[] | null) {
-  return available !== null && available.length === 0 ? pool.bodyweight : pool.loaded;
+  if (available === null) {
+    return pool.loaded;
+  }
+  if (available.length === 0) {
+    return pool.bodyweight;
+  }
+  // Between the two, each loaded pick has to be one the reader's chips allow;
+  // where it is not, the bodyweight pick in the same place stands in. Any chip
+  // at all used to mean the loaded list whole, so a home rack's recovery day
+  // was an elliptical trainer the equipment pass then removed — twice, on a
+  // six-day week (coverage sweep, 2026-10-04).
+  const picked = pool.loaded.map((name, index) =>
+    isExerciseAllowedWithEquipment(name, available) ? name : pool.bodyweight[index] ?? name,
+  );
+  return [...new Set(picked)];
 }

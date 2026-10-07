@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run start           # Expo dev server (scan QR to open on device)
 npm run android         # Launch on Android emulator / device
 npm run typecheck       # TypeScript type check (no emit)
+npm run typecheck:api   # api/ without strict, as the Vercel deploy compiles it
 npm run test:unit       # Run all unit tests (requires .test-dist to be up to date)
 npm run android:release # Build signed Android APK via Gradle
 npm run release:ios      # Store build for iOS, behind the version guard (scripts/releaseGuard.cjs)
@@ -176,9 +177,9 @@ Both keys go through `src/storage/largeItem.ts`, never bare `AsyncStorage.getIte
 
 The app works fully offline. AI Coach has two modes:
 - **Preview mode** (default): local mock responses from `src/lib/aiCoachPreview.ts`
-- **Live mode**: calls `EXPO_PUBLIC_AI_COACH_API_URL` → serverless endpoint in `api/ai-coach.ts` → OpenAI
+- **Live mode**: calls `EXPO_PUBLIC_AI_COACH_API_URL` → serverless endpoint in `api/ai-coach.ts` → Anthropic Messages API (Claude)
 
-Do not call OpenAI directly from the mobile app. See `docs/ai-coach-backend.md` for server setup.
+Do not call Anthropic (or any model provider) directly from the mobile app — the `ANTHROPIC_API_KEY` lives only on the server. See `docs/ai-coach-backend.md` for server setup.
 
 ## Key constraints
 

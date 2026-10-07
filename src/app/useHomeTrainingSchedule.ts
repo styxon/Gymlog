@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
 
 import { programmeHistoryIds } from '../lib/programLineage';
-import { planWeekdayIndexes, resolveProgramTrainingDays } from '../lib/programTrainingDays';
+import { livePlanEntries } from '../lib/planResolvableEntries';
+import { planWeekdayIndexes, resolveDerivedTrainingDays } from '../lib/programTrainingDays';
 import { cycleSchedule, weekdaySchedule, withRestDays } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { useHomeActivePlan } from './useHomeActivePlan';
+import { templateSessionsReader } from './planTemplateSessions';
 import { getEndOfWeek, getStartOfWeek } from './workoutCompletionState';
 
 /**
@@ -64,15 +66,24 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
     // A plan that names its own weekdays is the answer; deriving over the top
     // of it would silently undo a rhythm the reader set by hand.
     const activePlan = database.workoutPlans.find((plan) => plan.id === preferences.activePlanId) ?? null;
-    const named = planWeekdayIndexes(activePlan?.entries ?? []);
+    const named = planWeekdayIndexes(
+      livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
+    );
     if (named.length > 0) {
       return named;
     }
     const sessionsPerWeek = homeActivePlanCard
       ? Number.parseInt(homeActivePlanCard.sessionsPerWeek, 10) || open.length
       : open.length;
-    return resolveProgramTrainingDays(open, sessionsPerWeek);
-  }, [database.workoutPlans, homeActivePlanCard, preferences.activePlanId, preferences.setupAvailableDays]);
+    return resolveDerivedTrainingDays(open, sessionsPerWeek);
+  }, [
+    database.workoutPlans,
+    database.workoutTemplates,
+    database.exerciseTemplates,
+    homeActivePlanCard,
+    preferences.activePlanId,
+    preferences.setupAvailableDays,
+  ]);
   /**
    * The rhythm every calendar in the app reads.
    *

@@ -261,4 +261,33 @@ module.exports = [
       });
     },
   },
+  {
+    // Bug hunt, 2026-10-04: the setup preview anchored a re-run's unchanged
+    // cycle on today while the save kept the old anchor.
+    name: 'cycle anchor: an unchanged pattern keeps its anchor, a changed one starts today',
+    run() {
+      const { resolveCycleAnchor } = require('../../.test-dist/lib/trainingSchedule.js');
+      const now = new Date(2026, 9, 4, 15, 30);
+      const todayStart = new Date(2026, 9, 4).getTime();
+      const old = { pattern: [true, true, false], anchorDayStart: new Date(2026, 8, 1).getTime() };
+      assert.equal(resolveCycleAnchor([true, true, false], old, now), old);
+      assert.deepEqual(resolveCycleAnchor([true, false], old, now), { pattern: [true, false], anchorDayStart: todayStart });
+      assert.deepEqual(resolveCycleAnchor([true, true, false], null, now), { pattern: [true, true, false], anchorDayStart: todayStart });
+      assert.equal(resolveCycleAnchor(null, old, now), null);
+      assert.equal(resolveCycleAnchor([], old, now), null);
+
+      // The preview and the save must both go through it.
+      const read = (file) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', file), 'utf8');
+      assert.match(read('src/app/onboardingHandoff.ts'), /resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
+      assert.match(read('src/screens/OnboardingScreen.tsx'), /resolveCycleAnchor\(cyclePattern, existingTrainingCycle/);
+      assert.match(read('src/app/renderOnboarding.tsx'), /existingTrainingCycle=\{preferences\.trainingCycle\}/);
+
+      // And the saved patch, end to end.
+      const { buildSetupPreferencePatch } = require('../../.test-dist/app/onboardingHandoff.js');
+      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+      const kept = buildSetupPreferencePatch({ ...DEFAULT_FIRST_RUN_SELECTION, trainingCyclePattern: [true, true, false] }, null, old);
+      assert.equal(kept.trainingCycle.anchorDayStart, old.anchorDayStart);
+    },
+  },
+
 ];

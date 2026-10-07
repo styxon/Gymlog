@@ -36,6 +36,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_4_day_muscle_builder_v1',
       'tpl_gainer_at_home_beginner_v1',
       'tpl_gainer_strength_5x5_v1',
+      'tpl_athletic_starter_v1',
       // "Joint-friendly" describes how it trains, not a condition it treats.
       // That is the line this app holds wherever it touches health: a
       // description of the training passes, a claim about a complaint does not.
@@ -52,7 +53,11 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_3_day_strength_base_v1',
       'tpl_4_day_powerbuilding_v1',
       'tpl_4_day_strength_size_v1',
+      'tpl_home_bodyweight_strength_3_day_v1',
+      'tpl_home_calisthenics_strength_5_day_v1',
       'tpl_strong_elite_v1',
+      'tpl_home_dumbbell_strength_v1',
+      'tpl_home_dumbbell_strength_split_v1',
     ],
   },
   {
@@ -61,7 +66,12 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
     description: 'Higher weekly volume and more specialization without losing progression rails.',
     recommendedFor: 'Hypertrophy-focused lifters who want upper/lower or hybrid splits.',
     templateIds: [
+      'tpl_home_dumbbell_upper_lower_v1',
+      'tpl_home_dumbbell_ppl_v1',
+      'tpl_home_bodyweight_upper_lower_v1',
       'tpl_huge_starter_v1',
+      'tpl_home_bodyweight_full_body_v1',
+      'tpl_home_bodyweight_ppl_v1',
       'tpl_3_day_push_pull_legs_v1',
       'tpl_4_day_upper_lower_v1',
       'tpl_4_day_muscle_builder_v1',
@@ -84,6 +94,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
     description: 'Programs that keep practice frequent while recovery stays predictable.',
     recommendedFor: 'General training blocks where you want progression without a very narrow focus.',
     templateIds: [
+      'tpl_home_athletic_5_day_v1',
       'tpl_2_day_minimal_full_body_v1',
       'tpl_2_day_mobility_reset_v1',
       'tpl_2_day_yoga_recovery_v1',

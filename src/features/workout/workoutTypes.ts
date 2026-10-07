@@ -22,19 +22,59 @@ export type WorkoutProgressionPriority = 'high' | 'medium' | 'low';
  * of lying with their legs up a wall. The mode records what was already true;
  * it does not introduce a new kind of set.
  */
-export type WorkoutTrackingMode = 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold';
+export type WorkoutTrackingMode = 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes';
+
+/**
+ * `duration_minutes` is steady work done for a time: the rep numbers are
+ * MINUTES (user 2026-10-06, "Tuodaan minuuttiyksikkö appiin").
+ *
+ * Same story as the hold. "Stairmaster (Moderate) 1×20" and "Stationary Bike
+ * (Easy Pace) 1×15" were always twenty and fifteen minutes, and the app asked
+ * for twenty repetitions of a stair machine, timed them at 3.5 s apiece and
+ * offered a "20 reps" record for them. Seconds would have fitted the hold's
+ * mode, but nobody dials 1 200 seconds on a bike — so it is its own unit.
+ */
+export const WORKOUT_TRACKING_MODES: readonly WorkoutTrackingMode[] = [
+  'load_and_reps',
+  'reps_first',
+  'bodyweight',
+  'hold',
+  'duration_minutes',
+];
+
+/**
+ * A stored mode, checked: a value this build does not know is null, never
+ * passed on. Every reader of a persisted mode goes through here, so a mode
+ * added later cannot reach a switch that has no case for it.
+ */
+export function readStoredTrackingMode(value: unknown): WorkoutTrackingMode | null {
+  return WORKOUT_TRACKING_MODES.includes(value as WorkoutTrackingMode) ? (value as WorkoutTrackingMode) : null;
+}
 
 /**
  * No external load to log. A hold is bodyweight by definition, so every rule
- * that used to ask `!== 'bodyweight'` before requiring a weight means this.
+ * that used to ask `!== 'bodyweight'` before requiring a weight means this —
+ * and a bike's minutes carry no load either.
  */
 export function isUnloadedTrackingMode(trackingMode: WorkoutTrackingMode) {
-  return trackingMode === 'bodyweight' || trackingMode === 'hold';
+  return trackingMode === 'bodyweight' || trackingMode === 'hold' || trackingMode === 'duration_minutes';
 }
 
 /** Whether this exercise's rep numbers are seconds. */
 export function isTimedTrackingMode(trackingMode: WorkoutTrackingMode) {
   return trackingMode === 'hold';
+}
+
+/** Whether this exercise's rep numbers are minutes. */
+export function isMinutesTrackingMode(trackingMode: WorkoutTrackingMode | null | undefined) {
+  return trackingMode === 'duration_minutes';
+}
+
+/** What the rep numbers of a mode count. */
+export type PrescriptionUnit = 'reps' | 'seconds' | 'minutes';
+
+export function prescriptionUnitOf(trackingMode: WorkoutTrackingMode): PrescriptionUnit {
+  return isMinutesTrackingMode(trackingMode) ? 'minutes' : isTimedTrackingMode(trackingMode) ? 'seconds' : 'reps';
 }
 export type WorkoutStatus = 'active' | 'paused' | 'completed';
 export type WorkoutExerciseStatus = 'pending' | 'active' | 'completed' | 'skipped' | 'swapped';
@@ -156,8 +196,21 @@ export interface WorkoutSetInstance {
    * The reader added this set mid-session. Its opening weight is copied from
    * the set before it — usually what the reader just lifted — so the saved
    * plan must not present it as the app's suggestion.
+   *
+   * Also the one record of which sets are past the programme's count, which
+   * is what tells last time's warm-ups from its work (lib/warmupSets
+   * programmeSetCount) — so a swap keeps it. It used to clear it, and a
+   * session with a set added and the lift swapped read last time's warm-up
+   * as set 1 (bug hunt W11, 2026-10-05).
    */
   addedMidSession?: boolean;
+  /**
+   * An added set whose opening weight a swap re-resolved from the new lift's
+   * own history: the number is the app's now (`borrowed` or `none` in
+   * lib/loggedSetPlan), not the reader's carried-over one. Absent: untouched
+   * by a swap, or added after it.
+   */
+  plannedBySwap?: boolean;
   /**
    * When the prefill came from the same lift in a DIFFERENT slot — another
    * program, another day, an empty workout — this is when that session was
@@ -209,6 +262,20 @@ export interface WorkoutLiftIdentity {
   trackingMode: WorkoutTrackingMode;
 }
 
+/**
+ * A warm-up set the reader logged with "+ Warm-up set" (user, 2026-10-05).
+ *
+ * Kept apart from `sets`: the working sets are what the programme counts, the
+ * guided steps walk, the rest timer follows and progression reads. A warm-up
+ * is none of those — it is logged, saved (kind 'warmup') and offered again
+ * next time at its own load, and it never progresses.
+ */
+export interface WorkoutWarmupSet {
+  loadKg: number;
+  reps: number;
+  completedAt: string;
+}
+
 export interface WorkoutExerciseInstance {
   /**
    * The highest set index that was already logged when this exercise was
@@ -234,6 +301,8 @@ export interface WorkoutExerciseInstance {
   supersetGroup?: string | null;
   orderIndex: number;
   sets: WorkoutSetInstance[];
+  /** Warm-ups logged before the working sets, in order. Absent: none. */
+  warmups?: WorkoutWarmupSet[];
   status: WorkoutExerciseStatus;
   libraryItemId?: string | null;
   sessionInserted?: boolean;
@@ -359,6 +428,12 @@ export interface WorkoutSlotHistoryEntry {
    * Absent on every ordinary entry and on entries saved before 2026-09-28.
    */
   targetReps?: number;
+  /**
+   * The warm-ups logged with "+ Warm-up set", in order: what the button offers
+   * next time. Never in `sets`, so progression never reads them. Absent on
+   * entries with none and on entries saved before 2026-10-05.
+   */
+  warmups?: { loadKg: number; reps: number }[];
 }
 
 export interface WorkoutSessionSummary {

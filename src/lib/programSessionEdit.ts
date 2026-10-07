@@ -29,6 +29,7 @@ export interface ProgramSessionExerciseSnapshot {
   restSeconds: number | null;
   trackedDefault: boolean;
   libraryItemId?: string | null;
+  trackingMode?: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
   /** The superset this lift is part of — see src/lib/supersetGrouping.ts. */
   supersetGroup?: string | null;
 }
@@ -52,6 +53,7 @@ export interface ProgramSessionDayDraft {
     restSeconds: number | null;
     trackedDefault: boolean;
     libraryItemId: string | null;
+    trackingMode: 'load_and_reps' | 'reps_first' | 'bodyweight' | 'hold' | 'duration_minutes' | null;
     supersetGroup: string | null;
   }>;
 }
@@ -208,6 +210,7 @@ export function toDraftExercise(
     restSeconds: exercise.restSeconds,
     trackedDefault: exercise.trackedDefault,
     libraryItemId: exercise.libraryItemId ?? null,
+    trackingMode: exercise.trackingMode ?? null,
     supersetGroup: exercise.supersetGroup ?? null,
   };
 }
@@ -299,6 +302,8 @@ export function applyProgramSessionEdit(
             id: makeExerciseId(),
             name: edit.exerciseName,
             libraryItemId: edit.libraryItemId,
+            // A different lift is logged the way its own library row says.
+            trackingMode: null,
           };
         }
         if (edit.kind === 'prescribe') {

@@ -313,6 +313,50 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'At Home - No Equipment',
     tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
   },
+  tpl_home_dumbbell_upper_lower_v1: {
+    title: 'Home Dumbbell Upper/Lower',
+    tagKeys: ['prog.tag.home', 'prog.tag.upperLower'],
+  },
+  tpl_home_dumbbell_ppl_v1: {
+    title: 'Home Dumbbell Push/Pull/Legs',
+    tagKeys: ['prog.tag.home', 'prog.tag.ppl'],
+  },
+  tpl_home_dumbbell_strength_v1: {
+    title: 'Home Dumbbell Strength',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    title: 'Home Dumbbell Strength Split',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_home_bodyweight_upper_lower_v1: {
+    title: 'Bodyweight Upper/Lower',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.upperLower'],
+  },
+  tpl_home_bodyweight_full_body_v1: {
+    title: 'Bodyweight Full Body',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.fullBody'],
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    title: 'Bodyweight Push/Pull/Legs',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.ppl'],
+  },
+  tpl_athletic_starter_v1: {
+    title: 'Athletic Starter',
+    tagKeys: ['prog.tag.athletic', 'prog.tag.fullBody'],
+  },
+  tpl_home_athletic_5_day_v1: {
+    title: 'Home Athletic',
+    tagKeys: ['prog.tag.home', 'prog.tag.athletic'],
+  },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    title: 'Bodyweight Strength',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    title: 'Calisthenics Strength',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.strength'],
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     title: 'Calisthenics Mastery',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.advanced'],

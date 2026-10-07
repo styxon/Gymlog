@@ -439,8 +439,10 @@ export function createFinishSaves(deps: FinishSavesDeps) {
         templateName: summary.workoutName,
         exercises: summary.logs.map((log) => ({
           exerciseName: log.exerciseNameSnapshot,
+          // The work only: these become the sets the next session opens on and
+          // progression reads, and a warm-up is neither.
           sets: log.sets
-            .filter((set) => set.outcome === 'completed' && set.reps > 0)
+            .filter((set) => set.outcome === 'completed' && set.reps > 0 && set.kind !== 'warmup')
             .map((set, setIndex) => ({
               setIndex,
               loadKg: set.weight,
@@ -463,7 +465,7 @@ export function createFinishSaves(deps: FinishSavesDeps) {
         muscles: buildMuscleFocus(
           summary.logs.map((log) => ({
             exerciseName: log.exerciseNameSnapshot,
-            sets: log.sets.map((set) => ({
+            sets: log.sets.filter((set) => set.kind !== 'warmup').map((set) => ({
               status: set.outcome === 'completed' ? ('completed' as const) : ('skipped' as const),
               weightKg: set.weight,
               reps: set.reps,

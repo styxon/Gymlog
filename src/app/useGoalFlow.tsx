@@ -24,6 +24,8 @@ import { STRENGTH_GOAL_PRESETS } from '../lib/strengthGoalPresets';
 import { resolveGoalProgress, upsertStrengthGoal } from '../lib/strengthGoals';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { LiftHistory } from '../lib/trainingHistory';
+import { readyTemplateCardMinutes } from '../lib/programmeMinutes';
+import { resolveAvailableEquipment } from '../lib/equipmentExerciseFilter';
 import { AppRoute } from '../navigation/routes';
 import type { ProgramsExploreItem } from '../screens/ProgramsHomeScreen';
 import type { GoalFlowLift, GoalFlowProposal } from '../screens/StrengthGoalFlowScreen';
@@ -258,13 +260,27 @@ export function useGoalFlow(deps: GoalFlowDeps) {
         templateId: template.id,
         programmeName: getReadyTemplatePresentation(template, preferences.appLanguage).title,
         daysPerWeek: template.daysPerWeek,
-        minutes: template.estimatedSessionDuration,
+        minutes: readyTemplateCardMinutes(template, {
+          availableEquipment: resolveAvailableEquipment({
+            trainingEnvironment: preferences.setupTrainingEnvironment,
+            equipmentItems: preferences.setupEquipmentItems,
+          }),
+          overrides: preferences.routineDrillOverrides,
+        }),
         blockWeeks: getReadyProgramBlockWeeks(template),
         days,
         targetDays: days.filter((day) => day.trainsTarget).length,
       };
     },
-    [libraryNames, preferences.appLanguage, preferences.setupDaysPerWeek, preferences.setupLevel],
+    [
+      libraryNames,
+      preferences.appLanguage,
+      preferences.setupDaysPerWeek,
+      preferences.setupLevel,
+      preferences.setupTrainingEnvironment,
+      preferences.setupEquipmentItems,
+      preferences.routineDrillOverrides,
+    ],
   );
 
   /**

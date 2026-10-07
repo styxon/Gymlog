@@ -115,6 +115,13 @@ export function ProgrammeProposalCard({
           {t(language, 'aiCompose.unresolved', { names: proposal.unresolvedNames.join(', ') })}
         </Text>
       ) : null}
+      {proposal.specialtyLeftOut?.length ? (
+        <Text style={styles.note}>
+          {t(language, 'aiCompose.specialtyLeftOut', {
+            names: proposal.specialtyLeftOut.map((name) => exerciseNameLabel(language, name)).join(', '),
+          })}
+        </Text>
+      ) : null}
 
       {/* No "compose again" here. The card lives in a conversation now, and
           asking again is what the conversation is for — a button that re-ran

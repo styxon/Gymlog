@@ -47,6 +47,7 @@ import {
 } from '../lib/format';
 import { localDateKey, subtractCalendarMonths } from '../lib/completedSessions';
 import { addCardioMinutesByDay } from '../lib/dashboard';
+import { getCombinedActivityMinutes } from '../lib/cardio';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
 import { ProMomentContent, WeeklyReadRow } from '../lib/proInsights';
@@ -949,9 +950,10 @@ export function ProgressScreen({
     const currentMonthCardio = cardioSessions.filter((session) => inMonth(session.performedAt));
 
     const volumeKg = currentMonthSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0);
-    const totalDuration =
-      currentMonthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0) +
-      currentMonthCardio.reduce((sum, session) => sum + Math.round((session.durationSec ?? 0) / 60), 0);
+    const totalDuration = getCombinedActivityMinutes(
+      currentMonthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
+      currentMonthCardio,
+    );
     const counted = currentMonthSessions.length + currentMonthCardio.length;
     const averageDuration = counted ? Math.round(totalDuration / counted) : 0;
 
@@ -1015,7 +1017,7 @@ export function ProgressScreen({
       );
 
       return {
-        valueLabel: points.length ? formatWeight(bodyweightProgress.latest?.weight, unitPreference) : t(language, 'progress.noEntries'),
+        valueLabel: points.length ? formatWeight(bodyweightStats.currentKg, unitPreference) : t(language, 'progress.noEntries'),
         unitLabel: unitPreference,
         points,
         footerLabels: getOverviewFooterLabels(points, resolvedOverviewRange, language),
@@ -1128,7 +1130,7 @@ export function ProgressScreen({
       }),
       emptyLabel: t(language, olderSessionsExist ? 'progress.noSessionsRange' : 'progress.noVolume'),
     };
-  }, [bodyweightProgress.entries, bodyweightProgress.latest?.weight, cardioSessions, overviewMetric, resolvedOverviewRange, unitPreference, workoutSessions]);
+  }, [bodyweightProgress.entries, bodyweightStats.currentKg, cardioSessions, overviewMetric, resolvedOverviewRange, unitPreference, workoutSessions]);
 
   const activityCalendarDays = useMemo(() => activityCalendar.weeks.flat(), [activityCalendar.weeks]);
   // Start of today, so a planned day that has already gone by can be told
@@ -1831,7 +1833,7 @@ export function ProgressScreen({
               lightestKg={bodyweightStats.lightestKg}
               heightCm={heightCm}
               chartDays={weightWindowDays}
-              hasLoggedWeight={bodyweightProgress.entries.length > 0}
+              hasLoggedWeight={bodyweightStats.currentKg !== null}
               onLogWeight={() => setWeightSheetVisible(true)}
               onEditBmi={() => setBmiSheetVisible(true)}
               /* The same chips every other chart on this tab has (Progress v2,

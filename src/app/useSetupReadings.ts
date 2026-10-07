@@ -67,8 +67,11 @@ export function useSetupReadings(deps: SetupReadingsDeps) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const tailoringPreferences = useMemo(() => buildTailoringPreferences(preferences), [tailoringKey]);
   const setupRecommendation = useMemo(
-    () => (setupSelection ? resolveFirstRunRecommendationWithTailoring(setupSelection, tailoringPreferences) : null),
-    [setupSelection, tailoringPreferences],
+    () =>
+      setupSelection
+        ? resolveFirstRunRecommendationWithTailoring(setupSelection, tailoringPreferences, preferences.appLanguage)
+        : null,
+    [setupSelection, tailoringPreferences, preferences.appLanguage],
   );
   const recommendedReadyTemplate = useMemo(
     () => (preferences.recommendedProgramId ? getWorkoutTemplateById(preferences.recommendedProgramId) : null),

@@ -149,6 +149,17 @@ void SplashScreen.preventAutoHideAsync().catch(() => {
   // Native splash may already be controlled by the host app during fast refresh.
 });
 
+/**
+ * The native splash stays up at least this long, counted from when this
+ * module ran rather than from VinhaApp's first commit. The splash has been on
+ * screen since the process started, so the floor still holds, and the first
+ * render (~300 ms on a mid-range phone) now runs inside it instead of being
+ * added after it (startup trace, 2026-10-06). A monotonic clock, and a delay
+ * clamped to the floor, so a wall-clock correction cannot hold the splash up.
+ */
+const MINIMUM_SPLASH_MS = 1200;
+const splashFloorStartedAt = performance.now();
+
 interface NavigationState {
   route: AppRoute;
   history: AppRoute[];
@@ -357,7 +368,7 @@ function VinhaApp() {
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.
-  useScheduledNotifications(database);
+  useScheduledNotifications(database, hydrated);
 
   const { navigateToActiveWorkoutRef, finishFromNotificationRef } = useSessionNotifications({
     workout,
@@ -406,7 +417,11 @@ function VinhaApp() {
   }, [hydrated, workout.hydrated, activeCardio, cardioSessions, settleCardio]);
 
   useEffect(() => {
-    const timeout = setTimeout(() => setMinimumSplashElapsed(true), 1200);
+    const remaining = MINIMUM_SPLASH_MS - (performance.now() - splashFloorStartedAt);
+    const timeout = setTimeout(
+      () => setMinimumSplashElapsed(true),
+      Math.min(MINIMUM_SPLASH_MS, Math.max(0, remaining)),
+    );
     return () => clearTimeout(timeout);
   }, []);
 
@@ -1196,6 +1211,8 @@ function VinhaApp() {
       todaySession: {
         dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
         sessionId,
+        // Session ids repeat across programmes; this says which one's day.
+        workoutTemplateId: homeActivePlanCard?.programId ?? null,
         // The instant matters, not just the day: picking a session you already
         // trained today is how you say "again", and without a timestamp it was
         // indistinguishable from the stale pick left over from this morning.
@@ -1681,7 +1698,6 @@ function VinhaApp() {
     recommendedReadyTemplate,
     homeActivePlanCard,
     homeTrainingSchedule,
-    lifetimeSummary,
     refreshHomeWidget,
   });
 
@@ -1961,6 +1977,7 @@ function VinhaApp() {
       updateCompletedWorkoutSession,
       workout,
       leaveFinishedWorkout,
+      showToast,
     }));
   } else if (route.tab === 'workout') {
     // Every route-pure workout branch. `summary` and `celebration` sit above

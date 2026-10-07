@@ -17,6 +17,7 @@ import { estimateOneRepMaxKg } from './workoutCompletionSummary';
 import { getTopSetLabel } from './workoutCompleteView';
 import { AppLanguage, UnitPreference } from '../types/models';
 import type { WorkoutTrackingMode } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
 
 /**
  * Last session's sets, as the set screen's card reads them.
@@ -43,6 +44,8 @@ export interface LastTimeView {
    * from here too, but a different claim from "last time on this slot".
    */
   borrowed?: boolean;
+  /** That session's warm-ups ("+ Warm-up set"), what the button offers again. */
+  warmups?: { loadKg: number; reps: number }[];
 }
 
 /** How many sessions the chart shows, today included. */
@@ -158,7 +161,10 @@ export function buildExerciseSheetHistory(
   // and 100 × 5 after 100 × 3 went unmarked here while the Records tab called
   // it new (2026-09-26). An unloaded lift's bar is its reps, as before.
   const priorTop = topSetOf(sorted.flatMap((session) => session.sets));
+  // Minutes are a dose, not a record: a longer ride than last time is not a
+  // personal best to badge (2026-10-06, same rule as the Records tab).
   const todayIsPr =
+    !isMinutesTrackingMode(trackingMode) &&
     todayTop !== null &&
     priorBest > 0 &&
     (todayTop.loadKg > 0 && priorTop !== null && priorTop.loadKg > 0
@@ -175,7 +181,9 @@ export function buildExerciseSheetHistory(
           ? t(language, 'guided.sheet.today')
           : formatShortDate(item.session.performedAt, language),
         loadLabel: top && top.loadKg > 0 ? `${removeTrailingZeros(top.loadKg)} kg` : null,
-        pills: item.session.sets.map((set) => `${set.reps}`),
+        pills: item.session.sets.map((set) =>
+          isMinutesTrackingMode(trackingMode) ? t(language, 'logger.minutesValue', { count: set.reps }) : `${set.reps}`,
+        ),
         isToday: item.isToday,
         isPr: item.isToday && todayIsPr,
       };

@@ -51,8 +51,12 @@ module.exports = [
   {
     name: 'guided swap: search, then suggestions, then the whole library',
     run() {
-      assert.match(playerSource, /'guided\.swap\.search'/);
-      assert.match(playerSource, /'guided\.swap\.suggested'/);
+      // The search and the suggestions' heading are the shared sheet's
+      // copy now (lib/exerciseSheetMode, #bugs 2026-10-06).
+      const modeSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'exerciseSheetMode.ts'), 'utf8');
+      assert.match(modeSource, /'guided\.swap\.search'/);
+      assert.match(modeSource, /'guided\.swap\.suggested'/);
+      assert.match(playerSource, /featured=\{\s*swapFeaturedEntries\.length > 0[\s\S]{0,120}exerciseSheetCopy\('swap', language\)\.featuredTitle/);
       assert.match(playerSource, /'guided\.swap\.library'/);
       // The library list is derived and capped: 873 rows inside a sheet is a
       // scroll, not a choice.
@@ -98,7 +102,7 @@ module.exports = [
       assert.match(playerSource, /step\.type === 'rest' && endsAtRef\.current > Date\.now\(\)/);
       // And a rest that now runs out on its own must not run out behind the
       // "fix the set you just logged" sheet, whose edits commit on Save only.
-      assert.match(playerSource, /const frozen =[^;]*\|\| restEditOpen[^;]*;/);
+      assert.match(playerSource, /const frozen = guidedClockHeld\(\{[^}]*\brestEditOpen,[^}]*\}\);/);
       for (const key of [
         'guided.rest.of',
         'guided.rest.ready',
@@ -149,11 +153,11 @@ module.exports = [
       // field with one would disagree about the same number.
       assert.match(
         playerSource,
-        /onStep=\{\(direction\) => setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => stepDialReps\(current, direction, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       assert.match(
         playerSource,
-        /onCommit=\{\(text\) => setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)\}/,
+        /: setReps\(\(current\) => commitDialReps\(text, current, timed \? HOLD_DIAL : REPS_DIAL\)\)/,
       );
       // No "tap to type" line under the buttons: it was in the sketch and
       // struck out on the phone the same day ("napauta ja kirjoita poista nämä").
@@ -423,7 +427,10 @@ module.exports = [
       // Not inside a superset: a set count per lift there asks the reader to
       // reconcile "4 × 8" with "3 × 10" inside one box whose real unit is
       // rounds (user 2026-09-11).
-      assert.match(playerSource, /const memberPlan =\s*!isSuperset && lift && planSet\s/);
+      // The plan line is one helper since the walk-up lists the same rows
+      // (#bugs 2026-10-06), so the two cannot say different things.
+      assert.match(playerSource, /const memberPlan = !isSuperset \? runPlanLine\(member\.slotId\) : '';/);
+      assert.match(playerSource, /const runPlanLine = \(slotId: string \| null\): string => \{/);
       // Read off the next set still to do. A swap rewrites only the sets
       // ahead, so the first set of a slot swapped mid-way still carries the
       // old lift's reps and lowered target (review of #202, 2026-09-28).
@@ -497,7 +504,7 @@ module.exports = [
     run() {
       assert.match(
         playerSource,
-        /swapBodyPart !== 'all'\s*\?\s*libraryLabel\(swapBodyPart, language\)\s*:\s*t\(language, 'guided\.swap\.library'\)/,
+        /title:\s*swapBodyPart !== 'all'\s*\?\s*libraryLabel\(swapBodyPart, language\)\s*:\s*t\(language, 'guided\.swap\.library'\),/,
       );
     },
   },
@@ -695,7 +702,7 @@ module.exports = [
       const sheet = source.slice(source.indexOf('function GPSheet('), source.indexOf('/* ══'));
       assert.ok(sheet.length > 0, 'GPSheet moved');
       // The page.
-      assert.match(sheet, /<Pressable style=\{styles\.sheetScrim\} onPress=\{onClose\}>/);
+      assert.match(sheet, /<Pressable\s*style=\{styles\.sheetScrim\}\s*onPress=\{onClose\}/);
       // The ✕, named for a screen reader.
       assert.match(
         sheet,
@@ -703,7 +710,7 @@ module.exports = [
       );
       // The pull: on the strip that holds the grip AND the title, closing past
       // a distance or a flick, springing back otherwise — on a transform.
-      assert.match(sheet, /<View \{\.\.\.pan\.panHandlers\} style=\{styles\.sheetGrab\}>\s*<View style=\{styles\.sheetHandle\} \/>\s*<View style=\{styles\.sheetTitleRow\}>/);
+      assert.match(sheet, /<View\s*\{\.\.\.pan\.panHandlers\}\s*style=\{styles\.sheetGrab\}\s*onLayout=\{[^\n]*\}\s*>\s*<View style=\{styles\.sheetHandle\} \/>\s*<View style=\{styles\.sheetTitleRow\}>/);
       assert.match(
         sheet,
         /if \(gesture\.dy > SHEET_DISMISS_DRAG \|\| gesture\.vy > SHEET_DISMISS_VELOCITY\) \{\s*onCloseRef\.current\(\);/,
@@ -712,7 +719,8 @@ module.exports = [
       // Every sheet passes its title in, so every title is part of the strip.
       const openings = source.match(/<GPSheet\b/g) ?? [];
       const titled = source.match(/<GPSheet\s+title=/g) ?? [];
-      assert.ok(openings.length >= 5, 'the player lost its sheets');
+      // Four since the swap sheet became the shared exercise sheet (#bugs 2026-10-06).
+      assert.ok(openings.length >= 4, 'the player lost its sheets');
       assert.equal(titled.length, openings.length, 'a sheet draws its title outside the pull zone');
       assert.doesNotMatch(source, /styles\.sheetTitle\b/);
     },
@@ -765,54 +773,65 @@ module.exports = [
   },
   {
     /**
-     * #bugs 2026-09-30: "saisiko sen saman liikekirjaston missä on ne kuvat
-     * niin tuotua tähän" — the swap sheet's rows are the library's rows, the
-     * picture included, and the sheet is a fixed 90% rather than 55% dragged
-     * to 90% (the reader's call: with pictures the drag is not needed).
+     * #bugs 2026-10-06: "Vaihda liike ja Lisää liike pitäisi olla identtiset,
+     * käyttäen sitä miltä Lisää liike näyttää". The swap sheet was a GPSheet
+     * of picture rows with its own search and chips (#bugs 2026-09-30); it is
+     * the add sheet's card grid now — one component, two modes.
      */
-    name: 'guided swap: the library\'s picture rows, in a sheet 90% tall',
+    name: 'guided swap: the swap sheet is the add sheet, in swap mode',
     run() {
       const source = playerSource.replace(/\r\n/g, '\n');
-      assert.match(
-        source,
-        /import \{ ExerciseLibraryRow, exerciseLibraryRowMeta, getItemImage \} from '\.\.\/components\/ExerciseLibraryBrowser';/,
-      );
-      // Both lists, suggested and library, draw the shared row with a picture.
-      const sheet = source.slice(source.indexOf('{swapOpen && actionExercise && ('), source.indexOf('<AddExerciseSheet'));
-      assert.equal((sheet.match(/<ExerciseLibraryRow\b/g) ?? []).length, 2);
-      assert.match(sheet, /imageUrl=\{item \? getItemImage\(item\) : null\}/);
-      assert.match(sheet, /imageUrl=\{getItemImage\(item\)\}/);
-      assert.doesNotMatch(source, /SwapRow|swapRowText/);
-      // A suggestion is looked up in the library for its picture.
+      const sheet = fs
+        .readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'AddExerciseSheet.tsx'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      // One presentation: AddExerciseSheet draws ExercisePickerSheet, and the
+      // player's swap draws the same component.
+      assert.match(sheet, /export function ExercisePickerSheet\(/);
+      assert.match(sheet, /<ExercisePickerSheet\s+visible=\{visible\}[\s\S]*?mode="add"/);
+      assert.match(source, /<ExercisePickerSheet\s+visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?mode="swap"/);
+      assert.equal((source.match(/<ExercisePickerSheet\b/g) ?? []).length, 1);
+      // The old list is gone: no swap GPSheet, no picture rows, no own search.
+      assert.doesNotMatch(source, /\{swapOpen && actionExercise && \(/);
+      assert.doesNotMatch(source, /ExerciseLibraryRow|swapSearch|swapList|swapBrowseChip|sheetFrameTall/);
+      assert.doesNotMatch(source, /<GPSheet\b[^>]*\btall\b/);
+      // Same search, same three filter groups, same cards in both modes:
+      // the sheet has no mode branch in its layout, only in its copy.
+      assert.match(sheet, /const copy = exerciseSheetCopy\(mode, language, swappedName\);/);
+      assert.equal((sheet.match(/mode === 'swap'|mode === 'add'/g) ?? []).length, 0);
+      for (const group of ['sheet.category', 'sheet.bodyPart', 'sheet.equipment']) {
+        assert.ok(sheet.includes(`t(language, '${group}')`), group);
+      }
+      assert.match(sheet, /options=\{equipmentOptions\}/);
+      // The swap list obeys all three groups through every picker's one list
+      // (lib/exercisePicker), the add sheet's too.
+      assert.match(source, /listPickerExercises\(exerciseLibrary, \{\s*query,\s*filters: swapFilters,/);
+      assert.match(sheet, /listPickerExercises\(items, \{\s*query: search,\s*filters: \{ category, bodyPart, equipment \}/);
+      // A programme alternative keeps its card, with its picture when the
+      // library holds it (swapSuggestionRows) and its name when it does not.
       assert.match(source, /const swapSuggestionRows = useMemo\(/);
       assert.match(source, /findGuidedLibraryIndex\(getDrillLibraryName\(name\) \?\? name, libraryNames\)/);
-      // Tall: 90%, fixed, and the list fills it rather than a 380 cap.
-      assert.match(sheet, /<GPSheet[\s\S]*?\btall\b[\s\S]*?onClose=/);
-      assert.match(source, /sheetFrameTall: \{ height: '90%', maxHeight: '90%' \},/);
-      assert.match(source, /swapList: \{\s*flex: 1,\s*\}/);
-      // Only the swap sheet is tall; the rest keep the 78% content-sized cap.
-      const openings = source.match(/<GPSheet\b[\s\S]*?onClose=/g) ?? [];
-      assert.ok(openings.length >= 5, 'the player lost its sheets');
-      assert.equal(openings.filter((opening) => /^\s*tall$/m.test(opening)).length, 1);
-      // And the library screen draws the same component.
-      const browser = fs
-        .readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'ExerciseLibraryBrowser.tsx'), 'utf8')
-        .replace(/\r\n/g, '\n');
-      assert.match(browser, /export function ExerciseLibraryRow\(/);
-      // Still a button to a screen reader, as SwapRow was.
-      assert.match(browser, /accessibilityRole=\{onPress \? 'button' : undefined\}/);
-      assert.match(browser, /<ExerciseLibraryRow\s+title=\{exerciseListLabel\(language, item\.name\)\}/);
+      assert.match(sheet, /item: ExerciseLibraryItem \| null;/);
+      // A tap swaps by name, the same applySwap as before.
+      assert.match(source, /onSelect=\{\(entry\) => applySwap\(entry\.name\)\}/);
+      // "Already in this workout" stays under the list, and no empty card
+      // argues with it.
+      assert.match(source, /listNote=\{\s*swapSessionHits\.length > 0/);
+      assert.match(sheet, /ListEmptyComponent=\{\s*listNote \? null :/);
+      // The sheet's own bottom: the inset read on the screen, carried by the
+      // list when there is no commit bar under it.
+      assert.match(source, /<ExercisePickerSheet[\s\S]*?bottomInset=\{screenInsets\.bottom\}/);
+      assert.match(sheet, /footer \? null : \{ paddingBottom: spacing\.xxl \+ bottomInset \}/);
     },
   },
   {
     /**
      * The list opens on the lifts nearest the one being swapped: "filtteröinti
      * siihen liikkeeseen perustuva eli lähin sitä mitä haluu tehdä" (#bugs
-     * 2026-09-29). A bench press swap opened on squats and deadlifts — the
-     * most popular lifts of any body part — with the chips behind a "browse
-     * all" link (device, 2026-09-30).
+     * 2026-09-29). Kept through the move to the shared sheet (2026-10-06):
+     * the body-part pill opens on the lift's own body part, and only a pill
+     * the reader moves becomes theirs.
      */
-    name: 'guided swap: the chips are always there, on the lift\'s own body part until the reader picks',
+    name: 'guided swap: the body-part filter opens on the lift\'s own body part until the reader picks',
     run() {
       const source = playerSource.replace(/\r\n/g, '\n');
       assert.match(source, /useState<BodyPartFilter \| null>\(null\);/);
@@ -820,14 +839,90 @@ module.exports = [
         source,
         /const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart\(swapBodyPartFilter, swapBrowsePrefilter, swapQuery\);/,
       );
-      assert.match(source, /matchesBodyPartFilter\(item, swapBodyPart\),/);
-      assert.match(source, /const selected = swapBodyPart === option;/);
+      assert.match(source, /\(\) => \(\{ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment \}\)/);
+      assert.match(
+        source,
+        /if \(next\.bodyPart !== swapFilters\.bodyPart\) \{\s*setSwapBodyPartFilter\(next\.bodyPart\);\s*\}/,
+      );
       // No link in front of the chips any more, and no key for it.
       assert.doesNotMatch(source, /swapBrowseOpen|guided\.swap\.browseAll/);
       assert.doesNotMatch(i18nSource, /'guided\.swap\.browseAll'/);
-      // Both ways out start the next opening from the lift again.
+      // Both ways out start the next opening from the lift again, all three
+      // groups and the query with it.
       assert.equal((source.match(/setSwapBodyPartFilter\(null\);/g) ?? []).length, 2);
+      assert.equal((source.match(/setSwapCategory\('all'\);/g) ?? []).length, 2);
+      assert.equal((source.match(/setSwapEquipment\('all'\);/g) ?? []).length, 2);
       assert.doesNotMatch(source, /setSwapBodyPartFilter\('all'\)/);
+    },
+  },
+  {
+    name: 'exercise sheet modes: title, card action and note follow the mode in both languages',
+    run() {
+      const { exerciseSheetCopy } = require('../../.test-dist/lib/exerciseSheetMode.js');
+      const fiSwap = exerciseSheetCopy('swap', 'fi', 'Barbell Bench Press - Medium Grip');
+      assert.match(fiSwap.title, /^Vaihda /);
+      assert.ok(fiSwap.title.length > 'Vaihda '.length, 'the swap title names the lift');
+      assert.equal(fiSwap.actionLabel, 'Vaihda');
+      assert.equal(fiSwap.note, 'Jo kirjaamasi sarjat jäävät sille liikkeelle, jolla ne teit.');
+      assert.equal(fiSwap.featuredTitle, 'Ehdotetut');
+
+      const fiAdd = exerciseSheetCopy('add', 'fi');
+      assert.equal(fiAdd.title, 'Lisää liike');
+      assert.equal(fiAdd.actionLabel, 'Lisää');
+      assert.equal(fiAdd.note, null, 'adding touches no logged set, so it says nothing about them');
+      // The same search reads the same in both modes.
+      assert.equal(fiAdd.searchPlaceholder, fiSwap.searchPlaceholder);
+
+      const enSwap = exerciseSheetCopy('swap', 'en', 'Barbell Squat');
+      const enAdd = exerciseSheetCopy('add', 'en');
+      assert.equal(enSwap.actionLabel, 'Swap');
+      assert.equal(enAdd.actionLabel, 'Add');
+      assert.notEqual(enSwap.title, enAdd.title);
+      assert.ok(enSwap.note && enSwap.note.length > 0);
+      // A missing name never prints "undefined".
+      assert.doesNotMatch(exerciseSheetCopy('swap', 'fi', null).title, /undefined/);
+      // The new label exists in both dictionaries.
+      assert.equal((i18nSource.match(/'sheet\.swapAction': '[^']+'/g) ?? []).length, 2);
+    },
+  },
+  {
+    /**
+     * #bugs 2026-10-06: "Jos mahtuu, olisi hyvä tässäkin ruudussa olla koko
+     * ohjelman sisältö luettavissa." The walk-up lists the contents sheet's
+     * rows in the room under its cards — as many as fit — and never moves
+     * its buttons for them.
+     */
+    name: 'guided walk-up: the workout contents in the room that is left, never at the buttons\' cost',
+    run() {
+      const source = playerSource.replace(/\r\n/g, '\n');
+      const start = source.indexOf("{step.type === 'position' && (");
+      const walk = source.slice(start, source.indexOf('{/* An interval work bout', start));
+      assert.ok(start > 0 && walk.length > 0, 'walk-up moved');
+      // The list lives INSIDE the scroll, and the buttons outside it: the
+      // ScrollView closes before the swap / add / start buttons begin.
+      const scrollEnd = walk.indexOf('</ScrollView>');
+      assert.ok(walk.indexOf('{walkRunFit ? (') < scrollEnd, 'the list is in the scroll area');
+      assert.ok(walk.indexOf("label={t(language, 'guided.walk.startFirst')}") > scrollEnd, 'the start button is outside it');
+      assert.ok(walk.indexOf("label={t(language, 'guided.walk.swap')}") > scrollEnd);
+      // Measured room: the scroll's own height less everything above the list.
+      assert.match(walk, /onLayout=\{\(event\) => setWalkViewportHeight\(Math\.floor\(event\.nativeEvent\.layout\.height\)\)\}/);
+      assert.match(walk, /onLayout=\{\(event\) => setWalkTopHeight\(Math\.ceil\(event\.nativeEvent\.layout\.height\)\)\}/);
+      assert.match(source, /availableHeight: walkViewportHeight - WALK_RUN_CHROME - walkTopHeight,/);
+      assert.match(source, /const WALK_RUN_CHROME = 28 \+ 8 \+ 14;/);
+      assert.match(walk, /contentContainerStyle=\{\{ paddingTop: 28, paddingHorizontal: 24, paddingBottom: 8, gap: 14 \}\}/);
+      // Drawn at the heights the fit was worked out with.
+      assert.match(source, /headHeight: WALK_RUN_HEAD,\s*rowHeight: WALK_RUN_ROW,/);
+      assert.match(source, /walkRunHead: \{ height: WALK_RUN_HEAD,/);
+      assert.match(source, /walkRunRow: \{ height: WALK_RUN_ROW,/);
+      assert.match(walk, /numberOfLines=\{1\}\s*accessibilityLabel=\{item\.members\.map/);
+      // The contents sheet's rows: its builder, its plan line, its rounds.
+      assert.match(source, /const walkRunItems = step\.type === 'position' \? buildGuidedRunSheet\(stepPlan, stepIndex\) : \[\];/);
+      assert.match(walk, /runPlanLine\(item\.members\[0\]\?\.slotId \?\? null\)/);
+      assert.match(walk, /t\(language, 'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
+      // What did not fit is counted, and the whole sheet is one tap away.
+      assert.match(walk, /t\(language, 'guided\.walk\.contentMore', \{ count: walkRunFit\.hidden \}\)/);
+      assert.match(walk, /onPress=\{\(\) => setRunSheetOpen\(true\)\}/);
+      assert.equal((i18nSource.match(/'guided\.walk\.contentMore': '\+\{count\} [^']+'/g) ?? []).length, 2);
     },
   },
 ];

@@ -63,6 +63,17 @@ module.exports = [
     },
   },
   {
+    // Bug hunt, 2026-10-04: a failed commit lost the verdict silently and left
+    // an unhandled rejection. The failure toast and the log must follow it.
+    name: 'session feel: a failed write is logged and shown, not dropped',
+    run() {
+      assert.match(
+        appSource,
+        /\{ feel \}\)\.catch\(\(error\) => \{\s*console\.warn\([^;]*error\);\s*showToast\(t\(preferences\.appLanguage, 'toast\.entrySaveFailed'\)\);/,
+      );
+    },
+  },
+  {
     name: 'session feel: the stored value survives a reload, junk does not',
     run() {
       assert.match(modelsSource, /export type SessionFeel = 'easy' \| 'right' \| 'hard' \| 'too_hard'/);

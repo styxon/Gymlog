@@ -16,7 +16,7 @@ import {
 } from '../lib/programSlots';
 import { rememberName } from '../lib/exerciseNameBook';
 import { normalizeSupersetGroups } from '../lib/supersetGrouping';
-import { savedPrescription } from '../lib/singleRepTarget';
+import { savedPrescription, savedRestSeconds } from '../lib/singleRepTarget';
 import { findReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import { plansChanged, renamePlansForTemplate } from '../lib/programRename';
 import { createSerialTaskQueue, RunExclusive } from '../lib/serialTaskQueue';
@@ -619,7 +619,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
             name,
             repMin: Math.max(1, exercise.repMin),
             repMax: Math.max(Math.max(1, exercise.repMin), exercise.repMax),
-            restSeconds: exercise.restSeconds && exercise.restSeconds > 0 ? exercise.restSeconds : null,
+            restSeconds: savedRestSeconds(exercise.restSeconds),
           });
           return {
             id: exercise.id ?? createId('exercise'),
@@ -633,6 +633,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
             trackedDefault: exercise.trackedDefault,
             orderIndex: exerciseIndex,
             libraryItemId: exercise.libraryItemId ?? null,
+            trackingMode: exercise.trackingMode ?? null,
             supersetGroup: exercise.supersetGroup ?? null,
           };
         }),

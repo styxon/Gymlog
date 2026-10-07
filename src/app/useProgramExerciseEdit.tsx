@@ -430,9 +430,17 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
               // custom-programme slots to make the copy (PR #33 review).
               restSeconds:
                 typeof dose.restSeconds === 'number' ? dose.restSeconds : exercise.restSecondsMin,
-              trackedDefault: false,
+              // The catalogue's own answer to "is this lift in the trend". A
+              // flat false left it to the library's category, which called
+              // every curl compound; with the category corrected to the
+              // source mechanic (2026-10-06) a programme's primary curl would
+              // have dropped out of the progression the moment it was copied.
+              trackedDefault: exercise.progressionPriority !== 'low',
               orderIndex: exerciseIndex,
               libraryItemId: target && edit.kind === 'replace' ? resolveLibraryItemIdForName(name) : null,
+              // The catalogue row's own mode survives the copy, except for a
+              // lift swapped in, which the library describes.
+              trackingMode: target && edit.kind === 'replace' ? null : exercise.trackingMode,
               // The catalog's own pairing, which since 2026-09-11 is 83 real
               // supersets rather than none. It has to survive the copy: this
               // is the fork a reader's first edit to a ready programme takes.

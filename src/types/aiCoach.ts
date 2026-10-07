@@ -141,6 +141,12 @@ export interface AICoachLastSessionExercise {
    * it. Null or absent when the lift is not in a programme the app can start.
    */
   next?: { loadKg: number | null; reps: number[] } | null;
+  /**
+   * 'minutes' when the sets' reps are minutes of steady work (a bike, a run
+   * block) — read as reps, "20 with no added load" was twenty of something.
+   * Absent for repetitions, and from an app older than the unit.
+   */
+  unit?: 'minutes';
 }
 
 export interface AICoachHistoryLift {

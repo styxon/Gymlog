@@ -4,6 +4,7 @@ import { applyDecimalSeparator } from './format';
 import { t } from './i18n';
 import type { ProgressionFatigueSignal } from './progressionGate';
 import type { AppLanguage } from '../types/models';
+import { nearestDayStart } from './trainingSchedule';
 
 /**
  * The recovery sheet (design: "GAINER Palautuminen Sheet", 2026-09-26).
@@ -315,7 +316,7 @@ export function withRestDay(restDayStarts: ReadonlyArray<number>, dayStart: numb
 
 export function withoutRestDay(restDayStarts: ReadonlyArray<number>, dayStart: number, now: Date): number[] {
   return pruneRestDays(
-    restDayStarts.filter((day) => day !== dayStart),
+    restDayStarts.filter((day) => nearestDayStart(day) !== nearestDayStart(dayStart)),
     now,
   );
 }

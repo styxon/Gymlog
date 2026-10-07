@@ -5,12 +5,13 @@ import Svg, { Path } from 'react-native-svg';
 import { buildDraftFromCsvPreview, CsvLibraryEntry, parseCsvProgram } from '../lib/csvProgramImport';
 import { countKnownNames } from '../lib/exerciseNameBook';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
-import { exerciseMatchesQuery } from '../lib/exerciseSearch';
+import { compareByShownName, listPickerExercises } from '../lib/exercisePicker';
+import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { HevyImportPreview, isHevyHistoryCsv, parseHevyCsv } from '../lib/hevyImport';
 import { I18nKey, t } from '../lib/i18n';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { ProLockIcon, ProPill } from './ProLockMarks';
-import type { AppLanguage, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
+import type { AppLanguage, ExerciseLibraryItem, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 
 // Program accent (design_handoff_programs_redesign, hue 150). The handoff
@@ -33,7 +34,8 @@ const SAMPLE_CSV = [
 interface NewProgramSheetProps {
   visible: boolean;
   language?: AppLanguage;
-  exerciseLibrary: CsvLibraryEntry[];
+  /** The library rows themselves: the "which lift" list filters and ranks them like every picker. */
+  exerciseLibrary: ExerciseLibraryItem[];
   /**
    * Where the sheet opens. Settings' "Import plan (CSV)" row means exactly one
    * thing, so it skips the menu — and the back arrow with it, since there is no
@@ -256,22 +258,32 @@ export function NewProgramSheet({
         : 0,
     [nameBook, preview],
   );
+  const popularOrder = useMemo(() => getPopularExerciseLibraryOrder(exerciseLibrary), [exerciseLibrary]);
   /** The library, filtered by what the reader typed while explaining a name. */
   const teachResults = useMemo(() => {
     if (teaching === null) {
       return [];
     }
-    const query = teachQuery.trim();
-    // The same matcher as every other search: the Finnish name, any spacing,
-    // the gym's words. This one matched the English name as one exact run.
-    const pool = query
-      ? exerciseLibrary.filter((entry) =>
-          exerciseMatchesQuery(`${entry.name} ${exerciseNameLabel(language, entry.name)}`, query),
-        )
-      : exerciseLibrary;
+    // Every picker's one list (lib/exercisePicker): the Finnish name, any
+    // spacing, the gym's words, best answer first — and, before anything is
+    // typed, sets among normal exercises in the order a picker offers them.
+    // This list matched unranked and, unsearched, showed the library's first
+    // twenty rows, a quad stretch among them (#bugs 2026-10-06).
+    const pool = listPickerExercises(exerciseLibrary, {
+      query: teachQuery,
+      language,
+      popularity: (item) => popularOrder.get(item.id),
+    });
+    // Unsearched, the popular lifts first and then the alphabet of the name
+    // on screen — not the library's English order, which opened on "3/4 Sit-Up".
+    const byShownName = compareByShownName(language);
+    const unranked = (item: ExerciseLibraryItem) => popularOrder.get(item.id) ?? Number.MAX_SAFE_INTEGER;
+    const ordered = teachQuery.trim()
+      ? pool
+      : [...pool].sort((left, right) => unranked(left) - unranked(right) || byShownName(left, right));
     // Capped: 873 rows inside a sheet is a scroll, not a choice.
-    return pool.slice(0, 20);
-  }, [exerciseLibrary, language, teachQuery, teaching]);
+    return ordered.slice(0, 20);
+  }, [exerciseLibrary, language, popularOrder, teachQuery, teaching]);
 
   async function handleTeach(exercise: CsvLibraryEntry) {
     if (teaching === null || !onTeachName) {

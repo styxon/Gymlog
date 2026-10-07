@@ -1,11 +1,12 @@
 import React, { useMemo } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
 import { CARD_SHADOW } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { LegalDocumentId, buildLegalDocument } from '../lib/legalDocuments';
+import { legalWebUrl, splitLegalLinks } from '../lib/legalLinks';
 import { storePlatformOf } from '../lib/storeLinks';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
@@ -32,6 +33,22 @@ export function LegalDocumentScreen({ document, language, onBack }: LegalDocumen
   const platform = storePlatformOf(Platform.OS);
   const doc = useMemo(() => buildLegalDocument(document, language, platform), [document, language, platform]);
 
+  const open = (url: string) => {
+    void Linking.openURL(url).catch(() => undefined);
+  };
+  // An address in the text (the account deletion page) opens it; the rest of
+  // the sentence stays text.
+  const withLinks = (text: string) =>
+    splitLegalLinks(text).map((part, partIndex) =>
+      part.url ? (
+        <Text key={partIndex} accessibilityRole="link" onPress={() => open(part.url!)} style={styles.inlineLink}>
+          {part.text}
+        </Text>
+      ) : (
+        part.text
+      ),
+    );
+
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
@@ -57,17 +74,29 @@ export function LegalDocumentScreen({ document, language, onBack }: LegalDocumen
             <Text style={styles.heading}>{section.heading}</Text>
             {(section.body ?? []).map((paragraph, paragraphIndex) => (
               <Text key={paragraphIndex} style={styles.paragraph}>
-                {paragraph}
+                {withLinks(paragraph)}
               </Text>
             ))}
             {(section.bullets ?? []).map((bullet, bulletIndex) => (
               <View key={bulletIndex} style={styles.bulletRow}>
                 <View style={styles.bulletDot} />
-                <Text style={styles.bulletText}>{bullet}</Text>
+                <Text style={styles.bulletText}>{withLinks(bullet)}</Text>
               </View>
             ))}
           </View>
         ))}
+
+        {/* The same document on styxon.fi, for the reader who wants the web
+            copy (user, 2026-10-05). The screen above stays the one read: it
+            works offline and is the version the reader accepts. */}
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => open(legalWebUrl(document, language))}
+          hitSlop={8}
+          style={({ pressed }) => [styles.webLink, pressed && { opacity: 0.75 }]}
+        >
+          <Text style={styles.webLinkText}>{t(language, 'legal.readOnWeb')}</Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -155,5 +184,20 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     color: theme.muted,
+  },
+  inlineLink: {
+    color: theme.highlight,
+    fontWeight: '700',
+    textDecorationLine: 'underline',
+  },
+  webLink: {
+    alignSelf: 'center',
+    marginTop: 18,
+    paddingVertical: 8,
+  },
+  webLinkText: {
+    color: theme.highlight,
+    fontSize: 14,
+    fontWeight: '800',
   },
 });

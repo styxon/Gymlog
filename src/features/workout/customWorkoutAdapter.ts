@@ -9,6 +9,7 @@ import {
 
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
+import { isMinutesExerciseName } from '../../lib/minutesExercises';
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -35,11 +36,22 @@ function resolveSubstitutionGroup(exerciseName: string, fallbackId: string): str
 }
 
 function getTrackingMode(exercise: ExerciseTemplate, libraryItem?: ExerciseLibraryItem): WorkoutTrackingMode {
+  // The writer's own answer, when it had one (onboarding's composed week).
+  if (exercise.trackingMode) {
+    return exercise.trackingMode;
+  }
+
   // Asked before the equipment check: a hold is bodyweight, so the branch
   // below would swallow it and a plank in your own program would ask for
   // repetitions while the same plank in a ready program asked for seconds.
   if (isHoldExerciseName(libraryItem?.name ?? exercise.name)) {
     return 'hold';
+  }
+
+  // Before the category check below, which files a bike as cardio and so as
+  // repetitions. Either spelling: the programme's own or the library row's.
+  if (isMinutesExerciseName(exercise.name) || isMinutesExerciseName(libraryItem?.name)) {
+    return 'duration_minutes';
   }
 
   if (libraryItem?.equipment === 'bodyweight') {
@@ -117,8 +129,9 @@ function adaptExercise(
     sets: Math.max(1, exercise.targetSets),
     repsMin: Math.max(1, exercise.repMin),
     repsMax: Math.max(Math.max(1, exercise.repMin), exercise.repMax),
-    restSecondsMin: exercise.restSeconds && exercise.restSeconds > 0 ? exercise.restSeconds : defaultRestSeconds,
-    restSecondsMax: exercise.restSeconds && exercise.restSeconds > 0 ? exercise.restSeconds : defaultRestSeconds,
+    // 0 is a rest of none (stretches), not "unset"; only null falls to the default.
+    restSecondsMin: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
+    restSecondsMax: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
     substitutionGroup: resolveSubstitutionGroup(exercise.name, exercise.id),
     supersetGroup: exercise.supersetGroup ?? null,
   };

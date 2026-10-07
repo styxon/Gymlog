@@ -73,7 +73,7 @@ module.exports = [
     async run() {
       const COACH_KEY = '@vinha/coach/memory/v1';
       let sawReset = false;
-      for (let killAfter = 0; killAfter <= 8; killAfter += 1) {
+      for (let killAfter = 0; killAfter <= 24; killAfter += 1) {
         const fake = createFakeAsyncStorage();
         const database = loadDatabaseModule(fake, 'fi_FI');
         const before = usedInstall('fi');

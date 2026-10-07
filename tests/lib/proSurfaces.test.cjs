@@ -54,7 +54,7 @@ module.exports = [
       assert.doesNotMatch(guidedSource, /resolveGuidedResumeIndex\(steps, null/);
 
       // The clock must not run while a sheet is open over the set.
-      assert.match(guidedSource, /const frozen = paused \|\|[^;]*swapOpen/);
+      assert.match(guidedSource, /const frozen = guidedClockHeld\(\{[^}]*\bswapOpen,/);
 
       // Calling the action is not the same as the action landing. The swap
       // above satisfied this suite while being completely dead on screen: the

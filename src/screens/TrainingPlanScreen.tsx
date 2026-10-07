@@ -11,7 +11,7 @@ import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { cycleSchedule, patternFromOnOff, trainsOn } from '../lib/trainingSchedule';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
-import type { AppLanguage, SetupWeekday, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
+import type { AppLanguage, ExerciseLibraryItem, SetupWeekday, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
 
 const WEEKDAY_CHIPS: Array<{ day: SetupWeekday; labelKey: I18nKey }> = [
   { day: 'mon', labelKey: 'weekday.mon' },
@@ -80,7 +80,7 @@ interface TrainingPlanScreenProps {
    * plain weekdays, and the weekday chips are the whole truth.
    */
   trainingCycle?: TrainingCycleValue | null;
-  exerciseLibrary: CsvLibraryEntry[];
+  exerciseLibrary: ExerciseLibraryItem[];
   /** The reader's own lift names, for the CSV importer's matcher. */
   nameBook?: readonly ExerciseNameBookEntry[];
   onTeachName?: (wrote: string, exercise: CsvLibraryEntry) => Promise<void> | void;
@@ -225,7 +225,7 @@ export function TrainingPlanScreen({
   };
 
   const dayCountCaption = (count: number) =>
-    t(language, 'plan.dayCount', { days: count, rest: 7 - count });
+    t(language, count === 1 ? 'plan.dayCountOne' : 'plan.dayCount', { days: count, rest: 7 - count });
 
   const cyclePattern = showCycle
     ? editingSchedule
@@ -313,7 +313,7 @@ export function TrainingPlanScreen({
                 <View style={styles.badgeRow}>
                   <View style={styles.badge}>
                     <Text style={styles.badgeText}>
-                      {t(language, 'plan.exerciseCount', { count: planExerciseCount })}
+                      {t(language, planExerciseCount === 1 ? 'plan.exerciseCountOne' : 'plan.exerciseCount', { count: planExerciseCount })}
                     </Text>
                   </View>
                   <View style={styles.badge}>

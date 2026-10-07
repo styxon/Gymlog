@@ -53,11 +53,11 @@ module.exports = [
           file,
         );
       }
-      // The swap sheet's rows are the library's own now (#bugs 2026-09-30),
-      // and still carry both names.
+      // The swap sheet is the add sheet's cards now (#bugs 2026-10-06), and
+      // the card still carries both names.
       assert.match(
-        read('src/screens/GuidedPlayerScreen.tsx'),
-        /title=\{exerciseListLabel\(language, item\.name\)\}\s*accessibilityLabel=\{exerciseNameLabel\(language, item\.name\)\}/,
+        read('src/components/AddExerciseSheet.tsx'),
+        /accessibilityLabel=\{exerciseNameLabel\(language, name\)\}>\s*\{exerciseListLabel\(language, name\)\}/,
       );
       // Every text that prints the short form tells a screen reader the full
       // name — "K P" is what TalkBack would say (review, 2026-09-27).

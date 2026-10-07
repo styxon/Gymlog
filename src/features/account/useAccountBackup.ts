@@ -130,6 +130,13 @@ export type SignInOutcome =
   | { kind: 'restored'; summary: AccountBackupSummary }
   /** Signed in, and the phone refused to write the backup it downloaded. */
   | { kind: 'restore_failed' }
+  /**
+   * The phone refused the history after taking the backup's database, and
+   * then refused to put its own database back: half the backup is on the
+   * phone. Not "nothing changed" — the reader is told what is there and how
+   * to finish (bug hunt, 2026-10-05).
+   */
+  | { kind: 'restore_incomplete' }
   /** Both sides matter. Call resolveRestoreChoice with the reader's answer. */
   | { kind: 'choice'; summary: RestoreChoiceSummary }
   /**
@@ -172,7 +179,8 @@ export interface AccountBackupApi {
   phase: AccountBackupPhase;
   /** Without a provider, the first one offered. */
   signIn: (provider?: SignInProvider) => Promise<SignInOutcome>;
-  resolveRestoreChoice: (choice: 'restore' | 'keep_local') => Promise<AccountOperationResult>;
+  /** 'incomplete': see SignInOutcome's 'restore_incomplete'. */
+  resolveRestoreChoice: (choice: 'restore' | 'keep_local') => Promise<AccountOperationResult | 'incomplete'>;
   /**
    * The answer to 'confirm_upload'. 'skip' stays signed in with nothing
    * uploaded and the automatic backup held, until the reader backs up.
@@ -248,6 +256,17 @@ class Superseded extends Error {}
  * operation like any other — but the reader is told, not left with silence.
  */
 class SessionEnded extends Superseded {}
+
+/**
+ * Thrown by applyRestore when the history write failed and the database could
+ * not be put back either: the phone holds the backup's database beside its own
+ * history, and saying "nothing changed" would be false.
+ */
+class RestoreHalfApplied extends Error {
+  constructor(readonly original: unknown) {
+    super('Backup restore half applied');
+  }
+}
 
 /**
  * What the server answers an Apple session that is over (api/backup.ts): the
@@ -586,6 +605,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
           await restoreDatabase(previous, { rollback: true });
         } catch (rollbackError) {
           console.error('Backup restore could not be undone', rollbackError);
+          throw new RestoreHalfApplied(error);
         }
       }
       throw error;
@@ -735,10 +755,10 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
           // nothing synced, so the next "Back up now" asks again — and the
           // reader is told now instead of seeing nothing happen.
           console.error('Backup restore failed', error);
-          reportOperationFailed('backup_restore', error);
+          reportOperationFailed('backup_restore', error instanceof RestoreHalfApplied ? error.original : error);
           ensureCurrent(generation);
           await persistAccount({ ...base, ...remoteCounts });
-          return { kind: 'restore_failed' };
+          return { kind: error instanceof RestoreHalfApplied ? 'restore_incomplete' : 'restore_failed' };
         }
         await persistAccount({
           ...base,
@@ -865,7 +885,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   }, [available, settleWithRemote]);
 
   const resolveRestoreChoice = useCallback(
-    async (choice: 'restore' | 'keep_local'): Promise<AccountOperationResult> => {
+    async (choice: 'restore' | 'keep_local'): Promise<AccountOperationResult | 'incomplete'> => {
       const pending = pendingRestoreRef.current;
       if (!pending) {
         return 'failed';
@@ -888,10 +908,10 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
             // now" path — so the automatic backup never writes over the copy
             // the reader chose, and "Back up now" asks again (PR #119 review).
             console.error('Backup restore failed', error);
-            reportOperationFailed('backup_restore', error);
+            reportOperationFailed('backup_restore', error instanceof RestoreHalfApplied ? error.original : error);
             ensureCurrent(generation);
             await persistAccount({ ...current, lastBackupAt: null, lastBackupFingerprint: null, cloudVersion: null });
-            return 'failed';
+            return error instanceof RestoreHalfApplied ? 'incomplete' : 'failed';
           }
           await persistAccount({
             ...current,

@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-*Päivitetty 6.10.2026*
+*Päivitetty 3.10.2026*
 
 Mitä Vinha tallentaa, mikä lähtee puhelimestasi ja mitä voit sille tehdä.
 

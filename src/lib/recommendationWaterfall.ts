@@ -1,4 +1,5 @@
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
+import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -31,6 +32,21 @@ const FOCUS_PROGRAM_BY_AREA: Partial<Record<SetupFocusArea, string>> = {
   glutes: 'tpl_focus_glutes_program_v1',
 };
 
+/**
+ * What using all of the reader's own gear is worth against a programme that
+ * uses none of it: a little more than one day's difference (10), so a
+ * dumbbell owner is handed the dumbbell programme over the no-equipment one
+ * when both fit their week about as well (recommendation matrix, 2026-10-05).
+ */
+const GEAR_USE_WEIGHT = 12;
+
+/**
+ * A programme that leaves the reader's barbell or dumbbells unused while one
+ * that serves their goal uses them: two days' difference, so the geared week a
+ * day or two off still wins (review, 2026-10-05).
+ */
+const IGNORES_OWNED_LOAD = 20;
+
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
   return input.level === 'beginner' ? Math.min(input.daysPerWeek, 3) : input.daysPerWeek;
@@ -47,11 +63,16 @@ function pickClosestWithPenalty(
 ): { definition: RecommendationProgramDefinition; penalty: number } | null {
   let best: RecommendationProgramDefinition | null = null;
   let bestPenalty = Number.POSITIVE_INFINITY;
+  const ignoringLoad = programsIgnoringOwnedLoad(pool, input);
 
   for (const definition of pool) {
     let penalty = Math.abs(definition.daysPerWeek - targetDays) * 10;
     if (!definition.supportedLevels.includes(input.level)) {
-      penalty += 12;
+      // More than any day difference or the gear bonus: a beginner is not
+      // handed a pro programme because it uses their dumbbells, and a pro is
+      // not handed a beginner one (recommendation matrix, 2026-10-05). Was 12,
+      // about one day's worth.
+      penalty += 30;
     }
     if (input.level !== 'beginner' && definition.supportedLevels.includes('beginner')) {
       // Prefer level-targeted programs for experienced users when days tie.
@@ -69,7 +90,9 @@ function pickClosestWithPenalty(
     }
     if (!definition.supportedGoals.includes(input.goal)) {
       // A wrong-goal program must never beat the right goal over a one-day difference.
-      penalty += definition.backupGoals.includes(input.goal) ? 2 : 25;
+      // A backup goal costs more than the gear bonus: the reader's goal comes
+      // before the reader's gear (recommendation matrix, 2026-10-05). Was 2.
+      penalty += definition.backupGoals.includes(input.goal) ? GEAR_USE_WEIGHT + 2 : 25;
     }
     if (
       input.equipment === 'gym'
@@ -87,6 +110,12 @@ function pickClosestWithPenalty(
       // reader who had asked for two days — 15 points of equipment beat 10
       // points of "that is not the week you said you had".
       penalty += 15;
+    }
+    if (input.equipment !== 'gym') {
+      penalty -= GEAR_USE_WEIGHT * programGearUse(definition.programId, input.availableEquipment);
+    }
+    if (ignoringLoad.has(definition.programId)) {
+      penalty += IGNORES_OWNED_LOAD;
     }
     if (penalty < bestPenalty) {
       best = definition;
@@ -136,9 +165,11 @@ function decision(
 export function selectWaterfallDecision(input: RecommendationInput): RecommendationWaterfallDecision {
   const programs = RECOMMENDATION_PROGRAMS;
 
-  // 1. Equipment overrides everything: never send home/minimal users to gym content.
+  // 1. Equipment overrides everything: a home or minimal reader gets what their
+  // own chips can run — the low-equipment shelf, and a gym programme only when
+  // their gear covers it (a home rack and barbell).
   if (input.equipment !== 'gym') {
-    const pool = programs.filter((definition) => definition.equipmentTier === 'low_equipment');
+    const pool = equipmentCandidatePool(programs, input);
     const primary = pickClosest(pool, input);
     if (primary) {
       const remaining = pool.filter((definition) => definition.programId !== primary.programId);
@@ -148,12 +179,15 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
           ? pickClosest(remaining.filter((definition) => definition.styleTags.includes('conditioning')), input)
           : null)
         ?? pickClosest(remaining, input);
+      // A home rack can be handed a barbell programme now, and "nothing in it
+      // needs a gym" would be the wrong sentence for one.
+      const ownGear = primary.equipmentTier !== 'low_equipment';
       return decision(
         'home_equipment',
         primary,
         alternative,
-        'wf.home_equipment.primary',
-        'wf.home_equipment.alt',
+        ownGear ? 'wf.home_gear.primary' : 'wf.home_equipment.primary',
+        ownGear || alternative?.equipmentTier !== 'low_equipment' ? 'wf.home_gear.alt' : 'wf.home_equipment.alt',
       );
     }
   }
@@ -167,7 +201,15 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
         'run_mobility',
         primary,
         byId(FIT_PROGRAM_ID),
-        'wf.run_mobility.primary',
+        // Bug hunt, 2026-10-04: only the run programme puts running first.
+        // At 2 days the pick is the mobility reset and at 5-6 days another
+        // programme, and "running comes first" was printed over plans with no
+        // running in them.
+        primary.programId === RUN_PROGRAM_ID
+          ? 'wf.run_mobility.primary'
+          : primary.familyId === 'joint_friendly'
+            ? 'wf.run_mobility.mobilityPrimary'
+            : 'wf.run_mobility.closestPrimary',
         'wf.run_mobility.alt',
       );
     }

@@ -732,6 +732,21 @@ function renderLastSession(
     // sessions has to be read off this one's sets: three sets of 155 × 6 were
     // taken for "155 kg three sessions in a row" (2026-09-27).
     const exerciseLine = (exercise: AICoachLastSession['exercises'][number]) => {
+      // Steady cardio logs minutes in the reps column; it is said in minutes,
+      // with no load and no weight streak to read into it.
+      if (exercise.unit === 'minutes') {
+        const minutes = (entry: { reps: number }) => `${entry.reps} min`;
+        const timed = [`${plural(exercise.sets.length, 'bout')} this session: ${exercise.sets.map(minutes).join(', ')} (minutes, not reps)`];
+        if (exercise.previous) {
+          timed.push(`time before (${exercise.previous.day}): ${exercise.previous.sets.map(minutes).join(', ')}`);
+        } else if (exercise.previous === null) {
+          timed.push('no earlier log under this name');
+        }
+        if (exercise.next) {
+          timed.push(`next time (the app's own prescription): ${exercise.next.reps.join(', ')} min`);
+        }
+        return `- ${liftName(exercise.name)} — ${timed.join(' | ')}`;
+      }
       const parts = [`${plural(exercise.sets.length, 'set')} this session: ${exercise.sets.map(set).join(', ')}`];
       if (exercise.previous) {
         parts.push(`time before (${exercise.previous.day}): ${exercise.previous.sets.map(set).join(', ')}`);

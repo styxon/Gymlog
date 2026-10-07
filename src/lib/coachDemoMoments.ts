@@ -1,7 +1,7 @@
 import { FatigueSignal } from './fatigueModel';
 import { I18nKey } from './i18n';
 import { isLiftPlateaued } from './proInsights';
-import { LiftHistory } from './trainingHistory';
+import { LiftHistory, sessionBestPoints } from './trainingHistory';
 import type { SetupCautionFlag } from '../types/models';
 
 /**
@@ -118,7 +118,13 @@ function stalledLift(
 }
 
 function decliningLift(lifts: readonly LiftHistory[]): LiftHistory | null {
-  return lifts.find((lift) => lift.weightChangeKg < 0 && lift.points.length >= 3) ?? null;
+  // Sessions, not logs: one workout logging a lift twice is not a trend.
+  return (
+    lifts.find((lift) => {
+      const points = sessionBestPoints(lift);
+      return points.length >= 3 && points[points.length - 1].topSetWeightKg < points[0].topSetWeightKg;
+    }) ?? null
+  );
 }
 
 /**

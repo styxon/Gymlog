@@ -28,6 +28,7 @@ import {
   WorkoutTemplateDraft,
 } from '../types/models';
 import type { PreferencesPatch } from '../state/AppProvider';
+import { coachQuickAskKeys } from '../lib/coachQuickAsks';
 
 type ChatScreenProps = React.ComponentProps<typeof AICoachChatScreen>;
 type CardioScreenProps = React.ComponentProps<typeof CardioScreen>;
@@ -370,7 +371,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
         sessionCount={database.workoutSessions.length}
-        quickAskKeys={['coach.chip.analyze', 'coach.chip.program', 'coach.chip.protein']}
+        quickAskKeys={coachQuickAskKeys(database.workoutSessions.length, aiCoachTrainingContext.sessionsLast30Days)}
         lastSession={coachLastSession}
         onOpenAnalysis={(sessionId) => navigate({ tab: 'home', screen: 'analysis', sessionId })}
         onOpenPremium={() => navigate({ tab: 'profile', screen: 'premium' })}

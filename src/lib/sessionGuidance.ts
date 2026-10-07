@@ -110,6 +110,10 @@ function buildFirstAction(exercises: WorkoutTemplateExercise[]) {
     return `Start with ${firstPrimary.exerciseName} and keep the first round easy.`;
   }
 
+  if (firstPrimary.trackingMode === 'duration_minutes') {
+    return `Start ${firstPrimary.exerciseName} at a steady pace and log the minutes you did.`;
+  }
+
   if (isTimedTrackingMode(firstPrimary.trackingMode)) {
     return `Start with ${firstPrimary.exerciseName} and hold the position rather than chasing the clock.`;
   }
@@ -121,7 +125,17 @@ function buildFirstAction(exercises: WorkoutTemplateExercise[]) {
   return `Open ${firstPrimary.exerciseName}, do warm-up sets, then log the first work set.`;
 }
 
-export function buildSessionGuidance(template: WorkoutTemplateV1, session: WorkoutTemplateSession): SessionGuidance {
+/**
+ * `sessionMinutes` is the number the programme page's badge quotes
+ * (`readyProgramSessionMinutes`) — passed in, not read from the template's
+ * hand-written `estimatedSessionDuration`, which said 50 where the badge said
+ * 35 (bug hunt, 2026-10-05, B14).
+ */
+export function buildSessionGuidance(
+  template: WorkoutTemplateV1,
+  session: WorkoutTemplateSession,
+  sessionMinutes: number,
+): SessionGuidance {
   const primary = session.exercises.filter((exercise) => exercise.role === 'primary');
 
   return {
@@ -129,7 +143,7 @@ export function buildSessionGuidance(template: WorkoutTemplateV1, session: Worko
     mainFocus: `Main focus: ${joinExerciseNames(primary.length ? primary : session.exercises)}.`,
     supportFocus: buildSupportFocus(session.exercises),
     restGuidance: buildRestGuidance(session.exercises),
-    estimatedDuration: `${template.estimatedSessionDuration} min`,
+    estimatedDuration: `${sessionMinutes} min`,
     progressionHint: buildProgressionHint(template, session.exercises),
     firstAction: buildFirstAction(session.exercises),
   };

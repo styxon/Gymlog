@@ -45,8 +45,10 @@ import { DEFAULT_BUDGET_LIMITS } from './aiCoachBudget';
 import { buildAiCoachContextText } from './aiCoachSystemContext';
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import { detectPlateaus } from './progressionAnalyzer';
+import { sessionBestPoints } from './trainingHistory';
 import { buildFatigueModel } from './fatigueModel';
 import { getComparableLogSets } from './exerciseLog';
+import { isMinutesExerciseName, isMinutesLogEntry } from './minutesExercises';
 import {
   buildTrainingHistory,
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -448,18 +450,25 @@ function buildHistoryBlock(
     sessionCount: history.sessionCount,
     totalVolumeKg: history.totalVolumeKg,
     sessions,
-    lifts: history.lifts.slice(0, MAX_HISTORY_LIFTS).map((lift) => ({
-      name: lift.name,
-      sessions: lift.points.length,
-      firstWeightKg: lift.first.topSetWeightKg,
-      latestWeightKg: lift.latest.topSetWeightKg,
-      latestReps: lift.latest.topSetReps,
-      bestWeightKg: lift.bestWeightKg,
-      changeKg: lift.weightChangeKg,
-      spanDays: lift.spanDays,
-      stalledSessions: lift.stalledSessions,
-      weightSeriesKg: lift.points.map((point) => point.topSetWeightKg),
-    })),
+    lifts: history.lifts.slice(0, MAX_HISTORY_LIFTS).map((lift) => {
+      // Per session, not per log: a lift logged twice in one workout is one
+      // session, and its 60 then 70 is not ten kilos of progress.
+      const points = sessionBestPoints(lift);
+      const first = points[0] ?? lift.first;
+      const latest = points[points.length - 1] ?? lift.latest;
+      return {
+        name: lift.name,
+        sessions: points.length,
+        firstWeightKg: first.topSetWeightKg,
+        latestWeightKg: latest.topSetWeightKg,
+        latestReps: latest.topSetReps,
+        bestWeightKg: lift.bestWeightKg,
+        changeKg: Math.round((latest.topSetWeightKg - first.topSetWeightKg) * 100) / 100,
+        spanDays: Math.max(0, Math.round((latest.time - first.time) / 86400000)),
+        stalledSessions: lift.stalledSessions,
+        weightSeriesKg: points.map((point) => point.topSetWeightKg),
+      };
+    }),
     liftsNotShown: [
       ...history.lifts.slice(MAX_HISTORY_LIFTS),
       ...history.repsLifts.slice(MAX_HISTORY_LIFTS),
@@ -646,6 +655,7 @@ export function buildAiCoachLastSession(
         // programme prescribes next time, so it gets no "next time" rather
         // than the original lift's numbers under its name.
         next: nextFor(nextByLift.get(normalizedName(name))),
+        ...(isMinutesLogEntry(log) ? { unit: 'minutes' as const } : {}),
       };
     })
     .filter((exercise) => exercise.name.length > 0 && exercise.sets.length > 0);
@@ -727,7 +737,13 @@ export function buildAiTrainingContext({
       noteCount: session.noteCount ?? 0,
     }));
 
-  const trackedLifts = trackedProgress.slice(0, 3).map((summary) => ({
+  // A bout of minutes is not a lift with a weight and reps to report: its
+  // "latest 0 kg x 20" read as twenty reps of nothing. It reaches the coach
+  // in minutes, through the last session.
+  const liftProgress = trackedProgress.filter(
+    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isMinutesLogEntry(log)),
+  );
+  const trackedLifts = liftProgress.slice(0, 3).map((summary) => ({
     key: summary.key,
     name: summary.name,
     latestWeight: summary.latestWeight,
@@ -735,7 +751,7 @@ export function buildAiTrainingContext({
     latestReps: summary.latestReps,
   }));
 
-  const latestTopSets = trackedProgress.slice(0, 3).map((summary) => ({
+  const latestTopSets = liftProgress.slice(0, 3).map((summary) => ({
     exerciseName: summary.name,
     weight: summary.latestWeight,
     reps: summary.latestReps,
@@ -1250,6 +1266,7 @@ function normalizeLastSession(input: unknown): AICoachLastSession | null {
         ...(typeof streak === 'number' && Number.isInteger(streak) && streak >= 1 && streak <= 1000
           ? { sessionsAtThisWeight: streak }
           : {}),
+        ...(exercise?.unit === 'minutes' ? { unit: 'minutes' as const } : {}),
       };
     })
     .filter((exercise) => exercise.name.length > 0 && exercise.sets.length > 0);

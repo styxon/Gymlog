@@ -1,4 +1,6 @@
-﻿import { exerciseNameLabel } from './exerciseNameLabel';
+﻿import { filterBrowsableExercises } from './exerciseBrowseFilter';
+import { exerciseNameLabel } from './exerciseNameLabel';
+import { isHoldExerciseName } from './holdExercises';
 import { createId } from './ids';
 import {
   ExerciseLibraryItem,
@@ -87,6 +89,20 @@ export function getExerciseTemplateDefaults(item: ExerciseLibraryItem | undefine
       repMax: 8,
       restSeconds: defaultRestSeconds,
       trackedDefault: true,
+    };
+  }
+
+  // Before the category: a plank is filed under core, and core's 12–15 is a
+  // rep range. A hold reads its range as seconds, so a plank picked in "Build
+  // it yourself" asked for 15 s (device walk, 2026-10-05). 30–45 s is what the
+  // ready programmes prescribe most often for a hold.
+  if (isHoldExerciseName(item.name)) {
+    return {
+      targetSets: 3,
+      repMin: 30,
+      repMax: 45,
+      restSeconds: Math.min(defaultRestSeconds, 60),
+      trackedDefault: false,
     };
   }
 
@@ -215,7 +231,10 @@ export function getSuggestedExerciseLibraryItems({
   const preferredBodyParts = new Set(currentItems.map((item) => item.bodyPart));
   const preferredEquipment = new Set(currentItems.map((item) => item.equipment));
 
-  const scored = exerciseLibrary
+  // Offered unasked, so only what the picker offers unasked: no stretches or
+  // field drills, and no strongman implements — a leg-machine day was
+  // suggested the backward sled drag and the car deadlift (#bugs 2026-10-06).
+  const scored = filterBrowsableExercises(exerciseLibrary)
     .filter((item) => !currentIds.has(item.id))
     .map((item) => {
       const recentBonus = recentItems.findIndex((recent) => recent.id === item.id);

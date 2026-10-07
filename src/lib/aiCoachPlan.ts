@@ -2,10 +2,12 @@ import {
   AppPreferences,
   ExerciseBodyPart,
   ExerciseCategory,
-  ExerciseEquipment,
   ExerciseLibraryItem,
 } from '../types/models';
 import { AICoachPlanSchema, AICoachPlannedExercise, AICoachPlannedSession } from '../types/aiCoachPlan';
+import { isSpecialtyExercise } from './exerciseClassification';
+import { isBrowsableExercise } from './exerciseBrowseFilter';
+import { DisplayEquipmentValue, displayEquipmentValue } from './libraryLabel';
 
 type PlannedExerciseVariant = 'warmup' | 'primary' | 'secondary' | 'accessory';
 
@@ -139,27 +141,47 @@ function mapSetupRecovery(preferences: AppPreferences) {
   return preferences.aiPlannerRecovery ?? 'moderate';
 }
 
+/**
+ * The gear each planner answer means, in the buckets a row prints
+ * (displayEquipmentValue). Read off the stored bucket, "bodyweight" — "ilman
+ * välineitä" — handed a reader with nothing a band pull-apart or a medicine
+ * ball throw, which the library files as bodyweight (#bugs 2026-10-06).
+ * Kettlebells travel with dumbbells, as they always did through the stored
+ * bucket. A band and a foam roller are a corner of a room, so they come with
+ * any equipment at all; the medicine and exercise balls are gym-floor gear,
+ * as the composer's equipment rules treat them.
+ */
 function resolveAllowedEquipment(equipment: AppPreferences['aiPlannerEquipment']) {
-  const allowed = new Set<ExerciseEquipment>();
+  const allowed = new Set<DisplayEquipmentValue>();
   switch (equipment) {
     case 'bodyweight':
       allowed.add('bodyweight');
       break;
     case 'minimal':
       allowed.add('dumbbell');
+      allowed.add('kettlebells');
+      allowed.add('band');
+      allowed.add('foam roll');
       allowed.add('bodyweight');
       break;
     case 'home_gym':
       allowed.add('barbell');
       allowed.add('dumbbell');
+      allowed.add('kettlebells');
+      allowed.add('band');
+      allowed.add('foam roll');
       allowed.add('bodyweight');
       break;
     case 'full_gym':
     default:
       allowed.add('barbell');
       allowed.add('dumbbell');
+      allowed.add('kettlebells');
       allowed.add('machine');
       allowed.add('cable');
+      allowed.add('band');
+      allowed.add('ball');
+      allowed.add('foam roll');
       allowed.add('bodyweight');
       break;
   }
@@ -537,12 +559,12 @@ function getFocusBodyPart(preferences: AppPreferences): ExerciseBodyPart | null 
 function findLibraryItemForQuery(
   items: ExerciseLibraryItem[],
   query: string,
-  allowedEquipment: Set<ExerciseEquipment>,
+  allowedEquipment: Set<DisplayEquipmentValue>,
   avoidTerms: string[],
 ) {
   const normalizedQuery = normalize(query);
   return items.find((item) => {
-    if (!allowedEquipment.has(item.equipment)) {
+    if (!allowedEquipment.has(displayEquipmentValue(item))) {
       return false;
     }
 
@@ -558,7 +580,7 @@ function findLibraryItemForQuery(
 function chooseLibraryExercise(args: {
   items: ExerciseLibraryItem[];
   slot: SlotBlueprint;
-  allowedEquipment: Set<ExerciseEquipment>;
+  allowedEquipment: Set<DisplayEquipmentValue>;
   avoidTerms: string[];
   usedIds: Set<string>;
   mustIncludeTerms: string[];
@@ -586,8 +608,22 @@ function chooseLibraryExercise(args: {
 
   for (const query of candidates) {
     const normalizedQuery = normalize(query);
+    // A lift the reader named is theirs to have, specialty or not. A slot's
+    // own search word is not a name: "deadlift" must not land on Car Deadlift
+    // or Axle Deadlift (#bugs 2026-10-06, specialty movements).
+    const named = prioritizedMustTerms.includes(query);
+    // Nor must "hamstring" land on a hamstring stretch: a stretch or drill
+    // fills a slot only when the slot's own word says so ("world's greatest
+    // stretch" in the mobility focus) — the pickers' rule, read off the word.
+    const namesANonSet = named || !isBrowsableExercise({ name: query });
     const match = items.find((item) => {
-      if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment)) {
+      if (usedIds.has(item.id) || !allowedEquipment.has(displayEquipmentValue(item))) {
+        return false;
+      }
+      if (!named && isSpecialtyExercise(item)) {
+        return false;
+      }
+      if (!namesANonSet && !isBrowsableExercise(item)) {
         return false;
       }
 
@@ -621,8 +657,17 @@ function chooseLibraryExercise(args: {
     }
   }
 
+  // The app choosing with no word to go on: a set among normal exercises,
+  // never a stretch or a strongman implement. The mobility focus fell through
+  // to here on every one-day plan and handed out Chin To Chest Stretch
+  // (#bugs 2026-10-06, 45 of 2,025 plans).
   const fallback = items.find((item) => {
-    if (usedIds.has(item.id) || !allowedEquipment.has(item.equipment)) {
+    if (
+      usedIds.has(item.id) ||
+      !allowedEquipment.has(displayEquipmentValue(item)) ||
+      isSpecialtyExercise(item) ||
+      !isBrowsableExercise(item)
+    ) {
       return false;
     }
 
@@ -671,7 +716,7 @@ function appendUnplacedMustIncludes(args: {
   items: ExerciseLibraryItem[];
   mustIncludeTerms: string[];
   usedMustIncludeTerms: Set<string>;
-  allowedEquipment: Set<ExerciseEquipment>;
+  allowedEquipment: Set<DisplayEquipmentValue>;
   avoidTerms: string[];
   usedIds: Set<string>;
   goal: ReturnType<typeof mapSetupGoalToAiGoal>;
@@ -769,7 +814,11 @@ export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibr
         const nextSlot = slot.key === 'focus' && focusBodyPart
           ? {
               ...slot,
-              bodyParts: [focusBodyPart],
+              // Mobility reads as "full body", which none of its own words
+              // is filed under (World's Greatest Stretch is a legs row), so
+              // the slot fell through to the first full-body lift — an
+              // isometric neck exercise. Its words decide where it lands.
+              bodyParts: focusBodyPart === 'full body' ? undefined : [focusBodyPart],
               search:
                 focusBodyPart === 'chest'
                   ? ['barbell incline bench press', 'incline dumbbell bench press', 'cable crossover']
@@ -780,7 +829,7 @@ export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibr
                       : focusBodyPart === 'legs'
                         ? ['leg press', 'walking lunge', 'split squat']
                         : focusBodyPart === 'full body'
-                          ? ['world greatest stretch', 'walking lunge', 'plank']
+                          ? ["world's greatest stretch", 'walking lunge', 'plank']
                         : focusBodyPart === 'glutes'
                           ? ['hip thrust', 'glute bridge', 'walking lunge']
                           : focusBodyPart === 'biceps'

@@ -1,8 +1,10 @@
 import { getRecommendationProgramDefinition } from './recommendationCatalog';
+import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
 import { formatLiftDisplayLabel } from './displayLabel';
 import { pickPoolVariant, SUPPLEMENTAL_DAY_POOL, SupplementalDayKind } from './catalogExercisePools';
+import { projectTrainingWeekdays } from './programTrainingDays';
 import { resolveAvailableEquipment } from './equipmentExerciseFilter';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type {
@@ -21,7 +23,6 @@ import type {
 import type { SetupFocusArea, SetupWeekday } from '../types/models';
 
 const STARTER_PHASE_LABELS = ['Week 1 Baseline', 'Week 2 Build', 'Week 3 Build', 'Week 4 Review + easier week'];
-const WEEKDAY_ORDER: SetupWeekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 const DEFAULT_RHYTHM_BY_DAYS: Record<number, SetupWeekday[]> = {
   2: ['mon', 'thu'],
   3: ['mon', 'wed', 'fri'],
@@ -324,66 +325,9 @@ function getWeekdayShortLabel(day: SetupWeekday) {
   }
 }
 
-function normalizeWeekdays(days: SetupWeekday[]) {
-  return [...new Set(days)].sort((left, right) => WEEKDAY_ORDER.indexOf(left) - WEEKDAY_ORDER.indexOf(right));
-}
-
-function buildCombinationList(days: SetupWeekday[], targetSize: number): SetupWeekday[][] {
-  if (targetSize <= 0) {
-    return [[]];
-  }
-
-  if (days.length < targetSize) {
-    return [];
-  }
-
-  if (targetSize === 1) {
-    return days.map((day) => [day]);
-  }
-
-  const combinations: SetupWeekday[][] = [];
-  days.forEach((day, index) => {
-    buildCombinationList(days.slice(index + 1), targetSize - 1).forEach((combination) => {
-      combinations.push([day, ...combination]);
-    });
-  });
-
-  return combinations;
-}
-
-function scoreWeekdayCombination(days: SetupWeekday[]) {
-  const indexes = normalizeWeekdays(days).map((day) => WEEKDAY_ORDER.indexOf(day));
-  const gaps = indexes.map((current, index) => {
-    const next = indexes[(index + 1) % indexes.length];
-    return index === indexes.length - 1 ? next + 7 - current : next - current;
-  });
-
-  return Math.min(...gaps) * 100 - (Math.max(...gaps) - Math.min(...gaps)) * 10 - indexes.reduce((sum, value) => sum + value, 0);
-}
-
 function resolveProjectedTrainingDays(selection: FirstRunSetupSelection, daysPerWeek: number) {
   const defaultRhythm = DEFAULT_RHYTHM_BY_DAYS[daysPerWeek] ?? DEFAULT_RHYTHM_BY_DAYS[3];
-  if (selection.scheduleMode !== 'self_managed') {
-    return defaultRhythm;
-  }
-
-  const normalizedDays = normalizeWeekdays(selection.availableDays);
-  if (normalizedDays.length < defaultRhythm.length) {
-    return defaultRhythm;
-  }
-
-  if (normalizedDays.length === defaultRhythm.length) {
-    return normalizedDays;
-  }
-
-  const combinations = buildCombinationList(normalizedDays, defaultRhythm.length);
-  if (combinations.length === 0) {
-    return defaultRhythm;
-  }
-
-  return combinations.reduce((best, current) =>
-    scoreWeekdayCombination(current) > scoreWeekdayCombination(best) ? current : best,
-  );
+  return projectTrainingWeekdays(selection, defaultRhythm);
 }
 
 function roundToNearestTen(value: number) {
@@ -677,14 +621,19 @@ function buildPlanReadyWeeklySchedule(selection: FirstRunSetupSelection, program
   // own language rather than a word it cannot translate back.
   const rhythmDays = resolveProjectedTrainingDays(selection, plannedDaysPerWeek);
   const rhythm = rhythmDays.map((day) => getWeekdayShortLabel(day));
-  const templateDays = [...template.sessions]
-    .sort((left, right) => left.orderIndex - right.orderIndex)
+  const orderedSessions = [...template.sessions].sort((left, right) => left.orderIndex - right.orderIndex);
+  // Home's number for each day, not the catalog's one figure for every day
+  // (bug hunt, 2026-10-04).
+  const sessionMinutes = estimateProgrammeSessionMinutesList(orderedSessions, {
+    availableEquipment: resolveAvailableEquipment(selection),
+  });
+  const templateDays = orderedSessions
     .map((session, index): RecommendationPlanReadyScheduleDay => ({
       id: session.id,
       weekday: rhythmDays[index] ?? null,
       weekdayLabel: rhythm[index] ?? `Day ${index + 1}`,
       name: session.name,
-      meta: `${template.estimatedSessionDuration} min - ${pluralize(session.exercises.length, 'exercise')}`,
+      meta: `${sessionMinutes[index] || template.estimatedSessionDuration} min - ${pluralize(session.exercises.length, 'exercise')}`,
       keyLifts: session.exercises.slice(0, 2).map((exercise) => formatLiftDisplayLabel(exercise.exerciseName)),
       source: 'template',
       note: null,

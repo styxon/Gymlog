@@ -90,15 +90,19 @@ module.exports = [
   {
     name: 'workout content fit validates every strength template has heavy anchors',
     run() {
-      // The gainer catalog tags the postpartum recovery programme as
-      // goalType 'strength' but its content is intentionally gentle - no
-      // low-rep loaded anchor lifts. Pin that exception explicitly so any
-      // OTHER anchor-less strength template still fails this test.
-      const GENTLE_STRENGTH_EXCEPTIONS = new Set(['tpl_gainer_postpartum_recovery_v1']);
+      // The postpartum recovery programme used to be the one exception here:
+      // the generator filed it under strength, and its gentle content has no
+      // heavy anchor. It is general fitness now (catalog audit, 2026-10-06),
+      // so every loaded strength template is held to its anchors, no exceptions.
+      // The two bodyweight strength programmes are strength without a load: their
+      // anchors are hard variations at low reps (a decline push-up for six, a
+      // pistol squat for four), not loaded lifts. They are held to that instead of
+      // being let through unchecked: every lead lift unloaded, five or six reps at
+      // most, and enough of them (tests/lib/recommendationFixes20261005.test.cjs).
+      const BODYWEIGHT_STRENGTH = new Set(['tpl_home_bodyweight_strength_3_day_v1', 'tpl_home_calisthenics_strength_5_day_v1']);
       const strengthTemplates = WORKOUT_TEMPLATES_V1.filter((template) => template.goalType === 'strength');
 
       assert.ok(strengthTemplates.length >= 3);
-      assert.ok(strengthTemplates.some((template) => GENTLE_STRENGTH_EXCEPTIONS.has(template.id)));
 
       strengthTemplates.forEach((template) => {
         const fit = evaluateWorkoutContentFit(template.id, {
@@ -106,11 +110,10 @@ module.exports = [
           setupContext: 'full_gym',
         });
 
-        if (GENTLE_STRENGTH_EXCEPTIONS.has(template.id)) {
-          // Deliberately anchor-free recovery content; keep it beginner and short.
+        if (BODYWEIGHT_STRENGTH.has(template.id)) {
           assert.equal(fit.signals.hasLowRepLoadedAnchors, false, template.id);
-          assert.equal(template.level, 'beginner', template.id);
-          assert.equal(fit.signals.averageSessionMinutes <= 40, true, template.id);
+          assert.equal(fit.signals.loadedExerciseCount, 0, template.id);
+          assert.equal(fit.signals.primarySetCount >= 6, true, template.id);
           return;
         }
 

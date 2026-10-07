@@ -82,6 +82,7 @@ import { formatLastOwnBlock, OwnBlockPhase, OwnBlockStats } from '../lib/ownBloc
 import { buildWarmupBrief } from '../lib/warmupBrief';
 import {
   HOLD_DIAL,
+  MINUTES_DIAL,
   REPS_DIAL,
   commitDialReps,
   commitDialWeight,
@@ -91,6 +92,16 @@ import {
 } from '../lib/weightDial';
 import { isLiftableWeight } from '../lib/weightLimits';
 import {
+  minutesToLog,
+  MinutesStopwatch,
+  msUntilNextMinutesChange,
+  pauseStopwatch,
+  startStopwatch,
+  stopwatchElapsedMs,
+  STOPPED_STOPWATCH,
+} from '../lib/minutesExercises';
+import { formatCardioDuration } from '../lib/cardio';
+import {
   exerciseCardAccessibilityLabel,
   setFieldAccessibilityLabel,
   weightStepAccessibilityLabel,
@@ -98,6 +109,7 @@ import {
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { getExerciseTeaching } from '../lib/exerciseTeaching';
 import { buildExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
+import { programmeSetCount, toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
@@ -126,18 +138,18 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { exerciseMatchesQuery, oneRowPerShownName, rankExerciseMatches } from '../lib/exerciseSearch';
+import { exerciseMatchesQuery, oneRowPerShownName } from '../lib/exerciseSearch';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
-import { ExerciseLibraryRow, exerciseLibraryRowMeta, getItemImage } from '../components/ExerciseLibraryBrowser';
-import {
-  BODY_PART_FILTERS,
-  BodyPartFilter,
-  filterBrowsableExercises,
-  matchesBodyPartFilter,
-} from '../lib/exerciseBrowseFilter';
+import { guidedClockHeld } from '../lib/guidedClockHold';
+import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
+import { fitRunPreview } from '../lib/guidedRunPreview';
+import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
+import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
+import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from '../lib/exercisePicker';
+import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, orderSwapCandidates, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -150,6 +162,7 @@ import {
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet } from '../lib/liftSegments';
 import {
+  isMinutesTrackingMode,
   isTimedTrackingMode,
   isUnloadedTrackingMode,
   WorkoutExerciseInstance,
@@ -1284,25 +1297,28 @@ const NO_RECENT_EXERCISES: ExerciseLibraryItem[] = [];
 const SHEET_DISMISS_DRAG = 90;
 /** …or how fast it was still moving down when let go. */
 const SHEET_DISMISS_VELOCITY = 0.9;
+/**
+ * The walk-up's contents list draws its heading and rows at exactly these
+ * heights, so the space they need can be worked out before they are drawn
+ * (lib/guidedRunPreview).
+ */
+const WALK_RUN_HEAD = 28;
+const WALK_RUN_ROW = 30;
+/** The walk-up scroll's own padding (28 top, 8 bottom) and the gap above the list. */
+const WALK_RUN_CHROME = 28 + 8 + 14;
+/** The sheet's height cap (`sheetFrame`), as a share of the scrim. */
+const SHEET_CAP_FRACTION = 0.78;
 
 function GPSheet({
   title,
   language,
   onClose,
   bottomInset,
-  tall = false,
+  scrollable = false,
   children,
 }: {
   /** Drawn in the grab zone beside the close button, so the title is a handle too. */
   title: string;
-  /**
-   * 90% of the screen, fixed, instead of as tall as the content up to 78%.
-   * For a sheet that is a list to choose from — the swap sheet's picture
-   * rows — where room is rows and a sheet that resizes as the search narrows
-   * would move them under the thumb (#bugs 2026-09-30: no 55→90 drag, straight
-   * to 90).
-   */
-  tall?: boolean;
   /** For the close button's name. */
   language: AppLanguage;
   onClose: () => void;
@@ -1311,10 +1327,30 @@ function GPSheet({
    * inside this Modal, `useSafeAreaInsets` itself always answers 0.
    */
   bottomInset: number;
+  /**
+   * The children are a list that may be longer than the sheet: GPSheet
+   * scrolls them itself, bounded by MEASURED space — the scrim it stands in,
+   * its own head, its bottom padding with the inset (lib/sheetScrollBound).
+   * The contents sheet's own bound was a guess from the window and lost its
+   * last rows below the sheet on a nine-lift day (#bugs 2026-10-06).
+   */
+  scrollable?: boolean;
   children: React.ReactNode;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { height: windowHeight } = useWindowDimensions();
+  // Measured on layout; the window and the head's usual height stand in for
+  // the first frame only.
+  const [areaHeight, setAreaHeight] = useState<number | null>(null);
+  const [headHeight, setHeadHeight] = useState<number | null>(null);
+  const bottomPadding = bottomInset + 30;
+  const listMaxHeight = sheetScrollMaxHeight({
+    areaHeight: areaHeight ?? windowHeight,
+    capFraction: SHEET_CAP_FRACTION,
+    headHeight: headHeight ?? 81,
+    bottomPadding,
+  });
   // The sheet's own 30 was a guess at the phone's navigation bar, and on a
   // three-button handset the last row and the footnote sat behind it. Measured
   // rather than guessed — reported twice, on two different sheets.
@@ -1356,18 +1392,28 @@ function GPSheet({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.sheetScrim} onPress={onClose}>
+      <Pressable
+        style={styles.sheetScrim}
+        onPress={onClose}
+        onLayout={(event) => setAreaHeight(Math.round(event.nativeEvent.layout.height))}
+      >
         {/* The 78% cap lives on this wrapper, whose parent is the full-screen
             scrim: on the sheet inside it the percentage would resolve against
             a content-sized parent and quietly stop capping anything. */}
         <Animated.View
-          style={[styles.sheetFrame, tall ? styles.sheetFrameTall : null, { transform: [{ translateY: dragY }] }]}
+          style={[styles.sheetFrame, { transform: [{ translateY: dragY }] }]}
         >
           <Pressable
-            style={[styles.sheet, tall ? { flex: 1 } : null, { paddingBottom: bottomInset + 30 }]}
+            style={[styles.sheet, { paddingBottom: bottomPadding }]}
             onPress={() => undefined}
           >
-            <View {...pan.panHandlers} style={styles.sheetGrab}>
+            {/* Measured: the sheet's paddingTop and the grab's -12 margin
+                cancel, so the grab's own height is the whole head. */}
+            <View
+              {...pan.panHandlers}
+              style={styles.sheetGrab}
+              onLayout={(event) => setHeadHeight(Math.round(event.nativeEvent.layout.height))}
+            >
               <View style={styles.sheetHandle} />
               <View style={styles.sheetTitleRow}>
                 <Text style={styles.sheetTitleText}>{title}</Text>
@@ -1382,7 +1428,19 @@ function GPSheet({
                 </Pressable>
               </View>
             </View>
-            {children}
+            {scrollable ? (
+              <ScrollView
+                style={[styles.sheetScroll, { maxHeight: listMaxHeight }]}
+                contentContainerStyle={styles.sheetScrollContent}
+                // Android hides the bar until a scroll starts, and a list
+                // that does not look scrollable was reported as cut off.
+                persistentScrollbar
+              >
+                {children}
+              </ScrollView>
+            ) : (
+              children
+            )}
           </Pressable>
         </Animated.View>
       </Pressable>
@@ -1474,15 +1532,6 @@ function GuidedPlayer({
   const themeName = useThemeName();
   const workout = useWorkoutContext();
   const session = workout.activeSession;
-  // The contents sheet's list is bounded by the screen. The sheet's own
-  // maxHeight does not bound a ScrollView inside it (the swap list learned the
-  // same), so a long session grew past the bottom and the last lifts could not
-  // be reached (device, 2026-09-16).
-  // Also inside the sheet's own cap (78 %) less what sits around the list —
-  // handle, title and bottom padding, about 160 — or on a short screen the
-  // sheet would clip the list's end again.
-  const { height: windowHeight } = useWindowDimensions();
-  const runSheetListMaxHeight = Math.round(Math.min(windowHeight * 0.6, windowHeight * 0.78 - 160));
 
   /**
    * The session clock, derived here rather than ticked into global state.
@@ -1765,6 +1814,13 @@ function GuidedPlayer({
    * last one, and a second add landed before the first (#bugs 2026-10-02).
    */
   const [walkAdded, setWalkAdded] = useState<Record<string, WalkAddedLifts>>({});
+  /**
+   * The walk-up's scroll area and everything in it above the contents list,
+   * measured: what is left between them is the room the list may take
+   * (#bugs 2026-10-06, "jos mahtuu … koko ohjelman sisältö luettavissa").
+   */
+  const [walkViewportHeight, setWalkViewportHeight] = useState(0);
+  const [walkTopHeight, setWalkTopHeight] = useState(0);
   /** The slots that existed before a walk-up add, so the one it creates can be found. */
   const walkInsertRef = useRef<{ introSlotId: string; known: Set<string> } | null>(null);
   /**
@@ -1827,6 +1883,14 @@ function GuidedPlayer({
    * wherever `swapQuery` is, so every opening starts from the lift again.
    */
   const [swapBodyPartFilter, setSwapBodyPartFilter] = useState<BodyPartFilter | null>(null);
+  /**
+   * The sheet's other two filter groups. The swap sheet is the add sheet now
+   * (#bugs 2026-10-06), so it filters the same three ways; these two open on
+   * "all", reset with the rest, and narrow the candidates the swap already
+   * ordered rather than re-ordering them.
+   */
+  const [swapCategory, setSwapCategory] = useState<ExercisePickerFilters['category']>('all');
+  const [swapEquipment, setSwapEquipment] = useState<SheetEquipmentOption>('all');
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   /** The lift whose final set was just logged — a one-second check-splash
       before the next exercise's walk-up screen. Null = no splash showing. */
@@ -1860,16 +1924,21 @@ function GuidedPlayer({
   // `restEditOpen` joined when the rest started running out into the set
   // (review, PR #88): its edits commit on Save only, and a rest that expired
   // behind the sheet would have unmounted a correction half-made.
-  // `runSheetOpen` joined when the sheet began carrying the corrections: a
-  // rest that ran out under an open sheet moved the session on, and the lift
-  // the reader was about to correct vanished from under their thumb
-  // (device, 2026-09-16). Not during intervals, though: there both halves
-  // ARE the workout, and a runner who glances at the sheet mid-bout must not
-  // find the clock stopped.
-  const intervalRunning =
-    (step.type === 'set' && step.interval !== undefined) || (step.type === 'rest' && Boolean(step.recoveryKind));
-  const runSheetHolds = runSheetOpen && !intervalRunning;
-  const frozen = paused || howtoOpen || exitOpen || pauseSheetOpen || swapOpen || addExerciseOpen || restEditOpen || runSheetHolds || ownBlock !== null || restAsk.sheetOpen;
+  // `runSheetOpen` is NOT here, on purpose: the contents sheet is read
+  // during a rest, and the rest keeps counting under it and still ends with
+  // its cue and its OS alert (#bugs 2026-10-06; lib/guidedClockHold).
+  const frozen = guidedClockHeld({
+    paused,
+    howToOpen: howtoOpen,
+    exitOpen,
+    pauseSheetOpen,
+    swapOpen,
+    addExerciseOpen,
+    restEditOpen,
+    runSheetOpen,
+    ownBlockActive: ownBlock !== null,
+    restAlertsAskOpen: restAsk.sheetOpen,
+  });
   // Seconds since the reader said they would do it themselves. Derived from
   // the session clock's tick so it needs no timer of its own.
   const ownElapsedSeconds = ownBlock ? Math.max(0, Math.floor((clockNowMs - ownBlock.startedAt) / 1000)) : 0;
@@ -2080,6 +2149,46 @@ function GuidedPlayer({
     return <View style={{ flex: 1, backgroundColor: theme.bg }} />;
   }
 
+  /**
+   * "4 × 8" for one lift of the contents list: what is still asked of it, not
+   * what was lifted. Shared by the contents sheet and the walk-up's list, so
+   * the two say the same thing about the same lift.
+   */
+  const runPlanLine = (slotId: string | null): string => {
+    const lift = slotId ? exerciseBySlot.get(slotId) : undefined;
+    // Read off the next set still to do (planSetOf): a swap rewrites only
+    // the sets ahead.
+    const planSet = lift ? planSetOf(lift.sets) : undefined;
+    return lift && planSet
+      ? formatSetScheme(
+          lift.sets.length,
+          // The lowered target, when there is one — the plan says what the
+          // dial will open on.
+          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
+          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
+          lift.trackingMode,
+        )
+      : '';
+  };
+
+  /**
+   * The walk-up's slice of the contents: as many rows as the room under its
+   * cards holds, the lift being walked up to first (lib/guidedRunPreview).
+   * Null — no list at all — until both heights are measured, and whenever
+   * not one row fits; the buttons below never give way to it.
+   */
+  const walkRunItems = step.type === 'position' ? buildGuidedRunSheet(stepPlan, stepIndex) : [];
+  const walkRunFit =
+    step.type === 'position' && walkViewportHeight > 0 && walkTopHeight > 0
+      ? fitRunPreview({
+          count: walkRunItems.length,
+          currentIndex: walkRunItems.findIndex((item) => item.status === 'current'),
+          availableHeight: walkViewportHeight - WALK_RUN_CHROME - walkTopHeight,
+          headHeight: WALK_RUN_HEAD,
+          rowHeight: WALK_RUN_ROW,
+        })
+      : null;
+
   const completedSetCount = exercises.reduce(
     (sum, exercise) => sum + exercise.sets.filter((set) => set.status === 'completed').length,
     0,
@@ -2241,16 +2350,23 @@ function GuidedPlayer({
         requireLoaded: instance ? !isUnloadedTrackingMode(instance.trackingMode) : false,
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
       });
-      const last = resolved?.entry ?? null;
-      if (!last) {
+      const found = resolved?.entry ?? null;
+      if (!found) {
         return null;
       }
+      // The working sets, as the prefill reads them (lib/warmupSets): the
+      // panel listing a warm-up as set 1 above a dial that opens on the work
+      // was two answers to one question (review, 2026-10-05).
+      // Against the programme's count, not the live one: a set added
+      // mid-session must not change which of last time's sets were warm-ups.
+      const last = toWorkingHistoryEntry(found, instance ? programmeSetCount(instance.sets) : found.sets.length);
       const heaviest = Math.max(...last.sets.map((set) => set.loadKg));
       return {
         performedAt: last.performedAt,
         // Said out loud rather than passed off as this slot's own record —
         // it is a real number, lifted on a different day.
         borrowed: resolved?.borrowed ?? false,
+        warmups: last.warmups,
         sets: last.sets.map((set) => ({
           setIndex: set.setIndex + 1,
           loadKg: set.loadKg,
@@ -2381,6 +2497,11 @@ function GuidedPlayer({
    * whole library (effectiveSwapBodyPart).
    */
   const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart(swapBodyPartFilter, swapBrowsePrefilter, swapQuery);
+  /** The three groups the sheet draws, as the swap list applies them. */
+  const swapFilters = useMemo<ExercisePickerFilters>(
+    () => ({ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment }),
+    [swapBodyPart, swapCategory, swapEquipment],
+  );
 
   /**
    * Everything else the library holds.
@@ -2399,44 +2520,65 @@ function GuidedPlayer({
     // to swap it for.
     const current = actionExercise?.exerciseName;
     const currentLabel = current ? exerciseNameLabel(language, current) : null;
-    // What can be logged as sets, until the reader types: a stretch is no
-    // swap for a bench press, and "Rinnan venytys kädet niskan takana" sat in
-    // the chest list (device, 2026-09-30). The add-exercise sheet has hidden
-    // them the same way since #bugs 2026-08-26; a query finds them.
-    const pool = filterBrowsableExercises(exerciseLibrary, { query }).filter(
+    // Every picker's one list (lib/exercisePicker): what can be logged as
+    // sets until the reader types — a stretch is no swap for a bench press,
+    // and "Rinnan venytys kädet niskan takana" sat in the chest list (device,
+    // 2026-09-30) — the specialty movements only under their own chip
+    // (#bugs 2026-10-06), and the sheet's three chip groups, the body part
+    // the lift's own until the reader picks another (swapBodyPart). Ranked
+    // best answer first under a query, popularity breaking ties — the same
+    // rule as the add sheet, so the two do not disagree.
+    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
+    const pool = listPickerExercises(exerciseLibrary, {
+      query,
+      filters: swapFilters,
+      language,
+      popularity: (item) => popular.get(item.id),
+    }).filter(
       (item) =>
         item.name !== current &&
         exerciseNameLabel(language, item.name) !== currentLabel &&
         !sessionLiftLabels.has(exerciseNameLabel(language, item.name)) &&
-        !suggested.has(exerciseNameLabel(language, item.name)) &&
-        // The body-part chip, the lift's own until the reader picks another
-        // (swapBodyPart). Composes with the typed query below rather than
-        // replacing it, like the library screen's own chips do.
-        matchesBodyPartFilter(item, swapBodyPart),
+        !suggested.has(exerciseNameLabel(language, item.name)),
     );
     if (!query) {
       // Nearest the lift first — same kit, same kind of lift — then
       // popularity (orderSwapCandidates).
-      const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
       const nearest = orderSwapCandidates(pool, swapCurrentLibraryItem, popular);
       return oneRowPerShownName(nearest, language).slice(0, 25);
     }
-    // Best answer first, popularity breaking ties — the same rule as the
-    // pickers, so the swap sheet does not disagree with them.
-    const popular = getPopularExerciseLibraryOrder(exerciseLibrary);
     // One row per shown name, as on Home and the programme day (PR review).
-    const ranked = rankExerciseMatches(pool, query, language, (item) => popular.get(item.id));
-    return oneRowPerShownName(ranked, language).slice(0, 40);
+    return oneRowPerShownName(pool, language).slice(0, 40);
   }, [
     actionExercise,
     exerciseLibrary,
     language,
     sessionLiftLabels,
-    swapBodyPart,
     swapCurrentLibraryItem,
+    swapFilters,
     swapSuggestions,
     swapQuery,
   ]);
+
+  /**
+   * The programme's alternatives as the sheet's first cards. The body-part
+   * chip does not reach them — it opens on the lift's own body part, and the
+   * alternatives are the programme's answer whatever chip is on — but a
+   * category or equipment chip does: a reader who taps "Käsipaino" is asking
+   * for dumbbell lifts, and a barbell card above them would argue with the
+   * chip. An alternative the library does not hold cannot be checked, so it
+   * steps aside while one of those two is on.
+   */
+  const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(() => {
+    const narrowed = swapFilters.category !== 'all' || swapFilters.equipment !== 'all';
+    return swapSuggestionRows
+      .filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, { ...swapFilters, bodyPart: 'all' })))
+      .map(({ name, item }) => ({ key: `suggested-${name}`, name, item }));
+  }, [swapFilters, swapSuggestionRows]);
+  const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
+    () => swapLibrary.map((item) => ({ key: item.id, name: item.name, item })),
+    [swapLibrary],
+  );
 
   const applySwap = (exerciseName: string) => {
     if (!actionExercise) {
@@ -2451,6 +2593,8 @@ function GuidedPlayer({
     setSwapOpen(false);
     setSwapQuery('');
     setSwapBodyPartFilter(null);
+    setSwapCategory('all');
+    setSwapEquipment('all');
     unpause();
   };
 
@@ -2724,9 +2868,11 @@ function GuidedPlayer({
   // than the screen the user had just come from.
   const durationMinutes = estimateSessionMinutes({
     exercises: activeExercises.map((exercise) => ({
+      name: exercise.exerciseName,
       sets: exercise.sets.length,
       reps: exercise.sets[0]?.plannedRepsMax ?? 8,
       timed: isTimedTrackingMode(exercise.trackingMode),
+      minutes: isMinutesTrackingMode(exercise.trackingMode),
       restSeconds: exercise.restSecondsMin,
       // A superset rests once per round, not once per lift — see
       // estimateSessionSeconds. Without this the entry screen quotes a session
@@ -2781,6 +2927,7 @@ function GuidedPlayer({
           setCount: exercise.sets.length,
           repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
           timed: isTimedTrackingMode(exercise.trackingMode),
+          minutes: isMinutesTrackingMode(exercise.trackingMode),
           loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
         })),
         language,
@@ -2936,9 +3083,9 @@ function GuidedPlayer({
       todayValue:
         target.loadKg != null && target.loadKg > 0
           ? formatLoadOrRange(todayLoads) ?? formatWeight(target.loadKg, unitPreference)
-          : t(language, target.timed ? 'guided.target.seconds' : 'guided.target.reps', {
-              reps: target.reps,
-            }),
+          : // The unloaded label whatever the load says: a lift with no weight
+            // yet opens at 0 kg, and "8 × 0 kg" is not a target.
+            formatGuidedTarget({ ...target, loadKg: null }, language),
       // A lift that runs into the next one has no rest after it, so the card
       // names what does follow. Quoting the lift's own rest here would be the
       // same promise the day view stopped making — and worse on this screen,
@@ -3168,6 +3315,7 @@ function GuidedPlayer({
                                 setCount: exercise.sets.length,
                                 repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
                                 timed: isTimedTrackingMode(exercise.trackingMode),
+                                minutes: isMinutesTrackingMode(exercise.trackingMode),
                                 loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
                               },
                               unitPreference,
@@ -3585,83 +3733,154 @@ function GuidedPlayer({
                 style={{ flex: 1, minHeight: 0 }}
                 contentContainerStyle={{ paddingTop: 28, paddingHorizontal: 24, paddingBottom: 8, gap: 14 }}
                 showsVerticalScrollIndicator={false}
+                onLayout={(event) => setWalkViewportHeight(Math.floor(event.nativeEvent.layout.height))}
               >
-                {/* No card for the lift that just ended. It was a splash
-                    once, then a card at the top of this screen (2026-09-04),
-                    then two lines of it (2026-09-09) — and then not worth its
-                    room at all: the numbers are in the contents sheet, and
-                    without them the lift coming up, its picture and the swap
-                    all sit higher, with room to press (#bugs 2026-09-30,
-                    "poistetaan tuo mitä on viimeksi tehty se vie liikaa
-                    tilaa"). */}
-                <View style={{ alignItems: 'center', gap: 8 }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: '800', letterSpacing: 2, color: theme.highlight }}>
-                    {t(language, 'guided.nextUp')}
-                  </Text>
-                  {/* One line, the type shrinking to fit rather than the name
-                      wrapping (device, 2026-09-16): a two-line name was the
-                      line that pushed this screen into a scroll, and a walk-up
-                      is read in one glance or not at all. */}
-                  <Text
-                    style={styles.positionName}
-                    numberOfLines={1}
-                    adjustsFontSizeToFit
-                    minimumFontScale={0.5}
-                    accessibilityLabel={exerciseNameLabel(language, step.exerciseName)}
-                  >
-                    {exerciseListLabel(language, step.exerciseName)}
-                  </Text>
-                </View>
-
-                {/* Bigger. The shape was right and the box was not (user
-                    2026-09-04) — and the screen has the room, having lost a
-                    countdown. A little under the 230 it was, so the whole
-                    walk-up fits without scrolling (device, 2026-09-16). */}
-                <MediaZone
-                  name={step.exerciseName}
-                  library={exerciseLibrary}
-                  height={210}
-                  mode="set"
-                  showActions={false}
-                  fit="cover"
-                  language={language}
-                />
-
-                {/* Two cards, one question each: what you did last time, and
-                    what today asks of you. The plan used to be one line of
-                    small print under the name. Last time on the left, now on
-                    the right — read left to right, from then to today (#bugs
-                    2026-09-30, "Vaihda viimeksi ja nyt paikkaa"). */}
-                <View style={{ flexDirection: 'row', gap: 10 }}>
-                  <View style={styles.walkStat}>
-                    {/* "VIIMEKSI", whichever day of the plan it was: the
-                        "ERI PÄIVÄ" second line went on request, here and on
-                        the set card (#bugs 2026-09-30). A screen reader still
-                        hears it on the set card. */}
-                    <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.last')}</Text>
-                    <Text style={styles.walkStatValue}>{walkNext?.lastValue ?? '—'}</Text>
-                    {walkNext?.lastReps ? (
-                      <Text style={styles.walkStatSub}>{walkNext.lastReps}</Text>
-                    ) : null}
-                  </View>
-                  <View style={[styles.walkStat, { borderColor: theme.highlight }]}>
-                    <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.today')}</Text>
-                    <Text style={[styles.walkStatValue, { color: theme.highlight }]}>
-                      {walkNext?.todayValue ?? '—'}
+                {/* Measured as one block, so the contents list below knows the
+                    room that is left (walkRunFit). */}
+                <View
+                  style={{ gap: 14 }}
+                  onLayout={(event) => setWalkTopHeight(Math.ceil(event.nativeEvent.layout.height))}
+                >
+                  {/* No card for the lift that just ended. It was a splash
+                      once, then a card at the top of this screen (2026-09-04),
+                      then two lines of it (2026-09-09) — and then not worth its
+                      room at all: the numbers are in the contents sheet, and
+                      without them the lift coming up, its picture and the swap
+                      all sit higher, with room to press (#bugs 2026-09-30,
+                      "poistetaan tuo mitä on viimeksi tehty se vie liikaa
+                      tilaa"). */}
+                  <View style={{ alignItems: 'center', gap: 8 }}>
+                    <Text style={{ fontSize: 12.5, fontWeight: '800', letterSpacing: 2, color: theme.highlight }}>
+                      {t(language, 'guided.nextUp')}
                     </Text>
-                    {walkNext?.planLine ? (
-                      <Text style={styles.walkStatSub}>{walkNext.planLine}</Text>
-                    ) : null}
+                    {/* One line, the type shrinking to fit rather than the name
+                        wrapping (device, 2026-09-16): a two-line name was the
+                        line that pushed this screen into a scroll, and a walk-up
+                        is read in one glance or not at all. */}
+                    <Text
+                      style={styles.positionName}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.5}
+                      accessibilityLabel={exerciseNameLabel(language, step.exerciseName)}
+                    >
+                      {exerciseListLabel(language, step.exerciseName)}
+                    </Text>
                   </View>
+
+                  {/* Bigger. The shape was right and the box was not (user
+                      2026-09-04) — and the screen has the room, having lost a
+                      countdown. A little under the 230 it was, so the whole
+                      walk-up fits without scrolling (device, 2026-09-16). */}
+                  <MediaZone
+                    name={step.exerciseName}
+                    library={exerciseLibrary}
+                    height={210}
+                    mode="set"
+                    showActions={false}
+                    fit="cover"
+                    language={language}
+                  />
+
+                  {/* Two cards, one question each: what you did last time, and
+                      what today asks of you. The plan used to be one line of
+                      small print under the name. Last time on the left, now on
+                      the right — read left to right, from then to today (#bugs
+                      2026-09-30, "Vaihda viimeksi ja nyt paikkaa"). */}
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <View style={styles.walkStat}>
+                      {/* "VIIMEKSI", whichever day of the plan it was: the
+                          "ERI PÄIVÄ" second line went on request, here and on
+                          the set card (#bugs 2026-09-30). A screen reader still
+                          hears it on the set card. */}
+                      <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.last')}</Text>
+                      <Text style={styles.walkStatValue}>{walkNext?.lastValue ?? '—'}</Text>
+                      {walkNext?.lastReps ? (
+                        <Text style={styles.walkStatSub}>{walkNext.lastReps}</Text>
+                      ) : null}
+                    </View>
+                    <View style={[styles.walkStat, { borderColor: theme.highlight }]}>
+                      <Text style={styles.walkStatLabel}>{t(language, 'guided.walk.today')}</Text>
+                      <Text style={[styles.walkStatValue, { color: theme.highlight }]}>
+                        {walkNext?.todayValue ?? '—'}
+                      </Text>
+                      {walkNext?.planLine ? (
+                        <Text style={styles.walkStatSub}>{walkNext.planLine}</Text>
+                      ) : null}
+                    </View>
+                  </View>
+
+                  {/* The same finding Home's card shows, once, here — so
+                      dismissing that card does not make the lift's own stall
+                      unmentioned the next time it comes up (user 2026-09-29). */}
+                  {walkPlateau ? (
+                    <View style={styles.walkPlateauBanner}>
+                      <Text style={styles.walkPlateauText}>{walkPlateau.headline}</Text>
+                    </View>
+                  ) : null}
                 </View>
 
-                {/* The same finding Home's card shows, once, here — so
-                    dismissing that card does not make the lift's own stall
-                    unmentioned the next time it comes up (user 2026-09-29). */}
-                {walkPlateau ? (
-                  <View style={styles.walkPlateauBanner}>
-                    <Text style={styles.walkPlateauText}>{walkPlateau.headline}</Text>
-                  </View>
+                {/* The whole session, in the room under the cards — when there
+                    is room (#bugs 2026-10-06, "jos mahtuu, olisi hyvä tässäkin
+                    ruudussa olla koko ohjelman sisältö luettavissa"). The same
+                    rows as the contents sheet: done, here, to come, each with
+                    what is still asked of it. As many as fit, the lift coming
+                    up first; the rest are counted on the last line, and a tap
+                    opens the full sheet. On a phone with no room nothing is
+                    drawn and the screen is what it was — the rail under it
+                    still opens the sheet, and the buttons never move. */}
+                {walkRunFit ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityHint={t(language, 'guided.runSheet.open')}
+                    onPress={() => setRunSheetOpen(true)}
+                    style={({ pressed }) => [styles.walkRun, pressed && { opacity: 0.7 }]}
+                  >
+                    <View style={styles.walkRunHead}>
+                      <Text style={styles.walkRunTitle}>{t(language, 'guided.runSheet.title').toUpperCase()}</Text>
+                      <GPIcon name="chevR" size={14} color={theme.faint} />
+                    </View>
+                    {walkRunItems.slice(walkRunFit.start, walkRunFit.end).map((item) => {
+                      const isSuperset = item.members.length > 1;
+                      const plan = isSuperset
+                        ? item.setCount
+                          ? t(language, 'guided.runSheet.rounds', { count: item.setCount })
+                          : ''
+                        : runPlanLine(item.members[0]?.slotId ?? null);
+                      return (
+                        <View key={item.groupIndex} style={styles.walkRunRow}>
+                          <View
+                            style={[
+                              styles.walkRunDot,
+                              item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
+                              item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
+                            ]}
+                          >
+                            {item.status === 'done' ? <GPIcon name="check" size={9} color="#fff" sw={3} /> : null}
+                          </View>
+                          <Text
+                            style={[
+                              styles.walkRunName,
+                              item.status === 'current' && { color: theme.purple },
+                              item.status === 'done' && { color: theme.muted },
+                            ]}
+                            numberOfLines={1}
+                            accessibilityLabel={item.members.map((member) => exerciseNameLabel(language, member.name)).join(' + ')}
+                          >
+                            {item.members.map((member) => exerciseListLabel(language, member.name)).join(' + ')}
+                          </Text>
+                          {plan ? <Text style={styles.walkRunPlan}>{plan}</Text> : null}
+                        </View>
+                      );
+                    })}
+                    {walkRunFit.hidden > 0 ? (
+                      <View style={styles.walkRunRow}>
+                        <Text style={styles.walkRunMore}>
+                          {t(language, 'guided.walk.contentMore', { count: walkRunFit.hidden })}
+                        </Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
                 ) : null}
               </ScrollView>
               <View style={{ paddingHorizontal: 22, paddingBottom: 14, gap: 10 }}>
@@ -3807,6 +4026,11 @@ function GuidedPlayer({
                 void haptics.select();
                 workout.addSet(step.slotId);
               }}
+              onLogWarmup={(loadKg, reps) => {
+                void haptics.select();
+                workout.logWarmup(step.slotId, loadKg, reps);
+              }}
+              onRemoveWarmup={(index) => workout.removeWarmup(step.slotId, index)}
               /**
                * Only when there is a round to take: every lift in the block
                * has more than one set and its last one is still pending. A
@@ -3873,6 +4097,8 @@ function GuidedPlayer({
               panels={setPanelSource}
               onOpenSheet={() => setSetPanelsOpen(true)}
               onConfirm={confirmSet}
+              // The rest-over cue: the minutes are in, the reader logs them.
+              onMinutesReached={() => cue('rest')}
             />
           )}
 
@@ -4339,141 +4565,128 @@ function GuidedPlayer({
           language={language}
           onClose={() => setRunSheetOpen(false)}
           bottomInset={screenInsets.bottom}
+          scrollable
         >
-          <ScrollView style={{ flexGrow: 0, maxHeight: runSheetListMaxHeight }}>
-            {buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
-              const isSuperset = item.members.length > 1;
-              return (
+          {buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
+            const isSuperset = item.members.length > 1;
+            return (
+            <View
+              key={item.groupIndex}
+              style={[styles.runRow, isSuperset && styles.runRowSuperset]}
+            >
+              {/* Two lights running the outline, in opposite directions:
+                  one boundary, two lifts inside it, no rest between them.
+                  The label sits inside that boundary rather than on each
+                  row, because the box is what says "these go together" —
+                  A1/A2 on every line was the same fact stated twice. */}
+              {isSuperset ? (
+                <>
+                  <SupersetBorder radius={14} />
+                  <View style={styles.runSupersetPill}>
+                    <Text style={styles.runSupersetPillText}>
+                      {t(language, 'guided.superset.pill')}
+                    </Text>
+                  </View>
+                </>
+              ) : null}
+              {/* Done / here / to come, as a mark rather than as a colour:
+                  the dark theme flattens the accents into each other. */}
               <View
-                key={item.groupIndex}
-                style={[styles.runRow, isSuperset && styles.runRowSuperset]}
+                style={[
+                  styles.runDot,
+                  item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
+                  item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
+                ]}
               >
-                {/* Two lights running the outline, in opposite directions:
-                    one boundary, two lifts inside it, no rest between them.
-                    The label sits inside that boundary rather than on each
-                    row, because the box is what says "these go together" —
-                    A1/A2 on every line was the same fact stated twice. */}
-                {isSuperset ? (
-                  <>
-                    <SupersetBorder radius={14} />
-                    <View style={styles.runSupersetPill}>
-                      <Text style={styles.runSupersetPillText}>
-                        {t(language, 'guided.superset.pill')}
-                      </Text>
-                    </View>
-                  </>
-                ) : null}
-                {/* Done / here / to come, as a mark rather than as a colour:
-                    the dark theme flattens the accents into each other. */}
-                <View
-                  style={[
-                    styles.runDot,
-                    item.status === 'done' && { backgroundColor: theme.green, borderColor: theme.green },
-                    item.status === 'current' && { backgroundColor: theme.purple, borderColor: theme.purple },
-                  ]}
-                >
-                  {item.status === 'done' ? <GPIcon name="check" size={11} color="#fff" /> : null}
-                </View>
-                <View style={{ flex: 1 }}>
-                  {/* A superset is several lifts in one row of the sheet, and
-                      each of them gets its name and its logged sets — a pair
-                      drawn as its first lift hides the one you are about to be
-                      asked for. An ordinary lift is a row of exactly one. */}
-                  {item.members.map((member) => {
-                    const lift = member.slotId ? exerciseBySlot.get(member.slotId) : undefined;
-                    // What is still to do, not what was lifted. The line under each name
-                    // carried the logged weights until 2026-09-11, when the reader
-                    // asked for "pelkät tulevat sarjat ja toistot" — a sheet read
-                    // mid-session is read to find out what is coming, and the weight
-                    // you just used is on the screen behind it.
-                    //
-                    // Not inside a superset, though. A set count per lift asks the
-                    // reader to reconcile "4 × 8" with "3 × 10" inside one box, and
-                    // the answer is that the box is four ROUNDS — which the box
-                    // already says, once, on the right (user 2026-09-11: "ehkä
-                    // poistetaan sittenkin molemmat tilastot supersetistä ja se on
-                    // vain 4 kierrosta").
-                    const planSet = lift ? planSetOf(lift.sets) : undefined;
-                    const memberPlan =
-                      !isSuperset && lift && planSet
-                        ? formatSetScheme(
-                            lift.sets.length,
-                            // The lowered target, when there is one — the
-                            // plan says what the dial will open on.
-                            isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
-                            isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
-                            lift.trackingMode,
-                          )
-                        : '';
-                    // The lift's own way back to its numbers: every lift with a
-                    // logged set, on every step, each with its own pencil. It
-                    // was one chip on the current row while resting only, so
-                    // the last set of a lift — followed by a walk-up, not a
-                    // rest — could not be corrected anywhere (#bugs 2026-09-30,
-                    // "viimeistä sarjaa on mahdotonta muokata ... jokaiseen
-                    // liikkeeseen tulee omansa").
-                    const correction = restRoundCorrections([member], exerciseBySlot)[0] ?? null;
-                    // "The set you just logged" only where that is true: the
-                    // round the running rest belongs to.
-                    const justLogged =
-                      correction !== null &&
-                      step.type === 'rest' &&
-                      !step.recoveryKind &&
-                      item.status === 'current';
-                    return (
-                      <View key={member.slotId ?? member.name} style={styles.runMember}>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text
-                            style={[
-                              styles.runName,
-                              item.status === 'current' && { color: theme.purple },
-                              item.status === 'done' && { color: theme.muted },
-                            ]}
-                            numberOfLines={2}
-                            accessibilityLabel={exerciseNameLabel(language, member.name)}
-                          >
-                            {exerciseListLabel(language, member.name)}
-                          </Text>
-                          {memberPlan ? <Text style={styles.runPlan}>{memberPlan}</Text> : null}
-                        </View>
-                        {correction ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={`${t(language, 'guided.rest.edit')} · ${exerciseNameLabel(language, member.name)}`}
-                            hitSlop={6}
-                            onPress={() => {
-                              setRunSheetOpen(false);
-                              setRestEdit({
-                                slotId: correction.lift.slotId,
-                                setIndex: correction.setIndex,
-                                justLoggedSetIndex: justLogged ? correction.setIndex : -1,
-                              });
-                            }}
-                            // The action colour, on the right where the thumb
-                            // is: the one thing in the sheet that does
-                            // something (device, 2026-09-16).
-                            style={({ pressed }) => [styles.runEditBtn, pressed && { opacity: 0.7 }]}
-                          >
-                            <GPIcon name="edit" size={17} color={theme.orange} sw={2.4} />
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                  {/* No "Olet tässä" line: the row's colour and its dot say
-                      it already, and a third line of the same weight made the
-                      one control in the row hard to find (device,
-                      2026-09-16). */}
-                </View>
-                {item.setCount && item.members.length > 1 ? (
-                  <Text style={styles.runMeta}>
-                    {t(language, 'guided.runSheet.rounds', { count: item.setCount })}
-                  </Text>
-                ) : null}
+                {item.status === 'done' ? <GPIcon name="check" size={11} color="#fff" /> : null}
               </View>
-              );
-            })}
-          </ScrollView>
+              <View style={{ flex: 1 }}>
+                {/* A superset is several lifts in one row of the sheet, and
+                    each of them gets its name and its logged sets — a pair
+                    drawn as its first lift hides the one you are about to be
+                    asked for. An ordinary lift is a row of exactly one. */}
+                {item.members.map((member) => {
+                  // What is still to do, not what was lifted. The line under each name
+                  // carried the logged weights until 2026-09-11, when the reader
+                  // asked for "pelkät tulevat sarjat ja toistot" — a sheet read
+                  // mid-session is read to find out what is coming, and the weight
+                  // you just used is on the screen behind it.
+                  //
+                  // Not inside a superset, though. A set count per lift asks the
+                  // reader to reconcile "4 × 8" with "3 × 10" inside one box, and
+                  // the answer is that the box is four ROUNDS — which the box
+                  // already says, once, on the right (user 2026-09-11: "ehkä
+                  // poistetaan sittenkin molemmat tilastot supersetistä ja se on
+                  // vain 4 kierrosta").
+                  const memberPlan = !isSuperset ? runPlanLine(member.slotId) : '';
+                  // The lift's own way back to its numbers: every lift with a
+                  // logged set, on every step, each with its own pencil. It
+                  // was one chip on the current row while resting only, so
+                  // the last set of a lift — followed by a walk-up, not a
+                  // rest — could not be corrected anywhere (#bugs 2026-09-30,
+                  // "viimeistä sarjaa on mahdotonta muokata ... jokaiseen
+                  // liikkeeseen tulee omansa").
+                  const correction = restRoundCorrections([member], exerciseBySlot)[0] ?? null;
+                  // "The set you just logged" only where that is true: the
+                  // round the running rest belongs to.
+                  const justLogged =
+                    correction !== null &&
+                    step.type === 'rest' &&
+                    !step.recoveryKind &&
+                    item.status === 'current';
+                  return (
+                    <View key={member.slotId ?? member.name} style={styles.runMember}>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <Text
+                          style={[
+                            styles.runName,
+                            item.status === 'current' && { color: theme.purple },
+                            item.status === 'done' && { color: theme.muted },
+                          ]}
+                          numberOfLines={2}
+                          accessibilityLabel={exerciseNameLabel(language, member.name)}
+                        >
+                          {exerciseListLabel(language, member.name)}
+                        </Text>
+                        {memberPlan ? <Text style={styles.runPlan}>{memberPlan}</Text> : null}
+                      </View>
+                      {correction ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={`${t(language, 'guided.rest.edit')} · ${exerciseNameLabel(language, member.name)}`}
+                          hitSlop={6}
+                          onPress={() => {
+                            setRunSheetOpen(false);
+                            setRestEdit({
+                              slotId: correction.lift.slotId,
+                              setIndex: correction.setIndex,
+                              justLoggedSetIndex: justLogged ? correction.setIndex : -1,
+                            });
+                          }}
+                          // The action colour, on the right where the thumb
+                          // is: the one thing in the sheet that does
+                          // something (device, 2026-09-16).
+                          style={({ pressed }) => [styles.runEditBtn, pressed && { opacity: 0.7 }]}
+                        >
+                          <GPIcon name="edit" size={17} color={theme.orange} sw={2.4} />
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  );
+                })}
+                {/* No "Olet tässä" line: the row's colour and its dot say
+                    it already, and a third line of the same weight made the
+                    one control in the row hard to find (device,
+                    2026-09-16). */}
+              </View>
+              {item.setCount && item.members.length > 1 ? (
+                <Text style={styles.runMeta}>
+                  {t(language, 'guided.runSheet.rounds', { count: item.setCount })}
+                </Text>
+              ) : null}
+            </View>
+            );
+          })}
         </GPSheet>
       )}
 
@@ -4600,127 +4813,67 @@ function GuidedPlayer({
         }}
       />
 
-      {swapOpen && actionExercise && (
-        <GPSheet
-          title={t(language, 'guided.swap.title', {
-            name: exerciseNameLabel(language, actionExercise.exerciseName),
-          })}
-          language={language}
-          tall
-          onClose={() => {
-            setSwapOpen(false);
-            setSwapQuery('');
-            setSwapBodyPartFilter(null);
-            unpause();
-          }}
-          bottomInset={screenInsets.bottom}
-        >
-
-          <TextInput
-            value={swapQuery}
-            onChangeText={setSwapQuery}
-            placeholder={t(language, 'guided.swap.search')}
-            placeholderTextColor={theme.faint}
-            style={styles.swapSearch}
-            autoCorrect={false}
-            returnKeyType="search"
-          />
-
-          <ScrollView style={styles.swapList} keyboardShouldPersistTaps="handled">
-            {swapSuggestions.length > 0 ? (
-              <>
-                <Text style={styles.swapSectionLabel}>{t(language, 'guided.swap.suggested')}</Text>
-                <View style={{ gap: 9 }}>
-                  {swapSuggestionRows.map(({ name, item }) => (
-                    <ExerciseLibraryRow
-                      key={`suggested-${name}`}
-                      title={exerciseListLabel(language, name)}
-                      accessibilityLabel={exerciseNameLabel(language, name)}
-                      meta={item ? exerciseLibraryRowMeta(item, language) : null}
-                      imageUrl={item ? getItemImage(item) : null}
-                      onPress={() => applySwap(name)}
-                    />
-                  ))}
-                </View>
-              </>
-            ) : null}
-
-            {/*
-              The library's own way to narrow this list, always there and
-              already on the lift's own body part (swapBodyPart) — nearest
-              first, the way Ehdotetut already orders it. It sat behind a
-              "Selaa kaikkia liikkeitä" link until #bugs 2026-09-30, and the
-              list under it was the most popular lifts of any body part. It
-              reuses the library screen's chip data and matcher
-              (BODY_PART_FILTERS, matchesBodyPartFilter from
-              exerciseBrowseFilter.ts) rather than a second copy of either.
-            */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={styles.swapBrowseChipRow}
-            >
-              {BODY_PART_FILTERS.map((option) => {
-                const selected = swapBodyPart === option;
-                return (
-                  <Pressable
-                    key={option}
-                    accessibilityRole="button"
-                    accessibilityState={{ selected }}
-                    // 34 drawn, 44 to the thumb — the row's own vertical
-                    // padding holds the slop, the same as CatalogScreen's
-                    // and ExerciseLibraryBrowser's chip rails (accessibility
-                    // audit, 2026-09-21; Android clips a slop to its parent).
-                    hitSlop={{ top: 5, bottom: 5 }}
-                    onPress={() => setSwapBodyPartFilter(option)}
-                    style={[styles.swapBrowseChip, selected && styles.swapBrowseChipActive]}
-                  >
-                    <Text style={[styles.swapBrowseChipText, selected && styles.swapBrowseChipTextActive]}>
-                      {libraryLabel(option, language)}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-
-            {/*
-              "All exercises" over a list a chip just narrowed to one body
-              part claimed a completeness the row no longer had (break round
-              2026-09-29). The chip's own label replaces it while one is
-              picked; "guided.swap.library" is only the unfiltered heading.
-            */}
-            <Text style={styles.swapSectionLabel}>
-              {swapBodyPart !== 'all'
-                ? libraryLabel(swapBodyPart, language)
-                : t(language, 'guided.swap.library')}
-            </Text>
-            {swapLibrary.length > 0 ? (
-              <View style={{ gap: 9 }}>
-                {swapLibrary.map((item) => (
-                  <ExerciseLibraryRow
-                    key={item.id}
-                    title={exerciseListLabel(language, item.name)}
-                    accessibilityLabel={exerciseNameLabel(language, item.name)}
-                    meta={exerciseLibraryRowMeta(item, language)}
-                    imageUrl={getItemImage(item)}
-                    onPress={() => applySwap(item.name)}
-                  />
-                ))}
-              </View>
-            ) : swapSessionHits.length > 0 ? null : (
-              <Text style={styles.sheetFootnote}>{t(language, 'guided.swap.noMatch')}</Text>
-            )}
-            {swapSessionHits.length > 0 ? (
-              <Text style={styles.sheetFootnote}>
-                {t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })}
-              </Text>
-            ) : null}
-          </ScrollView>
-
-          <Text style={styles.sheetFootnote}>{t(language, 'guided.swap.footnote')}</Text>
-        </GPSheet>
-      )}
+      {/*
+        "Vaihda liike" is the add sheet, in swap mode (#bugs 2026-10-06:
+        "Vaihda liike ja Lisää liike pitäisi olla identtiset"). The same
+        search, the same three filter groups, the same cards; what differs is
+        said by lib/exerciseSheetMode — the title names the lift, the cards say
+        Vaihda, and the note under the title says the logged sets stay where
+        they were done. What is offered and in what order is still the swap's
+        own: the programme's alternatives first (swapFeaturedEntries), then
+        the library nearest the lift (swapLibrary), the lift's own body part
+        until the reader picks a chip.
+      */}
+      <ExercisePickerSheet
+        visible={swapOpen && Boolean(actionExercise)}
+        bottomInset={screenInsets.bottom}
+        language={language}
+        mode="swap"
+        swappedName={actionExercise?.exerciseName ?? null}
+        search={swapQuery}
+        onSearchChange={setSwapQuery}
+        filters={swapFilters}
+        onFiltersChange={(next) => {
+          // Only a chip the reader actually moved becomes theirs: the lift's
+          // own body part stays the default until then (effectiveSwapBodyPart).
+          if (next.bodyPart !== swapFilters.bodyPart) {
+            setSwapBodyPartFilter(next.bodyPart);
+          }
+          setSwapCategory(next.category);
+          setSwapEquipment(next.equipment);
+        }}
+        featured={
+          swapFeaturedEntries.length > 0
+            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapFeaturedEntries }
+            : null
+        }
+        main={{
+          // "All exercises" over a list a chip just narrowed to one body part
+          // claimed a completeness the row no longer had (break round
+          // 2026-09-29). The chip's own label replaces it while one is picked.
+          title:
+            swapBodyPart !== 'all'
+              ? libraryLabel(swapBodyPart, language)
+              : t(language, 'guided.swap.library'),
+          entries: swapLibraryEntries,
+        }}
+        emptyTitle={t(language, 'guided.swap.noMatch')}
+        emptyBody={null}
+        listNote={
+          swapSessionHits.length > 0
+            ? t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })
+            : null
+        }
+        onSelect={(entry) => applySwap(entry.name)}
+        onClose={() => {
+          setSwapOpen(false);
+          setSwapQuery('');
+          setSwapBodyPartFilter(null);
+          setSwapCategory('all');
+          setSwapEquipment('all');
+          unpause();
+        }}
+      />
 
       {/* The cooldown intro's "Lisää liike": the same library sheet the day
           editor uses, so search and the body-part chips are the ones the
@@ -5028,6 +5181,32 @@ function LoggedSetEditor({
   );
 }
 
+/**
+ * A minutes bout's running clock. It owns the one-second interval that moves
+ * its digits, so the set step around it does not re-render for them: the step
+ * only needs the whole minutes and "the minutes are in" (SetStepView sleeps
+ * until lib/minutesExercises msUntilNextMinutesChange). The time is read off
+ * the stopwatch's wall-clock start, so a tick that comes late shows the right
+ * second, not a lost one.
+ */
+function MinutesClockText({ watch, style }: { watch: MinutesStopwatch; style: React.ComponentProps<typeof Text>['style'] }) {
+  const running = watch.runningSinceMs !== null;
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    setNowMs(Date.now());
+    if (!running) {
+      return;
+    }
+    const timer = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running, watch]);
+  return (
+    <Text style={style} {...RING_CLOCK_FIT}>
+      {formatCardioDuration(stopwatchElapsedMs(watch, nowMs) / 1000)}
+    </Text>
+  );
+}
+
 function SetStepView({
   stepIndex,
   step,
@@ -5040,9 +5219,12 @@ function SetStepView({
   onOpenActions,
   onAddSet,
   onRemoveSet,
+  onLogWarmup,
+  onRemoveWarmup,
   panels,
   onOpenSheet,
   onConfirm,
+  onMinutesReached,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5059,6 +5241,10 @@ function SetStepView({
   onAddSet: () => void;
   /** Absent when there is no set to take back. */
   onRemoveSet?: (() => void) | null;
+  /** "+ Warm-up set": logs one apart from the working sets. */
+  onLogWarmup: (loadKg: number, reps: number) => void;
+  /** Takes back the logged warm-up at `index`. */
+  onRemoveWarmup: (index: number) => void;
   /** Resolved by the player; null falls back to the plain photo. */
   panels: {
     history: LastTimeView | null;
@@ -5067,6 +5253,8 @@ function SetStepView({
     initials: string;
   } | null;
   onConfirm: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
+  /** A bout of minutes reached its prescription on the clock — a cue, nothing logged. */
+  onMinutesReached?: () => void;
 }) {
   const theme = useTheme();
 
@@ -5082,6 +5270,80 @@ function SetStepView({
   const historyChips = panels?.history ? summarizeHistoricalSetChips(panels.history.sets) : null;
   const timed = exercise ? isTimedTrackingMode(exercise.trackingMode) : false;
   const [reps, setReps] = useState(target?.reps ?? 8);
+  /**
+   * A bout of minutes (trackingMode 'duration_minutes' — a bike, a stair
+   * machine, a run block): the set is a clock the reader starts, pauses and
+   * stops, and the dial below logs whole minutes. Left alone, the dial
+   * follows the clock — or the prescription, if the clock never ran — so
+   * twenty minutes ridden logs twenty without a tap (lib/minutesExercises
+   * minutesToLog). Touched, the dial is the reader's number.
+   *
+   * The clock is read off the wall, not ticks, so it keeps counting with the
+   * screen off. It is this screen's alone: leaving the step drops it, as the
+   * set's own dials are dropped.
+   */
+  const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
+  const plannedMinutes = target?.reps ?? 0;
+  const [watch, setWatch] = useState<MinutesStopwatch>(STOPPED_STOPWATCH);
+  const [watchNowMs, setWatchNowMs] = useState(() => Date.now());
+  const minutesChosenRef = useRef(false);
+  const [minutesChosen, setMinutesChosen] = useState(false);
+  const watchRunning = watch.runningSinceMs !== null;
+  // This step re-renders when the clock changes something it shows besides
+  // the seconds — the whole minutes on the dial, "the minutes are in" — and
+  // sleeps in between. A 500 ms state tick here re-rendered the entire set
+  // step (dials, history chips, panels) twice a second for a clock whose
+  // seconds MinutesClockText draws on its own.
+  useEffect(() => {
+    const wait = msUntilNextMinutesChange(watch, Date.now(), plannedMinutes);
+    if (wait === null) {
+      return;
+    }
+    // A few ms past the moment, so the wake-up lands on the far side of it.
+    const timer = setTimeout(() => setWatchNowMs(Date.now()), wait + 20);
+    return () => clearTimeout(timer);
+  }, [watch, watchNowMs, plannedMinutes]);
+  const elapsedMs = stopwatchElapsedMs(watch, watchNowMs);
+  const shownMinutes = minutesChosen ? reps : minutesToLog({ plannedMinutes, elapsedMs });
+  const shownMinutesRef = useRef(shownMinutes);
+  shownMinutesRef.current = shownMinutes;
+  const minutesReached = minutesMode && plannedMinutes > 0 && elapsedMs >= plannedMinutes * 60000;
+  const minutesReachedRef = useRef(false);
+  useEffect(() => {
+    if (minutesReached && !minutesReachedRef.current) {
+      minutesReachedRef.current = true;
+      onMinutesReached?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minutesReached]);
+  // Pausing the workout pauses the bout: the header's pause means "I have
+  // stopped", and a clock that ran on through it would log the break.
+  useEffect(() => {
+    if (paused) {
+      setWatch((current) => pauseStopwatch(current, Date.now()));
+    }
+  }, [paused]);
+  const toggleWatch = () => {
+    const now = Date.now();
+    setWatchNowMs(now);
+    setWatch((current) => (current.runningSinceMs === null ? startStopwatch(current, now) : pauseStopwatch(current, now)));
+  };
+  /** The first touch of the dial takes it from the clock, from where it stood. */
+  const stepMinutes = (direction: -1 | 1) => {
+    if (!minutesChosenRef.current) {
+      minutesChosenRef.current = true;
+      setMinutesChosen(true);
+      setReps(stepDialReps(shownMinutesRef.current, direction, MINUTES_DIAL));
+      return;
+    }
+    setReps((current) => stepDialReps(current, direction, MINUTES_DIAL));
+  };
+  const commitMinutes = (text: string) => {
+    const base = minutesChosenRef.current ? reps : shownMinutesRef.current;
+    minutesChosenRef.current = true;
+    setMinutesChosen(true);
+    setReps(commitDialReps(text, base, MINUTES_DIAL));
+  };
   const [kg, setKg] = useState(target?.loadKg ?? 0);
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
@@ -5097,10 +5359,59 @@ function SetStepView({
   }, [dial, stepIndex]);
   const logBlocked = dial === 'weight' && weightTextInvalid;
 
+  /**
+   * "+ Warm-up set" (user, 2026-10-05): the screen turns blue and logs a
+   * warm-up instead of the set — kept apart from the working sets, so the
+   * count, the steps and progression never see it. Offered before the first
+   * working set of a loaded lift only: a warm-up is what comes before the
+   * work, and a bodyweight lift or a hold has no load to build up to.
+   */
+  const [warmupMode, setWarmupMode] = useState(false);
+  const warmups = exercise?.warmups ?? [];
+  const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
+  const canWarmUp = !bodyweight && firstSetOpen;
+  const inWarmup = warmupMode && canWarmUp;
+  /**
+   * The set's own numbers while a warm-up borrows the dials: a weight dialled
+   * for set 1 before "+ Warm-up set" comes back after it, not the plan's
+   * (review, 2026-10-05).
+   */
+  const setNumbersRef = useRef<{ reps: number; kg: number } | null>(null);
+  const enterWarmup = () => {
+    setNumbersRef.current = { reps, kg };
+    const offer = warmupOffer(panels?.history?.warmups, warmups.length, target?.loadKg ?? null);
+    setDial(null);
+    setReps(offer.reps);
+    setKg(offer.loadKg ?? 0);
+    setWarmupMode(true);
+  };
+  const leaveWarmup = () => {
+    const kept = setNumbersRef.current;
+    setNumbersRef.current = null;
+    setDial(null);
+    setReps(kept?.reps ?? target?.reps ?? 8);
+    setKg(kept?.kg ?? target?.loadKg ?? 0);
+    setWarmupMode(false);
+  };
+
+  // A warm-up has nothing left to come before once the first set is done:
+  // the dials go back to the set's own numbers rather than log the warm-up's.
+  useEffect(() => {
+    if (!canWarmUp && warmupMode) {
+      leaveWarmup();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canWarmUp]);
+
   useEffect(() => {
     setDial(null);
+    setWarmupMode(false);
     setReps(target?.reps ?? 8);
     setKg(target?.loadKg ?? 0);
+    setWatch(STOPPED_STOPWATCH);
+    minutesChosenRef.current = false;
+    setMinutesChosen(false);
+    minutesReachedRef.current = false;
     // Re-derive when the step changes — and when the exercise under the step
     // changes, which is what a swap does without moving the index. Keying on
     // stepIndex alone left the old lift's weight sitting in local state after a
@@ -5294,7 +5605,7 @@ function SetStepView({
                   ramp has no one weight to lead with, and the per-set chips
                   below already say the whole thing (decision "a", #bugs
                   2026-09-29). */}
-              {historyChips?.uniform !== false ? (
+              {historyChips?.uniform !== false && !minutesMode ? (
                 <Text style={styles.setExerciseLastLoad}>
                   {/* The same number decides and is shown. Guarding on the
                       FIRST set while printing the heaviest hid a real top set
@@ -5310,7 +5621,9 @@ function SetStepView({
                 {panels.history.sets.map((set, index) => (
                   <View key={set.setIndex} style={styles.setExerciseLastPill}>
                     <Text style={styles.setExerciseLastPillText}>
-                      {historyChips?.chips[index] ?? set.reps}
+                      {minutesMode
+                        ? t(language, 'logger.minutesValue', { count: set.reps })
+                        : historyChips?.chips[index] ?? set.reps}
                     </Text>
                   </View>
                 ))}
@@ -5328,6 +5641,12 @@ function SetStepView({
             kello ei voi olla vierekkäin"). It sits on the name row now, where
             nothing grows, and the dots absorb the squeeze here. */}
         <View style={styles.setMetaRow}>
+          {inWarmup ? (
+            <View style={styles.setMetaLeft}>
+              <View style={styles.warmupDot} />
+              <Text style={styles.setCounter}>{t(language, 'guided.warmup.title', { index: warmups.length + 1 })}</Text>
+            </View>
+          ) : (
           <View style={styles.setMetaLeft}>
             <Text style={styles.setCounter}>
               {t(language, 'guided.setOfCount', { index: step.setIndex + 1, count: step.setCount })}
@@ -5387,7 +5706,47 @@ function SetStepView({
               <GPIcon name="plus" size={13} color={theme.green} sw={3} />
             </Pressable>
           </View>
+          )}
         </View>
+
+        {/* The warm-ups logged so far, and the button that adds one. Only on
+            the first working set: once the work has started, a warm-up is not
+            what comes next. A logged one is taken back with its ×. */}
+        {canWarmUp && (warmups.length > 0 || !inWarmup) ? (
+          <View style={styles.warmupRow}>
+            {warmups.map((warmup, index) => (
+              <Pressable
+                key={`${index}-${warmup.completedAt}`}
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.remove', {
+                  index: index + 1,
+                  kg: removeTrailingZeros(warmup.loadKg),
+                  reps: warmup.reps,
+                })}
+                hitSlop={8}
+                onPress={() => onRemoveWarmup(index)}
+                style={styles.warmupChip}
+              >
+                <Text style={styles.warmupChipText}>
+                  {t(language, 'guided.warmup.chip', { kg: removeTrailingZeros(warmup.loadKg), reps: warmup.reps })}
+                </Text>
+                <GPIcon name="x" size={11} color={theme.muted} sw={2.6} />
+              </Pressable>
+            ))}
+            {!inWarmup ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.add')}
+                hitSlop={8}
+                onPress={enterWarmup}
+                style={styles.warmupAdd}
+              >
+                <GPIcon name="plus" size={12} color={theme.blue} sw={3} />
+                <Text style={styles.warmupAddText}>{t(language, 'guided.warmup.add')}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
 
 
         <View style={styles.setTargetArea}>
@@ -5398,17 +5757,58 @@ function SetStepView({
               buttons behind a tap because a resting thumb once changed a
               number; under the number, the buttons are no longer where a
               thumb rests. Hold a button to run. */}
+          {minutesMode ? (
+            <View style={styles.minutesClock}>
+              <MinutesClockText watch={watch} style={styles.minutesClockTime} />
+              <Text style={styles.minutesClockOf}>
+                {t(language, 'guided.minutes.clockOf', { count: plannedMinutes })}
+              </Text>
+              {minutesReached ? (
+                <Text style={styles.minutesClockDone} accessibilityLiveRegion="polite">
+                  {t(language, 'guided.minutes.done')}
+                </Text>
+              ) : null}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(
+                  language,
+                  watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start',
+                )}
+                onPress={toggleWatch}
+                style={({ pressed }) => [styles.minutesClockButton, pressed && { opacity: 0.85 }]}
+              >
+                <GPIcon name={watchRunning ? 'pause' : 'play'} size={18} color={theme.ink} sw={2.4} />
+                <Text style={styles.minutesClockButtonText}>
+                  {t(language, watchRunning ? 'guided.pause' : elapsedMs > 0 ? 'guided.resume' : 'guided.minutes.start')}
+                </Text>
+              </Pressable>
+            </View>
+          ) : null}
           <View style={styles.setDialRow}>
             <DialCard
-              label={t(language, timed ? 'guided.seconds' : 'guided.reps')}
-              value={String(reps)}
-              unit={null}
+              label={t(language, minutesMode ? 'guided.minutes' : timed ? 'guided.seconds' : 'guided.reps')}
+              value={String(minutesMode ? shownMinutes : reps)}
+              unit={minutesMode ? 'min' : null}
               open={dial === 'reps'}
               onToggle={() => setDial((current) => (current === 'reps' ? null : 'reps'))}
-              onStep={(direction) => setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))}
-              onCommit={(text) => setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))}
-              downLabel={t(language, timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown')}
-              upLabel={t(language, timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp')}
+              onStep={(direction) =>
+                minutesMode
+                  ? stepMinutes(direction)
+                  : setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              onCommit={(text) =>
+                minutesMode
+                  ? commitMinutes(text)
+                  : setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))
+              }
+              downLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesDown' : timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown',
+              )}
+              upLabel={t(
+                language,
+                minutesMode ? 'guided.a11y.minutesUp' : timed ? 'guided.a11y.secondsUp' : 'guided.a11y.repsUp',
+              )}
               editHint={t(language, 'guided.a11y.tapToEdit')}
               wide={bodyweight}
               faint={false}
@@ -5463,8 +5863,9 @@ function SetStepView({
                   so these badges only ever render for an unlocked account — and only
                   when a number moved, which is the one case the user did not choose
                   it themselves. Green adds, red would take away (the gate only
-                  raises today), and the same pair covers reps on bodyweight work. */}
-              {autoDeltaKg !== null && autoDeltaKg !== 0 ? (
+                  raises today), and the same pair covers reps on bodyweight work.
+                  None of them is about a warm-up. */}
+              {inWarmup ? null : autoDeltaKg !== null && autoDeltaKg !== 0 ? (
                 <View style={autoDeltaKg > 0 ? styles.setAutoBadgeUp : styles.setAutoBadgeDown}>
                   <View style={autoDeltaKg > 0 ? null : { transform: [{ rotate: '180deg' }] }}>
                     <GPIcon
@@ -5506,8 +5907,29 @@ function SetStepView({
         </View>
 
         <View style={{ paddingHorizontal: 22 }}>
-          {/* Which set it logs, on the button that logs it. "Kirjaa sarja"
-              was true of all four. */}
+          {inWarmup ? (
+            <>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t(language, 'guided.warmup.log')}
+                accessibilityState={{ disabled: logBlocked || kg <= 0 }}
+                // No weight, no warm-up: the store refuses 0 kg, and the
+                // screen must not leave as if it had been saved.
+                disabled={logBlocked || kg <= 0}
+                onPress={() => {
+                  onLogWarmup(kg, reps);
+                  leaveWarmup();
+                }}
+                style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, (logBlocked || kg <= 0) && { opacity: 0.4 }]}
+              >
+                <GPIcon name="check" size={18} color={theme.blue} sw={2.8} />
+                <Text style={styles.warmupLogButtonText}>{t(language, 'guided.warmup.log')}</Text>
+              </Pressable>
+              <Pressable accessibilityRole="button" hitSlop={8} onPress={leaveWarmup} style={styles.warmupCancel}>
+                <Text style={styles.warmupCancelText}>{t(language, 'guided.warmup.cancel')}</Text>
+              </Pressable>
+            </>
+          ) : (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
@@ -5515,7 +5937,16 @@ function SetStepView({
             disabled={logBlocked}
             onPress={() => {
               setDial(null);
-              onConfirm(step.slotId, step.setIndex, reps, bodyweight ? null : kg);
+              // The minutes on the dial — the clock's, the prescription's or
+              // the reader's own — are what was done. The clock is read now:
+              // the dial shows the last wake-up's minutes, which can be a
+              // moment behind the tap.
+              const done = !minutesMode
+                ? reps
+                : minutesChosen
+                  ? reps
+                  : minutesToLog({ plannedMinutes, elapsedMs: stopwatchElapsedMs(watch, Date.now()) });
+              onConfirm(step.slotId, step.setIndex, done, bodyweight ? null : kg);
             }}
             style={({ pressed }) => [
               styles.setLogButton,
@@ -5528,6 +5959,7 @@ function SetStepView({
               {t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             </Text>
           </Pressable>
+          )}
         </View>
 
         {/* Two buttons, no more (user 2026-08-23): pause, and the menu.
@@ -6210,6 +6642,42 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Two dials of equal width. Each is a card, so the reps dial no longer
   // floats as a bare headline over a boxed weight — same shape, same weight.
   setDialRow: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },
+  // A bout of minutes: the clock above the dial, on the same card ground.
+  minutesClock: {
+    alignItems: 'center',
+    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
+  },
+  minutesClockTime: {
+    alignSelf: 'stretch',
+    textAlign: 'center',
+    fontSize: 52,
+    fontWeight: '800',
+    letterSpacing: -1.6,
+    color: theme.ink,
+    lineHeight: 58,
+    fontVariant: ['tabular-nums'],
+  },
+  minutesClockOf: { fontSize: 13, fontWeight: '700', color: theme.muted },
+  minutesClockDone: { fontSize: 13, fontWeight: '800', color: theme.ink, textAlign: 'center' },
+  minutesClockButton: {
+    marginTop: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 44,
+    paddingHorizontal: 20,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  minutesClockButtonText: { fontSize: 15, fontWeight: '800', color: theme.ink },
   setDialCard: {
     flex: 1,
     minWidth: 0,
@@ -6354,6 +6822,85 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  /*
+   * Warm-ups in blue (user, 2026-10-05): set apart from the green of the work
+   * at a glance. Blue edges and ink text, not white on blue — white on the
+   * light theme's #0A84FF falls short of 4.5:1.
+   */
+  warmupDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: theme.blue,
+  },
+  warmupRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 22,
+    marginTop: 8,
+  },
+  warmupChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    // 36 high and 8 of slop each way: the 48 a tap needs (review, 2026-10-05).
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderColor: theme.blue,
+    backgroundColor: theme.surface,
+  },
+  warmupChipText: {
+    color: theme.ink,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  warmupAdd: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    minHeight: 36,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 999,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: theme.blue,
+  },
+  warmupAddText: {
+    color: theme.ink,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  warmupLogButton: {
+    height: 56,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: theme.blue,
+    backgroundColor: theme.surface,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+  },
+  warmupLogButtonText: {
+    color: theme.ink,
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  warmupCancel: {
+    alignSelf: 'center',
+    paddingVertical: 10,
+  },
+  warmupCancelText: {
+    color: theme.muted,
+    fontSize: 14,
+    fontWeight: '700',
+  },
   setRoundBtn: {
     width: 60,
     height: 60,
@@ -6455,6 +7002,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 12,
   },
   walkPlateauText: { fontSize: 12.5, fontWeight: '700', color: theme.amberInk, lineHeight: 18 },
+  // The walk-up's contents list. Heading and rows are FIXED heights
+  // (WALK_RUN_HEAD, WALK_RUN_ROW): the room is worked out before they are
+  // drawn, and a row that grew with its text would spill past it.
+  walkRun: { paddingHorizontal: 2 },
+  walkRunHead: { height: WALK_RUN_HEAD, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  walkRunTitle: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.faint },
+  walkRunRow: { height: WALK_RUN_ROW, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  walkRunDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: theme.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  walkRunName: { flex: 1, minWidth: 0, fontSize: 14, lineHeight: 18, fontWeight: '700', color: theme.ink },
+  walkRunPlan: { fontSize: 12.5, fontWeight: '700', color: theme.muted, fontVariant: ['tabular-nums'] },
+  walkRunMore: { fontSize: 12.5, fontWeight: '700', color: theme.muted, paddingLeft: 26 },
   /* rest screen */
   restRunStrip: {
     marginHorizontal: 20,
@@ -6572,63 +7138,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexShrink: 1,
   },
   sheetFrame: { maxHeight: '78%' },
-  sheetFrameTall: { height: '90%', maxHeight: '90%' },
-  swapSearch: {
-    marginBottom: 14,
-    height: 46,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    backgroundColor: theme.bg,
-    paddingHorizontal: 14,
-    color: theme.ink,
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  // The rest of a tall sheet between the search and the footnote. It was
-  // capped at 380 while the sheet sized itself to its content; a fixed-height
-  // sheet bounds it instead, and the footnote stays on screen.
-  swapList: {
-    flex: 1,
-  },
-  swapSectionLabel: {
-    marginTop: 14,
-    marginBottom: 8,
-    color: theme.muted,
-    fontSize: 11.5,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-  },
-  // 5 above and below, not 4: the chips' 5 of hitSlop needs to sit inside
-  // this row, or Android clips the slop to it (accessibility audit,
-  // 2026-09-21 pattern).
-  swapBrowseChipRow: {
-    gap: 8,
-    paddingVertical: 5,
-  },
-  swapBrowseChip: {
-    minHeight: 34,
-    paddingHorizontal: 14,
-    borderRadius: 17,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.bg,
-  },
-  swapBrowseChipActive: {
-    backgroundColor: theme.purpleFill,
-    borderColor: theme.purpleFill,
-  },
-  swapBrowseChipText: {
-    color: theme.muted,
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-  swapBrowseChipTextActive: {
-    color: '#FFFFFF',
-  },
+  // A long sheet's list (GPSheet `scrollable`): sized to its rows, and given
+  // way to the measured bound rather than overflowing the sheet.
+  sheetScroll: { flexGrow: 0, flexShrink: 1 },
+  sheetScrollContent: { paddingBottom: 6 },
   sheetHandle: { width: 40, height: 5, borderRadius: 3, backgroundColor: theme.border, alignSelf: 'center', marginBottom: 16 },
   // The pull zone: out to the sheet's edges and up to its top, so a thumb does
   // not have to find the 40 px grip (#bugs 2026-09-30).
@@ -6717,14 +7230,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12.5,
     fontWeight: '700',
     color: theme.faint,
-  },
-  sheetFootnote: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: theme.muted,
-    marginTop: 14,
-    textAlign: 'center',
-    lineHeight: 19,
   },
   howToNumber: {
     width: 26,

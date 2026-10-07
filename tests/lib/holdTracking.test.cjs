@@ -193,4 +193,181 @@ module.exports = [
       assert.deepEqual(unexplained.sort(), []);
     },
   },
+  {
+    name: 'a stretch or isometric picked from the library is logged in seconds, a dynamic one in reps (bug hunt 2026-10-05)',
+    run() {
+      const path = require('node:path');
+      const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+      const { GENERATED_EXERCISE_LIBRARY } = dist('data/generatedExerciseLibrary.js');
+      const { EXTRA_EXERCISE_LIBRARY } = dist('data/extraExerciseLibrary.js');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = dist('features/workout/customWorkoutAdapter.js');
+      const { getExerciseTemplateDefaults } = dist('lib/exerciseSuggestions.js');
+      const library = [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
+      const modeOf = (item) => {
+        const defaults = getExerciseTemplateDefaults(item, 90);
+        const exercise = { id: 'e', workoutTemplateSessionId: 's', name: item.name, orderIndex: 0, libraryItemId: item.id, trackingMode: null, ...defaults };
+        const runtime = adaptLegacyWorkoutTemplateToRuntimeTemplate({ id: 't', name: 'T' }, [{ id: 's', name: 'S', orderIndex: 0, exercises: [exercise] }], library, 90);
+        return { mode: runtime.sessions[0].exercises[0].trackingMode, repMin: defaults.repMin };
+      };
+      const timed = library.filter((item) => /\b(stretch|isometric)\b/i.test(item.name) && !/\bdynamic\b/i.test(item.name) && !['cat stretch', 'iron crosses (stretch)', 'isometric wipers'].includes(item.name.toLowerCase()));
+      assert.ok(timed.length >= 40, `only ${timed.length} timed rows`);
+      const wrong = timed.map((item) => ({ name: item.name, ...modeOf(item) })).filter((row) => row.mode !== 'hold' || row.repMin < 20);
+      assert.deepEqual(wrong, [], 'a stretch or isometric opens a reps dial, or a hold of a few seconds');
+      // Moved through, not held.
+      const dynamic = library.find((item) => /\bdynamic\b.*\bstretch\b/i.test(item.name));
+      for (const name of ['Isometric Wipers', 'Iron Crosses (stretch)']) {
+        const item = library.find((row) => row.name === name);
+        assert.ok(item, name);
+        assert.notEqual(modeOf(item).mode, 'hold', name);
+      }
+      if (dynamic) {
+        assert.notEqual(modeOf(dynamic).mode, 'hold', dynamic.name);
+      }
+    },
+  },
+  {
+    // The hold set, written out. "Push Up to Side Plank" was a 3 x 30-45 s hold
+    // because the alias step took the shortest library name that CONTAINS a hold's
+    // name (M13, 2026-10-06). Containment is right for finding a photo and wrong
+    // for deciding what a movement is, so the set is pinned: every change to it
+    // has to be made on purpose, here, with the row in front of you.
+    name: 'the library rows that are logged as holds are exactly this set (a compound movement that merely contains a hold name is not one)',
+    run() {
+      const path = require('node:path');
+      const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+      const { isHoldExerciseName } = dist('lib/holdExercises.js');
+      const { GENERATED_EXERCISE_LIBRARY } = dist('data/generatedExerciseLibrary.js');
+      const { EXTRA_EXERCISE_LIBRARY } = dist('data/extraExerciseLibrary.js');
+      const library = [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
+
+      // The 24 held rows of the app's own library joined on 2026-10-06, when
+      // every ready-programme name got a row: the yoga poses, stretches and
+      // skill holds, each already on the catalogue's hold list by name.
+      const PINNED_HOLDS = [
+        '90/90 Hamstring',
+        '90/90 Hip Stretch',
+        'Adductor/Groin',
+        'All Fours Quad Stretch',
+        'Ankle On The Knee',
+        'Anterior Tibialis-SMR',
+        'Behind Head Chest Stretch',
+        'Box Breathing',
+        'Brachialis-SMR',
+        'Butterfly Stretch',
+        'Calf Stretch Elbows Against Wall',
+        'Calf Stretch Hands Against Wall',
+        'Calves-SMR',
+        'Chair Leg Extended Stretch',
+        'Chair Lower Back Stretch',
+        'Chair Upper Body Stretch',
+        'Chest And Front Of Shoulder Stretch',
+        'Chest Stretch on Stability Ball',
+        "Child's Pose",
+        'Chin To Chest Stretch',
+        'Cobra Pose',
+        'Crucifix',
+        "Dancer's Stretch",
+        'Deep Squat Hold',
+        'Doorway Pec Stretch',
+        'Foot-SMR',
+        'Frog Stretch',
+        'Front Lever Tuck Hold',
+        'Groin and Back Stretch',
+        'Hamstring Stretch',
+        'Hamstring-SMR',
+        'Hollow Body Hold',
+        'Iliotibial Tract-SMR',
+        'Intermediate Groin Stretch',
+        'Intermediate Hip Flexor and Quad Stretch',
+        'Isometric Chest Squeezes',
+        'Isometric Neck Exercise - Front And Back',
+        'Isometric Neck Exercise - Sides',
+        'IT Band and Glute Stretch',
+        'Kneeling Forearm Stretch',
+        'Kneeling Hip Flexor',
+        'L-Sit Hold',
+        'Latissimus Dorsi-SMR',
+        'Leg-Up Hamstring Stretch',
+        'Legs Up the Wall',
+        'Lower Back-SMR',
+        'Lying Bent Leg Groin',
+        'Lying Crossover',
+        'Lying Glute',
+        'Lying Hamstring',
+        'Lying Prone Quadriceps',
+        'Middle Back Stretch',
+        'Neck-SMR',
+        'On Your Side Quad Stretch',
+        'On-Your-Back Quad Stretch',
+        'One Handed Hang',
+        'Overhead Lat',
+        'Overhead Stretch',
+        'Overhead Triceps',
+        'Peroneals Stretch',
+        'Peroneals-SMR',
+        'Pigeon Pose',
+        'Piriformis-SMR',
+        'Plank',
+        'Posterior Tibialis Stretch',
+        'Quad Stretch',
+        'Quadriceps-SMR',
+        'Rhomboids-SMR',
+        'Round The World Shoulder Stretch',
+        "Runner's Stretch",
+        'Seated Biceps',
+        'Seated Calf Stretch',
+        'Seated Floor Hamstring Stretch',
+        'Seated Front Deltoid',
+        'Seated Glute',
+        'Seated Hamstring',
+        'Seated Hamstring and Calf Stretch',
+        'Seated Hip Stretch',
+        'Seated Overhead Stretch',
+        'Seated Pancake Stretch',
+        'Seated Spinal Twist',
+        'Shoulder Stretch',
+        'Side Bridge',
+        'Side Lying Groin Stretch',
+        'Side Neck Stretch',
+        'Side Plank',
+        'Side-Lying Floor Stretch',
+        'Single-Leg Balance Hold',
+        'Sleeper Stretch',
+        'Sphinx Pose',
+        'Spinal Stretch',
+        'Spinal Twist (Supine)',
+        'Standing Biceps Stretch',
+        'Standing Elevated Quad Stretch',
+        'Standing Forward Fold',
+        'Standing Gastrocnemius Calf Stretch',
+        'Standing Hamstring and Calf Stretch',
+        'Standing Hip Flexors',
+        'Standing Lateral Stretch',
+        'Standing Soleus And Achilles Stretch',
+        'Standing Toe Touches',
+        'Stomach Vacuum',
+        'Supported Deep Squat Hold',
+        'Supported Single-Leg Balance',
+        'The Straddle',
+        'Tricep Side Stretch',
+        'Triceps Stretch',
+        'Tuck Planche Hold',
+        'Upper Back Stretch',
+        'Upward Stretch',
+        'Wall Handstand Hold',
+        "World's Greatest Stretch",
+      ];
+      const actual = [...new Set(library.filter((item) => isHoldExerciseName(item.name)).map((item) => item.name))]
+        .sort((left, right) => left.localeCompare(right));
+      assert.deepEqual(actual, PINNED_HOLDS);
+
+      // The reported one, and its neighbours: movements with a hold in the name.
+      for (const name of ['Push Up to Side Plank', 'Plank Jack', 'Side Plank Rotation', 'Hanging Leg Raise', 'Hang Clean', 'Leverage Iso Row']) {
+        assert.equal(isHoldExerciseName(name), false, name);
+      }
+      for (const name of ['Plank', 'Side Plank', 'Side Bridge', 'Wall Handstand Hold', 'One Handed Hang', 'Calves-SMR']) {
+        assert.equal(isHoldExerciseName(name), true, name);
+      }
+    },
+  },
 ];

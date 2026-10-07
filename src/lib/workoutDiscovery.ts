@@ -1,6 +1,7 @@
 import { WorkoutGoalType, WorkoutLevel, WorkoutTemplateV1 } from '../features/workout/workoutTypes';
 import { TailoringPreferencesInput, getPreferredReadyEquipmentFilter, sortReadyDiscoveryItemsByTailoring } from './tailoringFit';
 import { resolveProgramEquipmentBucket } from './programEquipment';
+import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
 import { ReadyProgramContent } from './readyProgramContent';
 
 export type ReadyTimeFilter = 'all' | 'short' | 'balanced' | 'long';
@@ -18,6 +19,22 @@ export interface ReadyDiscoveryFilters {
 export interface ReadyDiscoveryItem {
   template: WorkoutTemplateV1;
   content: ReadyProgramContent | null;
+  /**
+   * The session length the Programs card quotes for this programme
+   * (`readyTemplateCardMinutes`). The plans screen prints it and the time
+   * filter buckets by it, so the two cannot disagree; neither reads the
+   * catalog's hand-written `estimatedSessionDuration`, which was 10+ minutes
+   * off the card on 43 of 68 programmes (bug hunt, 2026-10-05, B14).
+   */
+  minutes: number;
+}
+
+export function buildReadyDiscoveryItem(
+  template: WorkoutTemplateV1,
+  content: ReadyProgramContent | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): ReadyDiscoveryItem {
+  return { template, content, minutes: readyTemplateCardMinutes(template, minutesOptions) };
 }
 
 const READY_PROGRAM_TRADEOFFS: Record<string, string> = {
@@ -92,7 +109,7 @@ export function filterReadyDiscoveryItems(items: ReadyDiscoveryItem[], filters: 
       return false;
     }
 
-    if (filters.time !== 'all' && getReadyProgramTimeBucket(item.template.estimatedSessionDuration) !== filters.time) {
+    if (filters.time !== 'all' && getReadyProgramTimeBucket(item.minutes) !== filters.time) {
       return false;
     }
 

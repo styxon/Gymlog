@@ -153,6 +153,7 @@ const DIST = path.join(__dirname, '..', '..', '.test-dist');
 /** Modules that capture AsyncStorage when required, so they load fresh per fake. */
 const STORAGE_MODULES = [
   'storage/largeItem.js',
+  'storage/corruptCopies.js',
   'storage/workoutAside.js',
   'storage/coachAdviceMemoryStore.js',
   'storage/deviceLocale.js',

@@ -196,7 +196,7 @@ module.exports = [
       // rows get the space the padding was holding. Still the biggest thing on
       // this screen by a clear margin; the next-largest heading here is 22.
       assert.match(homeScreenSource, /heroTitle:\s*\{[\s\S]*fontSize: 32/);
-      assert.match(homeScreenSource, /t\(language, 'home\.hero\.sessionsProgress', \{ done: sessionsDone, total: sessionsTotal \}\)/);
+      assert.match(homeScreenSource, /t\(language, sessionsDone === 1 \? 'home\.hero\.sessionsProgressOne' : 'home\.hero\.sessionsProgress', \{ done: sessionsDone, total: sessionsTotal \}\)/);
       // Counts sessions plainly (design frame 15): "of 60" repeated the block
       // total that the programme section's "Week 1 of 12" already carries.
       assert.match(i18nSource, /'home\.hero\.sessionsProgress': '\{done\} sessions logged'/);
@@ -248,7 +248,7 @@ module.exports = [
       // (user 2026-08-30: the three rows drifted apart in size).
       assert.match(
         homeScreenSource,
-        /styles\.blockMeta[\s\S]{0,160}'home\.section\.workoutMeta', \{ count: totalExerciseCount, sets: totalSets \}/,
+        /styles\.blockMeta[\s\S]{0,160}'home\.section\.workoutMeta'[\s\S]{0,260}totalExerciseCount[\s\S]{0,200}totalSets/,
       );
       assert.doesNotMatch(homeScreenSource, /heroListMetaRow|heroListTitle|heroListMeta[^R]/);
       // The lifts' fold row is titled like its neighbours — "Treeni" between
@@ -506,12 +506,12 @@ module.exports = [
       // yesterday (2026-09-16).
       assert.match(
         heroCard,
-        /const completedForTemplate = completedSessionsForTemplate\(firstEntry\.workoutTemplateId, completedPlanSessions\);\s*const nextSessionIndex = resolveNextPlanEntryIndex\(sortedEntries, completedForTemplate\);/,
+        /const completedForTemplate = completedSessionsForTemplate\(firstEntry\.workoutTemplateId, completedPlanSessions\);\s*const nextSessionIndex = resolveNextPlanEntryIndex\(rotationEntries, completedForTemplate\);/,
       );
       // "Trained today" for the calendar forecast counts this plan's sessions
       // by the rotation's own match, not any workout logged today (recheck of
       // #224, 2026-09-28).
-      assert.match(heroCard, /trainedToday: planTrainedOnDay\(sortedEntries, completedForTemplate, todayDayStart\),/);
+      assert.match(heroCard, /trainedToday: planTrainedOnDay\(rotationEntries, completedForTemplate, todayDayStart\),/);
       assert.match(heroCard, /equipmentLabel: buildSessionEquipmentLabel\(/);
       assert.match(heroCard, /totalSets: session\.exercises\.reduce/);
       assert.doesNotMatch(homeScreenSource, /planChartBars/);

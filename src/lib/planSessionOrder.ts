@@ -19,7 +19,7 @@
  */
 
 import { SetupWeekday } from '../types/models';
-import { PlanRotationEntry, PlanRotationSession, resolveNextPlanEntryIndex } from './planRotation';
+import { PlanRotationEntry, PlanRotationSession, planTrainedOnDay, resolveNextPlanEntryIndex } from './planRotation';
 import { WEEKDAY_KEYS } from './programTrainingDays';
 import { rotateLabelsForNextSession } from './trainingWeekSync';
 
@@ -102,7 +102,16 @@ export function reorderPlanWeek<T extends PlanEntrySessionRef & PlanRotationEntr
   if (!labels.every(isWeekdayKey)) {
     return repointed;
   }
-  const turned = rotateLabelsForNextSession(labels, resolveNextPlanEntryIndex(repointed.entries, completed), now);
+  const turned = rotateLabelsForNextSession(
+    labels,
+    resolveNextPlanEntryIndex(repointed.entries, completed),
+    now,
+    planTrainedOnDay(
+      repointed.entries,
+      completed,
+      new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
+    ),
+  );
   return {
     kind: 'repointed',
     entries: repointed.entries.map((entry, index) => ({ ...entry, label: turned[index] })),

@@ -521,6 +521,8 @@ export interface GuidedSetTarget {
   reps: number;
   /** `reps` is seconds held, not repetitions — carried so every label agrees. */
   timed?: boolean;
+  /** `reps` is minutes of steady work (trackingMode 'duration_minutes'). */
+  minutes?: boolean;
   loadKg: number | null;
   /**
    * Load this set carried before automated progression raised it, when the
@@ -566,7 +568,11 @@ function formatKg(value: number): string {
 
 export function formatGuidedTarget(target: GuidedSetTarget, language: AppLanguage = 'en'): string {
   if (target.loadKg === null) {
-    return t(language, target.timed ? 'guided.target.seconds' : 'guided.target.reps', { reps: target.reps });
+    return t(
+      language,
+      target.minutes ? 'guided.target.minutes' : target.timed ? 'guided.target.seconds' : 'guided.target.reps',
+      { reps: target.reps },
+    );
   }
   return `${target.reps} × ${formatKg(target.loadKg)} kg`;
 }
@@ -726,8 +732,9 @@ export function resolveGuidedSetTarget(
     )
     .sort((left, right) => right.setIndex - left.setIndex)[0];
 
-  // A hold logs no weight either — its "reps" are seconds.
-  if (trackingMode === 'bodyweight' || trackingMode === 'hold') {
+  // A hold logs no weight either — its "reps" are seconds. Nor does a bout of
+  // minutes on a bike.
+  if (trackingMode === 'bodyweight' || trackingMode === 'hold' || trackingMode === 'duration_minutes') {
     // Bodyweight progresses by reps: the gate's target replaces the template
     // fallback, and the previous completed set still wins — mid-session the
     // day's own numbers are the better prescription.
@@ -741,6 +748,7 @@ export function resolveGuidedSetTarget(
       reps,
       // Set only when true, so a bodyweight target keeps the shape it had.
       ...(trackingMode === 'hold' ? { timed: true } : {}),
+      ...(trackingMode === 'duration_minutes' ? { minutes: true } : {}),
       loadKg: null,
       autoProgressedFromKg: null,
       prefilledFromPerformedAt: null,
@@ -1060,6 +1068,24 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'romanian deadlift': 'romanian deadlift',
   'barbell row': 'bent over barbell row',
   'hip thrust': 'barbell hip thrust',
+  // The floor bridge. By containment it landed on the barbell bridge, whose
+  // steps begin with a loaded bar over the legs (bug hunt, 2026-10-04).
+  'glute bridge': 'butt lift (bridge)',
+  // The equipment filter allows these with no gear (the name says bodyweight),
+  // so the demo must be the floor bridge, not the barbell hip thrust that
+  // "hip thrust" reaches by containment.
+  'hip thrust (bodyweight)': 'butt lift (bridge)',
+  'hip thrust (bodyweight or light bar)': 'butt lift (bridge)',
+  // The catalogue's plain calf raises are prescribed to readers with and
+  // without a gym. By containment they opened the seated and standing calf
+  // MACHINES (36 rows): a machine demo under a bodyweight programme. The extra
+  // entry's steps hold for a loaded row too. Where the extras are absent the
+  // target is absent and lookup falls through as before (bug hunt, 2026-10-04).
+  'calf raise': 'bodyweight calf raise',
+  'standing calf raise': 'bodyweight calf raise',
+  // Named single-leg in brackets, it is the single-leg raise, not the two-leg one.
+  'calf raise (single-leg)': 'single-leg calf raise',
+  'calf raise (each leg)': 'single-leg calf raise',
   'lat pulldown': 'wide-grip lat pulldown',
   'pull-up': 'pullups',
   'pull-ups': 'pullups',
@@ -1074,7 +1100,6 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // which is why stripped names are not allowed to use it.
   'rows (bar or rings)': 'inverted row',
   'seated cable row': 'seated cable rows',
-  'glute bridge': 'barbell glute bridge',
   'step-up': 'step-up with knee raise',
   vacuum: 'stomach vacuum',
 
@@ -1089,7 +1114,13 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // Jump" are left unresolved rather than pointed at "Plank" and "Star Jump".
   'chest-supported row': 'dumbbell incline row',
   'chest-supported t-bar row': 'lying t-bar row',
-  'bulgarian split squat': 'split squats',
+  // The app opens its own "Bulgarian Split Squat" (extraExerciseLibrary): an
+  // exact name wins over this alias. Against the generated list alone — where
+  // "Split Squats", a jumping move, would win by containment — the dumbbell
+  // split squat is the closest real lift (bug hunt, 2026-10-04).
+  'bulgarian split squat': 'split squat with dumbbells',
+  // "Arnold Press" matched "Kettlebell Arnold Press" by containment.
+  'arnold press': 'arnold dumbbell press',
   'machine chest press': 'leverage chest press',
   'machine high row': 'leverage high row',
   'hanging knee raise': 'hanging leg raise',
@@ -1129,7 +1160,12 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'banded hip thrust': 'barbell hip thrust',
   'single-leg hip thrust': 'single leg glute bridge',
   'banded glute bridge': 'barbell glute bridge',
-  'glute bridge hold': 'barbell glute bridge',
+  // The hold is a floor bridge with no load; the demo is the bodyweight one.
+  // Its history is still filed under the barbell bridge (DEMO_ONLY_ALIASES).
+  'glute bridge hold': 'butt lift (bridge)',
+  // The unloaded walking lunge opens the bodyweight lunge's steps, not the
+  // barbell one that containment used to land on.
+  'walking lunge': 'bodyweight walking lunge',
   'cable glute kickback': 'one-legged cable kickback',
   'inchworm to push-up': 'inchworm',
   // "each side" is a prescription, so the qualifier strip refuses this one.
@@ -1143,10 +1179,9 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // ones the library does hold under another name. Each pair was checked by
   // hand on the same rule as the block above — SAME MOVEMENT, gear may differ.
   //
-  // What is deliberately not here: the cardio prescriptions (Treadmill HIIT,
-  // Easy Run Blocks), which are dosage rather than lifts and have no library
-  // entry to point at, and the movements the library genuinely lacks (Burpee,
-  // Bird Dog, Nordic Hamstring Curl). A near miss is worse than a blank.
+  // What is deliberately not here: the movements the generated library
+  // genuinely lacks (Burpee, Bird Dog, the run blocks). A near miss is worse
+  // than a blank; they have rows of their own in extraExerciseLibrary now.
   'competition back squat': 'barbell full squat',
   'pause squat': 'barbell full squat',
   'competition deadlift': 'barbell deadlift',
@@ -1182,6 +1217,77 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'rowing machine hiit': 'rowing, stationary',
   'rowing machine (500m intervals)': 'rowing, stationary',
   'stationary bike (easy pace)': 'bicycling, stationary',
+
+  // ── The ready programmes' names that only containment placed ───────────
+  //
+  // Walking every slot of every ready programme (catalog audit, 2026-10-06):
+  // 180 slots reached their photo by "the shortest library name containing
+  // this one", and on about half of them that was another lift — "Barbell Bench
+  // Press" opened the DECLINE bench, "Leg Curl" the stability-ball curl,
+  // "Overhead Triceps Extension" a sled, "Close-Grip Bench Press" the Smith
+  // machine, "Bent-Over Row" the reverse grip. Each pair below is the same
+  // movement, checked by hand on the rule of the blocks above; the generic
+  // names whose row is one variant of several are in DEMO_ONLY_ALIASES, so
+  // the photo improves and what a log is filed under does not move.
+  // tests/lib/readyProgrammeAudit.test.cjs holds every slot to exact-or-alias.
+  'barbell bench press': 'barbell bench press - medium grip',
+  'bent-over row': 'bent over barbell row',
+  'bicep curl': 'dumbbell bicep curl',
+  'dumbbell curl': 'dumbbell bicep curl',
+  'box jump': 'front box jump',
+  'cable curl': 'standing biceps cable curl',
+  'cable fly': 'cable crossover',
+  'cable hammer curl': 'cable hammer curls - rope attachment',
+  'cable kickback': 'one-legged cable kickback',
+  'cable row': 'seated cable rows',
+  'cable triceps extension': 'low cable triceps extension',
+  'close-grip bench press': 'close-grip barbell bench press',
+  'dumbbell fly': 'dumbbell flyes',
+  'dumbbell row': 'one-arm dumbbell row',
+  'hammer curl': 'hammer curls',
+  // The prone drill lies face down; the programmes' morning opener stands.
+  'hip circles': 'standing hip circles',
+  'jump squat': 'freehand jump squat',
+  'leg curl': 'lying leg curls',
+  'lying leg curl': 'lying leg curls',
+  'leg extension': 'leg extensions',
+  'medicine ball slam': 'one-arm medicine ball slam',
+  'mountain climber': 'mountain climbers',
+  'overhead triceps extension': 'standing dumbbell triceps extension',
+  'rear delt fly': 'reverse flyes',
+  'renegade row': 'alternating renegade row',
+  'sissy squat': 'weighted sissy squat',
+  'skull crusher': 'ez-bar skullcrusher',
+  't-bar row': 't-bar row with handle',
+  'wrist curl': 'cable wrist curl',
+  // Names the library held under another spelling, unresolved until now.
+  // A diamond push-up is the close-hands push-up; the library's natural
+  // glute-ham raise is the Nordic curl (kneeling, lowered by the hamstrings).
+  // Not the single-leg RDL: the library's one is a kettlebell lift, and the
+  // programmes prescribe it with no weight to a reader who may own none.
+  'diamond push-up': 'push-ups - close triceps position',
+  'nordic hamstring curl': 'natural glute ham raise',
+
+  // ── Dosages of the app's own rows (extraExerciseLibrary) ───────────────
+  //
+  // The last 79 names of the ready programmes had no row at all (catalog
+  // audit, 2026-10-06). Each got one, except these: the same movement with
+  // the same equipment, whose name carries a dose the strip refuses to drop
+  // (a time, a distance, "each side") or a variant the row's steps already
+  // teach. The burpee row's steps include the push-up.
+  'burpee (20s on / 10s off)': 'burpee',
+  'burpee with push-up': 'burpee',
+  'pigeon pose (each side)': 'pigeon pose',
+  'treadmill hiit (30s on / 30s off)': 'treadmill hiit',
+  'bike hiit (45s sprint / 15s rest)': 'bike hiit',
+  // A fan bike sprint. Named here because the strip would have reached the
+  // library's "Air Bike", which is the bicycle crunch.
+  'air bike (30s sprint)': 'bike hiit',
+  'sprint 40m': 'sprint',
+  'sprint interval (200m)': 'sprint',
+  // Loaded in one programme and not in the others; the row's steps make the
+  // dumbbell optional, and it is never the library's kettlebell lift.
+  'single-leg romanian deadlift': 'single-leg rdl',
 };
 
 /**
@@ -1232,30 +1338,115 @@ function resolveExactOrAlias(candidate: string, lowerNames: readonly string[]): 
  * "Barbell Bench Press" is contained in "Decline Barbell Bench Press", and
  * "Squat" in "Box Squat". Null when only a substring would place the name.
  */
+/**
+ * Aliases that pick a demo, not a library row to file a lift's history under.
+ * The catalogue's plain calf raise opens the bodyweight raise's steps, but a
+ * gym's loaded calf raise is not that lift: filed under it, the bodyweight
+ * page listed 80 kg sets as its own (review, 2026-10-04).
+ */
+export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
+  ['calf raise', null],
+  ['standing calf raise', null],
+  ['walking lunge', null],
+  // Filed where it always was, so its history does not move when the demo does.
+  ['glute bridge hold', 'barbell glute bridge'],
+  // A generic name, or a lift done without the row's implement: the row shows
+  // the movement, but it is one variant of several (catalog audit, 2026-10-06).
+  ['leg curl', null],
+  ['rear delt fly', null],
+  ['medicine ball slam', null],
+  ['sissy squat', null],
+]);
+
+/**
+ * The lowercased names of a library array, and every answer already given
+ * against it.
+ *
+ * Both lookups below used to lowercase the whole library (about 900 names) on
+ * every call, and the recommender calls them thousands of times per pass: for
+ * each programme it scores, for each exercise in it, through
+ * resolveCatalogSourceCategory and friends. On the phone that was most of a
+ * 1.6 s render before the splash could lift (startup trace, 2026-10-06). A
+ * name's place in a given library never changes, so it is worked out once per
+ * array. Keyed by the array itself, which every caller holds at module level;
+ * an array built per call simply never hits and is collected with its entry.
+ * The length check keeps a caller that appends to its array from reading a
+ * stale snapshot.
+ */
+const libraryLookupCache = new WeakMap<
+  readonly string[],
+  { size: number; lowerNames: string[]; guided: Map<string, number | null>; filed: Map<string, number | null> }
+>();
+
+function libraryLookup(libraryNames: readonly string[]) {
+  let entry = libraryLookupCache.get(libraryNames);
+  if (!entry || entry.size !== libraryNames.length) {
+    entry = {
+      size: libraryNames.length,
+      lowerNames: libraryNames.map((name) => name.trim().toLowerCase()),
+      guided: new Map(),
+      filed: new Map(),
+    };
+    libraryLookupCache.set(libraryNames, entry);
+  }
+  return entry;
+}
+
 export function findFiledLibraryIndex(exerciseName: string, libraryNames: readonly string[]): number | null {
   const normalized = exerciseName.trim().toLowerCase();
   if (!normalized) {
     return null;
   }
-  const lowerNames = libraryNames.map((name) => name.trim().toLowerCase());
-  const direct = resolveExactOrAlias(normalized, lowerNames);
+  const lookup = libraryLookup(libraryNames);
+  const cached = lookup.filed.get(normalized);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const index = resolveFiledLibraryIndex(normalized, lookup.lowerNames);
+  lookup.filed.set(normalized, index);
+  return index;
+}
+
+function resolveFiledLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
+  const filedOnly = (candidate: string) => {
+    if (DEMO_ONLY_ALIASES.has(candidate)) {
+      const exact = lowerNames.indexOf(candidate);
+      if (exact >= 0) {
+        return exact;
+      }
+      const filedAs = DEMO_ONLY_ALIASES.get(candidate);
+      const filedIndex = filedAs ? lowerNames.indexOf(filedAs) : -1;
+      return filedIndex >= 0 ? filedIndex : null;
+    }
+    return resolveExactOrAlias(candidate, lowerNames);
+  };
+  const direct = filedOnly(normalized);
   if (direct !== null) {
     return direct;
   }
   const stripped = stripCoachingQualifier(normalized);
-  return stripped ? resolveExactOrAlias(stripped, lowerNames) : null;
+  return stripped ? filedOnly(stripped) : null;
 }
 
 export function findGuidedLibraryIndex(
   exerciseName: string,
-  libraryNames: string[],
+  libraryNames: readonly string[],
 ): number | null {
   const normalized = exerciseName.trim().toLowerCase();
   if (!normalized) {
     return null;
   }
-  const lowerNames = libraryNames.map((name) => name.trim().toLowerCase());
+  const lookup = libraryLookup(libraryNames);
+  const cached = lookup.guided.get(normalized);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const index = resolveGuidedLibraryIndex(normalized, lookup.lowerNames);
+  lookup.guided.set(normalized, index);
+  return index;
+}
 
+function resolveGuidedLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
   const direct = resolveExactOrAlias(normalized, lowerNames);
   if (direct !== null) {
     return direct;

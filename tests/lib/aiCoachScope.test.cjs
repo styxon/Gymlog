@@ -107,6 +107,124 @@ module.exports = [
     },
   },
   {
+    name: 'coach scope: the ways people actually type it are caught too (bug hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        // The apostrophe a phone keyboard types by default.
+        'I don’t want to live anymore',
+        'I dont want to live anymore',
+        // Finnish case endings, which a whole-word phrase could not reach.
+        'ajattelen itsemurhasta',
+        'mietin itsemurhaan',
+        'olen ollut itsetuhoinen',
+        'minulla on itsetuhoisia ajatuksia',
+        'viiltelin taas eilen',
+        // Inside a compound.
+        'mietin lääkeitsemurhaa',
+        // First person present, and the softened forms.
+        'tapan itseni',
+        'Minä tapan itseni',
+        'haluan vain kuolla',
+        'haluan vaan kuolla',
+        'toivon että kuolisin',
+        "I'm going to take my own life",
+        'I want to end my own life',
+        'everyone would be better off dead without me',
+        'I wish I were dead',
+        'I want to kill my self',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
+      }
+
+      // The widening must not take gym sentences with it. (Hyperbole that
+      // says the words themselves — "tapan itseni tällä ohjelmalla" — does get
+      // the crisis line; that is the side to be wrong on.)
+      for (const prompt of [
+        'I want to end my workout with core',
+        'how do I end my sets better',
+        'viimeinen sarja meinasi tappaa',
+        'itsevarmuus penkissä puuttuu',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'training', prompt);
+      }
+    },
+  },
+  {
+    name: 'coach scope: punctuation, spacing and spoken forms do not hide a crisis (evening hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        // A comma where the phrase has none.
+        'Toivon, että kuolisin',
+        'toivoisin, etten heräisi',
+        // Spacing the phrase does not have.
+        'haluan  kuolla',
+        'haluan\nkuolla',
+        'haluan\tkuolla',
+        'haluan\u00A0kuolla',
+        'en\u00A0halua\u00A0elää',
+        // An ä typed as a plus a combining mark.
+        'en halua ela\u0308a\u0308',
+        'toivon etta\u0308 kuolisin',
+        // An invisible character inside a word.
+        'itse\u200Bmurha',
+        'kill \u00ADmyself',
+        // Spoken and conditional forms.
+        'en jaksaisi elää',
+        'en jaksaisi enää elää',
+        'aion tehdä itsarin',
+        'mietin itsaria',
+        'mä haluun kuolla',
+        'I wanna die',
+        "I'm going to hang myself",
+        'thinking about hanging myself',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', JSON.stringify(prompt));
+      }
+    },
+  },
+  {
+    name: 'coach scope: gym words that contain a crisis word are training (evening hunt 2026-10-05)',
+    run() {
+      for (const prompt of [
+        'how many suicide sprints should I do after legs',
+        'are suicide runs good conditioning?',
+        'Suicide drills or intervals for basketball',
+        'I cut myself on the knurling, can I still deadlift?',
+        'cut myself on the bar during cleans',
+        'polvessa on viiltelevä kipu kyykyssä',
+        'viiltelevää kipua olkapäässä penkissä',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'training', prompt);
+      }
+
+      // The excuse covers the gym phrase, not the sentence it sits in.
+      for (const prompt of [
+        'suicide sprints make me want to die',
+        'I cut myself on purpose',
+        'I cut myself on my arm again',
+        'viiltelin taas eilen',
+        'olen viillellyt itseäni',
+        'viiltely on alkanut uudestaan',
+        'I keep thinking about suicide',
+        // A "suicide line" is a drill and a crisis line; asked for, it is the second.
+        'is there a suicide line I can call tonight',
+        'what is the suicide hotline number',
+      ]) {
+        assert.equal(classifyCoachScope(prompt), 'crisis', prompt);
+      }
+    },
+  },
+  {
+    name: 'coach scope: the offline coach answers a curly-apostrophe crisis with the crisis line',
+    run() {
+      const answer = buildAiCoachPreviewAnswer('I don’t want to live anymore', CONTEXT, 'en');
+      const crisis = buildAiCoachPreviewAnswer("I don't want to live anymore", CONTEXT, 'en');
+      assert.deepEqual(answer, crisis);
+      const fi = buildAiCoachPreviewAnswer('ajattelen itsemurhasta', CONTEXT, 'fi');
+      assert.match(JSON.stringify(fi), /112|MIELI/);
+    },
+  },
+  {
     name: 'coach scope: the offline coach declines instead of inventing an answer',
     run() {
       const offTopic = buildAiCoachPreviewAnswer('kuka voittaa presidentinvaalit', CONTEXT, 'fi');

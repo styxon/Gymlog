@@ -1,5 +1,8 @@
 import { buildAiCoachPlanSchema } from './aiCoachPlan';
+import { exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
+import { exerciseNameLabel } from './exerciseNameLabel';
 import { findGuidedLibraryIndex } from './guidedPlayer';
+import { isHoldExerciseName } from './holdExercises';
 import { AICoachPlanSchema } from '../types/aiCoachPlan';
 import {
   AiPlannerDaysPerWeek,
@@ -436,6 +439,16 @@ export interface ProposedExercise {
   repsMin: number;
   repsMax: number;
   restSeconds: number;
+  /**
+   * Whether the lift is in the progression ("Ei seurannassa" when not). Stored
+   * as the programme's `trackedDefault`, which decides for every lift the
+   * library does not call compound (customWorkoutAdapter). The saved
+   * programme wrote a flat false here, and that only went unnoticed while the
+   * library filed every curl and raise as compound; with the category
+   * following the source mechanic (2026-10-06), a coach's curl day would have
+   * had no lift in the trend. See `liveExerciseTracked` and `planToProposal`.
+   */
+  tracked: boolean;
 }
 
 export interface ProposedSession {
@@ -453,6 +466,22 @@ export interface ProgrammeProposal {
   unmetLifts: string[];
   /** Live only: names the model returned that resolve to nothing. Dropped, and shown. */
   unresolvedNames: string[];
+  /** Live only: specialty movements the model put in that the brief did not ask for. Dropped, and shown. */
+  specialtyLeftOut?: string[];
+}
+
+/**
+ * Whether the brief asks for this specialty movement: by its name in either
+ * language, or for specialty / strongman work as such. "Missään ohjelmassa ei
+ * saa olla erikoisliikkeitä, eikä AI saa ehdottaa niitä ellei käyttäjä
+ * erikseen kysy" (user, 2026-10-06).
+ */
+export function briefAsksForSpecialty(brief: string, item: Pick<ExerciseLibraryItem, 'name'>): boolean {
+  const text = brief.toLowerCase();
+  if (/strongman|erikoisliik|specialty|special lifts/.test(text)) {
+    return true;
+  }
+  return [item.name, exerciseNameLabel('fi', item.name)].some((name) => text.includes(name.toLowerCase()));
 }
 
 function planToProposal(
@@ -473,6 +502,9 @@ function planToProposal(
         repsMin: exercise.repsMin,
         repsMax: exercise.repsMax,
         restSeconds: exercise.restSeconds,
+        // The plan's own answer: its warm-ups and accessory slots are out of
+        // the trend, its primary and secondary lifts are in it.
+        tracked: exercise.tracked,
       })),
   }));
   const includedIds = new Set(sessions.flatMap((session) => session.exercises.map((exercise) => exercise.libraryItemId)));
@@ -519,6 +551,7 @@ export function resolveLiveProposal(
 ): ProgrammeProposal {
   const names = library.map((item) => item.name);
   const unresolvedNames: string[] = [];
+  const specialtyLeftOut: string[] = [];
   const sessions: ProposedSession[] = [];
   for (const session of raw.sessions) {
     const exercises: ProposedExercise[] = [];
@@ -531,6 +564,12 @@ export function resolveLiveProposal(
         continue;
       }
       const item = library[index];
+      if (isSpecialtyExercise(item) && !briefAsksForSpecialty(brief, item)) {
+        if (!specialtyLeftOut.includes(item.name)) {
+          specialtyLeftOut.push(item.name);
+        }
+        continue;
+      }
       const repsMin = Math.max(1, Math.round(exercise.repsMin || 1));
       exercises.push({
         name: item.name,
@@ -540,6 +579,7 @@ export function resolveLiveProposal(
         repsMax: Math.max(repsMin, Math.round(exercise.repsMax || repsMin)),
         restSeconds:
           exercise.restSeconds && exercise.restSeconds > 0 ? Math.round(exercise.restSeconds) : defaultRestSeconds,
+        tracked: liveExerciseTracked(item),
       });
     }
     if (exercises.length > 0) {
@@ -553,7 +593,28 @@ export function resolveLiveProposal(
     const item = name ? library.find((entry) => entry.name === name) : null;
     return !item || !includedIds.has(item.id);
   });
-  return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames };
+  return { source: 'live', title: raw.title.trim() || 'Vinha AI', sessions, signals, unmetLifts, unresolvedNames, specialtyLeftOut };
+}
+
+/**
+ * Whether a lift the live coach returned is in the progression.
+ *
+ * The live answer names lifts and doses, not roles, so the plan cannot say
+ * which of its lifts are accessories; the library decides. A strength lift —
+ * compound, or an isolation lift such as a curl or a leg curl — is tracked: on
+ * a coach's arm day the curl IS the main lift, and before 2026-10-06 every one
+ * of them was tracked through the library's old all-compound filing. A
+ * stretch, a hold, core and cardio work are not, as they were not then.
+ * (The preview composer's plan does name roles; its own `tracked` is used.)
+ */
+export function liveExerciseTracked(item: ExerciseLibraryItem): boolean {
+  if (item.category === 'compound') {
+    return true;
+  }
+  if (isHoldExerciseName(item.name) || exerciseTypeOf(item) === 'stretch') {
+    return false;
+  }
+  return item.category === 'isolation';
 }
 
 /**
@@ -579,7 +640,8 @@ export function buildProgrammeDraft(proposal: ProgrammeProposal, existingNames: 
         repMin: exercise.repsMin,
         repMax: exercise.repsMax,
         restSeconds: exercise.restSeconds,
-        trackedDefault: false,
+        // The proposal's own answer — see ProposedExercise.tracked.
+        trackedDefault: exercise.tracked === true,
         libraryItemId: exercise.libraryItemId,
       })),
     })),

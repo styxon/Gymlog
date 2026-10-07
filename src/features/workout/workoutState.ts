@@ -9,9 +9,9 @@ import {
 } from '../../lib/cardio';
 import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
-import { isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
-import { HOLD_DIAL, REPS_DIAL } from '../../lib/weightDial';
+import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
@@ -24,6 +24,7 @@ import {
   resolveProgressedReps,
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
+import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap, trackingModeAfterSwap } from '../../lib/catalogExercisePools';
 import {
   liftBeforeSwap,
@@ -104,6 +105,10 @@ export type WorkoutAction =
   | { type: 'set/undo'; payload: { slotId: string; setIndex: number } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
   | { type: 'exercise/removeSet'; payload: { slotId: string } }
+  /** A warm-up set, logged apart from the working sets (WorkoutWarmupSet). */
+  | { type: 'exercise/logWarmup'; payload: { slotId: string; loadKg: number; reps: number; completedAt: string } }
+  /** Takes back the warm-up at `index` of the lift's warm-ups. */
+  | { type: 'exercise/removeWarmup'; payload: { slotId: string; index: number } }
   /**
    * A session logged outside the guided player, remembered for next time.
    *
@@ -214,6 +219,7 @@ function cloneExercise(exercise: WorkoutExerciseInstance): WorkoutExerciseInstan
   return {
     ...exercise,
     sets: exercise.sets.map(cloneSet),
+    ...(exercise.warmups ? { warmups: exercise.warmups.map((warmup) => ({ ...warmup })) } : {}),
   };
 }
 
@@ -395,7 +401,7 @@ function resolveNamedHistoryDraft(
     rampTargetReps: undefined,
   };
 
-  const entry = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
+  const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
     // 0 kg is a real answer for bodyweight work and a missing one for a loaded
     // lift — the guided player used to hide the weight field, so zeroes exist.
     requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
@@ -405,6 +411,9 @@ function resolveNamedHistoryDraft(
     // would hide a real "last time" for nothing.
     repWindow: resolveBorrowRepWindow(exercise),
   });
+  // Working sets only, numbered as done: set 1 reads the first working set,
+  // not a warm-up logged before it (lib/warmupSets).
+  const entry = found ? toWorkingHistoryEntry(found, exercise.sets) : null;
   const matched = findHistoricalSetForIndex(entry, setIndex);
   if (!entry || !matched) {
     return blank;
@@ -462,7 +471,10 @@ function resolveHistoricalSetDraft(
   exercise: WorkoutTemplateExercise,
   options: WorkoutSessionMaterializeOptions,
 ): ResolvedSetDraft {
-  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName);
+  // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
+  // an ordinary set neither seeds set 1 nor climbs with the work.
+  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName)
+    .map((entry) => toWorkingHistoryEntry(entry, exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
@@ -510,6 +522,7 @@ function resolveHistoricalSetDraft(
     // never fired on a single set.
     fatigueSignal: options.fatigueSignal,
     fallbackLoadKg: matched.loadKg,
+    fallbackReps: matched.reps,
     // The early jump reads a single session, and only a recent one counts.
     nowMs: options.nowMs ?? Date.now(),
     cautionArea,
@@ -909,7 +922,9 @@ export function repsCeilingFor(
   const dial =
     isTimedTrackingMode(exercise.trackingMode) || parseIntervalScheme(exercise.exerciseName) !== null
       ? HOLD_DIAL.max
-      : REPS_DIAL.max;
+      : isMinutesTrackingMode(exercise.trackingMode)
+        ? MINUTES_DIAL.max
+        : REPS_DIAL.max;
   const planned = set?.plannedRepsMax;
   return typeof planned === 'number' && Number.isFinite(planned) ? Math.max(dial, planned) : dial;
 }
@@ -1107,6 +1122,8 @@ const CLOSED_SESSION_REFUSES = new Set<WorkoutAction['type']>([
   'set/undo',
   'exercise/addSet',
   'exercise/removeSet',
+  'exercise/logWarmup',
+  'exercise/removeWarmup',
   'exercise/skip',
   'exercise/insertAfter',
   'exercise/swap',
@@ -1588,6 +1605,47 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       return { ...state, activeSession: session };
     }
 
+    case 'exercise/logWarmup': {
+      if (!state.activeSession) {
+        return state;
+      }
+      const { slotId, loadKg, reps, completedAt } = action.payload;
+      // The same bounds a working set is held to, and a load: a warm-up is
+      // offered on loaded lifts only, and 0 kg there is no warm-up (it was then
+      // offered back every session — breaker, 2026-10-05).
+      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
+        return state;
+      }
+      const session = cloneSession(state.activeSession);
+      const exerciseIndex = findExerciseIndex(session, slotId);
+      if (exerciseIndex < 0) {
+        return state;
+      }
+      const exercise = session.exercises[exerciseIndex];
+      exercise.warmups = [...(exercise.warmups ?? []), { loadKg, reps, completedAt }];
+      session.updatedAt = completedAt;
+      return { ...state, activeSession: session };
+    }
+
+    case 'exercise/removeWarmup': {
+      if (!state.activeSession) {
+        return state;
+      }
+      const session = cloneSession(state.activeSession);
+      const exerciseIndex = findExerciseIndex(session, action.payload.slotId);
+      const warmups = exerciseIndex < 0 ? undefined : session.exercises[exerciseIndex].warmups;
+      if (!warmups || action.payload.index < 0 || action.payload.index >= warmups.length) {
+        return state;
+      }
+      const kept = warmups.filter((_, index) => index !== action.payload.index);
+      session.exercises[exerciseIndex].warmups = kept.length > 0 ? kept : undefined;
+      // Remembered as taken back, as set/undo does: a finish done twice merges
+      // with the stored log, which would bring this warm-up back.
+      session.takenBackAt = [...(session.takenBackAt ?? []), warmups[action.payload.index].completedAt];
+      session.updatedAt = new Date().toISOString();
+      return { ...state, activeSession: session };
+    }
+
     case 'exercise/addSet': {
       if (!state.activeSession) {
         return state;
@@ -1899,7 +1957,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // the field opens empty. `autoProgressedFromKg` is dropped either way,
       // because the progression gate did not choose a weight for this lift and
       // the badge must not say it did.
-      const swappedInEntry = findLatestEntryForExerciseName(state.history.slotHistory, action.payload.exerciseName, {
+      const swappedInFound = findLatestEntryForExerciseName(state.history.slotHistory, action.payload.exerciseName, {
         requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
         // Same gate as the session's own prefill: the swapped-in lift's weight
         // only carries over from sessions run at reps this slot is asking for.
@@ -1910,6 +1968,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           sets: pendingSets.length > 0 ? pendingSets : exercise.sets,
         }),
       });
+      // Its working sets only, numbered as done (lib/warmupSets), as the
+      // session's own prefill and the "Last time" panel read them: against the
+      // programme's count, so a set added mid-session does not change which of
+      // last time's sets were warm-ups (review, 2026-10-05).
+      const swappedInEntry = swappedInFound
+        ? toWorkingHistoryEntry(swappedInFound, programmeSetCount(exercise.sets))
+        : null;
       // Sets logged before this moment were a different lift. Clearing their
       // drafts is not enough on its own: the logger also carries forward from
       // the last COMPLETED set, which walked straight back over the swap and
@@ -1924,6 +1989,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           exercise.swappedAfterSetIndex ?? -1,
           ...completedIndexes,
         );
+      } else {
+        // Nothing done yet: the warm-ups were for the lift that is gone. Kept,
+        // they showed as the new lift's, were saved under it and offered for
+        // it next time — a barbell warm-up for a dumbbell lift (review,
+        // 2026-10-05). After a logged set they stay: they belong to the lift
+        // the slot started as, which keeps its own row.
+        exercise.warmups = undefined;
       }
       exercise.sets.forEach((set) => {
         if (set.status !== 'pending') {
@@ -1949,7 +2021,13 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         // holds a number the app chose (or none), and the log must say so:
         // `borrowed` or `none`, not "the reader's own" (lib/loggedSetPlan).
         // A set added after the swap is added afresh and stays `added`.
-        set.addedMidSession = undefined;
+        // The set is still past the programme's count, though, so it keeps
+        // that mark: cleared, the next swap and the "Last time" panel counted
+        // it as the programme's and read last time's warm-up as set 1 (bug
+        // hunt W11, 2026-10-05).
+        if (set.addedMidSession) {
+          set.plannedBySwap = true;
+        }
       });
       session.ui.swapSheetSlotId = null;
       session.updatedAt = new Date().toISOString();
@@ -2252,7 +2330,8 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
     // One entry per lift the slot held: the sets before a swap are the old
     // lift's history, not the new one's, and the next session of either lift
     // opens on what that lift actually did (lib/liftSegments).
-    const entries = splitExerciseByLift(exercise).map((segment): WorkoutSlotHistoryEntry => ({
+    const warmups = (exercise.warmups ?? []).map(({ loadKg, reps }) => ({ loadKg, reps }));
+    const entries = splitExerciseByLift(exercise).map((segment, segmentIndex): WorkoutSlotHistoryEntry => ({
       slotId: exercise.slotId,
       templateId: session.templateId,
       templateName: session.templateName,
@@ -2274,6 +2353,9 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // The lowered target this session asked for, if it asked for one, so
       // the next can ask one more (lib/progressionGate resolveMissedRepsTarget).
       ...loweredTargetOf(segment),
+      // Warm-ups come before the first working set, so they belong to the lift
+      // the slot started as: the first segment.
+      ...(segmentIndex === 0 && warmups.length > 0 ? { warmups } : {}),
     }));
 
     // Newest first, like the list it joins: the lift the slot ended on leads.

@@ -20,9 +20,17 @@ export interface TodaySessionPick {
   dayStart: number;
   sessionId: string;
   pickedAt: number;
+  /**
+   * The programme the pick was made in. Session ids repeat across catalog
+   * programmes, so the id alone does not say which programme's day was meant.
+   * Null on a pick stored before this existed: its programme is unknowable, so
+   * it keeps the old behaviour and applies to whichever programme leads.
+   */
+  workoutTemplateId?: string | null;
 }
 
 export interface CompletedPlanSession {
+  workoutTemplateId?: string | null;
   workoutTemplateSessionId?: string | null;
   performedAt: string;
 }
@@ -34,9 +42,18 @@ export function resolveTodaySessionPick<T extends { id: string }>(input: {
   completed: readonly CompletedPlanSession[];
   /** Start-of-day for a completion, so callers keep one date implementation. */
   toDayStart: (performedAt: string) => number;
+  /**
+   * The programme now leading (all the template ids it runs under). A pick
+   * made in a programme outside it is not this programme's, and only sessions
+   * of these templates can have answered the pick. Omitted: no programme check.
+   */
+  templateIds?: ReadonlySet<string>;
 }): T | null {
-  const { pick, sessions, todayDayStart, completed, toDayStart } = input;
+  const { pick, sessions, todayDayStart, completed, toDayStart, templateIds } = input;
   if (!pick || pick.dayStart !== todayDayStart) {
+    return null;
+  }
+  if (templateIds && pick.workoutTemplateId && !templateIds.has(pick.workoutTemplateId)) {
     return null;
   }
 
@@ -47,6 +64,10 @@ export function resolveTodaySessionPick<T extends { id: string }>(input: {
 
   const answeredByATrainedSession = completed.some((entry) => {
     if (entry.workoutTemplateSessionId !== picked.id) {
+      return false;
+    }
+    // A same-id day of some other programme did not answer this pick.
+    if (templateIds && entry.workoutTemplateId && !templateIds.has(entry.workoutTemplateId)) {
       return false;
     }
     if (toDayStart(entry.performedAt) !== todayDayStart) {

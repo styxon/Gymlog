@@ -15,11 +15,13 @@ import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
 import { findHeldReadyProgrammeCopyId, findReadyProgrammeCopyId } from '../lib/programmeCopyLink';
-import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan } from '../lib/programDetails';
+import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan, readyProgramSessionMinutes } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
 import { getSeasonProgramId, ProgramSeason } from '../lib/programSeasons';
+import { livePlanEntries } from '../lib/planResolvableEntries';
+import { templateSessionsReader } from './planTemplateSessions';
 import { planWeekdayIndexes } from '../lib/programTrainingDays';
 import {
   pickLibraryCollection,
@@ -165,7 +167,7 @@ export interface WorkoutTabDeps {
     workoutTemplateId: string,
     sessionId: string,
   ) => Promise<{ weekSynced: boolean } | null>;
-  handleSaveRhythm: (workoutTemplateId: string, dayIndexes: number[]) => Promise<void>;
+  handleSaveRhythm: (workoutTemplateId: string, dayIndexes: number[]) => Promise<boolean>;
   handleSaveEmphasis: (
     workoutTemplateId: string,
     updates: Parameters<NonNullable<ProgramDetailProps['onSaveEmphasis']>>[0],
@@ -406,12 +408,19 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
   if (route.screen === 'program') {
     const readyTemplate = route.programType === 'ready' ? getWorkoutTemplateById(route.workoutTemplateId) : null;
     const customTemplate = route.programType === 'custom' ? customWorkoutRuntimeMap[route.workoutTemplateId] ?? null : null;
+    // Truth rule: when this is the user's active program, the detail
+    // shows the composed week they actually run, not the raw catalog.
+    const readyComposedWeek = readyTemplate ? resolveComposedWeekForRoute(route.workoutTemplateId) : null;
+    const readyProgramMinutesOptions = { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides };
     const readyProgramFitExplanation =
       readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
         ? buildFirstRunRecommendationReasons(setupSelection, {
             projectedDaysPerWeek: readyTemplate.daysPerWeek,
-            estimatedSessionDuration: readyTemplate.estimatedSessionDuration,
+            // The page's own minutes, not the catalog's hand-written number:
+            // the badge said 35 and this line summed 50 (bug hunt, B14).
+            estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
             mismatchNote: setupRecommendation.mismatchNote,
+            language: preferences.appLanguage,
           }, tailoringPreferences).join(' ')
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);
@@ -494,12 +503,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           programInsightsByTemplateId[route.workoutTemplateId],
           readyProgramFitExplanation,
           readyProgramTailoringBadges,
-          // Truth rule: when this is the user's active program, the detail
-          // shows the composed week they actually run, not the raw catalog.
-          resolveComposedWeekForRoute(route.workoutTemplateId),
+          readyComposedWeek,
           preferences.appLanguage,
           readyProgramIsMine,
           programIsMine && !programLeads,
+          readyProgramMinutesOptions,
         )
       : customTemplate
         ? buildCustomProgramDetail(
@@ -512,9 +520,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         : null;
     // The plan's entries, in stored order — the order the week strip reads
     // both its days and the session on each of them.
-    const detailPlanEntries =
+    const detailPlanEntries = livePlanEntries(
       database.workoutPlans.find((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-        ?.entries ?? [];
+        ?.entries ?? [],
+      templateSessionsReader(database),
+    );
 
     return program ? (
       <ProgramDetailScreen
@@ -743,7 +753,20 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         }
         onSaveRhythm={
           database.workoutPlans.some((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-            ? (dayIndexes) => void handleSaveRhythm(route.workoutTemplateId, dayIndexes)
+            ? (dayIndexes) =>
+                void handleSaveRhythm(route.workoutTemplateId, dayIndexes).then(
+                  (saved) => {
+                    if (!saved) {
+                      void haptics.error();
+                      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                    }
+                  },
+                  (error) => {
+                    console.error('Failed to save the programme rhythm', error);
+                    void haptics.error();
+                    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                  },
+                )
             : undefined
         }
         // The cycle is the app's one schedule, so it is offered exactly where
@@ -803,6 +826,9 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           [],
           resolveComposedWeekForRoute(route.workoutTemplateId),
           preferences.appLanguage,
+          false,
+          false,
+          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides },
         )
       : customTemplate
         ? buildCustomProgramDetail(customTemplate, programInsightsByTemplateId[route.workoutTemplateId], preferences.appLanguage)
@@ -1117,6 +1143,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         programInsightsByTemplateId={programInsightsByTemplateId}
         recommendedReadyProgramId={recommendedReadyProgramId}
         tailoringPreferences={tailoringPreferences}
+        programAvailableEquipment={availableEquipmentForDrills}
+        programDrillOverrides={preferences.routineDrillOverrides}
         onOpenWorkout={navigateToGuidedWorkout}
         onOpenReadyProgram={handleOpenProgramDetail}
         onStartReadyProgram={handleStartReadyProgram}

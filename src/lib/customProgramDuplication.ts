@@ -53,6 +53,7 @@ export function buildDuplicatedCustomProgramDraft(
             restSeconds: exercise.restSeconds,
             trackedDefault: exercise.trackedDefault,
             libraryItemId: exercise.libraryItemId ?? null,
+            trackingMode: exercise.trackingMode ?? null,
             // The copy trains the same way the original did, supersets
             // included. Dropping this would unpair every superset in a
             // programme the moment the reader edited one lift in it.

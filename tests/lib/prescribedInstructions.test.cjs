@@ -31,103 +31,17 @@ const library = createSeedExerciseLibrary();
 const libraryNames = library.map((item) => item.name);
 
 /**
- * Prescribed names with no library entry, as of 2026-08-31.
+ * Prescribed names with no library entry. None since 2026-10-06.
  *
- * Mostly mobility holds, breathing drills and sprint blocks — things that are
- * a timed instruction rather than a lift on a rack, and that the warm-up and
- * cool-down builders own. Some are real lifts with no upstream row (Diamond
- * Push-Up, V-Up, Toes-to-Bar, Single-Leg Romanian Deadlift) and belong in
- * `extraExerciseLibrary.ts` eventually.
+ * Until then it held 79: mobility holds, breathing drills, sprint blocks and
+ * a handful of real lifts with no upstream row. Each now has a row of its own
+ * in `extraExerciseLibrary.ts`, or an alias to the row that is the same
+ * movement ("Sprint 40m" -> "Sprint").
  *
- * Pinned as a list, not waved past with a pattern: the point is that a NEW
- * unresolved name fails this suite. Shortening it is progress; growing it is
- * a regression, and either way it is a deliberate edit.
+ * Kept as a list, not deleted: the point is that a NEW unresolved name fails
+ * this suite, and growing it is a regression made on purpose.
  */
-const UNRESOLVED_TODAY = [
-  '90/90 Hip Stretch',
-  'Air Bike (30s sprint)',
-  'Ankle Mobility Drill',
-  'Banded Fire Hydrant',
-  'Bike HIIT (45s sprint / 15s rest)',
-  'Bird Dog',
-  'Box Breathing',
-  'Burpee (20s on / 10s off)',
-  'Burpee with Push-Up',
-  'Butterfly Stretch',
-  'Cable Abductor',
-  'Cobra Pose',
-  'Cone Drill (Pro Agility)',
-  'Cossack Squat',
-  'Deep Squat Hold',
-  'Diamond Push-Up',
-  'Diaphragmatic Breathing',
-  'Doorway Pec Stretch',
-  'Dragon Flag',
-  'Easy Run Blocks',
-  'Frog Pump',
-  'Frog Pump (Banded)',
-  'Frog Stretch',
-  'Front Lever Tuck Hold',
-  'Glute Bridge March',
-  'Handstand Wall Walk',
-  'Heel Slide',
-  'Heel-to-Toe Walk',
-  'High Knees',
-  'Hollow Body Hold',
-  'Jumping Jack',
-  'L-Sit Hold',
-  'Ladder Drill',
-  'Lateral Lunge',
-  'Legs Up the Wall',
-  'Nordic Hamstring Curl (Assisted)',
-  'Pelvic Floor Activation (Kegel)',
-  'Pigeon Pose',
-  'Pigeon Pose (each side)',
-  'Pike Push-Up',
-  'Pike Push-Up (Elevated)',
-  'Plank Jack',
-  'Plank Shoulder Tap',
-  'Plank to Pike',
-  'Plank-Up',
-  'Pogo Hops',
-  'Pseudo Planche Push-Up',
-  'Seated Hip Stretch',
-  'Seated Pancake Stretch',
-  'Seated Spinal Twist',
-  'Shoulder Dislocations (PVC)',
-  'Shrimp Squat',
-  'Side Plank (Knees Down)',
-  'Side-Lying Leg Raise',
-  'Single-Leg Balance Hold',
-  'Single-Leg Balance Reach',
-  'Single-Leg Calf Raise',
-  'Single-Leg RDL',
-  'Single-Leg Romanian Deadlift',
-  'Sit-to-Stand (Chair Squat)',
-  'Skater Jump',
-  'Sleeper Stretch',
-  'Sphinx Pose',
-  'Spinal Twist (Supine)',
-  'Sprint 40m',
-  'Sprint Interval (200m)',
-  'Standing Band Row',
-  'Standing Forward Fold',
-  'Standing Hip Abduction',
-  'Standing Marching',
-  'Stride Finishers',
-  'Supported Deep Squat Hold',
-  'Supported Single-Leg Balance',
-  'Tempo Run Blocks',
-  'Thoracic Extension on Roller',
-  'Thread the Needle',
-  'Toes-to-Bar',
-  'Transverse Abdominis Activation',
-  'Treadmill HIIT (30s on / 30s off)',
-  'Tuck Planche Hold',
-  'V-Up',
-  'Wall Handstand Hold',
-  'Wall Slide',
-];
+const UNRESOLVED_TODAY = [];
 
 function prescribedExerciseNames() {
   const names = new Set();

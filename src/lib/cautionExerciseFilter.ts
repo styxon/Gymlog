@@ -2,7 +2,9 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupCautionFlag, SetupFocusArea } from '../types/models';
 import { trackingModeAfterSwap } from './catalogExercisePools';
 import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } from './cautionAreaMatching';
+import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
+import { isMinutesExerciseName } from './minutesExercises';
 
 export { cautionAreaLoadedBy, exerciseHitsCautionArea } from './cautionAreaMatching';
 
@@ -150,6 +152,14 @@ export function applyCautionFlagsToExercises(
   exercises: WorkoutTemplateExercise[],
   flags: SetupCautionFlag[],
   focusAreas: SetupFocusArea[] = [],
+  /**
+   * The reader's gear, when known. A careful swap has to be something they
+   * can do: "squat → Box Squat" put a barbell-and-rack lift in a home week
+   * with no gear, and "bench press → Machine Chest Press" a machine there
+   * (1317 of 7200 answer sets, recommendation matrix 2026-10-05). The swap
+   * falls through to the bodyweight one, then keeps the movement as it was.
+   */
+  availableEquipment: string[] | null = null,
 ): CautionAdjustedExercises {
   const seriousFlags = flags.filter((flag) => flag.level !== 'info');
   if (seriousFlags.length === 0) {
@@ -159,56 +169,106 @@ export function applyCautionFlagsToExercises(
   const removed: CautionAdjustedExercises['removed'] = [];
   const swapped: CautionExerciseSwap[] = [];
 
-  const adjusted = exercises
-    .map((exercise) => {
-      const matching = seriousFlags.filter((flag) => exerciseHitsCautionArea(exercise.exerciseName, flag.area));
-      if (matching.length === 0) {
-        return exercise;
-      }
+  /*
+   * The names already on the day (the list is one session).
+   *
+   * Two squats on a lower day both became Box Squat, and a Box Squat the day
+   * already had got a second one beside it — the same lift twice, in 46
+   * answer sets (bug hunt, 2026-10-05, B7). A swap therefore skips a
+   * replacement the day already holds and tries the next one (careful, then
+   * bodyweight, or the other way round for a focus area). When every
+   * replacement is taken the movement keeps its place, the same as one with
+   * no swap at all: dropping it would cut the day's volume for a lift the
+   * reader only asked to be careful with, and that is the less expected
+   * change of the two.
+   *
+   * "On the day" is what this pass has already kept or swapped in, plus the
+   * originals it has yet to reach. An original that will itself be swapped
+   * away later still blocks its name: being conservative here can only
+   * keep a movement, never put a duplicate in.
+   */
+  const pending = new Map<string, number>();
+  for (const exercise of exercises) {
+    const key = normalize(exercise.exerciseName);
+    pending.set(key, (pending.get(key) ?? 0) + 1);
+  }
+  const taken = new Set<string>();
+  const onTheDay = (name: string) => {
+    const key = normalize(name);
+    return taken.has(key) || (pending.get(key) ?? 0) > 0;
+  };
 
-      const avoidFlag = matching.find((flag) => flag.level === 'avoid');
-      if (avoidFlag) {
-        removed.push({ name: exercise.exerciseName, area: avoidFlag.area });
-        return null;
-      }
-
-      for (const flag of matching) {
-        const focusOverlap = CAUTION_TO_FOCUS_AREAS[flag.area].some((area) => focusAreas.includes(area));
-        const replacement =
-          (focusOverlap ? findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]) : null) ??
-          findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
-
-        // Never swap into something another flag bans outright. And never
-        // swap a hold into a lift: its dose is seconds, and "60–90" carried
-        // onto Box Squat read as 90 squats (2026-09-14). A hold with no hold
-        // to go to keeps its place, the same as any unmatched movement.
-        const holdIntoLift =
-          replacement !== null &&
-          (exercise.trackingMode === 'hold' || isHoldExerciseName(exercise.exerciseName)) &&
-          !isHoldExerciseName(replacement);
-        const sameLift = replacement !== null && normalize(replacement) === normalize(exercise.exerciseName);
-        if (replacement && !holdIntoLift && !sameLift && !isBannedByAnyAvoid(replacement, seriousFlags)) {
-          swapped.push({ from: exercise.exerciseName, to: replacement, area: flag.area });
-          return {
-            ...exercise,
-            exerciseName: replacement,
-            // The library's own data, not a name guess: a keyword match on the
-            // replacement name called "Bench Dips" -> "Machine Chest Press"
-            // bodyweight, leaving the set screen with no kg field for a machine
-            // lift (found 2026-09-26). trackingModeAfterSwap is the same rule
-            // the live player and Home use for every other swap — hold names
-            // first, then the ready programmes' own prescriptions, then the
-            // generated library's equipment field, and it only ever moves a
-            // slot TOWARD needing a weight for a name none of those place, so
-            // an unknown name never silently loses its weight field either.
-            trackingMode: trackingModeAfterSwap(exercise.trackingMode, replacement),
-          };
-        }
-      }
-
+  const adjustOne = (exercise: WorkoutTemplateExercise): WorkoutTemplateExercise | null => {
+    const matching = seriousFlags.filter((flag) => exerciseHitsCautionArea(exercise.exerciseName, flag.area));
+    if (matching.length === 0) {
       return exercise;
-    })
-    .filter((exercise): exercise is WorkoutTemplateExercise => exercise !== null);
+    }
+
+    const avoidFlag = matching.find((flag) => flag.level === 'avoid');
+    if (avoidFlag) {
+      removed.push({ name: exercise.exerciseName, area: avoidFlag.area });
+      return null;
+    }
+
+    for (const flag of matching) {
+      const focusOverlap = CAUTION_TO_FOCUS_AREAS[flag.area].some((area) => focusAreas.includes(area));
+      const bodyweight = findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]);
+      const careful = findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
+      const candidates = focusOverlap ? [bodyweight, careful] : [careful, bodyweight];
+      const replacement =
+        candidates.find(
+          (candidate): candidate is string =>
+            candidate !== null
+            && isExerciseAllowedWithEquipment(candidate, availableEquipment)
+            && !onTheDay(candidate),
+        ) ?? null;
+
+      // Never swap into something another flag bans outright. And never
+      // swap a hold into a lift: its dose is seconds, and "60–90" carried
+      // onto Box Squat read as 90 squats (2026-09-14). A hold with no hold
+      // to go to keeps its place, the same as any unmatched movement.
+      //
+      // The same for a bout of minutes: twenty minutes on a stair machine
+      // carried onto a lift is twenty reps of it (2026-10-06).
+      const holdIntoLift =
+        replacement !== null &&
+        (((exercise.trackingMode === 'hold' || isHoldExerciseName(exercise.exerciseName)) &&
+          !isHoldExerciseName(replacement)) ||
+          ((exercise.trackingMode === 'duration_minutes' || isMinutesExerciseName(exercise.exerciseName)) &&
+            !isMinutesExerciseName(replacement)));
+      const sameLift = replacement !== null && normalize(replacement) === normalize(exercise.exerciseName);
+      if (replacement && !holdIntoLift && !sameLift && !isBannedByAnyAvoid(replacement, seriousFlags)) {
+        swapped.push({ from: exercise.exerciseName, to: replacement, area: flag.area });
+        return {
+          ...exercise,
+          exerciseName: replacement,
+          // The library's own data, not a name guess: a keyword match on the
+          // replacement name called "Bench Dips" -> "Machine Chest Press"
+          // bodyweight, leaving the set screen with no kg field for a machine
+          // lift (found 2026-09-26). trackingModeAfterSwap is the same rule
+          // the live player and Home use for every other swap — hold names
+          // first, then the ready programmes' own prescriptions, then the
+          // generated library's equipment field, and it only ever moves a
+          // slot TOWARD needing a weight for a name none of those place, so
+          // an unknown name never silently loses its weight field either.
+          trackingMode: trackingModeAfterSwap(exercise.trackingMode, replacement),
+        };
+      }
+    }
+
+    return exercise;
+  };
+
+  const adjusted: WorkoutTemplateExercise[] = [];
+  for (const exercise of exercises) {
+    const key = normalize(exercise.exerciseName);
+    pending.set(key, (pending.get(key) ?? 1) - 1);
+    const result = adjustOne(exercise);
+    if (result) {
+      taken.add(normalize(result.exerciseName));
+      adjusted.push(result);
+    }
+  }
 
   return { exercises: adjusted, removed, swapped };
 }

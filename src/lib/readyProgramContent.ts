@@ -148,6 +148,116 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Squat, push, pull and plank come back every week and progress comes from reps, so strength and fitness build without a kilo of iron.',
   },
+  tpl_home_dumbbell_upper_lower_v1: {
+    summary:
+      'Four days a week at home with a pair of dumbbells: two upper-body days and two lower-body days, each once heavier and once with more reps.',
+    audience:
+      'Anyone training at home with dumbbells who wants four sessions a week for muscle and strength.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
+    whyItWorks:
+      'Every muscle is trained twice a week, once heavier and once with more reps, and progress comes from adding reps before adding weight.',
+  },
+  tpl_home_dumbbell_ppl_v1: {
+    summary:
+      'Six days a week at home with a pair of dumbbells: push, pull and legs, each twice, once heavier and once with more reps.',
+    audience:
+      'Experienced lifters training at home with dumbbells who want six sessions a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable, a sturdy chair or a bench to lean on, and a table for rows. The presses are done on the floor.',
+    whyItWorks:
+      'Every muscle is trained twice a week from two directions, and each session is short enough to fit a busy day.',
+  },
+  tpl_home_dumbbell_strength_v1: {
+    summary:
+      'Three full-body days a week with a pair of dumbbells: a squat or a hinge, a press and a row every day, in heavy sets of five and six. Floor press, goblet squat, split squat, deadlift and rows, with a short finish each day.',
+    audience:
+      'Anyone with dumbbells, at home or in a gym without barbells, who wants to get stronger on three days a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable and heavy enough for sets of five, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
+    whyItWorks:
+      'Every session trains legs, a press and a pull in sets of five or six with long rests. When every set is done at the target reps, the weight goes up next time.',
+  },
+  tpl_home_dumbbell_strength_split_v1: {
+    summary:
+      'Five days a week with a pair of dumbbells: two upper-body days, two lower-body days and a full-body day. Floor press, rows, shoulder press, goblet squat and stiff-legged deadlift in heavy sets of five and six.',
+    audience:
+      'Experienced lifters with dumbbells and no barbell who want to train for strength five days a week.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable and heavy enough for sets of five, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor.',
+    whyItWorks:
+      'Press, pull, squat and hinge each get two heavy days a week, so every lift is practised often and no single session runs long.',
+  },
+  tpl_home_bodyweight_upper_lower_v1: {
+    summary:
+      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work.',
+    audience:
+      'Anyone training at home without equipment who is past the beginner stage and wants four sessions a week.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+    whyItWorks:
+      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first.',
+  },
+  tpl_home_bodyweight_full_body_v1: {
+    summary:
+      'Two bodyweight days a week, the whole body each time. Decline push-ups, pull-ups or rows, split squats and single-leg work, with the harder variation doing the job of added weight.',
+    audience:
+      'Anyone past the beginner stage who wants to build muscle at home with no equipment and has two days a week.',
+    equipmentProfile:
+      'No equipment is needed. A sturdy table for rows, a chair or bench for dips and split squats, and a pull-up bar if you have one: without it the pull-ups become rows.',
+    whyItWorks:
+      'Every muscle is trained twice a week at 8 to 15 repetitions, and progress comes from reps first, then a harder variation: feet raised, one leg instead of two, a slower lowering.',
+  },
+  tpl_home_bodyweight_ppl_v1: {
+    summary:
+      'Six bodyweight days a week: push, legs, and pull with core, each twice. The second round uses different exercises from the first.',
+    audience:
+      'Experienced bodyweight trainers who want to build muscle at home with no equipment and can train six days a week.',
+    equipmentProfile:
+      'No equipment is needed. A sturdy table for rows, a chair or bench for dips and split squats, and a pull-up bar if you have one: without it the pull-ups become rows.',
+    whyItWorks:
+      'Pushing, pulling and legs each come back twice a week with different exercises the second time, so the work is spread across the week instead of piled into one session. The triceps pairs are supersets to keep it dense.',
+  },
+  tpl_athletic_starter_v1: {
+    summary:
+      'Three sessions a week with a barbell: a lower-body day, an upper-body day and a full-body day that ends in conditioning. Squat, bench press, row, deadlift, jumps and burpees.',
+    audience:
+      'Beginners with a barbell, a rack and a bench who want strength and conditioning in the same week.',
+    equipmentProfile:
+      'A barbell with plates, a squat rack and a bench. The conditioning is bodyweight.',
+    whyItWorks:
+      'A few big lifts carry the strength work and short jump and burpee sets carry the conditioning, so a first block trains both without a long list of exercises.',
+  },
+  tpl_home_athletic_5_day_v1: {
+    summary:
+      'Five bodyweight days a week at home: push and core, legs, a full-body circuit, pull and conditioning, and a balance day.',
+    audience:
+      'Anyone training at home without equipment who wants five sessions a week for strength and fitness together.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+    whyItWorks:
+      'Strength days and conditioning days alternate, so the week mixes heavier work with faster circuits.',
+  },
+  tpl_home_bodyweight_strength_3_day_v1: {
+    summary:
+      'Three full-body days a week with no equipment: hard push-up and split-squat variations at low reps, rows under a table and single-leg hinges.',
+    audience:
+      'Anyone training at home without equipment who wants to get stronger, not just fitter. Beginners start on the easier variations the swap sheet offers.',
+    equipmentProfile:
+      'No equipment. A sturdy table for rows, a chair or couch to raise your feet and for dips, and something to hook your feet under for the Nordic curl.',
+    whyItWorks:
+      'A hard variation at six reps works the muscle the way added weight would: few reps, long rests. Add a rep when the sets are clean, and move to a harder variation at eight.',
+  },
+  tpl_home_calisthenics_strength_5_day_v1: {
+    summary:
+      'Five days a week of calisthenics for strength: planche and pike push-ups, pistol and shrimp squats, pull-ups and L-sits, at low reps with long rests.',
+    audience:
+      'Experienced bodyweight trainers who can already do push-ups and pull-ups for reps and want five strength sessions a week.',
+    equipmentProfile:
+      'A pull-up bar for the pull-ups; without one they become rows. A table for rows, a chair to raise your feet and for dips, a wall for the handstand, and something to hook your feet under for the Nordic curl.',
+    whyItWorks:
+      'Every movement is trained twice a week on a hard variation, with five reps or fewer on the lead lift of the day and long rests. Add reps, then move to a harder variation.',
+  },
   tpl_gainer_calisthenics_mastery_v1: {
     summary:
       'Four days a week built around skills: handstand and planche, muscle-up and front lever, pistol squats and jumps, plus a skills-and-core day.',

@@ -34,6 +34,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # The Vercel deploy compiles api/ without strict and deploys through
+      # type errors, so they would only ever show in its log (tsconfig.api.json).
+      - name: Typecheck api/ as Vercel compiles it
+        run: npm run typecheck:api
+
       - name: Compile test build
         run: npx tsc -p tsconfig.test.json
 

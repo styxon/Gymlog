@@ -1,6 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { buildRetiredLibraryIdRemap } from '../lib/legacyLibraryIds';
+import { withLibraryCorrections } from '../lib/exerciseClassification';
+import {
+  normalizeAppliedMigrations,
+  restoreTrackingAfterCategoryCorrection,
+  TRACKING_CATEGORY_MIGRATION_ID,
+} from '../lib/trackingCategoryMigration';
+import { MINUTES_MODE_MIGRATION_ID, moveOldCopiesToMinutesMode } from '../lib/minutesModeMigration';
 import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
@@ -20,7 +27,9 @@ import { createEmptyDatabase } from '../data/seed';
 import { resolveDeviceLanguage } from './deviceLocale';
 import { clearCoachAdviceMemory } from './coachAdviceMemoryStore';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from './largeItem';
+import { removeCorruptCopies, setAsideCorruptCopy } from './corruptCopies';
 import { normalizeExerciseLog } from '../lib/exerciseLog';
+import { readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { withLoggedSessionTotals } from '../lib/sessionTotals';
 import {
   normalizeLearnedExerciseIds,
@@ -186,6 +195,12 @@ function normalizeTemplateSessions(
     .sort((left: WorkoutTemplateSessionRecord, right: WorkoutTemplateSessionRecord) => left.orderIndex - right.orderIndex);
 }
 
+/**
+ * The seeded library, with any stored row laid over it — and the source
+ * corrections read in again afterwards. A blob written before the library was
+ * stripped on save (April 2026) still carries whole rows, and the overlay put
+ * their stored `category: 'compound'` back over the corrected leg extension.
+ */
 function mergeExerciseLibrary(
   inputLibrary: AppDatabase['exerciseLibrary'] | null | undefined,
   fallbackLibrary: AppDatabase['exerciseLibrary'],
@@ -209,7 +224,7 @@ function mergeExerciseLibrary(
     });
   }
 
-  return Array.from(merged.values());
+  return withLibraryCorrections(Array.from(merged.values()));
 }
 
 /**
@@ -222,11 +237,11 @@ function mergeExerciseLibrary(
  */
 function normalizeTodaySession(
   value: unknown,
-): { dayStart: number; sessionId: string; pickedAt: number } | null {
+): { dayStart: number; sessionId: string; pickedAt: number; workoutTemplateId: string | null } | null {
   if (typeof value !== 'object' || value === null) {
     return null;
   }
-  const raw = value as { dayStart?: unknown; sessionId?: unknown; pickedAt?: unknown };
+  const raw = value as { dayStart?: unknown; sessionId?: unknown; pickedAt?: unknown; workoutTemplateId?: unknown };
   if (typeof raw.dayStart !== 'number' || !Number.isFinite(raw.dayStart) || typeof raw.sessionId !== 'string') {
     return null;
   }
@@ -234,6 +249,10 @@ function normalizeTodaySession(
     ? {
         dayStart: raw.dayStart,
         sessionId: raw.sessionId,
+        // A pick stored before the programme was recorded has none: it applies
+        // to whichever programme leads, as it always did.
+        workoutTemplateId:
+          typeof raw.workoutTemplateId === 'string' && raw.workoutTemplateId ? raw.workoutTemplateId : null,
         // A pick stored before pickedAt existed is treated as made at the
         // start of its day: any completion that day is then later than the
         // pick, which is exactly how those picks already behaved.
@@ -355,7 +374,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     return retiredIds[value.trim()] ?? value;
   };
 
-  const rawExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
+  const exerciseLibrary = mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary);
+  const storedMigrations = normalizeAppliedMigrations(input?.appliedMigrations);
+
+  const storedExerciseTemplates: ExerciseTemplate[] = Array.isArray(input?.exerciseTemplates)
     ? input.exerciseTemplates.map((exercise: any) => {
         const name = typeof exercise?.name === 'string' ? exercise.name : 'Exercise';
         // Programmes saved before 2026-08-25 still carry rep ranges; the
@@ -382,6 +404,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           trackedDefault: typeof exercise?.trackedDefault === 'boolean' ? exercise.trackedDefault : true,
           orderIndex: typeof exercise?.orderIndex === 'number' ? exercise.orderIndex : 0,
           libraryItemId: liveLibraryItemId(exercise?.libraryItemId),
+          // A mode this build does not know (one written by a newer build, or
+          // a damaged row) is no mode: null derives it from the name, as an
+          // install that never stored one does.
+          trackingMode: readStoredTrackingMode(exercise?.trackingMode),
           persistedExerciseTemplateId:
             typeof exercise?.persistedExerciseTemplateId === 'string' || exercise?.persistedExerciseTemplateId === null
               ? exercise.persistedExerciseTemplateId
@@ -393,6 +419,23 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         };
       })
     : [];
+
+  // Once per database each, in this order: a programme saved before the
+  // library's category correction keeps the progression it had
+  // (lib/trackingCategoryMigration), and a copy made before steady cardio was
+  // logged in minutes gets the minutes mode the ready programme runs on
+  // (lib/minutesModeMigration). Not on every load — a value a writer stores
+  // today on purpose is meant.
+  let rawExerciseTemplates = storedExerciseTemplates;
+  const appliedMigrations = [...storedMigrations];
+  if (!appliedMigrations.includes(TRACKING_CATEGORY_MIGRATION_ID)) {
+    rawExerciseTemplates = restoreTrackingAfterCategoryCorrection(rawExerciseTemplates, exerciseLibrary);
+    appliedMigrations.push(TRACKING_CATEGORY_MIGRATION_ID);
+  }
+  if (!appliedMigrations.includes(MINUTES_MODE_MIGRATION_ID)) {
+    rawExerciseTemplates = moveOldCopiesToMinutesMode(rawExerciseTemplates);
+    appliedMigrations.push(MINUTES_MODE_MIGRATION_ID);
+  }
 
   // A stored programme with no id is not a programme. Mapped through the
   // defaults below, a null in the list became one called "Workout" with an
@@ -523,6 +566,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
                 )
                 .map((entry: any) => ({
                   ...entry,
+                  // Home reads it with label.trim() for a weekday plan, so a
+                  // stored null or number was a crash on every launch with
+                  // nothing set aside (bug hunt, 2026-10-05).
+                  label: typeof entry.label === 'string' ? entry.label : '',
                   workoutTemplateSessionId:
                     typeof entry.workoutTemplateSessionId === 'string' && entry.workoutTemplateSessionId.trim().length
                       ? entry.workoutTemplateSessionId
@@ -531,7 +578,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             : [],
         }))
       : [],
-    exerciseLibrary: mergeExerciseLibrary(input?.exerciseLibrary, fallback.exerciseLibrary),
+    exerciseLibrary,
+    // The one-time rewrites this database has had. Absent on every install
+    // written before the first of them, which is what lets that one run.
+    appliedMigrations,
     // An entry that is not an object with an id is not a session. Mapped
     // through the defaults below it became one — "Workout", dated now —
     // so a null or a stray number in a stored array put a workout on
@@ -951,6 +1001,11 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       selectedSignInMethod:
         input?.preferences?.selectedSignInMethod === 'apple' ||
         input?.preferences?.selectedSignInMethod === 'email' ||
+        // 'local' and 'google' are in the type and 'local' is written by the
+        // onboarding finish; dropping them here reset the reader's choice on
+        // every load (bug hunt, 2026-10-04).
+        input?.preferences?.selectedSignInMethod === 'local' ||
+        input?.preferences?.selectedSignInMethod === 'google' ||
         input?.preferences?.selectedSignInMethod === null
           ? input.preferences.selectedSignInMethod
           : fallback.preferences.selectedSignInMethod,
@@ -994,9 +1049,17 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           ? Math.max(0, Math.min(100, Math.round(input.preferences.setupAge)))
           : fallback.preferences.setupAge,
       setupHeightCm:
-        typeof input?.preferences?.setupHeightCm === 'number' && Number.isFinite(input.preferences.setupHeightCm)
-          ? Math.max(0, Math.min(300, Math.round(input.preferences.setupHeightCm)))
-          : fallback.preferences.setupHeightCm,
+        // The UI allows 120..230. Outside 100..250 is not a height: it is a
+        // stray 0 or a clamped 300 that would print "0 cm" and feed BMI a
+        // nonsense divisor, so it loads as "not set" (bug hunt, 2026-10-04).
+        typeof input?.preferences?.setupHeightCm === 'number' &&
+        Number.isFinite(input.preferences.setupHeightCm) &&
+        Math.round(input.preferences.setupHeightCm) >= 100 &&
+        Math.round(input.preferences.setupHeightCm) <= 250
+          ? Math.round(input.preferences.setupHeightCm)
+          : typeof input?.preferences?.setupHeightCm === 'number'
+            ? null
+            : fallback.preferences.setupHeightCm,
       setupAgeRange:
         input?.preferences?.setupAgeRange === 'unspecified' ||
         input?.preferences?.setupAgeRange === '18' ||
@@ -1384,7 +1447,7 @@ export async function loadDatabase() {
     // empty save below swept the only copy there was. The failure goes up
     // instead: the rows stay as they are, and the load fails the way an
     // unreadable disk does (loadWithRetry, then the storage error screen).
-    await setLargeItem(CORRUPT_STORAGE_KEY, raw);
+    await setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw);
     // The preferences are a row of their own and the blob's corruption is
     // not in them. Opened on defaults instead, the app lost the theme, the
     // notification choices, the trial's start and the coach's counters, and
@@ -1533,7 +1596,7 @@ export async function resetDatabase(
   // goes for a second reason — somebody who asks for their data to be erased is
   // not asking for a copy of it to survive under another name.
   await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
-  await removeLargeItem(CORRUPT_STORAGE_KEY);
+  await removeCorruptCopies(CORRUPT_STORAGE_KEY);
   // And the coach's memory, on its own key for backup reasons but erased by
   // the same request: "delete my data" cannot leave behind what the coach was
   // told to remember about the person asking.

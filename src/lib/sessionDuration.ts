@@ -32,6 +32,39 @@ export const SECONDS_PER_REP = 3.5;
 export const SET_SETUP_SECONDS = 20;
 /** Walking over, loading the bar, first setup — per exercise. */
 export const EXERCISE_SETUP_SECONDS = 45;
+/**
+ * A 500 m row is about two minutes and a 40 m sprint a few seconds; a quarter
+ * second a metre sits between them and is never off by an order of magnitude.
+ */
+export const SECONDS_PER_METRE = 0.25;
+
+/**
+ * What the rep numbers of a named exercise count, when the name says.
+ *
+ * The catalogs write a distance or an interval into the rep fields: "Rowing
+ * Machine (500m intervals)" is 6 × 500 metres, and costed as 500 repetitions it
+ * made one conditioning day 280 minutes long on Home and on the ready card
+ * (bug hunt, 2026-10-04). Null means the numbers are repetitions.
+ */
+export function prescriptionUnitFromName(name: string): 'metres' | 'seconds' | null {
+  const lower = name.toLowerCase();
+  if (/\b\d+\s?m\b/.test(lower)) {
+    return 'metres';
+  }
+  if (/\(\d+s\b|\b\d+s on\b|\bhiit\b/.test(lower)) {
+    return 'seconds';
+  }
+  // Work the catalogues prescribe by distance or time without saying so:
+  // "Farmer's Walk" 4 × 60, "Sled Push" 4 × 40, a battle rope 6 × 45. Costed
+  // as repetitions they were four minutes of "reps" a set (sweep, 2026-10-04).
+  // A loaded carry or sled push moves at a walk, about a second a metre, so
+  // the number is costed as seconds — the metres rate is a sprint's. "Sled
+  // Row" and the other sled lifts are repetitions (review, 2026-10-04).
+  if (/\bfarmer|\bcarry\b|\bsled (?:push|drag|pull)\b|\bbattl(?:e|ing) rope/.test(lower)) {
+    return 'seconds';
+  }
+  return null;
+}
 
 export interface DurationExerciseInput {
   sets: number;
@@ -44,6 +77,12 @@ export interface DurationExerciseInput {
    * minutes of "work", and a mobility session quoted twice the time it takes.
    */
   timed?: boolean;
+  /**
+   * `reps` is minutes (trackingMode 'duration_minutes'): twenty minutes on a
+   * stair machine is twenty minutes, not twenty reps at 3.5 s — which costed
+   * the bout at a minute and a half.
+   */
+  minutes?: boolean;
   /** Prescribed rest between sets, in seconds. */
   restSeconds: number;
   /** Skipped exercises cost nothing. */
@@ -58,6 +97,12 @@ export interface DurationExerciseInput {
    * that nobody would ever spend.
    */
   supersetGroup?: string | null;
+  /**
+   * The exercise's name, when the caller has it. Read only for what the rep
+   * numbers count (prescriptionUnitFromName): metres and seconds cost what
+   * they are, not 3.5 s apiece.
+   */
+  name?: string;
 }
 
 export interface SessionDurationInput {
@@ -67,11 +112,20 @@ export interface SessionDurationInput {
   cooldownSeconds?: number;
 }
 
-export function estimateWorkingSetSeconds(reps: number, timed = false): number {
+export function estimateWorkingSetSeconds(reps: number, timed = false, metres = false): number {
   const safeReps = Number.isFinite(reps) && reps > 0 ? reps : 8;
   // A held position already IS its duration; only the getting-into-it costs
-  // extra. A rep count has to be multiplied out.
-  return Math.round((timed ? safeReps : safeReps * SECONDS_PER_REP) + SET_SETUP_SECONDS);
+  // extra. A rep count has to be multiplied out, and so does a distance.
+  const work = timed ? safeReps : metres ? safeReps * SECONDS_PER_METRE : safeReps * SECONDS_PER_REP;
+  return Math.round(work + SET_SETUP_SECONDS);
+}
+
+function workingSetSecondsFor(exercise: DurationExerciseInput): number {
+  if (exercise.minutes) {
+    return estimateWorkingSetSeconds(exercise.reps * 60, true);
+  }
+  const unit = exercise.name ? prescriptionUnitFromName(exercise.name) : null;
+  return estimateWorkingSetSeconds(exercise.reps, Boolean(exercise.timed) || unit === 'seconds', unit === 'metres');
 }
 
 export function estimateSessionSeconds(input: SessionDurationInput): number {
@@ -83,7 +137,7 @@ export function estimateSessionSeconds(input: SessionDurationInput): number {
   const working = buildSupersetRuns(normalizeSupersetGroups(doing)).reduce((total, run) => {
     const members = run.indexes.map((index) => doing[index]);
     const setSeconds = members.reduce(
-      (sum, exercise) => sum + estimateWorkingSetSeconds(exercise.reps, exercise.timed) * exercise.sets,
+      (sum, exercise) => sum + workingSetSecondsFor(exercise) * exercise.sets,
       0,
     );
     // Walking over and loading the bar is paid per lift even in a superset:

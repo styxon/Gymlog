@@ -4,7 +4,7 @@
  * previous session of the same workout.
  */
 
-import { isTimedTrackingMode, WorkoutTrackingMode } from '../features/workout/workoutTypes';
+import { isMinutesTrackingMode, isTimedTrackingMode, WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { AppLanguage } from '../types/models';
 import { t } from './i18n';
 import { formatWeight, removeTrailingZeros } from './format';
@@ -71,6 +71,10 @@ export function getTopSetLabel(
 
   if (isTimedTrackingMode(trackingMode)) {
     return t(language, 'logger.secondsValue', { count: top.reps ?? 0 });
+  }
+  // A bike's twenty minutes, not "20 toistoa".
+  if (isMinutesTrackingMode(trackingMode)) {
+    return t(language, 'logger.minutesValue', { count: top.reps ?? 0 });
   }
 
   const weight = top.weightKg ?? 0;

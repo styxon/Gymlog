@@ -310,6 +310,32 @@ function buildMeasurementReminders(input: NotificationPlanInput): PlannedNotific
   return reminders;
 }
 
+/**
+ * How many days after the last session the comeback nudge may fire.
+ *
+ * A flat five days told a once-a-week reader "it's been 5 days, no rush" every
+ * single week, before their next planned day was even due (bug hunt,
+ * 2026-10-04). A nudge about a gap only makes sense once a planned day has
+ * actually gone by without a session, so it waits for the day after the first
+ * scheduled day that follows the last session, and never fires earlier than
+ * COMEBACK_AFTER_DAYS. Stepping is by calendar date so a 23- or 25-hour DST
+ * day cannot shift it. With no known schedule there is no planned day to
+ * miss, so the flat window stays.
+ */
+export function comebackGapDays(schedule: TrainingSchedule, lastSession: Date): number {
+  if (!isScheduleKnown(schedule)) {
+    return COMEBACK_AFTER_DAYS;
+  }
+  // An empty cycle has nothing planned; the flat window is the safe answer.
+  for (let offset = 1; offset <= 60; offset += 1) {
+    const day = new Date(lastSession.getFullYear(), lastSession.getMonth(), lastSession.getDate() + offset, 12, 0, 0, 0);
+    if (trainsOn(schedule, day)) {
+      return Math.max(COMEBACK_AFTER_DAYS, offset + 1);
+    }
+  }
+  return COMEBACK_AFTER_DAYS;
+}
+
 function buildComebackNudge(input: NotificationPlanInput): PlannedNotification | null {
   const { prefs, language, nowMs } = input;
   if (!prefs.comebackNudge || input.lastSessionAtMs === null) {
@@ -317,7 +343,9 @@ function buildComebackNudge(input: NotificationPlanInput): PlannedNotification |
   }
 
   const { hour, minute } = parseReminderTime(prefs.reminderTime);
-  const fireAtMs = atLocalTime(new Date(input.lastSessionAtMs), COMEBACK_AFTER_DAYS, hour, minute);
+  const lastSession = new Date(input.lastSessionAtMs);
+  const gapDays = comebackGapDays(input.schedule, lastSession);
+  const fireAtMs = atLocalTime(lastSession, gapDays, hour, minute);
   // Anchored to the last session only: once that moment has passed there is no
   // second nudge, and the next one needs a new session to hang off.
   if (fireAtMs <= nowMs) {
@@ -328,7 +356,7 @@ function buildComebackNudge(input: NotificationPlanInput): PlannedNotification |
     key: 'comeback',
     category: 'comeback',
     title: t(language, 'notif.msg.comebackTitle'),
-    body: t(language, 'notif.msg.comebackBody', { days: COMEBACK_AFTER_DAYS }),
+    body: t(language, 'notif.msg.comebackBody', { days: gapDays }),
     fireAtMs,
   };
 }
@@ -425,21 +453,18 @@ function applyDailyCap(planned: PlannedNotification[], level: NotificationLevel)
   return kept.sort((left, right) => left.fireAtMs - right.fireAtMs);
 }
 
-/** How long before the trial's last moment the warning goes out. */
+/** How many calendar days before the trial's last day the warning goes out. */
 const TRIAL_WARNING_DAYS = 2;
 /**
- * Fixed milliseconds, and deliberately so.
- *
- * The repo's rule is to step calendar dates by date rather than by DAY_MS,
- * because Helsinki's 23- and 25-hour days push a fixed step off local
- * midnight. This is not a calendar step: the trial ends at an instant, and the
- * warning is 48 hours before that instant. A clock change moves the wall-clock
- * time of the notice by an hour and changes nothing about when the trial ends.
+ * The hour of that day it goes out: the morning of a non-training message, the
+ * same hour the record note uses. It used to go out at the trial's own start
+ * clock time, which is whenever the reader happened to tap "start" — 03:00
+ * for somebody who did it after a night shift.
  */
-const TRIAL_DAY_MS = 24 * 60 * 60 * 1000;
+export const TRIAL_WARNING_HOUR = RECORD_HOUR;
 
 /**
- * Two days before the trial ends, once.
+ * Two days before the trial ends, once, at 09:00 local time.
  *
  * Not a training nudge, which is why it survives a training break below: the
  * reader is on holiday, and the trial runs out anyway. It is still subject to
@@ -452,7 +477,10 @@ function buildTrialEndingNote(input: NotificationPlanInput): PlannedNotification
   if (!endsAt || !Number.isFinite(endsAt)) {
     return null;
   }
-  const fireAtMs = endsAt - TRIAL_WARNING_DAYS * TRIAL_DAY_MS;
+  // A calendar step from the day the trial ends, not a fixed number of
+  // milliseconds: a clock change in between would move the notice off the hour.
+  // Always before the end: it is on an earlier local day than the end itself.
+  const fireAtMs = atLocalTime(new Date(endsAt), -TRIAL_WARNING_DAYS, TRIAL_WARNING_HOUR, 0);
   if (fireAtMs <= input.nowMs) {
     return null;
   }

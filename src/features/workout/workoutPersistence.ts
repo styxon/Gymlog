@@ -3,7 +3,9 @@ import { normalizeFreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
 
 import { normalizeActiveCardioSession } from '../../lib/cardio';
 import { scrubImpossibleSessionLoads } from '../../lib/impossibleLoads';
+import { isLiftableWeight } from '../../lib/weightLimits';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from '../../storage/largeItem';
+import { removeCorruptCopies, setAsideCorruptCopy } from '../../storage/corruptCopies';
 import { removeWorkoutAsideCopies } from '../../storage/workoutAside';
 import {
   LEGACY_WORKOUT_STORAGE_KEY,
@@ -61,6 +63,36 @@ function isHistorySet(value: unknown): boolean {
   );
 }
 
+/**
+ * A warm-up list as stored (live session or "last time"): kept only as a list
+ * of sets with a liftable load and whole reps; anything else is dropped, and
+ * an empty list is no list. Added 2026-10-05 — older data has none.
+ */
+function normalizeWarmups<T extends { loadKg: number; reps: number }>(
+  value: unknown,
+  withMoment: boolean,
+): T[] | undefined {
+  if (!Array.isArray(value)) {
+    return undefined;
+  }
+  const kept = value.filter(
+    (warmup) =>
+      isObject(warmup) &&
+      isLiftableWeight(warmup.loadKg) &&
+      typeof warmup.reps === 'number' &&
+      Number.isInteger(warmup.reps) &&
+      warmup.reps >= 1 &&
+      (!withMoment || typeof warmup.completedAt === 'string'),
+  ) as unknown as T[];
+  return kept.length > 0 ? kept : undefined;
+}
+
+/** Sets a key to a value, or takes the key away when the value is undefined. */
+function withOptional<T extends Record<string, unknown>>(target: T, key: string, value: unknown): T {
+  const { [key]: _dropped, ...rest } = target;
+  return (value === undefined ? rest : { ...rest, [key]: value }) as T;
+}
+
 function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'] {
   if (!isObject(input)) {
     return {};
@@ -75,7 +107,9 @@ function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'
       // And every set in it: a list holding `null`, or a set without its
       // numbers, reached `set.loadKg` in the "last time" lookup and took
       // down every lift of that name (recheck of #221, 2026-09-28).
-      .map((entry) => ({ ...entry, sets: entry.sets.filter(isHistorySet) })) as unknown as WorkoutHistoryStore['slotHistory'][string];
+      .map((entry) =>
+        withOptional({ ...entry, sets: entry.sets.filter(isHistorySet) }, 'warmups', normalizeWarmups(entry.warmups, false)),
+      ) as unknown as WorkoutHistoryStore['slotHistory'][string];
   }
   return slots;
 }
@@ -136,9 +170,9 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
   if (!Array.isArray(input.exercises)) {
     return null;
   }
-  const exercises = input.exercises.filter(
-    (exercise): exercise is Record<string, unknown> => isObject(exercise) && Array.isArray(exercise.sets),
-  );
+  const exercises = input.exercises
+    .filter((exercise): exercise is Record<string, unknown> => isObject(exercise) && Array.isArray(exercise.sets))
+    .map((exercise) => withOptional(exercise, 'warmups', normalizeWarmups(exercise.warmups, true)));
   if (exercises.length === 0) {
     return null;
   }
@@ -292,7 +326,7 @@ export async function loadWorkoutBundle() {
     // Same rule as the database's quarantine, including its failure: a copy
     // that could not be written fails the load, and the rows stay as they are,
     // because the save that follows an empty bundle would sweep them.
-    await setLargeItem(CORRUPT_STORAGE_KEY, raw);
+    await setAsideCorruptCopy(CORRUPT_STORAGE_KEY, raw);
     return { activeSession: null, history: createEmptyWorkoutHistory(), activeCardio: null } satisfies WorkoutPersistenceBundle;
   }
 }
@@ -305,7 +339,7 @@ export async function saveWorkoutBundle(bundle: WorkoutPersistenceBundle) {
 
 export async function clearWorkoutBundle() {
   await removeLargeItem(STORAGE_KEY);
-  await removeLargeItem(CORRUPT_STORAGE_KEY);
+  await removeCorruptCopies(CORRUPT_STORAGE_KEY);
   // Before the sweep below, which lists keys and can reject: a failed reset
   // must not leave the pre-rename bundle to load again.
   await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);

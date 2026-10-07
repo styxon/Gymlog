@@ -448,4 +448,73 @@ module.exports = [
       assert.equal(named.rows[0].day, 'Tuki ja liikkuvuus');
     },
   },
+  {
+    name: 'CSV import: a set count past the editor ceiling is a row to fix, not a programme of 100 000 sets (bug hunt 2026-10-05)',
+    run() {
+      const text = ['Day,Exercise,Sets,Reps', 'Day 1,Bench Press,100000,8', 'Day 1,Barbell Row,12,8', 'Day 1,Back Squat,13,5'].join('\n');
+      const fi = parseCsvProgram(text, LIBRARY, [], 'fi');
+      assert.deepEqual(fi.rows.map((row) => [row.exerciseName, row.sets]), [['Barbell Row', 12]]);
+      assert.deepEqual(fi.errors, ['Rivi 2: enintään 12 sarjaa.', 'Rivi 4: enintään 12 sarjaa.']);
+      const en = parseCsvProgram(text, LIBRARY, [], 'en');
+      assert.equal(en.errors[0], 'Row 2: at most 12 sets.');
+    },
+  },
+  {
+    // Sets were capped on 2026-10-05; reps went through at any size (M12, 2026-10-06).
+    name: 'CSV import: a rep count past any sane prescription is a row to fix, and the big numbers the ready catalog ships still import',
+    run() {
+      const text = [
+        'Day,Exercise,Sets,Reps',
+        'Day 1,Bench Press,3,100000',
+        'Day 1,Barbell Row,3,8-100000',
+        'Day 1,Back Squat,3,500',
+        'Day 1,Lat Pulldown,3,501',
+        'Day 1,Plank,3,600',
+        'Day 1,Plank,3,601',
+        'Day 1,Plank,3,30-60',
+      ].join('\n');
+      const en = parseCsvProgram(text, LIBRARY, [], 'en');
+      assert.deepEqual(
+        en.rows.map((row) => [row.exerciseName, row.repMin, row.repMax]),
+        [['Back Squat', 500, 500], ['Plank', 600, 600], ['Plank', 30, 60]],
+      );
+      assert.deepEqual(en.errors, [
+        'Row 2: at most 500 reps (seconds, for a hold).',
+        'Row 3: at most 500 reps (seconds, for a hold).',
+        'Row 5: at most 500 reps (seconds, for a hold).',
+        'Row 7: at most 600 reps (seconds, for a hold).',
+      ]);
+      // A hold written by its Finnish name is a hold too (review, 2026-10-06).
+      const finnishHold = parseCsvProgram(
+        'Day,Exercise,Sets,Reps\nDay 1,Lankku,3,540',
+        [...LIBRARY, { id: 'lib_plank', name: 'Plank' }],
+        [],
+        'fi',
+      );
+      assert.deepEqual(finnishHold.errors, []);
+      assert.equal(finnishHold.rows[0].repMax, 540);
+      const fi = parseCsvProgram('Day,Exercise,Sets,Reps\nDay 1,Bench Press,3,100000', LIBRARY, [], 'fi');
+      assert.deepEqual(fi.errors, ['Rivi 2: enintään 500 toistoa (pitoliikkeessä sekuntia).']);
+      assert.equal(fi.rows.length, 0);
+
+      // What the app ships must survive an export and an import: the 500 m
+      // row and the 300 s hold are in the ready catalog.
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const session of template.sessions) {
+          for (const exercise of session.exercises) {
+            const preview = parseCsvProgram(
+              `Day,Exercise,Sets,Reps\nD,${exercise.exerciseName.replace(/,/g, ' ')},${exercise.sets},${exercise.repsMin}-${exercise.repsMax}`,
+              [],
+              [],
+              'en',
+            );
+            if (preview.errors.some((error) => /at most \d+ reps/.test(error))) {
+              assert.fail(`${template.id}: ${exercise.exerciseName} ${exercise.repsMin}-${exercise.repsMax} is refused by the importer`);
+            }
+          }
+        }
+      }
+    },
+  },
 ];

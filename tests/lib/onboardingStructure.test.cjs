@@ -372,6 +372,12 @@ module.exports = [
       assert.doesNotMatch(locationBody, /onb\.equip\.orChoose/);
       assert.match(onboardingSource, /const EQUIPMENT_CHIP_CATALOG/);
       assert.match(onboardingSource, /const EQUIPMENT_DEFAULT_ITEMS/);
+      // A home treadmill, bike or cross-trainer can be ticked, but is never on
+      // by default: most homes have none (user, 2026-10-04).
+      const chipCatalog = onboardingSource.match(/const EQUIPMENT_CHIP_CATALOG[\s\S]*?\n\};/)[0];
+      const defaults = onboardingSource.match(/const EQUIPMENT_DEFAULT_ITEMS[\s\S]*?\n\};/)[0];
+      assert.match(chipCatalog.match(/home_gym: \[[^\]]*\]/)[0], /'Cardio machines'/);
+      assert.doesNotMatch(defaults.match(/home_gym: \[[^\]]*\]/)[0], /'Cardio machines'/);
       // Three setups only; heavy home gear decides home_gym vs minimal_equipment.
       assert.doesNotMatch(onboardingSource, /id: 'minimal_equipment'/);
       assert.doesNotMatch(onboardingSource, /id: 'running_hybrid'/);
@@ -773,8 +779,7 @@ module.exports = [
       // old anchor when only the questionnaire was re-run with the same
       // pattern.
       assert.match(handoffSource, /trainingCyclePattern: preferences\.trainingCycle\?\.pattern \?\? null/);
-      assert.match(handoffSource, /previousCycle\.pattern\.join\(','\) === cyclePattern\.join\(','\)/);
-      assert.match(handoffSource, /\{ pattern: cyclePattern, anchorDayStart: localTodayStart\(\) \}/);
+      assert.match(handoffSource, /resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
     },
   },
   {
