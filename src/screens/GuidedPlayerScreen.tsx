@@ -92,6 +92,7 @@ import {
 } from '../lib/weightDial';
 import { isLiftableWeight } from '../lib/weightLimits';
 import {
+  minutesClockOnStep,
   minutesToLog,
   MinutesStopwatch,
   msUntilNextMinutesChange,
@@ -151,7 +152,7 @@ import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '
 import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
 import { ExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
-import { effectiveSwapBodyPart, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
+import { effectiveSwapBodyPart, effectiveSwapCategory, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
 import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -1677,6 +1678,34 @@ function GuidedPlayer({
   const stepRef = useRef(step);
   stepRef.current = step;
 
+  // Leaving a bout's step without logging it pauses the bout
+  // (lib/minutesExercises minutesClockOnStep). Keyed on the set, not on the
+  // step object, which is rebuilt with every render. Only a move: the step
+  // this mount opens on is not one, so a session reopened at its overview or
+  // after Android killed the app finds the clock still running (#337).
+  const shownSetKey =
+    step.type === 'set' ? `${step.slotId}|${step.setIndex}|${step.exerciseName}` : null;
+  const minutesClockRef = useRef(workout.activeSession?.minutesClock ?? null);
+  minutesClockRef.current = workout.activeSession?.minutesClock ?? null;
+  const lastShownSetKeyRef = useRef(shownSetKey);
+  useEffect(() => {
+    if (lastShownSetKeyRef.current === shownSetKey) {
+      return;
+    }
+    lastShownSetKeyRef.current = shownSetKey;
+    const shown = stepRef.current;
+    const clock = minutesClockRef.current;
+    const next = minutesClockOnStep(
+      clock,
+      shown.type === 'set' ? { slotId: shown.slotId, setIndex: shown.setIndex, exerciseName: shown.exerciseName } : null,
+      Date.now(),
+    );
+    if (next !== clock) {
+      workout.setMinutesClock(next);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownSetKey]);
+
   /* ── timers ── */
   // Seeded from the opening step, not from zero: mounting straight onto a
   // timed step (a walk-up, a drill) with nothing on the clock would expire it
@@ -1891,7 +1920,8 @@ function GuidedPlayer({
    * "all", reset with the rest, and narrow the candidates the swap already
    * ordered rather than re-ordering them.
    */
-  const [swapCategory, setSwapCategory] = useState<ExercisePickerFilters['category']>('all');
+  /** The reader's type chip; null means the lift's own (effectiveSwapCategory). */
+  const [swapCategoryPick, setSwapCategoryPick] = useState<ExercisePickerFilters['category'] | null>(null);
   const [swapEquipment, setSwapEquipment] = useState<SheetEquipmentOption>('all');
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   /** The lift whose final set was just logged — a one-second check-splash
@@ -2501,8 +2531,12 @@ function GuidedPlayer({
   const swapBodyPart: BodyPartFilter = effectiveSwapBodyPart(swapBodyPartFilter, swapBrowsePrefilter, swapQuery);
   /** The three groups the sheet draws, as the swap list applies them. */
   const swapFilters = useMemo<ExercisePickerFilters>(
-    () => ({ category: swapCategory, bodyPart: swapBodyPart, equipment: swapEquipment }),
-    [swapBodyPart, swapCategory, swapEquipment],
+    () => ({
+      category: effectiveSwapCategory(swapCategoryPick, swapCurrentLibraryItem, swapQuery),
+      bodyPart: swapBodyPart,
+      equipment: swapEquipment,
+    }),
+    [swapBodyPart, swapCategoryPick, swapCurrentLibraryItem, swapEquipment, swapQuery],
   );
 
   /**
@@ -2535,12 +2569,13 @@ function GuidedPlayer({
   /** The programme's alternatives as the sheet's first cards, under its chips (narrowSwapAlternatives). */
   const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(
     () =>
-      narrowSwapAlternatives(swapSuggestionRows, swapFilters).map(({ name, item }) => ({
+      // Only a type chip the reader moved reaches the cards (useSwapPickerLists).
+      narrowSwapAlternatives(swapSuggestionRows, { ...swapFilters, category: swapCategoryPick ?? 'all' }).map(({ name, item }) => ({
         key: `suggested-${name}`,
         name,
         item,
       })),
-    [swapFilters, swapSuggestionRows],
+    [swapCategoryPick, swapFilters, swapSuggestionRows],
   );
   const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
     () => swapLibrary.map((item) => ({ key: item.id, name: item.name, item })),
@@ -2560,7 +2595,7 @@ function GuidedPlayer({
     setSwapOpen(false);
     setSwapQuery('');
     setSwapBodyPartFilter(null);
-    setSwapCategory('all');
+    setSwapCategoryPick(null);
     setSwapEquipment('all');
     unpause();
   };
@@ -4808,7 +4843,9 @@ function GuidedPlayer({
           if (next.bodyPart !== swapFilters.bodyPart) {
             setSwapBodyPartFilter(next.bodyPart);
           }
-          setSwapCategory(next.category);
+          if (next.category !== swapFilters.category) {
+            setSwapCategoryPick(next.category);
+          }
           setSwapEquipment(next.equipment);
         }}
         featured={
@@ -4838,7 +4875,7 @@ function GuidedPlayer({
           setSwapOpen(false);
           setSwapQuery('');
           setSwapBodyPartFilter(null);
-          setSwapCategory('all');
+          setSwapCategoryPick(null);
           setSwapEquipment('all');
           unpause();
         }}

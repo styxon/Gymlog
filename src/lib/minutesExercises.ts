@@ -283,6 +283,39 @@ export function stopwatchForSet(
 }
 
 /**
+ * The session's clock once the reader stands on `shown` — the set step on
+ * screen, or null for any other step.
+ *
+ * Leaving a bout's step without logging it pauses the bout. Kept running, a
+ * reader who started the bike, stepped on to look at the next lift and came
+ * back an hour later logged sixty minutes with one tap (review, 2026-10-07).
+ * Leaving is "I am doing something else"; coming back shows the minutes
+ * ridden, paused, and the clock's button carries on from there. The app going
+ * to the background or being reloaded is not leaving: the reader is still on
+ * the step, and the clock keeps counting (#bugs 2026-10-06).
+ *
+ * The same clock back when nothing changes, so a caller can compare.
+ */
+export function minutesClockOnStep(
+  clock: SessionMinutesClock | null | undefined,
+  shown: { slotId: string; setIndex: number; exerciseName: string } | null,
+  nowMs: number,
+): SessionMinutesClock | null {
+  if (!clock || clock.runningSinceMs === null) {
+    return clock ?? null;
+  }
+  if (
+    shown &&
+    shown.slotId === clock.slotId &&
+    shown.setIndex === clock.setIndex &&
+    shown.exerciseName === clock.exerciseName
+  ) {
+    return clock;
+  }
+  return { ...clock, ...pauseStopwatch(clock, nowMs) };
+}
+
+/**
  * When a running bout's prescription runs out — the moment the reader is due
  * back at the phone. Null while the clock is stopped, or when there is none.
  *

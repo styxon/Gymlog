@@ -14,8 +14,8 @@
  * exercise opens on "Takareidet", not the whole 276-row "Jalat" bucket.
  */
 import { isCatalogStapleExercise } from './catalogExercisePools';
-import { BodyPartFilter, LEG_MUSCLE_FILTERS } from './exerciseBrowseFilter';
-import { exerciseTypeOf } from './exerciseClassification';
+import { BodyPartFilter, ExerciseTypeFilter, LEG_MUSCLE_FILTERS } from './exerciseBrowseFilter';
+import { exerciseTypeOf, isStretchExercise } from './exerciseClassification';
 import { displayEquipmentValue } from './libraryLabel';
 import { ExerciseLibraryItem } from '../types/models';
 
@@ -116,4 +116,24 @@ export function effectiveSwapBodyPart(
     return picked;
   }
   return query.trim() ? 'all' : prefilter;
+}
+
+/**
+ * The type chip in force, by the same rule as the body part: the reader's,
+ * or else the lift's own when it is a stretch.
+ *
+ * The unsearched list holds no stretches (lib/exercisePicker), so a Child's
+ * Pose swap opened on chin-ups and deadlifts under its body part (review,
+ * 2026-10-07). A stretch opens on "Venytykset". Every other lift opens on
+ * all types, as before; typing searches every type.
+ */
+export function effectiveSwapCategory(
+  picked: ExerciseTypeFilter | null,
+  current: Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>> | null | undefined,
+  query: string,
+): ExerciseTypeFilter {
+  if (picked !== null) {
+    return picked;
+  }
+  return !query.trim() && current && isStretchExercise(current) ? 'stretch' : 'all';
 }

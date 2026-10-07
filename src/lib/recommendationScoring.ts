@@ -459,6 +459,7 @@ export function recommendPrograms(
   // scoring keeps ranking everything else (alternatives, confidence, tradeoffs).
   const waterfallDecision = selectWaterfallDecision(input);
   let waterfallPrimary = scoreRankedCandidates.find((candidate) => candidate.programId === waterfallDecision.primaryProgramId) ?? null;
+  const waterfallPick = waterfallPrimary;
   if (waterfallPrimary && hasMeaningfulTailoringPreferences(tailoringPreferences)) {
     // Tailoring may swap between variants of the same family + weekly rhythm
     // (e.g. the two 4-day STRONG Pro templates), but never change the cell itself.
@@ -499,9 +500,16 @@ export function recommendPrograms(
       waterfallPrimary = cellTop;
     }
   }
-  const waterfallAlternativeCandidate = waterfallDecision.alternativeProgramId
+  const waterfallSecond = waterfallDecision.alternativeProgramId
     ? scoreRankedCandidates.find((candidate) => candidate.programId === waterfallDecision.alternativeProgramId) ?? null
     : null;
+  // The swap can promote the waterfall's own second card: home, strength,
+  // advanced, four days put powerbuilding first and second, and the reader
+  // saw one card where there were two (review, 2026-10-07). The two trade
+  // places then. The reasons stay: they speak of the cell ("built around your
+  // gear", "a different rhythm with the same gear"), which both share.
+  const promotedSecond = Boolean(waterfallSecond && waterfallSecond === waterfallPrimary && waterfallPick !== waterfallPrimary);
+  const waterfallAlternativeCandidate = promotedSecond ? waterfallPick : waterfallSecond;
   // The waterfall's second card answers to the same level gate as the rest
   // of the alternatives (selectAlternativeCandidates): off the reader's level
   // it is dropped while anything at their level is left to offer (B2).
@@ -517,6 +525,7 @@ export function recommendPrograms(
     ? {
         ...waterfallDecision,
         primaryProgramId: waterfallPrimary.programId,
+        ...(promotedSecond && waterfallPick ? { alternativeProgramId: waterfallPick.programId } : {}),
         // The Programs tab's row reads the second card from here, so a card
         // the level gate dropped leaves this too, with its reason.
         ...(waterfallAlternativeCandidate && !waterfallAlternative

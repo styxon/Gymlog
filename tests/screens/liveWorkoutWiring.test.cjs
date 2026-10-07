@@ -60,7 +60,7 @@ module.exports = [
       // between the query reset and unpause — still one path out, unpause still last.
       assert.match(
         player,
-        /<ExercisePickerSheet\s*visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?onClose=\{\(\) => \{\s*setSwapOpen\(false\);\s*setSwapQuery\(''\);\s*setSwapBodyPartFilter\(null\);\s*setSwapCategory\('all'\);\s*setSwapEquipment\('all'\);\s*unpause\(\);/,
+        /<ExercisePickerSheet\s*visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?onClose=\{\(\) => \{\s*setSwapOpen\(false\);\s*setSwapQuery\(''\);\s*setSwapBodyPartFilter\(null\);\s*setSwapCategoryPick\(null\);\s*setSwapEquipment\('all'\);\s*unpause\(\);/,
         'closing the swap sheet resumes',
       );
       const applySwap = player.slice(player.indexOf('const applySwap = ('), player.indexOf('const resyncTargetRef'));
