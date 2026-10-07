@@ -7,8 +7,9 @@ import {
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
-import { isHoldExerciseName } from './holdExercises';
+import { DEFAULT_HOLD_SECONDS, isHoldExerciseName } from './holdExercises';
 import { DEFAULT_MINUTES_PRESCRIPTION, isMinutesExerciseName } from './minutesExercises';
+import { collapseRepRange } from './singleRepTarget';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
 
@@ -312,6 +313,57 @@ export function prescriptionAfterSwap(
         ? programmePrescriptions.minutes
         : programmePrescriptions.counted)
   );
+}
+
+export interface ComposedSlotDose {
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  restSecondsMin: number;
+  restSecondsMax: number;
+}
+
+/**
+ * The numbers a slot the composer writes from a name alone asks for, in the
+ * unit its tracking mode counts. `lift` is the sets and rest the caller gives
+ * a slot of repetitions or seconds; a bout of minutes replaces them.
+ *
+ * - Minutes: one bout of DEFAULT_MINUTES_PRESCRIPTION, no rest.
+ * - Seconds: a hold bracket — a plank's 20–40, else DEFAULT_HOLD_SECONDS.
+ * - Reps: 10–15, collapsed to one number.
+ *
+ * Focus emphasis and the suggested days both build slots this way. Emphasis
+ * used to write "2 × 10–15" whatever the unit: an Elliptical Trainer was two
+ * 15-minute bouts with a rest between, and a plank a 10–15 s hold, while a
+ * suggested day wrote the same names as one 20-minute bout and 20–40 s (bug
+ * hunt, 2026-10-07). Saved programmes prescribe one rep number, and the loader
+ * collapses any range it finds (lib/singleRepTarget); the same function
+ * decides here, so what is saved is what every later load reads.
+ */
+export function composedSlotDose(
+  name: string,
+  trackingMode: WorkoutTrackingMode,
+  lift: { sets: number; restSecondsMin: number; restSecondsMax: number },
+): ComposedSlotDose {
+  const unit = prescriptionUnitOf(trackingMode);
+  if (unit === 'minutes') {
+    return {
+      sets: DEFAULT_MINUTES_PRESCRIPTION.sets,
+      repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      restSecondsMin: 0,
+      restSecondsMax: 0,
+    };
+  }
+  const plank = name.toLowerCase().includes('plank');
+  const bracket =
+    unit === 'seconds'
+      ? plank
+        ? { min: 20, max: 40 }
+        : DEFAULT_HOLD_SECONDS
+      : { min: 10, max: 15 };
+  const reps = collapseRepRange({ name, repMin: bracket.min, repMax: bracket.max });
+  return { ...lift, repsMin: reps.repMin, repsMax: reps.repMax };
 }
 
 /** Bodyweight-first, then the loaded version. Both are real catalog entries. */

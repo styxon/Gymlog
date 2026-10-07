@@ -110,4 +110,60 @@ module.exports = [
       assert.equal(getExerciseTemplateDefaults(crunch, 120).repMax, 15);
     },
   },
+  {
+    name: 'a cardio machine picked from the library opens at one 20-minute bout, not 1 × 8-12 (bug hunt 2026-10-07)',
+    run() {
+      const { getExerciseTemplateDefaults } = require('../../.test-dist/lib/exerciseSuggestions.js');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const { isMinutesExerciseName, DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises.js');
+
+      // Every library row the minutes list claims: Stairmaster, the rower, the
+      // treadmills. Their defaults were the cardio category's 1 × 8-12, which
+      // the player ran as 8-12 minutes; every other surface writes 1 × 20.
+      const machines = GENERATED_EXERCISE_LIBRARY.filter((item) => isMinutesExerciseName(item.name));
+      assert.equal(machines.length, 12, 'the library minutes rows');
+      for (const item of machines) {
+        const defaults = getExerciseTemplateDefaults(item, 120);
+        assert.deepEqual(
+          [defaults.targetSets, defaults.repMin, defaults.repMax, defaults.restSeconds],
+          [DEFAULT_MINUTES_PRESCRIPTION.sets, DEFAULT_MINUTES_PRESCRIPTION.minutes, DEFAULT_MINUTES_PRESCRIPTION.minutes, 0],
+          item.name,
+        );
+        const runtime = adaptLegacyWorkoutTemplateToRuntimeTemplate(
+          { id: 't', name: 'T', createdAt: '2026-10-07T00:00:00.000Z', updatedAt: '2026-10-07T00:00:00.000Z' },
+          [
+            {
+              id: 's',
+              workoutTemplateId: 't',
+              name: 'Day 1',
+              orderIndex: 0,
+              exercises: [
+                {
+                  id: 'e',
+                  workoutTemplateSessionId: 's',
+                  libraryItemId: item.id,
+                  name: item.name,
+                  orderIndex: 0,
+                  trackingMode: null,
+                  ...defaults,
+                },
+              ],
+            },
+          ],
+          GENERATED_EXERCISE_LIBRARY,
+          120,
+        );
+        const exercise = runtime.sessions[0].exercises[0];
+        assert.equal(exercise.trackingMode, 'duration_minutes', item.name);
+        assert.deepEqual([exercise.sets, exercise.repsMin, exercise.repsMax], [1, 20, 20], item.name);
+      }
+
+      // A cardio row that is not a bout of minutes keeps the category's numbers.
+      const prowler = GENERATED_EXERCISE_LIBRARY.find((item) => item.name === 'Prowler Sprint');
+      assert.ok(prowler && prowler.category === 'cardio');
+      const sprint = getExerciseTemplateDefaults(prowler, 120);
+      assert.deepEqual([sprint.targetSets, sprint.repMin, sprint.repMax], [1, 8, 12]);
+    },
+  },
 ];
