@@ -54,6 +54,21 @@ export function splitsShortWeek(programId: string, days: number): boolean {
   return splits;
 }
 
+/**
+ * Whether the reader's days would cut this programme into a week missing a
+ * half of the body. Every chooser of the featured programme asks this: the
+ * waterfall's lanes, and the score ranking that picks when the waterfall's
+ * pick is not in the pool (review, 2026-10-08).
+ */
+export function splitsReaderWeek(
+  program: { programId: string; daysPerWeek: number },
+  input: Pick<RecommendationInput, 'daysPerWeek'>,
+): boolean {
+  return input.daysPerWeek <= SHORT_WEEK_DAYS
+    && program.daysPerWeek > input.daysPerWeek
+    && splitsShortWeek(program.programId, input.daysPerWeek);
+}
+
 type Half = 'upper' | 'lower';
 
 const HALVES: Half[] = ['upper', 'lower'];

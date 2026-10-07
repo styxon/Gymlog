@@ -22,6 +22,7 @@ const {
 } = require(dist + 'lib/programDetails.js');
 const { EXTRA_EXERCISE_LIBRARY } = require(dist + 'data/extraExerciseLibrary.js');
 const { getWorkoutTemplateById } = require(dist + 'features/workout/workoutCatalog.js');
+const { splitsShortWeek } = require(dist + 'lib/recommendationWeekFit.js');
 
 /**
  * What the recommender hands over has to survive being composed for the
@@ -66,6 +67,16 @@ function selection(overrides) {
     goals: [rest.goal ?? DEFAULT_FIRST_RUN_SELECTION.goal],
   };
 }
+
+const NEUTRAL_TAILORING = {
+  setupEquipment: null,
+  setupFreeWeightsPreference: 'neutral',
+  setupBodyweightPreference: 'neutral',
+  setupMachinesPreference: 'neutral',
+  setupShoulderFriendlySwaps: 'neutral',
+  setupElbowFriendlySwaps: 'neutral',
+  setupKneeFriendlySwaps: 'neutral',
+};
 
 /** Which halves of the body a set of days lifts for, by each lift's movement. */
 function halves(sessions) {
@@ -133,6 +144,70 @@ module.exports = [
       // Three days still get push/pull/legs: only a short week is steered.
       const three = selection({ goal: 'muscle', level: 'advanced', daysPerWeek: 3, gear: GEARS[0] });
       assert.equal(resolveFirstRunRecommendationWithTailoring(three, null).featuredProgramId, 'tpl_3_day_push_pull_legs_v1');
+    },
+  },
+  {
+    name: 'week fit: whichever chooser picks a two-day week, it is not a split cut short while a week that fits two days is on offer',
+    run() {
+      // The waterfall's lanes weigh a split cut short; when their pick is not
+      // in the reader's pool the score ranking chooses, and it did not: a
+      // two-day woman with machines and cables ticked, whose hourglass pick
+      // was out of the pool, got the arms block, whose Arms (Volume) and Arms
+      // (Heavy) are a week with no legs (review, 2026-10-08). Every run of two
+      // days is checked (splitsShortWeek), not the first composed pair.
+      const gears = [
+        ...GEARS,
+        { id: 'gym-machines-cables', equipment: 'gym', trainingEnvironment: 'full_gym', equipmentItems: ['Machines', 'Cables'] },
+      ];
+      const tailorings = [
+        null,
+        { ...NEUTRAL_TAILORING, setupFreeWeightsPreference: 'love' },
+        { ...NEUTRAL_TAILORING, setupMachinesPreference: 'love' },
+      ];
+      let checked = 0;
+      let offered = 0;
+      for (const goal of ['muscle', 'strength', 'general_fitness', 'lean_athletic', 'fat_loss']) {
+        for (const level of ['beginner', 'intermediate', 'advanced', 'pro']) {
+          for (const gear of gears) {
+            for (const focusAreas of [[], ['chest'], ['arms'], ['back'], ['glutes'], ['legs']]) {
+              for (const gender of ['male', 'female', 'unspecified']) {
+                for (const tailoring of focusAreas.length === 0 ? tailorings : [null]) {
+                  const setup = selection({ goal, level, daysPerWeek: 2, gear, focusAreas, gender });
+                  const recommendation = resolveFirstRunRecommendationWithTailoring(setup, tailoring);
+                  checked += 1;
+                  const fitsTwo = recommendation.scoredCandidates.some((candidate) => !splitsShortWeek(candidate.programId, 2));
+                  if (!fitsTwo) {
+                    continue;
+                  }
+                  offered += 1;
+                  assert.ok(
+                    !splitsShortWeek(recommendation.featuredProgramId, 2),
+                    `${goal}/${level}/${gear.id}/${focusAreas}/${gender}/${tailoring ? 'tailored' : 'plain'}: ${recommendation.featuredProgramId} (${recommendation.waterfall?.rule ?? 'score ranking'})`,
+                  );
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.equal(checked, 5 * 4 * 9 * (5 + 3) * 3);
+      assert.ok(offered > checked * 0.9, `${offered} of ${checked} had a two-day fit`);
+
+      // The review's cases by name: the score ranking chose each.
+      const machinesCables = gears[gears.length - 1];
+      for (const [goal, level, focusAreas] of [
+        ['muscle', 'advanced', []],
+        ['muscle', 'pro', ['legs']],
+        ['general_fitness', 'advanced', ['arms']],
+      ]) {
+        const setup = selection({ goal, level, daysPerWeek: 2, gear: machinesCables, focusAreas, gender: 'female' });
+        const { featuredProgramId, waterfall } = resolveFirstRunRecommendationWithTailoring(setup, null);
+        assert.equal(waterfall, null, `${goal}/${level}: the waterfall's pick is out of the pool`);
+        assert.ok(
+          !['tpl_focus_arms_program_v1', 'tpl_focus_legs_program_v1', 'tpl_3_day_upper_lower_lite_v1'].includes(featuredProgramId),
+          `${goal}/${level}/${focusAreas}: ${featuredProgramId}`,
+        );
+      }
     },
   },
   {

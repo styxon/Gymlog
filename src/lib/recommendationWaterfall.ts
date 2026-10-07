@@ -1,6 +1,6 @@
 import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
-import { focusProgrammeLosesItsPoint, SHORT_WEEK_DAYS, splitsShortWeek } from './recommendationWeekFit';
+import { focusProgrammeLosesItsPoint, splitsReaderWeek } from './recommendationWeekFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -61,12 +61,6 @@ const IGNORES_OWNED_LOAD = 21;
  */
 const SHORT_WEEK_SPLIT = 40;
 
-/** Whether the reader's days would cut this programme into a week missing a half of the body. */
-function splitsReaderWeek(definition: RecommendationProgramDefinition, input: RecommendationInput) {
-  return input.daysPerWeek <= SHORT_WEEK_DAYS
-    && definition.daysPerWeek > input.daysPerWeek
-    && splitsShortWeek(definition.programId, input.daysPerWeek);
-}
 
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
