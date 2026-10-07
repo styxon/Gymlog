@@ -73,7 +73,7 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
   // Finnish
   [['en'], ['halua', 'haluu', 'haluis', 'haluais', 'haluaisi', 'tahdo', 'tahtois', 'tahtoisi'], ['elää', 'herätä', 'olla elossa', 'olla olemassa']],
   // Not "herätä" here: "en jaksa herätä aamutreeniin" is a tired reader.
-  [['en'], ['jaksa', 'jaksais', 'jaksaisi'], ['elää', 'elämää', 'olla elossa']],
+  [['en'], ['jaksa', 'jaksais', 'jaksaisi'], ['elää', 'elämää', 'olla elossa', 'olla olemassa']],
   [['haluan', 'haluun', 'haluaisin', 'haluisin', 'tahdon', 'tahtoisin'], ['', 'vain', 'vaan', 'vaa'], ['kuolla', 'olla kuollut']],
   [['tapan', 'tappaa', 'tappaan', 'tappaisin', 'tappamaan'], ['itseni', 'itteni', 'ittein']],
   [['toivon', 'toivoisin', 'toivoin'], ['', 'vain', 'vaan'], ['että kuolisin', 'et kuolisin', 'etten heräisi', 'etten heräis', 'että en heräisi']],
