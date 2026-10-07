@@ -13,28 +13,24 @@ import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 export type SearchableSwapOption = TailoredSwapOption & { searchLabel?: string };
 
 /**
- * The swap list, cut down to a choice a reader can actually make.
+ * The swap list, ordered the way the question is asked.
  *
- * The pool a substitution group holds is the set of lifts that are VALID here,
- * which is not the same as the set worth reading. "Lantionnosto tangolla"
- * offered nine, all of them some hip thrust or glute bridge, and the reader's
- * verdict was that there were far too many — and the actions below the list had
- * been pushed off the bottom of the sheet (user 2026-08-26).
+ * Someone who cannot do this lift today wants either the same movement with
+ * different gear — a machine instead of a bar — or something else that trains
+ * the same thing. Those are two different answers and the list used to
+ * interleave them by score, so the machine version could sit fourth behind
+ * three glute bridges (user 2026-08-26). So the pool is split: variations
+ * first, then the related lifts.
  *
- * So the pool is split the way the question is actually asked. Someone who
- * cannot do this lift today wants either the same movement with different gear
- * — a machine instead of a bar — or something else that trains the same thing.
- * Those are two different answers and the list used to interleave them by
- * score, so the machine version could sit fourth behind three glute bridges.
+ * Nothing is cut. Home and the programme day kept three of each while the
+ * player showed the whole pool, so a lift could be a card in the workout and
+ * missing on Home (bug hunt 2026-10-07). The owner's call: no cap anywhere —
+ * the order makes the list sensible, and the reader can swap to any of it.
  *
  * Ranking inside each half is left exactly as `buildTailoredSwapOptions` made
  * it: that is where equipment, joints and stated preferences are weighed, and
  * re-sorting here would be a second opinion competing with it.
  */
-
-/** Enough to choose between, few enough to read without scrolling. */
-const MAX_VARIATIONS = 3;
-const MAX_RELATED = 3;
 
 /**
  * Words that name the gear or the manner, not the movement.
@@ -70,7 +66,7 @@ export interface SwapShortlist {
   variations: SearchableSwapOption[];
   /** A different movement from the same pool — same area, other angle. */
   related: SearchableSwapOption[];
-  /** How many the pool held before the cut, so the sheet can offer the rest. */
+  /** How many the two lists hold together. */
   total: number;
 }
 
@@ -162,11 +158,8 @@ export function buildSwapShortlist(
   }
 
   return {
-    variations: variations.slice(0, MAX_VARIATIONS),
-    // When the movement has no siblings, the whole shortlist is related lifts —
-    // and a list of three where nine were valid would be hiding choices for the
-    // sake of symmetry.
-    related: related.slice(0, variations.length === 0 ? MAX_VARIATIONS + MAX_RELATED : MAX_RELATED),
+    variations,
+    related,
     // Counted after the duplicate spellings are dropped: the reader is never
     // told a pool holds nine when two of them were the same lift twice.
     total: seen.size,

@@ -48,8 +48,9 @@ import {
 } from '../lib/homeSessionHero';
 import { AnimatedGreeting } from '../components/AnimatedGreeting';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
-import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { TailoringPreferencesInput } from '../lib/tailoringFit';
+import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { buildSwapAlternatives } from '../lib/swapPickerLists';
 import { doseAfterSwap } from '../lib/swapDose';
 import { formatSetScheme } from '../lib/format';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
@@ -449,7 +450,7 @@ interface HomeScreenProps {
   onKeepSwapInProgram?: (exerciseId: string, exerciseName: string) => void;
   /** Ranks the swap list the same way the player does. */
   tailoringPreferences?: TailoringPreferencesInput | null;
-  /** What the swap search reaches once the shortlist runs out. */
+  /** What the swap search reaches beyond the slot's own alternatives. */
   exerciseLibrary?: ExerciseLibraryItem[];
 }
 
@@ -764,54 +765,44 @@ export function HomeScreen({
   const swapRow = useMemo(() => {
     const exercise = nextPlanSession?.exercises.find((item) => item.slotId && item.slotId === swapSlotId);
     if (!exercise?.slotId) {
-      return {
-        currentName: '',
-        exerciseId: null,
-        shortlist: { variations: [], related: [], total: 0 } as ReturnType<typeof buildSwapShortlist>,
-      };
+      return { currentName: '', exerciseId: null, substitutionGroup: '' };
     }
-    const currentName = sessionSwaps[exercise.slotId] ?? exercise.name;
     return {
-      currentName,
+      currentName: sessionSwaps[exercise.slotId] ?? exercise.name,
       exerciseId: exercise.exerciseId ?? null,
-      // Split rather than listed: nine valid lifts interleaved by score put the
-      // machine version fourth behind three glute bridges, and pushed the
-      // actions off the bottom of the sheet (user 2026-08-26).
-      shortlist: buildSwapShortlist(
-        currentName,
-        buildSwapOptionsForSlot(exercise.substitutionGroup ?? '', currentName, tailoringPreferences).map(
-          (option) => ({ ...option, searchLabel: exerciseNameLabel(language, option.exerciseName) }),
-        ),
-        {
-          // What today's session already contains, swaps included: offering a
-          // lift that is two rows down is a change that changes nothing
-          // (#bugs 2026-08-26).
-          alreadyInSession: (nextPlanSession?.exercises ?? []).map(
-            (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
-          ),
-          query: swapQuery,
-          language,
-        },
-      ),
+      substitutionGroup: exercise.substitutionGroup ?? '',
     };
-  }, [nextPlanSession, swapSlotId, sessionSwaps, tailoringPreferences, swapQuery, language]);
+  }, [nextPlanSession, swapSlotId, sessionSwaps]);
 
   /**
    * The swap sheet is the guided player's (#bugs 2026-10-06; owner, 2026-10-07:
-   * that sheet everywhere). The slot's shortlist is the first cards, the
+   * that sheet everywhere). The slot's alternatives are the first cards, the
    * library nearest the lift under them, through the same chips as the
    * player and the programme day (useSwapPickerLists).
    */
-  const swapAlternatives = useMemo(
-    () => [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => option.exerciseName),
-    [swapRow.shortlist],
-  );
+  // What today's session already contains, swaps included: offering a lift
+  // that is two rows down is a change that changes nothing (#bugs 2026-08-26).
   const swapSessionLifts = useMemo(
     () =>
       (nextPlanSession?.exercises ?? []).map(
         (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
       ),
     [nextPlanSession, sessionSwaps],
+  );
+  // The same cards, in the same order, as the player and the programme day.
+  const swapAlternatives = useMemo(
+    () =>
+      swapRow.currentName
+        ? buildSwapAlternatives({
+            currentName: swapRow.currentName,
+            substitutionGroup: swapRow.substitutionGroup,
+            preferences: tailoringPreferences,
+            sessionLifts: swapSessionLifts,
+            query: swapQuery,
+            language,
+          })
+        : [],
+    [language, swapQuery, swapRow, swapSessionLifts, tailoringPreferences],
   );
   const swapPicker = useSwapPickerLists({
     exerciseLibrary,

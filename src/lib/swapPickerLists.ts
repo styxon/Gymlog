@@ -3,7 +3,8 @@ import { oneRowPerShownName } from './exerciseSearch';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from './exercisePicker';
 import { orderSwapCandidates } from './swapBrowsePrefilter';
-import { identityKey } from './swapShortlist';
+import { buildSwapShortlist, identityKey } from './swapShortlist';
+import { buildSwapOptionsForSlot, TailoringPreferencesInput } from './tailoringFit';
 
 /**
  * The swap sheet's two lists, for every screen that swaps a lift.
@@ -14,6 +15,48 @@ import { identityKey } from './swapShortlist';
  * sheet over these two lists, so what a swap offers cannot depend on where
  * the reader opened it.
  */
+
+export interface SwapAlternativesInput {
+  /** The lift being replaced, as it stands now (today's swap included). */
+  currentName: string;
+  /** The slot's substitution group; '' when it has none. */
+  substitutionGroup: string;
+  preferences: TailoringPreferencesInput | null | undefined;
+  /** Every lift in the session as it stands, swaps included. */
+  sessionLifts: readonly string[];
+  query: string;
+  language: AppLanguage;
+}
+
+/**
+ * The programme's alternatives for a slot: the sheet's first cards.
+ *
+ * The whole substitution pool, same-movement variations first and the related
+ * lifts after them (swapShortlist), the lifts already in the session left out.
+ * The player once showed every member and Home and the programme day three
+ * plus three, so the same lift was a card in one and missing in the other
+ * (bug hunt 2026-10-07); all three call this now, and nothing is cut.
+ */
+export function buildSwapAlternatives({
+  currentName,
+  substitutionGroup,
+  preferences,
+  sessionLifts,
+  query,
+  language,
+}: SwapAlternativesInput): string[] {
+  const { variations, related } = buildSwapShortlist(
+    currentName,
+    buildSwapOptionsForSlot(substitutionGroup, currentName, preferences).map((option) => ({
+      ...option,
+      searchLabel: exerciseNameLabel(language, option.exerciseName),
+    })),
+    // The lift being swapped is left out with the others, whether or not the
+    // caller's session list holds it under this name.
+    { alreadyInSession: [currentName, ...sessionLifts], query, language },
+  );
+  return [...variations, ...related].map((option) => option.exerciseName);
+}
 
 /** Unsearched, the library list is a choice, not a scroll. */
 const UNSEARCHED_CAP = 25;

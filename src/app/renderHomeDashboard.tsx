@@ -1,7 +1,7 @@
 import React from 'react';
 
 import { availableSignInProviders } from '../features/account/accountAuth';
-import { isWorkoutInProgress } from '../lib/activeWorkout';
+import { isWorkoutInProgress, isWorkoutInProgressFor } from '../lib/activeWorkout';
 import type { HomePrompt } from '../lib/homePrompts';
 import { isMeasurementCardKey } from '../lib/homeStatCards';
 import { SessionAdaptation, withoutSessionDrop, withSessionDrop, withSessionSwap } from '../lib/sessionAdaptation';
@@ -113,6 +113,16 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
     coachProUnlocked,
   } = deps;
 
+  // The card's session is the workout already running or paused. A swap or a
+  // drop made on Home would be held for it and never reach it — Resume opens
+  // the running workout and applies nothing — so the rows stay read-only and
+  // the edit is made in the player (bug hunt 2026-10-07).
+  const todayIsRunning = isWorkoutInProgressFor(
+    workout.activeSession,
+    homeActivePlanCard?.programId,
+    homeActivePlanCard?.nextSession?.id,
+  );
+
   let content: React.ReactNode = null;
   content = (
     <HomeScreen
@@ -217,7 +227,7 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
       }}
       sessionSwaps={homeSessionAdaptation.swaps}
       // The programme's own lift picked back undoes the swap (withSessionSwap).
-      onSwapSessionExercise={(slotId, exerciseName) =>
+      onSwapSessionExercise={todayIsRunning ? undefined : (slotId, exerciseName) =>
         adaptHomeSession((current) =>
           withSessionSwap(
             current,
@@ -228,8 +238,12 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
         )
       }
       sessionDrops={homeSessionAdaptation.drops}
-      onDropSessionExercise={(slotId) => adaptHomeSession((current) => withSessionDrop(current, slotId))}
-      onRestoreSessionExercise={(slotId) => adaptHomeSession((current) => withoutSessionDrop(current, slotId))}
+      onDropSessionExercise={
+        todayIsRunning ? undefined : (slotId) => adaptHomeSession((current) => withSessionDrop(current, slotId))
+      }
+      onRestoreSessionExercise={
+        todayIsRunning ? undefined : (slotId) => adaptHomeSession((current) => withoutSessionDrop(current, slotId))
+      }
       onRemoveSessionExercise={(exerciseId) => {
         const sessionId = homeActivePlanCard?.nextSession?.id;
         if (homeActivePlanCard && sessionId) {
