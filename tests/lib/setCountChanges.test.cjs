@@ -78,6 +78,8 @@ module.exports = [
     run() {
       assert.equal(t('fi', 'toast.setCountChanged', { name: 'Lantionnosto', from: 4, to: 5 }), 'Lantionnosto 4 → 5 sarjaa');
       assert.equal(t('en', 'toast.setCountChanged', { name: 'Hip thrust', from: 4, to: 5 }), 'Hip thrust 4 → 5 sets');
+      assert.equal(t('fi', 'toast.setCountChangedOne', { name: 'Lankku', from: 2 }), 'Lankku 2 → 1 sarja', 'one set is "sarja"');
+      assert.equal(t('en', 'toast.setCountChangedOne', { name: 'Plank', from: 2 }), 'Plank 2 → 1 set');
       assert.equal(t('fi', 'toast.setCountChangedMore', { count: 2 }), '+2 muuta');
       assert.match(t('fi', 'toast.setCountChangedMany', { list: 'x' }), /x$/);
     },
@@ -94,6 +96,9 @@ module.exports = [
       const toast = body.indexOf('showToast(setCountToast(changes))');
       assert.ok(savedCheck > 0 && toast > savedCheck, 'no line before the save resolves');
       assert.match(body, /if \(changes\.length > 0\)/, 'a save that moved no count says nothing');
+      assert.match(body, /catch \(error\) \{[\s\S]*showToast\(t\(preferences\.appLanguage, 'toast\.emphasisSaveFailed'\)\)/, 'a failed write says so');
+      const toastBuilder = source.slice(source.indexOf('function setCountToast('));
+      assert.match(toastBuilder, /change\.to === 1\s*\?\s*t\(language, 'toast\.setCountChangedOne'/, 'one set reads in the singular');
 
       const app = fs.readFileSync(path.join(ROOT, 'App.tsx'), 'utf8');
       const call = app.slice(app.indexOf('createProgrammePlanEdits({'), app.indexOf('createProgrammePlanEdits({') + 400);

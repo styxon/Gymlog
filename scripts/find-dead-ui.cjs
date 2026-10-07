@@ -122,7 +122,9 @@ const otherText = [...sources.entries()]
 // A prefix handed over as a plain string ('onb.equip.') and joined to a value
 // later, where no template shows it. Like the template-prefix rule below, it
 // answers for the whole family: a dead key under a live prefix is not seen.
-const literalPrefixes = [...otherText.matchAll(/['"`]([A-Za-z][\w]*(?:\.[\w]+)*\.)['"`]/g)].map((match) => match[1]);
+// Two segments at least ('onb.equip.', not 'home.'): a one-word literal is
+// as often a route or a log tag, and it would answer for a whole family.
+const literalPrefixes = [...otherText.matchAll(/['"`]([A-Za-z]\w*(?:\.\w+)+\.)['"`]/g)].map((match) => match[1]);
 
 // A template with the variable anywhere in the key, not only at the end:
 // `catalog.collection.${key}.label`, `prog.custom.${shape.slug}.title`. Only
@@ -130,7 +132,9 @@ const literalPrefixes = [...otherText.matchAll(/['"`]([A-Za-z][\w]*(?:\.[\w]+)*\
 const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const keyTemplates = [...otherText.matchAll(/`([^`\n]*\$\{[^`\n]*)`/g)]
   .map((match) => match[1].split(/\$\{[^}]*\}/))
-  .filter((parts) => /^[A-Za-z]\w*\./.test(parts[0]) || /\.\w+$/.test(parts[parts.length - 1]))
+  // The key-like text has to come first: `${x}.title` alone would read as
+  // every key that ends in .title.
+  .filter((parts) => /^[A-Za-z]\w*\./.test(parts[0]))
   .map((parts) => new RegExp(`^${parts.map(escapeRegExp).join('.+?')}$`));
 
 for (const key of enKeys) {

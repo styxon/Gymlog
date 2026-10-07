@@ -234,20 +234,29 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // Read off the days the write itself reads, so the line names what this
     // save changed and not what a stale copy of the programme would have.
     let changes: SetCountChange[] = [];
-    const result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => {
-      changes = setCountChanges(sessions, setsByExerciseId);
-      return {
-        kind: 'save',
-        sessions: sessions.map((session) => ({
-          id: session.id,
-          name: session.name,
-          exercises: session.exercises.map((exercise) => ({
-            ...toDraftExercise(exercise),
-            targetSets: setsByExerciseId.get(exercise.id) ?? exercise.targetSets,
+    let result: Awaited<ReturnType<typeof editWorkoutTemplateSessions>>;
+    try {
+      result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => {
+        changes = setCountChanges(sessions, setsByExerciseId);
+        return {
+          kind: 'save',
+          sessions: sessions.map((session) => ({
+            id: session.id,
+            name: session.name,
+            exercises: session.exercises.map((exercise) => ({
+              ...toDraftExercise(exercise),
+              targetSets: setsByExerciseId.get(exercise.id) ?? exercise.targetSets,
+            })),
           })),
-        })),
-      };
-    });
+        };
+      });
+    } catch (error) {
+      // The sheet has closed on the new split; a write that failed says so
+      // rather than leave the reader believing it held.
+      console.error('Could not save the programme emphasis', error);
+      showToast(t(preferences.appLanguage, 'toast.emphasisSaveFailed'));
+      return;
+    }
     if (!result.saved) {
       return;
     }
@@ -267,7 +276,10 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     const label = (change: SetCountChange) => exerciseNameLabel(language, change.name);
     if (changes.length === 1) {
       const [change] = changes;
-      return t(language, 'toast.setCountChanged', { name: label(change), from: change.from, to: change.to });
+      // "1 sarja", not "1 sarjaa": Finnish takes the partitive only after 2+.
+      return change.to === 1
+        ? t(language, 'toast.setCountChangedOne', { name: label(change), from: change.from })
+        : t(language, 'toast.setCountChanged', { name: label(change), from: change.from, to: change.to });
     }
     const { named, more } = setCountToastParts(changes);
     const items = named.map((change) =>
