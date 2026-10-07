@@ -396,6 +396,249 @@ const CRISIS = {
     'olen itse tuhoinen',
     'itsmurha',
   ],
+  // K1 hunt (2026-10-08): Finnish typed without ä and ö. Every Finnish line
+  // above is also swept folded, further down; these are the hunt's own.
+  umlautsLeftOut: [
+    'en halua elaa',
+    'en jaksa enaa elaa',
+    'toivon etta kuolisin',
+    'toivon etten heraisi',
+    'viillan ranteeni',
+    'otan kaikki laakkeet',
+    'heittaydyn junan alle',
+    'lopetan elamani',
+    'emma haluu elaa',
+    'haluan paattaa elamani',
+    'hyppaan sillalta',
+    'EN HALUA ELAA',
+    'en halua elää enaa',
+    'en jaksa elaa',
+  ],
+  // K1 hunt (2026-10-08): the Finnish for the methods the English rows hold.
+  finnishMethod: [
+    'aion hirttää itseni',
+    'hirtän itseni',
+    'mä hirtän itteni',
+    'aion hirttäytyä',
+    'hirttäydyn tänään',
+    'miten hirttäydytään',
+    'miten tehdä hirttosilmukka',
+    'aion ampua itseni',
+    'ammun itseni',
+    'ammun itseäni päähän',
+    'hukutan itseni',
+    'aion hukuttautua',
+    'hukuttaudun järveen',
+    'myrkytän itseni',
+    'aion myrkyttää itseni',
+    'otin yliannostuksen',
+    'aion ottaa yliannostuksen',
+    'otan yliannostuksen tänään',
+    'yliannostus',
+    'otin yliannoksen',
+    'haluan lopettaa kaiken',
+    'aion lopettaa kaiken',
+    'mä lopetan kaiken tänään',
+    'lopetan tän kaiken',
+    'haluan että kaikki loppuu',
+    'kunpa kuolisin',
+    'kunpa olisin kuollut',
+    'kumpa oisin kuollu',
+    'jospa en heräisi',
+    'toivon olevani kuollut',
+    'olisin mieluummin kuollut',
+    'olisin mieluummin kuollut kuin elän näin',
+    'aion hypätä junan eteen',
+    'hyppään rekan eteen',
+    'ajan rekan alle',
+    'aion ajaa rekan alle',
+    'ajan rekan eteen',
+    'hyppään kerrostalon katolta',
+    'hyppään kymmenennestä kerroksesta',
+    'mä hyppään sillalt',
+    'meen hyppää katolta',
+    'hyppäisin parvekkeelta',
+    'haluun hypätä parvekkeelt',
+  ],
+  // K1 hunt (2026-10-08): a closing phrase is not excused by whatever comes
+  // after it; only the session it names is.
+  notASessionAfter: [
+    "I don't want to be here any more",
+    "I don't want to be here anymore lol",
+    "I don't want to be here anymore and nobody cares",
+    "I don't want to be here in this world",
+    "I don't want to be here on this earth anymore",
+    "I don't want to be here tomorrow morning",
+    "I don't want to be around tomorrow",
+    'i dont wanna be here no more',
+    "I don't wanna be here anymore fr",
+    'I hope I don\'t wake up again',
+    'I hope I never wake up again',
+    "I hope I don't wake up tomorrow morning",
+    "I hope I don't wake up lol",
+    "I wish I wouldn't wake up tomorrow",
+    'toivon etten herää aamulla',
+    'toivon etten herää ollenkaan',
+    'toivon etten herää tästä unesta',
+    'toivon etten herää enää ikinä',
+    'en halua olla täällä maailmassa',
+    'en halua olla enää täällä ja kukaan ei välitä',
+    'en halua olla täällä huomenna',
+    'emmä haluu olla täällä enää',
+    "I'd rather be dead than live like this",
+    "I'd rather die than go on like this",
+    "I'd rather be dead than alive",
+    'I would rather die than wake up tomorrow',
+    'id rather be dead than keep living',
+    "I'd rather die than be a burden",
+    "I'd rather be dead than feel this way",
+    "I'd rather die than live through another leg day",
+    "I'd rather be dead than keep going to the gym",
+  ],
+  // K1 hunt (2026-10-08): how much of what kills, how, and a counted
+  // overdose.
+  lethality: [
+    'I took 30 sleeping pills',
+    'I just swallowed 50 tablets',
+    'I took 20 tylenol',
+    'I just took like 40 pills',
+    'I took a handful of pills',
+    'I swallowed a handful of sleeping pills',
+    'I took a whole pack of pills',
+    'I took the entire pack of paracetamol',
+    'I took a whole box of painkillers',
+    "I'm going to take a handful of sleeping pills",
+    'how many pills does it take to die',
+    'how many pills to die',
+    'how many sleeping pills to die',
+    'how many paracetamol would kill me',
+    'how much paracetamol kills you',
+    'how much insulin would kill me',
+    'how high do I need to jump from to die',
+    'lethal dose of paracetamol',
+    "what's a lethal dose of ibuprofen",
+    'lethal dose of tylenol for my weight',
+    "what's the quickest way to die",
+    'what is the most painless way to die',
+    'most painless way to kill yourself',
+    'how do people kill themselves',
+    'how to hang yourself',
+    'how to tie a noose',
+    'how to make a noose',
+    'where to cut to bleed out',
+    'which bridge is high enough to die',
+    "I'll end it after squats, with a gun",
+    "I'm ending it with dips, then pills",
+    'otin 30 unilääkettä',
+    'nielin 50 tablettia',
+    'paljonko pillereitä kuolee',
+    'paljonko panadolia tarvitaan kuolemaan',
+    'kuinka monta unilääkettä tappaa',
+    'tappava annos parasetamolia',
+    'mikä on tappava annos buranaa',
+    'kivuttomin tapa kuolla',
+    'nopein tapa kuolla',
+    'miten voi tappaa itsensä kivuttomasti',
+  ],
+  // K1 hunt (2026-10-08): a death wish one word from a listed row.
+  deathWish: [
+    'I should just die',
+    'I should die',
+    'I might as well die',
+    'I might as well be dead',
+    "I'm ready to die",
+    'I am ready to die tonight',
+    'all I want is to die',
+    'I want to be dead',
+    'I want death',
+    'I long for death',
+    "I'm praying to die",
+    'I pray I die in my sleep',
+    'I want my life to end',
+    'I want it all to end',
+    'I want everything to end',
+    'I want this life to be over',
+    'I just want it to be over',
+    'I want to stop existing',
+    'I wish I could just stop existing',
+    'I wish I could disappear forever',
+    "I'm tired of living",
+    "I'm tired of being alive",
+    "I'm sick of living",
+    'I hate being alive',
+    "I'm done with life",
+    'kill me now',
+    'someone please kill me',
+    'I wish someone would kill me',
+    'imma end it',
+    'im finna end it',
+    'ill end it',
+    'Ill end it',
+    'ill end it tonight',
+    "I'm finally ending it",
+    'i will finally end it',
+    'I end it tonight',
+    'tonight I end it',
+    'it ends tonight',
+    "I'm going to end things",
+    "I'm ending things tonight",
+    "I'm going to end everything",
+    'mun pitäis vaan kuolla',
+    'minun pitäisi kuolla',
+    'olen valmis kuolemaan',
+    'oon valmis kuolemaan',
+    'haluan että elämäni loppuu',
+    'haluan lakata olemasta',
+    'olen väsynyt elämään',
+    'oon kyllästynyt elämään',
+    'vihaan olla elossa',
+    'tappakaa mut',
+    'kunpa joku tappais mut',
+    "I'm done living",
+    "I don't want to wake up anymore",
+    "I wish I'd never been born",
+    'how many mg of xanax to overdose',
+    'haluan pois tästä elämästä',
+    'ajan autolla rekan alle',
+    'haluan tehdä lopun kaikesta',
+    'teen lopun itsestäni',
+  ],
+  // K1 hunt (2026-10-08): one letter off, a word glued on, or hyphens
+  // between.
+  oneLetterOff: [
+    'i wnat to die',
+    'i wamt to die',
+    'i wan to die',
+    'i want too die',
+    'i want to diee',
+    'i want to kil myself',
+    'kil myself',
+    'i want to kill mysefl',
+    'i want to kill msyelf',
+    'im gonna kill urself',
+    'i want to unalive myself',
+    'i want to unalive',
+    'unalive me',
+    'suicudal',
+    'suidical',
+    'haluan kuola',
+    'haluan kuolaa',
+    'haluun kuolaa',
+    'tapan itsenu',
+    'tapan itsni',
+    'itsemurah',
+    'ittemurha',
+    'en halau elää',
+    'iwanttokillmyself',
+    'i-wnat-to-die',
+    'i-want-to-kill-myself',
+    'wanttokillmyself',
+    'imgonnakillmyself',
+    'iamsuicidal',
+    'imsuicidal',
+    'iwanttoendmylife',
+    'haluanpäättääelämäni',
+  ],
 };
 
 const TRAINING = [
@@ -527,7 +770,50 @@ const TRAINING = [
   'what is my e1rm on bench',
   'sooo tired after legs, is that normal',
   'noooo my bench stalled again',
+  // K1 hunt (2026-10-08): the session the closing rows still let out.
+  "I don't want to be here at the gym at 6am",
+  "I don't want to be here so early",
+  "I hope I don't wake up sore",
+  "I hope I don't wake up too sore to train",
+  'toivon etten herää jumissa',
+  'en halua olla täällä salilla enää tänään',
+  "I'd rather die than miss a workout",
+  'kuolisin mieluummin kuin jättäisin jalkapäivän väliin',
+  // What the counted and the lethal rows must not read.
+  'I take 3 creatine pills a day',
+  'I take 2 pills of ibuprofen after heavy days',
+  'I ate a handful of almonds before training',
+  'how many sets to failure',
+  'how many calories do I burn on a run',
+  'is a lethal combo of squats and lunges too much?',
+  'lopetan kaiken sokerin ennen kisoja',
+  'haluan lopettaa kaiken herkuttelun',
+  'hyppään narua ennen treeniä',
+  'hang yourself from the bar for 30 seconds',
+  // The words one letter from a crisis word.
+  'I had to will myself through the last set',
+  'I need to warm myself up properly',
+  "I don't want to lie, I skipped leg day",
+  "I didn't want to love running but here we are",
+  'I almost shit myself on that deadlift',
+  'I would die for a 200 kg bench',
+  'en halua olla tällä dieetillä koko kesää',
+  "I'm tired of living on chicken and rice",
+  "I'm gonna die on leg day, I'd rather go home",
+  "I don't want to wake up at 5am for leg day",
+  "I don't want to wake up sore after squats",
+  "I'm done living on rice and chicken",
+  "I'm sending it on deadlifts today",
+  "I'm sending it",
+  'I jump off the rower between intervals',
+  'I want to arm myself with better technique',
+  'I took 20 pulls on the erg',
+  // Two slips in one phrase are not read: "ate lite" is two from "hate life".
+  'I ate lite yogurt after training',
 ];
+
+/** Finnish typed on a keyboard without ä and ö. */
+const folded = (prompt) => prompt.replace(/[äåÄÅ]/g, (letter) => (letter === letter.toLowerCase() ? 'a' : 'A')).replace(/[öÖ]/g, (letter) => (letter === 'ö' ? 'o' : 'O'));
 
 const CURLY_APOSTROPHE = String.fromCodePoint(0x2019);
 const NO_BREAK_SPACE = String.fromCodePoint(0xa0);
@@ -577,6 +863,47 @@ module.exports = [
         }
       }
       assert.deepEqual(missed, []);
+    },
+  },
+  {
+    name: 'crisis phrases: every Finnish line is caught with its ä and ö typed as a and o (K1 hunt, 2026-10-08)',
+    run() {
+      const missed = [];
+      let swept = 0;
+      for (const prompts of Object.values(CRISIS)) {
+        for (const prompt of prompts) {
+          if (!/[äöå]/i.test(prompt)) continue;
+          swept += 1;
+          for (const said of [folded(prompt), folded(prompt).toUpperCase()]) {
+            if (classifyCoachScope(said) !== 'crisis') missed.push(JSON.stringify(said));
+          }
+        }
+      }
+      assert.deepEqual(missed, []);
+      assert.ok(swept >= 90, `${swept} Finnish lines swept`);
+    },
+  },
+  {
+    name: 'crisis phrases: the gym talk is still training with its ä and ö typed as a and o',
+    run() {
+      const flagged = TRAINING.filter((prompt) => /[äöå]/i.test(prompt)).map(folded).filter((prompt) => classifyCoachScope(prompt) !== 'training');
+      assert.deepEqual(flagged, []);
+    },
+  },
+  {
+    name: 'crisis phrases: a typo is read only beside the rest of its phrase, and never in a word that is a word',
+    run() {
+      // A long prompt of words near the slot words costs what any long
+      // prompt does: the near words are found by index, not by a scan.
+      const near = 'wnat kil mysefl itsni kuola '.repeat(4000);
+      const started = Date.now();
+      assert.equal(classifyCoachScope(near), 'training');
+      const took = Date.now() - started;
+      assert.ok(took < 1500, `${took} ms for ${near.length} characters of near words`);
+      // A one-word row takes no typo: "nose" is one letter from "noose".
+      assert.equal(classifyCoachScope('my nose hurts after the bench'), 'training');
+      assert.equal(classifyCoachScope('nose breathing on the bike?'), 'training');
+      assert.equal(classifyCoachScope('how to tie a noose'), 'crisis');
     },
   },
   {
