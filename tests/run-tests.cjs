@@ -211,6 +211,7 @@ const suites = [
   ...require('./lib/liftIdentity.test.cjs'),
   ...require('./lib/programmeBrief.test.cjs'),
   ...require('./lib/programmeBriefNegation.test.cjs'),
+  ...require('./lib/programmeBriefLiveLimits.test.cjs'),
   ...require('./lib/programIntake.test.cjs'),
   ...require('./lib/widgetPayload.test.cjs'),
   ...require('./lib/widgetResources.test.cjs'),

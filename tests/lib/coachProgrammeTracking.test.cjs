@@ -102,7 +102,7 @@ module.exports = [
           },
         ],
       };
-      const proposal = resolveLiveProposal(raw, 'kädet', library, 120);
+      const proposal = resolveLiveProposal(raw, 'kädet', library, 120, preferences);
       const tracked = Object.fromEntries(proposal.sessions[0].exercises.map((exercise) => [exercise.name, exercise.tracked]));
       assert.deepEqual(tracked, {
         'Barbell Squat': true,

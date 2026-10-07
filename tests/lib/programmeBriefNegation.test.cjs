@@ -249,7 +249,7 @@ module.exports = [
         'Erikoisliikkeet eivät kiinnosta',
         'Basic lifts only, nothing like tire flips',
       ]) {
-        const proposal = resolveLiveProposal(raw, brief, library, 120);
+        const proposal = resolveLiveProposal(raw, brief, library, 120, preferences);
         assert.deepEqual(proposal.specialtyLeftOut, ['Tire Flip', 'Yoke Walk'], brief);
       }
       // A request is still a request.

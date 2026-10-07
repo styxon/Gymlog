@@ -5,7 +5,7 @@ import { CutButton } from './CutButton';
 import { CutSurface } from './CutSurface';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
-import { ProgrammeProposal } from '../lib/programmeBrief';
+import { ProgrammeProposal, proposalLeftSomethingOut } from '../lib/programmeBrief';
 import { localizeSessionName } from '../lib/sessionNameLabel';
 import { spacing } from '../theme';
 import { Theme, useThemedStyles } from '../theming';
@@ -122,6 +122,20 @@ export function ProgrammeProposalCard({
           })}
         </Text>
       ) : null}
+      {proposal.briefLeftOut?.length ? (
+        <Text style={styles.note}>
+          {t(language, 'aiCompose.briefLeftOut', {
+            names: proposal.briefLeftOut.map((name) => exerciseNameLabel(language, name)).join(', '),
+          })}
+        </Text>
+      ) : null}
+      {proposal.gearLeftOut?.length ? (
+        <Text style={styles.note}>
+          {t(language, 'aiCompose.gearLeftOut', {
+            names: proposal.gearLeftOut.map((name) => exerciseNameLabel(language, name)).join(', '),
+          })}
+        </Text>
+      ) : null}
 
       {/* No "compose again" here. The card lives in a conversation now, and
           asking again is what the conversation is for — a button that re-ran
@@ -134,8 +148,15 @@ export function ProgrammeProposalCard({
         />
       </View>
 
+      {/* A live week the check took lifts out of says so, rather than reading
+          as one that passed it whole. */}
       <Text style={styles.source}>
-        {t(language, proposal.source === 'live' ? 'aiCompose.source.live' : 'aiCompose.source.preview')}
+        {t(
+          language,
+          proposal.source === 'live'
+            ? proposalLeftSomethingOut(proposal) ? 'aiCompose.source.liveTrimmed' : 'aiCompose.source.live'
+            : 'aiCompose.source.preview',
+        )}
       </Text>
     </CutSurface>
   );

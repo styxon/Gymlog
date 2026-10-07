@@ -107,7 +107,7 @@ function mapSetupExperience(preferences: AppPreferences) {
   return 'beginner';
 }
 
-function mapSetupEquipment(preferences: AppPreferences) {
+function mapSetupEquipment(preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment'>) {
   if (preferences.aiPlannerEquipment) {
     return preferences.aiPlannerEquipment;
   }
@@ -556,6 +556,41 @@ function getFocusBodyPart(preferences: AppPreferences): ExerciseBodyPart | null 
   }
 }
 
+/**
+ * What a plan for these preferences is held to: the gear the reader has and
+ * the words their brief refuses, matched inside a library name. One reading
+ * for the composer below and for a week the live coach wrote
+ * (programmeBrief.resolveLiveProposal), so the two cannot disagree about what
+ * "no deadlifts" or "bodyweight only" keeps out.
+ */
+export interface PlannerLimits {
+  allowedEquipment: Set<DisplayEquipmentValue>;
+  avoidTerms: string[];
+}
+
+export function plannerLimits(
+  preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment' | 'aiPlannerAvoid'>,
+): PlannerLimits {
+  return {
+    allowedEquipment: resolveAllowedEquipment(mapSetupEquipment(preferences)),
+    avoidTerms: splitList(preferences.aiPlannerAvoid).map(normalize),
+  };
+}
+
+/** Whether a name carries a term the limits avoid. */
+export function isAvoidedByPlannerLimits(item: Pick<ExerciseLibraryItem, 'name'>, limits: PlannerLimits): boolean {
+  const normalizedName = normalize(item.name);
+  return limits.avoidTerms.some((term) => normalizedName.includes(term));
+}
+
+/** Whether the gear the limits allow covers this row. */
+export function fitsPlannerEquipment(
+  item: Pick<ExerciseLibraryItem, 'name' | 'equipment' | 'sourceEquipment'>,
+  limits: PlannerLimits,
+): boolean {
+  return limits.allowedEquipment.has(displayEquipmentValue(item));
+}
+
 function findLibraryItemForQuery(
   items: ExerciseLibraryItem[],
   query: string,
@@ -793,10 +828,9 @@ export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibr
   const equipment = mapSetupEquipment(preferences);
   const recovery = mapSetupRecovery(preferences);
   const sessionMinutes = mapSetupSessionMinutes(preferences, daysPerWeek);
-  const allowedEquipment = resolveAllowedEquipment(equipment);
+  const { allowedEquipment, avoidTerms } = plannerLimits(preferences);
   // Was filtering the legacy `lib_*` tier, which stopped shipping 2026-09-01.
   const importedLibrary = exerciseLibrary;
-  const avoidTerms = splitList(preferences.aiPlannerAvoid).map(normalize);
   const mustIncludeTerms = uniqueStrings(splitList(preferences.aiPlannerMustInclude));
   const usedMustIncludeTerms = new Set<string>();
   const usedIds = new Set<string>();
