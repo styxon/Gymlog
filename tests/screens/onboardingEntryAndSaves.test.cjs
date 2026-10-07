@@ -60,7 +60,7 @@ module.exports = [
       assert.match(editor[0], /basicsSeed=\{setupEditSelection \? null : setupBasics\}/);
       assert.match(
         app,
-        /const setupBasics = useMemo\(\s*\(\) => buildSetupBasicsFromPreferences\(preferences, latestWeighInKg\),\s*(\/\/[^\n]*\n\s*)?\[setupSelectionKey, latestWeighInKg\],\s*\);/,
+        /const setupBasics = useMemo\(\s*\(\) => buildSetupBasicsFromPreferences\(preferences, latestWeighInKg, leadTrainingCycle\),\s*(\/\/[^\n]*\n\s*)?\[setupSelectionKey, latestWeighInKg\],\s*\);/,
       );
       // Answered-ness is a fact about the seed, not about the mode: edit mode
       // with no selection opens its questions unanswered.
@@ -80,10 +80,12 @@ module.exports = [
   {
     name: 'onboarding: the setup memo key comes from the builders, cycle included',
     run() {
-      assert.match(app, /const setupSelectionKey = buildSetupSeedKey\(preferences\);/);
+      // The lead programme's rhythm is in the key: it is handed to the
+      // builders beside the preferences (2026-10-07).
+      assert.match(app, /const setupSelectionKey = buildSetupSeedKey\(preferences, leadTrainingCycle\);/);
       assert.match(
         app,
-        /const setupSelection = useMemo\(\(\) => buildSetupSelectionFromPreferences\(preferences\), \[setupSelectionKey\]\);/,
+        /const setupSelection = useMemo\(\s*\(\) => buildSetupSelectionFromPreferences\(preferences, null, leadTrainingCycle\),\s*\[setupSelectionKey\],\s*\);/,
       );
       assert.doesNotMatch(app, /const setupSelectionKey = JSON\.stringify\(/);
     },

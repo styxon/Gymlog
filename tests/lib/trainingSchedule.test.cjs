@@ -280,12 +280,21 @@ module.exports = [
       const read = (file) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', file), 'utf8');
       assert.match(read('src/app/onboardingHandoff.ts'), /resolveCycleAnchor\(selection\.trainingCyclePattern, previousCycle/);
       assert.match(read('src/screens/OnboardingScreen.tsx'), /resolveCycleAnchor\(cyclePattern, existingTrainingCycle/);
-      assert.match(read('src/app/renderOnboarding.tsx'), /existingTrainingCycle=\{preferences\.trainingCycle\}/);
+      // Both against the lead programme's rhythm, the one the questions replace.
+      assert.match(read('src/app/renderOnboarding.tsx'), /existingTrainingCycle=\{leadTrainingCycle\}/);
+      assert.match(read('App.tsx'), /const leadTrainingCycle = leadPlanTrainingCycle\(database\.workoutPlans, preferences\.activePlanId\);/);
+      assert.match(read('App.tsx'), /renderSetupEditor\(\{\s*leadTrainingCycle,/);
 
-      // And the saved patch, end to end.
-      const { buildSetupPreferencePatch } = require('../../.test-dist/app/onboardingHandoff.js');
+      // And the saved plan, end to end.
+      const { buildSavedOnboardingWorkoutPlan } = require('../../.test-dist/app/onboardingHandoff.js');
       const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-      const kept = buildSetupPreferencePatch({ ...DEFAULT_FIRST_RUN_SELECTION, trainingCyclePattern: [true, true, false] }, null, old);
+      const kept = buildSavedOnboardingWorkoutPlan(
+        { ...DEFAULT_FIRST_RUN_SELECTION, trainingCyclePattern: [true, true, false] },
+        'wt_1',
+        ['s1'],
+        'fi',
+        old,
+      );
       assert.equal(kept.trainingCycle.anchorDayStart, old.anchorDayStart);
     },
   },

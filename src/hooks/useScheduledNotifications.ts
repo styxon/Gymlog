@@ -21,6 +21,7 @@ import {
 } from '../lib/completedSessions';
 import { templateSessionsReader } from '../app/planTemplateSessions';
 import { livePlanEntries } from '../lib/planResolvableEntries';
+import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { buildNotificationPlan } from '../lib/notificationPlan';
 import { resolveReminderSchedule } from '../lib/reminderSchedule';
 import { findLatestSessionPr } from '../lib/workoutCompletionSummary';
@@ -97,7 +98,7 @@ export function useScheduledNotifications(database: AppDatabase, hydrated: boole
     : null;
 
   /**
-   * The rhythm the reminders follow: the reader's cycle when they have set
+   * The rhythm the reminders follow: the lead programme's cycle when it has
    * one, otherwise the days their own plan names, otherwise what setup said
    * they had free.
    *
@@ -111,14 +112,13 @@ export function useScheduledNotifications(database: AppDatabase, hydrated: boole
     const activePlan =
       database.workoutPlans.find((plan) => plan.id === database.preferences.activePlanId) ?? null;
     return resolveReminderSchedule({
-      trainingCycle: database.preferences.trainingCycle,
+      trainingCycle: planTrainingCycle(activePlan),
       planEntries: livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
       availableDays: setupAvailableDays,
       restDayStarts: database.preferences.restDayStarts,
     });
   }, [
     database.preferences.activePlanId,
-    database.preferences.trainingCycle,
     database.preferences.restDayStarts,
     database.workoutPlans,
     database.workoutTemplates,

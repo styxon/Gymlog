@@ -38,6 +38,7 @@ import {
 import { normalizeSupersetGroups } from '../lib/supersetGrouping';
 import { savedPrescription } from '../lib/singleRepTarget';
 import { reconcileRunningSet } from '../lib/activeProgramSet';
+import { moveTrainingCycleToLeadPlan } from '../lib/planTrainingCycle';
 import { buildLegacyTemplateSessions, getLegacyTemplateSessionId } from '../lib/workoutTemplateSessions';
 import {
   AppDatabase,
@@ -555,6 +556,9 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     workoutPlans: Array.isArray(input?.workoutPlans)
       ? input.workoutPlans.filter(hasStoredId).map((plan: any) => ({
           ...plan,
+          // Missing on every plan written before rhythms moved onto the
+          // programme (2026-10-07): that reads as the programme's own week.
+          trainingCycle: normalizeTrainingCycle(plan.trainingCycle, null),
           entries: Array.isArray(plan.entries)
             ? plan.entries
                 .filter(
@@ -1431,7 +1435,8 @@ export async function loadDatabase() {
     // After the overlay, not inside normalizeDatabase: the preferences key is
     // normalized without the plans, and it is the copy that wins. This is
     // where an install carrying a running id with no plan behind it heals.
-    return { ...database, preferences: reconcileRunningSet(preferences, database.workoutPlans) };
+    const reconciled = { ...database, preferences: reconcileRunningSet(preferences, database.workoutPlans) };
+    return await withTrainingCycleMoved(reconciled);
   } catch {
     // Unreadable storage is a corrupt install, not a new one — but inventing
     // history to paper over it would be the same lie.
@@ -1465,6 +1470,32 @@ export async function loadDatabase() {
     const empty = { ...blank, preferences: reconcileRunningSet(stored, blank.workoutPlans) };
     await saveDatabase(empty);
     return empty;
+  }
+}
+
+/**
+ * The old app-wide rhythm, moved onto the lead programme and written down.
+ *
+ * Here for the same reason as the running set's repair: the rhythm can sit in
+ * the preferences key, the plans sit in the blob, and only after the overlay
+ * are both in hand. Written at once, both keys in one write (one transaction
+ * on Android; on iOS the blob lands first, and a kill before the key only
+ * runs the move again) — left for the next commit, a preferences-only write
+ * (a theme switch) would land the emptied preference while the blob still
+ * held the plan without its rhythm, and the next launch would have lost it. If the
+ * write is refused the move is not made at all: this launch shows the
+ * programme's own week and the next one tries again, with nothing lost.
+ */
+async function withTrainingCycleMoved(database: AppDatabase): Promise<AppDatabase> {
+  const moved = moveTrainingCycleToLeadPlan(database);
+  if (moved === database) {
+    return database;
+  }
+  try {
+    await saveDatabase(moved, { withPreferences: true });
+    return moved;
+  } catch {
+    return database;
   }
 }
 

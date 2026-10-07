@@ -61,8 +61,9 @@ export interface FirstRunSetupSelection {
   /**
    * A repeating on/off rhythm chosen on the days step (e.g. [true, true,
    * false] = two on, one off), when the reader trains in cycles rather than
-   * on named weekdays. Null = weekdays are the whole answer. Persisted as
-   * preferences.trainingCycle, anchored at apply time.
+   * on named weekdays. Null = weekdays are the whole answer. Persisted on
+   * the plan the questions build (WorkoutPlan.trainingCycle), anchored at
+   * apply time.
    */
   trainingCyclePattern?: boolean[] | null;
   currentWeightKg?: number | null;

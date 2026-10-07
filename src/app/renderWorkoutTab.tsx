@@ -21,6 +21,7 @@ import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
 import { getSeasonProgramId, ProgramSeason } from '../lib/programSeasons';
 import { livePlanEntries } from '../lib/planResolvableEntries';
+import { planForTemplate, planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
 import { planWeekdayIndexes } from '../lib/programTrainingDays';
 import {
@@ -58,7 +59,7 @@ import { ProgramsHomeScreen } from '../screens/ProgramsHomeScreen';
 import { SeasonScreen } from '../screens/SeasonScreen';
 import { GoalFlowProposal, StrengthGoalFlowScreen } from '../screens/StrengthGoalFlowScreen';
 import { WorkoutsScreen } from '../screens/WorkoutsScreen';
-import { AppDatabase, AppPreferences, UnitPreference, WorkoutTemplateDraft } from '../types/models';
+import { AppDatabase, AppPreferences, TrainingCycle, UnitPreference, WorkoutTemplateDraft } from '../types/models';
 import type { PreferencesPatch } from '../state/AppProvider';
 import { FreestyleFinishSummary } from '../lib/emptyWorkoutSession';
 
@@ -86,6 +87,8 @@ export interface WorkoutTabDeps {
   workoutHomeRoute: AppRoute;
   preferences: AppPreferences;
   updatePreferences: (patch: PreferencesPatch) => Promise<unknown>;
+  /** One programme's rhythm set or cleared, on its own plan. */
+  setPlanTrainingCycle: (planId: string, cycle: TrainingCycle | null) => Promise<void>;
   unitPreference: UnitPreference;
   database: AppDatabase;
   workout: { templates: Parameters<typeof resolveProgramAffinity>[1] };
@@ -252,6 +255,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     workoutHomeRoute,
     preferences,
     updatePreferences,
+    setPlanTrainingCycle,
     unitPreference,
     database,
     workout,
@@ -518,13 +522,16 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             programIsMine && !programLeads,
           )
         : null;
+    // The plan this programme's week lives on — its weekdays and its rhythm
+    // both: the one the reader is on when several hold it, none when it was
+    // never started. handleSaveRhythm writes the same one.
+    const rhythmPlan = planForTemplate(
+      { plans: database.workoutPlans, activePlanId: preferences.activePlanId, activePlanIds: preferences.activePlanIds },
+      route.workoutTemplateId,
+    );
     // The plan's entries, in stored order — the order the week strip reads
     // both its days and the session on each of them.
-    const detailPlanEntries = livePlanEntries(
-      database.workoutPlans.find((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-        ?.entries ?? [],
-      templateSessionsReader(database),
-    );
+    const detailPlanEntries = livePlanEntries(rhythmPlan?.entries ?? [], templateSessionsReader(database));
 
     return program ? (
       <ProgramDetailScreen
@@ -752,7 +759,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             : undefined
         }
         onSaveRhythm={
-          database.workoutPlans.some((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
+          rhythmPlan
             ? (dayIndexes) =>
                 void handleSaveRhythm(route.workoutTemplateId, dayIndexes).then(
                   (saved) => {
@@ -769,12 +776,20 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                 )
             : undefined
         }
-        // The cycle is the app's one schedule, so it is offered exactly where
-        // the weekday rhythm is: on a programme that has a plan behind it.
-        trainingCycle={preferences.trainingCycle}
+        // This programme's own rhythm, on its own plan: another programme's is
+        // not this one's, and setting it here sets it nowhere else (user
+        // 2026-10-07). Offered exactly where the weekday rhythm is — on a
+        // programme that has a plan behind it; one never started shows its
+        // own week.
+        trainingCycle={planTrainingCycle(rhythmPlan)}
         onChangeTrainingCycle={
-          database.workoutPlans.some((plan) => plan.entries[0]?.workoutTemplateId === route.workoutTemplateId)
-            ? (cycle) => void updatePreferences({ trainingCycle: cycle })
+          rhythmPlan
+            ? (cycle) =>
+                void setPlanTrainingCycle(rhythmPlan.id, cycle).catch((error) => {
+                  console.error('Failed to save the programme rhythm', error);
+                  void haptics.error();
+                  showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                })
             : undefined
         }
         onSaveEmphasis={
