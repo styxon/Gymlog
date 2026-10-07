@@ -68,7 +68,7 @@ import { PW } from '../lightTheme';
 import { Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { layout, radii, spacing } from '../theme';
 import { AICoachAdvice, AICoachConversationTurn, AICoachTrainingContext } from '../types/aiCoach';
-import { AppLanguage } from '../types/models';
+import { AppLanguage, AppPreferences } from '../types/models';
 
 /**
  * The AI tab (design: Vinha AI Tab).
@@ -141,6 +141,11 @@ interface AICoachChatScreenProps {
   onIntentConsumed?: () => void;
   /** What the app already knows, preselected in the frame questions. */
   intakePreferences: ProgramIntakePreferences;
+  /**
+   * The stored profile. A brief that does not say the gear or the level is
+   * matched to a catalog programme on these, as the composer builds on them.
+   */
+  preferences: AppPreferences;
   trainingContext: AICoachTrainingContext;
   intro: CoachChatIntroInput;
   /** Total logged sessions, for the header line and the evidence footer. */
@@ -349,6 +354,7 @@ export function AICoachChatScreen({
   intent = null,
   onIntentConsumed,
   intakePreferences,
+  preferences,
   trainingContext,
   intro,
   sessionCount,
@@ -718,7 +724,7 @@ export function AICoachChatScreen({
         // who asks for five days gets a real answer instead of a paywall.
         const signals = parseProgrammeBrief(offer.brief);
         if (shouldOfferCatalogInstead(signals)) {
-          const match = matchProgrammeToBrief(signals);
+          const match = matchProgrammeToBrief(signals, preferences);
           const title = match ? catalogProgrammeTitle(match.programId) : null;
           if (match && title) {
             // Straight to the programme: a coach line explaining the composer's
@@ -866,6 +872,7 @@ export function AICoachChatScreen({
       onPinStatCard,
       onSetGoal,
       onOpenPremium,
+      preferences,
       proUnlocked,
       pinnedStatCardKeys,
     ],

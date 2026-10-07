@@ -5,6 +5,9 @@ const path = require('node:path');
 const { matchProgrammeToBrief, shouldOfferCatalogInstead } = require('../../.test-dist/lib/briefProgrammeMatch.js');
 const { parseProgrammeBrief } = require('../../.test-dist/lib/programmeBrief.js');
 const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
+const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
+
+const preferences = createSeedDatabase().preferences;
 
 module.exports = [
   {
@@ -18,7 +21,7 @@ module.exports = [
       assert.equal(signals.requestedDaysPerWeek, 5, 'the ask survives the cap');
       assert.equal(shouldOfferCatalogInstead(signals), true);
 
-      const match = matchProgrammeToBrief(signals);
+      const match = matchProgrammeToBrief(signals, preferences);
       assert.ok(match, 'the catalog has a five-day answer');
       assert.equal(match.daysPerWeek, 5, 'matched on the ASK, not on the capped four');
       assert.equal(match.matched.days, true);
@@ -39,7 +42,7 @@ module.exports = [
     name: 'brief match: a brief with nothing to match on returns nothing',
     run() {
       // Better than picking the catalog's first programme and calling it a fit.
-      assert.equal(matchProgrammeToBrief(parseProgrammeBrief('jotain kivaa')), null);
+      assert.equal(matchProgrammeToBrief(parseProgrammeBrief('jotain kivaa'), preferences), null);
     },
   },
   {
@@ -49,7 +52,7 @@ module.exports = [
       // model asked to name a programme names ones that do not exist.
       const ids = new Set(RECOMMENDATION_PROGRAMS.map((definition) => definition.programId));
       for (const brief of ['5 päivää, rinta', '6 päivää lihasmassaa', '5 päivää, jalat']) {
-        const match = matchProgrammeToBrief(parseProgrammeBrief(brief));
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), preferences);
         assert.ok(match && ids.has(match.programId), `${brief} produced an unknown id`);
       }
     },

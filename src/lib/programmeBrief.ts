@@ -1,6 +1,9 @@
 import { buildAiCoachPlanSchema, fitsPlannerEquipment, isAvoidedByPlannerLimits, plannerLimits } from './aiCoachPlan';
+import { getCatalogTrackingMode } from './catalogExercisePools';
 import { exerciseTypeOf, isSpecialtyExercise } from './exerciseClassification';
 import { exerciseNameLabel } from './exerciseNameLabel';
+import { getExerciseTemplateDefaults } from './exerciseSuggestions';
+import { prescriptionUnitOf } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
 import { isHoldExerciseName } from './holdExercises';
 import { AICoachPlanSchema } from '../types/aiCoachPlan';
@@ -1011,15 +1014,37 @@ export function resolveLiveProposal(
         }
         continue;
       }
+      const sets = Math.max(1, Math.min(8, Math.round(exercise.sets || 3)));
+      const restSeconds =
+        exercise.restSeconds && exercise.restSeconds > 0 ? Math.round(exercise.restSeconds) : defaultRestSeconds;
+      // The model doses every row in reps, and the player reads a hold's
+      // numbers as seconds and a cardio machine's as minutes: Plank 3 x 10-15
+      // ran as a 15 s hold and Elliptical Trainer 3 x 10-12 as three 12-minute
+      // bouts (re-hunt, 2026-10-07). Those rows take the add sheet's defaults
+      // for their unit (getExerciseTemplateDefaults) — a hold keeps the
+      // model's sets and rest, a bout of minutes is one bout with no rest.
+      const unit = prescriptionUnitOf(getCatalogTrackingMode(item.name));
+      if (unit !== 'reps') {
+        const dose = getExerciseTemplateDefaults(item, defaultRestSeconds);
+        exercises.push({
+          name: item.name,
+          libraryItemId: item.id,
+          sets: unit === 'minutes' ? dose.targetSets : sets,
+          repsMin: dose.repMin,
+          repsMax: dose.repMax,
+          restSeconds: unit === 'minutes' ? dose.restSeconds : restSeconds,
+          tracked: liveExerciseTracked(item),
+        });
+        continue;
+      }
       const repsMin = Math.max(1, Math.round(exercise.repsMin || 1));
       exercises.push({
         name: item.name,
         libraryItemId: item.id,
-        sets: Math.max(1, Math.min(8, Math.round(exercise.sets || 3))),
+        sets,
         repsMin,
         repsMax: Math.max(repsMin, Math.round(exercise.repsMax || repsMin)),
-        restSeconds:
-          exercise.restSeconds && exercise.restSeconds > 0 ? Math.round(exercise.restSeconds) : defaultRestSeconds,
+        restSeconds,
         tracked: liveExerciseTracked(item),
       });
     }

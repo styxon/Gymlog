@@ -1,4 +1,5 @@
 import {
+  AiPlannerEquipment,
   AppPreferences,
   ExerciseBodyPart,
   ExerciseCategory,
@@ -107,7 +108,14 @@ function mapSetupExperience(preferences: AppPreferences) {
   return 'beginner';
 }
 
-function mapSetupEquipment(preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment'>) {
+/**
+ * The gear a plan for these preferences is built for. Exported so the catalog
+ * shortcut (briefProgrammeMatch) reads a reader's gear the way the composer
+ * it stands in for does.
+ */
+export function mapSetupEquipment(
+  preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment'>,
+): AiPlannerEquipment {
   if (preferences.aiPlannerEquipment) {
     return preferences.aiPlannerEquipment;
   }
