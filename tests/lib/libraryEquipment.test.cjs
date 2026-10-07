@@ -180,13 +180,16 @@ module.exports = [
   },
   {
     /**
-     * The swap keeps the prescription's numbers, and a carry's are seconds or
-     * metres: the bridge it fell back to first became "3 × 40" bridges (CI
-     * review of #172). A hold reads those numbers as what they were.
+     * A carry's numbers are seconds or metres: the bridge it fell back to
+     * first became "3 × 40" bridges (CI review of #172). It falls back to a
+     * hold now, and the carry is logged in reps, so the hold takes the swap
+     * rule's dose (doseAfterSwap), the same plank a swap in the player gives,
+     * not the carry's 40 read as seconds (re-hunt, 2026-10-07).
      */
     name: 'library equipment: a farmer\'s walk with nothing to carry becomes a hold, not 40 reps',
     run() {
       const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      const { doseAfterSwap } = require('../../.test-dist/lib/swapDose.js');
       const carry = {
         id: 'carry',
         exerciseName: "Farmer's Walk",
@@ -204,7 +207,8 @@ module.exports = [
       const barOnly = applyEquipmentToExercises([carry], ['Pull-up bar', 'Yoga mat']).exercises[0];
       assert.equal(barOnly.exerciseName, 'Plank');
       assert.equal(barOnly.trackingMode, 'hold');
-      assert.equal(barOnly.repsMin, 40);
+      const plank = doseAfterSwap(carry, 'Plank');
+      assert.deepEqual([barOnly.sets, barOnly.repsMin, barOnly.repsMax], [3, plank.repsMin, plank.repsMax]);
       // With something to carry, it stays the carry.
       assert.equal(applyEquipmentToExercises([carry], ['Dumbbells']).exercises[0].exerciseName, "Farmer's Walk");
 
