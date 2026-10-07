@@ -332,6 +332,23 @@ export function minutesBoutDueMs(clock: SessionMinutesClock | null | undefined):
 }
 
 /**
+ * Until when a running bout counts as the reader training. Null while the
+ * clock is stopped, or when there is none.
+ *
+ * A bout dispatches nothing while it runs, so to the session clock a two-hour
+ * ride looked like the phone put away, and was taken off (lib/sessionClock
+ * SESSION_IDLE_MS). It counts as far past its start as the minutes dial
+ * reaches: further than that the dial cannot log, and the clock was left
+ * running and forgotten (owner's call, 2026-10-07).
+ */
+export function minutesClockCountsUntilMs(clock: SessionMinutesClock | null | undefined): number | null {
+  if (!clock || typeof clock.runningSinceMs !== 'number' || !Number.isFinite(clock.runningSinceMs)) {
+    return null;
+  }
+  return clock.runningSinceMs + MINUTES_DIAL.max * 60000;
+}
+
+/**
  * How long until the stopwatch next changes something a reader can read
  * besides its own seconds: the whole minutes minutesToLog would log (it
  * switches at the half minute) or the planned minutes being reached. Null

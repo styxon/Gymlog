@@ -48,7 +48,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  * A "soft" finding does not stop its sequence (so one defect cannot hide the
  * next), and still fails the suite, shrunk to its shortest sequence.
  *
- * Run alone (not in run-tests.cjs): INV2_SEED / INV2_SEQUENCES / INV2_REPLAY
+ * Run alone, beside run-tests.cjs: INV2_SEED / INV2_SEQUENCES / INV2_REPLAY
  * (a JSON list of events, as a hard failure prints it) / INV2_STATS=1.
  */
 
@@ -373,13 +373,15 @@ function checkSave(state, shadow, label, nowMs) {
   }
   if (!sameMultiset(warmIn, warmWant)) {
     // A lift the adapter leaves out of the save (nothing done on it, not skipped: shouldPersistExercise) takes its
-    // warm-ups with it. Told apart, so it does not hide any other loss.
+    // warm-ups with it. Told apart, so it does not hide any other loss. Not a finding: the slot history's entry for
+    // that lift has no working set, so "Last time" and the warm-up offer pass over it (exerciseHistoryLookup
+    // isUsableEntry) and agree with History that the lift was not done (hunt verdict, 2026-10-07).
     const kept = [];
     for (const exercise of s.exercises) {
       if (persistsExercise(exercise)) kept.push(...(exercise.warmups ?? []).map((w) => `${w.reps}@${w.loadKg}`));
     }
     if (sameMultiset(warmIn, kept)) {
-      soft('W4-warmupDropped', `${label}: the save receives warm-ups [${multiset(warmIn).join(' ')}], the reader logged [${multiset(warmWant).join(' ')}]: those on a lift with no working set logged are not saved, while the slot history keeps them`);
+      count('save: warm-ups of a lift with no working set left out');
     } else {
       fail('W4-warmup', `${label}: the save receives warm-ups [${multiset(warmIn).join(' ')}], the reader logged [${multiset(warmWant).join(' ')}]`);
     }
@@ -640,8 +642,8 @@ function apply(ev, ctx) {
       if (onClock && boutMs > 0) {
         const workoutMs = workoutSecondsUntil(session(), world.now) * 1000;
         if (workoutMs + 60000 < boutMs) {
-          // A gap longer than SESSION_IDLE_MS with nothing dispatched is read as time away (lib/sessionClock): a
-          // running bout dispatches nothing, and starting its clock does not move `updatedAt`. Reported (soft) so it
+          // A gap longer than SESSION_IDLE_MS with nothing dispatched is read as time away (lib/sessionClock), and a
+          // running bout dispatches nothing: it has to count as in use (sessionLastActiveMs). Reported (soft) so it
           // does not hide what else a sequence finds.
           soft('W7', `a ${Math.round(boutMs / 60000)}-minute bout of ${exercise.exerciseName} timed on the clock and logged as ${reps} min leaves the workout at ${Math.round(workoutMs / 60000)} min`);
         }
@@ -711,8 +713,15 @@ function apply(ev, ctx) {
       });
       if (options.length === 0) return;
       const { exercise, set } = pick(rnd, options);
+      const undone = world.shadow.work.get(key(exercise.slotId, set.setIndex));
       dispatch({ type: 'set/undo', payload: { slotId: exercise.slotId, setIndex: set.setIndex } });
       world.shadow.work.delete(key(exercise.slotId, set.setIndex));
+      // The last set of a lift swapped away taken back: its warm-ups go, as a swap with nothing logged drops them.
+      const nothingLeft = ![...world.shadow.work.keys()].some((k) => k.startsWith(`${exercise.slotId}|`));
+      if (nothingLeft && undone && lower(undone.lift) !== lower(exercise.exerciseName)) {
+        world.shadow.warm.delete(exercise.slotId);
+        count('undo: last set of a lift swapped away');
+      }
       return;
     }
     case 'swap': {
@@ -754,10 +763,11 @@ function apply(ev, ctx) {
       if (!isOpen()) return;
       const exercise = pick(rnd, s.exercises);
       dispatch({ type: 'exercise/removeSet', payload: { slotId: exercise.slotId } });
-      // A clock whose set came off stays (the reducer keeps it); reported apart (W3-removeSet), not failed, so it
-      // does not hide what else a sequence finds.
+      // A clock whose set came off goes with it, as it does with a lift skipped or swapped away (W3 fails a clock
+      // kept; it was reported apart, W3-removeSet, until the reducer dropped it).
       const clock = world.shadow.clock;
       if (clock && !session().exercises.some((e) => e.slotId === clock.slotId && e.sets.some((x) => x.setIndex === clock.setIndex))) {
+        world.shadow.clock = null;
         world.shadow.clockSetRemoved = true;
         count('removeSet: the clock set came off');
       }

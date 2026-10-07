@@ -1607,6 +1607,9 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       if (set.status === 'completed' && set.completedAt) {
         session.takenBackAt = [...(session.takenBackAt ?? []), set.completedAt];
       }
+      // Asked before the stamp is cleared: whether this set was the lift the
+      // slot was swapped away from.
+      const wasLiftBeforeSwap = set.status === 'completed' && liftBeforeSwap(exercise, set) !== null;
       set.status = 'pending';
       set.actualLoadKg = undefined;
       set.actualReps = undefined;
@@ -1615,6 +1618,18 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // Taken back, it is done again as whatever the slot holds now — the
       // lift it was logged as before a swap no longer answers for it.
       set.loggedAs = undefined;
+      // The last set of the lift swapped away is taken back, so that lift has
+      // no row left, and its warm-ups (logged before its first set, so for
+      // it) went to the lift that replaced it: a barbell warm-up saved under
+      // a dumbbell lift and offered for it next time. The swap's own rule
+      // when nothing was done (exercise/swap), applied now that nothing is.
+      if (wasLiftBeforeSwap && !exercise.sets.some((item) => item.status === 'completed') && exercise.warmups) {
+        session.takenBackAt = [
+          ...(session.takenBackAt ?? []),
+          ...exercise.warmups.map((warmup) => warmup.completedAt),
+        ];
+        exercise.warmups = undefined;
+      }
       exercise.status = 'active';
       session.restTimer = createInitialTimer();
       updateActiveExercise(session, exerciseIndex, action.payload.setIndex);
@@ -1649,7 +1664,20 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       if (!state.activeSession) {
         return state;
       }
-      return { ...state, activeSession: { ...state.activeSession, minutesClock: action.payload.clock } };
+      // Starting a bout, or stopping one, is the reader doing something: the
+      // session clock settles against it like a set logged. Left out, a bout
+      // started after a long look at the step was counted as time away along
+      // with the look (hunt, 2026-10-07).
+      const runningBefore = state.activeSession.minutesClock?.runningSinceMs ?? null;
+      const runningAfter = action.payload.clock?.runningSinceMs ?? null;
+      return {
+        ...state,
+        activeSession: {
+          ...state.activeSession,
+          minutesClock: action.payload.clock,
+          ...(runningBefore !== runningAfter ? { updatedAt: new Date().toISOString() } : {}),
+        },
+      };
     }
 
     case 'exercise/removeWarmup': {
@@ -1847,6 +1875,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
 
       block.forEach((position) => {
         const member = session.exercises[position];
+        dropMinutesClockOfSet(session, member.slotId, member.sets[member.sets.length - 1].setIndex);
         member.sets = member.sets.slice(0, -1);
         // The round taken back was the only set left to do: the lift is done.
         // Left at 'active', it was saved as one and History badged a finished
@@ -2309,6 +2338,17 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
  */
 function dropMinutesClockOfSlot(session: WorkoutSessionRuntime, slotId: string) {
   if (session.minutesClock && session.minutesClock.slotId === slotId) {
+    session.minutesClock = null;
+  }
+}
+
+/**
+ * The same for one set taken off: its clock goes with it. Kept, "+ set" put
+ * the same index back and the new bout opened on the old one's minutes
+ * (hunt, 2026-10-07).
+ */
+function dropMinutesClockOfSet(session: WorkoutSessionRuntime, slotId: string, setIndex: number) {
+  if (session.minutesClock && session.minutesClock.slotId === slotId && session.minutesClock.setIndex === setIndex) {
     session.minutesClock = null;
   }
 }
