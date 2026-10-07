@@ -9,6 +9,8 @@ const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.j
 const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
 const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
 const { effectiveSwapBodyPart, effectiveSwapCategory } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
+const { matchesExercisePickerFilters } = require('../../.test-dist/lib/exercisePicker.js');
+const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatch } = require('../../.test-dist/lib/exerciseSearch.js');
 
 /**
  * One swap list, wherever the swap was opened (owner, 2026-10-07).
@@ -206,6 +208,50 @@ module.exports = [
             `"${label}" (${language}) cannot be found by its own name`,
           );
         }
+      }
+    },
+  },
+  {
+    name: 'swap search: every library lift, in Finnish and English, is found by its own full name (hunt 2026-10-08)',
+    run() {
+      // The sample above stepped over Seated Band Hamstring Curl: the phrase
+      // alias "hamstring curl" -> "leg curl" left its own name matching
+      // nothing. The whole library through the pipeline is ~35 s, so each
+      // lift is checked through the three steps that decide its row: the
+      // sheet's chips let it through, its haystack matches, and it ranks as
+      // the name typed (rank 0) — no other row's name can push it past the cap.
+      const library = createSeedExerciseLibrary();
+      const current = library.find((item) => item.name === 'Barbell Full Squat');
+      assert.ok(current);
+      const misses = [];
+      for (const language of ['fi', 'en']) {
+        for (const item of library) {
+          const label = exerciseNameLabel(language, item.name);
+          if (label === exerciseNameLabel(language, current.name)) continue;
+          const filters = {
+            category: effectiveSwapCategory(null, current, label),
+            bodyPart: effectiveSwapBodyPart(null, 'quadriceps', label),
+            equipment: 'all',
+          };
+          if (!matchesExercisePickerFilters(item, filters)) misses.push(`${language} chips: ${label}`);
+          if (!exerciseMatchesQuery(buildExerciseSearchHaystack(item, language), label)) misses.push(`${language} match: ${label}`);
+          if (rankExerciseMatch(item, label, language) !== 0) misses.push(`${language} rank: ${label}`);
+        }
+      }
+      assert.deepEqual(misses, []);
+
+      // The one the sample missed, end to end, by its full name and by the phrase.
+      for (const query of ['Seated Band Hamstring Curl', 'band hamstring curl']) {
+        const rows = buildSwapPickerLibrary(library, {
+          query,
+          filters: { category: 'all', bodyPart: 'all', equipment: 'all' },
+          language: 'en',
+          currentName: current.name,
+          currentItem: current,
+          excludeNames: [current.name],
+          popularOrder: new Map(),
+        });
+        assert.ok(rows.some((row) => row.name === 'Seated Band Hamstring Curl'), `"${query}" did not find Seated Band Hamstring Curl`);
       }
     },
   },

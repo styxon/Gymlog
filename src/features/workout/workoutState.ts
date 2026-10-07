@@ -1717,12 +1717,21 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         set.plannedRepsMax = planned.repsMax;
         // What was typed for the old lift, in its unit.
         set.draftRepsText = '';
-        replanSetForCurrentLift(
-          exercise,
-          set,
-          findCurrentLiftEntry(state.history, exercise),
-          action.payload.unitPreference,
-        );
+        const entry = findCurrentLiftEntry(state.history, exercise);
+        replanSetForCurrentLift(exercise, set, entry, action.payload.unitPreference);
+        // Done again as the new lift, it is that lift's set too: the sets
+        // after it move one place along the lift's history, and kept their
+        // numbers from the swap, a 150/160/170 leg press opened 150, 150, 160
+        // (hunt 2026-10-08). A weight the reader typed is theirs and stays,
+        // and so does a set they added after the swap (exercise/addSet).
+        exercise.sets.forEach((other) => {
+          const planned =
+            other.plannedLoadKg !== undefined ? formatWeightInputValue(other.plannedLoadKg, action.payload.unitPreference) : '';
+          const addedAfterSwap = other.addedMidSession === true && other.plannedBySwap !== true;
+          if (other !== set && other.status === 'pending' && !addedAfterSwap && other.draftLoadText === planned) {
+            replanSetForCurrentLift(exercise, other, entry, action.payload.unitPreference);
+          }
+        });
         // With no set left as the old lift above it, the line kept the set
         // logged again here from carrying its weight to the next one.
         exercise.swappedAfterSetIndex = stillBeforeSwap.length > 0 ? Math.max(...stillBeforeSwap) : undefined;
@@ -2140,7 +2149,16 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         // they showed as the new lift's, were saved under it and offered for
         // it next time — a barbell warm-up for a dumbbell lift (review,
         // 2026-10-05). After a logged set they stay: they belong to the lift
-        // the slot started as, which keeps its own row.
+        // the slot started as, which keeps its own row. On record as taken
+        // back, as set/undo and removeWarmup put theirs: a finish merged into
+        // a stored copy that holds them otherwise kept them, under the lift
+        // that is gone (hunt 2026-10-08).
+        if (exercise.warmups?.length) {
+          session.takenBackAt = [
+            ...(session.takenBackAt ?? []),
+            ...exercise.warmups.map((warmup) => warmup.completedAt),
+          ];
+        }
         exercise.warmups = undefined;
       }
       exercise.sets.forEach((set) => {
