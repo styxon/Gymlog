@@ -1445,8 +1445,13 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   // Marked 'preview' because no model wrote it: the app charges no question
   // for it and does not remember it as advice. Not kept either — the reader
   // agreed to keep what they asked the coach, and the coach was not asked.
-  if (input.mode === 'advice' && classifyCoachScope(input.prompt) === 'crisis') {
-    res.status(200).json(createSuccess(buildAiCoachPreviewAnswer(input.prompt, input.context, input.language), 'preview'));
+  // Read up to the question's own limit: the body is not capped until the
+  // model's budget, and this runs before the rate limit, so a megabyte of
+  // starred words was seconds of function time for anyone to ask for
+  // (review, 2026-10-07). The phone's composer stops at that limit anyway.
+  const readForCrisis = input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars);
+  if (input.mode === 'advice' && classifyCoachScope(readForCrisis) === 'crisis') {
+    res.status(200).json(createSuccess(buildAiCoachPreviewAnswer(readForCrisis, input.context, input.language), 'preview'));
     return;
   }
 

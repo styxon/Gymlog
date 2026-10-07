@@ -61,6 +61,11 @@ const CRISIS = {
     'I am going to overdose tonight',
     'gonna od tonight',
     'I want to take all my pills',
+    "I'm going to take all my pills tonight",
+    'I am about to take all my pills',
+    'thinking about taking all my pills',
+    'I swallowed a bottle of pills',
+    'I took all my pills.',
     'I took all my pills',
     'I am going to take all my sleeping pills',
     'I want to slit my wrists',
@@ -173,6 +178,13 @@ const CRISIS = {
     'I am going to take my life to be with her',
     'I want to take my life to end this',
     'I will take my life over this',
+    "I'll end it with a rope",
+    "I will end it with my dad's gun",
+    "I'm going to end it tonight with pills",
+    "I'll end it on the tracks",
+    "I'll end it after the funeral",
+    "I'm going to end it now",
+    "I'm ending it now",
   ],
   // #30: misspelt, glued, spaced out, leet, stretched, and invisible
   // characters where a space or a letter is.
@@ -257,6 +269,23 @@ const TRAINING = [
   'am I poisoning myself with creatine?',
   'I think I poisoned myself with bad chicken, should I train?',
   'I take all my supplements in the morning',
+  // The daily dose (review, 2026-10-07).
+  'I need to take all my pills before training',
+  'I need to take all my pills in the morning',
+  'I need to take all my pills with food',
+  'I have to take all my pills before training, is that ok?',
+  'I should take all my pills with breakfast',
+  'I want to take all my pills in the morning before the gym',
+  'I took all my pills, can I lift?',
+  'I took all my meds today, can I train?',
+  'I took all my pills this morning, should I train fasted?',
+  'do I need to take all my pills on rest days too?',
+  'I have to take all my pills, the doctor said so',
+  'otan kaikki lääkkeet normaalisti, voinko treenata?',
+  'otan kaikki lääkkeet normaalisti',
+  'otan kaikki lääkkeeni joka päivä',
+  'otan kaikki lääkkeet päivittäin, haittaako se salia',
+  'otin kaikki lääkkeeni, voinko treenata tänään?',
   "I can't live without the gym",
   "I can't live on 1500 calories",
   "I'd rather die than skip leg day",
@@ -295,6 +324,24 @@ const TRAINING = [
   'I might end it here and do cardio',
   'can I end it early if my back hurts?',
   'this set will end it.',
+  // What follows "with" is open-ended, and no list of exercises held it
+  // (review, 2026-10-07): each of these went to the crisis line.
+  "I'll end it with dips",
+  "I'm going to end it with deadlifts",
+  'I want to end it with farmer carries',
+  'I could end it with a few sprints',
+  'I am going to end it with some burpees',
+  'I might end it with a heavy single',
+  'I will end it after 3 sets',
+  "I'll end it after this set",
+  "I'm ending it with a deload week",
+  'I am ending it now with stretching',
+  "I'll end it with a jump rope",
+  "I'll end it with rope climbs",
+  "I'll end it with glute bridges",
+  "I'll end it on a glute bridge",
+  "I'll end it on deadlifts",
+  "I'm going to end it today with a run",
   'I will take my life back',
   'how do I take my life to the next level in the gym',
   'I want to take my life more seriously and start training',
@@ -357,6 +404,23 @@ module.exports = [
     },
   },
   {
+    name: 'crisis phrases: starred words are read against the phrases as long as them, not all of them',
+    run() {
+      // A star stands for one letter. Read against every phrase, 100 kB of
+      // "a*b " took about two seconds (review, 2026-10-07); against the
+      // phrases of its length it takes a tenth of that.
+      const started = Date.now();
+      assert.equal(classifyCoachScope('a*b '.repeat(25000)), 'training');
+      const took = Date.now() - started;
+      assert.ok(took < 1000, `${took} ms for 100 kB of starred words`);
+      // And still read: a starred word of the right length is the word.
+      assert.equal(classifyCoachScope('k*ll myself'), 'crisis');
+      assert.equal(classifyCoachScope('i want to d*e'), 'crisis');
+      assert.equal(classifyCoachScope('su*ciiide'), 'crisis');
+      assert.equal(classifyCoachScope('i want to d*eeee'), 'crisis');
+    },
+  },
+  {
     name: 'crisis phrases: the table is big enough to mean something',
     run() {
       const crisisCount = Object.values(CRISIS).reduce((total, prompts) => total + prompts.length, 0);
@@ -416,7 +480,10 @@ module.exports = [
       const server = read('api', 'ai-coach.ts');
       assert.match(server, /import \{ classifyCoachScope \} from '\.\.\/src\/lib\/aiCoachScope';/);
       const handler = server.slice(server.indexOf('input = parseBody(req.body);'));
-      const crisisAt = handler.indexOf("classifyCoachScope(input.prompt) === 'crisis'");
+      // Read up to the question's own limit, so the body's size does not
+      // decide what the check costs (review, 2026-10-07).
+      assert.match(handler, /const readForCrisis = input\.prompt\.slice\(0, BUDGET_LIMITS\.maxPromptChars\);/);
+      const crisisAt = handler.indexOf("classifyCoachScope(readForCrisis) === 'crisis'");
       assert.ok(crisisAt > 0, 'the chat handler reads the question for a crisis');
       assert.ok(crisisAt < handler.indexOf('checkRateLimit(ip)'), 'before the rate limit');
       assert.ok(crisisAt < handler.indexOf('requestClaudeProgramme(input)'), 'before the composer');
@@ -424,7 +491,7 @@ module.exports = [
       const branch = handler.slice(crisisAt, handler.indexOf('return;', crisisAt));
       // Answered with the phone's own crisis answer, never kept, never charged
       // as a model answer.
-      assert.match(branch, /buildAiCoachPreviewAnswer\(input\.prompt, input\.context, input\.language\)/);
+      assert.match(branch, /buildAiCoachPreviewAnswer\(readForCrisis, input\.context, input\.language\)/);
       assert.match(branch, /'preview'/);
       assert.doesNotMatch(branch, /keepTranscript/);
     },
