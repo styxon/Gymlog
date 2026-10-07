@@ -734,7 +734,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       const templates = built.database.workoutTemplates.map((template) =>
         template.id === built.workoutTemplateId ? { ...template, createdAt: template.updatedAt } : template,
       );
-      const withPlan = workoutPlanRepository.upsert(
+      // Replaced whole for the same reason: the rhythm the questions chose, or
+      // none, is this programme's, where an edit would keep the old one.
+      const withPlan = workoutPlanRepository.replace(
         {
           ...built.database,
           workoutTemplates: templates,
