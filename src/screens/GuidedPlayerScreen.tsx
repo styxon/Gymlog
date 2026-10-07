@@ -2509,26 +2509,22 @@ function GuidedPlayer({
    * list Home's swap draws (lib/swapPickerLists).
    */
   const swapLibrary = useMemo(() => {
-    // By the name on screen: a library row that reads the same as a row in
-    // Suggested above it is the same row twice (PR review).
-    const excludeLabels = new Set(sessionLiftLabels);
-    for (const name of swapSuggestions) {
-      excludeLabels.add(exerciseNameLabel(language, name));
-    }
+    // The session's lifts and the Suggested cards above: a library row that
+    // reads the same as one of them is the same row twice (PR review).
     return buildSwapPickerLibrary(exerciseLibrary, {
       query: swapQuery,
       filters: swapFilters,
       language,
       currentName: actionExercise?.exerciseName ?? null,
       currentItem: swapCurrentLibraryItem,
-      excludeLabels,
+      excludeNames: [...exercises.map((exercise) => exercise.exerciseName), ...swapSuggestions],
       popularOrder: getPopularExerciseLibraryOrder(exerciseLibrary),
     });
   }, [
     actionExercise,
     exerciseLibrary,
+    exercises,
     language,
-    sessionLiftLabels,
     swapCurrentLibraryItem,
     swapFilters,
     swapSuggestions,

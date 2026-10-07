@@ -92,17 +92,20 @@ module.exports = [
       // Stretches and drills out until the reader types: the add sheet's one
       // list (lib/exercisePicker), with the sheet's chips.
       // Since 2026-10-07 through lib/swapPickerLists, which Home's swap uses too.
-      const lists = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'swapPickerLists.ts'), 'utf8');
+      const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
+      const lists = read('src', 'lib', 'swapPickerLists.ts');
       assert.match(lists, /const pool = listPickerExercises\(library, \{\s*query: typed,\s*filters,/);
       assert.match(lists, /orderSwapCandidates\(pool, currentItem, popularOrder\)/);
-      const home = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'HomeScreen.tsx'), 'utf8');
-      for (const [screen, source, current] of [
-        ['player', player, 'swapCurrentLibraryItem'],
-        ['home', home, 'swapCurrentItem'],
+      // The player, and Home and the programme day through their hook, hand
+      // it the lift's own library row and the chip in force.
+      const hook = read('src', 'hooks', 'useSwapPickerLists.ts');
+      for (const [where, source, current] of [
+        ['player', player, 'currentItem: swapCurrentLibraryItem,'],
+        ['planned-day hook', hook, 'currentItem,'],
       ]) {
-        assert.match(source, /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query: swapQuery,\s*filters: swapFilters,/, screen);
-        assert.match(source, new RegExp(`currentItem: ${current},`), screen);
-        assert.match(source, /effectiveSwapBodyPart\(/, screen);
+        assert.match(source, /buildSwapPickerLibrary\(exerciseLibrary, \{/, where);
+        assert.ok(source.includes(current), where);
+        assert.match(source, /effectiveSwapBodyPart\(/, where);
       }
     },
   },

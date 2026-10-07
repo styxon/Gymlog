@@ -362,14 +362,15 @@ module.exports = [
       // Searching "taka" returned "Tälle paikalle ei ole vaihtoehtoa", which
       // is a sentence about the pool and was read as a sentence about the app
       // ("ei pysty hakemaan todellisuudessa mitään", #bugs 2026-08-26).
-      assert.match(programDaySource, /swapLibraryMatches/);
       // The library search goes through the shared ranker (2026-09-02): the
-      // same match rule, best answer first. Since 2026-09-26 it does so inside
-      // buildSwapLibraryMatches, which Home's swap sheet shares.
-      assert.match(programDaySource, /buildSwapLibraryMatches\(exerciseLibrary, swapQuery, language,/);
-      assert.match(programDaySource, /home\.swapSheet\.library/);
-      // And the pool-is-empty line only shows when nothing was searched for.
-      assert.match(programDaySource, /swapQuery\.trim\(\) \? 'home\.swapSheet\.noMatches' : 'home\.swapSheet\.empty'/);
+      // same match rule, best answer first. Since 2026-10-07 the programme
+      // day draws the guided player's swap sheet over the shared swap list
+      // (useSwapPickerLists, with Home), which lists the library under the
+      // cards even before anything is typed.
+      assert.match(programDaySource, /useSwapPickerLists\(\{\s*exerciseLibrary,[\s\S]{0,300}query: swapQuery,/);
+      assert.match(programDaySource, /main=\{\{ title: swapPicker\.libraryTitle, entries: swapPicker\.libraryEntries \}\}/);
+      // An empty list says the search or a chip found nothing.
+      assert.match(programDaySource, /emptyTitle=\{t\(language, 'guided\.swap\.noMatch'\)\}/);
       assert.match(
         appSource,
         /onRemoveExercise=\{[\s\S]{0,200}editProgramExercise\(route\.programType, route\.workoutTemplateId, daySession\.id, exerciseId, \{[\s\S]{0,60}kind: 'remove'/,

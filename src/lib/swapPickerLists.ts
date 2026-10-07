@@ -3,6 +3,7 @@ import { oneRowPerShownName } from './exerciseSearch';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from './exercisePicker';
 import { orderSwapCandidates } from './swapBrowsePrefilter';
+import { identityKey } from './swapShortlist';
 
 /**
  * The swap sheet's two lists, for every screen that swaps a lift.
@@ -27,10 +28,13 @@ export interface SwapPickerLibraryOptions {
   currentName: string | null;
   currentItem: ExerciseLibraryItem | null;
   /**
-   * Shown names left out: today's other lifts (a swap to a lift two rows
+   * Stored names left out: today's other lifts (a swap to a lift two rows
    * down changes nothing) and the cards above the list (the same row twice).
+   * Matched by the name shown and by identity, so another spelling of one of
+   * them is left out too ("Bench Press" in the plan, "Barbell Bench Press -
+   * Medium Grip" in the library, both "Penkkipunnerrus").
    */
-  excludeLabels: ReadonlySet<string>;
+  excludeNames: readonly string[];
   popularOrder: ReadonlyMap<string, number>;
 }
 
@@ -46,19 +50,20 @@ export interface SwapPickerLibraryOptions {
  */
 export function buildSwapPickerLibrary<T extends ExerciseLibraryItem>(
   library: readonly T[],
-  { query, filters, language, currentName, currentItem, excludeLabels, popularOrder }: SwapPickerLibraryOptions,
+  { query, filters, language, currentName, currentItem, excludeNames, popularOrder }: SwapPickerLibraryOptions,
 ): T[] {
   const typed = query.trim();
-  const currentLabel = currentName ? exerciseNameLabel(language, currentName) : null;
+  const left = currentName ? [currentName, ...excludeNames] : [...excludeNames];
+  const excludedLabels = new Set(left.map((name) => exerciseNameLabel(language, name)));
+  const excludedIdentities = new Set(left.map(identityKey));
   const pool = listPickerExercises(library, {
     query: typed,
     filters,
     language,
     popularity: (item) => popularOrder.get(item.id),
-  }).filter((item) => {
-    const label = exerciseNameLabel(language, item.name);
-    return item.name !== currentName && label !== currentLabel && !excludeLabels.has(label);
-  });
+  }).filter(
+    (item) => !excludedLabels.has(exerciseNameLabel(language, item.name)) && !excludedIdentities.has(identityKey(item.name)),
+  );
   if (!typed) {
     return oneRowPerShownName(orderSwapCandidates(pool, currentItem, popularOrder), language).slice(0, UNSEARCHED_CAP);
   }

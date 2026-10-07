@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AccessibilityInfo,
   Animated,
@@ -50,16 +50,9 @@ import { AnimatedGreeting } from '../components/AnimatedGreeting';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
 import { buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
-import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
-import { effectiveSwapBodyPart, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
-import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
-import { ExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
-import { findGuidedLibraryIndex } from '../lib/guidedPlayer';
-import { getDrillLibraryName } from '../lib/drillMedia';
-import { libraryLabel } from '../lib/libraryLabel';
-import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
-import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
+import { ExercisePickerSheet } from '../components/AddExerciseSheet';
+import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
 import { localizeSessionFocus, localizeSessionName, localizeWorkoutFocus } from '../lib/sessionNameLabel';
 import { weekdayCodeForDate, weekdayLabel } from '../lib/planWeekdays';
 import { I18nKey, t } from '../lib/i18n';
@@ -557,17 +550,10 @@ export function HomeScreen({
   const [swapQuery, setSwapQuery] = useState('');
   /** The replacement picked but not committed — the scope question comes after. */
   const [swapPickName, setSwapPickName] = useState<string | null>(null);
-  /** The sheet's chips, as the guided player's swap keeps them; null body part = the lift's own. */
-  const [swapBodyPartFilter, setSwapBodyPartFilter] = useState<BodyPartFilter | null>(null);
-  const [swapCategory, setSwapCategory] = useState<ExercisePickerFilters['category']>('all');
-  const [swapEquipment, setSwapEquipment] = useState<SheetEquipmentOption>('all');
   const closeSwapSheet = () => {
     setSwapSlotId(null);
     setSwapQuery('');
     setSwapPickName(null);
-    setSwapBodyPartFilter(null);
-    setSwapCategory('all');
-    setSwapEquipment('all');
   };
   const [calendarExpanded, setCalendarExpanded] = useState(false);
   // Months away from today. Reset on close so reopening always lands on now.
@@ -809,86 +795,30 @@ export function HomeScreen({
   }, [nextPlanSession, swapSlotId, sessionSwaps, tailoringPreferences, swapQuery, language]);
 
   /**
-   * The swap sheet is the guided player's (#bugs 2026-10-06, "Vaihda liike ja
-   * Lisää liike pitäisi olla identtiset"; review 2026-10-07: Home kept its
-   * own). The slot's shortlist is the programme's alternatives, as the first
-   * cards; under them the library nearest the lift, through the same chips
-   * and the same list (lib/swapPickerLists).
+   * The swap sheet is the guided player's (#bugs 2026-10-06; owner, 2026-10-07:
+   * that sheet everywhere). The slot's shortlist is the first cards, the
+   * library nearest the lift under them, through the same chips as the
+   * player and the programme day (useSwapPickerLists).
    */
-  const swapPopularOrder = useMemo(() => getPopularExerciseLibraryOrder(exerciseLibrary ?? []), [exerciseLibrary]);
-  // One names array per library: the lookup remembers its answers per array
-  // (#328), and a fresh .map() per call would miss that every time.
-  const swapLibraryNames = useMemo(() => (exerciseLibrary ?? []).map((item) => item.name), [exerciseLibrary]);
-  const swapLibraryRow = useCallback(
-    (name: string) => {
-      const index = findGuidedLibraryIndex(getDrillLibraryName(name) ?? name, swapLibraryNames);
-      return index === null || !exerciseLibrary ? null : exerciseLibrary[index];
-    },
-    [exerciseLibrary, swapLibraryNames],
+  const swapAlternatives = useMemo(
+    () => [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => option.exerciseName),
+    [swapRow.shortlist],
   );
-  const swapCurrentItem = useMemo(
-    () => (swapRow.currentName ? swapLibraryRow(swapRow.currentName) : null),
-    [swapLibraryRow, swapRow.currentName],
-  );
-  const swapFilters = useMemo<ExercisePickerFilters>(
-    () => ({
-      category: swapCategory,
-      bodyPart: effectiveSwapBodyPart(swapBodyPartFilter, resolveSwapBrowsePrefilter(swapCurrentItem), swapQuery),
-      equipment: swapEquipment,
-    }),
-    [swapBodyPartFilter, swapCategory, swapCurrentItem, swapEquipment, swapQuery],
-  );
-  const swapAlternativeRows = useMemo(
+  const swapSessionLifts = useMemo(
     () =>
-      [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => ({
-        name: option.exerciseName,
-        item: swapLibraryRow(option.exerciseName),
-      })),
-    [swapLibraryRow, swapRow.shortlist],
+      (nextPlanSession?.exercises ?? []).map(
+        (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
+      ),
+    [nextPlanSession, sessionSwaps],
   );
-  const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(
-    () =>
-      narrowSwapAlternatives(swapAlternativeRows, swapFilters).map(({ name, item }) => ({
-        key: `suggested-${name}`,
-        name,
-        item,
-      })),
-    [swapAlternativeRows, swapFilters],
-  );
-  const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(() => {
-    if (!swapRow.currentName || !exerciseLibrary) {
-      return [];
-    }
-    // Today's lifts, swaps included, and the cards above, by the name shown.
-    const excludeLabels = new Set(
-      [
-        ...(nextPlanSession?.exercises ?? []).map(
-          (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
-        ),
-        ...swapAlternativeRows.map((row) => row.name),
-      ].map((name) => exerciseNameLabel(language, name)),
-    );
-    return buildSwapPickerLibrary(exerciseLibrary, {
-      query: swapQuery,
-      filters: swapFilters,
-      language,
-      currentName: swapRow.currentName,
-      currentItem: swapCurrentItem,
-      excludeLabels,
-      popularOrder: swapPopularOrder,
-    }).map((item) => ({ key: item.id, name: item.name, item }));
-  }, [
+  const swapPicker = useSwapPickerLists({
     exerciseLibrary,
+    currentName: swapRow.currentName || null,
+    alternatives: swapAlternatives,
+    sessionLifts: swapSessionLifts,
+    query: swapQuery,
     language,
-    nextPlanSession,
-    sessionSwaps,
-    swapAlternativeRows,
-    swapCurrentItem,
-    swapFilters,
-    swapPopularOrder,
-    swapQuery,
-    swapRow.currentName,
-  ]);
+  });
   // Left out of both lists on purpose, and named so the reader knows why the
   // lift they typed is not there (#bugs 2026-09-27).
   const swapSessionHits = useMemo(
@@ -2332,25 +2262,14 @@ export function HomeScreen({
         subtitle={null}
         search={swapQuery}
         onSearchChange={setSwapQuery}
-        filters={swapFilters}
-        onFiltersChange={(next) => {
-          // Only a chip the reader moved becomes theirs: the lift's own body
-          // part stays the default until then (effectiveSwapBodyPart).
-          if (next.bodyPart !== swapFilters.bodyPart) {
-            setSwapBodyPartFilter(next.bodyPart);
-          }
-          setSwapCategory(next.category);
-          setSwapEquipment(next.equipment);
-        }}
+        filters={swapPicker.filters}
+        onFiltersChange={swapPicker.onFiltersChange}
         featured={
-          swapFeaturedEntries.length > 0
-            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapFeaturedEntries }
+          swapPicker.featuredEntries.length > 0
+            ? { title: exerciseSheetCopy('swap', language).featuredTitle, entries: swapPicker.featuredEntries }
             : null
         }
-        main={{
-          title: swapFilters.bodyPart !== 'all' ? libraryLabel(swapFilters.bodyPart, language) : t(language, 'guided.swap.library'),
-          entries: swapLibraryEntries,
-        }}
+        main={{ title: swapPicker.libraryTitle, entries: swapPicker.libraryEntries }}
         // The player's words: with the library under the cards, an empty list
         // means the search or a chip found nothing — not that the slot has no
         // swap, which "home.swapSheet.empty" said when the shortlist was all.

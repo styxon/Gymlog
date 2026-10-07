@@ -13,14 +13,12 @@ const read = (relative) => fs.readFileSync(path.join(__dirname, '../..', relativ
  *
  * Inventory (2026-10-06):
  *   AddExerciseSheet         — programme builder, programme day, guided add
- *   lib/swapPickerLists      — the swap sheet's list (same component, swap
- *                              mode), for the guided player and, since
- *                              2026-10-07, Home
+ *   lib/swapPickerLists      — every swap sheet's list (same component, swap
+ *                              mode): the guided player, and since 2026-10-07
+ *                              Home and the programme day
  *   EmptyWorkoutScreen       — the free workout's add sheet
  *   ExerciseLibraryBrowser   — the exercise library screen
  *   NewProgramSheet          — the import's "which lift did you mean" list
- * The programme day's swap search goes through buildSwapLibraryMatches,
- * whose ranking is the same rankExerciseMatches (pinned in pickerRules).
  */
 const PICKER_FILES = {
   'add sheet': 'src/components/AddExerciseSheet.tsx',
@@ -43,13 +41,23 @@ module.exports = [
         // Nor filters by the stored body part, which has no leg muscles.
         assert.doesNotMatch(source, /\bitem\.bodyPart (?:===|!==) /, `${picker} filters by the stored body part`);
       }
-      // Both swap sheets draw the shared picker over the shared swap list, so
-      // what a swap offers does not depend on where it was opened (2026-10-07).
-      for (const screen of ['src/screens/GuidedPlayerScreen.tsx', 'src/screens/HomeScreen.tsx']) {
+      // Every swap sheet draws the shared picker over the shared swap list, so
+      // what a swap offers does not depend on where it was opened (owner,
+      // 2026-10-07: "tällä tyylillä kaikkialle"). The planned-day screens go
+      // through one hook; the player derives its alternatives from the live
+      // session.
+      const hook = read('src/hooks/useSwapPickerLists.ts');
+      for (const source of [read('src/screens/GuidedPlayerScreen.tsx'), hook]) {
+        assert.match(source, /buildSwapPickerLibrary\(/);
+        assert.match(source, /narrowSwapAlternatives\(/);
+      }
+      for (const screen of ['src/screens/GuidedPlayerScreen.tsx', 'src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
         const source = read(screen);
         assert.match(source, /<ExercisePickerSheet\b[\s\S]{0,300}mode="swap"/, `${screen} has its own swap sheet`);
-        assert.match(source, /buildSwapPickerLibrary\(/, `${screen} composes its own swap list`);
-        assert.match(source, /narrowSwapAlternatives\(/, `${screen} narrows its alternatives its own way`);
+        assert.doesNotMatch(source, /<KitSearch\b|buildSwapLibraryMatches/, `${screen} keeps an old swap list`);
+      }
+      for (const screen of ['src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
+        assert.match(read(screen), /useSwapPickerLists\(\{/, `${screen} composes its own swap list`);
       }
     },
   },

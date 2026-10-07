@@ -23,7 +23,7 @@ function list(options) {
     language: 'fi',
     currentName: null,
     currentItem: null,
-    excludeLabels: new Set(),
+    excludeNames: [],
     popularOrder,
     ...options,
   });
@@ -40,7 +40,7 @@ module.exports = [
         filters: { ...NO_CHIPS, bodyPart: 'quadriceps' },
         currentName: squat.name,
         currentItem: squat,
-        excludeLabels: new Set([excluded]),
+        excludeNames: ['Leg Press'],
       });
       assert.equal(rows.length, 25);
       const labels = rows.map((item) => exerciseNameLabel('fi', item.name));
