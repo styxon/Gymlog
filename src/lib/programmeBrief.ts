@@ -77,6 +77,13 @@ export interface ProgrammeBriefSignals {
   cautions: string[];
   /** Name fragments the composer must not pick ("overhead press"). */
   avoidTerms: string[];
+  /**
+   * The brief refused the leg day itself ("no leg day", "ei jalkapäivää").
+   * The composer then lays the week out with no Legs or Lower day: with the
+   * leg work avoided, those days were filled with bounds, a balance board and
+   * hang cleans (hunt, 2026-10-08).
+   */
+  noLegDay: boolean;
 }
 
 /**
@@ -160,8 +167,23 @@ const BODY_PART_KEYWORDS: ReadonlyArray<{ pattern: RegExp; part: SetupFocusArea;
     // `lats?\b` had a boundary only at the end, so it matched the tail of any
     // word ending in "lat" — and Finnish "jalat" (legs) is exactly that. Asking
     // for legs flagged the back as well, which then vetoed deadlifts and pulled
-    // back-tagged programmes up the match (found 2026-08-26).
-    pattern: new RegExp(`${fi('selkä')}|back(?! squat)|\\blats?\\b`, 'i'),
+    // back-tagged programmes up the match (found 2026-08-26). "Back" the
+    // adverb is no back either: "getting back into training after knee
+    // surgery", "I'm back after surgery" put a back caution on the deadlifts
+    // and rows (hunt, 2026-10-08). Only a return verb before it makes it the
+    // adverb, and "to" / "after" / "from" after it only when nothing owns it:
+    // read wider, "my main issue is back pain", "I hurt my back after
+    // deadlifts" and "back in pain since Monday" had no caution (review,
+    // 2026-10-08). "Is back" is the adverb only at the end of its clause:
+    // "the knee pain is back".
+    pattern: new RegExp(
+      `${fi('selkä')}` +
+        `|(?<=(?:^|[^a-zäöå])(?:my|the|your|his|her|our|lower|upper|mid)\\s)back(?! squat)` +
+        `|(?<!(?:get|gets|getting|got|come|comes|coming|came|been|i['’]?m|go|going|went|way|start|starting|bounce|bouncing|ease|easing)\\s)back(?! squat)` +
+        `(?!(?<=(?:is|are|was|were)\\sback)\\s*(?:$|[.,;:!?]))(?!\\s+(?:to|into|in|on|after|from|again)(?![a-zäöå])(?!\\s+pain))` +
+        `|\\blats?\\b`,
+      'i',
+    ),
     part: 'back',
     caution: 'back',
     avoid: ['deadlift', 'good morning', 'bent over', 'back extension'],
@@ -240,11 +262,16 @@ const BODY_PART_KEYWORDS: ReadonlyArray<{ pattern: RegExp; part: SetupFocusArea;
  * coaching on squats and bench" kept both lifts out (review, 2026-10-08).
  * The Finnish ones may end a compound ("polvivaiva", "selkävaivoja"), so
  * "vaiva" is bounded on the right instead: "vaivaton" (effortless) is no
- * trouble.
+ * trouble. "Sattuu" is also "happens to": "jos sattuu jäämään aikaa", "sattuu
+ * olemaan lempparini" took the bench and the rows out (hunt, 2026-10-08) —
+ * read by the infinitive after it, not by "jos": "jos sattuu polveen" is
+ * "if it hurts" (review, 2026-10-08).
  */
 const PAIN = new RegExp(
   [
-    'kipe', '(?<!penk)kipu', 's[äa]rke', 'vamma', '(?:^|\\s)arka', 'sattu(?!ma)', 'vaiv(?!ato|att|all|ann)', 'oireil',
+    'kipe', '(?<!penk)kipu', 's[äa]rke', 'vamma', '(?:^|\\s)arka',
+    'sattu(?!ma|u\\s+(?:olemaan|olla|jäämään|että|käymään|löytymään|tulemaan))',
+    'vaiv(?!ato|att|all|ann)', 'oireil',
     'iskias', 'pullistum', 'ei kest',
     `(?<![a-zäöå])(?:${[
       'hurt', 'pain(?:ful|s)?(?=\\s|$|[.,!?])', 'sore', 'injur', 'tender', 'aches?\\b', 'aching', 'achy',
@@ -261,15 +288,31 @@ const PAIN = new RegExp(
  * takia", "because of my knee", "olkapää jumissa". Alone they say nothing
  * about pain — "bad at squats", "no problem with deadlifts", "leikkausvaihe"
  * (a cut), "penkki on jumissa" (the bench has stalled).
+ *
+ * Weakness and skill are no injury either: "I'm bad at chest exercises",
+ * "olen huono rintatreeneissä", "rintalihakset huonot", "ongelmana on heikko
+ * rinta" each asked for more chest and got a chest caution that kept the
+ * bench out (hunt, 2026-10-08). So "bad" does not reach across "at" / "in",
+ * a part inside a compound about training or muscles is no part here, and a
+ * weakness word between makes it a focus.
  */
-const INJURY_BEFORE_PART = "bad|huono[nt]?|dodgy|problems?\\s+with|issues?\\s+with|trouble\\s+with|ongelm[\\p{L}]*|because\\s+of|due\\s+to";
+const INJURY_BEFORE_PART = "bad(?!\\s+(?:at|in)(?![\\p{L}]))|huono[nt]?|dodgy|problems?\\s+with|issues?\\s+with|trouble\\s+with|ongelm[\\p{L}]*|because\\s+of|due\\s+to";
 const INJURY_AFTER_PART = 'problems?|issues?|trouble|ongelm[\\p{L}]*|bad|huono[nt]?|leikat[\\p{L}]*|leikkau[\\p{L}]*|operoi[\\p{L}]*|jumissa|takia|vuoksi';
 const ANY_PART = BODY_PART_KEYWORDS.map((entry) => entry.pattern.source).join('|');
+const SKILL_COMPOUND = '(?![\\p{L}]*?(?:treen|harjoit|liik|lihak|lihas|päiv))';
+const NOT_WEAKNESS = '(?!(?:heik|weak|lagg)[\\p{L}]*\\s)';
 const INJURY_NEAR_PART = new RegExp(
-  `(?:^|\\s)(?:${INJURY_BEFORE_PART})\\s+(?:[\\p{L}']+\\s+){0,2}?[\\p{L}]*(?:${ANY_PART})` +
-    `|(?:${ANY_PART})[\\p{L}]*\\s+(?:(?:on|is|are|oli|was|got|has|have|been)\\s+)?(?:${INJURY_AFTER_PART})(?![\\p{L}])`,
+  `(?:^|\\s)(?:${INJURY_BEFORE_PART})\\s+(?:${NOT_WEAKNESS}[\\p{L}']+\\s+){0,2}?${NOT_WEAKNESS}[\\p{L}]*(?:${ANY_PART})${SKILL_COMPOUND}` +
+    `|(?:${ANY_PART})${SKILL_COMPOUND}[\\p{L}]*\\s+(?:(?:on|is|are|oli|was|got|has|have|been)\\s+)?(?:${INJURY_AFTER_PART})(?![\\p{L}])`,
   'giu',
 );
+
+/**
+ * Muscle soreness after training is no injury: "treenin jälkeinen lihaskipu
+ * jaloissa on ok", "lihakset kipeät treenistä" put a knee caution on the
+ * lunges (hunt, 2026-10-08). A joint that hurts after training still does.
+ */
+const MUSCLE_SORENESS = /doms|lihaskip|lihasarkuu|lihakset\s+(?:(?:on|ovat)\s+)?(?:kipe|arat|jumissa)|muscle soreness|sore muscles|muscles\s+(?:are\s+|get\s+)?sore/i;
 
 /** "knees are fine", "selkä kunnossa", "olkapää on parantunut": the body part is named to say it needs nothing. */
 const HEALTHY = /(?:^|\s)(?:fine|ok|okay|healthy|healed|recovered|kunnossa|terveet?|parantunut|parantui|toipunut)(?=\s|$|[.,!?])/i;
@@ -471,8 +514,12 @@ const PAIN_ELLIPSIS = /(?:^|\s)(?:on|ovat|is|are|does|do|kyllä|yes|still|edelle
  */
 function markPain(scopes: PainScope[]): void {
   for (const scope of scopes) {
-    const found = [...scope.text.matchAll(new RegExp(PAIN.source, 'gi')), ...scope.text.matchAll(INJURY_NEAR_PART)];
-    scope.mentionsPain = found.length > 0;
+    const soreness = MUSCLE_SORENESS.test(scope.text);
+    const found = [
+      ...(soreness ? [] : scope.text.matchAll(new RegExp(PAIN.source, 'gi'))),
+      ...scope.text.matchAll(INJURY_NEAR_PART),
+    ];
+    scope.mentionsPain = soreness || found.length > 0;
     scope.painful = found.some((match) => !painDenied(scope.text, match.index ?? 0, (match.index ?? 0) + match[0].length));
   }
   for (let index = scopes.length - 2; index >= 0; index -= 1) {
@@ -513,8 +560,17 @@ function weekDays(value: string): number | null {
 function parseRequestedDays(brief: string): number | null {
   // "5x5" and "3x10" are sets by reps, not days: read as the first "x", a
   // "5x5 voimaohjelma, 3 päivää viikossa" opened a five-day programme
-  // (bug hunt, 2026-10-07).
-  const lower = brief.toLowerCase().replace(/\d+\s*[x×]\s*\d+(?![\d\s]*min)/g, ' ');
+  // (bug hunt, 2026-10-07). Spelled out too: "Stronglifts 5 times 5" and
+  // "kyykky 5 kertaa 5" opened a five-day programme (hunt, 2026-10-08) —
+  // "3 times a week" has no number after its unit, and stays three days, and
+  // so does "3 times 1 hour a week", whose second number is the session
+  // (review, 2026-10-08).
+  const lower = brief
+    .toLowerCase()
+    .replace(
+      /\d+\s*(?:[x×]|times|kertaa|krt)\s*\d+(?![\d\s]*(?:[.,]\d+)?\s*(?:min|h(?![a-zäö])|hours?\b|tunti|tunnin|t\b|päiv|pv\b|days?\b|viikossa|a week|per week))/g,
+      ' ',
+    );
   // A number with a day or per-week unit outranks a bare "4x" or "3 treeniä"
   // earlier in the brief; two digits, so "12 days" is not read as 2. "times"
   // as the words spell it: "3 times a week" was no count at all while "three
@@ -696,6 +752,7 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
   const cautions: string[] = [];
   const avoidTerms: string[] = [];
   const refusedLifts: (typeof LIFT_KEYWORDS)[number][] = [];
+  let noLegDay = false;
 
   const addAvoid = (terms: readonly string[]) => {
     for (const term of terms) {
@@ -712,7 +769,11 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
       scopes: painScopes(clause, index === 0 ? null : 'comma'),
     }));
     markPain(clauses.flatMap((entry) => entry.scopes));
-    for (const { clause, lower, scopes } of clauses) {
+    for (const [clauseIndex, { clause, lower, scopes }] of clauses.entries()) {
+      const restOfSentence = clauses
+        .slice(clauseIndex + 1)
+        .map((entry) => entry.lower)
+        .join(', ');
       const scopeAt = (index: number) => scopes.find((scope) => index < scope.end) ?? scopes[scopes.length - 1];
       for (const entry of BODY_PART_KEYWORDS) {
         for (const match of lower.matchAll(new RegExp(entry.pattern.source, 'gi'))) {
@@ -741,11 +802,13 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
       // / "and": "Ei juoksua ja jalat painopisteenä", "No knee pain and legs
       // focus" refuse the running and the pain, and read as refusing the legs
       // they took every squat and deadlift out of a week that asked for them
-      // (review, 2026-10-08).
+      // (review, 2026-10-08). And only a refusal that governs the leg day
+      // itself (legDayRefused).
       for (const match of lower.matchAll(LEG_DAY)) {
         const index = match.index ?? 0;
-        if (!scopeAt(index).painful && mentionRefused(lower, index, index + match[0].length, true)) {
+        if (!scopeAt(index).painful && legDayRefused(lower, index, index + match[0].length)) {
           addAvoid(LEG_WORK);
+          noLegDay = true;
         }
       }
       for (const entry of LIFT_KEYWORDS) {
@@ -760,7 +823,8 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
         // 2026-10-07).
         for (const match of lower.matchAll(new RegExp(entry.pattern.source, 'gi'))) {
           const index = match.index ?? 0;
-          if (!scopeAt(index).painful && !mentionRefused(lower, index, index + match[0].length)) {
+          const end = index + match[0].length;
+          if (!scopeAt(index).painful && (!mentionRefused(lower, index, end) || capacityAsk(lower, index, end, restOfSentence, entry.lift))) {
             if (!lifts.includes(entry.lift)) {
               lifts.push(entry.lift);
             }
@@ -801,9 +865,12 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
     equipment: parseEquipment(brief),
     experience: parseExperience(brief),
     lifts,
-    focusBodyParts,
+    // A refused leg day is no legs focus: "leave the leg day out" named the
+    // legs to keep them out (review, 2026-10-08).
+    focusBodyParts: noLegDay ? focusBodyParts.filter((part) => part !== 'legs') : focusBodyParts,
     cautions,
     avoidTerms: filteredAvoid,
+    noLegDay,
   };
 }
 
@@ -976,6 +1043,8 @@ const REFUSAL_WORDS = new Set([
 const NEGATORS = new Set([
   'ei', 'en', 'eivät', 'älä', 'älkää',
   'no', 'not', 'never', "don't", 'dont', "won't", "can't", 'cant', 'cannot', "wouldn't", 'wouldnt', "shouldn't", 'shouldnt', "mustn't",
+  // "I hate skipping leg day" insists on it (hunt, 2026-10-08).
+  'hate', 'inhoan', 'vihaan',
 ]);
 
 /** The refusals that take something away, which a negator before them cancels. */
@@ -1372,6 +1441,196 @@ function mentionRefused(text: string, index: number, end: number, andEndsReach =
   return refusedAfter(after);
 }
 
+/** The words a refusal reaches across to the leg day it governs: "no dedicated leg day", "don't give me a leg day". */
+const LEG_DAY_FILLERS = new Set([
+  'a', 'an', 'the', 'any', 'my', 'me', 'dedicated', 'separate', 'erillistä', 'erillisiä', 'omaa', 'mitään', 'minulle', 'mulle',
+]);
+
+/** The ask a refusal negates before the leg day: "don't want", "en halua", "no need for", "en jaksa". */
+const LEG_DAY_WANTS = new Set(['want', 'need', 'like', 'for', 'halua', 'haluu', 'tarvitse', 'tykkää', 'pidä', 'jaksa']);
+
+/**
+ * A verb between: "don't want to train legs", "en halua treenata jalkoja",
+ * "don't include a leg day", "älä laita jalkoja". Without the programming
+ * verbs the "don't" governed nothing, and "don't add leg day" built one
+ * (review, 2026-10-08).
+ */
+const LEG_DAY_VERBS = new Set([
+  'train', 'training', 'do', 'doing', 'to', 'treenata', 'treenaa', 'tehdä', 'tee',
+  'include', 'add', 'give', 'put', 'schedule', 'program', 'programme', 'plan', 'laita', 'lisää', 'ohjelmoi',
+]);
+
+/**
+ * The verbs of a habit: "I never train legs", "I don't train legs" say what
+ * the reader has done so far, not what the week must leave out. "Don't do",
+ * "never do", "won't" are the gym's refusals (review, 2026-10-08).
+ */
+const LEG_DAY_HABITS = new Set(['train', 'training', 'treenaa']);
+
+/** Said between the refusal and its ask: "I don't really want", "en enää halua". */
+const LEG_DAY_ADVERBS = new Set(['really', 'even', 'todellakaan', 'enää', 'yhtään', 'oikeastaan']);
+
+/** "No leg day on Fridays", "ei jalkapäivää perjantaisin": a day kept free of it, not the leg day itself. */
+const LEG_DAY_WHEN =
+  /^(?:on|before|after|during|this|next|today|tomorrow|ennen|jälkeen|tänään|huomenna|tällä|ensi|\p{L}*(?:maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai|viikonlop)\p{L}*|(?:mon|tues|wednes|thurs|fri|satur|sun)days?)$/u;
+
+/**
+ * Whether the leg day at `index`..`end` is refused. Only a refusal that
+ * governs it does: one right before it, across an article, a "want" and a
+ * verb ("no leg day", "I don't want to train legs", "en halua jalkapäivää"),
+ * or one after it ("jalat pois"). Read as any negation in the clause, "I don't
+ * have strong legs", "I never train legs and want to start", "not too much
+ * leg work", "no leg day on Fridays" and "ilman koneita jalat ja pakarat"
+ * each took every squat, deadlift and lunge out of the week (hunt,
+ * 2026-10-08). A habit is no refusal ("I never train legs"), an order is ("don't
+ * train legs"), and two negations insist ("I hate skipping leg day"). "Leave
+ * out leg day" and "leave the leg day out" refuse it like "jätä pois".
+ */
+function legDayRefused(text: string, index: number, end: number): boolean {
+  const after = wordsAfter(text, end);
+  if (LEG_DAY_WHEN.test(after[0] ?? '')) {
+    return false;
+  }
+  const { words, from } = clauseWordsBefore(text, index);
+  const before = words.slice(reachStart(words, from, after, true));
+  let at = before.length - 1;
+  while (at >= 0 && LEG_DAY_FILLERS.has(before[at])) {
+    at -= 1;
+  }
+  const verbs: string[] = [];
+  while (at >= 0 && LEG_DAY_VERBS.has(before[at])) {
+    verbs.push(before[at]);
+    at -= 1;
+  }
+  let want = false;
+  while (at >= 0 && LEG_DAY_WANTS.has(before[at])) {
+    want = true;
+    at -= 1;
+  }
+  while (at >= 0 && LEG_DAY_ADVERBS.has(before[at])) {
+    at -= 1;
+  }
+  const leave = before[at] === 'out' && before[at - 1] === 'leave' ? at - 1 : before[at] === 'leave' && after[0] === 'out' ? at : -1;
+  if (leave !== -1) {
+    return !before.slice(Math.max(0, leave - 2), leave).some((word) => NEGATORS.has(word));
+  }
+  const governor = before[at];
+  if (governor === undefined || !REFUSAL_WORDS.has(governor)) {
+    return refusedAfter(after);
+  }
+  if (PRIVATIVES.has(governor) && before.slice(Math.max(0, at - 2), at).some((word) => NEGATORS.has(word))) {
+    return false;
+  }
+  const order = at === 0 || governor === 'älä' || governor === 'älkää';
+  const habit = verbs.length > 0 && verbs.every((verb) => LEG_DAY_HABITS.has(verb) || verb === 'to');
+  return !(habit && !want && NEGATORS.has(governor) && governor !== "won't" && !order);
+}
+
+/** "can't", "en pysty", "en jaksa": what the reader is able to do, which is not what they refuse. */
+const CAPACITY_WORDS = new Set(["can't", 'cant', 'cannot', 'unable', 'pysty', 'kykene', 'jaksa']);
+
+/** With one of those, how much or how well: "can't bench much", "en pysty vielä", "can't squat deep". */
+const CAPACITY_QUALIFIERS = new Set([
+  'much', 'deep', 'deeply', 'properly', 'well', 'heavy', 'single', 'yet', 'very', 'many',
+  'vielä', 'kunnolla', 'paljon', 'syvään', 'syvälle', 'hyvin', 'raskaasti', 'montaa', 'yhtään',
+]);
+
+const CANNOT_STAND = new Set(['stand', 'bear', 'sietää', 'sieda']);
+
+/** "don't have a strong bench", "ei oo vahva penkki": the lift's strength, not a refusal. */
+const POSSESSION = new Set(['have', 'got', 'ole', 'oo']);
+const STRENGTH_WORDS = new Set(['strong', 'good', 'great', 'decent', 'big', 'vahva', 'vahvaa', 'vahvat', 'hyvä', 'hyvää', 'hyvät', 'kova', 'kovaa']);
+
+/** Between a "can't" and the lift it governs: "can't do much", "en pysty vielä tekemään". */
+const CAPACITY_BRIDGE = new Set(['do', 'to', 'a', 'any', 'the', 'my', 'tehdä', 'tekemään', 'tekee', ...CAPACITY_QUALIFIERS]);
+
+/** Between "have" and the strength word, or the strength word and the lift: "have a really strong bench". */
+const STRENGTH_BRIDGE = new Set(['a', 'an', 'the', 'my', 'very', 'really', 'that', 'so', 'kovin', 'tosi', 'mikään', 'mitenkään']);
+
+/** A lift's name used as gear: "a good squat rack" is a rack, and "so no squats" still refuses the squat. */
+const GEAR_NOUNS = new Set(['rack', 'racks', 'stand', 'stands', 'cage', 'bar', 'teline', 'telineet', 'häkki', 'tanko']);
+
+/** The word before `at`, skipping the words in `bridge`; -1 when none. */
+function previousBeyond(words: readonly string[], at: number, bridge: ReadonlySet<string>): number {
+  let index = at - 1;
+  while (index >= 0 && bridge.has(words[index])) {
+    index -= 1;
+  }
+  return index;
+}
+
+/**
+ * Whether the wish to get better in `wish` is for this lift. A wish about
+ * another lift is no ask for this one: "I can't squat, I want to improve my
+ * bench" kept the squat in (review, 2026-10-08). With no other lift named it
+ * is this one's ("I can't do pull-ups but I want to learn"); with one, only
+ * when the wish names this lift, or "it" / "them", right after it.
+ */
+function wishIsFor(wish: string, lift: string): boolean {
+  const improve = wish.match(IMPROVE);
+  if (!improve) {
+    return false;
+  }
+  const others = LIFT_KEYWORDS.filter((entry) => entry.lift !== lift && entry.pattern.test(wish));
+  if (others.length === 0) {
+    return true;
+  }
+  const object = wish.slice((improve.index ?? 0) + improve[0].length).replace(/^(?:\s+(?:to|on|at|my|the|in|minun|mun))*\s*/u, '');
+  if (/^(?:it|them|this|that|sitä|niitä|tätä)(?![\p{L}])/u.test(object)) {
+    return true;
+  }
+  const own = LIFT_KEYWORDS.filter((entry) => entry.lift === lift);
+  return own.some((entry) => {
+    const at = object.search(entry.pattern);
+    return at !== -1 && at <= 1;
+  });
+}
+
+/** A wish to get better at it: "want to learn", "help me improve", "haluan oppia". */
+const IMPROVE = /(?:^|\s)(?:learn|learning|improve|improving|better|stronger|fix|master|oppia|opetella|kehitty\p{L}*|kehittää|parantaa|parantua|vahvemm\p{L}*|paremm\p{L}*)(?![\p{L}'])/u;
+
+/** A reason or a pain later in the sentence keeps a "can't" what it says: "I can't squat because my knee hurts". */
+const CAPACITY_REASON = /(?:^|\s)(?:because|since|koska|kun|sillä|takia|vuoksi)(?![\p{L}'])/u;
+
+/**
+ * Whether a lift read as refused is the reader saying what they cannot do
+ * yet, and so an ask: "I can't bench much, want to get stronger", "en pysty
+ * vielä tekemään leukoja mutta haluan oppia", "I can't squat deep", "I don't
+ * have a strong bench, want to improve it". Each kept the lift out of the
+ * week (hunt, 2026-10-08). A bare "I can't squat" still refuses it (hunt1
+ * #18), and so does one with a reason or a pain after it.
+ *
+ * Only the refusal that governs this mention reads so: the "can't" or the
+ * "don't have a strong" right before the lift. Read from anywhere in the
+ * clause, "I can't do much cardio and no deadlifts" and "I don't have a good
+ * squat rack, so no squats" asked for the very lift they refused (review,
+ * 2026-10-08).
+ */
+function capacityAsk(text: string, index: number, end: number, restOfSentence: string, lift: string): boolean {
+  const before = wordsBefore(text, index);
+  const after = wordsAfter(text, end);
+  const later = [text.slice(end).replace(/^[\p{L}\p{N}-]*/u, ''), restOfSentence].filter(Boolean).join(', ');
+  if (CAPACITY_REASON.test(later) || PAIN.test(later) || new RegExp(INJURY_NEAR_PART.source, 'iu').test(later)) {
+    return false;
+  }
+  const strength = previousBeyond(before, before.length, STRENGTH_BRIDGE);
+  if (strength !== -1 && STRENGTH_WORDS.has(before[strength]) && !GEAR_NOUNS.has(after[0] ?? '')) {
+    const have = previousBeyond(before, strength, STRENGTH_BRIDGE);
+    if (have > 0 && POSSESSION.has(before[have]) && NEGATORS.has(before[have - 1])) {
+      return true;
+    }
+  }
+  const capacity = previousBeyond(before, before.length, CAPACITY_BRIDGE);
+  // "I can't stand squats" is a dislike, not a limit.
+  if (capacity === -1 || !CAPACITY_WORDS.has(before[capacity]) || CANNOT_STAND.has(before[capacity + 1] ?? '')) {
+    return false;
+  }
+  if ([...before.slice(capacity + 1), ...after.slice(0, 2)].some((word) => CAPACITY_QUALIFIERS.has(word))) {
+    return true;
+  }
+  return wishIsFor(later.toLowerCase(), lift);
+}
+
 /** Whether some mention matched by `pattern` (global) is not refused in its own clause. */
 function asksFor(text: string, pattern: RegExp): boolean {
   for (const match of text.matchAll(pattern)) {
@@ -1410,6 +1669,8 @@ const NOT_YET_DONE = new Set([
   'tehnyt', 'tehny', 'kokeillut', 'kokeillu', 'osaa', 'done', 'tried', 'did', 'know',
   // "I've never trained legs", "en ole koskaan treenannut jalkoja" (review, 2026-10-08).
   'treenannut', 'treenannu', 'treenaillut', 'treenaillu', 'harjoitellut', 'harjoitellu', 'trained', 'practised', 'practiced',
+  // "I have no idea how to deadlift properly" is "don't know how to" (hunt, 2026-10-08).
+  'idea', 'hajua', 'hajuakaan',
 ]);
 
 function escapeRegExp(value: string): string {
@@ -1456,7 +1717,7 @@ export function composeProgrammePreview(
 ): ProgrammeProposal {
   const signals = parseProgrammeBrief(brief);
   const overlaid = applyBriefToPreferences(preferences, signals, library);
-  const plan = buildAiCoachPlanSchema(overlaid, library);
+  const plan = buildAiCoachPlanSchema(overlaid, library, { noLegDay: signals.noLegDay });
   return planToProposal(plan, signals, library, 'preview');
 }
 

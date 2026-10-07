@@ -126,6 +126,7 @@ module.exports = [
         focusBodyParts: [],
         cautions: [],
         avoidTerms: [],
+        noLegDay: false,
       });
     },
   },

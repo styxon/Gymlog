@@ -361,6 +361,125 @@ const TABLE = [
   { brief: 'Kyykkyä en halua poistaa', lifts: ['Back Squat'], kept: ['back squat'] },
   { brief: 'Haluan poistaa maastavedon', lifts: [], refused: ['deadlift'] },
   { brief: 'Consider removing deadlifts', lifts: [], refused: ['deadlift'] },
+
+  // Hunt of the fix batch (2026-10-08). The leg day is refused only by a
+  // refusal that governs it: weak legs, never trained legs, "not too much",
+  // a day of the week or a refusal of something else keep the leg work.
+  { brief: "I don't have strong legs, want to fix that", kept: LEG_WORK },
+  { brief: 'Mulla ei oo vahvat jalat', kept: LEG_WORK },
+  { brief: 'I never train legs and want to start', kept: LEG_WORK },
+  { brief: 'En tiedä miten treenata jalkoja', kept: LEG_WORK },
+  { brief: 'I have no idea how to train legs', kept: LEG_WORK },
+  { brief: 'Not too much leg work', kept: LEG_WORK },
+  { brief: 'Ei liikaa jalkoja', kept: LEG_WORK },
+  { brief: 'No leg day on Fridays', kept: LEG_WORK },
+  { brief: 'Ei jalkapäivää perjantaisin', kept: LEG_WORK },
+  { brief: 'Ilman koneita jalat ja pakarat', kept: LEG_WORK },
+  { brief: 'No pain in legs, want legs focus', focus: ['legs'], cautions: [], kept: LEG_WORK },
+  { brief: 'I hate skipping leg day', kept: LEG_WORK },
+  { brief: "Don't skip legs", kept: LEG_WORK },
+  // …and a refusal that does govern it still keeps the leg work out.
+  { brief: "I don't want a leg day", focus: [], refused: LEG_WORK },
+  { brief: 'En halua jalkapäivää', focus: [], refused: LEG_WORK },
+  { brief: "I don't want to train legs", focus: [], refused: LEG_WORK },
+  { brief: 'Without any leg work', focus: [], refused: LEG_WORK },
+  { brief: 'No dedicated leg day', focus: [], refused: LEG_WORK },
+  { brief: 'Ei jalkoja', focus: [], refused: LEG_WORK },
+  { brief: 'I hate leg day', focus: [], refused: LEG_WORK },
+  // Saying a lift cannot be done yet, or done well, and wanting it better asks for it.
+  { brief: "I can't bench much, want to get stronger", lifts: ['Bench Press'], kept: ['bench press'] },
+  { brief: "I can't do pull-ups but I want to learn", lifts: ['Pullups'], kept: ['pull-up'] },
+  { brief: 'En pysty vielä tekemään leukoja mutta haluan oppia', lifts: ['Pullups'], kept: ['pull-up'] },
+  { brief: 'I have no idea how to deadlift properly', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: "I can't squat deep, help me improve", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: "I don't have a strong bench, want to improve it", lifts: ['Bench Press'], kept: ['bench press'] },
+  { brief: "I can't do pull-ups yet", lifts: ['Pullups'], kept: ['pull-up'] },
+  { brief: "I can't do a single pull-up, want to learn", lifts: ['Pullups'], kept: ['pull-up'] },
+  { brief: 'En osaa vielä maastavetoa', lifts: ['Deadlift'], kept: ['deadlift'] },
+  { brief: "I'm weak at bench press and want to improve it", lifts: ['Bench Press'], kept: ['bench press'] },
+  // …and a bare "can't", a reason after it, or a refused kind of the lift still refuse.
+  { brief: "I can't squat because my knee hurts, want to get stronger", lifts: [], cautions: ['knee'], refused: ['back squat'] },
+  { brief: "I don't want heavy squats", lifts: [], refused: ['back squat'] },
+  { brief: "I can't do pull-ups, my elbow hurts", lifts: [], refused: ['pull-up'] },
+  // Weakness or lack of skill next to a body part is a focus, not an injury.
+  { brief: "I'm bad at chest exercises, want to improve", cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Olen huono rintatreeneissä, haluan kehittyä', cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Ongelmana on heikko rinta', cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: "I'm bad at leg exercises", cautions: [], kept: ['lunge'] },
+  { brief: 'Rintalihakset huonot', cautions: [], focus: ['chest'], kept: ['bench press'] },
+  // "sattuu" that means "happens", muscle soreness after training and "back"
+  // the adverb are no pain.
+  { brief: 'Rintaa ja selkää, jos sattuu jäämään aikaa', cautions: [], focus: ['chest', 'back'], kept: ['bench press', 'deadlift'] },
+  { brief: 'Jalkapäivä sattuu olemaan lempparini', cautions: [], kept: ['lunge'] },
+  { brief: 'Getting back into training after knee surgery', cautions: ['knee'], kept: ['deadlift', 'bent over'] },
+  { brief: "I'm back after surgery", cautions: [] },
+  { brief: 'Coming back to the gym after a break', cautions: [], focus: [] },
+  { brief: 'Treenin jälkeinen lihaskipu jaloissa on ok', cautions: [] },
+  { brief: 'Lihakset kipeät treenistä', cautions: [] },
+  { brief: 'Sore muscles after leg day are fine', cautions: [] },
+  // …while the pain itself still reads.
+  { brief: 'Polvi kipeä treenin jälkeen', cautions: ['knee'] },
+  { brief: 'My back hurts', cautions: ['back'] },
+  { brief: 'Had back surgery', cautions: ['back'] },
+  { brief: 'Selkä sattuu', cautions: ['back'] },
+  // Sets by reps in words are not days; times a week still are.
+  { brief: 'Stronglifts 5 times 5', days: null, requested: null },
+  { brief: 'I do 5 times 5 on squats', days: null, requested: null, lifts: ['Back Squat'] },
+  { brief: 'Kyykky 5 kertaa 5', days: null, requested: null },
+  { brief: 'I want to bench 3 times 10', days: null },
+  { brief: '5 times 5 squats, 3 days a week', days: 3 },
+  { brief: 'Penkki 3 kertaa 10, 3 kertaa viikossa', days: 3 },
+
+  // Review of the fix batch (2026-10-08). "Back" owned by "my" / "the" is the
+  // body part whatever follows it, and "is back pain" is pain.
+  { brief: 'I hurt my back after deadlifts last week', cautions: ['back'], refused: ['deadlift', 'good morning', 'bent over'] },
+  { brief: 'Pain in my back from sitting all day', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'My main issue is back pain', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'The problem is back pain when I bend', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'My back on the left side hurts', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'Back in pain since Monday', cautions: ['back'], refused: ['deadlift'] },
+  // …and the adverb still is none.
+  { brief: 'The knee pain is back', cautions: ['knee'], kept: ['deadlift'] },
+  { brief: 'Back to training after a break', cautions: [], focus: [] },
+  { brief: "I'm getting back to the gym", cautions: [], focus: [] },
+  // A plain leg-day refusal keeps the leg work out and builds no leg day.
+  { brief: "Don't include a leg day", focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't add leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't give me a leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "Please don't put legs in", focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä lisää jalkapäivää', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä laita jalkoja', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Leave out leg day', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Leave the leg day out', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: "I won't do legs", refused: LEG_WORK, noLegDay: true },
+  { brief: "I won't train legs", refused: LEG_WORK, noLegDay: true },
+  { brief: 'I never do leg day', refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't do leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't do leg days", refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't really do legs", refused: LEG_WORK, noLegDay: true },
+  { brief: 'En jaksa jalkapäivää', refused: LEG_WORK, noLegDay: true },
+  // …while a habit and an insistence still keep it.
+  { brief: 'I never train legs', kept: LEG_WORK, noLegDay: false },
+  { brief: 'I never trained legs', kept: LEG_WORK, noLegDay: false },
+  { brief: "Don't leave out leg day", kept: LEG_WORK, noLegDay: false },
+  // A "can't" or a "don't have" that governs another word refuses nothing for
+  // the lift, and a wish about another lift asks for that one.
+  { brief: "I can't do much cardio and no deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: "I don't have a good squat rack, so no squats", lifts: [], refused: ['back squat'] },
+  { brief: "I can't squat, I want to improve my bench", lifts: ['Bench Press'], refused: ['back squat'], kept: ['bench press'] },
+  { brief: "I can't squat but I want to improve my bench", lifts: ['Bench Press'], refused: ['back squat'], kept: ['bench press'] },
+  { brief: "I can't deadlift, I want to learn to squat", lifts: ['Back Squat'], refused: ['deadlift'], kept: ['back squat'] },
+  // …and the same wish about the lift itself still asks for it.
+  { brief: "I can't squat, I want to improve it", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Mulla ei oo vahva penkki', lifts: ['Bench Press'], kept: ['bench press'] },
+  // "Jos sattuu polveen" is "if the knee hurts".
+  { brief: 'Jos sattuu polveen, en tee kyykkyä', cautions: ['knee'], refused: ['back squat'] },
+  // A session length after "N times" is no reps count.
+  { brief: 'I can train 3 times 1 hour a week', days: 3 },
+  { brief: '3 kertaa 1h viikossa', days: 3 },
+  { brief: '3 kertaa 1,5h viikossa', days: 3 },
+  { brief: '3 times 45 min a week', days: 3 },
+  { brief: 'Stronglifts 5 times 5, 1 hour', days: null, requested: null },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -392,6 +511,7 @@ module.exports = [
         if ('equipment' in row) check('equipment', signals.equipment, row.equipment);
         if ('days' in row) check('days', signals.daysPerWeek, row.days);
         if ('requested' in row) check('requested', signals.requestedDaysPerWeek, row.requested);
+        if ('noLegDay' in row) check('noLegDay', signals.noLegDay, row.noLegDay);
       }
       assert.deepEqual(failures, []);
     },
@@ -705,6 +825,118 @@ module.exports = [
       assert.equal(signals.goal, 'muscle');
       assert.notEqual(matchProgrammeToBrief(signals, preferences)?.programId, 'tpl_shred_elite_v1');
       assert.equal(parseProgrammeBrief('5 päivää viikossa, voimaa, ei rasvanpudotusta').goal, 'strength');
+    },
+  },
+  {
+    /**
+     * Hunt of the fix batch (2026-10-08): "no leg day" kept the leg work out
+     * but still built a Legs or Lower day, filled with bounds, jumps, a
+     * balance board and hang cleans. The week is laid out without one.
+     */
+    name: 'brief negation: no leg day builds no Legs or Lower day and no leg filler, at every day count and gear',
+    run() {
+      const LEG_FILLER = /squat|deadlift|lunge|leg press|leg curl|leg extension|calf|jump|bound|skip|balance|hang clean|step-up|step up|good morning/i;
+      const offenders = [];
+      // "Don't add leg day" and "Älä laita jalkoja" built one (review, 2026-10-08).
+      for (const refusal of ['No leg day.', 'Ei jalkapäivää.', "Don't add leg day.", 'Älä laita jalkoja.']) {
+        for (const days of [1, 2, 3, 4]) {
+          for (const goal of ['muscle', 'strength', 'fat loss', 'fitness']) {
+            for (const gear of ['', ' Bodyweight only.', ' Paikka: kotona, käsipainot.']) {
+              const brief = `${refusal} Goal: ${goal}. ${days} days a week.${gear}`;
+              const proposal = composeProgrammePreview(brief, preferences, library);
+              if (proposal.sessions.length !== days) {
+                offenders.push(`${brief}: ${proposal.sessions.length} sessions`);
+              }
+              for (const session of proposal.sessions) {
+                if (/legs|lower/i.test(session.name)) {
+                  offenders.push(`${brief}: a session named ${session.name}`);
+                }
+                if (session.exercises.length < 3) {
+                  offenders.push(`${brief}: ${session.name} has ${session.exercises.length} exercises`);
+                }
+                for (const exercise of session.exercises) {
+                  if (LEG_FILLER.test(exercise.name)) {
+                    offenders.push(`${brief}: ${session.name} holds ${exercise.name}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} offenders`);
+      // A brief that keeps its legs still gets its leg day.
+      const legs = composeProgrammePreview('Goal: muscle. 3 days a week. Weak legs, want to fix them.', preferences, library);
+      assert.ok(legs.sessions.some((session) => session.name === 'Legs'), legs.sessions.map((session) => session.name).join(', '));
+      // The leg work the hunt's own briefs kept is in the week.
+      for (const brief of ["I don't have strong legs, want to fix that. 3 days a week", 'Not too much leg work. 3 days a week', 'No leg day on Fridays. 3 days a week']) {
+        const names = weekNames(composeProgrammePreview(brief, preferences, library));
+        assert.ok(names.some((name) => /squat/i.test(name)) && names.some((name) => /deadlift/i.test(name)), `${brief}: ${names.join(', ')}`);
+      }
+    },
+  },
+  {
+    // Hunt of the fix batch (2026-10-08): the capacity briefs put their lift in the week.
+    name: 'brief negation: a lift the reader cannot do well yet and wants better is in the composed week',
+    run() {
+      const week = (brief) => weekNames(composeProgrammePreview(`3 days a week. ${brief}`, preferences, library));
+      for (const brief of ["I can't bench much, want to get stronger.", "I don't have a strong bench, want to improve it."]) {
+        const names = week(brief);
+        assert.ok(names.some((name) => /^Barbell Bench Press/.test(name)), `${brief}: ${names.join(', ')}`);
+      }
+      const deadlift = week('I have no idea how to deadlift properly.');
+      assert.ok(deadlift.includes('Barbell Deadlift'), deadlift.join(', '));
+      // Chest work the reader is bad at is no injury: the bench is in the week.
+      const chest = composeProgrammePreview("3 days a week. I'm bad at chest exercises, want to improve.", preferences, library);
+      assert.deepEqual(chest.signals.cautions, []);
+      assert.ok(weekNames(chest).some((name) => /^Barbell Bench Press/.test(name)), weekNames(chest).join(', '));
+    },
+  },
+  {
+    /**
+     * Hunt of the fix batch (2026-10-08): onboarding's "Bodyweight only" card
+     * stores the 'minimal' bucket beside the bodyweight_only environment, and
+     * the catalog shortcut read the bucket alone — dumbbell programmes opened
+     * for a reader with none.
+     */
+    name: 'brief negation: a stored bodyweight-only reader is never matched to a programme that needs gear',
+    run() {
+      const stored = {
+        ...preferences,
+        setupEquipment: 'minimal',
+        setupTrainingEnvironment: 'bodyweight_only',
+        setupEquipmentItems: [],
+      };
+      for (const setupLevel of ['advanced', 'pro']) {
+        for (const brief of ['6 days a week, muscle', '5 days a week, strength', '6 päivää viikossa, lihasmassa', '5 päivää viikossa']) {
+          const match = matchProgrammeToBrief(parseProgrammeBrief(brief), { ...stored, setupLevel });
+          assert.ok(!match || programFitsEquipment(match.programId, []), `${setupLevel} ${brief} → ${match?.programId}`);
+        }
+      }
+      // A planner answer the reader gave since still wins over the stored environment.
+      const dumbbells = matchProgrammeToBrief(parseProgrammeBrief('6 days a week, muscle'), {
+        ...stored,
+        setupLevel: 'advanced',
+        aiPlannerEquipment: 'minimal',
+      });
+      assert.equal(dumbbells?.programId, 'tpl_home_dumbbell_ppl_v1');
+      // The composer reads the same stored reader as bodyweight.
+      const composed = composeProgrammePreview('3 days a week, muscle', { ...stored, setupLevel: 'advanced' }, library);
+      const byId = new Map(library.map((item) => [item.id, item]));
+      const gear = composed.sessions.flatMap((session) => session.exercises.map((exercise) => displayEquipmentValue(byId.get(exercise.libraryItemId))));
+      assert.deepEqual([...new Set(gear)], ['bodyweight']);
+    },
+  },
+  {
+    // Hunt of the fix batch (2026-10-08): "5 times 5" opened a five-day programme.
+    name: 'brief negation: sets by reps in words open no catalog programme',
+    run() {
+      for (const brief of ['Stronglifts 5 times 5', 'I do 5 times 5 on squats', 'Kyykky 5 kertaa 5']) {
+        const signals = parseProgrammeBrief(brief);
+        assert.equal(signals.requestedDaysPerWeek, null, brief);
+        assert.equal(shouldOfferCatalogInstead(signals), false, brief);
+      }
+      assert.equal(parseProgrammeBrief('5 times a week').requestedDaysPerWeek, 5);
     },
   },
 ];
