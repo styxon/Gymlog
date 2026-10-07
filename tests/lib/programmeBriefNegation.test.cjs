@@ -429,6 +429,57 @@ const TABLE = [
   { brief: 'I want to bench 3 times 10', days: null },
   { brief: '5 times 5 squats, 3 days a week', days: 3 },
   { brief: 'Penkki 3 kertaa 10, 3 kertaa viikossa', days: 3 },
+
+  // Review of the fix batch (2026-10-08). "Back" owned by "my" / "the" is the
+  // body part whatever follows it, and "is back pain" is pain.
+  { brief: 'I hurt my back after deadlifts last week', cautions: ['back'], refused: ['deadlift', 'good morning', 'bent over'] },
+  { brief: 'Pain in my back from sitting all day', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'My main issue is back pain', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'The problem is back pain when I bend', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'My back on the left side hurts', cautions: ['back'], refused: ['deadlift'] },
+  { brief: 'Back in pain since Monday', cautions: ['back'], refused: ['deadlift'] },
+  // …and the adverb still is none.
+  { brief: 'The knee pain is back', cautions: ['knee'], kept: ['deadlift'] },
+  { brief: 'Back to training after a break', cautions: [], focus: [] },
+  { brief: "I'm getting back to the gym", cautions: [], focus: [] },
+  // A plain leg-day refusal keeps the leg work out and builds no leg day.
+  { brief: "Don't include a leg day", focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't add leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't give me a leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "Please don't put legs in", focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä lisää jalkapäivää', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä laita jalkoja', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Leave out leg day', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: 'Leave the leg day out', focus: [], refused: LEG_WORK, noLegDay: true },
+  { brief: "I won't do legs", refused: LEG_WORK, noLegDay: true },
+  { brief: "I won't train legs", refused: LEG_WORK, noLegDay: true },
+  { brief: 'I never do leg day', refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't do leg day", refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't do leg days", refused: LEG_WORK, noLegDay: true },
+  { brief: "I don't really do legs", refused: LEG_WORK, noLegDay: true },
+  { brief: 'En jaksa jalkapäivää', refused: LEG_WORK, noLegDay: true },
+  // …while a habit and an insistence still keep it.
+  { brief: 'I never train legs', kept: LEG_WORK, noLegDay: false },
+  { brief: 'I never trained legs', kept: LEG_WORK, noLegDay: false },
+  { brief: "Don't leave out leg day", kept: LEG_WORK, noLegDay: false },
+  // A "can't" or a "don't have" that governs another word refuses nothing for
+  // the lift, and a wish about another lift asks for that one.
+  { brief: "I can't do much cardio and no deadlifts", lifts: [], refused: ['deadlift'] },
+  { brief: "I don't have a good squat rack, so no squats", lifts: [], refused: ['back squat'] },
+  { brief: "I can't squat, I want to improve my bench", lifts: ['Bench Press'], refused: ['back squat'], kept: ['bench press'] },
+  { brief: "I can't squat but I want to improve my bench", lifts: ['Bench Press'], refused: ['back squat'], kept: ['bench press'] },
+  { brief: "I can't deadlift, I want to learn to squat", lifts: ['Back Squat'], refused: ['deadlift'], kept: ['back squat'] },
+  // …and the same wish about the lift itself still asks for it.
+  { brief: "I can't squat, I want to improve it", lifts: ['Back Squat'], kept: ['back squat'] },
+  { brief: 'Mulla ei oo vahva penkki', lifts: ['Bench Press'], kept: ['bench press'] },
+  // "Jos sattuu polveen" is "if the knee hurts".
+  { brief: 'Jos sattuu polveen, en tee kyykkyä', cautions: ['knee'], refused: ['back squat'] },
+  // A session length after "N times" is no reps count.
+  { brief: 'I can train 3 times 1 hour a week', days: 3 },
+  { brief: '3 kertaa 1h viikossa', days: 3 },
+  { brief: '3 kertaa 1,5h viikossa', days: 3 },
+  { brief: '3 times 45 min a week', days: 3 },
+  { brief: 'Stronglifts 5 times 5, 1 hour', days: null, requested: null },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -460,6 +511,7 @@ module.exports = [
         if ('equipment' in row) check('equipment', signals.equipment, row.equipment);
         if ('days' in row) check('days', signals.daysPerWeek, row.days);
         if ('requested' in row) check('requested', signals.requestedDaysPerWeek, row.requested);
+        if ('noLegDay' in row) check('noLegDay', signals.noLegDay, row.noLegDay);
       }
       assert.deepEqual(failures, []);
     },
@@ -785,7 +837,8 @@ module.exports = [
     run() {
       const LEG_FILLER = /squat|deadlift|lunge|leg press|leg curl|leg extension|calf|jump|bound|skip|balance|hang clean|step-up|step up|good morning/i;
       const offenders = [];
-      for (const refusal of ['No leg day.', 'Ei jalkapäivää.']) {
+      // "Don't add leg day" and "Älä laita jalkoja" built one (review, 2026-10-08).
+      for (const refusal of ['No leg day.', 'Ei jalkapäivää.', "Don't add leg day.", 'Älä laita jalkoja.']) {
         for (const days of [1, 2, 3, 4]) {
           for (const goal of ['muscle', 'strength', 'fat loss', 'fitness']) {
             for (const gear of ['', ' Bodyweight only.', ' Paikka: kotona, käsipainot.']) {
