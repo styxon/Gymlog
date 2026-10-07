@@ -258,6 +258,15 @@ function eligiblePrograms(a, sel, daysTolerance = 1) {
     if (!def.supportedLevels.includes(a.level)) return false;
     if (def.targetGender !== 'unisex' && def.targetGender !== a.gender) return false;
     if (Math.abs(def.daysPerWeek - a.days) > daysTolerance) return false;
+    // A week of stretching only answers a reader who asked for one: running
+    // and mobility as the goal, or mobility as an outcome or a focus. The
+    // mobility flow uses a band, and counting it made every band owner who
+    // was not handed it a gear failure (bug hunt, 2026-10-07).
+    const recoveryOnly = def.familyId === 'joint_friendly' && !def.styleTags.includes('balanced');
+    const askedForRecovery = a.goal === 'run_mobility'
+      || (sel.secondaryOutcomes ?? []).includes('mobility')
+      || (sel.focusAreas ?? []).includes('mobility');
+    if (recoveryOnly && !askedForRecovery) return false;
     if (a.card.equipment === 'gym') {
       return programFitsEquipment(def.programId, gearAvailable(a.card));
     }

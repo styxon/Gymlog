@@ -565,47 +565,77 @@ function supplementalLifts(kind: SupplementalDayKind, selection: FirstRunSetupSe
   return pickPoolVariant(SUPPLEMENTAL_DAY_POOL[kind], resolveAvailableEquipment(selection));
 }
 
+/**
+ * The optional days, one per kind. The names are translated at display time
+ * (sessionNameLabel), so a new kind needs its name there too.
+ */
+const SUPPLEMENTAL_DAYS: Record<SupplementalDayKind, { name: string; minutes: number; note: string }> = {
+  accessoryStrength: {
+    name: 'Accessory Strength Day',
+    minutes: 30,
+    note: 'Optional accessory work without replacing the strength base.',
+  },
+  recoveryStrength: {
+    name: 'Recovery Strength Day',
+    minutes: 25,
+    note: 'Keep this easy so the main lifts recover.',
+  },
+  easyRun: { name: 'Easy Run Add-On', minutes: 30, note: 'Keep the pace conversational.' },
+  longRun: {
+    name: 'Long Run Add-On',
+    minutes: 45,
+    note: 'Build distance gradually and keep it easier than tempo day.',
+  },
+  bodyweightVolume: {
+    name: 'Bodyweight Volume Day',
+    minutes: 25,
+    note: 'Adds muscle-friendly volume without full-gym equipment.',
+  },
+  conditioningMobility: {
+    name: 'Conditioning + Mobility Day',
+    minutes: 25,
+    note: 'Keeps the week active without heavy fatigue.',
+  },
+  recoveryMobility: { name: 'Recovery + Mobility Day', minutes: 25, note: 'Optional day to fill the selected weekly rhythm.' },
+  easyConditioning: { name: 'Easy Conditioning Day', minutes: 25, note: 'Optional day to fill the selected weekly rhythm.' },
+};
+
+/**
+ * The kinds in the order a week takes them, one per optional day.
+ *
+ * Each goal had two, picked by `index === 0`, so every optional day after the
+ * first was the second one again: a beginner asking for six days is capped to
+ * a three-day programme, and two of its three added days were the same
+ * "Recovery Strength Day" (bug hunt, 2026-10-07). Five each, more than the
+ * four a two-day programme stretched to six days needs, and none twice.
+ */
+function supplementalDayKinds(selection: FirstRunSetupSelection, programId: string): SupplementalDayKind[] {
+  if (selection.goal === 'strength') {
+    return ['accessoryStrength', 'recoveryStrength', 'recoveryMobility', 'easyConditioning', 'conditioningMobility'];
+  }
+  if (selection.goal === 'run_mobility' || programId === 'tpl_3_day_run_mobility_v1') {
+    return ['easyRun', 'longRun', 'recoveryMobility', 'conditioningMobility', 'easyConditioning'];
+  }
+  if (selection.equipment === 'home' && selection.goal === 'muscle') {
+    return ['bodyweightVolume', 'conditioningMobility', 'recoveryMobility', 'easyConditioning', 'accessoryStrength'];
+  }
+  return ['recoveryMobility', 'easyConditioning', 'conditioningMobility', 'bodyweightVolume', 'accessoryStrength'];
+}
+
 function buildSupplementalDay(
   selection: FirstRunSetupSelection,
   programId: string,
   index: number,
 ): Omit<RecommendationPlanReadyScheduleDay, 'id' | 'weekday' | 'weekdayLabel'> {
-  if (selection.goal === 'strength') {
-    return {
-      name: index === 0 ? 'Accessory Strength Day' : 'Recovery Strength Day',
-      meta: `${index === 0 ? 30 : 25} min - optional`,
-      keyLifts: supplementalLifts(index === 0 ? 'accessoryStrength' : 'recoveryStrength', selection),
-      source: 'suggested',
-      note: index === 0 ? 'Optional accessory work without replacing the strength base.' : 'Keep this easy so the main lifts recover.',
-    };
-  }
-
-  if (selection.goal === 'run_mobility' || programId === 'tpl_3_day_run_mobility_v1') {
-    return {
-      name: index === 0 ? 'Easy Run Add-On' : 'Long Run Add-On',
-      meta: `${index === 0 ? 30 : 45} min - optional`,
-      keyLifts: supplementalLifts(index === 0 ? 'easyRun' : 'longRun', selection),
-      source: 'suggested',
-      note: index === 0 ? 'Keep the pace conversational.' : 'Build distance gradually and keep it easier than tempo day.',
-    };
-  }
-
-  if (selection.equipment === 'home' && selection.goal === 'muscle') {
-    return {
-      name: index === 0 ? 'Bodyweight Volume Day' : 'Conditioning + Mobility Day',
-      meta: '25 min - optional',
-      keyLifts: supplementalLifts(index === 0 ? 'bodyweightVolume' : 'conditioningMobility', selection),
-      source: 'suggested',
-      note: index === 0 ? 'Adds muscle-friendly volume without full-gym equipment.' : 'Keeps the week active without heavy fatigue.',
-    };
-  }
-
+  const kinds = supplementalDayKinds(selection, programId);
+  const kind = kinds[index % kinds.length];
+  const day = SUPPLEMENTAL_DAYS[kind];
   return {
-    name: index === 0 ? 'Recovery + Mobility Day' : 'Easy Conditioning Day',
-    meta: '25 min - optional',
-    keyLifts: supplementalLifts(index === 0 ? 'recoveryMobility' : 'easyConditioning', selection),
+    name: day.name,
+    meta: `${day.minutes} min - optional`,
+    keyLifts: supplementalLifts(kind, selection),
     source: 'suggested',
-    note: 'Optional day to fill the selected weekly rhythm.',
+    note: day.note,
   };
 }
 

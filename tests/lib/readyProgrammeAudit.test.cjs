@@ -140,10 +140,11 @@ module.exports = [
         .map((item) => item.name);
       assert.deepEqual(photolessGenerated, []);
       // Every extra the library carries is one a programme prescribes, except
-      // the two that exist for swaps and fallbacks.
+      // the ones that exist for swaps and fallbacks (Landmine Press is the
+      // careful-shoulders swap for an overhead press).
       const reachedIds = new Set(reached.map((item) => item.id));
       const unprescribedExtras = LIBRARY.filter((item) => item.id.startsWith('extra_') && !reachedIds.has(item.id)).map((item) => item.name).sort();
-      assert.deepEqual(unprescribedExtras, ['Band Curl', 'Machine Hip Thrust']);
+      assert.deepEqual(unprescribedExtras, ['Band Curl', 'Landmine Press', 'Machine Hip Thrust']);
     },
   },
   {

@@ -811,6 +811,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Kneeling Squat': 'Kyykky polviltaan',
   "Landmine 180's": 'Landmine-kierto 180°',
   'Landmine Linear Jammer': 'Landmine-työntö suoraan',
+  'Landmine Press': 'Landmine-punnerrus',
   'Lateral Box Jump': 'Laatikkohyppy sivulle',
   'Lateral Cone Hops': 'Kartiohypyt sivulle',
   'Lateral Raise - With Bands': 'Sivunosto kuminauhoilla',
