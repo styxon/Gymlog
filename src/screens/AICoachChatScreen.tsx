@@ -560,14 +560,19 @@ export function AICoachChatScreen({
   // A frame question waiting. The opening rows and the quick asks stand down
   // meanwhile: three other things to tap under a question are three ways to
   // walk off it.
-  const intakeOpen = useMemo(() => messages.some((message) => message.intake), [messages]);
-  // Opened from "New programme → AI-assisted": the visit is for the week, from
-  // the first question to the build, so the analysis link, the opening rows
-  // and the quick asks stay down the whole time, not only while a question is
-  // open (user, 2026-10-07). Read from the route on the first render, before
-  // the effect below hands the intent back, so none of them flashes in first.
-  const [buildingProgramme, setBuildingProgramme] = useState(intent === 'new_program');
-  const programmeOnly = buildingProgramme || intakeOpen;
+  const openIntake = useMemo(() => messages.find((message) => message.intake)?.intake ?? null, [messages]);
+  const intakeOpen = openIntake !== null;
+  // Opened from "New programme → AI-assisted": the analysis link, the opening
+  // rows and the quick asks stay down from the first question until the week
+  // is built, not only while a question is open (user, 2026-10-07). Read from
+  // the thread, so a Back onto this chat keeps them down too; the route's
+  // intent covers the first render, before the effect below starts the
+  // questions, so none of them flashes in first.
+  const frameOfferOpen = useMemo(
+    () => messages.some((message) => message.offer?.type === 'compose' && Boolean(message.offer.frame)),
+    [messages],
+  );
+  const programmeOnly = intent === 'new_program' || intakeOpen || frameOfferOpen;
   const showReadout = messages.length === 0 && openingRows.length > 0 && !programmeOnly;
 
   /**
@@ -1292,8 +1297,6 @@ export function AICoachChatScreen({
       return;
     }
     intentTaken.current = true;
-    // Also here, for a chat already mounted when the hand-off arrives.
-    setBuildingProgramme(true);
     onIntentConsumed?.();
     const intake = startProgramIntake(intakePreferences);
     const id = `intake:${Date.now()}`;
@@ -1374,17 +1377,30 @@ export function AICoachChatScreen({
   /**
    * "Edit" on the build offer: the questions again, each earlier answer the
    * choice to confirm. The offer gives way to the first question, and the
-   * answers already in the thread stay as the record of the first pass. An
-   * offer resumed from before answers were kept starts from the profile.
+   * answers already in the thread stay as the record of the first pass.
+   *
+   * Not while that offer is being built: the build would come back to an
+   * offer that is gone, and the week it composed would be dropped. Any other
+   * open question goes, as when the questions start from the route: two open
+   * at once would leave one unanswerable.
    */
   const editIntake = useCallback(
-    (messageId: string, answers: ProgramIntakeAnswers | undefined) => {
-      const intake = answers ? editProgramIntake(answers) : startProgramIntake(intakePreferences);
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === messageId ? { id: `intake:${Date.now()}`, fromCoach: true, text: '', intake } : message,
-        ),
-      );
+    (messageId: string) => {
+      if (resolvingOfferIdsRef.current.has(messageId)) {
+        return;
+      }
+      setMessages((current) => {
+        const offer = current.find((message) => message.id === messageId)?.offer;
+        if (offer?.type !== 'compose') {
+          return current;
+        }
+        const intake = offer.answers ? editProgramIntake(offer.answers) : startProgramIntake(intakePreferences);
+        return current
+          .filter((message) => !message.intake)
+          .map((message) =>
+            message.id === messageId ? { id: `intake:${Date.now()}`, fromCoach: true, text: '', intake } : message,
+          );
+      });
       setIntakeDraft('');
     },
     [intakePreferences],
@@ -1393,7 +1409,6 @@ export function AICoachChatScreen({
   // The free-text question, reached on an edit, starts from what was written
   // the first time. Set once the step opens, after the answer before it has
   // cleared the field, and not again while the reader types.
-  const openIntake = useMemo(() => messages.find((message) => message.intake)?.intake ?? null, [messages]);
   const openIntakeStep = openIntake ? currentProgramIntakeStep(openIntake) : null;
   const extraPreset = openIntake?.preset.extra ?? '';
   useEffect(() => {
@@ -1633,9 +1648,7 @@ export function AICoachChatScreen({
                     {message.offer.type === 'compose' && message.offer.frame ? (
                       <Pressable
                         accessibilityRole="button"
-                        onPress={() =>
-                          editIntake(message.id, (message.offer as { answers?: ProgramIntakeAnswers }).answers)
-                        }
+                        onPress={() => editIntake(message.id)}
                         style={({ pressed }) => [styles.offerGhost, pressed && styles.pressed]}
                       >
                         <Text style={styles.offerGhostText}>{t(language, 'programIntake.edit')}</Text>

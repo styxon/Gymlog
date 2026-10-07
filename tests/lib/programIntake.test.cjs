@@ -272,15 +272,13 @@ module.exports = [
       const fs = require('node:fs');
       const path = require('node:path');
       const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/AICoachChatScreen.tsx'), 'utf8');
-      // Seeded from the route on the first render, so nothing flashes in
-      // before the intake effect runs, and held for the whole visit.
-      assert.match(screen, /useState\(intent === 'new_program'\)/);
-      assert.match(screen, /const programmeOnly = buildingProgramme \|\| intakeOpen;/);
-      const effect = screen.slice(screen.indexOf('const intentTaken = useRef(false);'));
-      assert.ok(
-        effect.indexOf('setBuildingProgramme(true)') !== -1 &&
-          effect.indexOf('setBuildingProgramme(true)') < effect.indexOf('startProgramIntake('),
-        'the hand-off also raises the flag for a chat that was already open',
+      // The route's intent covers the first render, before the questions are
+      // in the thread; after that the thread says it, so a Back onto the chat
+      // keeps the surfaces down until the frame offer is built or edited away.
+      assert.match(screen, /const programmeOnly = intent === 'new_program' \|\| intakeOpen \|\| frameOfferOpen;/);
+      assert.match(
+        screen,
+        /const frameOfferOpen = useMemo\(\s*\(\) => messages\.some\(\(message\) => message\.offer\?\.type === 'compose' && Boolean\(message\.offer\.frame\)\)/,
       );
       // Each of the three surfaces is gated on the flag, not on the open
       // question alone: the quick asks used to come back with the build offer.
@@ -328,12 +326,24 @@ module.exports = [
       assert.match(screen, /frame: buildProgramIntakeFrame\(next\.answers, language\),[\s\S]{0,200}answers: next\.answers,/);
       // Edit stands where "No" stood on that offer; other offers keep "No".
       const gate = screen.indexOf("{message.offer.type === 'compose' && message.offer.frame ? (");
-      const edit = screen.indexOf('editIntake(message.id,', gate);
+      const edit = screen.indexOf('editIntake(message.id)', gate);
       const editLabel = screen.indexOf("'programIntake.edit'", gate);
       const no = screen.indexOf("'coachChat.measure.skip'", gate);
       assert.ok(gate !== -1 && gate < edit && edit < editLabel && editLabel < no, 'Edit first, "No" only in the else');
       assert.ok(no - gate < 2000, 'both in the same offer row');
       assert.match(screen, /state\.editing \? 'programIntake\.presetEdit' : 'programIntake\.preset'/);
+      // Edit waits for a build already under way (its week would come back to
+      // an offer that is gone), and leaves one open question, never two.
+      const editFn = screen.slice(screen.indexOf('const editIntake = useCallback('));
+      const locked = editFn.indexOf('resolvingOfferIdsRef.current.has(messageId)');
+      assert.ok(locked !== -1 && locked < editFn.indexOf('setMessages('), 'the lock is checked before the offer is replaced');
+      assert.match(editFn, /\.filter\(\(message\) => !message\.intake\)\s*\.map\(/);
+      // The free text written the first time is back in the field when the
+      // last question opens on an edit.
+      assert.match(
+        screen,
+        /if \(openIntakeStep === 'extra' && extraPreset\) \{\s*setIntakeDraft\(extraPreset\);\s*\}\s*\}, \[extraPreset, openIntakeStep\]\);/,
+      );
       // The catalog answer navigates in the same branch that finds it, before
       // anything else can run: no card to tap first.
       const branch = screen.slice(screen.indexOf('if (match && title) {'));
