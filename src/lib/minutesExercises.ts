@@ -28,6 +28,11 @@ const PROGRAMME_MINUTES_NAMES = [
   // harder".
   'Easy Run Blocks',
   'Tempo Run Blocks',
+  // What a run block becomes for a reader who avoids their knees or ankles
+  // (cautionExerciseFilter, RUN_STAND_INS): the same blocks, the same minutes.
+  'Brisk Walk Blocks',
+  'Incline Walk Blocks',
+  'Stationary Bike Blocks',
 ] as const;
 
 /**

@@ -6,6 +6,7 @@ import {
   readerAskedForRecovery,
 } from './recommendationCatalog';
 import { selectWaterfallDecision } from './recommendationWaterfall';
+import { programRunStandInKind, splitsReaderWeek } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
@@ -390,6 +391,24 @@ function homeEquipmentReason(programId: string): I18nKey {
     : 'wf.home_equipment.primary';
 }
 
+/**
+ * The reason over a programme whose runs the reader's knee or ankle flag turns
+ * into walks or rides, or null when it still runs.
+ *
+ * Whatever lane picked it: "Running comes first" was printed over a week of
+ * stretches for a reader who avoids their knees, and a home reader whose RUN
+ * was all walks was told only that nothing in it needed a gym (bug hunt,
+ * 2026-10-07, #35). The walks are the thing they did not ask for and need to
+ * know about.
+ */
+function runStandInReason(programId: string, input: RecommendationInput): I18nKey | null {
+  const kind = programRunStandInKind(programId, input);
+  if (kind === 'ride') {
+    return 'wf.run_mobility.ridePrimary';
+  }
+  return kind === 'walk' ? 'wf.run_mobility.walkPrimary' : null;
+}
+
 function selectAlternativeCandidates(candidates: RecommendationCandidate[], input: RecommendationInput) {
   const [featuredCandidate, ...otherCandidates] = candidates;
   if (!featuredCandidate) {
@@ -443,15 +462,22 @@ function genderAllows(definition: RecommendationProgramDefinition, input: Recomm
  * not among the candidates the score alone chooses, and a gym member with only
  * dumbbells ticked who asked for general fitness at five days was handed the
  * five-day mobility flow (bug hunt, 2026-10-07).
+ *
+ * A split the reader's short week cuts in half goes after every week that
+ * fits it, as in the waterfall, where it costs more than a wrong level. The
+ * score alone handed a two-day woman with machines and cables the three-day
+ * arms block, whose Arms (Volume) and Arms (Heavy) are a week with no legs,
+ * with the two-day full body on the same screen (review, 2026-10-08).
  */
 function levelFirst(candidates: RecommendationCandidate[], input: RecommendationInput) {
   const askedForRecovery = readerAskedForRecovery(input);
   const rank = (candidate: RecommendationCandidate) => {
     const definition = getRecommendationProgramDefinition(candidate.programId);
     const recoveryOnly = !askedForRecovery && definition !== null && isRecoveryOnlyProgram(definition);
-    return (fitsLevel(candidate, input) ? 0 : 2) + (recoveryOnly ? 1 : 0);
+    const splitsWeek = definition !== null && splitsReaderWeek(definition, input);
+    return (splitsWeek ? 4 : 0) + (fitsLevel(candidate, input) ? 0 : 2) + (recoveryOnly ? 1 : 0);
   };
-  return [0, 1, 2, 3].flatMap((tier) => candidates.filter((candidate) => rank(candidate) === tier));
+  return [0, 1, 2, 3, 4, 5, 6, 7].flatMap((tier) => candidates.filter((candidate) => rank(candidate) === tier));
 }
 
 export function recommendPrograms(
@@ -564,6 +590,7 @@ export function recommendPrograms(
       ))
       ? waterfallAlternativeCandidate
       : null;
+  const standInReason = waterfallPrimary ? runStandInReason(waterfallPrimary.programId, input) : null;
   const appliedWaterfall = waterfallPrimary
     ? {
         ...waterfallDecision,
@@ -579,6 +606,7 @@ export function recommendPrograms(
         ...(waterfallAlternativeCandidate && !waterfallAlternative
           ? { alternativeProgramId: null, whyAlternative: null }
           : {}),
+        ...(standInReason ? { whyPrimary: standInReason } : {}),
       }
     : null;
   const rankedCandidates = waterfallPrimary

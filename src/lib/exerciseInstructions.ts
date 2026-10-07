@@ -1444,6 +1444,21 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Kiihdytä tasaisesti ensimmäisen puoliskon aikana noin 90 prosenttiin huippuvauhdistasi, pidä vauhti muutaman sekunnin ajan hartiat rentoina ja askel nopeana ja hidasta sitten vähitellen.',
     'Kävele takaisin alkuun ja palaudu kunnolla ennen seuraavaa kiihdytystä.',
   ],
+  'Brisk Walk Blocks': [
+    'Aloita muutamalla minuutilla kevyttä kävelyä tasaisella.',
+    'Kävele jokainen blokki reippaasti: kädet heiluvat, hengitys tihenee, mutta pystyt yhä puhumaan lyhyin lausein. Sarjan luku on blokin pituus minuutteina.',
+    'Hidasta blokkien välissä kevyeen käyntiin ohjelman lepoajan verran ja nosta sitten vauhti taas ylös.',
+  ],
+  'Incline Walk Blocks': [
+    'Etsi tasainen ylämäki tai säädä juoksumattoon kulma, jolla pystyt kävelemään pitämättä kaiteista kiinni, ja lämmittele muutama minuutti kevyesti kävellen.',
+    'Kävele jokainen blokki ylämäkeen vauhdilla, joka tuntuu reippaalta mutta hallitulta: hengitys on syvää ja tiheää, ja pystyt sanomaan vain muutaman sanan kerrallaan. Sarjan luku on blokin pituus minuutteina.',
+    'Kävele blokkien välissä kevyesti tasaisella tai alamäkeen ohjelman lepoajan verran.',
+  ],
+  'Stationary Bike Blocks': [
+    'Säädä satula niin, että polvi jää hieman koukkuun polkimen ala-asennossa, ja polje muutama minuutti kevyesti lämmitellen.',
+    'Polje jokainen blokki päivän vaatimalla teholla: kevyenä päivänä juttelutahtia, tempopäivänä reippaasti mutta hallitusti. Sarjan luku on blokin pituus minuutteina.',
+    'Polje blokkien välissä hitaasti ohjelman lepoajan verran ja aloita sitten seuraava.',
+  ],
 };
 
 /**

@@ -14,6 +14,18 @@ const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/work
 
 const root = path.join(__dirname, '..', '..');
 
+/** Source without its comments, so a guard reads the code and not the notes on it. */
+function stripComments(source) {
+  return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+}
+
+/** The names a hook takes out of its `deps` argument. */
+function hookDeps(source) {
+  const match = source.match(/const \{([^}]*)\} = deps;/);
+  assert.ok(match, 'the hook destructures its deps');
+  return match[1];
+}
+
 module.exports = [
   {
     name: 'session length: a distance or an interval in the rep field is costed as what it is',
@@ -110,11 +122,44 @@ module.exports = [
     run() {
       const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
       assert.doesNotMatch(read('src/lib/programDayComposer.ts'), /sessionMinutes: template\.estimatedSessionDuration,/);
-      for (const file of ['src/app/useProgramsCatalog.tsx', 'src/app/useGoalFlow.tsx']) {
-        const source = read(file);
-        assert.doesNotMatch(source, /minutes: template\.estimatedSessionDuration/, file);
-        assert.match(source, /readyTemplateCardMinutes\(template/, file);
+      // The page's own number: the reader's composed week for their own
+      // programme, the gear estimate for the rest (#37). Every card site, by
+      // count: one site passing the week beside another passing null passed
+      // a single match (review, 2026-10-08).
+      for (const [file, sites] of [['src/app/useProgramsCatalog.tsx', 2], ['src/app/useGoalFlow.tsx', 1]]) {
+        const source = stripComments(read(file));
+        const minutesValues = [...source.matchAll(/\bminutes:\s*(.*)/g)].map((match) => match[1].trim());
+        assert.equal(minutesValues.length, sites, `${file}: ${minutesValues.join(' | ')}`);
+        for (const value of minutesValues) {
+          assert.match(value, /^programmeCardMinutes\(template, readerComposedWeek, /, `${file}: minutes: ${value}`);
+        }
+        assert.doesNotMatch(source, /readyTemplateCardMinutes\(/, file);
       }
+      // And the week is the page's: the resolver the programme page calls
+      // (renderWorkoutTab), from the same context, handed on as it is.
+      const pageContext =
+        /resolveReaderComposedWeek\((preferences\.recommendedProgramId|workoutTemplateId), \{\s*recommendedProgramId: preferences\.recommendedProgramId,\s*setupSelection,\s*workoutTemplates: database\.workoutTemplates,\s*workoutPlans: database\.workoutPlans,\s*\}\)/;
+      assert.match(stripComments(read('src/app/renderWorkoutTab.tsx')), pageContext, 'the programme page');
+      const catalog = stripComments(read('src/app/useProgramsCatalog.tsx'));
+      const catalogWeek = catalog.match(/const readerComposedWeek = useMemo\(\s*\(\) =>\s*preferences\.recommendedProgramId\s*\?([\s\S]*?): null,/);
+      assert.ok(catalogWeek, 'useProgramsCatalog composes readerComposedWeek in one useMemo');
+      assert.match(catalogWeek[1].trim(), new RegExp(`^${pageContext.source}$`), 'the cards compose from the page\'s context');
+      assert.equal((catalog.match(/\breaderComposedWeek\s*=/g) ?? []).length, 1, 'useProgramsCatalog assigns readerComposedWeek once');
+      assert.match(hookDeps(catalog), /^\s*setupSelection,$/m, 'useProgramsCatalog reads setupSelection from its deps');
+      const goalFlow = stripComments(read('src/app/useGoalFlow.tsx'));
+      assert.match(hookDeps(goalFlow), /^\s*readerComposedWeek,$/m, 'useGoalFlow reads readerComposedWeek from its deps');
+      assert.equal((goalFlow.match(/\breaderComposedWeek\s*=/g) ?? []).length, 0, 'useGoalFlow composes no week of its own');
+      // App hands the catalog the setup the page composes from, and the goal
+      // flow the week the catalog composed.
+      const app = stripComments(read('App.tsx'));
+      const catalogCall = app.match(/const \{([^}]*)\} = useProgramsCatalog\(\{([^}]*)\}\);/);
+      assert.ok(catalogCall, 'App calls useProgramsCatalog');
+      assert.match(catalogCall[1], /^\s*readerComposedWeek,$/m, 'App takes readerComposedWeek from useProgramsCatalog');
+      assert.match(catalogCall[2], /^\s*setupSelection,$/m, 'App passes setupSelection to useProgramsCatalog');
+      const goalFlowCall = app.match(/\} = useGoalFlow\(\{([^}]*)\}\);/);
+      assert.ok(goalFlowCall, 'App calls useGoalFlow');
+      assert.match(goalFlowCall[1], /^\s*readerComposedWeek,$/m, 'App passes readerComposedWeek to useGoalFlow');
+      assert.equal((app.match(/\breaderComposedWeek\s*=/g) ?? []).length, 0, 'App composes no week of its own');
       // The programme page: the composed week when it is the reader's plan,
       // otherwise the same options the cards get, so the two agree.
       assert.match(

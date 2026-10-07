@@ -181,6 +181,10 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Easy Run Blocks': 'Kevyet juoksublokit',
   'Tempo Run Blocks': 'Tempojuoksublokit',
   'Stride Finishers': 'Askelkiihdytykset',
+  // The run blocks' stand-ins for an avoided knee or ankle.
+  'Brisk Walk Blocks': 'Reippaat kävelyblokit',
+  'Incline Walk Blocks': 'Ylämäkikävelyblokit',
+  'Stationary Bike Blocks': 'Kuntopyöräblokit',
   'Rowing, Stationary': 'Soutulaite',
   'Bicycling, Stationary': 'Kuntopyörä',
   'Jump Rope': 'Hyppynaru',

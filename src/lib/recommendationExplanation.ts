@@ -3,6 +3,7 @@ import { resolveProgramTrainingDays } from './programTrainingDays';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import { getFocusAreaLabel } from './focusAreaPresentation';
 import { I18nKey, t } from './i18n';
+import type { RunStandInKind } from './cautionExerciseFilter';
 import type {
   AppLanguage,
   SetupEquipment,
@@ -17,6 +18,12 @@ export interface RecommendationReasonOptions {
   mismatchNote?: string | null;
   /** Bug hunt, 2026-10-04: these lines were English whatever the app language. */
   language?: AppLanguage;
+  /**
+   * What the programme's runs became for the reader's knee or ankle flag, if
+   * anything: "Run work with mobility." sat over a week of brisk walks (bug
+   * hunt, 2026-10-07, #35).
+   */
+  runStandIn?: RunStandInKind | null;
 }
 
 const WEEKDAY_ORDER: SetupWeekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -163,6 +170,7 @@ function buildWeightTargetReason(
 function buildGoalSpecificReason(
   selection: Pick<FirstRunSetupSelection, 'goal' | 'secondaryOutcomes'>,
   language: AppLanguage,
+  runStandIn: RunStandInKind | null = null,
 ) {
   if (selection.goal === 'strength' && selection.secondaryOutcomes.includes('muscle')) {
     return t(language, 'recExp.why.strengthMuscle');
@@ -193,7 +201,10 @@ function buildGoalSpecificReason(
   }
 
   if (selection.goal === 'run_mobility') {
-    return t(language, 'recExp.why.runMobility');
+    return t(
+      language,
+      runStandIn === 'ride' ? 'recExp.why.rideMobility' : runStandIn === 'walk' ? 'recExp.why.walkMobility' : 'recExp.why.runMobility',
+    );
   }
 
   return null;
@@ -273,7 +284,7 @@ export function buildRecommendationReasonLines(
   );
   const focusSummary = formatFocusAreaList(selection.focusAreas, language);
   const weightTargetReason = buildWeightTargetReason(selection, language);
-  const goalSpecificReason = buildGoalSpecificReason(selection, language);
+  const goalSpecificReason = buildGoalSpecificReason(selection, language, options.runStandIn ?? null);
 
   reasons.push(
     t(language, projectedDays === 1 ? 'recExp.daysOne' : 'recExp.days', {

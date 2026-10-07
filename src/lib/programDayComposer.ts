@@ -2,7 +2,12 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
-import { applyCautionFlagsToExercises, CautionExerciseSwap } from './cautionExerciseFilter';
+import {
+  applyCautionFlagsToExercises,
+  CautionExerciseSwap,
+  runStandInKindOf,
+  sessionNameAfterRunStandIn,
+} from './cautionExerciseFilter';
 import { applyEquipmentToExercises, isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
@@ -253,7 +258,11 @@ export function composeProgramWeekForSelection(
       cautionRemoved.push(...adjusted.removed);
       cautionSwapped.push(...adjusted.swapped);
 
-      return { ...session, exercises: adjusted.exercises };
+      // A run day whose runs became walks (or rides) is named for them.
+      const standInKind = adjusted.swapped.map((swap) => runStandInKindOf(swap.to)).find(Boolean) ?? null;
+      const name = standInKind ? sessionNameAfterRunStandIn(session.name, standInKind) : session.name;
+
+      return { ...session, name, exercises: adjusted.exercises };
     });
 
   // A day the filters emptied is refilled, not dropped: the chosen day count

@@ -1,5 +1,6 @@
 import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
+import { focusProgrammeLosesItsPoint, splitsReaderWeek } from './recommendationWeekFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -44,8 +45,22 @@ const GEAR_USE_WEIGHT = 12;
  * A programme that leaves the reader's barbell or dumbbells unused while one
  * that serves their goal uses them: two days' difference, so the geared week a
  * day or two off still wins (review, 2026-10-05).
+ *
+ * A point over two days, because at exactly two the two tied and pool order
+ * decided: a two-day dumbbell owner who wants muscle got the bodyweight full
+ * body over the dumbbell upper/lower, whose Upper and Lower days are the
+ * two-day week the owner asked for (2026-10-07, #34).
  */
-const IGNORES_OWNED_LOAD = 20;
+const IGNORES_OWNED_LOAD = 21;
+
+/**
+ * A split cut down to a short week, against a programme that fits it: more
+ * than a wrong level or a wrong-goal backup costs, so a two-day reader gets a
+ * two-day full-body or upper/lower week whenever the pool has one, and the
+ * split only when nothing else serves (owner, 2026-10-07, #34).
+ */
+const SHORT_WEEK_SPLIT = 40;
+
 
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
@@ -116,6 +131,11 @@ function pickClosestWithPenalty(
     }
     if (ignoringLoad.has(definition.programId)) {
       penalty += IGNORES_OWNED_LOAD;
+    }
+    if (splitsReaderWeek(definition, input)) {
+      // Push and Pull of a three-day push/pull/legs were a two-day reader's
+      // whole muscle week (bug hunt, 2026-10-07, #34).
+      penalty += SHORT_WEEK_SPLIT;
     }
     if (penalty < bestPenalty) {
       best = definition;
@@ -319,7 +339,16 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   // and the big splits already carry the focus emphasis.
   if (input.goal === 'muscle' && input.level !== 'beginner' && input.daysPerWeek <= 4) {
     const focusProgramId = input.focusAreas.map((area) => FOCUS_PROGRAM_BY_AREA[area]).find(Boolean);
-    const primary = focusProgramId ? byId(focusProgramId) : null;
+    const focusProgram = focusProgramId ? byId(focusProgramId) : null;
+    // Not a block the reader's week or flags take apart: two of its three
+    // days are the area, and at two days a week one week holds no legs; with
+    // elbows avoided the arms days were a lateral raise each, under "trains
+    // your focus area twice a week" (bug hunt, 2026-10-07, #34, #35). The
+    // muscle lane below picks then, and the focus emphasis still adds to it.
+    const primary =
+      focusProgram && !splitsReaderWeek(focusProgram, input) && !focusProgrammeLosesItsPoint(focusProgram.programId, input)
+        ? focusProgram
+        : null;
     if (primary) {
       const alternative = pickClosest(
         programs.filter((definition) => definition.familyId === 'mass_hypertrophy' && definition.supportedGoals.includes('muscle')),
