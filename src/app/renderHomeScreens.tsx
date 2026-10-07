@@ -360,6 +360,14 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
             coachDemoMomentsUsed: markCoachDemoMomentUsed(preferences.coachDemoMomentsUsed, key),
           });
         }}
+        intent={route.intent ?? null}
+        onIntentConsumed={() => {
+          // Replace, for the reasons onDemoQuestionSent gives above: the
+          // intent is on the route, so leaving it there would start the
+          // questions again on a remount or a Back onto this chat.
+          replaceRoute({ tab: 'home', screen: 'ai_chat' });
+        }}
+        intakePreferences={preferences}
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
         sessionCount={database.workoutSessions.length}

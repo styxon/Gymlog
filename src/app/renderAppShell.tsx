@@ -235,7 +235,7 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
         // earlier "the chat, for everyone" call: the gate had moved onto the
         // act of composing, and the row went to the chat for anyone.
         onAiAssisted={() =>
-          navigate({ tab: 'home', screen: 'ai_chat' })
+          navigate({ tab: 'home', screen: 'ai_chat', intent: 'new_program' })
         }
         onBuildYourself={() => navigate({ tab: 'workout', screen: 'template' })}
         onImportProgram={async (draft) => {

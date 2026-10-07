@@ -7,6 +7,7 @@ import { AICoachPlanSchema } from '../types/aiCoachPlan';
 import {
   AiPlannerDaysPerWeek,
   AiPlannerEquipment,
+  AiPlannerExperience,
   AiPlannerGoal,
   AppPreferences,
   ExerciseLibraryItem,
@@ -59,6 +60,12 @@ export interface ProgrammeBriefSignals {
   sessionMinutes: number | null;
   goal: AiPlannerGoal | null;
   equipment: AiPlannerEquipment | null;
+  /**
+   * Only from a labelled sentence ("Kokemus: 1–3 vuotta"), which is how the
+   * frame questions write it (lib/programIntake). Read loosely from free
+   * prose, "vuosi" or "years" means too many things to trust.
+   */
+  experience: AiPlannerExperience | null;
   /** Canonical lift names the brief asked for ("Bench Press"). */
   lifts: string[];
   /** Setup focus areas the brief leans towards ('chest', 'arms'). */
@@ -240,8 +247,30 @@ function parseMinutes(brief: string): number | null {
   return Number.isFinite(minutes) && minutes >= 15 && minutes <= 180 ? minutes : null;
 }
 
+/**
+ * The text after a label such as "Tavoite:", up to the end of its sentence,
+ * or null when the brief has no such label.
+ *
+ * The frame questions write each tapped answer under a label, and the free
+ * text the reader adds goes after them. Read across the whole brief, a word
+ * in that free text could outrank the tapped answer — the goal and equipment
+ * readers below go by keyword priority, not position, so "haluan vahvat
+ * jalat" turned a tapped Lihasmassa into strength. A labelled answer is read
+ * first, on its own.
+ */
+function labelledFragment(brief: string, labels: readonly string[]): string | null {
+  const match = brief.match(new RegExp(`(?:^|[.!?\\n]\\s*)(?:${labels.join('|')})\\s*:\\s*([^.!?\\n]+)`, 'i'));
+  return match ? match[1] : null;
+}
+
 function parseGoal(brief: string): AiPlannerGoal | null {
-  const lower = brief.toLowerCase();
+  const labelled = labelledFragment(brief, ['tavoite', 'goal']);
+  const fromLabel = labelled === null ? null : readGoal(labelled);
+  return fromLabel ?? readGoal(brief);
+}
+
+function readGoal(text: string): AiPlannerGoal | null {
+  const lower = text.toLowerCase();
   if (/rasva|laihdu|painonpudo|pudottaa|kiinte|fat|lean|cut\b|lose weight/.test(lower)) {
     return 'fat_loss';
   }
@@ -258,7 +287,13 @@ function parseGoal(brief: string): AiPlannerGoal | null {
 }
 
 function parseEquipment(brief: string): AiPlannerEquipment | null {
-  const lower = brief.toLowerCase();
+  const labelled = labelledFragment(brief, ['paikka', 'where']);
+  const fromLabel = labelled === null ? null : readEquipment(labelled);
+  return fromLabel ?? readEquipment(brief);
+}
+
+function readEquipment(text: string): AiPlannerEquipment | null {
+  const lower = text.toLowerCase();
   if (/kehonpaino|ilman välineitä|ei välineitä|bodyweight|no equipment|calisthenic/.test(lower)) {
     return 'bodyweight';
   }
@@ -270,6 +305,28 @@ function parseEquipment(brief: string): AiPlannerEquipment | null {
   }
   if (/salilla|sali\b|kuntosali|gym/.test(lower)) {
     return 'full_gym';
+  }
+  return null;
+}
+
+function parseExperience(brief: string): AiPlannerExperience | null {
+  const labelled = labelledFragment(brief, ['kokemus', 'experience']);
+  if (labelled === null) {
+    return null;
+  }
+  // Only the unambiguous forms, read from the start of the fragment. A loose
+  // match read "yli vuoden" (more than ONE year) and "en ole kokenut" (not
+  // experienced) as advanced, and "discovered" as "over". Anything else is
+  // no signal, and the stored level stands.
+  const lower = labelled.trim().toLowerCase();
+  if (/^(?:alle|under|less than)\s+(?:a\s+|1\s+|yksi\s+|yhden\s+)?(?:vuo|year)/.test(lower)) {
+    return 'beginner';
+  }
+  if (/^1\s*[–—-]\s*3(?:\s|$)/.test(lower)) {
+    return 'intermediate';
+  }
+  if (/^(?:yli|over|more than)\s+(?:3|kolme)\s/.test(lower) || /^3\s*\+/.test(lower)) {
+    return 'advanced';
   }
   return null;
 }
@@ -334,6 +391,7 @@ export function parseProgrammeBrief(brief: string): ProgrammeBriefSignals {
     sessionMinutes: parseMinutes(brief),
     goal: parseGoal(brief),
     equipment: parseEquipment(brief),
+    experience: parseExperience(brief),
     lifts,
     focusBodyParts,
     cautions,
@@ -366,6 +424,7 @@ export function applyBriefToPreferences(
     aiPlannerDaysPerWeek: signals.daysPerWeek ?? preferences.aiPlannerDaysPerWeek,
     aiPlannerSessionMinutes: signals.sessionMinutes ?? preferences.aiPlannerSessionMinutes,
     aiPlannerEquipment: signals.equipment ?? preferences.aiPlannerEquipment,
+    aiPlannerExperience: signals.experience ?? preferences.aiPlannerExperience,
     aiPlannerMustInclude: mustInclude.join(', '),
     aiPlannerAvoid: signals.avoidTerms.join(', '),
     aiPlannerLimitations: signals.cautions.join(', '),

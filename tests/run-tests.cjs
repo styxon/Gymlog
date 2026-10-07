@@ -210,6 +210,7 @@ const suites = [
   ...require('./lib/goalProgramme.test.cjs'),
   ...require('./lib/liftIdentity.test.cjs'),
   ...require('./lib/programmeBrief.test.cjs'),
+  ...require('./lib/programIntake.test.cjs'),
   ...require('./lib/widgetPayload.test.cjs'),
   ...require('./lib/widgetResources.test.cjs'),
   ...require('./lib/theming.test.cjs'),
