@@ -42,17 +42,15 @@ type CrisisSlots = readonly (readonly string[])[];
  * 2026-10-07). So do a bracket, a double quote and an emoji: "I want to end
  * it 😭 nothing matters" (A6 hunt, 2026-10-07).
  *
- * - `inTheGym`: for a phrase the gym goes on from in too many ways to list,
- *   a reading of the rest of its sentence. "end it with" is followed by
- *   every exercise there is, and a list of them sent "I'll end it with dips"
- *   to the crisis line because dips were not on it (review, 2026-10-07).
- *   What can be listed is what a crisis says there instead: the method.
- * - `unlessThenAsks`: excused when the next sentence asks whether to train.
- *   "I took all my pills, can I lift?" is a daily dose.
+ * - `inTheGym`: a reading of the rest of the sentence that says it is the
+ *   session. Crisis unless it does.
  *
  * `closing` named the crisis and let everything else out, and "I'm going to
  * end it tomorrow" and "I will end it with pills" went past as training (A6
- * hunt, 2026-10-07).
+ * hunt, 2026-10-07). The excuses only ever narrow a crisis to the gym talk
+ * they name: a crisis must never reach the model, and a sentence that could
+ * be either gets the line (owner's call, 2026-10-07). A false alarm costs one
+ * answer; a missed crisis is not a cost this file may take.
  */
 type CrisisPattern =
   | CrisisSlots
@@ -61,7 +59,6 @@ type CrisisPattern =
       unlessFollowedBy?: readonly string[];
       closing?: true;
       inTheGym?: (rest: readonly CrisisWord[]) => boolean;
-      unlessThenAsks?: true;
     };
 
 // Shared slots. Each list holds the forms a reader types, not a grammar.
@@ -102,15 +99,19 @@ const EN_THINKING = ['thinking about', 'think about', 'thought about', 'thinking
 /** Words that only say when, read past before what "end it" goes on with. */
 const END_IT_WHEN = new Set(['now', 'today', 'tonight', 'tomorrow', 'soon', 'then']);
 
-/** What a crisis ends it with: "with pills", "with a rope", "with my dad's gun". */
-const END_IT_WITH_METHOD = new Set([
-  'pills', 'pill', 'meds', 'medication', 'medications', 'tablets', 'painkillers', 'overdose', 'od', 'poison', 'bleach',
-  'rope', 'noose', 'gun', 'guns', 'shotgun', 'pistol', 'rifle', 'bullet', 'bullets', 'knife', 'knives', 'blade',
-  'blades', 'razor', 'razors', 'antifreeze',
+/**
+ * What a crisis ends it with or on. Only ever read to overrule a session word
+ * beside it — "with dips and pills" — since a sentence with no session word
+ * is a crisis anyway.
+ */
+const END_IT_METHOD = new Set([
+  'pills', 'pill', 'pillz', 'meds', 'medication', 'medications', 'tablets', 'painkillers', 'overdose', 'od', 'poison',
+  'bleach', 'antifreeze', 'insulin', 'heroin', 'alcohol', 'tylenol', 'paracetamol', 'xanax',
+  'rope', 'noose', 'belt', 'cord', 'scarf', 'bag', 'gun', 'guns', 'gunshot', 'handgun', 'shotgun', 'pistol', 'revolver',
+  'rifle', 'bullet', 'bullets', 'shot', 'knife', 'knives', 'blade', 'blades', 'razor', 'razors', 'monoxide', 'car',
+  'train', 'traffic', 'tracks', 'track', 'railway', 'railroad', 'rails', 'bridge', 'roof', 'rooftop', 'ledge', 'cliff',
+  'balcony', 'highway', 'motorway', 'floor', 'window', 'building',
 ]);
-
-/** Where a crisis ends it: "on the tracks", "on a bridge". */
-const END_IT_ON_METHOD = new Set(['tracks', 'railway', 'railroad', 'rails', 'bridge', 'roof', 'rooftop', 'ledge']);
 
 /**
  * Exercises a method word is part of: a jump rope, rope climbs, battle
@@ -120,55 +121,82 @@ const METHOD_EXERCISE_BEFORE = new Set(['jump', 'battle', 'glute', 'hip', 'skipp
 const METHOD_EXERCISE_AFTER = new Set([
   'climb', 'climbs', 'climbing', 'pull', 'pulls', 'pulldown', 'pulldowns', 'pushdown', 'pushdowns', 'curl', 'curls',
   'crunch', 'crunches', 'slam', 'slams', 'wave', 'waves', 'face', 'skipping', 'jumps', 'hold', 'holds', 'march',
-  'marches', 'walk', 'walks',
+  'marches', 'walk', 'walks', 'press', 'presses', 'wipers',
 ]);
 
-/** What a session is counted in: "after 3 sets", "after this round". */
-const END_IT_AFTER_COUNT = new Set([
-  'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'few', 'couple',
-  'set', 'sets', 'round', 'rounds', 'rep', 'reps', 'lap', 'laps', 'minute', 'minutes', 'min', 'mins', 'km',
+/**
+ * The session, as "end it with", "on" and "after" go on into it: "with dips",
+ * "on a PR", "after 3 sets". A closed list, on purpose. 4ff438f1 read
+ * anything that was not a listed method as the session, and "end it with a
+ * gunshot", "on friday" and "after 3 days" went past as training (re-hunt,
+ * 2026-10-07): a method list is never finished, and an exercise this list
+ * misses costs only a false alarm. Not "train", "car" or "bridge", which are
+ * how a crisis says it, nor a bare "minutes", "failure" or "note".
+ */
+const END_IT_SESSION_WORDS = new Set([
+  'set', 'sets', 'superset', 'supersets', 'dropset', 'dropsets', 'rep', 'reps', 'round', 'rounds', 'lap', 'laps', 'km',
+  'miles', 'finisher', 'finishers', 'burnout', 'amrap', 'emom', 'hiit', 'tabata', 'circuit', 'circuits', 'cooldown',
+  'warmup', 'warm-up', 'stretch', 'stretches', 'stretching', 'mobility', 'yoga', 'cardio', 'conditioning', 'core', 'abs',
+  'workout', 'session', 'exercise', 'exercises', 'deload', 'accessories', 'accessory', 'isolation', 'pump', 'pr', 'pb',
+  'rpe', 'sprint', 'sprints', 'run', 'jog', 'rowing', 'bike', 'cycling', 'treadmill', 'elliptical', 'erg', 'stairmaster',
+  'dips', 'dip', 'squat', 'squats', 'deadlift', 'deadlifts', 'bench', 'press', 'presses', 'curl', 'curls', 'row', 'rows',
+  'pullup', 'pullups', 'pull-up', 'pull-ups', 'chinup', 'chinups', 'chin-up', 'chin-ups', 'pushup', 'pushups', 'push-up',
+  'push-ups', 'burpee', 'burpees', 'lunge', 'lunges', 'crunch', 'crunches', 'situp', 'situps', 'sit-up', 'sit-ups',
+  'plank', 'planks', 'raises', 'extensions', 'flyes', 'flies', 'shrugs', 'cleans', 'snatch', 'snatches', 'thruster',
+  'thrusters', 'swings', 'kettlebell', 'kettlebells', 'dumbbell', 'dumbbells', 'barbell', 'pulldown', 'pulldowns',
+  'pushdown', 'pushdowns', 'kickbacks', 'climbers', 'carries', 'farmer', 'farmers', 'glute', 'glutes', 'calves', 'calf',
+  'hamstrings', 'quads', 'biceps', 'triceps', 'arms', 'legs', 'chest', 'shoulders', 'skipping',
 ]);
+
+/** Sessions said in two words: "a heavy single", "a high note". */
+const END_IT_SESSION_PHRASES = [
+  ['heavy', 'single'], ['high', 'note'], ['good', 'note'], ['positive', 'note'], ['strong', 'note'], ['cool', 'down'],
+  ['warm', 'up'], ['box', 'jumps'], ['jumping', 'jacks'],
+];
 
 /** What ends a session and nothing else: "early", "here", "for today". */
 const END_IT_SESSION = [
-  'early', 'earlier', 'sooner', 'there', 'here', 'for today', 'for the day', 'for this session', 'for this week',
+  'early', 'earlier', 'there', 'here', 'for today', 'for the day', 'for this session', 'for this week',
 ];
 
-/** Whether a method word among these names the method, not an exercise. */
-function namesMethod(near: readonly CrisisWord[], methods: ReadonlySet<string>): boolean {
-  return near.some(
-    (token, i) =>
-      methods.has(token.word) &&
-      !METHOD_EXERCISE_BEFORE.has(near[i - 1]?.word ?? '') &&
-      !METHOD_EXERCISE_AFTER.has(near[i + 1]?.word ?? ''),
+/** Whether the word at `i` is a method word, not the exercise it is part of. */
+function namesMethodAt(words: readonly CrisisWord[], i: number): boolean {
+  return (
+    END_IT_METHOD.has(words[i].word) &&
+    !METHOD_EXERCISE_BEFORE.has(words[i - 1]?.word ?? '') &&
+    !METHOD_EXERCISE_AFTER.has(words[i + 1]?.word ?? '')
   );
+}
+
+/** Whether the words from `i` name the session: "dips", "a jump rope", "a high note". */
+function namesSessionAt(words: readonly CrisisWord[], i: number): boolean {
+  if (END_IT_SESSION_WORDS.has(words[i].word)) return true;
+  if (END_IT_SESSION_PHRASES.some((phrase) => startsAt(words, i, phrase))) return true;
+  return END_IT_METHOD.has(words[i].word) && !namesMethodAt(words, i);
 }
 
 /**
  * Whether what follows "end it", in its sentence, ends a session.
  *
- * "with", "on" and "after" go on into the session — "with dips", "on a heavy
- * single", "after 3 sets" — unless a method or a place follows, or "after"
- * counts nothing. Everything else is the crisis: "tomorrow", "for good",
- * "myself", "by jumping", "and be gone". A when is read past: "I'm ending it
- * now with stretching" is a session, "I'm ending it now" is not.
+ * Only these do: "early", "here", "for today" and the like; and "with", "on"
+ * or "after" with a session word among the three words after it — "with
+ * dips", "with a heavy single", "on a PR", "after 3 sets", "after squats" —
+ * and no method anywhere after it. Everything else is the crisis:
+ * "tomorrow", "for good", "on friday", "with a gunshot", "after 3 days", "by
+ * jumping", "and be gone", and a "with" the sentence ends after ("with 💊").
+ * A when is read past: "I'm ending it now with stretching" is a session,
+ * "I'm ending it now" is not.
  */
 function endsASession(rest: readonly CrisisWord[]): boolean {
   let at = 0;
   while (at < rest.length && END_IT_WHEN.has(rest[at].word)) at += 1;
   const goesOn = rest.slice(at);
   if (goesOn.length === 0) return false;
-  const near = goesOn.slice(1, 6);
-  switch (goesOn[0].word) {
-    case 'with':
-      return !namesMethod(near, END_IT_WITH_METHOD);
-    case 'on':
-      return !namesMethod(near, END_IT_ON_METHOD);
-    case 'after':
-      return near.slice(0, 3).some((token) => /^\d+$/.test(token.word) || END_IT_AFTER_COUNT.has(token.word));
-    default:
-      return END_IT_SESSION.some((session) => startsAt(goesOn, 0, session.split(' ')));
+  if (!['with', 'on', 'after'].includes(goesOn[0].word)) {
+    return END_IT_SESSION.some((session) => startsAt(goesOn, 0, session.split(' ')));
   }
+  if (goesOn.some((_, i) => i > 0 && namesMethodAt(goesOn, i))) return false;
+  return [1, 2, 3].some((i) => i < goesOn.length && namesSessionAt(goesOn, i));
 }
 
 /** The supplements and food a gym "overdoses" on. */
@@ -178,41 +206,19 @@ const OVERDOSE_ON_FOOD = [
 ];
 
 /**
- * Intent to take every pill. Not "need to", "have to" or "should": said of
- * medication they are the prescription — "I need to take all my pills
- * before training" (review, 2026-10-07).
+ * What a reader takes every one of. With "all", "every" or a bottle in front,
+ * none of them is a dose: a routine is said without them — "I take my meds
+ * before training", "otan lääkkeet aamulla" (owner's call, 2026-10-07).
  */
-const PILLS_INTENT = [
-  'want to', 'wanna', 'wanted to', 'wanting to', 'going to', 'gonna', 'plan to', 'planning to', 'ready to', 'about to',
+const EN_PILLS = [
+  'pills', 'pill', 'meds', 'medication', 'medications', 'medicine', 'sleeping pills', 'painkillers', 'pain killers',
+  'tablets', 'antidepressants', 'tylenol', 'paracetamol', 'ibuprofen', 'advil', 'aspirin', 'xanax', 'insulin',
 ];
 
-/**
- * When and how a daily dose is taken. Not "today" after an intent: "I'm
- * going to take all my pills today" is not a dose.
- */
-const PILLS_ON_SCHEDULE = [
-  'in the morning', 'this morning', 'in the evening', 'before', 'after', 'with food', 'with breakfast',
-  'with my breakfast', 'with lunch', 'with dinner', 'with a meal', 'with meals', 'every day', 'everyday', 'each day',
-  'daily', 'as prescribed', 'on time', 'as usual', 'as normal', 'like normal', 'normally', 'like always',
+const EN_SWALLOW = [
+  'take', 'taking', 'took', 'taken', 'swallow', 'swallowing', 'swallowed', 'pop', 'popping', 'popped', 'down',
+  'downing', 'downed',
 ];
-
-/** A question whether to train, in either language: "can I lift?", "voinko treenata?". */
-const ASKS_LEAD = [
-  'can i', 'could i', 'should i', 'may i', 'do i', 'is it ok', 'is it okay', 'is it safe', 'is that ok', 'is that okay',
-  'am i ok to', 'am i okay to', 'ok to', 'okay to', 'voinko', 'saanko', 'pitäisikö', 'kannattaako', 'voiko',
-];
-const ASKS_TRAINING = new Set([
-  'lift', 'lifting', 'train', 'training', 'workout', 'work', 'exercise', 'gym', 'run', 'squat', 'bench', 'deadlift',
-  'cardio', 'treenata', 'treenaan', 'treenaamaan', 'salille', 'salilla', 'kuntoilla', 'harjoitella', 'juosta', 'lenkille',
-]);
-
-/** Whether this sentence asks whether to train. */
-function asksToTrain(sentence: readonly CrisisWord[]): boolean {
-  return (
-    ASKS_LEAD.some((lead) => startsAt(sentence, 0, lead.split(' '))) &&
-    sentence.some((token) => ASKS_TRAINING.has(token.word))
-  );
-}
 
 /**
  * Said plainly enough that no training reading survives.
@@ -286,23 +292,19 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     ['heittäydyn', 'heittäytyä', 'heittäytyisin', 'heittäydyin', 'heittäytymään', 'menen', 'meen', 'käyn', 'kävelen', 'jään'],
     ['junan alle', 'auton alle', 'rekan alle', 'bussin alle', 'ratikan alle'],
   ],
-  {
-    slots: [
-      ['otan', 'ottaa', 'ottaisin', 'otin', 'ottamaan', 'syön', 'syödä', 'söin', 'syömään', 'nielen', 'niellä', 'nielin'],
-      ['kaikki'],
-      ['pillerit', 'pillerini', 'lääkkeet', 'lääkkeeni', 'unilääkkeet', 'unilääkkeeni', 'tabletit', 'tablettini', 'särkylääkkeet', 'särkylääkkeeni'],
-    ],
-    // A morning routine names when, or how often.
-    unlessFollowedBy: [
-      'aamulla', 'illalla', 'aamupalalla', 'ruoan kanssa', 'ruuan kanssa', 'ennen', 'jälkeen', 'normaalisti',
-      'joka päivä', 'joka aamu', 'joka ilta', 'päivittäin', 'säännöllisesti', 'niin kuin aina', 'kuten aina',
-    ],
-    unlessThenAsks: true,
-  },
+  // Every pill, whatever comes after it. A routine is said without "kaikki"
+  // ("otan lääkkeet aamulla"); with it, a "when" did not make a routine of
+  // it — "ennen kuin kukaan tulee kotiin" (re-hunt, 2026-10-07).
   [
-    ['otan', 'ottaa', 'otin', 'syön', 'syödä', 'söin', 'nielen', 'niellä', 'nielin'],
-    ['koko purkin', 'purkillisen', 'kourallisen'],
-    ['pillereitä', 'lääkkeitä', 'unilääkkeitä', 'tabletteja', 'särkylääkkeitä'],
+    ['otan', 'ottaa', 'ottaisin', 'otin', 'ottamaan', 'syön', 'syödä', 'söin', 'syömään', 'nielen', 'niellä', 'nielin', 'vedän', 'vetää', 'vedin', 'popsin', 'popsia'],
+    ['kaikki'],
+    ['', 'mun', 'minun', 'ne'],
+    ['pillerit', 'pillerini', 'lääkkeet', 'lääkkeeni', 'unilääkkeet', 'unilääkkeeni', 'tabletit', 'tablettini', 'särkylääkkeet', 'särkylääkkeeni', 'buranat', 'panadolit'],
+  ],
+  [
+    ['otan', 'ottaa', 'otin', 'syön', 'syödä', 'söin', 'nielen', 'niellä', 'nielin', 'vedän', 'vetää', 'vedin', 'popsin', 'popsia'],
+    ['koko purkin', 'koko purkillisen', 'purkillisen', 'kourallisen', 'koko paketin', 'koko pakkauksen', 'koko levyn'],
+    ['pillereitä', 'lääkkeitä', 'unilääkkeitä', 'tabletteja', 'särkylääkkeitä', 'buranaa', 'panadolia', 'parasetamolia', 'ibuprofeenia'],
   ],
   // English. Not "kms": in a training app that is kilometres.
   [['suicide', 'suicidal', 'self-harm', 'self harm']],
@@ -354,28 +356,23 @@ const CRISIS_PATTERNS: readonly CrisisPattern[] = [
     slots: [EN_THINKING, ['poisoning myself', 'overdosing', 'taking an overdose']],
     unlessFollowedBy: OVERDOSE_ON_FOOD,
   },
-  // Every pill is also the daily dose, so these name the intent or the whole
-  // bottle, and a dose said with its when — or followed by "can I lift?" —
-  // is the prescription (review, 2026-10-07).
-  {
-    slots: [
-      PILLS_INTENT,
-      ['', 'just'],
-      ['take all my pills', 'take all the pills', 'take all my sleeping pills', 'swallow all my pills', 'swallow all the pills'],
+  // Every pill, or the whole bottle, whoever says it and whatever follows.
+  // 4ff438f1 let the lead, a "before" clause or a question after it make a
+  // dose of it, and "I'll take all my pills tonight", "...before my parents
+  // get home" and "I took all my pills. should I go to work or the
+  // hospital?" went past (re-hunt, 2026-10-07).
+  [
+    EN_SWALLOW,
+    [
+      'all my', 'all the', 'all of my', 'all of the', 'all', 'every', 'every single', 'every last', 'every one of my',
+      'a bottle of', 'a whole bottle of', 'the whole bottle of', 'my whole bottle of', 'an entire bottle of',
+      'the entire bottle of', 'a full bottle of',
     ],
-    unlessFollowedBy: PILLS_ON_SCHEDULE,
-    unlessThenAsks: true,
-  },
-  {
-    slots: [EN_THINKING, ['taking all my pills', 'taking all the pills', 'swallowing all my pills']],
-    unlessFollowedBy: PILLS_ON_SCHEDULE,
-    unlessThenAsks: true,
-  },
-  {
-    slots: [['took', 'swallowed', 'taken'], ['all my', 'all the', 'all of my', 'a bottle of', 'a whole bottle of', 'the whole bottle of'], ['pills', 'meds', 'medication', 'sleeping pills', 'painkillers', 'tablets']],
-    unlessFollowedBy: [...PILLS_ON_SCHEDULE, 'today', 'for today'],
-    unlessThenAsks: true,
-  },
+    ['', 'my'],
+    EN_PILLS,
+  ],
+  // "I swallowed the whole bottle." Not "the whole bottle of water".
+  { slots: [EN_SWALLOW, ['the whole bottle', 'a whole bottle', 'the entire bottle', 'an entire bottle']], closing: true },
   [['slit', 'slitting', 'cut', 'cutting', 'slice', 'slicing', 'slash', 'slashing', 'open', 'opening'], ['my wrists', 'my wrist', 'my throat', 'my veins']],
   [
     [
@@ -454,14 +451,13 @@ interface CrisisPhrase {
   unless: readonly (readonly string[])[];
   closing: boolean;
   inTheGym: ((rest: readonly CrisisWord[]) => boolean) | null;
-  unlessThenAsks: boolean;
 }
 
 const CRISIS_PHRASES: readonly CrisisPhrase[] = CRISIS_PATTERNS.flatMap((pattern) => {
-  const { slots, unlessFollowedBy = [], closing = false, inTheGym = null, unlessThenAsks = false } =
+  const { slots, unlessFollowedBy = [], closing = false, inTheGym = null } =
     'slots' in pattern ? pattern : { slots: pattern };
   const unless = unlessFollowedBy.map(words);
-  return expand(slots).map((phrase) => ({ phrase, unless, closing, inTheGym, unlessThenAsks }));
+  return expand(slots).map((phrase) => ({ phrase, unless, closing, inTheGym }));
 });
 
 /** A word with its hyphens and apostrophes out: "self-harm" and "selfharm", "don't" and "dont". */
@@ -529,15 +525,39 @@ interface CrisisWord {
 /** No word in either language holds one letter three times running. */
 const HELD_LETTER = /(\p{L})\1\1/u;
 
+/**
+ * The swearing a reader stars out. A star hides the vowel of these, so a
+ * starred word that reads as one is that word wherever its vowel is starred:
+ * "sh*t myself" read as "shot myself" and got the crisis line (re-hunt,
+ * 2026-10-07). Its consonants stay open, so "s**t my wrists" is still "slit".
+ */
+const STARRED_SWEARING = [
+  'shit', 'fuck', 'fucked', 'damn', 'crap', 'piss', 'pissed', 'hell', 'dick', 'cock', 'cunt', 'bitch', 'ass', 'arse',
+  'twat', 'wank', 'paska', 'vittu', 'perkele', 'saatana', 'helvetti',
+];
+
+const VOWEL = /[aeiouyäö]/;
+
+/** Whether a starred word fits a word: as long, and each star one letter. */
+const fits = (typed: string, target: string) =>
+  typed.length === target.length && [...typed].every((letter, i) => letter === '*' || letter === target[i]);
+
 function looseReading(word: string): CrisisWord['loose'] {
   const starred = word.includes('*');
   const held = HELD_LETTER.test(word);
   if (!starred && !held) return null;
   const typed = held ? squeezed(word) : word;
+  const swearing = starred
+    ? STARRED_SWEARING.map((swear) => (held ? squeezed(swear) : swear)).find((swear) => fits(typed, swear))
+    : undefined;
   return (listed) => {
     const target = held ? squeezed(listed) : listed;
     if (!starred) return typed === target;
-    return typed.length === target.length && [...typed].every((letter, i) => letter === '*' || letter === target[i]);
+    if (!fits(typed, target)) return false;
+    return (
+      swearing === undefined ||
+      [...typed].every((letter, i) => letter !== '*' || !VOWEL.test(swearing[i]) || target[i] === swearing[i])
+    );
   };
 }
 
@@ -579,10 +599,8 @@ function sentenceFrom(tokens: readonly CrisisWord[], start: number): readonly Cr
 
 /** Whether a phrase whose last word is `last` says it, given what follows. */
 function settles(tokens: readonly CrisisWord[], last: number, entry: CrisisPhrase): boolean {
-  const { unless, closing, inTheGym, unlessThenAsks } = entry;
-  const rest = tokens[last].closes ? [] : sentenceFrom(tokens, last + 1);
-  if (unlessThenAsks && asksToTrain(sentenceFrom(tokens, last + rest.length + 1))) return false;
-  if (inTheGym) return !inTheGym(rest);
+  const { unless, closing, inTheGym } = entry;
+  if (inTheGym) return !inTheGym(tokens[last].closes ? [] : sentenceFrom(tokens, last + 1));
   if (tokens[last].closes) return true;
   const next = last + 1;
   if (closing) {
