@@ -408,6 +408,7 @@ const suites = [
   ...require('./lib/pickerAuditClassification.test.cjs'),
   ...require('./lib/aiCoachPreview.test.cjs'),
   ...require('./lib/aiCoachScope.test.cjs'),
+  ...require('./lib/aiCoachCrisisPhrases.test.cjs'),
   ...require('./lib/coachChipAnswers.test.cjs'),
   ...require('./lib/displayLabel.test.cjs'),
   ...require('./lib/decimalSeparator.test.cjs'),

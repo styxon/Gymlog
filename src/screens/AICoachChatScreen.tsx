@@ -291,6 +291,12 @@ export interface ChatMessage {
    * vain ottaa lähimpää ohjelmaa mikä vastaa käyttäjän puheita?").
    */
   catalog?: { programId: string; title: string; daysPerWeek: number };
+  /**
+   * A crisis message and its answer. Drawn even under the online notice,
+   * where the rest of the thread is not: the crisis answer is local and is
+   * given before the notice is answered (A6 hunt, 2026-10-07).
+   */
+  crisis?: true;
 }
 
 /** Width of the soft light behind the dark thread's header. */
@@ -382,6 +388,7 @@ export function AICoachChatScreen({
   const sheetInsets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const askToken = useRef(0);
+  const crisisTurn = useRef(0);
   /**
    * The open conversation, in a ref rather than state: `send` must read the
    * exchanges as they are at the moment of sending, and a state value captured
@@ -909,13 +916,9 @@ export function AICoachChatScreen({
      */
     async (prompt: string, force = false) => {
       const trimmed = prompt.trim();
-      if (!trimmed || asking || mustAcknowledgeOnline) {
-        // Nothing leaves the device until the online disclosure is answered.
+      if (!trimmed) {
         return;
       }
-
-      const token = (askToken.current += 1);
-      setDraft('');
 
       /**
        * A reader in trouble is answered first, and here.
@@ -928,16 +931,35 @@ export function AICoachChatScreen({
        * turn is, so the message does not travel with the next question — a
        * client-side check that still posts the text is not the promise it
        * looks like (PR #124 review).
+       *
+       * And before the two waits below, which it needs neither of: a
+       * question still in flight, and the online notice not yet answered.
+       * Behind them a crisis message did nothing at all — no answer, the text
+       * left in the field — for up to the 40 s a request may take, or until
+       * a first-time reader tapped OK (A6 hunt, 2026-10-07). Its ids come
+       * from a count of its own: taking a turn from `askToken` would make the
+       * answer in flight a stale one, dropped when it arrives.
        */
       if (classifyCoachScope(trimmed) === 'crisis') {
+        // Dated too: a thread resumed from memory starts this count again.
+        const turn = `${Date.now()}:${(crisisTurn.current += 1)}`;
+        setDraft('');
         const answer = buildAiCoachPreviewAnswer(trimmed, trainingContext, language);
         setMessages((current) => [
           ...current,
-          { id: `me:${token}`, fromCoach: false, text: trimmed },
-          { id: `coach:${token}`, fromCoach: true, text: answer.takeaway, advice: answer },
+          { id: `me:crisis:${turn}`, fromCoach: false, text: trimmed, crisis: true },
+          { id: `coach:crisis:${turn}`, fromCoach: true, text: answer.takeaway, advice: answer, crisis: true },
         ]);
         return;
       }
+
+      if (asking || mustAcknowledgeOnline) {
+        // Nothing leaves the device until the online disclosure is answered.
+        return;
+      }
+
+      const token = (askToken.current += 1);
+      setDraft('');
 
       // "Kiitos" is answered here. It never reaches the network, so it costs
       // nothing and cannot come back as an analysis with a four-week plan
@@ -1578,8 +1600,12 @@ export function AICoachChatScreen({
               </Svg>
             </Pressable>
           ) : null}
+          </>
+          )}
 
-          {messages.map((message) =>
+          {/* Under the notice, only a crisis answer: it is given before the
+              notice is answered, and an answer nobody can see is not given. */}
+          {(mustAcknowledgeOnline ? messages.filter((message) => message.crisis) : messages).map((message) =>
             // Drawn over the offer rather than in place of it: the offer is
             // still in the thread underneath, so leaving now keeps it.
             composingIds.includes(message.id) ? (
@@ -1795,7 +1821,7 @@ export function AICoachChatScreen({
             ),
           )}
 
-          {asking ? (
+          {asking && !mustAcknowledgeOnline ? (
             <View style={styles.bubbleRow}>
               <View style={[styles.coachBubble, styles.thinkingBubble]}>
                 <ActivityIndicator size="small" color={theme.purple} />
@@ -1803,9 +1829,6 @@ export function AICoachChatScreen({
               </View>
             </View>
           ) : null}
-
-          </>
-          )}
         </ScrollView>
 
         {/* The suggestion rail lives outside the thread's scroll view, so it
