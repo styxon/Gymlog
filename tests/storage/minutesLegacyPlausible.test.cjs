@@ -102,6 +102,10 @@ module.exports = [
         false,
       );
       assert.equal(isMinutesLogEntry(oldLog('Rowing, Stationary', [500], { repsUnit: 'minutes' })), true);
+      // A long ride or hike runs for hours, and nothing on it shows metres.
+      assert.equal(isMinutesLogEntry(oldLog('Bicycling', [150])), true);
+      assert.equal(isMinutesLogEntry(oldLog('Trail Running/Walking', [240])), true);
+      assert.equal(isMinutesLogEntry(oldLog('Trail Running/Walking', [301])), false);
       // A ready programme's own minutes row was prescribed in minutes before the unit.
       assert.equal(isMinutesLogEntry(oldLog('Stairmaster (Moderate)', [200])), true);
       // Not a minutes name at all.
@@ -149,11 +153,12 @@ module.exports = [
         row('b', 'Rowing, Stationary', 'duration_minutes', 20, 1),
         row('c', 'Stairmaster (Moderate)', 'duration_minutes', 200, 2),
         row('d', 'Back Squat', 'load_and_reps', 500, 3),
+        row('e', 'Bicycling', 'duration_minutes', 150, 4),
       ];
       const loaded = database.normalizeDatabase(blob(rows, [MINUTES_MODE_MIGRATION_ID]));
       assert.deepEqual(
         loaded.exerciseTemplates.map((entry) => entry.trackingMode),
-        [null, 'duration_minutes', 'duration_minutes', 'load_and_reps'],
+        [null, 'duration_minutes', 'duration_minutes', 'load_and_reps', 'duration_minutes'],
       );
       assert.ok(loaded.appliedMigrations.includes(IMPLAUSIBLE_MINUTES_UNDO_MIGRATION_ID));
       assert.notEqual(playedModes(loaded)[0], 'duration_minutes');
@@ -179,6 +184,8 @@ module.exports = [
         source,
         /const minutesLift = hasHistory \? logs\.some\(\(log\) => isMinutesLogEntry\(log\)\) : isMinutesExerciseName\(item\.name\);/,
       );
+      assert.match(source, /count: bestMinutes/, 'the best is read from the minutes logs alone');
+      assert.match(source, /\[\.\.\.unitLogs\]\.reverse\(\)/, 'the line plots the minutes logs alone');
       const readouts = fs.readFileSync(path.join(ROOT, 'src/app/usePlanReadouts.tsx'), 'utf8');
       assert.match(readouts, /readsAsMinutesByName\(exercise\.name, \[exercise\.repMin, exercise\.repMax\]\)/);
     },

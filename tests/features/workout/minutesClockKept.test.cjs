@@ -178,6 +178,57 @@ module.exports = [
     },
   },
   {
+    name: 'minutes clock: pausing the workout stops a running bout at the pause, wherever the reader is',
+    run() {
+      const RealDate = Date;
+      let now = T0 + 6 * MIN;
+      global.Date = class extends RealDate {
+        constructor(...args) {
+          if (args.length === 0) super(now);
+          else super(...args);
+        }
+        static now() {
+          return now;
+        }
+      };
+      try {
+        let state = start();
+        state = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: runningBike(T0, 2 * MIN) } });
+        state = workoutReducer(state, { type: 'session/pause' });
+        assert.deepEqual(
+          stopwatchForSet(state.activeSession.minutesClock, bikeSet),
+          { accumulatedMs: 8 * MIN, runningSinceMs: null },
+          'two minutes before, six since the start: eight, and stopped',
+        );
+        now += 10 * MIN;
+        assert.equal(stopwatchElapsedMs(stopwatchForSet(state.activeSession.minutesClock, bikeSet), now), 8 * MIN, 'the break is not ridden');
+      } finally {
+        global.Date = RealDate;
+      }
+    },
+  },
+  {
+    name: 'minutes clock: skipping or swapping the lift drops its clock, so a bout nobody rides holds no nudge back',
+    run() {
+      for (const action of ['skip', 'swap']) {
+        let state = start();
+        const bike = state.activeSession.exercises[1].slotId;
+        state = workoutReducer(state, {
+          type: 'session/setMinutesClock',
+          payload: { clock: { ...runningBike(T0), slotId: bike } },
+        });
+        state = workoutReducer(
+          state,
+          action === 'skip'
+            ? { type: 'exercise/skip', payload: { slotId: bike } }
+            : { type: 'exercise/swap', payload: { slotId: bike, exerciseName: 'Rowing, Stationary', substitutionGroup: 'cardio', unitPreference: 'kg' } },
+        );
+        assert.equal(state.activeSession.minutesClock ?? null, null, action);
+        assert.equal(minutesBoutDueMs(state.activeSession.minutesClock), null, action);
+      }
+    },
+  },
+  {
     name: 'minutes clock: a session stored before the clock existed, or with a damaged one, opens with none',
     run() {
       const state = start();

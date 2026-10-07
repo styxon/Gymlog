@@ -73,6 +73,18 @@ export function isMinutesExerciseName(name: string | null | undefined): boolean 
 export const LEGACY_MINUTES_PLAUSIBLE_MAX = 120;
 
 /**
+ * Activities done outdoors for hours: a long ride or a hike runs well past two
+ * hours, and nothing on them shows metres to type in. Their line is the dial's
+ * own ceiling (review, 2026-10-07).
+ */
+const LONG_BOUT_NAMES = new Set<string>(['Bicycling', 'Trail Running/Walking', 'Skating'].map(normalize));
+
+/** The most a number written with no unit on this name is believed to be in minutes. */
+function legacyMinutesMaxFor(name: string): number {
+  return LONG_BOUT_NAMES.has(normalize(name)) ? MINUTES_DIAL.max : LEGACY_MINUTES_PLAUSIBLE_MAX;
+}
+
+/**
  * Whether numbers written with no unit, on an exercise with this name, read
  * as minutes.
  *
@@ -96,7 +108,8 @@ export function readsAsMinutesByName(
   if (byProgrammeName.has(normalize(name as string))) {
     return true;
   }
-  return counts.every((count) => !Number.isFinite(count) || count <= LEGACY_MINUTES_PLAUSIBLE_MAX);
+  const max = legacyMinutesMaxFor(name as string);
+  return counts.every((count) => !Number.isFinite(count) || count <= max);
 }
 
 /** The numbers a stored log wrote per set: its sets' when it has them, else repsPerSet. */
