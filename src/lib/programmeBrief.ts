@@ -433,11 +433,22 @@ const REFUSAL_WORDS = new Set([
   'no', 'not', 'without', 'avoid', 'never', 'skip', 'except', "don't", 'dont',
 ]);
 
+/**
+ * Words that turn a clause round, so a refusal before them does not reach
+ * past them: "ei koneita vaan strongman" asks for strongman — the usual
+ * Finnish way to — and so does "no machines but strongman" (CI review of
+ * #332, 2026-10-07). Not "ja" / "and": "ilman koneita ja strongmania" refuses
+ * both.
+ */
+const CONTRAST_WORDS = new Set(['vaan', 'mutta', 'but', 'instead', 'rather']);
+
 /** Whether some mention matched by `pattern` is not refused by a word just before it. */
 function asksFor(text: string, pattern: RegExp): boolean {
   for (const match of text.matchAll(pattern)) {
     const clause = text.slice(0, match.index).split(/[.,;:!?\n]/).pop() ?? '';
-    const before = clause.split(/\s+/).filter(Boolean).slice(-3);
+    const words = clause.split(/\s+/).filter(Boolean);
+    const turn = words.reduce((last, word, index) => (CONTRAST_WORDS.has(word) ? index : last), -1);
+    const before = words.slice(turn + 1).slice(-3);
     if (!before.some((word) => REFUSAL_WORDS.has(word.replace(/[’']/g, "'")))) {
       return true;
     }

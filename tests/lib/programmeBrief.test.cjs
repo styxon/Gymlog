@@ -285,6 +285,14 @@ module.exports = [
       // An emphatic request is still a request.
       const only = resolveLiveProposal(raw, 'nothing but strongman, 4 days', seeded, 120);
       assert.deepEqual(only.specialtyLeftOut, []);
+      // "ei X vaan Y" asks for Y: the refusal stops at the turn (CI review of
+      // #332, 2026-10-07) — and the other way round it still refuses.
+      for (const request of ['ei koneita vaan strongman', 'no machines but strongman', 'en halua koneita, mutta strongmania kyllä']) {
+        assert.deepEqual(resolveLiveProposal(raw, request, seeded, 120).specialtyLeftOut, [], request);
+      }
+      for (const refusal of ['ei strongmania vaan koneita', 'no strongman but machines', 'ilman koneita ja strongmania']) {
+        assert.deepEqual(resolveLiveProposal(raw, refusal, seeded, 120).specialtyLeftOut, ['Atlas Stones', 'Car Deadlift'], refusal);
+      }
 
       // The card says what it left out, and the model is told not to.
       const card = fs.readFileSync(path.join(__dirname, '../../src/components/ProgrammeProposalCard.tsx'), 'utf8');
