@@ -129,7 +129,14 @@ module.exports = [
       const guard = purchase.indexOf('if (!isDemoBuild()) {');
       const write = purchase.indexOf('mockSubscriptionPurchasedAt: new Date().toISOString()');
       assert.ok(guard > 0 && guard < write, 'the invented purchase is written outside the demo build');
-      assert.match(purchase.slice(guard, write), /showToast\(t\(preferences\.appLanguage, 'premium\.purchaseUnavailable'\)\);\s*return;/);
+      // Outside the demo the branch buys from the store and returns before
+      // the invented write in every case: the record it writes is the
+      // store's answer, and a store with no Pro to give says so.
+      const release = purchase.slice(guard, write);
+      assert.match(release, /const outcome = await purchaseStorePlan\(plan\);/);
+      assert.match(release, /const record = purchaseRecordFromStore\(outcome\.customer, preferences\);/);
+      assert.match(release, /'premium\.purchaseUnavailable'/);
+      assert.match(release, /if \(await turnProOn\(record\)\) \{[\s\S]*?\}\s*return;\s*\}\s*const purchased = await turnProOn\(\{\s*$/);
 
       const premium = read('src', 'screens', 'PremiumScreen.tsx');
       assert.match(premium, /const trialOffered = PRO_TRIAL_ENABLED && trialAvailable;/);

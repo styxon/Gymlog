@@ -33,6 +33,12 @@ interface MembershipEndScreenProps {
   onKeep: () => void;
   /** Ends Pro. Only offered when the app can actually do it. */
   onEndNow: () => void;
+  /**
+   * A store subscription: ending it happens in the store, so the end line
+   * opens it there and the splash and survey do not run — the splash says the
+   * membership ended, and at this tap it has not.
+   */
+  onEndInStore?: () => void;
   /** Stores the cancel reasons. Local only — there is no server to send to. */
   onSurveyDone: (reasons: CancelReasonKey[], note: string) => void;
 }
@@ -65,6 +71,7 @@ export function MembershipEndScreen({
   onBack,
   onKeep,
   onEndNow,
+  onEndInStore,
   onSurveyDone,
 }: MembershipEndScreenProps) {
   const theme = useTheme();
@@ -184,7 +191,7 @@ export function MembershipEndScreen({
         {plan.canEndNow ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setStep('splash')}
+            onPress={onEndInStore ?? (() => setStep('splash'))}
             hitSlop={8}
             style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
           >

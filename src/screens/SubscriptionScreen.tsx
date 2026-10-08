@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -38,6 +38,11 @@ interface SubscriptionScreenProps {
   onChangeMockCancelled: (cancelled: boolean) => void;
   /** False in a real release: every invented billing row disappears. */
   demoBuild: boolean;
+  /**
+   * Asks the store for the reader's purchases. Absent when this build has no
+   * store, and the Restore row then opens the store's subscription page.
+   */
+  onRestorePurchases?: () => Promise<void>;
   language?: AppLanguage;
   onBack: () => void;
   /** Opens the end-membership page. */
@@ -109,6 +114,7 @@ export function SubscriptionScreen({
   onChangeMockTerm,
   onChangeMockCancelled,
   demoBuild,
+  onRestorePurchases,
   language = 'en',
   onBack,
   onManageMembership,
@@ -122,6 +128,22 @@ export function SubscriptionScreen({
   const [sheet, setSheet] = useState<'term' | 'pay' | 'receipts' | 'includes' | null>(null);
   const [payMethod, setPayMethod] = useState<string>(MOCK_BILLING.defaultMethodId);
   const [termDraft, setTermDraft] = useState<SubscriptionTermKey>(mockTerm);
+  // One store round-trip at a time: a second tap while the first is out is
+  // ignored, as the Pro page ignores a second Buy.
+  const restoring = useRef(false);
+  const restore = onRestorePurchases
+    ? async () => {
+        if (restoring.current) {
+          return;
+        }
+        restoring.current = true;
+        try {
+          await onRestorePurchases();
+        } finally {
+          restoring.current = false;
+        }
+      }
+    : null;
 
   const model = resolveSubscriptionView({
     entitlement,
@@ -268,8 +290,20 @@ export function SubscriptionScreen({
         ...method,
       ];
     }
+    // A renewing store subscription: the date is counted from the store's
+    // own period start (lib/storePurchase), and the price is the plan's. No
+    // tap behind it — a plan change is made in the store.
     if (!billing) {
-      return [nothingScheduled];
+      return [
+        {
+          key: 'charge',
+          label: t(language, 'subs.meta.nextCharge'),
+          value: t(language, 'subs.meta.nextChargeValue', {
+            date: date(model.nextChargeAt),
+            price: t(language, term!.priceKey),
+          }),
+        },
+      ];
     }
     return [
       {
@@ -551,8 +585,8 @@ export function SubscriptionScreen({
                     icon="restore"
                     title={t(language, 'subs.row.restore')}
                     sub={t(language, 'subs.row.restoreSub')}
-                    onPress={() =>
-                      void Linking.openURL(manageSubscriptionsUrl(STORE))
+                    onPress={
+                      restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE))
                     }
                     divider
                   />

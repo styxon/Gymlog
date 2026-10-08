@@ -98,14 +98,20 @@ module.exports = [
       assert.match(rows, /const paid: Meta\[\] = billing\s*\?\s*\[\s*\{[^\]]*MOCK_BILLING\.lastChargedAt/);
       assert.equal(countIn(rows, 'MOCK_BILLING.methods'), 1);
       assert.equal(countIn(rows, 'MOCK_BILLING.lastChargedAt'), 1);
-      // The counted charge and the join date come only after a release build
-      // has already returned.
-      const releaseReturn = rows.indexOf('if (!billing) {\n      return [nothingScheduled];');
-      assert.ok(releaseReturn > 0, 'a release build returns before the charge row');
-      for (const needle of ["'subs.meta.nextChargeValue'", 'MOCK_BILLING.memberSince']) {
-        assert.equal(countIn(rows, needle), 1, needle);
-        assert.ok(rows.indexOf(needle) > releaseReturn, `${needle} must come after the release return`);
-      }
+      // A release build returns before the join date and the card. What it
+      // shows is the next charge counted from the store's period start
+      // (lib/storePurchase), with no tap behind it — since 2026-10-08 a
+      // release build has a store, and "none scheduled" under a renewing
+      // subscription was false.
+      const releaseReturn = rows.indexOf('if (!billing) {\n      return [');
+      assert.ok(releaseReturn > 0, 'a release build returns before the demo rows');
+      const releaseEnd = rows.indexOf('];', releaseReturn);
+      const release = rows.slice(releaseReturn, releaseEnd);
+      assert.doesNotMatch(release, /MOCK_BILLING|onPress/);
+      assert.equal(countIn(release, "'subs.meta.nextChargeValue'"), 1);
+      assert.equal(countIn(rows, "'subs.meta.nextChargeValue'"), 2);
+      assert.equal(countIn(rows, 'MOCK_BILLING.memberSince'), 1);
+      assert.ok(rows.indexOf('MOCK_BILLING.memberSince') > releaseEnd, 'the join date must come after the release return');
 
       // And the card renders the list, not hand-written rows beside it.
       const statusCard = between(screen, 'styles.statusCard', "model.state === 'active' ? (");
