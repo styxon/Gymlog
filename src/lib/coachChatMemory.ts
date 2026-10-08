@@ -19,6 +19,7 @@
  */
 
 import { AICoachConversationTurn } from '../types/aiCoach';
+import { withoutCoachCrisisTurns } from './coachCrisisTurn';
 
 /** A training day. Come back tomorrow and the coach starts fresh. */
 export const COACH_CHAT_MEMORY_MS = 8 * 60 * 60 * 1000;
@@ -61,5 +62,11 @@ export function resumeCoachChat<TMessage>(
     return null;
   }
 
-  return memory;
+  // The thread is drawn as it was, crisis answer included, but no crisis turn
+  // goes back to the model as history. The chat does not append them, and
+  // this is the second check: a kept turn rides along with every question
+  // for as long as the thread is open (F1 crisis hunt, 2026-10-08). Only the
+  // turns the crisis answer closed: one the coach answered live stays, even
+  // when today's filter reads its question as a crisis (review, 2026-10-08).
+  return { ...memory, turns: withoutCoachCrisisTurns(Array.isArray(memory.turns) ? memory.turns : []) };
 }

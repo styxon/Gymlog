@@ -13,9 +13,13 @@ import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
-import { composeProgramWeekForSelection } from '../lib/programDayComposer';
-import { findHeldReadyProgrammeCopyId, findReadyProgrammeCopyId } from '../lib/programmeCopyLink';
-import { buildCustomProgramDetail, buildReadyProgramDetail, composedWeekMatchesPlan, readyProgramSessionMinutes } from '../lib/programDetails';
+import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
+import {
+  buildCustomProgramDetail,
+  buildReadyProgramDetail,
+  readyProgramSessionMinutes,
+  resolveReaderComposedWeek,
+} from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
 import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programmeLineageIds } from '../lib/programLineage';
@@ -34,6 +38,7 @@ import { toggleTechniqueStatement } from '../lib/exerciseLearning';
 import { getExerciseProgressForName, SameLiftMatcher } from '../lib/progression';
 import { catalogLevelForSetup } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
+import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
 import { AdaptedSessionRef, SessionAdaptation, withSessionSwap } from '../lib/sessionAdaptation';
 import { isReaderNamedSession } from '../lib/sessionNameLabel';
@@ -91,7 +96,11 @@ export interface WorkoutTabDeps {
   setPlanTrainingCycle: (planId: string, cycle: TrainingCycle | null) => Promise<void>;
   unitPreference: UnitPreference;
   database: AppDatabase;
-  workout: { templates: Parameters<typeof resolveProgramAffinity>[1] };
+  workout: {
+    templates: Parameters<typeof resolveProgramAffinity>[1];
+    /** The workout running or paused, if any: a day's held swap cannot reach it. */
+    activeSession: Parameters<typeof isWorkoutInProgressFor>[0];
+  };
   /** The freestyle session in flight, from the workout provider — see FreestyleDraftSnapshot. */
   freestyleDraft: React.ComponentProps<typeof EmptyWorkoutScreen>['freestyleDraft'];
   saveFreestyleDraft: NonNullable<React.ComponentProps<typeof EmptyWorkoutScreen>['onSaveDraft']>;
@@ -378,36 +387,15 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
    * programme is adopted, the plan's days are the truth; before that, the
    * composed week is what the reader was shown and promised.
    */
-  const resolveComposedWeekForRoute = (workoutTemplateId: string) => {
-    if (preferences.recommendedProgramId !== workoutTemplateId || !setupSelection) {
-      return null;
-    }
-    /*
-     * And only while the composed week is the only version of it.
-     *
-     * Onboarding saves what it composed as a programme of the reader's own,
-     * and that copy is what they train. This page is the catalog
-     * programme's page: its day editor and its adopt button work on the
-     * original. Showing the copy's week here made a page whose days and
-     * whose buttons disagreed — the reader tapped a day they had been
-     * shown on Home and edited something else (audit round 4, 2026-09-20).
-     * The copy has a page of its own, which is where its week belongs.
-     */
-    if (findReadyProgrammeCopyId(workoutTemplateId, database.workoutTemplates)) {
-      return null;
-    }
-    const composed = composeProgramWeekForSelection(setupSelection, workoutTemplateId);
-    if (!composed) {
-      return null;
-    }
-    const planSessionIds = database.workoutPlans
-      .flatMap((plan) => plan.entries)
-      .filter((entry) => entry.workoutTemplateId === workoutTemplateId)
-      .map((entry) => entry.workoutTemplateSessionId);
-    return composedWeekMatchesPlan(composed.sessions.map((session) => session.id), planSessionIds)
-      ? composed
-      : null;
-  };
+  // The rule lives in programDetails, so the Programs card quotes the week
+  // this page draws (bug hunt, 2026-10-07, #37).
+  const resolveComposedWeekForRoute = (workoutTemplateId: string) =>
+    resolveReaderComposedWeek(workoutTemplateId, {
+      recommendedProgramId: preferences.recommendedProgramId,
+      setupSelection,
+      workoutTemplates: database.workoutTemplates,
+      workoutPlans: database.workoutPlans,
+    });
 
   if (route.screen === 'program') {
     const readyTemplate = route.programType === 'ready' ? getWorkoutTemplateById(route.workoutTemplateId) : null;
@@ -425,6 +413,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
             mismatchNote: setupRecommendation.mismatchNote,
             language: preferences.appLanguage,
+            programId: readyTemplate.id,
           }, tailoringPreferences).join(' ')
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);
@@ -852,6 +841,10 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     const dayIndex = daySession ? program!.sessions.findIndex((session) => session.id === route.sessionId) : -1;
     // The same pair the programme page starts this day with.
     const daySessionRef: AdaptedSessionRef = { programId: route.workoutTemplateId, sessionId: route.sessionId };
+    // This day's workout is already running or paused: a swap held here never
+    // reaches it — Resume opens the running workout and applies nothing — so
+    // the rows offer none, as Home's do (bug hunt 2026-10-07, finding 9).
+    const dayIsRunning = isWorkoutInProgressFor(workout.activeSession, route.workoutTemplateId, route.sessionId);
 
     return program && daySession ? (
       <ProgramDayScreen
@@ -873,8 +866,16 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // Held for this day of this programme: slot ids repeat across days,
         // so a swap made here is not an answer about any other day.
         sessionSwaps={sessionAdaptationFor(daySessionRef).swaps}
-        onSwapExercise={(slotId, exerciseName) =>
-          adaptSession(daySessionRef, (current) => withSessionSwap(current, slotId, exerciseName))
+        // The programme's own lift picked back undoes the swap (withSessionSwap).
+        onSwapExercise={dayIsRunning ? undefined : (slotId, exerciseName) =>
+          adaptSession(daySessionRef, (current) =>
+            withSessionSwap(
+              current,
+              slotId,
+              exerciseName,
+              daySession.exercises.find((exercise) => exercise.slotId === slotId)?.name,
+            ),
+          )
         }
         exerciseLibrary={exerciseBrowserItems}
         recentExerciseLibraryItems={recentExerciseBrowserItems}
@@ -1085,6 +1086,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     return (
       <GuidedPlayerScreen
         keepScreenAwake={preferences.keepScreenAwakeDuringWorkout}
+        defaultRestSeconds={preferences.defaultRestSeconds}
         unitPreference={unitPreference}
         availableEquipment={availableEquipmentForDrills}
         routineDrillOverrides={preferences.routineDrillOverrides}

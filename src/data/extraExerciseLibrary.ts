@@ -1512,4 +1512,76 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       'Walk back to the start and recover fully before the next stride.',
     ],
   },
+  {
+    // The three stand-ins for a run block when the reader avoids their knees
+    // or ankles (cautionExerciseFilter, RUN_STAND_INS). The composer hands
+    // them out, so each needs a row: steps, a Finnish name, and minutes.
+    id: 'extra_brisk_walk_blocks',
+    name: 'Brisk Walk Blocks',
+    category: 'cardio',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    sourceEquipment: 'body only',
+    sourceCategory: 'cardio',
+    sourceLevel: 'beginner',
+    primaryMuscles: ['quadriceps'],
+    secondaryMuscles: ['calves', 'glutes', 'hamstrings'],
+    instructions: [
+      'Start with a few minutes of easy walking on flat ground.',
+      'Walk each block briskly: arms swinging, breathing quicker, still able to talk in short sentences. The number on each set is the length of the block in minutes.',
+      'Slow to an easy stroll between blocks for the rest your programme gives, then pick the pace up again.',
+    ],
+  },
+  {
+    id: 'extra_incline_walk_blocks',
+    name: 'Incline Walk Blocks',
+    category: 'cardio',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    sourceEquipment: 'body only',
+    sourceCategory: 'cardio',
+    sourceLevel: 'beginner',
+    primaryMuscles: ['quadriceps'],
+    secondaryMuscles: ['calves', 'glutes', 'hamstrings'],
+    instructions: [
+      'Find a steady hill, or set a treadmill to a gradient you can walk without holding the rails, and warm up with a few minutes of easy walking.',
+      'Walk each block uphill at a pace that feels comfortably hard: breathing deep and quick, a few words at a time. The number on each set is the length of the block in minutes.',
+      'Walk easily on the flat or back down between blocks for the rest your programme gives.',
+    ],
+  },
+  {
+    id: 'extra_stationary_bike_blocks',
+    name: 'Stationary Bike Blocks',
+    category: 'cardio',
+    bodyPart: 'legs',
+    equipment: 'machine',
+    sourceEquipment: 'machine',
+    sourceCategory: 'cardio',
+    sourceLevel: 'beginner',
+    primaryMuscles: ['quadriceps'],
+    secondaryMuscles: ['calves', 'glutes', 'hamstrings'],
+    instructions: [
+      'Set the saddle so your knee stays slightly bent at the bottom of the pedal stroke, and pedal easily for a few minutes to warm up.',
+      'Ride each block at the effort the day asks for: conversational on an easy day, comfortably hard on a tempo day. The number on each set is the length of the block in minutes.',
+      'Pedal slowly between blocks for the rest your programme gives, then start the next one.',
+    ],
+  },
+  {
+    // The careful-shoulders swap for an overhead press. It named this lift,
+    // and the library had no row for it: no steps, and nothing for the
+    // equipment check to read (bug hunt, 2026-10-07).
+    id: 'extra_landmine_press',
+    name: 'Landmine Press',
+    category: 'compound',
+    bodyPart: 'shoulders',
+    equipment: 'barbell',
+    sourceCategory: 'strength',
+    primaryMuscles: ['shoulders'],
+    secondaryMuscles: ['chest', 'triceps'],
+    instructions: [
+      'Set one end of a barbell in a landmine attachment or a corner and load the other end. Stand facing it and hold the loaded end at your shoulder in one hand.',
+      'Brace your trunk and press the bar up and forward until the arm is straight. The bar moves on an arc in front of you, so the shoulder never has to reach straight overhead.',
+      'Lower it back to the shoulder under control. Finish the set, then switch hands.',
+    ],
+  },
 ];

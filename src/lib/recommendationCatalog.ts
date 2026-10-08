@@ -466,3 +466,26 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
 export function getRecommendationProgramDefinition(programId: string) {
   return RECOMMENDATION_PROGRAMS.find((entry) => entry.programId === programId) ?? null;
 }
+
+/**
+ * A week of stretching and nothing else: the joint-friendly family's mobility
+ * and yoga programmes. The supported joint-friendly programme lifts, and its
+ * 'balanced' tag says so.
+ */
+export function isRecoveryOnlyProgram(definition: Pick<RecommendationProgramDefinition, 'familyId' | 'styleTags'>) {
+  return definition.familyId === 'joint_friendly' && !definition.styleTags.includes('balanced');
+}
+
+/**
+ * Whether the reader asked for a recovery week: running and mobility as the
+ * goal, or mobility as an outcome or a focus. Nobody else is handed one as
+ * their programme. "Lose weight" at five days at a gym was given five days of
+ * stretching under "a balanced week that covers strength, condition, and
+ * energy", because the mobility flow fitted the day count (bug hunt,
+ * 2026-10-07).
+ */
+export function readerAskedForRecovery(
+  input: { goal: SetupGoal; secondaryOutcomes: readonly SetupSecondaryOutcome[]; focusAreas: readonly SetupFocusArea[] },
+) {
+  return input.goal === 'run_mobility' || input.secondaryOutcomes.includes('mobility') || input.focusAreas.includes('mobility');
+}

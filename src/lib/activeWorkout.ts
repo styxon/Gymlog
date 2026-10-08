@@ -13,3 +13,24 @@
 export function isWorkoutInProgress(session: { status?: string } | null | undefined): boolean {
   return session != null && session.status !== 'completed';
 }
+
+/**
+ * Whether the workout in progress is this very programme session.
+ *
+ * Home held a swap or a drop for its card's session while that session was
+ * already running, drew it as in force, and Resume never applied it: a held
+ * change reaches a session only when it starts (bug hunt 2026-10-07).
+ */
+export function isWorkoutInProgressFor(
+  session: { status?: string; templateId?: string; templateSessionId?: string | null } | null | undefined,
+  workoutTemplateId: string | null | undefined,
+  sessionId: string | null | undefined,
+): boolean {
+  return (
+    isWorkoutInProgress(session) &&
+    Boolean(workoutTemplateId) &&
+    Boolean(sessionId) &&
+    session?.templateId === workoutTemplateId &&
+    session?.templateSessionId === sessionId
+  );
+}

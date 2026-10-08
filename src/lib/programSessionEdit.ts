@@ -11,7 +11,11 @@
  * edits in a row compose instead of replacing each other.
  */
 
+import type { WorkoutTrackingMode } from '../features/workout/workoutTypes';
+import { isHoldExerciseName } from './holdExercises';
 import { createId } from './ids';
+import { readsAsMinutesByName } from './minutesExercises';
+import { doseAfterSwap, isSameLiftName } from './swapDose';
 import {
   normalizeSupersetGroups,
   setSupersetLink,
@@ -187,6 +191,11 @@ export type ProgramSessionEditOutcome =
    */
   | { kind: 'skip'; reason: 'alreadyAtEdge' }
   | { kind: 'skip'; reason: 'exerciseMissing' }
+  /**
+   * The lift swapped for itself. Written, it would hand the row a new id —
+   * a confirmation for an edit that changed nothing.
+   */
+  | { kind: 'skip'; reason: 'sameExercise' }
   /** The last lift of a day has no lift below it to run into. */
   | { kind: 'skip'; reason: 'noRowBelow' };
 
@@ -213,6 +222,24 @@ export function toDraftExercise(
     trackingMode: exercise.trackingMode ?? null,
     supersetGroup: exercise.supersetGroup ?? null,
   };
+}
+
+/**
+ * How a stored row is logged: its own mode when the writer gave one, else
+ * what the runtime adapter reads from its name (customWorkoutAdapter's
+ * getTrackingMode) — only the unit is asked of it here.
+ */
+function storedTrackingMode(exercise: ProgramSessionExerciseSnapshot): WorkoutTrackingMode {
+  if (exercise.trackingMode) {
+    return exercise.trackingMode;
+  }
+  if (isHoldExerciseName(exercise.name)) {
+    return 'hold';
+  }
+  if (readsAsMinutesByName(exercise.name, [exercise.repMin, exercise.repMax])) {
+    return 'duration_minutes';
+  }
+  return 'reps_first';
 }
 
 /**
@@ -245,6 +272,14 @@ export function applyProgramSessionEdit(
   }
   if (edit.kind !== 'add' && !targetDay.exercises.some((exercise) => exercise.id === edit.exerciseId)) {
     return { kind: 'skip', reason: 'exerciseMissing' };
+  }
+  if (
+    edit.kind === 'replace' &&
+    targetDay.exercises.some(
+      (exercise) => exercise.id === edit.exerciseId && isSameLiftName(exercise.name, edit.exerciseName),
+    )
+  ) {
+    return { kind: 'skip', reason: 'sameExercise' };
   }
 
   // Answered before the programme is rebuilt: a drop that changes nothing
@@ -287,9 +322,21 @@ export function applyProgramSessionEdit(
           return toDraftExercise(exercise);
         }
         if (edit.kind === 'replace') {
-          // Only the lift changes. Sets, reps and rest are the prescription,
-          // and a swap is a different way to train it, not a different dose.
-          //
+          // Only the lift changes while the unit holds. Sets, reps and rest
+          // are the prescription, and a swap is a different way to train it,
+          // not a different dose. Across units the numbers mean nothing — a
+          // 45-second plank kept as crunches asked for 45 crunches — and the
+          // reps take the incoming lift's own, as today's swap and the
+          // player's do (lib/swapDose). Sets and rest stay the slot's.
+          const dose = doseAfterSwap(
+            {
+              trackingMode: storedTrackingMode(exercise),
+              sets: exercise.targetSets,
+              repsMin: exercise.repMin,
+              repsMax: exercise.repMax,
+            },
+            edit.exerciseName,
+          );
           // The row gets a new id, though. Logged sets point at the row by id,
           // and records, progress and the "last time" slot all resolve the
           // lift through it — so keeping the id handed the old lift's whole
@@ -301,6 +348,8 @@ export function applyProgramSessionEdit(
             ...toDraftExercise(exercise),
             id: makeExerciseId(),
             name: edit.exerciseName,
+            repMin: dose.repsMin,
+            repMax: dose.repsMax,
             libraryItemId: edit.libraryItemId,
             // A different lift is logged the way its own library row says.
             trackingMode: null,

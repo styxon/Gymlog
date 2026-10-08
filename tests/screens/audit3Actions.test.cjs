@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { resolveLiveProposal } = require('../../.test-dist/lib/programmeBrief.js');
+const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');
@@ -31,6 +32,7 @@ module.exports = [
         'kolme kertaa viikossa',
         [{ id: 'l1', name: 'Barbell Back Squat' }],
         90,
+        createSeedDatabase().preferences,
       );
       assert.deepEqual(proposal.sessions, [], 'nothing resolvable leaves no sessions');
 

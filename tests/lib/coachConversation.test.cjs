@@ -47,7 +47,9 @@ module.exports = [
       assert.doesNotMatch(screen, /useState<AICoachConversationTurn\[\]>/);
       assert.match(screen, /const resumed = useRef\(resumeCoachChat\(memory, /);
       assert.match(screen, /history: conversation\.current,/);
-      assert.match(screen, /conversation\.current = appendCoachTurn\(conversation\.current, \{/);
+      // Through the rule that keeps crisis answers out (lib/coachCrisisTurn),
+      // which appends with appendCoachTurn.
+      assert.match(screen, /conversation\.current = coachHistoryAfterAnswer\(conversation\.current, trimmed, answer, false\);/);
 
       // Nothing about the thread is written to storage: it lives in memory for
       // as long as the app does, and no longer.

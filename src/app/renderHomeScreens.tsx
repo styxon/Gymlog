@@ -4,7 +4,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { reportOperationFailed } from '../features/errorReporting/errorReporter';
 import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { findSavedCardioRun } from '../lib/cardio';
-import { isAiCoachLiveConfigured, requestProgrammeComposition } from '../lib/aiCoachClient';
+import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../lib/aiCoachClient';
 import { randomLogId } from '../lib/aiCoachLogId';
 import { recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
@@ -153,8 +153,13 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
       // restored offer is tapped again.
       signal,
     );
+    // The crisis answer goes back to the chat to be said. It is not "no
+    // week" and must not reach the device composer (review, 2026-10-08).
+    if (isProgrammeCompositionCrisis(live)) {
+      return live;
+    }
     if (live) {
-      const resolved = resolveLiveProposal(live, brief, exerciseLibrary, preferences.defaultRestSeconds);
+      const resolved = resolveLiveProposal(live, brief, exerciseLibrary, preferences.defaultRestSeconds, preferences);
       /*
        * A week whose every lift the library does not know is not a week.
        *
@@ -358,6 +363,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           replaceRoute({ tab: 'home', screen: 'ai_chat' });
         }}
         intakePreferences={preferences}
+        preferences={preferences}
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
         sessionCount={database.workoutSessions.length}

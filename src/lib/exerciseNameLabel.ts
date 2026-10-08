@@ -181,6 +181,10 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Easy Run Blocks': 'Kevyet juoksublokit',
   'Tempo Run Blocks': 'Tempojuoksublokit',
   'Stride Finishers': 'Askelkiihdytykset',
+  // The run blocks' stand-ins for an avoided knee or ankle.
+  'Brisk Walk Blocks': 'Reippaat kävelyblokit',
+  'Incline Walk Blocks': 'Ylämäkikävelyblokit',
+  'Stationary Bike Blocks': 'Kuntopyöräblokit',
   'Rowing, Stationary': 'Soutulaite',
   'Bicycling, Stationary': 'Kuntopyörä',
   'Jump Rope': 'Hyppynaru',
@@ -811,6 +815,7 @@ const EXERCISE_NAME_FI: Record<string, string> = {
   'Kneeling Squat': 'Kyykky polviltaan',
   "Landmine 180's": 'Landmine-kierto 180°',
   'Landmine Linear Jammer': 'Landmine-työntö suoraan',
+  'Landmine Press': 'Landmine-punnerrus',
   'Lateral Box Jump': 'Laatikkohyppy sivulle',
   'Lateral Cone Hops': 'Kartiohypyt sivulle',
   'Lateral Raise - With Bands': 'Sivunosto kuminauhoilla',

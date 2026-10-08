@@ -119,7 +119,10 @@ Two things differ from advice:
 - **The app does the sweep.** Every name Claude returns goes through the
   library alias matcher (`programmeBrief.resolveLiveProposal`); a name that
   does not resolve is dropped and listed to the user, and a session left empty
-  is dropped. The endpoint validates shape only, never that a name exists.
+  is dropped. A lift the brief avoids (a refusal, or one that loads a sore
+  area) or that needs gear the reader lacks is dropped and listed the same
+  way, by the preview composer's own limits (`aiCoachPlan.plannerLimits`).
+  The endpoint validates shape only, never that a name exists.
 
 ## Deploy runbook (Vercel, in this order)
 

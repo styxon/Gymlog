@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import type { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
-import type { resolveFirstRunRecommendationWithTailoring } from '../lib/firstRunSetup';
+import type { FirstRunSetupSelection, resolveFirstRunRecommendationWithTailoring } from '../lib/firstRunSetup';
 import { t, type I18nKey } from '../lib/i18n';
 import {
   countByCategory,
@@ -11,9 +11,8 @@ import {
   type ProgramCategoryKey,
 } from '../lib/programCategories';
 import { expandRunningIdsWithSources } from '../lib/programmeCopyLink';
-import { buildProgramFingerprint } from '../lib/programFingerprint';
 import { programCoverStyle } from '../lib/programVisualIdentity';
-import { readyTemplateCardMinutes } from '../lib/programmeMinutes';
+import { programmeCardWeek, resolveReaderComposedWeek } from '../lib/programDetails';
 import { resolveAvailableEquipment } from '../lib/equipmentExerciseFilter';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { getReadyProgramBlockWeeks } from '../lib/readyProgramDuration';
@@ -52,6 +51,8 @@ export interface ProgramsCatalogDeps {
   activeProgramTemplateIds: string[];
   /** The whole database: which catalog programmes the running ones are copies of. */
   database: AppDatabase;
+  /** The questionnaire's answers, which compose the reader's own programme's week. */
+  setupSelection: FirstRunSetupSelection | null;
 }
 
 export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
@@ -63,6 +64,7 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
     recommendedReadyTemplate,
     activeProgramTemplateIds,
     database,
+    setupSelection,
   } = deps;
 
   const dismissedTipIds = preferences.dismissedTipIds ?? [];
@@ -79,6 +81,25 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
     [preferences.setupTrainingEnvironment, preferences.setupEquipmentItems, preferences.routineDrillOverrides],
   );
   /**
+   * The week the reader runs of the programme the questionnaire gave them,
+   * the one its page draws. Its card costs that week — caution swaps, focus
+   * additions and all — not the catalog's: with the knees avoided the card
+   * read 40 min and the page 30 (bug hunt, 2026-10-07, #37). Composed once,
+   * for that one programme.
+   */
+  const readerComposedWeek = useMemo(
+    () =>
+      preferences.recommendedProgramId
+        ? resolveReaderComposedWeek(preferences.recommendedProgramId, {
+            recommendedProgramId: preferences.recommendedProgramId,
+            setupSelection,
+            workoutTemplates: database.workoutTemplates,
+            workoutPlans: database.workoutPlans,
+          })
+        : null,
+    [preferences.recommendedProgramId, setupSelection, database.workoutTemplates, database.workoutPlans],
+  );
+  /**
    * The full catalog as browse cards, plus the counts each category tile
    * shows.
    *
@@ -89,19 +110,23 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
    */
   const programsCatalogItems = useMemo<ProgramsExploreItem[]>(
     () =>
-      workout.templates.map((template, index) => ({
-        id: template.id,
-        name: formatWorkoutDisplayLabel(template.name),
-        goal: formatGoalLabel(template.goalType, preferences.appLanguage),
-        blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
-        days: template.daysPerWeek,
-        minutes: readyTemplateCardMinutes(template, minutesOptions),
-        cover: programCoverStyle(template.id, template.name),
-        fingerprint: buildProgramFingerprint(template),
-        level: template.level,
-        weeks: getReadyProgramBlockWeeks(template),
-      })),
-    [minutesOptions, preferences.appLanguage, workout.templates],
+      workout.templates.map((template) => {
+        // Days, minutes and bars from one week, the page's (bug hunt, 2026-10-08).
+        const week = programmeCardWeek(template, readerComposedWeek, minutesOptions);
+        return {
+          id: template.id,
+          name: formatWorkoutDisplayLabel(template.name),
+          goal: formatGoalLabel(template.goalType, preferences.appLanguage),
+          blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
+          days: week.days,
+          minutes: week.minutes,
+          cover: programCoverStyle(template.id, template.name),
+          fingerprint: week.fingerprint,
+          level: template.level,
+          weeks: getReadyProgramBlockWeeks(template),
+        };
+      }),
+    [minutesOptions, preferences.appLanguage, readerComposedWeek, workout.templates],
   );
   const programsCategoryCounts = useMemo(
     () => countByCategory(workout.templates),
@@ -210,21 +235,23 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
       })
         .map((slot) => {
           const template = byId.get(slot.templateId);
-          return template
-            ? {
-                id: template.id,
-                name: formatWorkoutDisplayLabel(template.name),
-                goal: formatGoalLabel(template.goalType, preferences.appLanguage),
-                blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
-                why: t(preferences.appLanguage, slot.whyKey, { days: template.daysPerWeek }),
-                days: template.daysPerWeek,
-                minutes: readyTemplateCardMinutes(template, minutesOptions),
-                cover: programCoverStyle(template.id, template.name),
-                fingerprint: buildProgramFingerprint(template),
-                level: template.level,
-                weeks: getReadyProgramBlockWeeks(template),
-              }
-            : null;
+          if (!template) {
+            return null;
+          }
+          const week = programmeCardWeek(template, readerComposedWeek, minutesOptions);
+          return {
+            id: template.id,
+            name: formatWorkoutDisplayLabel(template.name),
+            goal: formatGoalLabel(template.goalType, preferences.appLanguage),
+            blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
+            why: t(preferences.appLanguage, slot.whyKey, { days: week.days }),
+            days: week.days,
+            minutes: week.minutes,
+            cover: programCoverStyle(template.id, template.name),
+            fingerprint: week.fingerprint,
+            level: template.level,
+            weeks: getReadyProgramBlockWeeks(template),
+          };
         })
         .filter((item): item is NonNullable<typeof item> => Boolean(item));
     },
@@ -237,6 +264,7 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
       homeActivePlanCard?.programId,
       minutesOptions,
       preferences.appLanguage,
+      readerComposedWeek,
       recommendedReadyTemplate,
       setupRecommendation?.waterfall,
       workout.templates,
@@ -250,5 +278,6 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
     catalogScreenItems,
     programsCategoryMembers,
     programsRecommendations,
+    readerComposedWeek,
   };
 }

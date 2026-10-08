@@ -139,10 +139,9 @@ import { AppLanguage, ExerciseLibraryItem, UnitPreference } from '../types/model
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
-import { buildSwapOptionsForSlot, TailoringPreferencesInput } from '../lib/tailoringFit';
-import { exerciseMatchesQuery } from '../lib/exerciseSearch';
+import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
-import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
+import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder, restSecondsForAddedLift } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
@@ -153,7 +152,7 @@ import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
 import { ExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, effectiveSwapCategory, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
-import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
+import { buildSwapAlternatives, buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
 import {
@@ -221,11 +220,10 @@ const SPLASH_MS = 2300;
 const SET_DOT_CAP = 9;
 
 /**
- * The rest a mid-workout add falls back to when there is no last exercise to
- * inherit one from — a cooldown-only session with no main block, added after
- * (recheck round 2026-09-29). Same number `AppProvider` seeds a fresh
- * install's preferences with, so a lift added here without one rests the
- * same as any lift would before the reader ever set a preference.
+ * The rest a mid-workout add falls back to when there is no rest to inherit —
+ * a cooldown-only session with no main block (recheck round 2026-09-29), or a
+ * last exercise that rests 0 — and no `defaultRestSeconds` was passed. Same
+ * number `AppProvider` seeds a fresh install's preferences with.
  */
 const NO_ANCHOR_DEFAULT_REST_SECONDS = 120;
 
@@ -312,6 +310,8 @@ interface GuidedPlayerScreenProps {
   soundCuesEnabled: boolean;
   /** Keep the display on for the whole guided session. */
   keepScreenAwake?: boolean;
+  /** The reader's default rest, for a lift added mid-session with no rest to inherit. */
+  defaultRestSeconds?: number;
   onToggleSoundCues: (next: boolean) => void;
   entryEyebrow: string;
   /**
@@ -1506,6 +1506,7 @@ function GuidedPlayer({
   plateauNotice,
   soundCuesEnabled,
   keepScreenAwake = false,
+  defaultRestSeconds = NO_ANCHOR_DEFAULT_REST_SECONDS,
   onToggleSoundCues,
   entryEyebrow,
   ownBlockStats = {},
@@ -2429,51 +2430,34 @@ function GuidedPlayer({
     };
   }, [exerciseLibrary, language, resolveSlotHistory, step]);
 
-  const swapOptions = useMemo(() => {
-    if (!actionExercise) {
-      return [];
-    }
-    return buildSwapOptionsForSlot(
-      actionExercise.substitutionGroup,
-      actionExercise.exerciseName,
-      tailoringPreferences,
-    );
-  }, [actionExercise, tailoringPreferences]);
+  /**
+   * Every lift in today's session, the one being swapped included. Swapping
+   * to one of them is doing it twice and calling it a change — Home and the
+   * programme day have left them out since 2026-08-26; this sheet offered
+   * even the lift it was replacing (emulator, 2026-09-27).
+   */
+  const swapSessionLifts = useMemo(() => exercises.map((exercise) => exercise.exerciseName), [exercises]);
 
   /**
-   * Every lift in today's session as the reader sees it, the one being
-   * swapped included. Swapping to one of them is doing it twice and calling
-   * it a change — Home and the programme day have left them out since
-   * 2026-08-26; this sheet offered even the lift it was replacing
-   * (emulator, 2026-09-27).
+   * The programme's own alternatives, which are better answers than a search:
+   * the same cards, in the same order, as Home and the programme day
+   * (buildSwapAlternatives) — one row per name the reader sees, variations
+   * first, nothing cut.
    */
-  const sessionLiftLabels = useMemo(
-    () => new Set(exercises.map((exercise) => exerciseNameLabel(language, exercise.exerciseName))),
-    [exercises, language],
+  const swapSuggestions = useMemo(
+    () =>
+      actionExercise
+        ? buildSwapAlternatives({
+            currentName: actionExercise.exerciseName,
+            substitutionGroup: actionExercise.substitutionGroup,
+            preferences: tailoringPreferences,
+            sessionLifts: swapSessionLifts,
+            query: swapQuery,
+            language,
+          })
+        : [],
+    [actionExercise, language, swapQuery, swapSessionLifts, tailoringPreferences],
   );
-
-  /** The programme's own alternatives, which are better answers than a search. */
-  const swapSuggestions = useMemo(() => {
-    const query = swapQuery.trim();
-    // One row per name the reader sees: the pool holds "Bench Press" and
-    // "Barbell Bench Press - Medium Grip", both "Penkkipunnerrus" (emulator,
-    // 2026-09-27). The first — the tailoring pass's pick — stays.
-    const shown = new Set<string>();
-    const names = swapOptions
-      .map((option) => option.exerciseName)
-      .filter((name) => {
-        const label = exerciseNameLabel(language, name);
-        if (sessionLiftLabels.has(label) || shown.has(label)) {
-          return false;
-        }
-        shown.add(label);
-        return true;
-      });
-    if (!query) {
-      return names;
-    }
-    return names.filter((name) => exerciseMatchesQuery(`${name} ${exerciseNameLabel(language, name)}`, query));
-  }, [language, sessionLiftLabels, swapOptions, swapQuery]);
 
   /**
    * The suggestions with their library rows, for the picture and the
@@ -2733,10 +2717,7 @@ function GuidedPlayer({
       ? exercises.find((exercise) => exercise.slotId === addExerciseAfterSlot.anchor) ?? null
       : null;
     const anchor = afterCurrent ?? exercises[exercises.length - 1] ?? null;
-    const defaults = getExerciseTemplateDefaults(
-      item,
-      anchor ? anchor.restSecondsMin : NO_ANCHOR_DEFAULT_REST_SECONDS,
-    );
+    const defaults = getExerciseTemplateDefaults(item, restSecondsForAddedLift(anchor?.restSecondsMin, defaultRestSeconds));
     if (afterCurrent && addExerciseAfterSlot) {
       // Stays on this lift: no jump, and the intro says where it went.
       const introSlotId = addExerciseAfterSlot.intro;
@@ -2765,7 +2746,7 @@ function GuidedPlayer({
     const target = getGuidedBackTargetIndex(steps, stepIndex);
     const targetStep = steps[target];
     if (targetStep?.type === 'set' && isSetCompleted(targetStep.slotId, targetStep.setIndex)) {
-      workout.undoSet(targetStep.slotId, targetStep.setIndex);
+      workout.undoSet(targetStep.slotId, targetStep.setIndex, unitPreference);
     }
     goTo(target);
   };

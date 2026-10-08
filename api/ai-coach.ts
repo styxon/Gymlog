@@ -3,6 +3,8 @@ import { del, list, put } from '@vercel/blob';
 import { readAnswerExtras, withoutExampleRepeats } from '../src/lib/aiCoachAnswerExtras';
 import { localizeAdviceDecimals } from '../src/lib/aiCoachAnswerDecimals';
 import { buildAiCoachPreviewAnswer } from '../src/lib/aiCoachPreview';
+import { classifyCoachScope } from '../src/lib/aiCoachScope';
+import { coachHistoryBeforeCrisis } from '../src/lib/coachCrisisTurn';
 import { buildAiCoachContextText } from '../src/lib/aiCoachSystemContext';
 import { normalizeAiCoachTrainingContext } from '../src/lib/aiTrainingContext';
 import { AI_COACH_DEBUG_TRANSCRIPTS } from '../src/lib/aiCoachDebug';
@@ -516,6 +518,20 @@ function sanitizeHistory(value: unknown): AICoachConversationTurn[] {
     }));
   // Oldest first, so the newest exchanges are the ones kept.
   return clean.slice(-MAX_HISTORY_TURNS);
+}
+
+/**
+ * The new question when it reads as a crisis, or null.
+ *
+ * Up to its own limit — a longer one is refused by the budget before the
+ * model, so nothing past it is ever sent. The history is not read here: a
+ * crisis there is taken out of it (coachHistoryBeforeCrisis) rather than
+ * answered, since answering it locked the thread on the crisis line for every
+ * question after it (review, 2026-10-08).
+ */
+function findCrisisText(input: ParsedBody): string | null {
+  const prompt = input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars);
+  return classifyCoachScope(prompt) === 'crisis' ? prompt : null;
 }
 
 function parseBody(body: unknown): ParsedBody | null {
@@ -1433,6 +1449,43 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
     res.status(400).json(createError({ code: 'BAD_REQUEST', message: 'Prompt and context are required.' }, undefined, undefined, 'preview'));
     return;
   }
+
+  // A reader in trouble, answered here with the phone's own classifier and
+  // its own crisis answer. The phone already does this before it sends, but
+  // only with the filter of the build it runs: an installed build from before
+  // a widening still sends what the newer filter catches (A6 hunt,
+  // 2026-10-07). So the newest filter stands here too — before the rate
+  // limit, which must not stand between a reader and the number, and before
+  // the model, whose crisis rule is then the net for what is said sideways.
+  // Marked 'preview' because no model wrote it: the app charges no question
+  // for it and does not remember it as advice. Not kept either — the reader
+  // agreed to keep what they asked the coach, and the coach was not asked.
+  // Read up to the question's own limit: the body is not capped until the
+  // model's budget, and this runs before the rate limit, so a megabyte of
+  // starred words was seconds of function time for anyone to ask for
+  // (review, 2026-10-07). The phone's composer stops at that limit anyway.
+  //
+  // A compose brief too (F1 crisis hunt, 2026-10-08): it carries the
+  // intake's free-text answer to a composer whose rules have no crisis line
+  // at all. A compose answer here holds no proposal; a current build reads
+  // the marker and says the line, an older one composes on the device.
+  //
+  // Marked `crisis: true`, so a phone need not know the words to know what
+  // it got (review, 2026-10-08). Older phones ignore the field and still
+  // match the words.
+  const readForCrisis = findCrisisText(input);
+  if (readForCrisis !== null) {
+    res.status(200).json({ ...createSuccess(buildAiCoachPreviewAnswer(readForCrisis, input.context, input.language), 'preview'), crisis: true });
+    return;
+  }
+  // And the history the model would read, which every build filled with the
+  // turn answered above: it came back on the next question and went to the
+  // model as a user message (F1 crisis hunt, 2026-10-08). Answering that with
+  // the crisis line as well locked the thread on it — each question after
+  // carried the turn back — so the crisis turn and every turn after it are
+  // taken out, and the question is answered without them (review,
+  // 2026-10-08). Nothing read as a crisis reaches the model either way.
+  input = { ...input, history: coachHistoryBeforeCrisis(input.history ?? []) };
 
   const ip = getIpAddress(req);
   const rateLimit = checkRateLimit(ip);

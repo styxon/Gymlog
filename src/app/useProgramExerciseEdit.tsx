@@ -14,6 +14,7 @@ import { liveSessionBlocksProgrammeDelete } from '../lib/programmeDeletion';
 import { applyProgramSessionEdit, ProgramPrescription } from '../lib/programSessionEdit';
 import { ProgramLimitReachedError, type ProgramSlots } from '../lib/programSlots';
 import { type AdaptedSessionRef, type SessionAdaptation, withoutSessionSwapsTo } from '../lib/sessionAdaptation';
+import { doseAfterSwap, isSameLiftName } from '../lib/swapDose';
 import { isSupersetLinked, setSupersetLink, supersetGroupIndexes, supersetSetTargets } from '../lib/supersetGrouping';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import type { AppRoute } from '../navigation/routes';
@@ -312,6 +313,18 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       }
     }
 
+    // And a lift swapped for itself: "Keep in programme" on a row whose held
+    // swap names the programme's own lift copied the whole catalogue
+    // programme, and spent a slot, for X → X (swap hunt, 2026-10-07).
+    if (edit.kind === 'replace') {
+      const row = template.sessions
+        .find((session) => session.id === sessionId)
+        ?.exercises.find((exercise) => exercise.id === exerciseId);
+      if (!row || isSameLiftName(row.exerciseName, edit.exerciseName)) {
+        return false;
+      }
+    }
+
     /**
      * Already have a version of this one? Edit it.
      *
@@ -405,19 +418,35 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
             const target = session.id === sessionId && exercise.id === exerciseId;
             const name =
               target && edit.kind === 'replace' ? edit.exerciseName : exercise.exerciseName;
-            // The catalog's dose unless this row is the one being re-dosed.
+            // The catalog's dose unless this row is the one being re-dosed,
+            // or a lift swapped in across units, whose reps are its own as
+            // the custom path's swap makes them (lib/swapDose).
             // Rest rides along on the same rule the custom path uses
             // (applyProgramSessionEdit): a number overrides, null leaves the
             // catalog's own value alone.
+            const swapped =
+              target && edit.kind === 'replace'
+                ? doseAfterSwap(
+                    {
+                      trackingMode: exercise.trackingMode,
+                      sets: exercise.sets,
+                      repsMin: exercise.repsMin,
+                      repsMax: exercise.repsMax,
+                    },
+                    edit.exerciseName,
+                  )
+                : null;
             const dose =
               target && edit.kind === 'prescribe'
                 ? edit.prescription
-                : {
-                    targetSets: exercise.sets,
-                    repMin: exercise.repsMin,
-                    repMax: exercise.repsMax,
-                    restSeconds: null,
-                  };
+                : swapped
+                  ? { targetSets: swapped.sets, repMin: swapped.repsMin, repMax: swapped.repsMax, restSeconds: null }
+                  : {
+                      targetSets: exercise.sets,
+                      repMin: exercise.repsMin,
+                      repMax: exercise.repsMax,
+                      restSeconds: null,
+                    };
             return {
               id: exercise.id,
               workoutTemplateId: template.id,

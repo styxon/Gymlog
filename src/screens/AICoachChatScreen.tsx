@@ -16,7 +16,7 @@ import { CoachReadoutTicker } from '../components/CoachReadoutTicker';
 import { CoachReportSheet } from '../components/CoachReportSheet';
 import { ProgrammeProposalCard } from '../components/ProgrammeProposalCard';
 import { ProLockedCard } from '../components/ProLockedCard';
-import { reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
+import { ProgrammeCompositionCrisis, isProgrammeCompositionCrisis, reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
 import { COACH_COPIES_KEPT } from '../lib/aiCoachLogId';
 import { CoachReportReason } from '../lib/coachAnswerReport';
 import { trackEvent } from '../features/analytics/analyticsClient';
@@ -28,7 +28,7 @@ import { fitAiCoachContextToCap } from '../lib/aiTrainingContext';
 import { formatShortDate } from '../lib/format';
 import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoachContextReadout, buildCoachNoticed, buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachOpeningRows } from '../lib/coachChat';
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
-import { appendCoachTurn } from '../lib/coachConversation';
+import { coachHistoryAfterAnswer } from '../lib/coachCrisisTurn';
 import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -68,7 +68,7 @@ import { PW } from '../lightTheme';
 import { Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { layout, radii, spacing } from '../theme';
 import { AICoachAdvice, AICoachConversationTurn, AICoachTrainingContext } from '../types/aiCoach';
-import { AppLanguage } from '../types/models';
+import { AppLanguage, AppPreferences } from '../types/models';
 
 /**
  * The AI tab (design: Vinha AI Tab).
@@ -141,6 +141,11 @@ interface AICoachChatScreenProps {
   onIntentConsumed?: () => void;
   /** What the app already knows, preselected in the frame questions. */
   intakePreferences: ProgramIntakePreferences;
+  /**
+   * The stored profile. A brief that does not say the gear or the level is
+   * matched to a catalog programme on these, as the composer builds on them.
+   */
+  preferences: AppPreferences;
   trainingContext: AICoachTrainingContext;
   intro: CoachChatIntroInput;
   /** Total logged sessions, for the header line and the evidence footer. */
@@ -186,9 +191,10 @@ interface AICoachChatScreenProps {
    *
    * It used to navigate to the composer screen. The week is drawn in the
    * conversation now — see ChatMessage.proposal for why that is the point
-   * rather than a shortcut.
+   * rather than a shortcut. A brief read as a crisis comes back as the
+   * crisis answer, to be said here instead of a week.
    */
-  onComposeProgramme: (brief: string, signal?: AbortSignal) => Promise<ProgrammeProposal | null>;
+  onComposeProgramme: (brief: string, signal?: AbortSignal) => Promise<ProgrammeProposal | ProgrammeCompositionCrisis | null>;
   /** Saves a proposal as a programme of the reader's own. */
   onSaveProgramme: (proposal: ProgrammeProposal) => Promise<void>;
   /**
@@ -291,6 +297,12 @@ export interface ChatMessage {
    * vain ottaa lähimpää ohjelmaa mikä vastaa käyttäjän puheita?").
    */
   catalog?: { programId: string; title: string; daysPerWeek: number };
+  /**
+   * A crisis message and its answer. Drawn even under the online notice,
+   * where the rest of the thread is not: the crisis answer is local and is
+   * given before the notice is answered (A6 hunt, 2026-10-07).
+   */
+  crisis?: true;
 }
 
 /** Width of the soft light behind the dark thread's header. */
@@ -343,6 +355,7 @@ export function AICoachChatScreen({
   intent = null,
   onIntentConsumed,
   intakePreferences,
+  preferences,
   trainingContext,
   intro,
   sessionCount,
@@ -382,6 +395,7 @@ export function AICoachChatScreen({
   const sheetInsets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView | null>(null);
   const askToken = useRef(0);
+  const crisisTurn = useRef(0);
   /**
    * The open conversation, in a ref rather than state: `send` must read the
    * exchanges as they are at the moment of sending, and a state value captured
@@ -711,7 +725,7 @@ export function AICoachChatScreen({
         // who asks for five days gets a real answer instead of a paywall.
         const signals = parseProgrammeBrief(offer.brief);
         if (shouldOfferCatalogInstead(signals)) {
-          const match = matchProgrammeToBrief(signals);
+          const match = matchProgrammeToBrief(signals, preferences);
           const title = match ? catalogProgrammeTitle(match.programId) : null;
           if (match && title) {
             // Straight to the programme: a coach line explaining the composer's
@@ -760,15 +774,29 @@ export function AICoachChatScreen({
         setComposingIds((current) => (current.includes(messageId) ? current : [...current, messageId]));
         const controller = new AbortController();
         composeControllersRef.current.set(messageId, controller);
-        let proposal: ProgrammeProposal | null = null;
+        let composed: ProgrammeProposal | ProgrammeCompositionCrisis | null = null;
         try {
-          proposal = await onComposeProgramme(offer.brief, controller.signal);
+          composed = await onComposeProgramme(offer.brief, controller.signal);
         } finally {
           // In a finally, so a rejected compose clears the building line too
           // rather than leaving the offer under a spinner with no way out.
           setComposingIds((current) => current.filter((id) => id !== messageId));
           composeControllersRef.current.delete(messageId);
         }
+        // A brief read as a crisis, by this build's filter or the server's:
+        // the offer becomes the crisis answer, drawn as send() draws its own,
+        // and no week is built from those words (review, 2026-10-08).
+        if (isProgrammeCompositionCrisis(composed)) {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === messageId
+                ? { id: `${messageId}:crisis`, fromCoach: true, text: composed.answer.takeaway, advice: composed.answer, crisis: true }
+                : message,
+            ),
+          );
+          return;
+        }
+        const proposal = composed;
         // The offer becomes the week it was offering. Replaced rather than
         // appended: leaving "shall I build this?" above the thing it built
         // would invite a second tap that composes the same brief again.
@@ -859,6 +887,7 @@ export function AICoachChatScreen({
       onPinStatCard,
       onSetGoal,
       onOpenPremium,
+      preferences,
       proUnlocked,
       pinnedStatCardKeys,
     ],
@@ -909,13 +938,9 @@ export function AICoachChatScreen({
      */
     async (prompt: string, force = false) => {
       const trimmed = prompt.trim();
-      if (!trimmed || asking || mustAcknowledgeOnline) {
-        // Nothing leaves the device until the online disclosure is answered.
+      if (!trimmed) {
         return;
       }
-
-      const token = (askToken.current += 1);
-      setDraft('');
 
       /**
        * A reader in trouble is answered first, and here.
@@ -928,16 +953,35 @@ export function AICoachChatScreen({
        * turn is, so the message does not travel with the next question — a
        * client-side check that still posts the text is not the promise it
        * looks like (PR #124 review).
+       *
+       * And before the two waits below, which it needs neither of: a
+       * question still in flight, and the online notice not yet answered.
+       * Behind them a crisis message did nothing at all — no answer, the text
+       * left in the field — for up to the 40 s a request may take, or until
+       * a first-time reader tapped OK (A6 hunt, 2026-10-07). Its ids come
+       * from a count of its own: taking a turn from `askToken` would make the
+       * answer in flight a stale one, dropped when it arrives.
        */
       if (classifyCoachScope(trimmed) === 'crisis') {
+        // Dated too: a thread resumed from memory starts this count again.
+        const turn = `${Date.now()}:${(crisisTurn.current += 1)}`;
+        setDraft('');
         const answer = buildAiCoachPreviewAnswer(trimmed, trainingContext, language);
         setMessages((current) => [
           ...current,
-          { id: `me:${token}`, fromCoach: false, text: trimmed },
-          { id: `coach:${token}`, fromCoach: true, text: answer.takeaway, advice: answer },
+          { id: `me:crisis:${turn}`, fromCoach: false, text: trimmed, crisis: true },
+          { id: `coach:crisis:${turn}`, fromCoach: true, text: answer.takeaway, advice: answer, crisis: true },
         ]);
         return;
       }
+
+      if (asking || mustAcknowledgeOnline) {
+        // Nothing leaves the device until the online disclosure is answered.
+        return;
+      }
+
+      const token = (askToken.current += 1);
+      setDraft('');
 
       // "Kiitos" is answered here. It never reaches the network, so it costs
       // nothing and cannot come back as an analysis with a four-week plan
@@ -1034,6 +1078,25 @@ export function AICoachChatScreen({
           return;
         }
         const answer = result.answer;
+        // The crisis answer, from a server whose filter caught what this
+        // build's did not — in the question, or in a turn of the history it
+        // was sent with. Drawn like the branch at the top of send(), so it
+        // stands under the online notice too, and not as an offline answer:
+        // it is the answer, not a fallback, and the badge stays as it was.
+        // Nothing is charged and nothing is offered beside it. And the
+        // history is emptied before the thread is published: the turn the
+        // server caught may be one this thread would send again, and every
+        // question after it would get the crisis line (review, 2026-10-08).
+        if (result.crisis) {
+          conversation.current = coachHistoryAfterAnswer(conversation.current, trimmed, answer, true);
+          setMessages((current) => [
+            ...current
+              .filter((message) => message.id !== `offer:${token}`)
+              .map((message) => (message.id === `me:${token}` ? { ...message, crisis: true as const } : message)),
+            { id: `coach:${token}`, fromCoach: true, text: answer.takeaway, advice: answer, crisis: true },
+          ]);
+          return;
+        }
         // The endpoint answers with a canned offline reply when it cannot
         // reach the model — rate limited, upstream down, key missing. Until
         // now the chat showed that as if the coach had said it, which is how
@@ -1071,11 +1134,9 @@ export function AICoachChatScreen({
         }
         // Kept even when the answer was a follow-up question: without it the
         // reader's reply to that question would arrive with no antecedent,
-        // which is the exact failure this exists to fix.
-        conversation.current = appendCoachTurn(conversation.current, {
-          question: trimmed,
-          takeaway: answer.takeaway,
-        });
+        // which is the exact failure this exists to fix. A crisis answer
+        // never gets here (above), so this is the ordinary append.
+        conversation.current = coachHistoryAfterAnswer(conversation.current, trimmed, answer, false);
         // And the long memory, on a narrower rule than the thread above. The
         // thread keeps a clarifying question so the reader's reply has an
         // antecedent; the memory keeps only advice, so an answer that asked
@@ -1353,9 +1414,14 @@ export function AICoachChatScreen({
           return [
             ...(message.text ? [{ id: `${message.id}:i`, fromCoach: true, text: message.text }] : []),
             { id: `${message.id}:q`, fromCoach: true, text: t(language, PROGRAM_INTAKE_QUESTION_KEYS[step]) },
-            { id: `${message.id}:a`, fromCoach: false, text: programIntakeAnswerText(step, value, language) },
+            {
+              id: `${message.id}:a`,
+              fromCoach: false,
+              text: programIntakeAnswerText(step, value, language),
+              ...(crisisAnswer ? { crisis: true as const } : {}),
+            },
             crisisAnswer
-              ? { id: `${message.id}:crisis`, fromCoach: true, text: crisisAnswer.takeaway, advice: crisisAnswer }
+              ? { id: `${message.id}:crisis`, fromCoach: true, text: crisisAnswer.takeaway, advice: crisisAnswer, crisis: true as const }
               : nextStep
               ? { id: `${message.id}:n`, fromCoach: true, text: '', intake: next }
               : {
@@ -1578,8 +1644,12 @@ export function AICoachChatScreen({
               </Svg>
             </Pressable>
           ) : null}
+          </>
+          )}
 
-          {messages.map((message) =>
+          {/* Under the notice, only a crisis answer: it is given before the
+              notice is answered, and an answer nobody can see is not given. */}
+          {(mustAcknowledgeOnline ? messages.filter((message) => message.crisis) : messages).map((message) =>
             // Drawn over the offer rather than in place of it: the offer is
             // still in the thread underneath, so leaving now keeps it.
             composingIds.includes(message.id) ? (
@@ -1795,7 +1865,7 @@ export function AICoachChatScreen({
             ),
           )}
 
-          {asking ? (
+          {asking && !mustAcknowledgeOnline ? (
             <View style={styles.bubbleRow}>
               <View style={[styles.coachBubble, styles.thinkingBubble]}>
                 <ActivityIndicator size="small" color={theme.purple} />
@@ -1803,9 +1873,6 @@ export function AICoachChatScreen({
               </View>
             </View>
           ) : null}
-
-          </>
-          )}
         </ScrollView>
 
         {/* The suggestion rail lives outside the thread's scroll view, so it

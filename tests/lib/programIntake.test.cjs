@@ -32,7 +32,10 @@ function answerAll(values, preferences = BLANK_PREFERENCES) {
 }
 
 const GOAL_SIGNAL = { muscle: 'muscle', strength: 'strength', fat_loss: 'fat_loss', fitness: 'fitness' };
-const EQUIPMENT_SIGNAL = { gym: 'full_gym', home_dumbbells: 'home_gym', bodyweight: 'bodyweight' };
+// Dumbbells at home are the planner's 'minimal' set: 'home_gym' carries a
+// barbell, and composed a barbell week under "Koti (käsipainot)" (bug hunt,
+// 2026-10-07).
+const EQUIPMENT_SIGNAL = { gym: 'full_gym', home_dumbbells: 'minimal', bodyweight: 'bodyweight' };
 
 module.exports = [
   {
@@ -239,6 +242,12 @@ module.exports = [
       assert.ok(crisisAt !== -1, 'the intake answer is classified');
       assert.ok(offerAt !== -1 && crisisAt < offerAt, 'the crisis check comes before the build offer');
       assert.ok(/crisisAnswer\s*\?/.test(handler), 'a crisis answer replaces the offer');
+      // Marked as the crisis, so it is drawn under the online notice like
+      // send()'s own crisis answer: an answer nobody can see is not given.
+      const answerAt = handler.indexOf('id: `${message.id}:crisis`');
+      assert.ok(answerAt !== -1, 'the intake has its own crisis answer row');
+      const answerRow = handler.slice(answerAt, handler.indexOf(String.fromCharCode(10), answerAt));
+      assert.match(answerRow, /crisis: true/, 'the crisis answer row is marked crisis');
       const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
       assert.equal(classifyCoachScope('mietin itsemurhaa'), 'crisis');
     },

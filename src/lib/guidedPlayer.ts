@@ -1407,25 +1407,38 @@ export function findFiledLibraryIndex(exerciseName: string, libraryNames: readon
   return index;
 }
 
-function resolveFiledLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
-  const filedOnly = (candidate: string) => {
-    if (DEMO_ONLY_ALIASES.has(candidate)) {
-      const exact = lowerNames.indexOf(candidate);
-      if (exact >= 0) {
-        return exact;
-      }
-      const filedAs = DEMO_ONLY_ALIASES.get(candidate);
-      const filedIndex = filedAs ? lowerNames.indexOf(filedAs) : -1;
-      return filedIndex >= 0 ? filedIndex : null;
+/**
+ * `findFiledLibraryIndex` without the qualifier strip: the name exactly as
+ * written, or its alias. The strip was written for the catalogue's own cues,
+ * "(Wide)" and "(Light)"; a CSV from another app puts the variant there —
+ * "Bench Press (Dumbbell)", "Deadlift (Romanian)" — and stripping that filed
+ * them under the barbell lift (bug hunt, 2026-10-08).
+ */
+export function findFiledLibraryIndexAsWritten(exerciseName: string, libraryNames: readonly string[]): number | null {
+  const normalized = exerciseName.trim().toLowerCase();
+  return normalized ? resolveFiledAsWritten(normalized, libraryLookup(libraryNames).lowerNames) : null;
+}
+
+function resolveFiledAsWritten(candidate: string, lowerNames: readonly string[]): number | null {
+  if (DEMO_ONLY_ALIASES.has(candidate)) {
+    const exact = lowerNames.indexOf(candidate);
+    if (exact >= 0) {
+      return exact;
     }
-    return resolveExactOrAlias(candidate, lowerNames);
-  };
-  const direct = filedOnly(normalized);
+    const filedAs = DEMO_ONLY_ALIASES.get(candidate);
+    const filedIndex = filedAs ? lowerNames.indexOf(filedAs) : -1;
+    return filedIndex >= 0 ? filedIndex : null;
+  }
+  return resolveExactOrAlias(candidate, lowerNames);
+}
+
+function resolveFiledLibraryIndex(normalized: string, lowerNames: readonly string[]): number | null {
+  const direct = resolveFiledAsWritten(normalized, lowerNames);
   if (direct !== null) {
     return direct;
   }
   const stripped = stripCoachingQualifier(normalized);
-  return stripped ? filedOnly(stripped) : null;
+  return stripped ? resolveFiledAsWritten(stripped, lowerNames) : null;
 }
 
 export function findGuidedLibraryIndex(

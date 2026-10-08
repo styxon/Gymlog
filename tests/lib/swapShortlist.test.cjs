@@ -12,20 +12,19 @@ const read = (relative) =>
 
 module.exports = [
   {
-    name: 'shortlist: the hip thrust pool becomes a choice instead of a catalogue',
+    name: 'shortlist: the hip thrust pool is split into variations and related lifts, none cut',
     run() {
       // Nine options, all of them some hip thrust or glute bridge, ranked
       // together — so the machine version could sit fourth behind three
-      // bridges, and the actions under the list fell off the sheet
-      // (user 2026-08-26).
+      // bridges (user 2026-08-26). Split, not cut: the owner's call
+      // (2026-10-07) is that no swap list is capped.
       const options = buildSwapOptionsForSlot('hip_thrust_bridge', 'Barbell Hip Thrust', null);
       assert.ok(options.length >= 8, `the pool itself is still large: ${options.length}`);
 
       const shortlist = buildSwapShortlist('Barbell Hip Thrust', options);
       assert.ok(shortlist.total <= options.length);
-      assert.ok(shortlist.variations.length <= 3);
-      assert.ok(shortlist.related.length <= 3);
-      assert.ok(shortlist.variations.length + shortlist.related.length <= 6, 'six rows at the very most');
+      assert.equal(shortlist.variations.length + shortlist.related.length, shortlist.total, 'every lift kept');
+      assert.ok(shortlist.total > 6, `the whole pool, not six rows: ${shortlist.total}`);
 
       // Same movement, different kit.
       for (const option of shortlist.variations) {
@@ -93,10 +92,9 @@ module.exports = [
     },
   },
   {
-    name: 'shortlist: search reaches past the six rows, in the language the reader types',
+    name: 'shortlist: search narrows the pool, in the language the reader types',
     run() {
-      // The shortlist is deliberately short and the pool behind it is not. A
-      // reader who knows what they want should not have to be offered it.
+      // A reader who knows what they want should not have to scroll to it.
       const options = [
         { exerciseName: 'Cable Kickback', searchLabel: 'Taljapotku', reason: null, score: 5 },
         { exerciseName: 'Frog Pump', searchLabel: 'Sammakkopumppu', reason: null, score: 4 },
@@ -150,9 +148,9 @@ module.exports = [
       assert.match(read('src/components/sheetKit.tsx'), /maxHeight: '86%'/);
       for (const source of [home, day]) {
         assert.match(source, /listFooter=\{\s*<View style=\{styles\.swapActions\}>/);
-        assert.match(source, /buildSwapShortlist\(/);
-        // The shortlist is the first cards: variations, then related.
-        assert.match(source, /\[\.\.\.swapRow\.shortlist\.variations, \.\.\.swapRow\.shortlist\.related\]/);
+        // The slot's alternatives are the first cards: variations, then
+        // related, the same as the player's (tests/lib/swapOneList).
+        assert.match(source, /buildSwapAlternatives\(\{/);
       }
     },
   },

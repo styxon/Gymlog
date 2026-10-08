@@ -5,6 +5,7 @@ const path = require('node:path');
 const { parseProgrammeBrief, briefAsksForSpecialty } = require('../../.test-dist/lib/programmeBrief.js');
 const { buildProgramIntakeBrief } = require('../../.test-dist/lib/programIntake.js');
 const { matchProgrammeToBrief } = require('../../.test-dist/lib/briefProgrammeMatch.js');
+const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
 const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
 const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
 const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
@@ -121,7 +122,7 @@ module.exports = [
             for (const experience of ['beginner', 'intermediate', 'advanced']) {
               for (const language of ['fi', 'en']) {
                 const signals = parseProgrammeBrief(intakeBrief({ goal, days, equipment, experience }, language));
-                const match = matchProgrammeToBrief(signals);
+                const match = matchProgrammeToBrief(signals, createSeedDatabase().preferences);
                 if (!match) continue;
                 const program = getRecommendationProgramDefinition(match.programId);
                 const label = `${goal} ${days}d ${equipment} ${experience} ${language} -> ${match.programId}`;
@@ -137,11 +138,11 @@ module.exports = [
       assert.deepEqual(offenders, []);
       // The case that showed it: a beginner at home with nothing, five days.
       const beginner = parseProgrammeBrief(intakeBrief({ days: 5, minutes: 30, equipment: 'bodyweight', experience: 'beginner' }));
-      assert.equal(matchProgrammeToBrief(beginner), null, 'no five-day programme fits; the composer builds and says so');
+      assert.equal(matchProgrammeToBrief(beginner, createSeedDatabase().preferences), null, 'no five-day programme fits; the composer builds and says so');
       // And the goals the catalog names differently are matched at all.
       for (const goal of ['fat_loss', 'fitness']) {
         const signals = parseProgrammeBrief(intakeBrief({ goal, days: 6, equipment: 'gym', experience: 'advanced' }));
-        assert.ok(matchProgrammeToBrief(signals)?.matched.goal, `${goal} matched no programme's goal`);
+        assert.ok(matchProgrammeToBrief(signals, createSeedDatabase().preferences)?.matched.goal, `${goal} matched no programme's goal`);
       }
     },
   },

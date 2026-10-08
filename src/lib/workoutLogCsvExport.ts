@@ -102,13 +102,15 @@ function logRowsOf(log: ExerciseLog): Array<{
   completed: boolean;
 }> {
   if (log.sets && log.sets.length > 0) {
-    // Warm-ups ("+ Warm-up set") are not sets of the programme, and their
-    // numbers run below zero: left out, the set column stays 1, 2, 3.
+    // Warm-ups ("+ Warm-up set") are not sets of the programme, and the header
+    // has no set-type column to mark one, so they stay out. The Set column is
+    // the position among working sets, not orderIndex + 1: a Hevy import puts
+    // its warm-up at orderIndex 0, and its working sets would start at 2.
     return [...log.sets]
       .filter((set) => set.kind !== 'warmup')
       .sort((left, right) => left.orderIndex - right.orderIndex)
-      .map((set) => ({
-        set: set.orderIndex + 1,
+      .map((set, index) => ({
+        set: index + 1,
         reps: set.reps,
         weight: set.weight,
         // A set with no status at all predates the field and was, by

@@ -1,4 +1,4 @@
-import type { SetupAgeRange, SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome, SetupEquipment, SetupGender, SetupWeekday } from './models';
+import type { SetupAgeRange, SetupCautionFlag, SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome, SetupEquipment, SetupGender, SetupWeekday } from './models';
 import type { RecommendationProfile } from '../lib/recommendationProfile';
 import type { I18nKey } from '../lib/i18n';
 
@@ -47,6 +47,13 @@ export interface RecommendationInput {
    * shelf they sit on — see programEquipmentFit.
    */
   availableEquipment?: string[] | null;
+  /**
+   * The areas the reader flagged. The pick was made as if there were none,
+   * and the composer then took the runs out of RUN and the curls out of the
+   * arms specialisation under reasons that still promised them (bug hunt,
+   * 2026-10-07, #35).
+   */
+  cautionFlags?: SetupCautionFlag[];
 }
 
 export interface RecommendationProgramDefinition {

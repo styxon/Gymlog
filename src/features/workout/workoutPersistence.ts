@@ -265,6 +265,16 @@ function normalizeActiveSession(input: unknown): WorkoutSessionRuntime | null {
       ...session.restTimer,
       exerciseSlotId: remapSlotId(session.restTimer.exerciseSlotId),
     },
+    // The bout's clock is found by its slot (stopwatchForSet); left on the old
+    // id, the bout reopened at 0:00 with its minutes gone.
+    ...(session.minutesClock
+      ? {
+          minutesClock: {
+            ...session.minutesClock,
+            slotId: remapSlotId(session.minutesClock.slotId) ?? session.minutesClock.slotId,
+          },
+        }
+      : {}),
     ui: {
       ...session.ui,
       activeSlotId: remapSlotId(session.ui.activeSlotId),

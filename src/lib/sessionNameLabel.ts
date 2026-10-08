@@ -116,6 +116,12 @@ const FOCUS_FI: Record<string, string> = {
   'recovery strength day': 'Kevyt voimapäivä',
   'easy run add-on': 'Lisäpäivä: kevyt juoksu',
   'long run add-on': 'Lisäpäivä: pitkä juoksu',
+  // The same days when the reader's knee or ankle flag turned the runs into
+  // walks or rides (sessionNameAfterRunStandIn).
+  'easy walk add-on': 'Lisäpäivä: kevyt kävely',
+  'long walk add-on': 'Lisäpäivä: pitkä kävely',
+  'easy ride add-on': 'Lisäpäivä: kevyt pyöräily',
+  'long ride add-on': 'Lisäpäivä: pitkä pyöräily',
   'bodyweight volume day': 'Kehonpainon volyymipäivä',
   'conditioning + mobility day': 'Kunto ja liikkuvuus',
   'recovery + mobility day': 'Palautuminen ja liikkuvuus',
@@ -160,6 +166,10 @@ const FOCUS_FI: Record<string, string> = {
   'yoga flow': 'Joogavirta',
   'easy run': 'Kevyt juoksu',
   'tempo run': 'Tempojuoksu',
+  'easy walk': 'Kevyt kävely',
+  'tempo walk': 'Tempokävely',
+  'easy ride': 'Kevyt pyöräily',
+  'tempo ride': 'Tempopyöräily',
   // Two-word focuses with no separator to split on.
   // The block below is what the template editor's split presets write: they
   // are stored as session names, so they arrive here rather than through a

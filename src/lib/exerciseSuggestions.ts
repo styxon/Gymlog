@@ -1,7 +1,10 @@
 ﻿import { filterBrowsableExercises } from './exerciseBrowseFilter';
 import { exerciseNameLabel } from './exerciseNameLabel';
-import { isHoldExerciseName } from './holdExercises';
+import { prescriptionUnitOf } from '../features/workout/workoutTypes';
+import { getCatalogTrackingMode } from './catalogExercisePools';
+import { DEFAULT_HOLD_SECONDS } from './holdExercises';
 import { createId } from './ids';
+import { DEFAULT_MINUTES_PRESCRIPTION } from './minutesExercises';
 import {
   ExerciseLibraryItem,
   ExerciseTemplate,
@@ -81,6 +84,20 @@ function shouldTrackByDefault(item?: ExerciseLibraryItem) {
   return item.category === 'compound';
 }
 
+/**
+ * The rest a lift added mid-session starts from, before its kind trims it
+ * (getExerciseTemplateDefaults): the rest of the lift it is added after, so it
+ * keeps the session's rhythm, when that lift rests between sets at all. A bout
+ * of minutes, a 1 × 20 finisher and the first half of a superset rest 0, and a
+ * 3 × 6–8 bench added after one rested 0 — the player's 15 s floor (re-hunt
+ * R4, 2026-10-07). Otherwise the reader's own default rest.
+ */
+export function restSecondsForAddedLift(anchorRestSeconds: number | null | undefined, defaultRestSeconds: number): number {
+  return typeof anchorRestSeconds === 'number' && Number.isFinite(anchorRestSeconds) && anchorRestSeconds > 0
+    ? anchorRestSeconds
+    : defaultRestSeconds;
+}
+
 export function getExerciseTemplateDefaults(item: ExerciseLibraryItem | undefined, defaultRestSeconds: number) {
   if (!item) {
     return {
@@ -92,16 +109,31 @@ export function getExerciseTemplateDefaults(item: ExerciseLibraryItem | undefine
     };
   }
 
-  // Before the category: a plank is filed under core, and core's 12–15 is a
-  // rep range. A hold reads its range as seconds, so a plank picked in "Build
-  // it yourself" asked for 15 s (device walk, 2026-10-05). 30–45 s is what the
-  // ready programmes prescribe most often for a hold.
-  if (isHoldExerciseName(item.name)) {
+  // Before the category, the unit the exercise is logged in — the same
+  // getCatalogTrackingMode the player runs the row on. A plank is filed under
+  // core, and core's 12–15 is a rep range; a hold reads its range as seconds,
+  // so a plank picked in "Build it yourself" asked for 15 s (device walk,
+  // 2026-10-05).
+  const unit = prescriptionUnitOf(getCatalogTrackingMode(item.name));
+  if (unit === 'seconds') {
     return {
       targetSets: 3,
-      repMin: 30,
-      repMax: 45,
+      repMin: DEFAULT_HOLD_SECONDS.min,
+      repMax: DEFAULT_HOLD_SECONDS.max,
       restSeconds: Math.min(defaultRestSeconds, 60),
+      trackedDefault: false,
+    };
+  }
+
+  // A treadmill or a rower is filed under cardio, whose 1 × 8–12 the player
+  // ran as 8–12 minutes; every other place a bout is built from a name writes
+  // one of twenty (bug hunt, 2026-10-07). One bout, so no rest after it.
+  if (unit === 'minutes') {
+    return {
+      targetSets: DEFAULT_MINUTES_PRESCRIPTION.sets,
+      repMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      repMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      restSeconds: 0,
       trackedDefault: false,
     };
   }

@@ -42,10 +42,22 @@ module.exports = [
       const ref = between('const homeSessionRef', 'const homeSessionAdaptation');
       assert.match(ref, /programId: homeActivePlanCard\.programId, sessionId: homeActivePlanCard\.nextSession\.id/);
       const home = between('sessionSwaps={homeSessionAdaptation.swaps}', 'onRemoveSessionExercise=');
-      assert.match(home, /onSwapSessionExercise=\{\(slotId, exerciseName\) =>\s*adaptHomeSession\(\(current\) => withSessionSwap\(current, slotId, exerciseName\)\)/);
+      // With the row's own lift, so picking it back undoes the swap (swap
+      // hunt, 2026-10-07); none while that session is the running workout
+      // (tests/screens/homeRunningSessionEdits).
+      assert.match(
+        home,
+        /onSwapSessionExercise=\{\s*todayIsRunning \? undefined : \(slotId, exerciseName\) =>\s*adaptHomeSession\(\(current\) =>\s*withSessionSwap\(\s*current,\s*slotId,\s*exerciseName,\s*homeActivePlanCard\?\.nextSession\?\.exercises\.find\(\(exercise\) => exercise\.slotId === slotId\)\?\.name,\s*\),/,
+      );
       assert.match(home, /sessionDrops=\{homeSessionAdaptation\.drops\}/);
-      assert.match(home, /onDropSessionExercise=\{\(slotId\) => adaptHomeSession\(\(current\) => withSessionDrop\(current, slotId\)\)\}/);
-      assert.match(home, /onRestoreSessionExercise=\{\(slotId\) => adaptHomeSession\(\(current\) => withoutSessionDrop\(current, slotId\)\)\}/);
+      assert.match(
+        home,
+        /onDropSessionExercise=\{\s*todayIsRunning \? undefined : \(slotId\) => adaptHomeSession\(\(current\) => withSessionDrop\(current, slotId\)\)\s*\}/,
+      );
+      assert.match(
+        home,
+        /onRestoreSessionExercise=\{\s*todayIsRunning \? undefined : \(slotId\) => adaptHomeSession\(\(current\) => withoutSessionDrop\(current, slotId\)\)\s*\}/,
+      );
       // The card starts the same programme it holds the rows for.
       const start = between('onStartActivePlanSession={(sessionId) => {', 'onCreateWorkoutFromExercises=');
       assert.match(start, /handleStartCustomProgramSession\(homeActivePlanCard\.programId, sessionId\)/);
@@ -58,7 +70,10 @@ module.exports = [
       const day = between("if (route.screen === 'programDay') {", 'exerciseLibrary={exerciseBrowserItems}');
       assert.match(day, /const daySessionRef: AdaptedSessionRef = \{ programId: route\.workoutTemplateId, sessionId: route\.sessionId \};/);
       assert.match(day, /sessionSwaps=\{sessionAdaptationFor\(daySessionRef\)\.swaps\}/);
-      assert.match(day, /adaptSession\(daySessionRef, \(current\) => withSessionSwap\(current, slotId, exerciseName\)\)/);
+      assert.match(
+        day,
+        /adaptSession\(daySessionRef, \(current\) =>\s*withSessionSwap\(\s*current,\s*slotId,\s*exerciseName,\s*daySession\.exercises\.find\(\(exercise\) => exercise\.slotId === slotId\)\?\.name,\s*\),/,
+      );
     },
   },
   {

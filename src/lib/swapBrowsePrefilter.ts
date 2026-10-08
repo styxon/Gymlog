@@ -19,10 +19,28 @@ import { exerciseTypeOf, isStretchExercise } from './exerciseClassification';
 import { displayEquipmentValue } from './libraryLabel';
 import { ExerciseLibraryItem } from '../types/models';
 
-type SwapBrowseSource = Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'>;
+type SwapBrowseSource = Pick<ExerciseLibraryItem, 'bodyPart' | 'primaryMuscles'> &
+  Partial<Pick<ExerciseLibraryItem, 'name' | 'category' | 'sourceCategory' | 'sourceMechanic'>>;
+
+/** Whether the lift being swapped is a cardio row, read the way its type chip is. */
+function isCardioLift(current: Partial<Pick<ExerciseLibraryItem, 'name' | 'category' | 'sourceCategory' | 'sourceMechanic'>>) {
+  return (
+    current.category === 'cardio' &&
+    exerciseTypeOf({ ...current, name: current.name ?? '', category: current.category }) === 'cardio'
+  );
+}
 
 export function resolveSwapBrowsePrefilter(current: SwapBrowseSource | null | undefined): BodyPartFilter {
   if (!current || !current.bodyPart) {
+    return 'all';
+  }
+  // A machine or a run is filed under the muscle it works — the stair
+  // machine, the bike and the run blocks are all "quadriceps" — and a muscle
+  // chip lists no cardio, so their swap opened on hack squats and leg presses
+  // (swap hunt, 2026-10-07). Cardio is a kind of work, not a body part: it
+  // opens on the type chip instead (effectiveSwapCategory), over every body
+  // part.
+  if (isCardioLift(current)) {
     return 'all';
   }
   const primary = current.primaryMuscles?.[0];
@@ -126,14 +144,25 @@ export function effectiveSwapBodyPart(
  * Pose swap opened on chin-ups and deadlifts under its body part (review,
  * 2026-10-07). A stretch opens on "Venytykset". Every other lift opens on
  * all types, as before; typing searches every type.
+ *
+ * A cardio row opens on "Cardio" the same way (resolveSwapBrowsePrefilter
+ * gives it every body part): a stair machine's swap is another machine, and
+ * the list under a leg chip held only leg lifts (swap hunt, 2026-10-07).
  */
 export function effectiveSwapCategory(
   picked: ExerciseTypeFilter | null,
-  current: Pick<ExerciseLibraryItem, 'name'> & Partial<Pick<ExerciseLibraryItem, 'sourceCategory'>> | null | undefined,
+  current:
+    | (Pick<ExerciseLibraryItem, 'name'> &
+        Partial<Pick<ExerciseLibraryItem, 'sourceCategory' | 'category' | 'sourceMechanic'>>)
+    | null
+    | undefined,
   query: string,
 ): ExerciseTypeFilter {
   if (picked !== null) {
     return picked;
   }
-  return !query.trim() && current && isStretchExercise(current) ? 'stretch' : 'all';
+  if (query.trim() || !current) {
+    return 'all';
+  }
+  return isStretchExercise(current) ? 'stretch' : isCardioLift(current) ? 'cardio' : 'all';
 }

@@ -7,6 +7,7 @@ import { NewProgramSheet } from '../components/NewProgramSheet';
 import { ChevronIcon, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { CsvLibraryEntry } from '../lib/csvProgramImport';
 import { I18nKey, t } from '../lib/i18n';
+import { scheduleDraftSave } from '../lib/scheduleDraft';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { cycleSchedule, patternFromOnOff, trainsOn } from '../lib/trainingSchedule';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -183,6 +184,14 @@ export function TrainingPlanScreen({
   const cycleDirty =
     draftCycleOn !== (trainingCycle !== null) ||
     (draftCycleOn && draftPattern.join(',') !== (trainingCycle?.pattern ?? []).join(','));
+  // On the rhythm tab the weekday draft is not shown, so it cannot hold Done
+  // back there; it is simply not written (scheduleDraftSave).
+  const draftSave = scheduleDraftSave({
+    daysDirty: draftDirty,
+    daysValid: draftValid,
+    cycleOn: draftCycleOn,
+    cycleDirty: cycleDirty && Boolean(onChangeTrainingCycle),
+  });
 
   const beginEditingSchedule = () => {
     setDraftDays(trainingDays);
@@ -192,7 +201,10 @@ export function TrainingPlanScreen({
   };
 
   const finishEditingSchedule = () => {
-    if (cycleDirty && onChangeTrainingCycle) {
+    if (!draftSave.canFinish) {
+      return; // Done stays hidden — the caption explains the 2–6 rule.
+    }
+    if (draftSave.writeCycle && onChangeTrainingCycle) {
       // Today, not the day the plan was made: the reader is telling us where
       // they are in their rhythm right now, and an older anchor would put them
       // somewhere else in it.
@@ -200,11 +212,9 @@ export function TrainingPlanScreen({
     }
     // The weekday list stays written even while a cycle overrides it — it is
     // what the reminders and the recommender read, and the cycle can be turned
-    // off again.
-    if (draftDirty) {
-      if (!draftValid) {
-        return; // Done stays disabled — the caption explains the 2–6 rule.
-      }
+    // off again. A weekday draft left outside 2–6 on the rhythm tab is not
+    // written: the stored days stand.
+    if (draftSave.writeDays) {
       onChangeTrainingDays(draftDays);
     }
     setEditingSchedule(false);
@@ -331,9 +341,9 @@ export function TrainingPlanScreen({
                 label={t(language, 'plan.schedule')}
                 actionLabel={
                   editingSchedule
-                    ? draftDirty && !draftValid
-                      ? undefined
-                      : t(language, 'plan.done')
+                    ? draftSave.canFinish
+                      ? t(language, 'plan.done')
+                      : undefined
                     : t(language, 'plan.edit')
                 }
                 onAction={editingSchedule ? finishEditingSchedule : beginEditingSchedule}

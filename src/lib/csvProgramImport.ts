@@ -1,11 +1,15 @@
 import type { AppLanguage, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
+import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
+import { isMinutesTrackingMode, prescriptionUnitOf, WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { collapseCellWhitespace, splitCsvRecords } from './csvRecords';
 import { isBrowsableExercise } from './exerciseBrowseFilter';
 import { isSpecialtyExercise } from './exerciseClassification';
 import { lookupNameBook } from './exerciseNameBook';
 import { PLAIN_EXERCISE_NAMES, TRANSLATED_EXERCISE_NAMES } from './exerciseNameLabel';
+import { findFiledLibraryIndex, findFiledLibraryIndexAsWritten } from './guidedPlayer';
 import { t } from './i18n';
 import { isHoldExerciseName } from './holdExercises';
+import { intervalOffSeconds, parseIntervalScheme } from './intervalScheme';
 import { MINUTES_DIAL } from './weightDial';
 import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 
@@ -47,6 +51,15 @@ export interface CsvProgramRow {
   repMax: number;
   /** The Reps cell said minutes ("20 min"). Absent for every other row. */
   minutes?: boolean;
+  /**
+   * How the row is logged, where the name it links to might say otherwise:
+   * any hold, which was read in seconds, and a ready programme's row filed
+   * under a library row of another name — "Glute Bridge Hold" under the
+   * barbell bridge, "Rowing Machine HIIT" under the rower the library logs in
+   * minutes. Absent for every other row; the unit is read off the name where
+   * the programme runs.
+   */
+  trackingMode?: WorkoutTrackingMode;
   matchedName: string | null;
   libraryItemId: string | null;
   suggestion: string | null;
@@ -68,6 +81,36 @@ export interface CsvProgramPreview {
 
 function normalizeName(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+/**
+ * Every name the ready programmes prescribe, with how its first row logs it —
+ * null when two rows of the same name log it in different units.
+ *
+ * The app's own export writes these names, and the catalogue is what they
+ * mean: it alone knows "Glute Bridge Hold" is held for seconds although its
+ * history is filed under the barbell bridge (bug hunt, 2026-10-08).
+ */
+const READY_PROGRAMME_MODES: ReadonlyMap<string, WorkoutTrackingMode | null> = (() => {
+  const modes = new Map<string, WorkoutTrackingMode | null>();
+  for (const template of WORKOUT_TEMPLATES_V1) {
+    for (const session of template.sessions) {
+      for (const exercise of session.exercises) {
+        const key = exercise.exerciseName.trim().toLowerCase();
+        const known = modes.get(key);
+        if (known === undefined) {
+          modes.set(key, exercise.trackingMode);
+        } else if (known !== null && prescriptionUnitOf(known) !== prescriptionUnitOf(exercise.trackingMode)) {
+          modes.set(key, null);
+        }
+      }
+    }
+  }
+  return modes;
+})();
+
+function isReadyProgrammeName(name: string) {
+  return READY_PROGRAMME_MODES.has(name.trim().toLowerCase());
 }
 
 /**
@@ -137,6 +180,13 @@ export const CSV_REPS_MAX = 500;
 export const CSV_HOLD_SECONDS_MAX = 600;
 /** Five hours: the player's minutes dial (MINUTES_DIAL) stops there too. */
 export const CSV_MINUTES_MAX = MINUTES_DIAL.max;
+/**
+ * The rest between minutes blocks ("Easy Run Blocks, 4, 5 min"): the middle
+ * of the 45–75 s the ready catalogue prescribes for its own. The importer gave
+ * every minutes row 0, which only fits a single steady bout (bug hunt,
+ * 2026-10-07).
+ */
+export const CSV_MINUTES_BLOCK_REST_SECONDS = 60;
 
 function parseReps(value: string): { repMin: number; repMax: number; minutes: boolean } | null {
   // "20 min" is minutes — the app's own export writes a bout of steady
@@ -248,9 +298,32 @@ function isRoleWord(value: string) {
   return ROLE_WORDS.has(foldLabel(value));
 }
 
+/**
+ * One word's singular, so "Leg Extension" is the library's "Leg Extensions"
+ * and "Seated Cable Row" its "Seated Cable Rows". Applied to both sides, so a
+ * fold that is not quite English ("abs" -> "ab") still compares like with like.
+ */
+function singularWord(word: string) {
+  if (word.length <= 2 || /(ss|us|is)$/.test(word)) {
+    return word;
+  }
+  if (word.endsWith('ies')) {
+    return `${word.slice(0, -3)}y`;
+  }
+  if (/(ch|sh|x|ss)es$/.test(word)) {
+    return word.slice(0, -2);
+  }
+  return word.endsWith('s') ? word.slice(0, -1) : word;
+}
+
+function foldPlural(normalized: string) {
+  return normalized.split(' ').map(singularWord).join(' ');
+}
+
 function matchExercise(
   rawName: string,
   library: CsvLibraryEntry[],
+  libraryNames: readonly string[],
   nameBook: readonly ExerciseNameBookEntry[],
 ) {
   const normalized = normalizeName(rawName);
@@ -274,7 +347,26 @@ function matchExercise(
     };
   }
 
+  // The row the player files this name under: the library's own name or the
+  // alias table's hand-checked answer, never a substring. The app's own
+  // export writes catalogue names such as "Air Bike (30s sprint)", and only
+  // this table knows that is the fan bike, not the library's ab exercise.
+  //
+  // The player also drops a trailing bracket to find a row, which is only
+  // safe on the ready programmes' own names: their brackets are cues checked
+  // by hand, "(Wide)", "(Light)". Another app writes the variant there, and
+  // "Bench Press (Dumbbell)" was linked as the barbell bench (bug hunt,
+  // 2026-10-08); it goes on to the guesses below for the reader to confirm.
+  const filedIndex = findFiledLibraryIndexAsWritten(rawName, libraryNames)
+    ?? (isReadyProgrammeName(rawName) ? findFiledLibraryIndex(rawName, libraryNames) : null);
+  const filed = filedIndex === null ? null : library[filedIndex];
+  if (filed) {
+    return { matchedName: filed.name, libraryItemId: filed.id, suggestion: null, viaNameBook: false };
+  }
+
   const compact = normalized.replace(/ /g, '');
+  const folded = foldPlural(normalized);
+  const foldedCompact = folded.replace(/ /g, '');
 
   // The app's own name for the lift, in either language, before guessing —
   // but after a library name written out exactly, which is never a label for
@@ -289,6 +381,7 @@ function matchExercise(
   }
 
   const containsMatches: CsvLibraryEntry[] = [];
+  let pluralMatch: CsvLibraryEntry | null = null;
   let bestOverlap: { entry: CsvLibraryEntry; score: number } | null = null;
   const writtenNamesANonSet = !isBrowsableExercise({ name: rawName });
 
@@ -297,6 +390,14 @@ function matchExercise(
     // Exact match, tolerant of spacing/punctuation ("Dead Lift" === "Deadlift").
     if (entryNormalized === normalized || entryNormalized.replace(/ /g, '') === compact) {
       return { matchedName: entry.name, libraryItemId: entry.id, suggestion: null, viaNameBook: false };
+    }
+    // The same name but for a plural. Kept until the loop ends, so an exact
+    // match further down still wins.
+    if (!pluralMatch) {
+      const entryFolded = foldPlural(entryNormalized);
+      if (entryFolded === folded || entryFolded.replace(/ /g, '') === foldedCompact) {
+        pluralMatch = entry;
+      }
     }
     if (!mayGuess(entry, writtenNamesANonSet)) {
       continue;
@@ -313,16 +414,20 @@ function matchExercise(
     }
   }
 
+  if (pluralMatch) {
+    return { matchedName: pluralMatch.name, libraryItemId: pluralMatch.id, suggestion: null, viaNameBook: false };
+  }
+
   // A generic name — "Deadlift", "Pull Up", "Press" — is a whole-word
   // substring of dozens of more specific library entries. Taking the first
   // one found used to turn a photographed or CSV "Deadlift" into e.g.
   // "Romanian Deadlift" or a machine variant with no way for the reader to
-  // notice (#bugs). A contains-match is only trustworthy when it names
-  // exactly one entry; an ambiguous one falls through to the ordinary
-  // suggestion path below, same as any other near-miss.
+  // notice (#bugs). Even exactly one is a guess: "Cable Row" is only inside
+  // "Upright Cable Row", a shoulder lift, and "Plank Jack" only contains
+  // "Plank" (bug hunt, 2026-10-07). It is offered for the reader to confirm,
+  // like any other near-miss; an ambiguous one falls through to the overlap.
   if (containsMatches.length === 1) {
-    const match = containsMatches[0];
-    return { matchedName: match.name, libraryItemId: match.id, suggestion: null, viaNameBook: false };
+    return { matchedName: null, libraryItemId: null, suggestion: containsMatches[0].name, viaNameBook: false };
   }
   if (bestOverlap && bestOverlap.score >= 0.5) {
     return { matchedName: null, libraryItemId: null, suggestion: bestOverlap.entry.name, viaNameBook: false };
@@ -396,6 +501,7 @@ export function parseCsvProgram(
     };
   }
 
+  const libraryNames = library.map((entry) => entry.name);
   const rows: CsvProgramRow[] = [];
   const seenDayKeys = new Set<string>();
   const skippedDayKeys = new Set<string>();
@@ -414,7 +520,7 @@ export function parseCsvProgram(
     // not one is the reader's to fix, like a missing name.
     const setsText = (cells[setsIndex] ?? '').trim();
     const sets = /^\d+$/.test(setsText) ? Number(setsText) : Number.NaN;
-    const reps = parseReps((cells[repsIndex] ?? '').trim());
+    const parsedReps = parseReps((cells[repsIndex] ?? '').trim());
 
     if (!day || !exerciseName) {
       errors.push(t(language, 'csv.error.missing', { row }));
@@ -431,15 +537,29 @@ export function parseCsvProgram(
       errors.push(t(language, 'csv.error.setsMax', { row, max: PROGRAM_SETS_RANGE.max }));
       continue;
     }
-    if (!reps) {
+    if (!parsedReps) {
       errors.push(t(language, 'csv.error.reps', { row }));
       continue;
     }
     // A hold is written in seconds, so it gets the seconds ceiling — read off
     // the name the row resolves to as well as the one written, so "Lankku"
     // is a plank like "Plank" is.
-    const match = matchExercise(exerciseName, library, nameBook);
-    const isHold = isHoldExerciseName(exerciseName) || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
+    const match = matchExercise(exerciseName, library, libraryNames, nameBook);
+    // A ready programme's row linked under another name keeps the catalogue's
+    // own unit; the library name would read 30 s of rowing as 30 minutes.
+    // Minutes are the cell's to say ("20 min"), as the export writes them.
+    const catalogueMode = match.matchedName !== null && normalizeName(match.matchedName) !== normalizeName(exerciseName)
+      ? READY_PROGRAMME_MODES.get(exerciseName.trim().toLowerCase()) ?? null
+      : null;
+    const linkedMode = catalogueMode !== null && !isMinutesTrackingMode(catalogueMode) ? catalogueMode : null;
+    const isHold = isHoldExerciseName(exerciseName)
+      || (match.matchedName !== null && isHoldExerciseName(match.matchedName))
+      || linkedMode === 'hold';
+    // Checked before the minutes: "Plank, 3, 1 min" is a 60 s hold, not a
+    // minutes bout (bug hunt, 2026-10-07).
+    const reps = isHold && parsedReps.minutes
+      ? { repMin: parsedReps.repMin * 60, repMax: parsedReps.repMax * 60, minutes: false }
+      : parsedReps;
     const repsMax = reps.minutes ? CSV_MINUTES_MAX : isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
     if (reps.repMax > repsMax) {
       errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
@@ -468,6 +588,9 @@ export function parseCsvProgram(
       // Only when the cell said so. A bike written "1,20" with no unit is
       // still minutes by its name, decided where the programme is run.
       ...(reps.minutes ? { minutes: true } : {}),
+      // A hold says so outright: linked under "Barbell Glute Bridge", the
+      // seconds just read would be run as repetitions with a weight.
+      ...(reps.minutes ? {} : isHold ? { trackingMode: 'hold' as const } : linkedMode ? { trackingMode: linkedMode } : {}),
       ...match,
     });
   }
@@ -492,16 +615,26 @@ export function buildDraftFromCsvPreview(preview: CsvProgramPreview, programName
     }
     const key = normalizeName(row.day);
     const session = sessionsByDay.get(key) ?? { name: row.day, exercises: [] };
+    // An interval's rhythm lives in its name, and the player reads it there:
+    // "Push-Up (20s on / 10s off)" saved as the library's "Pushups" was 20
+    // push-ups with 90 s rest (bug hunt, 2026-10-08). The written name stays,
+    // linked to the same library row, and rests the off-phase it states.
+    const name = parseIntervalScheme(row.exerciseName) && !parseIntervalScheme(row.matchedName)
+      ? row.exerciseName
+      : row.matchedName;
+    const intervalRest = intervalOffSeconds(name);
+    const trackingMode = row.minutes ? 'duration_minutes' as const : row.trackingMode;
     session.exercises.push({
-      name: row.matchedName,
+      name,
       targetSets: row.sets,
       repMin: row.repMin,
       repMax: row.repMax,
-      // A bout of minutes has no rest between sets to speak of.
-      restSeconds: row.minutes ? 0 : 90,
+      // One bout of minutes has no rest to speak of; several are blocks, and
+      // rest like the catalogue's own.
+      restSeconds: intervalRest ?? (row.minutes ? (row.sets > 1 ? CSV_MINUTES_BLOCK_REST_SECONDS : 0) : 90),
       trackedDefault: true,
       libraryItemId: row.libraryItemId,
-      ...(row.minutes ? { trackingMode: 'duration_minutes' as const } : {}),
+      ...(trackingMode ? { trackingMode } : {}),
     });
     sessionsByDay.set(key, session);
   }

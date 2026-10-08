@@ -8,14 +8,18 @@ import {
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { t } from './i18n';
-import { ComposedProgramWeek } from './programDayComposer';
+import { ComposedProgramWeek, composeProgramWeekForSelection } from './programDayComposer';
+import { findReadyProgrammeCopyId, ProgrammeCopyTemplate } from './programmeCopyLink';
+import type { FirstRunSetupSelection } from './firstRunSetup';
 import { ProgramInsightSummary } from './programInsights';
 import { getRecommendationProgrammeSummary } from './recommendationProgramme';
 import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgramContent';
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
-import type { AppLanguage } from '../types/models';
+import type { AppLanguage, WorkoutPlan } from '../types/models';
 import { doseUnitSuffix, removeTrailingZeros } from './format';
 import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMinutes';
+import { doseAfterSwap } from './swapDose';
+import { buildProgramFingerprint } from './programFingerprint';
 
 export type ProgramDetailSource = 'ready' | 'custom';
 
@@ -40,6 +44,8 @@ export interface ProgramDetailExerciseItem {
   timed: boolean;
   /** Steady cardio is prescribed in minutes — "1 × 20 min". */
   minutes: boolean;
+  /** How the row is logged, which a swap for today converts from (lib/swapDose). */
+  trackingMode: WorkoutTrackingMode;
   prescription: string;
   /** "tauko"-less rest range, e.g. "45–105 s" or "1,5–2,5 min". */
   restLabel: string;
@@ -130,6 +136,33 @@ function buildPrescription(
 }
 
 /**
+ * A day's row as today's swap will start it: the swapped lift's dose
+ * (lib/swapDose: numbers in its own unit once the unit changes), or the row as
+ * it is with no swap. The day screen printed the programme's "3 × 8" over a
+ * plank that would open on seconds (swap hunt, 2026-10-07).
+ */
+export function exerciseAfterSessionSwap(
+  exercise: ProgramDetailExerciseItem,
+  swapName: string | null | undefined,
+): Pick<ProgramDetailExerciseItem, 'prescription'> {
+  if (!swapName) {
+    return { prescription: exercise.prescription };
+  }
+  const dose = doseAfterSwap(
+    {
+      trackingMode: exercise.trackingMode,
+      sets: exercise.sets,
+      repsMin: exercise.repMin,
+      repsMax: exercise.repMax,
+    },
+    swapName,
+  );
+  return {
+    prescription: buildPrescription(dose.repsMin, dose.repsMax, dose.sets, dose.trackingMode),
+  };
+}
+
+/**
  * "tauko 45–105 s" / "tauko 1,5–2,5 min" — seconds until the minute reads
  * cleaner, matching the design's day view.
  */
@@ -176,6 +209,7 @@ function buildSessionItems(
         repMax: exercise.repsMax,
         timed: isTimedTrackingMode(exercise.trackingMode),
         minutes: isMinutesTrackingMode(exercise.trackingMode),
+        trackingMode: exercise.trackingMode,
         prescription: buildPrescription(exercise.repsMin, exercise.repsMax, exercise.sets, exercise.trackingMode),
         restLabel: buildRestLabel(exercise.restSecondsMin, exercise.restSecondsMax),
         restSeconds: exercise.restSecondsMin,
@@ -203,6 +237,111 @@ export function readyProgramSessionMinutes(
   minutesOptions: ProgrammeMinutesOptions = {},
 ): number {
   return composedWeek?.sessionMinutes || readyTemplateCardMinutes(template, minutesOptions);
+}
+
+/**
+ * The minutes a card quotes for a ready programme: the page's number.
+ *
+ * `readerWeek` is the reader's composed week (resolveReaderComposedWeek) and
+ * counts only for its own programme; every other card has nothing composed
+ * behind its page either, and both quote the gear estimate.
+ */
+export function programmeCardMinutes(
+  template: WorkoutTemplateV1,
+  readerWeek: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): number {
+  return readyProgramSessionMinutes(template, readerWeek?.programId === template.id ? readerWeek : null, minutesOptions);
+}
+
+/**
+ * The week a ready programme's page shows: the composed one when it holds
+ * sessions, otherwise the catalog's. Its days and its session list.
+ */
+function readyProgramWeek(template: WorkoutTemplateV1, composedWeek?: ComposedProgramWeek | null) {
+  const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
+  return composed
+    ? { days: composed.days, sessions: composed.sessions }
+    : { days: template.daysPerWeek, sessions: template.sessions };
+}
+
+/**
+ * Everything a card quotes about a ready programme's week, from the week its
+ * page shows: the days, the minutes and one bar per session.
+ *
+ * The card took its minutes from the reader's composed week and its days from
+ * the catalog: a strength beginner who asked for four days read "3 days ·
+ * ~35 min" on the card and "4 days" on the page, and the ladder's weekly load
+ * multiplied the two (bug hunt, 2026-10-08).
+ */
+export function programmeCardWeek(
+  template: WorkoutTemplateV1,
+  readerWeek: ComposedProgramWeek | null,
+  minutesOptions: ProgrammeMinutesOptions = {},
+): { days: number; minutes: number; fingerprint: number[] } {
+  const own = readerWeek?.programId === template.id ? readerWeek : null;
+  const week = readyProgramWeek(template, own);
+  return {
+    days: week.days,
+    minutes: programmeCardMinutes(template, readerWeek, minutesOptions),
+    fingerprint: buildProgramFingerprint(week),
+  };
+}
+
+export interface ReaderComposedWeekContext {
+  /** The programme the questionnaire handed the reader. */
+  recommendedProgramId: string | null | undefined;
+  setupSelection: FirstRunSetupSelection | null;
+  /** The reader's own templates: a copy of the programme has a page of its own. */
+  workoutTemplates: readonly ProgrammeCopyTemplate[];
+  workoutPlans: ReadonlyArray<Pick<WorkoutPlan, 'entries'>>;
+}
+
+/**
+ * The week the reader runs of this ready programme, composed for their days,
+ * flags, focus and gear, or null when the catalog's own week is the answer.
+ *
+ * Only the questionnaire's programme, only while the reader has no copy of
+ * it, and only while the plan's days are the composed ones.
+ *
+ * The programme page, the Programs cards and the goal proposal all read the
+ * reader's week through this. The cards used to cost the catalog week for
+ * gear alone, so with the knees avoided a card read 40 min and the page 30
+ * for the same programme (bug hunt, 2026-10-07, #37).
+ */
+export function resolveReaderComposedWeek(
+  templateId: string,
+  context: ReaderComposedWeekContext,
+): ComposedProgramWeek | null {
+  const { recommendedProgramId, setupSelection } = context;
+  if (recommendedProgramId !== templateId || !setupSelection) {
+    return null;
+  }
+  /*
+   * And only while the composed week is the only version of it.
+   *
+   * Onboarding saves what it composed as a programme of the reader's own,
+   * and that copy is what they train. The programme page is the catalog
+   * programme's page: its day editor and its adopt button work on the
+   * original. Showing the copy's week there made a page whose days and
+   * whose buttons disagreed — the reader tapped a day they had been
+   * shown on Home and edited something else (audit round 4, 2026-09-20).
+   * The copy has a page of its own, which is where its week belongs.
+   */
+  if (findReadyProgrammeCopyId(templateId, context.workoutTemplates)) {
+    return null;
+  }
+  const composed = composeProgramWeekForSelection(setupSelection, templateId);
+  if (!composed) {
+    return null;
+  }
+  const planSessionIds = context.workoutPlans
+    .flatMap((plan) => plan.entries)
+    .filter((entry) => entry.workoutTemplateId === templateId)
+    .map((entry) => entry.workoutTemplateSessionId);
+  return composedWeekMatchesPlan(composed.sessions.map((session) => session.id), planSessionIds)
+    ? composed
+    : null;
 }
 
 export function buildReadyProgramDetail(
@@ -247,7 +386,7 @@ export function buildReadyProgramDetail(
   const content = getReadyProgramContent(template.id, language);
   const programmeSummary = getRecommendationProgrammeSummary(template.id);
   const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
-  const daysPerWeek = composed ? composed.days : template.daysPerWeek;
+  const daysPerWeek = readyProgramWeek(template, composed).days;
   const sessionMinutes = readyProgramSessionMinutes(template, composedWeek, minutesOptions);
   const detailSessions: WorkoutTemplateSession[] = composed
     ? composed.sessions.map((session) => ({

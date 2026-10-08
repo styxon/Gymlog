@@ -7,8 +7,9 @@ import {
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
-import { isHoldExerciseName } from './holdExercises';
+import { DEFAULT_HOLD_SECONDS, isHoldExerciseName } from './holdExercises';
 import { DEFAULT_MINUTES_PRESCRIPTION, isMinutesExerciseName } from './minutesExercises';
+import { collapseRepRange } from './singleRepTarget';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
 
@@ -238,6 +239,10 @@ export interface SwapPrescription {
   repsMax: number;
 }
 
+interface ProgrammeRow extends SwapPrescription {
+  sets: number;
+}
+
 function middle<T>(items: T[], by: (item: T) => number): T | null {
   if (items.length === 0) {
     return null;
@@ -252,14 +257,14 @@ function middle<T>(items: T[], by: (item: T) => number): T | null {
  * timed and counted rows over all of them, for a name none of them writes.
  */
 const programmePrescriptions = (() => {
-  const rowsByName = new Map<string, SwapPrescription[]>();
-  const timed: SwapPrescription[] = [];
-  const minutes: SwapPrescription[] = [];
-  const counted: SwapPrescription[] = [];
+  const rowsByName = new Map<string, ProgrammeRow[]>();
+  const timed: ProgrammeRow[] = [];
+  const minutes: ProgrammeRow[] = [];
+  const counted: ProgrammeRow[] = [];
   for (const template of WORKOUT_TEMPLATES_V1) {
     for (const session of template.sessions) {
       for (const exercise of session.exercises) {
-        const row = { repsMin: exercise.repsMin, repsMax: exercise.repsMax };
+        const row = { sets: exercise.sets, repsMin: exercise.repsMin, repsMax: exercise.repsMax };
         const key = exercise.exerciseName.trim().toLowerCase();
         const rows = rowsByName.get(key) ?? [];
         rows.push(row);
@@ -269,18 +274,31 @@ const programmePrescriptions = (() => {
       }
     }
   }
-  const byName = new Map<string, SwapPrescription>();
+  const byName = new Map<string, ProgrammeRow>();
   rowsByName.forEach((rows, key) => byName.set(key, middle(rows, (row) => row.repsMax)!));
   return {
     byName,
-    timed: middle(timed, (row) => row.repsMax) ?? { repsMin: 30, repsMax: 30 },
+    timed: middle(timed, (row) => row.repsMax) ?? { sets: 3, repsMin: 30, repsMax: 30 },
     minutes: middle(minutes, (row) => row.repsMax) ?? {
+      sets: DEFAULT_MINUTES_PRESCRIPTION.sets,
       repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
       repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
     },
-    counted: middle(counted, (row) => row.repsMax) ?? { repsMin: 10, repsMax: 10 },
+    counted: middle(counted, (row) => row.repsMax) ?? { sets: 3, repsMin: 10, repsMax: 10 },
   };
 })();
+
+/** The row the programmes write for this name, or for its kind of set. */
+function programmeRowFor(exerciseName: string, unit: ReturnType<typeof prescriptionUnitOf>): ProgrammeRow {
+  return (
+    programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
+    (unit === 'seconds'
+      ? programmePrescriptions.timed
+      : unit === 'minutes'
+        ? programmePrescriptions.minutes
+        : programmePrescriptions.counted)
+  );
+}
 
 /**
  * The numbers a slot asks for after a swap that turns seconds into
@@ -304,14 +322,83 @@ export function prescriptionAfterSwap(
   if (prescriptionUnitOf(from) === toUnit) {
     return current;
   }
-  return (
-    programmePrescriptions.byName.get(exerciseName.trim().toLowerCase()) ??
-    (toUnit === 'seconds'
-      ? programmePrescriptions.timed
-      : toUnit === 'minutes'
-        ? programmePrescriptions.minutes
-        : programmePrescriptions.counted)
-  );
+  const { repsMin, repsMax } = programmeRowFor(exerciseName, toUnit);
+  return { repsMin, repsMax };
+}
+
+/**
+ * How many bouts a slot asks for once a lift timed in minutes takes the place
+ * of one that was not: the count the programmes write beside the minutes
+ * prescriptionAfterSwap gives it (one row's pair), and the slot's own count
+ * for any other swap.
+ *
+ * A set count belongs to its unit as much as the reps do. SHRED's treadmill
+ * HIIT at 8 × 30 s fell back to "Trail Running/Walking 8 × 5 min" with the
+ * cardio machines unticked: forty minutes in place of eight, Day 1 at 80 min
+ * against 45 (bug hunt, 2026-10-08).
+ */
+export function boutsAfterSwap(
+  from: WorkoutTrackingMode,
+  to: WorkoutTrackingMode,
+  currentSets: number,
+  exerciseName: string,
+): number {
+  const toUnit = prescriptionUnitOf(to);
+  if (toUnit !== 'minutes' || prescriptionUnitOf(from) === toUnit) {
+    return currentSets;
+  }
+  return programmeRowFor(exerciseName, toUnit).sets;
+}
+
+export interface ComposedSlotDose {
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  restSecondsMin: number;
+  restSecondsMax: number;
+}
+
+/**
+ * The numbers a slot the composer writes from a name alone asks for, in the
+ * unit its tracking mode counts. `lift` is the sets and rest the caller gives
+ * a slot of repetitions or seconds; a bout of minutes replaces them.
+ *
+ * - Minutes: one bout of DEFAULT_MINUTES_PRESCRIPTION, no rest.
+ * - Seconds: a hold bracket — a plank's 20–40, else DEFAULT_HOLD_SECONDS.
+ * - Reps: 10–15, collapsed to one number.
+ *
+ * Focus emphasis and the suggested days both build slots this way. Emphasis
+ * used to write "2 × 10–15" whatever the unit: an Elliptical Trainer was two
+ * 15-minute bouts with a rest between, and a plank a 10–15 s hold, while a
+ * suggested day wrote the same names as one 20-minute bout and 20–40 s (bug
+ * hunt, 2026-10-07). Saved programmes prescribe one rep number, and the loader
+ * collapses any range it finds (lib/singleRepTarget); the same function
+ * decides here, so what is saved is what every later load reads.
+ */
+export function composedSlotDose(
+  name: string,
+  trackingMode: WorkoutTrackingMode,
+  lift: { sets: number; restSecondsMin: number; restSecondsMax: number },
+): ComposedSlotDose {
+  const unit = prescriptionUnitOf(trackingMode);
+  if (unit === 'minutes') {
+    return {
+      sets: DEFAULT_MINUTES_PRESCRIPTION.sets,
+      repsMin: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      repsMax: DEFAULT_MINUTES_PRESCRIPTION.minutes,
+      restSecondsMin: 0,
+      restSecondsMax: 0,
+    };
+  }
+  const plank = name.toLowerCase().includes('plank');
+  const bracket =
+    unit === 'seconds'
+      ? plank
+        ? { min: 20, max: 40 }
+        : DEFAULT_HOLD_SECONDS
+      : { min: 10, max: 15 };
+  const reps = collapseRepRange({ name, repMin: bracket.min, repMax: bracket.max });
+  return { ...lift, repsMin: reps.repMin, repsMax: reps.repMax };
 }
 
 /** Bodyweight-first, then the loaded version. Both are real catalog entries. */

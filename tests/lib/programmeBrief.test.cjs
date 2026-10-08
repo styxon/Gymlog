@@ -126,6 +126,7 @@ module.exports = [
         focusBodyParts: [],
         cautions: [],
         avoidTerms: [],
+        noLegDay: false,
       });
     },
   },
@@ -169,6 +170,7 @@ module.exports = [
         'penkki 2 päivää',
         library,
         90,
+        preferences,
       );
       assert.equal(proposal.source, 'live');
       assert.equal(proposal.sessions.length, 1, 'the day with nothing real in it is gone');
@@ -255,16 +257,16 @@ module.exports = [
           },
         ],
       };
-      const plain = resolveLiveProposal(raw, '3 päivää, jalat ja selkä', seeded, 120);
+      const plain = resolveLiveProposal(raw, '3 päivää, jalat ja selkä', seeded, 120, preferences);
       assert.deepEqual(plain.sessions[0].exercises.map((exercise) => exercise.name), ['Barbell Full Squat']);
       assert.deepEqual(plain.specialtyLeftOut, ['Atlas Stones', 'Car Deadlift']);
       assert.deepEqual(plain.unresolvedNames, []);
 
       // Asked for by name, in either language, it stays; asked for as
       // strongman work, they all do.
-      const named = resolveLiveProposal(raw, 'jalat ja atlas stones', seeded, 120);
+      const named = resolveLiveProposal(raw, 'jalat ja atlas stones', seeded, 120, preferences);
       assert.deepEqual(named.sessions[0].exercises.map((exercise) => exercise.name), ['Barbell Full Squat', 'Atlas Stones']);
-      const strongman = resolveLiveProposal(raw, 'haluan strongman-treeniä', seeded, 120);
+      const strongman = resolveLiveProposal(raw, 'haluan strongman-treeniä', seeded, 120, preferences);
       assert.equal(strongman.sessions[0].exercises.length, 3);
       assert.deepEqual(strongman.specialtyLeftOut, []);
 
@@ -277,22 +279,22 @@ module.exports = [
         "legs without specialty stuff, and don't add atlas stones",
         'jalat ilman atlas stonesia',
       ]) {
-        const refused = resolveLiveProposal(raw, refusal, seeded, 120);
+        const refused = resolveLiveProposal(raw, refusal, seeded, 120, preferences);
         assert.deepEqual(refused.specialtyLeftOut, ['Atlas Stones', 'Car Deadlift'], refusal);
       }
       // A refusal in one clause does not cancel a request in another.
-      const mixed = resolveLiveProposal(raw, 'ei koneita. haluan atlas stones', seeded, 120);
+      const mixed = resolveLiveProposal(raw, 'ei koneita. haluan atlas stones', seeded, 120, preferences);
       assert.deepEqual(mixed.specialtyLeftOut, ['Car Deadlift']);
       // An emphatic request is still a request.
-      const only = resolveLiveProposal(raw, 'nothing but strongman, 4 days', seeded, 120);
+      const only = resolveLiveProposal(raw, 'nothing but strongman, 4 days', seeded, 120, preferences);
       assert.deepEqual(only.specialtyLeftOut, []);
       // "ei X vaan Y" asks for Y: the refusal stops at the turn (CI review of
       // #332, 2026-10-07) — and the other way round it still refuses.
       for (const request of ['ei koneita vaan strongman', 'no machines but strongman', 'en halua koneita, mutta strongmania kyllä']) {
-        assert.deepEqual(resolveLiveProposal(raw, request, seeded, 120).specialtyLeftOut, [], request);
+        assert.deepEqual(resolveLiveProposal(raw, request, seeded, 120, preferences).specialtyLeftOut, [], request);
       }
       for (const refusal of ['ei strongmania vaan koneita', 'no strongman but machines', 'ilman koneita ja strongmania']) {
-        assert.deepEqual(resolveLiveProposal(raw, refusal, seeded, 120).specialtyLeftOut, ['Atlas Stones', 'Car Deadlift'], refusal);
+        assert.deepEqual(resolveLiveProposal(raw, refusal, seeded, 120, preferences).specialtyLeftOut, ['Atlas Stones', 'Car Deadlift'], refusal);
       }
 
       // The card says what it left out, and the model is told not to.
@@ -321,7 +323,7 @@ module.exports = [
         ] }],
       };
       const brief = '3 päivää, koko keho';
-      const resolved = resolveLiveProposal(raw, brief, seeded, 120);
+      const resolved = resolveLiveProposal(raw, brief, seeded, 120, preferences);
       assert.equal(resolved.sessions.length, 0);
       const preview = composeProgrammePreview(brief, createSeedDatabase().preferences, seeded);
       const shown = liveProposalOrPreview(resolved, () => preview);
@@ -333,7 +335,7 @@ module.exports = [
       // A usable answer is itself, untouched.
       const usable = resolveLiveProposal(
         { title: 'Legs', sessions: [{ name: 'Day 1', exercises: [{ name: 'Barbell Full Squat', sets: 4, repsMin: 5, repsMax: 5 }] }] },
-        brief, seeded, 120,
+        brief, seeded, 120, preferences,
       );
       assert.equal(liveProposalOrPreview(usable, () => { throw new Error('preview not needed'); }), usable);
     },

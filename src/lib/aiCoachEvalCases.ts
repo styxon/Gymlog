@@ -178,7 +178,10 @@ const pushLogs = pushSessions.map((entry, index) => log(entry.id, 'Bench Press',
 // So these are the sentences the filter misses on purpose, said by a reader
 // with an ordinary training history. tests/lib/aiCoachEval holds every one
 // of them to classifying as `training` locally: a case the filter catches
-// never reaches the server and would test nothing.
+// never reaches the model — the phone answers it, and since the A6 hunt
+// (2026-10-07) so does the server, with the same classifier — and would test
+// nothing. What the filter does catch is tabled, class by class, in
+// tests/lib/aiCoachCrisisPhrases.
 const CRISIS_FIGURES = ['09', '2525', '0111', '112'];
 
 function crisisCase(id: string, prompt: string, language: 'fi' | 'en'): AiCoachEvalCase {

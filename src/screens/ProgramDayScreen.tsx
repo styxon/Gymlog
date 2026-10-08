@@ -31,7 +31,7 @@ import {
 } from '../lib/homeSessionHero';
 import { I18nKey, t } from '../lib/i18n';
 import { useDragHold } from '../hooks/useDragHold';
-import { ProgramDetailSessionItem } from '../lib/programDetails';
+import { exerciseAfterSessionSwap, ProgramDetailSessionItem } from '../lib/programDetails';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetPositions } from '../lib/supersetGrouping';
 import { SupersetBorder } from '../components/SupersetBorder';
 import {
@@ -39,8 +39,9 @@ import {
   ProgramPrescription,
   stepProgramPrescription,
 } from '../lib/programSessionEdit';
-import { buildSwapOptionsForSlot } from '../lib/tailoringFit';
-import { buildSwapShortlist, sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { TailoringPreferencesInput } from '../lib/tailoringFit';
+import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
+import { buildSwapAlternatives } from '../lib/swapPickerLists';
 import { formatPlanSessionTitle, localizeSessionName } from '../lib/sessionNameLabel';
 import { formatClock } from '../lib/restSchedule';
 import { doseUnitSuffix } from '../lib/format';
@@ -227,7 +228,7 @@ interface ProgramDayScreenProps {
    * only inside one session would be gone the next time the day came round.
    */
   onSupersetLink?: (exerciseId: string, linked: boolean) => void;
-  tailoringPreferences?: Parameters<typeof buildSwapOptionsForSlot>[2];
+  tailoringPreferences?: TailoringPreferencesInput | null;
   /**
    * Take this whole day out of the programme (#bugs 2026-09-24). Asked first;
    * the caller leaves the page once the write has landed. Undefined for a
@@ -439,49 +440,41 @@ export function ProgramDayScreen({
     if (!exercise?.slotId) {
       return null;
     }
-    const currentName = sessionSwaps[exercise.slotId] ?? exercise.name;
     return {
       slotId: exercise.slotId,
-      currentName,
+      currentName: sessionSwaps[exercise.slotId] ?? exercise.name,
       // The stored programme's own id, which removal is written against.
       exerciseId: exercise.id ?? null,
-      // Split rather than listed — see swapShortlist: nine valid lifts ranked
-      // together buried the machine version and pushed the actions off the
-      // bottom of the sheet.
-      shortlist: buildSwapShortlist(
-        currentName,
-        buildSwapOptionsForSlot(exercise.substitutionGroup ?? '', currentName, tailoringPreferences).map(
-          (option) => ({ ...option, searchLabel: exerciseNameLabel(language, option.exerciseName) }),
-        ),
-        {
-          // Offering a lift the day already holds is a change that changes
-          // nothing (#bugs 2026-08-26).
-          alreadyInSession: session.exercises.map(
-            (item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name,
-          ),
-          query: swapQuery,
-          language,
-        },
-      ),
+      substitutionGroup: exercise.substitutionGroup ?? '',
     };
-  }, [session.exercises, swapSlotId, sessionSwaps, tailoringPreferences, swapQuery, language]);
+  }, [session.exercises, swapSlotId, sessionSwaps]);
 
   /**
    * The swap sheet is the guided player's (#bugs 2026-10-06; owner, 2026-10-07:
-   * that sheet everywhere). The slot's shortlist is the first cards, the
+   * that sheet everywhere). The slot's alternatives are the first cards, the
    * library nearest the lift under them, through the same chips as the
    * player and Home (useSwapPickerLists).
    */
-  const swapAlternatives = useMemo(
-    () =>
-      swapRow
-        ? [...swapRow.shortlist.variations, ...swapRow.shortlist.related].map((option) => option.exerciseName)
-        : [],
-    [swapRow],
-  );
+  // Offering a lift the day already holds is a change that changes nothing
+  // (#bugs 2026-08-26).
   const swapSessionLifts = useMemo(
     () => session.exercises.map((item) => (item.slotId ? sessionSwaps[item.slotId] : undefined) ?? item.name),
     [session.exercises, sessionSwaps],
+  );
+  // The same cards, in the same order, as the player and Home.
+  const swapAlternatives = useMemo(
+    () =>
+      swapRow
+        ? buildSwapAlternatives({
+            currentName: swapRow.currentName,
+            substitutionGroup: swapRow.substitutionGroup,
+            preferences: tailoringPreferences,
+            sessionLifts: swapSessionLifts,
+            query: swapQuery,
+            language,
+          })
+        : [],
+    [language, swapQuery, swapRow, swapSessionLifts, tailoringPreferences],
   );
   const swapPicker = useSwapPickerLists({
     exerciseLibrary,
@@ -731,6 +724,14 @@ export function ProgramDayScreen({
                 : 0;
             const superset = supersets[index] ?? null;
             const linkedToNext = superset?.hasNextInGroup === true;
+            // The dose today's swap will start on, as the name above it is
+            // the swapped lift's.
+            const shownDose = exerciseAfterSessionSwap(exercise, exercise.slotId ? sessionSwaps[exercise.slotId] : null);
+            // The sheet tunes the programme's row, not today's swap: on a
+            // swapped row it opened on the old lift's reps under the new
+            // lift's name, and Save rewrote the old lift (hunt 2026-10-08).
+            // The numbers are stated until the swap is kept or picked back.
+            const rowCanTune = canTune && !(exercise.slotId && sessionSwaps[exercise.slotId]);
             return (
             <Animated.View
               key={exercise.id}
@@ -850,7 +851,7 @@ export function ProgramDayScreen({
                     wear the pencil — a chip that edits and a chip that only
                     states, side by side, taught the reader to distrust both. */}
                 <View style={styles.exerciseDose}>
-                  {canTune ? (
+                  {rowCanTune ? (
                     <>
                       <Pressable
                         accessibilityRole="button"
@@ -858,7 +859,7 @@ export function ProgramDayScreen({
                         onPress={() => openTuneSheet(exercise)}
                         style={({ pressed }) => [styles.doseChip, pressed && styles.swapOptionPressed]}
                       >
-                        <Text style={styles.doseChipText}>{exercise.prescription}</Text>
+                        <Text style={styles.doseChipText}>{shownDose.prescription}</Text>
                         <PencilGlyph theme={theme} />
                       </Pressable>
                       {/* No rest follows a lift you run straight out of, so the
@@ -888,7 +889,7 @@ export function ProgramDayScreen({
                     </>
                   ) : (
                     <>
-                      <Text style={styles.exerciseScheme}>{exercise.prescription}</Text>
+                      <Text style={styles.exerciseScheme}>{shownDose.prescription}</Text>
                       <Text style={styles.exerciseRest} numberOfLines={1}>
                         {linkedToNext
                           ? t(language, 'detail.day.supersetNext')

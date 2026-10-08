@@ -136,6 +136,85 @@ function isBannedByAnyAvoid(exerciseName: string, flags: SetupCautionFlag[]): bo
   return flags.some((flag) => flag.level === 'avoid' && exerciseHitsCautionArea(exerciseName, flag.area));
 }
 
+/**
+ * What a run becomes for a reader who avoids their knees or ankles.
+ *
+ * `avoid` used to remove it like any other lift, and RUN's "Easy Run" day was
+ * left as one stretch and a calf raise under "Running comes first" (bug hunt,
+ * 2026-10-07, #35). The owner's call: the run is replaced, for the same
+ * minutes. Knees walk — briskly on the easy day, uphill on the tempo day.
+ * Ankles ride a stationary bike when the reader's gear has one, and walk on
+ * the flat otherwise: a hill loads the ankle the flag is about.
+ *
+ * Only a run done for minutes has a stand-in. A stride or a sprint is counted,
+ * and walking one is not the same drill made gentler, so those still go.
+ */
+export const RUN_STAND_INS = {
+  walk: 'Brisk Walk Blocks',
+  inclineWalk: 'Incline Walk Blocks',
+  ride: 'Stationary Bike Blocks',
+} as const;
+
+/** The run the uphill walk stands in for; every other run walks on the flat. */
+const TEMPO_RUN = normalize('Tempo Run Blocks');
+
+export type RunStandInKind = 'walk' | 'ride';
+
+/** What a reader's runs become, or null when their flags keep them running. */
+export function runStandInKind(
+  flags: readonly SetupCautionFlag[],
+  availableEquipment: string[] | null = null,
+): RunStandInKind | null {
+  const avoids = (area: SetupCautionArea) => flags.some((flag) => flag.level === 'avoid' && flag.area === area);
+  if (avoids('ankles')) {
+    return isExerciseAllowedWithEquipment(RUN_STAND_INS.ride, availableEquipment) ? 'ride' : 'walk';
+  }
+  return avoids('knees') ? 'walk' : null;
+}
+
+/** The kind a stand-in name is, for renaming the day it landed on. */
+export function runStandInKindOf(exerciseName: string): RunStandInKind | null {
+  const key = normalize(exerciseName);
+  if (key === normalize(RUN_STAND_INS.ride)) {
+    return 'ride';
+  }
+  return key === normalize(RUN_STAND_INS.walk) || key === normalize(RUN_STAND_INS.inclineWalk) ? 'walk' : null;
+}
+
+/**
+ * A day named for its run, renamed for what it now holds: "Day 1: Easy Run"
+ * over two brisk walks was the same false promise as the reason line.
+ */
+export function sessionNameAfterRunStandIn(name: string, kind: RunStandInKind): string {
+  return name.replace(/\bRun\b/g, kind === 'ride' ? 'Ride' : 'Walk');
+}
+
+/** A run done for minutes: the only kind of run with a stand-in. */
+export function isMinutesRun(exercise: Pick<WorkoutTemplateExercise, 'exerciseName' | 'trackingMode'>): boolean {
+  const minutes = exercise.trackingMode === 'duration_minutes' || isMinutesExerciseName(exercise.exerciseName);
+  return minutes
+    && (exerciseHitsCautionArea(exercise.exerciseName, 'knees') || exerciseHitsCautionArea(exercise.exerciseName, 'ankles'));
+}
+
+function runStandIn(
+  exercise: WorkoutTemplateExercise,
+  flags: SetupCautionFlag[],
+  availableEquipment: string[] | null,
+): string | null {
+  if (!isMinutesRun(exercise)) {
+    return null;
+  }
+  const kind = runStandInKind(flags, availableEquipment);
+  if (kind === 'ride') {
+    return RUN_STAND_INS.ride;
+  }
+  if (kind === null) {
+    return null;
+  }
+  const flatOnly = flags.some((flag) => flag.level === 'avoid' && flag.area === 'ankles');
+  return !flatOnly && normalize(exercise.exerciseName) === TEMPO_RUN ? RUN_STAND_INS.inclineWalk : RUN_STAND_INS.walk;
+}
+
 export interface CautionExerciseSwap {
   from: string;
   to: string;
@@ -206,6 +285,12 @@ export function applyCautionFlagsToExercises(
 
     const avoidFlag = matching.find((flag) => flag.level === 'avoid');
     if (avoidFlag) {
+      const standIn = runStandIn(exercise, seriousFlags, availableEquipment);
+      if (standIn && !onTheDay(standIn) && !isBannedByAnyAvoid(standIn, seriousFlags)) {
+        // The same blocks for the same minutes: only the movement changes.
+        swapped.push({ from: exercise.exerciseName, to: standIn, area: avoidFlag.area });
+        return { ...exercise, exerciseName: standIn, trackingMode: 'duration_minutes' };
+      }
       removed.push({ name: exercise.exerciseName, area: avoidFlag.area });
       return null;
     }

@@ -200,6 +200,23 @@ const ALL_PHRASE_ALIASES: ReadonlyArray<readonly [phrase: string, target: string
 const PHRASE_JOIN = '\u0000';
 
 /**
+ * Between a phrase-alias token's target and the phrase as the reader typed
+ * it, so either can land. "hamstring curl" became "leg curl" alone, and
+ * Seated Band Hamstring Curl — whose name holds the typed phrase, not the
+ * alias — could not be found by its own name (hunt 2026-10-08). Never typed
+ * by a reader, never produced by `normalizeSearchText`.
+ */
+const PHRASE_OR = '\u0001';
+
+/** Each alias's boundary pattern, compiled once: a search runs it per row, per keystroke. */
+const PHRASE_ALIAS_PATTERNS = ALL_PHRASE_ALIASES.map(([phrase, target]) => ({
+  boundary: new RegExp(`\\b${phrase.replace(/ /g, '\\s+')}s?\\b`, 'g'),
+  joinedTarget: target.split(' ').join(PHRASE_JOIN),
+}));
+
+const aliasedCache = new Map<string, string>();
+
+/**
  * The query with every known phrase swapped for the word the library
  * carries, applied before the per-term aliasing below (and before the query
  * is split into terms) so a two-word gym phrase is one hit instead of two
@@ -236,11 +253,29 @@ const PHRASE_JOIN = '\u0000';
  * only a genuine trailing "s" (or nothing) satisfies it.
  */
 function applyPhraseAliases(normalizedQuery: string): string {
-  return ALL_PHRASE_ALIASES.reduce((text, [phrase, target]) => {
-    const boundary = new RegExp(`\\b${phrase.replace(/ /g, '\\s+')}s?\\b`, 'g');
-    const joinedTarget = target.split(' ').join(PHRASE_JOIN);
-    return boundary.test(text) ? text.replace(boundary, joinedTarget) : text;
-  }, normalizedQuery);
+  // The same query is aliased once per library row; a bounded memo like
+  // normalizeSearchText's keeps that to once per keystroke.
+  const cached = aliasedCache.get(normalizedQuery);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const aliased = PHRASE_ALIAS_PATTERNS.reduce(
+    (text, { boundary, joinedTarget }) =>
+      // The phrase as typed (an alias, or the target's plural) rides along
+      // as the token's other variant, so a name that holds it literally —
+      // Seated Band Hamstring Curl, Leg Extensions — still matches and ranks
+      // as its own name (see PHRASE_OR).
+      text.replace(boundary, (typed) => {
+        const asTyped = typed.split(/\s+/).join(PHRASE_JOIN);
+        return asTyped === joinedTarget ? joinedTarget : `${joinedTarget}${PHRASE_OR}${asTyped}`;
+      }),
+    normalizedQuery,
+  );
+  if (aliasedCache.size > 2000) {
+    aliasedCache.clear();
+  }
+  aliasedCache.set(normalizedQuery, aliased);
+  return aliased;
 }
 
 /** A phrase-alias token's words, back to a plain space; a no-op on anything else. */
@@ -248,9 +283,9 @@ function dephrase(term: string): string {
   return term.split(PHRASE_JOIN).join(' ');
 }
 
-/** A term and the words it also stands for. */
+/** A term and the words it also stands for — both sides of a phrase alias. */
 function termVariants(term: string): string[] {
-  return [term, ...(SEARCH_ALIASES[term] ?? [])];
+  return term.split(PHRASE_OR).flatMap((variant) => [variant, ...(SEARCH_ALIASES[variant] ?? [])]);
 }
 
 /**

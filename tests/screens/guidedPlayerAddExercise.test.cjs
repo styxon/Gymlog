@@ -68,9 +68,11 @@ module.exports = [
       // The reducer/provider method already existed; this is its first caller.
       assert.match(playerSource, /workout\.insertExerciseAfter\(anchor \? anchor\.slotId : null, \{/);
       assert.match(playerSource, /trackingMode: getCatalogTrackingMode\(item\.name\),/);
+      // The rest: the anchor's when it rests at all, else the reader's default
+      // (tests/lib/midSessionAddRest).
       assert.match(
         playerSource,
-        /getExerciseTemplateDefaults\(\s*\n\s*item,\s*\n\s*anchor \? anchor\.restSecondsMin : NO_ANCHOR_DEFAULT_REST_SECONDS,\s*\n\s*\)/,
+        /getExerciseTemplateDefaults\(item, restSecondsForAddedLift\(anchor\?\.restSecondsMin, defaultRestSeconds\)\)/,
       );
       // No new tracking-mode or rep-default policy invented for this screen.
       assert.doesNotMatch(playerSource, /function resolveInsertTrackingMode|function getInsertDefaults/);

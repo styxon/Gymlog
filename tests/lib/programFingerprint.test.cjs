@@ -103,14 +103,18 @@ module.exports = [
       ]) {
         assert.match(source, /<ProgramLadderRow$/m, `${file} draws its own program row`);
       }
-      // Built from the template, not from a card field that could drift. Two
-      // rows build one: the catalog items every sheet and the catalog screen
-      // read, and the "for you" cards. It was three until the season rows were
-      // parked with their section. Counted across the shell — App.tsx and
-      // the src/app modules — since the rows left App.tsx for
-      // useProgramsCatalog (phase-C split, 2026-10-01).
+      // Built from the programme's week, not from a card field that could
+      // drift. Two rows build one: the catalog items every sheet and the
+      // catalog screen read, and the "for you" cards. It was three until the
+      // season rows were parked with their section. Counted across the shell —
+      // App.tsx and the src/app modules — since the rows left App.tsx for
+      // useProgramsCatalog (phase-C split, 2026-10-01). The week is the one
+      // the page shows, the reader's composed one for their own programme
+      // (programmeCardWeek, bug hunt 2026-10-08), so the bars and the days
+      // count the same sessions.
       const { readAppWiring } = require('../helpers/appWiringSource.cjs');
-      assert.ok((readAppWiring().match(/buildProgramFingerprint\(template\)/g) ?? []).length >= 2);
+      assert.ok((readAppWiring().match(/fingerprint: week\.fingerprint,/g) ?? []).length >= 2);
+      assert.match(read('src', 'lib', 'programDetails.ts'), /fingerprint: buildProgramFingerprint\(week\),/);
 
       // The bars scale with the cover. They were hard-coded to a 74px ceiling
       // against a 176px card; dropped onto a 92px continue cover unchanged

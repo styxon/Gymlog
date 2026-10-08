@@ -179,6 +179,11 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nosta lantio ylös, kunnes vartalo on suora linja päästä jalkoihin (tai polviin), ja pidä se siinä painumatta alas tai kiertymättä eteen.',
     'Hengitä tasaisesti ja pidä asento ohjelman ajan, laske sitten lantio alas, käänny ja tee sama toisella puolella.',
   ],
+  'Landmine Press': [
+    'Aseta levytangon toinen pää landmine-telineeseen tai nurkkaan ja lisää painot toiseen päähän. Seiso tankoa kohti ja pidä painotettua päätä yhdellä kädellä olkapään edessä.',
+    'Jännitä keskivartalo ja punnerra tanko ylös ja eteen, kunnes käsi on suora. Tanko kulkee kaarella edessäsi, joten olkapään ei tarvitse ojentua suoraan pään yli.',
+    'Laske tanko hallitusti takaisin olkapäälle. Tee sarja loppuun ja vaihda kättä.',
+  ],
   'Machine Hip Thrust': [
     'Asetu laitteeseen selkä tukea vasten ja lantiotyyny tai -tanko lantion päälle, aivan lonkkaluiden alapuolelle.',
     'Säädä istuin niin, että sääret ovat pystysuorassa liikkeen yläasennossa, ja työnnä kantapäillä lantio ylös.',
@@ -1438,6 +1443,21 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Etsi juoksun lopuksi tasainen noin 80–100 metrin pätkä.',
     'Kiihdytä tasaisesti ensimmäisen puoliskon aikana noin 90 prosenttiin huippuvauhdistasi, pidä vauhti muutaman sekunnin ajan hartiat rentoina ja askel nopeana ja hidasta sitten vähitellen.',
     'Kävele takaisin alkuun ja palaudu kunnolla ennen seuraavaa kiihdytystä.',
+  ],
+  'Brisk Walk Blocks': [
+    'Aloita muutamalla minuutilla kevyttä kävelyä tasaisella.',
+    'Kävele jokainen blokki reippaasti: kädet heiluvat, hengitys tihenee, mutta pystyt yhä puhumaan lyhyin lausein. Sarjan luku on blokin pituus minuutteina.',
+    'Hidasta blokkien välissä kevyeen käyntiin ohjelman lepoajan verran ja nosta sitten vauhti taas ylös.',
+  ],
+  'Incline Walk Blocks': [
+    'Etsi tasainen ylämäki tai säädä juoksumattoon kulma, jolla pystyt kävelemään pitämättä kaiteista kiinni, ja lämmittele muutama minuutti kevyesti kävellen.',
+    'Kävele jokainen blokki ylämäkeen vauhdilla, joka tuntuu reippaalta mutta hallitulta: hengitys on syvää ja tiheää, ja pystyt sanomaan vain muutaman sanan kerrallaan. Sarjan luku on blokin pituus minuutteina.',
+    'Kävele blokkien välissä kevyesti tasaisella tai alamäkeen ohjelman lepoajan verran.',
+  ],
+  'Stationary Bike Blocks': [
+    'Säädä satula niin, että polvi jää hieman koukkuun polkimen ala-asennossa, ja polje muutama minuutti kevyesti lämmitellen.',
+    'Polje jokainen blokki päivän vaatimalla teholla: kevyenä päivänä juttelutahtia, tempopäivänä reippaasti mutta hallitusti. Sarjan luku on blokin pituus minuutteina.',
+    'Polje blokkien välissä hitaasti ohjelman lepoajan verran ja aloita sitten seuraava.',
   ],
 };
 

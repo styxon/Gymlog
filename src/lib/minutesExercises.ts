@@ -28,6 +28,11 @@ const PROGRAMME_MINUTES_NAMES = [
   // harder".
   'Easy Run Blocks',
   'Tempo Run Blocks',
+  // What a run block becomes for a reader who avoids their knees or ankles
+  // (cautionExerciseFilter, RUN_STAND_INS): the same blocks, the same minutes.
+  'Brisk Walk Blocks',
+  'Incline Walk Blocks',
+  'Stationary Bike Blocks',
 ] as const;
 
 /**
@@ -329,6 +334,23 @@ export function minutesBoutDueMs(clock: SessionMinutesClock | null | undefined):
     return null;
   }
   return clock.runningSinceMs + Math.max(0, clock.plannedMinutes * 60000 - clock.accumulatedMs);
+}
+
+/**
+ * Until when a running bout counts as the reader training. Null while the
+ * clock is stopped, or when there is none.
+ *
+ * A bout dispatches nothing while it runs, so to the session clock a two-hour
+ * ride looked like the phone put away, and was taken off (lib/sessionClock
+ * SESSION_IDLE_MS). It counts as far past its start as the minutes dial
+ * reaches: further than that the dial cannot log, and the clock was left
+ * running and forgotten (owner's call, 2026-10-07).
+ */
+export function minutesClockCountsUntilMs(clock: SessionMinutesClock | null | undefined): number | null {
+  if (!clock || typeof clock.runningSinceMs !== 'number' || !Number.isFinite(clock.runningSinceMs)) {
+    return null;
+  }
+  return clock.runningSinceMs + MINUTES_DIAL.max * 60000;
 }
 
 /**

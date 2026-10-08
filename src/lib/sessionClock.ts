@@ -1,4 +1,5 @@
 import type { WorkoutRestTimerState, WorkoutSessionRuntime } from '../features/workout/workoutTypes';
+import { minutesClockCountsUntilMs } from './minutesExercises';
 
 /**
  * A running session's clock, read at a given moment.
@@ -13,8 +14,9 @@ import type { WorkoutRestTimerState, WorkoutSessionRuntime } from '../features/w
  * The longest stretch with nothing done in it that still counts as training.
  *
  * Nothing in a guided session waits this long by itself: a rest is minutes, a
- * drill is seconds, a hold or a timed bout tops out at the hold dial's thirty
- * minutes. A stretch past it is the phone put away — the app closed between
+ * drill is seconds, a hold tops out at the hold dial's thirty minutes, and a
+ * bout on the minutes clock counts while it runs (sessionLastActiveMs). A
+ * stretch past it is the phone put away — the app closed between
  * two sets and opened the next morning — and counting it saved a workout of
  * two evening sets and a morning's worth more as 921 minutes (live-session
  * audit, 2026-09-20).
@@ -114,16 +116,30 @@ export function restSecondsLeft(timer: WorkoutRestTimerState, nowMs: number): nu
  * re-rendered the whole app once a second to keep a timestamp current. The
  * rest is read here instead: an active session resting counts as in use up to
  * now, or up to the rest's end if that has passed.
+ *
+ * A bout on the minutes clock is the same: nothing is dispatched while it
+ * runs, so a ride past SESSION_IDLE_MS was taken off as time away and the
+ * workout saved as one minute (hunt, 2026-10-07). It counts up to now, or up
+ * to the furthest its dial can log (minutesClockCountsUntilMs), so a clock
+ * left running and forgotten does not count for ever.
  */
 export function sessionLastActiveMs(session: WorkoutSessionRuntime, nowMs: number): number {
   const updatedMs = Date.parse(session.updatedAt);
   const base = Number.isFinite(updatedMs) ? updatedMs : -Infinity;
-  // Read on the finish path, which must not throw on a session built without a timer.
-  const timer: WorkoutRestTimerState | null | undefined = session.restTimer;
-  if (session.status !== 'active' || timer?.status !== 'running' || typeof timer.endsAtMs !== 'number') {
+  if (session.status !== 'active') {
     return base;
   }
-  return Math.max(base, Math.min(nowMs, timer.endsAtMs));
+  let lastActiveMs = base;
+  // Read on the finish path, which must not throw on a session built without a timer.
+  const timer: WorkoutRestTimerState | null | undefined = session.restTimer;
+  if (timer?.status === 'running' && typeof timer.endsAtMs === 'number') {
+    lastActiveMs = Math.max(lastActiveMs, Math.min(nowMs, timer.endsAtMs));
+  }
+  const boutUntilMs = minutesClockCountsUntilMs(session.minutesClock);
+  if (boutUntilMs !== null) {
+    lastActiveMs = Math.max(lastActiveMs, Math.min(nowMs, boutUntilMs));
+  }
+  return lastActiveMs;
 }
 
 /**

@@ -4,6 +4,9 @@ import { buildRecommendationReasonLines } from './recommendationExplanation';
 import { buildRecommendationInput } from './recommendationInput';
 import { getRecommendationProgramDefinition } from './recommendationCatalog';
 import { recommendPrograms } from './recommendationScoring';
+import { runStandInKind } from './cautionExerciseFilter';
+import { programRunWork } from './recommendationWeekFit';
+import { resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildTailoringRecommendationNote, TailoringPreferencesInput } from './tailoringFit';
 import { t } from './i18n';
 import {
@@ -354,10 +357,18 @@ export function buildFirstRunRecommendationReasons(
     estimatedSessionDuration?: number | null;
     mismatchNote?: string | null;
     language?: AppLanguage;
+    /**
+     * The programme the lines are about, so they can say its runs are walks,
+     * or leave runs unsaid where it has none.
+     */
+    programId?: string | null;
   },
   tailoringPreferences?: TailoringPreferencesInput | null,
 ) {
-  return buildRecommendationReasonLines(selection, options, tailoringPreferences);
+  const runWork = options.programId
+    ? programRunWork(options.programId, buildRecommendationInput(selection))
+    : null;
+  return buildRecommendationReasonLines(selection, { ...options, runWork }, tailoringPreferences);
 }
 
 
@@ -394,9 +405,17 @@ function buildRecommendationMismatchNote(
 
   if (selection.goal === 'run_mobility' && featuredProgramId === PROGRAM_IDS.runMobility && selection.daysPerWeek > featuredDays) {
     const secondaryName = secondaryProgramId ? getWorkoutTemplateById(secondaryProgramId)?.name ?? null : null;
+    // "A run + mobility split" is not what a reader whose runs are walks or
+    // rides was handed (bug hunt, 2026-10-07, #35).
+    const standIn = runStandInKind(selection.cautionFlags ?? [], resolveAvailableEquipment(selection));
+    const keys = standIn === 'ride'
+      ? (['mismatch.rideMobility', 'mismatch.rideMobility.withExtra'] as const)
+      : standIn === 'walk'
+        ? (['mismatch.walkMobility', 'mismatch.walkMobility.withExtra'] as const)
+        : (['mismatch.runMobility', 'mismatch.runMobility.withExtra'] as const);
     return secondaryName
-      ? t(language, 'mismatch.runMobility.withExtra', { name: secondaryName })
-      : t(language, 'mismatch.runMobility');
+      ? t(language, keys[1], { name: secondaryName })
+      : t(language, keys[0]);
   }
 
   if (selection.equipment !== 'gym' && featuredDefinition?.equipmentTier === 'low_equipment') {

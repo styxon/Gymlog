@@ -1,4 +1,5 @@
 import {
+  AiPlannerEquipment,
   AppPreferences,
   ExerciseBodyPart,
   ExerciseCategory,
@@ -107,9 +108,27 @@ function mapSetupExperience(preferences: AppPreferences) {
   return 'beginner';
 }
 
-function mapSetupEquipment(preferences: AppPreferences) {
+/**
+ * The gear a plan for these preferences is built for. Exported so the catalog
+ * shortcut (briefProgrammeMatch) reads a reader's gear the way the composer
+ * it stands in for does.
+ *
+ * Onboarding's "Bodyweight only" card stores the 'minimal' bucket beside the
+ * bodyweight_only environment, and read off the bucket alone that reader was
+ * handed dumbbells: the catalog shortcut opened a dumbbell programme for
+ * "6 days a week, muscle" (hunt, 2026-10-08). The environment says what the
+ * bucket cannot, as the intake's own preset reads it (programIntake).
+ */
+export function mapSetupEquipment(
+  preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment'> &
+    Partial<Pick<AppPreferences, 'setupTrainingEnvironment'>>,
+): AiPlannerEquipment {
   if (preferences.aiPlannerEquipment) {
     return preferences.aiPlannerEquipment;
+  }
+
+  if (preferences.setupTrainingEnvironment === 'bodyweight_only') {
+    return 'bodyweight';
   }
 
   switch (preferences.setupEquipment) {
@@ -451,6 +470,98 @@ function buildSessionBlueprints(goal: ReturnType<typeof mapSetupGoalToAiGoal>, d
   return templates[String(daysPerWeek)] ?? templates[3];
 }
 
+/**
+ * The week for a brief that refused the leg day ("no leg day", "ei
+ * jalkapäivää"). The split blueprints above still laid out a Legs or Lower
+ * day, and with every squat, deadlift and lunge avoided its slots filled with
+ * whatever was left: Alternate Leg Diagonal Bound, Balance Board, Alternating
+ * Hang Clean, and bench jumps and depth leaps for a reader with no gear
+ * (hunt, 2026-10-08). The days go to the upper body and the core instead, as
+ * many as were asked for.
+ */
+function buildNoLegDayBlueprints(goal: ReturnType<typeof mapSetupGoalToAiGoal>, daysPerWeek: number): SessionBlueprint[] {
+  const core: SlotBlueprint = { key: 'core', variant: 'accessory', search: ['cable crunch', 'ab crunch machine', 'crunch'], bodyParts: ['core'] };
+  const upperA: SessionBlueprint = {
+    key: 'upper_a',
+    name: 'Upper A',
+    focus: 'Heavy upper press and row.',
+    slots: [
+      { key: 'warmup_upper', variant: 'warmup', name: 'Upper-body warm-up' },
+      { key: 'bench', variant: 'primary', search: ['barbell bench press', 'dumbbell bench press', 'push-up'], bodyParts: ['chest'] },
+      { key: 'row', variant: 'primary', search: ['bent over barbell row', 'seated cable row', 'dumbbell row'], bodyParts: ['back'] },
+      { key: 'press', variant: 'secondary', search: ['barbell shoulder press', 'dumbbell shoulder press', 'arnold press'], bodyParts: ['shoulders'] },
+      { key: 'pull', variant: 'secondary', search: ['lat pulldown', 'pull-up', 'chin-up'], bodyParts: ['back'] },
+      { key: 'focus', variant: 'accessory', search: ['triceps pushdown', 'hammer curls', 'barbell curl'], bodyParts: ['triceps', 'biceps'] },
+      core,
+    ],
+  };
+  const upperB: SessionBlueprint = {
+    key: 'upper_b',
+    name: 'Upper B',
+    focus: 'Upper volume and shoulder support.',
+    slots: [
+      { key: 'warmup_upper', variant: 'warmup', name: 'Upper-body warm-up' },
+      { key: 'incline', variant: 'primary', search: ['barbell incline bench press', 'incline dumbbell bench press', 'decline push-up'], bodyParts: ['chest'] },
+      { key: 'pull', variant: 'primary', search: ['lat pulldown', 'pull-up', 'chin-up'], bodyParts: ['back'] },
+      { key: 'row', variant: 'secondary', search: ['seated cable row', 'dumbbell row', 'bent over barbell row'], bodyParts: ['back'] },
+      { key: 'laterals', variant: 'accessory', search: ['lateral raise', 'cable seated lateral raise'], bodyParts: ['shoulders'] },
+      { key: 'arms', variant: 'accessory', search: ['barbell curl', 'hammer curls', 'triceps pushdown'], bodyParts: ['biceps', 'triceps'] },
+      core,
+    ],
+  };
+  const upperC: SessionBlueprint = {
+    key: 'upper_c',
+    name: 'Upper C',
+    focus: 'Shoulders, back and arms.',
+    slots: [
+      { key: 'warmup_upper', variant: 'warmup', name: 'Upper-body warm-up' },
+      { key: 'press', variant: 'primary', search: ['dumbbell shoulder press', 'barbell shoulder press', 'arnold press'], bodyParts: ['shoulders'] },
+      { key: 'chin', variant: 'primary', search: ['chin-up', 'pull-up', 'lat pulldown'], bodyParts: ['back'] },
+      { key: 'chest', variant: 'secondary', search: ['dumbbell bench press', 'cable chest press', 'push-up'], bodyParts: ['chest'] },
+      { key: 'rear_delt', variant: 'secondary', search: ['rear lateral raise', 'face pull', 'rear delt row'], bodyParts: ['shoulders', 'back'] },
+      { key: 'arms', variant: 'accessory', search: ['lying triceps press', 'alternating dumbbell curl', 'hammer curls'], bodyParts: ['triceps', 'biceps'] },
+      core,
+    ],
+  };
+  const push: SessionBlueprint = {
+    key: 'push',
+    name: 'Push',
+    focus: 'Chest, shoulders, and triceps.',
+    slots: [
+      { key: 'warmup_upper', variant: 'warmup', name: 'Push warm-up' },
+      { key: 'bench', variant: 'primary', search: ['barbell bench press', 'dumbbell bench press', 'push-up'], bodyParts: ['chest'] },
+      { key: 'press', variant: 'primary', search: ['barbell shoulder press', 'dumbbell shoulder press', 'arnold press'], bodyParts: ['shoulders'] },
+      { key: 'incline', variant: 'secondary', search: ['barbell incline bench press', 'incline dumbbell bench press', 'decline push-up'], bodyParts: ['chest'] },
+      { key: 'laterals', variant: 'accessory', search: ['lateral raise', 'cable seated lateral raise'], bodyParts: ['shoulders'] },
+      { key: 'triceps', variant: 'accessory', search: ['triceps pushdown', 'lying triceps press', 'bench dips'], bodyParts: ['triceps'] },
+      core,
+    ],
+  };
+  const pull: SessionBlueprint = {
+    key: 'pull',
+    name: 'Pull',
+    focus: 'Lats, upper back, and biceps.',
+    slots: [
+      { key: 'warmup_upper', variant: 'warmup', name: 'Pull warm-up' },
+      { key: 'pulldown', variant: 'primary', search: ['lat pulldown', 'pull-up', 'chin-up'], bodyParts: ['back'] },
+      { key: 'row', variant: 'primary', search: ['bent over barbell row', 'seated cable row', 'dumbbell row'], bodyParts: ['back'] },
+      { key: 'rear_delt', variant: 'secondary', search: ['rear lateral raise', 'rear delt row', 'face pull'], bodyParts: ['shoulders', 'back'] },
+      { key: 'curl', variant: 'accessory', search: ['barbell curl', 'hammer curls', 'alternating dumbbell curl'], bodyParts: ['biceps'] },
+      core,
+    ],
+  };
+  switch (daysPerWeek) {
+    case 1:
+      return [{ ...upperA, key: 'upper_body', name: 'Vinha AI Upper Body', focus: 'Upper body and core in one slot.' }];
+    case 2:
+      return [upperA, upperB];
+    case 3:
+      return goal === 'muscle' ? [push, pull, { ...upperB, key: 'upper', name: 'Upper' }] : [upperA, upperB, upperC];
+    default:
+      return [upperA, push, upperB, pull];
+  }
+}
+
 function getWarmupExercise(sessionName: string): AICoachPlannedExercise {
   const lower = sessionName.toLowerCase().includes('lower') || sessionName.toLowerCase().includes('leg') || sessionName.toLowerCase().includes('strength');
   return {
@@ -554,6 +665,42 @@ function getFocusBodyPart(preferences: AppPreferences): ExerciseBodyPart | null 
     default:
       return null;
   }
+}
+
+/**
+ * What a plan for these preferences is held to: the gear the reader has and
+ * the words their brief refuses, matched inside a library name. One reading
+ * for the composer below and for a week the live coach wrote
+ * (programmeBrief.resolveLiveProposal), so the two cannot disagree about what
+ * "no deadlifts" or "bodyweight only" keeps out.
+ */
+export interface PlannerLimits {
+  allowedEquipment: Set<DisplayEquipmentValue>;
+  avoidTerms: string[];
+}
+
+export function plannerLimits(
+  preferences: Pick<AppPreferences, 'aiPlannerEquipment' | 'setupEquipment' | 'aiPlannerAvoid'> &
+    Partial<Pick<AppPreferences, 'setupTrainingEnvironment'>>,
+): PlannerLimits {
+  return {
+    allowedEquipment: resolveAllowedEquipment(mapSetupEquipment(preferences)),
+    avoidTerms: splitList(preferences.aiPlannerAvoid).map(normalize),
+  };
+}
+
+/** Whether a name carries a term the limits avoid. */
+export function isAvoidedByPlannerLimits(item: Pick<ExerciseLibraryItem, 'name'>, limits: PlannerLimits): boolean {
+  const normalizedName = normalize(item.name);
+  return limits.avoidTerms.some((term) => normalizedName.includes(term));
+}
+
+/** Whether the gear the limits allow covers this row. */
+export function fitsPlannerEquipment(
+  item: Pick<ExerciseLibraryItem, 'name' | 'equipment' | 'sourceEquipment'>,
+  limits: PlannerLimits,
+): boolean {
+  return limits.allowedEquipment.has(displayEquipmentValue(item));
 }
 
 function findLibraryItemForQuery(
@@ -786,22 +933,30 @@ function appendUnplacedMustIncludes(args: {
   }
 }
 
-export function buildAiCoachPlanSchema(preferences: AppPreferences, exerciseLibrary: ExerciseLibraryItem[]): AICoachPlanSchema {
+/** What the brief says beyond the stored preferences: a refused leg day (buildNoLegDayBlueprints). */
+export interface AiCoachPlanOptions {
+  noLegDay?: boolean;
+}
+
+export function buildAiCoachPlanSchema(
+  preferences: AppPreferences,
+  exerciseLibrary: ExerciseLibraryItem[],
+  options: AiCoachPlanOptions = {},
+): AICoachPlanSchema {
   const goal = mapSetupGoalToAiGoal(preferences);
   const daysPerWeek = mapSetupDays(preferences);
   const experience = mapSetupExperience(preferences);
   const equipment = mapSetupEquipment(preferences);
   const recovery = mapSetupRecovery(preferences);
   const sessionMinutes = mapSetupSessionMinutes(preferences, daysPerWeek);
-  const allowedEquipment = resolveAllowedEquipment(equipment);
+  const { allowedEquipment, avoidTerms } = plannerLimits(preferences);
   // Was filtering the legacy `lib_*` tier, which stopped shipping 2026-09-01.
   const importedLibrary = exerciseLibrary;
-  const avoidTerms = splitList(preferences.aiPlannerAvoid).map(normalize);
   const mustIncludeTerms = uniqueStrings(splitList(preferences.aiPlannerMustInclude));
   const usedMustIncludeTerms = new Set<string>();
   const usedIds = new Set<string>();
   const focusBodyPart = getFocusBodyPart(preferences);
-  const blueprints = buildSessionBlueprints(goal, daysPerWeek);
+  const blueprints = options.noLegDay ? buildNoLegDayBlueprints(goal, daysPerWeek) : buildSessionBlueprints(goal, daysPerWeek);
   const maxExercises = sessionMinutes <= 45 ? 5 : sessionMinutes >= 75 ? 7 : 6;
 
   const sessions: AICoachPlannedSession[] = blueprints.map((blueprint, sessionIndex) => {
