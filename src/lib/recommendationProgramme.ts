@@ -616,7 +616,11 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   if (selection.goal === 'run_mobility' || programId === 'tpl_3_day_run_mobility_v1') {
     return ['easyRun', 'longRun', 'recoveryMobility', 'conditioningMobility', 'easyConditioning'];
   }
-  if (selection.equipment === 'home' && selection.goal === 'muscle') {
+  // Anyone without the full gym: "Bodyweight only" is equipment 'minimal', a
+  // home setup 'home', and the note on the day reads "without full-gym
+  // equipment". Testing 'home' alone gave the reader who picked bodyweight a
+  // Cat Stretch day and the one with a pull-up bar and bands a push-up day.
+  if (selection.equipment !== 'gym' && selection.goal === 'muscle') {
     return ['bodyweightVolume', 'conditioningMobility', 'recoveryMobility', 'easyConditioning', 'accessoryStrength'];
   }
   return ['recoveryMobility', 'easyConditioning', 'conditioningMobility', 'bodyweightVolume', 'accessoryStrength'];

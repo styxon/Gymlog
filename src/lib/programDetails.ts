@@ -240,6 +240,22 @@ export function readyProgramSessionMinutes(
 }
 
 /**
+ * The gym days a ready programme's "Why it fits" line quotes: the composed
+ * week's, when the programme is the reader's. A programme composed down to
+ * fewer sessions than the catalog has ran 3 days under a line that said 4
+ * (and 180 minutes), and the optional add-on days a short programme is padded
+ * with are not gym days, so the template's own count caps it.
+ */
+export function readyProgramProjectedDays(
+  template: Pick<WorkoutTemplateV1, 'daysPerWeek'>,
+  composedWeek?: Pick<ComposedProgramWeek, 'days'> | null,
+): number {
+  return composedWeek && composedWeek.days > 0
+    ? Math.min(template.daysPerWeek, composedWeek.days)
+    : template.daysPerWeek;
+}
+
+/**
  * The minutes a card quotes for a ready programme: the page's number.
  *
  * `readerWeek` is the reader's composed week (resolveReaderComposedWeek) and

@@ -46,6 +46,9 @@ export const AREA_CAREFUL_SWAPS: Record<SetupCautionArea, Array<[string, string]
     ['shoulder press', 'Landmine Press'],
     ['push press', 'Landmine Press'],
     ['arnold press', 'Landmine Press'],
+    ['seated dumbbell press', 'Landmine Press'],
+    ['kettlebell seated press', 'Landmine Press'],
+    ['thruster', 'Landmine Press'],
     ['upright row', 'Lateral Raise'],
     ['upright barbell row', 'Lateral Raise'],
     ['incline bench press', 'Machine Chest Press'],
@@ -104,6 +107,7 @@ export const AREA_BODYWEIGHT_SWAPS: Record<SetupCautionArea, Array<[string, stri
   shoulders: [
     ['overhead press', 'Incline Push-Up'],
     ['shoulder press', 'Incline Push-Up'],
+    ['seated dumbbell press', 'Incline Push-Up'],
     ['bench press', 'Push-Up Wide'],
   ],
   lower_back: [

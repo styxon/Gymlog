@@ -4,9 +4,11 @@ import {
   composedSlotDose,
   FOCUS_ACCESSORY_POOL,
   getCatalogTrackingMode,
+  isSameCatalogMovement,
   pickPoolVariant,
   sessionFocusAffinity,
 } from './catalogExercisePools';
+import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 
 /**
  * Focus areas add real training emphasis (onboarding truth plan P3):
@@ -59,8 +61,9 @@ export interface FocusEmphasisAddition {
 
 /**
  * Spreads each focus area's accessories across the week and never duplicates a
- * movement a session already holds. Mutates nothing — returns per-session
- * additions.
+ * movement a session already holds — by library row, not by spelling ("Hip
+ * Thrust" on the template and "Barbell Hip Thrust" in the pool are one lift).
+ * Mutates nothing — returns per-session additions.
  *
  * Placement is by affinity first: the day whose exercises already train the
  * area wins. The per-area round-robin offset only breaks ties, so two focus
@@ -81,11 +84,19 @@ export function buildFocusEmphasisAdditions(
     const areaPool = FOCUS_ACCESSORY_POOL[area];
     const pool = areaPool ? pickPoolVariant(areaPool, availableEquipment) : [];
     const count = Math.min(getFocusEmphasisCount(area), pool.length);
+    let placed = 0;
 
-    for (let step = 0; step < count; step += 1) {
-      const name = pool[step % pool.length];
+    // Puts one pool entry on the best day that can take it. `trainingDaysOnly`
+    // keeps it to the days that already train the area.
+    const place = (name: string, trainingDaysOnly: boolean): boolean => {
+      // A pick the reader's gear rules out is not added only to be swapped
+      // for something else afterwards: a "Band Good Morning" with no band came
+      // back as a glute bridge beside the one the day already held.
+      if (!isExerciseAllowedWithEquipment(name, availableEquipment)) {
+        return false;
+      }
       // Offset per area so two focus areas don't stack on the same day.
-      const startIndex = (areaIndex + step) % sessions.length;
+      const startIndex = (areaIndex + placed) % sessions.length;
 
       const ranked = sessions
         .map((session, index) => {
@@ -105,10 +116,15 @@ export function buildFocusEmphasisAdditions(
         .sort((left, right) => right.affinity - left.affinity || left.rotation - right.rotation);
 
       for (const candidate of ranked) {
+        if (trainingDaysOnly && candidate.affinity === 0 && ranked[0].affinity > 0) {
+          continue;
+        }
         // Session time budget: at most two added accessories per session.
+        // "Already holds the movement" is the library's answer, not the
+        // spelling's.
         if (
           candidate.pendingCount >= 2 ||
-          candidate.names.some((existing) => existing.toLowerCase() === name.toLowerCase())
+          candidate.names.some((existing) => isSameCatalogMovement(existing, name))
         ) {
           continue;
         }
@@ -119,7 +135,23 @@ export function buildFocusEmphasisAdditions(
           exercise,
         ]);
         additions.push({ area, exerciseName: name, sessionId: candidate.session.id });
-        break;
+        placed += 1;
+        return true;
+      }
+      return false;
+    };
+
+    // Walks the pool until `count` accessories are placed, so an area still
+    // gets the emphasis it promises when its first entry is a lift the week
+    // already holds under another spelling. The first walk keeps to the days
+    // that train the area (another lift on the right day beats the same lift
+    // on the wrong one); only what is still owed after it may go anywhere.
+    const used = new Set<number>();
+    for (const trainingDaysOnly of [true, false]) {
+      for (let poolIndex = 0; poolIndex < pool.length && placed < count; poolIndex += 1) {
+        if (!used.has(poolIndex) && place(pool[poolIndex], trainingDaysOnly)) {
+          used.add(poolIndex);
+        }
       }
     }
   });
