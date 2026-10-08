@@ -275,20 +275,29 @@ module.exports = [
     name: 'round 2 sweep: no featured or second-card day the avoid flags thinned is under three lifts',
     run() {
       // Every goal, level, day count, gear and single or paired avoid flag,
-      // a fixed quarter of them (the full product is about a minute).
+      // a fixed fifth of them (the full product is about half a minute). The
+      // step is 5, which shares no factor with the 12 flag sets or the 11
+      // gears, so it walks through every pair of them; a step of 4 landed on
+      // the same three flag sets in every block and never ran knees.
       const flagSets = [['knees'], ['wrists'], ['shoulders'], ['lower_back'], ['elbows'], ['ankles'], ['hips'], ['neck'], ['knees', 'wrists'], ['elbows', 'wrists'], ['knees', 'lower_back'], ['shoulders', 'elbows']];
       let index = 0;
       let checked = 0;
       const failures = [];
+      const visitedFlags = new Map(flagSets.map((avoid) => [avoid.join('+'), 0]));
+      const visitedGear = new Map(Object.keys(GEARS).map((gearId) => [gearId, 0]));
+      const visitedPairs = new Set();
       for (const goal of ['strength', 'muscle', 'general', 'run_mobility', 'lean_athletic', 'general_fitness']) {
         for (const level of ['beginner', 'advanced', 'pro']) {
           for (const daysPerWeek of [2, 3, 4, 5, 6]) {
             for (const [gearId, gear] of Object.entries(GEARS)) {
               for (const avoid of flagSets) {
                 index += 1;
-                if (index % 4 !== 0) {
+                if (index % 5 !== 0) {
                   continue;
                 }
+                visitedFlags.set(avoid.join('+'), visitedFlags.get(avoid.join('+')) + 1);
+                visitedGear.set(gearId, visitedGear.get(gearId) + 1);
+                visitedPairs.add(`${gearId}/${avoid.join('+')}`);
                 const setup = selection({ goal, level, daysPerWeek, gear, avoid });
                 const recommendation = resolveFirstRunRecommendationWithTailoring(setup, null);
                 for (const programId of [recommendation.featuredProgramId, recommendation.waterfall?.alternativeProgramId].filter(Boolean)) {
@@ -304,6 +313,11 @@ module.exports = [
       }
       assert.deepEqual(failures.slice(0, 15), [], `${failures.length} failures`);
       assert.ok(checked > 1500, `${checked}`);
+      // A sample that aliases with the loops skips whole flag sets or gears
+      // and still passes; this fails it instead.
+      assert.deepEqual([...visitedFlags].filter(([, count]) => count === 0), [], 'flag sets the sample never ran');
+      assert.deepEqual([...visitedGear].filter(([, count]) => count === 0), [], 'gears the sample never ran');
+      assert.equal(visitedPairs.size, flagSets.length * visitedGear.size, 'gear and flag pairs the sample never ran');
     },
   },
   {
