@@ -90,7 +90,6 @@ function normalizeWarmups<T extends { loadKg: number; reps: number }>(
   return kept.length > 0 ? kept : undefined;
 }
 
-/** Sets a key to a value, or takes the key away when the value is undefined. */
 /**
  * A slot's programmed dose as stored (added 2026-10-08): a known mode and a
  * range a set can ask for, or nothing — the swap back then takes the one
@@ -116,6 +115,7 @@ function normalizeProgrammedDose(input: unknown): ProgrammedDose | undefined {
   return { trackingMode, repsMin, repsMax };
 }
 
+/** Sets a key to a value, or takes the key away when the value is undefined. */
 function withOptional<T extends Record<string, unknown>>(target: T, key: string, value: unknown): T {
   const { [key]: _dropped, ...rest } = target;
   return (value === undefined ? rest : { ...rest, [key]: value }) as T;

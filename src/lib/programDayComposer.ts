@@ -284,7 +284,16 @@ function withoutRepeats(
   const slots = new Set(day.map((exercise) => exercise.slotId));
   return incoming
     .filter((exercise) => !names.has(exercise.exerciseName.trim().toLowerCase()))
-    .map((exercise) => (slots.has(exercise.slotId) ? { ...exercise, slotId: `${exercise.slotId}_folded` } : exercise));
+    .map((exercise) => {
+      // Numbered until free: two days folded into one may share a slot id,
+      // and one suffix for both made them one slot to the player.
+      let slotId = exercise.slotId;
+      for (let fold = 1; slots.has(slotId); fold += 1) {
+        slotId = `${exercise.slotId}_folded${fold > 1 ? fold : ''}`;
+      }
+      slots.add(slotId);
+      return slotId === exercise.slotId ? exercise : { ...exercise, slotId };
+    });
 }
 
 export function composeProgramWeekForSelection(

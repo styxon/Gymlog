@@ -266,6 +266,16 @@ module.exports = [
       assert.equal(new Set(folded.map((exercise) => exercise.slotId)).size, folded.length, folded.map((exercise) => exercise.slotId).join(', '));
       assert.equal(first.foldedInto.get('a'), 'b');
 
+      // Two thin days with the same slot id folded into one day: each keeps a
+      // slot of its own (one suffix for both made them one slot).
+      const twice = foldThinSessions([
+        { id: 'a', name: 'a', exercises: [lift('Push-Up', 'core_1'), lift('Plank', 'core_2'), lift('Dead Bug', 'core_3')] },
+        { id: 'b', name: 'b', exercises: [lift('Glute Bridge', 'core_1')] },
+        { id: 'c', name: 'c', exercises: [lift('Bird Dog', 'core_1')] },
+      ], thin);
+      const twiceSlots = twice.sessions[0].exercises.map((exercise) => exercise.slotId);
+      assert.equal(new Set(twiceSlots).size, twiceSlots.length, twiceSlots.join(', '));
+
       // A week of thin days has no neighbour to fold into, and stays.
       const all = [day('a', 'Plank'), day('b', 'Glute Bridge')];
       assert.equal(foldThinSessions(all, thin).sessions, all);
