@@ -318,29 +318,40 @@ export function applyCautionFlagsToExercises(
   }
   const taken = new Set<string>();
   /*
-   * The same rule for a movement family, for swap targets only. Exact names
-   * missed the pairs that are one drill: a leg press became Hip Thrust and a
-   * lunge Glute Bridge on the same day, and Leg Curl stood beside Lying Leg
-   * Curl (17 of 113 swapped sessions across the ready templates, persona hunt
-   * 2026-10-08). An original is never judged by its family, so a template's
-   * own Hip Thrust beside a banded bridge stays as written; a swap just does
-   * not add a second.
+   * The same rule for a movement family, in two strengths.
+   *
+   * Exact names missed the pairs that are one drill: a leg press became Hip
+   * Thrust and a lunge Glute Bridge on the same day, and Leg Curl stood beside
+   * Lying Leg Curl (17 of 113 swapped sessions across the ready templates,
+   * persona hunt 2026-10-08). A family THIS PASS has already swapped in is a
+   * hard block: a swap never adds a second one.
+   *
+   * A family the template itself holds is only a preference. The first cut
+   * made it a block too, and a day with its own Hip Thrust or bridge then kept
+   * its Conventional Deadlift for a careful lower-back reader (15 ready
+   * sessions, 22 composed weeks): a duplicate bridge is a smaller fault than
+   * a heavy hinge left in place. So a replacement outside the family wins when
+   * there is one, and otherwise the swap goes ahead beside the native lift.
    */
-  const pendingFamilies = new Map<string, number>();
+  const nativeFamilies = new Set<string>();
   for (const exercise of exercises) {
     const family = movementFamilyOf(exercise.exerciseName);
     if (family) {
-      pendingFamilies.set(family, (pendingFamilies.get(family) ?? 0) + 1);
+      nativeFamilies.add(family);
     }
   }
-  const takenFamilies = new Set<string>();
+  const swappedInFamilies = new Set<string>();
   const onTheDay = (name: string) => {
     const key = normalize(name);
     return taken.has(key) || (pending.get(key) ?? 0) > 0;
   };
-  const familyOnTheDay = (name: string) => {
+  const familyAddedBySwap = (name: string) => {
     const family = movementFamilyOf(name);
-    return family !== null && (takenFamilies.has(family) || (pendingFamilies.get(family) ?? 0) > 0);
+    return family !== null && swappedInFamilies.has(family);
+  };
+  const familyNative = (name: string) => {
+    const family = movementFamilyOf(name);
+    return family !== null && nativeFamilies.has(family);
   };
 
   const adjustOne = (exercise: WorkoutTemplateExercise): WorkoutTemplateExercise | null => {
@@ -366,14 +377,23 @@ export function applyCautionFlagsToExercises(
       const bodyweight = findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]);
       const careful = findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
       const candidates = focusOverlap ? [bodyweight, careful] : [careful, bodyweight];
+      const usable = candidates.filter(
+        (candidate): candidate is string =>
+          candidate !== null
+          && isExerciseAllowedWithEquipment(candidate, availableEquipment)
+          && !onTheDay(candidate)
+          && !familyAddedBySwap(candidate),
+      );
+      // The table's own order decides (the focus area asks for the bodyweight
+      // variant first). Only a first choice that repeats a movement the
+      // template holds gives way, and only to a later one that repeats nothing
+      // and leaves the flag alone: a bodyweight lunge for a lunge still hits
+      // the knee, which is worse than a repeated bridge.
+      const stillHits = (candidate: string) => exerciseHitsCautionArea(candidate, flag.area);
       const replacement =
-        candidates.find(
-          (candidate): candidate is string =>
-            candidate !== null
-            && isExerciseAllowedWithEquipment(candidate, availableEquipment)
-            && !onTheDay(candidate)
-            && !familyOnTheDay(candidate),
-        ) ?? null;
+        usable[0] !== undefined && familyNative(usable[0])
+          ? usable.find((candidate) => !familyNative(candidate) && !stillHits(candidate)) ?? usable[0]
+          : usable[0] ?? null;
 
       // Never swap into something another flag bans outright. And never
       // swap a hold into a lift: its dose is seconds, and "60–90" carried
@@ -415,16 +435,14 @@ export function applyCautionFlagsToExercises(
   for (const exercise of exercises) {
     const key = normalize(exercise.exerciseName);
     pending.set(key, (pending.get(key) ?? 1) - 1);
-    const ownFamily = movementFamilyOf(exercise.exerciseName);
-    if (ownFamily) {
-      pendingFamilies.set(ownFamily, (pendingFamilies.get(ownFamily) ?? 1) - 1);
-    }
     const result = adjustOne(exercise);
     if (result) {
       taken.add(normalize(result.exerciseName));
-      const resultFamily = movementFamilyOf(result.exerciseName);
-      if (resultFamily) {
-        takenFamilies.add(resultFamily);
+      if (result.exerciseName !== exercise.exerciseName) {
+        const resultFamily = movementFamilyOf(result.exerciseName);
+        if (resultFamily) {
+          swappedInFamilies.add(resultFamily);
+        }
       }
       adjusted.push(result);
     }

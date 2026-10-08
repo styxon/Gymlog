@@ -100,14 +100,15 @@ module.exports = [
       const kept = applyCautionFlagsToExercises(native, careful('knees'), [], null);
       assert.deepEqual(names(kept.exercises).slice(0, 2), ['Hip Thrust', 'Glute Bridge (Banded)']);
 
-      // An original Leg Curl on the day blocks a second one as a swap target:
-      // Leg Extension has no curl to become, and keeps its place.
+      // The template's own Lying Leg Curl does not keep the knee-flagged Leg
+      // Extension on the day: it becomes Leg Curl beside it, since a repeated
+      // curl is the smaller fault. A second swap into the family is refused.
       const curls = applyCautionFlagsToExercises([exercise('Lying Leg Curl', 0), exercise('Leg Extension', 1)], careful('knees'), [], null);
-      assert.deepEqual(names(curls.exercises), ['Lying Leg Curl', 'Leg Extension']);
+      assert.deepEqual(names(curls.exercises), ['Lying Leg Curl', 'Leg Curl']);
     },
   },
   {
-    name: 'round 3: under a careful-knees flag no ready session ends with more of a family than it began with',
+    name: 'round 3: under a careful-knees flag no ready session gains more than one swapped-in lift of a family',
     run() {
       let swappedSessions = 0;
       for (const template of WORKOUT_TEMPLATES_V1) {
@@ -120,8 +121,12 @@ module.exports = [
             swappedSessions += 1;
             for (const family of ['glute-bridge', 'leg-curl']) {
               const count = (list) => list.filter((entry) => movementFamilyOf(entry.exerciseName) === family).length;
+              // The template's own lifts are never judged; the pass adds at
+              // most one of a family, and only as a swap target.
+              const after = count(result.exercises);
+              const swappedIn = result.swapped.filter((swap) => movementFamilyOf(swap.to) === family).length;
               assert.ok(
-                count(result.exercises) <= Math.max(count(session.exercises), 1),
+                after <= Math.max(count(session.exercises), 1) || (after === count(session.exercises) + 1 && swappedIn === 1),
                 `${template.id} / ${session.name} (${gear}): ${family} -> ${names(result.exercises).join(', ')}`,
               );
             }
@@ -388,6 +393,106 @@ module.exports = [
         }
       }
       assert.ok(titled > 50 && renamed > 5, `${titled} titles, ${renamed} renamed: the sweep is not looking`);
+    },
+  },
+
+  {
+    name: "round 3 fix-up: a template's own bridge or hip thrust never keeps a flagged lift on the day",
+    run() {
+      // Deadlift beside a native Hip Thrust: the exact-name rule blocks Hip
+      // Thrust, and the bodyweight bridge takes the deadlift out.
+      const native = applyCautionFlagsToExercises(
+        [exercise('Conventional Deadlift', 0), exercise('Hip Thrust', 1)],
+        careful('lower_back'),
+        [],
+        null,
+      );
+      assert.deepEqual(names(native.exercises), ['Glute Bridge', 'Hip Thrust']);
+
+      // A banded bridge is the same movement family and not the same name:
+      // the deadlift still goes, because no replacement lies outside the family.
+      const banded = applyCautionFlagsToExercises(
+        [exercise('Romanian Deadlift', 0), exercise('Banded Glute Bridge', 1)],
+        careful('lower_back'),
+        [],
+        null,
+      );
+      assert.ok(!names(banded.exercises).includes('Romanian Deadlift'), names(banded.exercises).join(', '));
+      assert.equal(banded.swapped.length, 1);
+
+      // Hips: Barbell Hip Thrust beside a banded bridge still becomes Glute Bridge.
+      const hips = applyCautionFlagsToExercises(
+        [exercise('Barbell Hip Thrust', 0), exercise('Banded Glute Bridge', 1)],
+        careful('hips'),
+        [],
+        null,
+      );
+      assert.ok(!names(hips.exercises).includes('Barbell Hip Thrust'), names(hips.exercises).join(', '));
+
+      // Knees: a lunge beside a banded bridge becomes the bridge, not a
+      // bodyweight lunge that the knee flag still hits.
+      const knees = applyCautionFlagsToExercises(
+        [exercise('Walking Lunge', 0), exercise('Banded Glute Bridge', 1)],
+        careful('knees'),
+        [],
+        null,
+      );
+      assert.ok(!names(knees.exercises).some((name) => exerciseHitsCautionArea(name, 'knees')), names(knees.exercises).join(', '));
+
+      // Two swaps still do not add two bridges: the second keeps looking.
+      const pair = applyCautionFlagsToExercises([exercise('Leg Press', 0), exercise('Walking Lunge', 1)], careful('knees'), [], null);
+      assert.equal(names(pair.exercises).filter((name) => movementFamilyOf(name) === 'glute-bridge').length, 1);
+    },
+  },
+  {
+    name: 'round 3 fix-up: a careful lower-back or hips flag never leaves more flagged lifts than a day began with, native bridge or not',
+    run() {
+      // 'Hip Thrust' is itself a swap target, so by exact name it can block
+      // the swap: the day may keep what it had, but never gain a flagged lift.
+      const natives = ['Hip Thrust', 'Banded Glute Bridge', 'Barbell Hip Thrust'];
+      const exactTargets = ['Hip Thrust'];
+      let withFlagged = 0;
+      let checked = 0;
+      for (const area of ['lower_back', 'hips']) {
+        for (const template of WORKOUT_TEMPLATES_V1) {
+          for (const session of template.sessions) {
+            const hits = (list) => list.filter((entry) => exerciseHitsCautionArea(entry.exerciseName, area)).length;
+            const before = hits(session.exercises);
+            if (before === 0) {
+              continue;
+            }
+            withFlagged += 1;
+            for (const gear of [null, ['Dumbbells'], []]) {
+              const alone = applyCautionFlagsToExercises(session.exercises, careful(area), [], gear);
+              for (const nativeName of natives) {
+                // A native lift of the flagged area itself changes the count;
+                // a bridge-family lift the flag does not hit is the probe.
+                if (exerciseHitsCautionArea(nativeName, area)) {
+                  continue;
+                }
+                const day = [...session.exercises, exercise(nativeName, 99)];
+                const result = applyCautionFlagsToExercises(day, careful(area), [], gear);
+                checked += 1;
+                assert.ok(
+                  hits(result.exercises) <= before,
+                  `${area} / ${template.id} / ${session.name} + ${nativeName} (${gear}): ${names(result.exercises).join(', ')}`,
+                );
+                // A native lift that is only the same movement costs the flag
+                // nothing it could do without it.
+                if (exactTargets.includes(nativeName)) {
+                  continue;
+                }
+                assert.equal(
+                  hits(result.exercises),
+                  hits(alone.exercises),
+                  `${area} / ${template.id} / ${session.name} + ${nativeName} (${gear}): ${names(result.exercises).join(', ')}`,
+                );
+              }
+            }
+          }
+        }
+      }
+      assert.ok(withFlagged > 100 && checked > 300, `${withFlagged} sessions, ${checked} runs: the sweep is not looking`);
     },
   },
 ];
