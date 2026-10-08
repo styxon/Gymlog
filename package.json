@@ -14,6 +14,7 @@
     "exercise:sync": "node scripts/generate_free_exercise_library.mjs",
     "slack:notify": "node scripts/slackNotify.cjs",
     "android:release": "node -e \"const cp=require('child_process');const path=require('path');const bin=process.platform==='win32'?path.join(process.cwd(),'android','gradlew.bat'):'./gradlew';const result=cp.spawnSync(bin,['assembleRelease'],{cwd:'android',stdio:'inherit',shell:true,env:{...process.env,CI:'1'}});process.exit(result.status ?? 1)\"",
+    "measure:startup": "node scripts/measureStartup.cjs",
     "release:ios": "node scripts/releaseGuard.cjs --platform ios && eas build -p ios --profile production",
     "release:ios:done": "node scripts/releaseGuard.cjs --platform ios --mark",
     "release:android": "node scripts/releaseGuard.cjs --platform android && npm run android:release",

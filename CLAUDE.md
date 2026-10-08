@@ -11,6 +11,7 @@ npm run typecheck       # TypeScript type check (no emit)
 npm run typecheck:api   # api/ without strict, as the Vercel deploy compiles it
 npm run test:unit       # Run all unit tests (requires .test-dist to be up to date)
 npm run android:release # Build signed Android APK via Gradle
+npm run measure:startup # Cold start on the connected phone, after every APK install (fails over 3.5 s)
 npm run release:ios      # Store build for iOS, behind the version guard (scripts/releaseGuard.cjs)
 npm run release:android  # The same for Android
 npm run release:ios:done # After the store accepted it: tags ios-v<version>, so that version cannot ship twice
@@ -86,6 +87,17 @@ What is worth flagging in this repo, beyond ordinary correctness:
   from `tests/run-tests.cjs`.
 - **Loaders that trust stored data.** `src/storage/database.ts` normalizes on
   load; a new field that skips it is a crash on someone's old install.
+- **Work at the top of a module.** Every module is evaluated before the first
+  render, on Hermes without a JIT — about twenty times slower than Node. A
+  table built when a module loads is paid on every cold start, screen opened
+  or not; one whose size is a product (slots × options, a `flatMap` inside a
+  `flatMap`) grows by multiplication when a row is added. The crisis filter's
+  rows once multiplied out to 195,800 phrases and the cold start went from
+  2.4 to 9.4 s (2026-10-08). Build on first use, or index without
+  multiplying. `tests/lib/startupWorkBudget.test.cjs` fails a module over
+  150 ms of its own load in Node — that is about 3 s on the phone, so it
+  catches a disaster, not a slow drift; `npm run measure:startup` on the
+  device catches the drift.
 
 ## Architecture
 
