@@ -436,6 +436,7 @@ const suites = [
   ...require('./lib/recommendationFixes20261005.test.cjs'),
   ...require('./lib/recommendationFixes20261006.test.cjs'),
   ...require('./lib/recommenderSweep20261007.test.cjs'),
+  ...require('./lib/recommenderSweep20261008.test.cjs'),
   ...require('./lib/reviewFixes20261007.test.cjs'),
   ...require('./lib/swapHunt20261007.test.cjs'),
   ...require('./lib/sessionMinutesOneTruth.test.cjs'),
