@@ -246,7 +246,7 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'A well-equipped gym: barbell, squat rack and bench, trap bar, dumbbells, cables, a pull-up bar, a box, a sled, a kettlebell, a medicine ball and an air bike or exercise bike.',
     whyItWorks:
-      'The heavy lifts come first, while you are fresh, and the conditioning comes last on the same day. The upper body pulls on more sets than it presses, and the only heavy hinge is on the last day of the week.',
+      'The heavy lifts come first, while you are fresh, and the conditioning comes last on the same day. The upper body pulls on more sets than it presses, and the trap bar deadlift, the heaviest pull of the week, is on its last day.',
   },
   tpl_athletic_performance_5_day_v1: {
     summary:
@@ -256,7 +256,7 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'A well-equipped gym: barbell, squat rack and bench, trap bar, dumbbells, cables, a pull-up bar, a box, a sled, a medicine ball, an air bike and a treadmill.',
     whyItWorks:
-      'Strength, size, power and conditioning each have their own day. Upper and lower days alternate, the upper body pulls on more sets than it presses, and the only heavy hinge is on the last day, so the day after it is an upper-body day.',
+      'Strength, size, power and conditioning each have their own day. Upper and lower days alternate, the upper body pulls on more sets than it presses, and the trap bar deadlift, the heaviest pull of the week, is on the last day, so the day after it is an upper-body day.',
   },
   tpl_home_dumbbell_athletic_5_day_v1: {
     summary:

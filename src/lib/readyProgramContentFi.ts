@@ -229,7 +229,7 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'Hyvin varustettu sali: levytanko, kyykkyteline ja penkki, trap bar, käsipainot, taljat, leuanvetotanko, hyppylaatikko, kelkka, kahvakuula, kuntopallo sekä ilmapyörä tai kuntopyörä.',
     whyItWorks:
-      'Raskaat liikkeet tulevat ensin, kun olet tuore, ja kuntoloppu samalle päivälle viimeiseksi. Yläkehossa vedetään useampi sarja kuin työnnetään, ja ainoa raskas maastaveto on viikon viimeisenä päivänä.',
+      'Raskaat liikkeet tulevat ensin, kun olet tuore, ja kuntoloppu samalle päivälle viimeiseksi. Yläkehossa vedetään useampi sarja kuin työnnetään, ja viikon raskain veto, trap bar -maastaveto, on viimeisenä päivänä.',
   },
   tpl_athletic_performance_5_day_v1: {
     summary:
@@ -239,7 +239,7 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     equipmentProfile:
       'Hyvin varustettu sali: levytanko, kyykkyteline ja penkki, trap bar, käsipainot, taljat, leuanvetotanko, hyppylaatikko, kelkka, kuntopallo, ilmapyörä ja juoksumatto.',
     whyItWorks:
-      'Voimalla, koolla, teholla ja kunnolla on kullakin oma päivänsä. Ylä- ja alavartalopäivät vuorottelevat, yläkehossa vedetään useampi sarja kuin työnnetään, ja ainoa raskas maastaveto on viimeisenä päivänä, joten sen jälkeinen päivä on yläkehopäivä.',
+      'Voimalla, koolla, teholla ja kunnolla on kullakin oma päivänsä. Ylä- ja alavartalopäivät vuorottelevat, yläkehossa vedetään useampi sarja kuin työnnetään, ja viikon raskain veto, trap bar -maastaveto, on viimeisenä päivänä, joten sen jälkeinen päivä on yläkehopäivä.',
   },
   tpl_home_dumbbell_athletic_5_day_v1: {
     summary:
