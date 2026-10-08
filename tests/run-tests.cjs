@@ -452,6 +452,7 @@ const suites = [
   ...require('./lib/cautionNameMatching.test.cjs'),
   ...require('./lib/sourceEncoding.test.cjs'),
   ...require('./lib/focusEmphasis.test.cjs'),
+  ...require('./lib/composerDaysTruth.test.cjs'),
   ...require('./lib/equipmentExerciseFilter.test.cjs'),
   ...require('./lib/programmeMinutes.test.cjs'),
   ...require('./lib/savedCopyFidelity.test.cjs'),

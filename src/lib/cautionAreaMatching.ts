@@ -28,6 +28,12 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'shoulder press',
     'push press',
     'arnold press',
+    // Presses overhead whose names do not say "shoulder" or "overhead": the
+    // seated dumbbell press sits in vertical_press in five ready programmes,
+    // and a thruster ends overhead (programmeBrief already lists all three).
+    'seated dumbbell press',
+    'kettlebell seated press',
+    'thruster',
     'upright row',
     'upright barbell row',
     'lateral raise',

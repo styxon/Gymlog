@@ -17,6 +17,7 @@ import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
   buildReadyProgramDetail,
+  readyProgramProjectedDays,
   readyProgramSessionMinutes,
   resolveReaderComposedWeek,
 } from '../lib/programDetails';
@@ -407,7 +408,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     const readyProgramFitExplanation =
       readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
         ? buildFirstRunRecommendationReasons(setupSelection, {
-            projectedDaysPerWeek: readyTemplate.daysPerWeek,
+            projectedDaysPerWeek: readyProgramProjectedDays(readyTemplate, readyComposedWeek),
             // The page's own minutes, not the catalog's hand-written number:
             // the badge said 35 and this line summed 50 (bug hunt, B14).
             estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),

@@ -422,7 +422,12 @@ function buildRecommendationMismatchNote(
     return buildLowEquipmentMismatchNote(selection, featuredDays, language);
   }
 
-  if (featuredDays !== selection.daysPerWeek) {
+  // The note is true of a programme with FEWER sessions than asked for: the
+  // week keeps its own sessions and the rest are optional add-ons. A programme
+  // with more sessions is composed down to the days asked for (the composer
+  // keeps the first N), so "keeps this start at 4 days" beside a 3-day week
+  // was false (bug hunt, 2026-10-08).
+  if (featuredDays < selection.daysPerWeek) {
     return t(language, 'mismatch.closestDays', { count: featuredDays });
   }
 
