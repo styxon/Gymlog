@@ -4,9 +4,10 @@
  * warmup/cooldown blocks, and the Adapt-sheet trim estimate.
  */
 import { resolveCatalogBodyPart, resolveCatalogSourceCategory } from './catalogExercisePools';
+import { exerciseHitsCautionArea } from './cautionAreaMatching';
 import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { I18nKey, t } from './i18n';
-import { AppLanguage } from '../types/models';
+import { AppLanguage, SetupCautionFlag } from '../types/models';
 
 export interface SessionDrill {
   /**
@@ -511,6 +512,73 @@ function routineBlockMinutes(drills: SessionRoutineBlock['drills']): number {
 }
 
 /**
+ * What stands in for a default drill an avoid flag names, in order: the first
+ * one no flag names and the block does not already hold. The block is not
+ * shortened, so a reader's per-slot drill choices keep their places.
+ */
+const DRILL_STAND_INS: Record<RoutineBlockKind, Record<SessionFocusKind, Array<Parameters<typeof t>[1]>>> = {
+  warmup: {
+    lower: ['home.drill.hipOpeners', 'home.drill.wallSlides', 'home.drill.armCircles'],
+    general: ['home.drill.hipOpeners', 'home.drill.armCircles', 'home.drill.wallSlides'],
+    push: ['home.drill.armCircles', 'home.drill.wallSlides', 'home.drill.hipOpeners'],
+    upper: ['home.drill.armCircles', 'home.drill.wallSlides', 'home.drill.hipOpeners'],
+    pull: ['home.drill.wallSlides', 'home.drill.armCircles', 'home.drill.hipOpeners'],
+  },
+  cooldown: {
+    lower: ['home.drill.seatedHamstringStretch', 'home.drill.childsPose', 'home.drill.chestDoorwayStretch'],
+    general: ['home.drill.seatedHamstringStretch', 'home.drill.childsPose', 'home.drill.chestDoorwayStretch'],
+    push: ['home.drill.childsPose', 'home.drill.chestDoorwayStretch', 'home.drill.seatedHamstringStretch'],
+    upper: ['home.drill.childsPose', 'home.drill.chestDoorwayStretch', 'home.drill.seatedHamstringStretch'],
+    pull: ['home.drill.childsPose', 'home.drill.standingLatStretch', 'home.drill.seatedHamstringStretch'],
+  },
+};
+
+/**
+ * The defaults a reader's avoid flags rule out, replaced. The plan removed
+ * Bodyweight Squat and Jump Squat for sore knees and then opened every lower
+ * day with jumping jacks and bodyweight squats (persona hunt, 2026-10-08).
+ * Judged on the drill's English name by the same rule as the lifts. Only the
+ * app's defaults: a drill the reader picked themselves stays.
+ */
+function withoutAvoidedDrills(
+  kind: RoutineBlockKind,
+  focus: SessionFocusKind,
+  drills: SessionDrill[],
+  flags: readonly SetupCautionFlag[],
+  language: AppLanguage,
+  available: string[] | null,
+): SessionDrill[] {
+  const avoided = flags.filter((flag) => flag.level === 'avoid');
+  if (avoided.length === 0) {
+    return drills;
+  }
+  const isAvoided = (key: I18nKey) => avoided.some((flag) => exerciseHitsCautionArea(t('en', key), flag.area));
+  if (!drills.some((drill) => isAvoided(drill.key))) {
+    return drills;
+  }
+  const schemes = new Map<string, string>();
+  for (const specs of Object.values(specsFor(kind))) {
+    for (const spec of specs) {
+      if (!schemes.has(spec.key)) {
+        schemes.set(spec.key, spec.scheme);
+      }
+    }
+  }
+  const held = new Set<string>(drills.filter((drill) => !isAvoided(drill.key)).map((drill) => drill.key));
+  return drills.map((drill) => {
+    if (!isAvoided(drill.key)) {
+      return drill;
+    }
+    const standIn = DRILL_STAND_INS[kind][focus].find((key) => !held.has(key) && !isAvoided(key));
+    if (!standIn) {
+      return drill;
+    }
+    held.add(standIn);
+    return { key: standIn, name: t(language, standIn), schemeLabel: schemes.get(standIn) ?? drill.schemeLabel };
+  });
+}
+
+/**
  * Deterministic default warmup for a session focus (no warmup data model yet).
  *
  * Takes the classified focus rather than a title, so no caller can pass display
@@ -521,11 +589,19 @@ export function getDefaultWarmup(
   language: AppLanguage = 'en',
   availableEquipment: string[] | null = null,
   overrides: RoutineDrillOverrides | null = null,
+  cautionFlags: readonly SetupCautionFlag[] = [],
 ): SessionRoutineBlock {
   const drills = applyOverrides(
     'warmup',
     focus,
-    resolveDrills(WARMUP_DRILLS[focus], language, availableEquipment),
+    withoutAvoidedDrills(
+      'warmup',
+      focus,
+      resolveDrills(WARMUP_DRILLS[focus], language, availableEquipment),
+      cautionFlags,
+      language,
+      availableEquipment,
+    ),
     overrides,
     language,
     availableEquipment,
@@ -541,11 +617,19 @@ export function getDefaultCooldown(
   language: AppLanguage = 'en',
   availableEquipment: string[] | null = null,
   overrides: RoutineDrillOverrides | null = null,
+  cautionFlags: readonly SetupCautionFlag[] = [],
 ): SessionRoutineBlock {
   const drills = applyOverrides(
     'cooldown',
     focus,
-    resolveDrills(COOLDOWN_DRILLS[focus], language, availableEquipment),
+    withoutAvoidedDrills(
+      'cooldown',
+      focus,
+      resolveDrills(COOLDOWN_DRILLS[focus], language, availableEquipment),
+      cautionFlags,
+      language,
+      availableEquipment,
+    ),
     overrides,
     language,
     availableEquipment,

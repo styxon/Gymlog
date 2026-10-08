@@ -281,4 +281,113 @@ module.exports = [
       assert.equal(filed === null ? null : libraryNames[filed], 'Barbell Glute Bridge');
     },
   },
+  {
+    name: 'round 3: the default warm-up and cool-down never open with a movement an avoid flag leaves out',
+    run() {
+      const { getDefaultWarmup, getDefaultCooldown, routineDrillSlotKey } = require(dist + 'lib/homeSessionHero.js');
+      const { estimateProgrammeSessionMinutesList } = require(dist + 'lib/programmeMinutes.js');
+      const AREAS = ['neck', 'shoulders', 'elbows', 'wrists', 'lower_back', 'hips', 'knees', 'ankles'];
+      const FOCUSES = ['lower', 'push', 'pull', 'upper', 'general'];
+      const GEARS = [null, [], ['Cardio machines', 'Pull-up bar', 'Resistance bands', 'Squat rack', 'Barbells']];
+      const { t } = require(dist + 'lib/i18n.js');
+      let flaggedDefaults = 0;
+      for (const focus of FOCUSES) {
+        for (const gear of GEARS) {
+          for (const area of AREAS) {
+            const flags = [{ area, level: 'avoid' }];
+            for (const [kind, build] of [['warmup', getDefaultWarmup], ['cooldown', getDefaultCooldown]]) {
+              const plain = build(focus, 'en', gear);
+              const guarded = build(focus, 'en', gear, null, flags);
+              assert.equal(guarded.drills.length, plain.drills.length, `${kind}/${focus}/${area}: the block keeps its length`);
+              for (const drill of guarded.drills) {
+                assert.ok(!exerciseHitsCautionArea(drill.name, area), `${kind}/${focus}/${gear}: ${drill.name} loads ${area}`);
+              }
+              flaggedDefaults += plain.drills.filter((drill) => exerciseHitsCautionArea(drill.name, area)).length;
+              // Careful and info change nothing.
+              for (const level of ['careful', 'info']) {
+                assert.deepEqual(build(focus, 'en', gear, null, [{ area, level }]), plain, `${kind}/${focus}/${area}/${level}`);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(flaggedDefaults > 10, `${flaggedDefaults} defaults were flagged: the sweep is not looking`);
+
+      // The lower day of a reader with sore knees.
+      const lower = getDefaultWarmup('lower', 'en', [], null, [{ area: 'knees', level: 'avoid' }]).drills.map((drill) => drill.name);
+      assert.ok(!lower.includes('Jumping jacks') && !lower.includes('Bodyweight squats'), lower.join(', '));
+      assert.ok(lower.includes('Hip openers'));
+      // Finnish names come from the same keys.
+      const fi = getDefaultWarmup('lower', 'fi', [], null, [{ area: 'knees', level: 'avoid' }]).drills.map((drill) => drill.name);
+      assert.ok(!fi.includes(t('fi', 'home.drill.jumpingJacks')), fi.join(', '));
+
+      // A drill the reader picked themselves is theirs.
+      const picked = getDefaultWarmup('push', 'en', [], { [routineDrillSlotKey('warmup', 'push', 2)]: 'home.drill.pushUps' }, [{ area: 'wrists', level: 'avoid' }]);
+      assert.equal(picked.drills[2].name, 'Push-ups');
+
+      // The minutes a card quotes follow the drills that are there.
+      const day = [{ exerciseName: 'Back Squat', sets: 3, repsMax: 5, restSecondsMin: 90, restSecondsMax: 90, trackingMode: 'weight_reps' }];
+      const free = estimateProgrammeSessionMinutesList([{ exercises: day }], { availableEquipment: [] });
+      const flagged = estimateProgrammeSessionMinutesList([{ exercises: day }], { availableEquipment: [], cautionFlags: [{ area: 'knees', level: 'avoid' }] });
+      assert.equal(typeof flagged[0], 'number');
+      assert.ok(flagged[0] <= free[0] + 2);
+    },
+  },
+  {
+    name: 'round 3: a day named for a lift the flags removed is renamed for what it holds',
+    run() {
+      const { sessionNameAfterRemovedLifts } = require(dist + 'lib/cautionExerciseFilter.js');
+      const rename = (name, removed, remaining) => sessionNameAfterRemovedLifts(name, removed, remaining, 'Lower Focus');
+      assert.equal(rename('Day 1: Squat & Bench', ['Back Squat'], ['Bench Press', 'Chest-Supported Row']), 'Day 1: Bench');
+      assert.equal(rename('Day 3: Squat & Row', ['Back Squat'], ['Seated Cable Row']), 'Day 3: Row');
+      assert.equal(rename('Squat Day', ['Back Squat'], ['Standing Calf Raise', 'Glute Bridge']), 'Lower Focus');
+      assert.equal(rename('Day 2: Deadlift Day', ['Deadlift'], ['Bench Press']), 'Day 2: Lower Focus');
+      assert.equal(rename('Legs: Pistol Squats & Plyo', ['Pistol Squat'], ['Plyo Push-Up']), 'Legs: Plyo');
+      // Nothing to say: the lift is still there (a swap kept the word), the
+      // title never named one, or the lift was not removed by a flag.
+      assert.equal(rename('Day 1: Squat & Bench', ['Back Squat'], ['Box Squat', 'Bench Press']), 'Day 1: Squat & Bench');
+      assert.equal(rename('Day 1: Full Body', ['Back Squat'], ['Bench Press']), 'Day 1: Full Body');
+      assert.equal(rename('Day 1: Squat & Bench', [], ['Bench Press']), 'Day 1: Squat & Bench');
+    },
+  },
+  {
+    name: 'round 3: no composed day is titled for a squat, deadlift or bench its week no longer holds',
+    run() {
+      const { localizeSessionName } = require(dist + 'lib/sessionNameLabel.js');
+      const { findPhrase, words } = require(dist + 'lib/cautionAreaMatching.js');
+      const hasWord = (text, word) => findPhrase(words(text), [word]) !== -1;
+      let renamed = 0;
+      let titled = 0;
+      for (const template of COMPOSABLE_TEMPLATES) {
+        for (const gear of [HOME_NONE, HOME_DUMBBELLS]) {
+          for (const avoid of [['knees'], ['lower_back'], ['knees', 'lower_back']]) {
+            const base = setup({ ...gear, goal: 'general', level: 'beginner', daysPerWeek: 3 });
+            const free = composeProgramWeekForSelection({ ...base, cautionFlags: [] }, template.id);
+            const week = composeProgramWeekForSelection({ ...base, cautionFlags: avoid.map((area) => ({ area, level: 'avoid' })) }, template.id);
+            for (const session of week.sessions) {
+              const before = free.sessions.find((entry) => entry.id === session.id);
+              for (const word of ['squat', 'deadlift', 'bench']) {
+                if (!hasWord(session.name, word)) {
+                  continue;
+                }
+                titled += 1;
+                if (before && before.exercises.some((entry) => hasWord(entry.exerciseName, word))) {
+                  assert.ok(
+                    session.exercises.some((entry) => hasWord(entry.exerciseName, word)),
+                    `${template.id} / ${session.name} (${avoid}): ${names(session.exercises).join(', ')}`,
+                  );
+                }
+              }
+              if (before && before.name !== session.name) {
+                renamed += 1;
+                // The new name is one the Finnish app translates.
+                assert.notEqual(localizeSessionName(session.name, 'fi'), session.name, session.name);
+              }
+            }
+          }
+        }
+      }
+      assert.ok(titled > 50 && renamed > 5, `${titled} titles, ${renamed} renamed: the sweep is not looking`);
+    },
+  },
 ];

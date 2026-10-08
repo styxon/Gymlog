@@ -30,7 +30,7 @@ import {
 import { ProgramInsightSummary } from '../lib/programInsights';
 import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
-import type { AppLanguage } from '../types/models';
+import type { AppLanguage, SetupCautionFlag } from '../types/models';
 import { layout, spacing } from '../theme';
 
 interface CustomWorkoutListItem {
@@ -59,6 +59,8 @@ interface WorkoutsScreenProps {
    */
   programAvailableEquipment?: string[] | null;
   programDrillOverrides?: Record<string, string> | null;
+  /** The reader's avoid flags, which take movements out of the warm-up and cool-down a card costs. */
+  programCautionFlags?: readonly SetupCautionFlag[] | null;
   language?: AppLanguage;
 }
 
@@ -278,6 +280,7 @@ export function WorkoutsScreen({
   tailoringPreferences = null,
   programAvailableEquipment = null,
   programDrillOverrides = null,
+  programCautionFlags = null,
   language = 'en',
 }: WorkoutsScreenProps) {
   const theme = useTheme();
@@ -332,9 +335,10 @@ export function WorkoutsScreen({
       buildReadyDiscoveryItem(template, getReadyProgramContent(template.id), {
         availableEquipment: programAvailableEquipment,
         overrides: programDrillOverrides,
+        cautionFlags: programCautionFlags,
       }),
     );
-  }, [programAvailableEquipment, programDrillOverrides, templates]);
+  }, [programAvailableEquipment, programDrillOverrides, programCautionFlags, templates]);
   const filteredReadyItems = useMemo(
     () => {
       return filterAndSortReadyDiscoveryItems(

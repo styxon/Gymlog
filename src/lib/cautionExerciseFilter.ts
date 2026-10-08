@@ -194,6 +194,46 @@ export function sessionNameAfterRunStandIn(name: string, kind: RunStandInKind): 
   return name.replace(/\bRun\b/g, kind === 'ride' ? 'Ride' : 'Walk');
 }
 
+/** The lifts a day can be named for. Each has a Finnish word in sessionNameLabel. */
+const TITLE_LIFTS = ['squat', 'deadlift', 'bench'] as const;
+
+const hasWord = (text: string, word: string) => findPhrase(words(text), [word]) !== -1;
+
+/**
+ * A day named for a lift it no longer holds, renamed for what it does.
+ *
+ * "Day 1: Squat & Bench" stayed that over Bench Press, a row and a crunch
+ * when the knees were avoided, and a "Squat Day" held calf raises and
+ * bridges (44 titles across the ready templates, persona hunt 2026-10-08).
+ * Only a lift an avoid flag removed counts, and only when nothing left on
+ * the day carries its word: a Box Squat swapped in keeps "Squat" honest.
+ * The named part goes ("Squat & Bench" is "Bench"); a title with nothing
+ * left is the day's focus, a name sessionNameLabel already translates.
+ */
+export function sessionNameAfterRemovedLifts(
+  name: string,
+  removed: readonly string[],
+  remaining: readonly string[],
+  fallbackFocus: string,
+): string {
+  const prefixed = name.match(/^(.*?:\s+)?(.*)$/);
+  const prefix = prefixed?.[1] ?? '';
+  const focus = prefixed?.[2] ?? name;
+  const missing = TITLE_LIFTS.filter(
+    (word) =>
+      hasWord(focus, word) &&
+      removed.some((lift) => hasWord(lift, word)) &&
+      !remaining.some((lift) => hasWord(lift, word)),
+  );
+  if (missing.length === 0) {
+    return name;
+  }
+  const parts = focus.split(/(\s*[&+/]\s*)/);
+  const separator = parts.find((part, index) => index % 2 === 1) ?? ' & ';
+  const kept = parts.filter((part, index) => index % 2 === 0 && !missing.some((word) => hasWord(part, word)));
+  return `${prefix}${kept.length > 0 ? kept.map((part) => part.trim()).join(separator) : fallbackFocus}`;
+}
+
 /** A run done for minutes: the only kind of run with a stand-in. */
 export function isMinutesRun(exercise: Pick<WorkoutTemplateExercise, 'exerciseName' | 'trackingMode'>): boolean {
   const minutes = exercise.trackingMode === 'duration_minutes' || isMinutesExerciseName(exercise.exerciseName);

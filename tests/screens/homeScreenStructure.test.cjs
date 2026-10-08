@@ -222,11 +222,11 @@ module.exports = [
       // a swap would render for one frame and vanish on the next rebuild.
       assert.match(
         homeScreenSource,
-        /getDefaultWarmup\(focusKind, language, availableEquipment, routineDrillOverrides\)/,
+        /getDefaultWarmup\(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags\)/,
       );
       assert.match(
         homeScreenSource,
-        /getDefaultCooldown\(focusKind, language, availableEquipment, routineDrillOverrides\)/,
+        /getDefaultCooldown\(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags\)/,
       );
       // And the swap writes through a slot key, never through a drill's name.
       assert.match(homeScreenSource, /routineDrillSlotKey\(drillSwap\.kind, focusKind, drillSwap\.index\)/);

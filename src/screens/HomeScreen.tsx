@@ -66,7 +66,10 @@ import { CutSurface } from '../components/CutSurface';
 import { ProLockedCard } from '../components/ProLockedCard';
 import { ProMomentSheet } from '../components/ProMomentSheet';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
-import { AppLanguage, CardioActivityType, ExerciseLibraryItem } from '../types/models';
+import { AppLanguage, CardioActivityType, ExerciseLibraryItem, SetupCautionFlag } from '../types/models';
+
+/** One shared empty list, so a prop default does not rebuild the drills every render. */
+const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
 import { queryReduceMotion } from '../utils/reduceMotion';
 
 // The Home Pro sheet is gone (design: Vinha Paywall Moments): contextual
@@ -391,6 +394,8 @@ interface HomeScreenProps {
   availableEquipment?: string[] | null;
   /** The reader's own warm-up / cool-down picks — see routineDrillSlotKey. */
   routineDrillOverrides?: Record<string, string>;
+  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** Undefined leaves the drills read-only, the way they were before. */
   onSwapRoutineDrill?: (slotKey: string, drillKey: string) => void;
   /**
@@ -484,6 +489,7 @@ export function HomeScreen({
   onOpenPlanSession,
   availableEquipment = null,
   routineDrillOverrides = {},
+  cautionFlags = NO_CAUTION_FLAGS,
   onSwapRoutineDrill,
   statCatalogCards = [],
   suggestedStatCardKeys = [],
@@ -700,8 +706,8 @@ export function HomeScreen({
   // Classified in App.tsx from the full exercise list; the five rows Home
   // receives are not enough to work it out here.
   const focusKind = nextPlanSession?.focusKind ?? 'general';
-  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides);
-  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides);
+  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
+  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
 
   /**
    * Which drill slot the swap sheet is open on, and what it has picked.

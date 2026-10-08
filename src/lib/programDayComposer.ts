@@ -2,7 +2,12 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
-import { CautionExerciseSwap, runStandInKindOf, sessionNameAfterRunStandIn } from './cautionExerciseFilter';
+import {
+  CautionExerciseSwap,
+  runStandInKindOf,
+  sessionNameAfterRemovedLifts,
+  sessionNameAfterRunStandIn,
+} from './cautionExerciseFilter';
 import { isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from './readerDayFilters';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
@@ -130,6 +135,15 @@ function resolveSubstitutionGroup(name: string, role: string, exerciseIndex: num
 }
 
 const REFILL_EXERCISE_COUNT = 3;
+
+/** What a day is called when its title's lifts are gone: names sessionNameLabel translates. */
+const FOCUS_TITLES: Record<SessionFocusKind, string> = {
+  push: 'Push Focus',
+  pull: 'Pull Focus',
+  upper: 'Upper Focus',
+  lower: 'Lower Focus',
+  general: 'Full Body Focus',
+};
 
 /** The accessory pools that train what a day was for. */
 const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
@@ -415,6 +429,7 @@ export function composeProgramWeekForSelection(
   const equipmentSwapped: Array<{ from: string; to: string }> = [];
 
   const liftsBeforeCaution = new Map<string, number>();
+  const removedBySession = new Map<string, string[]>();
 
   const filtered = baseSessions
     .map((session): ComposedProgramSession => {
@@ -431,6 +446,7 @@ export function composeProgramWeekForSelection(
       equipmentSwapped.push(...equipped.swapped);
       liftsBeforeCaution.set(session.id, countDayLifts(equipped.exercises));
       cautionRemoved.push(...adjusted.removed);
+      removedBySession.set(session.id, adjusted.removed.map((entry) => entry.name));
       cautionSwapped.push(...adjusted.swapped);
 
       // A run day whose runs became walks (or rides) is named for them.
@@ -472,7 +488,17 @@ export function composeProgramWeekForSelection(
     toppedUp,
     (session) => trainingDayIds.has(session.id) && countDayLifts(session.exercises) < MIN_DAY_LIFTS,
   );
-  const sessions = folded.sessions.map((session, index) => ({ ...session, orderIndex: index }));
+  const sessions = folded.sessions.map((session, index) => ({
+    ...session,
+    // A day named for a lift the flags took out is named for what it holds.
+    name: sessionNameAfterRemovedLifts(
+      session.name,
+      removedBySession.get(session.id) ?? [],
+      session.exercises.map((exercise) => exercise.exerciseName),
+      FOCUS_TITLES[classifySessionFocus(session.exercises.map((exercise) => exercise.exerciseName))],
+    ),
+    orderIndex: index,
+  }));
 
   // Report only emphasis that survived the caution pass (as-is or swapped) —
   // the truth surface must not claim additions the flags vetoed — on the day
@@ -502,9 +528,9 @@ export function composeProgramWeekForSelection(
     totalWorkouts: weeks * days,
     // Home's arithmetic over the week as composed, swaps and all (bug hunt,
     // 2026-10-04).
-    sessionMinutes: estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
+    sessionMinutes: estimateProgrammeSessionMinutes(sessions, { availableEquipment, cautionFlags }) || template.estimatedSessionDuration,
     savedCopySessionMinutes:
-      estimateProgrammeSessionMinutes(sessions, { availableEquipment, rest: 'max' }) || template.estimatedSessionDuration,
+      estimateProgrammeSessionMinutes(sessions, { availableEquipment, cautionFlags, rest: 'max' }) || template.estimatedSessionDuration,
     composed: days !== template.daysPerWeek,
     cautionRemoved,
     cautionSwapped,

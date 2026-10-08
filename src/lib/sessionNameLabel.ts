@@ -69,6 +69,9 @@ const FOCUS_FI: Record<string, string> = {
   'legs a: quad focus': 'Jalat A: etureidet',
   'legs b: posterior focus': 'Jalat B: takaketju',
   'legs: pistol squats & plyo': 'Jalat: pistolikyykyt ja hypyt',
+  // The same day once the knees flag took the pistol squats out
+  // (sessionNameAfterRemovedLifts).
+  'legs: plyo': 'Jalat: hypyt',
   'low-impact cardio & stability': 'Kevyt kestävyys ja tasapaino',
   'lower body bodyweight': 'Alavartalo kehonpainolla',
   'lower body hiit': 'Alavartalon HIIT',
