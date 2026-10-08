@@ -1357,6 +1357,8 @@ export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
   // Filed where it always was, so its history does not move when the demo does.
   ['glute bridge hold', 'barbell glute bridge'],
   ['banded glute bridge', 'barbell glute bridge'],
+  ['cable pullover', 'straight-arm dumbbell pullover'],
+  ['bodyweight reverse lunge', 'dumbbell rear lunge'],
   // A generic name, or a lift done without the row's implement: the row shows
   // the movement, but it is one variant of several (catalog audit, 2026-10-06).
   ['leg curl', null],

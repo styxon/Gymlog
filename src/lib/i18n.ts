@@ -4332,7 +4332,7 @@ const FI: Record<I18nKey, string> = {
   'wf.female_targeted.primary': 'Naisille tehty ohjelma, joka sopii tasoosi ja viikkoosi.',
   'wf.female_targeted.alt': 'Haluatko mieluummin klassisen reitin? Sama viikko, eri painotus.',
   'wf.lean_athletic.primary': 'Voimasarjat ja kunto-osuudet samassa viikossa.',
-  'wf.lean_athletic.alt': 'Haluatko rauhallisemman viikon? Tasapainoinen pohja, vähemmän kuntoa.',
+  'wf.lean_athletic.alt': 'Haluatko rauhallisemman viikon? Tasapainoinen pohja, vähemmän kunto-osuuksia.',
   'wf.lean_athletic.primaryLoss': 'Säilyttää voimasi, kun kunto-osuudet hoitavat rasvanpolton.',
   'wf.lean_athletic.altLoss': 'Haluatko rauhallisemman viikon? Tasapainoinen pohja tukee silti rasvanpolttoa.',
   'wf.muscle_focus.primary': 'Erikoistumisjakso, joka treenaa fokusaluettasi kahdesti viikossa.',

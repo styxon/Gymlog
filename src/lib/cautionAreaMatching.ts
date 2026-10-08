@@ -41,9 +41,6 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'lateral raise',
     'rear delt',
     'handstand',
-    // A squat into an overhead press: it loads the shoulder the way a push
-    // press does (programmeBrief already lists it for a sore shoulder).
-    'thruster',
     'dip',
     'dippi',
   ],

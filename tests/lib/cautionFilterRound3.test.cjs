@@ -287,6 +287,19 @@ module.exports = [
     },
   },
   {
+    name: 'round 3: a demo moved for Cable Pullover or Bodyweight Reverse Lunge leaves their history filed where it was',
+    run() {
+      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require(dist + 'lib/guidedPlayer.js');
+      const { createSeedExerciseLibrary } = require(dist + 'data/seed.js');
+      const libraryNames = createSeedExerciseLibrary().map((item) => item.name);
+      const nameAt = (index) => (index === null ? null : libraryNames[index]);
+      assert.equal(nameAt(findGuidedLibraryIndex('Cable Pullover', libraryNames)), 'Straight-Arm Pulldown');
+      assert.equal(nameAt(findFiledLibraryIndex('Cable Pullover', libraryNames)), 'Straight-Arm Dumbbell Pullover');
+      assert.equal(nameAt(findGuidedLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Reverse Lunge');
+      assert.equal(nameAt(findFiledLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Dumbbell Rear Lunge');
+    },
+  },
+  {
     name: 'round 3: the default warm-up and cool-down never open with a movement an avoid flag leaves out',
     run() {
       const { getDefaultWarmup, getDefaultCooldown, routineDrillSlotKey } = require(dist + 'lib/homeSessionHero.js');
