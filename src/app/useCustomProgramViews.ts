@@ -100,6 +100,12 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
         })),
     [getWorkoutExercises, getWorkoutTemplateSessions, workoutTemplates],
   );
+  // The two fields the insight map reads of the running session. The session
+  // object itself is replaced on every set logged, rest ended and swap, and
+  // keying the map on it rebuilt all 71 programmes' insights each time with
+  // the same answer.
+  const liveTemplateId = workout.activeSession?.templateId ?? null;
+  const liveTemplateName = workout.activeSession?.templateName ?? null;
   const programInsightsByTemplateId = useMemo(
     () =>
       buildProgramInsightMap({
@@ -119,9 +125,12 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
           })),
         ],
         unitPreference,
-        activeSession: workout.activeSession,
+        activeSession:
+          liveTemplateId !== null
+            ? { templateId: liveTemplateId, templateName: liveTemplateName ?? '' }
+            : null,
       }),
-    [database, customWorkoutRuntimeMap, unitPreference, workout.activeSession, workout.templates],
+    [database, customWorkoutRuntimeMap, unitPreference, liveTemplateId, liveTemplateName, workout.templates],
   );
   const recentCompletedCustomTemplateId = useMemo(
     () =>

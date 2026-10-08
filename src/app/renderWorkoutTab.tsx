@@ -35,7 +35,7 @@ import {
   resolveCollectionProgress,
 } from '../lib/exerciseCollections';
 import { toggleTechniqueStatement } from '../lib/exerciseLearning';
-import { getExerciseProgressForName, SameLiftMatcher } from '../lib/progression';
+import type { ExerciseProgressSummary } from '../lib/progression';
 import { catalogLevelForSetup } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
@@ -204,8 +204,8 @@ export interface WorkoutTabDeps {
   liftHistory: React.ComponentProps<typeof GuidedPlayerScreen>['liftHistory'];
   /** The plateau reminder for whichever lift is walked to next, by name. */
   plateauNotice: React.ComponentProps<typeof GuidedPlayerScreen>['plateauNotice'];
-  /** Whether a log is one library row's history — see isSameLiftAsLibraryRow. */
-  sameLibraryRow: SameLiftMatcher;
+  /** The exercise page's logged history by name — see useExerciseDetailHistory. */
+  exerciseProgressFor: (exerciseName: string) => ExerciseProgressSummary;
   guidedEntryEyebrow: GuidedProps['entryEyebrow'];
   guidedWeekProgress: GuidedProps['weekProgress'];
   guidedNextUp: GuidedProps['nextUp'];
@@ -311,7 +311,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     freestyleDraft,
     saveFreestyleDraft,
     clearFreestyleDraft,
-    sameLibraryRow,
+    exerciseProgressFor,
     guidedEntryEyebrow,
     guidedWeekProgress,
     guidedNextUp,
@@ -1182,7 +1182,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // onboarding programme logs "Bench Press" against the library's
         // "Barbell Bench Press - Medium Grip". A variation filed as its own
         // row (sumo, trap bar) stays on its own page.
-        history={getExerciseProgressForName(database, exercise.name, sameLibraryRow)}
+        history={exerciseProgressFor(exercise.name)}
         unitPreference={unitPreference}
         // Decides whether this lift's caution is for this reader.
         cautionFlags={preferences.setupCautionFlags}
