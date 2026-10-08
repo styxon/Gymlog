@@ -7,8 +7,9 @@ import {
   WorkoutTrackingMode,
 } from '../features/workout/workoutTypes';
 import { findGuidedLibraryIndex } from './guidedPlayer';
-import { DEFAULT_HOLD_SECONDS, isHoldExerciseName } from './holdExercises';
+import { DEFAULT_HOLD_SECONDS, isHoldExerciseName, isRepsStretchName } from './holdExercises';
 import { DEFAULT_MINUTES_PRESCRIPTION, isMinutesExerciseName } from './minutesExercises';
+import { exerciseNameLabel } from './exerciseNameLabel';
 import { collapseRepRange } from './singleRepTarget';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { SetupFocusArea } from '../types/models';
@@ -67,6 +68,35 @@ export function resolveCatalogBodyPart(name: string) {
 
   const index = findGuidedLibraryIndex(name, libraryNames);
   return index === null ? null : GENERATED_EXERCISE_LIBRARY[index].bodyPart;
+}
+
+/**
+ * The library row a name is, lower-cased — the identity two spellings of one
+ * lift share. A ready template says "Hip Thrust" where the focus pools say
+ * "Barbell Hip Thrust", and "Dumbbell Fly" where they say "Dumbbell Flyes";
+ * the guided player opens the same exercise for both, so a day holding both
+ * holds the lift twice. A name the library cannot place is its own identity.
+ */
+export function resolveCatalogLibraryKey(name: string): string {
+  const trimmed = name.trim().toLowerCase();
+  const index = findGuidedLibraryIndex(name, libraryNames);
+  return index === null ? trimmed : libraryNames[index].trim().toLowerCase();
+}
+
+/**
+ * Whether two names are the one lift on a day: the same spelling, the same
+ * library row, or the same English label (the rows the app itself renames,
+ * such as "Butt Lift (Bridge)" and "Glute Bridge", are one lift to the reader).
+ * Variants the library files apart (Barbell and Dumbbell Bench Press) stay apart.
+ */
+export function isSameCatalogMovement(left: string, right: string): boolean {
+  if (left.trim().toLowerCase() === right.trim().toLowerCase()) {
+    return true;
+  }
+  if (resolveCatalogLibraryKey(left) === resolveCatalogLibraryKey(right)) {
+    return true;
+  }
+  return exerciseNameLabel('en', left).trim().toLowerCase() === exerciseNameLabel('en', right).trim().toLowerCase();
 }
 
 /**
@@ -350,6 +380,9 @@ export function boutsAfterSwap(
   return programmeRowFor(exerciseName, toUnit).sets;
 }
 
+/** What workoutCatalog doses Cat Stretch at in its own mobility programmes. */
+export const MOBILITY_REPS_DOSE = { reps: 6, maxSets: 3, restSecondsMin: 30, restSecondsMax: 45 } as const;
+
 export interface ComposedSlotDose {
   sets: number;
   repsMin: number;
@@ -366,6 +399,10 @@ export interface ComposedSlotDose {
  * - Minutes: one bout of DEFAULT_MINUTES_PRESCRIPTION, no rest.
  * - Seconds: a hold bracket — a plank's 20–40, else DEFAULT_HOLD_SECONDS.
  * - Reps: 10–15, collapsed to one number.
+ * - A stretch moved through in reps (the cat-cow): the ready mobility
+ *   programmes' dose, 6 reps on 30–45 s of rest and no more than 3 sets. A
+ *   lift's 15 reps on a two-minute rest between cat-cows was the whole of a
+ *   suggested recovery day (bug hunt, 2026-10-08).
  *
  * Focus emphasis and the suggested days both build slots this way. Emphasis
  * used to write "2 × 10–15" whatever the unit: an Elliptical Trainer was two
@@ -390,6 +427,15 @@ export function composedSlotDose(
       restSecondsMax: 0,
     };
   }
+  if (unit === 'reps' && isRepsStretchName(name)) {
+    return {
+      sets: Math.min(lift.sets, MOBILITY_REPS_DOSE.maxSets),
+      repsMin: MOBILITY_REPS_DOSE.reps,
+      repsMax: MOBILITY_REPS_DOSE.reps,
+      restSecondsMin: MOBILITY_REPS_DOSE.restSecondsMin,
+      restSecondsMax: MOBILITY_REPS_DOSE.restSecondsMax,
+    };
+  }
   const plank = name.toLowerCase().includes('plank');
   const bracket =
     unit === 'seconds'
@@ -409,19 +455,19 @@ export interface FocusAccessoryPool {
 
 export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = {
   chest: {
-    bodyweight: ['Push-Up Wide', 'Incline Push-Up'],
-    loaded: ['Incline Dumbbell Press', 'Dumbbell Flyes'],
+    bodyweight: ['Push-Up Wide', 'Incline Push-Up', 'Decline Push-Up'],
+    loaded: ['Incline Dumbbell Press', 'Dumbbell Flyes', 'Cable Crossover'],
   },
   back: {
-    bodyweight: ['Inverted Row', 'Bodyweight Mid Row'],
-    loaded: ['Close-Grip Front Lat Pulldown', 'Bent Over Two-Dumbbell Row'],
+    bodyweight: ['Inverted Row', 'Bodyweight Mid Row', 'Superman'],
+    loaded: ['Close-Grip Front Lat Pulldown', 'Bent Over Two-Dumbbell Row', 'Seated Cable Rows'],
   },
   shoulders: {
     // "Alternating Deltoid Raise" is a dumbbell lift whose name never says so,
     // which means the gear filter cannot see what it needs. Keep names the
     // equipment rules can read.
-    bodyweight: ['Band Pull Apart', 'Arm Circles'],
-    loaded: ['Arnold Dumbbell Press', 'Cable Rear Delt Fly'],
+    bodyweight: ['Band Pull Apart', 'Arm Circles', 'Pike Push-Up'],
+    loaded: ['Arnold Dumbbell Press', 'Cable Rear Delt Fly', 'Dumbbell Lying Rear Lateral Raise'],
   },
   arms: {
     bodyweight: ['Bench Dips', 'Body-Up'],
@@ -431,17 +477,23 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
     bodyweight: ['Plank', 'Dead Bug'],
     loaded: ['Cable Crunch', 'Hanging Leg Raise'],
   },
+  // Each area keeps a reserve beyond what its emphasis promises: a ready
+  // template often holds the lift a pool names under another spelling, and the
+  // walk down the pool then needs something to land on. Bodyweight and loaded
+  // lists stay the same length, so pickPoolVariant swaps them place for place.
   quads: {
-    bodyweight: ['Bodyweight Squat', 'Bodyweight Walking Lunge'],
-    loaded: ['Leg Press', 'Dumbbell Lunges'],
+    bodyweight: ['Bodyweight Squat', 'Bodyweight Walking Lunge', 'Step-up with Knee Raise'],
+    loaded: ['Leg Press', 'Dumbbell Lunges', 'Leg Extensions'],
   },
   glutes: {
-    bodyweight: ['Butt Lift (Bridge)', 'Glute Kickback'],
-    loaded: ['Barbell Hip Thrust', 'One-Legged Cable Kickback'],
+    // Not "Pull Through": it is a cable lift whose name never says so, which
+    // the gear filter cannot read.
+    bodyweight: ['Butt Lift (Bridge)', 'Glute Kickback', 'Standing Hip Abduction', 'Frog Pump'],
+    loaded: ['Barbell Hip Thrust', 'One-Legged Cable Kickback', 'Cable Abductor', 'Barbell Glute Bridge'],
   },
   hamstrings: {
-    bodyweight: ['Floor Glute-Ham Raise', 'Band Good Morning'],
-    loaded: ['Romanian Deadlift', 'Glute Ham Raise'],
+    bodyweight: ['Floor Glute-Ham Raise', 'Band Good Morning', 'Butt Lift (Bridge)'],
+    loaded: ['Romanian Deadlift', 'Glute Ham Raise', 'Lying Leg Curls'],
   },
   calves: {
     // Not "Donkey Calf Raises": that one needs a machine (bug hunt, 2026-10-04).
@@ -449,8 +501,8 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
     loaded: ['Seated Calf Raise', 'Calf Press'],
   },
   legs: {
-    bodyweight: ['Bodyweight Squat', 'Bodyweight Walking Lunge'],
-    loaded: ['Leg Press', 'Dumbbell Lunges'],
+    bodyweight: ['Bodyweight Squat', 'Bodyweight Walking Lunge', 'Step-up with Knee Raise'],
+    loaded: ['Leg Press', 'Dumbbell Lunges', 'Leg Extensions'],
   },
   mobility: {
     bodyweight: ['Cat Stretch', 'All Fours Quad Stretch'],
