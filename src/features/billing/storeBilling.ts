@@ -113,6 +113,12 @@ export async function purchaseStorePlan(plan: SubscriptionTermKey): Promise<Stor
     if (code === store.PURCHASES_ERROR_CODE.PAYMENT_PENDING_ERROR) {
       return { status: 'pending' };
     }
+    // The store account already owns it (a reinstall, a second phone): that
+    // is the reader's Pro, not a failed purchase, so read it back.
+    if (code === store.PURCHASES_ERROR_CODE.PRODUCT_ALREADY_PURCHASED_ERROR) {
+      const owned = await restoreStorePurchases();
+      return owned ? { status: 'purchased', customer: owned } : { status: 'failed' };
+    }
     console.error('Store billing: the purchase failed', error);
     return { status: 'failed' };
   }

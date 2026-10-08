@@ -183,7 +183,7 @@ module.exports = [
       const profile = read('src', 'app', 'renderProfileTab.tsx');
       // End membership opens the store instead of the "ended" splash, for a
       // store purchase in a release build only.
-      assert.match(profile, /onEndInStore=\{\s*!isDemoBuild\(\) && proEntitlement\.source === 'purchase'/);
+      assert.match(profile, /onEndInStore=\{\s*!isDemoBuild\(\) && isStoreBillingConfigured\(\) && proEntitlement\.source === 'purchase'/);
       const end = read('src', 'screens', 'MembershipEndScreen.tsx');
       assert.match(end, /onPress=\{onEndInStore \?\? \(\(\) => setStep\('splash'\)\)\}/);
 
@@ -200,7 +200,19 @@ module.exports = [
       const saved = restore.indexOf('await updatePreferences(record);');
       const said = restore.indexOf("'subs.restore.done'");
       assert.ok(saved > -1 && said > saved, 'the restore is announced before it is stored');
-      assert.match(read('src', 'screens', 'SubscriptionScreen.tsx'), /onRestorePurchases \?\? \(\(\) => void Linking\.openURL\(manageSubscriptionsUrl\(STORE\)\)\)/);
+      const subs = read('src', 'screens', 'SubscriptionScreen.tsx');
+      assert.match(subs, /restore \? \(\) => void restore\(\) : \(\) => void Linking\.openURL\(manageSubscriptionsUrl\(STORE\)\)/);
+      // A second tap while the store is being asked does nothing.
+      assert.match(subs, /if \(restoring\.current\) \{\s*return;\s*\}\s*restoring\.current = true;\s*try \{\s*await onRestorePurchases\(\);\s*\} finally \{\s*restoring\.current = false;\s*\}/);
+
+      // A renewing store subscription names its next payment; "none
+      // scheduled" is for a cancelled one and a grant.
+      const noBilling = subs.slice(subs.indexOf('if (!billing) {'));
+      assert.match(noBilling, /^if \(!billing\) \{\s*return \[\s*\{\s*key: 'charge',[\s\S]*?'subs\.meta\.nextChargeValue'/);
+
+      // Already owned is the reader's Pro, read back — not a failed purchase.
+      const service = read('src', 'features', 'billing', 'storeBilling.ts');
+      assert.match(service, /PRODUCT_ALREADY_PURCHASED_ERROR\) \{\s*const owned = await restoreStorePurchases\(\);\s*return owned \? \{ status: 'purchased', customer: owned \} : \{ status: 'failed' \};/);
 
       const i18n = read('src', 'lib', 'i18n.ts');
       for (const key of ['premium.purchasePending', 'premium.purchaseFailed', 'subs.restore.done', 'subs.restore.none', 'subs.restore.failed']) {

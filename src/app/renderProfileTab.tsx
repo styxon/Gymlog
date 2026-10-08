@@ -691,7 +691,9 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // there instead of playing an "ended" splash over a subscription that
         // is still renewing; the cancellation comes back through the sync.
         onEndInStore={
-          !isDemoBuild() && proEntitlement.source === 'purchase'
+          // Only with a store to send them to: without one, the record is the
+          // demo's invented purchase, and Play would show an empty page.
+          !isDemoBuild() && isStoreBillingConfigured() && proEntitlement.source === 'purchase'
             ? () =>
                 void Linking.openURL(manageSubscriptionsUrl(storePlatformOf(Platform.OS))).catch(() => undefined)
             : undefined
