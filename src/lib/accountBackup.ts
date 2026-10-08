@@ -12,7 +12,7 @@
  * defaults, not a crash.
  */
 import { laterLegalAcceptance } from './legalAcceptance';
-import { gunzipSync, gzipSync, strFromU8 } from 'fflate';
+import { Gzip, gunzipSync, gzipSync, strFromU8 } from 'fflate';
 
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { WorkoutHistoryStore } from '../features/workout/workoutTypes';
@@ -137,6 +137,88 @@ export function encodeAccountBackupBody(payload: AccountBackupPayload): string {
     data: bytesToBase64(gzipSync(utf8Encode(json), { level: 6 })),
   };
   return JSON.stringify(envelope);
+}
+
+/**
+ * How much one stretch of the async encoder works before it gives the thread
+ * back: 64 K characters of JSON per slice, two slices per stretch. Measured with
+ * node --jitless (the nearest stand-in for Hermes' interpreter), gzip costs
+ * about 200 ms a megabyte, so a stretch is about 25 ms. The one-shot call it
+ * replaces held the thread for 0.6 s at 3 MB and 1.3 s at 6 MB, on the Home or
+ * completion screen, eight seconds after the last change.
+ */
+export const ACCOUNT_BACKUP_SLICE_CHARS = 65_536;
+export const ACCOUNT_BACKUP_SLICES_PER_STRETCH = 2;
+
+/** Bytes per base64 slice; a multiple of three, so only the last one is padded. */
+const BASE64_SLICE_BYTES = 3 * 32_768;
+
+/**
+ * `encodeAccountBackupBody` that lets the UI run in between.
+ *
+ * The result decodes to the same payload and has the same envelope, so the
+ * server and `decodeAccountBackupBody` are untouched; only the compressed
+ * bytes may differ from gzipSync's (streamed blocks), by a fraction of a
+ * percent. The lib stays pure by taking the yield as a parameter: the caller
+ * passes a macrotask yield, the tests pass a spy.
+ *
+ * The JSON is taken whole before the first yield, so what is sent is one
+ * snapshot of the payload however long the encode is spread over.
+ */
+export async function encodeAccountBackupBodyAsync(
+  payload: AccountBackupPayload,
+  yieldToUi: () => Promise<void>,
+): Promise<string> {
+  const json = JSON.stringify(payload);
+  if (json.length <= ACCOUNT_BACKUP_COMPRESS_ABOVE_CHARS) {
+    return json;
+  }
+  let sinceYield = 0;
+  const stretchDone = async () => {
+    sinceYield += 1;
+    if (sinceYield >= ACCOUNT_BACKUP_SLICES_PER_STRETCH) {
+      sinceYield = 0;
+      await yieldToUi();
+    }
+  };
+
+  const parts: Uint8Array[] = [];
+  const gzip = new Gzip({ level: 6 }, (chunk) => {
+    parts.push(chunk);
+  });
+  for (let start = 0; start < json.length; ) {
+    let end = Math.min(start + ACCOUNT_BACKUP_SLICE_CHARS, json.length);
+    // A cut between the halves of a surrogate pair would encode each half as
+    // U+FFFD; move it back so the bytes equal those of the whole string.
+    if (end < json.length && isHighSurrogateUnit(json.charCodeAt(end - 1))) {
+      end -= 1;
+    }
+    gzip.push(utf8Encode(json.slice(start, end)), end >= json.length);
+    start = end;
+    await stretchDone();
+  }
+
+  let size = 0;
+  for (const part of parts) {
+    size += part.length;
+  }
+  const packed = new Uint8Array(size);
+  let offset = 0;
+  for (const part of parts) {
+    packed.set(part, offset);
+    offset += part.length;
+  }
+  const pieces: string[] = [];
+  for (let start = 0; start < packed.length; start += BASE64_SLICE_BYTES) {
+    pieces.push(bytesToBase64(packed.subarray(start, start + BASE64_SLICE_BYTES)));
+    await stretchDone();
+  }
+  const envelope: CompressedAccountBackup = { encoding: ACCOUNT_BACKUP_ENCODING, data: pieces.join('') };
+  return JSON.stringify(envelope);
+}
+
+function isHighSurrogateUnit(code: number) {
+  return code >= 0xd800 && code <= 0xdbff;
 }
 
 /**

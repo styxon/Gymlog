@@ -491,10 +491,42 @@ function activate(phone) {
   global.clearTimeout = phone.clock.clearTimeout;
 }
 
+/**
+ * Awaits an operation of the phone while moving its clock: a large backup is
+ * encoded in stretches that yield on a zero-delay timer, and the clock is the
+ * world's, so nothing else would ever fire it.
+ */
+async function pumped(phone, promise) {
+  let finished = false;
+  let failed = false;
+  let outcome;
+  promise.then(
+    (value) => {
+      finished = true;
+      outcome = value;
+    },
+    (error) => {
+      finished = true;
+      failed = true;
+      outcome = error;
+    },
+  );
+  while (!finished) {
+    await flush();
+    phone.clock.advance(0);
+  }
+  if (failed) {
+    throw outcome;
+  }
+  return outcome;
+}
+
 async function settle(phone) {
   let quiet = 0;
   for (let round = 0; round < 400 && quiet < 3; round += 1) {
     await flush();
+    // A large backup is encoded in stretches that yield on a zero-delay timer; the clock is the world's, so it is moved here.
+    phone.clock.advance(0);
     const before = phone.api?.phase;
     render(phone);
     quiet = phone.api.phase === 'idle' && before === 'idle' ? quiet + 1 : 0;
@@ -532,7 +564,7 @@ async function signIn(phone, account) {
   render(phone);
   world.nextGoogle = account;
   const restoredBefore = phone.restored;
-  const result = await phone.api.signIn('google');
+  const result = await pumped(phone, phone.api.signIn('google'));
   // N6: said before anything else happens, so both stores must already be on disk.
   if (result.kind === 'restored' && phone.restored === restoredBefore) {
     bad('6: "restored" was reported before the restore had written both stores');
@@ -545,7 +577,7 @@ async function operation(phone, name, ...args) {
   activate(phone);
   render(phone);
   const restoredBefore = phone.restored;
-  const result = await phone.api[name](...args);
+  const result = await pumped(phone, phone.api[name](...args));
   if (name === 'resolveRestoreChoice' && args[0] === 'restore' && result === 'done' && phone.restored === restoredBefore) {
     bad('6: "restore" was reported done before the restore had written both stores');
   }

@@ -11,7 +11,7 @@ const dist = (file) => require(path.join(DIST, file));
 
 const format = dist('lib/format.js');
 const progression = dist('lib/progression.js');
-const { indexLogsBySession } = dist('lib/sessionLogIndex.js');
+const { groupLogsBySession, logsOfSession } = dist('lib/sessionLogIndex.js');
 const { getSummaryChartPoints, getSummaryChartValues, getTrackedSummaryValues } = dist('lib/progressChartPoints.js');
 const { buildExerciseSheetHistory } = dist('lib/exerciseSheetHistory.js');
 const search = dist('lib/exerciseSearch.js');
@@ -260,12 +260,12 @@ module.exports = [
     name: 'screen work: the log index answers each session as the filter did, reading each log once',
     run() {
       const db = bigHistory(200);
-      const index = indexLogsBySession(db.exerciseLogs);
+      const index = groupLogsBySession(db.exerciseLogs);
       assert.equal(index.size, 200);
       for (const session of db.workoutSessions) {
-        assert.deepEqual(index.get(session.id), exerciseLogRepository.listBySessionId(db, session.id));
+        assert.deepEqual(logsOfSession(index, session.id), exerciseLogRepository.listBySessionId(db, session.id));
       }
-      assert.equal(index.get('nope'), undefined);
+      assert.deepEqual(logsOfSession(index, 'nope'), []);
 
       let reads = 0;
       const counted = new Proxy(db.exerciseLogs, {
@@ -276,11 +276,13 @@ module.exports = [
           return Reflect.get(target, key, receiver);
         },
       });
-      indexLogsBySession(counted);
+      groupLogsBySession(counted);
       assert.equal(reads, db.exerciseLogs.length, 'every log is read exactly once, not once per session');
 
       const provider = source('src/state/AppProvider.tsx');
-      assert.match(provider, /const logsBySession = useMemo\(\(\) => indexLogsBySession\(database\.exerciseLogs\), \[database\.exerciseLogs\]\);/);
+      assert.match(provider, /const sessionLogIndex = useMemo\(\(\) => groupLogsBySession\(database\.exerciseLogs\), \[database\.exerciseLogs\]\);/);
+      // getSessionLogs keeps its identity until the logs change, so History's memoised rows are not rebuilt by a preference toggle.
+      assert.match(provider, /const getSessionLogs = useCallback\([\s\S]*?\[sessionLogIndex\],\s*\);/);
       assert.doesNotMatch(provider, /listBySessionId/, 'getSessionLogs must not filter the table per question');
     },
   },

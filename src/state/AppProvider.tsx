@@ -4,6 +4,7 @@ import { StorageLoadFailedScreen } from '../components/StorageLoadFailedScreen';
 import { resolveDeviceLanguage } from '../storage/deviceLocale';
 import { findSavedCardioRun, mergeContinuedCardioRun } from '../lib/cardio';
 import { createId } from '../lib/ids';
+import { groupLogsBySession, logsOfSession } from '../lib/sessionLogIndex';
 import { preferencesForRestore } from '../lib/accountBackup';
 import { moveTrainingCycleToLeadPlan, withPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { withPendingAiLogDeletion, withoutAiLogDeletions } from '../lib/aiLogDeletion';
@@ -35,7 +36,6 @@ import {
   getLatestLogForTemplateExercise,
   getTrackedExerciseProgress,
 } from '../lib/progression';
-import { indexLogsBySession } from '../lib/sessionLogIndex';
 import { loadDatabase, normalizeDatabase, resetDatabase, saveDatabase, savePreferences } from '../storage/database';
 import { reportOperationFailed } from '../features/errorReporting/errorReporter';
 import { loadWithRetry } from '../storage/loadWithRetry';
@@ -1380,16 +1380,19 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   }
 
   /**
-   * A session's logs, from an index built once per change to the logs table
-   * rather than a scan of the table per question. Stable across every other
-   * database change (a preference, a template), so a screen that memoises on
-   * it — History's rows — is not rebuilt by them. A fresh array each call, as
-   * the filter it replaces gave.
+   * A session's logs, from an index built once per change to the log list
+   * rather than a scan of the list per question. Keyed on the log list alone,
+   * so a preference toggle does not rebuild it, and getSessionLogs keeps its
+   * identity across every other database change (a preference, a template): a
+   * screen that memoises on it, History's rows, is not rebuilt by them. The
+   * groups are shared between askers: a caller that reorders copies first.
    */
-  const logsBySession = useMemo(() => indexLogsBySession(database.exerciseLogs), [database.exerciseLogs]);
+  const sessionLogIndex = useMemo(() => groupLogsBySession(database.exerciseLogs), [database.exerciseLogs]);
   const getSessionLogs = useCallback(
-    (sessionId: string) => (logsBySession.get(sessionId) ?? []).slice(),
-    [logsBySession],
+    (sessionId: string) => {
+      return logsOfSession(sessionLogIndex, sessionId);
+    },
+    [sessionLogIndex],
   );
 
   const value = useMemo<AppContextValue>(

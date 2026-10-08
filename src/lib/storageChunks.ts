@@ -78,9 +78,16 @@ function isLowSurrogate(code: number) {
 /**
  * Whether `text` is at most `maxBytes` once encoded as UTF-8.
  *
- * Counts only when it has to: a string short enough at three bytes a unit
- * fits, and one longer than the limit in units cannot. A full save runs this
- * on every commit, and the workout bundle once a second mid-session.
+ * Counts only when it has to. A string short enough at three bytes a unit
+ * fits, and one longer than the limit in units cannot. Between the two, the
+ * bytes are at most one per unit plus two for every unit outside ASCII (a
+ * two-byte unit costs one extra at most, a three-byte one two, a surrogate
+ * pair four bytes for two units), and the non-ASCII units are counted by a
+ * native replace, not a per-character loop: a bundle or database in that
+ * window is mostly ASCII JSON, and the loop cost 20-45 ms under an
+ * interpreter on every save. Only a text that bound cannot decide gets the
+ * exact count. A full save runs this on every commit, and the workout bundle
+ * on every change to the session (a set, a swap, a rest settling).
  */
 export function fitsOneRow(text: string, maxBytes: number = SINGLE_ROW_BYTES): boolean {
   if (text.length * 3 <= maxBytes) {
@@ -88,6 +95,10 @@ export function fitsOneRow(text: string, maxBytes: number = SINGLE_ROW_BYTES): b
   }
   if (text.length > maxBytes) {
     return false;
+  }
+  const nonAscii = text.replace(/[\u0000-\u007f]+/g, '').length;
+  if (text.length + 2 * nonAscii <= maxBytes) {
+    return true;
   }
   let bytes = 0;
   for (let index = 0; index < text.length; index += 1) {
