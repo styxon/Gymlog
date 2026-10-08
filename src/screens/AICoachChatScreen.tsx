@@ -1414,9 +1414,14 @@ export function AICoachChatScreen({
           return [
             ...(message.text ? [{ id: `${message.id}:i`, fromCoach: true, text: message.text }] : []),
             { id: `${message.id}:q`, fromCoach: true, text: t(language, PROGRAM_INTAKE_QUESTION_KEYS[step]) },
-            { id: `${message.id}:a`, fromCoach: false, text: programIntakeAnswerText(step, value, language) },
+            {
+              id: `${message.id}:a`,
+              fromCoach: false,
+              text: programIntakeAnswerText(step, value, language),
+              ...(crisisAnswer ? { crisis: true as const } : {}),
+            },
             crisisAnswer
-              ? { id: `${message.id}:crisis`, fromCoach: true, text: crisisAnswer.takeaway, advice: crisisAnswer }
+              ? { id: `${message.id}:crisis`, fromCoach: true, text: crisisAnswer.takeaway, advice: crisisAnswer, crisis: true as const }
               : nextStep
               ? { id: `${message.id}:n`, fromCoach: true, text: '', intake: next }
               : {
