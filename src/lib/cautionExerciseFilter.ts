@@ -5,6 +5,7 @@ import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } fr
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
 import { isMinutesExerciseName } from './minutesExercises';
+import { movementFamilyOf } from './movementFamily';
 
 export { cautionAreaLoadedBy, exerciseHitsCautionArea } from './cautionAreaMatching';
 
@@ -54,7 +55,9 @@ export const AREA_CAREFUL_SWAPS: Record<SetupCautionArea, Array<[string, string]
   ],
   lower_back: [
     ['romanian deadlift', 'Hip Thrust'],
+    ['rdl', 'Hip Thrust'],
     ['deadlift', 'Hip Thrust'],
+    ['pull-through', 'Hip Thrust'],
     ['good morning', 'Back Extension'],
     ['bent-over', 'Chest-Supported Row'],
     ['barbell row', 'Chest-Supported Row'],
@@ -105,6 +108,8 @@ export const AREA_BODYWEIGHT_SWAPS: Record<SetupCautionArea, Array<[string, stri
   ],
   lower_back: [
     ['deadlift', 'Glute Bridge'],
+    ['rdl', 'Glute Bridge'],
+    ['pull-through', 'Glute Bridge'],
     ['barbell row', 'Inverted Row'],
     ['bent-over', 'Inverted Row'],
     ['kettlebell swing', 'Glute Bridge'],
@@ -272,9 +277,30 @@ export function applyCautionFlagsToExercises(
     pending.set(key, (pending.get(key) ?? 0) + 1);
   }
   const taken = new Set<string>();
+  /*
+   * The same rule for a movement family, for swap targets only. Exact names
+   * missed the pairs that are one drill: a leg press became Hip Thrust and a
+   * lunge Glute Bridge on the same day, and Leg Curl stood beside Lying Leg
+   * Curl (17 of 113 swapped sessions across the ready templates, persona hunt
+   * 2026-10-08). An original is never judged by its family, so a template's
+   * own Hip Thrust beside a banded bridge stays as written; a swap just does
+   * not add a second.
+   */
+  const pendingFamilies = new Map<string, number>();
+  for (const exercise of exercises) {
+    const family = movementFamilyOf(exercise.exerciseName);
+    if (family) {
+      pendingFamilies.set(family, (pendingFamilies.get(family) ?? 0) + 1);
+    }
+  }
+  const takenFamilies = new Set<string>();
   const onTheDay = (name: string) => {
     const key = normalize(name);
     return taken.has(key) || (pending.get(key) ?? 0) > 0;
+  };
+  const familyOnTheDay = (name: string) => {
+    const family = movementFamilyOf(name);
+    return family !== null && (takenFamilies.has(family) || (pendingFamilies.get(family) ?? 0) > 0);
   };
 
   const adjustOne = (exercise: WorkoutTemplateExercise): WorkoutTemplateExercise | null => {
@@ -305,7 +331,8 @@ export function applyCautionFlagsToExercises(
           (candidate): candidate is string =>
             candidate !== null
             && isExerciseAllowedWithEquipment(candidate, availableEquipment)
-            && !onTheDay(candidate),
+            && !onTheDay(candidate)
+            && !familyOnTheDay(candidate),
         ) ?? null;
 
       // Never swap into something another flag bans outright. And never
@@ -348,9 +375,17 @@ export function applyCautionFlagsToExercises(
   for (const exercise of exercises) {
     const key = normalize(exercise.exerciseName);
     pending.set(key, (pending.get(key) ?? 1) - 1);
+    const ownFamily = movementFamilyOf(exercise.exerciseName);
+    if (ownFamily) {
+      pendingFamilies.set(ownFamily, (pendingFamilies.get(ownFamily) ?? 1) - 1);
+    }
     const result = adjustOne(exercise);
     if (result) {
       taken.add(normalize(result.exerciseName));
+      const resultFamily = movementFamilyOf(result.exerciseName);
+      if (resultFamily) {
+        takenFamilies.add(resultFamily);
+      }
       adjusted.push(result);
     }
   }

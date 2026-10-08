@@ -8,6 +8,7 @@ import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
+import { movementFamilyOf } from './movementFamily';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type { SetupFocusArea, SetupWeekday } from '../types/models';
@@ -154,23 +155,85 @@ function refillEmptiedSession(
   selection: FirstRunSetupSelection,
 ): ComposedProgramSession {
   const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
-  const names = [
-    ...movementPoolNames(originalNames),
-    ...pools.flatMap((pool) => pool.bodyweight),
-    ...pools.flatMap((pool) => pool.loaded),
-  ];
-  const exercises = safeCandidates(names, session.id, new Set(), availableEquipment, cautionFlags, selection)
-    .slice(0, REFILL_EXERCISE_COUNT)
+  const onTheDay = new Set<string>();
+  const focusNames = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection);
+  const supplemental = safeCandidates(
+    [...pools.flatMap((pool) => pool.bodyweight), ...pools.flatMap((pool) => pool.loaded)],
+    session.id,
+    new Set(focusNames.map((name) => name.trim().toLowerCase())),
+    availableEquipment,
+    cautionFlags,
+    selection,
+  );
+  const exercises = pickDistinctMovements([...focusNames, ...supplemental], REFILL_EXERCISE_COUNT, [])
     .map((name, index) => buildComposedFallbackExercise(name, session.id, index));
   return { ...session, source: 'suggested', exercises };
 }
 
-/** The accessory pools for what the day was for, bodyweight first. */
-function movementPoolNames(originalNames: readonly string[]): string[] {
-  const focusPools = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map(
-    (area) => FOCUS_ACCESSORY_POOL[area],
-  );
-  return [...focusPools.flatMap((pool) => pool.bodyweight), ...focusPools.flatMap((pool) => pool.loaded)];
+/**
+ * The names that train what the day was for and survive the reader's gear and
+ * flags, one per movement area per round: the first safe name of each area,
+ * then the second of each, and so on. Listing every bodyweight name of every
+ * area before any other handed a lower day with the legs struck out two
+ * bridge variants and a kickback, and never reached the hinge or the calves
+ * that were safe (persona hunt, 2026-10-08). Within an area the order stays
+ * bodyweight first.
+ */
+function movementPoolNames(
+  originalNames: readonly string[],
+  sessionId: string,
+  onTheDay: ReadonlySet<string>,
+  availableEquipment: string[] | null,
+  cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
+  selection: FirstRunSetupSelection,
+): string[] {
+  const perArea = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map((area) => {
+    const pool = FOCUS_ACCESSORY_POOL[area];
+    return safeCandidates([...pool.bodyweight, ...pool.loaded], sessionId, onTheDay, availableEquipment, cautionFlags, selection);
+  });
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (let round = 0; perArea.some((list) => round < list.length); round += 1) {
+    for (const list of perArea) {
+      if (round >= list.length) {
+        continue;
+      }
+      const name = list[round];
+      const key = name.trim().toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      names.push(name);
+    }
+  }
+  return names;
+}
+
+/**
+ * The first `count` names that are not a movement the day already holds (see
+ * movementFamily): a day with Glute Bridge March is not topped up with a
+ * second bridge while a hinge or a calf raise is safe. When the distinct ones
+ * run out the repeats fill the rest, since a thin day is the worse outcome.
+ */
+function pickDistinctMovements(names: readonly string[], count: number, onTheDay: readonly string[]): string[] {
+  const families = new Set(onTheDay.map(movementFamilyOf).filter((family): family is string => family !== null));
+  const picked: string[] = [];
+  const repeats: string[] = [];
+  for (const name of names) {
+    const family = movementFamilyOf(name);
+    if (family !== null && families.has(family)) {
+      repeats.push(name);
+      continue;
+    }
+    if (picked.length < count) {
+      picked.push(name);
+      if (family !== null) {
+        families.add(family);
+      }
+    }
+  }
+  return [...picked, ...repeats].slice(0, count);
 }
 
 /**
@@ -224,10 +287,13 @@ function topUpThinSession(
     return session;
   }
   const onTheDay = new Set(session.exercises.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
-  const fillers = safeCandidates(movementPoolNames(originalNames), session.id, onTheDay, availableEquipment, cautionFlags, selection)
-    .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }))
-    .slice(0, missing)
-    .map((name, index) => buildComposedFallbackExercise(name, session.id, session.exercises.length + index));
+  const candidates = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection)
+    .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }));
+  const fillers = pickDistinctMovements(
+    candidates,
+    missing,
+    session.exercises.map((exercise) => exercise.exerciseName),
+  ).map((name, index) => buildComposedFallbackExercise(name, session.id, session.exercises.length + index));
   return fillers.length > 0 ? { ...session, exercises: [...session.exercises, ...fillers] } : session;
 }
 
