@@ -48,6 +48,16 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'kettlebell swing',
     'clean',
     'snatch',
+    // The same hinges under other names: Single-Leg RDL stayed in a week
+    // that avoided the lower back while its long name, Single-Leg Romanian
+    // Deadlift, was removed (persona hunt, 2026-10-08). A pull-through and a
+    // stiff-legged lift are loaded hinges; the reverse hyperextension is the
+    // back-friendly one and is excluded below.
+    'rdl',
+    'pull-through',
+    'stiff-legged',
+    'stiff legs',
+    'hyperextension',
   ],
   knees: [
     'squat',
@@ -87,7 +97,10 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'ladder drill',
   ],
   elbows: ['curl', 'skull crusher', 'triceps', 'close-grip', 'pushdown', 'dip', 'dippi'],
-  wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist'],
+  // A dip holds the wrist in loaded extension: a wrists "avoid" week dropped
+  // every push-up and kept Bench Dips (persona hunt, 2026-10-08). Elbows and
+  // shoulders already list it, with the Finnish compounds the rule catches.
+  wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist', 'dip', 'dippi'],
   hips: ['hip thrust', 'sumo', 'adductor', 'abductor', 'bulgarian', 'pistol'],
   neck: ['shrug', 'neck', 'behind-the-neck'],
   ankles: ['calf raise', 'calf press', 'jump', 'skipping', 'sprint', 'run', 'jog', 'treadmill', 'stride'],
@@ -99,8 +112,9 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
 // lift). Add one only for a name that is a real false positive.
 const AREA_EXCLUDE_PATTERNS: Record<SetupCautionArea, string[]> = {
   shoulders: [],
-  // A grip, and rows done upright or supported on a bench, are not a hinge.
-  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row'],
+  // A grip, rows done upright or supported on a bench, and the reverse
+  // hyperextension (hips swung over a bench, a back-friendly lift) are not a hinge.
+  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row', 'reverse hyperextension'],
   // The leg press of a calf press is done with straight legs.
   knees: ['calf press on the leg press'],
   // "curl" is also the hamstring curl and the prone back raise, and the

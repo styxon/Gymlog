@@ -5,6 +5,7 @@ import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } fr
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
 import { isMinutesExerciseName } from './minutesExercises';
+import { movementFamilyOf } from './movementFamily';
 
 export { cautionAreaLoadedBy, exerciseHitsCautionArea } from './cautionAreaMatching';
 
@@ -54,7 +55,9 @@ export const AREA_CAREFUL_SWAPS: Record<SetupCautionArea, Array<[string, string]
   ],
   lower_back: [
     ['romanian deadlift', 'Hip Thrust'],
+    ['rdl', 'Hip Thrust'],
     ['deadlift', 'Hip Thrust'],
+    ['pull-through', 'Hip Thrust'],
     ['good morning', 'Back Extension'],
     ['bent-over', 'Chest-Supported Row'],
     ['barbell row', 'Chest-Supported Row'],
@@ -105,6 +108,8 @@ export const AREA_BODYWEIGHT_SWAPS: Record<SetupCautionArea, Array<[string, stri
   ],
   lower_back: [
     ['deadlift', 'Glute Bridge'],
+    ['rdl', 'Glute Bridge'],
+    ['pull-through', 'Glute Bridge'],
     ['barbell row', 'Inverted Row'],
     ['bent-over', 'Inverted Row'],
     ['kettlebell swing', 'Glute Bridge'],
@@ -187,6 +192,46 @@ export function runStandInKindOf(exerciseName: string): RunStandInKind | null {
  */
 export function sessionNameAfterRunStandIn(name: string, kind: RunStandInKind): string {
   return name.replace(/\bRun\b/g, kind === 'ride' ? 'Ride' : 'Walk');
+}
+
+/** The lifts a day can be named for. Each has a Finnish word in sessionNameLabel. */
+const TITLE_LIFTS = ['squat', 'deadlift', 'bench'] as const;
+
+const hasWord = (text: string, word: string) => findPhrase(words(text), [word]) !== -1;
+
+/**
+ * A day named for a lift it no longer holds, renamed for what it does.
+ *
+ * "Day 1: Squat & Bench" stayed that over Bench Press, a row and a crunch
+ * when the knees were avoided, and a "Squat Day" held calf raises and
+ * bridges (44 titles across the ready templates, persona hunt 2026-10-08).
+ * Only a lift an avoid flag removed counts, and only when nothing left on
+ * the day carries its word: a Box Squat swapped in keeps "Squat" honest.
+ * The named part goes ("Squat & Bench" is "Bench"); a title with nothing
+ * left is the day's focus, a name sessionNameLabel already translates.
+ */
+export function sessionNameAfterRemovedLifts(
+  name: string,
+  removed: readonly string[],
+  remaining: readonly string[],
+  fallbackFocus: string,
+): string {
+  const prefixed = name.match(/^(.*?:\s+)?(.*)$/);
+  const prefix = prefixed?.[1] ?? '';
+  const focus = prefixed?.[2] ?? name;
+  const missing = TITLE_LIFTS.filter(
+    (word) =>
+      hasWord(focus, word) &&
+      removed.some((lift) => hasWord(lift, word)) &&
+      !remaining.some((lift) => hasWord(lift, word)),
+  );
+  if (missing.length === 0) {
+    return name;
+  }
+  const parts = focus.split(/(\s*[&+/]\s*)/);
+  const separator = parts.find((part, index) => index % 2 === 1) ?? ' & ';
+  const kept = parts.filter((part, index) => index % 2 === 0 && !missing.some((word) => hasWord(part, word)));
+  return `${prefix}${kept.length > 0 ? kept.map((part) => part.trim()).join(separator) : fallbackFocus}`;
 }
 
 /** A run done for minutes: the only kind of run with a stand-in. */
@@ -272,9 +317,41 @@ export function applyCautionFlagsToExercises(
     pending.set(key, (pending.get(key) ?? 0) + 1);
   }
   const taken = new Set<string>();
+  /*
+   * The same rule for a movement family, in two strengths.
+   *
+   * Exact names missed the pairs that are one drill: a leg press became Hip
+   * Thrust and a lunge Glute Bridge on the same day, and Leg Curl stood beside
+   * Lying Leg Curl (17 of 113 swapped sessions across the ready templates,
+   * persona hunt 2026-10-08). A family THIS PASS has already swapped in is a
+   * hard block: a swap never adds a second one.
+   *
+   * A family the template itself holds is only a preference. The first cut
+   * made it a block too, and a day with its own Hip Thrust or bridge then kept
+   * its Conventional Deadlift for a careful lower-back reader (15 ready
+   * sessions, 22 composed weeks): a duplicate bridge is a smaller fault than
+   * a heavy hinge left in place. So a replacement outside the family wins when
+   * there is one, and otherwise the swap goes ahead beside the native lift.
+   */
+  const nativeFamilies = new Set<string>();
+  for (const exercise of exercises) {
+    const family = movementFamilyOf(exercise.exerciseName);
+    if (family) {
+      nativeFamilies.add(family);
+    }
+  }
+  const swappedInFamilies = new Set<string>();
   const onTheDay = (name: string) => {
     const key = normalize(name);
     return taken.has(key) || (pending.get(key) ?? 0) > 0;
+  };
+  const familyAddedBySwap = (name: string) => {
+    const family = movementFamilyOf(name);
+    return family !== null && swappedInFamilies.has(family);
+  };
+  const familyNative = (name: string) => {
+    const family = movementFamilyOf(name);
+    return family !== null && nativeFamilies.has(family);
   };
 
   const adjustOne = (exercise: WorkoutTemplateExercise): WorkoutTemplateExercise | null => {
@@ -300,13 +377,23 @@ export function applyCautionFlagsToExercises(
       const bodyweight = findSwap(exercise.exerciseName, AREA_BODYWEIGHT_SWAPS[flag.area]);
       const careful = findSwap(exercise.exerciseName, AREA_CAREFUL_SWAPS[flag.area]);
       const candidates = focusOverlap ? [bodyweight, careful] : [careful, bodyweight];
+      const usable = candidates.filter(
+        (candidate): candidate is string =>
+          candidate !== null
+          && isExerciseAllowedWithEquipment(candidate, availableEquipment)
+          && !onTheDay(candidate)
+          && !familyAddedBySwap(candidate),
+      );
+      // The table's own order decides (the focus area asks for the bodyweight
+      // variant first). Only a first choice that repeats a movement the
+      // template holds gives way, and only to a later one that repeats nothing
+      // and leaves the flag alone: a bodyweight lunge for a lunge still hits
+      // the knee, which is worse than a repeated bridge.
+      const stillHits = (candidate: string) => exerciseHitsCautionArea(candidate, flag.area);
       const replacement =
-        candidates.find(
-          (candidate): candidate is string =>
-            candidate !== null
-            && isExerciseAllowedWithEquipment(candidate, availableEquipment)
-            && !onTheDay(candidate),
-        ) ?? null;
+        usable[0] !== undefined && familyNative(usable[0])
+          ? usable.find((candidate) => !familyNative(candidate) && !stillHits(candidate)) ?? usable[0]
+          : usable[0] ?? null;
 
       // Never swap into something another flag bans outright. And never
       // swap a hold into a lift: its dose is seconds, and "60–90" carried
@@ -351,6 +438,12 @@ export function applyCautionFlagsToExercises(
     const result = adjustOne(exercise);
     if (result) {
       taken.add(normalize(result.exerciseName));
+      if (result.exerciseName !== exercise.exerciseName) {
+        const resultFamily = movementFamilyOf(result.exerciseName);
+        if (resultFamily) {
+          swappedInFamilies.add(resultFamily);
+        }
+      }
       adjusted.push(result);
     }
   }

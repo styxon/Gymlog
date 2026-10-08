@@ -49,6 +49,7 @@ export function useRoutineBlockCosts(deps: RoutineBlockCostsDeps) {
           preferences.appLanguage,
           availableEquipmentForDrills,
           preferences.routineDrillOverrides,
+          preferences.setupCautionFlags,
         ),
       ),
       cooldownSeconds: estimateRoutineBlockSeconds(
@@ -57,10 +58,11 @@ export function useRoutineBlockCosts(deps: RoutineBlockCostsDeps) {
           preferences.appLanguage,
           availableEquipmentForDrills,
           preferences.routineDrillOverrides,
+          preferences.setupCautionFlags,
         ),
       ),
     }),
-    [preferences.appLanguage, availableEquipmentForDrills, preferences.routineDrillOverrides],
+    [preferences.appLanguage, availableEquipmentForDrills, preferences.routineDrillOverrides, preferences.setupCautionFlags],
   );
   /** The same cost for a day known only by its lifts — the programme page's. */
   const routineSecondsForExercises = useCallback(

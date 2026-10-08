@@ -232,7 +232,11 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['dumbbell curl', ['Reverse Plate Curls', 'Band Curl']],
   ['hammer curl', ['Dumbbell Bicep Curl', 'Reverse Plate Curls', 'Band Curl']],
   ['rear delt', ['Band Pull Apart']],
-  ['kettlebell swing', ['Butt Lift (Bridge)']],
+  // A hinge first, like the two deadlift rows above: with dumbbells the swing
+  // is a loaded hip hinge, and the bridge alone left a dumbbell home's HIIT
+  // day with three glute-isolation lifts and no hinge (persona hunt,
+  // 2026-10-08). The bridge stays for a reader with no weights.
+  ['kettlebell swing', ['Stiff-Legged Dumbbell Deadlift', 'Butt Lift (Bridge)']],
   ['leg curl', ['Butt Lift (Bridge)']],
   ['leg extension', ['Bodyweight Squat']],
   // Not "Donkey Calf Raises": its steps start with "you will need access to a

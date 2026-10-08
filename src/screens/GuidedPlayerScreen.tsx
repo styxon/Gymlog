@@ -135,7 +135,10 @@ import { RestAlertsSheet } from '../components/RestAlertsSheet';
 import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { sound, type CueSound } from '../utils/sound';
 import { readableOn, Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
-import { AppLanguage, ExerciseLibraryItem, UnitPreference } from '../types/models';
+import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
+
+/** One shared empty list, so a prop default does not rebuild the drills every render. */
+const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
@@ -284,6 +287,8 @@ interface GuidedPlayerScreenProps {
    * actually runs it (found in review, 2026-08-31).
    */
   routineDrillOverrides?: Record<string, string>;
+  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** Ranks the swap list the same way the list logger does. */
   tailoringPreferences?: TailoringPreferencesInput | null;
   exerciseLibrary: ExerciseLibraryItem[];
@@ -1500,6 +1505,7 @@ function GuidedPlayer({
   language = 'en',
   availableEquipment = null,
   routineDrillOverrides = {},
+  cautionFlags = NO_CAUTION_FLAGS,
   tailoringPreferences = null,
   exerciseLibrary,
   liftHistory,
@@ -1575,16 +1581,16 @@ function GuidedPlayer({
   const warmupDrills = useMemo<GuidedDrill[]>(
     () =>
       buildGuidedDrillsFromBlock(
-        getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides),
+        getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags),
       ),
-    [focusKind, language, availableEquipment, routineDrillOverrides],
+    [focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags],
   );
   const cooldownDrills = useMemo<GuidedDrill[]>(
     () =>
       buildGuidedDrillsFromBlock(
-        getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides),
+        getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags),
       ),
-    [focusKind, language, availableEquipment, routineDrillOverrides],
+    [focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags],
   );
 
   const exercises = session?.exercises ?? [];

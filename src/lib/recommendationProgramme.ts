@@ -656,6 +656,7 @@ function buildPlanReadyWeeklySchedule(selection: FirstRunSetupSelection, program
   // (bug hunt, 2026-10-04).
   const sessionMinutes = estimateProgrammeSessionMinutesList(orderedSessions, {
     availableEquipment: resolveAvailableEquipment(selection),
+    cautionFlags: selection.cautionFlags,
   });
   const templateDays = orderedSessions
     .map((session, index): RecommendationPlanReadyScheduleDay => ({

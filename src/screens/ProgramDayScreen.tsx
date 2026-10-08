@@ -47,7 +47,10 @@ import { formatClock } from '../lib/restSchedule';
 import { doseUnitSuffix } from '../lib/format';
 import { layout, radii, spacing } from '../theme';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
-import { AppLanguage, ExerciseLibraryItem } from '../types/models';
+import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag } from '../types/models';
+
+/** One shared empty list, so a prop default does not rebuild the drills every render. */
+const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
 
 /**
  * The day view (design: GAINER Hourglass Shape, screen 2) — the one separate
@@ -172,6 +175,8 @@ interface ProgramDayScreenProps {
   availableEquipment?: string[] | null;
   /** The reader's own warm-up / cool-down picks — see routineDrillSlotKey. */
   routineDrillOverrides?: Record<string, string>;
+  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** Undefined leaves the drills read-only. */
   onSwapRoutineDrill?: (slotKey: string, drillKey: string) => void;
   /** Slot id -> chosen lift, shared with the session this screen starts. */
@@ -263,6 +268,7 @@ export function ProgramDayScreen({
   language = 'en',
   availableEquipment = null,
   routineDrillOverrides = {},
+  cautionFlags = NO_CAUTION_FLAGS,
   onSwapRoutineDrill,
   sessionSwaps = {},
   onSwapExercise,
@@ -503,8 +509,8 @@ export function ProgramDayScreen({
     () => classifySessionFocus(session.exercises.map((exercise) => exercise.name)),
     [session.exercises],
   );
-  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides);
-  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides);
+  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
+  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
 
   /**
    * The drill swap, same shape as Home's (user 2026-08-31: the three sections
