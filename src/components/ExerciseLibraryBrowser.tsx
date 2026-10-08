@@ -13,7 +13,7 @@ import Svg, { Circle, Path } from 'react-native-svg';
 
 import { VinhaIcon, VinhaIconName } from './VinhaIcon';
 import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
-import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { exerciseCardLabel, exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
 import { libraryLabel } from '../lib/libraryLabel';
@@ -279,12 +279,14 @@ function ExCard({
         </View>
       </View>
       <View style={styles.cardBody}>
+        {/* On its syllables, as the add sheet's cards (#bugs 2026-10-08). */}
         <Text
           numberOfLines={2}
           style={styles.cardTitle}
           accessibilityLabel={exerciseNameLabel(language, item.name)}
+          android_hyphenationFrequency="normal"
         >
-          {exerciseListLabel(language, item.name)}
+          {exerciseCardLabel(language, item.name)}
         </Text>
         <View style={styles.cardFooter}>
           <Text numberOfLines={1} style={styles.cardMeta}>

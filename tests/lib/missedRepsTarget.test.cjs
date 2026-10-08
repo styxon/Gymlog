@@ -195,23 +195,56 @@ module.exports = [
     },
   },
   {
-    // The ramp rule withholds its +1 under a flagged area or a recovery hold;
-    // the lowered target's climb is the same kind of progression (2026-10-02).
-    name: 'a lift held for a flagged area or by recovery does not climb its lowered target',
+    // The ramp rule withholds its +1 under a flagged area; so does the lowered
+    // target's climb (2026-10-02). Recovery does not: the climb only returns
+    // to the programme's reps at the same weight, and held, a "recovery low"
+    // bench sat at 3 × 6 under a programme of 8 while Home's plateau card asked
+    // for 3 × 7 (#bugs 2026-10-08).
+    name: 'a lift held for a flagged area does not climb its lowered target; recovery does not hold it',
     run() {
       const met = [entry([6, 6, 6, 6], { targetReps: 6 })];
       const beat = [entry([7, 7, 7, 7], { targetReps: 6 })];
       assert.equal(rule(met).targetReps, 7);
       assert.equal(rule(met, { cautionArea: 'knees' }).targetReps, 6);
       assert.equal(rule(beat, { cautionArea: 'knees' }).targetReps, 7, 'what the sets just did is a repeat, not a climb');
-      assert.equal(rule(met, { fatigueSignal: 'high' }).targetReps, 6);
-      assert.equal(rule(met, { fatigueSignal: 'elevated' }).targetReps, 6);
-      assert.equal(rule(met, { fatigueSignal: 'normal' }).targetReps, 7);
       assert.equal(rule(met, { cautionArea: null }).targetReps, 7);
+      assert.equal(rule(met, { fatigueSignal: 'high' }).targetReps, 7, 'recovery does not hold the climb');
+      assert.equal(rule(met, { fatigueSignal: 'elevated' }).targetReps, 7);
       // The first lowering is a repeat of the average either way.
       assert.deepEqual(rule([entry([7, 6, 4, 4])], { cautionArea: 'knees' }), { targetReps: 6, fromAverage: 5.25 });
       // Held, a target the sets already beat to the floor still lets go.
       assert.equal(rule([entry([12, 12, 12, 12], { targetReps: 6 })], { cautionArea: 'knees' }), null);
+    },
+  },
+  {
+    // At the gym, 2026-10-08: 60 kg 6 · 6 · 6 under a programme of 8, again and
+    // again, with recovery reading "Vähissä" — and the card said 3 × 6 every
+    // time, while Home's plateau card asked for 3 × 7.
+    name: 'end to end: with recovery low the lowered target still climbs back to the programme',
+    run() {
+      const open = (state, day, fatigueSignal) => {
+        const next = workoutReducer(state, {
+          type: 'session/startFromRuntimeTemplate',
+          payload: {
+            template: TEMPLATE,
+            sessionOrderIndex: 0,
+            unitPreference: 'kg',
+            progression: { automatedProgressionEnabled: true, setupLevel: 'beginner', nowMs: Date.UTC(2026, 8, day, 8), fatigueSignal },
+          },
+        });
+        const lift = next.activeSession.exercises[0];
+        return {
+          reps: lift.sets.map((_, index) => resolveGuidedSetTarget(lift.sets, index, lift.trackingMode).reps),
+          loads: lift.sets.map((set) => set.plannedLoadKg),
+        };
+      };
+      let { state } = session(EMPTY, [7, 6, 4, 4], 20);
+      ({ state } = session(state, [6, 6, 6, 6], 22));
+      for (const fatigueSignal of ['high', 'elevated', 'normal']) {
+        const opened = open(state, 24, fatigueSignal);
+        assert.deepEqual(opened.reps, [7, 7, 7, 7], fatigueSignal);
+        assert.deepEqual(opened.loads, [60, 60, 60, 60], `${fatigueSignal}: the weight does not move`);
+      }
     },
   },
   {

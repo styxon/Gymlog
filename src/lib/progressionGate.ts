@@ -588,8 +588,6 @@ export interface MissedRepsInput {
   nowMs?: number;
   /** A flagged area this lift loads: its target is repeated, never climbed. */
   cautionArea?: SetupCautionArea | null;
-  /** Recovery says not today: the target is repeated, never climbed. */
-  fatigueSignal?: ProgressionFatigueSignal;
 }
 
 /**
@@ -633,9 +631,13 @@ function givenTarget(entry: WorkoutSlotHistoryEntry, repsMin: number): number | 
  * Bodyweight work progresses by reps already, and a hold is seconds: both are
  * left alone. Pro, like the rest of automated progression (user, 2026-09-28).
  *
- * The climb is a progression like the ramp rule's +1, and is withheld the same
- * way: on a lift that loads a flagged area, or on a day recovery holds, the
- * target repeats what the sets last did rather than asking one more.
+ * On a lift that loads a flagged area the climb is withheld, as the ramp
+ * rule's +1 is: the target repeats what the sets last did rather than asking
+ * one more. Recovery does not withhold it. The climb only returns towards the
+ * programme's own reps, at a weight that does not move, so it adds nothing
+ * the programme did not already ask for — and held, a "recovery low" reading
+ * kept a bench at 3 × 6 for three sessions under a programme of 8 while Home's
+ * plateau card asked for 3 × 7 (#bugs 2026-10-08).
  */
 export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResolution | null {
   const { history, repsMin, targetSets, trackingMode } = input;
@@ -688,8 +690,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   // "Every set" means every set the programme asks for, and fewer than that
   // did not meet it.
   if (given !== null && reps.length >= targetSets && reps.every((count) => count >= given)) {
-    const mayClimb =
-      !input.cautionArea && input.fatigueSignal !== 'high' && input.fatigueSignal !== 'elevated';
+    const mayClimb = !input.cautionArea;
     const climbed = given + (reps.every((count) => count > given) ? 2 : 1);
     const next = Math.max(mayClimb ? climbed : given, averageTarget);
     return next >= repsMin ? null : { targetReps: next, fromAverage: null };

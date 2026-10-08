@@ -1442,6 +1442,8 @@ const EN = {
   'guided.walk.add': 'Add exercise',
   'guided.walk.added': 'Added after this one: {name}',
   'guided.walk.contentMore': '+{count} more',
+  'guided.walk.lastLift': 'This is the last exercise',
+  'guided.walk.praise': 'Great work! {name} {dose}, more than last time.',
   'guided.sheet.tab.learn': 'Learn',
   'guided.sheet.tab.howTo': 'How to',
   'exerciseSheet.expand': 'Expand',
@@ -1459,6 +1461,7 @@ const EN = {
   'guided.sheet.cues': 'THREE CUES',
   'guided.card.hint': 'Tap here for more about this lift',
   'guided.card.lastTime': 'LAST TIME',
+  'guided.card.today': 'TODAY',
   'guided.card.firstTime': 'First time on this lift',
   // -- The free timer (session flow, screen 4).
   'guided.own.lastTime': 'Last time you took {clock}',
@@ -4846,6 +4849,8 @@ const FI: Record<I18nKey, string> = {
   'guided.walk.add': 'Lisää liike',
   'guided.walk.added': 'Lisätty tämän jälkeen: {name}',
   'guided.walk.contentMore': '+{count} muuta',
+  'guided.walk.lastLift': 'Tämä on viimeinen liike',
+  'guided.walk.praise': 'Loistavaa! {name} {dose}, enemmän kuin viimeksi.',
   // "Opettele", not "Opi": this tab is deliberate practice on one lift —
   // three cues and a self-audit — while "Opi" is the name of the section that
   // holds the courses (user 2026-09-04).
@@ -4866,6 +4871,7 @@ const FI: Record<I18nKey, string> = {
   'guided.sheet.cues': 'KOLME VINKKIÄ',
   'guided.card.hint': 'Paina tästä saadaksesi lisätietoja',
   'guided.card.lastTime': 'VIIME KERRALLA',
+  'guided.card.today': 'TÄNÄÄN',
   'guided.card.firstTime': 'Ensimmäinen kerta tällä liikkeellä',
   'guided.own.lastTime': 'Viime kerralla käytit {clock}',
   'guided.own.brief.label': 'TÄMÄN TREENIN KUORMAT',

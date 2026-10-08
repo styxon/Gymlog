@@ -705,7 +705,7 @@ module.exports = [
       const sheet = source.slice(source.indexOf('function GPSheet('), source.indexOf('/* ══'));
       assert.ok(sheet.length > 0, 'GPSheet moved');
       // The page.
-      assert.match(sheet, /<Pressable\s*style=\{styles\.sheetScrim\}\s*onPress=\{onClose\}/);
+      assert.match(sheet, /<Pressable\s*style=\{StyleSheet\.absoluteFill\}\s*onPress=\{onClose\}/);
       // The ✕, named for a screen reader.
       assert.match(
         sheet,

@@ -69,3 +69,19 @@ export function fitRunPreview({
   const end = anchor + visible;
   return { start, end, hidden: count - end };
 }
+
+/**
+ * The lift being walked up to is the workout's last: nothing of the work phase
+ * comes after it.
+ *
+ * There the walk-up's contents said "+2 muuta" under it — the two stretches of
+ * the recovery — and read as two more lifts to come. The reader asked for the
+ * plain fact in its place (#bugs 2026-10-08): "tämä on viimeinen liike".
+ */
+export function isLastWorkItem(items: ReadonlyArray<{ phase: string; status: string }>): boolean {
+  const current = items.findIndex((item) => item.status === 'current');
+  if (current < 0 || items[current].phase !== 'work') {
+    return false;
+  }
+  return !items.slice(current + 1).some((item) => item.phase === 'work');
+}

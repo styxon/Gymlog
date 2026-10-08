@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { fitRunPreview } = require('../../.test-dist/lib/guidedRunPreview.js');
+const { fitRunPreview, isLastWorkItem } = require('../../.test-dist/lib/guidedRunPreview.js');
 
 const ROW = 30;
 const HEAD = 28;
@@ -98,6 +98,27 @@ module.exports = [
           }
         }
       }
+    },
+  },
+  {
+    // "+2 muuta" under the last lift counted the recovery's two stretches as
+    // lifts to come (#bugs 2026-10-08): the walk-up says it is the last.
+    name: 'run preview: the last lift is the one with no work after it, stretches or not',
+    run() {
+      const row = (phase, status) => ({ phase, status });
+      assert.equal(isLastWorkItem([row('work', 'done'), row('work', 'current'), row('cooldown', 'upcoming'), row('cooldown', 'upcoming')]), true);
+      assert.equal(isLastWorkItem([row('work', 'done'), row('work', 'current')]), true);
+      assert.equal(isLastWorkItem([row('work', 'current'), row('work', 'upcoming'), row('cooldown', 'upcoming')]), false);
+      assert.equal(isLastWorkItem([row('warmup', 'current'), row('cooldown', 'upcoming')]), false);
+      assert.equal(isLastWorkItem([row('work', 'done'), row('cooldown', 'upcoming')]), false, 'no current lift');
+      assert.equal(isLastWorkItem([]), false);
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      assert.match(player, /const walkLastLift = isLastWorkItem\(walkRunItems\);/);
+      assert.match(player, /\{walkLastLift \? \(\s*<View style=\{styles\.walkRunRow\}>[\s\S]{0,160}t\(language, 'guided\.walk\.lastLift'\)/);
+      const { t } = require('../../.test-dist/lib/i18n.js');
+      assert.equal(t('fi', 'guided.walk.lastLift'), 'Tämä on viimeinen liike');
     },
   },
 ];

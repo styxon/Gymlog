@@ -1,4 +1,5 @@
 import { AppLanguage } from '../types/models';
+import { hyphenateFinnish } from './finnishHyphenation';
 
 /**
  * Exercise names are stored, matched and filtered as their English text — the
@@ -1372,4 +1373,18 @@ export function exerciseListLabel(language: AppLanguage, name: string): string {
     return label;
   }
   return SHORT_FORMS_FI.reduce((text, [pattern, short]) => text.replace(pattern, short), label);
+}
+
+/**
+ * The list label for a column narrower than a Finnish compound — the cards of
+ * the add and swap sheets, the library grid — with soft hyphens at its
+ * syllables (lib/finnishHyphenation). Half a sheet is narrower than
+ * "Vinopenkkipunnerrus", and Android, with no Finnish patterns of its own, cut
+ * it "Vinopenkk / ipunnerrus" (#bugs 2026-10-08). The hyphens are invisible
+ * unless the line breaks there; the Text that draws it sets
+ * `android_hyphenationFrequency`, as the day screen's rows do.
+ */
+export function exerciseCardLabel(language: AppLanguage, name: string): string {
+  const label = exerciseListLabel(language, name);
+  return language === 'fi' ? hyphenateFinnish(label) : label;
 }

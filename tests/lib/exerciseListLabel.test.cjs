@@ -8,6 +8,23 @@ const library = Object.values(require('../../.test-dist/data/generatedExerciseLi
 
 module.exports = [
   {
+    // "Vinopenkk / ipunnerrus" on a swap card (#bugs 2026-10-08): a card's
+    // name breaks on its syllables, and only where the line has to break.
+    name: 'exercise card label: the list label with soft hyphens at its syllables, Finnish only',
+    run() {
+      const { exerciseCardLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+      const SOFT = '­';
+      const card = exerciseCardLabel('fi', 'Smith Machine Incline Bench Press');
+      assert.equal(card.split(SOFT).join(''), exerciseListLabel('fi', 'Smith Machine Incline Bench Press'));
+      assert.equal(card.split(SOFT).join('-'), 'Vi-no-penk-ki-pun-ner-rus Smit-his-sä');
+      assert.equal(exerciseCardLabel('en', 'Smith Machine Incline Bench Press'), exerciseListLabel('en', 'Smith Machine Incline Bench Press'));
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const browser = fs.readFileSync(path.join(__dirname, '../../src/components/ExerciseLibraryBrowser.tsx'), 'utf8');
+      assert.match(browser, /android_hyphenationFrequency="normal"\s*>\s*\{exerciseCardLabel\(language, item\.name\)\}/);
+    },
+  },
+  {
     name: 'list names use the gym\'s short forms for the equipment words',
     run() {
       assert.equal(exerciseListLabel('fi', 'Incline Dumbbell Press'), 'Vinopenkkipunnerrus KP');
@@ -54,7 +71,7 @@ module.exports = [
       // the card still carries both names.
       assert.match(
         read('src/components/AddExerciseSheet.tsx'),
-        /accessibilityLabel=\{exerciseNameLabel\(language, name\)\}>\s*\{exerciseListLabel\(language, name\)\}/,
+        /accessibilityLabel=\{exerciseNameLabel\(language, name\)\}\s*android_hyphenationFrequency="normal"\s*>\s*\{exerciseCardLabel\(language, name\)\}/,
       );
       // Every text that prints the short form tells a screen reader the full
       // name — "K P" is what TalkBack would say (review, 2026-09-27).
@@ -62,7 +79,7 @@ module.exports = [
       for (const dir of ['src/screens', 'src/components']) {
         for (const file of fs.readdirSync(path.join(__dirname, '..', '..', dir)).filter((name) => name.endsWith('.tsx'))) {
           const source = read(`${dir}/${file}`);
-          const shown = /<Text\b((?:(?!<Text\b)[\s\S])*?)>\s*\{exerciseListLabel\(/g;
+          const shown = /<Text\b((?:(?!<Text\b)[\s\S])*?)>\s*\{exercise(?:List|Card)Label\(/g;
           let match;
           while ((match = shown.exec(source))) {
             if (!/accessibilityLabel=/.test(match[1])) {
