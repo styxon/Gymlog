@@ -5,7 +5,7 @@
  * feature is absent, same rule as the coach URL.
  */
 import type { AccountBackupPayload } from '../../lib/accountBackup';
-import { decodeAccountBackupBody, encodeAccountBackupBody, parseAccountBackupPayload } from '../../lib/accountBackup';
+import { decodeAccountBackupBody, encodeAccountBackupBodyAsync, parseAccountBackupPayload } from '../../lib/accountBackup';
 import { appVersionHeaders, noteServerAnswer } from '../appUpdate/appUpdateSignal';
 
 const BACKUP_API_URL = (process.env.EXPO_PUBLIC_BACKUP_API_URL ?? '').trim();
@@ -32,6 +32,11 @@ function versionOf(body: { version?: unknown }): string | null {
   return typeof body.version === 'string' && body.version ? body.version : null;
 }
 
+/** A macrotask turn: touches and frames get their go before the next stretch of encoding. */
+function yieldToUi(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 function withTimeout(): { signal: AbortSignal; cleanup: () => void } {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
@@ -54,6 +59,15 @@ export async function uploadBackup(
   if (!BACKUP_API_URL) {
     return { ok: false, error: 'NOT_CONFIGURED' };
   }
+  // Compressed once the history is large; see ACCOUNT_BACKUP_COMPRESS_ABOVE_CHARS.
+  // Done in stretches that let the UI run, and BEFORE the timeout starts, so
+  // the time it takes is not taken from the network's.
+  let body: string;
+  try {
+    body = await encodeAccountBackupBodyAsync(payload, yieldToUi);
+  } catch {
+    return { ok: false, error: 'NETWORK' };
+  }
   const { signal, cleanup } = withTimeout();
   try {
     const response = await fetch(BACKUP_API_URL, {
@@ -64,21 +78,20 @@ export async function uploadBackup(
         'x-backup-expected-version': expectedVersion ?? 'none',
         ...appVersionHeaders(),
       },
-      // Compressed once the history is large; see ACCOUNT_BACKUP_COMPRESS_ABOVE_CHARS.
-      body: encodeAccountBackupBody(payload),
+      body,
       signal,
     });
-    const body = (await response.json()) as { ok?: boolean; savedAt?: string; error?: string; version?: unknown };
-    noteServerAnswer(response.status, body);
-    if (response.ok && body.ok && typeof body.savedAt === 'string') {
-      return { ok: true, savedAt: body.savedAt, version: versionOf(body) };
+    const answer = (await response.json()) as { ok?: boolean; savedAt?: string; error?: string; version?: unknown };
+    noteServerAnswer(response.status, answer);
+    if (response.ok && answer.ok && typeof answer.savedAt === 'string') {
+      return { ok: true, savedAt: answer.savedAt, version: versionOf(answer) };
     }
     // Only the server's own answer: a 412 from anything else is not a copy
     // another phone wrote, and must not start the restore-or-keep question.
-    if (response.status === 412 && body.error === BACKUP_CHANGED) {
+    if (response.status === 412 && answer.error === BACKUP_CHANGED) {
       return { ok: false, error: BACKUP_CHANGED };
     }
-    return { ok: false, error: body.error ?? `HTTP_${response.status}` };
+    return { ok: false, error: answer.error ?? `HTTP_${response.status}` };
   } catch {
     return { ok: false, error: 'NETWORK' };
   } finally {

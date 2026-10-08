@@ -205,7 +205,7 @@ module.exports = [
     name: 'backup compression: the app sends and reads through the codec, and the server allows 4 MB',
     run() {
       const client = read('src', 'features', 'account', 'backupApi.ts');
-      assert.match(client, /body: encodeAccountBackupBody\(payload\)/);
+      assert.match(client, /await encodeAccountBackupBodyAsync\(payload, yieldToUi\)/);
       assert.match(client, /parseAccountBackupPayload\(decodeAccountBackupBody\(body\.payload\)\)/);
       assert.doesNotMatch(client, /body: JSON\.stringify\(payload\)/);
 

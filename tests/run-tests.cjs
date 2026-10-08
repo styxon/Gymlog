@@ -546,6 +546,7 @@ const suites = [
   ...require('./storage/prescriptionRoundTrip.test.cjs'),
   ...require('./storage/runningSetMatchesPlans.test.cjs'),
   ...require('./lib/storageChunks.test.cjs'),
+  ...require('./lib/perfStorage.test.cjs'),
   ...require('./storage/largeItem.test.cjs'),
   ...require('./storage/workoutAside.test.cjs'),
   ...require('./storage/coachAdviceMemoryStore.test.cjs'),
