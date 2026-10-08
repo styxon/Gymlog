@@ -39,7 +39,20 @@ export function exerciseCardAccessibilityLabel(
   language: AppLanguage,
   name: string,
   lastTime: LastTimeSummary | null,
+  /**
+   * Today's sets as the card's TÄNÄÄN row shows them (lib/guidedPlayer
+   * resolveGuidedSetPlan) — null for a set with no number. The label stands in
+   * for the card's children, so the row is said here or not at all.
+   */
+  todayReps?: ReadonlyArray<number | null> | null,
 ): string {
+  const label = lastTimeCardLabel(language, name, lastTime);
+  return todayReps && todayReps.length > 0
+    ? `${label}. ${t(language, 'guided.card.todayA11y', { reps: todayReps.map((reps) => reps ?? '–').join(', ') })}`
+    : label;
+}
+
+function lastTimeCardLabel(language: AppLanguage, name: string, lastTime: LastTimeSummary | null): string {
   if (!lastTime) {
     return `${name}. ${t(language, 'guided.card.firstTime')}`;
   }

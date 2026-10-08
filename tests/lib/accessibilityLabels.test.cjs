@@ -26,6 +26,19 @@ const {
  */
 module.exports = [
   {
+    // The card's TÄNÄÄN row (#bugs 2026-10-08) is drawn inside the card, whose
+    // label replaces its children for TalkBack: said in the label, after last time.
+    name: "a11y: the set card says today's sets after last time's",
+    run() {
+      const { exerciseCardAccessibilityLabel } = require('../../.test-dist/lib/accessibilityLabels.js');
+      const lastTime = { sets: [{ loadKg: 35, reps: 12 }, { loadKg: 35, reps: 8 }], borrowed: false };
+      const without = exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', lastTime);
+      assert.equal(exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', lastTime, [10, 10, null]), `${without}. Tänään: 10, 10, –`);
+      assert.equal(exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', lastTime, []), without);
+      assert.equal(exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', null, [10]), `${exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', null)}. Tänään: 10`);
+    },
+  },
+  {
     name: 'a11y labels: the lift card is read as the lift, then last time',
     run() {
       setNumberLanguage('fi');

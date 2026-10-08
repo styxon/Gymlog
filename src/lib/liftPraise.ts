@@ -9,7 +9,8 @@
  * Only for a step up, never for a repeat: praise on every lift met as planned
  * would be a label on the normal case, and the reader stops reading it. A step
  * up is a heavier planned weight than last time's heaviest, or, at no lighter
- * a weight, a rep target above last time's on some set and below it on none.
+ * a weight, a rep target above last time's on some set and below it on none —
+ * over at least as many sets as last time.
  * Every set must be logged at its target — the reps, and the planned weight
  * where there is one. Holds and bouts of minutes are left out: their numbers
  * are seconds, and the rule is about reps.
@@ -52,8 +53,9 @@ export function resolveLiftPraise(
   if (trackingMode === 'hold' || trackingMode === 'duration_minutes') {
     return null;
   }
-  // A first time has nothing to beat.
-  if (!last || last.length === 0 || sets.length === 0) {
+  // A first time has nothing to beat, and fewer sets than last time is not
+  // more than last time, however the sets compare one by one.
+  if (!last || last.length === 0 || sets.length < last.length) {
     return null;
   }
   if (!sets.every((set) => set.status === 'completed' && typeof set.actualReps === 'number')) {

@@ -221,6 +221,10 @@ const SPLASH_MS = 2300;
 /** How many set dots the row will draw before it stops counting in dots. */
 const SET_DOT_CAP = 9;
 
+/** The walk-up's one-line notices — a stall in amber, a step up in green — share one shape. */
+const WALK_BANNER = { borderWidth: 1, borderRadius: 14, padding: 12 } as const;
+const WALK_BANNER_TEXT = { fontSize: 12.5, fontWeight: '700', lineHeight: 18 } as const;
+
 /**
  * The rest a mid-workout add falls back to when there is no rest to inherit —
  * a cooldown-only session with no main block (recheck round 2026-09-29), or a
@@ -5653,6 +5657,7 @@ function SetStepView({
                   borrowed: panels.history.borrowed === true,
                 }
               : null,
+            todayPlan.map((chip) => chip.reps),
           )}
           accessibilityHint={t(language, 'guided.panelsToggle')}
           onPress={onOpenSheet}
@@ -7122,24 +7127,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   walkStatSub: { fontSize: 12, fontWeight: '600', color: theme.muted, fontVariant: ['tabular-nums'] },
   // Amber, matching Home's plateau card and the rest-denied banner above —
   // one finding, one colour, wherever it shows up.
-  walkPlateauBanner: {
-    borderWidth: 1,
-    borderColor: theme.amberBorder,
-    backgroundColor: theme.amberSoft,
-    borderRadius: 14,
-    padding: 12,
-  },
-  walkPlateauText: { fontSize: 12.5, fontWeight: '700', color: theme.amberInk, lineHeight: 18 },
+  walkPlateauBanner: { ...WALK_BANNER, borderColor: theme.amberBorder, backgroundColor: theme.amberSoft },
+  walkPlateauText: { ...WALK_BANNER_TEXT, color: theme.amberInk },
   // Green, the colour a step forward wears on the set rail and the finish
   // screen — the plateau banner's answer, in the same shape.
-  walkPraiseBanner: {
-    borderWidth: 1,
-    borderColor: theme.green,
-    backgroundColor: theme.greenSoft,
-    borderRadius: 14,
-    padding: 12,
-  },
-  walkPraiseText: { fontSize: 12.5, fontWeight: '700', color: theme.greenInk, lineHeight: 18 },
+  walkPraiseBanner: { ...WALK_BANNER, borderColor: theme.green, backgroundColor: theme.greenSoft },
+  walkPraiseText: { ...WALK_BANNER_TEXT, color: theme.greenInk },
   // The walk-up's contents list. Heading and rows are FIXED heights
   // (WALK_RUN_HEAD, WALK_RUN_ROW): the room is worked out before they are
   // drawn, and a row that grew with its text would spill past it.

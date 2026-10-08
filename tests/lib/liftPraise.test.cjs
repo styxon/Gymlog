@@ -48,6 +48,8 @@ module.exports = [
     run() {
       assert.equal(resolveLiftPraise(done([6, 6, 6], { plannedTargetReps: 6 }), last([6, 6, 6]), 'load_and_reps'), null);
       assert.equal(resolveLiftPraise(done([8, 8, 8]), last([8, 8, 8]), 'load_and_reps'), null);
+      // A set fewer than last time is not more than last time (review): 21 reps against 24.
+      assert.equal(resolveLiftPraise(done([7, 7, 7], { plannedTargetReps: 7 }), last([6, 6, 6, 6]), 'load_and_reps'), null);
       // A target below last time's on one set is not a step up, whatever another set asks.
       assert.equal(
         resolveLiftPraise(done([9, 9, 7], { plannedRepsMax: 9 }).map((set, index) => (index === 2 ? { ...set, plannedRepsMax: 7 } : set)), last([8, 8, 8]), 'load_and_reps'),
