@@ -349,8 +349,12 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
   defineProgram('tpl_shred_elite_v1', {
     familyId: 'athletic_recomp',
-    supportedGoals: ['lean_athletic', 'general_fitness'],
-    backupGoals: ['general', 'muscle'],
+    // Lean and athletic is a backup since 2026-10-08, as on Athlete Conditioning
+    // below: Athletic Performance is the five-day week written for the goal at
+    // advanced and pro, and a pro-only listing outbid it by the one point the
+    // pro level adds to a programme that lists both levels.
+    supportedGoals: ['general_fitness'],
+    backupGoals: ['lean_athletic', 'general', 'muscle'],
     supportedLevels: ['pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
@@ -382,8 +386,11 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
   defineProgram('tpl_gainer_athlete_conditioning_v1', {
     familyId: 'athletic_recomp',
-    supportedGoals: ['lean_athletic', 'general_fitness'],
-    backupGoals: ['general', 'run_mobility'],
+    // Speed, agility and sprint work for an athlete: a backup for lean and
+    // athletic since 2026-10-08, when the unisex four- and five-day weeks took
+    // the goal (see tpl_shred_elite_v1 above).
+    supportedGoals: ['general_fitness'],
+    backupGoals: ['lean_athletic', 'general', 'run_mobility'],
     supportedLevels: ['pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',

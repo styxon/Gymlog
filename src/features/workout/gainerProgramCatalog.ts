@@ -1686,8 +1686,13 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
     equipmentTier: 'full_gym',
     recoveryDemand: 'high',
     targetGender: 'male',
-    supportedGoals: ['lean_athletic', 'general'],
-    backupGoals: ['general_fitness'],
+    // Lean and athletic is a backup since 2026-10-08: the unisex Athletic
+    // Performance week is written for it, and the men-only cut outbid it on
+    // the gender tie-break (-1) for every advanced man at five days, while the
+    // women at the same five days were handed the unisex week. The cut stays
+    // the second card for the goal, and the first for "general".
+    supportedGoals: ['general'],
+    backupGoals: ['lean_athletic', 'general_fitness'],
     supportedLevels: ['advanced', 'pro'],
     styleTags: ['conditioning', 'balanced'],
     secondaryOutcomeTags: ['conditioning', 'consistency'],
