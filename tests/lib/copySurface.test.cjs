@@ -27,11 +27,23 @@ function selectionFor(overrides) {
   return { ...first.DEFAULT_FIRST_RUN_SELECTION, goal, goals: [goal], ...overrides };
 }
 
-function pageFor(selection, language = 'en') {
-  const recommendation = first.resolveFirstRunRecommendationWithTailoring(selection, null, language);
+function tailoringFor(selection) {
+  return {
+    setupEquipment: selection.equipment,
+    setupFreeWeightsPreference: 'neutral',
+    setupBodyweightPreference: 'neutral',
+    setupMachinesPreference: 'neutral',
+    setupShoulderFriendlySwaps: 'neutral',
+    setupElbowFriendlySwaps: 'neutral',
+    setupKneeFriendlySwaps: 'neutral',
+  };
+}
+
+function pageFor(selection, language = 'en', tailoringPreferences = null) {
+  const recommendation = first.resolveFirstRunRecommendationWithTailoring(selection, tailoringPreferences, language);
   const template = getWorkoutTemplateById(recommendation.featuredProgramId);
   const composedWeek = composeProgramWeekForSelection(selection, recommendation.featuredProgramId);
-  const text = buildReadyProgramFitExplanation({ selection, recommendation, template, composedWeek, language });
+  const text = buildReadyProgramFitExplanation({ selection, recommendation, template, composedWeek, language, tailoringPreferences });
   return { recommendation, template, composedWeek, text };
 }
 
@@ -107,7 +119,29 @@ module.exports = [
       const page = pageFor(selection);
       assert.equal(page.composedWeek.days, 4);
       assert.notEqual(page.template.daysPerWeek, 4, 'the case no longer differs; pick another');
-      assert.doesNotMatch(page.text, /lighter equipment|lighter than/i, page.text);
+      assert.doesNotMatch(page.text, /lighter[- ]equipment|lighter than/i, page.text);
+      // The tailoring note must not be promoted into the freed line either.
+      // The reader's own preferences are all neutral (as the app builds them),
+      // and the page says the gear once ("Built for minimal equipment").
+      for (const env of ['home', 'bodyweight']) {
+        for (const language of ['en', 'fi']) {
+          for (const daysPerWeek of [3, 4, 5]) {
+            const sel = selectionFor({ goal: 'muscle', level: 'beginner', daysPerWeek, ...ENVIRONMENTS[env] });
+            const shown = pageFor(sel, language, tailoringFor(sel));
+            assert.doesNotMatch(shown.text, /lighter[- ]equipment|home-friendly|Biased toward/i, shown.text);
+            assert.doesNotMatch(shown.text, /vähävälinei|kotiin sopiv|Painottaa/i, shown.text);
+            assert.equal(
+              shown.text.includes(t(language, env === 'home' ? 'tailor.note.home' : 'tailor.note.minimal')),
+              false,
+              shown.text,
+            );
+          }
+        }
+      }
+      // A joint preference is still news and is still said.
+      const sore = selectionFor({ goal: 'muscle', level: 'beginner', daysPerWeek: 4, ...ENVIRONMENTS.bodyweight });
+      const kneeAware = { ...tailoringFor(sore), setupKneeFriendlySwaps: 'prioritize' };
+      assert.match(pageFor(sore, 'en', kneeAware).text, /knee/i);
       // The stored note, written before the week was composed, still says it
       // for a reader of the catalogue programme.
       assert.match(page.recommendation.mismatchNote ?? '', /lighter than your target/);

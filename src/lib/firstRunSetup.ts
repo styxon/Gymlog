@@ -381,7 +381,6 @@ function buildLowEquipmentMismatchNote(
   selection: FirstRunSetupSelection,
   featuredDays: number,
   language: AppLanguage,
-  tailoringPreferences?: TailoringPreferencesInput | null,
 ) {
   const selfDirected =
     selection.guidanceMode === 'self_directed' ? t(language, 'mismatch.lowEquipment.selfDirected') : null;
@@ -398,7 +397,7 @@ function buildLowEquipmentMismatchNote(
   // say was "you picked lighter gear", under a line that already says the
   // programme is built for it. Nothing is said instead (persona hunt,
   // 2026-10-08).
-  return selfDirected ?? buildTailoringRecommendationNote(tailoringPreferences, language);
+  return selfDirected;
 }
 
 /**
@@ -443,14 +442,16 @@ export function buildRecommendationMismatchNote(
   }
 
   if (selection.equipment !== 'gym' && featuredDefinition?.equipmentTier === 'low_equipment') {
-    return buildLowEquipmentMismatchNote(selection, featuredDays, language, tailoringPreferences);
+    return buildLowEquipmentMismatchNote(selection, featuredDays, language);
   }
 
   if (featuredDays !== selection.daysPerWeek) {
     return t(language, 'mismatch.closestDays', { count: featuredDays });
   }
 
-  return buildTailoringRecommendationNote(tailoringPreferences, language);
+  return buildTailoringRecommendationNote(tailoringPreferences, language, {
+    includeEquipment: selection.equipment === 'gym',
+  });
 }
 
 /**

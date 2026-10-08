@@ -374,7 +374,11 @@ export function buildRecommendationReasonLines(
     reasons.push(options.mismatchNote);
   }
 
-  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences, language);
+  // The "Built for ..." line above already names the gear of a home or minimal
+  // reader; the equipment half of this note would say it a second time.
+  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences, language, {
+    includeEquipment: selection.equipment === 'gym',
+  });
   if (tailoringNote) {
     reasons.push(tailoringNote);
   }
