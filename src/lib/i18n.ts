@@ -185,6 +185,8 @@ const EN = {
   'home.drill.wallSlides': 'Wall slides',
   'home.drill.standingLatStretch': 'Standing lat stretch',
   'home.drill.childsPose': "Child's pose",
+  'home.drill.marchInPlace': 'March in place',
+  'home.drill.gluteBridges': 'Glute bridges',
 
   // ── Common ─────────────────────────────────────────────────────────────
   'common.cancel': 'Cancel',
@@ -3672,6 +3674,8 @@ const FI: Record<I18nKey, string> = {
   'home.drill.wallSlides': 'Seinäliuku',
   'home.drill.standingLatStretch': 'Leveän selän venytys seisten',
   'home.drill.childsPose': 'Lapsen asento',
+  'home.drill.marchInPlace': 'Marssi paikallaan',
+  'home.drill.gluteBridges': 'Lantionnostot',
 
   // ── Common ─────────────────────────────────────────────────────────────
   'common.cancel': 'Peruuta',

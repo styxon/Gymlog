@@ -136,9 +136,6 @@ import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { sound, type CueSound } from '../utils/sound';
 import { readableOn, Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
-
-/** One shared empty list, so a prop default does not rebuild the drills every render. */
-const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
@@ -280,6 +277,11 @@ interface GuidedPlayerScreenProps {
   /** Equipment chips the user actually has; null when the setup never said. */
   availableEquipment?: string[] | null;
   /**
+   * The reader's caution flags: an `avoid` area keeps its drills out of the
+   * warm-up and cool-down, the way it keeps its lifts out of the week.
+   */
+  cautionFlags?: readonly SetupCautionFlag[];
+  /**
    * The reader's own warm-up / cool-down picks.
    *
    * Without these the player coached the drill they replaced: the swap showed
@@ -287,8 +289,6 @@ interface GuidedPlayerScreenProps {
    * actually runs it (found in review, 2026-08-31).
    */
   routineDrillOverrides?: Record<string, string>;
-  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
-  cautionFlags?: readonly SetupCautionFlag[];
   /** Ranks the swap list the same way the list logger does. */
   tailoringPreferences?: TailoringPreferencesInput | null;
   exerciseLibrary: ExerciseLibraryItem[];
@@ -1504,8 +1504,8 @@ function GuidedPlayer({
   unitPreference,
   language = 'en',
   availableEquipment = null,
+  cautionFlags,
   routineDrillOverrides = {},
-  cautionFlags = NO_CAUTION_FLAGS,
   tailoringPreferences = null,
   exerciseLibrary,
   liftHistory,

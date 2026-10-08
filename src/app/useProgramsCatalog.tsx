@@ -79,7 +79,12 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
       overrides: preferences.routineDrillOverrides,
       cautionFlags: preferences.setupCautionFlags,
     }),
-    [preferences.setupTrainingEnvironment, preferences.setupEquipmentItems, preferences.routineDrillOverrides, preferences.setupCautionFlags],
+    [
+      preferences.setupTrainingEnvironment,
+      preferences.setupEquipmentItems,
+      preferences.routineDrillOverrides,
+      preferences.setupCautionFlags,
+    ],
   );
   /**
    * The week the reader runs of the programme the questionnaire gave them,

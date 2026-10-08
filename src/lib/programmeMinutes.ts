@@ -19,7 +19,7 @@ export interface ProgrammeMinutesOptions {
   /** The reader's gear, which decides the warm-up and cool-down drills. */
   availableEquipment?: string[] | null;
   overrides?: RoutineDrillOverrides | null;
-  /** The reader's avoid flags, which take their movements out of the warm-up and cool-down. */
+  /** An `avoid` flag swaps the default drills for stand-ins (same scheme, same seconds); a drill the reader picked stays. */
   cautionFlags?: readonly SetupCautionFlag[] | null;
   /**
    * Which end of the rest range to cost. A ready programme runs on the low
@@ -36,7 +36,7 @@ export function estimateProgrammeSessionMinutesList(
 ): number[] {
   const equipment = options.availableEquipment ?? null;
   const overrides = options.overrides ?? null;
-  const cautionFlags = options.cautionFlags ?? [];
+  const cautionFlags = options.cautionFlags ?? null;
   return sessions.map((session) => {
     if (session.exercises.length === 0) {
       return 0;

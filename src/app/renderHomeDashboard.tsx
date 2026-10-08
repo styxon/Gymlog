@@ -160,8 +160,8 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
       }}
       onRemoveOtherProgram={(planId) => void handleRemoveActiveProgram(planId)}
       availableEquipment={availableEquipmentForDrills}
-      routineDrillOverrides={preferences.routineDrillOverrides}
       cautionFlags={preferences.setupCautionFlags}
+      routineDrillOverrides={preferences.routineDrillOverrides}
       // Permanent by nature: the drills are generated from the session's
       // focus, so the choice belongs to every day with that focus rather
       // than to today. There is no "just this time" to offer.

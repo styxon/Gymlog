@@ -49,9 +49,6 @@ import { layout, radii, spacing } from '../theme';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag } from '../types/models';
 
-/** One shared empty list, so a prop default does not rebuild the drills every render. */
-const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
-
 /**
  * The day view (design: GAINER Hourglass Shape, screen 2) — the one separate
  * screen the programme page opens. A read-out of the session, not a logger:
@@ -173,10 +170,13 @@ interface ProgramDayScreenProps {
   dayCount: number;
   language?: AppLanguage;
   availableEquipment?: string[] | null;
+  /**
+   * The reader's caution flags: an `avoid` area keeps its drills out of the
+   * warm-up and cool-down, the way it keeps its lifts out of the week.
+   */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** The reader's own warm-up / cool-down picks — see routineDrillSlotKey. */
   routineDrillOverrides?: Record<string, string>;
-  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
-  cautionFlags?: readonly SetupCautionFlag[];
   /** Undefined leaves the drills read-only. */
   onSwapRoutineDrill?: (slotKey: string, drillKey: string) => void;
   /** Slot id -> chosen lift, shared with the session this screen starts. */
@@ -267,8 +267,8 @@ export function ProgramDayScreen({
   dayCount,
   language = 'en',
   availableEquipment = null,
+  cautionFlags,
   routineDrillOverrides = {},
-  cautionFlags = NO_CAUTION_FLAGS,
   onSwapRoutineDrill,
   sessionSwaps = {},
   onSwapExercise,
@@ -530,10 +530,10 @@ export function ProgramDayScreen({
         .filter((_, index) => index !== drillSwap.index)
         .map((drill) => drill.key as string),
     );
-    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment).filter(
+    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment, cautionFlags).filter(
       (option) => !taken.has(option.key as string),
     );
-  }, [availableEquipment, cooldown, drillSwap, language, warmup]);
+  }, [availableEquipment, cautionFlags, cooldown, drillSwap, language, warmup]);
   const drillCurrent = drillSwap
     ? (drillSwap.kind === 'warmup' ? warmup : cooldown).drills[drillSwap.index] ?? null
     : null;

@@ -143,6 +143,8 @@ const FOCUS_TITLES: Record<SessionFocusKind, string> = {
   upper: 'Upper Focus',
   lower: 'Lower Focus',
   general: 'Full Body Focus',
+  // Only reached when a stretching or run day was emptied; the title says what a mixed day does.
+  easy: 'Full Body Focus',
 };
 
 /** The accessory pools that train what a day was for. */
@@ -152,6 +154,8 @@ const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
   upper: ['chest', 'back', 'shoulders', 'arms', 'core'],
   lower: ['legs', 'glutes', 'hamstrings', 'calves'],
   general: ['legs', 'chest', 'core', 'back'],
+  // An emptied stretching or run day is refilled like any mixed day.
+  easy: ['legs', 'chest', 'core', 'back'],
 };
 
 /**

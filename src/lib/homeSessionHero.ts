@@ -3,11 +3,11 @@
  * Focus title, body-focus label, week phase, equipment line, default
  * warmup/cooldown blocks, and the Adapt-sheet trim estimate.
  */
+import { avoidedCautionAreas, exerciseHitsCautionArea } from './cautionAreaMatching';
 import { resolveCatalogBodyPart, resolveCatalogSourceCategory } from './catalogExercisePools';
-import { exerciseHitsCautionArea } from './cautionAreaMatching';
 import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { I18nKey, t } from './i18n';
-import { AppLanguage, SetupCautionFlag } from '../types/models';
+import { AppLanguage, SetupCautionArea, SetupCautionFlag } from '../types/models';
 
 export interface SessionDrill {
   /**
@@ -143,7 +143,13 @@ export function buildSessionEquipmentLabel(
   return `${labels.slice(0, -1).join(', ')} & ${labels[labels.length - 1]}`;
 }
 
-export type SessionFocusKind = 'lower' | 'push' | 'pull' | 'upper' | 'general';
+/**
+ * `easy` is a day with nothing to lift: only stretches, mobility flows and
+ * runs. It used to read as `general`, whose block is written for a mixed
+ * strength day -- so a yoga flow warmed up with push-ups and ended on a chest
+ * stretch, and the minutes of that block were counted into the day.
+ */
+export type SessionFocusKind = 'lower' | 'push' | 'pull' | 'upper' | 'general' | 'easy';
 
 /**
  * Catalog body part → the movement pattern whose prep and stretches it wants.
@@ -184,7 +190,7 @@ function inferPatternFromExerciseName(name: string): 'push' | 'pull' | 'lower' |
   if (
     // "kickback" is qualified: a glute kickback is lower, a triceps kickback
     // is not. "sled" beats the push regex below for the same reason.
-    /squat|lunge|deadlift|hip thrust|glute|bridge|calf|hamstring|quad|step-?up|leg press|leg curl|leg extension|leg raise|good morning|pull-through|glute kickback|nordic|box jump|skater|high knees|sprint|\bsled\b/.test(
+    /squat|lunge|deadlift|\brdl\b|hip thrust|glute|bridge|calf|hamstring|quad|step-?up|leg press|leg curl|leg extension|leg raise|good morning|pull-through|glute kickback|nordic|box jump|skater|high knees|sprint|\bsled\b/.test(
       normalized,
     )
   ) {
@@ -201,6 +207,19 @@ function inferPatternFromExerciseName(name: string): 'push' | 'pull' | 'lower' |
 
 /** A pattern owns the session at 70%; below that the day is genuinely mixed. */
 const MAJORITY = 0.7;
+
+/**
+ * Whether an exercise is a stretch, a mobility flow or a run: the work of a day
+ * that has no lift in it. Stricter than "no pattern voted" on purpose -- core
+ * and skill work (a handstand wall walk, a hollow hold) also casts no vote, and
+ * those days still want a strength day's push-ups to warm the wrists.
+ */
+const GENTLE_NAME =
+  /stretch|\bpose\b|mobility|\bflow\b|breath|\bfold\b|salutation|circles|cat-?cow|spinal twist|\broller\b|legs up the wall|\bruns?\b|\bjog|\bstrides?\b|\b(?:brisk|incline|easy)\s+walk\b|\bbike\b/;
+
+function isGentleExercise(name: string): boolean {
+  return GENTLE_NAME.test(name.trim().toLowerCase()) || resolveCatalogSourceCategory(name) === 'stretching';
+}
 
 /**
  * What the session actually trains, read from its exercises.
@@ -222,6 +241,9 @@ const MAJORITY = 0.7;
  */
 export function classifySessionFocus(exerciseNames: string[]): SessionFocusKind {
   const counts = { push: 0, pull: 0, lower: 0 };
+  // The pattern of the first lift that voted: the day's opening lift, which the
+  // warm-up has to prepare whatever the rest of the list is made of.
+  let openingPattern: 'push' | 'pull' | 'lower' | null = null;
   for (const name of exerciseNames) {
     const inferred = inferPatternFromExerciseName(name);
 
@@ -247,14 +269,16 @@ export function classifySessionFocus(exerciseNames: string[]): SessionFocusKind 
     const pattern = inferred ?? (bodyPart ? PATTERN_BY_BODY_PART[bodyPart] : undefined);
     if (pattern) {
       counts[pattern] += 1;
+      openingPattern = openingPattern ?? pattern;
     }
   }
 
   const total = counts.push + counts.pull + counts.lower;
   if (total === 0) {
-    // Nothing recognisable — a mobility or cardio day, or names the catalog
-    // has never heard of. `general` is the honest answer, not a fallback.
-    return 'general';
+    // Nothing recognisable. A day made only of stretches, flows and runs is
+    // `easy`; core and skill work, or names the catalog has never heard of,
+    // stay `general` -- that is the honest answer there, not a fallback.
+    return exerciseNames.length > 0 && exerciseNames.every(isGentleExercise) ? 'easy' : 'general';
   }
 
   if (counts.lower / total >= MAJORITY) {
@@ -269,7 +293,11 @@ export function classifySessionFocus(exerciseNames: string[]): SessionFocusKind 
     if (counts.pull / upper >= MAJORITY) {
       return 'pull';
     }
-    return 'upper';
+    // A day that opens on a squat or a hinge and then presses and rows is not
+    // an upper day: the heavy leg lift is the first thing the warm-up has to
+    // prepare, and a lone lift is outvoted. Push-only and pull-only days stay
+    // as they are (a deadlift before five pulls is still a pull day).
+    return openingPattern === 'lower' ? 'general' : 'upper';
   }
 
   return 'general';
@@ -354,6 +382,11 @@ const WARMUP_DRILLS: Record<SessionFocusKind, DrillSpec[]> = {
     { key: 'home.drill.hipOpeners', scheme: '2 × 8' },
     { key: 'home.drill.pushUps', scheme: '2 × 8' },
   ],
+  // Nothing to lift, so nothing to brace for: a short walk-up and the hips.
+  easy: [
+    { key: 'home.drill.marchInPlace', scheme: '2 min' },
+    { key: 'home.drill.hipOpeners', scheme: '2 × 8' },
+  ],
 };
 
 const COOLDOWN_DRILLS: Record<SessionFocusKind, DrillSpec[]> = {
@@ -395,7 +428,45 @@ const COOLDOWN_DRILLS: Record<SessionFocusKind, DrillSpec[]> = {
     { key: 'home.drill.couchStretch', scheme: '2 × 60s' },
     { key: 'home.drill.chestDoorwayStretch', scheme: '2 × 45s' },
   ],
+  easy: [
+    { key: 'home.drill.childsPose', scheme: '2 × 45s' },
+    { key: 'home.drill.seatedHamstringStretch', scheme: '2 × 45s' },
+  ],
 };
+
+type DrillKey = Parameters<typeof t>[1];
+
+/**
+ * What stands in for a drill that loads an area the reader said to leave out
+ * entirely, best first. The exercise filter never sees these blocks, so a knee
+ * "avoid" removed Jumping Jack and Bodyweight Squat from the week and then
+ * opened every day with both. The stand-in keeps the drill's scheme, so the
+ * block costs the same seconds and every minutes estimate stays in step.
+ */
+const AVOID_SUBSTITUTES: Partial<Record<DrillKey, DrillKey[]>> = {
+  'home.drill.jumpingJacks': ['home.drill.marchInPlace', 'home.drill.armCircles'],
+  'home.drill.emptyBarSquats': ['home.drill.gluteBridges', 'home.drill.hipOpeners'],
+  'home.drill.bodyweightSquats': ['home.drill.gluteBridges', 'home.drill.hipOpeners'],
+  'home.drill.pushUps': ['home.drill.wallSlides', 'home.drill.armCircles'],
+  'home.drill.tricepsOverheadStretch': ['home.drill.childsPose', 'home.drill.seatedHamstringStretch'],
+};
+
+/** Neutral drills for a slot whose own stand-ins are taken or hit the area too. */
+const NEUTRAL_DRILLS: Record<'warmup' | 'cooldown', DrillKey[]> = {
+  warmup: ['home.drill.hipOpeners', 'home.drill.armCircles', 'home.drill.wallSlides', 'home.drill.marchInPlace'],
+  cooldown: [
+    'home.drill.seatedHamstringStretch',
+    'home.drill.childsPose',
+    'home.drill.standingLatStretch',
+    'home.drill.chestDoorwayStretch',
+  ],
+};
+
+function drillHitsAvoidedArea(key: DrillKey, avoided: readonly SetupCautionArea[]): boolean {
+  // The matcher reads English exercise names, whatever language the drill is shown in.
+  const name = t('en', key);
+  return avoided.some((area) => exerciseHitsCautionArea(name, area));
+}
 
 function drillAllowed(spec: DrillSpec, available: string[] | null) {
   // null = the setup never said what gear exists, so nothing is assumed missing.
@@ -413,16 +484,35 @@ function resolveDrill(spec: DrillSpec, language: AppLanguage, available: string[
   return { key, name: t(language, key), schemeLabel: spec.fallbackScheme ?? spec.scheme };
 }
 
+/** Which of the two blocks a drill belongs to. */
+export type RoutineBlockKind = 'warmup' | 'cooldown';
+
 function resolveDrills(
+  kind: RoutineBlockKind,
   specs: DrillSpec[],
   language: AppLanguage,
   available: string[] | null,
+  avoided: readonly SetupCautionArea[],
 ): SessionRoutineBlock['drills'] {
-  return specs.map((spec) => resolveDrill(spec, language, available));
+  const drills = specs.map((spec) => resolveDrill(spec, language, available));
+  if (avoided.length === 0) {
+    return drills;
+  }
+  const taken = new Set<string>(drills.map((drill) => drill.key));
+  return drills.map((drill) => {
+    if (!drillHitsAvoidedArea(drill.key, avoided)) {
+      return drill;
+    }
+    const standIn = [...(AVOID_SUBSTITUTES[drill.key] ?? []), ...NEUTRAL_DRILLS[kind]].find(
+      (key) => !taken.has(key) && !drillHitsAvoidedArea(key, avoided),
+    );
+    if (!standIn) {
+      return drill;
+    }
+    taken.add(standIn);
+    return { key: standIn, name: t(language, standIn), schemeLabel: drill.schemeLabel };
+  });
 }
-
-/** Which of the two blocks a drill belongs to. */
-export type RoutineBlockKind = 'warmup' | 'cooldown';
 
 /**
  * Which drill a reader put in which slot.
@@ -456,13 +546,17 @@ export function listRoutineDrillOptions(
   kind: RoutineBlockKind,
   language: AppLanguage = 'en',
   availableEquipment: string[] | null = null,
+  cautionFlags: readonly SetupCautionFlag[] | null = null,
 ): SessionDrill[] {
+  const avoided = avoidedCautionAreas(cautionFlags);
   const seen = new Set<string>();
   const options: SessionDrill[] = [];
   for (const specs of Object.values(specsFor(kind))) {
     for (const spec of specs) {
       const drill = resolveDrill(spec, language, availableEquipment);
-      if (seen.has(drill.key)) {
+      // A drill on a flagged area is not offered, so the picker cannot hand
+      // back what the flag left out.
+      if (seen.has(drill.key) || drillHitsAvoidedArea(drill.key, avoided)) {
         continue;
       }
       seen.add(drill.key);
@@ -477,6 +571,11 @@ export function listRoutineDrillOptions(
  *
  * An override naming a drill this build no longer ships is dropped rather than
  * rendered as a raw key — the same rule the stored-data loaders follow.
+ *
+ * A drill the reader picked themselves stays theirs even if an avoid flag later
+ * names it: the flag swaps the app's defaults and keeps the picker from offering
+ * the drill, but it does not undo a choice the reader made. The pool is
+ * therefore the unfiltered one.
  */
 function applyOverrides(
   kind: RoutineBlockKind,
@@ -512,73 +611,6 @@ function routineBlockMinutes(drills: SessionRoutineBlock['drills']): number {
 }
 
 /**
- * What stands in for a default drill an avoid flag names, in order: the first
- * one no flag names and the block does not already hold. The block is not
- * shortened, so a reader's per-slot drill choices keep their places.
- */
-const DRILL_STAND_INS: Record<RoutineBlockKind, Record<SessionFocusKind, Array<Parameters<typeof t>[1]>>> = {
-  warmup: {
-    lower: ['home.drill.hipOpeners', 'home.drill.wallSlides', 'home.drill.armCircles'],
-    general: ['home.drill.hipOpeners', 'home.drill.armCircles', 'home.drill.wallSlides'],
-    push: ['home.drill.armCircles', 'home.drill.wallSlides', 'home.drill.hipOpeners'],
-    upper: ['home.drill.armCircles', 'home.drill.wallSlides', 'home.drill.hipOpeners'],
-    pull: ['home.drill.wallSlides', 'home.drill.armCircles', 'home.drill.hipOpeners'],
-  },
-  cooldown: {
-    lower: ['home.drill.seatedHamstringStretch', 'home.drill.childsPose', 'home.drill.chestDoorwayStretch'],
-    general: ['home.drill.seatedHamstringStretch', 'home.drill.childsPose', 'home.drill.chestDoorwayStretch'],
-    push: ['home.drill.childsPose', 'home.drill.chestDoorwayStretch', 'home.drill.seatedHamstringStretch'],
-    upper: ['home.drill.childsPose', 'home.drill.chestDoorwayStretch', 'home.drill.seatedHamstringStretch'],
-    pull: ['home.drill.childsPose', 'home.drill.standingLatStretch', 'home.drill.seatedHamstringStretch'],
-  },
-};
-
-/**
- * The defaults a reader's avoid flags rule out, replaced. The plan removed
- * Bodyweight Squat and Jump Squat for sore knees and then opened every lower
- * day with jumping jacks and bodyweight squats (persona hunt, 2026-10-08).
- * Judged on the drill's English name by the same rule as the lifts. Only the
- * app's defaults: a drill the reader picked themselves stays.
- */
-function withoutAvoidedDrills(
-  kind: RoutineBlockKind,
-  focus: SessionFocusKind,
-  drills: SessionDrill[],
-  flags: readonly SetupCautionFlag[],
-  language: AppLanguage,
-  available: string[] | null,
-): SessionDrill[] {
-  const avoided = flags.filter((flag) => flag.level === 'avoid');
-  if (avoided.length === 0) {
-    return drills;
-  }
-  const isAvoided = (key: I18nKey) => avoided.some((flag) => exerciseHitsCautionArea(t('en', key), flag.area));
-  if (!drills.some((drill) => isAvoided(drill.key))) {
-    return drills;
-  }
-  const schemes = new Map<string, string>();
-  for (const specs of Object.values(specsFor(kind))) {
-    for (const spec of specs) {
-      if (!schemes.has(spec.key)) {
-        schemes.set(spec.key, spec.scheme);
-      }
-    }
-  }
-  const held = new Set<string>(drills.filter((drill) => !isAvoided(drill.key)).map((drill) => drill.key));
-  return drills.map((drill) => {
-    if (!isAvoided(drill.key)) {
-      return drill;
-    }
-    const standIn = DRILL_STAND_INS[kind][focus].find((key) => !held.has(key) && !isAvoided(key));
-    if (!standIn) {
-      return drill;
-    }
-    held.add(standIn);
-    return { key: standIn, name: t(language, standIn), schemeLabel: schemes.get(standIn) ?? drill.schemeLabel };
-  });
-}
-
-/**
  * Deterministic default warmup for a session focus (no warmup data model yet).
  *
  * Takes the classified focus rather than a title, so no caller can pass display
@@ -589,19 +621,12 @@ export function getDefaultWarmup(
   language: AppLanguage = 'en',
   availableEquipment: string[] | null = null,
   overrides: RoutineDrillOverrides | null = null,
-  cautionFlags: readonly SetupCautionFlag[] = [],
+  cautionFlags: readonly SetupCautionFlag[] | null = null,
 ): SessionRoutineBlock {
   const drills = applyOverrides(
     'warmup',
     focus,
-    withoutAvoidedDrills(
-      'warmup',
-      focus,
-      resolveDrills(WARMUP_DRILLS[focus], language, availableEquipment),
-      cautionFlags,
-      language,
-      availableEquipment,
-    ),
+    resolveDrills('warmup', WARMUP_DRILLS[focus], language, availableEquipment, avoidedCautionAreas(cautionFlags)),
     overrides,
     language,
     availableEquipment,
@@ -617,19 +642,12 @@ export function getDefaultCooldown(
   language: AppLanguage = 'en',
   availableEquipment: string[] | null = null,
   overrides: RoutineDrillOverrides | null = null,
-  cautionFlags: readonly SetupCautionFlag[] = [],
+  cautionFlags: readonly SetupCautionFlag[] | null = null,
 ): SessionRoutineBlock {
   const drills = applyOverrides(
     'cooldown',
     focus,
-    withoutAvoidedDrills(
-      'cooldown',
-      focus,
-      resolveDrills(COOLDOWN_DRILLS[focus], language, availableEquipment),
-      cautionFlags,
-      language,
-      availableEquipment,
-    ),
+    resolveDrills('cooldown', COOLDOWN_DRILLS[focus], language, availableEquipment, avoidedCautionAreas(cautionFlags)),
     overrides,
     language,
     availableEquipment,

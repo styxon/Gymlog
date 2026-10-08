@@ -67,9 +67,6 @@ import { ProLockedCard } from '../components/ProLockedCard';
 import { ProMomentSheet } from '../components/ProMomentSheet';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, CardioActivityType, ExerciseLibraryItem, SetupCautionFlag } from '../types/models';
-
-/** One shared empty list, so a prop default does not rebuild the drills every render. */
-const NO_CAUTION_FLAGS: readonly SetupCautionFlag[] = [];
 import { queryReduceMotion } from '../utils/reduceMotion';
 
 // The Home Pro sheet is gone (design: Vinha Paywall Moments): contextual
@@ -392,10 +389,13 @@ interface HomeScreenProps {
    * default warmup honest — no rower for a bodyweight-only user.
    */
   availableEquipment?: string[] | null;
+  /**
+   * The reader's caution flags: an `avoid` area keeps its drills out of the
+   * warm-up and cool-down, the way it keeps its lifts out of the week.
+   */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** The reader's own warm-up / cool-down picks — see routineDrillSlotKey. */
   routineDrillOverrides?: Record<string, string>;
-  /** The reader's avoid flags: the default drills never open with a movement they leave out. */
-  cautionFlags?: readonly SetupCautionFlag[];
   /** Undefined leaves the drills read-only, the way they were before. */
   onSwapRoutineDrill?: (slotKey: string, drillKey: string) => void;
   /**
@@ -488,8 +488,8 @@ export function HomeScreen({
   onOpenActivePlan,
   onOpenPlanSession,
   availableEquipment = null,
+  cautionFlags,
   routineDrillOverrides = {},
-  cautionFlags = NO_CAUTION_FLAGS,
   onSwapRoutineDrill,
   statCatalogCards = [],
   suggestedStatCardKeys = [],
@@ -729,10 +729,10 @@ export function HomeScreen({
         .filter((_, index) => index !== drillSwap.index)
         .map((drill) => drill.key as string),
     );
-    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment).filter(
+    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment, cautionFlags).filter(
       (option) => !taken.has(option.key as string),
     );
-  }, [availableEquipment, cooldown, drillSwap, language, warmup]);
+  }, [availableEquipment, cautionFlags, cooldown, drillSwap, language, warmup]);
   const drillCurrent = drillSwap
     ? (drillSwap.kind === 'warmup' ? warmup : cooldown).drills[drillSwap.index] ?? null
     : null;

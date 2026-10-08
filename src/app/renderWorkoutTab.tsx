@@ -404,7 +404,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     // Truth rule: when this is the user's active program, the detail
     // shows the composed week they actually run, not the raw catalog.
     const readyComposedWeek = readyTemplate ? resolveComposedWeekForRoute(route.workoutTemplateId) : null;
-    const readyProgramMinutesOptions = { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides, cautionFlags: preferences.setupCautionFlags };
+    const readyProgramMinutesOptions = {
+      availableEquipment: availableEquipmentForDrills,
+      overrides: preferences.routineDrillOverrides,
+      cautionFlags: preferences.setupCautionFlags,
+    };
     const readyProgramFitExplanation =
       readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
         ? buildFirstRunRecommendationReasons(setupSelection, {
@@ -833,7 +837,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           preferences.appLanguage,
           false,
           false,
-          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides, cautionFlags: preferences.setupCautionFlags },
+          {
+            availableEquipment: availableEquipmentForDrills,
+            overrides: preferences.routineDrillOverrides,
+            cautionFlags: preferences.setupCautionFlags,
+          },
         )
       : customTemplate
         ? buildCustomProgramDetail(customTemplate, programInsightsByTemplateId[route.workoutTemplateId], preferences.appLanguage)
@@ -855,8 +863,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         dayNumber={dayIndex + 1}
         dayCount={program.sessions.length}
         availableEquipment={availableEquipmentForDrills}
-        routineDrillOverrides={preferences.routineDrillOverrides}
         cautionFlags={preferences.setupCautionFlags}
+        routineDrillOverrides={preferences.routineDrillOverrides}
         // Permanent by nature: the drills are generated from the session
         // focus, so a choice belongs to every day with that focus rather
         // than to this one. There is no "just this time" to offer.
@@ -1091,8 +1099,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         defaultRestSeconds={preferences.defaultRestSeconds}
         unitPreference={unitPreference}
         availableEquipment={availableEquipmentForDrills}
-        routineDrillOverrides={preferences.routineDrillOverrides}
         cautionFlags={preferences.setupCautionFlags}
+        routineDrillOverrides={preferences.routineDrillOverrides}
         tailoringPreferences={tailoringPreferences}
         exerciseLibrary={exerciseLibrary}
         liftHistory={liftHistory}

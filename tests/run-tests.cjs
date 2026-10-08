@@ -346,6 +346,7 @@ const suites = [
   ...require('./lib/homePlanProgress.test.cjs'),
   ...require('./lib/homeSessionHero.test.cjs'),
   ...require('./lib/sessionFocusClassification.test.cjs'),
+  ...require('./lib/routineBlockFit.test.cjs'),
   ...require('./lib/substitutionGroups.test.cjs'),
   ...require('./lib/workoutCompleteView.test.cjs'),
   ...require('./lib/homeCalendar.test.cjs'),
@@ -438,13 +439,10 @@ const suites = [
   ...require('./lib/recommendationFixes20261006.test.cjs'),
   ...require('./lib/recommenderSweep20261007.test.cjs'),
   ...require('./lib/recommenderSweep20261008.test.cjs'),
-<<<<<<< HEAD
   ...require('./lib/trapBarGear20261008.test.cjs'),
   ...require('./lib/readyCatalogPull20261008.test.cjs'),
   ...require('./lib/recommenderFit20261008.test.cjs'),
-=======
   ...require('./lib/cautionFilterRound3.test.cjs'),
->>>>>>> worktree-wf_d40c4c58-da0-2
   ...require('./lib/reviewFixes20261007.test.cjs'),
   ...require('./lib/swapHunt20261007.test.cjs'),
   ...require('./lib/sessionMinutesOneTruth.test.cjs'),

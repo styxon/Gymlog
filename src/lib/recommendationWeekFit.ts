@@ -143,7 +143,7 @@ function halfSets(exercises: ReadonlyArray<{ exerciseName: string; sets: number 
     const kind = classifySessionFocus([exercise.exerciseName]);
     if (kind === 'lower') {
       sets.lower += exercise.sets;
-    } else if (kind !== 'general') {
+    } else if (kind !== 'general' && kind !== 'easy') {
       sets.upper += exercise.sets;
     }
     sets.all += exercise.sets;
