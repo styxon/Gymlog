@@ -260,11 +260,11 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_home_dumbbell_athletic_5_day_v1: {
     summary:
-      'Five days a week at home with a pair of dumbbells: upper-body strength, lower-body strength, upper-body hypertrophy, a power and conditioning day, and a lower-body day with a short engine finish. Incline press, rows, goblet squat, stiff-legged deadlift, thrusters and jump squats.',
+      'Five days a week at home with a pair of dumbbells: upper-body strength, lower-body strength, upper-body hypertrophy, a power and conditioning day, and a lower-body day with a short engine finish. Floor press, rows, goblet squat, stiff-legged deadlift, thrusters and jump squats.',
     audience:
       'Experienced trainees with dumbbells at home who want strength, power and conditioning on five days a week. On six days, the app adds one light day.',
     equipmentProfile:
-      'A pair of dumbbells, ideally adjustable, and a bench or a sturdy chair. No barbell and no machines.',
+      'A pair of dumbbells, ideally adjustable, and a sturdy chair or a bench to lean on for rows and split squats. The presses are done on the floor. No barbell and no machines.',
     whyItWorks:
       'Upper and lower days alternate, the upper body rows on more sets than it presses, and jumps and burpees add the conditioning without any gear beyond the dumbbells.',
   },

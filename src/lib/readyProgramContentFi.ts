@@ -243,11 +243,11 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_home_dumbbell_athletic_5_day_v1: {
     summary:
-      'Viisi päivää viikossa kotona käsipainoparilla: yläkehon voima, alakehon voima, yläkehon lihaskasvu, teho- ja kuntopäivä sekä alavartalopäivä lyhyellä kuntoloppulla. Vinopenkkipunnerrus, soutu, goblet-kyykky, suorin jaloin tehty maastaveto, thrusterit ja kyykkyhypyt.',
+      'Viisi päivää viikossa kotona käsipainoparilla: yläkehon voima, alakehon voima, yläkehon lihaskasvu, teho- ja kuntopäivä sekä alavartalopäivä lyhyellä kuntoloppulla. Lattiapunnerrus, soutu, goblet-kyykky, suorin jaloin tehty maastaveto, thrusterit ja kyykkyhypyt.',
     audience:
       'Kokeneille treenaajille, joilla on käsipainot kotona ja jotka haluavat voimaa, tehoa ja kuntoa viitenä päivänä viikossa. Kuudella päivällä sovellus lisää yhden kevyen päivän.',
     equipmentProfile:
-      'Käsipainopari, mieluiten säädettävä, sekä penkki tai tukeva tuoli. Ei tankoa eikä koneita.',
+      'Käsipainopari, mieluiten säädettävä, ja tukeva tuoli tai penkki tueksi soutuihin ja askelkyykkyihin. Punnerrukset tehdään lattialla. Ei tankoa eikä koneita.',
     whyItWorks:
       'Ylä- ja alavartalopäivät vuorottelevat, yläkehossa soudetaan useampi sarja kuin punnerretaan, ja hypyt ja burpeet tuovat kunnon ilman muita välineitä kuin käsipainot.',
   },

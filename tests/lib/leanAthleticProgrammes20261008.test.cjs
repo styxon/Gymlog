@@ -308,6 +308,31 @@ module.exports = [
     },
   },
   {
+    name: 'lean athletic: the home week runs as written on a pair of dumbbells alone: no lift needs a bench, none is swapped or dropped, and the page says the presses are on the floor',
+    run() {
+      const { applyEquipmentToExercises } = require(dist + 'lib/equipmentExerciseFilter.js');
+      // programFitsEquipment tolerates one swap or drop, so it cannot catch a lift
+      // that a bare pair of dumbbells cannot do. Incline Dumbbell Press opened Day 1
+      // for a reader who was never offered a bench (reviewer, 2026-10-08).
+      const NEEDS_BENCH = /incline|decline bench|bench press|bench dip|step-up/i;
+      for (const exercise of exercisesOf(HOME5)) {
+        assert.ok(!NEEDS_BENCH.test(exercise.exerciseName), `${exercise.exerciseName} needs a bench`);
+      }
+      for (const chips of [['Dumbbells'], ['Dumbbells', 'Resistance bands']]) {
+        for (const session of template(HOME5).sessions) {
+          const adjusted = applyEquipmentToExercises(session.exercises, chips);
+          assert.deepEqual(adjusted.removed, [], `${session.name} (${chips.join('+')}) drops a lift`);
+          assert.deepEqual(adjusted.swapped, [], `${session.name} (${chips.join('+')}) swaps a lift`);
+        }
+      }
+      const firstPress = template(HOME5).sessions[0].exercises[0];
+      assert.equal(firstPress.exerciseName, 'Dumbbell Floor Press');
+      assert.equal(firstPress.role, 'primary');
+      assert.match(getReadyProgramContent(HOME5, 'en').equipmentProfile, /presses are done on the floor/i);
+      assert.match(getReadyProgramContent(HOME5, 'fi').equipmentProfile, /Punnerrukset tehdään lattialla/);
+    },
+  },
+  {
     name: 'lean athletic: the programmes the new weeks replaced as first choice are still on offer for the goal, as backups',
     run() {
       for (const id of ['tpl_gainer_lean_shred_v1', 'tpl_gainer_athlete_conditioning_v1', 'tpl_shred_elite_v1']) {
