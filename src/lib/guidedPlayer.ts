@@ -686,6 +686,43 @@ function loggedOffPlan(set: { plannedLoadKg?: number; actualLoadKg?: number }): 
   return Math.abs(set.actualLoadKg - set.plannedLoadKg) >= 0.001;
 }
 
+export interface GuidedSetPlanChip {
+  /** Done: the reps logged. Otherwise what the dial will open on. Null when there is no number. */
+  reps: number | null;
+  status: 'done' | 'current' | 'upcoming' | 'skipped';
+}
+
+/**
+ * Today's sets, set by set, for the row under last time's on the set card.
+ *
+ * "Saadaanko näkyviin koko sarja mitä pitäisi tehdä eli esim tee 10 10 10 10
+ * 9" (#bugs 2026-10-08): the card showed last time's sets and only the one set
+ * being done today. A set still to do reads what its dial will open on — the
+ * same target the dial uses, so a set logged over its target moves the ones
+ * after it, as the dial does; a logged set reads what was done.
+ */
+export function resolveGuidedSetPlan(
+  sets: Parameters<typeof resolveGuidedSetTarget>[0],
+  currentSetIndex: number,
+  trackingMode: string,
+  swappedAfterSetIndex?: number | null,
+): GuidedSetPlanChip[] {
+  return [...sets]
+    .sort((left, right) => left.setIndex - right.setIndex)
+    .map((set): GuidedSetPlanChip => {
+      if (set.status === 'completed') {
+        return { reps: typeof set.actualReps === 'number' ? set.actualReps : null, status: 'done' };
+      }
+      if (set.status === 'skipped') {
+        return { reps: null, status: 'skipped' };
+      }
+      return {
+        reps: resolveGuidedSetTarget(sets, set.setIndex, trackingMode, swappedAfterSetIndex)?.reps ?? null,
+        status: set.setIndex === currentSetIndex ? 'current' : 'upcoming',
+      };
+    });
+}
+
 /**
  * Default target the set screen opens with. Weight: the previous completed
  * set's actual when the reader logged it off its plan; else the set's own

@@ -16,7 +16,7 @@ import {
   getPopularExerciseLibraryOrder,
   getSuggestedExerciseLibraryItems,
 } from '../lib/exerciseSuggestions';
-import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { exerciseCardLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import {
   BODY_PART_FILTERS,
   BodyPartFilter,
@@ -199,8 +199,14 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
       </View>
 
       <View style={styles.gridCardCopy}>
-        <Text numberOfLines={3} style={styles.gridCardTitle} accessibilityLabel={exerciseNameLabel(language, name)}>
-          {exerciseListLabel(language, name)}
+        {/* On its syllables when it has to break (lib/exerciseNameLabel exerciseCardLabel). */}
+        <Text
+          numberOfLines={3}
+          style={styles.gridCardTitle}
+          accessibilityLabel={exerciseNameLabel(language, name)}
+          android_hyphenationFrequency="normal"
+        >
+          {exerciseCardLabel(language, name)}
         </Text>
         {item ? (
           <>

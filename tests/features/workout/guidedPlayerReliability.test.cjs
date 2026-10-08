@@ -346,7 +346,15 @@ module.exports = [
       );
       assert.match(player, /const bottomPadding = bottomInset \+ 30;/);
       assert.match(player, /const listMaxHeight = sheetScrollMaxHeight\(\{\s*areaHeight: areaHeight \?\? windowHeight,\s*capFraction: SHEET_CAP_FRACTION,\s*headHeight: headHeight \?\? 81,\s*bottomPadding,\s*\}\);/);
-      assert.match(player, /style=\{styles\.sheetScrim\}\s*onPress=\{onClose\}\s*onLayout=\{\(event\) => setAreaHeight\(/);
+      assert.match(player, /<View\s*style=\{styles\.sheetScrim\}\s*onLayout=\{\(event\) => setAreaHeight\(/);
+      // And it scrolls at all: no pressable around the list (#bugs 2026-10-08,
+      // "ei pysty vieläkään skrollaamaan"). The tap on the page is a sibling
+      // behind the sheet, and the sheet a plain View, as in components/sheetKit.
+      const gpSheet = player.slice(player.indexOf('function GPSheet('), player.indexOf('/* ══'));
+      assert.match(gpSheet, /<Pressable\s*style=\{StyleSheet\.absoluteFill\}\s*onPress=\{onClose\}/);
+      assert.match(gpSheet, /<View style=\{\[styles\.sheet, \{ paddingBottom: bottomPadding \}\]\}>/);
+      assert.doesNotMatch(gpSheet, /onPress=\{\(\) => undefined\}/);
+      assert.doesNotMatch(gpSheet, /<Pressable\s*style=\{(styles\.sheetScrim|\[styles\.sheet,)/);
       assert.match(player, /style=\{styles\.sheetGrab\}\s*onLayout=\{\(event\) => setHeadHeight\(/);
       assert.match(player, /<ScrollView\s*style=\{\[styles\.sheetScroll, \{ maxHeight: listMaxHeight \}\]\}/);
       assert.match(player, /  sheetScroll: \{ flexGrow: 0, flexShrink: 1 \},/);

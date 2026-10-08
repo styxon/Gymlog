@@ -70,6 +70,7 @@ import {
   getGuidedStepLabel,
   isGuidedExerciseOut,
   resolveGuidedOpening,
+  resolveGuidedSetPlan,
   resolveGuidedSetTarget,
   restRoundCorrections,
   loggedSetsOf,
@@ -146,7 +147,7 @@ import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
-import { fitRunPreview } from '../lib/guidedRunPreview';
+import { fitRunPreview, isLastWorkItem } from '../lib/guidedRunPreview';
 import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
 import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
 import { ExercisePickerFilters } from '../lib/exercisePicker';
@@ -163,6 +164,7 @@ import {
 } from '../features/workout/workoutState';
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet } from '../lib/liftSegments';
+import { resolveLiftPraise } from '../lib/liftPraise';
 import {
   isMinutesTrackingMode,
   isTimedTrackingMode,
@@ -218,6 +220,10 @@ const SPLASH_MS = 2300;
 
 /** How many set dots the row will draw before it stops counting in dots. */
 const SET_DOT_CAP = 9;
+
+/** The walk-up's one-line notices — a stall in amber, a step up in green — share one shape. */
+const WALK_BANNER = { borderWidth: 1, borderRadius: 14, padding: 12 } as const;
+const WALK_BANNER_TEXT = { fontSize: 12.5, fontWeight: '700', lineHeight: 18 } as const;
 
 /**
  * The rest a mid-workout add falls back to when there is no rest to inherit —
@@ -1400,21 +1406,31 @@ function GPSheet({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable
+      <View
         style={styles.sheetScrim}
-        onPress={onClose}
         onLayout={(event) => setAreaHeight(Math.round(event.nativeEvent.layout.height))}
       >
+        {/* The tap on the dimmed page, BESIDE the sheet rather than around it.
+            The sheet sat inside this Pressable and was a Pressable itself, to
+            swallow its own taps — and on Android the contents list inside two
+            pressables did not scroll at all, whatever height it was given
+            (#bugs 2026-10-08, "ei pysty vieläkään skrollaamaan", after two
+            fixes to its height). The kit's sheets (components/sheetKit) are
+            built this way, and their lists scroll. Out of the accessibility
+            tree: the ✕ is the same action with a name. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={onClose}
+          accessible={false}
+          importantForAccessibility="no"
+        />
         {/* The 78% cap lives on this wrapper, whose parent is the full-screen
             scrim: on the sheet inside it the percentage would resolve against
             a content-sized parent and quietly stop capping anything. */}
         <Animated.View
           style={[styles.sheetFrame, { transform: [{ translateY: dragY }] }]}
         >
-          <Pressable
-            style={[styles.sheet, { paddingBottom: bottomPadding }]}
-            onPress={() => undefined}
-          >
+          <View style={[styles.sheet, { paddingBottom: bottomPadding }]}>
             {/* Measured: the sheet's paddingTop and the grab's -12 margin
                 cancel, so the grab's own height is the whole head. */}
             <View
@@ -1449,9 +1465,9 @@ function GPSheet({
             ) : (
               children
             )}
-          </Pressable>
+          </View>
         </Animated.View>
-      </Pressable>
+      </View>
     </Modal>
   );
 }
@@ -2217,11 +2233,14 @@ function GuidedPlayer({
    * not one row fits; the buttons below never give way to it.
    */
   const walkRunItems = step.type === 'position' ? buildGuidedRunSheet(stepPlan, stepIndex) : [];
+  // The last lift: one line saying so, in place of its row and a "+2 muuta"
+  // that counted the stretches as lifts (lib/guidedRunPreview isLastWorkItem).
+  const walkLastLift = isLastWorkItem(walkRunItems);
   const walkRunFit =
     step.type === 'position' && walkViewportHeight > 0 && walkTopHeight > 0
       ? fitRunPreview({
-          count: walkRunItems.length,
-          currentIndex: walkRunItems.findIndex((item) => item.status === 'current'),
+          count: walkLastLift ? 1 : walkRunItems.length,
+          currentIndex: walkLastLift ? 0 : walkRunItems.findIndex((item) => item.status === 'current'),
           availableHeight: walkViewportHeight - WALK_RUN_CHROME - walkTopHeight,
           headHeight: WALK_RUN_HEAD,
           rowHeight: WALK_RUN_ROW,
@@ -3139,6 +3158,38 @@ function GuidedPlayer({
   /** The lift being walked to, if it is currently plateaued — see plateauNotice. */
   const walkPlateau = step.type === 'position' ? plateauNotice?.(step.exerciseName) ?? null : null;
 
+  /**
+   * The lift just finished, when it met a target set above last time's: the
+   * card that names a stall names the step that ends it too (lib/liftPraise,
+   * #bugs 2026-10-08). Only on the walk-up that follows that lift's last set,
+   * and not for a lift swapped mid-way, whose sets are two lifts.
+   */
+  const walkPraise = (() => {
+    const before = step.type === 'position' ? steps[stepIndex - 1] : undefined;
+    if (!before || before.type !== 'set') {
+      return null;
+    }
+    const done = exerciseBySlot.get(before.slotId);
+    if (!done || done.swappedAfterSetIndex !== undefined) {
+      return null;
+    }
+    const praise = resolveLiftPraise(
+      done.sets,
+      resolveSlotHistory(before.slotId, done.exerciseName)?.sets ?? null,
+      done.trackingMode,
+    );
+    if (!praise) {
+      return null;
+    }
+    const reps = praise.reps.every((count) => count === praise.reps[0])
+      ? `${praise.reps.length} × ${praise.reps[0]}`
+      : praise.reps.join('/');
+    return t(language, 'guided.walk.praise', {
+      name: exerciseNameLabel(language, done.exerciseName),
+      dose: praise.loadKg !== null ? `${formatWeight(praise.loadKg, unitPreference)} ${reps}` : reps,
+    });
+  })();
+
   const railGroupIndex = step.type === 'finish' || step.type === 'splash' ? 0 : step.groupIndex;
   const phaseRail = useMemo(() => getGuidedPhaseRail(groups, railGroupIndex), [groups, railGroupIndex]);
 
@@ -3808,6 +3859,11 @@ function GuidedPlayer({
                   {/* The same finding Home's card shows, once, here — so
                       dismissing that card does not make the lift's own stall
                       unmentioned the next time it comes up (user 2026-09-29). */}
+                  {walkPraise ? (
+                    <View style={styles.walkPraiseBanner}>
+                      <Text style={styles.walkPraiseText}>{walkPraise}</Text>
+                    </View>
+                  ) : null}
                   {walkPlateau ? (
                     <View style={styles.walkPlateauBanner}>
                       <Text style={styles.walkPlateauText}>{walkPlateau.headline}</Text>
@@ -3835,7 +3891,14 @@ function GuidedPlayer({
                       <Text style={styles.walkRunTitle}>{t(language, 'guided.runSheet.title').toUpperCase()}</Text>
                       <GPIcon name="chevR" size={14} color={theme.faint} />
                     </View>
-                    {walkRunItems.slice(walkRunFit.start, walkRunFit.end).map((item) => {
+                    {walkLastLift ? (
+                      <View style={styles.walkRunRow}>
+                        <Text style={styles.walkRunName} numberOfLines={1}>
+                          {t(language, 'guided.walk.lastLift')}
+                        </Text>
+                      </View>
+                    ) : null}
+                    {(walkLastLift ? [] : walkRunItems.slice(walkRunFit.start, walkRunFit.end)).map((item) => {
                       const isSuperset = item.members.length > 1;
                       const plan = isSuperset
                         ? item.setCount
@@ -5289,6 +5352,10 @@ function SetStepView({
    * where it stood, still running, instead of at zero (#bugs 2026-10-06).
    */
   const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
+  const todayPlan =
+    exercise && !minutesMode
+      ? resolveGuidedSetPlan(exercise.sets, step.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex)
+      : [];
   const plannedMinutes = target?.reps ?? 0;
   const keptWatch = () =>
     stopwatchForSet(minutesClock, { slotId: step.slotId, setIndex: step.setIndex, exerciseName: step.exerciseName });
@@ -5590,6 +5657,7 @@ function SetStepView({
                   borrowed: panels.history.borrowed === true,
                 }
               : null,
+            todayPlan.map((chip) => chip.reps),
           )}
           accessibilityHint={t(language, 'guided.panelsToggle')}
           onPress={onOpenSheet}
@@ -5661,6 +5729,38 @@ function SetStepView({
           ) : (
             <Text style={styles.setExerciseFirstTime}>{t(language, 'guided.card.firstTime')}</Text>
           )}
+          {/* Today's sets beside last time's, set by set: done ones as done,
+              the one being done ringed, the rest at what their dial will open
+              on (lib/guidedPlayer resolveGuidedSetPlan; #bugs 2026-10-08,
+              "näkyviin koko sarja mitä pitäisi tehdä"). Not for a bout of
+              minutes, which is one number on its clock. */}
+          {todayPlan.length > 0 ? (
+            <View style={styles.setExerciseToday}>
+              <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.today')}</Text>
+              <View style={styles.setExerciseLastPills}>
+                {todayPlan.map((chip, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.setExerciseLastPill,
+                      chip.status === 'done' && { backgroundColor: theme.greenSoft },
+                      chip.status === 'current' && styles.setExerciseTodayCurrent,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.setExerciseLastPillText,
+                        chip.status === 'done' && { color: theme.greenInk },
+                        chip.status === 'current' && { color: theme.ink },
+                      ]}
+                    >
+                      {chip.reps ?? '–'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          ) : null}
         </Pressable>
 
         {/* The set counter, its dots and the add button — and nothing else.
@@ -6659,6 +6759,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontVariant: ['tabular-nums'],
   },
+  // Last time's row again, for today: the same chips under the same rule.
+  setExerciseToday: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 7 },
+  // The set being done: ringed in the action colour, as its dot is below.
+  setExerciseTodayCurrent: { borderWidth: 1.5, borderColor: theme.highlight, paddingHorizontal: 3.5, paddingVertical: 1.5 },
   setExerciseFirstTime: {
     borderTopWidth: 1,
     borderTopColor: theme.border,
@@ -7023,14 +7127,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   walkStatSub: { fontSize: 12, fontWeight: '600', color: theme.muted, fontVariant: ['tabular-nums'] },
   // Amber, matching Home's plateau card and the rest-denied banner above —
   // one finding, one colour, wherever it shows up.
-  walkPlateauBanner: {
-    borderWidth: 1,
-    borderColor: theme.amberBorder,
-    backgroundColor: theme.amberSoft,
-    borderRadius: 14,
-    padding: 12,
-  },
-  walkPlateauText: { fontSize: 12.5, fontWeight: '700', color: theme.amberInk, lineHeight: 18 },
+  walkPlateauBanner: { ...WALK_BANNER, borderColor: theme.amberBorder, backgroundColor: theme.amberSoft },
+  walkPlateauText: { ...WALK_BANNER_TEXT, color: theme.amberInk },
+  // Green, the colour a step forward wears on the set rail and the finish
+  // screen — the plateau banner's answer, in the same shape.
+  walkPraiseBanner: { ...WALK_BANNER, borderColor: theme.green, backgroundColor: theme.greenSoft },
+  walkPraiseText: { ...WALK_BANNER_TEXT, color: theme.greenInk },
   // The walk-up's contents list. Heading and rows are FIXED heights
   // (WALK_RUN_HEAD, WALK_RUN_ROW): the room is worked out before they are
   // drawn, and a row that grew with its text would spill past it.
