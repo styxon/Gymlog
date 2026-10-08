@@ -258,7 +258,7 @@ export function programmeCardMinutes(
  * The week a ready programme's page shows: the composed one when it holds
  * sessions, otherwise the catalog's. Its days and its session list.
  */
-function readyProgramWeek(template: WorkoutTemplateV1, composedWeek?: ComposedProgramWeek | null) {
+export function readyProgramWeek(template: WorkoutTemplateV1, composedWeek?: ComposedProgramWeek | null) {
   const composed = composedWeek && composedWeek.sessions.length > 0 ? composedWeek : null;
   return composed
     ? { days: composed.days, sessions: composed.sessions }
@@ -402,9 +402,15 @@ export function buildReadyProgramDetail(
     source: 'ready',
     title: template.name,
     subtitle: `${goal} | ${level} | ${daysPerWeek} ${pluralize(daysPerWeek, 'day')} / week`,
+    // The catalog's own summary counts the catalog's days ("Four gym days, one
+    // muscle group at a time"). Over a week composed to a different count it
+    // is a sentence about another week, and the header right above it says how
+    // many days there are: nothing is said instead (persona hunt, 2026-10-08).
     description:
-      content?.summary ??
-      `${titleCase(template.splitType)} program with ${template.sessions.length} sessions and repeatable progression rules for consistent logging.`,
+      composed && composed.days !== template.daysPerWeek
+        ? ''
+        : content?.summary ??
+          `${titleCase(template.splitType)} program with ${template.sessions.length} sessions and repeatable progression rules for consistent logging.`,
     badges: [
       goal,
       level,

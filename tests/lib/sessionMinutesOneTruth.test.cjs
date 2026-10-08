@@ -136,6 +136,7 @@ module.exports = [
         // Parameters that carry the page's own minutes under this name.
         'src/lib/firstRunSetup.ts',
         'src/lib/recommendationExplanation.ts',
+        'src/lib/readyProgramFit.ts',
         'src/app/renderWorkoutTab.tsx',
         'src/lib/sessionDuration.ts',
       ]);

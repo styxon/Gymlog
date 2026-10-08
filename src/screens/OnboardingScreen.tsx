@@ -40,6 +40,7 @@ import {
   getRecommendedProgramName,
   getWeekdayShortLabel,
   resolveFirstRunRecommendationWithTailoring,
+  resolveMismatchNoteForWeek,
   getSetupEquipmentTitle,
   getSetupGoalTitle,
   weekAfterCycleRemoved,
@@ -52,6 +53,7 @@ import {
   buildProgramFocusSplit,
 } from '../lib/programFocusSplit';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
+import { buildCautionAdaptationLine } from '../lib/cautionAdaptationLine';
 import { CAUTION_TO_FOCUS_AREAS } from '../lib/cautionExerciseFilter';
 import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
@@ -1451,8 +1453,29 @@ export function OnboardingScreen({
 
     return recommendation.featuredProgramId;
   }, [recommendation.featuredProgramId, recommendationOptionIds, selectedRecommendationProgramId]);
+  // The composed week for the currently selected program — the single truth
+  // for day counts and the week preview (matches what gets saved).
+  const composedActiveWeek = useMemo(
+    () => composeProgramWeekForSelection(selection, activeRecommendedProgramId),
+    [activeRecommendedProgramId, selection],
+  );
+  // The note is first written from the catalog programme's days; the brief
+  // quotes it, so it is restated for the week that gets saved.
   const activeRecommendationMismatchNote =
-    activeRecommendedProgramId === recommendation.featuredProgramId ? recommendation.mismatchNote : null;
+    activeRecommendedProgramId === recommendation.featuredProgramId
+      ? resolveMismatchNoteForWeek(
+          selection,
+          recommendation,
+          composedActiveWeek?.days,
+          recommendationTailoringPreferences,
+          language,
+        )
+      : null;
+  // What the reader's flags took out of the week, for the line under the strip.
+  const cautionAdaptationLine = useMemo(
+    () => buildCautionAdaptationLine(composedActiveWeek, language),
+    [composedActiveWeek, language],
+  );
   const planReadyPayload = useMemo(
     () =>
       buildRecommendationPlanReadyPayload(selection, activeRecommendedProgramId, {
@@ -1494,12 +1517,6 @@ export function OnboardingScreen({
   }, [recommendation.featuredProgramId, recommendationOptionIds, selection]);
   const helperSuggestions = useMemo(
     () => buildFirstRunPromptSuggestions(selection, getRecommendedProgramName(activeRecommendedProgramId)),
-    [activeRecommendedProgramId, selection],
-  );
-  // The composed week for the currently selected program — the single truth
-  // for day counts and the week preview (matches what gets saved).
-  const composedActiveWeek = useMemo(
-    () => composeProgramWeekForSelection(selection, activeRecommendedProgramId),
     [activeRecommendedProgramId, selection],
   );
   const locationLabel = useMemo(
@@ -2860,7 +2877,10 @@ export function OnboardingScreen({
               }))
         }
         weekNote={
-          cyclePattern ? t(language, 'onb.days.cycleSummary', { len: cyclePattern.length }) : undefined
+          [
+            cyclePattern ? t(language, 'onb.days.cycleSummary', { len: cyclePattern.length }) : null,
+            cautionAdaptationLine,
+          ].filter(Boolean).join(' ') || undefined
         }
         weekLabel={t(language, cyclePattern ? 'onb.days.cycleWeek' : 'onb.planReady.yourWeek')}
         ctaLabel={t(language, 'onb.cta.startTraining')}
