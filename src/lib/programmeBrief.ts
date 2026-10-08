@@ -326,7 +326,15 @@ const INJURY_NEAR_PART = new RegExp(
  * back". Each asks for more of the part, and read as an injury kept its main
  * lift out (re-hunt, 2026-10-08).
  */
-const GROWTH = /(?:^|\s)(?:kasv\p{L}*|kehit\p{L}*|kehity\p{L}*|growth|grow\p{L}*|build\p{L}*|develop\p{L}*|size)(?![\p{L}])/u;
+const GROWTH = /(?:^|\s)(?:kasv\p{L}*|kehit(?!tyi|tynyt|tyneet)\p{L}*|kehity\p{L}*|growth|grow\p{L}*|build\p{L}*|develop(?!ed)\p{L}*|size)(?![\p{L}])/u;
+
+/**
+ * A clause that only goes on about the growth of the part before it: "hauis
+ * jumissa, ei kasva". Subjectless, so it is the same part's, where "polvi on
+ * ongelma, haluan kasvattaa jalkoja" is a wish of its own beside a knee
+ * that hurts (review, 2026-10-08).
+ */
+const GROWTH_CLAUSE = /^(?:(?:ei|eikä|not|never|doesn't|doesnt|won't|wont|isn't|just|vain|hardly|tuskin)\s+)?(?:kasv\p{L}*|kehity\p{L}*|grow\p{L}*|growing|develop(?!ed)\p{L}*)(?:\s+\p{L}+)?$/u;
 
 /**
  * A muscle as "the problem": "kädet on ongelma", "ongelmana rinta" names the
@@ -338,15 +346,26 @@ const MUSCLE_PART = new RegExp(`${fi('rinta')}|chest|pecs?|${fi('pakara')}|glute
 const JOINT_PART = /polvi|polve|knee|olkap|shoulder|kyyn[äa]r|elbow|rann|rant|wrist|nilk|ankle|lonk|hip\b|niska|neck|selk|selä|back|alasel|lanne/iu;
 
 /**
- * Whether an injury-beside-a-part match is no injury: growth in it or in the
- * few words after it, or a muscle (not a joint) called the problem.
+ * Whether an injury-beside-a-part match is no injury: a growth word in it
+ * ("trouble with building my back"), or — for a muscle — growth in the few
+ * words after it or in a subjectless clause that follows, or the muscle
+ * called the problem. A joint or the back is never let off by growth beside
+ * it: "Knee problems, want to build legs", "back problems, want more size"
+ * and "knee problems that developed after running" each lost their caution
+ * when the next clause's wish was read as the joint's (review, 2026-10-08).
  */
-function injuryIsAsk(match: string, following: string): boolean {
-  const next = following.split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
-  if (GROWTH.test(match) || GROWTH.test(next)) {
+function injuryIsAsk(match: string, following: string, nextClause: string | null): boolean {
+  if (GROWTH.test(match)) {
     return true;
   }
-  return PROBLEM_WORD.test(match) && MUSCLE_PART.test(match) && !JOINT_PART.test(match);
+  if (JOINT_PART.test(match)) {
+    return false;
+  }
+  const next = following.split(/\s+/).filter(Boolean).slice(0, 4).join(' ');
+  if (GROWTH.test(next) || (nextClause !== null && GROWTH_CLAUSE.test(nextClause))) {
+    return true;
+  }
+  return PROBLEM_WORD.test(match) && MUSCLE_PART.test(match);
 }
 
 /**
@@ -565,6 +584,25 @@ function isPartList(text: string): boolean {
 /** "...mutta selkä on", "...but the knee does": the pain said once, for the part after "but". */
 const PAIN_ELLIPSIS = /(?:^|\s)(?:on|ovat|is|are|does|do|kyllä|yes|still|edelleen|too|myös)$/;
 
+/** A bare joint or the back listed after the scope before it: "reidet kipeät treenistä, polvikin". */
+function soreJoint(scope: PainScope): boolean {
+  return (scope.join === 'comma' || scope.join === 'and') && isBarePart(scope.text) && JOINT_PART.test(scope.text);
+}
+
+/**
+ * Whether a bare list item takes the pain of the scope it leads into. A
+ * soreness scope gives none to a muscle, but a joint or the back named in
+ * its list is sore itself: "Polvi ja jalat kipeät treenistä", "back and legs
+ * sore from training" lost the knee and the back with the legs' soreness
+ * (review, 2026-10-08).
+ */
+function leadsIntoPain(scope: PainScope, next: PainScope): boolean {
+  if (scope.soreness || (next.join !== 'comma' && next.join !== 'and') || !isBarePart(scope.text)) {
+    return false;
+  }
+  return next.painful || (next.soreness === true && JOINT_PART.test(scope.text));
+}
+
 /**
  * Which scopes of a sentence say something hurts. A pain word the scope
  * denies is none: "no shoulder pain", "ei polvikipuja", "no injuries". A bare
@@ -575,14 +613,12 @@ const PAIN_ELLIPSIS = /(?:^|\s)(?:on|ovat|is|are|does|do|kyllä|yes|still|edelle
 function markPain(scopes: PainScope[]): void {
   for (const [index, scope] of scopes.entries()) {
     const soreness = MUSCLE_SORENESS.test(scope.text) || soreFromTraining(scope.text);
-    const rest = scopes
-      .slice(index + 1)
-      .map((entry) => entry.text)
-      .join(' ');
+    const following = scopes[index + 1];
+    const nextClause = following && following.join === 'comma' ? following.text : null;
     const found = [
       ...(soreness ? [] : scope.text.matchAll(new RegExp(PAIN.source, 'gi'))),
       ...[...scope.text.matchAll(INJURY_NEAR_PART)].filter(
-        (match) => !injuryIsAsk(match[0], `${scope.text.slice((match.index ?? 0) + match[0].length)} ${rest}`),
+        (match) => !injuryIsAsk(match[0], scope.text.slice((match.index ?? 0) + match[0].length), nextClause),
       ),
     ];
     scope.soreness = soreness;
@@ -591,11 +627,8 @@ function markPain(scopes: PainScope[]): void {
   }
   for (let index = scopes.length - 2; index >= 0; index -= 1) {
     const next = scopes[index + 1];
-    // "Lihaskipua rinnassa, olkapää kipeä": the soreness is no list item of the shoulder's pain.
-    if (scopes[index].soreness) {
-      continue;
-    }
-    if (!scopes[index].painful && next.painful && (next.join === 'comma' || next.join === 'and') && isBarePart(scopes[index].text)) {
+    // "Lihaskipua rinnassa, olkapää kipeä": the soreness is no list item of the shoulder's pain (leadsIntoPain).
+    if (!scopes[index].painful && leadsIntoPain(scopes[index], next)) {
       scopes[index].painful = true;
     }
   }
@@ -606,6 +639,9 @@ function markPain(scopes: PainScope[]): void {
       continue;
     }
     if (previous.painful && (PAIN_CONTINUES.test(scope.text) || (scope.join === 'and' && isPartList(scope.text)))) {
+      scope.painful = true;
+    } else if (previous.soreness && soreJoint(scope)) {
+      // "Reidet kipeät treenistä, polvikin": the knee is sore too, and a sore joint hurts.
       scope.painful = true;
     } else if (
       scope.join === 'but' &&
@@ -762,6 +798,16 @@ function parseEquipment(brief: string): EquipmentReading | null {
 type EquipmentReading = AiPlannerEquipment | 'home';
 
 /**
+ * Gear that makes a home a barbell home gym: a bar, plates, a squat or power
+ * rack. Not a pull-up stand or a dumbbell rack: "kotona, minulla on
+ * leuanvetoteline" and "at home, I have a pull-up rack" lifted a stored
+ * bodyweight reader to barbell lifts (review, 2026-10-08). "Tanko" is a bar
+ * only as a word of its own — "leuanvetotanko" is the pull-up bar.
+ */
+const BARBELL_GEAR =
+  /(?:^|\s)(?:levytan[gk]\p{L}*|tan[gk]o\p{L}*|levypain\p{L}*|kyykkytelin\p{L}*|(?:kyykky|voima)räkk\p{L}*)|barbell|(?:squat|power|half)[\s-]+racks?(?![\p{L}])|(?:^|\s)plates(?![\p{L}])/gu;
+
+/**
  * The place as the planner's equipment answer. A place the brief negates is
  * no answer: "no gym access" was read as a full gym. Dumbbells with no bar or
  * gym beside them are the 'minimal' set, not a home gym — the intake's "Koti
@@ -790,7 +836,7 @@ function readEquipment(text: string): EquipmentReading | null {
   if (
     asksFor(lower, /käsipaino|dumbbell/g) &&
     !gym &&
-    !asksFor(lower, /(?:^|\s)(?:levy)?tan[gk]|barbell|rack|teline|kotisali|home gym/g)
+    !asksFor(lower, new RegExp(`${BARBELL_GEAR.source}|kotisali|home gym`, 'gu'))
   ) {
     return 'minimal';
   }
@@ -798,7 +844,7 @@ function readEquipment(text: string): EquipmentReading | null {
     return 'home_gym';
   }
   if (asksFor(lower, /kotona|home/g)) {
-    return asksFor(lower, /(?:^|\s)(?:levy)?tan[gk]|barbell|rack|teline/g) ? 'home_gym' : 'home';
+    return asksFor(lower, BARBELL_GEAR) ? 'home_gym' : 'home';
   }
   return gym ? 'full_gym' : null;
 }
@@ -1614,19 +1660,41 @@ const LEG_DAY_WHEN_LATER =
   /^(?:before|after|during|near|within|ennen|jälkeen|aikana|edeltävä\p{L}*|jälkeise\p{L}*|lähellä|\p{L}+päivänä|\p{L}*(?:maanantai|tiistai|keskiviikko|torstai|perjantai|lauantai|sunnuntai)\p{L}*)$/u;
 
 /**
+ * Words that make "no leg day" whole, so no time after them schedules it:
+ * "No leg day at all after my surgery", "ei jalkapäivää ollenkaan" (review,
+ * 2026-10-08).
+ */
+const LEG_DAY_EMPHATIC = new Set([
+  'ollenkaan', 'lainkaan', 'koskaan', 'ikinä', 'enää', 'kokonaan', 'ever', 'never', 'anymore', 'whatsoever', 'until', 'till', 'kunnes',
+]);
+
+/**
+ * A recovery after the time word: "after my surgery", "leikkauksen jälkeen",
+ * "before the knee heals". Not a game day but the reason there is none.
+ */
+const LEG_DAY_RECOVERY =
+  /^(?:surgery|surgeries|operation|injury|injuries|rehab\p{L}*|heal\p{L}*|recover\p{L}*|leikkau\p{L}*|leikat\p{L}*|vamma\p{L}*|loukkaantu\p{L}*|paran\p{L}*|toipu\p{L}*|kuntoutu\p{L}*)$/u;
+
+/**
  * The time qualifier after a leg day, up to a refusal: "ei jalkapäivää pelin
  * jälkeen" schedules it, "jalat pois ennen kisoja" still takes the legs out.
+ * An emphatic word ("at all", "ollenkaan"), "until" / "ennen kuin", or a
+ * recovery beside the time word ("after my surgery") refuses it whole.
  */
 function legDayScheduled(after: readonly string[]): boolean {
-  if (LEG_DAY_WHEN.test(after[0] ?? '')) {
-    return true;
-  }
-  for (const word of after.slice(0, 4)) {
-    if (TRAILING_REFUSAL_WORDS.has(word) || REFUSAL_WORDS.has(word)) {
+  const window = after.slice(0, 4);
+  for (const [at, word] of window.entries()) {
+    if (
+      TRAILING_REFUSAL_WORDS.has(word) ||
+      REFUSAL_WORDS.has(word) ||
+      LEG_DAY_EMPHATIC.has(word) ||
+      (word === 'at' && after[at + 1] === 'all')
+    ) {
       return false;
     }
-    if (LEG_DAY_WHEN_LATER.test(word)) {
-      return true;
+    if ((at === 0 && LEG_DAY_WHEN.test(word)) || LEG_DAY_WHEN_LATER.test(word)) {
+      const until = (word === 'ennen' || word === 'before') && (after[at + 1] === 'kuin' || after[at + 1] === 'than');
+      return !until && !after.slice(0, at + 4).some((entry) => LEG_DAY_RECOVERY.test(entry));
     }
   }
   return false;
@@ -1640,8 +1708,14 @@ function legDayScheduled(after: readonly string[]): boolean {
  */
 const PERSONAL_NEGATIVES = new Set(['en', 'ei', 'emme', 'ette', 'eivät', 'enkä', 'eikä']);
 
-/** A wish to start, later in the sentence: "…, haluan aloittaa", "…, want to start". */
-const START_WISH = /(?:^|\s)(?:aloittaa|aloitan|aloittaisin|aloittamaan|start|starting|begin|beginning)(?![\p{L}'])|haluan\s+nyt(?![\p{L}])/u;
+/**
+ * A wish to start, later in the sentence: "…, haluan aloittaa", "…, want to
+ * start (them now)". Only a wish to start itself: "Don't train legs, start
+ * with upper body", "älä treenaa jalkoja, aloitan juoksun" start something
+ * else, and read as a wish they kept every leg lift (review, 2026-10-08).
+ */
+const START_WISH =
+  /(?:^|\s)(?:(?:want|would\s+like|i'd\s+like)\s+to|wanna|haluan|haluaisin|haluun)\s+(?:(?:now|nyt)\s+)?(?:start|begin|aloittaa|alkaa)(?:\s+(?:now|nyt|them|ne|niitä|training\s+them|training\s+legs|legs|jalkoja|treenaamaan\s+jalkoja|jalkatreenit))?(?=\s*(?:$|[,.;:!?])|\s+(?:but|mutta|and|ja)\s)|(?:^|\s)haluan\s+nyt(?=\s*(?:$|[,.;:!?]))/u;
 
 /**
  * Whether the leg day at `index`..`end` is refused. Only a refusal that
@@ -1705,8 +1779,8 @@ function legDayGoverned(before: readonly string[], start: number, after: readonl
   }
   const order = governor === 'älä' || governor === 'älkää' || (at === 0 && !PERSONAL_NEGATIVES.has(governor));
   const habit = verbs.length > 0 && verbs.every((verb) => LEG_DAY_HABITS.has(verb) || verb === 'to');
-  if (habit && !want && NEGATORS.has(governor) && governor !== "won't" && START_WISH.test(later)) {
-    // "Never train legs, want to start" asks for them, order or not.
+  if (habit && !want && NEGATORS.has(governor) && governor !== "won't" && governor !== 'älä' && governor !== 'älkää' && START_WISH.test(later)) {
+    // "Never train legs, want to start" asks for them; "älä" is an order whatever follows.
     return false;
   }
   return !(habit && !want && NEGATORS.has(governor) && governor !== "won't" && !order);

@@ -542,6 +542,59 @@ const TABLE = [
   { brief: 'Lihaskipua rinnassa, olkapää kipeä', cautions: ['shoulder'], kept: ['bench press'] },
   { brief: 'Polvi kipeä treenistä', cautions: ['knee'] },
   { brief: 'Selkä kipeä eilisestä', cautions: ['back'] },
+
+  // Review of the re-hunt fixes (2026-10-08). A growth wish in the next
+  // clause is the reader's own, not the joint's: the joint stays a caution.
+  { brief: 'Polvi on ongelma, haluan kasvattaa jalkoja', cautions: ['knee'] },
+  { brief: 'Knee problems, want to build legs', cautions: ['knee'] },
+  { brief: 'Knee problems that developed after running', cautions: ['knee'] },
+  { brief: 'Shoulder trouble, want to grow my chest', cautions: ['shoulder'] },
+  { brief: 'Back problems, want more size', cautions: ['back'] },
+  { brief: 'Olkapää jumissa, haluan kehittää rintaa', cautions: ['shoulder'] },
+  { brief: 'Ongelmia polven kanssa, haluan kasvattaa reisiä', cautions: ['knee'] },
+  { brief: 'Selkä on ongelma, tavoite kasvattaa lihaksia', cautions: ['back'] },
+  { brief: 'Problems with my knee, building up slowly', cautions: ['knee'] },
+  { brief: 'Polvi on ongelma kun kasvatan jalkoja', cautions: ['knee'] },
+  { brief: 'Knee problems when building legs', cautions: ['knee'] },
+  // A muscle's injury keeps its caution beside a wish of its own, or a past "developed".
+  { brief: 'Pec issues, want to build my back', cautions: ['chest'] },
+  { brief: 'Pec issues that developed after benching', cautions: ['chest'] },
+  // A joint listed with a sore muscle group is sore itself; the muscles are not.
+  { brief: 'Polvi ja jalat kipeät treenistä', cautions: ['knee'] },
+  { brief: 'Selkä ja jalat kipeät eilisestä', cautions: ['back'] },
+  { brief: 'Olkapää ja rinta kipeät treenistä', cautions: ['shoulder'] },
+  { brief: 'Back and legs sore from training', cautions: ['back'] },
+  { brief: 'Knee and legs sore from yesterday', cautions: ['knee'] },
+  { brief: 'Shoulder and chest sore after training', cautions: ['shoulder'] },
+  { brief: 'Reidet kipeät treenistä, polvikin', cautions: ['knee'] },
+  { brief: 'Legs sore around the knee from yesterday', cautions: ['knee'] },
+  { brief: 'Reidet kipeät polven yläpuolelta treenistä', cautions: ['knee'] },
+  { brief: 'Jalat kipeät treenistä, polvi kunnossa', cautions: [], kept: ['lunge'] },
+  // An order stays an order when something else starts after it.
+  { brief: "Don't train legs, start with upper body", refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't train legs, I'll start running instead", refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä treenaa jalkoja, aloitan juoksun', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Never train legs, but I want to start now', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Älä treenaa jalkoja, haluan aloittaa', refused: LEG_WORK, noLegDay: true },
+  // A whole refusal, or a recovery, is no game-day schedule.
+  { brief: 'No leg day at all after my surgery', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ollenkaan ennen kuin polvi paranee', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day after my surgery', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää leikkauksen jälkeen', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day until my knee heals', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ollenkaan kauden aikana', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day at all during the season', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day ever during the season', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ennen kuin kausi loppuu', refused: LEG_WORK, noLegDay: true },
+  // A pull-up stand or a dumbbell rack is no barbell at home.
+  { brief: 'Kotona leuanvetotelineellä', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Treenaan kotona, minulla on leuanvetoteline', equipment: 'home_gym', placeOnly: true },
+  { brief: 'At home, I have a pull-up rack', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Kotona leuanvetotanko', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Kotona käsipainot ja leuanvetoteline', equipment: 'minimal', placeOnly: false },
+  { brief: 'Kotona, tanko ja levypainot', equipment: 'home_gym', placeOnly: false },
+  { brief: 'Kotona kyykkyteline', equipment: 'home_gym', placeOnly: false },
+  { brief: 'At home with a squat rack', equipment: 'home_gym', placeOnly: false },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -575,6 +628,7 @@ module.exports = [
         if ('requested' in row) check('requested', signals.requestedDaysPerWeek, row.requested);
         if ('noLegDay' in row) check('noLegDay', signals.noLegDay, row.noLegDay);
         if ('legsSpread' in row) check('legsSpread', signals.legsSpread, row.legsSpread);
+        if ('placeOnly' in row) check('placeOnly', signals.placeOnly, row.placeOnly);
       }
       assert.deepEqual(failures, []);
     },
@@ -1112,6 +1166,13 @@ module.exports = [
       assert.ok(!gearOf(atHome).includes('machine'), gearOf(atHome).join(', '));
       const homeGym = composeProgrammePreview('3 days a week, home gym', bodyweight, library);
       assert.ok(gearOf(homeGym).includes('barbell'), gearOf(homeGym).join(', '));
+      // A pull-up stand at home is no barbell gear (review, 2026-10-08).
+      for (const brief of ['4 päivää viikossa. Kotona, minulla on leuanvetoteline', '4 days a week. At home, I have a pull-up rack']) {
+        const gear = gearOf(composeProgrammePreview(brief, bodyweight, library));
+        assert.ok(!gear.some((value) => /barbell|machine|cable|dumbbell/i.test(value)), `${brief}: ${gear.join(', ')}`);
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), bodyweight);
+        assert.ok(!match || programFitsEquipment(match.programId, []), `${brief} → ${match?.programId}`);
+      }
     },
   },
   {
