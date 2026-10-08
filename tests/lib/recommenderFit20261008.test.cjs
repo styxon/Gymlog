@@ -8,7 +8,11 @@ const {
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
 const { buildRecommendationInput } = require(dist + 'lib/recommendationInput.js');
 const { selectWaterfallDecision } = require(dist + 'lib/recommendationWaterfall.js');
-const { getRecommendationProgramDefinition, RECOMMENDATION_PROGRAMS } = require(dist + 'lib/recommendationCatalog.js');
+const {
+  getRecommendationProgramDefinition,
+  isRecoveryOnlyProgram,
+  RECOMMENDATION_PROGRAMS,
+} = require(dist + 'lib/recommendationCatalog.js');
 const { lowerBodyOnlyAgainstFocus, trainsLowerBodyOnly } = require(dist + 'lib/recommendationWeekFit.js');
 const { classifySessionFocus } = require(dist + 'lib/homeSessionHero.js');
 const { t } = require(dist + 'lib/i18n.js');
@@ -183,6 +187,44 @@ module.exports = [
         buildRecommendationInput(selection({ goal: 'strength', level: 'beginner', daysPerWeek: 2 })),
       );
       assert.equal(twoDay.alternativeProgramId, 'tpl_2_day_minimal_full_body_v1');
+    },
+  },
+  {
+    name: 'recommender fit: no second card is a week of stretching for a reader who did not ask for recovery',
+    run() {
+      const GOALS = ['general', 'general_fitness', 'strength', 'muscle', 'lean_athletic'];
+      for (const gearName of Object.keys(GEARS)) {
+        for (const gender of ['female', 'male', 'unspecified']) {
+          for (const goal of GOALS) {
+            for (const level of ['beginner', 'intermediate', 'advanced']) {
+              for (const days of [2, 3, 4, 5, 6]) {
+                const sel = selection({ gear: GEARS[gearName], gender, goal, level, daysPerWeek: days });
+                const result = featured(sel);
+                const label = `${gearName} ${gender} ${goal} ${level} ${days}d`;
+                const primary = getRecommendationProgramDefinition(result.featuredProgramId);
+                if (isRecoveryOnlyProgram(primary)) {
+                  continue;
+                }
+                for (const id of result.alternativeProgramIds) {
+                  assert.equal(isRecoveryOnlyProgram(getRecommendationProgramDefinition(id)), false, `${label}: ${id}`);
+                }
+              }
+            }
+          }
+        }
+      }
+      // The gym beginner at general fitness keeps two real cards at 4-5 days.
+      for (const goal of ['general', 'general_fitness']) {
+        for (const days of [4, 5]) {
+          const result = featured(selection({ gender: 'male', goal, level: 'beginner', daysPerWeek: days }));
+          assert.ok(result.alternativeProgramIds.length >= 1, `${goal} ${days}d`);
+        }
+      }
+      // Asking for mobility still gets it.
+      const asked = featured(selection({ gender: 'male', goal: 'general', level: 'beginner', daysPerWeek: 5, secondaryOutcomes: ['mobility'] }));
+      assert.ok(
+        [asked.featuredProgramId, ...asked.alternativeProgramIds].some((id) => isRecoveryOnlyProgram(getRecommendationProgramDefinition(id))),
+      );
     },
   },
 ];

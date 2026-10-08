@@ -5,7 +5,12 @@ const path = require('node:path');
 const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
 const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
 const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
-const { getRecommendationProgramDefinition, RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
+const {
+  getRecommendationProgramDefinition,
+  isRecoveryOnlyProgram,
+  readerAskedForRecovery,
+  RECOMMENDATION_PROGRAMS,
+} = require('../../.test-dist/lib/recommendationCatalog.js');
 const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
 const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { applyCautionFlagsToExercises, CAUTION_TO_FOCUS_AREAS } = require('../../.test-dist/lib/cautionExerciseFilter.js');
@@ -167,9 +172,14 @@ module.exports = [
       for (const { selection, result, label } of answerGrid()) {
         const { level, goal, daysPerWeek } = selection;
         const shown = new Set([result.featuredProgramId, result.secondaryProgramId, ...result.alternativeProgramIds]);
+        // A week of stretching is not left to offer to a reader who did not ask
+        // for one (recommender fit, 2026-10-08).
+        const recoveryOffered =
+          readerAskedForRecovery(buildRecommendationInput(selection)) || isRecoveryOnlyProgram(definition(result.featuredProgramId));
         const servingLeft = result.scoredCandidates.some(
           (candidate) =>
             !shown.has(candidate.programId)
+            && (recoveryOffered || !isRecoveryOnlyProgram(definition(candidate.programId)))
             && definition(candidate.programId).supportedLevels.includes(level)
             && definition(candidate.programId).daysPerWeek === daysPerWeek
             && goalTier(candidate.programId, goal) > 0,
