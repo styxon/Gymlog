@@ -198,8 +198,18 @@ export function sessionNameAfterRunStandIn(name: string, kind: RunStandInKind): 
   return name.replace(/\bRun\b/g, kind === 'ride' ? 'Ride' : 'Walk');
 }
 
-/** The lifts a day can be named for. Each has a Finnish word in sessionNameLabel. */
-const TITLE_LIFTS = ['squat', 'deadlift', 'bench'] as const;
+/**
+ * The lifts a day can be named for, each with the exercises that still make
+ * the word true: a leg press or a lunge keeps "Squat" honest, a pulldown keeps
+ * "Row". Each has a Finnish word in sessionNameLabel.
+ */
+const TITLE_LIFTS: ReadonlyArray<{ word: string; honoured: RegExp }> = [
+  { word: 'squat', honoured: /squat|leg press|lunge|step-?up|hack/i },
+  { word: 'deadlift', honoured: /deadlift/i },
+  { word: 'bench', honoured: /bench|chest press|push-?up|dip/i },
+  { word: 'press', honoured: /press|push-?up|dip/i },
+  { word: 'row', honoured: /row|pulldown|pull-?up|chin-?up/i },
+];
 
 const hasWord = (text: string, word: string) => findPhrase(words(text), [word]) !== -1;
 
@@ -209,8 +219,9 @@ const hasWord = (text: string, word: string) => findPhrase(words(text), [word]) 
  * "Day 1: Squat & Bench" stayed that over Bench Press, a row and a crunch
  * when the knees were avoided, and a "Squat Day" held calf raises and
  * bridges (44 titles across the ready templates, persona hunt 2026-10-08).
- * Only a lift an avoid flag removed counts, and only when nothing left on
- * the day carries its word: a Box Squat swapped in keeps "Squat" honest.
+ * Only a day a flag took a lift from (removed, or swapped away) is renamed, and
+ * a title word goes only when nothing left on the day honours it: a Box Squat
+ * or a lunge swapped in keeps "Squat" honest.
  * The named part goes ("Squat & Bench" is "Bench"); a title with nothing
  * left is the day's focus, a name sessionNameLabel already translates.
  */
@@ -223,12 +234,14 @@ export function sessionNameAfterRemovedLifts(
   const prefixed = name.match(/^(.*?:\s+)?(.*)$/);
   const prefix = prefixed?.[1] ?? '';
   const focus = prefixed?.[2] ?? name;
-  const missing = TITLE_LIFTS.filter(
-    (word) =>
-      hasWord(focus, word) &&
-      removed.some((lift) => hasWord(lift, word)) &&
-      !remaining.some((lift) => hasWord(lift, word)),
-  );
+  // Only a day a flag took a lift from is touched; a title nothing on the day
+  // honours any more loses that word, whichever lift the flag took.
+  const missing =
+    removed.length === 0
+      ? []
+      : TITLE_LIFTS.filter(
+          ({ word, honoured }) => hasWord(focus, word) && !remaining.some((lift) => honoured.test(lift)),
+        ).map(({ word }) => word);
   if (missing.length === 0) {
     return name;
   }

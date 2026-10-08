@@ -362,6 +362,8 @@ export function buildFirstRunRecommendationReasons(
      * or leave runs unsaid where it has none.
      */
     programId?: string | null;
+    /** What the reader's caution flags changed in the week (buildCautionAdaptationLine). */
+    cautionLine?: string | null;
   },
   tailoringPreferences?: TailoringPreferencesInput | null,
 ) {
@@ -380,30 +382,51 @@ function buildLowEquipmentMismatchNote(
   featuredDays: number,
   language: AppLanguage,
 ) {
+  const selfDirected =
+    selection.guidanceMode === 'self_directed' ? t(language, 'mismatch.lowEquipment.selfDirected') : null;
+
   // "Lighter than your target" only when it is: the home programmes now run
   // four to six days, and the sentence used to follow any home pick
   // (bug hunt, 2026-10-04).
-  const base = t(
-    language,
-    featuredDays < selection.daysPerWeek ? 'mismatch.lowEquipment.lighter' : 'mismatch.lowEquipment.fits',
-  );
+  if (featuredDays < selection.daysPerWeek) {
+    const lighter = t(language, 'mismatch.lowEquipment.lighter');
+    return selfDirected ? `${lighter} ${selfDirected}` : lighter;
+  }
 
-  return selection.guidanceMode === 'self_directed'
-    ? `${base} ${t(language, 'mismatch.lowEquipment.selfDirected')}`
-    : base;
+  // The week meets the days asked for, so the only thing this note had left to
+  // say was "you picked lighter gear", under a line that already says the
+  // programme is built for it. Nothing is said instead (persona hunt,
+  // 2026-10-08).
+  return selfDirected;
 }
 
-function buildRecommendationMismatchNote(
+/**
+ * The note under the recommendation: why the pick is not an exact fit.
+ *
+ * `featuredDaysOverride` is the day count of the week the reader is shown, once
+ * it is composed. The note is first built from the catalog definition, and the
+ * composer fits the week to the days asked for, so a 4-day definition at 3 days
+ * asked read "keeps this start at 4 days" over a 3-day week, and a 3-day one at
+ * 4 days read "lighter than your target" over four days (persona hunt,
+ * 2026-10-08).
+ */
+export function buildRecommendationMismatchNote(
   selection: FirstRunSetupSelection,
   featuredProgramId: string,
   secondaryProgramId: string | null,
   tailoringPreferences?: TailoringPreferencesInput | null,
   language: AppLanguage = 'en',
+  featuredDaysOverride?: number | null,
 ) {
   const featuredDefinition = getRecommendationProgramDefinition(featuredProgramId);
-  const featuredDays = featuredDefinition?.daysPerWeek ?? getWorkoutTemplateById(featuredProgramId)?.daysPerWeek ?? selection.daysPerWeek;
+  const definitionDays = featuredDefinition?.daysPerWeek ?? getWorkoutTemplateById(featuredProgramId)?.daysPerWeek ?? selection.daysPerWeek;
+  const featuredDays =
+    typeof featuredDaysOverride === 'number' && featuredDaysOverride > 0 ? featuredDaysOverride : definitionDays;
 
-  if (selection.goal === 'run_mobility' && featuredProgramId === PROGRAM_IDS.runMobility && selection.daysPerWeek > featuredDays) {
+  // The run + mobility note is about the catalog programme's own three days
+  // and the optional extra, not about the composed week, so it keeps the
+  // definition's count.
+  if (selection.goal === 'run_mobility' && featuredProgramId === PROGRAM_IDS.runMobility && selection.daysPerWeek > definitionDays) {
     const secondaryName = secondaryProgramId ? getWorkoutTemplateById(secondaryProgramId)?.name ?? null : null;
     // "A run + mobility split" is not what a reader whose runs are walks or
     // rides was handed (bug hunt, 2026-10-07, #35).
@@ -431,7 +454,34 @@ function buildRecommendationMismatchNote(
     return t(language, 'mismatch.closestDays', { count: featuredDays });
   }
 
-  return buildTailoringRecommendationNote(tailoringPreferences, language);
+  return buildTailoringRecommendationNote(tailoringPreferences, language, {
+    includeEquipment: selection.equipment === 'gym',
+  });
+}
+
+/**
+ * The recommendation's note, restated for the week the reader is shown.
+ *
+ * With no composed week there is nothing to restate and the stored note stands.
+ */
+export function resolveMismatchNoteForWeek(
+  selection: FirstRunSetupSelection,
+  recommendation: { featuredProgramId: string; secondaryProgramId?: string | null; mismatchNote?: string | null },
+  composedDays: number | null | undefined,
+  tailoringPreferences?: TailoringPreferencesInput | null,
+  language: AppLanguage = 'en',
+) {
+  if (typeof composedDays !== 'number' || composedDays <= 0) {
+    return recommendation.mismatchNote ?? null;
+  }
+  return buildRecommendationMismatchNote(
+    selection,
+    recommendation.featuredProgramId,
+    recommendation.secondaryProgramId ?? null,
+    tailoringPreferences,
+    language,
+    composedDays,
+  );
 }
 
 export function resolveFirstRunRecommendationWithTailoring(
@@ -559,7 +609,10 @@ function buildFinnishProgramName(selection: FirstRunSetupSelection) {
     selection.goal === 'run_mobility'
       ? 'Juoksu ja liikkuvuus'
       : selection.goal === 'lean_athletic'
-        ? 'Kiinteä ja atleettinen'
+        ? // The one Finnish name for the goal, as the questionnaire card has it:
+          // the saved plan, Home and the reasons each had their own wording
+          // (persona hunt, 2026-10-08).
+          t('fi', 'setup.goal.leanAthletic')
         : selection.goal === 'muscle'
           ? 'Massa'
           : selection.goal === 'strength'

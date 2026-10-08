@@ -15,7 +15,7 @@ const {
   resolveFirstRunRecommendationWithTailoring,
 } = require('../../.test-dist/lib/firstRunSetup');
 const { buildRecommendationPlanReadyPayload } = require('../../.test-dist/lib/recommendationProgramme');
-const { readyProgramProjectedDays } = require('../../.test-dist/lib/programDetails');
+const { readyProgramWeek } = require('../../.test-dist/lib/programDetails');
 const { WORKOUT_TEMPLATES_V1: ALL_TEMPLATES } = require('../../.test-dist/features/workout/workoutCatalog');
 const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog');
 
@@ -318,15 +318,19 @@ module.exports = [
   {
     name: 'composer days: the Program page quotes the days the reader runs',
     run() {
-      const template = { daysPerWeek: 4 };
-      assert.equal(readyProgramProjectedDays(template, { days: 3 }), 3);
-      assert.equal(readyProgramProjectedDays(template, { days: 2 }), 2);
-      // Optional add-on days past the template's own are not gym days.
-      assert.equal(readyProgramProjectedDays(template, { days: 5 }), 4);
-      assert.equal(readyProgramProjectedDays(template, { days: 4 }), 4);
+      // The days the page quotes are the week it draws (readyProgramWeek, which
+      // the "Why it fits" line reads through readyProgramFit): fewer sessions
+      // than the catalog has, and the days a reader asked for beyond it, are
+      // both what the page shows.
+      const template = { daysPerWeek: 4, sessions: [] };
+      const week = (days) => ({ days, sessions: Array.from({ length: days }, (_, index) => ({ id: `d${index}` })) });
+      assert.equal(readyProgramWeek(template, week(3)).days, 3);
+      assert.equal(readyProgramWeek(template, week(2)).days, 2);
+      assert.equal(readyProgramWeek(template, week(5)).days, 5);
+      assert.equal(readyProgramWeek(template, week(4)).days, 4);
       // Not the reader's programme: the catalog's own count.
-      assert.equal(readyProgramProjectedDays(template, null), 4);
-      assert.equal(readyProgramProjectedDays(template, undefined), 4);
+      assert.equal(readyProgramWeek(template, null).days, 4);
+      assert.equal(readyProgramWeek(template, undefined).days, 4);
     },
   },
   {

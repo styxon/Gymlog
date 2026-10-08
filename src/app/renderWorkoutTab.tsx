@@ -2,7 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { buildFirstRunRecommendationReasons, FirstRunSetupSelection } from '../lib/firstRunSetup';
+import type { FirstRunSetupSelection } from '../lib/firstRunSetup';
+import { buildReadyProgramFitExplanation } from '../lib/readyProgramFit';
 import { restAlertsAnswered } from '../lib/restAlertAnswer';
 import { openRestAlertSettings } from '../utils/sessionNotifications';
 import { recordOwnBlock } from '../lib/ownBlockHistory';
@@ -17,8 +18,6 @@ import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
   buildReadyProgramDetail,
-  readyProgramProjectedDays,
-  readyProgramSessionMinutes,
   resolveReaderComposedWeek,
 } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
@@ -108,7 +107,7 @@ export interface WorkoutTabDeps {
   clearFreestyleDraft: NonNullable<React.ComponentProps<typeof EmptyWorkoutScreen>['onClearDraft']>;
   customWorkoutRuntimeMap: Record<string, Parameters<typeof buildCustomProgramDetail>[0] | undefined>;
   setupSelection: FirstRunSetupSelection | null;
-  setupRecommendation: { featuredProgramId?: string | null; mismatchNote?: string | null } | null;
+  setupRecommendation: { featuredProgramId?: string | null; secondaryProgramId?: string | null; mismatchNote?: string | null } | null;
   tailoringPreferences: Parameters<typeof buildTailoringBadgeLabels>[0];
   activeProgramTemplateIds: string[];
   onStopProgram: (workoutTemplateId: string) => Promise<void>;
@@ -409,17 +408,18 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
       overrides: preferences.routineDrillOverrides,
       cautionFlags: preferences.setupCautionFlags,
     };
+    // Every number in it is from the week this page draws (readyProgramFit).
     const readyProgramFitExplanation =
-      readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
-        ? buildFirstRunRecommendationReasons(setupSelection, {
-            projectedDaysPerWeek: readyProgramProjectedDays(readyTemplate, readyComposedWeek),
-            // The page's own minutes, not the catalog's hand-written number:
-            // the badge said 35 and this line summed 50 (bug hunt, B14).
-            estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
-            mismatchNote: setupRecommendation.mismatchNote,
+      readyTemplate && setupSelection && setupRecommendation
+        ? buildReadyProgramFitExplanation({
+            selection: setupSelection,
+            recommendation: setupRecommendation,
+            template: readyTemplate,
+            composedWeek: readyComposedWeek,
+            minutesOptions: readyProgramMinutesOptions,
+            tailoringPreferences,
             language: preferences.appLanguage,
-            programId: readyTemplate.id,
-          }, tailoringPreferences).join(' ')
+          })
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);
     /*

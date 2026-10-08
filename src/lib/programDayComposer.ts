@@ -450,7 +450,12 @@ export function composeProgramWeekForSelection(
       equipmentSwapped.push(...equipped.swapped);
       liftsBeforeCaution.set(session.id, countDayLifts(equipped.exercises));
       cautionRemoved.push(...adjusted.removed);
-      removedBySession.set(session.id, adjusted.removed.map((entry) => entry.name));
+      // A lift a `careful` flag swapped away is as gone from the day as one an
+      // `avoid` flag removed: a Hip Thrust does not make it a Deadlift day.
+      removedBySession.set(session.id, [
+        ...adjusted.removed.map((entry) => entry.name),
+        ...adjusted.swapped.map((swap) => swap.from),
+      ]);
       cautionSwapped.push(...adjusted.swapped);
 
       // A run day whose runs became walks (or rides) is named for them.

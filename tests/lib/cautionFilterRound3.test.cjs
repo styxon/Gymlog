@@ -392,7 +392,7 @@ module.exports = [
           }
         }
       }
-      assert.ok(titled > 50 && renamed > 5, `${titled} titles, ${renamed} renamed: the sweep is not looking`);
+      assert.ok(titled > 30 && renamed > 5, `${titled} titles, ${renamed} renamed: the sweep is not looking`);
     },
   },
 

@@ -473,10 +473,12 @@ module.exports = [
       // catalog's hand-written number (renderWorkoutTab is not compiled here).
       const page = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderWorkoutTab.tsx'), 'utf8');
       assert.doesNotMatch(page, /estimatedSessionDuration: readyTemplate\.estimatedSessionDuration/);
-      assert.match(
-        page,
-        /estimatedSessionDuration: readyProgramSessionMinutes\(readyTemplate, readyComposedWeek, readyProgramMinutesOptions\)/,
-      );
+      // The explanation lives in readyProgramFit now (persona hunt, 2026-10-08):
+      // the page hands it the composed week and the page's minute options.
+      assert.match(page, /buildReadyProgramFitExplanation\(\{[\s\S]*?composedWeek: readyComposedWeek,\s*minutesOptions: readyProgramMinutesOptions,/);
+      const fit = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'readyProgramFit.ts'), 'utf8');
+      assert.doesNotMatch(fit, /estimatedSessionDuration: template\.estimatedSessionDuration/);
+      assert.match(fit, /estimatedSessionDuration: readyProgramSessionMinutes\(template, composed, input\.minutesOptions\)/);
       assert.match(page, /buildReadyProgramDetail\([\s\S]*?readyComposedWeek,[\s\S]*?readyProgramMinutesOptions,\s*\)/);
     },
   },
