@@ -874,6 +874,15 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Kun liike on tuttu, pidennä pitoa yli 20 sekunnin. Tavoittele lopulta 40–60 sekuntia.',
     'Toista suositeltu määrä sarjoja.',
   ],
+  // The cable pullover opens this row since 2026-10-08 (it used to open the
+  // dumbbell pullover, which is filed under the chest).
+  'Straight-Arm Pulldown': [
+    'Tartu leveällä, kämmenet alaspäin -otteella ylätaljan tankoon ja astu pari askelta taaksepäin.',
+    'Taivuta ylävartaloa lonkasta noin 30 astetta eteen, kädet suorina edessäsi ja kyynärpäät hieman koukussa. Jännitä leveät selkälihakset.',
+    'Pidä kädet suorina ja vedä tanko alas reisien viereen leveillä selkälihaksilla. Hengitä ulos.',
+    'Palaa hallitusti alkuasentoon ja hengitä sisään.',
+    'Toista ohjelman mukainen määrä toistoja.',
+  ],
   'Straight-Arm Dumbbell Pullover': [
     'Aseta käsipaino pystyyn tasaisen penkin päälle.',
     'Varmista, että paino pysyy tukevasti penkin päällä, ja asetu makuulle poikittain penkin yli niin, että vain lapaluut ovat penkillä. Lantio on penkin alapuolella, polvet koukussa ja jalkaterät tukevasti lattiassa. Myös pää jää penkin ulkopuolelle.',
@@ -1037,6 +1046,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Laskeudu suoraan alas koukistamalla etupolvea, kunnes takapolvi melkein koskettaa lattiaa. Pidä ylävartalo pystyssä ja etupolvi jalkaterän päällä.',
     'Työnnä etukantapäällä takaisin ylös.',
     'Tee kaikki toistot yhdellä jalalla ja vaihda sitten jalkaa.',
+  ],
+  'Reverse Lunge': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä. Pidä käsipainoa kummassakin kädessä vartalon sivuilla, jos ohjelmasi kirjaa painon; muuten pidä kädet lantiolla.',
+    'Astu toisella jalalla noin puoli metriä taakse ja laskeudu suoraan alas, kunnes takapolvi melkein koskettaa lattiaa. Pidä ylävartalo pystyssä ja etusääri lähes kohtisuorassa.',
+    'Työnnä etukantapäällä takaisin ylös.',
+    'Tee sama toisella jalalla.',
   ],
   'Stiff-Legged Dumbbell Deadlift': [
     'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',

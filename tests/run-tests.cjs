@@ -398,6 +398,7 @@ const suites = [
   ...require('./lib/briefProgrammeMatch.test.cjs'),
   ...require('./lib/briefMatchStoredProfile.test.cjs'),
   ...require('./lib/extraExerciseLibrary.test.cjs'),
+  ...require('./lib/catalogContent20261008.test.cjs'),
   ...require('./lib/sessionDrops.test.cjs'),
   ...require('./lib/programCapNotice.test.cjs'),
   ...require('./lib/exerciseBrowseFilter.test.cjs'),

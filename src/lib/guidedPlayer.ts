@@ -1142,7 +1142,7 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'rope pushdown': 'triceps pushdown - rope attachment',
   'cable triceps kickback': 'tricep dumbbell kickback',
   'reverse wrist curl': 'palms-down wrist curl over a bench',
-  'cable pullover': 'straight-arm dumbbell pullover',
+  'cable pullover': 'straight-arm pulldown',
   'cable pull-through': 'pull through',
   'dumbbell thruster': 'kettlebell thruster',
   'battle rope slam': 'battling ropes',
@@ -1156,7 +1156,9 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // which is a different movement AND filed under 'back' — so every leg day
   // running one picked up a pull vote.
   'reverse lunge': 'dumbbell rear lunge',
-  'bodyweight reverse lunge': 'dumbbell rear lunge',
+  // The app opens its own "Reverse Lunge" (extraExerciseLibrary), whose steps
+  // hold with or without dumbbells; the alias below is the generated list's.
+  'bodyweight reverse lunge': 'reverse lunge',
   'banded hip thrust': 'barbell hip thrust',
   'single-leg hip thrust': 'single leg glute bridge',
   // A band bridge is a floor bridge: the barbell bridge's steps start with a
