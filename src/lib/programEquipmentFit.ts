@@ -1,5 +1,5 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { applyEquipmentToExercises, GYM_ALWAYS_HAS } from './equipmentExerciseFilter';
+import { applyEquipmentToExercises, GYM_ALWAYS_HAS, swapKeepsTheLift } from './equipmentExerciseFilter';
 import { resolveProgramEquipment } from './programEquipment';
 
 /**
@@ -55,7 +55,7 @@ export function programFitsEquipment(programId: string, available: string[] | nu
     const adjusted = applyEquipmentToExercises(session.exercises, available);
     total += session.exercises.length;
     removed += adjusted.removed.length;
-    swapped += adjusted.swapped.length;
+    swapped += adjusted.swapped.filter((swap) => !swapKeepsTheLift(swap)).length;
     if (adjusted.removed.length > MAX_REMOVED_PER_SESSION) {
       fits = false;
     }
