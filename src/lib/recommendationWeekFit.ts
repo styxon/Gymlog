@@ -4,6 +4,7 @@ import { classifySessionFocus } from './homeSessionHero';
 import { emphasisAreaForExercise, type EmphasisArea } from './programEmphasis';
 import { applyReaderFiltersToDay } from './readerDayFilters';
 import type { RecommendationInput } from '../types/recommendation';
+import type { SetupFocusArea } from '../types/models';
 
 /**
  * What the recommender has to know about a programme's week, as the reader
@@ -68,6 +69,48 @@ export function splitsReaderWeek(
   return input.daysPerWeek <= SHORT_WEEK_DAYS
     && program.daysPerWeek > input.daysPerWeek
     && splitsShortWeek(program.programId, input.daysPerWeek);
+}
+
+const lowerBodyOnlyPrograms = new Map<string, boolean>();
+
+/**
+ * Whether this programme trains the lower body and nothing above the waist:
+ * lifts for the legs and hips, and not one set for the chest, back, shoulders
+ * or arms. Glute Foundations is the one such programme in the catalog.
+ */
+export function trainsLowerBodyOnly(programId: string): boolean {
+  const cached = lowerBodyOnlyPrograms.get(programId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const template = getWorkoutTemplateById(programId);
+  let lowerOnly = false;
+  if (template) {
+    const week = template.sessions.map((session) => halfSets(session.exercises));
+    lowerOnly = sumOf(week, 'upper') === 0 && sumOf(week, 'lower') >= MIN_HALF_SETS;
+  }
+  lowerBodyOnlyPrograms.set(programId, lowerOnly);
+  return lowerOnly;
+}
+
+/** The areas a reader names when they want their lower body trained. */
+const LOWER_BODY_FOCUS: readonly SetupFocusArea[] = ['glutes', 'legs', 'quads', 'hamstrings', 'calves'];
+
+/**
+ * Whether handing this programme over would give a reader who did not ask for
+ * the lower body a week with none of the rest in it. A woman wanting muscle or
+ * general fitness was featured Glute Foundations by the tie-break for her
+ * gender alone: three lower-body days and no chest, back or shoulders, where a
+ * man with the same answers got a full week (recommender fit, 2026-10-08).
+ * Picking glutes, legs, quads, hamstrings or calves keeps it.
+ */
+export function lowerBodyOnlyAgainstFocus(
+  programId: string,
+  input: Pick<RecommendationInput, 'focusAreas' | 'goal'>,
+): boolean {
+  return input.goal !== 'run_mobility'
+    && !input.focusAreas.some((area) => LOWER_BODY_FOCUS.includes(area))
+    && trainsLowerBodyOnly(programId);
 }
 
 type Half = 'upper' | 'lower';
