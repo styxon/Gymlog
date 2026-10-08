@@ -238,6 +238,36 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Strength days and conditioning days alternate, so the week mixes heavier work with faster circuits.',
   },
+  tpl_athletic_upper_lower_4_day_v1: {
+    summary:
+      'Four gym days a week: upper-body strength, lower-body strength, an upper-body day with intervals, and a lower-body power day. Bench press, row, squat and trap bar deadlift in sets of five to eight, and a conditioning finish on every day.',
+    audience:
+      'Experienced lifters who want strength and conditioning in the same week on four gym days, without a bodybuilding split.',
+    equipmentProfile:
+      'A well-equipped gym: barbell, squat rack and bench, trap bar, dumbbells, cables, a pull-up bar, a box, a sled, a kettlebell, a medicine ball and an air bike or exercise bike.',
+    whyItWorks:
+      'The heavy lifts come first, while you are fresh, and the conditioning comes last on the same day. The upper body pulls on more sets than it presses, and the only heavy hinge is on the last day of the week.',
+  },
+  tpl_athletic_performance_5_day_v1: {
+    summary:
+      'Five gym days a week: upper-body strength, lower-body strength, upper-body hypertrophy, a power and conditioning day, and a heavy hinge day with intervals. Squat, bench press, row, trap bar deadlift, box jumps and sled pushes.',
+    audience:
+      'Experienced lifters who train five days a week and want strength, power and conditioning together. On six days, the app adds one light day.',
+    equipmentProfile:
+      'A well-equipped gym: barbell, squat rack and bench, trap bar, dumbbells, cables, a pull-up bar, a box, a sled, a medicine ball, an air bike and a treadmill.',
+    whyItWorks:
+      'Strength, size, power and conditioning each have their own day. Upper and lower days alternate, the upper body pulls on more sets than it presses, and the only heavy hinge is on the last day, so the day after it is an upper-body day.',
+  },
+  tpl_home_dumbbell_athletic_5_day_v1: {
+    summary:
+      'Five days a week at home with a pair of dumbbells: upper-body strength, lower-body strength, upper-body hypertrophy, a power and conditioning day, and a lower-body day with a short engine finish. Incline press, rows, goblet squat, stiff-legged deadlift, thrusters and jump squats.',
+    audience:
+      'Experienced trainees with dumbbells at home who want strength, power and conditioning on five days a week. On six days, the app adds one light day.',
+    equipmentProfile:
+      'A pair of dumbbells, ideally adjustable, and a bench or a sturdy chair. No barbell and no machines.',
+    whyItWorks:
+      'Upper and lower days alternate, the upper body rows on more sets than it presses, and jumps and burpees add the conditioning without any gear beyond the dumbbells.',
+  },
   tpl_home_bodyweight_strength_3_day_v1: {
     summary:
       'Three full-body days a week with no equipment: hard push-up and split-squat variations at low reps, rows under a table and single-leg hinges.',

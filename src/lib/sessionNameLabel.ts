@@ -100,6 +100,19 @@ const FOCUS_FI: Record<string, string> = {
   'upper body sculpt': 'Ylävartalon muotoilu',
   'upper body strength': 'Ylävartalon voima',
   'upper body toning': 'Ylävartalon kiinteytys',
+  // The three lean and athletic weeks (2026-10-08). Whole phrases: the "+" in
+  // them joins a day's focus to what closes it, and the decomposition would
+  // pair each half with the wrong Finnish connective.
+  'upper strength + finisher': 'Ylävartalon voima + kuntoloppu',
+  'lower strength + finisher': 'Alavartalon voima + kuntoloppu',
+  'upper athletic + intervals': 'Urheilullinen ylävartalo + intervallit',
+  'lower power + conditioning': 'Alavartalon teho + kunto',
+  'upper hypertrophy': 'Ylävartalon lihaskasvu',
+  'lower strength (squat)': 'Alavartalon voima (kyykky)',
+  'power + engine': 'Teho + kestävyys',
+  'lower hinge + conditioning': 'Alavartalo, maastaveto + kunto',
+  'power + conditioning': 'Teho + kunto',
+  'lower + engine': 'Alavartalo + kestävyys',
   'upper pull + hiit': 'Ylävartalon veto + HIIT',
   'upper push + hiit': 'Ylävartalon työntö + HIIT',
   'workout a': 'Treeni A',

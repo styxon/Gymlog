@@ -87,6 +87,9 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
     label: 'Balanced weekly rhythm',
     templateIds: [
       'tpl_home_athletic_5_day_v1',
+      'tpl_home_dumbbell_athletic_5_day_v1',
+      'tpl_athletic_upper_lower_4_day_v1',
+      'tpl_athletic_performance_5_day_v1',
       'tpl_2_day_minimal_full_body_v1',
       'tpl_2_day_mobility_reset_v1',
       'tpl_2_day_yoga_recovery_v1',

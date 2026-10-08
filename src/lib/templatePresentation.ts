@@ -349,6 +349,18 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'Home Athletic',
     tagKeys: ['prog.tag.home', 'prog.tag.athletic'],
   },
+  tpl_athletic_upper_lower_4_day_v1: {
+    title: 'Athletic Upper/Lower',
+    tagKeys: ['prog.tag.athletic', 'prog.tag.upperLower'],
+  },
+  tpl_athletic_performance_5_day_v1: {
+    title: 'Athletic Performance',
+    tagKeys: ['prog.tag.athletic', 'prog.tag.conditioning'],
+  },
+  tpl_home_dumbbell_athletic_5_day_v1: {
+    title: 'Home Dumbbell Athletic',
+    tagKeys: ['prog.tag.home', 'prog.tag.athletic'],
+  },
   tpl_home_bodyweight_strength_3_day_v1: {
     title: 'Bodyweight Strength',
     tagKeys: ['prog.tag.home', 'prog.tag.strength'],

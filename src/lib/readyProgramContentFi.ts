@@ -221,6 +221,36 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Voima- ja kuntopäivät vuorottelevat, joten viikossa on sekä raskaampaa työtä että nopeampia kiertoja.',
   },
+  tpl_athletic_upper_lower_4_day_v1: {
+    summary:
+      'Neljä salipäivää viikossa: yläkehon voima, alakehon voima, yläkehopäivä intervalleilla ja alakehon tehopäivä. Penkkiprässi, soutu, kyykky ja trap bar -maastaveto viidestä kahdeksaan toiston sarjoina sekä kuntoloppu joka päivälle.',
+    audience:
+      'Kokeneille treenaajille, jotka haluavat voimaa ja kuntoa samalle viikolle neljällä salipäivällä ilman kehonrakennussplittiä.',
+    equipmentProfile:
+      'Hyvin varustettu sali: levytanko, kyykkyteline ja penkki, trap bar, käsipainot, taljat, leuanvetotanko, hyppylaatikko, kelkka, kahvakuula, kuntopallo sekä ilmapyörä tai kuntopyörä.',
+    whyItWorks:
+      'Raskaat liikkeet tulevat ensin, kun olet tuore, ja kuntoloppu samalle päivälle viimeiseksi. Yläkehossa vedetään useampi sarja kuin työnnetään, ja ainoa raskas maastaveto on viikon viimeisenä päivänä.',
+  },
+  tpl_athletic_performance_5_day_v1: {
+    summary:
+      'Viisi salipäivää viikossa: yläkehon voima, alakehon voima, yläkehon lihaskasvu, teho- ja kuntopäivä sekä raskas maastavetopäivä intervalleilla. Kyykky, penkkiprässi, soutu, trap bar -maastaveto, laatikkohypyt ja kelkantyöntö.',
+    audience:
+      'Kokeneille treenaajille, jotka treenaavat viitenä päivänä viikossa ja haluavat voimaa, tehoa ja kuntoa yhdessä. Kuudella päivällä sovellus lisää yhden kevyen päivän.',
+    equipmentProfile:
+      'Hyvin varustettu sali: levytanko, kyykkyteline ja penkki, trap bar, käsipainot, taljat, leuanvetotanko, hyppylaatikko, kelkka, kuntopallo, ilmapyörä ja juoksumatto.',
+    whyItWorks:
+      'Voimalla, koolla, teholla ja kunnolla on kullakin oma päivänsä. Ylä- ja alavartalopäivät vuorottelevat, yläkehossa vedetään useampi sarja kuin työnnetään, ja ainoa raskas maastaveto on viimeisenä päivänä, joten sen jälkeinen päivä on yläkehopäivä.',
+  },
+  tpl_home_dumbbell_athletic_5_day_v1: {
+    summary:
+      'Viisi päivää viikossa kotona käsipainoparilla: yläkehon voima, alakehon voima, yläkehon lihaskasvu, teho- ja kuntopäivä sekä alavartalopäivä lyhyellä kuntoloppulla. Vinopenkkipunnerrus, soutu, goblet-kyykky, suorin jaloin tehty maastaveto, thrusterit ja kyykkyhypyt.',
+    audience:
+      'Kokeneille treenaajille, joilla on käsipainot kotona ja jotka haluavat voimaa, tehoa ja kuntoa viitenä päivänä viikossa. Kuudella päivällä sovellus lisää yhden kevyen päivän.',
+    equipmentProfile:
+      'Käsipainopari, mieluiten säädettävä, sekä penkki tai tukeva tuoli. Ei tankoa eikä koneita.',
+    whyItWorks:
+      'Ylä- ja alavartalopäivät vuorottelevat, yläkehossa soudetaan useampi sarja kuin punnerretaan, ja hypyt ja burpeet tuovat kunnon ilman muita välineitä kuin käsipainot.',
+  },
   tpl_home_bodyweight_strength_3_day_v1: {
     summary:
       'Kolme koko kehon päivää viikossa ilman välineitä: vaikeita punnerrus- ja askelkyykkyversioita pienillä toistoilla, soutua pöydän alla ja yhden jalan liikkeitä.',
