@@ -11,6 +11,7 @@ const { buildProgramIntakeBrief } = require('../../.test-dist/lib/programIntake.
 const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { programFitsEquipment } = require('../../.test-dist/lib/programEquipmentFit.js');
 const { displayEquipmentValue } = require('../../.test-dist/lib/libraryLabel.js');
+const { localizeSessionName } = require('../../.test-dist/lib/sessionNameLabel.js');
 const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
 const { createSeedDatabase, createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
 
@@ -383,7 +384,6 @@ const TABLE = [
   { brief: 'En halua jalkapäivää', focus: [], refused: LEG_WORK },
   { brief: "I don't want to train legs", focus: [], refused: LEG_WORK },
   { brief: 'Without any leg work', focus: [], refused: LEG_WORK },
-  { brief: 'No dedicated leg day', focus: [], refused: LEG_WORK },
   { brief: 'Ei jalkoja', focus: [], refused: LEG_WORK },
   { brief: 'I hate leg day', focus: [], refused: LEG_WORK },
   // Saying a lift cannot be done yet, or done well, and wanting it better asks for it.
@@ -480,6 +480,121 @@ const TABLE = [
   { brief: '3 kertaa 1,5h viikossa', days: 3 },
   { brief: '3 times 45 min a week', days: 3 },
   { brief: 'Stronglifts 5 times 5, 1 hour', days: null, requested: null },
+
+  // Re-hunt of #340 (2026-10-08). A leg day of its own refused is no leg
+  // work refused: the legs go into the other days (owner, 2026-10-08).
+  { brief: 'Full body 3 days, no separate leg day', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'No dedicated leg day, legs in every session. 3 days a week', kept: LEG_WORK, noLegDay: false, legsSpread: true, days: 3 },
+  { brief: 'Ei erillistä jalkapäivää, jalat joka treenissä', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'No dedicated leg day', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'Ei omaa jalkapäivää', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'En halua erillistä jalkapäivää', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'Legs in every session', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  { brief: 'Jalkoja jokaisessa treenissä', kept: LEG_WORK, noLegDay: false, legsSpread: true },
+  // …while a plain refusal of the leg work still keeps it out.
+  { brief: 'No leg day', refused: LEG_WORK, noLegDay: true, legsSpread: false },
+  { brief: 'Skip legs', refused: LEG_WORK, noLegDay: true, legsSpread: false },
+  { brief: 'Ei jalkoja', refused: LEG_WORK, noLegDay: true, legsSpread: false },
+  { brief: 'No leg day, legs in every session', refused: LEG_WORK, noLegDay: true, legsSpread: false },
+  // "En" is no order: never trained legs and wanting to start asks for them.
+  { brief: 'En treenaa jalkoja, haluan aloittaa', kept: LEG_WORK, noLegDay: false },
+  { brief: 'En treenaa jalkoja', kept: LEG_WORK, noLegDay: false },
+  { brief: 'En treenaa jalkoja koskaan', kept: LEG_WORK, noLegDay: false },
+  { brief: 'En treenaa jalkoja koskaan mutta haluan nyt', kept: LEG_WORK, noLegDay: false },
+  { brief: "I don't train legs, want to start", kept: LEG_WORK, noLegDay: false },
+  { brief: 'Never train legs, want to start', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Älä treenaa jalkoja', refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't train legs", refused: LEG_WORK, noLegDay: true },
+  // A time after the leg day's noun is scheduling, not a refusal.
+  { brief: 'Ei jalkapäivää pelin jälkeen', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Ei jalkapäivää ottelua ennen', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Ei jalkapäivää futistreenien jälkeen', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Pelaan jalkapalloa, ei jalkapäivää pelin jälkeen', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Ei jalkapäivää pelipäivänä', kept: LEG_WORK, noLegDay: false },
+  { brief: 'No leg day the day before games', kept: LEG_WORK, noLegDay: false },
+  { brief: 'No leg day right before a match', kept: LEG_WORK, noLegDay: false },
+  { brief: 'No leg day near game day', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Jalat pois', refused: LEG_WORK, noLegDay: true },
+  // Growth and a muscle as "the problem" are an ask, not an injury.
+  { brief: 'Ongelmana rinnan kasvu', cautions: [], focus: ['chest'], kept: ['bench press', 'dips', 'fly'] },
+  { brief: 'Ongelmana on rinta joka ei kasva', cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Problems with chest growth', cautions: [], focus: ['chest'], kept: ['bench press'] },
+  { brief: 'Trouble with building my back', cautions: [], focus: ['back'], kept: ['deadlift', 'bent over'] },
+  { brief: 'Kädet on ongelma', cautions: [], focus: ['arms'] },
+  { brief: 'Hauis jumissa, ei kasva', cautions: [], focus: ['arms'] },
+  { brief: 'Knee problems', cautions: ['knee'] },
+  { brief: 'Ongelmia polven kanssa', cautions: ['knee'] },
+  { brief: 'Olkapää jumissa', cautions: ['shoulder'] },
+  { brief: 'Selkä on ongelma', cautions: ['back'] },
+  // A session length as a range is no reps count either.
+  { brief: '3 kertaa 45-60 min viikossa', days: 3 },
+  { brief: '3 times 45-60 min', days: 3 },
+  { brief: '4 krt 60-75 min', days: 4 },
+  { brief: '3 times 60 to 90 minutes', days: 3 },
+  { brief: '4 times 1-hour sessions a week', days: 4 },
+  { brief: '3 times 1 hr a week', days: 3 },
+  { brief: 'Kyykky 5 kertaa 5, 45-60 min', days: null, requested: null },
+  // Muscles sore from training are no injury, and their soreness takes no
+  // neighbour's pain.
+  { brief: 'Jalat kipeät treenistä', cautions: [], kept: ['lunge'] },
+  { brief: 'Jalat on kipeät eilisestä', cautions: [], kept: ['lunge'] },
+  { brief: 'Legs sore from yesterday', cautions: [], kept: ['lunge'] },
+  { brief: 'Lihaskipua rinnassa, olkapää kipeä', cautions: ['shoulder'], kept: ['bench press'] },
+  { brief: 'Polvi kipeä treenistä', cautions: ['knee'] },
+  { brief: 'Selkä kipeä eilisestä', cautions: ['back'] },
+
+  // Review of the re-hunt fixes (2026-10-08). A growth wish in the next
+  // clause is the reader's own, not the joint's: the joint stays a caution.
+  { brief: 'Polvi on ongelma, haluan kasvattaa jalkoja', cautions: ['knee'] },
+  { brief: 'Knee problems, want to build legs', cautions: ['knee'] },
+  { brief: 'Knee problems that developed after running', cautions: ['knee'] },
+  { brief: 'Shoulder trouble, want to grow my chest', cautions: ['shoulder'] },
+  { brief: 'Back problems, want more size', cautions: ['back'] },
+  { brief: 'Olkapää jumissa, haluan kehittää rintaa', cautions: ['shoulder'] },
+  { brief: 'Ongelmia polven kanssa, haluan kasvattaa reisiä', cautions: ['knee'] },
+  { brief: 'Selkä on ongelma, tavoite kasvattaa lihaksia', cautions: ['back'] },
+  { brief: 'Problems with my knee, building up slowly', cautions: ['knee'] },
+  { brief: 'Polvi on ongelma kun kasvatan jalkoja', cautions: ['knee'] },
+  { brief: 'Knee problems when building legs', cautions: ['knee'] },
+  // A muscle's injury keeps its caution beside a wish of its own, or a past "developed".
+  { brief: 'Pec issues, want to build my back', cautions: ['chest'] },
+  { brief: 'Pec issues that developed after benching', cautions: ['chest'] },
+  // A joint listed with a sore muscle group is sore itself; the muscles are not.
+  { brief: 'Polvi ja jalat kipeät treenistä', cautions: ['knee'] },
+  { brief: 'Selkä ja jalat kipeät eilisestä', cautions: ['back'] },
+  { brief: 'Olkapää ja rinta kipeät treenistä', cautions: ['shoulder'] },
+  { brief: 'Back and legs sore from training', cautions: ['back'] },
+  { brief: 'Knee and legs sore from yesterday', cautions: ['knee'] },
+  { brief: 'Shoulder and chest sore after training', cautions: ['shoulder'] },
+  { brief: 'Reidet kipeät treenistä, polvikin', cautions: ['knee'] },
+  { brief: 'Legs sore around the knee from yesterday', cautions: ['knee'] },
+  { brief: 'Reidet kipeät polven yläpuolelta treenistä', cautions: ['knee'] },
+  { brief: 'Jalat kipeät treenistä, polvi kunnossa', cautions: [], kept: ['lunge'] },
+  // An order stays an order when something else starts after it.
+  { brief: "Don't train legs, start with upper body", refused: LEG_WORK, noLegDay: true },
+  { brief: "Don't train legs, I'll start running instead", refused: LEG_WORK, noLegDay: true },
+  { brief: 'Älä treenaa jalkoja, aloitan juoksun', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Never train legs, but I want to start now', kept: LEG_WORK, noLegDay: false },
+  { brief: 'Älä treenaa jalkoja, haluan aloittaa', refused: LEG_WORK, noLegDay: true },
+  // A whole refusal, or a recovery, is no game-day schedule.
+  { brief: 'No leg day at all after my surgery', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ollenkaan ennen kuin polvi paranee', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day after my surgery', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää leikkauksen jälkeen', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day until my knee heals', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ollenkaan kauden aikana', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day at all during the season', refused: LEG_WORK, noLegDay: true },
+  { brief: 'No leg day ever during the season', refused: LEG_WORK, noLegDay: true },
+  { brief: 'Ei jalkapäivää ennen kuin kausi loppuu', refused: LEG_WORK, noLegDay: true },
+  // A pull-up stand or a dumbbell rack is no barbell at home.
+  { brief: 'Kotona leuanvetotelineellä', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Treenaan kotona, minulla on leuanvetoteline', equipment: 'home_gym', placeOnly: true },
+  { brief: 'At home, I have a pull-up rack', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Kotona leuanvetotanko', equipment: 'home_gym', placeOnly: true },
+  { brief: 'Kotona käsipainot ja leuanvetoteline', equipment: 'minimal', placeOnly: false },
+  { brief: 'Kotona, tanko ja levypainot', equipment: 'home_gym', placeOnly: false },
+  { brief: 'Kotona kyykkyteline', equipment: 'home_gym', placeOnly: false },
+  { brief: 'At home with a squat rack', equipment: 'home_gym', placeOnly: false },
 ];
 
 /** Whether the lift named by a canonical avoid term is kept out. */
@@ -512,6 +627,8 @@ module.exports = [
         if ('days' in row) check('days', signals.daysPerWeek, row.days);
         if ('requested' in row) check('requested', signals.requestedDaysPerWeek, row.requested);
         if ('noLegDay' in row) check('noLegDay', signals.noLegDay, row.noLegDay);
+        if ('legsSpread' in row) check('legsSpread', signals.legsSpread, row.legsSpread);
+        if ('placeOnly' in row) check('placeOnly', signals.placeOnly, row.placeOnly);
       }
       assert.deepEqual(failures, []);
     },
@@ -937,6 +1054,174 @@ module.exports = [
         assert.equal(shouldOfferCatalogInstead(signals), false, brief);
       }
       assert.equal(parseProgrammeBrief('5 times a week').requestedDaysPerWeek, 5);
+    },
+  },
+  {
+    // Re-hunt of #340 (2026-10-08): "no separate leg day" built three upper days.
+    name: 'brief negation: no separate leg day spreads the leg work over full-body days, at every day count and gear',
+    run() {
+      const LEG_LIFT = /squat|deadlift|lunge|leg press|hip thrust|glute bridge/i;
+      const offenders = [];
+      for (const ask of ['No separate leg day.', 'Ei erillistä jalkapäivää, jalat joka treenissä.', 'Legs in every session.']) {
+        for (const days of [1, 2, 3, 4]) {
+          for (const goal of ['muscle', 'strength', 'fat loss', 'fitness']) {
+            for (const gear of ['', ' Bodyweight only.', ' Paikka: kotona, käsipainot.']) {
+              const brief = `${ask} Goal: ${goal}. ${days} days a week.${gear}`;
+              const proposal = composeProgrammePreview(brief, preferences, library);
+              if (proposal.sessions.length !== days) {
+                offenders.push(`${brief}: ${proposal.sessions.length} sessions`);
+              }
+              for (const session of proposal.sessions) {
+                if (/legs|lower/i.test(session.name)) {
+                  offenders.push(`${brief}: a session named ${session.name}`);
+                }
+                if (/full|body/i.test(localizeSessionName(session.name, 'fi'))) {
+                  offenders.push(`${brief}: ${session.name} reads "${localizeSessionName(session.name, 'fi')}" in Finnish`);
+                }
+                if (!session.exercises.some((exercise) => LEG_LIFT.test(exercise.name))) {
+                  offenders.push(`${brief}: ${session.name} has no leg lift (${session.exercises.map((exercise) => exercise.name).join(', ')})`);
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} offenders`);
+      // The intake brief with the reader's own line keeps its squat and deadlift.
+      const intake = 'Tavoite: lihasmassa. 3 päivää viikossa, 60 min treeni. Paikka: sali. Kokemus: 1–3 vuotta. Ei erillistä jalkapäivää, jalat joka treenissä.';
+      const names = weekNames(composeProgrammePreview(intake, preferences, library));
+      assert.ok(names.some((name) => /squat/i.test(name)) && names.some((name) => /deadlift/i.test(name)), names.join(', '));
+      // A six-day ask opens no programme with a leg day of its own.
+      for (const brief of ['6 days a week, muscle, no separate leg day', '5 päivää viikossa, lihasmassa, ei erillistä jalkapäivää']) {
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), { ...preferences, setupLevel: 'pro' });
+        const sessions = match ? getWorkoutTemplateById(match.programId).sessions.map((session) => session.name) : [];
+        assert.ok(!sessions.some((name) => /^(?:day \d+:\s*)?(?:legs|lower)\b/i.test(name)), `${brief} → ${match?.programId}: ${sessions.join(' / ')}`);
+      }
+    },
+  },
+  {
+    // Re-hunt of #340 (2026-10-08): the leg briefs that keep their legs compose them.
+    name: 'brief negation: a leg day scheduled round games, or a wish to start legs, keeps the leg lifts in the week',
+    run() {
+      const intake = 'Tavoite: voima. 3 päivää viikossa, 60 min treeni. Paikka: sali. Kokemus: 1–3 vuotta. ';
+      for (const line of ['Pelaan jalkapalloa, ei jalkapäivää pelin jälkeen.', 'En treenaa jalkoja, haluan aloittaa.', 'No leg day the day before games.']) {
+        const proposal = composeProgrammePreview(intake + line, preferences, library);
+        assert.equal(proposal.signals.noLegDay, false, line);
+        const names = weekNames(proposal);
+        assert.ok(names.some((name) => /squat/i.test(name)), `${line}: ${names.join(', ')}`);
+      }
+    },
+  },
+  {
+    // Re-hunt of #340 (2026-10-08): chest growth and leg soreness put cautions on the week.
+    name: 'brief negation: a growth remark keeps the bench and training soreness keeps the lunges',
+    run() {
+      const intake = 'Tavoite: lihasmassa. 3 päivää viikossa, 60 min treeni. Paikka: sali. Kokemus: 1–3 vuotta. ';
+      const chest = composeProgrammePreview(`${intake}Ongelmana rinnan kasvu.`, preferences, library);
+      assert.deepEqual(chest.signals.cautions, []);
+      assert.ok(weekNames(chest).some((name) => /^Barbell Bench Press/.test(name)), weekNames(chest).join(', '));
+      const legs = composeProgrammePreview(`${intake}Jalat kipeät treenistä.`, preferences, library);
+      assert.deepEqual(legs.signals.cautions, []);
+      assert.ok(weekNames(legs).some((name) => /lunge/i.test(name)), weekNames(legs).join(', '));
+    },
+  },
+  {
+    /**
+     * Re-hunt of #340 (2026-10-08): a coach's "kotona" read as a home gym, so
+     * a stored bodyweight-only reader got a dumbbell programme and a week of
+     * barbell lifts. The stored gear is the ceiling unless the brief names gear.
+     */
+    name: 'brief negation: "at home" never lifts a stored bodyweight or dumbbell reader to barbell gear',
+    run() {
+      const byId = new Map(library.map((item) => [item.id, item]));
+      const gearOf = (proposal) =>
+        [...new Set(proposal.sessions.flatMap((session) => session.exercises.map((exercise) => displayEquipmentValue(byId.get(exercise.libraryItemId)))))];
+      const bodyweight = {
+        ...preferences,
+        setupEquipment: 'minimal',
+        setupTrainingEnvironment: 'bodyweight_only',
+        setupEquipmentItems: [],
+        setupLevel: 'advanced',
+        setupGoal: 'muscle',
+      };
+      const dumbbells = { ...preferences, setupEquipment: 'minimal', setupTrainingEnvironment: 'minimal_equipment', setupLevel: 'advanced', setupGoal: 'muscle' };
+      for (const brief of ['6 päivää viikossa kotona', '6 days a week at home']) {
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), bodyweight);
+        assert.ok(match && programFitsEquipment(match.programId, []), `${brief} → ${match?.programId}`);
+        const dumbbellMatch = matchProgrammeToBrief(parseProgrammeBrief(brief), dumbbells);
+        assert.ok(!dumbbellMatch || programFitsEquipment(dumbbellMatch.programId, ['Dumbbells', 'Resistance bands']), `${brief} → ${dumbbellMatch?.programId}`);
+      }
+      for (const brief of ['4 days a week at home, chest focus', '4 päivää viikossa kotona']) {
+        assert.deepEqual(gearOf(composeProgrammePreview(brief, bodyweight, library)), ['bodyweight'], brief);
+        const gear = gearOf(composeProgrammePreview(brief, dumbbells, library));
+        assert.ok(!gear.some((value) => /barbell|machine|cable/i.test(value)), `${brief}: ${gear.join(', ')}`);
+      }
+      // A stored gym reader at home moves to the home tier, and named gear still counts.
+      assert.equal(parseProgrammeBrief('3 päivää viikossa kotona').placeOnly, true);
+      assert.equal(parseProgrammeBrief('Kotisali, 3 päivää').placeOnly, false);
+      assert.equal(parseProgrammeBrief('At home with a barbell and a rack').placeOnly, false);
+      assert.equal(parseProgrammeBrief('At home with a barbell and a rack').equipment, 'home_gym');
+      const gymReader = { ...preferences, setupEquipment: 'gym', setupTrainingEnvironment: 'full_gym', aiPlannerEquipment: null };
+      const atHome = composeProgrammePreview('3 days a week at home', gymReader, library);
+      assert.ok(!gearOf(atHome).includes('machine'), gearOf(atHome).join(', '));
+      const homeGym = composeProgrammePreview('3 days a week, home gym', bodyweight, library);
+      assert.ok(gearOf(homeGym).includes('barbell'), gearOf(homeGym).join(', '));
+      // A pull-up stand at home is no barbell gear (review, 2026-10-08).
+      for (const brief of ['4 päivää viikossa. Kotona, minulla on leuanvetoteline', '4 days a week. At home, I have a pull-up rack']) {
+        const gear = gearOf(composeProgrammePreview(brief, bodyweight, library));
+        assert.ok(!gear.some((value) => /barbell|machine|cable|dumbbell/i.test(value)), `${brief}: ${gear.join(', ')}`);
+        const match = matchProgrammeToBrief(parseProgrammeBrief(brief), bodyweight);
+        assert.ok(!match || programFitsEquipment(match.programId, []), `${brief} → ${match?.programId}`);
+      }
+    },
+  },
+  {
+    /**
+     * Re-hunt of #340 (2026-10-08): with no goal in the brief, the catalog
+     * shortcut ignored the stored one, and a muscle reader was opened into
+     * the mobility flow or a strength split.
+     */
+    name: 'brief negation: a goal-less brief opens only a programme that serves the stored goal',
+    run() {
+      const STORED = {
+        strength: ['strength'],
+        muscle: ['muscle'],
+        general: ['general', 'general_fitness'],
+        general_fitness: ['general_fitness', 'general'],
+        lean_athletic: ['lean_athletic'],
+        run_mobility: ['run_mobility'],
+      };
+      const environments = [
+        ['gym', 'full_gym'],
+        ['home', 'home_gym'],
+        ['minimal', 'minimal_equipment'],
+        ['minimal', 'bodyweight_only'],
+      ];
+      const offenders = [];
+      let matched = 0;
+      for (const setupGoal of Object.keys(STORED)) {
+        for (const [setupEquipment, setupTrainingEnvironment] of environments) {
+          for (const setupLevel of ['beginner', 'advanced', 'pro']) {
+            for (const brief of ['5 päivää viikossa, painotus rinta, pakarat ja vatsa', '5 päivää viikossa', '6 days a week']) {
+              const stored = { ...preferences, setupGoal, setupEquipment, setupTrainingEnvironment, setupLevel, aiPlannerGoal: null };
+              const match = matchProgrammeToBrief(parseProgrammeBrief(brief), stored);
+              if (!match) continue;
+              matched += 1;
+              const definition = RECOMMENDATION_PROGRAMS.find((entry) => entry.programId === match.programId);
+              const goals = [...definition.supportedGoals, ...definition.backupGoals];
+              if (!STORED[setupGoal].some((goal) => goals.includes(goal))) {
+                offenders.push(`${setupGoal}/${setupTrainingEnvironment}/${setupLevel} "${brief}" → ${match.programId} [${goals.join(', ')}]`);
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(offenders.slice(0, 10), [], `${offenders.length} offenders`);
+      assert.ok(matched > 20, `${matched} matches`);
+      // The brief's own goal still wins over the stored one.
+      const strength = matchProgrammeToBrief(parseProgrammeBrief('5 days a week, strength'), { ...preferences, setupGoal: 'muscle', setupLevel: 'pro' });
+      const definition = RECOMMENDATION_PROGRAMS.find((entry) => entry.programId === strength?.programId);
+      assert.ok(definition && [...definition.supportedGoals, ...definition.backupGoals].includes('strength'), strength?.programId);
     },
   },
 ];

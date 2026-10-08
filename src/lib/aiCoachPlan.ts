@@ -562,6 +562,72 @@ function buildNoLegDayBlueprints(goal: ReturnType<typeof mapSetupGoalToAiGoal>, 
   }
 }
 
+/**
+ * The week for a brief that refused only a leg day of its own ("no separate
+ * leg day", "jalat joka treenissä"): full-body days with leg work in each.
+ * The legs are spread over the week, not dropped (owner, 2026-10-08). Each
+ * leg slot ends on a bodyweight lift, so a reader with no gear gets a squat
+ * or a lunge rather than whatever the legs fallback finds first.
+ */
+function buildLegsSpreadBlueprints(daysPerWeek: number): SessionBlueprint[] {
+  const core: SlotBlueprint = { key: 'core', variant: 'accessory', search: ['cable crunch', 'ab crunch machine', 'crunch'], bodyParts: ['core'] };
+  const days: SessionBlueprint[] = [
+    {
+      key: 'full_body_a',
+      name: 'Full Body A',
+      focus: 'Squat, press, and row.',
+      slots: [
+        { key: 'warmup_lower', variant: 'warmup', name: 'Warm-up flow' },
+        { key: 'squat', variant: 'primary', search: ['back squat', 'barbell full squat', 'goblet squat', 'leg press', 'bodyweight squat'], bodyParts: ['legs'] },
+        { key: 'bench', variant: 'primary', search: ['barbell bench press', 'dumbbell bench press', 'push-up'], bodyParts: ['chest'] },
+        { key: 'row', variant: 'secondary', search: ['bent over barbell row', 'seated cable row', 'dumbbell row'], bodyParts: ['back'] },
+        { key: 'focus', variant: 'accessory', search: ['lateral raise', 'cable seated lateral raise'], bodyParts: ['shoulders'] },
+        core,
+      ],
+    },
+    {
+      key: 'full_body_b',
+      name: 'Full Body B',
+      focus: 'Hinge, vertical press, and pull.',
+      slots: [
+        { key: 'warmup_upper', variant: 'warmup', name: 'Warm-up flow' },
+        { key: 'hinge', variant: 'primary', search: ['romanian deadlift', 'deadlift', 'hip thrust', 'glute bridge'], bodyParts: ['legs', 'glutes', 'back'] },
+        { key: 'press', variant: 'primary', search: ['barbell shoulder press', 'dumbbell shoulder press', 'arnold press'], bodyParts: ['shoulders'] },
+        { key: 'pull', variant: 'secondary', search: ['lat pulldown', 'pull-up', 'chin-up'], bodyParts: ['back'] },
+        { key: 'arms', variant: 'accessory', search: ['triceps pushdown', 'hammer curls', 'barbell curl'], bodyParts: ['triceps', 'biceps'] },
+        core,
+      ],
+    },
+    {
+      key: 'full_body_c',
+      name: 'Full Body C',
+      focus: 'Single-leg work and chest/back top-up.',
+      slots: [
+        { key: 'warmup_lower', variant: 'warmup', name: 'Warm-up flow' },
+        { key: 'single_leg', variant: 'primary', search: ['walking lunge', 'split squat', 'bulgarian split squat'], bodyParts: ['legs', 'glutes'] },
+        { key: 'incline', variant: 'primary', search: ['barbell incline bench press', 'incline dumbbell bench press', 'decline push-up'], bodyParts: ['chest'] },
+        { key: 'row', variant: 'secondary', search: ['seated cable row', 'bent over barbell row', 'dumbbell row'], bodyParts: ['back'] },
+        { key: 'arms', variant: 'accessory', search: ['barbell curl', 'hammer curls', 'triceps pushdown'], bodyParts: ['biceps', 'triceps'] },
+        core,
+      ],
+    },
+    {
+      key: 'full_body_d',
+      name: 'Full Body D',
+      focus: 'Quads, glutes, and upper-body volume.',
+      slots: [
+        { key: 'warmup_lower', variant: 'warmup', name: 'Warm-up flow' },
+        { key: 'quad', variant: 'primary', search: ['front squat', 'goblet squat', 'cossack squat'], bodyParts: ['legs'] },
+        { key: 'chest', variant: 'primary', search: ['dumbbell bench press', 'cable chest press', 'push-up'], bodyParts: ['chest'] },
+        { key: 'chin', variant: 'secondary', search: ['chin-up', 'pull-up', 'lat pulldown'], bodyParts: ['back'] },
+        { key: 'glutes', variant: 'secondary', search: ['hip thrust', 'glute bridge'], bodyParts: ['glutes', 'legs'] },
+        core,
+      ],
+    },
+  ];
+  return days.slice(0, Math.max(1, Math.min(days.length, daysPerWeek)));
+}
+
 function getWarmupExercise(sessionName: string): AICoachPlannedExercise {
   const lower = sessionName.toLowerCase().includes('lower') || sessionName.toLowerCase().includes('leg') || sessionName.toLowerCase().includes('strength');
   return {
@@ -933,9 +999,14 @@ function appendUnplacedMustIncludes(args: {
   }
 }
 
-/** What the brief says beyond the stored preferences: a refused leg day (buildNoLegDayBlueprints). */
+/**
+ * What the brief says beyond the stored preferences: a refused leg day
+ * (buildNoLegDayBlueprints), or one refused only as a day of its own
+ * (buildLegsSpreadBlueprints).
+ */
 export interface AiCoachPlanOptions {
   noLegDay?: boolean;
+  legsSpread?: boolean;
 }
 
 export function buildAiCoachPlanSchema(
@@ -956,7 +1027,11 @@ export function buildAiCoachPlanSchema(
   const usedMustIncludeTerms = new Set<string>();
   const usedIds = new Set<string>();
   const focusBodyPart = getFocusBodyPart(preferences);
-  const blueprints = options.noLegDay ? buildNoLegDayBlueprints(goal, daysPerWeek) : buildSessionBlueprints(goal, daysPerWeek);
+  const blueprints = options.noLegDay
+    ? buildNoLegDayBlueprints(goal, daysPerWeek)
+    : options.legsSpread
+      ? buildLegsSpreadBlueprints(daysPerWeek)
+      : buildSessionBlueprints(goal, daysPerWeek);
   const maxExercises = sessionMinutes <= 45 ? 5 : sessionMinutes >= 75 ? 7 : 6;
 
   const sessions: AICoachPlannedSession[] = blueprints.map((blueprint, sessionIndex) => {
