@@ -114,18 +114,27 @@ module.exports = [
      * rows once multiplied out to 195,800 phrases there: 420 ms in Node and
      * eight seconds on the phone, a cold start of 9.4 s (#bugs, 2026-10-08).
      *
-     * The slowest module today takes about 30 ms of its own here. A failure
+     * The slowest module today takes 30–60 ms of its own here, the spread
+     * being a garbage collection that lands on whichever module is loading,
+     * so each module counts at its fastest of three fresh loads. A failure
      * means a module does work when it loads: build it on first use, or
      * without the multiplication.
      */
     name: 'startup budget: no module does heavy work when it loads',
     run() {
       const root = path.resolve(__dirname, '../../.test-dist');
-      const result = spawnSync(process.execPath, ['-e', MODULE_SELF_TIMES, root], { encoding: 'utf8' });
-      assert.equal(result.status, 0, result.stderr);
-      const times = result.stdout.trim().split('\n').map((line) => JSON.parse(line));
-      assert.ok(times.length > 100, `only ${times.length} modules loaded`);
-      for (const { file, ms } of times) {
+      const fastest = new Map();
+      for (let load = 0; load < 3; load += 1) {
+        // A module that leaves a timer running at load would keep the child
+        // alive; the timeout fails the suite instead of hanging it.
+        const result = spawnSync(process.execPath, ['-e', MODULE_SELF_TIMES, root], { encoding: 'utf8', timeout: 60_000 });
+        assert.equal(result.status, 0, result.error ? `module load child: ${result.error.message}` : result.stderr);
+        for (const { file, ms } of result.stdout.trim().split('\n').map((line) => JSON.parse(line))) {
+          fastest.set(file, Math.min(fastest.get(file) ?? Infinity, ms));
+        }
+      }
+      assert.ok(fastest.size > 100, `only ${fastest.size} modules loaded`);
+      for (const [file, ms] of fastest) {
         assertWithin(`loading ${file}`, ms, 150);
       }
     },

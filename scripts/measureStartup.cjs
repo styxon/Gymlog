@@ -81,8 +81,13 @@ if (devices.length === 0) {
   console.error('No device connected (adb devices lists none). Connect the phone and allow USB debugging.');
   process.exit(2);
 }
-if (devices.length > 1 && !serial) {
-  console.error(`Several devices connected; pass --serial. ${devices.map((line) => line.split('\t')[0]).join(', ')}`);
+const serials = devices.map((line) => line.split('\t')[0]);
+if (serial && !serials.includes(serial)) {
+  console.error(`Device ${serial} is not connected. Connected: ${serials.join(', ')}`);
+  process.exit(2);
+}
+if (serials.length > 1 && !serial) {
+  console.error(`Several devices connected; pass --serial. ${serials.join(', ')}`);
   process.exit(2);
 }
 
@@ -96,19 +101,23 @@ if (!version) {
 console.log(`${PACKAGE} ${version}, installed ${updated}`);
 
 /**
- * One cold start's TotalTime, or null. Now and then Android reports a start
- * as `LaunchState: UNKNOWN` with no TotalTime (seen twice on 2026-10-08, once
- * in three runs), so a run is tried up to three times before it counts as
- * failed.
+ * One cold start's TotalTime, or null. Only a start Android calls COLD
+ * counts: a force-stop that did not take leaves a warm start, whose few
+ * hundred milliseconds would pass any budget. Now and then Android reports a
+ * start as `LaunchState: UNKNOWN` with no TotalTime (seen twice on
+ * 2026-10-08, once in three runs), so a run is tried up to three times before
+ * it counts as failed.
  */
 function coldStart() {
   for (let attempt = 1; attempt <= 3; attempt += 1) {
-    adb('shell', 'am', 'force-stop', PACKAGE);
+    const stop = adb('shell', 'am', 'force-stop', PACKAGE);
     pause(2500);
     const { out } = adb('shell', 'am', 'start', '-W', '-n', ACTIVITY);
+    const state = out.match(/LaunchState:\s*(\w+)/)?.[1] ?? 'none';
     const total = Number(out.match(/TotalTime:\s*(\d+)/)?.[1]);
-    if (Number.isFinite(total)) return total;
-    console.log(`  (no TotalTime reported, ${attempt < 3 ? 'retrying' : 'giving up'})`);
+    if (stop.status === 0 && state === 'COLD' && Number.isFinite(total)) return total;
+    const why = stop.status !== 0 ? `force-stop failed: ${stop.out.trim()}` : `LaunchState ${state}`;
+    console.log(`  (not a cold start, ${why}; ${attempt < 3 ? 'retrying' : 'giving up'})`);
     pause(3000);
   }
   return null;
@@ -118,7 +127,7 @@ const times = [];
 for (let run = 1; run <= runs; run += 1) {
   const total = coldStart();
   if (total === null) {
-    console.error(`Run ${run}: Android reported no TotalTime in three tries.`);
+    console.error(`Run ${run}: no cold start in three tries.`);
     process.exit(2);
   }
   times.push(total);

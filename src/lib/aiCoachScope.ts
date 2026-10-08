@@ -988,21 +988,31 @@ interface CrisisRow {
   slots: readonly (readonly (readonly string[])[])[];
   /** The words a phrase of the row can start with. */
   firsts: ReadonlySet<string>;
+  /** Each option `glued`: the phrases of two words or more typed as one, "killmyself", "iwanttodie". */
+  gluedSlots: readonly (readonly string[])[];
+  /** The letters a phrase of the row typed as one word can start with. */
+  gluedFirsts: ReadonlySet<string>;
   unless: readonly (readonly string[])[];
   inTheGym: CrisisGymReading | null;
   then: readonly (readonly string[])[];
 }
 
-/** The words a way through `slots` can start with: each slot's, up to the first that cannot be left out. */
-function firstWordsOf(slots: CrisisRow['slots']): Set<string> {
-  const firsts = new Set<string>();
+/** A word with its hyphens and apostrophes out: "self-harm" and "selfharm", "don't" and "dont". */
+const glued = (word: string) => word.replace(/['-]/g, '');
+
+/**
+ * What a way through `slots` can start with: the start of each slot's
+ * options, up to the first slot that cannot be left out.
+ */
+function startsOf<T extends { length: number }>(slots: readonly (readonly T[])[], start: (option: T) => string): Set<string> {
+  const starts = new Set<string>();
   for (const slot of slots) {
     for (const option of slot) {
-      if (option.length > 0) firsts.add(option[0]);
+      if (option.length > 0) starts.add(start(option));
     }
     if (!slot.some((option) => option.length === 0)) break;
   }
-  return firsts;
+  return starts;
 }
 
 const CRISIS_ROWS: readonly CrisisRow[] = CRISIS_PATTERNS.map((pattern) => {
@@ -1015,14 +1025,20 @@ const CRISIS_ROWS: readonly CrisisRow[] = CRISIS_PATTERNS.map((pattern) => {
   );
   const then = thenInSentence.map((option) => words(folded(option)));
   const slots = rawSlots.map((slot) => slot.map((option) => words(option).map(folded)));
-  return { slots, firsts: firstWordsOf(slots), unless, inTheGym, then };
+  const gluedSlots = slots.map((slot) => slot.map((option) => glued(option.join(''))));
+  return {
+    slots,
+    firsts: startsOf(slots, (option) => option[0]),
+    gluedSlots,
+    gluedFirsts: startsOf(gluedSlots, (option) => option[0]),
+    unless,
+    inTheGym,
+    then,
+  };
 });
 
 /** Every word a crisis phrase can start with. */
 const FIRST_WORDS: ReadonlySet<string> = new Set(CRISIS_ROWS.flatMap((row) => [...row.firsts]));
-
-/** A word with its hyphens and apostrophes out: "self-harm" and "selfharm", "don't" and "dont". */
-const glued = (word: string) => word.replace(/['-]/g, '');
 
 /** Runs of one repeated letter as one letter: "diiiie" and "die" both "die", "wannnna" and "wanna" both "wana". */
 const squeezed = (word: string) => word.replace(/(\p{L})\1+/gu, '$1');
@@ -1145,16 +1161,12 @@ function firstReadings(token: CrisisWord): Map<string, number> {
 }
 
 /**
- * Each row's slots glued (`glued`): the phrases of two words or more typed as
- * one, "killmyself", "kill-myself", "iwanttodie" (A6 hunt, 2026-10-07).
+ * Whether `typed` is a phrase of `row` of two words or more, typed without
+ * its spaces: "killmyself", "kill-myself", "iwanttodie" (A6 hunt, 2026-10-07).
  */
-const GLUED_SLOTS: ReadonlyMap<CrisisRow, readonly (readonly string[])[]> = new Map(
-  CRISIS_ROWS.map((row) => [row, row.slots.map((slot) => slot.map((option) => glued(option.join(''))))]),
-);
-
-/** Whether `typed` is a phrase of `row` of two words or more, typed without its spaces. */
 function rowGluedAs(row: CrisisRow, typed: string): boolean {
-  const slots = GLUED_SLOTS.get(row) ?? [];
+  const slots = row.gluedSlots;
+  if (!row.gluedFirsts.has(typed[0])) return false;
   const walk = (slot: number, from: number, length: number): boolean => {
     if (slot === slots.length) return from === typed.length && length > 1;
     return slots[slot].some(
@@ -1318,7 +1330,8 @@ function saysCrisis(text: string): boolean {
   const tokens = crisisTokens(text);
   return tokens.some((token, at) => {
     const firsts = firstReadings(token);
-    const startsHere = (row: CrisisRow) => [...firsts.keys()].some((first) => row.firsts.has(first));
+    const firstWords = [...firsts.keys()];
+    const startsHere = (row: CrisisRow) => firstWords.some((first) => row.firsts.has(first));
     if (firsts.size > 0 && CRISIS_ROWS.some((row) => startsHere(row) && rowSaysAt(tokens, at, row, firsts))) {
       return true;
     }
