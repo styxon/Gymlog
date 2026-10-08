@@ -120,6 +120,21 @@ export interface WorkoutTemplateExercise {
    * the swap on record. Absent on every template the programme itself wrote.
    */
   sourceExerciseName?: string;
+  /** With `sourceExerciseName`: the slot as the programme wrote it (ProgrammedDose). */
+  programmedDose?: ProgrammedDose;
+}
+
+/**
+ * The mode and numbers the programme writes for a slot, kept once a swap has
+ * converted them into another lift's unit. Picking the programme's lift back
+ * restores them; without them it opened on the programmes' median for that
+ * lift — Back Squat 3×8 through a plank came back at 7 (final hunt,
+ * 2026-10-08).
+ */
+export interface ProgrammedDose {
+  trackingMode: WorkoutTrackingMode;
+  repsMin: number;
+  repsMax: number;
 }
 
 export interface WorkoutTemplateSession {
@@ -308,6 +323,12 @@ export interface WorkoutExerciseInstance {
   libraryItemId?: string | null;
   sessionInserted?: boolean;
   sourceExerciseName?: string;
+  /**
+   * The programme's dose for this slot, recorded at its first swap (or carried
+   * from Home's held swap). Absent before any swap, and on sessions from older
+   * builds — a swap back then takes the one swap rule.
+   */
+  programmedDose?: ProgrammedDose;
   notes?: string;
   isExpanded: boolean;
 }

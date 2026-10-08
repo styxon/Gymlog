@@ -27,7 +27,7 @@ import {
 } from '../../lib/progressionGate';
 import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap } from '../../lib/catalogExercisePools';
-import { doseAfterSwap } from '../../lib/swapDose';
+import { doseAfterSwap, isSameLiftName } from '../../lib/swapDose';
 import {
   liftBeforeSwap,
   liftOfSet,
@@ -734,6 +734,7 @@ function materializeExercise(
     // made in the player — otherwise the save could not tell the lift that
     // was done from the one the programme wrote here.
     ...(exercise.sourceExerciseName ? { sourceExerciseName: exercise.sourceExerciseName } : {}),
+    ...(exercise.sourceExerciseName && exercise.programmedDose ? { programmedDose: { ...exercise.programmedDose } } : {}),
     orderIndex,
     sets,
     status: 'pending',
@@ -2105,6 +2106,15 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           set.loggedAs = liftBeforeSwap(exercise, set) ?? currentLiftOf(exercise);
         }
       });
+      // The first swap off the programme's lift: its sets still hold the
+      // programme's numbers, and the swap below converts them away.
+      if (!exercise.sourceExerciseName && exercise.sets.length > 0) {
+        exercise.programmedDose = {
+          trackingMode: exercise.trackingMode,
+          repsMin: exercise.sets[0]?.plannedRepsMin ?? 0,
+          repsMax: exercise.sets[0]?.plannedRepsMax ?? 0,
+        };
+      }
       exercise.sourceExerciseName = exercise.sourceExerciseName ?? exercise.exerciseName;
       exercise.exerciseName = action.payload.exerciseName;
       // The bout that was on the clock is not the lift that replaces it.
@@ -2114,17 +2124,22 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // And the sets still ahead ask for numbers in its unit: seconds of a
       // hold are not repetitions of a hip thrust. One rule with Home's swaps
       // and "For ever" (lib/swapDose), so the same pick opens on the same dose
-      // wherever it was made.
+      // wherever it was made. Except the programme's own lift picked back:
+      // that is the slot as written, as on Home (withSessionSwap), not a
+      // conversion of the numbers the last swap converted away.
       const pendingSets = exercise.sets.filter((set) => set.status === 'pending');
-      const dose = doseAfterSwap(
-        {
-          trackingMode: exercise.trackingMode,
-          sets: pendingSets.length,
-          repsMin: pendingSets[0]?.plannedRepsMin ?? 0,
-          repsMax: pendingSets[0]?.plannedRepsMax ?? 0,
-        },
-        action.payload.exerciseName,
-      );
+      const dose =
+        exercise.programmedDose && isSameLiftName(action.payload.exerciseName, exercise.sourceExerciseName)
+          ? exercise.programmedDose
+          : doseAfterSwap(
+              {
+                trackingMode: exercise.trackingMode,
+                sets: pendingSets.length,
+                repsMin: pendingSets[0]?.plannedRepsMin ?? 0,
+                repsMax: pendingSets[0]?.plannedRepsMax ?? 0,
+              },
+              action.payload.exerciseName,
+            );
       exercise.trackingMode = dose.trackingMode;
       pendingSets.forEach((set) => {
         set.plannedRepsMin = dose.repsMin;

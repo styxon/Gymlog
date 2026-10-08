@@ -579,6 +579,7 @@ const suites = [
   ...require('./features/workout/minutesClockKept.test.cjs'),
   ...require('./features/workout/minutesClockSessionTime.test.cjs'),
   ...require('./features/workout/workoutLifecycleInvariant2.test.cjs'),
+  ...require('./features/workout/swapBackRestoresDose.test.cjs'),
   ...require('./storage/storageLoadInvariant2.test.cjs'),
   ...require('./storage/minutesLegacyPlausible.test.cjs'),
   ...require('./storage/holdSecondsForOldStretches.test.cjs'),
