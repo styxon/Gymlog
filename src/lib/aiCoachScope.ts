@@ -975,24 +975,38 @@ const CRISIS_FILLERS = foldedSet([
 
 const words = (option: string) => (option ? option.split(' ') : []);
 
-/** Every way through a row of slots, as word lists. */
-function expand(slots: CrisisSlots): string[][] {
-  return slots.reduce<string[][]>(
-    (phrases, slot) => phrases.flatMap((phrase) => slot.map((option) => [...phrase, ...words(option)])),
-    [[]],
-  );
-}
-
-interface CrisisPhrase {
-  phrase: readonly string[];
+/**
+ * A pattern as it is read: each slot's options as word lists, folded the way
+ * the readings are (`folded`), and what settles a phrase of it.
+ *
+ * The slots are walked against what was typed, never multiplied out. Every
+ * way through them was once a phrase of its own, built when the module
+ * loaded: the K1 rows made that 195,800 phrases, and Hermes took eight
+ * seconds over them on every cold start, coach opened or not (2026-10-08).
+ */
+interface CrisisRow {
+  slots: readonly (readonly (readonly string[])[])[];
+  /** The words a phrase of the row can start with. */
+  firsts: ReadonlySet<string>;
   unless: readonly (readonly string[])[];
   inTheGym: CrisisGymReading | null;
   then: readonly (readonly string[])[];
 }
 
-/** Every phrase, folded the way the readings are (`folded`). */
-const CRISIS_PHRASES: readonly CrisisPhrase[] = CRISIS_PATTERNS.flatMap((pattern) => {
-  const { slots, unlessFollowedBy = [], inTheGym = null, thenInSentence = [] } =
+/** The words a way through `slots` can start with: each slot's, up to the first that cannot be left out. */
+function firstWordsOf(slots: CrisisRow['slots']): Set<string> {
+  const firsts = new Set<string>();
+  for (const slot of slots) {
+    for (const option of slot) {
+      if (option.length > 0) firsts.add(option[0]);
+    }
+    if (!slot.some((option) => option.length === 0)) break;
+  }
+  return firsts;
+}
+
+const CRISIS_ROWS: readonly CrisisRow[] = CRISIS_PATTERNS.map((pattern) => {
+  const { slots: rawSlots, unlessFollowedBy = [], inTheGym = null, thenInSentence = [] } =
     'slots' in pattern ? pattern : { slots: pattern };
   // A hyphened excuse is read spaced too, as the hyphen-split reading has it:
   // "in pre-workout" is "in pre workout" (K1 review, 2026-10-08).
@@ -1000,51 +1014,18 @@ const CRISIS_PHRASES: readonly CrisisPhrase[] = CRISIS_PATTERNS.flatMap((pattern
     words(folded(option)),
   );
   const then = thenInSentence.map((option) => words(folded(option)));
-  return expand(slots).map((phrase) => ({ phrase: phrase.map(folded), unless, inTheGym, then }));
+  const slots = rawSlots.map((slot) => slot.map((option) => words(option).map(folded)));
+  return { slots, firsts: firstWordsOf(slots), unless, inTheGym, then };
 });
+
+/** Every word a crisis phrase can start with. */
+const FIRST_WORDS: ReadonlySet<string> = new Set(CRISIS_ROWS.flatMap((row) => [...row.firsts]));
 
 /** A word with its hyphens and apostrophes out: "self-harm" and "selfharm", "don't" and "dont". */
 const glued = (word: string) => word.replace(/['-]/g, '');
 
 /** Runs of one repeated letter as one letter: "diiiie" and "die" both "die", "wannnna" and "wanna" both "wana". */
 const squeezed = (word: string) => word.replace(/(\p{L})\1+/gu, '$1');
-
-function indexBy(key: (entry: CrisisPhrase) => string | null): Map<string, CrisisPhrase[]> {
-  const index = new Map<string, CrisisPhrase[]>();
-  for (const entry of CRISIS_PHRASES) {
-    const at = key(entry);
-    if (at === null) continue;
-    const bucket = index.get(at);
-    if (bucket) bucket.push(entry);
-    else index.set(at, [entry]);
-  }
-  return index;
-}
-
-/** The phrases by their first word: thousands of phrases, read once per word. */
-const PHRASES_BY_FIRST_WORD = indexBy((entry) => entry.phrase[0]);
-
-/** The same, for a first word typed with a letter held down. */
-const PHRASES_BY_SQUEEZED_FIRST_WORD = indexBy((entry) => squeezed(entry.phrase[0]));
-
-/**
- * For a starred first word, the first words as long: a star stands for one
- * letter. Read against every phrase, a prompt of starred words cost the
- * server seconds per request (review, 2026-10-07); read against every phrase
- * of its length, it cost two once the K1 rows were in (2026-10-08). Each
- * first word is read once, and only the phrases of those that fit follow.
- */
-function firstWordsBy(key: (first: string) => number): Map<number, string[]> {
-  const index = new Map<number, string[]>();
-  for (const first of PHRASES_BY_FIRST_WORD.keys()) {
-    const bucket = index.get(key(first));
-    if (bucket) bucket.push(first);
-    else index.set(key(first), [first]);
-  }
-  return index;
-}
-const FIRST_WORDS_BY_LENGTH = firstWordsBy((first) => first.length);
-const FIRST_WORDS_BY_SQUEEZED_LENGTH = firstWordsBy((first) => squeezed(first).length);
 
 /**
  * Keys a thumb lands on beside each other. Each row sits half a key right of
@@ -1112,16 +1093,17 @@ function typoOf(typed: string, listed: string): boolean {
 const deletions = (word: string) => [...word].map((_, i) => word.slice(0, i) + word.slice(i + 1));
 
 /**
- * The first words of the phrases of two words or more, by every key a slip
- * of them may share with what was typed: the word, it squeezed, and it with
- * each letter out. A typed word is looked up by its own keys, so the near
- * first words are found without reading every one (`typoOf` then decides).
+ * The first words of the phrases, by every key a slip of them may share with
+ * what was typed: the word, it squeezed, and it with each letter out. A typed
+ * word is looked up by its own keys, so the near first words are found
+ * without reading every one (`typoOf` then decides). A slip is read only in a
+ * phrase of two words or more, which the walk of the slots settles
+ * (`rowSaysAt`).
  */
 const FIRST_WORDS_NEAR = (() => {
   const near = new Map<string, Set<string>>();
-  for (const entry of CRISIS_PHRASES) {
-    const first = entry.phrase[0];
-    if (entry.phrase.length < 2 || !/^\p{L}+$/u.test(first)) continue;
+  for (const first of FIRST_WORDS) {
+    if (!/^\p{L}+$/u.test(first)) continue;
     for (const key of [first, squeezed(first), ...deletions(first)]) {
       const bucket = near.get(key);
       if (bucket) bucket.add(first);
@@ -1143,26 +1125,44 @@ function firstWordsNear(typed: string): string[] {
   return [...found];
 }
 
-function phrasesFor(token: CrisisWord): readonly CrisisPhrase[] {
-  if (!token.loose) {
-    const exact = PHRASES_BY_FIRST_WORD.get(token.word) ?? [];
-    const near = firstWordsNear(token.word);
-    return near.length === 0 ? exact : [...exact, ...near.flatMap((first) => PHRASES_BY_FIRST_WORD.get(first) ?? [])];
-  }
-  const typed = squeezed(token.word);
-  if (!token.word.includes('*')) return PHRASES_BY_SQUEEZED_FIRST_WORD.get(typed) ?? [];
+/**
+ * The first words `token` reads as, each with the slips it costs: none for
+ * the word itself or what a loosely typed word may be, one for a slip of the
+ * thumb (`firstWordsNear`).
+ */
+function firstReadings(token: CrisisWord): Map<string, number> {
+  const readings = new Map<string, number>();
   const { loose } = token;
-  const firsts = HELD_LETTER.test(token.word)
-    ? FIRST_WORDS_BY_SQUEEZED_LENGTH.get(typed.length) ?? []
-    : FIRST_WORDS_BY_LENGTH.get(token.word.length) ?? [];
-  return firsts.filter((first) => loose(first)).flatMap((first) => PHRASES_BY_FIRST_WORD.get(first) ?? []);
+  if (loose) {
+    for (const first of FIRST_WORDS) {
+      if (loose(first)) readings.set(first, 0);
+    }
+    return readings;
+  }
+  if (FIRST_WORDS.has(token.word)) readings.set(token.word, 0);
+  for (const first of firstWordsNear(token.word)) readings.set(first, 1);
+  return readings;
 }
 
 /**
- * The phrases of two words or more, typed as one: "killmyself",
- * "kill-myself", "iwanttodie" (A6 hunt, 2026-10-07).
+ * Each row's slots glued (`glued`): the phrases of two words or more typed as
+ * one, "killmyself", "kill-myself", "iwanttodie" (A6 hunt, 2026-10-07).
  */
-const PHRASES_GLUED = indexBy((entry) => (entry.phrase.length > 1 ? glued(entry.phrase.join('')) : null));
+const GLUED_SLOTS: ReadonlyMap<CrisisRow, readonly (readonly string[])[]> = new Map(
+  CRISIS_ROWS.map((row) => [row, row.slots.map((slot) => slot.map((option) => glued(option.join(''))))]),
+);
+
+/** Whether `typed` is a phrase of `row` of two words or more, typed without its spaces. */
+function rowGluedAs(row: CrisisRow, typed: string): boolean {
+  const slots = GLUED_SLOTS.get(row) ?? [];
+  const walk = (slot: number, from: number, length: number): boolean => {
+    if (slot === slots.length) return from === typed.length && length > 1;
+    return slots[slot].some(
+      (part, option) => typed.startsWith(part, from) && walk(slot + 1, from + part.length, length + row.slots[slot][option].length),
+    );
+  };
+  return walk(0, 0, 0);
+}
 
 /** A sentence end, between words. */
 const CLAUSE_END = '.';
@@ -1251,19 +1251,41 @@ function startsAt(tokens: readonly CrisisWord[], at: number, phrase: readonly st
 }
 
 /**
- * A crisis phrase at `at`, one slip of the thumb allowed in a phrase of two
- * words or more (`typoOf`). Only the crisis phrases read slips; the excuses
- * and the gym readings are read exactly, so a slip never lets one out.
+ * Whether a phrase of `row` starts at `at` and says it (`settles`): a way
+ * through its slots whose words are the reader's, the first read through
+ * `firsts` (`firstReadings`). One slip of the thumb is allowed in a phrase of
+ * two words or more (`typoOf`). Only the crisis phrases read slips; the
+ * excuses and the gym readings are read exactly, so a slip never lets one out.
  */
-function phraseAt(tokens: readonly CrisisWord[], at: number, phrase: readonly string[]): boolean {
-  let slips = phrase.length > 1 ? 1 : 0;
-  return phrase.every((word, i) => {
-    const token = tokens[at + i];
-    if (reads(token, word)) return true;
-    if (slips === 0 || token === undefined || token.loose || !typoOf(token.word, word)) return false;
-    slips -= 1;
-    return true;
-  });
+function rowSaysAt(
+  tokens: readonly CrisisWord[],
+  at: number,
+  row: CrisisRow,
+  firsts: ReadonlyMap<string, number>,
+): boolean {
+  const walk = (slot: number, length: number, slips: number): boolean => {
+    if (slot === row.slots.length) {
+      return length > 0 && (slips === 0 || length > 1) && settles(tokens, at + length - 1, row);
+    }
+    return row.slots[slot].some((option) => {
+      let used = slips;
+      for (let i = 0; i < option.length; i += 1) {
+        const word = option[i];
+        if (length + i === 0) {
+          const cost = firsts.get(word);
+          if (cost === undefined) return false;
+          used += cost;
+          continue;
+        }
+        const token = tokens[at + length + i];
+        if (reads(token, word)) continue;
+        if (used > 0 || token === undefined || token.loose || !typoOf(token.word, word)) return false;
+        used += 1;
+      }
+      return walk(slot + 1, length + option.length, used);
+    });
+  };
+  return walk(0, 0, 0);
 }
 
 /** The sentence that starts at `start`: its words up to the one it ends after. */
@@ -1273,8 +1295,8 @@ function sentenceFrom(tokens: readonly CrisisWord[], start: number): readonly Cr
 }
 
 /** Whether a phrase whose last word is `last` says it, given what follows. */
-function settles(tokens: readonly CrisisWord[], last: number, entry: CrisisPhrase): boolean {
-  const { unless, inTheGym, then } = entry;
+function settles(tokens: readonly CrisisWord[], last: number, row: CrisisRow): boolean {
+  const { unless, inTheGym, then } = row;
   const rest = tokens[last].closes ? [] : sentenceFrom(tokens, last + 1);
   if (then.length > 0) return rest.some((_, i) => then.some((word) => startsAt(rest, i, word)));
   if (inTheGym) return !inTheGym(rest, tokens.slice(last + 1));
@@ -1295,8 +1317,9 @@ const GLUED_LEADS = [
 function saysCrisis(text: string): boolean {
   const tokens = crisisTokens(text);
   return tokens.some((token, at) => {
-    const says = (entry: CrisisPhrase) => phraseAt(tokens, at, entry.phrase) && settles(tokens, at + entry.phrase.length - 1, entry);
-    if (phrasesFor(token).some(says)) {
+    const firsts = firstReadings(token);
+    const startsHere = (row: CrisisRow) => [...firsts.keys()].some((first) => row.firsts.has(first));
+    if (firsts.size > 0 && CRISIS_ROWS.some((row) => startsHere(row) && rowSaysAt(tokens, at, row, firsts))) {
       return true;
     }
     // One word that is a whole phrase typed without its spaces, with or
@@ -1305,7 +1328,7 @@ function saysCrisis(text: string): boolean {
     return GLUED_LEADS.some(
       (lead) =>
         typed.startsWith(lead) &&
-        (PHRASES_GLUED.get(typed.slice(lead.length)) ?? []).some((entry) => settles(tokens, at, entry)),
+        CRISIS_ROWS.some((row) => rowGluedAs(row, typed.slice(lead.length)) && settles(tokens, at, row)),
     );
   });
 }

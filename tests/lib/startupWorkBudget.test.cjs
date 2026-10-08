@@ -1,4 +1,6 @@
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
+const path = require('node:path');
 
 const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../.test-dist/lib/firstRunSetup.js');
 const { describeGoalCoverage, rankProgrammesForLift } = require('../../.test-dist/lib/goalProgramme.js');
@@ -64,7 +66,70 @@ function assertWithin(label, ms, budgetMs) {
   assert.ok(ms <= budgetMs, `${label} took ${ms.toFixed(1)} ms, budget ${budgetMs} ms`);
 }
 
+/**
+ * Loads every compiled module in a fresh Node and prints each one's own
+ * evaluation time — its top-level code, without the modules it requires — as
+ * JSON lines, slowest first.
+ */
+const MODULE_SELF_TIMES = `
+const Module = require('module');
+const fs = require('fs');
+const path = require('path');
+const compile = Module.prototype._compile;
+const stack = [];
+const self = new Map();
+Module.prototype._compile = function (content, filename) {
+  const start = process.hrtime.bigint();
+  stack.push(0n);
+  try {
+    return compile.call(this, content, filename);
+  } finally {
+    const total = process.hrtime.bigint() - start;
+    const children = stack.pop();
+    if (stack.length) stack[stack.length - 1] += total;
+    self.set(filename, Number(total - children) / 1e6);
+  }
+};
+const root = process.argv[1];
+(function walk(dir) {
+  for (const name of fs.readdirSync(dir)) {
+    const file = path.join(dir, name);
+    if (fs.statSync(file).isDirectory()) walk(file);
+    else if (file.endsWith('.js')) {
+      try { require(file); } catch {}
+    }
+  }
+})(root);
+for (const [file, ms] of [...self].filter(([file]) => file.startsWith(root)).sort((a, b) => b[1] - a[1])) {
+  console.log(JSON.stringify({ file: path.relative(root, file), ms }));
+}
+`;
+
 module.exports = [
+  {
+    /*
+     * The app's modules are all evaluated before the first render, Hermes
+     * without a JIT, so a table built at the top of a module is paid on every
+     * cold start whether its screen is opened or not. The crisis filter's
+     * rows once multiplied out to 195,800 phrases there: 420 ms in Node and
+     * eight seconds on the phone, a cold start of 9.4 s (#bugs, 2026-10-08).
+     *
+     * The slowest module today takes about 30 ms of its own here. A failure
+     * means a module does work when it loads: build it on first use, or
+     * without the multiplication.
+     */
+    name: 'startup budget: no module does heavy work when it loads',
+    run() {
+      const root = path.resolve(__dirname, '../../.test-dist');
+      const result = spawnSync(process.execPath, ['-e', MODULE_SELF_TIMES, root], { encoding: 'utf8' });
+      assert.equal(result.status, 0, result.stderr);
+      const times = result.stdout.trim().split('\n').map((line) => JSON.parse(line));
+      assert.ok(times.length > 100, `only ${times.length} modules loaded`);
+      for (const { file, ms } of times) {
+        assertWithin(`loading ${file}`, ms, 150);
+      }
+    },
+  },
   {
     // useSetupReadings: the setup recommendation, resolved on every cold start.
     name: 'startup budget: the setup recommendation',
