@@ -360,9 +360,12 @@ module.exports = [
       );
       assert.match(
         app,
-        /history=\{getExerciseProgressForName\(database, exercise\.name, sameLibraryRow\)\}/,
-        'the exercise detail reads its history by exact name, or by the target rule, again',
+        /history=\{exerciseProgressFor\(exercise\.name\)\}/,
+        'the exercise detail reads its history through the lookup again',
       );
+      // ...and the lookup is the library-row matcher over getExerciseProgressForName, not another rule.
+      assert.match(app, /const exerciseProgressFor = useExerciseDetailHistory\(database, sameLibraryRow\);/);
+      assert.match(app, /createExerciseProgressLookup\(database, sameLibraryRow\)/);
       assert.match(
         app,
         /getLiftProgress\(lift\.exerciseName, trackedProgress, sameLift\)/,

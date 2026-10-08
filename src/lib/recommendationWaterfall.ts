@@ -1,6 +1,6 @@
 import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
-import { focusProgrammeLosesItsPoint, splitsReaderWeek } from './recommendationWeekFit';
+import { focusProgrammeLosesItsPoint, lowerBodyOnlyAgainstFocus, splitsReaderWeek } from './recommendationWeekFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -144,6 +144,13 @@ function pickClosestWithPenalty(
       // 2026-10-08).
       penalty += SHORT_WEEK_SPLIT;
     }
+    if (lowerBodyOnlyAgainstFocus(definition.programId, input)) {
+      // The gender tie-break (-1) is not a reason to hand a reader who did not
+      // name the lower body a week without chest, back or shoulders in it. The
+      // woman who picks glutes or legs still gets it (recommender fit,
+      // 2026-10-08).
+      penalty += SHORT_WEEK_SPLIT;
+    }
     if (penalty < bestPenalty) {
       best = definition;
       bestPenalty = penalty;
@@ -280,9 +287,17 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
       let alternative = input.profile.weightDirection === 'loss' && primary.programId !== SHRED_PROGRAM_ID
         ? byId(SHRED_PROGRAM_ID)
         : null;
+      // Not the bodyweight starter beside a gym reader's three days or more:
+      // its card says "without needing a gym", and a 1-point score margin put
+      // it second for every full-gym beginner who wanted strength. It stays
+      // the second card of the gym reader's two days (recommender fit,
+      // 2026-10-08).
+      const gymWeek = input.equipment === 'gym' && effectiveDays(input) >= 3;
       alternative = alternative ?? pickClosest(
         programs.filter(
-          (definition) => definition.familyId === 'full_body_minimal' && definition.programId !== primary.programId,
+          (definition) => definition.familyId === 'full_body_minimal'
+            && definition.programId !== primary.programId
+            && !(gymWeek && definition.equipmentTier === 'low_equipment'),
         ),
         input,
       );
@@ -300,9 +315,15 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   }
 
   // 4. Women-targeted primary for physique goals; the goal family stays one tap away.
+  // Not for lean & athletic: none of the women's programmes lists it, so the
+  // pool chose on day count alone and an advanced woman who asked to stay lean
+  // and athletic was handed Advanced Glutes, a bodybuilding week with no
+  // conditioning in it, under "Balanced strength and conditioning". Step 5
+  // picks her week as it does the men's, from what lists the goal
+  // (recommender fit, 2026-10-08).
   if (
     input.gender === 'female'
-    && (input.goal === 'muscle' || input.goal === 'general' || input.goal === 'general_fitness' || input.goal === 'lean_athletic')
+    && (input.goal === 'muscle' || input.goal === 'general' || input.goal === 'general_fitness')
   ) {
     const pool = programs.filter((definition) => definition.targetGender === 'female');
     const primary = pickClosest(pool, input);
@@ -335,8 +356,11 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
         'lean_athletic',
         primary,
         byId(FIT_PROGRAM_ID),
-        'wf.lean_athletic.primary',
-        'wf.lean_athletic.alt',
+        // The fat-loss line only for a reader whose weight target is a loss:
+        // onboarding never asks, so a lean reader was told the plan drives fat
+        // loss they never mentioned (recommender fit, 2026-10-08).
+        input.profile.weightDirection === 'loss' ? 'wf.lean_athletic.primaryLoss' : 'wf.lean_athletic.primary',
+        input.profile.weightDirection === 'loss' ? 'wf.lean_athletic.altLoss' : 'wf.lean_athletic.alt',
       );
     }
   }

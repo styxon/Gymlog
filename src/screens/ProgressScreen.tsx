@@ -41,11 +41,13 @@ import {
   formatTime,
   formatVolume,
   formatWeight,
+  getDateTimeFormat,
   localeFor,
   parseNumberInput,
   removeTrailingZeros,
 } from '../lib/format';
 import { localDateKey, subtractCalendarMonths } from '../lib/completedSessions';
+import { getSummaryChartPoints, getTrackedSummaryValues } from '../lib/progressChartPoints';
 import { addCardioMinutesByDay } from '../lib/dashboard';
 import { getCombinedActivityMinutes } from '../lib/cardio';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
@@ -441,16 +443,16 @@ function bucketOverviewPointsByRange(
 
 function formatDayMonthLabel(dateString: string, language: AppLanguage) {
   const date = new Date(dateString);
-  const month = new Intl.DateTimeFormat(localeFor(language), { month: 'short' }).format(date);
+  const month = getDateTimeFormat(localeFor(language), { month: 'short' }).format(date);
   return `${date.getDate()} ${month}`;
 }
 
 function formatMonthLabel(dateString: string, language: AppLanguage) {
-  return new Intl.DateTimeFormat(localeFor(language), { month: 'short' }).format(new Date(dateString));
+  return getDateTimeFormat(localeFor(language), { month: 'short' }).format(new Date(dateString));
 }
 
 function formatMonthYearLabel(dateString: string, language: AppLanguage) {
-  return new Intl.DateTimeFormat(localeFor(language), { month: 'short', year: '2-digit' }).format(
+  return getDateTimeFormat(localeFor(language), { month: 'short', year: '2-digit' }).format(
     new Date(dateString),
   );
 }
@@ -557,17 +559,6 @@ function compareProgressSummaries(left: ExerciseProgressSummary, right: Exercise
   const leftDate = left.latestLog ? new Date(left.latestLog.performedAt).getTime() : 0;
   const rightDate = right.latestLog ? new Date(right.latestLog.performedAt).getTime() : 0;
   return rightDate - leftDate;
-}
-
-function getSummaryChartPoints(
-  summary: ExerciseProgressSummary,
-  unitPreference: UnitPreference,
-  language: AppLanguage,
-) {
-  return [...summary.logs].reverse().map((log) => ({
-    label: formatShortDate(log.performedAt, language),
-    value: convertWeightFromKg(log.weight, unitPreference),
-  }));
 }
 
 function fmtDelta(value: number) {
@@ -917,7 +908,7 @@ export function ProgressScreen({
 
     // Hardcoded en-US put "August 2026" above a Finnish calendar, under a
     // Finnish heading, in an otherwise Finnish app.
-    return new Intl.DateTimeFormat(language === 'fi' ? 'fi-FI' : 'en-US', {
+    return getDateTimeFormat(language === 'fi' ? 'fi-FI' : 'en-US', {
       month: 'long',
       year: 'numeric',
     }).format(new Date(currentMonthDay.dayStart));
@@ -1163,6 +1154,29 @@ export function ProgressScreen({
       summary: byKey.get(lift.exerciseName.trim().toLowerCase()) ?? null,
     }));
   }, [summaries, targetLifts]);
+
+  /**
+   * What the Tracked rows read on every render: the numbers for the sparkline
+   * and the start/latest/delta line, oldest first. No dates, so no formatter —
+   * the labelled points below are built for the one open row only.
+   */
+  const trackedValues = useMemo(
+    () => getTrackedSummaryValues(trackedRows.map(({ summary }) => summary), unitPreference),
+    [trackedRows, unitPreference],
+  );
+
+  /**
+   * The open row's chart points, labels included. Memoised so the array keeps
+   * its identity between renders: SimpleLineChart clears its open tooltip when
+   * `points` changes, and a freshly built array did that on every unrelated
+   * parent render.
+   */
+  const expandedTrackedPoints = useMemo(() => {
+    const open = expandedKey
+      ? trackedRows.find(({ summary }) => summary?.key === expandedKey)?.summary ?? null
+      : null;
+    return open ? getSummaryChartPoints(open, unitPreference, language) : null;
+  }, [expandedKey, trackedRows, unitPreference, language]);
 
   /**
    * Deep links: a Home lift card and the coach's "review this trend" open
@@ -1730,10 +1744,11 @@ export function ProgressScreen({
               }
               const isOpen = expandedKey === summary.key;
               const signalDot = SIGNAL_STYLES[getExerciseProgressSignal(summary).kind].dot;
-              const points = getSummaryChartPoints(summary, unitPreference, language);
-              const start = points[0]?.value ?? null;
-              const latest = points.length ? points[points.length - 1].value : null;
-              const delta = start !== null && latest !== null && points.length > 1 ? latest - start : null;
+              const values = trackedValues.get(summary.key) ?? [];
+              const points = isOpen ? expandedTrackedPoints ?? [] : [];
+              const start = values[0] ?? null;
+              const latest = values.length ? values[values.length - 1] : null;
+              const delta = start !== null && latest !== null && values.length > 1 ? latest - start : null;
               return (
                 <View key={summary.key} style={styles.trackedCard}>
                   {/* The row opens the set log; the chevron still expands the
@@ -1757,7 +1772,7 @@ export function ProgressScreen({
                         </Text>
                       </View>
                     </View>
-                    <Sparkline values={points.map((point) => point.value)} color={signalDot} />
+                    <Sparkline values={values} color={signalDot} />
                     <Pressable
                       accessibilityRole="button"
                       accessibilityState={{ expanded: isOpen }}

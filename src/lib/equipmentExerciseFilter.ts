@@ -134,7 +134,12 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'competition deadlift', requires: [BARBELL] },
   { pattern: 'deficit deadlift', requires: [BARBELL] },
   { pattern: 'sumo deadlift', requires: [BARBELL] },
-  { pattern: 'trap bar', requires: [BARBELL] },
+  // A hex bar is gym-floor gear, like the sled below: the home card's "Barbell
+  // & plates" is a straight bar and does not imply one, and a lifter who ticked
+  // only that was handed Trap Bar Deadlift as the lead lift of the day. The
+  // full-gym card's "Barbells" chip still carries it (recommender fit,
+  // 2026-10-08).
+  { pattern: 'trap bar', requires: [['Barbells']] },
   { pattern: 'romanian deadlift', exact: true, requires: [BARBELL] },
   // The light one is the postpartum and recovery hinge, done with whatever
   // weight is in the house; dumbbells come first so that is the chip shown.
@@ -206,6 +211,10 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['box squat', ['Goblet Squat', 'Bodyweight Squat']],
   ['hack squat', ['Goblet Squat', 'Bodyweight Squat']],
   ['leg press', ['Goblet Squat', 'Bodyweight Squat']],
+  // Ahead of both deadlift entries below, which match "Trap Bar Deadlift" by
+  // name and would hand a barbell owner a dumbbell lift or a glute bridge: the
+  // straight bar's deadlift is the lift he can do.
+  ['trap bar', ['Barbell Deadlift', 'Stiff-Legged Dumbbell Deadlift', 'Butt Lift (Bridge)']],
   ['romanian deadlift', ['Stiff-Legged Dumbbell Deadlift', 'Butt Lift (Bridge)']],
   ['deadlift', ['Stiff-Legged Dumbbell Deadlift', 'Butt Lift (Bridge)']],
   ['barbell row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
@@ -223,7 +232,11 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['dumbbell curl', ['Reverse Plate Curls', 'Band Curl']],
   ['hammer curl', ['Dumbbell Bicep Curl', 'Reverse Plate Curls', 'Band Curl']],
   ['rear delt', ['Band Pull Apart']],
-  ['kettlebell swing', ['Butt Lift (Bridge)']],
+  // A hinge first, like the two deadlift rows above: with dumbbells the swing
+  // is a loaded hip hinge, and the bridge alone left a dumbbell home's HIIT
+  // day with three glute-isolation lifts and no hinge (persona hunt,
+  // 2026-10-08). The bridge stays for a reader with no weights.
+  ['kettlebell swing', ['Stiff-Legged Dumbbell Deadlift', 'Butt Lift (Bridge)']],
   ['leg curl', ['Butt Lift (Bridge)']],
   ['leg extension', ['Bodyweight Squat']],
   // Not "Donkey Calf Raises": its steps start with "you will need access to a
@@ -378,6 +391,17 @@ function findEquipmentFallback(
     }
   }
   return null;
+}
+
+/**
+ * Whether a gear swap leaves the lift as it was: a hex-bar deadlift done with
+ * the straight bar the lifter owns is the same hinge, not a different
+ * programme. The fit test does not count it against a programme, or one
+ * trap-bar day tipped a home barbell week past the share of swaps it allows
+ * and handed the barbell owner a bodyweight one (recommender fit, 2026-10-08).
+ */
+export function swapKeepsTheLift(swap: { from: string; to: string }): boolean {
+  return normalize(swap.from).includes('trap bar') && normalize(swap.to) === 'barbell deadlift';
 }
 
 export interface EquipmentAdjustedExercises {

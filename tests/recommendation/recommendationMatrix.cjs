@@ -61,7 +61,7 @@ const { selectWaterfallDecision } = lib('recommendationWaterfall');
 const { buildRecommendationInput } = lib('recommendationInput');
 const { programFitsEquipment, GYM_ALWAYS_HAS } = lib('programEquipmentFit');
 const { exerciseHitsCautionArea } = lib('cautionAreaMatching');
-const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = lib('equipmentExerciseFilter');
+const { isExerciseAllowedWithEquipment, resolveAvailableEquipment, swapKeepsTheLift } = lib('equipmentExerciseFilter');
 const { getWorkoutTemplateById } = require(path.join(dist, 'features', 'workout', 'workoutCatalog.js'));
 
 const args = process.argv.slice(2);
@@ -291,7 +291,9 @@ function evaluate(a, programId, sel, ws) {
   const gear = resolveAvailableEquipment(sel);
 
   // E1: gear survives composition
-  const swapped = week.equipmentSwapped.length;
+  // The same count the fit test makes: a hex-bar deadlift done with the
+  // straight bar is the lift as written (recommender fit, 2026-10-08).
+  const swapped = week.equipmentSwapped.filter((swap) => !swapKeepsTheLift(swap)).length;
   const removed = week.equipmentRemoved.length;
   const lifts = ws.originalCount || 1;
   if (a.card.equipment !== 'gym' || (gear && gear.length < GYM_ALL.length)) {

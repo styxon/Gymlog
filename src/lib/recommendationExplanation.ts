@@ -25,6 +25,13 @@ export interface RecommendationReasonOptions {
    * Mobility Reset too (bug hunt, 2026-10-08). Null when unknown.
    */
   runWork?: ProgramRunWork | null;
+  /**
+   * One plain line for what the reader's caution flags changed in the week
+   * they were handed (buildCautionAdaptationLine), or null when nothing was.
+   * It goes in ahead of the generic goal line, which is the one it displaces
+   * when the list is full.
+   */
+  cautionLine?: string | null;
 }
 
 const WEEKDAY_ORDER: SetupWeekday[] = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -168,13 +175,32 @@ function buildWeightTargetReason(
   return t(language, 'recExp.weight.other', { range });
 }
 
+/**
+ * Whether the programme can have heavy barbell compounds in it for this reader.
+ * "Heavy compounds first." sat over a bodyweight week (persona hunt, 2026-10-08).
+ */
+function hasHeavyLiftingGear(
+  selection: Pick<FirstRunSetupSelection, 'equipment' | 'trainingEnvironment' | 'equipmentItems'>,
+) {
+  return (
+    selection.equipment === 'gym' ||
+    selection.trainingEnvironment === 'full_gym' ||
+    (selection.equipmentItems ?? []).some((item) => item === 'Barbells' || item === 'Barbell & plates')
+  );
+}
+
 function buildGoalSpecificReason(
-  selection: Pick<FirstRunSetupSelection, 'goal' | 'secondaryOutcomes'>,
+  selection: Pick<
+    FirstRunSetupSelection,
+    'goal' | 'secondaryOutcomes' | 'equipment' | 'trainingEnvironment' | 'equipmentItems'
+  >,
   language: AppLanguage,
   runWork: ProgramRunWork | null = null,
 ) {
+  const heavy = hasHeavyLiftingGear(selection);
+
   if (selection.goal === 'strength' && selection.secondaryOutcomes.includes('muscle')) {
-    return t(language, 'recExp.why.strengthMuscle');
+    return heavy ? t(language, 'recExp.why.strengthMuscle') : null;
   }
 
   if (selection.goal === 'muscle' && selection.secondaryOutcomes.includes('strength')) {
@@ -182,7 +208,7 @@ function buildGoalSpecificReason(
   }
 
   if (selection.goal === 'strength') {
-    return t(language, 'recExp.why.strength');
+    return heavy ? t(language, 'recExp.why.strength') : null;
   }
 
   if (selection.goal === 'muscle') {
@@ -307,31 +333,58 @@ export function buildRecommendationReasonLines(
     reasons.push(t(language, 'recExp.minutesWeek', { minutes: weeklyMinutes }));
   }
 
-  if (focusSummary) {
-    reasons.push(t(language, 'recExp.focus', { areas: focusSummary }));
-  } else if (weightTargetReason) {
-    reasons.push(weightTargetReason);
-  } else if (goalSpecificReason && shouldPreferGoalSpecificReason(selection)) {
-    reasons.push(goalSpecificReason);
-  } else if (outcomeSummary) {
-    reasons.push(t(language, 'recExp.alsoKeeps', { outcomes: outcomeSummary }));
-  } else if (goalSpecificReason) {
-    reasons.push(goalSpecificReason);
-  } else if (selection.guidanceMode === 'self_directed') {
-    reasons.push(t(language, 'recExp.why.selfDirected'));
-  } else if (selection.guidanceMode === 'done_for_me') {
-    reasons.push(t(language, 'recExp.why.doneForMe'));
-  } else {
-    reasons.push(t(language, 'recExp.why.default'));
+  // What the flags changed comes before the line about the goal. The cap of
+  // four below then drops the goal's slogan, never the one thing on this list
+  // that is about this reader's own week.
+  const cautionLine = options.cautionLine?.trim() || null;
+  if (cautionLine) {
+    reasons.push(cautionLine);
   }
+
+  let goalLine: string;
+  let goalLineIsAnswer = true;
+  if (focusSummary) {
+    goalLine = t(language, 'recExp.focus', { areas: focusSummary });
+  } else if (weightTargetReason) {
+    goalLine = weightTargetReason;
+  } else if (goalSpecificReason && shouldPreferGoalSpecificReason(selection)) {
+    goalLine = goalSpecificReason;
+    goalLineIsAnswer = false;
+  } else if (outcomeSummary) {
+    goalLine = t(language, 'recExp.alsoKeeps', { outcomes: outcomeSummary });
+  } else if (goalSpecificReason) {
+    goalLine = goalSpecificReason;
+    goalLineIsAnswer = false;
+  } else if (selection.guidanceMode === 'self_directed') {
+    goalLine = t(language, 'recExp.why.selfDirected');
+    goalLineIsAnswer = false;
+  } else if (selection.guidanceMode === 'done_for_me') {
+    goalLine = t(language, 'recExp.why.doneForMe');
+    goalLineIsAnswer = false;
+  } else {
+    goalLine = t(language, 'recExp.why.default');
+    goalLineIsAnswer = false;
+  }
+  // Only the slogans give way to the caution line: a focus area or a weight
+  // target is something the reader said.
+  const goalLineYields = cautionLine !== null && !goalLineIsAnswer;
+  reasons.push(goalLine);
 
   if (options.mismatchNote) {
     reasons.push(options.mismatchNote);
   }
 
-  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences, language);
+  // The "Built for ..." line above already names the gear of a home or minimal
+  // reader; the equipment half of this note would say it a second time.
+  const tailoringNote = buildTailoringRecommendationNote(tailoringPreferences, language, {
+    includeEquipment: selection.equipment === 'gym',
+  });
   if (tailoringNote) {
     reasons.push(tailoringNote);
+  }
+
+  if (goalLineYields && reasons.length > 4) {
+    reasons.splice(reasons.indexOf(goalLine), 1);
   }
 
   return reasons.slice(0, 4);

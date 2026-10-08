@@ -593,7 +593,7 @@ module.exports = [
       for (const [written, filed] of [
         ['Cable Row', 'Seated Cable Rows'],
         ['Bent-Over Row', 'Bent Over Barbell Row'],
-        ['Reverse Lunge', 'Dumbbell Rear Lunge'],
+        ['Reverse Lunge', 'Reverse Lunge'],
         ['Air Bike (30s sprint)', 'Bike HIIT'],
         ['Single-Leg Romanian Deadlift', 'Single-Leg RDL'],
       ]) {

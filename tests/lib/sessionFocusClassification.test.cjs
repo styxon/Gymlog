@@ -70,8 +70,9 @@ module.exports = [
         classifySessionFocus(['Back Squat', 'Bench Press', 'Chest-Supported Row', 'Romanian Deadlift']),
         'general',
       );
-      // Nothing recognisable (mobility, yoga, cardio) also lands on 'general'.
-      assert.equal(classifySessionFocus(['Sun Salutation Flow', 'Breath Reset']), 'general');
+      // Nothing to lift (mobility, yoga, runs) is its own kind: 'general' warms
+      // up with push-ups and cools down on a chest stretch.
+      assert.equal(classifySessionFocus(['Sun Salutation Flow', 'Breath Reset']), 'easy');
       assert.equal(classifySessionFocus([]), 'general');
 
       // A stretch is not the stimulus and gets no vote — whether the library
@@ -80,9 +81,9 @@ module.exports = [
       // turned a mobility session into a leg day that opened with squats.
       assert.equal(
         classifySessionFocus(['Kneeling Hip Flexor', 'Seated Floor Hamstring Stretch', "Child's Pose"]),
-        'general',
+        'easy',
       );
-      assert.equal(classifySessionFocus(['Lying Quad Stretch', 'Standing Forward Fold', 'Cobra Pose']), 'general');
+      assert.equal(classifySessionFocus(['Lying Quad Stretch', 'Standing Forward Fold', 'Cobra Pose']), 'easy');
       // ...but the library files "Split Squats" and "Crossover Reverse Lunge"
       // as stretching, and those are what "Bulgarian Split Squat" and "Curtsy
       // Lunge" resolve to. The name overrules the category, or a leg day made

@@ -420,8 +420,24 @@ function selectAlternativeCandidates(candidates: RecommendationCandidate[], inpu
   // the second card because they were the six-day programmes, with twenty
   // beginner ones in the pool (bug hunt, 2026-10-05, B2). Off-level
   // programmes are offered only when nothing at the reader's level is left.
-  const levelFitting = otherCandidates.filter((candidate) => fitsLevel(candidate, input));
-  const remainingCandidates = levelFitting.length > 0 ? levelFitting : otherCandidates;
+  //
+  // A week of stretching and nothing else is offered as a second card only to a
+  // reader who asked for one, or beside a primary that is one. With the gym
+  // beginner's bodyweight starter filtered out of the waterfall's second card,
+  // the day-count match was left with the mobility flow alone for general
+  // fitness at five days (recommender fit, 2026-10-08).
+  const primaryDefinition = getRecommendationProgramDefinition(featuredCandidate.programId);
+  const recoveryAllowed =
+    readerAskedForRecovery(input) || (primaryDefinition !== null && isRecoveryOnlyProgram(primaryDefinition));
+  const eligibleCandidates = otherCandidates.filter((candidate) => {
+    if (recoveryAllowed) {
+      return true;
+    }
+    const definition = getRecommendationProgramDefinition(candidate.programId);
+    return !(definition && isRecoveryOnlyProgram(definition));
+  });
+  const levelFitting = eligibleCandidates.filter((candidate) => fitsLevel(candidate, input));
+  const remainingCandidates = levelFitting.length > 0 ? levelFitting : eligibleCandidates;
 
   const sameDayAlternatives = remainingCandidates.filter((candidate) => {
     const definition = getRecommendationProgramDefinition(candidate.programId);

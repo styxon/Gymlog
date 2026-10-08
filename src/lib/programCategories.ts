@@ -156,6 +156,8 @@ const CONDITIONING_IDS = new Set([
   'tpl_3_day_run_mobility_v1',
   'tpl_gainer_runners_strength_v1',
   'tpl_gainer_athlete_conditioning_v1',
+  'tpl_athletic_upper_lower_4_day_v1',
+  'tpl_athletic_performance_5_day_v1',
   'tpl_gainer_calisthenics_mastery_v1',
 ]);
 
@@ -167,6 +169,7 @@ const HOME_IDS = new Set([
   'tpl_home_dumbbell_strength_split_v1',
   'tpl_home_bodyweight_upper_lower_v1',
   'tpl_home_athletic_5_day_v1',
+  'tpl_home_dumbbell_athletic_5_day_v1',
   'tpl_home_bodyweight_strength_3_day_v1',
   'tpl_home_calisthenics_strength_5_day_v1',
   'tpl_home_bodyweight_full_body_v1',

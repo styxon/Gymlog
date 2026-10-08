@@ -187,7 +187,11 @@ module.exports = [
         /composedWeek\?\.sessionMinutes \|\| readyTemplateCardMinutes\(template, minutesOptions\)/,
       );
       assert.equal(
-        (read('src/app/renderWorkoutTab.tsx').match(/availableEquipment: availableEquipmentForDrills, overrides: preferences\.routineDrillOverrides/g) ?? []).length,
+        (
+          read('src/app/renderWorkoutTab.tsx').match(
+            /availableEquipment: availableEquipmentForDrills,\s+overrides: preferences\.routineDrillOverrides,\s+cautionFlags: preferences\.setupCautionFlags,/g,
+          ) ?? []
+        ).length,
         2,
         'both programme-page builds pass the reader\'s gear',
       );

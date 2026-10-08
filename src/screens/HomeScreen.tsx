@@ -66,7 +66,7 @@ import { CutSurface } from '../components/CutSurface';
 import { ProLockedCard } from '../components/ProLockedCard';
 import { ProMomentSheet } from '../components/ProMomentSheet';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
-import { AppLanguage, CardioActivityType, ExerciseLibraryItem } from '../types/models';
+import { AppLanguage, CardioActivityType, ExerciseLibraryItem, SetupCautionFlag } from '../types/models';
 import { queryReduceMotion } from '../utils/reduceMotion';
 
 // The Home Pro sheet is gone (design: Vinha Paywall Moments): contextual
@@ -389,6 +389,11 @@ interface HomeScreenProps {
    * default warmup honest — no rower for a bodyweight-only user.
    */
   availableEquipment?: string[] | null;
+  /**
+   * The reader's caution flags: an `avoid` area keeps its drills out of the
+   * warm-up and cool-down, the way it keeps its lifts out of the week.
+   */
+  cautionFlags?: readonly SetupCautionFlag[];
   /** The reader's own warm-up / cool-down picks — see routineDrillSlotKey. */
   routineDrillOverrides?: Record<string, string>;
   /** Undefined leaves the drills read-only, the way they were before. */
@@ -483,6 +488,7 @@ export function HomeScreen({
   onOpenActivePlan,
   onOpenPlanSession,
   availableEquipment = null,
+  cautionFlags,
   routineDrillOverrides = {},
   onSwapRoutineDrill,
   statCatalogCards = [],
@@ -700,8 +706,8 @@ export function HomeScreen({
   // Classified in App.tsx from the full exercise list; the five rows Home
   // receives are not enough to work it out here.
   const focusKind = nextPlanSession?.focusKind ?? 'general';
-  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides);
-  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides);
+  const warmup = getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
+  const cooldown = getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags);
 
   /**
    * Which drill slot the swap sheet is open on, and what it has picked.
@@ -723,10 +729,10 @@ export function HomeScreen({
         .filter((_, index) => index !== drillSwap.index)
         .map((drill) => drill.key as string),
     );
-    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment).filter(
+    return listRoutineDrillOptions(drillSwap.kind, language, availableEquipment, cautionFlags).filter(
       (option) => !taken.has(option.key as string),
     );
-  }, [availableEquipment, cooldown, drillSwap, language, warmup]);
+  }, [availableEquipment, cautionFlags, cooldown, drillSwap, language, warmup]);
   const drillCurrent = drillSwap
     ? (drillSwap.kind === 'warmup' ? warmup : cooldown).drills[drillSwap.index] ?? null
     : null;

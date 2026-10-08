@@ -7,8 +7,43 @@ import { AppLanguage, ExerciseLog, UnitPreference } from '../types/models';
 // The app is kg-only. The unit-preference params are kept on these signatures
 // for call-site compatibility, but weights are never converted or shown in lb.
 
+/**
+ * One Intl.DateTimeFormat per (locale, options) instead of one per call.
+ *
+ * Building a formatter goes through the platform's locale data and costs about
+ * 40 microseconds here and several times that on Hermes; formatting with a
+ * built one costs about 1. The date helpers below sat in per-row render loops
+ * (a History row, a chart point per log, a sheet row per session), so a long
+ * history paid the construction a thousand times per render.
+ *
+ * A formatter fixes the device's time zone when it is built, so the cache is
+ * dropped whenever the zone's offset at this moment differs from the one it
+ * was filled under. Travelling across zones with the app alive therefore still
+ * reads the new zone, as a fresh formatter per call always did.
+ */
+const dateTimeFormatCache = new Map<string, Intl.DateTimeFormat>();
+let dateTimeFormatCacheOffset = Number.NaN;
+
+export function getDateTimeFormat(
+  locale: string | undefined,
+  options: Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  const offset = new Date().getTimezoneOffset();
+  if (offset !== dateTimeFormatCacheOffset) {
+    dateTimeFormatCache.clear();
+    dateTimeFormatCacheOffset = offset;
+  }
+  const key = `${locale ?? 'device'}|${JSON.stringify(options)}`;
+  let formatter = dateTimeFormatCache.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, options);
+    dateTimeFormatCache.set(key, formatter);
+  }
+  return formatter;
+}
+
 export function formatDate(dateString: string, language?: AppLanguage) {
-  return new Intl.DateTimeFormat(localeFor(language), {
+  return getDateTimeFormat(localeFor(language), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -56,14 +91,14 @@ export function formatDateNumeric(date: Date, language: AppLanguage) {
 }
 
 export function formatShortDate(dateString: string, language?: AppLanguage) {
-  return new Intl.DateTimeFormat(localeFor(language), {
+  return getDateTimeFormat(localeFor(language), {
     day: 'numeric',
     month: 'short',
   }).format(new Date(dateString));
 }
 
 export function formatSessionDate(dateString: string, language?: AppLanguage) {
-  return new Intl.DateTimeFormat(localeFor(language), {
+  return getDateTimeFormat(localeFor(language), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
@@ -77,7 +112,7 @@ export function formatSessionDate(dateString: string, language?: AppLanguage) {
  * even when the app is in Finnish. Finland writes 18:06.
  */
 export function formatTime(dateString: string, language: AppLanguage = 'en') {
-  return new Intl.DateTimeFormat(language === 'fi' ? 'fi-FI' : undefined, {
+  return getDateTimeFormat(language === 'fi' ? 'fi-FI' : undefined, {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(dateString));

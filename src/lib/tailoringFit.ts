@@ -507,9 +507,16 @@ export function buildTailoringPreferences(
   };
 }
 
+/**
+ * `includeEquipment: false` leaves out the home / lighter-equipment sentence.
+ * A reader whose page already says "Built for minimal equipment" is told the
+ * same thing twice by it; the joint notes are still new (persona hunt,
+ * 2026-10-08).
+ */
 export function buildTailoringRecommendationNote(
   preferences: TailoringPreferencesInput | null | undefined,
   language: AppLanguage = 'en',
+  options: { includeEquipment?: boolean } = {},
 ) {
   if (!preferences) {
     return null;
@@ -532,6 +539,10 @@ export function buildTailoringRecommendationNote(
       first: joint(jointBadges[0].bias),
       second: joint(jointBadges[1].bias),
     });
+  }
+
+  if (options.includeEquipment === false) {
+    return null;
   }
 
   if (preferences.setupEquipment === 'home') {

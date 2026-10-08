@@ -172,10 +172,10 @@ module.exports = [
         // Intended: the library has one entry whose steps hold for both
         // (extraExerciseLibrary), filed under dumbbells because most rows load it.
         ['Bulgarian Split Squat', 'one entry, steps cover loaded and unloaded'],
+        ['Reverse Lunge', 'one entry, steps cover loaded and unloaded'],
+        ['Bodyweight Reverse Lunge', 'one entry, steps cover loaded and unloaded'],
         // Known mismatches, not fixed here: no bodyweight entry of the same
         // movement exists, so a demo with gear in its steps is the closest.
-        ['Reverse Lunge', 'only a dumbbell rear lunge exists'],
-        ['Bodyweight Reverse Lunge', 'only a dumbbell rear lunge exists'],
         ['Sumo Squat', 'only a dumbbell plie squat exists'],
         ['Pistol Squat (each leg)', 'only the kettlebell pistol squat exists'],
         ['Bulgarian Split Squat (Jumping)', 'stripped to the loaded split squat'],

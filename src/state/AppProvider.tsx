@@ -1,9 +1,10 @@
-import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { StorageLoadFailedScreen } from '../components/StorageLoadFailedScreen';
 import { resolveDeviceLanguage } from '../storage/deviceLocale';
 import { findSavedCardioRun, mergeContinuedCardioRun } from '../lib/cardio';
 import { createId } from '../lib/ids';
+import { groupLogsBySession, logsOfSession } from '../lib/sessionLogIndex';
 import { preferencesForRestore } from '../lib/accountBackup';
 import { moveTrainingCycleToLeadPlan, withPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { withPendingAiLogDeletion, withoutAiLogDeletions } from '../lib/aiLogDeletion';
@@ -40,7 +41,6 @@ import { reportOperationFailed } from '../features/errorReporting/errorReporter'
 import { loadWithRetry } from '../storage/loadWithRetry';
 import {
   bodyweightRepository,
-  exerciseLogRepository,
   exerciseTemplateRepository,
   workoutPlanRepository,
   workoutSessionRepository,
@@ -1379,6 +1379,22 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     });
   }
 
+  /**
+   * A session's logs, from an index built once per change to the log list
+   * rather than a scan of the list per question. Keyed on the log list alone,
+   * so a preference toggle does not rebuild it, and getSessionLogs keeps its
+   * identity across every other database change (a preference, a template): a
+   * screen that memoises on it, History's rows, is not rebuilt by them. The
+   * groups are shared between askers: a caller that reorders copies first.
+   */
+  const sessionLogIndex = useMemo(() => groupLogsBySession(database.exerciseLogs), [database.exerciseLogs]);
+  const getSessionLogs = useCallback(
+    (sessionId: string) => {
+      return logsOfSession(sessionLogIndex, sessionId);
+    },
+    [sessionLogIndex],
+  );
+
   const value = useMemo<AppContextValue>(
     () => ({
       database,
@@ -1414,9 +1430,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       getLatestTemplateLog(exerciseTemplateId: string) {
         return getLatestLogForTemplateExercise(database, exerciseTemplateId);
       },
-      getSessionLogs(sessionId: string) {
-        return exerciseLogRepository.listBySessionId(database, sessionId);
-      },
+      getSessionLogs,
       setUnitPreference,
       updatePreferences,
       completeOnboarding,
@@ -1452,7 +1466,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       restoreDatabaseFromBackup,
       importWorkoutHistory,
     }),
-    [database, hydrated],
+    [database, hydrated, getSessionLogs],
   );
 
   if (loadFailed) {

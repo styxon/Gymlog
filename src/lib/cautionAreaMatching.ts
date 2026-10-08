@@ -28,6 +28,14 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'shoulder press',
     'push press',
     'arnold press',
+    // The focus pool's spelling of the same press.
+    'arnold dumbbell press',
+    // Presses overhead whose names do not say "shoulder" or "overhead": the
+    // seated dumbbell press sits in vertical_press in five ready programmes,
+    // and a thruster ends overhead (programmeBrief already lists all three).
+    'seated dumbbell press',
+    'kettlebell seated press',
+    'thruster',
     'upright row',
     'upright barbell row',
     'lateral raise',
@@ -48,6 +56,16 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'kettlebell swing',
     'clean',
     'snatch',
+    // The same hinges under other names: Single-Leg RDL stayed in a week
+    // that avoided the lower back while its long name, Single-Leg Romanian
+    // Deadlift, was removed (persona hunt, 2026-10-08). A pull-through and a
+    // stiff-legged lift are loaded hinges; the reverse hyperextension is the
+    // back-friendly one and is excluded below.
+    'rdl',
+    'pull-through',
+    'stiff-legged',
+    'stiff legs',
+    'hyperextension',
   ],
   knees: [
     'squat',
@@ -58,6 +76,9 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'pistol',
     'box jump',
     'wall sit',
+    // The front squat inside a press: "Dumbbell Thruster" survived a knee
+    // "avoid" in three ready programmes because no pattern named it.
+    'thruster',
     // Landings load the knee too: a knee "avoid" still left Burpee, Jumping
     // Jack and Mountain Climber in the week (recommendation matrix, 2026-10-05).
     'jump',
@@ -87,7 +108,10 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'ladder drill',
   ],
   elbows: ['curl', 'skull crusher', 'triceps', 'close-grip', 'pushdown', 'dip', 'dippi'],
-  wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist'],
+  // A dip holds the wrist in loaded extension: a wrists "avoid" week dropped
+  // every push-up and kept Bench Dips (persona hunt, 2026-10-08). Elbows and
+  // shoulders already list it, with the Finnish compounds the rule catches.
+  wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist', 'dip', 'dippi'],
   hips: ['hip thrust', 'sumo', 'adductor', 'abductor', 'bulgarian', 'pistol'],
   neck: ['shrug', 'neck', 'behind-the-neck'],
   ankles: ['calf raise', 'calf press', 'jump', 'skipping', 'sprint', 'run', 'jog', 'treadmill', 'stride'],
@@ -99,8 +123,9 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
 // lift). Add one only for a name that is a real false positive.
 const AREA_EXCLUDE_PATTERNS: Record<SetupCautionArea, string[]> = {
   shoulders: [],
-  // A grip, and rows done upright or supported on a bench, are not a hinge.
-  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row'],
+  // A grip, rows done upright or supported on a bench, and the reverse
+  // hyperextension (hips swung over a bench, a back-friendly lift) are not a hinge.
+  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row', 'reverse hyperextension'],
   // The leg press of a calf press is done with straight legs.
   knees: ['calf press on the leg press'],
   // "curl" is also the hamstring curl and the prone back raise, and the
@@ -242,3 +267,18 @@ export function cautionAreaLoadedBy(
   return null;
 }
 
+/**
+ * The areas the reader said to leave out ENTIRELY (`avoid`), for the blocks the
+ * exercise filter never sees: the warm-up and cool-down drills. `careful` is not
+ * here on purpose -- it swaps heavier lifts for gentler ones and promises no
+ * absence, so a light warm-up squat for a careful knee is consistent with it.
+ */
+export function avoidedCautionAreas(flags: readonly SetupCautionFlag[] | null | undefined): SetupCautionArea[] {
+  const areas: SetupCautionArea[] = [];
+  for (const flag of flags ?? []) {
+    if (flag.level === 'avoid' && !areas.includes(flag.area)) {
+      areas.push(flag.area);
+    }
+  }
+  return areas;
+}

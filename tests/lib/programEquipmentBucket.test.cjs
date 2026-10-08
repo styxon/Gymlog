@@ -36,6 +36,8 @@ const LOW_EQUIPMENT_PROGRAMS = [
   'tpl_home_dumbbell_ppl_v1',
   'tpl_home_dumbbell_strength_v1',
   'tpl_home_dumbbell_strength_split_v1',
+  // Dumbbells and a bench to press on: five days of strength, power and conditioning.
+  'tpl_home_dumbbell_athletic_5_day_v1',
   'tpl_home_bodyweight_full_body_v1',
   'tpl_home_bodyweight_ppl_v1',
   'tpl_home_bodyweight_upper_lower_v1',

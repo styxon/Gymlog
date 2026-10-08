@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { buildFocusEmphasisAdditions, getFocusEmphasisCount } = require('../../.test-dist/lib/focusEmphasis');
 const { buildComposedFallbackExercise, composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
 const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools');
+const { isRepsStretchName } = require('../../.test-dist/lib/holdExercises');
 const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises');
 const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog');
 const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionExerciseFilter');
@@ -139,6 +140,11 @@ module.exports = [
               } else if (row.trackingMode === 'hold') {
                 seen.hold += 1;
                 assert.ok(row.repsMin >= 20, `${where}: held for ${row.repsMin} s`);
+              } else if (isRepsStretchName(row.exerciseName)) {
+                // The cat-cow is dosed as the ready mobility programmes dose it.
+                seen.reps += 1;
+                assert.deepEqual([row.repsMin, row.repsMax], [6, 6], where);
+                assert.ok(row.restSecondsMax <= 45, `${where}: ${row.restSecondsMax} s between cat-cows`);
               } else {
                 seen.reps += 1;
                 assert.deepEqual([row.repsMin, row.repsMax], [15, 15], where);

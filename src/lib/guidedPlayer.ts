@@ -1142,7 +1142,7 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   'rope pushdown': 'triceps pushdown - rope attachment',
   'cable triceps kickback': 'tricep dumbbell kickback',
   'reverse wrist curl': 'palms-down wrist curl over a bench',
-  'cable pullover': 'straight-arm dumbbell pullover',
+  'cable pullover': 'straight-arm pulldown',
   'cable pull-through': 'pull through',
   'dumbbell thruster': 'kettlebell thruster',
   'battle rope slam': 'battling ropes',
@@ -1156,10 +1156,16 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // which is a different movement AND filed under 'back' — so every leg day
   // running one picked up a pull vote.
   'reverse lunge': 'dumbbell rear lunge',
-  'bodyweight reverse lunge': 'dumbbell rear lunge',
+  // The app opens its own "Reverse Lunge" (extraExerciseLibrary), whose steps
+  // hold with or without dumbbells; the alias below is the generated list's.
+  'bodyweight reverse lunge': 'reverse lunge',
   'banded hip thrust': 'barbell hip thrust',
   'single-leg hip thrust': 'single leg glute bridge',
-  'banded glute bridge': 'barbell glute bridge',
+  // A band bridge is a floor bridge: the barbell bridge's steps start with a
+  // loaded bar over the legs. The plain and held bridges were moved off it on
+  // 2026-10-04; the banded one was missed. History stays filed where it was
+  // (DEMO_ONLY_ALIASES).
+  'banded glute bridge': 'butt lift (bridge)',
   // The hold is a floor bridge with no load; the demo is the bodyweight one.
   // Its history is still filed under the barbell bridge (DEMO_ONLY_ALIASES).
   'glute bridge hold': 'butt lift (bridge)',
@@ -1350,6 +1356,9 @@ export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
   ['walking lunge', null],
   // Filed where it always was, so its history does not move when the demo does.
   ['glute bridge hold', 'barbell glute bridge'],
+  ['banded glute bridge', 'barbell glute bridge'],
+  ['cable pullover', 'straight-arm dumbbell pullover'],
+  ['bodyweight reverse lunge', 'dumbbell rear lunge'],
   // A generic name, or a lift done without the row's implement: the row shows
   // the movement, but it is one variant of several (catalog audit, 2026-10-06).
   ['leg curl', null],

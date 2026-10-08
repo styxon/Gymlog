@@ -11,7 +11,7 @@ import {
   topSetOf,
 } from './trainingHistory';
 import { AppLanguage, ExerciseLog, ExerciseLogSetEffort, WorkoutSession } from '../types/models';
-import { removeTrailingZeros } from './format';
+import { getDateTimeFormat, removeTrailingZeros } from './format';
 
 /**
  * The written-out post-workout analysis behind the coach sheet's
@@ -150,7 +150,7 @@ function shortDate(iso: string, language: AppLanguage) {
   if (!Number.isFinite(date.getTime())) {
     return '';
   }
-  return new Intl.DateTimeFormat(language === 'fi' ? 'fi-FI' : 'en-US', {
+  return getDateTimeFormat(language === 'fi' ? 'fi-FI' : 'en-US', {
     day: 'numeric',
     month: 'numeric',
   }).format(date);

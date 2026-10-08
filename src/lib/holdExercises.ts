@@ -155,6 +155,17 @@ function isNamedHold(normalized: string): boolean {
   return NAMED_HOLD.test(normalized) && !MOVED_STRETCH.test(normalized) && !REPS_STRETCHES.has(normalized);
 }
 
+/**
+ * Whether this is a stretch that is moved through in repetitions (the cat-cow,
+ * a dynamic stretch) rather than held. Such a row is mobility work, so a
+ * composed day doses it as the ready mobility programmes do: a few easy reps
+ * on a short rest, not a lift's bracket and rest.
+ */
+export function isRepsStretchName(name: string): boolean {
+  const normalized = normalize(name);
+  return REPS_STRETCHES.has(normalized) || (NAMED_HOLD.test(normalized) && MOVED_STRETCH.test(normalized));
+}
+
 /** Whether this exercise is logged in seconds held rather than repetitions. */
 export function isHoldExerciseName(name: string): boolean {
   const normalized = normalize(name);

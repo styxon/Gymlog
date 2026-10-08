@@ -271,6 +271,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
             equipmentItems: preferences.setupEquipmentItems,
           }),
           overrides: preferences.routineDrillOverrides,
+          cautionFlags: preferences.setupCautionFlags,
         }),
         blockWeeks: getReadyProgramBlockWeeks(template),
         days,
@@ -285,6 +286,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
       preferences.setupTrainingEnvironment,
       preferences.setupEquipmentItems,
       preferences.routineDrillOverrides,
+      preferences.setupCautionFlags,
       readerComposedWeek,
     ],
   );

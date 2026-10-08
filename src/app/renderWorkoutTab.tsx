@@ -2,7 +2,8 @@ import React from 'react';
 import { View } from 'react-native';
 
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { buildFirstRunRecommendationReasons, FirstRunSetupSelection } from '../lib/firstRunSetup';
+import type { FirstRunSetupSelection } from '../lib/firstRunSetup';
+import { buildReadyProgramFitExplanation } from '../lib/readyProgramFit';
 import { restAlertsAnswered } from '../lib/restAlertAnswer';
 import { openRestAlertSettings } from '../utils/sessionNotifications';
 import { recordOwnBlock } from '../lib/ownBlockHistory';
@@ -17,7 +18,6 @@ import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
   buildReadyProgramDetail,
-  readyProgramSessionMinutes,
   resolveReaderComposedWeek,
 } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
@@ -35,7 +35,7 @@ import {
   resolveCollectionProgress,
 } from '../lib/exerciseCollections';
 import { toggleTechniqueStatement } from '../lib/exerciseLearning';
-import { getExerciseProgressForName, SameLiftMatcher } from '../lib/progression';
+import type { ExerciseProgressSummary } from '../lib/progression';
 import { catalogLevelForSetup } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
@@ -107,7 +107,7 @@ export interface WorkoutTabDeps {
   clearFreestyleDraft: NonNullable<React.ComponentProps<typeof EmptyWorkoutScreen>['onClearDraft']>;
   customWorkoutRuntimeMap: Record<string, Parameters<typeof buildCustomProgramDetail>[0] | undefined>;
   setupSelection: FirstRunSetupSelection | null;
-  setupRecommendation: { featuredProgramId?: string | null; mismatchNote?: string | null } | null;
+  setupRecommendation: { featuredProgramId?: string | null; secondaryProgramId?: string | null; mismatchNote?: string | null } | null;
   tailoringPreferences: Parameters<typeof buildTailoringBadgeLabels>[0];
   activeProgramTemplateIds: string[];
   onStopProgram: (workoutTemplateId: string) => Promise<void>;
@@ -204,8 +204,8 @@ export interface WorkoutTabDeps {
   liftHistory: React.ComponentProps<typeof GuidedPlayerScreen>['liftHistory'];
   /** The plateau reminder for whichever lift is walked to next, by name. */
   plateauNotice: React.ComponentProps<typeof GuidedPlayerScreen>['plateauNotice'];
-  /** Whether a log is one library row's history — see isSameLiftAsLibraryRow. */
-  sameLibraryRow: SameLiftMatcher;
+  /** The exercise page's logged history by name — see useExerciseDetailHistory. */
+  exerciseProgressFor: (exerciseName: string) => ExerciseProgressSummary;
   guidedEntryEyebrow: GuidedProps['entryEyebrow'];
   guidedWeekProgress: GuidedProps['weekProgress'];
   guidedNextUp: GuidedProps['nextUp'];
@@ -311,7 +311,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     freestyleDraft,
     saveFreestyleDraft,
     clearFreestyleDraft,
-    sameLibraryRow,
+    exerciseProgressFor,
     guidedEntryEyebrow,
     guidedWeekProgress,
     guidedNextUp,
@@ -403,18 +403,23 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     // Truth rule: when this is the user's active program, the detail
     // shows the composed week they actually run, not the raw catalog.
     const readyComposedWeek = readyTemplate ? resolveComposedWeekForRoute(route.workoutTemplateId) : null;
-    const readyProgramMinutesOptions = { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides };
+    const readyProgramMinutesOptions = {
+      availableEquipment: availableEquipmentForDrills,
+      overrides: preferences.routineDrillOverrides,
+      cautionFlags: preferences.setupCautionFlags,
+    };
+    // Every number in it is from the week this page draws (readyProgramFit).
     const readyProgramFitExplanation =
-      readyTemplate && setupSelection && setupRecommendation?.featuredProgramId === readyTemplate.id
-        ? buildFirstRunRecommendationReasons(setupSelection, {
-            projectedDaysPerWeek: readyTemplate.daysPerWeek,
-            // The page's own minutes, not the catalog's hand-written number:
-            // the badge said 35 and this line summed 50 (bug hunt, B14).
-            estimatedSessionDuration: readyProgramSessionMinutes(readyTemplate, readyComposedWeek, readyProgramMinutesOptions),
-            mismatchNote: setupRecommendation.mismatchNote,
+      readyTemplate && setupSelection && setupRecommendation
+        ? buildReadyProgramFitExplanation({
+            selection: setupSelection,
+            recommendation: setupRecommendation,
+            template: readyTemplate,
+            composedWeek: readyComposedWeek,
+            minutesOptions: readyProgramMinutesOptions,
+            tailoringPreferences,
             language: preferences.appLanguage,
-            programId: readyTemplate.id,
-          }, tailoringPreferences).join(' ')
+          })
         : null;
     const readyProgramTailoringBadges = buildTailoringBadgeLabels(tailoringPreferences).slice(0, 3);
     /*
@@ -832,7 +837,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           preferences.appLanguage,
           false,
           false,
-          { availableEquipment: availableEquipmentForDrills, overrides: preferences.routineDrillOverrides },
+          {
+            availableEquipment: availableEquipmentForDrills,
+            overrides: preferences.routineDrillOverrides,
+            cautionFlags: preferences.setupCautionFlags,
+          },
         )
       : customTemplate
         ? buildCustomProgramDetail(customTemplate, programInsightsByTemplateId[route.workoutTemplateId], preferences.appLanguage)
@@ -854,6 +863,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         dayNumber={dayIndex + 1}
         dayCount={program.sessions.length}
         availableEquipment={availableEquipmentForDrills}
+        cautionFlags={preferences.setupCautionFlags}
         routineDrillOverrides={preferences.routineDrillOverrides}
         // Permanent by nature: the drills are generated from the session
         // focus, so a choice belongs to every day with that focus rather
@@ -1089,6 +1099,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         defaultRestSeconds={preferences.defaultRestSeconds}
         unitPreference={unitPreference}
         availableEquipment={availableEquipmentForDrills}
+        cautionFlags={preferences.setupCautionFlags}
         routineDrillOverrides={preferences.routineDrillOverrides}
         tailoringPreferences={tailoringPreferences}
         exerciseLibrary={exerciseLibrary}
@@ -1162,6 +1173,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         tailoringPreferences={tailoringPreferences}
         programAvailableEquipment={availableEquipmentForDrills}
         programDrillOverrides={preferences.routineDrillOverrides}
+        programCautionFlags={preferences.setupCautionFlags}
         onOpenWorkout={navigateToGuidedWorkout}
         onOpenReadyProgram={handleOpenProgramDetail}
         onStartReadyProgram={handleStartReadyProgram}
@@ -1182,7 +1194,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // onboarding programme logs "Bench Press" against the library's
         // "Barbell Bench Press - Medium Grip". A variation filed as its own
         // row (sumo, trap bar) stays on its own page.
-        history={getExerciseProgressForName(database, exercise.name, sameLibraryRow)}
+        history={exerciseProgressFor(exercise.name)}
         unitPreference={unitPreference}
         // Decides whether this lift's caution is for this reader.
         cautionFlags={preferences.setupCautionFlags}

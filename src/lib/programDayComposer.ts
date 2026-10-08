@@ -2,12 +2,18 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
-import { CautionExerciseSwap, runStandInKindOf, sessionNameAfterRunStandIn } from './cautionExerciseFilter';
+import {
+  CautionExerciseSwap,
+  runStandInKindOf,
+  sessionNameAfterRemovedLifts,
+  sessionNameAfterRunStandIn,
+} from './cautionExerciseFilter';
 import { isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from './readerDayFilters';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
+import { movementFamilyOf } from './movementFamily';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type { SetupFocusArea, SetupWeekday } from '../types/models';
@@ -130,6 +136,17 @@ function resolveSubstitutionGroup(name: string, role: string, exerciseIndex: num
 
 const REFILL_EXERCISE_COUNT = 3;
 
+/** What a day is called when its title's lifts are gone: names sessionNameLabel translates. */
+const FOCUS_TITLES: Record<SessionFocusKind, string> = {
+  push: 'Push Focus',
+  pull: 'Pull Focus',
+  upper: 'Upper Focus',
+  lower: 'Lower Focus',
+  general: 'Full Body Focus',
+  // Only reached when a stretching or run day was emptied; the title says what a mixed day does.
+  easy: 'Full Body Focus',
+};
+
 /** The accessory pools that train what a day was for. */
 const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
   push: ['chest', 'shoulders', 'arms', 'core'],
@@ -137,6 +154,8 @@ const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
   upper: ['chest', 'back', 'shoulders', 'arms', 'core'],
   lower: ['legs', 'glutes', 'hamstrings', 'calves'],
   general: ['legs', 'chest', 'core', 'back'],
+  // An emptied stretching or run day is refilled like any mixed day.
+  easy: ['legs', 'chest', 'core', 'back'],
 };
 
 /**
@@ -154,23 +173,85 @@ function refillEmptiedSession(
   selection: FirstRunSetupSelection,
 ): ComposedProgramSession {
   const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
-  const names = [
-    ...movementPoolNames(originalNames),
-    ...pools.flatMap((pool) => pool.bodyweight),
-    ...pools.flatMap((pool) => pool.loaded),
-  ];
-  const exercises = safeCandidates(names, session.id, new Set(), availableEquipment, cautionFlags, selection)
-    .slice(0, REFILL_EXERCISE_COUNT)
+  const onTheDay = new Set<string>();
+  const focusNames = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection);
+  const supplemental = safeCandidates(
+    [...pools.flatMap((pool) => pool.bodyweight), ...pools.flatMap((pool) => pool.loaded)],
+    session.id,
+    new Set(focusNames.map((name) => name.trim().toLowerCase())),
+    availableEquipment,
+    cautionFlags,
+    selection,
+  );
+  const exercises = pickDistinctMovements([...focusNames, ...supplemental], REFILL_EXERCISE_COUNT, [])
     .map((name, index) => buildComposedFallbackExercise(name, session.id, index));
   return { ...session, source: 'suggested', exercises };
 }
 
-/** The accessory pools for what the day was for, bodyweight first. */
-function movementPoolNames(originalNames: readonly string[]): string[] {
-  const focusPools = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map(
-    (area) => FOCUS_ACCESSORY_POOL[area],
-  );
-  return [...focusPools.flatMap((pool) => pool.bodyweight), ...focusPools.flatMap((pool) => pool.loaded)];
+/**
+ * The names that train what the day was for and survive the reader's gear and
+ * flags, one per movement area per round: the first safe name of each area,
+ * then the second of each, and so on. Listing every bodyweight name of every
+ * area before any other handed a lower day with the legs struck out two
+ * bridge variants and a kickback, and never reached the hinge or the calves
+ * that were safe (persona hunt, 2026-10-08). Within an area the order stays
+ * bodyweight first.
+ */
+function movementPoolNames(
+  originalNames: readonly string[],
+  sessionId: string,
+  onTheDay: ReadonlySet<string>,
+  availableEquipment: string[] | null,
+  cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
+  selection: FirstRunSetupSelection,
+): string[] {
+  const perArea = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map((area) => {
+    const pool = FOCUS_ACCESSORY_POOL[area];
+    return safeCandidates([...pool.bodyweight, ...pool.loaded], sessionId, onTheDay, availableEquipment, cautionFlags, selection);
+  });
+  const names: string[] = [];
+  const seen = new Set<string>();
+  for (let round = 0; perArea.some((list) => round < list.length); round += 1) {
+    for (const list of perArea) {
+      if (round >= list.length) {
+        continue;
+      }
+      const name = list[round];
+      const key = name.trim().toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      names.push(name);
+    }
+  }
+  return names;
+}
+
+/**
+ * The first `count` names that are not a movement the day already holds (see
+ * movementFamily): a day with Glute Bridge March is not topped up with a
+ * second bridge while a hinge or a calf raise is safe. When the distinct ones
+ * run out the repeats fill the rest, since a thin day is the worse outcome.
+ */
+function pickDistinctMovements(names: readonly string[], count: number, onTheDay: readonly string[]): string[] {
+  const families = new Set(onTheDay.map(movementFamilyOf).filter((family): family is string => family !== null));
+  const picked: string[] = [];
+  const repeats: string[] = [];
+  for (const name of names) {
+    const family = movementFamilyOf(name);
+    if (family !== null && families.has(family)) {
+      repeats.push(name);
+      continue;
+    }
+    if (picked.length < count) {
+      picked.push(name);
+      if (family !== null) {
+        families.add(family);
+      }
+    }
+  }
+  return [...picked, ...repeats].slice(0, count);
 }
 
 /**
@@ -224,10 +305,13 @@ function topUpThinSession(
     return session;
   }
   const onTheDay = new Set(session.exercises.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
-  const fillers = safeCandidates(movementPoolNames(originalNames), session.id, onTheDay, availableEquipment, cautionFlags, selection)
-    .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }))
-    .slice(0, missing)
-    .map((name, index) => buildComposedFallbackExercise(name, session.id, session.exercises.length + index));
+  const candidates = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection)
+    .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }));
+  const fillers = pickDistinctMovements(
+    candidates,
+    missing,
+    session.exercises.map((exercise) => exercise.exerciseName),
+  ).map((name, index) => buildComposedFallbackExercise(name, session.id, session.exercises.length + index));
   return fillers.length > 0 ? { ...session, exercises: [...session.exercises, ...fillers] } : session;
 }
 
@@ -349,6 +433,7 @@ export function composeProgramWeekForSelection(
   const equipmentSwapped: Array<{ from: string; to: string }> = [];
 
   const liftsBeforeCaution = new Map<string, number>();
+  const removedBySession = new Map<string, string[]>();
 
   const filtered = baseSessions
     .map((session): ComposedProgramSession => {
@@ -365,6 +450,12 @@ export function composeProgramWeekForSelection(
       equipmentSwapped.push(...equipped.swapped);
       liftsBeforeCaution.set(session.id, countDayLifts(equipped.exercises));
       cautionRemoved.push(...adjusted.removed);
+      // A lift a `careful` flag swapped away is as gone from the day as one an
+      // `avoid` flag removed: a Hip Thrust does not make it a Deadlift day.
+      removedBySession.set(session.id, [
+        ...adjusted.removed.map((entry) => entry.name),
+        ...adjusted.swapped.map((swap) => swap.from),
+      ]);
       cautionSwapped.push(...adjusted.swapped);
 
       // A run day whose runs became walks (or rides) is named for them.
@@ -406,7 +497,17 @@ export function composeProgramWeekForSelection(
     toppedUp,
     (session) => trainingDayIds.has(session.id) && countDayLifts(session.exercises) < MIN_DAY_LIFTS,
   );
-  const sessions = folded.sessions.map((session, index) => ({ ...session, orderIndex: index }));
+  const sessions = folded.sessions.map((session, index) => ({
+    ...session,
+    // A day named for a lift the flags took out is named for what it holds.
+    name: sessionNameAfterRemovedLifts(
+      session.name,
+      removedBySession.get(session.id) ?? [],
+      session.exercises.map((exercise) => exercise.exerciseName),
+      FOCUS_TITLES[classifySessionFocus(session.exercises.map((exercise) => exercise.exerciseName))],
+    ),
+    orderIndex: index,
+  }));
 
   // Report only emphasis that survived the caution pass (as-is or swapped) —
   // the truth surface must not claim additions the flags vetoed — on the day
@@ -436,9 +537,9 @@ export function composeProgramWeekForSelection(
     totalWorkouts: weeks * days,
     // Home's arithmetic over the week as composed, swaps and all (bug hunt,
     // 2026-10-04).
-    sessionMinutes: estimateProgrammeSessionMinutes(sessions, { availableEquipment }) || template.estimatedSessionDuration,
+    sessionMinutes: estimateProgrammeSessionMinutes(sessions, { availableEquipment, cautionFlags }) || template.estimatedSessionDuration,
     savedCopySessionMinutes:
-      estimateProgrammeSessionMinutes(sessions, { availableEquipment, rest: 'max' }) || template.estimatedSessionDuration,
+      estimateProgrammeSessionMinutes(sessions, { availableEquipment, cautionFlags, rest: 'max' }) || template.estimatedSessionDuration,
     composed: days !== template.daysPerWeek,
     cautionRemoved,
     cautionSwapped,

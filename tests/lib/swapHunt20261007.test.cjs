@@ -179,7 +179,7 @@ module.exports = [
         ['Back Squat', 'Plank', '3x45-45 seconds'],
         ['Back Squat', 'Bicycling, Stationary', '3x5-5 minutes'],
         ['Plank', 'Dead Bug', '4x12-12 reps'],
-        ['Mountain Climbers', 'Plank', '2x45-45 seconds'],
+        ['Mountain Climbers', 'Plank', '4x45-45 seconds'],
         ['Back Squat', 'Leg Press', '3x8-8 reps'],
       ];
       for (const [from, to, expected] of cases) {

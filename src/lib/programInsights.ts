@@ -249,7 +249,8 @@ export function buildProgramInsightMap({
   database: AppDatabase;
   programs: ProgramInsightInput[];
   unitPreference: UnitPreference;
-  activeSession: WorkoutSessionRuntime | null;
+  /** Only which template is running, and under what name, is read. */
+  activeSession: Pick<WorkoutSessionRuntime, 'templateId' | 'templateName'> | null;
   now?: Date;
 }) {
   const canonicalSessions = getCanonicalCompletedSessions(database);
