@@ -446,6 +446,7 @@ const suites = [
   ...require('./lib/recommendationWaterfallCopy.test.cjs'),
   ...require('./lib/firstRunSetup.test.cjs'),
   ...require('./lib/copySurface.test.cjs'),
+  ...require('./lib/sessionNameAfterCaution.test.cjs'),
   ...require('./lib/focusAreaPresentation.test.cjs'),
   ...require('./lib/programFocusSplit.test.cjs'),
   ...require('./lib/programDayComposer.test.cjs'),

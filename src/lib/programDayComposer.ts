@@ -8,6 +8,7 @@ import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
+import { sessionNameAfterLiftsLeft } from './sessionNameAfterCaution';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
 import type { FirstRunSetupSelection } from './firstRunSetup';
 import type { SetupFocusArea, SetupWeekday } from '../types/models';
@@ -349,6 +350,8 @@ export function composeProgramWeekForSelection(
   const equipmentSwapped: Array<{ from: string; to: string }> = [];
 
   const liftsBeforeCaution = new Map<string, number>();
+  // The days a flag took a lift out of: their names are checked below.
+  const cautionTouched = new Set<string>();
 
   const filtered = baseSessions
     .map((session): ComposedProgramSession => {
@@ -366,6 +369,9 @@ export function composeProgramWeekForSelection(
       liftsBeforeCaution.set(session.id, countDayLifts(equipped.exercises));
       cautionRemoved.push(...adjusted.removed);
       cautionSwapped.push(...adjusted.swapped);
+      if (adjusted.removed.length > 0 || adjusted.swapped.length > 0) {
+        cautionTouched.add(session.id);
+      }
 
       // A run day whose runs became walks (or rides) is named for them.
       const standInKind = adjusted.swapped.map((swap) => runStandInKindOf(swap.to)).find(Boolean) ?? null;
@@ -406,7 +412,18 @@ export function composeProgramWeekForSelection(
     toppedUp,
     (session) => trainingDayIds.has(session.id) && countDayLifts(session.exercises) < MIN_DAY_LIFTS,
   );
-  const sessions = folded.sessions.map((session, index) => ({ ...session, orderIndex: index }));
+  // A day a flag emptied of its squats is no longer "Squat & Bench": the name
+  // loses the lift words nothing on the day honours (persona hunt, 2026-10-08).
+  for (const target of folded.foldedInto.values()) {
+    cautionTouched.add(target);
+  }
+  const sessions = folded.sessions.map((session, index) => ({
+    ...session,
+    name: cautionTouched.has(session.id)
+      ? sessionNameAfterLiftsLeft(session.name, session.exercises.map((exercise) => exercise.exerciseName))
+      : session.name,
+    orderIndex: index,
+  }));
 
   // Report only emphasis that survived the caution pass (as-is or swapped) —
   // the truth surface must not claim additions the flags vetoed — on the day
