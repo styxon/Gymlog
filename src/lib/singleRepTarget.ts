@@ -1,3 +1,4 @@
+import type { WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { isHoldExerciseName } from './holdExercises';
 import { intervalOffSeconds } from './intervalScheme';
 
@@ -13,14 +14,18 @@ import { intervalOffSeconds } from './intervalScheme';
  *
  * Holds are exempt for the same reason they were in the catalog: their
  * numbers are seconds, and "30-60 s" is a dose bracket, not a rep range.
- * `isHoldExerciseName` is the one list that decides.
+ * `isHoldExerciseName` is the one list that decides — unless the row says
+ * outright it is a hold: a CSV import files "Glute Bridge Hold" under the
+ * barbell bridge with trackingMode 'hold', and the name alone collapsed its
+ * 30-45 s to 45 on every save and load (round 2, 2026-10-08).
  */
 export function collapseRepRange(exercise: {
   name: string;
   repMin: number;
   repMax: number;
+  trackingMode?: WorkoutTrackingMode | null;
 }): { repMin: number; repMax: number } {
-  if (exercise.repMin === exercise.repMax || isHoldExerciseName(exercise.name)) {
+  if (exercise.repMin === exercise.repMax || exercise.trackingMode === 'hold' || isHoldExerciseName(exercise.name)) {
     return { repMin: exercise.repMin, repMax: exercise.repMax };
   }
   return { repMin: exercise.repMax, repMax: exercise.repMax };
@@ -52,6 +57,7 @@ export function savedPrescription(row: {
   repMin: number;
   repMax: number;
   restSeconds: number | null;
+  trackingMode?: WorkoutTrackingMode | null;
 }): { repMin: number; repMax: number; restSeconds: number | null } {
   const reps = collapseRepRange(row);
   // An interval's rest is the off-phase its own name states — a saved

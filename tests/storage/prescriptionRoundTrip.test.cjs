@@ -122,4 +122,22 @@ module.exports = [
       assert.deepEqual([bike.repMin, bike.repMax, bike.restSeconds], [45, 45, 15]);
     },
   },
+  {
+    name: 'prescription: a row stored as a hold keeps its seconds bracket on load, whatever its name (round 2, 2026-10-08)',
+    async run() {
+      // What a CSV import of "Glute Bridge Hold, 3, 30-45" stored before it
+      // kept the catalogue's name: the barbell bridge, marked a hold.
+      const database = loadDatabaseModule();
+      const out = database.normalizeDatabase({
+        workoutTemplates: [{ id: 'wt1', name: 'Imported', sessions: [{ id: 's1', name: 'A', orderIndex: 0, exerciseIds: ['e1', 'e2'] }] }],
+        exerciseTemplates: [
+          { id: 'e1', workoutTemplateId: 'wt1', workoutTemplateSessionId: 's1', name: 'Barbell Glute Bridge', repMin: 30, repMax: 45, restSeconds: 90, orderIndex: 0, trackingMode: 'hold' },
+          { id: 'e2', workoutTemplateId: 'wt1', workoutTemplateSessionId: 's1', name: 'Barbell Glute Bridge', repMin: 8, repMax: 10, restSeconds: 90, orderIndex: 1, trackingMode: 'load_and_reps' },
+        ],
+      });
+      const [hold, lift] = out.exerciseTemplates;
+      assert.deepEqual([hold.repMin, hold.repMax, hold.trackingMode], [30, 45, 'hold']);
+      assert.deepEqual([lift.repMin, lift.repMax], [10, 10], 'the same name lifted for reps still reads one number');
+    },
+  },
 ];
