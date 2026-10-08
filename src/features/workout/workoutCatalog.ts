@@ -40,7 +40,11 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: 'bodyweight_pull', allowedExerciseNames: ['Inverted Row', 'Pull-Up', 'Inverted Row (Table)', 'Rows (Bar or Rings)'] },
   { id: 'bodyweight_core', allowedExerciseNames: ['Plank', 'Mountain Climbers', 'Push Up to Side Plank', 'Hollow Body Hold', 'Dead Bug', 'Dead Bug (Modified)', 'Bird Dog', 'Mountain Climber', 'Mountain Climber (20s on / 10s off)'] },
   { id: 'bodyweight_hinge', allowedExerciseNames: ['Glute Bridge', 'Single-Leg Glute Bridge', 'Single Leg Glute Bridge', 'Hamstring Walkout'] },
-  { id: 'chest_fly', allowedExerciseNames: ['Cable Fly', 'Dumbbell Fly', 'Pec Deck', 'Cable Crossover', 'Cable Pullover'] },
+  { id: 'chest_fly', allowedExerciseNames: ['Cable Fly', 'Dumbbell Fly', 'Pec Deck', 'Cable Crossover'] },
+  // The pullover is a lat lift. It sat in chest_fly, so a pull day's lat
+  // accessory offered chest flies as swaps. Stored rows that still carry
+  // chest_fly keep working: the group itself is unchanged.
+  { id: 'lat_isolation', allowedExerciseNames: ['Cable Pullover', 'Straight-Arm Pulldown', 'Rope Straight-Arm Pulldown'] },
   { id: 'barbell_curl', allowedExerciseNames: ['Barbell Curl', 'EZ-Bar Curl', 'Cable Curl', 'Preacher Curl', 'Bicep Curl', 'Dumbbell Bicep Curl', 'Cable Bicep Curl', 'Incline Dumbbell Curl', 'Cable Hammer Curl', 'Band Curl'] },
   { id: 'overhead_triceps', allowedExerciseNames: ['Overhead Triceps Extension', 'Skull Crusher', 'Close-Grip Bench Press', 'Weighted Dips', 'Triceps Dip (Chair)'] },
   ...Vinha_PROGRAM_SUBSTITUTION_GROUPS,
@@ -219,8 +223,9 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       session({ id: 'minimal_full_body_b', name: 'Day 2: Full Body', orderIndex: 2, exercises: [
         ex({ id: 'minimal_full_body_b_bodyweight_walking_lunge', exerciseName: 'Bodyweight Walking Lunge', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_squat_pattern' }),
         ex({ id: 'minimal_full_body_b_push_up_wide', exerciseName: 'Push-Up Wide', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'minimal_full_body_b_inverted_row', exerciseName: 'Inverted Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_pull' }),
         ex({ id: 'minimal_full_body_b_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
-        ex({ id: 'minimal_full_body_b_mountain_climbers', exerciseName: 'Mountain Climbers', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 40, repsMax: 40, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'minimal_full_body_b_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_core' }),
       ] }),
     ],
   },
@@ -1569,6 +1574,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       session({ id: 'fit_elite_upper_b', name: 'Day 3: Upper Volume', orderIndex: 3, exercises: [
         ex({ id: 'fit_elite_upper_b_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: 'horizontal_press' }),
         ex({ id: 'fit_elite_upper_b_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: 'vertical_pull' }),
+        ex({ id: 'fit_elite_upper_b_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'secondary_pull_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'fit_elite_upper_b_lateral_raise', exerciseName: 'Lateral Raise', slotId: 'accessory_delts_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
         ex({ id: 'fit_elite_upper_b_burpee', exerciseName: 'Burpee', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'conditioning_circuit' }),
       ] }),
