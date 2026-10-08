@@ -459,7 +459,9 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
     loaded: ['Incline Dumbbell Press', 'Dumbbell Flyes', 'Cable Crossover'],
   },
   back: {
-    bodyweight: ['Inverted Row', 'Bodyweight Mid Row', 'Superman'],
+    // Not "Superman": it is a lower-back extension that the caution filter does
+    // not read as one, so a lower-back flag still handed it out.
+    bodyweight: ['Inverted Row', 'Bodyweight Mid Row', 'Suspended Row'],
     loaded: ['Close-Grip Front Lat Pulldown', 'Bent Over Two-Dumbbell Row', 'Seated Cable Rows'],
   },
   shoulders: {

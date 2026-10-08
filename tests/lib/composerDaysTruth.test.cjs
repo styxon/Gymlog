@@ -329,4 +329,90 @@ module.exports = [
       assert.equal(readyProgramProjectedDays(template, undefined), 4);
     },
   },
+  {
+    name: 'composer days: no accessory pool entry passes a lower-back, knee or shoulder flag when its library row loads that area',
+    run() {
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
+      const { SUPPLEMENTAL_DAY_POOL } = require('../../.test-dist/lib/catalogExercisePools');
+      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer');
+      const libraryNames = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
+
+      // Library primary muscle -> the flag that has to read the name. A stretch
+      // is mobility work and not the lift the flag is about; the elliptical and
+      // the recumbent bike load the quads without landing on the knee; the pull
+      // apart, arm circles and ropes are light shoulder work, not a press.
+      const areaOfMuscle = { 'lower back': 'lower_back', quadriceps: 'knees', shoulders: 'shoulders' };
+      const lightLoad = new Set(['Elliptical Trainer', 'Recumbent Bike', 'Band Pull Apart', 'Arm Circles', 'Battling Ropes']);
+
+      const names = new Set();
+      for (const pool of [...Object.values(FOCUS_ACCESSORY_POOL), ...Object.values(SUPPLEMENTAL_DAY_POOL)]) {
+        for (const name of [...pool.bodyweight, ...pool.loaded]) names.add(name);
+      }
+      const unflagged = [];
+      let checked = 0;
+      for (const name of names) {
+        const index = findGuidedLibraryIndex(name, libraryNames);
+        if (index === null) continue;
+        const row = GENERATED_EXERCISE_LIBRARY[index];
+        if (/stretch/i.test(name) || lightLoad.has(name)) continue;
+        for (const muscle of row.primaryMuscles) {
+          const area = areaOfMuscle[muscle];
+          if (!area) continue;
+          checked += 1;
+          if (!exerciseHitsCautionArea(name, area)) unflagged.push(`${name} (${muscle}) is not read as ${area}`);
+        }
+      }
+      assert.ok(checked >= 10, `${checked} rows checked: the pools or the library moved`);
+      assert.deepEqual(unflagged, []);
+    },
+  },
+  {
+    name: 'composer days: a lower-back flag leaves no lower-back extension in a back-focus accessory, for any programme, gear or flag level',
+    run() {
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer');
+      const libraryNames = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
+      const loadsLowerBack = (name) => {
+        const index = findGuidedLibraryIndex(name, libraryNames);
+        return index !== null && GENERATED_EXERCISE_LIBRARY[index].primaryMuscles.includes('lower back');
+      };
+      // The pool itself: nothing in the back pool is a lower-back lift.
+      for (const name of [...FOCUS_ACCESSORY_POOL.back.bodyweight, ...FOCUS_ACCESSORY_POOL.back.loaded]) {
+        assert.equal(loadsLowerBack(name), false, name);
+      }
+      const gears = [
+        { trainingEnvironment: 'bodyweight_only', equipment: 'home' },
+        { trainingEnvironment: 'home_gym', equipment: 'home', equipmentItems: ['Dumbbells', 'Resistance bands'] },
+      ];
+      let focusRows = 0;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const level of ['avoid', 'careful']) {
+          for (const gear of gears) {
+            const week = composeProgramWeekForSelection(
+              selectionWith({
+                daysPerWeek: template.daysPerWeek,
+                focusAreas: ['back'],
+                cautionFlags: [{ area: 'lower_back', level, refinements: [] }],
+                ...gear,
+              }),
+              template.id,
+            );
+            if (!week) continue;
+            for (const day of week.sessions) {
+              for (const row of day.exercises) {
+                if (!isFocusRow(row)) continue;
+                focusRows += 1;
+                assert.equal(
+                  loadsLowerBack(row.exerciseName),
+                  false,
+                  `${template.id} (${level}) ${day.name}: ${row.exerciseName}`,
+                );
+              }
+            }
+          }
+        }
+      }
+      assert.ok(focusRows > 0, 'no focus rows composed: the fixture no longer exercises the pool');
+    },
+  },
 ];
