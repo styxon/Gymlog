@@ -397,6 +397,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           repMin: typeof exercise?.repMin === 'number' ? exercise.repMin : 6,
           repMax: typeof exercise?.repMax === 'number' ? exercise.repMax : 8,
           restSeconds: typeof exercise?.restSeconds === 'number' ? exercise.restSeconds : null,
+          trackingMode: readStoredTrackingMode(exercise?.trackingMode),
         });
         return {
           id: String(exercise?.id ?? ''),

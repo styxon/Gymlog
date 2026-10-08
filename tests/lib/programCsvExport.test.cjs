@@ -139,13 +139,14 @@ module.exports = [
     name: 'programCsvExport: every ready programme exported and imported again keeps each row in its own unit (bug hunt 2026-10-08)',
     run() {
       const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { isMinutesTrackingMode, prescriptionUnitOf } = require('../../.test-dist/features/workout/workoutTypes.js');
+      const { prescriptionUnitOf } = require('../../.test-dist/features/workout/workoutTypes.js');
+      const { csvExportRowOfCatalogue } = require('../../.test-dist/lib/programCsvExport.js');
+      const { csvRowDayKey } = require('../../.test-dist/lib/csvProgramImport.js');
       const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
       const { parseIntervalScheme } = require('../../.test-dist/lib/intervalScheme.js');
       const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
       const library = createSeedExerciseLibrary();
       const entries = library.map((item) => ({ id: item.id, name: item.name, sourceCategory: item.sourceCategory }));
-      const dayKey = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 
       const offenders = [];
       const unlinked = new Set();
@@ -155,18 +156,13 @@ module.exports = [
         const catalogueRows = template.sessions.flatMap((session) => session.exercises);
         const csv = buildProgramCsv(template.sessions.map((session) => ({
           name: session.name,
-          exercises: session.exercises.map((exercise) => ({
-            name: exercise.exerciseName,
-            sets: exercise.sets,
-            repMin: exercise.repsMin,
-            repMax: exercise.repsMax,
-            minutes: isMinutesTrackingMode(exercise.trackingMode),
-          })),
+          exercises: session.exercises.map(csvExportRowOfCatalogue),
         })));
         const preview = parseCsvProgram(csv, entries);
         assert.deepEqual(preview.errors, [], template.id);
         assert.equal(preview.rows.length, catalogueRows.length, template.id);
         const draft = buildDraftFromCsvPreview(preview, template.name);
+        assert.equal(draft.sessions.length, template.sessions.length, `${template.id}: one session per exported day`);
 
         // Run the draft the way a saved custom programme runs.
         const sessions = draft.sessions.map((session, sessionIndex) => ({
@@ -190,7 +186,7 @@ module.exports = [
           90,
         );
 
-        // The draft keeps linked rows in order, one session per day name.
+        // The draft keeps linked rows in order, one session per day.
         const sessionOrder = [];
         const filled = new Map();
         preview.rows.forEach((row, index) => {
@@ -199,7 +195,7 @@ module.exports = [
             unlinked.add(original.exerciseName);
             return;
           }
-          const key = dayKey(row.day);
+          const key = csvRowDayKey(row);
           if (!filled.has(key)) {
             filled.set(key, 0);
             sessionOrder.push(key);

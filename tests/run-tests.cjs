@@ -202,6 +202,7 @@ const suites = [
   ...require('./lib/notificationPlan.test.cjs'),
   ...require('./lib/planNotificationSync.test.cjs'),
   ...require('./lib/programCsvExport.test.cjs'),
+  ...require('./lib/programCsvRoundTrip.test.cjs'),
   ...require('./lib/setupHandoff.test.cjs'),
   ...require('./lib/quickLayoutExercises.test.cjs'),
   ...require('./lib/templateBuilderSteps.test.cjs'),

@@ -81,6 +81,26 @@ module.exports = [
       assert.ok(upsert.length > 0, 'buildTemplateUpsert is gone');
       assert.match(upsert, /const prescription = savedPrescription\(\{\s*name,/);
       assert.match(upsert, /repMin: prescription\.repMin,\s*repMax: prescription\.repMax,\s*restSeconds: prescription\.restSeconds,/);
+      // Both hand the rule the row's mode: a hold under a name that is not
+      // one's lost its seconds bracket on the save (round 2, 2026-10-08).
+      assert.match(upsert, /savedPrescription\(\{[^}]*trackingMode: exercise\.trackingMode \?\? null,[^}]*\}\)/);
+      assert.match(database, /savedPrescription\(\{[^}]*trackingMode: readStoredTrackingMode\(exercise\?\.trackingMode\),[^}]*\}\)/);
+    },
+  },
+  {
+    name: 'a row stored as a hold keeps its seconds bracket under any name (round 2, 2026-10-08)',
+    run() {
+      const { savedPrescription } = require('../../.test-dist/lib/singleRepTarget.js');
+      assert.deepEqual(
+        savedPrescription({ name: 'Barbell Glute Bridge', repMin: 30, repMax: 45, restSeconds: 90, trackingMode: 'hold' }),
+        { repMin: 30, repMax: 45, restSeconds: 90 },
+      );
+      // The name still decides for a row that does not say, and a counted mode does not exempt it.
+      assert.deepEqual(collapseRepRange({ name: 'Barbell Glute Bridge', repMin: 30, repMax: 45 }), { repMin: 45, repMax: 45 });
+      assert.deepEqual(
+        collapseRepRange({ name: 'Barbell Glute Bridge', repMin: 8, repMax: 10, trackingMode: 'load_and_reps' }),
+        { repMin: 10, repMax: 10 },
+      );
     },
   },
   {

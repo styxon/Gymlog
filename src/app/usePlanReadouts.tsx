@@ -2,8 +2,7 @@ import { useMemo } from 'react';
 
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
-import { readsAsMinutesByName } from '../lib/minutesExercises';
+import { csvExportRowOfCatalogue, csvExportRowOfSaved } from '../lib/programCsvExport';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
@@ -79,17 +78,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
       name: formatWorkoutDisplayLabel(template.name, 'Workout plan'),
       sessions: getWorkoutTemplateSessions(template.id).map((session) => ({
         name: session.name,
-        exercises: session.exercises.map((exercise) => ({
-          name: exercise.name,
-          sets: exercise.targetSets,
-          repMin: exercise.repMin,
-          repMax: exercise.repMax,
-          // The stored mode when the writer knew it, the name when it did
-          // not — the same order the programme is run in (customWorkoutAdapter).
-          minutes: exercise.trackingMode
-            ? isMinutesTrackingMode(exercise.trackingMode)
-            : readsAsMinutesByName(exercise.name, [exercise.repMin, exercise.repMax]),
-        })),
+        exercises: session.exercises.map(csvExportRowOfSaved),
       })),
     }));
 
@@ -104,13 +93,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
           name: homeActivePlanCard.title,
           sessions: readyTemplate.sessions.map((session) => ({
             name: session.name,
-            exercises: session.exercises.map((exercise) => ({
-              name: exercise.exerciseName,
-              sets: exercise.sets,
-              repMin: exercise.repsMin,
-              repMax: exercise.repsMax,
-              minutes: isMinutesTrackingMode(exercise.trackingMode),
-            })),
+            exercises: session.exercises.map(csvExportRowOfCatalogue),
           })),
         });
       }

@@ -186,8 +186,11 @@ module.exports = [
       );
       assert.match(source, /count: bestMinutes/, 'the best is read from the minutes logs alone');
       assert.match(source, /\[\.\.\.unitLogs\]\.reverse\(\)/, 'the line plots the minutes logs alone');
+      // The plan export's saved rows: their own module since round 2 (2026-10-08).
       const readouts = fs.readFileSync(path.join(ROOT, 'src/app/usePlanReadouts.tsx'), 'utf8');
-      assert.match(readouts, /readsAsMinutesByName\(exercise\.name, \[exercise\.repMin, exercise\.repMax\]\)/);
+      assert.match(readouts, /session\.exercises\.map\(csvExportRowOfSaved\)/);
+      const exportRows = fs.readFileSync(path.join(ROOT, 'src/lib/programCsvExport.ts'), 'utf8');
+      assert.match(exportRows, /readsAsMinutesByName\(exercise\.name, \[exercise\.repMin, exercise\.repMax\]\)/);
     },
   },
 ];
