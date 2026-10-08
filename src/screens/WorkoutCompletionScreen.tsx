@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const HERO_GRADIENT_WIDTH = Dimensions.get('window').width;
 const HERO_GRADIENT_HEIGHT = 360;
 
-import { formatTime, formatWeight, removeTrailingZeros } from '../lib/format';
+import { formatTime, formatWeight, getDateTimeFormat, removeTrailingZeros } from '../lib/format';
 import { bodyPartLabel, t } from '../lib/i18n';
 import { Movement, WhatMovedRow } from '../lib/sessionMovement';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
@@ -261,7 +261,7 @@ function formatWhenLabel(performedAt: string, language: AppLanguage) {
     ? t(language, 'common.today')
     : language === 'fi'
       ? `${performed.getDate()}.${performed.getMonth() + 1}.`
-      : new Intl.DateTimeFormat('en-US', { day: 'numeric', month: 'short' }).format(performed);
+      : getDateTimeFormat('en-US', { day: 'numeric', month: 'short' }).format(performed);
   return `${day} · ${formatTime(performedAt, language)}`;
 }
 

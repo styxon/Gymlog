@@ -398,8 +398,14 @@ export function rankExerciseMatches<
   // A large finite stand-in: Infinity - Infinity is NaN, and a comparator
   // that returns NaN leaves the order to the engine.
   const popular = (item: T) => popularity?.(item) ?? Number.MAX_SAFE_INTEGER;
+  // Matched first, ranked after: the ranking reads several normalised strings
+  // per row and most of a library does not match a typed word, so ranking all
+  // of it first spent the work on rows the filter then dropped — on each
+  // keystroke. The filter keeps relative order, so `index` is unchanged.
   const ranked = items
-    .map((item, index) => {
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => exerciseMatchesQuery(buildExerciseSearchHaystack(item, language), needle))
+    .map(({ item, index }) => {
       const label = exerciseNameLabel(language, item.name);
       return {
         item,
@@ -413,7 +419,6 @@ export function rankExerciseMatches<
         nameHit: exerciseMatchesQuery(`${label} ${item.name}`, needle) ? 0 : 1,
       };
     })
-    .filter(({ item }) => exerciseMatchesQuery(buildExerciseSearchHaystack(item, language), needle))
     .sort(
       (left, right) =>
         left.rank - right.rank ||
