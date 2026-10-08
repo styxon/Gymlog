@@ -13,6 +13,14 @@ const { t } = require('../../.test-dist/lib/i18n.js');
  * the composer from any build whose own filter missed it. Both are the older
  * installs the server check exists for. Run against the endpoint with
  * Anthropic replaced by a fake that counts its calls.
+ *
+ * The review of that fix (2026-10-08): answering the whole request with the
+ * crisis line for a crisis in the HISTORY locked the thread — every question
+ * after it carried the turn back and got the line again, for the eight hours
+ * a thread lives. A crisis in the history now takes that turn and everything
+ * after it out, and the new question is answered without them; only a crisis
+ * in the new question is answered with the line. Either way nothing read as
+ * a crisis reaches the model, and the line is marked `crisis: true`.
  */
 async function withCoach(scenario) {
   const upstream = [];
@@ -43,11 +51,17 @@ function assertCrisisAnswer(response, language) {
   assert.equal(response.body.ok, true);
   assert.equal(response.body.source, 'preview', 'no model wrote it, so nothing is charged for it');
   assert.equal(response.body.answer.takeaway, t(language, 'coachPreview.crisis.takeaway'));
+  // Said outright, so a phone need not recognise the words (older phones
+  // ignore the field and still match the words).
+  assert.equal(response.body.crisis, true);
 }
+
+/** Everything the model was given to read as the conversation. */
+const conversationOf = (call) => JSON.stringify(call.body.messages);
 
 module.exports = [
   {
-    name: 'crisis server: a crisis in the history is answered as one, and the model is not called',
+    name: 'crisis server: a crisis in the history is taken out with every turn after it, and the question is answered without them',
     async run() {
       await withCoach(async ({ post, upstream }) => {
         // Turn one, as an older build sends it: the server catches it.
@@ -56,29 +70,52 @@ module.exports = [
         assert.equal(upstream.length, 0);
 
         // Turn two carries turn one back, the way every build appended it.
+        // Answered, not locked: the turn is dropped before the model.
         const history = [{ question: 'I want to die', takeaway: first.body.answer.takeaway }];
         const second = await post({ prompt: 'how many sets for chest?', context: {}, language: 'en', history });
-        assertCrisisAnswer(second, 'en');
-        assert.equal(upstream.length, 0, 'a crisis in the history reached the model');
+        // The fake upstream fails, so the answer is the offline fallback —
+        // but an answer to the question, not the crisis line again.
+        const said = second.body.answer ?? second.body.fallback;
+        assert.notEqual(said.takeaway, t('en', 'coachPreview.crisis.takeaway'), 'the thread is locked on the crisis line');
+        assert.equal(second.body.crisis, undefined);
+        assert.equal(upstream.length, 1, 'the question after a crisis turn was never answered');
+        assert.doesNotMatch(conversationOf(upstream[0]), /want to die/, 'a crisis in the history reached the model');
+        assert.deepEqual(upstream[0].body.messages, [{ role: 'user', content: 'how many sets for chest?' }]);
 
-        // Anywhere in the three turns kept, and in Finnish.
-        const deeper = await post({
+        // Anywhere in the three turns kept, and in Finnish: the turns before
+        // it go, the crisis turn and every turn after it do not.
+        await post({
           prompt: 'entä jalat?',
           context: {},
           language: 'fi',
           history: [
-            { question: 'halusin kuolla', takeaway: 'x' },
             { question: 'paljonko sarjoja rintaan?', takeaway: 'Kymmenen viikossa.' },
+            { question: 'halusin kuolla', takeaway: 'x' },
             { question: 'entä selkä?', takeaway: 'Saman verran.' },
           ],
         });
-        assertCrisisAnswer(deeper, 'fi');
-        assert.equal(upstream.length, 0);
+        assert.equal(upstream.length, 2);
+        assert.deepEqual(upstream[1].body.messages, [
+          { role: 'user', content: 'paljonko sarjoja rintaan?' },
+          { role: 'assistant', content: 'Kymmenen viikossa.' },
+          { role: 'user', content: 'entä jalat?' },
+        ]);
+
+        // A turn the crisis answer closed goes too, whatever its question
+        // reads as to this filter.
+        await post({
+          prompt: 'and legs?',
+          context: {},
+          language: 'en',
+          history: [{ question: 'something only an older filter caught', takeaway: t('en', 'coachPreview.crisis.takeaway') }],
+        });
+        assert.equal(upstream.length, 3);
+        assert.deepEqual(upstream[2].body.messages, [{ role: 'user', content: 'and legs?' }]);
       });
     },
   },
   {
-    name: 'crisis server: the history check stands before the rate limit',
+    name: 'crisis server: a crisis in the question stands before the rate limit',
     async run() {
       await withCoach(async ({ post, upstream }) => {
         // Spend the window on ordinary questions until the limit answers.
@@ -91,13 +128,18 @@ module.exports = [
         }
         assert.ok(limited, 'the rate limit never answered');
         const calls = upstream.length;
-        const crisis = await post({
+        const crisis = await post({ prompt: 'I wanted to die', context: {}, language: 'en' });
+        assertCrisisAnswer(crisis, 'en');
+        assert.equal(upstream.length, calls);
+        // A crisis in the history only is an ordinary question now, and waits
+        // its turn like one — without reaching the model either way.
+        const after = await post({
           prompt: 'and legs?',
           context: {},
           language: 'en',
           history: [{ question: 'I wanted to die', takeaway: 'x' }],
         });
-        assertCrisisAnswer(crisis, 'en');
+        assert.equal(after.status, 429);
         assert.equal(upstream.length, calls);
       });
     },
@@ -113,6 +155,7 @@ module.exports = [
           history: [{ question: 'how many sets for chest?', takeaway: 'Ten a week.' }],
         });
         assert.equal(upstream.length, 1, 'the check refused a conversation with no crisis in it');
+        assert.equal(upstream[0].body.messages.length, 3, 'an ordinary history lost a turn');
         assert.equal(upstream[0].body.messages[0].content, 'how many sets for chest?');
       });
     },

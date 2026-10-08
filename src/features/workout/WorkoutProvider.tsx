@@ -393,7 +393,7 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
         dispatch({ type: 'exercise/removeSet', payload: { slotId } });
       },
       setMinutesClock(clock) {
-        dispatch({ type: 'session/setMinutesClock', payload: { clock } });
+        dispatch({ type: 'session/setMinutesClock', payload: { clock, nowMs: Date.now() } });
       },
       skipExercise(slotId, reason) {
         dispatch({ type: 'exercise/skip', payload: { slotId, reason } });

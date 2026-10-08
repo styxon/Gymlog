@@ -106,7 +106,7 @@ const slotOf = (state, name) => state.activeSession.exercises.find((e) => e.exer
 function startClock(state, slotId, setIndex, exerciseName, accumulatedMs = 0) {
   return workoutReducer(state, {
     type: 'session/setMinutesClock',
-    payload: { clock: { slotId, setIndex, exerciseName, plannedMinutes: 150, accumulatedMs, runningSinceMs: Date.now() } },
+    payload: { clock: { slotId, setIndex, exerciseName, plannedMinutes: 150, accumulatedMs, runningSinceMs: Date.now() }, nowMs: Date.now() },
   });
 }
 
@@ -175,11 +175,11 @@ module.exports = [
         state = startClock(state, ride, 0, 'Bicycling');
         const running = state.activeSession.minutesClock;
         clock.now += 30 * MIN;
-        const same = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: { ...running } } });
+        const same = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: { ...running }, nowMs: clock.now } });
         assert.equal(same.activeSession.updatedAt, state.activeSession.updatedAt, 'the same running clock again is not an action');
         state = workoutReducer(state, {
           type: 'session/setMinutesClock',
-          payload: { clock: { ...running, accumulatedMs: 30 * MIN, runningSinceMs: null } },
+          payload: { clock: { ...running, accumulatedMs: 30 * MIN, runningSinceMs: null }, nowMs: clock.now },
         });
         assert.equal(Date.parse(state.activeSession.updatedAt), clock.now, 'pausing the bout is the reader doing something');
       });
@@ -306,6 +306,31 @@ module.exports = [
         state = workoutReducer(state, { type: 'set/undo', payload: { slotId: bench, setIndex: 1 } });
         assert.equal(state.activeSession.exercises[0].warmups?.length, 1, 'a bench set is still logged: its warm-ups stay');
       });
+    },
+  },
+  {
+    name: 'minutes clock: a bout is stamped with the time on its action, not the wall clock (review, 2026-10-08)',
+    run() {
+      // The reducer read new Date() for updatedAt, so replaying the same
+      // action gave a different state. The dispatcher stamps the action now,
+      // the way set/repeatLast does, and the reducer only reads it.
+      withNow((clock) => {
+        let state = start([bike()]);
+        const ride = slotOf(state, 'Bicycling');
+        const stampedAt = clock.now + 7 * MIN;
+        clock.now += 90 * MIN;
+        const clockValue = { slotId: ride, setIndex: 0, exerciseName: 'Bicycling', plannedMinutes: 150, accumulatedMs: 0, runningSinceMs: stampedAt };
+        const action = { type: 'session/setMinutesClock', payload: { clock: clockValue, nowMs: stampedAt } };
+        const once = workoutReducer(state, action);
+        assert.equal(Date.parse(once.activeSession.updatedAt), stampedAt, 'updatedAt is the nowMs on the action');
+        clock.now += 30 * MIN;
+        assert.deepEqual(workoutReducer(state, action), once, 'the same action on the same state is the same state');
+      });
+      const source = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../../src/features/workout/workoutState.ts'), 'utf8');
+      const branch = source.slice(source.indexOf("case 'session/setMinutesClock': {"), source.indexOf("case 'exercise/removeWarmup': {"));
+      assert.doesNotMatch(branch.replace(/\/\/.*$/gm, ''), /new Date\(\)|Date\.now\(\)/, 'the reducer reads no clock of its own');
+      const provider = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../../src/features/workout/WorkoutProvider.tsx'), 'utf8');
+      assert.match(provider, /dispatch\(\{ type: 'session\/setMinutesClock', payload: \{ clock, nowMs: Date\.now\(\) \} \}\)/);
     },
   },
 ];

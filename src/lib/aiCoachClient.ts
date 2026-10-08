@@ -6,6 +6,7 @@ import { AICoachAdvice, AICoachAdviceError, AICoachAdviceRequest, AICoachAdviceS
 import { appVersionHeaders, noteServerAnswer } from '../features/appUpdate/appUpdateSignal';
 import { buildCoachReportBody, CoachReportReason } from './coachAnswerReport';
 import { COACH_COPIES_KEPT } from './aiCoachLogId';
+import { isCoachCrisisReply } from './coachCrisisTurn';
 
 // The key the endpoint asks for on every call (api/ai-coach.ts, hasAppKey).
 // Without it the server refuses, so a build that lacks it is a preview build
@@ -76,6 +77,13 @@ export interface RequestAiCoachAdviceResult {
    * canned answer (#bugs, 2026-09-30: "menikö offlineen koska viestiraja?").
    */
   limited?: boolean;
+  /**
+   * The crisis answer: this build's filter caught the question, or the server
+   * said its own did (`crisis: true`, or the crisis answer's words from a
+   * server older than the marker). The chat draws it as a crisis message and
+   * keeps nothing of the thread the server may have caught it in.
+   */
+  crisis?: true;
 }
 
 /**
@@ -202,6 +210,7 @@ export async function requestAiCoachAdvice(input: AICoachAdviceRequest, upstream
       answer: buildAiCoachPreviewAnswer(input.prompt, input.context, input.language),
       source: 'preview',
       note: undefined,
+      crisis: true,
     };
   }
 
@@ -232,6 +241,7 @@ export async function requestAiCoachAdvice(input: AICoachAdviceRequest, upstream
         answer: payload.answer,
         source: payload.source,
         note: payload.note,
+        ...(isCoachCrisisReply({ crisis: payload.crisis, takeaway: payload.answer?.takeaway }) ? { crisis: true as const } : {}),
       };
     }
 
@@ -279,6 +289,11 @@ export async function requestAiCoachAdvice(input: AICoachAdviceRequest, upstream
  * locally. There is no fallback proposal in the response the way advice has
  * one: the deterministic composer needs the exercise library, which lives on
  * the device, not on the server.
+ *
+ * Except a brief read as a crisis, by this build's filter or the server's:
+ * that comes back as the crisis answer, for the chat to say. Read as "no
+ * proposal", it had the device compose a week from the words (review,
+ * 2026-10-08).
  */
 export interface LiveProgrammeProposalPayload {
   title: string;
@@ -287,6 +302,16 @@ export interface LiveProgrammeProposalPayload {
     focus?: string;
     exercises: Array<{ name: string; sets: number; repsMin: number; repsMax: number; restSeconds?: number }>;
   }>;
+}
+
+/** A brief answered with the crisis answer instead of a week. */
+export interface ProgrammeCompositionCrisis {
+  crisis: true;
+  answer: AICoachAdvice;
+}
+
+export function isProgrammeCompositionCrisis(value: unknown): value is ProgrammeCompositionCrisis {
+  return Boolean(value) && typeof value === 'object' && (value as ProgrammeCompositionCrisis).crisis === true;
 }
 
 function isProposalPayload(value: unknown): value is { ok: true; proposal: LiveProgrammeProposalPayload } {
@@ -371,7 +396,12 @@ export async function requestProgrammeComposition(
     logId?: string | null;
   },
   upstreamSignal?: AbortSignal,
-): Promise<LiveProgrammeProposalPayload | null> {
+): Promise<LiveProgrammeProposalPayload | ProgrammeCompositionCrisis | null> {
+  // Before anything goes anywhere, as for a question: the brief can carry the
+  // intake's free-text answer, and an offline build would build a week on it.
+  if (classifyCoachScope(input.brief) === 'crisis') {
+    return { crisis: true, answer: buildAiCoachPreviewAnswer(input.brief, input.context, input.language) };
+  }
   if (!AI_COACH_API_URL) {
     return null;
   }
@@ -392,6 +422,14 @@ export async function requestProgrammeComposition(
     });
     const payload = (await response.json()) as unknown;
     noteServerAnswer(response.status, payload);
+    if (
+      response.ok &&
+      isSuccessResponse(payload) &&
+      typeof payload.answer?.takeaway === 'string' &&
+      isCoachCrisisReply({ crisis: payload.crisis, takeaway: payload.answer.takeaway })
+    ) {
+      return { crisis: true, answer: payload.answer };
+    }
     return response.ok && isProposalPayload(payload) ? payload.proposal : null;
   } catch {
     return null;

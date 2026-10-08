@@ -105,8 +105,11 @@ export type WorkoutAction =
   | { type: 'set/recordEffort'; payload: { slotId: string; setIndex: number; effort: WorkoutSetEffort } }
   | { type: 'set/repeatLast'; payload: { slotId: string; setIndex: number; nowMs: number; unitPreference: 'kg' | 'lb' } }
   | { type: 'set/undo'; payload: { slotId: string; setIndex: number; unitPreference: 'kg' | 'lb' } }
-  /** The bout's stopwatch started or paused (null: none on the clock). */
-  | { type: 'session/setMinutesClock'; payload: { clock: SessionMinutesClock | null } }
+  /**
+   * The bout's stopwatch started or paused (null: none on the clock). `nowMs`
+   * is when, stamped by the dispatcher: the reducer reads no clock of its own.
+   */
+  | { type: 'session/setMinutesClock'; payload: { clock: SessionMinutesClock | null; nowMs: number } }
   | { type: 'exercise/addSet'; payload: { slotId: string } }
   | { type: 'exercise/removeSet'; payload: { slotId: string } }
   /** A warm-up set, logged apart from the working sets (WorkoutWarmupSet). */
@@ -1785,15 +1788,18 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // Starting a bout, or stopping one, is the reader doing something: the
       // session clock settles against it like a set logged. Left out, a bout
       // started after a long look at the step was counted as time away along
-      // with the look (hunt, 2026-10-07).
+      // with the look (hunt, 2026-10-07). Stamped with the action's own time,
+      // so the same action on the same state is the same state (review,
+      // 2026-10-08); one without a readable time leaves the stamp alone.
       const runningBefore = state.activeSession.minutesClock?.runningSinceMs ?? null;
       const runningAfter = action.payload.clock?.runningSinceMs ?? null;
+      const stamp = runningBefore !== runningAfter && Number.isFinite(action.payload.nowMs);
       return {
         ...state,
         activeSession: {
           ...state.activeSession,
           minutesClock: action.payload.clock,
-          ...(runningBefore !== runningAfter ? { updatedAt: new Date().toISOString() } : {}),
+          ...(stamp ? { updatedAt: new Date(action.payload.nowMs).toISOString() } : {}),
         },
       };
     }

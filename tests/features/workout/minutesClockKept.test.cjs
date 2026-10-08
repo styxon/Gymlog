@@ -113,7 +113,7 @@ module.exports = [
     name: 'minutes clock: a cold start mid-ride opens on the clock still running, and logs the minutes ridden',
     run() {
       let state = start();
-      state = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: runningBike(T0) } });
+      state = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: runningBike(T0), nowMs: T0 } });
 
       // Killed with the screen off; the screen mounts again 22 minutes in.
       const restored = coldStart(state);
@@ -130,7 +130,7 @@ module.exports = [
       let state = start();
       state = workoutReducer(state, {
         type: 'session/setMinutesClock',
-        payload: { clock: { ...runningBike(null, 7 * MIN) } },
+        payload: { clock: { ...runningBike(null, 7 * MIN) }, nowMs: T0 },
       });
       const watch = stopwatchForSet(coldStart(state).activeSession.minutesClock, bikeSet);
       assert.deepEqual(watch, { accumulatedMs: 7 * MIN, runningSinceMs: null });
@@ -155,7 +155,7 @@ module.exports = [
       const squat = state.activeSession.exercises[0].slotId;
       state = workoutReducer(state, {
         type: 'session/setMinutesClock',
-        payload: { clock: { ...runningBike(T0), slotId: squat, exerciseName: 'Back Squat' } },
+        payload: { clock: { ...runningBike(T0), slotId: squat, exerciseName: 'Back Squat' }, nowMs: T0 },
       });
       const completed = (current) =>
         current.activeSession.exercises[0].sets.filter((set) => set.status === 'completed').length;
@@ -193,7 +193,7 @@ module.exports = [
       };
       try {
         let state = start();
-        state = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: runningBike(T0, 2 * MIN) } });
+        state = workoutReducer(state, { type: 'session/setMinutesClock', payload: { clock: runningBike(T0, 2 * MIN), nowMs: T0 } });
         state = workoutReducer(state, { type: 'session/pause' });
         assert.deepEqual(
           stopwatchForSet(state.activeSession.minutesClock, bikeSet),
@@ -215,7 +215,7 @@ module.exports = [
         const bike = state.activeSession.exercises[1].slotId;
         state = workoutReducer(state, {
           type: 'session/setMinutesClock',
-          payload: { clock: { ...runningBike(T0), slotId: bike } },
+          payload: { clock: { ...runningBike(T0), slotId: bike }, nowMs: T0 },
         });
         state = workoutReducer(
           state,

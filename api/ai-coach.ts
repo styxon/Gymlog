@@ -4,6 +4,7 @@ import { readAnswerExtras, withoutExampleRepeats } from '../src/lib/aiCoachAnswe
 import { localizeAdviceDecimals } from '../src/lib/aiCoachAnswerDecimals';
 import { buildAiCoachPreviewAnswer } from '../src/lib/aiCoachPreview';
 import { classifyCoachScope } from '../src/lib/aiCoachScope';
+import { coachHistoryBeforeCrisis } from '../src/lib/coachCrisisTurn';
 import { buildAiCoachContextText } from '../src/lib/aiCoachSystemContext';
 import { normalizeAiCoachTrainingContext } from '../src/lib/aiTrainingContext';
 import { AI_COACH_DEBUG_TRANSCRIPTS } from '../src/lib/aiCoachDebug';
@@ -520,17 +521,17 @@ function sanitizeHistory(value: unknown): AICoachConversationTurn[] {
 }
 
 /**
- * The first text in a request that reads as a crisis, or null.
+ * The new question when it reads as a crisis, or null.
  *
- * The question up to its own limit — a longer one is refused by the budget
- * before the model, so nothing past it is ever sent — and each history
- * question, already clipped by sanitizeHistory. The takeaways are the
- * coach's own words, not the reader's.
+ * Up to its own limit — a longer one is refused by the budget before the
+ * model, so nothing past it is ever sent. The history is not read here: a
+ * crisis there is taken out of it (coachHistoryBeforeCrisis) rather than
+ * answered, since answering it locked the thread on the crisis line for every
+ * question after it (review, 2026-10-08).
  */
 function findCrisisText(input: ParsedBody): string | null {
-  const texts = [input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars), ...(input.history ?? []).map((turn) => turn.question)];
-  const crisis = texts.find((text) => classifyCoachScope(text) === 'crisis');
-  return crisis === undefined ? null : crisis;
+  const prompt = input.prompt.slice(0, BUDGET_LIMITS.maxPromptChars);
+  return classifyCoachScope(prompt) === 'crisis' ? prompt : null;
 }
 
 function parseBody(body: unknown): ParsedBody | null {
@@ -1464,17 +1465,27 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
   // starred words was seconds of function time for anyone to ask for
   // (review, 2026-10-07). The phone's composer stops at that limit anyway.
   //
-  // Every text the model would read, not just the new question (F1 crisis
-  // hunt, 2026-10-08). Every build appended the turn this answered, so the
-  // crisis came back as `history` on the next question and went to the model
-  // as a user message; and a compose brief carries the intake's free-text
-  // answer to a composer whose rules have no crisis line at all. A compose
-  // answer here holds no proposal, so an older build composes on the device.
+  // A compose brief too (F1 crisis hunt, 2026-10-08): it carries the
+  // intake's free-text answer to a composer whose rules have no crisis line
+  // at all. A compose answer here holds no proposal; a current build reads
+  // the marker and says the line, an older one composes on the device.
+  //
+  // Marked `crisis: true`, so a phone need not know the words to know what
+  // it got (review, 2026-10-08). Older phones ignore the field and still
+  // match the words.
   const readForCrisis = findCrisisText(input);
   if (readForCrisis !== null) {
-    res.status(200).json(createSuccess(buildAiCoachPreviewAnswer(readForCrisis, input.context, input.language), 'preview'));
+    res.status(200).json({ ...createSuccess(buildAiCoachPreviewAnswer(readForCrisis, input.context, input.language), 'preview'), crisis: true });
     return;
   }
+  // And the history the model would read, which every build filled with the
+  // turn answered above: it came back on the next question and went to the
+  // model as a user message (F1 crisis hunt, 2026-10-08). Answering that with
+  // the crisis line as well locked the thread on it — each question after
+  // carried the turn back — so the crisis turn and every turn after it are
+  // taken out, and the question is answered without them (review,
+  // 2026-10-08). Nothing read as a crisis reaches the model either way.
+  input = { ...input, history: coachHistoryBeforeCrisis(input.history ?? []) };
 
   const ip = getIpAddress(req);
   const rateLimit = checkRateLimit(ip);

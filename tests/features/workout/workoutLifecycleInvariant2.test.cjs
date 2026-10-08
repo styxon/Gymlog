@@ -805,7 +805,7 @@ function apply(ev, ctx) {
       const current = clockOf();
       const watch = mins.startStopwatch(mins.stopwatchForSet(current, ref), world.now);
       const clock = { ...ref, plannedMinutes: set.plannedRepsMax, ...watch };
-      dispatch({ type: 'session/setMinutesClock', payload: { clock } });
+      dispatch({ type: 'session/setMinutesClock', payload: { clock, nowMs: world.now } });
       world.shadow.clock = clock;
       world.shadow.clockSetRemoved = false;
       count('clock started');
@@ -815,7 +815,7 @@ function apply(ev, ctx) {
       const clock = clockOf();
       if (!isOpen() || !clock || clock.runningSinceMs === null) return;
       const next = { ...clock, ...mins.pauseStopwatch(clock, world.now) };
-      dispatch({ type: 'session/setMinutesClock', payload: { clock: next } });
+      dispatch({ type: 'session/setMinutesClock', payload: { clock: next, nowMs: world.now } });
       world.shadow.clock = next;
       return;
     }
@@ -830,7 +830,7 @@ function apply(ev, ctx) {
         world.now,
       );
       if (next !== clock) {
-        dispatch({ type: 'session/setMinutesClock', payload: { clock: next } });
+        dispatch({ type: 'session/setMinutesClock', payload: { clock: next, nowMs: world.now } });
         world.shadow.clock = next;
         count('clock paused by leaving its step');
       }

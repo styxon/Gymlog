@@ -556,6 +556,12 @@ export interface AICoachAdviceSuccess {
   source: 'live' | 'preview';
   answer: AICoachAdvice;
   note?: string;
+  /**
+   * The answer is the crisis answer: the server's filter read the question as
+   * a crisis. Absent on every other answer, and from a server older than the
+   * field — a phone then knows it by the answer's words.
+   */
+  crisis?: true;
 }
 
 export interface AICoachAdviceError {

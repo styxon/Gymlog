@@ -16,7 +16,7 @@ import { CoachReadoutTicker } from '../components/CoachReadoutTicker';
 import { CoachReportSheet } from '../components/CoachReportSheet';
 import { ProgrammeProposalCard } from '../components/ProgrammeProposalCard';
 import { ProLockedCard } from '../components/ProLockedCard';
-import { reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
+import { ProgrammeCompositionCrisis, isProgrammeCompositionCrisis, reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
 import { COACH_COPIES_KEPT } from '../lib/aiCoachLogId';
 import { CoachReportReason } from '../lib/coachAnswerReport';
 import { trackEvent } from '../features/analytics/analyticsClient';
@@ -28,8 +28,7 @@ import { fitAiCoachContextToCap } from '../lib/aiTrainingContext';
 import { formatShortDate } from '../lib/format';
 import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoachContextReadout, buildCoachNoticed, buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachOpeningRows } from '../lib/coachChat';
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
-import { appendCoachTurn } from '../lib/coachConversation';
-import { isCoachCrisisTurn } from '../lib/coachCrisisTurn';
+import { coachHistoryAfterAnswer } from '../lib/coachCrisisTurn';
 import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -192,9 +191,10 @@ interface AICoachChatScreenProps {
    *
    * It used to navigate to the composer screen. The week is drawn in the
    * conversation now — see ChatMessage.proposal for why that is the point
-   * rather than a shortcut.
+   * rather than a shortcut. A brief read as a crisis comes back as the
+   * crisis answer, to be said here instead of a week.
    */
-  onComposeProgramme: (brief: string, signal?: AbortSignal) => Promise<ProgrammeProposal | null>;
+  onComposeProgramme: (brief: string, signal?: AbortSignal) => Promise<ProgrammeProposal | ProgrammeCompositionCrisis | null>;
   /** Saves a proposal as a programme of the reader's own. */
   onSaveProgramme: (proposal: ProgrammeProposal) => Promise<void>;
   /**
@@ -774,15 +774,29 @@ export function AICoachChatScreen({
         setComposingIds((current) => (current.includes(messageId) ? current : [...current, messageId]));
         const controller = new AbortController();
         composeControllersRef.current.set(messageId, controller);
-        let proposal: ProgrammeProposal | null = null;
+        let composed: ProgrammeProposal | ProgrammeCompositionCrisis | null = null;
         try {
-          proposal = await onComposeProgramme(offer.brief, controller.signal);
+          composed = await onComposeProgramme(offer.brief, controller.signal);
         } finally {
           // In a finally, so a rejected compose clears the building line too
           // rather than leaving the offer under a spinner with no way out.
           setComposingIds((current) => current.filter((id) => id !== messageId));
           composeControllersRef.current.delete(messageId);
         }
+        // A brief read as a crisis, by this build's filter or the server's:
+        // the offer becomes the crisis answer, drawn as send() draws its own,
+        // and no week is built from those words (review, 2026-10-08).
+        if (isProgrammeCompositionCrisis(composed)) {
+          setMessages((current) =>
+            current.map((message) =>
+              message.id === messageId
+                ? { id: `${messageId}:crisis`, fromCoach: true, text: composed.answer.takeaway, advice: composed.answer, crisis: true }
+                : message,
+            ),
+          );
+          return;
+        }
+        const proposal = composed;
         // The offer becomes the week it was offering. Replaced rather than
         // appended: leaving "shall I build this?" above the thing it built
         // would invite a second tap that composes the same brief again.
@@ -1064,6 +1078,25 @@ export function AICoachChatScreen({
           return;
         }
         const answer = result.answer;
+        // The crisis answer, from a server whose filter caught what this
+        // build's did not — in the question, or in a turn of the history it
+        // was sent with. Drawn like the branch at the top of send(), so it
+        // stands under the online notice too, and not as an offline answer:
+        // it is the answer, not a fallback, and the badge stays as it was.
+        // Nothing is charged and nothing is offered beside it. And the
+        // history is emptied before the thread is published: the turn the
+        // server caught may be one this thread would send again, and every
+        // question after it would get the crisis line (review, 2026-10-08).
+        if (result.crisis) {
+          conversation.current = coachHistoryAfterAnswer(conversation.current, trimmed, answer, true);
+          setMessages((current) => [
+            ...current
+              .filter((message) => message.id !== `offer:${token}`)
+              .map((message) => (message.id === `me:${token}` ? { ...message, crisis: true as const } : message)),
+            { id: `coach:${token}`, fromCoach: true, text: answer.takeaway, advice: answer, crisis: true },
+          ]);
+          return;
+        }
         // The endpoint answers with a canned offline reply when it cannot
         // reach the model — rate limited, upstream down, key missing. Until
         // now the chat showed that as if the coach had said it, which is how
@@ -1101,19 +1134,9 @@ export function AICoachChatScreen({
         }
         // Kept even when the answer was a follow-up question: without it the
         // reader's reply to that question would arrive with no antecedent,
-        // which is the exact failure this exists to fix.
-        //
-        // Not a crisis answer, though. The branch at the top of send() never
-        // appends its own, but a server whose filter is newer than this
-        // build's answers with the same crisis answer, and appending that sent
-        // the message back to the model with the next question (F1 crisis
-        // hunt, 2026-10-08).
-        if (!isCoachCrisisTurn({ question: trimmed, takeaway: answer.takeaway })) {
-          conversation.current = appendCoachTurn(conversation.current, {
-            question: trimmed,
-            takeaway: answer.takeaway,
-          });
-        }
+        // which is the exact failure this exists to fix. A crisis answer
+        // never gets here (above), so this is the ordinary append.
+        conversation.current = coachHistoryAfterAnswer(conversation.current, trimmed, answer, false);
         // And the long memory, on a narrower rule than the thread above. The
         // thread keeps a clarifying question so the reader's reply has an
         // antecedent; the memory keeps only advice, so an answer that asked
