@@ -1,7 +1,8 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { applyCautionFlagsToExercises, isMinutesRun, runStandInKind, type RunStandInKind } from './cautionExerciseFilter';
+import { isMinutesRun, runStandInKind, type RunStandInKind } from './cautionExerciseFilter';
 import { classifySessionFocus } from './homeSessionHero';
 import { emphasisAreaForExercise, type EmphasisArea } from './programEmphasis';
+import { applyReaderFiltersToDay } from './readerDayFilters';
 import type { RecommendationInput } from '../types/recommendation';
 
 /**
@@ -134,12 +135,17 @@ const FOCUS_PROGRAMME_AREA: Record<string, EmphasisArea> = {
  * raise and "Arms (Volume)" = one rear delt fly, under "trains your focus area
  * twice a week" (bug hunt, 2026-10-07, #35). The waterfall then falls to its
  * next pick instead.
+ *
+ * The day is judged as the composer builds it, gear pass first. Asking the
+ * flags alone, a chest block with no dumbbells or cables and elbows and
+ * wrists avoided kept 10 of Chest (Heavy)'s 12 chest sets on paper and 4 in
+ * the week, and every chooser featured it (bug hunt round 2, 2026-10-08).
  */
 export function focusProgrammeLosesItsPoint(programId: string, input: RecommendationInput): boolean {
   const area = FOCUS_PROGRAMME_AREA[programId];
-  const flags = (input.cautionFlags ?? []).filter((flag) => flag.level === 'avoid');
+  const cautionFlags = input.cautionFlags ?? [];
   const template = getWorkoutTemplateById(programId);
-  if (!area || !template || flags.length === 0) {
+  if (!area || !template || !cautionFlags.some((flag) => flag.level === 'avoid')) {
     return false;
   }
   const areaSets = (exercises: ReadonlyArray<{ exerciseName: string; sets: number }>) =>
@@ -156,12 +162,12 @@ export function focusProgrammeLosesItsPoint(programId: string, input: Recommenda
     if (before * 2 <= totalSets(session.exercises)) {
       return false;
     }
-    const kept = applyCautionFlagsToExercises(
+    const kept = applyReaderFiltersToDay(
       [...session.exercises],
-      flags,
-      input.focusAreas,
       input.availableEquipment ?? null,
-    ).exercises;
+      cautionFlags,
+      input.focusAreas,
+    ).adjusted.exercises;
     return areaSets(kept) * 2 < before;
   });
 }
