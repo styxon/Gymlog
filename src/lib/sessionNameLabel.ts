@@ -187,6 +187,7 @@ const FOCUS_FI: Record<string, string> = {
   'full body a': 'Koko keho A',
   'full body b': 'Koko keho B',
   'full body c': 'Koko keho C',
+  'full body d': 'Koko keho D',
   'upper power': 'Ylävartalon teho',
   'lower power': 'Alavartalon teho',
   'upper volume': 'Ylävartalon volyymi',

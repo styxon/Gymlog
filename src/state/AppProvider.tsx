@@ -627,6 +627,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
             repMin: Math.max(1, exercise.repMin),
             repMax: Math.max(Math.max(1, exercise.repMin), exercise.repMax),
             restSeconds: savedRestSeconds(exercise.restSeconds),
+            trackingMode: exercise.trackingMode ?? null,
           });
           return {
             id: exercise.id ?? createId('exercise'),

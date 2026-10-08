@@ -81,6 +81,13 @@ function applySwap(exercise: WorkoutTemplateExercise, name: string): WorkoutTemp
     repsMin,
     repsMax,
     sourceExerciseName: exercise.sourceExerciseName ?? exercise.exerciseName,
+    // The numbers above are the incoming lift's; the player restores these
+    // if the programme's lift is picked back (exercise/swap).
+    programmedDose: exercise.programmedDose ?? {
+      trackingMode: exercise.trackingMode,
+      repsMin: exercise.repsMin,
+      repsMax: exercise.repsMax,
+    },
   };
 }
 

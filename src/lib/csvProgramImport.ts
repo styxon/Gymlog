@@ -11,6 +11,7 @@ import { t } from './i18n';
 import { isHoldExerciseName } from './holdExercises';
 import { intervalOffSeconds, parseIntervalScheme } from './intervalScheme';
 import { MINUTES_DIAL } from './weightDial';
+import { readsAsMinutesByName } from './minutesExercises';
 import { PROGRAM_SETS_RANGE } from './programSessionEdit';
 
 /**
@@ -49,6 +50,13 @@ export interface CsvProgramRow {
   sets: number;
   repMin: number;
   repMax: number;
+  /**
+   * The file's "Day no" for this row. The app's export numbers its days when
+   * two share a name (Workout A, B, A), and grouping by name alone made them
+   * one day with every lift twice (round 2, 2026-10-08). Absent when the file
+   * has no numbers; the name groups the rows then, as it always did.
+   */
+  dayNumber?: number;
   /** The Reps cell said minutes ("20 min"). Absent for every other row. */
   minutes?: boolean;
   /**
@@ -83,6 +91,15 @@ function normalizeName(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
 }
 
+/** A day name as the importer groups it: two names with one key are one day. */
+export function csvDayNameKey(value: string) {
+  return normalizeName(value);
+}
+
+/** The optional column that numbers the days, and the key its header folds to. */
+export const CSV_DAY_NUMBER_HEADER = 'Day no';
+const CSV_DAY_NUMBER_KEY = normalizeName(CSV_DAY_NUMBER_HEADER);
+
 /**
  * Every name the ready programmes prescribe, with how its first row logs it —
  * null when two rows of the same name log it in different units.
@@ -113,6 +130,15 @@ function isReadyProgrammeName(name: string) {
   return READY_PROGRAMME_MODES.has(name.trim().toLowerCase());
 }
 
+/** The catalogue's own spelling of a ready programme's name, whatever the case it was written in. */
+const READY_PROGRAMME_SPELLINGS: ReadonlyMap<string, string> = new Map(
+  WORKOUT_TEMPLATES_V1.flatMap((template) =>
+    template.sessions.flatMap((session) =>
+      session.exercises.map((exercise) => [exercise.exerciseName.trim().toLowerCase(), exercise.exerciseName] as const),
+    ),
+  ),
+);
+
 /**
  * A programme's rhythm is one weekday mask (ProgramDetailScreen's week strip
  * is seven chips, `getTrainingDayIndexes` clamps to `Math.min(dayCount, 7)`).
@@ -134,32 +160,59 @@ function detectDelimiter(headerLine: string) {
   return ',';
 }
 
-function splitCsvLine(line: string, delimiter: string) {
+function splitCsvLine(line: string, delimiter: string): string[] {
   const cells: string[] = [];
   let current = '';
   let inQuotes = false;
+  // A quote opens a quoted cell only where a cell starts (leading spaces
+  // allowed), the rule splitCsvRecords splits the records by. Opening one on
+  // every quote let the inch mark in `Box Jump (24")` swallow the Sets and
+  // Reps cells, and the row was refused as "sets must be a whole number"
+  // (round 2, 2026-10-08).
+  let atCellStart = true;
+  let openQuoteIndex = -1;
   for (let index = 0; index < line.length; index += 1) {
     const char = line[index];
-    if (char === '"') {
-      // A doubled quote inside a quoted cell is one literal quote — the CSV
-      // escape. This dropped every quote character instead, so a lift called
-      // Bench ("close grip") arrived with its quotes silently removed. Found
-      // when the photo importer, which writes this format itself, round
-      // -tripped a name through it (2026-08-24).
-      if (inQuotes && line[index + 1] === '"') {
-        current += '"';
-        index += 1;
+    if (inQuotes) {
+      if (char === '"') {
+        // A doubled quote inside a quoted cell is one literal quote — the CSV
+        // escape. This dropped every quote character instead, so a lift called
+        // Bench ("close grip") arrived with its quotes silently removed. Found
+        // when the photo importer, which writes this format itself, round
+        // -tripped a name through it (2026-08-24).
+        if (line[index + 1] === '"') {
+          current += '"';
+          index += 1;
+        } else {
+          inQuotes = false;
+        }
         continue;
       }
-      inQuotes = !inQuotes;
+      current += char;
       continue;
     }
-    if (char === delimiter && !inQuotes) {
+    if (char === '"' && atCellStart) {
+      inQuotes = true;
+      openQuoteIndex = index;
+      continue;
+    }
+    if (char === delimiter) {
       cells.push(current.trim());
       current = '';
+      atCellStart = true;
       continue;
     }
     current += char;
+    atCellStart = atCellStart && (char === ' ' || char === '\t');
+  }
+  if (inQuotes) {
+    // A quote that never closes is a plain character, as splitCsvRecords
+    // reads it, and that splitter has already named the row. Read as an open
+    // cell, it took the rest of the line along and the row got a second,
+    // wrong error about its sets.
+    const head = splitCsvLine(line.slice(0, openQuoteIndex), delimiter);
+    const tail = line.slice(openQuoteIndex).split(delimiter).map((cell) => cell.trim());
+    return [...head.slice(0, -1), `${head[head.length - 1]}${tail[0]}`.trim(), ...tail.slice(1)];
   }
   cells.push(current.trim());
   return cells;
@@ -188,13 +241,34 @@ export const CSV_MINUTES_MAX = MINUTES_DIAL.max;
  */
 export const CSV_MINUTES_BLOCK_REST_SECONDS = 60;
 
-function parseReps(value: string): { repMin: number; repMax: number; minutes: boolean } | null {
-  // "20 min" is minutes — the app's own export writes a bout of steady
-  // cardio that way, and a reader may too. Any other unit is not a number.
-  const minutesMatch = value.match(/^(.*?)\s*min(?:s|utes?|uuttia|uutti)?\.?$/i);
-  const minutes = minutesMatch !== null;
-  const numbers = (minutes ? minutesMatch[1] : value).replace(/\s+/g, '');
-  const match = numbers.match(/^(\d+)(?:[-–—x/](\d+))?$/);
+/**
+ * The unit a Reps cell wrote out, when it wrote one: "20 min", "30-45 s",
+ * "30 reps". The app's own export writes one wherever the name alone would
+ * read the numbers in another unit — a hold filed under the barbell bridge,
+ * 30 s on a rower the library logs in minutes (round 2, 2026-10-08) — and a
+ * reader may write one too. No unit leaves the name to decide, as before.
+ */
+type CsvRepsUnit = 'minutes' | 'seconds' | 'reps';
+
+const REPS_UNIT_PATTERNS: ReadonlyArray<[CsvRepsUnit, RegExp]> = [
+  // In this order: "reps" and "mins" both end in an s.
+  ['minutes', /^(.*?)\s*min(?:s|utes?|uuttia|uutti)?\.?$/i],
+  ['reps', /^(.*?)\s*(?:reps?|toistoa|toisto)\.?$/i],
+  ['seconds', /^(.*?)\s*(?:s|secs?|seconds?|sek|sekuntia|sekunti)\.?$/i],
+];
+
+function parseReps(value: string): { repMin: number; repMax: number; unit: CsvRepsUnit | null } | null {
+  let unit: CsvRepsUnit | null = null;
+  let numbers = value;
+  for (const [candidate, pattern] of REPS_UNIT_PATTERNS) {
+    const unitMatch = value.match(pattern);
+    if (unitMatch) {
+      unit = candidate;
+      numbers = unitMatch[1];
+      break;
+    }
+  }
+  const match = numbers.replace(/\s+/g, '').match(/^(\d+)(?:[-–—x/](\d+))?$/);
   if (!match) {
     return null;
   }
@@ -203,7 +277,7 @@ function parseReps(value: string): { repMin: number; repMax: number; minutes: bo
   if (!Number.isFinite(first) || first <= 0 || !Number.isFinite(second) || second <= 0) {
     return null;
   }
-  return { repMin: Math.min(first, second), repMax: Math.max(first, second), minutes };
+  return { repMin: Math.min(first, second), repMax: Math.max(first, second), unit };
 }
 
 function escapeRegExp(value: string) {
@@ -294,7 +368,7 @@ function matchAppLabel(rawName: string, library: CsvLibraryEntry[]): CsvLibraryE
  */
 const ROLE_WORDS = new Set(['anchor', 'support', 'extra', 'accessory', 'ankkuri', 'tuki', 'lisä', 'lisa']);
 
-function isRoleWord(value: string) {
+export function isRoleWord(value: string) {
   return ROLE_WORDS.has(foldLabel(value));
 }
 
@@ -489,6 +563,7 @@ export function parseCsvProgram(
   const exerciseIndex = header.findIndex((cell) => cell === 'exercise' || cell === 'exercise name' || cell === 'lift');
   const setsIndex = header.findIndex((cell) => cell === 'sets');
   const repsIndex = header.findIndex((cell) => cell === 'reps' || cell === 'rep range');
+  const dayNumberIndex = header.findIndex((cell) => cell === CSV_DAY_NUMBER_KEY || cell === 'day number');
 
   if (dayIndex < 0 || exerciseIndex < 0 || setsIndex < 0 || repsIndex < 0) {
     errors.push(t(language, 'csv.error.header'));
@@ -506,6 +581,7 @@ export function parseCsvProgram(
   const seenDayKeys = new Set<string>();
   const skippedDayKeys = new Set<string>();
   let lastDay: string | null = null;
+  let lastDayNumber: number | null = null;
   for (let index = 1; index < lineEntries.length; index += 1) {
     const row = lineEntries[index].row;
     const cells = splitCsvLine(lineEntries[index].text, delimiter);
@@ -513,7 +589,13 @@ export function parseCsvProgram(
     // was wrapped with (Alt+Enter, or a photographed cell copied verbatim),
     // and that wrap is not part of the name.
     const writtenDay = collapseCellWhitespace(cells[dayIndex] ?? '');
-    const day: string = isRoleWord(writtenDay) ? lastDay ?? t(language, 'tpl.day', { index: 1 }) : writtenDay;
+    const dayNumberText = dayNumberIndex >= 0 ? (cells[dayNumberIndex] ?? '').trim() : '';
+    const writtenDayNumber = /^\d+$/.test(dayNumberText) && Number(dayNumberText) > 0 ? Number(dayNumberText) : null;
+    // A numbered day is the day its cell names, whatever the word: the app
+    // numbers its export when a name alone cannot tell the days apart.
+    const roleTagged = writtenDayNumber === null && isRoleWord(writtenDay);
+    const day: string = roleTagged ? lastDay ?? t(language, 'tpl.day', { index: 1 }) : writtenDay;
+    const dayNumber: number | null = writtenDayNumber ?? (roleTagged ? lastDayNumber : null);
     const exerciseName = collapseCellWhitespace(cells[exerciseIndex] ?? '');
     // A whole number, all of it. parseInt read "2,5" as 2 and "3-4" as 3 and
     // reported nothing (decimal audit, 2026-09-21); a count of sets that is
@@ -552,21 +634,38 @@ export function parseCsvProgram(
       ? READY_PROGRAMME_MODES.get(exerciseName.trim().toLowerCase()) ?? null
       : null;
     const linkedMode = catalogueMode !== null && !isMinutesTrackingMode(catalogueMode) ? catalogueMode : null;
-    const isHold = isHoldExerciseName(exerciseName)
-      || (match.matchedName !== null && isHoldExerciseName(match.matchedName))
-      || linkedMode === 'hold';
+    const namedHold = isHoldExerciseName(exerciseName)
+      || (match.matchedName !== null && isHoldExerciseName(match.matchedName));
+    // Seconds are a hold's unit, the only mode counted in them; a count
+    // written out is not one, whatever the name.
+    const isHold = parsedReps.unit === 'seconds'
+      || (parsedReps.unit !== 'reps' && (namedHold || linkedMode === 'hold'));
     // Checked before the minutes: "Plank, 3, 1 min" is a 60 s hold, not a
     // minutes bout (bug hunt, 2026-10-07).
-    const reps = isHold && parsedReps.minutes
-      ? { repMin: parsedReps.repMin * 60, repMax: parsedReps.repMax * 60, minutes: false }
-      : parsedReps;
-    const repsMax = reps.minutes ? CSV_MINUTES_MAX : isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
+    const minutes = parsedReps.unit === 'minutes' && !isHold;
+    const reps = isHold && parsedReps.unit === 'minutes'
+      ? { repMin: parsedReps.repMin * 60, repMax: parsedReps.repMax * 60 }
+      : { repMin: parsedReps.repMin, repMax: parsedReps.repMax };
+    const repsMax = minutes ? CSV_MINUTES_MAX : isHold ? CSV_HOLD_SECONDS_MAX : CSV_REPS_MAX;
     if (reps.repMax > repsMax) {
       errors.push(t(language, 'csv.error.repsMax', { row, max: repsMax }));
       continue;
     }
+    // "30 reps" on a name that would read its numbers as seconds or minutes:
+    // counted, in the counted mode that name has elsewhere.
+    const countedMode: WorkoutTrackingMode | null = parsedReps.unit !== 'reps'
+      ? null
+      : linkedMode !== null && prescriptionUnitOf(linkedMode) === 'reps'
+        ? linkedMode
+        : namedHold || linkedMode === 'hold'
+          ? 'bodyweight'
+          : readsAsMinutesByName(exerciseName, [reps.repMin, reps.repMax])
+              || readsAsMinutesByName(match.matchedName, [reps.repMin, reps.repMax])
+            ? 'reps_first'
+            : null;
+    const trackingMode = minutes ? null : isHold ? 'hold' as const : parsedReps.unit === 'reps' ? countedMode : linkedMode;
 
-    const dayKey = normalizeName(day);
+    const dayKey = dayNumber !== null ? numberedDayKey(dayNumber) : normalizeName(day);
     if (!seenDayKeys.has(dayKey)) {
       if (seenDayKeys.size >= MAX_TRAINING_DAYS) {
         if (!skippedDayKeys.has(dayKey)) {
@@ -578,19 +677,21 @@ export function parseCsvProgram(
       seenDayKeys.add(dayKey);
     }
     lastDay = day;
+    lastDayNumber = dayNumber;
 
     rows.push({
       day,
+      ...(dayNumber !== null ? { dayNumber } : {}),
       exerciseName,
       sets,
       repMin: reps.repMin,
       repMax: reps.repMax,
       // Only when the cell said so. A bike written "1,20" with no unit is
       // still minutes by its name, decided where the programme is run.
-      ...(reps.minutes ? { minutes: true } : {}),
+      ...(minutes ? { minutes: true } : {}),
       // A hold says so outright: linked under "Barbell Glute Bridge", the
       // seconds just read would be run as repetitions with a weight.
-      ...(reps.minutes ? {} : isHold ? { trackingMode: 'hold' as const } : linkedMode ? { trackingMode: linkedMode } : {}),
+      ...(trackingMode ? { trackingMode } : {}),
       ...match,
     });
   }
@@ -600,9 +701,18 @@ export function parseCsvProgram(
     rows,
     matchedCount,
     unmatchedCount: rows.length - matchedCount,
-    dayCount: new Set(rows.map((row) => normalizeName(row.day))).size,
+    dayCount: new Set(rows.map(csvRowDayKey)).size,
     errors,
   };
+}
+
+function numberedDayKey(dayNumber: number) {
+  return `#${dayNumber}`;
+}
+
+/** Which day a row belongs to: its number when the file numbered its days, else its name. */
+export function csvRowDayKey(row: Pick<CsvProgramRow, 'day' | 'dayNumber'>) {
+  return row.dayNumber !== undefined ? numberedDayKey(row.dayNumber) : normalizeName(row.day);
 }
 
 /** Builds a custom-template draft from the matched rows; unmatched rows are skipped. */
@@ -613,15 +723,21 @@ export function buildDraftFromCsvPreview(preview: CsvProgramPreview, programName
     if (!row.matchedName) {
       continue;
     }
-    const key = normalizeName(row.day);
+    const key = csvRowDayKey(row);
     const session = sessionsByDay.get(key) ?? { name: row.day, exercises: [] };
     // An interval's rhythm lives in its name, and the player reads it there:
     // "Push-Up (20s on / 10s off)" saved as the library's "Pushups" was 20
     // push-ups with 90 s rest (bug hunt, 2026-10-08). The written name stays,
     // linked to the same library row, and rests the off-phase it states.
-    const name = parseIntervalScheme(row.exerciseName) && !parseIntervalScheme(row.matchedName)
-      ? row.exerciseName
-      : row.matchedName;
+    //
+    // So does every ready programme's own name, as duplicating the programme
+    // keeps it: the catalogue's name is what says "Sprint Interval (200m)" is
+    // metres and "Glute Bridge Hold" a hold, and saved as the library's
+    // "Sprint" or barbell bridge the next export lost both (round 2,
+    // 2026-10-08). A name the reader taught the app is theirs to decide.
+    const catalogueName = row.viaNameBook ? undefined : READY_PROGRAMME_SPELLINGS.get(row.exerciseName.trim().toLowerCase());
+    const name = catalogueName
+      ?? (parseIntervalScheme(row.exerciseName) && !parseIntervalScheme(row.matchedName) ? row.exerciseName : row.matchedName);
     const intervalRest = intervalOffSeconds(name);
     const trackingMode = row.minutes ? 'duration_minutes' as const : row.trackingMode;
     session.exercises.push({

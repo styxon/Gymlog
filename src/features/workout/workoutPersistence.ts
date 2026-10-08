@@ -15,6 +15,8 @@ import {
 } from '../../storage/workoutKeys';
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
+  ProgrammedDose,
+  readStoredTrackingMode,
   WorkoutHistoryStore,
   WorkoutPersistenceBundle,
   WorkoutRestTimerState,
@@ -86,6 +88,31 @@ function normalizeWarmups<T extends { loadKg: number; reps: number }>(
       (!withMoment || typeof warmup.completedAt === 'string'),
   ) as unknown as T[];
   return kept.length > 0 ? kept : undefined;
+}
+
+/**
+ * A slot's programmed dose as stored (added 2026-10-08): a known mode and a
+ * range a set can ask for, or nothing — the swap back then takes the one
+ * swap rule rather than restore numbers it cannot trust.
+ */
+function normalizeProgrammedDose(input: unknown): ProgrammedDose | undefined {
+  if (!isObject(input)) {
+    return undefined;
+  }
+  const trackingMode = readStoredTrackingMode(input.trackingMode);
+  const { repsMin, repsMax } = input;
+  if (
+    !trackingMode ||
+    typeof repsMin !== 'number' ||
+    typeof repsMax !== 'number' ||
+    !Number.isFinite(repsMin) ||
+    !Number.isFinite(repsMax) ||
+    repsMin < 0 ||
+    repsMin > repsMax
+  ) {
+    return undefined;
+  }
+  return { trackingMode, repsMin, repsMax };
 }
 
 /** Sets a key to a value, or takes the key away when the value is undefined. */
@@ -173,7 +200,8 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
   }
   const exercises = input.exercises
     .filter((exercise): exercise is Record<string, unknown> => isObject(exercise) && Array.isArray(exercise.sets))
-    .map((exercise) => withOptional(exercise, 'warmups', normalizeWarmups(exercise.warmups, true)));
+    .map((exercise) => withOptional(exercise, 'warmups', normalizeWarmups(exercise.warmups, true)))
+    .map((exercise) => withOptional(exercise, 'programmedDose', normalizeProgrammedDose(exercise.programmedDose)));
   if (exercises.length === 0) {
     return null;
   }

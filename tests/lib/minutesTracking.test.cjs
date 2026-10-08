@@ -248,7 +248,7 @@ module.exports = [
         {
           name: 'Cardio',
           exercises: [
-            { name: 'Stairmaster', sets: 1, repMin: 20, repMax: 20, minutes: true },
+            { name: 'Stairmaster', sets: 1, repMin: 20, repMax: 20, unit: 'minutes' },
             { name: 'Push-Up', sets: 3, repMin: 12, repMax: 12 },
           ],
         },

@@ -4,7 +4,7 @@ import { programFitsEquipment } from './programEquipmentFit';
 import { applyBriefToPreferences } from './programmeBrief';
 import { RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import type { ProgrammeBriefSignals } from './programmeBrief';
-import type { AiPlannerEquipment, AiPlannerExperience, AiPlannerGoal, AppPreferences, SetupLevel } from '../types/models';
+import type { AiPlannerEquipment, AiPlannerExperience, AiPlannerGoal, AppPreferences, SetupGoal, SetupLevel } from '../types/models';
 import type { RecommendationProgramDefinition } from '../types/recommendation';
 
 /**
@@ -91,14 +91,14 @@ export function matchProgrammeToBrief(
     const days = wantedDays !== null && definition.daysPerWeek === wantedDays;
     const focus = focusOverlap(signals, definition);
     const catalogGoals = [...(definition.supportedGoals as unknown as string[]), ...(definition.backupGoals as unknown as string[])];
-    const goal = Boolean(signals.goal && CATALOG_GOALS[signals.goal].some((name) => catalogGoals.includes(name)));
+    const goal = Boolean(reader.goals && reader.goals.some((name) => catalogGoals.includes(name)));
 
     // A programme opened in place of the build has to be the week that was
     // asked for: the days and the goal said, not a two-day base or a
     // mobility flow that only won because nothing else fit the reader
     // (review, 2026-10-07). Nothing left is an answer too — the composer
     // builds the trimmed week and says so.
-    if ((wantedDays !== null && !days) || (signals.goal && !goal)) {
+    if ((wantedDays !== null && !days) || (reader.goals && !goal)) {
       continue;
     }
     const score = (days ? DAYS_WEIGHT : 0) + focus.length * FOCUS_WEIGHT + (goal ? GOAL_WEIGHT : 0);
@@ -141,10 +141,26 @@ const CATALOG_LEVEL: Record<AiPlannerExperience, SetupLevel> = {
  */
 const DUMBBELL_HOME_ITEMS: readonly string[] = ['Dumbbells', 'Resistance bands'];
 
-/** The reader a programme has to fit: their gear, and their level when one is known. */
+/**
+ * The stored onboarding goal in the catalog's words. The catalog keeps the
+ * goals onboarding asks, so a lean or mobility reader is matched as one, not
+ * as the composer's broader "fitness".
+ */
+const STORED_GOALS: Record<SetupGoal, readonly string[]> = {
+  strength: ['strength'],
+  muscle: ['muscle'],
+  general: ['general', 'general_fitness'],
+  general_fitness: ['general_fitness', 'general'],
+  lean_athletic: ['lean_athletic'],
+  run_mobility: ['run_mobility'],
+};
+
+/** The reader a programme has to fit: their gear, their level and their goal when one is known. */
 interface BriefReader {
   equipment: AiPlannerEquipment;
   level: SetupLevel | null;
+  /** The catalog goals that answer the reader, or null when nothing names one. */
+  goals: readonly string[] | null;
 }
 
 /**
@@ -154,12 +170,22 @@ interface BriefReader {
  * päivää viikossa" from a beginner training at home was matched as if
  * nothing were known about them. The gear is read as the composer reads it,
  * a gym when nothing is stored; a level nothing names does not filter.
+ *
+ * The goal too: a coach's "5 päivää viikossa, painotus rinta" names none,
+ * and a stored muscle reader was opened into the mobility flow or a strength
+ * split, where the composer it stands in for built for muscle (re-hunt,
+ * 2026-10-08).
  */
 function readerOf(signals: ProgrammeBriefSignals, preferences: AppPreferences): BriefReader {
   const merged = applyBriefToPreferences(preferences, signals, []);
   return {
     equipment: mapSetupEquipment(merged),
     level: merged.aiPlannerExperience ? CATALOG_LEVEL[merged.aiPlannerExperience] : merged.setupLevel,
+    goals: merged.aiPlannerGoal
+      ? CATALOG_GOALS[merged.aiPlannerGoal]
+      : merged.setupGoal
+        ? STORED_GOALS[merged.setupGoal] ?? null
+        : null,
   };
 }
 
@@ -181,6 +207,9 @@ function fitsReader(signals: ProgrammeBriefSignals, reader: BriefReader, definit
     return false;
   }
   if (holdsAvoidedLift(signals, definition.programId)) {
+    return false;
+  }
+  if (signals.legsSpread && holdsLegOnlyDay(definition.programId)) {
     return false;
   }
   switch (reader.equipment) {
@@ -217,6 +246,23 @@ function holdsAvoidedLift(signals: ProgrammeBriefSignals, programId: string): bo
       return signals.avoidTerms.some((term) => name.includes(term));
     }),
   );
+}
+
+/**
+ * A day of legs alone, by its name: "Day 3: Legs", "Lower (Heavy)", "Glutes &
+ * Hamstrings", "Squat Day". Not "Back & Legs" or "Legs & Pull", which mix the
+ * legs in.
+ */
+const LEG_ONLY_SESSION =
+  /^(?:day \d+:\s*)?(?:legs|lower|quads?|glutes?|hamstrings?|heavy glutes|explosive lower|squat day|deadlift day)\b(?![^(]*\b(?:upper|push|pull|chest|back|arms|shoulders|core|full)\b)/i;
+
+/**
+ * Whether the programme has a leg day of its own, which "no separate leg
+ * day" turns down: the legs belong in the other days (owner, 2026-10-08).
+ */
+function holdsLegOnlyDay(programId: string): boolean {
+  const template = getWorkoutTemplateById(programId);
+  return !template || template.sessions.some((session) => LEG_ONLY_SESSION.test(session.name));
 }
 
 /**

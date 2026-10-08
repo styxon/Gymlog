@@ -2,13 +2,9 @@ import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
-import {
-  applyCautionFlagsToExercises,
-  CautionExerciseSwap,
-  runStandInKindOf,
-  sessionNameAfterRunStandIn,
-} from './cautionExerciseFilter';
-import { applyEquipmentToExercises, isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
+import { CautionExerciseSwap, runStandInKindOf, sessionNameAfterRunStandIn } from './cautionExerciseFilter';
+import { isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
+import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from './readerDayFilters';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
 import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
@@ -147,11 +143,8 @@ const REFILL_AREAS_BY_FOCUS: Record<SessionFocusKind, SetupFocusArea[]> = {
  * Fills a day whose exercises were all removed, with lifts for what the day
  * was for: a chest day gets chest and shoulder work before anything generic
  * (review, 2026-10-04 — every refill was the same dips, rows and plank under
- * "Chest (Volume)" or "Arms (Heavy)"). Candidates go through the equipment
- * and caution filters, and the equipment check runs again after caution,
- * whose swaps are not gear-checked, so a refill never puts back what the
- * reader's gear or flags ruled out. The filters' removed/swapped bookkeeping
- * for the candidates is discarded: the reader never saw them.
+ * "Chest (Volume)" or "Arms (Heavy)"). The generic day pools come after, and
+ * every candidate goes through the reader's filters (safeCandidates).
  */
 function refillEmptiedSession(
   session: ComposedProgramSession,
@@ -160,35 +153,147 @@ function refillEmptiedSession(
   cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
   selection: FirstRunSetupSelection,
 ): ComposedProgramSession {
+  const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
+  const names = [
+    ...movementPoolNames(originalNames),
+    ...pools.flatMap((pool) => pool.bodyweight),
+    ...pools.flatMap((pool) => pool.loaded),
+  ];
+  const exercises = safeCandidates(names, session.id, new Set(), availableEquipment, cautionFlags, selection)
+    .slice(0, REFILL_EXERCISE_COUNT)
+    .map((name, index) => buildComposedFallbackExercise(name, session.id, index));
+  return { ...session, source: 'suggested', exercises };
+}
+
+/** The accessory pools for what the day was for, bodyweight first. */
+function movementPoolNames(originalNames: readonly string[]): string[] {
   const focusPools = REFILL_AREAS_BY_FOCUS[classifySessionFocus([...originalNames])].map(
     (area) => FOCUS_ACCESSORY_POOL[area],
   );
-  const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
-  const names = [
-    ...new Set([
-      ...focusPools.flatMap((pool) => pool.bodyweight),
-      ...focusPools.flatMap((pool) => pool.loaded),
-      ...pools.flatMap((pool) => pool.bodyweight),
-      ...pools.flatMap((pool) => pool.loaded),
-    ]),
-  ];
-  const candidates = names.map((name, index) => buildComposedFallbackExercise(name, session.id, index));
-  const equipped = applyEquipmentToExercises(candidates, availableEquipment);
-  const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas, availableEquipment);
-  const seen = new Set<string>();
-  const exercises = adjusted.exercises
+  return [...focusPools.flatMap((pool) => pool.bodyweight), ...focusPools.flatMap((pool) => pool.loaded)];
+}
+
+/**
+ * The names, in order, that survive the reader's gear and flags and are not
+ * on the day already. The equipment check runs again after caution, whose
+ * swaps are not gear-checked, so nothing comes back that the gear or the
+ * flags ruled out. The filters' removed/swapped bookkeeping for candidates
+ * is discarded: the reader never saw them.
+ */
+function safeCandidates(
+  names: readonly string[],
+  sessionId: string,
+  onTheDay: ReadonlySet<string>,
+  availableEquipment: string[] | null,
+  cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
+  selection: FirstRunSetupSelection,
+): string[] {
+  const candidates = [...new Set(names)].map((name, index) => buildComposedFallbackExercise(name, sessionId, index));
+  const { adjusted } = applyReaderFiltersToDay(candidates, availableEquipment, cautionFlags, selection.focusAreas);
+  const seen = new Set(onTheDay);
+  return adjusted.exercises
     .filter((exercise) => isExerciseAllowedWithEquipment(exercise.exerciseName, availableEquipment))
-    .filter((exercise) => {
-      const key = exercise.exerciseName.toLowerCase();
+    .map((exercise) => exercise.exerciseName)
+    .filter((name) => {
+      const key = name.trim().toLowerCase();
       if (seen.has(key)) {
         return false;
       }
       seen.add(key);
       return true;
-    })
-    .slice(0, REFILL_EXERCISE_COUNT)
-    .map((exercise, index) => buildComposedFallbackExercise(exercise.exerciseName, session.id, index));
-  return { ...session, source: 'suggested', exercises };
+    });
+}
+
+/**
+ * Fills a training day the filters left with fewer than MIN_DAY_LIFTS lifts
+ * back up, with safe lifts from the same movement pools the refill reads.
+ * What survived keeps its place and its prescription; the new lifts go after
+ * it. Glute Bridge March alone was Lower Body HIIT with knees avoided, and
+ * Glute Bridge alone the two-day full body's second day with knees and
+ * wrists (bug hunt round 2, 2026-10-08).
+ */
+function topUpThinSession(
+  session: ComposedProgramSession,
+  originalNames: readonly string[],
+  availableEquipment: string[] | null,
+  cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
+  selection: FirstRunSetupSelection,
+): ComposedProgramSession {
+  const missing = MIN_DAY_LIFTS - countDayLifts(session.exercises);
+  if (missing <= 0) {
+    return session;
+  }
+  const onTheDay = new Set(session.exercises.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
+  const fillers = safeCandidates(movementPoolNames(originalNames), session.id, onTheDay, availableEquipment, cautionFlags, selection)
+    .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }))
+    .slice(0, missing)
+    .map((name, index) => buildComposedFallbackExercise(name, session.id, session.exercises.length + index));
+  return fillers.length > 0 ? { ...session, exercises: [...session.exercises, ...fillers] } : session;
+}
+
+/**
+ * Folds each thin day into its neighbour, the day before it (or after, for
+ * the first): when no safe lift is left to fill a day, its survivors are
+ * trained beside another day's rather than shown as a one-lift day (owner,
+ * 2026-10-08). Returns which day each folded day went into. A week that is
+ * all thin days is left as it is: there is no neighbour to fold into.
+ *
+ * Exported for its suite: with the catalog's pools some bodyweight core or
+ * glute lift has survived every flag combination so far, so no composed week
+ * reaches this yet.
+ */
+export function foldThinSessions(
+  sessions: ComposedProgramSession[],
+  isThin: (session: ComposedProgramSession) => boolean,
+): { sessions: ComposedProgramSession[]; foldedInto: Map<string, string> } {
+  const foldedInto = new Map<string, string>();
+  if (sessions.every(isThin)) {
+    return { sessions, foldedInto };
+  }
+  const kept: ComposedProgramSession[] = [];
+  let waiting: ComposedProgramSession[] = [];
+  const fold = (target: ComposedProgramSession, folded: ComposedProgramSession[]): ComposedProgramSession => {
+    let exercises = target.exercises;
+    for (const session of folded) {
+      foldedInto.set(session.id, target.id);
+      exercises = [...exercises, ...withoutRepeats(exercises, session.exercises)];
+    }
+    return { ...target, exercises };
+  };
+  for (const session of sessions) {
+    if (isThin(session)) {
+      if (kept.length > 0) {
+        kept[kept.length - 1] = fold(kept[kept.length - 1], [session]);
+      } else {
+        waiting = [...waiting, session];
+      }
+      continue;
+    }
+    kept.push(waiting.length > 0 ? fold(session, waiting) : session);
+    waiting = [];
+  }
+  return { sessions: kept, foldedInto };
+}
+
+/** The rows a day does not already hold, with slot ids it has not used. */
+function withoutRepeats(
+  day: readonly WorkoutTemplateExercise[],
+  incoming: readonly WorkoutTemplateExercise[],
+): WorkoutTemplateExercise[] {
+  const names = new Set(day.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
+  const slots = new Set(day.map((exercise) => exercise.slotId));
+  return incoming
+    .filter((exercise) => !names.has(exercise.exerciseName.trim().toLowerCase()))
+    .map((exercise) => {
+      // Numbered until free: two days folded into one may share a slot id,
+      // and one suffix for both made them one slot to the player.
+      let slotId = exercise.slotId;
+      for (let fold = 1; slots.has(slotId); fold += 1) {
+        slotId = `${exercise.slotId}_folded${fold > 1 ? fold : ''}`;
+      }
+      slots.add(slotId);
+      return slotId === exercise.slotId ? exercise : { ...exercise, slotId };
+    });
 }
 
 export function composeProgramWeekForSelection(
@@ -243,18 +348,22 @@ export function composeProgramWeekForSelection(
   const equipmentRemoved: string[] = [];
   const equipmentSwapped: Array<{ from: string; to: string }> = [];
 
+  const liftsBeforeCaution = new Map<string, number>();
+
   const filtered = baseSessions
     .map((session): ComposedProgramSession => {
       const withEmphasis = [...session.exercises, ...(emphasis.bySessionId.get(session.id) ?? [])];
-      // Order matters: equipment first, caution LAST so bans always win —
-      // an equipment fallback can never resurrect a flagged movement.
-      const equipped = applyEquipmentToExercises(withEmphasis, availableEquipment);
+      // P4 then P2: the gear pass, then the caution flags — avoid removes,
+      // careful swaps (bodyweight-first when the area is also a focus).
+      const { equipped, adjusted } = applyReaderFiltersToDay(
+        withEmphasis,
+        availableEquipment,
+        cautionFlags,
+        selection.focusAreas,
+      );
       equipmentRemoved.push(...equipped.removed);
       equipmentSwapped.push(...equipped.swapped);
-
-      // P2: caution flags change the actual movements — avoid removes,
-      // careful swaps (bodyweight-first when the area is also a focus).
-      const adjusted = applyCautionFlagsToExercises(equipped.exercises, cautionFlags, selection.focusAreas, availableEquipment);
+      liftsBeforeCaution.set(session.id, countDayLifts(equipped.exercises));
       cautionRemoved.push(...adjusted.removed);
       cautionSwapped.push(...adjusted.swapped);
 
@@ -269,24 +378,43 @@ export function composeProgramWeekForSelection(
   // is the reader's rhythm, and dropping the day saved a 6-day plan as 5 with
   // a "Day 6" naming gap and no notice (bug hunt, 2026-10-04). Only a day for
   // which nothing at all survives both filters leaves the week.
-  const sessions = filtered
+  const originalNamesOf = (session: ComposedProgramSession) =>
+    baseSessions.find((entry) => entry.id === session.id)?.exercises.map((exercise) => exercise.exerciseName) ?? [];
+  const refilled = filtered
     .map((session) =>
       session.exercises.length > 0
         ? session
-        : refillEmptiedSession(
-            session,
-            baseSessions.find((entry) => entry.id === session.id)?.exercises.map((exercise) => exercise.exerciseName) ?? [],
-            availableEquipment,
-            cautionFlags,
-            selection,
-          ),
+        : refillEmptiedSession(session, originalNamesOf(session), availableEquipment, cautionFlags, selection),
     )
-    .filter((session) => session.exercises.length > 0)
-    .map((session, index) => ({ ...session, orderIndex: index }));
+    .filter((session) => session.exercises.length > 0);
+
+  // A training day the filters left with fewer than MIN_DAY_LIFTS lifts is
+  // filled back from its own movement, and folded into its neighbour when
+  // nothing safe is left to fill it (owner, 2026-10-08). Only a day the flags
+  // thinned, one that had the lifts after the gear pass: a mobility day or a
+  // run add-on is short on lifts by design, and the gear alone leaves the
+  // week the Programs card costs for every programme (programmeMinutes).
+  const trainingDayIds = new Set(
+    [...liftsBeforeCaution].filter(([, lifts]) => lifts >= MIN_DAY_LIFTS).map(([sessionId]) => sessionId),
+  );
+  const toppedUp = refilled.map((session) =>
+    trainingDayIds.has(session.id)
+      ? topUpThinSession(session, originalNamesOf(session), availableEquipment, cautionFlags, selection)
+      : session,
+  );
+  const folded = foldThinSessions(
+    toppedUp,
+    (session) => trainingDayIds.has(session.id) && countDayLifts(session.exercises) < MIN_DAY_LIFTS,
+  );
+  const sessions = folded.sessions.map((session, index) => ({ ...session, orderIndex: index }));
 
   // Report only emphasis that survived the caution pass (as-is or swapped) —
-  // the truth surface must not claim additions the flags vetoed.
-  const focusAdditions = emphasis.additions.filter((addition) => {
+  // the truth surface must not claim additions the flags vetoed — on the day
+  // it is trained on now.
+  const focusAdditions = emphasis.additions.map((addition) => {
+    const foldedInto = folded.foldedInto.get(addition.sessionId);
+    return foldedInto ? { ...addition, sessionId: foldedInto } : addition;
+  }).filter((addition) => {
     const session = sessions.find((entry) => entry.id === addition.sessionId);
     if (!session) {
       return false;
