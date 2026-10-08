@@ -35,6 +35,8 @@ const DRILL_LIBRARY_NAME: Record<string, string> = {
   'home.drill.wallSlides': 'Arm Circles',
   'home.drill.standingLatStretch': 'Standing Lateral Stretch',
   'home.drill.childsPose': "Child's Pose",
+  'home.drill.marchInPlace': 'Walking, Treadmill',
+  'home.drill.gluteBridges': 'Butt Lift (Bridge)',
 };
 
 const DRILL_KEYS = Object.keys(DRILL_LIBRARY_NAME) as I18nKey[];

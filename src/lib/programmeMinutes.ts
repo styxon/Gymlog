@@ -2,6 +2,7 @@ import { isMinutesTrackingMode, isTimedTrackingMode, WorkoutTemplateExercise } f
 import { applyEquipmentToExercises } from './equipmentExerciseFilter';
 import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup, RoutineDrillOverrides } from './homeSessionHero';
+import type { SetupCautionFlag } from '../types/models';
 import { estimateSessionMinutes } from './sessionDuration';
 
 /**
@@ -18,6 +19,8 @@ export interface ProgrammeMinutesOptions {
   /** The reader's gear, which decides the warm-up and cool-down drills. */
   availableEquipment?: string[] | null;
   overrides?: RoutineDrillOverrides | null;
+  /** An `avoid` flag swaps drills (same scheme, same seconds) and drops stored picks of a flagged drill. */
+  cautionFlags?: readonly SetupCautionFlag[] | null;
   /**
    * Which end of the rest range to cost. A ready programme runs on the low
    * end; the copy onboarding saves keeps the high end (onboardingHandoff), so
@@ -33,6 +36,7 @@ export function estimateProgrammeSessionMinutesList(
 ): number[] {
   const equipment = options.availableEquipment ?? null;
   const overrides = options.overrides ?? null;
+  const cautionFlags = options.cautionFlags ?? null;
   return sessions.map((session) => {
     if (session.exercises.length === 0) {
       return 0;
@@ -49,8 +53,8 @@ export function estimateProgrammeSessionMinutesList(
         supersetGroup: exercise.supersetGroup ?? null,
       })),
       // Drill durations do not depend on the language, only their labels do.
-      warmupSeconds: estimateRoutineBlockSeconds(getDefaultWarmup(focus, 'en', equipment, overrides)),
-      cooldownSeconds: estimateRoutineBlockSeconds(getDefaultCooldown(focus, 'en', equipment, overrides)),
+      warmupSeconds: estimateRoutineBlockSeconds(getDefaultWarmup(focus, 'en', equipment, overrides, cautionFlags)),
+      cooldownSeconds: estimateRoutineBlockSeconds(getDefaultCooldown(focus, 'en', equipment, overrides, cautionFlags)),
     });
   });
 }

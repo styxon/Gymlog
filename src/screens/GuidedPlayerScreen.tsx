@@ -135,7 +135,7 @@ import { RestAlertsSheet } from '../components/RestAlertsSheet';
 import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { sound, type CueSound } from '../utils/sound';
 import { readableOn, Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
-import { AppLanguage, ExerciseLibraryItem, UnitPreference } from '../types/models';
+import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
@@ -276,6 +276,11 @@ interface GuidedPlayerScreenProps {
   language?: AppLanguage;
   /** Equipment chips the user actually has; null when the setup never said. */
   availableEquipment?: string[] | null;
+  /**
+   * The reader's caution flags: an `avoid` area keeps its drills out of the
+   * warm-up and cool-down, the way it keeps its lifts out of the week.
+   */
+  cautionFlags?: readonly SetupCautionFlag[];
   /**
    * The reader's own warm-up / cool-down picks.
    *
@@ -1499,6 +1504,7 @@ function GuidedPlayer({
   unitPreference,
   language = 'en',
   availableEquipment = null,
+  cautionFlags,
   routineDrillOverrides = {},
   tailoringPreferences = null,
   exerciseLibrary,
@@ -1575,16 +1581,16 @@ function GuidedPlayer({
   const warmupDrills = useMemo<GuidedDrill[]>(
     () =>
       buildGuidedDrillsFromBlock(
-        getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides),
+        getDefaultWarmup(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags),
       ),
-    [focusKind, language, availableEquipment, routineDrillOverrides],
+    [focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags],
   );
   const cooldownDrills = useMemo<GuidedDrill[]>(
     () =>
       buildGuidedDrillsFromBlock(
-        getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides),
+        getDefaultCooldown(focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags),
       ),
-    [focusKind, language, availableEquipment, routineDrillOverrides],
+    [focusKind, language, availableEquipment, routineDrillOverrides, cautionFlags],
   );
 
   const exercises = session?.exercises ?? [];

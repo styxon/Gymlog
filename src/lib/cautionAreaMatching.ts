@@ -33,6 +33,9 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'lateral raise',
     'rear delt',
     'handstand',
+    // A squat into an overhead press: it loads the shoulder the way a push
+    // press does (programmeBrief already lists it for a sore shoulder).
+    'thruster',
     'dip',
     'dippi',
   ],
@@ -58,6 +61,9 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'pistol',
     'box jump',
     'wall sit',
+    // The front squat inside a press: "Dumbbell Thruster" survived a knee
+    // "avoid" in three ready programmes because no pattern named it.
+    'thruster',
     // Landings load the knee too: a knee "avoid" still left Burpee, Jumping
     // Jack and Mountain Climber in the week (recommendation matrix, 2026-10-05).
     'jump',
@@ -242,3 +248,18 @@ export function cautionAreaLoadedBy(
   return null;
 }
 
+/**
+ * The areas the reader said to leave out ENTIRELY (`avoid`), for the blocks the
+ * exercise filter never sees: the warm-up and cool-down drills. `careful` is not
+ * here on purpose -- it swaps heavier lifts for gentler ones and promises no
+ * absence, so a light warm-up squat for a careful knee is consistent with it.
+ */
+export function avoidedCautionAreas(flags: readonly SetupCautionFlag[] | null | undefined): SetupCautionArea[] {
+  const areas: SetupCautionArea[] = [];
+  for (const flag of flags ?? []) {
+    if (flag.level === 'avoid' && !areas.includes(flag.area)) {
+      areas.push(flag.area);
+    }
+  }
+  return areas;
+}
