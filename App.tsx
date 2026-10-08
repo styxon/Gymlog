@@ -100,6 +100,7 @@ import { createProgrammeSwitches } from './src/app/programmeSwitches';
 import { useProgramCapLine } from './src/app/useProgramCapLine';
 import { createOnboardingFinishes } from './src/app/onboardingFinishes';
 import { useDeviceSwitches } from './src/app/useDeviceSwitches';
+import { useStoreBillingSync } from './src/app/useStoreBillingSync';
 import { useFunnelAnalytics } from './src/app/useFunnelAnalytics';
 import { useInstallStamps } from './src/app/useInstallStamps';
 import { useSetupWeightSeed } from './src/app/useSetupWeightSeed';
@@ -369,6 +370,10 @@ function VinhaApp() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useDeviceSwitches({ hydrated, preferences });
+
+  // The store's word on Pro, in a release build: one read after load, then
+  // whatever it pushes (renewal, a cancel made in Play, a refund).
+  useStoreBillingSync({ hydrated, preferences, updatePreferences });
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.

@@ -187,8 +187,12 @@ module.exports = [
       assert.ok(tryAt > -1 && okAt > tryAt && catchAt > okAt);
       assert.match(writer.slice(catchAt), /showToast\(t\(preferences\.appLanguage, 'toast\.proUnlockFailed'\)\);\s*return false;/);
 
-      // Two ways onto the unlock screen, both behind a write that landed.
-      assert.equal(handler.split("screen: 'premium_unlock'").length - 1, 2);
+      // Three ways onto the unlock screen, each behind a write that landed:
+      // the trial, the store's purchase (release) and the invented one (demo).
+      assert.equal(handler.split("screen: 'premium_unlock'").length - 1, 3);
+      const storeWrite = handler.indexOf('if (await turnProOn(record)) {');
+      const storeScreen = handler.indexOf("screen: 'premium_unlock', plan: record.mockSubscriptionTerm })");
+      assert.ok(storeWrite > -1 && storeScreen > storeWrite, 'the store purchase is announced before it is stored');
       const trialWrite = handler.search(
         /if \(!\(await turnProOn\(\{ proTrialUntil: trialUntil, proTrialStartedAt: new Date\(\)\.toISOString\(\) \}\)\)\) \{\s*return;\s*\}/,
       );

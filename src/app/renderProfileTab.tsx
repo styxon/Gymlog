@@ -8,7 +8,9 @@ import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
 import { buildCancelSurveyAnswer } from '../lib/cancelSurvey';
 import { recordRatingCompleted } from '../lib/ratingPrompt';
-import { storePlatformOf, usesSystemReviewPrompt, writeReviewUrl } from '../lib/storeLinks';
+import { manageSubscriptionsUrl, storePlatformOf, usesSystemReviewPrompt, writeReviewUrl } from '../lib/storeLinks';
+import { purchaseRecordFromStore } from '../lib/storePurchase';
+import { isStoreBillingConfigured, purchaseStorePlan, restoreStorePurchases } from '../features/billing/storeBilling';
 import { isDemoBuild } from '../lib/demoMode';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { t } from '../lib/i18n';
@@ -351,8 +353,38 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           // free Pro that never expires in any build that shipped without
           // billing — a build releaseReadiness refuses, but the write must
           // not be the thing that makes the refusal matter.
+          //
+          // A release build buys from the store, and the record it writes is
+          // the store's answer, not the moment the button was pressed. The
+          // unlock screen follows that write, as it follows the demo's.
           if (!isDemoBuild()) {
-            showToast(t(preferences.appLanguage, 'premium.purchaseUnavailable'));
+            const outcome = await purchaseStorePlan(plan);
+            if (outcome.status === 'cancelled') {
+              return;
+            }
+            if (outcome.status !== 'purchased') {
+              showToast(
+                t(
+                  preferences.appLanguage,
+                  outcome.status === 'pending'
+                    ? 'premium.purchasePending'
+                    : outcome.status === 'failed'
+                      ? 'premium.purchaseFailed'
+                      : 'premium.purchaseUnavailable',
+                ),
+              );
+              return;
+            }
+            const record = purchaseRecordFromStore(outcome.customer, preferences);
+            if (record.mockSubscriptionPurchasedAt === null) {
+              // Paid, and the store has not granted Pro yet: say so rather
+              // than show a receipt for something that is not on.
+              showToast(t(preferences.appLanguage, 'premium.purchasePending'));
+              return;
+            }
+            if (await turnProOn(record)) {
+              navigate({ tab: 'profile', screen: 'premium_unlock', plan: record.mockSubscriptionTerm });
+            }
             return;
           }
           const purchased = await turnProOn({
@@ -544,6 +576,13 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
   }
 
   if (route.screen === 'subscription') {
+    // In a release build every change to a paid subscription is made in the
+    // store: the app cannot cancel, resume or switch a Play subscription, it
+    // can only send the reader to the page that does and read the answer back
+    // (useStoreBillingSync).
+    const releaseBuild = !isDemoBuild();
+    const openStoreSubscriptions = () =>
+      void Linking.openURL(manageSubscriptionsUrl(storePlatformOf(Platform.OS))).catch(() => undefined);
     return (
       <SubscriptionScreen
         language={preferences.appLanguage}
@@ -555,6 +594,10 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         mockCancelled={preferences.mockSubscriptionCancelledAt !== null}
         purchasedAt={preferences.mockSubscriptionPurchasedAt}
         onChangeMockTerm={(term) => {
+          if (releaseBuild) {
+            openStoreSubscriptions();
+            return;
+          }
           // A plan change is a new subscription, and billing treats it as one.
           // Writing the term alone let a cancelled monthly become a yearly and
           // carry its end date eleven months forward — time nobody bought.
@@ -565,6 +608,10 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           });
         }}
         onChangeMockCancelled={(cancelled) => {
+          if (releaseBuild) {
+            openStoreSubscriptions();
+            return;
+          }
           if (cancelled) {
             void updatePreferences({ mockSubscriptionCancelledAt: new Date().toISOString() });
             return;
@@ -580,6 +627,33 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           navigate({ tab: 'profile', screen: 'premium' });
         }}
         demoBuild={isDemoBuild()}
+        // The success toast follows the saved answer, never the tap. Without a
+        // store in this build the row keeps sending the reader to Play.
+        onRestorePurchases={
+          releaseBuild && isStoreBillingConfigured()
+            ? async () => {
+                const customer = await restoreStorePurchases();
+                if (!customer) {
+                  showToast(t(preferences.appLanguage, 'subs.restore.failed'));
+                  return;
+                }
+                const record = purchaseRecordFromStore(customer, preferences);
+                try {
+                  await updatePreferences(record);
+                } catch (error) {
+                  console.error('Failed to save the restored purchase', error);
+                  showToast(t(preferences.appLanguage, 'subs.restore.failed'));
+                  return;
+                }
+                showToast(
+                  t(
+                    preferences.appLanguage,
+                    record.mockSubscriptionPurchasedAt ? 'subs.restore.done' : 'subs.restore.none',
+                  ),
+                );
+              }
+            : undefined
+        }
         onBack={() => navigateBack({ tab: 'profile', screen: 'settings' })}
         onManageMembership={() => navigate({ tab: 'profile', screen: 'membership_end' })}
         onOpenPremium={() => navigate({ tab: 'profile', screen: 'premium' })}
@@ -613,6 +687,15 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // the page promises two lines above the button, so ending it on the spot
         // would contradict the screen the reader is standing on.
         onEndNow={() => void updatePreferences({ mockSubscriptionCancelledAt: new Date().toISOString() })}
+        // A store subscription is ended in the store. The page sends the reader
+        // there instead of playing an "ended" splash over a subscription that
+        // is still renewing; the cancellation comes back through the sync.
+        onEndInStore={
+          !isDemoBuild() && proEntitlement.source === 'purchase'
+            ? () =>
+                void Linking.openURL(manageSubscriptionsUrl(storePlatformOf(Platform.OS))).catch(() => undefined)
+            : undefined
+        }
         onSurveyDone={(reasons, note) => {
           const answer = buildCancelSurveyAnswer(reasons, note, new Date().toISOString());
           if (answer) {

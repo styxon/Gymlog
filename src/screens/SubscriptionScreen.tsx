@@ -38,6 +38,11 @@ interface SubscriptionScreenProps {
   onChangeMockCancelled: (cancelled: boolean) => void;
   /** False in a real release: every invented billing row disappears. */
   demoBuild: boolean;
+  /**
+   * Asks the store for the reader's purchases. Absent when this build has no
+   * store, and the Restore row then opens the store's subscription page.
+   */
+  onRestorePurchases?: () => void;
   language?: AppLanguage;
   onBack: () => void;
   /** Opens the end-membership page. */
@@ -109,6 +114,7 @@ export function SubscriptionScreen({
   onChangeMockTerm,
   onChangeMockCancelled,
   demoBuild,
+  onRestorePurchases,
   language = 'en',
   onBack,
   onManageMembership,
@@ -551,8 +557,8 @@ export function SubscriptionScreen({
                     icon="restore"
                     title={t(language, 'subs.row.restore')}
                     sub={t(language, 'subs.row.restoreSub')}
-                    onPress={() =>
-                      void Linking.openURL(manageSubscriptionsUrl(STORE))
+                    onPress={
+                      onRestorePurchases ?? (() => void Linking.openURL(manageSubscriptionsUrl(STORE)))
                     }
                     divider
                   />

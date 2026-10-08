@@ -11,7 +11,7 @@
  * Anything that only belongs in the demo hangs off this one flag, so nothing
  * demo-shaped can reach a release build by being forgotten.
  */
-export const DEMO_BUILD = true;
+export const DEMO_BUILD = false;
 
 export function isDemoBuild(): boolean {
   return DEMO_BUILD;

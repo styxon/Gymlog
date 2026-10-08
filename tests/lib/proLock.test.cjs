@@ -366,7 +366,7 @@ module.exports = [
     },
   },
   {
-    name: 'proLock: the purchase is simulated end to end, and the build says so',
+    name: 'proLock: the demo purchase is simulated end to end, and this build is a store build',
     run() {
       const tab = read('src', 'app', 'renderProfileTab.tsx');
       // It records an instant and a term — the shape billing slots into.
@@ -382,7 +382,10 @@ module.exports = [
       // ...and only for a purchase: a promo and the trial are grants with no
       // card behind them, in any build.
       assert.match(view, /return demoBuild && view\.state === 'active' && view\.grant === null;/);
-      assert.equal(JSON.parse(read('app.json')).expo.extra.demoBuild, true);
+      // Cleared 2026-10-08 (user): this is a store build. The invented
+      // purchase is the demo's alone, and a store build has a store to buy from.
+      assert.equal(JSON.parse(read('app.json')).expo.extra.demoBuild, false);
+      assert.ok(JSON.parse(read('package.json')).dependencies['react-native-purchases'], 'a store build with no billing library');
     },
   },
 ];

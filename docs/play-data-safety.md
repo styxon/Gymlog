@@ -18,6 +18,22 @@ fails if a fourth appears. The policy names all three.
 | AI coach online mode, programme composer, photo import | `src/lib/aiCoachClient.ts` → `api/ai-coach.ts` | Question + conversation history + training summary **including latest weight, measurements, height, age, gender, goals and setup answers**; the composer brief; the downscaled photo | **Nothing by default. With consent, three separate lines each starting at no** (`aiLogChatConsent` / `aiLogComposerConsent` / `aiLogPhotoConsent`): `keepTranscript()` files the question and its answer, the brief and the proposal it produced, or the photo itself plus the rows read out of it, as `transcripts/<day>/<aiLogId>--…`. **Never the training summary** — that is sent, answered from, and dropped. Swept at 24 months by `api/prune-events.ts`; turning any one line off calls a forget route that deletes every copy under the label, whichever line made it. The same prefix also holds entries a development log wrote **before #92**, without consent, and chat copies written before #128 carry the signed-in email — both cleaned by hand before release, §3 | Vercel (function and storage in Stockholm, `arn1`), Anthropic (model, United States; deletes within 30 days, no training) |
 | Anonymous usage events | `src/features/analytics/analyticsClient.ts` → `api/events.ts` | Random install id + event names, timestamps, `step` / `path`; since 2026-10-04 also **error reports** (`app_error`: error class, up to five `bundle:line:col` positions, screen key, app version, platform; `operation_failed`: which operation and a closed code). Never an error message (`src/lib/errorReport.ts`) | Batches as private blobs (Vercel, EU); deleted after 24 months by the daily cron (`api/prune-events.ts`, `docs/usage-events.md`) | Vercel (function and storage in Stockholm, `arn1`) |
 
+**Purchases (since 2026-10-08, not live until the store is set up).** A fourth
+recipient, and not a `src/` request site, so the count above does not see it:
+the RevenueCat SDK (`react-native-purchases`, `src/features/billing/storeBilling.ts`)
+talks to RevenueCat from native code once `EXPO_PUBLIC_REVENUECAT_*_KEY` is set.
+It sends an anonymous RevenueCat app user id, the Play purchase token and
+purchase history, and device and app info such as the OS, the app version and
+the store country. **Action for the publisher before a build with the key
+ships:**
+- name RevenueCat (a US processor) in the privacy policy, in both languages;
+- answer *Financial info → Purchase history* (collected, not shared, for app
+  functionality) and *App info and performance* in the form, checking against
+  RevenueCat's own Data safety guidance on the day.
+
+The merged manifest also gains `com.android.vending.BILLING`, which is the
+billing library's own permission. See `docs/store-billing.md`.
+
 **App version on every request (since 2026-09-28).** All three clients also send
 `x-vinha-app-version` (e.g. `1.1.0`) and `x-vinha-platform` (`android` / `ios`), so
 the server can refuse a build too old for it (`src/lib/appUpdateGate.ts`,
