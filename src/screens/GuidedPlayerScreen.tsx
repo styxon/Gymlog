@@ -2994,6 +2994,12 @@ function GuidedPlayer({
 
   /** Eight sessions of top sets, today's included and growing set by set. */
   const sheetHistory = useMemo(() => {
+    // Read only by the open sheet below. Built behind a closed one it ran for
+    // the whole series of the lift — a date format per session — on every
+    // step change and logged set, and was thrown away unseen.
+    if (!setPanelsOpen) {
+      return buildExerciseSheetHistory([], null, language);
+    }
     const slotId = step.type === 'set' ? step.slotId : null;
     const instance = slotId ? exerciseBySlot.get(slotId) ?? null : null;
     // The lift by name, then whatever only the slot knows. The two stamp a
@@ -3025,7 +3031,7 @@ function GuidedPlayer({
       instance?.trackingMode ?? 'load_and_reps',
       unitPreference,
     );
-  }, [exerciseBySlot, language, liftHistory, step, unitPreference, workout.history]);
+  }, [exerciseBySlot, language, liftHistory, setPanelsOpen, step, unitPreference, workout.history]);
 
   /* ── rest screen ───────────────────────────────────────────────────────── */
   /**

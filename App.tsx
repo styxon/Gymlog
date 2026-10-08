@@ -42,6 +42,8 @@ import {
   buildProgramWorkoutPlan,
 } from './src/lib/programAdoption';
 import { useRecordsAndMilestones } from './src/app/useRecordsAndMilestones';
+import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
+import { useStableActiveWorkoutSummary } from './src/app/useStableActiveWorkoutSummary';
 import { I18nKey, t } from './src/lib/i18n';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
@@ -750,7 +752,7 @@ function VinhaApp() {
   } = useProInsights({ database, preferences });
   // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
   // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
-  const homeActiveWorkoutSummary = useMemo(() => markingWorkoutFailures(() => {
+  const homeActiveWorkoutParts = useMemo(() => markingWorkoutFailures(() => {
     if (!workout.activeSession || !isWorkoutInProgress(workout.activeSession)) {
       return null;
     }
@@ -772,6 +774,8 @@ function VinhaApp() {
       meta: `${pluralize(remainingSets, 'set')} left | Started ${formatTime(workout.activeSession.startedAt)}`,
     };
   }), [workout.activeSession]);
+  // The same three fields as a value that holds still: see useStableActiveWorkoutSummary.
+  const homeActiveWorkoutSummary = useStableActiveWorkoutSummary(homeActiveWorkoutParts);
   /**
    * Go to the session that is already running, if there is one.
    *
@@ -1824,6 +1828,7 @@ function VinhaApp() {
     showToast,
     readerComposedWeek,
   });
+  const exerciseProgressFor = useExerciseDetailHistory(database, sameLibraryRow);
   const { programsCustomItems } = useProgramsCustomItems({
     customWorkouts,
     database,
@@ -2049,7 +2054,7 @@ function VinhaApp() {
       exerciseLibrary,
       liftHistory,
       plateauNotice,
-      sameLibraryRow,
+      exerciseProgressFor,
       guidedEntryEyebrow,
       guidedWeekProgress,
       guidedNextUp,

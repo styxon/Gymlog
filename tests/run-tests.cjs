@@ -112,6 +112,7 @@ const suites = [
   ...require('./lib/guidedPlayer.test.cjs'),
   ...require('./lib/libraryLookupCache.test.cjs'),
   ...require('./lib/startupWorkBudget.test.cjs'),
+  ...require('./lib/screenWorkBudget.test.cjs'),
   ...require('./lib/guidedClockHold.test.cjs'),
   ...require('./lib/sheetScrollBound.test.cjs'),
   ...require('./lib/guidedRunPreview.test.cjs'),

@@ -110,7 +110,7 @@ module.exports = [
       // piece 05).
       assert.match(
         historySource,
-        /editing && onDeleteSession \? \(\) => setPendingDelete\(session\) : undefined/,
+        /editing && onDeleteSession \? requestDelete : undefined/,
       );
       assert.match(historySource, /const \[editing, setEditing\] = useState\(false\);/,
         'History opens with its bins showing');

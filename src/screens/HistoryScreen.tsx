@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -201,7 +201,13 @@ function FeelSummaryCard({
   );
 }
 
-function SessionRow({
+/**
+ * Memoised, and so handed handlers that are the same function for every row
+ * and every render: a row is redrawn when its own session, language or unit
+ * changes, or when Edit puts the bins on, and not when a delete dialog opens
+ * or closes. A 300-session history is about 2,000 native views.
+ */
+const SessionRow = React.memo(function SessionRow({
   session,
   unitPreference,
   language,
@@ -211,7 +217,7 @@ function SessionRow({
   session: HistorySessionViewModel;
   unitPreference: UnitPreference;
   language: AppLanguage;
-  onPress: () => void;
+  onPress: (sessionId: string) => void;
   /**
    * Absent means this row cannot be deleted, rather than an inert button.
    *
@@ -219,7 +225,7 @@ function SessionRow({
    * is a delete waiting to happen, and this list is the one place a session
    * can be lost from (Progress v2, piece 05).
    */
-  onDelete?: () => void;
+  onDelete?: (session: HistorySessionViewModel) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
@@ -238,7 +244,10 @@ function SessionRow({
   const feelColor = session.feel ? sessionFeelColor(theme, session.feel) : null;
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.sessionCard, pressed && styles.pressed]}>
+    <Pressable
+      onPress={() => onPress(session.sessionId)}
+      style={({ pressed }) => [styles.sessionCard, pressed && styles.pressed]}
+    >
       {feelColor ? (
         <View style={[styles.sessionFeelStripe, { backgroundColor: feelColor }]} />
       ) : null}
@@ -251,7 +260,7 @@ function SessionRow({
             accessibilityRole="button"
             accessibilityLabel={t(language, 'history.delete')}
             hitSlop={12}
-            onPress={onDelete}
+            onPress={() => onDelete(session)}
             style={({ pressed }) => [styles.sessionDelete, pressed && styles.pressed]}
           >
             {/* A bin, not an ×. The × read as "dismiss this row" on a list
@@ -281,7 +290,7 @@ function SessionRow({
       </View>
     </Pressable>
   );
-}
+});
 
 /**
  * Month names for the group headers.
@@ -340,6 +349,11 @@ export function HistoryScreen({
   const [pendingDelete, setPendingDelete] = useState<HistorySessionViewModel | null>(null);
   const [pendingCardioDelete, setPendingCardioDelete] = useState<{ id: string; name: string } | null>(null);
   const selectedSession = sessions.find((session) => session.id === selectedSessionId);
+  // One function for every row, whatever the caller's handler is this render.
+  const onSelectSessionRef = useRef(onSelectSession);
+  onSelectSessionRef.current = onSelectSession;
+  const selectSession = useCallback((sessionId: string) => onSelectSessionRef.current(sessionId), []);
+  const requestDelete = useCallback((session: HistorySessionViewModel) => setPendingDelete(session), []);
 
   const sessionViewModels = useMemo(
     () =>
@@ -650,10 +664,8 @@ export function HistoryScreen({
                             session={session}
                             unitPreference={unitPreference}
                             language={language}
-                            onPress={() => onSelectSession(session.sessionId)}
-                            onDelete={
-                              editing && onDeleteSession ? () => setPendingDelete(session) : undefined
-                            }
+                            onPress={selectSession}
+                            onDelete={editing && onDeleteSession ? requestDelete : undefined}
                           />
                         ))}
                       </View>

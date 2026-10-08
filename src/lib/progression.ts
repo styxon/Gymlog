@@ -260,6 +260,28 @@ function finalizeExerciseSummary(
   };
 }
 
+/** The three tables a lift's progress is read from. */
+export type ProgressDatabase = Pick<AppDatabase, 'exerciseLogs' | 'exerciseTemplates' | 'workoutSessions'>;
+
+/**
+ * `getExerciseProgressForName` for one database and matcher, remembering the
+ * last answer. The exercise page asks on every shell render, and a render that
+ * changed nothing it reads (a technique tick, a preference) used to rebuild the
+ * whole summary and every chart label from it; the same name now returns the
+ * same summary object, so what hangs off it stays memoised.
+ */
+export function createExerciseProgressLookup(database: ProgressDatabase, sameLift: SameLiftMatcher = isSameName) {
+  let lastName: string | null = null;
+  let lastSummary: ExerciseProgressSummary | null = null;
+  return (exerciseName: string): ExerciseProgressSummary => {
+    if (lastSummary === null || lastName !== exerciseName) {
+      lastSummary = getExerciseProgressForName(database, exerciseName, sameLift);
+      lastName = exerciseName;
+    }
+    return lastSummary;
+  };
+}
+
 /**
  * Build a progress summary for a single exercise by name, regardless of whether
  * the user has tracked it. Used by the Exercise Detail screen to show this lift's
@@ -271,7 +293,7 @@ function finalizeExerciseSummary(
  * read "No history yet" on the bench press's own page (emulator, 2026-09-13).
  */
 export function getExerciseProgressForName(
-  database: AppDatabase,
+  database: ProgressDatabase,
   exerciseName: string,
   sameLift: SameLiftMatcher = isSameName,
 ): ExerciseProgressSummary {

@@ -962,7 +962,7 @@ module.exports = [
       const provider = read('src', 'features', 'workout', 'WorkoutProvider.tsx');
       assert.match(provider, /useReducer\(markedWorkoutReducer, workoutInitialState\)/);
       assert.match(provider, /const markedWorkoutReducer: typeof workoutReducer = \(state, action\) => markingWorkoutFailures\(\(\) => workoutReducer\(state, action\)\);/);
-      assert.match(app, /const homeActiveWorkoutSummary = useMemo\(\(\) => markingWorkoutFailures\(\(\) => \{/, 'the session read for Home on every route');
+      assert.match(app, /const homeActiveWorkoutParts = useMemo\(\(\) => markingWorkoutFailures\(\(\) => \{/, 'the session read for Home on every route');
     },
   },
   {
