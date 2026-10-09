@@ -194,8 +194,10 @@ module.exports = [
 
       const tab = read('src', 'app', 'renderWorkoutTab.tsx');
       assert.equal((tab.match(/onOpenPro=\{\(\) => navigate\(\{ tab: 'profile', screen: 'premium' \}\)\}/g) ?? []).length, 2);
-      assert.match(tab, /<ExerciseDetailScreen[\s\S]*?proUnlocked=\{proUnlocked\}/);
-      assert.match(tab, /<GuidedPlayerScreen[\s\S]*?proUnlocked=\{proUnlocked\}/);
+      // Inside each element's own props, not anywhere later in the file.
+      const props = (tag) => tab.slice(tab.indexOf(tag), tab.indexOf('\n      />', tab.indexOf(tag)));
+      assert.match(props('<ExerciseDetailScreen'), /proUnlocked=\{proUnlocked\}/);
+      assert.match(props('<GuidedPlayerScreen'), /proUnlocked=\{proUnlocked\}/);
     },
   },
   {
