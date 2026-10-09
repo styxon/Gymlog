@@ -50,7 +50,9 @@ const libraryKeys = () => [
 
 /** The map source's entries: key -> file the thunk requires. */
 function readMapEntries() {
-  const text = fs.readFileSync(MAP_SOURCE, 'utf8');
+  // A Windows checkout (core.autocrlf) has CRLF here, and ENTRY is anchored
+  // at the line end.
+  const text = fs.readFileSync(MAP_SOURCE, 'utf8').replace(/\r\n/g, '\n');
   const start = text.indexOf('const EXERCISE_IMAGES');
   const end = text.indexOf('\n};', start);
   assert.ok(start > 0 && end > start, 'could not find the EXERCISE_IMAGES table in the generated map');
