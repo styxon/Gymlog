@@ -292,6 +292,7 @@ const suites = [
   ...require('./lib/exerciseSetLog.test.cjs'),
   ...require('./lib/slotHistoryLastTime.test.cjs'),
   ...require('./lib/hevyImportLastTime.test.cjs'),
+  ...require('./lib/hevyExerciseName.test.cjs'),
   ...require('./lib/logRecordedWork.test.cjs'),
   ...require('./lib/authoredProgramCount.test.cjs'),
   ...require('./lib/uncalledExports.test.cjs'),

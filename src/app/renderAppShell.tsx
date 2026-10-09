@@ -272,7 +272,9 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
           // (hunt, 2026-10-09). Every workout the database now holds, those
           // it already had included, so importing the file again mends an
           // import made before this.
-          recordLoggedWorkouts(hevyWorkoutsToLoggedSessions(preview.workouts, new Set(result.sessionIds)));
+          recordLoggedWorkouts(
+            hevyWorkoutsToLoggedSessions(preview.workouts, new Set(result.sessionIds), exerciseNameBook),
+          );
           setSettingsImportVisible(false);
           const imported = t(
             preferences.appLanguage,
