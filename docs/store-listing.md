@@ -276,7 +276,7 @@ Things the text deliberately leaves out:
 | Asset | Size | State |
 |---|---|---|
 | Icon | 512×512 PNG | Ready: `assets/branding/vinha-play-store-512.png` |
-| Feature graphic | 1024×500, no alpha | Missing. Needs a design: brand mark and the tagline "Treeni, joka etenee." / "Training that moves forward.", key elements away from the edges, not a copy of the icon |
+| Feature graphic | 1024×500, no alpha | Ready (2026-10-09, direction B of three): `assets/branding/vinha-feature-graphic-fi.png` and `-en.png`. The tagline beside three logged sets and the rest timer, no device frame, not a copy of the icon. Source: the design canvas https://claude.ai/artifact/DHfonRGakXAhdMkBEni49Q |
 | Phone screenshots | 2–8, 1080×1920 recommended, at least 4 for recommendations | A set of 17 from 2026-09-14 exists (`Pictures\Vinha-kuvakaappaukset-2026-09-13\kauppakuvat-testi`), shot before many UI changes; reshoot from the release APK |
 
 Proposed eight, in this order, with the caption above the screen:
