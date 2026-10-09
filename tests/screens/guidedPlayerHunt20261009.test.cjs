@@ -65,7 +65,7 @@ module.exports = [
       }
       // And the hook turns that into the session card, which has no +30 s / skip.
       const sync = between(alertHook, 'async (endsAtMs: number | null', 'await scheduleRestLadder');
-      assert.match(sync, /recovery/);
+      assert.match(sync, /if \(ongoing && recovery\) \{/);
       assert.match(sync, /kind: 'session'/);
     },
   },
