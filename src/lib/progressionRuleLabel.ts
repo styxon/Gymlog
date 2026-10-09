@@ -53,8 +53,6 @@ const FI: Record<string, string> = {
     'Pidä paino samana kunnes koko toistohaarukka toistuu. Kesätreenin pitäisi loppua niin että jotain jää jäljelle.',
   'Run blocks progress by adding one block, never by running the same block harder. Add the block only when the last one felt easy.':
     'Juoksuosuus etenee lisäämällä yksi osuus, ei juoksemalla samaa osuutta kovempaa. Lisää osuus vasta kun edellinen tuntui helpolta.',
-  'If repsMin is missed, repeat the same session next time. If the same target is missed twice in a row, drop a set rather than the programme.':
-    'Jos alarajaa ei saavuteta, toista sama treeni seuraavalla kerralla. Jos sama tavoite jää kahdesti peräkkäin, pudota sarja pois – älä ohjelmaa.',
   'Same rule, slower. Twenty-six weeks is long enough that holding a load for three sessions costs you nothing.':
     'Sama sääntö, hitaammin. 26 viikkoa on niin pitkä aika, ettei painon pitäminen samana kolme treeniä maksa mitään.',
   'Add reps before load. The conditioning finisher is not progressed by load at all - keep the effort steady and let the leg work be the hard part.':
@@ -137,34 +135,32 @@ const FI: Record<string, string> = {
     'Käytä liikkuvuusharjoitteita niin että treenistä lähtee notkeampana, ei väsyneempänä.',
 
   // ── Failure handling ────────────────────────────────────────────────
-  'A missed anchor set repeats the load. Two misses in a row drops load 5% and rebuilds the wave.':
-    'Epäonnistunut ankkurisarja toistetaan samalla painolla. Kaksi peräkkäin pudottaa painoa 5 % ja aalto rakennetaan uudelleen.',
-  'A missed range repeats the load once; two misses in a row drops load slightly and rebuilds.':
-    'Vajaaksi jäänyt toistohaarukka toistetaan kerran samalla painolla; kaksi peräkkäin pudottaa painoa hieman ja rakennetaan uudelleen.',
-  'If a main lift misses repsMin, hold the same load next time. Two misses in a row means reduce load slightly and rebuild.':
-    'Jos ankkuriliikkeessä jää toistohaarukan alaraja vajaaksi, pidä sama paino ensi kerralla. Kaksi peräkkäin tarkoittaa pientä painon pudotusta ja uudelleenrakentamista.',
-  'If a main lift misses repsMin, repeat it next time. Two misses in a row means reduce load slightly and rebuild the pattern.':
-    'Jos ankkuriliikkeessä jää toistohaarukan alaraja vajaaksi, toista se ensi kerralla. Kaksi peräkkäin tarkoittaa pientä painon pudotusta ja liikkeen rakentamista uudelleen.',
-  'If repsMin is missed on the anchor, repeat the load. Two misses means reduce by 5% and rebuild cleanly before attempting new weight.':
-    'Jos ankkurissa jää alaraja vajaaksi, toista sama paino. Kaksi kertaa tarkoittaa 5 % pudotusta ja puhdasta uudelleenrakentamista ennen uutta painoa.',
-  'If repsMin is missed, repeat the load next time. If it happens twice, reduce load 5-10% and rebuild.':
-    'Jos alaraja jää vajaaksi, toista sama paino ensi kerralla. Jos näin käy kahdesti, pudota painoa 5–10 % ja rakenna uudelleen.',
-  'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.':
-    'Jos alaraja jää vajaaksi, toista sama paino kerran. Jos sama tavoite jää vajaaksi kahdesti peräkkäin, pudota painoa 5–10 % ja rakenna uudelleen.',
-  'If the first hard set misses repsMin, repeat the same load next time. Two misses in a row means reduce load slightly and rebuild.':
-    'Jos ensimmäisessä raskaassa sarjassa jää alaraja vajaaksi, toista sama paino ensi kerralla. Kaksi peräkkäin tarkoittaa pientä painon pudotusta ja uudelleenrakentamista.',
-  'If the first hard set misses repsMin, repeat the same load. If it misses twice, reduce load slightly and rebuild.':
-    'Jos ensimmäisessä raskaassa sarjassa jää alaraja vajaaksi, toista sama paino. Jos se jää kahdesti, pudota painoa hieman ja rakenna uudelleen.',
-  'If the first work set misses repsMin, repeat the load next time. If it stalls twice, reduce load by 5% and rebuild with clean reps.':
-    'Jos ensimmäisessä työsarjassa jää alaraja vajaaksi, toista sama paino ensi kerralla. Jos se jumittaa kahdesti, pudota painoa 5 % ja rakenna uudelleen puhtailla toistoilla.',
-  'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.':
-    'Jos ankkuriliikkeessä jää alaraja vajaaksi, toista sama paino. Kaksi peräkkäistä tarkoittaa 5 % pudotusta ja nousua takaisin puhtaalla tekniikalla.',
-  'Miss repsMin on the anchor lift and you repeat the load. Miss it twice and back off slightly before rebuilding.':
-    'Jos ankkuriliikkeen alaraja jää vajaaksi, toistat saman painon. Kahdesti vajaaksi tarkoittaa pientä perääntymistä ennen uudelleenrakentamista.',
-  'Missed reps on the first hard set means hold the same load next time. Two misses in a row means reduce load slightly and rebuild the week cleanly.':
-    'Vajaat toistot ensimmäisessä raskaassa sarjassa tarkoittavat saman painon pitämistä ensi kerralla. Kaksi peräkkäin tarkoittaa pientä painon pudotusta ja viikon rakentamista puhtaasti uudelleen.',
-  'Missed repsMin repeats the load once; two misses in a row drops load 5-10% and rebuilds.':
-    'Vajaaksi jäänyt alaraja toistetaan kerran samalla painolla; kaksi peräkkäin pudottaa painoa 5–10 % ja rakennetaan uudelleen.',
+  'If repsMin is missed, keep the same load and build the reps back up before adding weight.':
+    'Jos alaraja jää vajaaksi, pidä sama paino ja nosta toistot takaisin ennen kuin lisäät painoa.',
+  'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.':
+    'Jos ankkuriliikkeessä jää alaraja vajaaksi, toista sama paino ja nosta toistot takaisin puhtaalla tekniikalla ennen kuin lisäät painoa.',
+  'If repsMin is missed on the anchor, repeat the load and rebuild the reps cleanly before attempting new weight.':
+    'Jos ankkurissa jää alaraja vajaaksi, toista sama paino ja rakenna toistot puhtaasti takaisin ennen uutta painoa.',
+  'Missed repsMin repeats the load until the reps are back.':
+    'Vajaaksi jäänyt alaraja toistetaan samalla painolla, kunnes toistot ovat palanneet.',
+  'Missed reps on the first hard set means hold the same load and rebuild the reps cleanly before adding weight.':
+    'Vajaat toistot ensimmäisessä raskaassa sarjassa tarkoittavat, että paino pysyy samana ja toistot rakennetaan puhtaasti takaisin ennen painon lisäystä.',
+  'Miss repsMin on the anchor lift and you repeat the load until the reps are back.':
+    'Jos ankkuriliikkeen alaraja jää vajaaksi, toistat saman painon, kunnes toistot ovat palanneet.',
+  'If the first work set misses repsMin, repeat the load and rebuild with clean reps before adding weight.':
+    'Jos ensimmäisessä työsarjassa jää alaraja vajaaksi, toista sama paino ja rakenna toistot puhtaasti takaisin ennen painon lisäystä.',
+  'If the first hard set misses repsMin, repeat the same load and build the reps back up.':
+    'Jos ensimmäisessä raskaassa sarjassa jää alaraja vajaaksi, toista sama paino ja nosta toistot takaisin.',
+  'If repsMin is missed, repeat the same session next time until the reps are back.':
+    'Jos alaraja jää vajaaksi, toista sama treeni, kunnes toistot ovat palanneet.',
+  'If a main lift misses repsMin, repeat it next time and rebuild the reps at the same load.':
+    'Jos ankkuriliikkeessä jää alaraja vajaaksi, toista se ensi kerralla ja rakenna toistot takaisin samalla painolla.',
+  'If a main lift misses repsMin, hold the same load and build the reps back up.':
+    'Jos ankkuriliikkeessä jää alaraja vajaaksi, pidä sama paino ja nosta toistot takaisin.',
+  'A missed range repeats the load until the reps are back.':
+    'Vajaaksi jäänyt toistohaarukka toistetaan samalla painolla, kunnes toistot ovat palanneet.',
+  'A missed anchor set repeats the load until the reps are back.':
+    'Epäonnistunut ankkurisarja toistetaan samalla painolla, kunnes toistot ovat palanneet.',
   'If a drill feels rough, repeat the same dose next time instead of adding more rounds or rushing range.':
     'Jos harjoite tuntuu kankealta, toista sama annos ensi kerralla sen sijaan että lisäisit kierroksia tai kiirehtisit liikerataa.',
   'If the flow quality drops, keep the same number of cycles next time and slow the pace down.':

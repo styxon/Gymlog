@@ -65,7 +65,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'full_body_a', name: 'Day 1: Full Body', orderIndex: 1, exercises: [
@@ -105,7 +105,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
@@ -156,7 +156,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
@@ -211,7 +211,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'minimal_full_body_a', name: 'Day 1: Full Body', orderIndex: 1, exercises: [
@@ -243,7 +243,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Drive the main lift with lower-rep double progression. Add load only when all planned sets stay crisp and inside the rep range.',
       secondary: 'Keep secondary lifts one step lighter than the main lift and progress more slowly than the anchors.',
       accessory: 'Use accessories to keep weak links moving, but do not let them limit recovery for the next heavy day.',
-      failureHandling: 'If the first work set misses repsMin, repeat the load next time. If it stalls twice, reduce load by 5% and rebuild with clean reps.',
+      failureHandling: 'If the first work set misses repsMin, repeat the load and rebuild with clean reps before adding weight.',
     },
     sessions: [
       session({ id: 'strength_base_a', name: 'Day 1: Squat & Bench', orderIndex: 1, exercises: [
@@ -280,7 +280,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Run the first lift of each day as the performance anchor. Add load after every set lands at the top of the target range with clean technique.',
       secondary: 'Use secondary compounds to add quality volume without matching the fatigue of the main lift.',
       accessory: 'Accessories should support muscle gain and joint balance. Add reps first and keep them from disrupting recovery for the next heavy day.',
-      failureHandling: 'Missed reps on the first hard set means hold the same load next time. Two misses in a row means reduce load slightly and rebuild the week cleanly.',
+      failureHandling: 'Missed reps on the first hard set means hold the same load and rebuild the reps cleanly before adding weight.',
     },
     sessions: [
       session({ id: 'power_upper_strength', name: 'Day 1: Upper (Heavy)', orderIndex: 1, exercises: [
@@ -327,7 +327,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Drive the main lift with lower-rep double progression. Add load only when all planned sets stay clean and inside the target range.',
       secondary: 'Keep secondary lifts one step easier than the main lift so the week stays repeatable.',
       accessory: 'Use accessories to support the main patterns, but keep the total workload low enough that recovery stays obvious.',
-      failureHandling: 'If the first hard set misses repsMin, repeat the same load next time. Two misses in a row means reduce load slightly and rebuild.',
+      failureHandling: 'If the first hard set misses repsMin, repeat the same load and build the reps back up.',
     },
     sessions: [
       session({ id: 'beginner_strength_a', name: 'Day 1: Squat & Bench', orderIndex: 1, exercises: [
@@ -359,7 +359,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on the first two lifts each day and add load after the top of the rep range repeats with good form.',
       secondary: 'Let the secondary compounds climb more slowly so session quality stays consistent across the week.',
       accessory: 'Treat accessory lifts as easy volume that rounds the session out without making recovery harder than it needs to be.',
-      failureHandling: 'If a main lift misses repsMin, hold the same load next time. Two misses in a row means reduce load slightly and rebuild.',
+      failureHandling: 'If a main lift misses repsMin, hold the same load and build the reps back up.',
     },
     sessions: [
       session({ id: 'upper_lower_lite_upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
@@ -405,7 +405,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Push the first compound lift on each day through the rep range before adding load.',
       secondary: 'Secondary compounds add volume, so let them rise more slowly than the anchor of the day.',
       accessory: 'Accessories should chase clean reps and a pump without creating sloppy fatigue for the next session.',
-      failureHandling: 'If the first hard set misses repsMin, repeat the same load. If it misses twice, reduce load slightly and rebuild.',
+      failureHandling: 'If the first hard set misses repsMin, repeat the same load and build the reps back up.',
     },
     sessions: [
       session({ id: 'push_pull_legs_push', name: 'Day 1: Push', orderIndex: 1, exercises: [
@@ -448,7 +448,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first compound lift of each session through the rep range before adding load.',
       secondary: 'Secondary lifts add most of the weekly volume, so keep them technical and avoid forcing progress too aggressively.',
       accessory: 'Accessories should be smooth, high-quality sets that fill out the session without wrecking the next one.',
-      failureHandling: 'If a main lift misses repsMin, repeat it next time. Two misses in a row means reduce load slightly and rebuild the pattern.',
+      failureHandling: 'If a main lift misses repsMin, repeat it next time and rebuild the reps at the same load.',
     },
     sessions: [
       session({ id: 'muscle_builder_upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
@@ -500,7 +500,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Treat the first lift on each day as the performance slot and only add load once all work sets live at the top of the target range.',
       secondary: 'Use the second compound lift to build more total work without matching the fatigue of the anchor.',
       accessory: 'Accessories should improve recovery and muscle balance, not compete with the heavy work.',
-      failureHandling: 'Miss repsMin on the anchor lift and you repeat the load. Miss it twice and back off slightly before rebuilding.',
+      failureHandling: 'Miss repsMin on the anchor lift and you repeat the load until the reps are back.',
     },
     sessions: [
       session({ id: 'strength_size_upper_performance', name: 'Day 1: Upper (Heavy)', orderIndex: 1, exercises: [
@@ -667,7 +667,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Add reps inside the range before adding load. When the top of the range is clean on every set, add the smallest increment you have.',
       secondary: 'Hold the load until the whole range is repeatable. A summer session should end with something left in you.',
       accessory: 'Run blocks progress by adding one block, never by running the same block harder. Add the block only when the last one felt easy.',
-      failureHandling: 'If repsMin is missed, repeat the same session next time. If the same target is missed twice in a row, drop a set rather than the programme.',
+      failureHandling: 'If repsMin is missed, repeat the same session next time until the reps are back.',
     },
     sessions: [
       session({ id: 'season_summer_push', name: 'Day 1: Push and Easy Run', orderIndex: 1, exercises: [
@@ -705,7 +705,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Same rule, slower. Twenty-six weeks is long enough that holding a load for three sessions costs you nothing.',
       accessory: 'Add reps before load. The conditioning finisher is not progressed by load at all - keep the effort steady and let the leg work be the hard part.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'season_winter_lower_a', name: 'Day 1: Lower, Heavy', orderIndex: 1, exercises: [
@@ -754,7 +754,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'ppl_plus_push', name: 'Day 1: Push', orderIndex: 1, exercises: [
@@ -805,7 +805,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'ppl5_push_a', name: 'Day 1: Push', orderIndex: 1, exercises: [
@@ -862,7 +862,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'ulf5_upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
@@ -922,7 +922,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Anchor the first lift of each day through the full rep range before adding weight. At this frequency, load jumps must stay small.',
       secondary: 'Secondary compounds drive total weekly volume. Keep them technical and let load rise more slowly than the anchor.',
       accessory: 'Accessory volume is the engine of growth at high frequency. Protect quality over raw numbers — sloppy sets count for less than you think.',
-      failureHandling: 'If repsMin is missed on the anchor, repeat the load. Two misses means reduce by 5% and rebuild cleanly before attempting new weight.',
+      failureHandling: 'If repsMin is missed on the anchor, repeat the load and rebuild the reps cleanly before attempting new weight.',
     },
     sessions: [
       session({ id: 'ppl6_push_a', name: 'Day 1: Push', orderIndex: 1, exercises: [
@@ -987,7 +987,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Anchor the first lift of each day through the full rep range before adding weight. At this frequency, load jumps must stay small.',
       secondary: 'Secondary compounds drive total weekly volume. Keep them technical and let load rise more slowly than the anchor.',
       accessory: 'Accessory volume is the engine of growth at high frequency. Protect quality over raw numbers — sloppy sets count for less than you think.',
-      failureHandling: 'If repsMin is missed on the anchor, repeat the load. Two misses means reduce by 5% and rebuild cleanly before attempting new weight.',
+      failureHandling: 'If repsMin is missed on the anchor, repeat the load and rebuild the reps cleanly before attempting new weight.',
     },
     sessions: [
       session({ id: 'arnold_chest_back_a', name: 'Day 1: Chest & Back', orderIndex: 1, exercises: [
@@ -1056,7 +1056,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_chest', name: 'Chest', orderIndex: 1, exercises: [
@@ -1084,7 +1084,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_back', name: 'Back', orderIndex: 1, exercises: [
@@ -1112,7 +1112,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_shoulders', name: 'Shoulders', orderIndex: 1, exercises: [
@@ -1140,7 +1140,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_arms', name: 'Arms', orderIndex: 1, exercises: [
@@ -1167,7 +1167,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_legs', name: 'Legs', orderIndex: 1, exercises: [
@@ -1195,7 +1195,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Progress the first exercise through the full rep range before adding weight. This is the highest-priority movement of the day.',
       secondary: 'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.',
       accessory: 'Keep accessory sets smooth and controlled. Add reps before load and prioritise feeling the muscle over moving weight.',
-      failureHandling: 'If the primary misses repsMin, repeat the same load. Two consecutive misses mean reduce load by 5% and build back up with clean technique.',
+      failureHandling: 'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.',
     },
     sessions: [
       session({ id: 'focus_glutes', name: 'Glutes', orderIndex: 1, exercises: [
@@ -1223,7 +1223,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Conditioning finishers are effort-based: keep the work intervals honest and let pace, not load, be the progression.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'shred_day1', name: 'Day 1: Full Body + HIIT', orderIndex: 1, exercises: [
@@ -1265,7 +1265,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'huge_starter_day1', name: 'Day 1: Full Body (Push)', orderIndex: 1, exercises: [
@@ -1300,7 +1300,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'focusp_chest_day1', name: 'Day 1: Chest (Heavy)', orderIndex: 1, exercises: [
@@ -1343,7 +1343,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'focusp_back_day1', name: 'Day 1: Back (Heavy)', orderIndex: 1, exercises: [
@@ -1386,7 +1386,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'focusp_arms_day1', name: 'Day 1: Arms (Heavy)', orderIndex: 1, exercises: [
@@ -1426,7 +1426,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'focusp_legs_day1', name: 'Day 1: Legs (Heavy)', orderIndex: 1, exercises: [
@@ -1466,7 +1466,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.',
       secondary: 'Use the same rule, but keep load stable longer if fatigue rises. Prefer completing the rep range before adding weight.',
       accessory: 'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.',
-      failureHandling: 'If repsMin is missed, repeat the same load once. If the same target is missed twice in a row, reduce load by 5-10% and rebuild.',
+      failureHandling: 'If repsMin is missed, keep the same load and build the reps back up before adding weight.',
     },
     sessions: [
       session({ id: 'focusp_glutes_day1', name: 'Day 1: Glutes (Heavy)', orderIndex: 1, exercises: [
@@ -1509,7 +1509,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Anchor lifts run heavy double progression: add load only after every planned set lands at the top of the range with bar speed intact.',
       secondary: 'Secondary compounds add pressure without matching anchor fatigue — climb them slower than the anchors.',
       accessory: 'Accessories keep joints and trunk strong; add reps first and never let them cost the next heavy day.',
-      failureHandling: 'A missed anchor set repeats the load. Two misses in a row drops load 5% and rebuilds the wave.',
+      failureHandling: 'A missed anchor set repeats the load until the reps are back.',
     },
     sessions: [
       session({ id: 'strong_elite_upper_heavy', name: 'Day 1: Upper (Heavy)', orderIndex: 1, exercises: [
@@ -1556,7 +1556,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Run double progression on the first two lifts each day; add load once the top of the range repeats cleanly.',
       secondary: 'Secondary work climbs slower — the goal is a repeatable hard week, not a maximal one.',
       accessory: 'Conditioning and trunk work progress by pace and reps, never at the cost of the main lifts.',
-      failureHandling: 'A missed range repeats the load once; two misses in a row drops load slightly and rebuilds.',
+      failureHandling: 'A missed range repeats the load until the reps are back.',
     },
     sessions: [
       session({ id: 'fit_elite_upper_a', name: 'Day 1: Upper Power', orderIndex: 1, exercises: [
@@ -1600,7 +1600,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       primary: 'Anchor lifts keep double progression so strength holds while conditioning volume climbs.',
       secondary: 'Secondary lifts complete the range before adding load; fatigue from finishers never excuses sloppy reps.',
       accessory: 'Finishers progress by pace and density — harder intervals, same honesty.',
-      failureHandling: 'Missed repsMin repeats the load once; two misses in a row drops load 5-10% and rebuilds.',
+      failureHandling: 'Missed repsMin repeats the load until the reps are back.',
     },
     sessions: [
       session({ id: 'shred_elite_day1', name: 'Day 1: Squat + Intervals', orderIndex: 1, exercises: [

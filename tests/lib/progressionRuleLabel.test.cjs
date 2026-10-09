@@ -30,6 +30,28 @@ module.exports = [
     },
   },
   {
+    // Bug hunt 2026-10-09: 68 of 71 ready programmes said two misses in a row
+    // drop the load 5-10 % (or a set). Nothing in the app ever lowers a load:
+    // a miss repeats the weight, and with automated progression the reps
+    // target comes down to what was managed and climbs back
+    // (lib/progressionGate resolveMissedRepsTarget, 2026-09-09). The detail
+    // screen shows this rule under the programme's progression, so it may
+    // only describe what the app does.
+    name: 'no failure-handling rule promises a load or set drop the app never makes',
+    run() {
+      const EN = /reduce|drops? (the )?load|drop (a|one) set|back off|deload|lower the (load|weight)|\d+\s*%/i;
+      const FI = /pudot|perääntym|kevennä|keventä|laske painoa|\d+\s*%/i;
+      const promising = new Set();
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        const rule = template.progressionRules.failureHandling;
+        if (EN.test(rule) || FI.test(progressionRuleLabel('fi', rule))) {
+          promising.add(rule);
+        }
+      }
+      assert.deepEqual([...promising], []);
+    },
+  },
+  {
     name: 'English passes through, and an unknown rule reads rather than vanishes',
     run() {
       const rule = WORKOUT_TEMPLATES_V1[0].progressionRules.primary;
