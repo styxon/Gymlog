@@ -3,27 +3,17 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { t } from '../lib/i18n';
+import { clampProfileName, codePointLength, storedProfileName, MAX_PROFILE_NAME_LENGTH, profileInitials } from '../lib/profileName';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage } from '../types/models';
-
-const MAX_NAME_LENGTH = 30;
 
 interface EditProfileScreenProps {
   initialName: string | null;
   language?: AppLanguage;
   onBack: () => void;
-  onSave: (name: string | null) => void;
-}
-
-function getInitials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return 'V';
-  }
-  const first = parts[0].charAt(0);
-  const second = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
-  return (first + second).toUpperCase();
+  /** Resolves with whether the name was stored; the editor closes only when it was. */
+  onSave: (name: string | null) => Promise<boolean>;
 }
 
 /**
@@ -35,16 +25,24 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState(initialName ?? '');
+  const [saving, setSaving] = useState(false);
 
   const trimmed = name.trim();
   const dirty = trimmed !== (initialName ?? '').trim();
 
-  const handleSave = () => {
-    if (!dirty) {
+  const handleSave = async () => {
+    if (!dirty || saving) {
       return;
     }
-    onSave(trimmed.length > 0 ? trimmed.slice(0, MAX_NAME_LENGTH) : null);
-    onBack();
+    setSaving(true);
+    // Closed after the write resolved: a refused one leaves the editor open
+    // with what was typed, and the parent has said why.
+    const saved = await onSave(trimmed.length > 0 ? storedProfileName(trimmed) : null);
+    if (saved) {
+      onBack();
+    } else {
+      setSaving(false);
+    }
   };
 
   return (
@@ -63,7 +61,7 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
         <Text style={styles.headerTitle}>{t(language, 'editProfile.title')}</Text>
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: !dirty }}
+          accessibilityState={{ disabled: !dirty || saving }}
           onPress={handleSave}
           hitSlop={8}
           style={styles.saveButton}
@@ -93,7 +91,7 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
                 the Finnish app drew a G next to a profile it calls "Vieras".
                 Same guest name Profile uses, so the two avatars agree. */}
             <Text style={styles.avatarText}>
-              {getInitials(trimmed.length > 0 ? trimmed : t(language, 'profile.guestName'))}
+              {profileInitials(trimmed.length > 0 ? trimmed : t(language, 'profile.guestName'))}
             </Text>
           </View>
         </View>
@@ -102,15 +100,14 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
           <View style={styles.fieldLabelRow}>
             <Text style={styles.fieldLabel}>{t(language, 'editProfile.displayName')}</Text>
             <Text style={styles.fieldCounter}>
-              {name.length}/{MAX_NAME_LENGTH}
+              {codePointLength(name)}/{MAX_PROFILE_NAME_LENGTH}
             </Text>
           </View>
           <TextInput
             value={name}
-            onChangeText={(next) => setName(next.slice(0, MAX_NAME_LENGTH))}
+            onChangeText={(next) => setName(clampProfileName(next))}
             placeholder={t(language, 'editProfile.namePlaceholder')}
             placeholderTextColor={theme.faint}
-            maxLength={MAX_NAME_LENGTH}
             autoCapitalize="words"
             style={styles.input}
           />

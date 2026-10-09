@@ -7,6 +7,7 @@ import { CutSurface } from '../components/CutSurface';
 import { CARD_SHADOW, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
+import { profileInitials } from '../lib/profileName';
 import { formatCompactVolume, formatWeight } from '../lib/format';
 import { LifetimeTrainingSummary } from '../lib/lifetimeSummary';
 import { MilestoneLedger } from '../lib/milestoneFacts';
@@ -51,19 +52,6 @@ interface ProfileScreenProps {
    * — same rule as everywhere else the ask lives.
    */
   onOpenRating?: () => void;
-}
-
-function getInitials(name: string | null | undefined) {
-  if (!name) {
-    return 'V';
-  }
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return 'V';
-  }
-  const first = parts[0].charAt(0);
-  const second = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
-  return (first + second).toUpperCase();
 }
 
 function GearIcon() {
@@ -278,7 +266,7 @@ export function ProfileScreen({
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         {/* IDENTITY */}
         <View style={styles.identityRow}>
-          <Avatar initials={getInitials(identityName)} />
+          <Avatar initials={profileInitials(identityName)} />
           <View style={styles.identityStats}>
             {identityStats.map((stat) => (
               <View key={stat.key} style={styles.identityStat}>

@@ -218,6 +218,26 @@ const FOCUS_FI: Record<string, string> = {
   strength: 'voima',
 };
 
+/**
+ * The name a free (Empty) workout is saved under: the title in the language
+ * the app had at the moment of finishing, and for the holder template the
+ * short date after it ("Tyhjä treeni 9.10."). The dictionary above only goes
+ * English to Finnish, so a name the app wrote in one language and shows after
+ * a switch to the other needs its own rule, in both directions.
+ */
+const FREESTYLE_TITLES: readonly AppLanguage[] = ['en', 'fi'];
+function localizeFreestyleName(name: string, language: AppLanguage): string | null {
+  const match = name.match(/^(.+?)(\s+\d{1,2}\.\d{1,2}\.)?$/);
+  if (!match) {
+    return null;
+  }
+  const title = match[1].toLowerCase();
+  if (!FREESTYLE_TITLES.some((saved) => t(saved, 'emptyWorkout.title').toLowerCase() === title)) {
+    return null;
+  }
+  return `${t(language, 'emptyWorkout.title')}${match[2] ?? ''}`;
+}
+
 const DICTIONARIES: Partial<Record<AppLanguage, Record<string, string>>> = { fi: FOCUS_FI };
 
 /**
@@ -313,6 +333,10 @@ export function localizeWorkoutFocus(focus: string, language: AppLanguage = 'en'
  */
 export function localizeSessionFocus(name: string, language: AppLanguage = 'en'): string {
   const raw = name.trim();
+  const freestyle = localizeFreestyleName(raw, language);
+  if (freestyle) {
+    return freestyle;
+  }
   // Both spellings: catalog data says "Day 1:", but a duplicated or composed
   // custom programme SAVES its session names in Finnish ("Päivä 1:", by
   // design — customProgramDuplication), and the Finnish prefix used to slip
@@ -337,6 +361,10 @@ export function localizeSessionFocus(name: string, language: AppLanguage = 'en')
  */
 export function localizeSessionName(name: string, language: AppLanguage = 'en'): string {
   const raw = name.trim();
+  const freestyle = localizeFreestyleName(raw, language);
+  if (freestyle) {
+    return freestyle;
+  }
   if (language === 'en' || !raw) {
     return raw;
   }

@@ -58,6 +58,7 @@ import {
   WorkoutTemplateSessionRecord,
 } from '../types/models';
 import { normalizeSeenNoticeIds } from '../lib/serverNotice';
+import { storedProfileName } from '../lib/profileName';
 
 const CAUTION_AREAS = ['neck', 'shoulders', 'elbows', 'wrists', 'lower_back', 'hips', 'knees', 'ankles'] as const;
 const CAUTION_LEVELS = ['info', 'careful', 'avoid'] as const;
@@ -1047,7 +1048,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           : fallback.preferences.selectedAccessTier,
       profileName:
         typeof input?.preferences?.profileName === 'string' && input.preferences.profileName.trim().length
-          ? input.preferences.profileName.trim().slice(0, 32)
+          ? storedProfileName(input.preferences.profileName)
           : input?.preferences?.profileName === null
             ? null
             : fallback.preferences.profileName,

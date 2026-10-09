@@ -73,14 +73,19 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
   // program they are actually running. The rest of the catalog is app content
   // that never leaves the app, so there is nothing to carry out for it.
   const exportablePlans = useMemo<ExportablePlan[]>(() => {
-    const plans: ExportablePlan[] = workoutTemplates.map((template) => ({
-      id: template.id,
-      name: formatWorkoutDisplayLabel(template.name, 'Workout plan'),
-      sessions: getWorkoutTemplateSessions(template.id).map((session) => ({
-        name: session.name,
-        exercises: session.exercises.map(csvExportRowOfSaved),
-      })),
-    }));
+    // Not the holders a finished free workout hangs on: they are not plans, and
+    // the Programs list and the free-programme cap leave them out too. The
+    // workout log export already carries those sessions.
+    const plans: ExportablePlan[] = workoutTemplates
+      .filter((template) => template.origin !== 'freestyle')
+      .map((template) => ({
+        id: template.id,
+        name: formatWorkoutDisplayLabel(template.name, 'Workout plan'),
+        sessions: getWorkoutTemplateSessions(template.id).map((session) => ({
+          name: session.name,
+          exercises: session.exercises.map(csvExportRowOfSaved),
+        })),
+      }));
 
     if (homeActivePlanCard?.programType === 'ready') {
       const readyTemplate = getWorkoutTemplateById(homeActivePlanCard.programId);

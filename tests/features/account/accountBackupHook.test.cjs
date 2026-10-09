@@ -179,6 +179,9 @@ async function withHook({ local, stored = null, cloud = null }, scenario) {
         store.account = account;
       },
       clearStoredAccount: async () => {
+        if (store.clearError) {
+          throw store.clearError;
+        }
         store.account = null;
       },
       rememberSignedOutAccount: async (sub) => {
@@ -1891,6 +1894,59 @@ module.exports = [
       } finally {
         Date.now = realNow;
       }
+    },
+  },
+  {
+    // Bug hunt 10 (2026-10-09). Reset signs out before it wipes, so what the cloud holds at that
+    // moment is what signing back in restores. The dialog could not tell an up-to-date copy
+    // from one that was a day behind (offline) or still waiting out the quiet window.
+    name: 'account hook: cloudCopyBehind is true while the phone holds changes the cloud copy lacks, and false once backed up or signed out',
+    async run() {
+      const local = database({ workoutSessions: workouts(10) });
+      await withHook({ local }, async (env) => {
+        assert.equal(env.api.cloudCopyBehind(), false, 'signed out has no cloud copy to be behind');
+        assert.equal((await env.api.signIn()).kind, 'backed_up');
+        await env.settle();
+        assert.equal(env.api.cloudCopyBehind(), false, 'a fresh backup is not behind');
+
+        // Inside the quiet window: the edit is on the phone, the upload has not left.
+        await env.edit((db) => ({ ...db, workoutSessions: [...db.workoutSessions, workout('w10')] }));
+        assert.equal(env.calls.upload, 1);
+        assert.equal(env.api.cloudCopyBehind(), true, 'an edit inside the quiet window was reported as backed up');
+
+        // Reset's own step: one interactive backup brings the cloud level, one upload.
+        assert.equal((await env.api.backUpOrAsk()).kind, 'backed_up');
+        assert.equal(env.calls.upload, 2);
+        assert.equal(env.server.blob.database.workoutSessions.length, 11);
+        assert.equal(env.api.cloudCopyBehind(), false);
+
+        // Backups failing: the copy stays behind, and the question stays true.
+        env.server.uploadError = 'NETWORK';
+        await env.edit((db) => ({ ...db, workoutSessions: [...db.workoutSessions, workout('w11')] }));
+        await env.advance(QUIET_MS * 5);
+        assert.equal(env.api.cloudCopyBehind(), true);
+        assert.notEqual((await env.api.backUpOrAsk()).kind, 'backed_up');
+        assert.equal(env.api.cloudCopyBehind(), true, 'a failed backup left the copy reported as current');
+
+        await env.api.signOut();
+        assert.equal(env.api.cloudCopyBehind(), false);
+      });
+    },
+  },
+  {
+    // Bug hunt 10: a record the disk would not clear skipped the provider's sign-out, so the
+    // screen said signed out while the next launch loaded the account and signed in again.
+    name: 'account hook: a sign-out whose record could not be cleared still ends the provider session, and tells the caller',
+    async run() {
+      const local = database({ workoutSessions: workouts(3) });
+      await withHook({ local }, async (env) => {
+        assert.equal((await env.api.signIn()).kind, 'backed_up');
+        env.store.clearError = new Error('storage: clear failed');
+        const signedOutBefore = env.calls.signedOut;
+        await assert.rejects(() => env.api.signOut(), /clear failed/);
+        assert.equal(env.calls.signedOut, signedOutBefore + 1, 'the provider session survived a failed record clear');
+        assert.equal(env.api.state.status, 'signed_out');
+      });
     },
   },
 ];

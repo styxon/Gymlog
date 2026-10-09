@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
@@ -22,8 +22,11 @@ interface MyDataScreenProps {
   preferences: AppPreferences;
   language?: AppLanguage;
   onBack: () => void;
-  /** Basics edit in place — writes straight to preferences. */
-  onSaveBasics: (patch: Partial<AppPreferences>) => void;
+  /**
+   * Basics edit in place — writes straight to preferences. Resolves with
+   * whether the write landed; the sheet closes only when it did.
+   */
+  onSaveBasics: (patch: Partial<AppPreferences>) => Promise<boolean>;
   /**
    * The newest weigh-in, in kg — the weight Home and Progress show. Null when
    * the log is empty.
@@ -272,25 +275,36 @@ export function MyDataScreen({
     return parsed !== null && parsed >= meta.min && parsed <= meta.max;
   })();
 
-  const saveEditor = () => {
-    if (editing === null) {
+  const savingRef = useRef(false);
+  const saveEditor = async () => {
+    if (editing === null || savingRef.current) {
       return;
     }
+    let patch: Partial<AppPreferences>;
     if (editing === 'gender') {
-      onSaveBasics({ setupGender: draftGender });
+      patch = { setupGender: draftGender };
     } else if (editing === 'age') {
       // The band replaces the year rather than sitting beside it: `ageLabel`
       // prefers a stored year, so leaving one behind would show the old number
       // over the band the reader just chose.
-      onSaveBasics({ setupAgeRange: draftAgeRange, setupAge: null });
+      patch = { setupAgeRange: draftAgeRange, setupAge: null };
     } else {
       const parsed = parseNumberInput(draftValue);
       if (!numericDraftValid || parsed === null) {
         return;
       }
-      onSaveBasics({ setupHeightCm: Math.round(parsed) });
+      patch = { setupHeightCm: Math.round(parsed) };
     }
-    setEditing(null);
+    // The sheet closes once the write has landed; a refused one leaves it open
+    // with the draft, and the parent has said why.
+    savingRef.current = true;
+    try {
+      if (await onSaveBasics(patch)) {
+        setEditing(null);
+      }
+    } finally {
+      savingRef.current = false;
+    }
   };
 
   return (

@@ -1126,6 +1126,16 @@ const EN = {
   'settings.resetDialog.message': 'Everything on this phone is deleted.',
   'settings.resetDialog.message.signedIn':
     'Everything on this phone is deleted and you are signed out. Your cloud backup stays — sign in again to restore it.',
+  // The cloud copy is older than the phone: the dialog cannot promise it holds everything.
+  'settings.resetDialog.message.signedInBehind':
+    'Everything on this phone is deleted and you are signed out. Your cloud backup is older than this phone, so the app backs up first.',
+  'settings.resetBehind.title': 'Backup did not finish',
+  'settings.resetBehind.message':
+    'The cloud copy is older than this phone. Resetting now deletes what was added since, and signing in again restores only the older copy.',
+  'settings.resetBehind.confirm': 'Reset anyway',
+  'toast.resetFailed': 'Reset did not finish. Try again.',
+  'toast.prefsSaveFailed': 'Could not save. Try again.',
+  'account.signOutFailed': 'Sign-out did not finish. Try again.',
   'settings.resetDialog.confirm': 'Reset',
 
   // ── Exercise tags (category/equipment → display label) ─────────────────
@@ -4626,6 +4636,15 @@ const FI: Record<I18nKey, string> = {
   'settings.resetDialog.message': 'Kaikki tässä puhelimessa poistetaan.',
   'settings.resetDialog.message.signedIn':
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopiosi säilyy — kirjaudu uudelleen palauttaaksesi sen.',
+  'settings.resetDialog.message.signedInBehind':
+    'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopio on puhelinta vanhempi, joten sovellus varmuuskopioi ensin.',
+  'settings.resetBehind.title': 'Varmuuskopiointi ei valmistunut',
+  'settings.resetBehind.message':
+    'Pilvikopio on puhelinta vanhempi. Nollaus poistaa sen jälkeen lisätyt tiedot, eikä uudelleen kirjautuminen palauta kuin vanhemman kopion.',
+  'settings.resetBehind.confirm': 'Nollaa silti',
+  'toast.resetFailed': 'Nollaus ei valmistunut. Yritä uudelleen.',
+  'toast.prefsSaveFailed': 'Tallennus ei onnistunut. Yritä uudelleen.',
+  'account.signOutFailed': 'Uloskirjautuminen ei valmistunut. Yritä uudelleen.',
   'settings.resetDialog.confirm': 'Nollaa',
 
   // ── Exercise tags ──────────────────────────────────────────────────────
