@@ -44,7 +44,7 @@ own rules:
 Vinha: Treenipäiväkirja
 ```
 
-Alternatives:
+Chosen by the owner on 2026-10-09. The others considered:
 
 | Title | Characters | Note |
 |---|---|---|
@@ -129,7 +129,7 @@ is a separate cleanup.
 Vinha: Gym Log & Workout Plans
 ```
 
-Alternatives:
+Chosen by the owner on 2026-10-09. The others considered:
 
 | Title | Characters | Note |
 |---|---|---|
