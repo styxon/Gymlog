@@ -76,8 +76,12 @@ import {
   restRoundCorrections,
   loggedSetsOf,
   guidedRestSeconds,
+  guidedAdjustedMs,
+  guidedRestCueDue,
   guidedRestOpeningMs,
+  guidedRestToExtend,
   withGuidedRestDeadline,
+  withGuidedRestPaused,
 } from '../lib/guidedPlayer';
 import {
   buildOverviewColumns,
@@ -1711,6 +1715,12 @@ function GuidedPlayer({
   const step: GuidedStep = steps[Math.min(stepIndex, steps.length - 1)] ?? { type: 'finish' };
   const stepRef = useRef(step);
   stepRef.current = step;
+  const stepIndexRef = useRef(stepIndex);
+  stepIndexRef.current = stepIndex;
+  /** The rest that last ran out by itself into the step after it; any move clears it. */
+  const expiredRestRef = useRef<number | null>(null);
+  const stepsRef = useRef(steps);
+  stepsRef.current = steps;
 
   // Leaving a bout's step without logging it pauses the bout
   // (lib/minutesExercises minutesClockOnStep). Keyed on the set, not on the
@@ -1813,6 +1823,15 @@ function GuidedPlayer({
     () =>
       subscribeRestActions((action) => {
         const shown = stepRef.current;
+        // The rest this alert is about may have run out into its set before
+        // the tap was delivered (coming back to the app settles the clock
+        // first, or second): "+60 s" then goes back to that rest, as it does
+        // on the free workout's overrun rest.
+        const lapsed = guidedRestToExtend(stepsRef.current, expiredRestRef.current, stepIndexRef.current);
+        if (action.kind === 'extend' && shown?.type !== 'rest' && lapsed !== null) {
+          goToRef.current(lapsed, action.seconds * 1000);
+          return;
+        }
         // An interval's recovery is neither stretched nor skipped (the rest
         // screen hides both, #bugs 2026-08-26): a tap on the lock screen is
         // the same move and gets the same answer.
@@ -1987,8 +2006,15 @@ function GuidedPlayer({
     // that one when it runs again.
     onGranted: () => {
       const endsAt = endsAtRef.current;
-      if (stepRef.current?.type === 'rest' && endsAt !== null && endsAt > Date.now()) {
-        void syncRestNotification(endsAt, exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''));
+      const shown = stepRef.current;
+      if (shown?.type === 'rest' && endsAt !== null && endsAt > Date.now()) {
+        // The same card the step effect armed: an interval's recovery is the
+        // buttonless session card, not a rest with "+30 s" and "Skip".
+        void syncRestNotification(
+          endsAt,
+          exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+          shown.recoveryKind !== undefined,
+        );
       }
     },
   });
@@ -2068,8 +2094,9 @@ function GuidedPlayer({
   }, [workout]);
 
   const goTo = useCallback(
-    (index: number) => {
+    (index: number, openingMs?: number) => {
       const clamped = Math.min(Math.max(0, index), steps.length - 1);
+      expiredRestRef.current = null;
       // Moving on is resuming. The set screen's pause stops the session clock,
       // and only its own button started it again: pause, then Log, Swap or
       // Skip, and the clock stayed frozen for the rest of the workout.
@@ -2077,7 +2104,10 @@ function GuidedPlayer({
       setPauseSheetOpen(false);
       setHowtoOpen(false);
       const target = steps[clamped];
-      remainingRef.current = stepSeconds(target) * 1000;
+      // The time the step opens with, when the caller knows better than its
+      // nominal length: what a reopened rest has left, or a rest extended
+      // from the lock screen after it ran out.
+      remainingRef.current = openingMs ?? stepSeconds(target) * 1000;
       setRemainingMs(remainingRef.current);
       firedRef.current = false;
       lastBeepSecondRef.current = null;
@@ -2106,14 +2136,26 @@ function GuidedPlayer({
       workout.setGuidedStep(stepIndex, withGuidedRestDeadline(getGuidedStepAnchor(step), endsAtMs));
     }
   };
+  /** A frozen rest has no deadline, but it keeps what it had left. */
+  const persistRestLeft = (leftMs: number) => {
+    if (step.type === 'rest') {
+      workout.setGuidedStep(stepIndex, withGuidedRestPaused(getGuidedStepAnchor(step), leftMs));
+    }
+  };
 
   /** ±15s / +10s: shift the leftover time, the deadline and any pending alert. */
   const adjustRemaining = (deltaMs: number, floorMs = 0) => {
     // From the deadline when one is running: `remainingRef` is only as fresh as
     // the last tick, and a lock-screen "+30 s" lands before the app has had one
     // since it was backgrounded, so it would add to the time left at lock.
-    const left = endsAtRef.current !== null ? endsAtRef.current - Date.now() : remainingRef.current;
-    const next = Math.max(floorMs, left + deltaMs);
+    // Never from before now (guidedAdjustedMs).
+    const next = guidedAdjustedMs({
+      endsAtMs: endsAtRef.current,
+      remainingMs: remainingRef.current,
+      nowMs: Date.now(),
+      deltaMs,
+      floorMs,
+    });
     remainingRef.current = next;
     if (endsAtRef.current !== null) {
       endsAtRef.current = Date.now() + next;
@@ -2149,8 +2191,14 @@ function GuidedPlayer({
   useEffect(() => {
     if (mode !== 'player' || frozen) {
       // Pausing freezes the leftover time; the deadline is re-derived on resume.
+      // The leftover goes into the anchor, so a screen torn down while paused
+      // reopens with it and not with a full rest.
       endsAtRef.current = null;
-      persistRestDeadline(null);
+      if (mode === 'player') {
+        persistRestLeft(remainingRef.current);
+      } else {
+        persistRestDeadline(null);
+      }
       return;
     }
     // Not `position` any more: walking to another machine is not time-bound,
@@ -2165,6 +2213,8 @@ function GuidedPlayer({
       endsAtRef.current = null;
       return;
     }
+    // A rest armed with nothing left ended while the screen was gone.
+    const openedWithMs = remainingRef.current;
     endsAtRef.current = Date.now() + Math.max(0, remainingRef.current);
     persistRestDeadline(endsAtRef.current);
 
@@ -2205,7 +2255,7 @@ function GuidedPlayer({
           // Rest running out is the one transition the user may not be looking
           // at — but a cue fired minutes late (we were backgrounded when it
           // expired) is noise, so only sound it if we caught the moment.
-          if (step.type === 'rest' && next > -1500) {
+          if (step.type === 'rest' && guidedRestCueDue(openedWithMs, next)) {
             // An interval's recovery ending means "go" — the next thing is a
             // work bout, not a set you walk up to in your own time.
             cue(step.recoveryKind ? 'go' : 'rest');
@@ -2217,6 +2267,10 @@ function GuidedPlayer({
           // the reader watching the ring reach zero disagreed.
           clearInterval(interval);
           expireRef.current();
+          if (step.type === 'rest' && !step.recoveryKind) {
+            // After the move: every goTo clears it, this one included.
+            expiredRestRef.current = stepIndex;
+          }
         }
         return;
       }
@@ -2313,7 +2367,11 @@ function GuidedPlayer({
   /* ── actions ── */
   const startAt = (index: number) => {
     setMode('player');
-    goTo(index);
+    // A rest the session was left on has what it had left, as on the straight-in
+    // reopen; every other step starts at its own length.
+    const target = steps[Math.min(Math.max(0, index), steps.length - 1)];
+    const left = target ? guidedRestOpeningMs(session.ui.guidedResumeAnchor, target, Date.now()) : null;
+    goTo(index, left ?? undefined);
   };
 
   // Same resolver the opening position came from, so the card at the top, the

@@ -40,7 +40,8 @@ module.exports = [
     name: 'guided rest: +30 s / +15 s extend from the deadline, not from the last tick',
     run() {
       const body = between(player, 'const adjustRemaining = (deltaMs', 'setRemainingMs(next);');
-      assert.match(body, /endsAtRef\.current - Date\.now\(\)/);
+      // The sum itself is guidedAdjustedMs (clamped to now, #3 of hunt 10).
+      assert.match(body, /guidedAdjustedMs\(\{[^}]*endsAtMs: endsAtRef\.current/);
       assert.doesNotMatch(body, /remainingRef\.current \+ deltaMs/);
     },
   },
@@ -59,7 +60,7 @@ module.exports = [
       assert.match(listener, /recoveryKind/);
       // Every arming of the OS rest alert says whether it is a recovery.
       const calls = player.match(/void syncRestNotification\(\n[\s\S]*?\);/g) ?? [];
-      assert.equal(calls.length, 2);
+      assert.equal(calls.length, 3, 'the step effect, the adjust and the permission grant');
       for (const call of calls) {
         assert.match(call, /recoveryKind !== undefined/);
       }
