@@ -7,8 +7,9 @@ the app makes no request for them at all.
 
 What this does, for every `imageKey` in src/data/generatedExerciseLibrary.ts:
   1. downloads <key>/0.jpg from yuhonas/free-exercise-db (Unlicense) once,
-  2. resizes it to 480 px wide and saves it as WebP quality 70 in
-     assets/exercises/<key lowercased>.webp (about 12 KB each),
+  2. resizes it to 720 px wide and saves it as WebP quality 75 in
+     assets/exercises/<key lowercased>.webp (about 23 KB each; 480 px looked
+     soft on the full-width exercise sheet, owner 2026-10-09),
   3. rewrites src/assets/exerciseImages.ts, the lazy map the app reads.
 
 Only the first picture of an exercise is ever shown, so only that one is kept.
@@ -34,8 +35,8 @@ LIBRARY = ROOT / "src" / "data" / "generatedExerciseLibrary.ts"
 OUT_DIR = ROOT / "assets" / "exercises"
 MAP_FILE = ROOT / "src" / "assets" / "exerciseImages.ts"
 SOURCE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/{key}/0.jpg"
-WIDTH = 480
-QUALITY = 70
+WIDTH = 720
+QUALITY = 75
 KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
 
 

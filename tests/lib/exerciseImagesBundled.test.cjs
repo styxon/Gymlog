@@ -161,11 +161,11 @@ module.exports = [
         assert.equal(bytes.subarray(0, 4).toString('latin1'), 'RIFF', `${name} is not a RIFF container`);
         assert.equal(bytes.subarray(8, 12).toString('latin1'), 'WEBP', `${name} is not WebP`);
         assert.ok(bytes.length > 1000, `${name} is suspiciously small (${bytes.length} bytes)`);
-        assert.ok(bytes.length < 80 * 1024, `${name} is ${bytes.length} bytes; resize it (480 px wide, q70)`);
+        assert.ok(bytes.length < 80 * 1024, `${name} is ${bytes.length} bytes; resize it (720 px wide, q75)`);
       }
-      // 873 pictures are about 10.5 MB. The APK is 65 MB, and this is the
+      // 873 pictures are about 19 MB at 720 px (2026-10-09). The APK is 85 MB, and this is the
       // line past which "a picture was added at full size" is the likely cause.
-      assert.ok(total < 16 * 1024 * 1024, `assets/exercises is ${(total / 1048576).toFixed(1)} MB`);
+      assert.ok(total < 24 * 1024 * 1024, `assets/exercises is ${(total / 1048576).toFixed(1)} MB`);
     },
   },
   {
@@ -247,6 +247,28 @@ module.exports = [
         if (/href=\{\{\s*uri:/.test(text)) offenders.push(path.relative(ROOT, file));
       }
       assert.deepEqual(offenders, []);
+    },
+  },
+  {
+    name: 'exercise pictures: an <Image> showing a bundled picture is sized, not only pinned by absoluteFill',
+    run() {
+      // A require()d picture brings its pixel size as the Image's default
+      // width and height, and absoluteFill's edges do not override it: the
+      // picture drew at full size from the corner, and the set card's thumb
+      // and the exercise sheet showed its top-left (#bugs 2026-10-09).
+      const offenders = [];
+      // Every file, every attribute order: a source handed down as a prop is
+      // just as bundled. Only a remote `{{ uri }}` has no size of its own.
+      for (const file of sourceFiles().filter((f) => /\.tsx$/.test(f))) {
+        const text = fs.readFileSync(file, 'utf8');
+        for (const [element] of text.matchAll(/<(?:Animated\.)?Image\b[^>]*>/g)) {
+          const bundled = /\bsource=\{(?!\{)/.test(element);
+          if (bundled && /\bstyle=\{StyleSheet\.absoluteFill\}/.test(element)) {
+            offenders.push(`${path.relative(ROOT, file)}: ${element.replace(/\s+/g, ' ').slice(0, 90)}`);
+          }
+        }
+      }
+      assert.deepEqual(offenders, [], 'give the Image width and height 100% as well');
     },
   },
   {

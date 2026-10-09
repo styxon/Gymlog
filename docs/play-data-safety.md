@@ -31,7 +31,7 @@ exercises used to be loaded by `<Image source={{ uri }}>` from a public CDN at
 the moment an exercise was shown, which is a request that carries the user's IP
 address to a third party the policy does not name, and which the three-sites
 count above could not see (it is not a `src/` request site either). They are
-now WebP files inside the APK (`assets/exercises/`, about 10.5 MB, looked up
+now WebP files inside the APK (`assets/exercises/`, about 19 MB at 720 px, looked up
 through `src/assets/exerciseImages.ts`), so showing an exercise makes no
 request at all. Nothing is disclosed to the CDN, so there is no recipient to
 list in the form, and the policy needs no wording for it.

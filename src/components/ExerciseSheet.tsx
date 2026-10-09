@@ -19,6 +19,13 @@ import { t } from '../lib/i18n';
 import { Theme, useThemedStyles, useTheme } from '../theming';
 import { AppLanguage } from '../types/models';
 
+// A bundled picture carries its own pixel size, and React Native uses it
+// as the Image's default width and height, which absoluteFill's edges do not
+// override: the picture drew at full size from the corner and was cropped to
+// its top-left (#bugs 2026-10-09). A remote uri had no size, so this never
+// showed before the pictures were bundled.
+const FILL_SIZE = { width: '100%', height: '100%' } as const;
+
 /**
  * Everything the set screen knows about the lift in front of you, in one sheet.
  *
@@ -318,7 +325,7 @@ export function ExerciseSheet({
                     other half was these same instructions, three of them. */}
                 <View style={styles.photo}>
                   {photoSource ? (
-                    <Image source={photoSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                    <Image source={photoSource} style={[StyleSheet.absoluteFill, FILL_SIZE]} resizeMode="cover" />
                   ) : (
                     <Text style={styles.photoInitials}>{initials}</Text>
                   )}
