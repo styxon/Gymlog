@@ -72,6 +72,7 @@
 
 const suites = [
   ...require('./releaseReadiness.test.cjs'),
+  ...require('./storeListing.test.cjs'),
   ...require('./scripts/slackNotify.test.cjs'),
   ...require('./scripts/releaseGuard.test.cjs'),
   ...require('./scripts/claudeReviewWorkflow.test.cjs'),
