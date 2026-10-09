@@ -93,7 +93,7 @@ KEHITYS
 • Kotinäytön widgetit: kuukausi ja treeniputki
 
 TOIMII ILMAN VERKKOA
-Kirjaus, ohjelmat ja historia toimivat ilman verkkoa ja ilman tiliä. Verkkoa käyttävät vapaaehtoinen pilvivarmuuskopio (kirjautuminen Googlella, tallennus EU:ssa), valmentaja, liikekuvat ja nimettömät käyttötilastot, jotka voi kytkeä pois asetuksista. Ei mainoksia eikä kolmansien osapuolten analytiikkaa.
+Kirjaus, ohjelmat ja historia toimivat ilman verkkoa ja ilman tiliä. Verkkoa käyttävät vapaaehtoinen pilvivarmuuskopio (kirjautuminen Googlella, tallennus EU:ssa), valmentaja ja nimettömät käyttötilastot, jotka voi kytkeä pois asetuksista. Ei mainoksia eikä kolmansien osapuolten analytiikkaa.
 
 VINHA PRO
 Ilmaisversiolla ei ole aikarajaa. Siinä ovat kaikki valmiit ohjelmat, kolme omaa ohjelmaa sekä kuvaajat ja ennätykset kolmen kuukauden ajalta. Pro lisää:
@@ -178,7 +178,7 @@ PROGRESS
 • Home screen widgets with your month and your streak
 
 WORKS OFFLINE
-Logging, programs and history work without a connection and without an account. The network is used for the optional cloud backup (sign in with Google, stored in the EU), the coach, exercise pictures and anonymous usage statistics, which you can switch off in settings. No ads and no third-party analytics.
+Logging, programs and history work without a connection and without an account. The network is used for the optional cloud backup (sign in with Google, stored in the EU), the coach and anonymous usage statistics, which you can switch off in settings. No ads and no third-party analytics.
 
 VINHA PRO
 The free version has no time limit. It includes every ready program, three programs of your own, and charts and records for the last three months. Pro adds:
@@ -213,9 +213,6 @@ Support: support@vinha.app
 - **The in-app "billing is not live yet" lines** (`pro.sheet.fine`,
   `pro.v3.notice`) must go before the first store release, or the app
   contradicts this listing.
-- **"Exercise pictures use the network."** The pictures load from a public
-  image CDN (jsDelivr) when shown. The listing says so; the privacy policy does
-  not yet name it.
 
 ## 5. Facts behind the text (checked 2026-10-09)
 
@@ -230,7 +227,7 @@ Support: support@vinha.app
 | Gym, home dumbbells, bodyweight | 50 full-gym, 21 low-equipment (`programEquipment.ts`) |
 | Six steps → a program | `startPath.build.body`, recommender on the device |
 | 900+ exercises | 873 generated + 85 own = 958 (`seed.ts` `createSeedExerciseLibrary`) |
-| Instructions / pictures | 953 of 958 with English steps; 873 with a picture. Finnish steps only 240, so the FI text does not promise instructions |
+| Instructions / pictures | 953 of 958 with English steps; 873 with a picture, bundled in the APK since #351 (no network). Finnish steps only 240, so the FI text does not promise instructions |
 | Warm-up, sets, rest, cooldown | guided player step order (`guidedPlayer.ts`) |
 | Rest timer in the background | timestamp-based (`restSchedule.ts`) |
 | Supersets, holds, intervals | `supersetGrouping.ts`, timed holds, `intervalScheme.ts` |
@@ -244,7 +241,7 @@ Support: support@vinha.app
 | Goals, milestones, calendar | `strengthGoals.ts`, `profileMilestones.ts` (12 families), `homeCalendar.ts` |
 | Widgets: month and streak | four widgets in `plugins/withHomeWidget.js` |
 | Offline, no account | `pro.v6.free.offline.b`; sign-in only for backup |
-| What uses the network | backup, coach, exercise pictures (jsDelivr), usage stats (`api/events`, off in Settings); also the launch notice check and Play purchases, left out as plumbing |
+| What uses the network | backup, coach, usage stats (`api/events`, off in Settings); also the launch notice check and Play purchases, left out as plumbing |
 | Backup in the EU | Vercel Blob, `docs/account-backup.md` |
 | No ads, no third-party analytics | `legalDocuments.ts` privacy section; own `/api/events` only |
 | Free: 3 own programs, 3 months of charts | `FREE_CUSTOM_PROGRAM_LIMIT = 3`, `FREE_TREND_MONTHS = 3` |
