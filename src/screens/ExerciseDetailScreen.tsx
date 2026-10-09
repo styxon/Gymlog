@@ -3,6 +3,7 @@ import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from '
 import Svg, { Path } from 'react-native-svg';
 
 import { SimpleLineChart } from '../components/SimpleLineChart';
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { countRemainingStatements } from '../lib/exerciseLearning';
@@ -99,16 +100,17 @@ function DumbbellIcon({ color: colorProp, size = 30 }: { color?: string; size?: 
   );
 }
 
-function HeroImage({ uri }: { uri?: string | null }) {
+function HeroImage({ imageKey }: { imageKey?: string | null }) {
   const styles = useThemedStyles(makeStyles);
 
-  const [state, setState] = useState<'loading' | 'ok' | 'err'>(uri ? 'loading' : 'err');
+  const source = useMemo(() => getExerciseImageSource(imageKey), [imageKey]);
+  const [state, setState] = useState<'loading' | 'ok' | 'err'>(source ? 'loading' : 'err');
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    setState(uri ? 'loading' : 'err');
+    setState(source ? 'loading' : 'err');
     opacity.setValue(0);
-  }, [uri, opacity]);
+  }, [source, opacity]);
 
   return (
     <View style={styles.hero}>
@@ -117,9 +119,9 @@ function HeroImage({ uri }: { uri?: string | null }) {
           {state === 'err' ? <DumbbellIcon /> : null}
         </View>
       ) : null}
-      {uri ? (
+      {source ? (
         <Animated.Image
-          source={{ uri }}
+          source={source}
           resizeMode="cover"
           style={[styles.heroImage, { opacity }]}
           onLoad={() => {
@@ -327,7 +329,7 @@ export function ExerciseDetailScreen({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <HeroImage uri={item.imageUrls?.[0] ?? null} />
+        <HeroImage imageKey={item.imageKey ?? null} />
 
         <View style={styles.titleBlock}>
           <Text style={styles.title}>{exerciseNameLabel(language, item.name)}</Text>

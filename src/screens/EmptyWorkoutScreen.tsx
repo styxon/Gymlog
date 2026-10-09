@@ -148,7 +148,7 @@ function buildExerciseState(
     localKey: createId('draft'),
     name: item.name,
     libraryItemId: item.id,
-    imageUrl: item.imageUrls?.[0] ?? null,
+    imageUrl: item.imageKey ?? null,
     repMin: defaults.repMin,
     repMax: defaults.repMax,
     restSeconds: defaults.restSeconds,

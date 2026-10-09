@@ -11,7 +11,7 @@
     "typecheck:api": "tsc -p tsconfig.api.json",
     "test:unit": "node tests/run-tests.cjs",
     "texts:export": "tsc -p tsconfig.test.json && node scripts/export-app-texts.cjs",
-    "exercise:sync": "node scripts/generate_free_exercise_library.mjs",
+    "exercise:sync": "node scripts/generate_free_exercise_library.mjs && python -P scripts/bundle_exercise_images.py",
     "slack:notify": "node scripts/slackNotify.cjs",
     "android:release": "node -e \"const cp=require('child_process');const path=require('path');const bin=process.platform==='win32'?path.join(process.cwd(),'android','gradlew.bat'):'./gradlew';const result=cp.spawnSync(bin,['assembleRelease'],{cwd:'android',stdio:'inherit',shell:true,env:{...process.env,CI:'1'}});process.exit(result.status ?? 1)\"",
     "measure:startup": "node scripts/measureStartup.cjs",

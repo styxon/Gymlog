@@ -19,9 +19,10 @@ const path = require('node:path');
  * stated bound whose marker was removed from the source, and a request made
  * from inside an effect or an interval that the list does not acknowledge.
  *
- * What is NOT scanned, on purpose: third parties (Google sign-in, RevenueCat,
- * the exercise images on cdn.jsdelivr.net - Anthropic is only ever called by
- * api/ai-coach.ts, never by the app), and `Linking.openURL` hand-offs, which
+ * What is NOT scanned, on purpose: third parties (Google sign-in, RevenueCat -
+ * Anthropic is only ever called by api/ai-coach.ts, never by the app; the
+ * exercise pictures are bundled and fetched from nowhere, which
+ * exerciseImagesBundled.test.cjs guards), and `Linking.openURL` hand-offs, which
  * open a page in the system browser on a tap.
  *
  * The check runs on a map of file name -> text, so the tests at the bottom can

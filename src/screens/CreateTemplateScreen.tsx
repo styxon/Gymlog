@@ -9,6 +9,7 @@ import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ScreenHeader } from '../components/ScreenHeader';
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
 import { formatRepRange } from '../lib/format';
@@ -151,18 +152,18 @@ function resolvePresetPreviewImage(preset: SplitPreset, exerciseLibrary: Exercis
   const normalizedKeywords = preset.previewKeywords.map((keyword) => keyword.toLowerCase());
 
   for (const item of exerciseLibrary) {
-    const imageUrl = item.imageUrls?.[0];
-    if (!imageUrl) {
+    const imageKey = item.imageKey;
+    if (!imageKey) {
       continue;
     }
 
     const haystack = `${item.name} ${item.bodyPart} ${item.equipment} ${item.category}`.toLowerCase();
     if (normalizedKeywords.some((keyword) => haystack.includes(keyword))) {
-      return imageUrl;
+      return imageKey;
     }
   }
 
-  return exerciseLibrary.find((item) => item.imageUrls?.[0])?.imageUrls?.[0] ?? null;
+  return exerciseLibrary.find((item) => item.imageKey)?.imageKey ?? null;
 }
 
 export function CreateTemplateScreen({
@@ -562,7 +563,7 @@ export function CreateTemplateScreen({
         <Text style={styles.stepBody}>{t(language, 'tpl.baseBody')}</Text>
         <View style={styles.baseList}>
           {presets.map((preset) => {
-            const previewImage = presetPreviewImages[preset.id];
+            const previewImage = getExerciseImageSource(presetPreviewImages[preset.id]);
             const chosen = chosenBase === preset.id;
             return (
               <Pressable
@@ -580,7 +581,7 @@ export function CreateTemplateScreen({
                 >
                   <View style={styles.baseMedia}>
                     {previewImage ? (
-                      <Image source={{ uri: previewImage }} style={styles.baseMediaImage} resizeMode="cover" />
+                      <Image source={previewImage} style={styles.baseMediaImage} resizeMode="cover" />
                     ) : (
                       <Text style={styles.baseMediaFallbackText}>
                         {t(language, preset.labelKey).slice(0, 1).toUpperCase()}
@@ -683,7 +684,7 @@ export function CreateTemplateScreen({
                 <View style={styles.exerciseList}>
                   {session.exercises.map((exercise) => {
                     const libraryItem = exercise.libraryItemId ? libraryById.get(exercise.libraryItemId) ?? null : null;
-                    const previewImage = libraryItem?.imageUrls?.[0] ?? null;
+                    const previewImage = getExerciseImageSource(libraryItem?.imageKey);
 
                     return (
                       <CutSurface
@@ -695,7 +696,7 @@ export function CreateTemplateScreen({
                         <View style={styles.exerciseLead}>
                           <View style={styles.exerciseThumb}>
                             {previewImage ? (
-                              <Image source={{ uri: previewImage }} style={styles.exerciseThumbImage} resizeMode="cover" />
+                              <Image source={previewImage} style={styles.exerciseThumbImage} resizeMode="cover" />
                             ) : (
                               <View style={styles.exerciseThumbFallback}>
                                 <Text style={styles.exerciseThumbFallbackText}>

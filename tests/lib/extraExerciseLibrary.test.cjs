@@ -247,7 +247,7 @@ module.exports = [
         // Nothing the app adds is a strongman implement.
         if (isSpecialtyExercise(item)) at('specialty');
         // No photo yet: a row that gains one has to gain it on purpose.
-        if ((item.imageUrls ?? []).length) at('has a photo');
+        if (item.imageKey) at('has a photo');
       }
       assert.deepEqual(problems, []);
     },

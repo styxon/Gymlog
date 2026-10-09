@@ -23,7 +23,7 @@ module.exports = [
             const match = GENERATED_EXERCISE_LIBRARY.find((item) => item.name === libraryName);
             assert.ok(match, `library has no exercise named "${libraryName}"`);
             assert.ok(
-              Array.isArray(match.imageUrls) && match.imageUrls.length > 0,
+              typeof match.imageKey === 'string' && match.imageKey.length > 0,
               `"${libraryName}" carries no photo`,
             );
           }

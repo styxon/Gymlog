@@ -39,6 +39,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import {
   GuidedDrill,
   GuidedStep,
@@ -570,7 +571,7 @@ function MediaZone({
   const [imageFailed, setImageFailed] = useState(false);
   useEffect(() => setImageFailed(false), [name]);
 
-  const imageUrl = match?.imageUrls?.[0] ?? null;
+  const imageSource = getExerciseImageSource(match?.imageKey);
 
   // The media zone always shows the flat photo (or initials). A 3D rig with
   // an on-demand sheet lived here until 2026-08-26 ("poistetaan kaikki 3d
@@ -603,7 +604,7 @@ function MediaZone({
     </>
   );
 
-  if (imageUrl && !imageFailed) {
+  if (imageSource && !imageFailed) {
     const ramp = DUOTONE[themeName];
     return (
       <View style={[styles.mediaZone, { height, backgroundColor: '#E9DCFA', borderColor: '#E6DAF8' }]}>
@@ -622,7 +623,7 @@ function MediaZone({
               </Filter>
             </Defs>
             <SvgImage
-              href={{ uri: imageUrl }}
+              href={imageSource}
               width="100%"
               height="100%"
               preserveAspectRatio={fit === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'}
@@ -2502,7 +2503,7 @@ function GuidedPlayer({
     return {
       history: resolveSlotHistory(slotId, name),
       instructions: getExerciseInstructions(match?.name, match?.instructions, language),
-      imageUrl: match?.imageUrls?.[0] ?? null,
+      imageKey: match?.imageKey ?? null,
       initials: exerciseNameLabel(language, name).slice(0, 2).toUpperCase(),
     };
   }, [exerciseLibrary, language, resolveSlotHistory, step]);
@@ -4595,7 +4596,7 @@ function GuidedPlayer({
           visible
           language={language}
           exerciseName={exerciseNameLabel(language, step.exerciseName)}
-          imageUrl={setPanelSource?.imageUrl ?? null}
+          imageKey={setPanelSource?.imageKey ?? null}
           initials={setPanelSource?.initials ?? ''}
           instructions={setPanelSource?.instructions ?? []}
           learn={sheetLearn}
@@ -5367,7 +5368,7 @@ function SetStepView({
   panels: {
     history: LastTimeView | null;
     instructions: string[];
-    imageUrl: string | null;
+    imageKey: string | null;
     initials: string;
   } | null;
   onConfirm: (slotId: string, setIndex: number, reps: number, loadKg: number | null) => void;
@@ -5390,6 +5391,7 @@ function SetStepView({
   // on every chip instead of one heading number, so it reads as a ramp rather
   // than a single weight with an unexplained jump partway through (#bugs 2026-09-29).
   const historyChips = panels?.history ? summarizeHistoricalSetChips(panels.history.sets) : null;
+  const thumbSource = getExerciseImageSource(panels?.imageKey);
   const timed = exercise ? isTimedTrackingMode(exercise.trackingMode) : false;
   const [reps, setReps] = useState(target?.reps ?? 8);
   /**
@@ -5719,8 +5721,8 @@ function SetStepView({
         >
           <View style={styles.setExerciseTop}>
             <View style={styles.setExerciseThumb}>
-              {panels?.imageUrl ? (
-                <Image source={{ uri: panels.imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+              {thumbSource ? (
+                <Image source={thumbSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
               ) : (
                 <Text style={styles.setExerciseInitials}>{panels?.initials ?? ''}</Text>
               )}

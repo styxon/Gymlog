@@ -12,6 +12,7 @@ import {
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { VinhaIcon, VinhaIconName } from './VinhaIcon';
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { exerciseCardLabel, exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
@@ -84,8 +85,8 @@ function getBodyPartIcon(bodyPart: BodyPartFilter): VinhaIconName {
   }
 }
 
-export function getItemImage(item: ExerciseLibraryItem) {
-  return item.imageUrls?.[0] ?? null;
+export function getItemImageKey(item: ExerciseLibraryItem) {
+  return item.imageKey ?? null;
 }
 
 /**
@@ -184,12 +185,12 @@ function CategoryIcon({ option, color }: { option: string; color: string }) {
 // fires onLoad until a scroll forces re-layout. Intrinsic pixel dimensions let
 // the image request fire immediately at mount.
 function Thumb({
-  uri,
+  imageKey,
   width,
   height,
   radius = 12,
 }: {
-  uri: string | null;
+  imageKey: string | null;
   width: number;
   height: number;
   radius?: number;
@@ -198,17 +199,18 @@ function Thumb({
 
   const styles = useThemedStyles(makeStyles);
 
-  const [state, setState] = useState<'load' | 'ok' | 'err'>(uri ? 'load' : 'err');
+  const source = useMemo(() => getExerciseImageSource(imageKey), [imageKey]);
+  const [state, setState] = useState<'load' | 'ok' | 'err'>(source ? 'load' : 'err');
 
   useEffect(() => {
-    setState(uri ? 'load' : 'err');
-  }, [uri]);
+    setState(source ? 'load' : 'err');
+  }, [source]);
 
   return (
     <View style={{ width, height, borderRadius: radius, overflow: 'hidden', backgroundColor: theme.surfaceSoft }}>
-      {uri ? (
+      {source ? (
         <Image
-          source={{ uri }}
+          source={source}
           resizeMode="cover"
           style={{ width, height }}
           onLoad={() => setState('ok')}
@@ -274,7 +276,7 @@ function ExCard({
   return (
     <Pressable onPress={onOpen} disabled={!onOpen} style={styles.card}>
       <View style={styles.cardImageWrap}>
-        <Thumb uri={getItemImage(item)} radius={0} width={CARD_IMAGE_WIDTH} height={104} />
+        <Thumb imageKey={getItemImageKey(item)} radius={0} width={CARD_IMAGE_WIDTH} height={104} />
         <View style={styles.cardStar}>
         </View>
       </View>
@@ -321,14 +323,14 @@ export function ExerciseLibraryRow({
   title,
   accessibilityLabel,
   meta,
-  imageUrl,
+  imageKey,
   onPress,
   trailing,
 }: {
   title: string;
   accessibilityLabel: string;
   meta: string | null;
-  imageUrl: string | null;
+  imageKey: string | null;
   onPress?: () => void;
   trailing?: React.ReactNode;
 }) {
@@ -343,7 +345,7 @@ export function ExerciseLibraryRow({
       disabled={!onPress}
       style={styles.row}
     >
-      <Thumb uri={imageUrl} radius={11} width={52} height={52} />
+      <Thumb imageKey={imageKey} radius={11} width={52} height={52} />
       <View style={styles.rowCopy}>
         <Text numberOfLines={2} style={styles.rowTitle} accessibilityLabel={accessibilityLabel}>
           {title}
@@ -373,7 +375,7 @@ function ExRow({
       title={exerciseListLabel(language, item.name)}
       accessibilityLabel={exerciseNameLabel(language, item.name)}
       meta={exerciseLibraryRowMeta(item, language)}
-      imageUrl={getItemImage(item)}
+      imageKey={getItemImageKey(item)}
       onPress={onOpen}
       trailing={
         onOpen ? (
