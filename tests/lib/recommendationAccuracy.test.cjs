@@ -50,8 +50,15 @@ const { execFileSync } = require('node:child_process');
  * stopped winning for a dumbbell-and-bar owner, and a geared week exactly two
  * days off now beats one that ignores the gear instead of tying it: the
  * dumbbell upper/lower wins those four answers, E4 15 -> 13.
+ *
+ * Bug hunt, 2026-10-09 (#10): Runner's Strength, legs and core with one side
+ * plank, is no longer handed to a reader who did not name the lower body, and
+ * the matrix's eligible set leaves it out for them the same way. E2 6 -> 2,
+ * E2s 37 -> 23. G1 25 -> 29 is the supply it hid: an advanced lean-athletic
+ * reader at home with a bar, or a barbell and rack, has no programme that
+ * lists the goal; HARD holds at 31.
  */
-const CEILINGS = { E2: 6, E3: 0, E4: 13, L1: 0, S1: 0, C1: 0, HARD: 31 };
+const CEILINGS = { E2: 2, E3: 0, E4: 13, L1: 0, S1: 0, C1: 0, HARD: 31 };
 
 let cached = null;
 function matrix() {

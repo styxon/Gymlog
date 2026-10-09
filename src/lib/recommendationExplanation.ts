@@ -26,6 +26,12 @@ export interface RecommendationReasonOptions {
    */
   runWork?: ProgramRunWork | null;
   /**
+   * Whether the programme's week holds conditioning (programHoldsConditioning).
+   * False leaves "Balanced strength and conditioning" unsaid over a week with
+   * none (review, 2026-10-09). Null when unknown.
+   */
+  conditioning?: boolean | null;
+  /**
    * One plain line for what the reader's caution flags changed in the week
    * they were handed (buildCautionAdaptationLine), or null when nothing was.
    * It goes in ahead of the generic goal line, which is the one it displaces
@@ -196,6 +202,7 @@ function buildGoalSpecificReason(
   >,
   language: AppLanguage,
   runWork: ProgramRunWork | null = null,
+  conditioning: boolean | null = null,
 ) {
   const heavy = hasHeavyLiftingGear(selection);
 
@@ -220,7 +227,8 @@ function buildGoalSpecificReason(
   }
 
   if (selection.goal === 'lean_athletic') {
-    return t(language, 'recExp.why.leanAthletic');
+    // Not over a week with no conditioning in it; the next line takes the place.
+    return conditioning === false ? null : t(language, 'recExp.why.leanAthletic');
   }
 
   if (selection.goal === 'general_fitness') {
@@ -316,7 +324,7 @@ export function buildRecommendationReasonLines(
   );
   const focusSummary = formatFocusAreaList(selection.focusAreas, language);
   const weightTargetReason = buildWeightTargetReason(selection, language);
-  const goalSpecificReason = buildGoalSpecificReason(selection, language, options.runWork ?? null);
+  const goalSpecificReason = buildGoalSpecificReason(selection, language, options.runWork ?? null, options.conditioning ?? null);
 
   // "6 days for run + mobility" opened the lines over a bodyweight push-pull-legs
   // week with no runs at all (a pro reader at six days has no run programme to

@@ -56,6 +56,7 @@ const { resolveFirstRunRecommendationWithTailoring } = lib('firstRunSetup');
 const { composeProgramWeekForSelection } = lib('programDayComposer');
 const { buildProgramFocusSplit } = lib('programFocusSplit');
 const { RECOMMENDATION_PROGRAMS, getRecommendationProgramDefinition } = lib('recommendationCatalog');
+const { lowerBodyOnlyAgainstFocus } = lib('recommendationWeekFit');
 const { resolveProgramEquipment } = lib('programEquipment');
 const { selectWaterfallDecision } = lib('recommendationWaterfall');
 const { buildRecommendationInput } = lib('recommendationInput');
@@ -267,6 +268,11 @@ function eligiblePrograms(a, sel, daysTolerance = 1) {
       || (sel.secondaryOutcomes ?? []).includes('mobility')
       || (sel.focusAreas ?? []).includes('mobility');
     if (recoveryOnly && !askedForRecovery) return false;
+    // Nor does a week for the legs and core alone answer a reader who did not
+    // name the lower body. Runner's Strength lists lean athletic, and counting
+    // it made every gear owner not handed its 0 upper-body sets a failure (bug
+    // hunt, 2026-10-09, #10).
+    if (lowerBodyOnlyAgainstFocus(def.programId, { goal: a.goal, focusAreas: sel.focusAreas ?? [] })) return false;
     if (a.card.equipment === 'gym') {
       return programFitsEquipment(def.programId, gearAvailable(a.card));
     }

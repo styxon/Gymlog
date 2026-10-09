@@ -2,6 +2,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { isMinutesRun, runStandInKind, type RunStandInKind } from './cautionExerciseFilter';
 import { classifySessionFocus } from './homeSessionHero';
 import { emphasisAreaForExercise, type EmphasisArea } from './programEmphasis';
+import { buildProgramFocusSplit } from './programFocusSplit';
 import { applyReaderFiltersToDay } from './readerDayFilters';
 import type { RecommendationInput } from '../types/recommendation';
 import type { SetupFocusArea } from '../types/models';
@@ -74,9 +75,13 @@ export function splitsReaderWeek(
 const lowerBodyOnlyPrograms = new Map<string, boolean>();
 
 /**
- * Whether this programme trains the lower body and nothing above the waist:
- * lifts for the legs and hips, and not one set for the chest, back, shoulders
- * or arms. Glute Foundations is the one such programme in the catalog.
+ * Whether this programme trains the lower body and next to nothing above the
+ * waist: lifts for the legs and hips, and less than the share of its lifting
+ * sets that would make an upper-body week. Glute Foundations has no upper set
+ * at all. Runner's Strength has a side plank, and asked for "not one set" it
+ * was handed to a two-day lean-athletic reader as "balanced strength and
+ * conditioning" with 0 sets for the chest, back or shoulders (bug hunt,
+ * 2026-10-09, #10).
  */
 export function trainsLowerBodyOnly(programId: string): boolean {
   const cached = lowerBodyOnlyPrograms.get(programId);
@@ -87,7 +92,7 @@ export function trainsLowerBodyOnly(programId: string): boolean {
   let lowerOnly = false;
   if (template) {
     const week = template.sessions.map((session) => halfSets(session.exercises));
-    lowerOnly = sumOf(week, 'upper') === 0 && sumOf(week, 'lower') >= MIN_HALF_SETS;
+    lowerOnly = sumOf(week, 'lower') >= MIN_HALF_SETS && !hasShare(week, 'upper');
   }
   lowerBodyOnlyPrograms.set(programId, lowerOnly);
   return lowerOnly;
@@ -213,6 +218,36 @@ export function focusProgrammeLosesItsPoint(programId: string, input: Recommenda
     ).adjusted.exercises;
     return areaSets(kept) * 2 < before;
   });
+}
+
+/**
+ * The share of a week's sets that must be conditioning for a lean-athletic
+ * line to call it "strength and conditioning": the bar the accuracy matrix
+ * holds the pick to (G2 in tests/recommendation/recommendationMatrix.cjs).
+ */
+const LEAN_CONDITIONING_PCT = 15;
+
+const conditioningPrograms = new Map<string, boolean | null>();
+
+/**
+ * Whether this programme's week holds conditioning enough to be called
+ * strength and conditioning; null for a programme the catalog does not know.
+ * The line sat over Strength Base and the bodyweight full body, neither with a
+ * conditioning set in it, once Runner's Strength stopped taking those readers
+ * (review, 2026-10-09).
+ */
+export function programHoldsConditioning(programId: string): boolean | null {
+  const cached = conditioningPrograms.get(programId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const template = getWorkoutTemplateById(programId);
+  const holds = template
+    ? (buildProgramFocusSplit(template.sessions).find((segment) => segment.quality === 'Conditioning')?.pct ?? 0)
+      >= LEAN_CONDITIONING_PCT
+    : null;
+  conditioningPrograms.set(programId, holds);
+  return holds;
 }
 
 /** What a programme's runs are for the reader, or 'none' when it holds no runs. */
