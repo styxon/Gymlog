@@ -16,6 +16,7 @@ import {
   getPopularExerciseLibraryOrder,
   getSuggestedExerciseLibraryItems,
 } from '../lib/exerciseSuggestions';
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseCardLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import {
   BODY_PART_FILTERS,
@@ -168,7 +169,7 @@ interface ExerciseCardProps {
 function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLabel, selectedLabel, language, onPress }: ExerciseCardProps) {
   const styles = useThemedStyles(makeStyles);
   const { item, name } = entry;
-  const previewImage = item?.imageUrls?.[0] ?? null;
+  const previewImage = getExerciseImageSource(item?.imageKey);
   // The library screen's line, split over the card's two: body part, then equipment · type.
   const rowLabels = item ? exercisePickerRowLabels(item, language) : [];
 
@@ -182,7 +183,7 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
     >
       <View style={styles.gridCardMedia}>
         {previewImage ? (
-          <Image source={{ uri: previewImage }} style={styles.gridCardImage} resizeMode="cover" />
+          <Image source={previewImage} style={styles.gridCardImage} resizeMode="cover" />
         ) : (
           <View style={styles.gridCardImageFallback}>
             <Text style={styles.gridCardImageFallbackText}>{name.charAt(0).toUpperCase()}</Text>

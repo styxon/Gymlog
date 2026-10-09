@@ -13,6 +13,7 @@ import { isLiftableWeight } from './weightLimits';
 import { isExerciseDone } from './sessionTotals';
 import { normalizeExerciseLog } from './exerciseLog';
 import { beatsBest, heaviestOfSets } from './personalRecords';
+import { exerciseImageKeyFrom } from './exerciseImageKey';
 import {
   ExercisePrLookup,
   WorkoutCompletionExerciseCard,
@@ -60,6 +61,11 @@ export interface FreestyleExerciseDraft {
   localKey: string;
   name: string;
   libraryItemId: string | null;
+  /**
+   * The exercise's picture key (ExerciseLibraryItem.imageKey), not a URL: the
+   * name stayed because it is stored. A draft saved before 2026-10-09 holds a
+   * CDN URL here; the loader below turns it into the key.
+   */
   imageUrl: string | null;
   repMin: number;
   repMax: number;
@@ -594,7 +600,7 @@ export function normalizeFreestyleDraftSnapshot(input: unknown): FreestyleDraftS
       localKey: lift.localKey,
       name: lift.name,
       libraryItemId: typeof lift.libraryItemId === 'string' ? lift.libraryItemId : null,
-      imageUrl: typeof lift.imageUrl === 'string' ? lift.imageUrl : null,
+      imageUrl: exerciseImageKeyFrom(typeof lift.imageUrl === 'string' ? lift.imageUrl : null),
       repMin: finiteOr(lift.repMin, 8),
       repMax: finiteOr(lift.repMax, 12),
       restSeconds: finiteOr(lift.restSeconds, 90),

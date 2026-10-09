@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import { ExerciseSheetHistory, SHEET_HISTORY_SESSIONS } from '../lib/exerciseSheetHistory';
+import { getExerciseImageSource } from '../assets/exerciseImages';
 import { removeTrailingZeros } from '../lib/format';
 import { t } from '../lib/i18n';
 import { Theme, useThemedStyles, useTheme } from '../theming';
@@ -60,7 +61,7 @@ interface ExerciseSheetProps {
   language: AppLanguage;
   /** Already localized. */
   exerciseName: string;
-  imageUrl: string | null;
+  imageKey: string | null;
   /** Two letters, when there is no photo. */
   initials: string;
   /** Already localized; empty means the tab says so rather than showing nothing. */
@@ -93,7 +94,7 @@ export function ExerciseSheet({
   visible,
   language,
   exerciseName,
-  imageUrl,
+  imageKey,
   initials,
   instructions,
   learn,
@@ -105,6 +106,7 @@ export function ExerciseSheet({
 }: ExerciseSheetProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const photoSource = useMemo(() => getExerciseImageSource(imageKey), [imageKey]);
   // A lift with no teaching has no Learn tab, so it cannot open on one.
   const tabs = learn ? ALL_TABS : ALL_TABS.filter((key) => key !== 'learn');
   const [tab, setTab] = useState<ExerciseSheetTab>(initialTab ?? tabs[0]);
@@ -315,8 +317,8 @@ export function ExerciseSheet({
                 {/* The photo lives here now. It had a tab of its own whose
                     other half was these same instructions, three of them. */}
                 <View style={styles.photo}>
-                  {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                  {photoSource ? (
+                    <Image source={photoSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
                   ) : (
                     <Text style={styles.photoInitials}>{initials}</Text>
                   )}

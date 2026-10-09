@@ -5,6 +5,7 @@ import { ExerciseLog, ExerciseTemplate, WorkoutSession } from '../types/models';
 export interface WorkoutCompletionExerciseCard {
   id: string;
   name: string;
+  /** The exercise's picture key (ExerciseLibraryItem.imageKey); the name is from when it was a URL. */
   imageUrl?: string | null;
   completedSets: number;
   totalSets: number;
@@ -19,6 +20,7 @@ export interface WorkoutCompletionExerciseCard {
 export interface WorkoutCompletionPrCard {
   id: string;
   exerciseName: string;
+  /** The exercise's picture key (ExerciseLibraryItem.imageKey); the name is from when it was a URL. */
   imageUrl?: string | null;
   /** The heaviest weight this lift carried before today's session, or null on its first-ever log. */
   previousBestWeightKg: number | null;

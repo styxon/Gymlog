@@ -156,7 +156,7 @@ export function buildCompletionCardsFromAdaptedSession({
     return {
       id: exercise.slotId,
       name: exercise.exerciseName,
-      imageUrl: libraryItem?.imageUrls?.[0] ?? null,
+      imageUrl: libraryItem?.imageKey ?? null,
       completedSets,
       totalSets: Math.max(1, exercise.sets.length),
       totalVolumeKg,
@@ -195,7 +195,7 @@ export function buildCompletionCardsFromAdaptedSession({
       return {
         id: `pr:${exercise.slotId}`,
         exerciseName: exercise.exerciseName,
-        imageUrl: libraryItem?.imageUrls?.[0] ?? null,
+        imageUrl: libraryItem?.imageKey ?? null,
         previousBestWeightKg: previousBest?.weight ?? null,
         previousBestReps: previousBest?.reps ?? null,
         performedWeightKg: bestSet.weight,

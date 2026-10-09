@@ -136,7 +136,7 @@ module.exports = [
           .filter((index) => index !== null),
       )].map((index) => LIBRARY[index]);
       const photolessGenerated = reached
-        .filter((item) => !(item.imageUrls ?? []).length && !item.id.startsWith('extra_'))
+        .filter((item) => !item.imageKey && !item.id.startsWith('extra_'))
         .map((item) => item.name);
       assert.deepEqual(photolessGenerated, []);
       // Every extra the library carries is one a programme prescribes, except

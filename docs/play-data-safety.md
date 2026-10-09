@@ -26,6 +26,20 @@ fails if a fourth appears. The policy names all three.
 | Report a coach answer (the Report link under an online answer) | `src/lib/aiCoachClient.ts` → `api/ai-coach.ts` → Slack webhook | The answer's own text (takeaway, why, next steps, attention, example, plan) and the reason picked from a closed list (`src/lib/coachAnswerReport.ts`). Not the question, not the training summary, no id | Nothing on our server; the message sits in the `#bugs` Slack channel | Slack (United States) — named in the policy |
 | Anonymous usage events | `src/features/analytics/analyticsClient.ts` → `api/events.ts` | Random install id + event names, timestamps, `step` / `path`; since 2026-10-04 also **error reports** (`app_error`: error class, up to five `bundle:line:col` positions, screen key, app version, platform; `operation_failed`: which operation and a closed code). Never an error message (`src/lib/errorReport.ts`) | Batches as private blobs (Vercel, EU); deleted after 24 months by the daily cron (`api/prune-events.ts`, `docs/usage-events.md`) | Vercel (function and storage in Stockholm, `arn1`) |
 
+**Exercise pictures (bundled since 2026-10-09).** The pictures of the 873 library
+exercises used to be loaded by `<Image source={{ uri }}>` from a public CDN at
+the moment an exercise was shown, which is a request that carries the user's IP
+address to a third party the policy does not name, and which the three-sites
+count above could not see (it is not a `src/` request site either). They are
+now WebP files inside the APK (`assets/exercises/`, about 10.5 MB, looked up
+through `src/assets/exerciseImages.ts`), so showing an exercise makes no
+request at all. Nothing is disclosed to the CDN, so there is no recipient to
+list in the form, and the policy needs no wording for it.
+`tests/lib/exerciseImagesBundled.test.cjs` fails if any source file names the
+CDN again (the one exception is the resolver that recognises the URLs an old
+install stored, and never requests them), and `exercise:sync` refreshes the
+files together with the library.
+
 **Purchases (since 2026-10-08, not live until the store is set up).** A fourth
 recipient, and not a `src/` request site, so the count above does not see it:
 the RevenueCat SDK (`react-native-purchases`, `src/features/billing/storeBilling.ts`)

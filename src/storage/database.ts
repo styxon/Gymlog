@@ -207,6 +207,11 @@ function normalizeTemplateSessions(
  * corrections read in again afterwards. A blob written before the library was
  * stripped on save (April 2026) still carries whole rows, and the overlay put
  * their stored `category: 'compound'` back over the corrected leg extension.
+ *
+ * Those whole rows also carry `imageUrls`, the CDN addresses the pictures
+ * were fetched from until 2026-10-09. The pictures are bundled now, keyed by
+ * the seed's `imageKey`; the old field is dropped so it can never be read as
+ * somewhere to fetch from.
  */
 function mergeExerciseLibrary(
   inputLibrary: AppDatabase['exerciseLibrary'] | null | undefined,
@@ -224,9 +229,10 @@ function mergeExerciseLibrary(
         return;
       }
 
+      const { imageUrls: _retiredImageUrls, ...stored } = item as typeof item & { imageUrls?: unknown };
       merged.set(item.id, {
         ...merged.get(item.id),
-        ...item,
+        ...stored,
       });
     });
   }

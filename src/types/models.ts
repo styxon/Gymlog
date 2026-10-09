@@ -293,7 +293,8 @@ export interface ExerciseLibraryItem {
   primaryMuscles?: string[];
   secondaryMuscles?: string[];
   instructions?: string[];
-  imageUrls?: string[];
+  /** Key of the bundled picture (assets/exercises); see src/lib/exerciseImageKey.ts. */
+  imageKey?: string;
   sourceCategory?: string | null;
   sourceEquipment?: string | null;
   sourceMechanic?: string | null;

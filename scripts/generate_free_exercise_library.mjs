@@ -3,7 +3,6 @@ import path from 'node:path';
 import https from 'node:https';
 
 const DATA_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
-const IMAGE_BASE_URL = 'https://cdn.jsdelivr.net/gh/yuhonas/free-exercise-db@main/exercises';
 const OUTPUT_PATH = path.resolve(process.cwd(), 'src/data/generatedExerciseLibrary.ts');
 // Loaded lifts the source files under "other", by name — see the file's _why.
 const EQUIPMENT_OVERRIDES = JSON.parse(
@@ -141,13 +140,14 @@ function mapCategory(entry, mappedBodyPart) {
   return 'isolation';
 }
 
-function toImageUrl(relativePath) {
-  const encodedPath = String(relativePath)
-    .split('/')
-    .map((segment) => encodeURIComponent(segment))
-    .join('/');
-
-  return `${IMAGE_BASE_URL}/${encodedPath}`;
+// The picture folder name in the source repository ("3_4_Sit-Up/0.jpg" ->
+// "3_4_Sit-Up"). Only the first picture of an exercise is ever shown, so only
+// that one is kept; scripts/bundle_exercise_images.py turns each key into a
+// bundled .webp, and src/lib/exerciseImageKey.ts is the one reader of the key.
+function toImageKey(images) {
+  const first = Array.isArray(images) ? String(images[0] ?? '') : '';
+  const slug = first.split('/')[0];
+  return /^[A-Za-z0-9_-]+$/.test(slug) ? slug : null;
 }
 
 function mapExercise(entry) {
@@ -168,7 +168,7 @@ function mapExercise(entry) {
     primaryMuscles: Array.isArray(entry.primaryMuscles) ? entry.primaryMuscles.map((item) => String(item)) : [],
     secondaryMuscles: Array.isArray(entry.secondaryMuscles) ? entry.secondaryMuscles.map((item) => String(item)) : [],
     instructions: Array.isArray(entry.instructions) ? entry.instructions.map((item) => String(item)) : [],
-    imageUrls: Array.isArray(entry.images) ? entry.images.map(toImageUrl) : [],
+    ...(toImageKey(entry.images) ? { imageKey: toImageKey(entry.images) } : {}),
     sourceCategory: entry.category ? String(entry.category) : null,
     sourceEquipment: entry.equipment ? String(entry.equipment) : null,
     sourceMechanic: entry.mechanic ? String(entry.mechanic) : null,
@@ -187,7 +187,7 @@ async function main() {
     .filter((item) => item.name.length > 0)
     .sort((left, right) => left.name.localeCompare(right.name));
 
-  const file = `/* eslint-disable */\nimport type { ExerciseLibraryItem } from '../types/models';\n\n// Generated from yuhonas/free-exercise-db (Unlicense).\n// Refresh with: node scripts/generate_free_exercise_library.mjs\nexport const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = ${JSON.stringify(mapped, null, 2)};\n`;
+  const file = `/* eslint-disable */\nimport type { ExerciseLibraryItem } from '../types/models';\n\n// Generated from yuhonas/free-exercise-db (Unlicense).\n// Refresh with: npm run exercise:sync (also bundles the pictures, see scripts/bundle_exercise_images.py)\nexport const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = ${JSON.stringify(mapped, null, 2)};\n`;
 
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
   await fs.writeFile(OUTPUT_PATH, file, 'utf8');
