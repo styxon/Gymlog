@@ -5,8 +5,23 @@ export interface RouteHistoryResult {
   route: AppRoute | null;
 }
 
+/**
+ * Where a route goes, without how it was reached.
+ *
+ * The player's `resume` says which button opened it, not which screen it is.
+ * Compared whole, a lock-screen or widget tap into the player that Start had
+ * already opened stacked a second copy of it, and the player's first Back
+ * landed on itself (hunt 10, #36).
+ */
+function routeIdentity(route: AppRoute): string {
+  if (route.tab === 'workout' && route.screen === 'guided') {
+    return JSON.stringify({ tab: route.tab, screen: route.screen, workoutTemplateId: route.workoutTemplateId });
+  }
+  return JSON.stringify(route);
+}
+
 export function isSameRoute(left: AppRoute, right: AppRoute) {
-  return JSON.stringify(left) === JSON.stringify(right);
+  return routeIdentity(left) === routeIdentity(right);
 }
 
 export function pushRoute(history: AppRoute[], current: AppRoute, next: AppRoute) {

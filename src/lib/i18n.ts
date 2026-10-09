@@ -476,6 +476,9 @@ const EN = {
   // A programme with a workout of it running is not deleted: the workout
   // would have nowhere to be saved to (see lib/programmeDeletion).
   'toast.programDeleteWorkoutRunning': 'A workout of this program is in progress — save or discard it first',
+  // The delete is applied in memory first and rolls back when the disk
+  // refuses, so the programme reappears; this says why (hunt 10, #37).
+  'toast.programDeleteFailed': 'Could not delete the program — it is back in your list',
   'toast.programEditWorkoutRunning': 'A workout of this program is in progress — edit the program once it is saved',
   'export.log.tooBig': 'The log could not be handed over — it has grown past what a share can carry. Export your programme instead, and tell us: we will add a file export.',
   'toast.entrySaveFailed': 'Could not save that entry',
@@ -2741,6 +2744,9 @@ const EN = {
   // one is not enough, so the text says how many.
   'programLimit.running.overTitle': 'Programme places over the limit · {used}/{limit}',
   'programLimit.running.overBody': 'Free runs {limit} programmes at the same time, and {used} are running. Stop {count} to start another, or unlock more with Pro. Ready-made programmes and your training history stay free.',
+  // Start next past the limit: the next programme takes the finished one's
+  // place, so the count to stop is of the others (hunt 10, #20).
+  'programLimit.running.replaceBody': 'Free runs {limit} programmes at the same time, and {used} are running. The next programme takes the place of the finished one; stop {count} more to start it, or unlock more with Pro. Ready-made programmes and your training history stay free.',
   'programLimit.overTitle': 'Your own programmes are over the limit · {used}/{limit}',
   'programLimit.overBody': 'Free keeps {limit} programmes of your own, and you have {used}. Delete {count} to make a new one, or unlock more with Pro. Ready-made programmes and your training history stay free.',
   'programLimit.over': '{used}/{limit} programmes of your own · delete {count} to make another',
@@ -3109,6 +3115,7 @@ const EN = {
   'programs.cap.atCap': '{used}/{cap} programmes running · drop one to take on another',
   'programs.cap.over': '{used}/{cap} programmes running · drop {count} to take on another',
   'programs.cap.fullOver': 'You are running {used} programmes, and {cap} fit. Drop {count} to take on another.',
+  'programs.cap.fullReplace': 'You are running {used} programmes, and {cap} fit. The next one takes the place of the finished one; drop {count} more to take it on.',
   'season.oneProgram': 'One program for the whole season, the same one for everyone, and it does not change. Everything else in the catalog still works — it is just not the season, and it does not score.',
   'season.how.records': 'Beat a lift you have logged before: {perRecord} points. Each lift can do that once per block, so the points come from new ground rather than repeating one good day. Carry a block to its end: {perBlock}.',
   'season.badges': 'SEASON BADGES · {earned} / {total}',
@@ -3989,6 +3996,7 @@ const FI: Record<I18nKey, string> = {
   'toast.deleteFailed': 'Treeniä ei voitu poistaa',
   'toast.entryDeleteFailed': 'Merkintää ei voitu poistaa — se on takaisin listassa',
   'toast.programDeleteWorkoutRunning': 'Tämän ohjelman treeni on kesken — tallenna tai hylkää se ensin',
+  'toast.programDeleteFailed': 'Ohjelmaa ei voitu poistaa — se on taas listallasi',
   'toast.programEditWorkoutRunning': 'Tämän ohjelman treeni on kesken — muokkaa ohjelmaa, kun treeni on tallennettu',
   'export.log.tooBig': 'Lokia ei saatu luovutettua — se on kasvanut isommaksi kuin jako pystyy kantamaan. Vie ohjelmasi sen sijaan ja kerro meille: lisäämme tiedostoviennin.',
   'toast.entrySaveFailed': 'Merkintää ei voitu tallentaa',
@@ -6069,6 +6077,7 @@ const FI: Record<I18nKey, string> = {
   'programLimit.running.body': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan. Lopeta yksi aloittaaksesi uuden, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.running.overTitle': 'Ohjelmapaikat yli rajan · {used}/{limit}',
   'programLimit.running.overBody': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan, ja sinulla on {used} käynnissä. Lopeta {count} aloittaaksesi uuden, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
+  'programLimit.running.replaceBody': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan, ja sinulla on {used} käynnissä. Seuraava ohjelma tulee juuri päättyneen tilalle; lopeta lisäksi {count} aloittaaksesi sen, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.overTitle': 'Omia ohjelmia yli rajan · {used}/{limit}',
   'programLimit.overBody': 'Ilmaisella voit pitää {limit} omaa ohjelmaa, ja sinulla on {used}. Poista {count} tehdäksesi uuden, tai avaa lisää ohjelmia Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.over': '{used}/{limit} omaa ohjelmaa · poista {count} tehdäksesi uuden',
@@ -6418,6 +6427,7 @@ const FI: Record<I18nKey, string> = {
   'programs.cap.atCap': '{used}/{cap} ohjelmaa käynnissä · poista yksi ottaaksesi uuden',
   'programs.cap.over': '{used}/{cap} ohjelmaa käynnissä · poista {count} ottaaksesi uuden',
   'programs.cap.fullOver': 'Sinulla on {used} ohjelmaa käynnissä, ja {cap} mahtuu. Poista {count} ottaaksesi uuden.',
+  'programs.cap.fullReplace': 'Sinulla on {used} ohjelmaa käynnissä, ja {cap} mahtuu. Seuraava tulee juuri päättyneen tilalle; poista lisäksi {count} ottaaksesi sen.',
   'season.oneProgram': 'Yksi ohjelma koko kaudelle, sama kaikille, eikä se vaihdu. Kirjaston muut ohjelmat toimivat edelleen — ne eivät vain ole kausi eivätkä pisteytä.',
   'season.how.records': 'Ylität liikkeessä aiemman tuloksesi: {perRecord} pistettä. Jokainen liike voi tehdä sen kerran per blokki, joten pisteet tulevat uudesta maasta eivätkä yhden hyvän päivän toistamisesta. Vedät blokin loppuun: {perBlock}.',
   'season.badges': 'KAUDEN MERKIT · {earned} / {total}',

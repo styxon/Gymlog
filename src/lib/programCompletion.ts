@@ -98,6 +98,29 @@ export function forgetCompletionDismissals(
 }
 
 /**
+ * The stored dismissals, made to agree with the plan records that are stored.
+ *
+ * forgetCompletionDismissals runs where a plan is removed, and only since
+ * PR #350: a programme removed before that left its answer behind, and the
+ * same `ready_plan_<template>` adopted again never showed its card (hunt 10,
+ * #19 and #26). A dismissal with no plan record behind it answers nothing,
+ * so it goes. Applied where the preferences meet the plans, as the running
+ * set's repair is (reconcileRunningSet): on load, after the preferences key
+ * is laid over the blob, and on a restore. The same object comes back when
+ * nothing changes.
+ */
+export function reconcileCompletionDismissals<T extends { dismissedCompletionPlanIds: string[] }>(
+  preferences: T,
+  plans: ReadonlyArray<{ id: string }>,
+): T {
+  const stored = new Set(plans.map((plan) => plan.id));
+  const kept = preferences.dismissedCompletionPlanIds.filter((planId) => stored.has(planId));
+  return kept.length === preferences.dismissedCompletionPlanIds.length
+    ? preferences
+    : { ...preferences, dismissedCompletionPlanIds: kept };
+}
+
+/**
  * The dismissals once a plan's block moves to a new plan record.
  *
  * Editing one lift of a ready programme copies it into the reader's own

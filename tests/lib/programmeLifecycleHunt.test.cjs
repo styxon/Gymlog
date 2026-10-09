@@ -281,7 +281,7 @@ module.exports = [
       assert.equal(programLimitSheetCopy('own', 3, 3).bodyKey, 'programLimit.body');
 
       const sheet = read('src', 'components', 'ProgramLimitSheet.tsx');
-      assert.match(sheet, /programLimitSheetCopy\(kind, used, limit\)/);
+      assert.match(sheet, /programLimitSheetCopy\(kind, used, limit, replacingStop\)/);
       assert.doesNotMatch(sheet, /'programLimit\.running\.body'/, 'the sheet picks its own words again');
     },
   },
@@ -310,11 +310,16 @@ module.exports = [
       assert.equal(t('en', 'programLimit.over', { used: 5, limit: 3, count: 3 }), '5/3 programmes of your own · delete 3 to make another');
       assert.equal(t('fi', 'programLimit.over', { used: 5, limit: 3, count: 3 }), '5/3 omaa ohjelmaa · poista 3 tehdäksesi uuden');
 
-      // Every door that refuses uses the one message.
+      // Every door that refuses uses the one message: programCapFullMessage,
+      // or for a door that can replace a finished programme the refusal that
+      // wraps it (runningCapRefusalMessage, hunt 10, #20).
       for (const file of [['App.tsx'], ['src', 'app', 'programmeStarts.tsx'], ['src', 'app', 'programmeSwitches.tsx']]) {
         const source = read(...file);
         assert.doesNotMatch(source, /'programs\.cap\.full'/, `${file.join('/')} builds its own refusal toast`);
-        assert.match(source, /programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)/);
+        assert.match(
+          source,
+          /programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)|runningCapRefusalMessage\(preferences\.appLanguage, refusal\)/,
+        );
       }
     },
   },

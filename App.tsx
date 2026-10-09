@@ -37,7 +37,12 @@ import {
   addActiveProgram,
   evaluateProgramAdoption,
 } from './src/lib/activeProgramSet';
-import { programCapFullMessage } from './src/lib/programCapNotice';
+import {
+  programCapFullMessage,
+  RunningCapRefusal,
+  runningCapRefusal,
+  runningCapRefusalMessage,
+} from './src/lib/programCapNotice';
 import { runningSetWithout, type AdoptReadyOptions } from './src/lib/runningProgrammes';
 import {
   buildReadyProgramPlanId,
@@ -57,6 +62,7 @@ import { CoachChatMemory } from './src/lib/coachChatMemory';
 import { CoachAdviceMemoryEntry } from './src/lib/coachAdviceMemory';
 import { clearCoachAdviceMemory } from './src/storage/coachAdviceMemoryStore';
 import type { ChatMessage } from './src/screens/AICoachChatScreen';
+import type { TemplateLeaveGuard } from './src/screens/CreateTemplateScreen';
 import { useProgramExerciseEdit } from './src/app/useProgramExerciseEdit';
 import { useRecoverySheet } from './src/app/useRecoverySheet';
 import {
@@ -369,6 +375,9 @@ function VinhaApp() {
   // The first-run tour's wiring: where its targets are, and which bar item
   // its sweep is resting on. The registry is one object for the app's life.
   const tourRegistry = useRef(createTourTargetRegistry()).current;
+  // The programme builder's question before its draft is dropped. Set while
+  // the builder is open; the tab bar and the AI button ask it first.
+  const templateLeaveGuardRef = useRef<TemplateLeaveGuard | null>(null);
   const [tourSweep, setTourSweep] = useState<TourBarStop | null>(null);
   /**
    * Which section the tour is pointing at. Home reads it to shut its folds
@@ -566,6 +575,18 @@ function VinhaApp() {
   }
 
   /**
+   * The bar's ways out, past the open screen's own unsaved-work question. The
+   * builder asks it on Back; a tab or the AI button unmounted it without
+   * asking and the draft was gone (hunt 10, #7).
+   */
+  function leaveThroughScreenGuard(leave: () => void) {
+    if (templateLeaveGuardRef.current?.(leave)) {
+      return;
+    }
+    leave();
+  }
+
+  /**
    * Guided player (design_handoff_guided_player) is the only way to run a
    * PROGRAMME session.
    *
@@ -712,7 +733,12 @@ function VinhaApp() {
   const [programLimitVisible, setProgramLimitVisible] = useState(false);
   // The running-programme wall on the free tier. The numbers outlive `visible`
   // so the title does not read 0/0 while the sheet fades out.
-  const [runningCapSheet, setRunningCapSheet] = useState({ visible: false, used: 0, cap: 0 });
+  const [runningCapSheet, setRunningCapSheet] = useState<{ visible: boolean } & RunningCapRefusal>({
+    visible: false,
+    used: 0,
+    cap: 0,
+    replacingStop: null,
+  });
   /**
    * The onboarding's last two steps are full-bleed: the program picker's
    * diagonal and the paywall's hero both run to the top edge. The shell
@@ -999,15 +1025,18 @@ function VinhaApp() {
     }
 
     if (decision.kind === 'blocked') {
+      // In the count running now, not the one without the finished programme
+      // it replaces (runningCapRefusal).
+      const refusal = runningCapRefusal(preferences.activePlanIds, decision);
       // Full on the free tier is a sale; full on Pro is not, and sending a
       // paying reader to the paywall would be selling them what they own.
       if (decision.canUpgrade) {
         // The wall first, on this screen, then Pro only if the reader asks —
         // it used to jump straight to the paywall (user 2026-09-14).
-        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
+        setRunningCapSheet({ visible: true, ...refusal });
         return false;
       }
-      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
+      showToast(runningCapRefusalMessage(preferences.appLanguage, refusal));
       return false;
     }
 
@@ -1392,7 +1421,7 @@ function VinhaApp() {
 
     if (decision.kind === 'blocked') {
       if (decision.canUpgrade) {
-        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
+        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap, replacingStop: null });
         return false;
       }
       showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
@@ -1436,7 +1465,17 @@ function VinhaApp() {
       showToast(t(preferences.appLanguage, 'toast.programDeleteWorkoutRunning'));
       return;
     }
-    await deleteWorkoutTemplate(workoutTemplateId);
+    // A refused write rolls the delete back and rejects; the press is wired
+    // as `void`, so uncaught it was a programme that vanished and came back
+    // with no word (hunt 10, #37).
+    try {
+      await deleteWorkoutTemplate(workoutTemplateId);
+    } catch (error) {
+      console.error('Failed to delete the programme', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.programDeleteFailed'));
+      return;
+    }
     void haptics.success();
     leaveDeletedProgramme(workoutTemplateId);
   }
@@ -2089,6 +2128,7 @@ function VinhaApp() {
       sessionAdaptationFor,
       adaptSession,
       templateBuilderDraft,
+      templateLeaveGuardRef,
       exerciseBrowserItems,
       recentExerciseBrowserItems,
       upsertWorkoutTemplate,
@@ -2351,6 +2391,7 @@ function VinhaApp() {
     updatePreferences,
     navigate,
     navigateToTab,
+    leaveThroughScreenGuard,
     tourSweep,
     tourRegistry,
     legalConsentDue,

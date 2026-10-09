@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -56,6 +56,13 @@ interface TemplateSessionState {
   exercises: TemplateExerciseState[];
 }
 
+/**
+ * Asked before a way out the screen does not own (a tab, the AI button) leaves
+ * it. True means the screen took the leaving over: it asks first, and runs
+ * `leave` only if the reader confirms.
+ */
+export type TemplateLeaveGuard = (leave: () => void) => boolean;
+
 interface CreateTemplateScreenProps {
   initialDraft: WorkoutTemplateDraft;
   exerciseLibrary: ExerciseLibraryItem[];
@@ -64,6 +71,11 @@ interface CreateTemplateScreenProps {
   language?: AppLanguage;
   onBack: () => void;
   onSave: (draft: WorkoutTemplateDraft) => Promise<void> | void;
+  /**
+   * Where the shell reads the guard. The tab bar and the AI button unmount
+   * this screen without passing its Back, and dropped a draft nothing stores.
+   */
+  leaveGuardRef?: React.MutableRefObject<TemplateLeaveGuard | null>;
 }
 
 const STEP_LABEL_KEYS: Record<TemplateBuilderStep, I18nKey> = {
@@ -174,6 +186,7 @@ export function CreateTemplateScreen({
   language = 'en',
   onBack,
   onSave,
+  leaveGuardRef,
 }: CreateTemplateScreenProps) {
   const theme = useTheme();
   // The add-exercise sheet is a Modal and cannot read this itself.
@@ -208,6 +221,8 @@ export function CreateTemplateScreen({
   const lastBaseSignature = useRef<string | null>(null);
   const [pendingBase, setPendingBase] = useState<{ preset: SplitPreset | null } | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  /** The way out the leave dialog confirms; null is the screen's own Back. */
+  const pendingLeaveRef = useRef<(() => void) | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const sessionCount = clampDayCount(sessions.length);
@@ -362,6 +377,7 @@ export function CreateTemplateScreen({
       return;
     }
     if (hasUnsavedWork) {
+      pendingLeaveRef.current = null;
       setConfirmingLeave(true);
       return;
     }
@@ -371,6 +387,34 @@ export function CreateTemplateScreen({
   // The route-level back listener stands down on this screen (useRouteBack),
   // so the key walks the steps the way the header's chevron does.
   useHardwareBack(handleBack);
+
+  // The shell's ways out ask the same question Back does, in the same dialog.
+  // Read through a ref: the guard is registered once and must see this
+  // render's draft.
+  const unsavedWorkRef = useRef(hasUnsavedWork);
+  unsavedWorkRef.current = hasUnsavedWork;
+  useEffect(() => {
+    if (!leaveGuardRef) {
+      return undefined;
+    }
+    const guard: TemplateLeaveGuard = (leave) => {
+      if (savingRef.current) {
+        return true;
+      }
+      if (!unsavedWorkRef.current) {
+        return false;
+      }
+      pendingLeaveRef.current = leave;
+      setConfirmingLeave(true);
+      return true;
+    };
+    leaveGuardRef.current = guard;
+    return () => {
+      if (leaveGuardRef.current === guard) {
+        leaveGuardRef.current = null;
+      }
+    };
+  }, [leaveGuardRef]);
 
   function updateSessionName(sessionKey: string, nextName: string) {
     setSessions((current) =>
@@ -932,10 +976,15 @@ export function CreateTemplateScreen({
         title={t(language, 'tpl.leave.title')}
         message={t(language, 'tpl.leave.body')}
         confirmLabel={t(language, 'tpl.leave.confirm')}
-        onCancel={() => setConfirmingLeave(false)}
-        onConfirm={() => {
+        onCancel={() => {
+          pendingLeaveRef.current = null;
           setConfirmingLeave(false);
-          onBack();
+        }}
+        onConfirm={() => {
+          const leave = pendingLeaveRef.current ?? onBack;
+          pendingLeaveRef.current = null;
+          setConfirmingLeave(false);
+          leave();
         }}
       />
     </View>

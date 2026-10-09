@@ -413,7 +413,9 @@ module.exports = [
       // src/app/renderAppShell.tsx (phase C, 2026-10-01).
       assert.match(
         readAppWiring(),
-        /<BottomTabBar[\s\S]{0,900}onAiPress=\{\(\) => navigate\(\{ tab: 'home', screen: 'ai_chat' \}\)\}/,
+        // Through the open screen's unsaved-work question since hunt 10 (#7);
+        // still the chat, for everyone.
+        /<BottomTabBar[\s\S]{0,1100}onAiPress=\{\(\) => leaveThroughScreenGuard\(\(\) => navigate\(\{ tab: 'home', screen: 'ai_chat' \}\)\)\}/,
         'Home lost the ungated door to the coach, so the free answer has none',
       );
 

@@ -50,7 +50,7 @@ import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { haptics } from '../utils/haptics';
-import { CreateTemplateScreen } from '../screens/CreateTemplateScreen';
+import { CreateTemplateScreen, TemplateLeaveGuard } from '../screens/CreateTemplateScreen';
 import { EmptyWorkoutScreen } from '../screens/EmptyWorkoutScreen';
 import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
 import { ExercisesScreen } from '../screens/ExercisesScreen';
@@ -111,7 +111,8 @@ export interface WorkoutTabDeps {
   setupRecommendation: { featuredProgramId?: string | null; secondaryProgramId?: string | null; mismatchNote?: string | null } | null;
   tailoringPreferences: Parameters<typeof buildTailoringBadgeLabels>[0];
   activeProgramTemplateIds: string[];
-  onStopProgram: (workoutTemplateId: string) => Promise<void>;
+  /** False when the write was refused (the toast has said so). */
+  onStopProgram: (workoutTemplateId: string) => Promise<boolean>;
   /** The Active switch turned on — see handleResumeProgram. */
   onResumeProgram: (workoutTemplateId: string) => Promise<void>;
   /** The active programme switched off in favour of another — see handleSwitchActiveProgram. */
@@ -190,6 +191,8 @@ export interface WorkoutTabDeps {
   sessionAdaptationFor: (ref: AdaptedSessionRef | null | undefined) => SessionAdaptation;
   adaptSession: (ref: AdaptedSessionRef, change: (current: SessionAdaptation) => SessionAdaptation) => void;
   templateBuilderDraft: React.ComponentProps<typeof CreateTemplateScreen>['initialDraft'];
+  /** The builder's unsaved-work question, for the tab bar and the AI button. */
+  templateLeaveGuardRef: React.MutableRefObject<TemplateLeaveGuard | null>;
   exerciseBrowserItems: React.ComponentProps<typeof ExercisesScreen>['items'];
   recentExerciseBrowserItems: React.ComponentProps<typeof CreateTemplateScreen>['recentExerciseLibraryItems'];
   upsertWorkoutTemplate: (draft: WorkoutTemplateDraft) => Promise<string>;
@@ -235,7 +238,7 @@ export interface WorkoutTabDeps {
   syncPlanToTemplate: (workoutTemplateId: string) => Promise<void>;
   trackedProgress: Array<{ logs: Array<{ weight: number; repsPerSet: number[]; performedAt: string }> }>;
   workoutSessions: Parameters<typeof computeSeasonProgress>[0];
-  handleEnrolSeason: (season: ProgramSeason, year: number) => void;
+  handleEnrolSeason: (season: ProgramSeason, year: number) => Promise<unknown>;
   programsCatalogItems: ProgramsHomeProps['catalogItems'];
   /** Whether AI-assisted composition opens the chat or the paywall. */
   proUnlocked: boolean;
@@ -300,6 +303,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     sessionAdaptationFor,
     adaptSession,
     templateBuilderDraft,
+    templateLeaveGuardRef,
     exerciseBrowserItems,
     recentExerciseBrowserItems,
     upsertWorkoutTemplate,
@@ -607,7 +611,13 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             : undefined
         }
         onBrowseProgrammes={() => {
-          void onStopProgram(route.workoutTemplateId).then(() => navigate({ tab: 'workout', screen: 'catalog' }));
+          // To the catalogue only once the programme is stopped: a refused
+          // write leaves the reader on its page, with the toast saying why.
+          void onStopProgram(route.workoutTemplateId).then((stopped) => {
+            if (stopped) {
+              navigate({ tab: 'workout', screen: 'catalog' });
+            }
+          });
         }}
         // Only the adopt answers make this programme active; the button's
         // other answers start a session, open an editor or the reader's own
@@ -986,6 +996,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         exerciseLibrary={exerciseBrowserItems}
         recentExerciseLibraryItems={recentExerciseBrowserItems}
         defaultRestSeconds={preferences.defaultRestSeconds}
+        leaveGuardRef={templateLeaveGuardRef}
         onBack={() => navigateBack(workoutHomeRoute)}
         onSave={async (draft) => {
           let workoutTemplateId: string;
@@ -1354,8 +1365,18 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           // filed the reader into summer and handed them the winter programme
           // (audit 3, 2026-09-19). `seasonWindow` above already resolves this
           // correctly, and every other number on the screen reads it.
-          handleEnrolSeason(seasonInView, seasonWindow.year);
-          void handleAdoptReadyProgram(seasonProgramId);
+          //
+          // The programme FIRST, and the row only if it landed, as the goal
+          // flow does. The row was written first, so a join the cap refused
+          // left the screen saying "running" over a programme that was not
+          // (hunt 10, #11).
+          void handleAdoptReadyProgram(seasonProgramId)
+            .then((joined) => (joined ? handleEnrolSeason(seasonInView, seasonWindow.year) : undefined))
+            .catch((error) => {
+              console.error('Failed to join the season', error);
+              void haptics.error();
+              showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+            });
         }}
         onBack={() => navigateBack({ tab: 'workout', screen: 'programs_home' })}
         onOpenProgram={handleOpenProgramDetail}

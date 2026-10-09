@@ -99,7 +99,8 @@ module.exports = [
       // the same one: a backup of an install carrying the phantom is healed.
       // Since 2026-09-26 the terms acceptance rides between the two: the later
       // of this phone's and the backup's (lib/legalAcceptance).
-      assert.match(lib, /const kept = keepDevicePrivacyChoices\(keepDeviceEntitlement\(restored, device\), device\);\s*return reconcileRunningSet\(\s*\{ \.\.\.kept, legalAcceptance: laterLegalAcceptance\(device\.legalAcceptance, restored\.legalAcceptance\) \},\s*plans,\s*\);/);
+      // Wrapped in the completion dismissals' repair since hunt 10 (#19).
+      assert.match(lib, /const kept = keepDevicePrivacyChoices\(keepDeviceEntitlement\(restored, device\), device\);[\s\S]{0,200}?return reconcileCompletionDismissals\(\s*reconcileRunningSet\(\s*\{ \.\.\.kept, legalAcceptance: laterLegalAcceptance\(device\.legalAcceptance, restored\.legalAcceptance\) \},\s*plans,\s*\),\s*plans,\s*\);/);
     },
   },
   {

@@ -169,7 +169,8 @@ module.exports = [
       assert.match(screen, /useHardwareBack\(handleBack\);/);
       assert.match(screen, /const previous = previousTemplateBuilderStep\(step, editing\);/);
       // Leaving with unsaved work asks; the dialog's confirm is what leaves.
-      assert.match(screen, /if \(hasUnsavedWork\) \{\s*setConfirmingLeave\(true\);\s*return;\s*\}\s*onBack\(\);/);
+      // Back's own question clears any way out the shell left pending.
+      assert.match(screen, /if \(hasUnsavedWork\) \{\s*pendingLeaveRef\.current = null;\s*setConfirmingLeave\(true\);\s*return;\s*\}\s*onBack\(\);/);
       // Nothing moves while a save is on its way.
       assert.match(screen, /function handleBack\(\) \{\s*if \(savingRef\.current\) \{\s*return;\s*\}/);
       const routeBack = read('src', 'app', 'useRouteBack.ts');

@@ -17,6 +17,7 @@ import { Gzip, gunzipSync, gzipSync, strFromU8 } from 'fflate';
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { WorkoutHistoryStore } from '../features/workout/workoutTypes';
 import { ONBOARDING_PLAN_PREFIX, reconcileRunningSet } from './activeProgramSet';
+import { reconcileCompletionDismissals } from './programCompletion';
 import { isWorkoutInProgress } from './activeWorkout';
 import { base64ToBytes, bytesToBase64 } from './base64';
 import { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } from './proEntitlement';
@@ -605,8 +606,13 @@ export function preferencesForRestore(
   plans: ReadonlyArray<{ id: string; entries: ReadonlyArray<unknown> }>,
 ): AppPreferences {
   const kept = keepDevicePrivacyChoices(keepDeviceEntitlement(restored, device), device);
-  return reconcileRunningSet(
-    { ...kept, legalAcceptance: laterLegalAcceptance(device.legalAcceptance, restored.legalAcceptance) },
+  // And the completion dismissals the same way: a backup from before PR #350
+  // carries answers for plans it no longer holds (hunt 10, #19).
+  return reconcileCompletionDismissals(
+    reconcileRunningSet(
+      { ...kept, legalAcceptance: laterLegalAcceptance(device.legalAcceptance, restored.legalAcceptance) },
+      plans,
+    ),
     plans,
   );
 }

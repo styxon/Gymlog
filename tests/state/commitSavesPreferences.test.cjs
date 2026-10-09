@@ -33,7 +33,13 @@ module.exports = [
       // is reconcileRunningSet since it also drops ids with no plan behind
       // them (2026-09-21); includeLeadInRunningSet is one step of it.
       assert.match(database, /const preferences = await loadStoredPreferences\(database\.preferences\)/);
-      assert.match(database, /preferences: reconcileRunningSet\(preferences, database\.workoutPlans\)/);
+      // Through reconcileWithPlans since the completion dismissals are
+      // repaired in the same step (hunt 10, #19).
+      assert.match(database, /preferences: reconcileWithPlans\(preferences, database\.workoutPlans\)/);
+      assert.match(
+        functionBody(database, 'function reconcileWithPlans(', ''),
+        /reconcileRunningSet\(preferences, plans\)/,
+      );
       assert.match(
         functionBody(database, 'async function loadStoredPreferences(', ''),
         /\{ \.\.\.fallback, \.\.\.parsed \}/,

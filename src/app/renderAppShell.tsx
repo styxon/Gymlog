@@ -12,6 +12,7 @@ import { ServerNoticeDialog } from '../features/serverNotice/ServerNoticeDialog'
 import { hevyWorkoutsToLoggedSessions, HevyLoggedSession } from '../lib/hevyImport';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
+import type { RunningCapRefusal } from '../lib/programCapNotice';
 import { ProgramSlots } from '../lib/programSlots';
 import { recordRatingCompleted } from '../lib/ratingPrompt';
 import { AppRoute, RootTabKey } from '../navigation/routes';
@@ -21,7 +22,7 @@ import { createUnlessAtLimit } from './programLimitGuard';
 
 type SettingsImportSheetProps = Omit<React.ComponentProps<typeof NewProgramSheet>, 'bottomInset'>;
 type TabBarProps = React.ComponentProps<typeof BottomTabBar>;
-type RunningCapSheet = { visible: boolean; used: number; cap: number };
+type RunningCapSheet = { visible: boolean } & RunningCapRefusal;
 
 /**
  * The app shell and the sheets and dialogs that sit over every screen, moved
@@ -49,6 +50,8 @@ export interface AppShellDeps {
   updatePreferences: (patch: PreferencesPatch) => Promise<void>;
   navigate: (nextRoute: AppRoute) => void;
   navigateToTab: (tab: RootTabKey) => void;
+  /** Runs a bar press through the open screen's unsaved-work question. */
+  leaveThroughScreenGuard: (leave: () => void) => void;
   tourSweep: TabBarProps['sweep'];
   tourRegistry: TabBarProps['tourTargets'];
   legalConsentDue: 'first' | 'changed' | null;
@@ -98,6 +101,7 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
     updatePreferences,
     navigate,
     navigateToTab,
+    leaveThroughScreenGuard,
     tourSweep,
     tourRegistry,
     legalConsentDue,
@@ -196,11 +200,13 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
               route.tab === 'home' &&
               route.screen === 'ai_chat'
             }
-            onTabPress={navigateToTab}
+            // Both unmount the screen under them, so both ask what its Back
+            // asks: the programme builder dropped its draft on a tab press.
+            onTabPress={(tab) => leaveThroughScreenGuard(() => navigateToTab(tab))}
             // The design's rule for the middle button: it opens the chat, for
             // everyone, always. It used to open a paywall-shaped sheet — the
             // app's most valuable placement spent on an advert.
-            onAiPress={() => navigate({ tab: 'home', screen: 'ai_chat' })}
+            onAiPress={() => leaveThroughScreenGuard(() => navigate({ tab: 'home', screen: 'ai_chat' }))}
             sweep={tourSweep}
             tourTargets={tourRegistry}
           />
@@ -312,6 +318,7 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
         kind="running"
         used={runningCapSheet.used}
         limit={runningCapSheet.cap}
+        replacingStop={runningCapSheet.replacingStop}
         language={preferences.appLanguage}
         onClose={() => setRunningCapSheet((current) => ({ ...current, visible: false }))}
         onSeePro={() => {
