@@ -85,7 +85,7 @@ function getBodyPartIcon(bodyPart: BodyPartFilter): VinhaIconName {
   }
 }
 
-export function getItemImage(item: ExerciseLibraryItem) {
+export function getItemImageKey(item: ExerciseLibraryItem) {
   return item.imageKey ?? null;
 }
 
@@ -276,7 +276,7 @@ function ExCard({
   return (
     <Pressable onPress={onOpen} disabled={!onOpen} style={styles.card}>
       <View style={styles.cardImageWrap}>
-        <Thumb imageKey={getItemImage(item)} radius={0} width={CARD_IMAGE_WIDTH} height={104} />
+        <Thumb imageKey={getItemImageKey(item)} radius={0} width={CARD_IMAGE_WIDTH} height={104} />
         <View style={styles.cardStar}>
         </View>
       </View>
@@ -375,7 +375,7 @@ function ExRow({
       title={exerciseListLabel(language, item.name)}
       accessibilityLabel={exerciseNameLabel(language, item.name)}
       meta={exerciseLibraryRowMeta(item, language)}
-      imageKey={getItemImage(item)}
+      imageKey={getItemImageKey(item)}
       onPress={onOpen}
       trailing={
         onOpen ? (

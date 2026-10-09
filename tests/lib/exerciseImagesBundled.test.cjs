@@ -125,6 +125,31 @@ module.exports = [
     },
   },
   {
+    name: 'exercise pictures: no two keys share a file name or an Android resource name',
+    run() {
+      // The file is the key lower-cased, and an Android release build turns
+      // each bundled image into a drawable named from its path: lower case,
+      // '/' to '_', every other character outside [a-z0-9_] dropped
+      // (@react-native/assets-registry getAndroidResourceIdentifier). So
+      // 'Sit-Up' and 'SitUp' would land on one drawable: a duplicate-resource
+      // build error, or one exercise showing the other's picture. Nothing in
+      // the source data stops an `exercise:sync` from bringing such a pair in.
+      const keys = [...new Set(GENERATED_EXERCISE_LIBRARY.map((item) => item.imageKey).filter(Boolean))];
+      const androidName = (key) =>
+        `assets/exercises/${key.toLowerCase()}`.replace(/\//g, '_').replace(/[^a-z0-9_]/g, '').replace(/^assets_/, '');
+      for (const [label, nameOf] of [['file name', (key) => key.toLowerCase()], ['Android resource name', androidName]]) {
+        const seen = new Map();
+        const clashes = [];
+        for (const key of keys) {
+          const name = nameOf(key);
+          if (seen.has(name)) clashes.push(`${seen.get(name)} / ${key} -> ${name}`);
+          else seen.set(name, key);
+        }
+        assert.deepEqual(clashes, [], `Picture keys that share a ${label}: ${clashes.join('; ')}`);
+      }
+    },
+  },
+  {
     name: 'exercise pictures: the files are real WebP images of a sane size, and the folder stays modest',
     run() {
       let total = 0;

@@ -151,6 +151,7 @@ function toImageKey(images) {
 }
 
 function mapExercise(entry) {
+  const imageKey = toImageKey(entry.images);
   const preliminaryBodyPart = mapBodyPart(entry.primaryMuscles, String(entry.category ?? '').toLowerCase());
   const category = mapCategory(entry, preliminaryBodyPart);
   const bodyPart = mapBodyPart(entry.primaryMuscles, category);
@@ -168,7 +169,7 @@ function mapExercise(entry) {
     primaryMuscles: Array.isArray(entry.primaryMuscles) ? entry.primaryMuscles.map((item) => String(item)) : [],
     secondaryMuscles: Array.isArray(entry.secondaryMuscles) ? entry.secondaryMuscles.map((item) => String(item)) : [],
     instructions: Array.isArray(entry.instructions) ? entry.instructions.map((item) => String(item)) : [],
-    ...(toImageKey(entry.images) ? { imageKey: toImageKey(entry.images) } : {}),
+    ...(imageKey ? { imageKey } : {}),
     sourceCategory: entry.category ? String(entry.category) : null,
     sourceEquipment: entry.equipment ? String(entry.equipment) : null,
     sourceMechanic: entry.mechanic ? String(entry.mechanic) : null,
