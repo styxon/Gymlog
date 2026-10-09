@@ -8,7 +8,7 @@ const {
 } = require(dist + 'lib/firstRunSetup.js');
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
 const { buildRecommendationInput } = require(dist + 'lib/recommendationInput.js');
-const { selectWaterfallDecision } = require(dist + 'lib/recommendationWaterfall.js');
+const { reasonOverProgramme, selectWaterfallDecision } = require(dist + 'lib/recommendationWaterfall.js');
 const {
   getRecommendationProgramDefinition,
   isRecoveryOnlyProgram,
@@ -245,6 +245,19 @@ module.exports = [
       );
       assert.equal(lean.alternativeProgramId, 'tpl_3_day_full_body_v1');
       assert.equal(lean.whyAlternative, 'wf.lean_athletic.altStrength');
+      // The scoring asks again after a swap, with whichever form the waterfall
+      // chose: each form turns into the one the new programme needs.
+      for (const key of ['wf.general.primary', 'wf.general.primaryStrength']) {
+        assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.general.primary', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.general.primaryStrength', key);
+      }
+      for (const key of ['wf.lean_athletic.alt', 'wf.lean_athletic.altStrength']) {
+        assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.lean_athletic.alt', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.lean_athletic.altStrength', key);
+      }
+      // Other lines, and a programme the catalog does not know, pass through.
+      assert.equal(reasonOverProgramme('wf.muscle.primary', 'tpl_3_day_full_body_v1'), 'wf.muscle.primary');
+      assert.equal(reasonOverProgramme('wf.general.primary', 'tpl_no_such_programme'), 'wf.general.primary');
       for (const language of ['en', 'fi']) {
         assert.doesNotMatch(t(language, 'wf.general.primaryStrength'), /condition|kunto|energ/i, language);
         assert.doesNotMatch(t(language, 'wf.lean_athletic.altStrength'), /less|vähemmän/i, language);
