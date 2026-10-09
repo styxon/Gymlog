@@ -1,11 +1,18 @@
 import { cautionAreaLoadedBy } from './cautionExerciseFilter';
+import { getRollingWindowStart } from './completedSessions';
 import { FatigueResult } from './fatigueModel';
 import { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { formatShortDate, formatWeight } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { t } from './i18n';
 import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
-import { LiftHistory, normalizedName, sessionBestPoints, stalledRunPoints } from './trainingHistory';
+import {
+  DEFAULT_HISTORY_WINDOW_DAYS,
+  LiftHistory,
+  normalizedName,
+  sessionBestPoints,
+  stalledRunPoints,
+} from './trainingHistory';
 import { AppLanguage, SetupCautionFlag, SetupLevel } from '../types/models';
 
 /**
@@ -28,6 +35,19 @@ import { AppLanguage, SetupCautionFlag, SetupLevel } from '../types/models';
 export const PLATEAU_STALL_SESSIONS = 3;
 
 export { sessionBestPoints };
+
+/**
+ * The lifts a finding about "now" may be made of: trained within the coach
+ * context's window. A lift dropped with an old programme keeps its stall run
+ * forever, and the longest run wins Home's card and a Weekly read slot over
+ * the lift the reader is actually stuck on ("Your Leg Press hasn't moved in
+ * 10 sessions", last trained nine months ago; bug hunt, 2026-10-09). The
+ * histories themselves stay whole — the charts and records want all of them.
+ */
+export function recentLifts(lifts: LiftHistory[], now: number | Date): LiftHistory[] {
+  const cutoff = getRollingWindowStart(now, DEFAULT_HISTORY_WINDOW_DAYS);
+  return lifts.filter((lift) => lift.latest.time >= cutoff);
+}
 
 export interface PlateauDetection {
   liftKey: string;
@@ -88,6 +108,11 @@ export interface WeeklyReadRow {
   bars: number[];
   /** Present on the rows whose conclusion is worth paying for. */
   locked: LockedConclusion | null;
+}
+
+/** Whole weeks a lift's history spans, at least one: "in 1 week", never "in 0 weeks". */
+function spanWeeks(lift: LiftHistory): number {
+  return Math.max(1, Math.round(lift.spanDays / 7));
 }
 
 function lastBars(points: number[], count = 5): number[] {
@@ -360,15 +385,16 @@ export function buildNextSessionMoment(
   const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
   const climbed = lift.weightChangeKg > 0;
   const horizon = horizonStepKg(lift, level);
+  const weeks = spanWeeks(lift);
   return {
     eyebrow: t(language, 'pro.sheet.next.eyebrow'),
     title: t(language, 'pro.sheet.next.title'),
     lead: climbed
-      ? t(language, 'pro.sheet.next.leadClimb', {
+      ? t(language, weeks === 1 ? 'pro.sheet.next.leadClimbOne' : 'pro.sheet.next.leadClimb', {
           lift: liftLabel,
           from: formatWeight(lift.first.topSetWeightKg, 'kg'),
           to: formatWeight(lift.latest.topSetWeightKg, 'kg'),
-          weeks: Math.max(1, Math.round(lift.spanDays / 7)),
+          weeks,
         })
       : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
     bars,
@@ -387,16 +413,26 @@ export function buildNextSessionMoment(
  * The post-session locked insight: the session's most-trained lift with enough
  * history to say something about the next session. Null when nothing honest
  * can be said (fresh users see no lock at all).
+ *
+ * Given a `sessionId` (null counts as one that matches nothing), only a lift
+ * logged in THAT session qualifies: after a leg day with no bench the lock
+ * named the bench, the all-time most-logged lift (bug hunt, 2026-10-09). A
+ * session with no such lift gets no lock rather than one about a lift the
+ * reader did not just train. Left out, any lift qualifies.
  */
 export function pickCompletionLift(
   lifts: LiftHistory[],
   cautionFlags?: SetupCautionFlag[] | null,
+  sessionId?: string | null,
 ): LiftHistory | null {
   // A held lift has no next weight to offer: the lock names the next
   // lift in line instead.
   const candidates = lifts.filter(
     (lift) =>
-      sessionBestPoints(lift).length >= 2 && lift.latest.topSetWeightKg > 0 && !isLiftHeldForCaution(lift, cautionFlags),
+      sessionBestPoints(lift).length >= 2 &&
+      lift.latest.topSetWeightKg > 0 &&
+      !isLiftHeldForCaution(lift, cautionFlags) &&
+      (sessionId === undefined || lift.points.some((point) => point.sessionId === sessionId)),
   );
   return candidates[0] ?? null;
 }
@@ -457,9 +493,9 @@ export function buildWeeklyRead(
         tone: 'green',
         name,
         status: t(language, 'pro.read.improving'),
-        meta: t(language, 'pro.read.improvingMeta', {
+        meta: t(language, spanWeeks(lift) === 1 ? 'pro.read.improvingMetaOne' : 'pro.read.improvingMeta', {
           change: formatWeight(lift.weightChangeKg, 'kg'),
-          weeks: Math.max(1, Math.round(lift.spanDays / 7)),
+          weeks: spanWeeks(lift),
         }),
         bars,
         locked: null,
@@ -503,14 +539,20 @@ export function buildWeeklyRead(
           : tone === 'amber'
             ? t(language, 'pro.read.recoveryElevated')
             : t(language, 'pro.read.recoveryOk'),
-      meta: t(language, 'pro.read.recoveryMeta', { count: fatigue.sessionCount7d }),
+      meta: t(language, fatigue.sessionCount7d === 1 ? 'pro.read.recoveryMetaOne' : 'pro.read.recoveryMeta', {
+        count: fatigue.sessionCount7d,
+      }),
       bars: normalizedBars([fatigue.recoveryScore]),
       locked:
         tone === 'green'
           ? null
           : {
               teaser: t(language, 'pro.read.recoveryTeaser'),
-              body: t(language, 'pro.read.recoveryBody', { count: fatigue.sessionCount7d }),
+              body: t(
+                language,
+                fatigue.sessionCount7d === 1 ? 'pro.read.recoveryBodyOne' : 'pro.read.recoveryBody',
+                { count: fatigue.sessionCount7d },
+              ),
             },
     });
   }

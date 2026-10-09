@@ -118,6 +118,8 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
             sessions: workoutSessions,
             logs: database.exerciseLogs,
             language: preferences.appLanguage,
+            cautionFlags: preferences.setupCautionFlags,
+            level: preferences.setupLevel,
             // The week the analysed session filled, not the week the reader
             // is in: right after a week's last session those are two weeks,
             // and the analysis read "WEEK 2" beside a summary that had just
@@ -134,7 +136,15 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
               : null,
           })
         : null,
-    [analysisSessionId, database, homeActivePlanCard, preferences.appLanguage, workoutSessions],
+    [
+      analysisSessionId,
+      database,
+      homeActivePlanCard,
+      preferences.appLanguage,
+      preferences.setupCautionFlags,
+      preferences.setupLevel,
+      workoutSessions,
+    ],
   );
 
   const profilePlanSummary = useMemo(() => {

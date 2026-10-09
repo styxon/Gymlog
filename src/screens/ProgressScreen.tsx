@@ -21,6 +21,7 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BmiEditSheet, MeasureLogSheet, WeightLogSheet } from '../components/MeasureRulerSheet';
 import { WeightBmiCards } from '../components/WeightBmiCards';
 import {
+  ALL_RANGE_CEILING_DAYS,
   buildBodyweightCardStats,
   buildValueWindow,
   buildWeightWindow,
@@ -978,7 +979,7 @@ export function ProgressScreen({
     // why THIS card was the one photographed drawing an axis into November.
     const ceilingByRange: Record<string, number> = { '7d': 7, '1m': 31, '3m': 91, '6m': 183 };
     const first = earliestEntryMs(bodyweightProgress.entries.map((entry) => entry.recordedAt));
-    const days = capRangeDays(ceilingByRange[resolvedOverviewRange] ?? 730, first, nowMs);
+    const days = capRangeDays(ceilingByRange[resolvedOverviewRange] ?? ALL_RANGE_CEILING_DAYS, first, nowMs);
     // The window follows the data, as the weight card's does: the range chip
     // caps the width and the history sets it, so a short history is a short
     // axis rather than eleven empty weeks before the first entry (user

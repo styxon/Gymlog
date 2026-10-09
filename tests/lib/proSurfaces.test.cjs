@@ -820,9 +820,9 @@ module.exports = [
     run() {
       // App.tsx reads the dismiss list before calling detectPlateau, so a
       // dismissed episode is skipped rather than trusted straight from
-      // proLiftHistories.
+      // the lift histories (the recent ones: a lift dropped months ago is not a finding).
       assert.match(appSource, /dismissedPlateauEpisodes/);
-      assert.match(appSource, /detectPlateau\(proLiftHistories, dismissedPlateauEpisodes, preferences\.setupCautionFlags\)/);
+      assert.match(appSource, /detectPlateau\(proRecentLifts, dismissedPlateauEpisodes, preferences\.setupCautionFlags\)/);
       assert.match(appSource, /episodeKey: plateauEpisodeKey\(proPlateauLift\)/);
       // Dismissing writes the episode key, appended — never a wholesale
       // replace that could drop another lift's earlier dismissal.

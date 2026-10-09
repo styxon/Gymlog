@@ -30,6 +30,8 @@ interface SubscriptionScreenProps {
   entitlement: ProEntitlement;
   /** A promoProUntil that has already passed — the only honest "lapsed" signal. */
   lapsedPromoUntil: string | null;
+  /** A proTrialUntil that has already passed: just as provable a lapse. */
+  lapsedTrialUntil: string | null;
   mockTerm: SubscriptionTermKey;
   mockCancelled: boolean;
   /** When Pro was turned on, ISO. The renewal date is counted from it. */
@@ -108,6 +110,7 @@ function Glyph({ name, color, size = 19 }: { name: string; color: string; size?:
 export function SubscriptionScreen({
   entitlement,
   lapsedPromoUntil,
+  lapsedTrialUntil,
   mockTerm,
   mockCancelled,
   purchasedAt,
@@ -151,6 +154,7 @@ export function SubscriptionScreen({
     mockCancelled,
     purchasedAt,
     lapsedPromoUntil,
+    lapsedTrialUntil,
   });
   const billing = showsMockBilling(model, demoBuild);
   const term = model.term ? SUBSCRIPTION_TERMS[model.term] : null;

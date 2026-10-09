@@ -794,7 +794,12 @@ function VinhaApp() {
     proWeeklyRead,
     proCompletionMoment,
     proCoachSpecimen,
-  } = useProInsights({ database, preferences });
+  } = useProInsights({
+    database,
+    preferences,
+    completedSessionId: completionSummary?.sessionId ?? null,
+    todayKey,
+  });
   // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
   // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
   const homeActiveWorkoutParts = useMemo(() => markingWorkoutFailures(() => {

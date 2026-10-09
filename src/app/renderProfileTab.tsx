@@ -607,6 +607,8 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // Only an *expired* promo means "lapsed". A live one is active Pro and
         // resolveSubscriptionView reads it from the entitlement instead.
         lapsedPromoUntil={proEntitlement.unlocked ? null : preferences.promoProUntil}
+        // The same for the free trial, which ends in its own field.
+        lapsedTrialUntil={proEntitlement.unlocked ? null : preferences.proTrialUntil}
         mockTerm={preferences.mockSubscriptionTerm}
         mockCancelled={preferences.mockSubscriptionCancelledAt !== null}
         purchasedAt={preferences.mockSubscriptionPurchasedAt}

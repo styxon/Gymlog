@@ -230,6 +230,7 @@ const suites = [
   ...require('./lib/widgetResources.test.cjs'),
   ...require('./lib/theming.test.cjs'),
   ...require('./lib/proInsights.test.cjs'),
+  ...require('./lib/bugHunt20261009ProInsights.test.cjs'),
   ...require('./lib/aiCoachQuota.test.cjs'),
   ...require('./lib/coachChat.test.cjs'),
   ...require('./lib/coachDemoMoments.test.cjs'),

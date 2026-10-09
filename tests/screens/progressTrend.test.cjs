@@ -345,7 +345,7 @@ module.exports = [
       // (user 2026-09-07).
       assert.match(
         overviewBranch,
-        /capRangeDays\(ceilingByRange\[resolvedOverviewRange\] \?\? 730, first, nowMs\)/,
+        /capRangeDays\(ceilingByRange\[resolvedOverviewRange\] \?\? ALL_RANGE_CEILING_DAYS, first, nowMs\)/,
         'the trend card went back to taking its range in days raw',
       );
       // The expression, not the prose: the comment above the fix names the
