@@ -44,7 +44,7 @@ export function useProgramsCustomItems(deps: ProgramsCustomItemsDeps) {
       .filter((template) => template.origin !== 'freestyle')
       .map((template) => ({
         id: template.id,
-        name: formatWorkoutDisplayLabel(template.name),
+        name: formatWorkoutDisplayLabel(template.name, t(preferences.appLanguage, 'common.customWorkout')),
         // Built in English here, under a Finnish heading, on the tab that
         // sells programs. The key existed the whole time.
         subtitle: t(

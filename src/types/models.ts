@@ -963,6 +963,12 @@ export interface WorkoutTemplateDraft {
 export interface WorkoutTemplateSessionDraft {
   id?: string;
   name: string;
+  /**
+   * The reader typed this name into the builder's day field. The store ignores
+   * it; the caller reads it to remember the name as the reader's own
+   * (typedSessionNames).
+   */
+  nameTyped?: boolean;
   exercises: ExerciseTemplateDraft[];
 }
 

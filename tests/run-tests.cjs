@@ -216,6 +216,7 @@ const suites = [
   ...require('./lib/setupHandoff.test.cjs'),
   ...require('./lib/quickLayoutExercises.test.cjs'),
   ...require('./lib/templateBuilderSteps.test.cjs'),
+  ...require('./lib/programmeBuilderHunt10.test.cjs'),
   ...require('./lib/exerciseSearch.test.cjs'),
   ...require('./lib/exerciseSearchWords.test.cjs'),
   ...require('./lib/exerciseListLabel.test.cjs'),

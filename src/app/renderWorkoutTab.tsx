@@ -48,6 +48,7 @@ import { isEnrolled } from '../lib/seasonEnrolment';
 import { computeSeasonProgress, countSeasonRecords, resolveSeasonBadges } from '../lib/seasonScoring';
 import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
+import { typedSessionNames } from '../lib/templateBuilderSteps';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { haptics } from '../utils/haptics';
 import { CreateTemplateScreen, TemplateLeaveGuard } from '../screens/CreateTemplateScreen';
@@ -1015,6 +1016,21 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             void haptics.error();
             showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
             return;
+          }
+          // The names the reader typed for the days, remembered as the page's
+          // pencil remembers its own, so the programme page they land on shows
+          // "A" and "Workout B" as typed instead of reading them as placeholders.
+          // Its own write, after the template's: a failure here must not be told
+          // as a failed save.
+          const typedDayNames = typedSessionNames(draft.sessions);
+          if (Object.keys(typedDayNames).length > 0) {
+            try {
+              await updatePreferences((current) => ({
+                readerSessionNames: { ...current.readerSessionNames, ...typedDayNames },
+              }));
+            } catch (error) {
+              console.error('Failed to remember the typed day names', error);
+            }
           }
           // And the plan follows the days. The template is half the record:
           // the plan pins each day to a weekday and decides which comes next,

@@ -36,6 +36,13 @@ export interface TailoringPreferencesInput {
   setupShoulderFriendlySwaps: JointSwapPreference;
   setupElbowFriendlySwaps: JointSwapPreference;
   setupKneeFriendlySwaps: JointSwapPreference;
+  /**
+   * The gear the reader named, which the swap sheet's alternatives are held to
+   * (swapPickerLists). Optional: the tier above is all a score reads, and an
+   * input without them leaves the alternatives unconstrained.
+   */
+  setupTrainingEnvironment?: AppPreferences['setupTrainingEnvironment'];
+  setupEquipmentItems?: string[];
 }
 
 export interface TailoredSwapOption {
@@ -494,7 +501,8 @@ export function buildTailoringPreferences(
     | 'setupShoulderFriendlySwaps'
     | 'setupElbowFriendlySwaps'
     | 'setupKneeFriendlySwaps'
-  >,
+  > &
+    Partial<Pick<AppPreferences, 'setupTrainingEnvironment' | 'setupEquipmentItems'>>,
 ): TailoringPreferencesInput {
   return {
     setupEquipment: preferences.setupEquipment,
@@ -504,6 +512,8 @@ export function buildTailoringPreferences(
     setupShoulderFriendlySwaps: preferences.setupShoulderFriendlySwaps,
     setupElbowFriendlySwaps: preferences.setupElbowFriendlySwaps,
     setupKneeFriendlySwaps: preferences.setupKneeFriendlySwaps,
+    setupTrainingEnvironment: preferences.setupTrainingEnvironment,
+    setupEquipmentItems: preferences.setupEquipmentItems,
   };
 }
 

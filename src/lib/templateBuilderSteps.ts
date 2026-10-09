@@ -21,6 +21,37 @@ export const TEMPLATE_DAY_OPTIONS: readonly TemplateDayCount[] = [1, 2, 3, 4, 5,
 export const MAX_TEMPLATE_DAYS: TemplateDayCount = 6;
 
 /**
+ * The longest a programme's or a day's name can be typed. One number for every
+ * field that takes one: the builder's two inputs had none while the page's two
+ * rename inputs stopped at 60, so a pasted paragraph was a valid name through
+ * one door and impossible to type through the other (hunt 2026-10-09).
+ */
+export const PROGRAMME_NAME_MAX = 60;
+
+/**
+ * The day names the reader typed, by day id, for the preference that makes the
+ * programme page show a name as typed (isReaderNamedSession).
+ *
+ * Only the page's pencil used to write it, so "A", "B", "C" typed into the
+ * builder read as "Workout" three times on the page they were saved to, and
+ * "Workout A" as "Treeni 1": the placeholder rules meant for names the app
+ * wrote were applied to names the reader chose (hunt 2026-10-09). A name the
+ * app wrote — a layout's, a blank day's "Päivä 2" — is not typed.
+ */
+export function typedSessionNames(
+  sessions: ReadonlyArray<{ id?: string; name: string; nameTyped?: boolean }>,
+): Record<string, string> {
+  const typed: Record<string, string> = {};
+  for (const session of sessions) {
+    const name = session.name.trim();
+    if (session.nameTyped && session.id && name) {
+      typed[session.id] = name;
+    }
+  }
+  return typed;
+}
+
+/**
  * A layout to start from. `names` become the days' names and pick their
  * lifts (quickLayoutExercises), so they are English tokens every one of which
  * that module recognises; only the card's label and description translate.

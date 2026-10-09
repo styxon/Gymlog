@@ -35,6 +35,7 @@ import {
   baseSignature,
   clampDayCount,
   canJumpToTemplateBuilderStep,
+  PROGRAMME_NAME_MAX,
   initialTemplateBuilderStep,
   laterTemplateBuilderStep,
   nextTemplateBuilderStep,
@@ -53,6 +54,12 @@ interface TemplateSessionState {
   localKey: string;
   id?: string;
   name: string;
+  /**
+   * The reader typed this name into the day's field. A layout's name, a blank
+   * day's "Päivä 2" and a name loaded from a saved programme are not typed,
+   * and are read by the app's usual naming rules.
+   */
+  nameTyped?: boolean;
   exercises: TemplateExerciseState[];
 }
 
@@ -153,8 +160,13 @@ function buildTemplateDraft(
     // was "New template", stored in English on a Finnish programme (2026-09-14).
     name: name.trim() || t(language, 'tpl.namePlaceholder'),
     sessions: sessions.map((session, index) => ({
-      id: session.id,
+      // Every day leaves with an id, minted here for a new one (the provider
+      // mints the same kind): the names the reader typed are remembered against
+      // it once the programme is stored, and the id of a new day is not known
+      // to the screen after that.
+      id: session.id ?? createId('workout_template_session'),
       name: session.name.trim() || `${t(language, 'tpl.dayWord')} ${index + 1}`,
+      nameTyped: session.nameTyped,
       exercises: session.exercises.map(({ localKey: _localKey, ...exercise }) => exercise),
     })),
   };
@@ -211,6 +223,8 @@ export function CreateTemplateScreen({
    * the length of the fade.
    */
   const lastDayDropCount = useRef(1);
+  /** The day whose Remove button was pressed while it held lifts; asked before it goes. */
+  const [pendingDayRemoval, setPendingDayRemoval] = useState<string | null>(null);
 
   // The guided path. An edit opens on the days, with every step behind it
   // already reached.
@@ -423,10 +437,26 @@ export function CreateTemplateScreen({
           ? {
               ...session,
               name: nextName,
+              nameTyped: true,
             }
           : session,
       ),
     );
+  }
+
+  /**
+   * The same question the day-count chips ask, for the same loss: Remove sits
+   * in the day's header, a thumb from the title, and took the day with every
+   * lift in it and nothing to undo it with. An empty day is not worth asking
+   * about.
+   */
+  function requestSessionRemoval(sessionKey: string) {
+    const target = sessions.find((session) => session.localKey === sessionKey);
+    if (!target || target.exercises.length === 0) {
+      removeSession(sessionKey);
+      return;
+    }
+    setPendingDayRemoval(sessionKey);
   }
 
   function removeSession(sessionKey: string) {
@@ -549,6 +579,7 @@ export function CreateTemplateScreen({
           <TextInput
             value={templateName}
             onChangeText={setTemplateName}
+            maxLength={PROGRAMME_NAME_MAX}
             placeholder={t(language, 'tpl.namePlaceholder')}
             placeholderTextColor={theme.faint}
             selectionColor={theme.purple}
@@ -709,7 +740,7 @@ export function CreateTemplateScreen({
                 </View>
 
                 {sessions.length > 1 ? (
-                  <Pressable onPress={() => removeSession(session.localKey)} style={styles.sessionRemoveButton}>
+                  <Pressable onPress={() => requestSessionRemoval(session.localKey)} style={styles.sessionRemoveButton}>
                     <Text style={styles.sessionRemoveButtonText}>{t(language, 'tpl.remove')}</Text>
                   </Pressable>
                 ) : null}
@@ -718,6 +749,7 @@ export function CreateTemplateScreen({
               <TextInput
                 value={session.name}
                 onChangeText={(value) => updateSessionName(session.localKey, value)}
+                maxLength={PROGRAMME_NAME_MAX}
                 placeholder={t(language, 'tpl.day', { index: index + 1 })}
                 placeholderTextColor={theme.faint}
                 selectionColor={theme.purple}
@@ -946,6 +978,24 @@ export function CreateTemplateScreen({
           setPendingDayDrop(null);
           if (target) {
             setSessionCount(target.nextCount);
+          }
+        }}
+      />
+
+      {/* One day's Remove button, asked on the same terms as the chips above. */}
+      <ConfirmDialog
+        language={language}
+        visible={pendingDayRemoval !== null}
+        destructive
+        title={t(language, 'tpl.removeDay.title')}
+        message={t(language, 'tpl.removeDay.body')}
+        confirmLabel={t(language, 'tpl.dropDays.confirm')}
+        onCancel={() => setPendingDayRemoval(null)}
+        onConfirm={() => {
+          const target = pendingDayRemoval;
+          setPendingDayRemoval(null);
+          if (target) {
+            removeSession(target);
           }
         }}
       />

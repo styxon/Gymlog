@@ -10,6 +10,7 @@ import { ProgramPhotoSlot } from '../components/ProgramPhotoSlot';
 import { ToggleSwitch } from '../components/SettingsUi';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatPercent } from '../lib/format';
+import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
 import { I18nKey, t } from '../lib/i18n';
 import { cycleSchedule, resolveCycleAnchor, sessionSlotOn } from '../lib/trainingSchedule';
 import { sessionForSlot } from '../lib/homeCalendar';
@@ -469,7 +470,7 @@ export function ProgramDetailScreen({
     () => missingEquipment(equipment as never, availableEquipment),
     [availableEquipment, equipment],
   );
-  const displayTitle = formatWorkoutDisplayLabel(program.title, 'Workout plan');
+  const displayTitle = formatWorkoutDisplayLabel(program.title, t(language, 'common.customWorkout'));
   // A day's row name: the shared rule, or the reader's own words if they typed them.
   const dayTitleOf = (session: { id: string; name: string }, index: number) =>
     formatPlanSessionTitle(session, index, displayTitle, language, isReaderNamedSession(readerSessionNames, session));
@@ -846,7 +847,7 @@ export function ProgramDetailScreen({
               onChangeText={setNameDraft}
               autoFocus
               selectTextOnFocus
-              maxLength={60}
+              maxLength={PROGRAMME_NAME_MAX}
               placeholderTextColor={theme.faint}
               style={styles.titleInput}
               onSubmitEditing={commitRename}

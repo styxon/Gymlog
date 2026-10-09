@@ -67,7 +67,7 @@ export function useSetupReadings(deps: SetupReadingsDeps) {
   const tailoringKey = JSON.stringify([
     preferences.setupBodyweightPreference, preferences.setupElbowFriendlySwaps, preferences.setupEquipment,
     preferences.setupFreeWeightsPreference, preferences.setupKneeFriendlySwaps, preferences.setupMachinesPreference,
-    preferences.setupShoulderFriendlySwaps,
+    preferences.setupShoulderFriendlySwaps, preferences.setupTrainingEnvironment, preferences.setupEquipmentItems,
   ]);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const tailoringPreferences = useMemo(() => buildTailoringPreferences(preferences), [tailoringKey]);
