@@ -108,7 +108,7 @@ module.exports = [
       assert.match(
         handler,
         // The delete sits in a try since hunt 10 (#37): a refused write says so.
-        /if \(liveSessionBlocksProgrammeDelete\(workout\.activeSession, workoutTemplateId\)\) \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.programDeleteWorkoutRunning'\)\);\s*return;\s*\}\s*(?:\/\/[^\n]*\s*)*try \{\s*await deleteWorkoutTemplate\(workoutTemplateId\);/,
+        /if \(liveSessionBlocksProgrammeDelete\(workout\.activeSession, workoutTemplateId\)\) \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.programDeleteWorkoutRunning'\)\);\s*return;\s*\}\s*(?:\/\/[^\n]*\n\s*)*try \{\s*await deleteWorkoutTemplate\(workoutTemplateId\);/,
         'the refusal must come before the delete',
       );
       const { t } = require('../../.test-dist/lib/i18n.js');
