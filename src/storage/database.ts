@@ -1547,6 +1547,11 @@ async function readStoredDatabase(): Promise<string | null> {
   }
 }
 
+/** The preferences that describe plans, made to agree with the stored plans. */
+function reconcileWithPlans(preferences: AppPreferences, plans: AppDatabase['workoutPlans']): AppPreferences {
+  return reconcileCompletionDismissals(reconcileRunningSet(preferences, plans), plans);
+}
+
 /**
  * The preferences key, when it has been written, over the ones the blob holds.
  *
@@ -1554,11 +1559,6 @@ async function readStoredDatabase(): Promise<string | null> {
  * an unreadable one is not worth losing a whole database over — both fall back
  * to the blob's own copy, which a full save keeps current.
  */
-/** The preferences that describe plans, made to agree with the stored plans. */
-function reconcileWithPlans(preferences: AppPreferences, plans: AppDatabase['workoutPlans']): AppPreferences {
-  return reconcileCompletionDismissals(reconcileRunningSet(preferences, plans), plans);
-}
-
 async function loadStoredPreferences(fallback: AppPreferences): Promise<AppPreferences> {
   try {
     const raw = await AsyncStorage.getItem(PREFERENCES_STORAGE_KEY);
