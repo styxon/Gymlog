@@ -83,7 +83,7 @@ function publisher(language: AppLanguage): string {
  * show it. A real date, never ahead of the calendar (tests/lib/legalDocuments
  * holds it there).
  */
-export const LEGAL_LAST_UPDATED = '2026-10-03';
+export const LEGAL_LAST_UPDATED = '2026-10-09';
 
 /**
  * What an acceptance is stored against: a string that only ever grows, so a
@@ -101,7 +101,7 @@ export const LEGAL_LAST_UPDATED = '2026-10-03';
  * current value with a suffix ('2026-10-06.1', '.2', …), which still compares
  * as later.
  */
-export const LEGAL_VERSION = '2026-10-06';
+export const LEGAL_VERSION = '2026-10-09';
 
 export type LegalDocumentId = 'privacy' | 'terms';
 
@@ -241,7 +241,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Who helps us run this',
     body: [
-      'We run no servers of our own. Five companies process data for us, under contracts that bind them to handle it only on our instructions and only for the purposes described here.',
+      'We run no servers of our own. Six companies process data for us, under contracts that bind them to handle it only on our instructions and only for the purposes described here.',
     ],
     bullets: [
       'Vercel (United States): runs our server and stores the cloud backups and the usage events. The storage is in the European Union.',
@@ -256,13 +256,18 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
         ios: 'Apple (United States): verifies your Apple sign-in and handles App Store payments. Your relationship with Apple is covered by Apple’s own privacy policy.',
         both: 'Apple (United States): on iPhone, verifies your Apple sign-in and handles App Store payments. Your relationship with Apple is covered by Apple’s own privacy policy.',
       }),
+      pick(p, {
+        android: 'RevenueCat (United States): manages your Pro purchase for us. It receives an anonymous purchase id, your Google Play purchase record and basic app and device information (app version, operating system, store country). It never receives your name, email or card details.',
+        ios: 'RevenueCat (United States): manages your Pro purchase for us. It receives an anonymous purchase id, your App Store purchase record and basic app and device information (app version, operating system, store country). It never receives your name, email or card details.',
+        both: 'RevenueCat (United States): manages your Pro purchase for us. It receives an anonymous purchase id, your Google Play or App Store purchase record and basic app and device information (app version, operating system, store country). It never receives your name, email or card details.',
+      }),
       'Slack (United States): delivers the coach answers you report to us for review, as described above.',
     ],
   },
   {
     heading: 'Data outside the European Union',
     body: [
-      'Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, and possibly Vercel’s processing — the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.',
+      'Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, your purchase record at RevenueCat, and possibly Vercel’s processing — the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.',
     ],
   },
   {
@@ -506,7 +511,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Ketkä auttavat meitä',
     body: [
-      'Meillä ei ole omia palvelimia. Viisi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.',
+      'Meillä ei ole omia palvelimia. Kuusi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.',
     ],
     bullets: [
       'Vercel (Yhdysvallat): ajaa palvelimemme ja säilyttää pilvivarmuuskopiot ja käyttötapahtumat. Tallennustila on Euroopan unionin alueella.',
@@ -521,13 +526,18 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
         ios: 'Apple (Yhdysvallat): vahvistaa Apple-kirjautumisesi ja hoitaa App Storen maksut. Suhdettasi Appleen koskee Applen oma tietosuojakäytäntö.',
         both: 'Apple (Yhdysvallat): vahvistaa iPhonella Apple-kirjautumisesi ja hoitaa App Storen maksut. Suhdettasi Appleen koskee Applen oma tietosuojakäytäntö.',
       }),
+      pick(p, {
+        android: 'RevenueCat (Yhdysvallat): hallinnoi Pro-ostoasi puolestamme. Se saa nimettömän ostotunnisteen, Google Playn ostotietosi sekä perustiedot sovelluksesta ja laitteesta (sovellusversio, käyttöjärjestelmä, kaupan maa). Se ei koskaan saa nimeäsi, sähköpostiasi eikä korttitietojasi.',
+        ios: 'RevenueCat (Yhdysvallat): hallinnoi Pro-ostoasi puolestamme. Se saa nimettömän ostotunnisteen, App Storen ostotietosi sekä perustiedot sovelluksesta ja laitteesta (sovellusversio, käyttöjärjestelmä, kaupan maa). Se ei koskaan saa nimeäsi, sähköpostiasi eikä korttitietojasi.',
+        both: 'RevenueCat (Yhdysvallat): hallinnoi Pro-ostoasi puolestamme. Se saa nimettömän ostotunnisteen, Google Playn tai App Storen ostotietosi sekä perustiedot sovelluksesta ja laitteesta (sovellusversio, käyttöjärjestelmä, kaupan maa). Se ei koskaan saa nimeäsi, sähköpostiasi eikä korttitietojasi.',
+      }),
       'Slack (Yhdysvallat): toimittaa meille tarkistettaviksi valmentajan vastaukset, joista ilmoitat, kuten yllä kuvattiin.',
     ],
   },
   {
     heading: 'Tiedot Euroopan unionin ulkopuolella',
     body: [
-      'Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.',
+      'Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.',
     ],
   },
   {

@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-*Päivitetty 3.10.2026*
+*Päivitetty 9.10.2026*
 
 Mitä Vinha tallentaa, mikä lähtee puhelimestasi ja mitä voit sille tehdä.
 
@@ -110,17 +110,18 @@ Tapahtumat menevät omalle palvelimellemme eivätkä mihinkään muualle. Niitä
 
 ## Ketkä auttavat meitä
 
-Meillä ei ole omia palvelimia. Viisi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.
+Meillä ei ole omia palvelimia. Kuusi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.
 
 - Vercel (Yhdysvallat): ajaa palvelimemme ja säilyttää pilvivarmuuskopiot ja käyttötapahtumat. Tallennustila on Euroopan unionin alueella.
 - Anthropic (Yhdysvallat): vastaa valmentajan kysymyksiin, koostaa ohjelmia ja lukee ohjelmakuvia, kuten yllä kuvattiin.
 - Google (Yhdysvallat): vahvistaa Google-kirjautumisesi ja hoitaa Androidilla Google Playn maksut. Suhdettasi Googleen koskee Googlen oma tietosuojakäytäntö.
 - Apple (Yhdysvallat): vahvistaa iPhonella Apple-kirjautumisesi ja hoitaa App Storen maksut. Suhdettasi Appleen koskee Applen oma tietosuojakäytäntö.
+- RevenueCat (Yhdysvallat): hallinnoi Pro-ostoasi puolestamme. Se saa nimettömän ostotunnisteen, Google Playn tai App Storen ostotietosi sekä perustiedot sovelluksesta ja laitteesta (sovellusversio, käyttöjärjestelmä, kaupan maa). Se ei koskaan saa nimeäsi, sähköpostiasi eikä korttitietojasi.
 - Slack (Yhdysvallat): toimittaa meille tarkistettaviksi valmentajan vastaukset, joista ilmoitat, kuten yllä kuvattiin.
 
 ## Tiedot Euroopan unionin ulkopuolella
 
-Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.
+Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.
 
 ## Millä perusteella käsittelemme tietojasi
 

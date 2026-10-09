@@ -43,6 +43,8 @@ const LEGAL_TEXT_VERSIONS = [
   { version: '2026-10-05', fingerprint: '75c46b9081ec08fb' },
   // The cookie line names the web deletion page's Google sign-in.
   { version: '2026-10-06', fingerprint: '4e2656f3346bf4e6' },
+  // RevenueCat named as the processor of Pro purchases (#344 wired it).
+  { version: '2026-10-09', fingerprint: '14611161a2a511e7' },
 ];
 
 const IDS = ['privacy', 'terms'];
