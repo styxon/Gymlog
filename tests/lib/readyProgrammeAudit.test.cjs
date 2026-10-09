@@ -159,8 +159,16 @@ module.exports = [
           .map(({ exercise }) => findGuidedLibraryIndex(exercise.exerciseName, LIBRARY_NAMES))
           .filter((index) => index !== null),
       )].map((index) => LIBRARY[index]);
+      // The exception is a lift whose only upstream photo shows another
+      // movement (scripts/exercise-pictures.json, owner decision 2026-10-09):
+      // it is meant to open the placeholder, and each must be on that list.
+      const noPicture = new Set(
+        require('../../scripts/exercise-pictures.json').noPicture.map(
+          (key) => `free_${key.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`,
+        ),
+      );
       const photolessGenerated = reached
-        .filter((item) => !item.imageKey && !item.id.startsWith('extra_'))
+        .filter((item) => !item.imageKey && !item.id.startsWith('extra_') && !noPicture.has(item.id))
         .map((item) => item.name);
       assert.deepEqual(photolessGenerated, []);
       // Every extra the library carries is one a programme prescribes, except

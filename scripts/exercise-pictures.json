@@ -1,0 +1,22 @@
+{
+  "_why": "Read by scripts/bundle_exercise_images.py (NO_PICTURE, ACCEPTED_SHARED_FRAMES), by scripts/generate_free_exercise_library.mjs (noPicture) and by tests/lib/exerciseImagesBundled.test.cjs. free-exercise-db reuses one photo for several different exercises. A frame that shows another movement than the exercise's own steps is worse than none, so those keys ship no picture (owner decision 2026-10-09) and the app shows its placeholder. Two keys may share a frame only when it is a fair picture of both, and each such group is named here.",
+  "noPicture": [
+    "Hug_Knees_To_Chest",
+    "Intermediate_Hip_Flexor_and_Quad_Stretch",
+    "IT_Band_and_Glute_Stretch",
+    "Latissimus_Dorsi-SMR",
+    "One_Half_Locust",
+    "Overhead_Stretch",
+    "Quad_Stretch",
+    "Side_Lying_Groin_Stretch"
+  ],
+  "acceptedSharedFrames": [
+    ["90_90_Hamstring", "Leg-Up_Hamstring_Stretch"],
+    ["All_Fours_Quad_Stretch", "Cat_Stretch", "Rear_Leg_Raises"],
+    ["Elbows_Back", "Standing_Toe_Touches"],
+    ["Seated_Calf_Stretch", "Upper_Back-Leg_Grab"],
+    ["Shoulder_Stretch", "Tricep_Side_Stretch", "Triceps_Stretch"],
+    ["Standing_Hip_Flexors", "Standing_Soleus_And_Achilles_Stretch"],
+    ["Standing_Pelvic_Tilt", "Upper_Back_Stretch"]
+  ]
+}

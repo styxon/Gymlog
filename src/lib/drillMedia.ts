@@ -26,7 +26,7 @@ const DRILL_LIBRARY_NAME: Record<string, string> = {
   'home.drill.tricepsOverheadStretch': 'Triceps Stretch',
   'home.drill.latStretchOnRack': 'Standing Lateral Stretch',
   'home.drill.deadHang': 'Pullups',
-  'home.drill.couchStretch': 'Intermediate Hip Flexor and Quad Stretch',
+  'home.drill.couchStretch': 'Kneeling Hip Flexor',
   'home.drill.seatedHamstringStretch': 'Seated Floor Hamstring Stretch',
   // Bodyweight fallbacks for gear-gated drills (equipment-aware warmups).
   'home.drill.jumpingJacks': 'Star Jump',

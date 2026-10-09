@@ -8213,7 +8213,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Hold your arms under the knees, not over (that would put to much pressure on your knee joints).",
       "Slowly pull the knees toward your shoulders. This also stretches your buttocks muscles."
     ],
-    "imageKey": "Hug_Knees_To_Chest",
     "sourceCategory": "stretching",
     "sourceEquipment": null,
     "sourceMechanic": null,
@@ -8812,7 +8811,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Lie face down on the floor, with a rope, belt, or band looped around one foot.",
       "Flex the knee and extend the hip of the leg to be stretched, using both hands to pull on the belt. Your knee and your hip should come off of the floor, creating tension in the hip flexors and quadriceps. Hold the stretch for 10-20 seconds, and repeat on the other leg."
     ],
-    "imageKey": "Intermediate_Hip_Flexor_and_Quad_Stretch",
     "sourceCategory": "stretching",
     "sourceEquipment": "other",
     "sourceMechanic": "compound",
@@ -9048,7 +9046,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Loop a belt, rope, or band around one of your feet, and swing that leg across your body to the opposite side, keeping the leg extended as you lay on the ground. This will be your starting position.",
       "Keeping your foot off of the floor, pull on the belt, using the tension to pull the toes up. Hold for 10-20 seconds, and repeat on the other side."
     ],
-    "imageKey": "IT_Band_and_Glute_Stretch",
     "sourceCategory": "stretching",
     "sourceEquipment": "other",
     "sourceMechanic": null,
@@ -10160,7 +10157,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "While lying on the floor, place a foam roll under your back and to one side, just behind your arm pit. This will be your starting position.",
       "Keep the arm of the side being stretched behind and to the side of you as you shift your weight onto your lats, keeping your upper body off of the ground. Hold for 10-30 seconds, and switch sides."
     ],
-    "imageKey": "Latissimus_Dorsi-SMR",
     "sourceCategory": "stretching",
     "sourceEquipment": "foam roll",
     "sourceMechanic": "isolation",
@@ -12201,7 +12197,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Bend your right knee so you can hold the foot in your right hand.",
       "Lift the foot in the air and simultaneously lift your shoulders off the floor. This also stretches the right hip flexor and the chest and shoulders. Switch sides. If it doesn't bother your back, you can try it with both arms and legs at the same time."
     ],
-    "imageKey": "One_Half_Locust",
     "sourceCategory": "stretching",
     "sourceEquipment": null,
     "sourceMechanic": null,
@@ -13038,7 +13033,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Standing straight up, lace your fingers together and open your palms to the ceiling. Keep your shoulders down as you extend your arms up.",
       "To create a full torso stretch, pull your tailbone down and stabilize your torso as you do this. Stretch the muscles on both the front and the back of the torso."
     ],
-    "imageKey": "Overhead_Stretch",
     "sourceCategory": "stretching",
     "sourceEquipment": null,
     "sourceMechanic": "compound",
@@ -14228,7 +14222,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Lay on your side. Loop a belt, rope, or band around your top foot. Flex the knee and extend your hip, attempting to touch your glutes with your foot, and holding the belt with your hands. This will be your starting position.",
       "With the belt being held over the shoulder or overhead, gently pull to increase the stretch in the quadriceps. Hold for 10-20 seconds, and then switch sides."
     ],
-    "imageKey": "Quad_Stretch",
     "sourceCategory": "stretching",
     "sourceEquipment": "other",
     "sourceMechanic": null,
@@ -16568,7 +16561,6 @@ export const GENERATED_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
       "Rest your head on your right hand or shoulder. Lift your left leg upward and hold it by the back of the knee (easier) or the foot (harder).",
       "Pull your left knee in toward your left shoulder and simultaneously press your foot or knee down to the floor. To intensify this stretch, straighten your left leg. Switch sides."
     ],
-    "imageKey": "Side_Lying_Groin_Stretch",
     "sourceCategory": "stretching",
     "sourceEquipment": null,
     "sourceMechanic": "isolation",
