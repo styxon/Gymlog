@@ -101,6 +101,8 @@ module.exports = [
       // Nothing expired, or the reader has been somewhere since.
       assert.equal(guidedRestToExtend(steps, null, restIndex + 1), null);
       assert.equal(guidedRestToExtend(steps, restIndex, restIndex + 2), null);
+      assert.equal(steps[restIndex + 3].type, 'set');
+      assert.equal(guidedRestToExtend(steps, restIndex, restIndex + 3), null);
       assert.equal(guidedRestToExtend(steps, restIndex, restIndex), null);
       // Not a rest at all, or one that is not stretched.
       assert.equal(guidedRestToExtend(steps, 0, 1), null);
