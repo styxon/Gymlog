@@ -16,6 +16,14 @@ import { AppState } from 'react-native';
 
 import { forgetAiCoachLog, isAiCoachLiveConfigured, lastAiLogCarriedAt } from '../lib/aiCoachClient';
 import { aiLogRetryAt, createAiLogDeletionRunner } from '../lib/aiLogDeletion';
+import {
+  AI_LOG_RETRY_PACING,
+  EMPTY_PACING,
+  notePacingOutcome,
+  notePacingSent,
+  pacingWaitMs,
+  type PacingState,
+} from '../lib/requestPacing';
 
 /** Past the moment itself, so a timer that fires a little early still finds the delete final. */
 const SETTLE_MARGIN_MS = 1000;
@@ -29,6 +37,7 @@ export function usePendingAiLogDeletions(input: {
   pendingRef.current = input.pending;
   const clearRef = useRef(input.clear);
   clearRef.current = input.clear;
+  const pacingRef = useRef<PacingState>(EMPTY_PACING);
 
   const [run] = useState(() =>
     createAiLogDeletionRunner({
@@ -62,10 +71,25 @@ export function usePendingAiLogDeletions(input: {
     if (!input.hydrated) {
       return undefined;
     }
+    // Paced (lib/requestPacing): a server that keeps refusing a delete is
+    // asked on a return to the app, not on every one of them. The settle
+    // timer above and Reset's own delete go through `run` unpaced - each is
+    // a single, dated ask.
     const retry = () => {
-      if (pendingRef.current.length > 0) {
-        void run(pendingRef.current);
+      if (pendingRef.current.length === 0) {
+        return;
       }
+      if (pacingWaitMs(pacingRef.current, AI_LOG_RETRY_PACING, Date.now()) > 0) {
+        return;
+      }
+      pacingRef.current = notePacingSent(pacingRef.current, AI_LOG_RETRY_PACING, Date.now());
+      const settle = (confirmed: boolean) => {
+        pacingRef.current = notePacingOutcome(pacingRef.current, confirmed, Date.now());
+      };
+      void run(pendingRef.current).then(
+        (stillOwed) => settle(stillOwed.length === 0),
+        () => settle(false),
+      );
     };
     retry();
     const subscription = AppState.addEventListener('change', (state) => {

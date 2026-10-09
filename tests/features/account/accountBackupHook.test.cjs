@@ -1828,4 +1828,36 @@ module.exports = [
       assert.match(t('en', 'account.restore.incomplete'), /partly/);
     },
   },
+  {
+    // 2026-10-09: Vercel is on on-demand billing, so a bug that keeps changing
+    // the data must not turn into an upload every quiet pause. The ceiling is
+    // lib/requestPacing AUTO_BACKUP_PACING; nothing is dropped, the look waits.
+    name: 'account hook: data that changes after every backup cannot start more than sixty automatic backups an hour, and the rest is taken when the budget has room',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const realNow = Date.now;
+      let now = 1_900_000_000_000;
+      Date.now = () => now;
+      try {
+        await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
+          // A loop that edits the data once per quiet pause, for ninety minutes of the clock.
+          for (let round = 0; round < 675; round += 1) {
+            now += QUIET_MS;
+            await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: `n${round}` } }));
+            await env.advance(QUIET_MS);
+          }
+          // 675 quiet pauses are ninety minutes: sixty in the first hour, then the budget refills.
+          assert.ok(env.calls.upload <= 60 + 60, `${env.calls.upload} uploads in ninety minutes`);
+          assert.ok(env.calls.upload >= 60, 'the budget is a ceiling, not a stop');
+
+          // Nothing was lost: once the budget has room the latest data is the cloud copy.
+          now += 2 * 60 * 60 * 1000;
+          await env.advance(2 * 60 * 60 * 1000);
+          assert.equal(env.server.blob.database.preferences.profileName, 'n674', 'the held-back look never ran');
+        });
+      } finally {
+        Date.now = realNow;
+      }
+    },
+  },
 ];

@@ -155,8 +155,13 @@ module.exports = [
       assert.match(code(read('src', 'app', 'renderProfileTab.tsx')), /onBackupNow: \(\) => void handleAccountBackupNow\(\)/);
 
       // The automatic path goes through the same planner: it runs backupNow,
-      // which is runBackup(false), and only when the data differs.
-      assert.match(hook, /if \(current\.lastBackupFingerprint === accountBackupFingerprint\(database, workoutHistory\)\) \{\s*return;\s*\}\s*void backupNowRef\.current\(\);/);
+      // which is runBackup(false), and only when the data differs - and under
+      // the automatic backup's hourly budget (lib/requestPacing), which holds
+      // a look back rather than dropping it.
+      assert.match(
+        hook,
+        /if \(current\.lastBackupFingerprint === accountBackupFingerprint\(database, workoutHistory\)\) \{\s*return;\s*\}[^]*?pacingWaitMs\(backupPacingRef\.current, AUTO_BACKUP_PACING[^]*?void backupNowRef\.current\(\);/,
+      );
       // Every count the account keeps is taken the one way, both stores at
       // once (syncCounts of countBackup), so the stored size and the local
       // one it is compared with cannot be counted differently.

@@ -28,6 +28,14 @@ import {
   isValidEvent,
   takeBatch,
 } from '../../lib/analytics';
+import {
+  ANALYTICS_FLUSH_PACING,
+  EMPTY_PACING,
+  notePacingOutcome,
+  notePacingSent,
+  pacingWaitMs,
+  type PacingState,
+} from '../../lib/requestPacing';
 import { appVersionHeaders, noteServerAnswer } from '../appUpdate/appUpdateSignal';
 
 const ANALYTICS_URL = (process.env.EXPO_PUBLIC_ANALYTICS_URL ?? '').trim();
@@ -60,6 +68,13 @@ let memory: StoredState | null = null;
 let earlyEvents: AnalyticsEvent[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let flushing = false;
+/**
+ * When batches left and how the last ones fared (lib/requestPacing). Whatever
+ * raises events - however often - at most ANALYTICS_FLUSH_PACING's budget of
+ * requests leaves the phone, and a server that is failing is not asked again
+ * every five seconds for as long as the reader keeps tapping.
+ */
+let pacing: PacingState = EMPTY_PACING;
 /**
  * null until App.tsx has read the preference: events raised before that are
  * queued, and dropped if the answer turns out to be no. Only an explicit
@@ -177,6 +192,8 @@ async function flush(): Promise<void> {
   }
   flushing = true;
   const batch = takeBatch(state.queue);
+  pacing = notePacingSent(pacing, ANALYTICS_FLUSH_PACING, Date.now());
+  let settled = false;
   try {
     const response = await fetch(ANALYTICS_URL, {
       method: 'POST',
@@ -196,6 +213,8 @@ async function flush(): Promise<void> {
     // about this batch).
     const ownRefusal = body !== null && body.ok === false && typeof body.error === 'string';
     if (response.ok || (ownRefusal && isFinalRefusal(response.status))) {
+      settled = true;
+      pacing = notePacingOutcome(pacing, true, Date.now());
       state.queue = state.queue.slice(batch.length);
       await persist();
       if (state.queue.length > 0) {
@@ -205,6 +224,11 @@ async function flush(): Promise<void> {
   } catch {
     // Offline. The queue holds; the next foreground tries again.
   } finally {
+    // A batch the server took or refused for good is an answer; anything
+    // else - no network, a 5xx, a rate limit - is a failure the next try waits out.
+    if (!settled) {
+      pacing = notePacingOutcome(pacing, false, Date.now());
+    }
     flushing = false;
   }
 }
@@ -216,7 +240,7 @@ function scheduleFlush(): void {
   flushTimer = setTimeout(() => {
     flushTimer = null;
     void flush();
-  }, FLUSH_DELAY_MS);
+  }, Math.max(FLUSH_DELAY_MS, pacingWaitMs(pacing, ANALYTICS_FLUSH_PACING, Date.now())));
 }
 
 /**

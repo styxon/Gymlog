@@ -54,6 +54,7 @@ import {
   uploadNeedsConsent,
 } from '../../lib/accountBackup';
 import { randomHex } from '../../lib/aiCoachLogId';
+import { AUTO_BACKUP_PACING, EMPTY_PACING, notePacingSent, pacingWaitMs, type PacingState } from '../../lib/requestPacing';
 import { reportOperationFailed } from '../errorReporting/errorReporter';
 import {
   BACKUP_CHANGED,
@@ -1472,6 +1473,18 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   /** A look that came while another account operation ran; taken once that ends. */
   const lookWaitingRef = useRef(false);
   const lookRef = useRef<() => void>(() => undefined);
+  /** The automatic backup's starts, for its budget; and the look waiting for the budget to have room. */
+  const backupPacingRef = useRef<PacingState>(EMPTY_PACING);
+  const pacedLookTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(
+    () => () => {
+      if (pacedLookTimerRef.current) {
+        clearTimeout(pacedLookTimerRef.current);
+        pacedLookTimerRef.current = null;
+      }
+    },
+    [],
+  );
   lookRef.current = () => {
     const current = accountRef.current;
     const { database, hydrated, workoutHistory } = latestRef.current;
@@ -1486,6 +1499,21 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
     if (current.lastBackupFingerprint === accountBackupFingerprint(database, workoutHistory)) {
       return;
     }
+    // The ceiling under every trigger (lib/requestPacing): a bug that keeps
+    // changing the data would otherwise upload the whole history every
+    // quiet pause for as long as the app is open. Held back, the look is
+    // taken again when the budget has room - nothing is dropped.
+    const wait = pacingWaitMs(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
+    if (wait > 0) {
+      if (!pacedLookTimerRef.current) {
+        pacedLookTimerRef.current = setTimeout(() => {
+          pacedLookTimerRef.current = null;
+          lookRef.current();
+        }, wait);
+      }
+      return;
+    }
+    backupPacingRef.current = notePacingSent(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
     void backupNowRef.current();
   };
 
