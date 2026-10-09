@@ -58,7 +58,7 @@ module.exports = [
       assert.equal(free(1), null, 'a count nobody is near is a sign about nothing');
       assert.equal(free(2), 'lastPlace');
       assert.equal(free(3), 'atCap');
-      assert.equal(free(4), 'atCap', 'over the limit from before is still the wall');
+      assert.equal(free(4), 'over', 'over the limit from before is still the wall, and says how many it takes');
       assert.equal(programSlotsLineKey(resolveProgramSlots(9, true)), null);
 
       assert.equal(t('fi', 'programLimit.lastPlace', { used: 2, limit: 3 }), '2/3 omaa ohjelmaa · yksi paikka jäljellä');
@@ -78,7 +78,8 @@ module.exports = [
       assert.equal(t('en', 'programLimit.cta'), 'Unlock more programmes');
 
       const sheet = read('src', 'components', 'ProgramLimitSheet.tsx');
-      assert.match(sheet, /kind === 'running' \? 'programLimit\.running\.title' : 'programLimit\.title'/);
+      // The words are picked in programLimitSheetCopy (at the limit or past it).
+      assert.match(sheet, /programLimitSheetCopy\(kind, used, limit\)/);
       assert.doesNotMatch(sheet, /programLimit\.count/, 'the count is in the title now, not said twice');
     },
   },
@@ -131,7 +132,7 @@ module.exports = [
           `${adopt} confirms before the write resolves, or leaves the page`,
         );
       }
-      assert.match(body(app, 'async function handleAdoptCustomProgram'), /return false;\s*\}\s*showToast\(t\(preferences\.appLanguage, 'programs\.cap\.full'/);
+      assert.match(body(app, 'async function handleAdoptCustomProgram'), /return false;\s*\}\s*showToast\(programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)/);
 
       const programs = read('src', 'screens', 'ProgramsHomeScreen.tsx');
       assert.match(programs, /\{ownProgramsLine \? <Text style=\{styles\.ownProgramsLine\}>\{ownProgramsLine\}<\/Text> : null\}/);

@@ -14,7 +14,7 @@
  * `ready_plan_<id>` — and both questions below turn on that fact.
  */
 
-import { planCanRun } from './activeProgramSet';
+import { planCanRun, removeActiveProgram } from './activeProgramSet';
 
 /** The only part of a plan these rules read. */
 export interface RunningPlan {
@@ -117,6 +117,67 @@ export function stopProgramme(input: {
   return {
     activePlanIds,
     activePlanId: planIds.includes(input.activePlanId ?? '') ? activePlanIds[0] ?? null : input.activePlanId,
+  };
+}
+
+/**
+ * How a programme is taken on (handleAdoptReadyProgram and what it calls).
+ */
+export interface AdoptReadyOptions {
+  /** Home leads with it from now on. */
+  lead?: boolean;
+  /**
+   * The plan it takes the place of: that programme's running slot goes in the
+   * same write that starts this one (runningSetWithout). Taking the finished
+   * programme's place is taking its lead too, so this implies `lead`.
+   */
+  replacingPlanId?: string;
+}
+
+/**
+ * The running set once a finished programme gives its place to the next one.
+ *
+ * "Start next" on the completion card used to ADD: the finished programme kept
+ * running beside its successor, kept a slot against the cap, and a free reader
+ * at 2/2 who stepped up once met the "places full, unlock Pro" sheet for it
+ * (#bugs 2026-10-09; owner: the next programme REPLACES the finished one).
+ * The caller measures the cap against this set and writes the new programme
+ * into it in the same preferences write, so the finished one is never half
+ * stopped. Only its running slot goes: its plan record and every session it
+ * logged stay, which is what makes it a stopped programme and not a deleted one.
+ *
+ * Stopped by programme and not by plan id (stopProgramme), for the same reason
+ * stopping is: a programme held under two plan ids would keep running under the
+ * other. The same set, de-duplicated, when nothing is being replaced.
+ */
+export function runningSetWithout(input: {
+  activePlanId: string | null;
+  activePlanIds: readonly string[];
+  plans: readonly RunningPlan[];
+  replacingPlanId: string | null | undefined;
+}): { activePlanId: string | null; activePlanIds: string[] } {
+  const replacing = input.replacingPlanId;
+  const templateId = replacing
+    ? input.plans.find((plan) => plan.id === replacing)?.entries[0]?.workoutTemplateId
+    : undefined;
+  const stopped = templateId
+    ? stopProgramme({
+        activePlanId: input.activePlanId,
+        activePlanIds: input.activePlanIds,
+        plans: input.plans,
+        templateId,
+      })
+    : null;
+  if (stopped) {
+    return stopped;
+  }
+  // No plan record to read the programme from, or none of it running: the id alone.
+  const activePlanIds = replacing
+    ? removeActiveProgram(input.activePlanIds, replacing)
+    : [...new Set(input.activePlanIds)];
+  return {
+    activePlanIds,
+    activePlanId: replacing && input.activePlanId === replacing ? activePlanIds[0] ?? null : input.activePlanId,
   };
 }
 

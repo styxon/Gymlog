@@ -94,9 +94,14 @@ export class ProgramLimitReachedError extends Error {
  * place left and at the wall. The point is that the limit sheet never arrives
  * as news. Pro has no limit and no line.
  */
-export function programSlotsLineKey(slots: ProgramSlots): 'lastPlace' | 'atCap' | null {
+export function programSlotsLineKey(slots: ProgramSlots): 'lastPlace' | 'atCap' | 'over' | null {
   if (slots.limit === null) {
     return null;
+  }
+  // Past the limit (a lapsed Pro keeps what it built): deleting one still
+  // leaves the wall standing, and the line says how many it takes.
+  if (slots.used > slots.limit) {
+    return 'over';
   }
   if (slots.used >= slots.limit) {
     return 'atCap';

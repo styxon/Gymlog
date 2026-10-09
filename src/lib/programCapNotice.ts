@@ -1,4 +1,6 @@
-import { resolveActiveProgramCap } from './activeProgramSet';
+import { placesToFree, resolveActiveProgramCap } from './activeProgramSet';
+import { I18nKey, t } from './i18n';
+import type { AppLanguage } from '../types/models';
 
 /**
  * How full the set of running programmes is, for the line the programme list
@@ -28,6 +30,11 @@ export interface ProgramCapState {
   atCap: boolean;
   /** One place left. The last moment a warning can still be useful. */
   lastPlace: boolean;
+  /**
+   * Past the cap, not at it: a lapsed Pro keeps what it was running. Stopping
+   * one is not enough to start another, and the line has to say how many.
+   */
+  over: boolean;
 }
 
 export interface ProgramCapStateInput {
@@ -47,6 +54,7 @@ export function describeProgramCap({ activePlanIds, proUnlocked }: ProgramCapSta
     cap,
     atCap: used >= cap,
     lastPlace: used === cap - 1,
+    over: used > cap,
   };
 }
 
@@ -56,9 +64,48 @@ export function describeProgramCap({ activePlanIds, proUnlocked }: ProgramCapSta
  * Null is the common answer, and it is the whole design: a reader with one
  * programme of five places is not being warned about anything.
  */
-export function programCapLineKey(state: ProgramCapState): 'atCap' | 'lastPlace' | null {
+export function programCapLineKey(state: ProgramCapState): 'over' | 'atCap' | 'lastPlace' | null {
+  if (state.over) {
+    return 'over';
+  }
   if (state.atCap) {
     return 'atCap';
   }
   return state.lastPlace ? 'lastPlace' : null;
+}
+
+/**
+ * The refusal toast for a full set (a Pro reader at five, who has no sheet to
+ * be sent to). "You are running {cap}" was only true AT the cap; past it, it
+ * named the wrong number and a drop of one was not enough.
+ */
+export function programCapFullMessage(language: AppLanguage, used: number, cap: number): string {
+  return used > cap
+    ? t(language, 'programs.cap.fullOver', { used, cap, count: placesToFree(used, cap) })
+    : t(language, 'programs.cap.full', { cap });
+}
+
+/**
+ * The limit sheet's words for how full the set is.
+ *
+ * The same sheet for both limits (own programmes, programmes running), and for
+ * both a reader AT the limit and one past it. Past it the title and body name
+ * how many to give up before one more fits; "stop one" was a promise the
+ * second refusal broke.
+ */
+export function programLimitSheetCopy(
+  kind: 'own' | 'running',
+  used: number,
+  limit: number,
+): { titleKey: I18nKey; bodyKey: I18nKey; vars: { used: number; limit: number; count: number } } {
+  const over = used > limit;
+  const vars = { used, limit, count: placesToFree(used, limit) };
+  if (kind === 'running') {
+    return over
+      ? { titleKey: 'programLimit.running.overTitle', bodyKey: 'programLimit.running.overBody', vars }
+      : { titleKey: 'programLimit.running.title', bodyKey: 'programLimit.running.body', vars };
+  }
+  return over
+    ? { titleKey: 'programLimit.overTitle', bodyKey: 'programLimit.overBody', vars }
+    : { titleKey: 'programLimit.title', bodyKey: 'programLimit.body', vars };
 }

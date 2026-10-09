@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { placesToFree } from '../lib/activeProgramSet';
 import { I18nKey, t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { describeProgramCap, programCapLineKey } from '../lib/programCapNotice';
@@ -41,7 +42,11 @@ export function useProgramCapLine(deps: ProgramCapLineDeps) {
     });
     const key = programCapLineKey(state);
     return key
-      ? t(preferences.appLanguage, `programs.cap.${key}` as I18nKey, { used: state.used, cap: state.cap })
+      ? t(preferences.appLanguage, `programs.cap.${key}` as I18nKey, {
+          used: state.used,
+          cap: state.cap,
+          count: placesToFree(state.used, state.cap),
+        })
       : null;
   }, [preferences]);
 

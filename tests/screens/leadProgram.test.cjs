@@ -28,7 +28,7 @@ module.exports = [
       // The helper over the shell, to its own closing brace: it moves to
       // src/app in phase C (2026-10-01). The adoptions calling it stay here.
       const promote = functionBody(readAppWiring(), 'async function promoteHeldProgramToLead(');
-      assert.match(promote, /async function promoteHeldProgramToLead\(workoutTemplateId: string\)/);
+      assert.match(promote, /async function promoteHeldProgramToLead\(workoutTemplateId: string(, replacingPlanId\?: string)?\)/);
       assert.match(appSource, /if \(options\?\.lead\) \{\s*\r?\n\s*await promoteHeldProgramToLead/);
       // Matched on the template, because the same programme can be held under a
       // plan id minted by onboarding, by adoption, or by a season.

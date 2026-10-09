@@ -4,6 +4,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { evaluateProgramAdoption } from '../lib/activeProgramSet';
+import { programCapFullMessage } from '../lib/programCapNotice';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { t } from '../lib/i18n';
@@ -12,7 +13,7 @@ import { resolveProEntitlement, resolveProgressionOptions } from '../lib/proEnti
 import { buildReadySessionRuntimeTemplate } from '../lib/programDetails';
 import { alignHistoryToCopiedDays, programmeHistoryIds } from '../lib/programLineage';
 import { isLightenPending, lightenedFatigueSignal, lightenRuntimeTemplate } from '../lib/recoverySheet';
-import { resumeProgramme } from '../lib/runningProgrammes';
+import { resumeProgramme, runningSetWithout, type AdoptReadyOptions } from '../lib/runningProgrammes';
 import {
   type AdaptedSessionRef,
   applySessionAdaptation,
@@ -361,11 +362,20 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
    */
   async function resumeHeldProgramme(
     templateId: string,
-    options?: { lead?: boolean },
+    options?: AdoptReadyOptions,
   ): Promise<boolean | null> {
-    const resumed = resumeProgramme({
+    // Without the programme this one replaces: the cap is measured against
+    // what will be running, and the written set never carries the finished
+    // one along (runningSetWithout).
+    const running = runningSetWithout({
       activePlanId: preferences.activePlanId,
       activePlanIds: preferences.activePlanIds,
+      plans: database.workoutPlans,
+      replacingPlanId: options?.replacingPlanId,
+    });
+    const resumed = resumeProgramme({
+      activePlanId: running.activePlanId,
+      activePlanIds: running.activePlanIds,
       plans: database.workoutPlans,
       templateId,
     });
@@ -373,7 +383,7 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
       return null;
     }
     const decision = evaluateProgramAdoption({
-      activePlanIds: preferences.activePlanIds,
+      activePlanIds: running.activePlanIds,
       targetPlanId: resumed.planId,
       proUnlocked: resolveProEntitlement(preferences).unlocked,
     });
@@ -382,7 +392,7 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return false;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return false;
     }
     await updatePreferences({
@@ -390,7 +400,7 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
       // resumeProgramme names the resumed plan as activePlanId whichever way,
       // so the lead is kept here: joining a season must not quietly demote the
       // programme at the top of Home.
-      activePlanId: options?.lead ? resumed.planId : preferences.activePlanId ?? resumed.planId,
+      activePlanId: options?.lead ? resumed.planId : running.activePlanId ?? resumed.planId,
     });
     // Counted here, after the write, for every door that resumes through
     // this — and only when the plan was not already running (analytics

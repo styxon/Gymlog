@@ -4,6 +4,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { CutButton } from './CutButton';
 import { CutSurface } from './CutSurface';
 import { t } from '../lib/i18n';
+import { programLimitSheetCopy } from '../lib/programCapNotice';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 
@@ -48,6 +49,7 @@ export function ProgramLimitSheet({
 }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
+  const copy = programLimitSheetCopy(kind, used, limit);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -57,12 +59,8 @@ export function ProgramLimitSheet({
           <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
             {/* The count sits in the title ("· 3/3"). It used to be a pill of
                 its own under the body, the same number said twice. */}
-            <Text style={styles.title}>
-              {t(language, kind === 'running' ? 'programLimit.running.title' : 'programLimit.title', { used, limit })}
-            </Text>
-            <Text style={styles.body}>
-              {t(language, kind === 'running' ? 'programLimit.running.body' : 'programLimit.body', { limit })}
-            </Text>
+            <Text style={styles.title}>{t(language, copy.titleKey, copy.vars)}</Text>
+            <Text style={styles.body}>{t(language, copy.bodyKey, copy.vars)}</Text>
             <View style={styles.actions}>
               <CutButton size="lg" label={t(language, 'programLimit.cta')} onPress={onSeePro} />
               <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8} style={styles.later}>

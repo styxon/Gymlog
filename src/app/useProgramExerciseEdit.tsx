@@ -3,6 +3,7 @@ import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
 import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { addActiveProgram, removeActiveProgram } from '../lib/activeProgramSet';
+import { carryCompletionDismissal } from '../lib/programCompletion';
 import { buildDuplicatedCustomProgramDraft } from '../lib/customProgramDuplication';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
@@ -618,8 +619,8 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       // the reader had one programme before this and must have one after. Only
       // when the ready one was actually running: editing a day of a programme
       // they are merely browsing must not adopt anything.
-      await updatePreferences(
-        wasRunning
+      await updatePreferences({
+        ...(wasRunning
           ? {
               activePlanIds: addActiveProgram(
                 removeActiveProgram(preferences.activePlanIds, readyPlanId),
@@ -632,8 +633,20 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
               activePlanId:
                 preferences.activePlanId === readyPlanId ? plan.id : preferences.activePlanId ?? plan.id,
             }
-          : {},
-      );
+          : {}),
+        // The copy inherits the finished block, and the card the reader had
+        // already answered for it: a new plan id asked the same question again.
+        // Running or not, in the same write as the copy's place in the set.
+        ...(wasHeld && preferences.dismissedCompletionPlanIds.includes(readyPlanId)
+          ? {
+              dismissedCompletionPlanIds: carryCompletionDismissal(
+                preferences.dismissedCompletionPlanIds,
+                readyPlanId,
+                plan.id,
+              ),
+            }
+          : {}),
+      });
       uncommittedCopyId = null;
       committed = true;
       if (wasHeld) {

@@ -37,6 +37,8 @@ import {
   addActiveProgram,
   evaluateProgramAdoption,
 } from './src/lib/activeProgramSet';
+import { programCapFullMessage } from './src/lib/programCapNotice';
+import { runningSetWithout, type AdoptReadyOptions } from './src/lib/runningProgrammes';
 import {
   buildReadyProgramPlanId,
   buildCustomProgramPlanId,
@@ -902,12 +904,17 @@ function VinhaApp() {
    */
   async function handleAdoptReadyProgram(
     workoutTemplateId: string,
-    options?: { lead?: boolean },
+    adoption?: AdoptReadyOptions,
   ): Promise<boolean> {
     const template = getWorkoutTemplateById(workoutTemplateId);
     if (!template) {
       return false;
     }
+    // Taking a finished programme's place is taking its lead.
+    const options: AdoptReadyOptions = {
+      lead: Boolean(adoption?.lead || adoption?.replacingPlanId),
+      replacingPlanId: adoption?.replacingPlanId,
+    };
 
     // Already running this programme under some other plan id (an onboarding
     // pick, say) — joining again would spend a cap slot on a duplicate. But
@@ -915,8 +922,8 @@ function VinhaApp() {
     // return on both: the only way to change the lead was to REMOVE the other
     // programme, which is a destructive answer to a question about ordering.
     if (activeProgramTemplateIds.includes(workoutTemplateId)) {
-      if (options?.lead) {
-        await promoteHeldProgramToLead(workoutTemplateId);
+      if (options.lead) {
+        await promoteHeldProgramToLead(workoutTemplateId, options.replacingPlanId);
       }
       // Already held is already running, which is what the caller asked for.
       return true;
@@ -949,8 +956,8 @@ function VinhaApp() {
     );
     if (copyTemplateId) {
       if (activeProgramTemplateIds.includes(copyTemplateId)) {
-        if (options?.lead) {
-          await promoteHeldProgramToLead(copyTemplateId);
+        if (options.lead) {
+          await promoteHeldProgramToLead(copyTemplateId, options.replacingPlanId);
         }
         return true;
       }
@@ -973,8 +980,16 @@ function VinhaApp() {
       return resumedHeld;
     }
     const planId = buildReadyProgramPlanId(workoutTemplateId);
-    const decision = evaluateProgramAdoption({
+    // The cap counts what will be running: a finished programme this one
+    // replaces has already given up its slot (runningSetWithout).
+    const running = runningSetWithout({
+      activePlanId: preferences.activePlanId,
       activePlanIds: preferences.activePlanIds,
+      plans: database.workoutPlans,
+      replacingPlanId: options.replacingPlanId,
+    });
+    const decision = evaluateProgramAdoption({
+      activePlanIds: running.activePlanIds,
       targetPlanId: planId,
       proUnlocked: resolveProEntitlement(preferences).unlocked,
     });
@@ -992,7 +1007,7 @@ function VinhaApp() {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return false;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return false;
     }
 
@@ -1017,13 +1032,15 @@ function VinhaApp() {
     });
 
     await upsertWorkoutPlan(plan);
-    const nextActivePlanIds = addActiveProgram(preferences.activePlanIds, plan.id);
+    // One write: the finished programme leaves the running set as this one
+    // joins it, so the reader never holds both.
+    const nextActivePlanIds = addActiveProgram(running.activePlanIds, plan.id);
     await updatePreferences({
       activePlanIds: nextActivePlanIds,
       // Joining a season must not quietly demote the programme already at the
       // top of Home — but stepping up FROM a finished programme is the reader
       // explicitly choosing a new lead, so the completion flow passes `lead`.
-      activePlanId: options?.lead ? plan.id : preferences.activePlanId ?? plan.id,
+      activePlanId: options.lead ? plan.id : running.activePlanId ?? plan.id,
     });
     /*
      * Counted where a programme has started running: after the write.
@@ -1378,7 +1395,7 @@ function VinhaApp() {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return false;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return false;
     }
 

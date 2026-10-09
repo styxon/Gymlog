@@ -54,7 +54,7 @@ module.exports = [
       // The helper and the rhythm editor over the shell: both move to src/app
       // in phase C (2026-10-01). The rhythm is read to its first
       // setupScheduleMode inside its own body, not on to whatever follows it.
-      assert.match(wiring, /async function resumeHeldProgramme\([\s\S]{0,400}resumeProgramme\(\{/, 'and the helper is the one that resumes');
+      assert.match(wiring, /async function resumeHeldProgramme\([\s\S]{0,900}resumeProgramme\(\{/, 'and the helper is the one that resumes');
 
       const rhythm = sourceSlices.between(
         sourceSlices.functionBody(wiring, 'async function handleSaveRhythm('),

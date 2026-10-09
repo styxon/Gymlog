@@ -30,6 +30,7 @@ import {
   SessionSaveSummary,
 } from './completedWorkoutPersistence';
 import { HevyImportedWorkout, hevySessionId } from '../lib/hevyImport';
+import { forgetCompletionDismissals } from '../lib/programCompletion';
 import { planIdsHoldingTemplate, stopProgramme } from '../lib/runningProgrammes';
 import {
   getBodyweightProgress,
@@ -931,13 +932,21 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         plans: current.workoutPlans,
         templateId: workoutTemplateId,
       });
-      const nextDatabase = workoutPlanRepository.removeMany(
-        current,
-        planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId),
-      );
+      const removedPlanIds = planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId);
+      const nextDatabase = workoutPlanRepository.removeMany(current, removedPlanIds);
       await commit({
         ...nextDatabase,
-        preferences: stopped ? { ...nextDatabase.preferences, ...stopped } : nextDatabase.preferences,
+        preferences: {
+          ...nextDatabase.preferences,
+          ...stopped,
+          // Whatever the removed plans were answered with goes too: adopting
+          // the programme again builds the same plan id, and a round that
+          // inherits the last one's answer never gets its completion card.
+          dismissedCompletionPlanIds: forgetCompletionDismissals(
+            nextDatabase.preferences.dismissedCompletionPlanIds,
+            removedPlanIds,
+          ),
+        },
       });
     });
   }
@@ -956,7 +965,16 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         templateId: workoutTemplateId,
       });
       const nextDatabase = workoutTemplateRepository.remove(current, workoutTemplateId);
-      const preferences = stopped ? { ...nextDatabase.preferences, ...stopped } : nextDatabase.preferences;
+      const preferences = {
+        ...nextDatabase.preferences,
+        ...stopped,
+        // Its plans are emptied with it, and a plan id answered once is not
+        // asked again: the dismissals go with the records (forgetHeldProgramme).
+        dismissedCompletionPlanIds: forgetCompletionDismissals(
+          nextDatabase.preferences.dismissedCompletionPlanIds,
+          planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId),
+        ),
+      };
       const nextActivePlanId = preferences.activePlanId
         ? workoutPlanRepository.findById(nextDatabase, preferences.activePlanId)?.id ?? null
         : null;
