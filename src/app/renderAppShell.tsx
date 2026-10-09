@@ -276,7 +276,13 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
           setSettingsImportVisible(false);
           const imported = t(
             preferences.appLanguage,
-            result.duplicates > 0 ? 'hevy.doneWithDuplicates' : 'hevy.done',
+            result.duplicates > 0
+              ? result.imported === 1
+                ? 'hevy.doneWithDuplicatesOne'
+                : 'hevy.doneWithDuplicates'
+              : result.imported === 1
+                ? 'hevy.doneOne'
+                : 'hevy.done',
             { imported: String(result.imported), duplicates: String(result.duplicates) },
           );
           // Said apart from the duplicates: these were never in the app.

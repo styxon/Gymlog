@@ -16,6 +16,7 @@ import { resumeProgramme } from '../lib/runningProgrammes';
 import {
   type AdaptedSessionRef,
   applySessionAdaptation,
+  sessionHasNoExercises,
   type HeldSessionAdaptations,
   type SessionAdaptation,
   spendHeldAdaptation,
@@ -196,6 +197,20 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
       return;
     }
 
+    // Only what was chosen for THIS session: a swap made on another day's
+    // card shares slot ids with this one and is not an answer about it.
+    const sessionRef = { programId: workoutTemplateId, sessionId };
+    const runtimeTemplate = applySessionAdaptation(
+      buildReadySessionRuntimeTemplate(template, sessionId),
+      sessionAdaptationFor(sessionRef),
+    );
+    // Every row left out for today: nothing to train, and a start would open an
+    // empty player and spend the lighter-session request on it.
+    if (sessionHasNoExercises(runtimeTemplate)) {
+      showToast(t(preferences.appLanguage, 'toast.everyLiftDropped'));
+      return;
+    }
+
     guardStrengthStartOverCardio(() => {
       // Training a session does not change which programme is active. It
       // used to — the lead followed whatever was trained — and a one-off
@@ -203,13 +218,6 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
       // off the one the reader had chosen. The Active switch is the one door
       // now, and it asks first (user 2026-09-21).
       void updatePreferences({ trainingFirstRunDismissed: true });
-      // Only what was chosen for THIS session: a swap made on another day's
-      // card shares slot ids with this one and is not an answer about it.
-      const sessionRef = { programId: workoutTemplateId, sessionId };
-      const runtimeTemplate = applySessionAdaptation(
-        buildReadySessionRuntimeTemplate(template, sessionId),
-        sessionAdaptationFor(sessionRef),
-      );
       startProgrammeWorkout(runtimeTemplate, nextUnitPreference);
       // Today's changes are spent the moment they are applied — an adaptation
       // is an answer about right now, and a stale one is worse than none.

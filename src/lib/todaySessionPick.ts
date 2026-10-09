@@ -81,3 +81,22 @@ export function resolveTodaySessionPick<T extends { id: string }>(input: {
 
   return answeredByATrainedSession ? null : picked;
 }
+
+/**
+ * The pick, followed onto the copy of its programme. A ready programme's first
+ * edit copies it under new programme and day ids; a pick keyed by the old ones
+ * resolved to nothing, and Home went back to the rotation's day. A pick made in
+ * another programme is left alone.
+ */
+export function movePickToCopy(
+  pick: TodaySessionPick | null,
+  fromTemplateId: string,
+  toTemplateId: string,
+  sessionIds: Readonly<Record<string, string>>,
+): TodaySessionPick | null {
+  if (!pick || pick.workoutTemplateId !== fromTemplateId) {
+    return pick;
+  }
+  const sessionId = sessionIds[pick.sessionId];
+  return sessionId ? { ...pick, sessionId, workoutTemplateId: toTemplateId } : pick;
+}

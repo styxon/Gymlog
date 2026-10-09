@@ -24,6 +24,7 @@
  */
 
 import { WorkoutRuntimeTemplate, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
+import { customSlotId } from '../features/workout/customWorkoutAdapter';
 import { estimateSessionMinutes } from './sessionDuration';
 import { doseAfterSwap, isSameLiftName } from './swapDose';
 
@@ -121,6 +122,14 @@ export function applySessionAdaptation(
       }),
     })),
   };
+}
+
+/**
+ * Whether the adapted session has nothing left to train. Every row can be left
+ * out for today, and a session started like that opened an empty player.
+ */
+export function sessionHasNoExercises(template: WorkoutRuntimeTemplate): boolean {
+  return template.sessions.every((session) => session.exercises.length === 0);
 }
 
 /** The session an adaptation was made for: one day of one programme. */
@@ -252,3 +261,107 @@ export function withoutSessionSwapsTo(adaptation: SessionAdaptation, exerciseNam
 }
 
 
+
+/**
+ * Today's holds, carried from one programme's day to the same day of its copy.
+ *
+ * The first edit of a ready programme copies it into a programme of the
+ * reader's own with new programme, day and row ids, and a held entry is keyed
+ * by the old ones — the day under the catalogue programme's ids, each slot
+ * under the catalogue's slot ids. Left where they were, the swaps and drops
+ * the reader had chosen for today stayed on a programme Home no longer reads,
+ * and the session started as the programme wrote it (hunt 9, 2026-10-09).
+ */
+export interface HeldSessionMove {
+  from: AdaptedSessionRef;
+  to: AdaptedSessionRef;
+  /** Old slot id -> new slot id. A slot with no entry is gone from the copy. */
+  slots: Record<string, string>;
+}
+
+function translateAdaptation(adaptation: SessionAdaptation, slots: Record<string, string>): SessionAdaptation {
+  const swaps: Record<string, string> = {};
+  for (const [slotId, name] of Object.entries(adaptation.swaps)) {
+    if (slots[slotId]) {
+      swaps[slots[slotId]] = name;
+    }
+  }
+  const drops = (adaptation.drops ?? []).filter((slotId) => slots[slotId]).map((slotId) => slots[slotId]);
+  return { swaps, drops };
+}
+
+/**
+ * The held adaptations with each move applied: the entry filed under `from`
+ * leaves it and is filed under `to`, its slot ids translated. A swap or drop on
+ * a row the copy does not have is let go with the row. Returns the input
+ * untouched when nothing was held for any `from`.
+ */
+export function moveHeldAdaptations(
+  held: HeldSessionAdaptations,
+  moves: readonly HeldSessionMove[],
+): HeldSessionAdaptations {
+  let bySession: Record<string, SessionAdaptation> | null = null;
+  for (const move of moves) {
+    const fromKey = heldKey(move.from);
+    const current = (bySession ?? held.bySession)[fromKey];
+    if (!current) {
+      continue;
+    }
+    bySession = bySession ?? { ...held.bySession };
+    delete bySession[fromKey];
+    const moved = translateAdaptation(current, move.slots);
+    if (hasSessionAdaptation(moved)) {
+      bySession[heldKey(move.to)] = moved;
+    }
+  }
+  return bySession ? { ...held, bySession } : held;
+}
+
+/** One day of a ready programme, as far as the move needs to know it. */
+export interface CatalogueDayForMove {
+  id: string;
+  exercises: ReadonlyArray<{ id: string; slotId: string }>;
+}
+
+/** The same day in the copy: its stored id, and each stored row with the catalogue row it came from. */
+export interface CopiedDayForMove {
+  id: string;
+  exercises: ReadonlyArray<{ id: string; fromExerciseId: string | null }>;
+}
+
+/**
+ * The moves that carry today's holds from a ready programme to its copy. Days
+ * pair by position (they are copied in order); rows pair by position too, the
+ * copy having the catalogue's rows less one removed, reordered, or with one
+ * added, which is why each copied row says which catalogue row it came from.
+ */
+export function planHeldMovesToCopy(input: {
+  programId: string;
+  copyId: string;
+  days: readonly CatalogueDayForMove[];
+  copiedDays: readonly CopiedDayForMove[];
+}): { moves: HeldSessionMove[]; sessionIds: Record<string, string> } {
+  const moves: HeldSessionMove[] = [];
+  const sessionIds: Record<string, string> = {};
+  input.days.forEach((day, index) => {
+    const copied = input.copiedDays[index];
+    if (!copied) {
+      return;
+    }
+    const slotByExerciseId = new Map(day.exercises.map((exercise) => [exercise.id, exercise.slotId]));
+    const slots: Record<string, string> = {};
+    for (const row of copied.exercises) {
+      const oldSlot = row.fromExerciseId ? slotByExerciseId.get(row.fromExerciseId) : undefined;
+      if (oldSlot) {
+        slots[oldSlot] = customSlotId(row.id);
+      }
+    }
+    sessionIds[day.id] = copied.id;
+    moves.push({
+      from: { programId: input.programId, sessionId: day.id },
+      to: { programId: input.copyId, sessionId: copied.id },
+      slots,
+    });
+  });
+  return { moves, sessionIds };
+}

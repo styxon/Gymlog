@@ -2,6 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, LayoutChangeEvent, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
 
+import { isStoreBillingConfigured } from '../features/billing/storeBilling';
+import { paymentsAreLive } from '../lib/billingCopy';
+import { isDemoBuild } from '../lib/demoMode';
 import { CutSurface } from './CutSurface';
 import { CUT_BY_SIZE, cutCornerPath } from '../lib/cutCorner';
 
@@ -17,8 +20,9 @@ import { AppLanguage } from '../types/models';
  * the trigger, built on the user's own numbers. Deliberately NO comparison
  * table — that belongs to the full Pro page this sheet's CTA opens.
  *
- * The CTA is honest: billing is not live, so it says what Pro does and routes
- * to the Pro page instead of promising a trial that does not exist.
+ * The CTA is honest: it says what Pro does and routes to the Pro page instead
+ * of promising a trial that does not exist. The fine print under it says
+ * billing is not live only while that is true (lib/billingCopy).
  *
  * A3: the sheet keeps its gradient but takes the cut — the gradient is drawn
  * inside the cut path rather than a rounded rect, so the corner is the same
@@ -133,7 +137,9 @@ export function ProMomentSheet({ visible, content, language, bottomInset, onClos
                 <Text style={styles.ctaText}>{t(language, 'pro.sheet.cta')}</Text>
               </CutSurface>
             </Pressable>
-            <Text style={styles.fine}>{t(language, 'pro.sheet.fine')}</Text>
+            <Text style={styles.fine}>
+              {t(language, paymentsAreLive(isDemoBuild(), isStoreBillingConfigured()) ? 'pro.sheet.fineLive' : 'pro.sheet.fine')}
+            </Text>
             <Pressable accessibilityRole="button" onPress={onClose} hitSlop={12} style={styles.notNowHit}>
               <Text style={styles.notNow}>{t(language, 'pro.sheet.notNow')}</Text>
             </Pressable>

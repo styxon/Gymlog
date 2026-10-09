@@ -75,8 +75,10 @@ import {
   applySessionAdaptation,
   HeldSessionAdaptations,
   heldAdaptationFor,
+  moveHeldAdaptations,
   NO_HELD_SESSION_ADAPTATIONS,
   SessionAdaptation,
+  sessionHasNoExercises,
   spendHeldAdaptation,
   updateHeldAdaptation,
 } from './src/lib/sessionAdaptation';
@@ -270,6 +272,10 @@ function VinhaApp() {
     onRestored: async () => {
       setCoachAdviceMemory([]);
       setCoachChatMemory(null);
+      // Today's held swaps and drops are one more thing outside both: catalogue
+      // ids are the same on every phone, so the previous state's holds would
+      // otherwise show on the restored account's Home (hunt 9, 2026-10-09).
+      setHeldSessionAdaptations(NO_HELD_SESSION_ADAPTATIONS);
       // Awaited: useAccountBackup's applyRestore holds the restore open
       // until this settles, so a process kill cannot land the restore while
       // the erase is still on disk (recheck round, 2026-09-29).
@@ -1186,15 +1192,21 @@ function VinhaApp() {
       return;
     }
 
+    const sessionRef = { programId: workoutTemplateId, sessionId };
+    const runtimeTemplate = applySessionAdaptation(
+      buildCustomSessionRuntimeTemplate(customTemplate, sessionId),
+      sessionAdaptationFor(sessionRef),
+    );
+    // Every row left out for today: the same refusal as the ready start.
+    if (sessionHasNoExercises(runtimeTemplate)) {
+      showToast(t(preferences.appLanguage, 'toast.everyLiftDropped'));
+      return;
+    }
+
     guardStrengthStartOverCardio(() => {
       // Nor here: training leaves the active programme where it is, as on the
       // ready path above.
       void updatePreferences({ trainingFirstRunDismissed: true });
-      const sessionRef = { programId: workoutTemplateId, sessionId };
-      const runtimeTemplate = applySessionAdaptation(
-        buildCustomSessionRuntimeTemplate(customTemplate, sessionId),
-        sessionAdaptationFor(sessionRef),
-      );
       startProgrammeWorkout(runtimeTemplate, unitPreference);
       setHeldSessionAdaptations((held) => spendHeldAdaptation(held, sessionRef));
       navigateToGuidedWorkout(workoutTemplateId);
@@ -1298,6 +1310,7 @@ function VinhaApp() {
     navigate,
     showToast,
     adaptSession,
+    moveHeldAdaptations: (moves) => setHeldSessionAdaptations((held) => moveHeldAdaptations(held, moves)),
     setProgramLimitVisible,
   });
 
@@ -1958,6 +1971,8 @@ function VinhaApp() {
       preferences,
       updatePreferences,
       workout,
+      hasFreestyleBoard: freestyleDraft != null,
+      discardFreestyleBoard: workout.clearFreestyleDraft,
       cardioSessions,
       cardioSaving,
       setCardioSaving,

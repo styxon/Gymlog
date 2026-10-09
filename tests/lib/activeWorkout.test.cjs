@@ -63,7 +63,7 @@ module.exports = [
       assert.doesNotMatch(widget, /hasActiveSession: workout\.activeSession !== null/);
 
       const home = read('src', 'app', 'renderHomeScreens.tsx');
-      assert.match(home, /hasActiveStrengthSession=\{isWorkoutInProgress\(workout\.activeSession\)\}/);
+      assert.match(home, /hasActiveStrengthSession=\{isWorkoutInProgress\(workout\.activeSession\)(?: \|\| hasFreestyleBoard)?\}/);
       assert.doesNotMatch(home, /hasActiveStrengthSession=\{Boolean\(workout\.activeSession\)\}/);
 
       const views = read('src', 'app', 'useCustomProgramViews.ts');

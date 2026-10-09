@@ -50,6 +50,14 @@ export interface HomeScreensDeps {
   preferences: AppPreferences;
   updatePreferences: (patch: PreferencesPatch) => Promise<unknown>;
   workout: { activeSession: { status: string } | null; discardWorkout: () => void };
+  /**
+   * Whether a free workout's board is waiting (a kill, a widget or a
+   * notification tap leaves it live with the screen gone), and the discard for
+   * it. It is a strength session for the cardio conflict rule, as it is the
+   * other way round.
+   */
+  hasFreestyleBoard: boolean;
+  discardFreestyleBoard: () => void;
   cardioSessions: CardioScreenProps['cardioSessions'];
   cardioSaving: boolean;
   setCardioSaving: (saving: boolean) => void;
@@ -98,6 +106,8 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
     preferences,
     updatePreferences,
     workout,
+    hasFreestyleBoard,
+    discardFreestyleBoard,
     cardioSessions,
     cardioSaving,
     setCardioSaving,
@@ -222,14 +232,22 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
         language={preferences.appLanguage}
         keepScreenAwake={preferences.keepScreenAwakeDuringWorkout}
         cardioSessions={cardioSessions}
-        hasActiveStrengthSession={isWorkoutInProgress(workout.activeSession)}
+        hasActiveStrengthSession={isWorkoutInProgress(workout.activeSession) || hasFreestyleBoard}
         isSaving={cardioSaving}
         onResumeStrengthSession={() => {
-          // The button says resume, so it resumes: straight to the set.
-          navigateToActiveWorkout({ resume: true });
+          // The button says resume, so it resumes: straight to the set, or to
+          // the free workout's board when that is the one waiting.
+          if (isWorkoutInProgress(workout.activeSession)) {
+            navigateToActiveWorkout({ resume: true });
+          } else {
+            navigate({ tab: 'workout', screen: 'empty' });
+          }
         }}
         onDiscardStrengthSession={() => {
           workout.discardWorkout();
+          if (hasFreestyleBoard) {
+            discardFreestyleBoard();
+          }
           setFinishSaveState({ status: 'idle', sessionId: null });
         }}
         onSaveCardioSession={async (input) => {

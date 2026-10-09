@@ -112,6 +112,14 @@ function indexExerciseLibrary(exerciseLibrary: ExerciseLibraryItem[]): ExerciseL
   return { byId, byName };
 }
 
+/**
+ * The slot a custom programme's row runs under. Today's held swaps and drops
+ * are keyed by it, so whatever moves them to a copy needs the same spelling.
+ */
+export function customSlotId(exerciseId: string): string {
+  return `custom_slot_${exerciseId}`;
+}
+
 function adaptExercise(
   exercise: ExerciseTemplate,
   library: ExerciseLibraryIndex,
@@ -125,7 +133,7 @@ function adaptExercise(
     id: exercise.id,
     persistedExerciseTemplateId: exercise.id,
     exerciseName: exercise.name,
-    slotId: `custom_slot_${exercise.id}`,
+    slotId: customSlotId(exercise.id),
     role: getRole(exercise, libraryItem),
     progressionPriority: getPriority(exercise, libraryItem),
     trackingMode: getTrackingMode(exercise, libraryItem),

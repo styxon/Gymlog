@@ -1776,7 +1776,7 @@ function GuidedPlayer({
         session: sessionTitle,
         exercise: current ? exerciseNameLabel(language, current.exerciseName) : '',
       }),
-      body: t(language, 'rest.notify.sessionBody', { done, total, time }),
+      body: t(language, total === 1 ? 'rest.notify.sessionBodyOne' : 'rest.notify.sessionBody', { done, total, time }),
     };
   }, [language, session, sessionTitle]);
   const syncRestEndAlert = useRestEndAlert(language, {

@@ -13,8 +13,15 @@ import { buildCustomProgramPlanId, buildProgramWorkoutPlan, buildReadyProgramPla
 import { liveSessionBlocksProgrammeDelete } from '../lib/programmeDeletion';
 import { applyProgramSessionEdit, ProgramPrescription } from '../lib/programSessionEdit';
 import { ProgramLimitReachedError, type ProgramSlots } from '../lib/programSlots';
-import { type AdaptedSessionRef, type SessionAdaptation, withoutSessionSwapsTo } from '../lib/sessionAdaptation';
+import {
+  type AdaptedSessionRef,
+  type HeldSessionMove,
+  type SessionAdaptation,
+  planHeldMovesToCopy,
+  withoutSessionSwapsTo,
+} from '../lib/sessionAdaptation';
 import { doseAfterSwap, isSameLiftName } from '../lib/swapDose';
+import { movePickToCopy } from '../lib/todaySessionPick';
 import { isSupersetLinked, setSupersetLink, supersetGroupIndexes, supersetSetTargets } from '../lib/supersetGrouping';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import type { AppRoute } from '../navigation/routes';
@@ -89,6 +96,8 @@ export interface ProgramExerciseEditDeps {
   showToast: (message: string) => void;
   /** VinhaApp's writer for today's held swaps and drops. */
   adaptSession: (ref: AdaptedSessionRef, change: (current: SessionAdaptation) => SessionAdaptation) => void;
+  /** VinhaApp's mover for today's holds: a ready programme's copy takes them along. */
+  moveHeldAdaptations: (moves: HeldSessionMove[]) => void;
   /** Opens the programme-limit sheet. */
   setProgramLimitVisible: (visible: boolean) => void;
 }
@@ -112,6 +121,7 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
     navigate,
     showToast,
     adaptSession,
+    moveHeldAdaptations,
     setProgramLimitVisible,
   } = deps;
 
@@ -405,6 +415,9 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       setProgramLimitVisible(true);
       return false;
     }
+    // Which catalogue row each row of the copy came from, by day and position:
+    // the copy's stored ids are new, and today's holds are keyed by the old.
+    const draftRowOrigins: string[][] = [];
     const draft = buildDuplicatedCustomProgramDraft(
       template.name,
       template.sessions.map((session, sessionIndex) => {
@@ -533,6 +546,7 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
           }
         }
 
+        draftRowOrigins[sessionIndex] = exercises.map((exercise) => exercise.id);
         return {
           id: session.id,
           workoutTemplateId: template.id,
@@ -638,8 +652,39 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       }
       copiedInThisEditBurst.current.add(programId);
       void haptics.success();
-      if (edit.kind === 'replace') {
-        adaptSession({ programId, sessionId }, (current) => withoutSessionSwapsTo(current, edit.exerciseName));
+      /**
+       * Today's choices go where the programme went.
+       *
+       * The pick ("today is legs") and the swaps and drops held for the day
+       * are keyed by the catalogue programme's ids, and the copy has none of
+       * them. Left behind, they sat on a programme Home no longer reads: the
+       * first edit of a ready programme threw away everything else the reader
+       * had decided for today (hunt 9, 2026-10-09).
+       */
+      const dayIndex = template.sessions.findIndex((session) => session.id === sessionId);
+      const { moves, sessionIds: copiedDayIds } = planHeldMovesToCopy({
+        programId,
+        copyId: workoutTemplateId,
+        days: template.sessions,
+        copiedDays: copiedSessions.map((copied, index) => ({
+          id: copied.id,
+          exercises: copied.exercises
+            .slice()
+            .sort((left, right) => left.orderIndex - right.orderIndex)
+            .map((row, position) => ({ id: row.id, fromExerciseId: draftRowOrigins[index]?.[position] ?? null })),
+        })),
+      });
+      moveHeldAdaptations(moves);
+      await updatePreferences((current) => {
+        const pick = movePickToCopy(current.todaySession, programId, workoutTemplateId, copiedDayIds);
+        return pick === current.todaySession ? {} : { todaySession: pick };
+      });
+      if (edit.kind === 'replace' && dayIndex > -1 && copiedSessions[dayIndex]) {
+        // The programme took the swap; what is held for this day is now the
+        // copy's, and an override on a slot that already says it is a mark.
+        adaptSession({ programId: workoutTemplateId, sessionId: copiedSessions[dayIndex].id }, (current) =>
+          withoutSessionSwapsTo(current, edit.exerciseName),
+        );
       }
       /**
        * Onto the copy's version of the day the reader is standing on.
@@ -651,7 +696,6 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
        * using floating over it. The days are copied in order, so the day at
        * the same position is the same day.
        */
-      const dayIndex = template.sessions.findIndex((session) => session.id === sessionId);
       // Read off the unfiltered list: the plan drops a day with nothing in it,
       // but the days are still stored in their original order, and indexing
       // the filtered list would walk one day forward past a dropped one.

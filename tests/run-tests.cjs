@@ -388,6 +388,8 @@ const suites = [
   ...require('./screens/homeWeekTruth.test.cjs'),
   ...require('./screens/weekAndDayTruth.test.cjs'),
   ...require('./screens/programmeHeld.test.cjs'),
+  ...require('./lib/hunt9CopySession.test.cjs'),
+  ...require('./screens/hunt9CopySession.test.cjs'),
   ...require('./screens/freestyleSurvives.test.cjs'),
   ...require('./screens/resumeIntent.test.cjs'),
   ...require('./screens/teachingSections.test.cjs'),

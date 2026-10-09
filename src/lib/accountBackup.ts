@@ -641,9 +641,23 @@ export function accountBackupFingerprint(database: AppDatabase, history: Workout
   for (const template of database.workoutTemplates ?? []) {
     hash.add(`${template.id}|${template.updatedAt}|${template.name}|${template.origin}`);
   }
-  // Only the name, notes and feel of a saved workout can be edited.
+  // A saved workout is edited in its name, notes and feel, and its sets are
+  // written again when a finished board is finished once more (a merge replaces
+  // the stored logs under new ids, and the totals with them).
   for (const session of database.workoutSessions ?? []) {
-    hash.add(`${session.id}|${session.workoutNameSnapshot}|${session.sessionNotes ?? ''}|${session.feel ?? ''}`);
+    hash.add(
+      `${session.id}|${session.workoutNameSnapshot}|${session.sessionNotes ?? ''}|${session.feel ?? ''}|` +
+        `${session.setsCompleted}|${session.totalVolumeKg}|${session.performedAt}|${session.durationMinutes}`,
+    );
+  }
+  // Each log by its id and what is in it: counting them alone missed a set added
+  // to a lift that already had logs.
+  for (const log of database.exerciseLogs ?? []) {
+    let volume = 0;
+    for (const set of log.sets ?? []) {
+      volume += (Number(set.weight) || 0) * (Number(set.reps) || 0);
+    }
+    hash.add(`${log.id}|${log.sets?.length ?? 0}|${volume}`);
   }
   const newest = history.sessions?.[0];
   hash.add(

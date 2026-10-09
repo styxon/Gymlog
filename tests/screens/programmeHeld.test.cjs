@@ -37,7 +37,7 @@ module.exports = [
     run() {
       // Both anchors asserted: a fork with no replace branch after it fails
       // here rather than reading on to the end of the shell.
-      const fork = sourceSlices.between(wiring, 'const replacedPlan = wasHeld', "if (edit.kind === 'replace')");
+      const fork = sourceSlices.between(wiring, 'const replacedPlan = wasHeld', "if (edit.kind === 'replace' &&");
       // On the record, not on the running set: a programme switched off
       // still has its plan, and editing a lift in one left that record
       // behind while the copy started from week 1 (CI review of #161).

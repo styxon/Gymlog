@@ -14,7 +14,11 @@
  * 1. A consonant followed by a vowel starts a syllable: ka-la, kort-ti.
  * 2. Two vowels in a row are split unless they are a long vowel (aa, ää…) or
  *    a diphthong (ai, ei, au, ou, äy…): ti-on, but kau-la.
- * 3. ie, uo and yö are diphthongs only in a word's first syllable.
+ * 3. ie, uo and yö are diphthongs in a word's first syllable and wherever a
+ *    consonant opens the syllable they sit in: Kun-to-pyö-rä, Rin-ta-työn-tö.
+ *    That second half is how a compound's later part is told from a split
+ *    pair, without a dictionary: ie, uo, yö after a vowel are two syllables
+ *    (e-tu-ol-ka-pää), and so is the plural ending -ien (pol-vi-en).
  *
  * Compound boundaries fall on syllable boundaries in almost every exercise
  * name, so no dictionary is needed. A break that would leave fewer than two
@@ -31,6 +35,8 @@ const DIPHTHONGS = new Set([
   'ey', 'iy', 'äy', 'öy',
 ]);
 const FIRST_SYLLABLE_DIPHTHONGS = new Set(['ie', 'uo', 'yö']);
+/** The one compound in the exercise names whose first part ends in the u of "uo". */
+const SPLIT_UO_PREFIX = /^etuo/;
 
 /** Words shorter than this fit any column the app draws a name in. */
 const MIN_WORD_LENGTH = 7;
@@ -74,8 +80,17 @@ function syllableStarts(word: string): number[] {
     if (isVowel(previous) && isVowel(current)) {
       const pair = previous + current;
       const long = previous === current;
+      // A later syllable opened by a consonant: the second part of a compound
+      // (pyörä, työntö, kierto), unless it is the plural ending or the
+      // compound's u meeting an o.
+      const opensAfterConsonant =
+        index >= 2 &&
+        !isVowel(lower[index - 2]) &&
+        !(pair === 'ie' && lower.slice(index + 1) === 'n') &&
+        !(pair === 'uo' && SPLIT_UO_PREFIX.test(lower));
       const diphthong =
-        DIPHTHONGS.has(pair) || (syllableCount === 0 && FIRST_SYLLABLE_DIPHTHONGS.has(pair));
+        DIPHTHONGS.has(pair) ||
+        (FIRST_SYLLABLE_DIPHTHONGS.has(pair) && (syllableCount === 0 || opensAfterConsonant));
       // A vowel that already closed a diphthong cannot open a second one:
       // "raiu" is rai-u, not ra-iu.
       const closesTriple = index >= 2 && isVowel(lower[index - 2]) && !starts.includes(index - 1);

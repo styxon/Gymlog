@@ -63,6 +63,10 @@ store clears it.
   - a cancelled period ends on the store's `expirationDate`, not one full term
     from the purchase (`purchaseRecordFromStore`, PR #344 review);
   - `releaseReadiness` checks the offer, not just the library.
+- **"Billing is not live" copy.** The Pro moment sheet's fine print and the
+  receipt's "Payments are not live yet" note show only while
+  `paymentsAreLive(isDemoBuild(), isStoreBillingConfigured())` is false
+  (`lib/billingCopy`), so a build with the RevenueCat key says neither.
 - **The privacy policy and the Data safety form** must name RevenueCat. See
   `docs/play-data-safety.md` §1. The policy text is the owner's to edit.
 - **Server-side Pro.** The coach endpoint does not check the store. Checking

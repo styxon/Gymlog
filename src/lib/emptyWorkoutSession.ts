@@ -20,7 +20,8 @@ import {
   resolvePreviousExercisePr,
 } from './workoutCompletionSummary';
 import { buildPersistedSessionNames } from './workoutEditorNaming';
-import { buildSupersetRuns, isSupersetLinked, normalizeSupersetGroups } from './supersetGrouping';
+import { SESSION_IDLE_MS } from './sessionClock';
+import { buildSupersetRuns,isSupersetLinked, normalizeSupersetGroups } from './supersetGrouping';
 import { AppDatabase, ExerciseLog, ExerciseLogDraft, ExerciseLogSet, WorkoutTemplateDraft } from '../types/models';
 
 // ── letter tiles ─────────────────────────────────────────────────────────
@@ -545,6 +546,51 @@ export function resolveFreestyleDraftStart(
   }
   const age = now - draft.savedAtMs;
   return age >= 0 && age <= FREESTYLE_DRAFT_CLOCK_MAX_AGE_MS ? draft.startedAtMs : now;
+}
+
+/**
+ * The last time the board was touched, as it stands when the screen opens.
+ *
+ * The draft's `savedAtMs` while its clock is the one running (the start was
+ * kept); now when the clock restarted, because an older edit says nothing
+ * about a session that began just now.
+ */
+export function resolveFreestyleLastEdit(
+  draft: { startedAtMs: number | null; savedAtMs: number } | null | undefined,
+  startedAtMs: number | null,
+  now: number,
+): number {
+  if (!draft || startedAtMs === null || draft.startedAtMs !== startedAtMs) {
+    return now;
+  }
+  return Number.isFinite(draft.savedAtMs) && draft.savedAtMs > startedAtMs && draft.savedAtMs <= now
+    ? draft.savedAtMs
+    : now;
+}
+
+/**
+ * When a free workout ended, and how long it ran.
+ *
+ * The Finish tap, unless the board had been left alone for more than
+ * SESSION_IDLE_MS: then the last edit is when it ended, the way the guided
+ * player pins a late finish to the last logged set (workoutAppAdapter's
+ * STALE_FINISH_MS). Free sets carry no times of their own, so the board's last
+ * edit stands in. Without this a workout finished at 22:00 and closed the next
+ * morning, inside the 12 hours the draft's clock survives, was saved as up to
+ * 720 minutes long and dated the next day (hunt 9, 2026-10-09).
+ */
+export function resolveFreestyleFinish(input: {
+  startedAtMs: number | null;
+  lastEditMs: number;
+  nowMs: number;
+}): { performedAtMs: number; elapsedSeconds: number } {
+  const { startedAtMs, lastEditMs, nowMs } = input;
+  const stale = Number.isFinite(lastEditMs) && nowMs - lastEditMs > SESSION_IDLE_MS;
+  const endMs = stale ? Math.max(lastEditMs, startedAtMs ?? lastEditMs) : nowMs;
+  return {
+    performedAtMs: endMs,
+    elapsedSeconds: startedAtMs === null ? 0 : Math.max(0, Math.floor((endMs - startedAtMs) / 1000)),
+  };
 }
 
 const finiteOr = (value: unknown, fallback: number) =>
