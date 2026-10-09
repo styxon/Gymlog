@@ -23,8 +23,7 @@
  *   feel in forty minutes.
  */
 
-import { WorkoutRuntimeTemplate, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { customSlotId } from '../features/workout/customWorkoutAdapter';
+import { customSlotId, WorkoutRuntimeTemplate, WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { estimateSessionMinutes } from './sessionDuration';
 import { doseAfterSwap, isSameLiftName } from './swapDose';
 

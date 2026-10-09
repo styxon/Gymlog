@@ -143,5 +143,6 @@ export function formatSetLogSet(set: Pick<SetLogSet, 'weightKg' | 'reps'>, timed
   if (set.weightKg === 0) {
     return count;
   }
-  return `${count} × ${removeTrailingZeros(Math.round(set.weightKg * 10) / 10)}`;
+  // Hundredths, as every other weight surface: the dial steps 1.25 kg.
+  return `${count} × ${removeTrailingZeros(Math.round(set.weightKg * 100) / 100)}`;
 }

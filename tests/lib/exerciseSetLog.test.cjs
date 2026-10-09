@@ -169,6 +169,8 @@ module.exports = [
       assert.equal(formatSetLogSet(plank.sessions[0].sets[0], plank.timed, 'en'), '60 s');
       assert.equal(formatSetLogSet({ weightKg: 0, reps: 15 }, false, 'en'), '15');
       assert.equal(formatSetLogSet({ weightKg: 82.5, reps: 3 }, false, 'en'), '3 × 82.5');
+      // The dial steps 1.25 kg: hundredths, as Records and the stat cards print it.
+      assert.equal(formatSetLogSet({ weightKg: 61.25, reps: 8 }, false, 'en'), '8 × 61.25');
       assert.equal(formatSetLogSet({ weightKg: 10, reps: 45 }, true, 'en'), '45 s × 10');
 
       const fs = require('node:fs');

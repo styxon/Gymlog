@@ -5,7 +5,11 @@ import {
   WorkoutRuntimeTemplate,
   WorkoutTemplateExercise,
   WorkoutTrackingMode,
+  customSlotId,
 } from './workoutTypes';
+
+// Re-exported: the spelling lives with the types, so lib can share it.
+export { customSlotId };
 
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
@@ -110,14 +114,6 @@ function indexExerciseLibrary(exerciseLibrary: ExerciseLibraryItem[]): ExerciseL
     }
   }
   return { byId, byName };
-}
-
-/**
- * The slot a custom programme's row runs under. Today's held swaps and drops
- * are keyed by it, so whatever moves them to a copy needs the same spelling.
- */
-export function customSlotId(exerciseId: string): string {
-  return `custom_slot_${exerciseId}`;
 }
 
 function adaptExercise(

@@ -678,6 +678,10 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       await updatePreferences((current) => {
         const pick = movePickToCopy(current.todaySession, programId, workoutTemplateId, copiedDayIds);
         return pick === current.todaySession ? {} : { todaySession: pick };
+      }).catch((error) => {
+        // Cleanup like the forget above: the copy is in, so a failed write
+        // here is logged rather than turning the edit into a failure.
+        console.error("Failed to move today's pick onto the copy", error);
       });
       if (edit.kind === 'replace' && dayIndex > -1 && copiedSessions[dayIndex]) {
         // The programme took the swap; what is held for this day is now the
