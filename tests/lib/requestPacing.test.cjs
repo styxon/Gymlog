@@ -200,6 +200,42 @@ module.exports = [
     },
   },
   {
+    // Bug hunt 9, 2026-10-09: starts and failures stamped after "now" were
+    // clamped to now on every query, so the returned wait never counted down.
+    name: 'request pacing: after a clock set back, waiting the returned time leaves nothing to wait for',
+    run() {
+      // A failed batch, then the clock corrected two hours back.
+      let failed = notePacingSent(EMPTY_PACING, ANALYTICS_FLUSH_PACING, 10 * HOUR);
+      failed = notePacingOutcome(failed, false, 10 * HOUR);
+      let now = 8 * HOUR;
+      for (let step = 0; step < 3; step += 1) {
+        const wait = pacingWaitMs(failed, ANALYTICS_FLUSH_PACING, now);
+        if (wait === 0) {
+          break;
+        }
+        assert.ok(wait <= 15 * MINUTE + ANALYTICS_FLUSH_PACING.minGapMs, `waited ${wait} ms`);
+        now += wait;
+      }
+      assert.equal(pacingWaitMs(failed, ANALYTICS_FLUSH_PACING, now), 0, 'the wait counts down to nothing');
+      assert.ok(now - 8 * HOUR <= 15 * MINUTE + 5000, 'and does not last for the size of the jump');
+
+      // The budget: sixty starts, then the clock 30 minutes back.
+      let backup = EMPTY_PACING;
+      for (let index = 0; index < 60; index += 1) {
+        backup = notePacingSent(backup, AUTO_BACKUP_PACING, 20 * HOUR + index * 1000);
+      }
+      const setBack = 20 * HOUR + 60_000 - 30 * MINUTE;
+      assert.equal(pacingWaitMs(backup, AUTO_BACKUP_PACING, setBack), 0, 'starts the new clock cannot place are forgotten');
+
+      // Starts after the set-back are paced as usual.
+      let fresh = backup;
+      for (let index = 0; index < 60; index += 1) {
+        fresh = notePacingSent(fresh, AUTO_BACKUP_PACING, setBack + index * 1000);
+      }
+      assert.ok(pacingWaitMs(fresh, AUTO_BACKUP_PACING, setBack + 60_000) > 0, 'the budget still bites on the new clock');
+    },
+  },
+  {
     name: 'request pacing: a trigger that fires as fast as it can is held to the policy over a day',
     run() {
       // Always succeeding: the budget is the ceiling.

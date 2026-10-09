@@ -97,12 +97,15 @@ export function failureBackoffMs(failures: number, policy: Pick<PacingPolicy, 'b
 /**
  * Milliseconds until a request may start: 0 when it may start now. The
  * largest of the minimum gap, the budget's next free slot and the failure
- * backoff. A start time in the future (the clock was set back) counts as now.
+ * backoff. A start time in the future (the clock was set back) is forgotten:
+ * it cannot be placed against the new clock, and clamping it to now on every
+ * call re-anchored it each time, so the wait never counted down until the old
+ * time had passed.
  */
 export function pacingWaitMs(state: PacingState, policy: PacingPolicy, now: number): number {
   let waitUntil = now;
 
-  const recent = state.sentAt.map((at) => Math.min(at, now));
+  const recent = state.sentAt.filter((at) => at <= now);
   const last = recent[recent.length - 1];
   if (last !== undefined) {
     waitUntil = Math.max(waitUntil, last + policy.minGapMs);
@@ -117,7 +120,11 @@ export function pacingWaitMs(state: PacingState, policy: PacingPolicy, now: numb
   }
 
   if (state.failures > 0 && state.lastFailureAt !== null) {
-    waitUntil = Math.max(waitUntil, Math.min(state.lastFailureAt, now) + failureBackoffMs(state.failures, policy));
+    // A failure stamped after now is from before a set-back: its backoff has
+    // no start to count from, so it is spent.
+    if (state.lastFailureAt <= now) {
+      waitUntil = Math.max(waitUntil, state.lastFailureAt + failureBackoffMs(state.failures, policy));
+    }
   }
 
   return Math.max(0, Math.ceil(waitUntil - now));
@@ -125,7 +132,7 @@ export function pacingWaitMs(state: PacingState, policy: PacingPolicy, now: numb
 
 /** The state after a request started at `now`. Keeps only as many starts as the budget can look back on. */
 export function notePacingSent(state: PacingState, policy: PacingPolicy, now: number): PacingState {
-  const kept = state.sentAt.map((at) => Math.min(at, now)).filter((at) => at > now - policy.windowMs);
+  const kept = state.sentAt.filter((at) => at <= now && at > now - policy.windowMs);
   const sentAt = [...kept, now].slice(-Math.max(1, policy.maxPerWindow));
   return { ...state, sentAt };
 }
