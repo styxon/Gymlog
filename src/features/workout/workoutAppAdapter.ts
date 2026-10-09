@@ -45,6 +45,11 @@ export interface AdaptedCompletedWorkoutExercise {
   notes: string | null;
   swappedFrom: string | null;
   sets: AdaptedCompletedWorkoutSet[];
+  /**
+   * The rep ceiling this lift's sets were planned at, so the finish screen
+   * does not ask for a rep past it. Absent when no set carried one.
+   */
+  repsMax?: number;
 }
 
 export interface AdaptedCompletedWorkoutSession {
@@ -208,7 +213,17 @@ function adaptExerciseForBridge(exercise: WorkoutExerciseInstance): AdaptedCompl
     notes: lift.notes,
     swappedFrom: lift.segment.swappedFrom,
     sets: sortByOrderIndex(lift.segment.sets.map(adaptSetForBridge)),
+    ...plannedCeilingOf(lift.segment.sets),
   }));
+}
+
+/** The highest rep ceiling the sets were planned at, when any carried one. */
+function plannedCeilingOf(sets: WorkoutExerciseInstance['sets']): { repsMax?: number } {
+  const ceiling = sets.reduce(
+    (max, set) => (Number.isFinite(set.plannedRepsMax) && set.plannedRepsMax > max ? set.plannedRepsMax : max),
+    0,
+  );
+  return ceiling > 0 ? { repsMax: ceiling } : {};
 }
 
 function adaptSetToLogSet(set: WorkoutExerciseInstance['sets'][number]): ExerciseLogDraft['sets'][number] {

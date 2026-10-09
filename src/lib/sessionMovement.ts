@@ -108,6 +108,11 @@ export interface MovementRow {
   todayTopReps: number;
   /** Last session's top set for this lift; null the first time. */
   previousTopKg: number | null;
+  /**
+   * The programme's rep ceiling for this lift, when it has one. At it, the
+   * next step is weight, not a rep.
+   */
+  repsMax?: number | null;
 }
 
 export interface Movement {
@@ -174,10 +179,22 @@ export function buildWhatMoved(
     .map((entry) => ({
       exerciseName: entry.row.exerciseName,
       deltaLabel: entry.movement.label as string,
-      nudge: t(language, 'complete.moved.nudge', {
-        weight: removeTrailingZeros(entry.row.todayTopKg),
-        reps: entry.row.todayTopReps,
-        next: entry.row.todayTopReps + 1,
-      }),
+      nudge: nudgeFor(entry.row, language),
     }));
+}
+
+/**
+ * One rep more, until the programme's ceiling. At it the line asked for a rep
+ * the programme does not want: 62,5 × 8 on a 3 × 8 said "aim for 9" while the
+ * next session opened at 65 × 8, and 140 × 1 asked for 2 (bug hunt,
+ * 2026-10-09). There it says where the set stands and promises nothing — the
+ * weight moving is the gate's call, and a free reader's own.
+ */
+function nudgeFor(row: MovementRow, language: AppLanguage): string {
+  const weight = removeTrailingZeros(row.todayTopKg);
+  const ceiling = row.repsMax;
+  if (typeof ceiling === 'number' && Number.isFinite(ceiling) && ceiling > 0 && row.todayTopReps >= ceiling) {
+    return t(language, 'complete.moved.nudgeTop', { weight, reps: row.todayTopReps });
+  }
+  return t(language, 'complete.moved.nudge', { weight, reps: row.todayTopReps, next: row.todayTopReps + 1 });
 }

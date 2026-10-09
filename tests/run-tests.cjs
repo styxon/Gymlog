@@ -368,6 +368,7 @@ const suites = [
   ...require('./features/workout/liveWorkoutKept.test.cjs'),
   ...require('./features/workout/warmupSets.test.cjs'),
   ...require('./features/workout/warmupMovement.test.cjs'),
+  ...require('./features/workout/whatMovedCeiling.test.cjs'),
   ...require('./features/workout/warmupSwapCount.test.cjs'),
   ...require('./features/workout/rampTargets.test.cjs'),
   ...require('./screens/liveWorkoutWiring.test.cjs'),
