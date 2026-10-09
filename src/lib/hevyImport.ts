@@ -44,6 +44,13 @@ export interface HevyImportPreview {
   lastDate: string | null;
   /** Rows with no countable set — duration-only cardio, empty lines. */
   skippedRowCount: number;
+  /**
+   * Sets heavier than the app holds (weightLimits). The loader refuses such a
+   * set for good, so it is left out here, where it can be said — counted in
+   * `setCount` it promised a set the history would never show, and a workout
+   * of nothing else was later reported as one that "already existed".
+   */
+  overweightSetCount: number;
   errors: string[];
 }
 
@@ -177,6 +184,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     firstDate: null,
     lastDate: null,
     skippedRowCount: 0,
+    overweightSetCount: 0,
     errors: [],
   };
   // The separator first, off the header line: the record splitter needs it
@@ -219,6 +227,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
   const workoutsByKey = new Map<string, HevyImportedWorkout>();
   let setCount = 0;
   let skippedRowCount = 0;
+  let overweightSetCount = 0;
 
   for (let i = 1; i < lines.length; i += 1) {
     if (!lines[i].trim()) {
@@ -245,6 +254,13 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     // v1 imports the lifting history and counts the rest out loud.
     if (!reps || reps <= 0) {
       skippedRowCount += 1;
+      continue;
+    }
+
+    // Before the workout is opened: one with only such sets must not exist.
+    const setWeightKg = Math.max(0, Math.round((weightKg ?? 0) * 100) / 100);
+    if (!isLiftableWeight(setWeightKg)) {
+      overweightSetCount += 1;
       continue;
     }
 
@@ -287,7 +303,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
       }
     }
     exercise.sets.push({
-      weightKg: Math.max(0, Math.round((weightKg ?? 0) * 100) / 100),
+      weightKg: setWeightKg,
       reps: Math.max(1, Math.round(reps)),
       kind: setKind(columns.setType >= 0 ? fields[columns.setType] : undefined),
     });
@@ -302,6 +318,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     firstDate: dates[0] ?? null,
     lastDate: dates[dates.length - 1] ?? null,
     skippedRowCount,
+    overweightSetCount,
     errors: workouts.length === 0 ? ['NO_WORKOUTS'] : [],
   };
 }

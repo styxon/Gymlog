@@ -69,11 +69,21 @@ export function parseCardioDistanceKm(input: string): number | null {
   if (!normalized) {
     return null;
   }
-  const parsed = Number(normalized);
-  if (!Number.isFinite(parsed) || parsed <= 0 || parsed >= 1000) {
+  // Digits and one decimal point: Number() would also read "1e2", "0x10" and "0b11".
+  if (!/^\d*\.?\d*$/.test(normalized)) {
     return null;
   }
-  return Math.round(parsed * 100) / 100;
+  const parsed = Number(normalized);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  // Rounded before the range check, so what is tested is what is saved:
+  // "0,004" is no distance (0) and "999,999" is the 1000 that is refused.
+  const rounded = Math.round(parsed * 100) / 100;
+  if (rounded <= 0 || rounded >= 1000) {
+    return null;
+  }
+  return rounded;
 }
 
 /**

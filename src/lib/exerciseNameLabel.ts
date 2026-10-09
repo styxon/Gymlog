@@ -1327,10 +1327,10 @@ export function exerciseNameLabel(language: AppLanguage, name: string): string {
     return '';
   }
   const key = name.trim();
-  if (language !== 'fi') {
-    return EXERCISE_NAME_EN[key] ?? name;
-  }
-  return EXERCISE_NAME_FI[key] ?? name;
+  // Own entries only: a custom exercise called "constructor" would otherwise
+  // find Object's function on the prototype and be shown as that.
+  const table = language !== 'fi' ? EXERCISE_NAME_EN : EXERCISE_NAME_FI;
+  return (Object.prototype.hasOwnProperty.call(table, key) ? table[key] : undefined) ?? name;
 }
 
 /** Exposed for the coverage test — every catalog lift should have an entry. */

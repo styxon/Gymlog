@@ -439,6 +439,7 @@ const suites = [
   ...require('./lib/recommendationPresentation.test.cjs'),
   ...require('./lib/recommendationProgramme.test.cjs'),
   ...require('./lib/csvProgramImport.test.cjs'),
+  ...require('./lib/importSearchHunt9.test.cjs'),
   ...require('./lib/recommendationScoring.test.cjs'),
   ...require('./lib/recommendationBackfill.test.cjs'),
   ...require('./lib/recommendationWaterfall.test.cjs'),

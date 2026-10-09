@@ -66,7 +66,7 @@ export interface AppShellDeps {
   upsertWorkoutTemplate: (draft: WorkoutTemplateDraft) => Promise<string>;
   importWorkoutHistory: (
     workouts: Parameters<NonNullable<SettingsImportSheetProps['onImportHistory']>>[0]['workouts'],
-  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[] }>;
+  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[]; skipped: number }>;
   /** The workout store's bulk filing, so imported lifts open on their last time. */
   recordLoggedWorkouts: (sessions: HevyLoggedSession[]) => void;
   showToast: (message: string) => void;
@@ -274,12 +274,16 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
           // import made before this.
           recordLoggedWorkouts(hevyWorkoutsToLoggedSessions(preview.workouts, new Set(result.sessionIds)));
           setSettingsImportVisible(false);
+          const imported = t(
+            preferences.appLanguage,
+            result.duplicates > 0 ? 'hevy.doneWithDuplicates' : 'hevy.done',
+            { imported: String(result.imported), duplicates: String(result.duplicates) },
+          );
+          // Said apart from the duplicates: these were never in the app.
           showToast(
-            t(
-              preferences.appLanguage,
-              result.duplicates > 0 ? 'hevy.doneWithDuplicates' : 'hevy.done',
-              { imported: String(result.imported), duplicates: String(result.duplicates) },
-            ),
+            result.skipped > 0
+              ? `${imported} · ${t(preferences.appLanguage, 'hevy.doneLeftOut', { skipped: String(result.skipped) })}`
+              : imported,
           );
         }}
       />

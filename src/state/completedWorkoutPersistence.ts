@@ -83,6 +83,7 @@ export interface CompletedWorkoutRecord {
 export interface BatchImportResult {
   database: AppDatabase;
   imported: number;
+  /** Workouts whose id is already in the history. */
   duplicates: number;
   /**
    * The inputs' session ids the returned database holds — written now or
@@ -90,6 +91,8 @@ export interface BatchImportResult {
    * time") names only sessions History has.
    */
   sessionIds: string[];
+  /** Workouts with nothing loggable left in them: never in the history, so not "already there". */
+  skipped: number;
 }
 
 function createEmptySummary(): SessionSaveSummary {
@@ -329,10 +332,11 @@ export function persistCompletedWorkoutSessionToDatabase(
  * workout — fine for one, quadratic for a multi-year history import (Hevy,
  * 1000+ workouts) that froze the app (#bugs). This builds every new session
  * and its logs against a Set of ids instead of a growing database, then
- * writes once. Same duplicate counting (a workout with nothing loggable
- * counts as a duplicate here too, as it always has), same per-workout shape,
- * one commit — so a caller's success message still follows one resolved
- * write, not the last of many.
+ * writes once. Same duplicate counting, same per-workout shape, one commit —
+ * so a caller's success message still follows one resolved write, not the
+ * last of many. A workout with nothing loggable is counted as skipped: it
+ * used to be counted as a duplicate, and the toast then said it "already
+ * existed" about a workout that was never in the app.
  */
 export function persistCompletedWorkoutSessionsToDatabase(
   database: AppDatabase,
@@ -345,6 +349,7 @@ export function persistCompletedWorkoutSessionsToDatabase(
   const sessionIds: string[] = [];
   let imported = 0;
   let duplicates = 0;
+  let skipped = 0;
 
   for (const input of inputs) {
     if (seenSessionIds.has(input.sessionId)) {
@@ -354,7 +359,7 @@ export function persistCompletedWorkoutSessionsToDatabase(
     }
     const record = buildCompletedWorkoutRecord(input, createIdFn);
     if (!record) {
-      duplicates += 1;
+      skipped += 1;
       continue;
     }
     seenSessionIds.add(input.sessionId);
@@ -365,11 +370,11 @@ export function persistCompletedWorkoutSessionsToDatabase(
   }
 
   if (newSessions.length === 0) {
-    return { database, imported, duplicates, sessionIds };
+    return { database, imported, duplicates, sessionIds, skipped };
   }
 
   let nextDatabase = workoutSessionRepository.appendMany(database, newSessions);
   nextDatabase = exerciseLogRepository.appendMany(nextDatabase, newLogs);
 
-  return { database: nextDatabase, imported, duplicates, sessionIds };
+  return { database: nextDatabase, imported, duplicates, sessionIds, skipped };
 }

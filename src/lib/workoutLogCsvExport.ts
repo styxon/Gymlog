@@ -1,6 +1,7 @@
 import { CardioSession, ExerciseLog, WorkoutSession } from '../types/models';
 import { getCardioActivity } from './cardio';
 import { localDateKey } from './completedSessions';
+import { guardCsvFormula } from './csvRecords';
 import { isMinutesLog } from './exerciseLog';
 
 /**
@@ -40,7 +41,9 @@ export const CARDIO_LOG_CSV_HEADER = 'Date,Activity,Duration (s),Distance (km),F
  * turns one of those into two columns and silently shifts every value after it.
  */
 function csvField(value: string | number | null | undefined): string {
-  const text = value === null || value === undefined ? '' : String(value);
+  // Only text can be a formula: a number is written as it is, so a weight
+  // stays a bare number a spreadsheet can sum.
+  const text = value === null || value === undefined ? '' : typeof value === 'string' ? guardCsvFormula(value) : String(value);
   if (!/[",\n\r]/.test(text)) {
     return text;
   }

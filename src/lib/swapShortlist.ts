@@ -87,7 +87,9 @@ export function identityKey(name: string): string {
     // Brackets are punctuation here, not gear talk to discard: "(Banded)" is
     // exactly the word that makes this the same lift as "Banded Glute Bridge".
     .replace(/[-–]/g, ' ')
-    .replace(/[^a-zåäö ]/g, ' ')
+    // Digits stay: "3/4 Sit-Up" is not "Sit-Up", and one identity would hide
+    // the one lift whenever the other is in the session.
+    .replace(/[^a-z0-9åäö ]/g, ' ')
     .split(/\s+/)
     .filter(Boolean)
     .sort()

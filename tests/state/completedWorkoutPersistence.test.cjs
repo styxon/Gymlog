@@ -185,8 +185,8 @@ module.exports = [
 
       // A mix the single-workout path already has to get right: two distinct
       // workouts, the same workout appearing twice in one file, and a row
-      // with nothing loggable (which persists nothing and is counted as a
-      // duplicate, exactly as the single-workout path already does).
+      // with nothing loggable (which persists nothing, as the single-workout
+      // path does, and is counted as skipped, not as a duplicate).
       const inputs = [
         buildInput('hevy_1', 'Push Day'),
         buildInput('hevy_2', 'Leg Day'),
@@ -212,10 +212,14 @@ module.exports = [
 
       const batch = persistCompletedWorkoutSessionsToDatabase(createEmptyDatabase(), inputs);
 
+      // The old path has one "did not persist"; the batch says which of the
+      // two it was (a workout already there, or one with nothing to log).
       assert.deepEqual(
-        { imported: batch.imported, duplicates: batch.duplicates },
-        { imported: oldImported, duplicates: oldDuplicates },
+        { imported: batch.imported, notPersisted: batch.duplicates + batch.skipped },
+        { imported: oldImported, notPersisted: oldDuplicates },
       );
+      assert.equal(batch.duplicates, 1, 'the workout listed twice');
+      assert.equal(batch.skipped, 1, 'the one with nothing loggable is not "already there"');
       assert.equal(oldImported, 3);
       assert.equal(oldDuplicates, 2);
 

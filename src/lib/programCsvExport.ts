@@ -1,5 +1,6 @@
 import { prescriptionUnitOf, type PrescriptionUnit, type WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { CSV_DAY_NUMBER_HEADER, csvDayNameKey, isRoleWord } from './csvProgramImport';
+import { guardCsvFormula } from './csvRecords';
 import { isHoldExerciseName } from './holdExercises';
 import { readsAsMinutesByName } from './minutesExercises';
 
@@ -113,7 +114,9 @@ function formatRepsCell(exercise: CsvExportExercise) {
 }
 
 function escapeCell(value: string) {
-  const cleaned = value.trim().replace(/\s+/g, ' ');
+  // A leading apostrophe defuses a name that starts as a formula; the importer
+  // takes it back out, so the round trip holds.
+  const cleaned = guardCsvFormula(value.trim().replace(/\s+/g, ' '));
   // Quoted the RFC way, a quote inside doubled. The importer used to drop
   // every quote character, so a name could not carry one and this stripped
   // them; it reads `""` as one quote since 2026-08-24, and an inch mark in

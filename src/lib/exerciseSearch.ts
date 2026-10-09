@@ -283,9 +283,21 @@ function dephrase(term: string): string {
   return term.split(PHRASE_JOIN).join(' ');
 }
 
+/**
+ * Abbreviations the rows print. They stand for the word alone: left as their
+ * own letters they match inside kyykky, penkki and lankku, so "kyykky kk"
+ * (kettlebell squats) listed every squat there is.
+ */
+const ABBREVIATIONS: ReadonlySet<string> = new Set(['kk', 'kp']);
+
 /** A term and the words it also stands for — both sides of a phrase alias. */
 function termVariants(term: string): string[] {
-  return term.split(PHRASE_OR).flatMap((variant) => [variant, ...(SEARCH_ALIASES[variant] ?? [])]);
+  return term.split(PHRASE_OR).flatMap((variant) => {
+    // An own-property read: the reader's text may be "constructor", which a
+    // plain lookup finds on Object.prototype and the spread cannot iterate.
+    const aliases = Object.prototype.hasOwnProperty.call(SEARCH_ALIASES, variant) ? SEARCH_ALIASES[variant] : [];
+    return ABBREVIATIONS.has(variant) ? [...aliases] : [variant, ...aliases];
+  });
 }
 
 /**

@@ -188,7 +188,7 @@ interface AppContextValue {
    */
   importWorkoutHistory: (
     workouts: HevyImportedWorkout[],
-  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[] }>;
+  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[]; skipped: number }>;
   saveCardioSession: (input: {
     activityType: CardioActivityType;
     startedAt: string;
@@ -1346,7 +1346,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       }
       // The ids the database now holds, so the caller can file the same
       // sessions as "last time" (lib/hevyImport hevyWorkoutsToLoggedSessions).
-      return { imported: result.imported, duplicates: result.duplicates, sessionIds: result.sessionIds };
+      return { imported: result.imported, duplicates: result.duplicates, sessionIds: result.sessionIds, skipped: result.skipped };
     });
   }
 
