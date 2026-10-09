@@ -158,6 +158,14 @@ export type AppRoute =
        * at the top of the overview is arriving somewhere else (2026-08-25).
        */
       scrollTo?: 'activity';
+      /**
+       * When a notification tap opened this, in milliseconds. Two taps name
+       * the same section and measure, which as bare values compare equal, so
+       * the screen — which lets the reader move within it — never heard the
+       * second one. A stamp that differs each time is what says "go there
+       * again".
+       */
+      openedAt?: number;
     }
   | {
       tab: 'progress';

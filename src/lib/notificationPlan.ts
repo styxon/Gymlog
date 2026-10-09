@@ -88,6 +88,15 @@ export interface NotificationPlanInput {
   weekVolumeKg: number;
   latestPr: LatestPrSignal | null;
   onTrainingBreak: boolean;
+  /**
+   * When the workout now in progress began, or null when none is.
+   *
+   * The reminder skip above only sees COMPLETED workouts, so a reader who
+   * started at 16:45 was still told "training day" at 17:30, mid-set, with the
+   * foreground handler forcing the sound on. A day with a workout under way
+   * has nothing left to ask for either.
+   */
+  activeWorkoutStartedAtMs?: number | null;
   /** Last weigh-in, so today's nudge is skipped once it is already done. */
   lastBodyweightAtMs?: number | null;
   /** Last measurement of the reminded kind, for the same reason. */
@@ -213,6 +222,12 @@ function buildSessionReminders(input: NotificationPlanInput): PlannedNotificatio
     // Already trained that day — the reminder has nothing left to ask for.
     const lastWorkoutAtMs = input.lastWorkoutAtMs ?? null;
     if (lastWorkoutAtMs !== null && isSameLocalDay(lastWorkoutAtMs, fireAtMs)) {
+      continue;
+    }
+    // Under way counts as much as done: the reminder asks for the session the
+    // reader is in.
+    const activeStartedAtMs = input.activeWorkoutStartedAtMs ?? null;
+    if (activeStartedAtMs !== null && isSameLocalDay(activeStartedAtMs, fireAtMs)) {
       continue;
     }
 
@@ -447,7 +462,18 @@ function applyDailyCap(planned: PlannedNotification[], level: NotificationLevel)
         CATEGORY_PRIORITY[left.category] - CATEGORY_PRIORITY[right.category] ||
         left.fireAtMs - right.fireAtMs,
     );
-    kept.push(...ranked.slice(0, cap));
+    const day = ranked.slice(0, cap);
+    // The weekly summary ranks last, and the weigh-in is every morning — so
+    // with both on, the summary lost every Sunday inside the weigh-in's
+    // horizon and never fired at all. Against the daily message the once-a-week
+    // one keeps the slot, as the tape measure does; against the others the
+    // order above stands.
+    const weekly = ranked.find((item) => item.category === 'weekly');
+    const weighInSlot = day.findIndex((item) => item.category === 'weighIn');
+    if (weekly && !day.includes(weekly) && weighInSlot !== -1) {
+      day[weighInSlot] = weekly;
+    }
+    kept.push(...day);
   });
 
   return kept.sort((left, right) => left.fireAtMs - right.fireAtMs);
@@ -504,15 +530,46 @@ export function buildNotificationPlan(input: NotificationPlanInput): PlannedNoti
     return trialNote ? [trialNote] : [];
   }
 
+  const comebackNote = buildComebackNudge(input);
+  // The nudge is the day's message about the gap, so it replaces that day's
+  // training reminder instead of arriving with it at the same minute: "no
+  // rush" beside "Training day". Dropped before the cap, where the reminder
+  // ranks below the nudge anyway and so can never be the one that kept it out.
+  const reminders = comebackNote
+    ? buildSessionReminders(input).filter((item) => !isSameLocalDay(item.fireAtMs, comebackNote.fireAtMs))
+    : buildSessionReminders(input);
+
   const planned = [
     trialNote,
-    ...buildSessionReminders(input),
+    ...reminders,
     ...buildWeighInReminders(input),
     ...buildMeasurementReminders(input),
-    buildComebackNudge(input),
+    comebackNote,
     buildWeeklySummary(input),
     buildRecordNote(input),
   ].filter((item): item is PlannedNotification => item !== null);
 
   return applyDailyCap(planned, input.prefs.level).slice(0, MAX_SCHEDULED);
+}
+
+/**
+ * When the workout in progress began, from the two places one can live: the
+ * guided session and the freestyle board. A finished session is not in
+ * progress — it is a completed workout by then, which the plan already reads.
+ */
+export function activeWorkoutStartedAt(
+  activeSession: { status: string; startedAt: string } | null | undefined,
+  freestyleStartedAtMs: number | null | undefined,
+): number | null {
+  const candidates: number[] = [];
+  if (activeSession && activeSession.status !== 'completed') {
+    const startedAt = new Date(activeSession.startedAt).getTime();
+    if (Number.isFinite(startedAt)) {
+      candidates.push(startedAt);
+    }
+  }
+  if (typeof freestyleStartedAtMs === 'number' && Number.isFinite(freestyleStartedAtMs)) {
+    candidates.push(freestyleStartedAtMs);
+  }
+  return candidates.length > 0 ? Math.max(...candidates) : null;
 }

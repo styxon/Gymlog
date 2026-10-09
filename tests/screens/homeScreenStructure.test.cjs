@@ -717,7 +717,7 @@ module.exports = [
       assert.match(progressScreenSource, /progressHistoryCard/);
       assert.match(progressScreenSource, /onOpenRecentSession\?\.\(session\.id\)/);
       assert.match(progressScreenSource, /useState<ProgressSection>\(initialSection \?\? 'overview'\)/);
-      assert.match(progressScreenSource, /useEffect\(\(\) => \{[\s\S]*setProgressSection\(initialSection\);[\s\S]*\}, \[initialSection\]\)/);
+      assert.match(progressScreenSource, /useEffect\(\(\) => \{[\s\S]*setProgressSection\(initialSection\);[\s\S]*\}, \[initialSection, routeOpenedAt\]\)/);
       // Wired in the progress module since phase A.
       assert.match(
         require('../helpers/appWiringSource.cjs').readAppWiring(),

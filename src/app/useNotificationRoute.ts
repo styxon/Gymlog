@@ -124,6 +124,12 @@ export function useNotificationRoute(deps: NotificationRouteDeps): void {
       return;
     }
     setPendingNotificationRoute(null);
-    resetToRoute(pendingNotificationRoute);
+    // Progress keeps its section and measure as state the reader can change;
+    // the stamp lets a second tap for the same destination take them back.
+    resetToRoute(
+      pendingNotificationRoute.tab === 'progress' && pendingNotificationRoute.screen === 'list'
+        ? { ...pendingNotificationRoute, openedAt: Date.now() }
+        : pendingNotificationRoute,
+    );
   }, [appHydrated, pendingNotificationRoute]);
 }

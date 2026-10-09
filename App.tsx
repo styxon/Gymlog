@@ -15,6 +15,7 @@ import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
 import { haptics } from './src/utils/haptics';
 import { useScheduledNotifications } from './src/hooks/useScheduledNotifications';
+import { activeWorkoutStartedAt } from './src/lib/notificationPlan';
 import { usePendingAiLogDeletions } from './src/hooks/usePendingAiLogDeletions';
 import { ThemeProvider, themeForName } from './src/theming';
 import {
@@ -377,7 +378,12 @@ function VinhaApp() {
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.
-  useScheduledNotifications(database, hydrated);
+  // A workout under way retires today's training reminder: starting it re-plans.
+  const activeWorkoutStartedAtMs = activeWorkoutStartedAt(
+    workout.activeSession,
+    workout.freestyleDraft?.startedAtMs,
+  );
+  useScheduledNotifications(database, hydrated, activeWorkoutStartedAtMs);
 
   const { navigateToActiveWorkoutRef, finishFromNotificationRef } = useSessionNotifications({
     workout,
