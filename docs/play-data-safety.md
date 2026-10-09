@@ -6,8 +6,8 @@ Last reviewed: 9 October 2026 · package `app.vinha` (previous full review 16 Se
 2026-09-30), the development transcript reader is gone (#347) and `transcripts/` is
 empty (2026-10-09, §3), error reports joined the usage events (2026-10-04), and
 purchases go through RevenueCat (#344, live once the store is set up). The
-**one blocker** this leaves for the form is in §3: the privacy policy does not
-name RevenueCat yet.
+**one blocker** this left — the privacy policy did not name RevenueCat — is fixed
+in the 2026-10-09 wording; the published pages on styxon.fi still need the upload (§3).
 
 The working draft for the Play Console **Data safety** form. It is derived from
 the privacy policy (`src/lib/legalDocuments.ts`, the single source of truth) and
@@ -41,8 +41,8 @@ RevenueCat's own Play guidance
 lists one data type: *Financial info → Purchase history*. It collects no location
 (only locale and currency), no crash logs, no diagnostics. **Action for the
 publisher before a build with the key ships:**
-- name RevenueCat (a US processor) in the privacy policy, in both languages (§3 —
-  the one open blocker);
+- RevenueCat (a US processor) is named in the privacy policy since the 2026-10-09
+  wording; publish that wording on styxon.fi (§3);
 - answer *Financial info → Purchase history* as in §2.
 
 The merged manifest also gains `com.android.vending.BILLING`, which is the
@@ -196,10 +196,12 @@ Done (keep true):
 
 Open:
 
-- [ ] **Name RevenueCat in the privacy policy, in both languages** — the one
-  blocker for this form. In the processor list of `src/lib/legalDocuments.ts`, next
-  to Google and Apple, and in the "outside the European Union" sentence; then bump
-  `LEGAL_LAST_UPDATED`, rebuild the legal site and upload it to styxon.fi by hand.
+- [x] **RevenueCat named in the privacy policy, in both languages** (2026-10-09,
+  version `2026-10-09`): in the processor list next to Google and Apple, per
+  platform, and in the "outside the European Union" sentence.
+- [ ] **Upload the rebuilt legal pages to styxon.fi** (`node scripts/build-legal-site.cjs`,
+  copy `dist-legal` into the site, upload by hand) — until then the public policy
+  URL in the form still shows the 3 October wording without RevenueCat.
 - [ ] Storage still in the EU — the policy says so in both languages; the function region (§1) is not claimed there.
   Verified 2026-09-16 (§1); on the day, re-check both: `vercel blob list-stores
   --scope vinha-fit` for the store, and the second segment of `x-vercel-id` on any

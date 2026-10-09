@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Updated 3 October 2026*
+*Updated 9 October 2026*
 
 What Vinha stores, what leaves your phone, and what you can do about it.
 
@@ -116,11 +116,12 @@ We run no servers of our own. Five companies process data for us, under contract
 - Anthropic (United States): answers coach questions, composes programmes and reads programme photos, as described above.
 - Google (United States): verifies your Google sign-in and, on Android, handles Google Play payments. Your relationship with Google is covered by Google’s own privacy policy.
 - Apple (United States): on iPhone, verifies your Apple sign-in and handles App Store payments. Your relationship with Apple is covered by Apple’s own privacy policy.
+- RevenueCat (United States): manages your Pro purchase for us. It receives an anonymous purchase id, your Google Play or App Store purchase record and basic app and device information (app version, operating system, store country). It never receives your name, email or card details.
 - Slack (United States): delivers the coach answers you report to us for review, as described above.
 
 ## Data outside the European Union
 
-Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, and possibly Vercel’s processing — the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.
+Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, your purchase record at RevenueCat, and possibly Vercel’s processing —the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.
 
 ## Why we may process your data
 
