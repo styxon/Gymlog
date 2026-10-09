@@ -65,10 +65,10 @@ module.exports = [
 
       // Home's own strip goes through the same function, not its own modulo.
       const home = strip(read('src', 'screens', 'HomeScreen.tsx'));
-      // From today on it names days by the rotation Home offers (forecastSlotOn).
+      // From today on it names days by the rotation Home offers (sessionForForecastDay).
       assert.match(
         home,
-        /session:\s*picked \?\?\s*sessionForSlot\(planSessions, forecastSlotOn\(trainingSchedule, date, activePlan\?\.sessionForecast \?\? null\)\),/,
+        /session:\s*picked \?\?\s*sessionForForecastDay\(planSessions, trainingSchedule, date, activePlan\?\.sessionForecast \?\? null\),/,
       );
       // Today the reader's own pick names the chip, as it names the hero
       // (review of the forecast, 2026-09-28).

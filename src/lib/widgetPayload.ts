@@ -604,7 +604,16 @@ export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayloa
       // "Is today a training day" stops being the question the moment the
       // training is done. The card said "Treeni" on an afternoon when the
       // calendar beside it had already gone green.
-      const done = session !== null && workoutDoneDays.has(toDayStartMs(date));
+      //
+      // Today asks the forecast when there is one, as findHomeWidgetNextSession
+      // does: the logged days are every programme's and freestyle's too, and a
+      // freestyle workout made the card say "Done" while its own tap and Home
+      // still offered this plan's session (bug hunt 10, 2026-10-09).
+      const done =
+        session !== null &&
+        (offset === 0 && input.sessionForecast
+          ? input.sessionForecast.trainedToday
+          : workoutDoneDays.has(toDayStartMs(date)));
       return {
         kind: done ? ('done' as const) : session ? ('work' as const) : ('rest' as const),
         dateKey: toDateKey(date),

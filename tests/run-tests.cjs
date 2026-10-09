@@ -394,6 +394,8 @@ const suites = [
   ...require('./screens/programmeHeld.test.cjs'),
   ...require('./lib/hunt9CopySession.test.cjs'),
   ...require('./screens/hunt9CopySession.test.cjs'),
+  ...require('./lib/hunt10HomeToday.test.cjs'),
+  ...require('./screens/hunt10HomeToday.test.cjs'),
   ...require('./screens/freestyleSurvives.test.cjs'),
   ...require('./screens/resumeIntent.test.cjs'),
   ...require('./screens/teachingSections.test.cjs'),

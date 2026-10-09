@@ -84,7 +84,18 @@ export function useWidgetTaps(deps: WidgetTapsDeps): void {
       // lives mid-page, and landing at the top of the overview is landing
       // somewhere else (user 2026-08-25). The standalone calendar screen
       // this used to open was retired as a duplicate.
-      resetToRoute({ tab: 'progress', screen: 'list', section: 'overview', scrollTo: 'activity' });
+      //
+      // Stamped, as the notification taps are: Progress keeps its section and
+      // scroll as state the reader moves, and a second tap names the same
+      // section and target, which as bare values compare equal — the screen
+      // stayed where the reader had left it (bug hunt 10, 2026-10-09).
+      resetToRoute({
+        tab: 'progress',
+        screen: 'list',
+        section: 'overview',
+        scrollTo: 'activity',
+        openedAt: Date.now(),
+      });
       return;
     }
     if (pendingWidgetTarget === 'programs') {

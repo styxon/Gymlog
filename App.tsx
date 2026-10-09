@@ -1748,6 +1748,7 @@ function VinhaApp() {
     todayStartMs,
     recommendedReadyTemplate,
     homeActivePlanCard,
+    homeEmptyProgramme,
     homeTrainingSchedule,
     refreshHomeWidget,
   });

@@ -42,6 +42,11 @@ export interface HomeWidgetFeedDeps {
     sessions: WidgetInput['sessions'];
     sessionForecast?: WidgetInput['sessionForecast'];
   } | null;
+  /**
+   * The running programme when every one of its days is empty: Home names it
+   * (useHomeActivePlan), and the widget has to as well, not suggest another.
+   */
+  homeEmptyProgramme: { title: string } | null;
   homeTrainingSchedule: WidgetInput['schedule'];
   /** From ./modules/home-widget. */
   refreshHomeWidget: () => Promise<boolean>;
@@ -55,6 +60,7 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
     todayStartMs,
     recommendedReadyTemplate,
     homeActivePlanCard,
+    homeEmptyProgramme,
     homeTrainingSchedule,
     refreshHomeWidget,
   } = deps;
@@ -114,7 +120,10 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
         // The widget shows whatever the app resolved, Pro gate included — it
         // cannot re-derive this, it is drawn in the launcher's process.
         theme: resolveThemeName(preferences),
-        planName: homeActivePlanCard?.title ?? null,
+        // A programme with days and nothing in them has no card but is still
+        // the reader's programme: the plan-with-no-sessions line is built for
+        // it, and the suggestion is for a reader who has none (bug hunt 10).
+        planName: homeActivePlanCard?.title ?? homeEmptyProgramme?.title ?? null,
         // With no programme the widget names the one the app would recommend
         // rather than asking an empty question. Presented here, because the
         // catalog's curated titles live on this side of the bridge.
@@ -149,6 +158,7 @@ export function useHomeWidgetFeed(deps: HomeWidgetFeedDeps) {
     appHydrated,
     preferences,
     homeActivePlanCard,
+    homeEmptyProgramme,
     homeTrainingSchedule,
     widgetCompletedDayStarts,
     widgetCompletedWorkoutDayStarts,

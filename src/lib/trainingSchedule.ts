@@ -218,6 +218,30 @@ export interface SessionForecast {
 }
 
 /**
+ * The forecast with the reader's pick for today taken as the session today
+ * actually takes.
+ *
+ * `nextSlot` comes from what was TRAINED, so a hand-picked session left the
+ * later days counting on from the rotation's slot: with Pull picked over
+ * Upper, the strip named Lower for the next training day and Pull again the
+ * one after, and after training Pull it flipped to Push and Upper — the
+ * rotation continues from the session trained, not the one it expected
+ * (resolveNextPlanEntryIndex). So the forecast continues from the pick:
+ * before training it is today's slot, after training the next. A pick that
+ * names no day of the list leaves the forecast alone.
+ */
+export function forecastFromPick(
+  forecast: SessionForecast,
+  pickedIndex: number | null,
+  sessionCount: number,
+): SessionForecast {
+  if (pickedIndex === null || pickedIndex < 0 || pickedIndex >= sessionCount) {
+    return forecast;
+  }
+  return { ...forecast, nextSlot: (pickedIndex + (forecast.trainedToday ? 1 : 0)) % sessionCount };
+}
+
+/**
  * Which session a day is shown with, as an index into the programme's list.
  *
  * From today on, the rotation Home's hero follows: the first training day not

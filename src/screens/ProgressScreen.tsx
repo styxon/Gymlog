@@ -891,12 +891,20 @@ export function ProgressScreen({
   };
   useEffect(() => {
     if (scrollToTarget === 'activity') {
+      // The y belongs to an overview that is on screen. Asked from another
+      // section it is a leftover of an earlier visit, the block mounts again
+      // under a new layout, and the scroll has to wait for that one.
+      if (progressSection !== 'overview') {
+        activityBlockY.current = null;
+      }
       setProgressSection('overview');
       pendingActivityScroll.current = true;
       scrollToActivityBlock();
     }
+    // routeOpenedAt: a second tap on the widget's calendar names the same
+    // target as the first, and only its stamp says "go there again".
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollToTarget]);
+  }, [scrollToTarget, routeOpenedAt]);
 
   function switchSection(section: ProgressSection) {
     setProgressSection(section);

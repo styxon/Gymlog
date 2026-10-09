@@ -792,11 +792,11 @@ module.exports = [
       // which survive a switch to a cycle untouched and kept saying MON/THU
       // under a six-day rotation (user, 2026-08-25).
       // From today on the names follow the rotation the hero offers
-      // (forecastSlotOn, break round 2026-09-28); which days train is still
+      // (sessionForForecastDay, break round 2026-09-28); which days train is still
       // the schedule's.
       assert.match(
         homeScreenSource,
-        /sessionForSlot\(planSessions, forecastSlotOn\(trainingSchedule, date, activePlan\?\.sessionForecast \?\? null\)\)/,
+        /sessionForForecastDay\(planSessions, trainingSchedule, date, activePlan\?\.sessionForecast \?\? null\)/,
       );
       assert.doesNotMatch(homeScreenSource, /resolveSessionWeekday|hasFixedWeekdays/);
       // The five day cards became a compact strip (design frame 15), and the
