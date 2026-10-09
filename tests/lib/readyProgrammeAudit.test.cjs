@@ -132,6 +132,14 @@ module.exports = [
       // "Single-Leg Glute Bridge" opened initials and no steps, and "Squat"
       // and "Assisted Pull-Up" reached a row only by the containment guess
       // (bug hunt, 2026-10-09).
+      // A row whose only upstream photo shows another movement opens the
+      // placeholder on purpose (scripts/exercise-pictures.json, owner
+      // decision 2026-10-09), as in the prescribed-lift check below.
+      const noPicture = new Set(
+        require('../../scripts/exercise-pictures.json').noPicture.map(
+          (key) => `free_${key.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`,
+        ),
+      );
       const offenders = [];
       for (const group of WORKOUT_SUBSTITUTION_GROUPS) {
         for (const name of group.allowedExerciseNames) {
@@ -139,7 +147,7 @@ module.exports = [
           if (index === null) {
             const guess = findGuidedLibraryIndex(name, LIBRARY_NAMES);
             offenders.push(`${group.id} / ${name} -> ${guess === null ? 'no row' : `guess ${LIBRARY_NAMES[guess]}`}`);
-          } else if (!LIBRARY[index].imageKey && !LIBRARY[index].id.startsWith('extra_')) {
+          } else if (!LIBRARY[index].imageKey && !LIBRARY[index].id.startsWith('extra_') && !noPicture.has(LIBRARY[index].id)) {
             offenders.push(`${group.id} / ${name} -> ${LIBRARY_NAMES[index]} has no photo`);
           }
         }
