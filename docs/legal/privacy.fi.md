@@ -110,7 +110,7 @@ Tapahtumat menevät omalle palvelimellemme eivätkä mihinkään muualle. Niitä
 
 ## Ketkä auttavat meitä
 
-Meillä ei ole omia palvelimia. Viisi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.
+Meillä ei ole omia palvelimia. Kuusi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.
 
 - Vercel (Yhdysvallat): ajaa palvelimemme ja säilyttää pilvivarmuuskopiot ja käyttötapahtumat. Tallennustila on Euroopan unionin alueella.
 - Anthropic (Yhdysvallat): vastaa valmentajan kysymyksiin, koostaa ohjelmia ja lukee ohjelmakuvia, kuten yllä kuvattiin.
@@ -121,7 +121,7 @@ Meillä ei ole omia palvelimia. Viisi yritystä käsittelee tietoja puolestamme 
 
 ## Tiedot Euroopan unionin ulkopuolella
 
-Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely —siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.
+Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.
 
 ## Millä perusteella käsittelemme tietojasi
 

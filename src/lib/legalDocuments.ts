@@ -241,7 +241,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Who helps us run this',
     body: [
-      'We run no servers of our own. Five companies process data for us, under contracts that bind them to handle it only on our instructions and only for the purposes described here.',
+      'We run no servers of our own. Six companies process data for us, under contracts that bind them to handle it only on our instructions and only for the purposes described here.',
     ],
     bullets: [
       'Vercel (United States): runs our server and stores the cloud backups and the usage events. The storage is in the European Union.',
@@ -267,7 +267,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Data outside the European Union',
     body: [
-      'Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, your purchase record at RevenueCat, and possibly Vercel’s processing —the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.',
+      'Where data goes outside the European Union — the coach traffic to Anthropic, the answers you report to Slack, your purchase record at RevenueCat, and possibly Vercel’s processing — the transfer rests on the European Commission’s standard contractual clauses, which are part of each provider’s data processing agreement with us.',
     ],
   },
   {
@@ -511,7 +511,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Ketkä auttavat meitä',
     body: [
-      'Meillä ei ole omia palvelimia. Viisi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.',
+      'Meillä ei ole omia palvelimia. Kuusi yritystä käsittelee tietoja puolestamme sopimuksilla, jotka velvoittavat ne käsittelemään tietoja vain meidän ohjeidemme mukaan ja vain tässä kuvattuihin tarkoituksiin.',
     ],
     bullets: [
       'Vercel (Yhdysvallat): ajaa palvelimemme ja säilyttää pilvivarmuuskopiot ja käyttötapahtumat. Tallennustila on Euroopan unionin alueella.',
@@ -537,7 +537,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Tiedot Euroopan unionin ulkopuolella',
     body: [
-      'Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely —siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.',
+      'Siltä osin kuin tietoja siirtyy Euroopan unionin ulkopuolelle — valmentajan liikenne Anthropicille, ilmoittamasi vastaukset Slackiin, ostotietosi RevenueCatilla ja mahdollisesti Vercelin käsittely — siirto perustuu Euroopan komission vakiosopimuslausekkeisiin, jotka ovat osa kunkin palveluntarjoajan kanssamme tekemää tietojenkäsittelysopimusta.',
     ],
   },
   {
