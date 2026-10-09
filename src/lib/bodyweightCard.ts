@@ -192,7 +192,12 @@ export function buildWeightAxisTicks(values: readonly number[], tickCount = 7): 
       // Strictly inside, not merely within: a dot welded to the outermost
       // gridline reads as clipped, which is the clear air the step size was
       // buying before the origin was snapped too.
-      return rawMax < snapped + candidate * half && rawMin > snapped - candidate * half;
+      // Against the gridlines as they are printed (two decimals), with a
+      // margin: 187.6 + 0.6000000000000001 is above 188.2 in floating point
+      // where on the axis the two are the same line.
+      const hi = Number((snapped + candidate * half).toFixed(2));
+      const lo = Number((snapped - candidate * half).toFixed(2));
+      return rawMax < hi - 1e-9 && rawMin > lo + 1e-9;
     }) ??
     NICE_STEPS[NICE_STEPS.length - 1];
 

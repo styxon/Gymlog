@@ -173,6 +173,19 @@ export function isHoldExerciseName(name: string): boolean {
 }
 
 /**
+ * Whether a stored log is a hold: its reps are seconds held, not repetitions.
+ *
+ * The player saves a hold as reps = seconds with no unit (only minutes carry
+ * one), so the name is all a log has to say so — the same way a log of minutes
+ * from before the unit existed is read (minutesExercises.isMinutesLogEntry).
+ * Three planks of 60 s are not 180 repetitions: a rep total, a rep record or
+ * a rep trajectory that adds seconds to repetitions counts nothing true.
+ */
+export function isHoldLogEntry(log: { exerciseNameSnapshot?: unknown } | null | undefined): boolean {
+  return typeof log?.exerciseNameSnapshot === 'string' && isHoldExerciseName(log.exerciseNameSnapshot);
+}
+
+/**
  * Whether a name is a hold only since 2026-10-05: through the name rule or the
  * library's own list, not the original list or its library spellings. Before
  * that day such a row opened a reps dial, so what a programme stored for it

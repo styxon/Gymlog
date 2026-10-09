@@ -167,6 +167,29 @@ export function getComparableLogSets(
 }
 
 /**
+ * Every set that was lifted for work: the working sets and the drop sets, not
+ * the warm-ups and not what was never done.
+ *
+ * getComparableLogSets answers "which sets stand for this lift" — the working
+ * ones when there are any — and that is right for a top set, a record or a
+ * trend, which compare one lift against the next. It is wrong for a COUNT: a
+ * Hevy import of 2 × 100 × 5 and two drop sets (80 × 8, 60 × 10) read as 2
+ * sets and 1000 kg, where 4 sets and 2240 kg were lifted. Sets done and
+ * kilograms moved read this; a top set or a record keeps the comparable ones.
+ */
+export function getWorkedLogSets(
+  log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> | null | undefined,
+) {
+  if (!log || log.skipped) {
+    return [];
+  }
+
+  return getOrderedLogSets(log).filter(
+    (set) => set.status !== 'pending' && set.status !== 'skipped' && set.kind !== 'warmup',
+  );
+}
+
+/**
  * Did this log record any work at all?
  *
  * An exercise that was put on the board and never performed still leaves a

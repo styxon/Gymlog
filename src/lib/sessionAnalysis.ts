@@ -1,17 +1,18 @@
+import { getWorkedLogSets } from './exerciseLog';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { I18nKey, t } from './i18n';
 import { localizeSessionName } from './sessionNameLabel';
+import { isExerciseDone } from './sessionTotals';
 import {
   buildLiftHistories,
   comparableSessions,
-  completedReps,
   normalizedName,
   sessionTime,
   sessionVolumeKg,
   topSetOf,
 } from './trainingHistory';
 import { AppLanguage, ExerciseLog, ExerciseLogSetEffort, WorkoutSession } from '../types/models';
-import { getDateTimeFormat, removeTrailingZeros } from './format';
+import { formatPercent, getDateTimeFormat, removeTrailingZeros } from './format';
 
 /**
  * The written-out post-workout analysis behind the coach sheet's
@@ -114,7 +115,7 @@ export function describeVolumeChange(
   if (percent === 0) {
     return { kind: 'flat', text: t(language, 'analysis.change.flat') };
   }
-  return { kind: percent > 0 ? 'up' : 'down', text: `${percent > 0 ? '+' : ''}${percent}%` };
+  return { kind: percent > 0 ? 'up' : 'down', text: `${percent > 0 ? '+' : ''}${formatPercent(percent, language)}` };
 }
 
 export interface SessionAnalysisInput {
@@ -128,9 +129,16 @@ export interface SessionAnalysisInput {
 
 const MAX_VOLUME_BARS = 6;
 
-function round(value: number, decimals = 1) {
+// Two decimals: the weight dial steps 1.25 kg, and one decimal printed 61.25 as
+// 61,3 — a weight nobody lifted (removeTrailingZeros keeps two for this reason).
+function round(value: number, decimals = 2) {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+/** The sets of a log that were lifted for work and had reps: what a count or a row line reads. */
+function workedSetsWithReps(log: ExerciseLog) {
+  return getWorkedLogSets(log).filter((set) => set.reps > 0);
 }
 
 function collectEfforts(logs: ExerciseLog[]) {
@@ -168,7 +176,10 @@ export function buildSessionAnalysis({
     return null;
   }
 
-  const sessionLogs = logs.filter((log) => log.sessionId === session.id && !log.skipped);
+  // The exercises that were done, by the rule History counts them with
+  // (isExerciseDone): a swap never started or a note-only row is saved as a
+  // log too, and read "over 3 exercises" for one lift.
+  const sessionLogs = logs.filter((log) => log.sessionId === session.id && isExerciseDone(log));
   if (sessionLogs.length === 0) {
     return null;
   }
@@ -179,7 +190,7 @@ export function buildSessionAnalysis({
     : localizedName.toUpperCase();
 
   // ── meta row ────────────────────────────────────────────────────────────
-  const setCount = sessionLogs.reduce((sum, log) => sum + completedReps(log).length, 0);
+  const setCount = sessionLogs.reduce((sum, log) => sum + workedSetsWithReps(log).length, 0);
   const volume = sessionVolumeKg(session, logs);
   const metaParts: string[] = [];
 
@@ -283,9 +294,19 @@ export function buildSessionAnalysis({
       continue;
     }
 
-    const reps = completedReps(log);
+    const worked = workedSetsWithReps(log);
+    const reps = worked.map((set) => set.reps);
     const repLabel = reps.every((count) => count === reps[0]) ? `${reps[0]}` : reps.join('/');
-    const detail = `${reps.length} × ${repLabel} · ${removeTrailingZeros(round(log.weight))} kg`;
+    // The weights the sets were lifted at, not the heaviest one printed under
+    // every set: a ramp of 60 / 80 / 100 kg read "3 × 8/5/3 · 100 kg", as if
+    // the eight had been at a hundred.
+    const lightest = Math.min(...worked.map((set) => set.weight));
+    const heaviestWeight = Math.max(...worked.map((set) => set.weight));
+    const weightLabel =
+      lightest === heaviestWeight
+        ? `${removeTrailingZeros(round(heaviestWeight))} kg`
+        : `${removeTrailingZeros(round(lightest))}–${removeTrailingZeros(round(heaviestWeight))} kg`;
+    const detail = `${reps.length} × ${repLabel} · ${weightLabel}`;
 
     // Compare against the most recent earlier session of the same lift.
     const earlier =

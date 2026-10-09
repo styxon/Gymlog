@@ -5,7 +5,8 @@ import {
   getCanonicalCompletedSessions,
 } from './completedSessions';
 import { getSessionDurationMinutes } from './dashboard';
-import { getComparableLogSets } from './exerciseLog';
+import { getWorkedLogSets } from './exerciseLog';
+import { isHoldLogEntry } from './holdExercises';
 import { isMinutesLogEntry } from './minutesExercises';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import {
@@ -128,13 +129,15 @@ export function getMilestoneFacts(
     timelines.volume.push({ at, total: volume });
 
     for (const log of logsBySession.get(session.id) ?? []) {
-      const comparable = getComparableLogSets(log).filter((set) => set.reps > 0);
+      // Every set lifted, drop sets with the working ones: a count, not a top set.
+      const comparable = getWorkedLogSets(log).filter((set) => set.reps > 0);
       if (comparable.length === 0) {
         continue;
       }
       sets += comparable.length;
-      // A log of minutes counts its sets, not its minutes as repetitions.
-      reps += isMinutesLogEntry(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
+      // A log of minutes counts its sets, not its minutes as repetitions; a
+      // hold likewise, its seconds are not repetitions.
+      reps += isMinutesLogEntry(log) || isHoldLogEntry(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
       seenExercises.add(log.exerciseNameSnapshot.trim().toLowerCase());
     }
     timelines.reps.push({ at, total: reps });

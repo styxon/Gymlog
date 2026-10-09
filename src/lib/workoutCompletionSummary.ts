@@ -1,5 +1,4 @@
-import { getComparableLogSets } from './exerciseLog';
-import { WeightedSet, beatsBest, heaviestOfSets } from './personalRecords';
+import { WeightedSet, beatsBest, heaviestOfSets, recordSetsOfLog } from './personalRecords';
 import { ExerciseLog, ExerciseTemplate, WorkoutSession } from '../types/models';
 
 export interface WorkoutCompletionExerciseCard {
@@ -83,7 +82,9 @@ export function buildExercisePrLookup({
       return;
     }
 
-    const topSet = heaviestOfSets(getComparableLogSets(log));
+    // The sets a record reads: none for minutes (a level in the kg dial is not
+    // a load) or a hold, so the prior best here is the Records tab's.
+    const topSet = heaviestOfSets(recordSetsOfLog(log));
     if (!topSet) {
       return;
     }
@@ -197,7 +198,7 @@ export function findLatestSessionPr({
 
       // The log's own best set is the only one that can beat the prior best
       // — any other set in the same log is, by the same rule, no better.
-      const topSet = heaviestOfSets(getComparableLogSets(log));
+      const topSet = heaviestOfSets(recordSetsOfLog(log));
       if (!topSet || !beatsBest(topSet, previousBest)) {
         return;
       }

@@ -8,8 +8,9 @@
   WorkoutSession,
   WorkoutTemplate,
 } from '../types/models';
-import { getComparableLogSets, isMinutesLog, logRecordedWork } from './exerciseLog';
+import { getComparableLogSets, getWorkedLogSets, logRecordedWork } from './exerciseLog';
 import { t } from './i18n';
+import { isMinutesLogEntry } from './minutesExercises';
 
 export interface ExerciseLogWithSession extends ExerciseLog {
   performedAt: string;
@@ -128,7 +129,7 @@ export function getTotalReps(repsPerSet: number[]) {
 }
 
 export function getCompletedSetCount(logs: readonly Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>[]) {
-  return logs.reduce((sum, log) => sum + (log.skipped ? 0 : getComparableLogSets(log).length), 0);
+  return logs.reduce((sum, log) => sum + (log.skipped ? 0 : getWorkedLogSets(log).length), 0);
 }
 
 /**
@@ -137,16 +138,20 @@ export function getCompletedSetCount(logs: readonly Pick<ExerciseLog, 'weight' |
  * (nothing, from the player) is not a load that was lifted twenty times.
  */
 export function getTotalVolume(
-  log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>,
+  log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
 ) {
-  if (isMinutesLog(log)) {
+  // The unit or, for a log saved before the unit existed, the name: the same
+  // reading Records and the rep totals make (isMinutesLogEntry).
+  if (isMinutesLogEntry(log)) {
     return 0;
   }
-  return getComparableLogSets(log).reduce((sum, set) => sum + set.weight * set.reps, 0);
+  return getWorkedLogSets(log).reduce((sum, set) => sum + set.weight * set.reps, 0);
 }
 
 export function getSessionTotalVolume(
-  logs: readonly (Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & Pick<Partial<ExerciseLog>, 'repsUnit'>)[],
+  logs: readonly (Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>)[],
 ) {
   return logs.reduce((sum, log) => sum + (log.skipped ? 0 : getTotalVolume(log)), 0);
 }

@@ -70,7 +70,11 @@ export function formatOverviewVolumeTick(value: number, ticks: number[]) {
   const top = ticks.length ? ticks[ticks.length - 1] : 0;
   if (top >= 1000) {
     const tonnes = value / 1000;
-    return `${removeTrailingZeros(Number(tonnes.toFixed(tonnes >= 10 ? 0 : 1)))} t`;
+    // A tenth of a tonne is a hundred kilos. A top of 1000 kg takes a 250 kg
+    // step, and 250 / 750 on a one-decimal axis read "0,3 t" / "0,8 t" under
+    // gridlines that were at a quarter and three quarters.
+    const wholeHundreds = ticks.every((tick) => tick % 100 === 0);
+    return `${removeTrailingZeros(Number(tonnes.toFixed(tonnes >= 10 ? 0 : wholeHundreds ? 1 : 2)))} t`;
   }
   return `${removeTrailingZeros(Math.round(value))} kg`;
 }

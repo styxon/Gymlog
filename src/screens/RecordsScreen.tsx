@@ -46,7 +46,8 @@ const MONTHS: Record<AppLanguage, string[]> = {
 };
 
 function decimal(value: number, language: AppLanguage) {
-  return removeTrailingZeros(Math.round(value * 10) / 10);
+  // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
+  return removeTrailingZeros(Math.round(value * 100) / 100);
 }
 
 function thousands(value: number, language: AppLanguage) {
