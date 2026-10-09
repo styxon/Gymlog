@@ -1,7 +1,7 @@
 import type { AppLanguage, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
 import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import { isMinutesTrackingMode, prescriptionUnitOf, WorkoutTrackingMode } from '../features/workout/workoutTypes';
-import { collapseCellWhitespace, splitCsvRecords } from './csvRecords';
+import { collapseCellWhitespace, splitCsvRecords, unguardCsvFormula } from './csvRecords';
 import { isBrowsableExercise } from './exerciseBrowseFilter';
 import { isSpecialtyExercise } from './exerciseClassification';
 import { lookupNameBook } from './exerciseNameBook';
@@ -37,11 +37,53 @@ export interface CsvLibraryEntry {
  * written out, the app's own label or the reader's name book still reach
  * every row; so does a written name that itself says stretch.
  */
-function mayGuess(entry: CsvLibraryEntry, writtenNamesANonSet: boolean): boolean {
-  if (isSpecialtyExercise({ name: entry.name, sourceCategory: entry.sourceCategory ?? undefined })) {
-    return false;
+function mayGuess(entry: IndexedLibraryEntry, writtenNamesANonSet: boolean): boolean {
+  return !entry.specialty && (writtenNamesANonSet || entry.browsable);
+}
+
+/**
+ * A library row with everything the matcher derives from its name, worked out
+ * once. A row that matches nothing used to re-fold every one of the library's
+ * rows and build a RegExp for each, about 3 ms in Node, and the programme
+ * sheet parses again on every keystroke in the paste box.
+ */
+interface IndexedLibraryEntry {
+  entry: CsvLibraryEntry;
+  normalized: string;
+  compact: string;
+  folded: string;
+  foldedCompact: string;
+  /** ` normalized ` — a whole-word test is a plain substring test on these. */
+  padded: string;
+  tokens: ReadonlySet<string>;
+  specialty: boolean;
+  browsable: boolean;
+}
+
+const LIBRARY_INDEXES = new WeakMap<CsvLibraryEntry[], IndexedLibraryEntry[]>();
+
+function indexLibrary(library: CsvLibraryEntry[]): IndexedLibraryEntry[] {
+  const known = LIBRARY_INDEXES.get(library);
+  if (known && known.length === library.length) {
+    return known;
   }
-  return writtenNamesANonSet || isBrowsableExercise(entry);
+  const indexed = library.map((entry): IndexedLibraryEntry => {
+    const normalized = normalizeName(entry.name);
+    const folded = foldPlural(normalized);
+    return {
+      entry,
+      normalized,
+      compact: normalized.replace(/ /g, ''),
+      folded,
+      foldedCompact: folded.replace(/ /g, ''),
+      padded: ` ${normalized} `,
+      tokens: new Set(normalized.split(' ').filter(Boolean)),
+      specialty: isSpecialtyExercise({ name: entry.name, sourceCategory: entry.sourceCategory ?? undefined }),
+      browsable: isBrowsableExercise(entry),
+    };
+  });
+  LIBRARY_INDEXES.set(library, indexed);
+  return indexed;
 }
 
 export interface CsvProgramRow {
@@ -93,7 +135,9 @@ function normalizeName(value: string) {
 
 /** A day name as the importer groups it: two names with one key are one day. */
 export function csvDayNameKey(value: string) {
-  return normalizeName(value);
+  // A name with no a-z or digit in it ("Пн", "💪", "Ä") folds to nothing, and
+  // every such day would share the one empty key and merge into a single day.
+  return normalizeName(value) || value.trim().replace(/\s+/g, ' ').toLocaleLowerCase('fi');
 }
 
 /** The optional column that numbers the days, and the key its header folds to. */
@@ -268,7 +312,9 @@ function parseReps(value: string): { repMin: number; repMax: number; unit: CsvRe
       break;
     }
   }
-  const match = numbers.replace(/\s+/g, '').match(/^(\d+)(?:[-–—x/](\d+))?$/);
+  // Space is allowed around a separator ("8 - 10", "3 x 10") and nowhere else:
+  // stripped everywhere, "6 8" joined into 68.
+  const match = numbers.trim().replace(/\s*([-–—x/])\s*/g, '$1').match(/^(\d+)(?:[-–—x/](\d+))?$/);
   if (!match) {
     return null;
   }
@@ -280,26 +326,18 @@ function parseReps(value: string): { repMin: number; repMax: number; unit: CsvRe
   return { repMin: Math.min(first, second), repMax: Math.max(first, second), unit };
 }
 
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
 /**
- * Whether `needle` occurs in `haystack` as whole words, not merely as a run of
- * characters — "up" inside "ups" is not "up". Both sides have already been
- * through `normalizeName`, which leaves tokens separated by single spaces, so
- * a boundary is simply the string's edge or a space.
+ * Whether one name occurs in the other as whole words, not merely as a run of
+ * characters — "up" inside "ups" is not "up". Both sides are `normalizeName`
+ * output padded with a space each end (tokens are single-space separated), so
+ * a boundary is a space and the test is a plain substring one. An empty name
+ * pads to two spaces, which no single-spaced text holds.
  */
-function containsWholeWords(haystack: string, needle: string): boolean {
-  if (!needle) {
-    return false;
-  }
-  return new RegExp(`(^|\\s)${escapeRegExp(needle)}(\\s|$)`).test(haystack);
+function containsWholeWords(haystackPadded: string, needlePadded: string): boolean {
+  return needlePadded.length > 2 && haystackPadded.includes(needlePadded);
 }
 
-function tokenOverlapScore(left: string, right: string) {
-  const leftTokens = new Set(left.split(' ').filter(Boolean));
-  const rightTokens = new Set(right.split(' ').filter(Boolean));
+function tokenOverlapScore(leftTokens: ReadonlySet<string>, rightTokens: ReadonlySet<string>) {
   if (!leftTokens.size || !rightTokens.size) {
     return 0;
   }
@@ -343,7 +381,7 @@ const LABEL_TO_STORED_NAMES: ReadonlyMap<string, readonly string[]> = (() => {
   return map;
 })();
 
-function matchAppLabel(rawName: string, library: CsvLibraryEntry[]): CsvLibraryEntry | null {
+function matchAppLabel(rawName: string, library: readonly IndexedLibraryEntry[]): CsvLibraryEntry | null {
   const storedNames = LABEL_TO_STORED_NAMES.get(foldLabel(rawName));
   if (!storedNames) {
     return null;
@@ -352,9 +390,9 @@ function matchAppLabel(rawName: string, library: CsvLibraryEntry[]): CsvLibraryE
   // table lists them — the table puts the canonical lift first.
   for (const stored of storedNames) {
     const key = normalizeName(stored);
-    const entry = library.find((candidate) => normalizeName(candidate.name) === key);
+    const entry = library.find((candidate) => candidate.normalized === key);
     if (entry) {
-      return entry;
+      return entry.entry;
     }
   }
   return null;
@@ -445,11 +483,9 @@ function matchExercise(
   // The app's own name for the lift, in either language, before guessing —
   // but after a library name written out exactly, which is never a label for
   // some other lift.
-  const exact = library.some((entry) => {
-    const entryNormalized = normalizeName(entry.name);
-    return entryNormalized === normalized || entryNormalized.replace(/ /g, '') === compact;
-  });
-  const labelled = exact ? null : matchAppLabel(rawName, library);
+  const indexed = indexLibrary(library);
+  const exact = indexed.some((entry) => entry.normalized === normalized || entry.compact === compact);
+  const labelled = exact ? null : matchAppLabel(rawName, indexed);
   if (labelled) {
     return { matchedName: labelled.name, libraryItemId: labelled.id, suggestion: null, viaNameBook: false };
   }
@@ -458,31 +494,30 @@ function matchExercise(
   let pluralMatch: CsvLibraryEntry | null = null;
   let bestOverlap: { entry: CsvLibraryEntry; score: number } | null = null;
   const writtenNamesANonSet = !isBrowsableExercise({ name: rawName });
+  const padded = ` ${normalized} `;
+  const tokens = new Set(normalized.split(' ').filter(Boolean));
 
-  for (const entry of library) {
-    const entryNormalized = normalizeName(entry.name);
+  for (const indexedEntry of indexed) {
+    const { entry } = indexedEntry;
     // Exact match, tolerant of spacing/punctuation ("Dead Lift" === "Deadlift").
-    if (entryNormalized === normalized || entryNormalized.replace(/ /g, '') === compact) {
+    if (indexedEntry.normalized === normalized || indexedEntry.compact === compact) {
       return { matchedName: entry.name, libraryItemId: entry.id, suggestion: null, viaNameBook: false };
     }
     // The same name but for a plural. Kept until the loop ends, so an exact
     // match further down still wins.
-    if (!pluralMatch) {
-      const entryFolded = foldPlural(entryNormalized);
-      if (entryFolded === folded || entryFolded.replace(/ /g, '') === foldedCompact) {
-        pluralMatch = entry;
-      }
+    if (!pluralMatch && (indexedEntry.folded === folded || indexedEntry.foldedCompact === foldedCompact)) {
+      pluralMatch = entry;
     }
-    if (!mayGuess(entry, writtenNamesANonSet)) {
+    if (!mayGuess(indexedEntry, writtenNamesANonSet)) {
       continue;
     }
     if (
       normalized.length >= 5
-      && (containsWholeWords(entryNormalized, normalized) || containsWholeWords(normalized, entryNormalized))
+      && (containsWholeWords(indexedEntry.padded, padded) || containsWholeWords(padded, indexedEntry.padded))
     ) {
       containsMatches.push(entry);
     }
-    const score = tokenOverlapScore(normalized, entryNormalized);
+    const score = tokenOverlapScore(tokens, indexedEntry.tokens);
     if (score > (bestOverlap?.score ?? 0)) {
       bestOverlap = { entry, score };
     }
@@ -588,7 +623,7 @@ export function parseCsvProgram(
     // Collapsed, not just trimmed: a quoted cell can carry the line break it
     // was wrapped with (Alt+Enter, or a photographed cell copied verbatim),
     // and that wrap is not part of the name.
-    const writtenDay = collapseCellWhitespace(cells[dayIndex] ?? '');
+    const writtenDay = unguardCsvFormula(collapseCellWhitespace(cells[dayIndex] ?? ''));
     const dayNumberText = dayNumberIndex >= 0 ? (cells[dayNumberIndex] ?? '').trim() : '';
     const writtenDayNumber = /^\d+$/.test(dayNumberText) && Number(dayNumberText) > 0 ? Number(dayNumberText) : null;
     // A numbered day is the day its cell names, whatever the word: the app
@@ -596,7 +631,7 @@ export function parseCsvProgram(
     const roleTagged = writtenDayNumber === null && isRoleWord(writtenDay);
     const day: string = roleTagged ? lastDay ?? t(language, 'tpl.day', { index: 1 }) : writtenDay;
     const dayNumber: number | null = writtenDayNumber ?? (roleTagged ? lastDayNumber : null);
-    const exerciseName = collapseCellWhitespace(cells[exerciseIndex] ?? '');
+    const exerciseName = unguardCsvFormula(collapseCellWhitespace(cells[exerciseIndex] ?? ''));
     // A whole number, all of it. parseInt read "2,5" as 2 and "3-4" as 3 and
     // reported nothing (decimal audit, 2026-09-21); a count of sets that is
     // not one is the reader's to fix, like a missing name.
@@ -665,7 +700,7 @@ export function parseCsvProgram(
             : null;
     const trackingMode = minutes ? null : isHold ? 'hold' as const : parsedReps.unit === 'reps' ? countedMode : linkedMode;
 
-    const dayKey = dayNumber !== null ? numberedDayKey(dayNumber) : normalizeName(day);
+    const dayKey = dayNumber !== null ? numberedDayKey(dayNumber) : csvDayNameKey(day);
     if (!seenDayKeys.has(dayKey)) {
       if (seenDayKeys.size >= MAX_TRAINING_DAYS) {
         if (!skippedDayKeys.has(dayKey)) {
@@ -712,7 +747,7 @@ function numberedDayKey(dayNumber: number) {
 
 /** Which day a row belongs to: its number when the file numbered its days, else its name. */
 export function csvRowDayKey(row: Pick<CsvProgramRow, 'day' | 'dayNumber'>) {
-  return row.dayNumber !== undefined ? numberedDayKey(row.dayNumber) : normalizeName(row.day);
+  return row.dayNumber !== undefined ? numberedDayKey(row.dayNumber) : csvDayNameKey(row.day);
 }
 
 /** Builds a custom-template draft from the matched rows; unmatched rows are skipped. */

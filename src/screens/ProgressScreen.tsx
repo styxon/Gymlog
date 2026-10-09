@@ -168,6 +168,13 @@ interface ProgressScreenProps {
    * tap should land ON the calendar, which lives mid-page (2026-08-25).
    */
   scrollToTarget?: 'activity';
+  /**
+   * Stamp of the notification tap that opened this route. The section and
+   * measure effects listen to it as well as to their values: a second tap for
+   * the same destination changes neither value, and the reader may have moved
+   * since the first.
+   */
+  routeOpenedAt?: number;
   selectedExerciseKey?: string;
   /**
    * The three most recent records, and how many there are in total.
@@ -705,6 +712,7 @@ export function ProgressScreen({
   language = 'en',
   initialSection,
   scrollToTarget,
+  routeOpenedAt,
   initialMeasure,
   selectedExerciseKey,
   topRecords = [],
@@ -857,7 +865,7 @@ export function ProgressScreen({
     if (initialSection) {
       setProgressSection(initialSection);
     }
-  }, [initialSection]);
+  }, [initialSection, routeOpenedAt]);
 
   // The old bodyweight detail route now lands on the Measures tab. Lift deep
   // links are answered below trackedRows, which they need.
@@ -1252,7 +1260,7 @@ export function ProgressScreen({
     }
     // measureModels is stable per language; the key is what changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialMeasure]);
+  }, [initialMeasure, routeOpenedAt]);
   const selectedMeasureModel = measureModels.find((model) => model.key === selectedMeasure) ?? measureModels[0];
 
   // The unit-follows-the-measure effect went with the text field: the ruler

@@ -18,6 +18,7 @@ const {
   comebackGapDays,
   DAILY_CAP_BY_LEVEL,
   REMINDER_HORIZON_DAYS,
+  activeWorkoutStartedAt,
 } = require('../../.test-dist/lib/notificationPlan.js');
 
 // Local wall-clock helper: every assertion below is built the same way the
@@ -489,6 +490,101 @@ module.exports = [
       );
       assert.equal(laterFriday.length, 1);
       assert.equal(laterFriday[0].category, 'reminder');
+    },
+  },
+  {
+    // Bug hunt 9, 2026-10-09: the weigh-in is every morning, so on the quiet
+    // level it took every Sunday inside its horizon and the weekly summary
+    // never fired; on normal it lost any Sunday that also had a reminder.
+    name: 'notificationPlan: the once-a-week summary keeps its Sunday against the daily weigh-in',
+    run() {
+      const sunday = (plan) =>
+        plan.filter((item) => new Date(item.fireAtMs).getDay() === 0 && new Date(item.fireAtMs).getDate() === 5);
+      const base = { weekSessionCount: 2, weekVolumeKg: 6000, lastSessionAtMs: at(2026, 6, 30, 18, 0) };
+      const prefs = { weighInReminder: true, comebackNudge: false };
+
+      const quiet = planWith({ ...base, prefs: { ...prefs, level: 'quiet' } });
+      assert.deepEqual(sunday(quiet).map((item) => item.category), ['weekly'], 'quiet: the summary, not the weigh-in');
+      // The weigh-in still has every other morning.
+      assert.ok(quiet.filter((item) => item.category === 'weighIn').length >= 10);
+
+      // Normal on a training Sunday: weigh-in, reminder and summary want two slots.
+      const normal = planWith({ ...base, schedule: weekdaySchedule([0, 2, 4, 6]), prefs: { ...prefs, level: 'normal' } });
+      assert.deepEqual(
+        sunday(normal).map((item) => item.category).sort(),
+        ['reminder', 'weekly'],
+        'normal: the weigh-in gives way, the reminder stays',
+      );
+
+      // Room for all three: nothing is dropped.
+      const motivating = planWith({ ...base, schedule: weekdaySchedule([0, 2, 4, 6]), prefs: { ...prefs, level: 'motivating' } });
+      assert.equal(sunday(motivating).length, 3);
+
+      // Against the comeback nudge the order stands: it still outranks the summary.
+      const withNudge = planWith({
+        ...base,
+        prefs: { weighInReminder: false, comebackNudge: true, level: 'quiet' },
+      });
+      assert.equal(sunday(withNudge)[0].category, 'comeback');
+    },
+  },
+  {
+    // Bug hunt 9, 2026-10-09: both were laid down at the reminder time.
+    name: 'notificationPlan: the comeback nudge replaces that day training reminder instead of landing beside it',
+    run() {
+      // Mon/Wed/Fri; last session Friday 26 June, so the nudge is Wednesday 1 July.
+      const input = {
+        prefs: { level: 'normal', weeklySummary: false },
+        lastSessionAtMs: at(2026, 6, 26, 18, 0),
+        lastWorkoutAtMs: at(2026, 6, 26, 18, 0),
+      };
+      const plan = planWith(input);
+      const wednesday = plan.filter(
+        (item) => new Date(item.fireAtMs).getDate() === 1 && new Date(item.fireAtMs).getMonth() === 6,
+      );
+      assert.deepEqual(wednesday.map((item) => item.category), ['comeback'], 'one message in that slot');
+      // The other training days keep their reminders.
+      const friday = plan.filter((item) => item.category === 'reminder' && new Date(item.fireAtMs).getDate() === 3);
+      assert.equal(friday.length, 1);
+
+      // With the nudge off, Wednesday's reminder is back.
+      const without = planWith({ ...input, prefs: { ...input.prefs, comebackNudge: false } });
+      assert.ok(without.some((item) => item.category === 'reminder' && new Date(item.fireAtMs).getDate() === 1));
+    },
+  },
+  {
+    // Bug hunt 9, 2026-10-09: only COMPLETED workouts retired the reminder.
+    name: 'notificationPlan: a workout under way retires that day training reminder',
+    run() {
+      // Wednesday 12:00, training started at 11:00: the 17:30 reminder asks for a session already in progress.
+      const started = planWith({ prefs: { weeklySummary: false }, activeWorkoutStartedAtMs: at(2026, 7, 1, 11, 0) });
+      assert.ok(!started.some((item) => item.category === 'reminder' && new Date(item.fireAtMs).getDate() === 1));
+      assert.ok(
+        started.some((item) => item.category === 'reminder' && new Date(item.fireAtMs).getDate() === 3),
+        'Friday keeps its own',
+      );
+
+      const idle = planWith({ prefs: { weeklySummary: false }, activeWorkoutStartedAtMs: null });
+      assert.ok(idle.some((item) => item.category === 'reminder' && new Date(item.fireAtMs).getDate() === 1));
+
+      // The start time comes from the guided session or the freestyle board; a finished session is not under way.
+      const startedAt = new Date(at(2026, 7, 1, 11, 0)).toISOString();
+      assert.equal(activeWorkoutStartedAt({ status: 'active', startedAt }, null), at(2026, 7, 1, 11, 0));
+      assert.equal(activeWorkoutStartedAt({ status: 'paused', startedAt }, null), at(2026, 7, 1, 11, 0));
+      assert.equal(activeWorkoutStartedAt({ status: 'completed', startedAt }, null), null);
+      assert.equal(activeWorkoutStartedAt(null, at(2026, 7, 1, 10, 0)), at(2026, 7, 1, 10, 0));
+      assert.equal(activeWorkoutStartedAt(null, null), null);
+      assert.equal(activeWorkoutStartedAt({ status: 'active', startedAt: 'nonsense' }, undefined), null);
+
+      // And the shell actually feeds it, and re-plans when a session starts.
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const read = (file) => fs.readFileSync(path.join(__dirname, '../..', file), 'utf8');
+      assert.match(read('App.tsx'), /useScheduledNotifications\(database, hydrated, activeWorkoutStartedAtMs\)/);
+      assert.match(read('App.tsx'), /activeWorkoutStartedAt\(\s*workout\.activeSession,\s*workout\.freestyleDraft\?\.startedAtMs/);
+      const hook = read('src/hooks/useScheduledNotifications.ts');
+      assert.match(hook, /activeWorkoutStartedAtMs,\s*weekSessionCount: signals\.weekSessionCount/);
+      assert.match(hook, /signals\.lastWorkoutAtMs,\s*activeWorkoutStartedAtMs,/);
     },
   },
   {

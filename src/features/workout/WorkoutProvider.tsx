@@ -16,6 +16,7 @@ import { clearWorkoutBundle, loadWorkoutBundle, normalizeWorkoutBundle, saveWork
 import { loadWithRetry } from '../../storage/loadWithRetry';
 import { GuidedResumeAnchor, WorkoutExerciseInsertInput, WorkoutHistoryStore, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRuntimeTemplate, WorkoutSessionRuntime, WorkoutSetEffort } from './workoutTypes';
 import {
+  LoggedHistorySession,
   WorkoutFeatureState,
   workoutInitialState,
   workoutReducer,
@@ -93,6 +94,11 @@ interface WorkoutContextValue {
       sets: Array<{ setIndex: number; loadKg: number; reps: number; completedAt?: string | null }>;
     }>;
   }) => void;
+  /**
+   * Many sessions logged elsewhere, filed in one go — an imported history, so
+   * its lifts open on what was last done. See 'history/recordLoggedMany'.
+   */
+  recordLoggedWorkouts: (sessions: LoggedHistorySession[]) => void;
   /** A deleted saved workout, taken out of "last time", prefill and progression. */
   forgetHistorySession: (sessionId: string) => void;
   skipExercise: (slotId: string, reason?: string) => void;
@@ -385,6 +391,9 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
       },
       recordLoggedWorkout(input) {
         dispatch({ type: 'history/recordLogged', payload: input });
+      },
+      recordLoggedWorkouts(sessions) {
+        dispatch({ type: 'history/recordLoggedMany', payload: { sessions } });
       },
       forgetHistorySession(sessionId) {
         dispatch({ type: 'history/forgetSession', payload: { sessionId } });

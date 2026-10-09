@@ -6,7 +6,7 @@ import {
   readerAskedForRecovery,
 } from './recommendationCatalog';
 import { selectWaterfallDecision } from './recommendationWaterfall';
-import { focusProgrammeLosesItsPoint, programRunStandInKind, splitsReaderWeek } from './recommendationWeekFit';
+import { focusProgrammeLosesItsPoint, programRunStandInKind, programRunWork, splitsReaderWeek } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
@@ -612,6 +612,16 @@ export function recommendPrograms(
       ? waterfallAlternativeCandidate
       : null;
   const standInReason = waterfallPrimary ? runStandInReason(waterfallPrimary.programId, input) : null;
+  // A run + mobility reader the equipment step handed a week with no runs (a
+  // pro reader at six days with home gear: the bodyweight or dumbbell PPL) was
+  // told only that nothing in it needs a gym. The run lane says "running is not
+  // the main work here" for the same pick; so does every lane (hunt, 2026-10-09).
+  const noRunsReason: I18nKey | null =
+    waterfallPrimary && input.goal === 'run_mobility' && programRunWork(waterfallPrimary.programId, input) === 'none'
+      ? waterfallPrimary.familyId === 'joint_friendly'
+        ? 'wf.run_mobility.mobilityPrimary'
+        : 'wf.run_mobility.closestPrimary'
+      : null;
   const appliedWaterfall = waterfallPrimary
     ? {
         ...waterfallDecision,
@@ -627,6 +637,7 @@ export function recommendPrograms(
         ...(waterfallAlternativeCandidate && !waterfallAlternative
           ? { alternativeProgramId: null, whyAlternative: null }
           : {}),
+        ...(noRunsReason ? { whyPrimary: noRunsReason } : {}),
         ...(standInReason ? { whyPrimary: standInReason } : {}),
       }
     : null;

@@ -19,6 +19,20 @@ export function resolveActiveProgramCap(proUnlocked: boolean): number {
   return proUnlocked ? PRO_ACTIVE_PROGRAM_CAP : FREE_ACTIVE_PROGRAM_CAP;
 }
 
+/**
+ * How many places to give up before one more can be taken.
+ *
+ * A reader whose Pro lapsed keeps every programme they were running (only the
+ * reader removes one), so the set can stand ABOVE the cap: five running
+ * against two. "Stop one to start another" was true only at exactly the cap;
+ * at 5/2 it sent them to stop one and refused again at 4/2 (hunt 9,
+ * 2026-10-09). The answer is the whole distance plus the one place wanted:
+ * 1 at the cap, 4 at 5/2.
+ */
+export function placesToFree(used: number, cap: number): number {
+  return Math.max(1, used - cap + 1);
+}
+
 export type ProgramAdoptionDecision =
   /** Already running it — the button should offer to train, not to join. */
   | { kind: 'already_active' }

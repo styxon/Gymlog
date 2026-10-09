@@ -11,6 +11,7 @@ import { formatShortDate } from '../lib/format';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { t } from '../lib/i18n';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
+import { placesToFree } from '../lib/activeProgramSet';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
@@ -1424,7 +1425,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         ownProgramsLine={(() => {
           const key = programSlotsLineKey(programSlots);
           return key
-            ? t(preferences.appLanguage, `programLimit.${key}`, { used: programSlots.used, limit: programSlots.limit ?? 0 })
+            ? t(preferences.appLanguage, `programLimit.${key}`, {
+                used: programSlots.used,
+                limit: programSlots.limit ?? 0,
+                count: placesToFree(programSlots.used, programSlots.limit ?? 0),
+              })
             : null;
         })()}
         exerciseLibraryCount={exerciseBrowserItems.length}

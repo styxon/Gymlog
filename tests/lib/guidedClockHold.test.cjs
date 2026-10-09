@@ -13,6 +13,8 @@ const NONE = {
   runSheetOpen: false,
   ownBlockActive: false,
   restAlertsAskOpen: false,
+  confirmingEnd: false,
+  confirmingSkipExercise: false,
 };
 
 module.exports = [
@@ -43,6 +45,15 @@ module.exports = [
       const correcting = { ...NONE, runSheetOpen: true, restEditOpen: true };
       assert.equal(guidedClockHeld(correcting), true);
       assert.equal(guidedClockHeld({ ...correcting, restEditOpen: false }), false);
+    },
+  },
+  {
+    name: 'guided clock: a rest does not run out behind "End workout?" (hunt 2026-10-09)',
+    run() {
+      // The exit sheet closes before the confirmation opens, so the dialog
+      // has to hold the clock by itself.
+      assert.equal(guidedClockHeld({ ...NONE, exitOpen: false, confirmingEnd: true }), true);
+      assert.equal(guidedClockHeld({ ...NONE, pauseSheetOpen: false, confirmingSkipExercise: true }), true);
     },
   },
 ];

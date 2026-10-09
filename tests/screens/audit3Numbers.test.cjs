@@ -152,7 +152,7 @@ module.exports = [
       const screen = strip(read('src', 'screens', 'ExerciseDetailScreen.tsx'));
       // `bestWeight` is 0 for a pull-up, not null, so `!= null` printed "0 kg".
       assert.match(screen, /const unloaded = \(history\?\.bestWeight \?\? 0\) <= 0 && \(history\?\.bestReps \?\? 0\) > 0;/);
-      assert.match(screen, /t\(language, 'exDetail\.bestReps', \{ count: history\?\.bestReps \?\? 0 \}\)/);
+      assert.match(screen, /history\?\.bestReps === 1 \? 'exDetail\.bestRepsOne' : 'exDetail\.bestReps', \{\s+count: history\?\.bestReps \?\? 0,/);
       assert.match(screen, /history\?\.bestWeight != null && history\.bestWeight > 0/);
       // And the line plots the reps rather than a row of zeroes — counted the
       // way `bestReps` above it is counted. A raw sum over `log.sets` takes

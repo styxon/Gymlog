@@ -329,6 +329,14 @@ export function findHomeWidgetNextSession(input: {
   const now = new Date(nowMs);
   const doneDays = new Set((input.completedWorkoutDayStarts ?? []).map((ms) => toDayStartMs(new Date(ms))));
   const labels = getMondayFirstWeekdayLabels();
+  // The forecast speaks for this plan alone; the logged days are every
+  // programme's and freestyle's too. Skipping today on a freestyle workout
+  // while the forecast still owes today's slot named every later day one
+  // session ahead of what Home offers. The logged days only decide when there
+  // is no forecast to ask.
+  const todayDone = input.sessionForecast
+    ? input.sessionForecast.trainedToday
+    : doneDays.has(toDayStartMs(now));
 
   for (let offset = 0; offset <= LOOKAHEAD_DAYS; offset += 1) {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
@@ -336,7 +344,7 @@ export function findHomeWidgetNextSession(input: {
     if (!trainsOn(schedule, date)) {
       continue;
     }
-    if (offset === 0 && doneDays.has(toDayStartMs(date))) {
+    if (offset === 0 && todayDone) {
       continue;
     }
 

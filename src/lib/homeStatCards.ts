@@ -320,7 +320,8 @@ export function formatHomeStatValue(value: number | null): string {
   if (value === null) {
     return '—';
   }
-  return removeTrailingZeros(Math.round(value * 10) / 10);
+  // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
+  return removeTrailingZeros(Math.round(value * 100) / 100);
 }
 
 /**

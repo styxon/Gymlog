@@ -1,4 +1,8 @@
+import { removeTrailingZeros } from './format';
+import { isHoldExerciseName } from './holdExercises';
+import { t } from './i18n';
 import { PersonalRecord, RecordSource, resolveRecord } from './personalRecords';
+import type { AppLanguage } from '../types/models';
 
 /**
  * One lift, every set of it, session by session.
@@ -43,6 +47,11 @@ export interface ExerciseSetLog {
    * cannot live behind the same lock as the sets.
    */
   curve: number[];
+  /**
+   * A hold: what a set stores as reps is seconds held. The sheet printed a
+   * 60 s plank as "60 × 0" (hunt, 2026-10-09).
+   */
+  timed: boolean;
   bestWeight: PersonalRecord | null;
   bestReps: PersonalRecord | null;
   bestVolume: PersonalRecord | null;
@@ -95,9 +104,13 @@ export function buildExerciseSetLog(
 
   // A lift that was never loaded has no weight to draw, so the line follows
   // reps instead — the same reason the records come in three kinds.
+  // A lift that was loaded draws weight, and only through the sessions that
+  // carried one: dips done weighted and then plain dropped to 0 kg on every
+  // plain session, a fall in a line that measures kilos (hunt, 2026-10-09).
   const everLoaded = usable.some((entry) => entry.sets.some((set) => set.weight > 0));
   const curve = [...usable]
     .reverse()
+    .filter((entry) => !everLoaded || entry.sets.some((set) => set.weight > 0))
     .map((entry) =>
       entry.sets.reduce(
         (best, set) => Math.max(best, everLoaded ? set.weight : set.reps),
@@ -113,8 +126,23 @@ export function buildExerciseSetLog(
     sessions,
     totalSessions: usable.length,
     curve,
+    timed: isHoldExerciseName(source.name),
     bestWeight,
     bestReps,
     bestVolume,
   };
+}
+
+/**
+ * One set as the sheet's chip says it: the reps — seconds for a hold — and the
+ * weight when there was one. "15 × 0" read as fifteen reps of nothing; a set
+ * with no load is its count alone, as the set screen's history pills show it.
+ */
+export function formatSetLogSet(set: Pick<SetLogSet, 'weightKg' | 'reps'>, timed: boolean, language: AppLanguage): string {
+  const count = timed ? t(language, 'logger.secondsValue', { count: set.reps }) : `${set.reps}`;
+  if (set.weightKg === 0) {
+    return count;
+  }
+  // Hundredths, as every other weight surface: the dial steps 1.25 kg.
+  return `${count} × ${removeTrailingZeros(Math.round(set.weightKg * 100) / 100)}`;
 }

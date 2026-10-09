@@ -124,7 +124,7 @@ module.exports = [
       assert.ok(removal > stop, 'the plans are emptied before stopProgramme can find them');
       assert.match(
         remove,
-        /\{ \.\.\.nextDatabase\.preferences, \.\.\.stopped \}/,
+        /\.\.\.nextDatabase\.preferences,\s*\.\.\.stopped,/,
         'stopProgramme is asked, and its answer is never written',
       );
     },

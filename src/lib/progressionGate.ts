@@ -126,12 +126,34 @@ export interface ProgressionGateInput {
   nowMs?: number;
 }
 
-const GAP_DAYS = 7;
+/**
+ * A break: this many calendar days or more between two sessions of the lift.
+ *
+ * Not the spec's 7. Slot history is kept per programme day, so a lift on a
+ * weekly programme is 7 days from its last session every time — and at 7 the
+ * rule held the earned jump whenever this week's finish came a few minutes
+ * later in the day than last week's: about every other week (bug hunt,
+ * 2026-10-09). Ten lets a weekly session move a day or two and still counts
+ * a missed week, 14 days, as the break it is.
+ */
+const BREAK_DAYS = 10;
 const MIN_COMPLETION_RATE = 0.8;
 
-/** The heaviest load actually used in an entry, which is what we progress from. */
-function entryLoadKg(entry: WorkoutSlotHistoryEntry): number {
-  return entry.sets.reduce((max, set) => Math.max(max, set.loadKg), 0);
+/**
+ * The sets the programme asked for: the first `targetSets`, in set order.
+ *
+ * A set past them is extra work. A tired fourth set of 60 × 5 after 3 × 8 as
+ * asked held the jump the three had earned, while a lighter one did not — the
+ * missed-reps rule already reads only these (review of #202; bug hunt,
+ * 2026-10-09).
+ */
+function programmedSets(entry: WorkoutSlotHistoryEntry, targetSets: number) {
+  return [...entry.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, Math.max(0, targetSets));
+}
+
+/** The heaviest load the programmed sets used, which is what we progress from. */
+function entryLoadKg(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
+  return programmedSets(entry, targetSets).reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
 
 /**
@@ -154,7 +176,7 @@ export function isProgressionReadySession(
   if (entry.sets.length < targetSets) {
     return false;
   }
-  return gatingSets(entry.sets).every((set) => set.reps >= repsMax);
+  return gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax);
 }
 
 /**
@@ -183,20 +205,24 @@ function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, target
     !entry.skipped &&
     entry.sets.length >= targetSets &&
     entry.sets.length > 0 &&
-    gatingSets(entry.sets).every((set) => set.reps >= repsMax + margin)
+    gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax + margin)
   );
 }
 
 /**
- * Sessions that count toward the baseline: entries with a logged set.
+ * The sessions the gate reads: entries with a logged set, newest first.
  *
- * An entry left with no sets — a skipped day, or one whose sets were junk and
- * dropped on load — was counted, so one real session and one empty entry met
- * a beginner's two-session baseline and moved the load (third break round,
- * 2026-09-28).
+ * An entry with no sets is a day this lift did not happen — skipped, left
+ * pending when the workout ended, or junk dropped on load — and a finished
+ * session filed one for every such lift. Counted, one real session and one
+ * empty entry met a beginner's two-session baseline (third break round,
+ * 2026-09-28). As the newest entry it silenced the gate and dropped a jump
+ * already earned; as the one before, it hid a five-week break from the break
+ * rule (bug hunt, 2026-10-09). The prefill and the "Last time" card look past
+ * them too (selectLatestUsableEntry), and so does the missed-reps target.
  */
-function countedSessions(history: readonly WorkoutSlotHistoryEntry[]): number {
-  return history.filter((entry) => entry.sets.length > 0).length;
+function sessionsOf(history: readonly WorkoutSlotHistoryEntry[]): WorkoutSlotHistoryEntry[] {
+  return history.filter((entry) => entry.sets.length > 0);
 }
 
 /** No load to gate: bodyweight, a hold, a bout of minutes (workoutTypes). */
@@ -206,7 +232,8 @@ function isUnloadedMode(trackingMode: string | undefined): boolean {
 }
 
 export function evaluateProgression(input: ProgressionGateInput): ProgressionDecision {
-  const { history, repsMin, repsMax, targetSets, fatigueSignal, trackingMode } = input;
+  const { repsMin, repsMax, targetSets, fatigueSignal, trackingMode } = input;
+  const history = sessionsOf(input.history);
   const params = PROGRESSION_LEVEL_PARAMS[getProgressionTier(input.level)];
 
   // ── Silence: no target to evaluate against, or not enough baseline ────────
@@ -222,18 +249,19 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   if (isUnloadedMode(trackingMode)) {
     return { recommendation: 'silent' };
   }
-  if (countedSessions(history) < params.minSessions) {
+  if (history.length < params.minSessions) {
     // Short of the baseline, one exception: a weight so light that every
     // set went well past the ceiling. The holds below still apply to it.
     // And only off a recent session. The break rule needs a session before
     // this one, which a single session never has, so a first session months
     // old moved the load as if it were last week (recheck of #223,
-    // 2026-09-28). Within the same week, as the break rule counts.
+    // 2026-09-28). Short of a break, as the break rule counts one: at 7 days
+    // a weekly lift's second visit was never recent.
     const recent =
       typeof input.nowMs === 'number' &&
       Number.isFinite(input.nowMs) &&
       history.length >= 1 &&
-      !isAtLeastDaysBefore(history[0].performedAt, new Date(input.nowMs).toISOString(), GAP_DAYS) &&
+      !isAtLeastDaysBefore(history[0].performedAt, new Date(input.nowMs).toISOString(), BREAK_DAYS) &&
       // Not in the future either: a session dated ahead by a wrong phone
       // clock stayed "recent" for good (third break round, 2026-09-28).
       Date.parse(history[0].performedAt) <= input.nowMs;
@@ -247,11 +275,11 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   }
 
   const latest = history[0];
-  if (!latest || latest.sets.length === 0) {
+  if (!latest) {
     return { recommendation: 'silent' };
   }
 
-  const currentLoadKg = entryLoadKg(latest);
+  const currentLoadKg = entryLoadKg(latest, targetSets);
   if (!(currentLoadKg > 0)) {
     return { recommendation: 'silent' };
   }
@@ -276,7 +304,7 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
 
   // A session that follows a long break is not the moment to add load.
   const previous = history[1];
-  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, GAP_DAYS)) {
+  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) {
     return { recommendation: 'hold', holdReason: 'gap_return', loadKg: currentLoadKg };
   }
 
@@ -292,7 +320,7 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     }
     // Only sessions at the same load count toward confirmation; a lighter
     // session that happened to hit the ceiling proves nothing about this load.
-    if (Math.abs(entryLoadKg(entry) - currentLoadKg) > 0.001) {
+    if (Math.abs(entryLoadKg(entry, targetSets) - currentLoadKg) > 0.001) {
       break;
     }
     consecutive += 1;
@@ -453,9 +481,9 @@ export interface ProgressedRepsResolution {
   heldForCautionArea: SetupCautionArea | null;
 }
 
-/** The weakest set is the level the session proved, so it is what we raise. */
-function entryMinReps(entry: WorkoutSlotHistoryEntry): number {
-  return entry.sets.reduce((min, set) => Math.min(min, set.reps), Number.POSITIVE_INFINITY);
+/** The weakest programmed set is the level the session proved, so it is what we raise. */
+function entryMinReps(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
+  return programmedSets(entry, targetSets).reduce((min, set) => Math.min(min, set.reps), Number.POSITIVE_INFINITY);
 }
 
 export interface ProgressedRepsInput {
@@ -475,18 +503,19 @@ export interface ProgressedRepsInput {
 type RepsRecommendation = 'silent' | 'hold' | 'increase';
 
 function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation {
-  const { history, templateTargetReps, targetSets, fatigueSignal } = input;
+  const { templateTargetReps, targetSets, fatigueSignal } = input;
+  const history = sessionsOf(input.history);
   const params = PROGRESSION_LEVEL_PARAMS[getProgressionTier(input.level)];
 
   if (!(templateTargetReps > 0) || !(targetSets > 0)) {
     return 'silent';
   }
-  if (countedSessions(history) < params.minSessions) {
+  if (history.length < params.minSessions) {
     return 'silent';
   }
 
   const latest = history[0];
-  if (!latest || latest.sets.length === 0) {
+  if (!latest) {
     return 'silent';
   }
 
@@ -499,7 +528,7 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
   }
 
   const previous = history[1];
-  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, GAP_DAYS)) {
+  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) {
     return 'hold';
   }
 
@@ -554,7 +583,8 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
   if (recommendation === 'increase') {
     // The floor can sit above the template target when the user has been
     // overshooting it; raising from the proven floor is what keeps +1 honest.
-    const fromReps = Math.max(input.templateTargetReps, entryMinReps(input.history[0]));
+    // The session the gate just read: the newest that logged sets.
+    const fromReps = Math.max(input.templateTargetReps, entryMinReps(sessionsOf(input.history)[0], input.targetSets));
     return {
       targetReps: fromReps + REP_INCREMENT,
       progressed: true,
@@ -724,8 +754,10 @@ export interface RampSetTargetInput {
  * and set every set's target off warm-ups. A ramp is common enough to have its
  * own rule (user 2026-10-01, option A): each set repeats its own reps from
  * last time, and the heaviest — the one that is the work — asks for one more,
- * up to the programme's ceiling. 40×10, 50×8, 60×5 opens as 10, 8, 6. The
- * weights are not touched; each set keeps the load it already prefills.
+ * up to the programme's ceiling. 40×10, 50×8, 60×5 opens as 10, 8, 6. Once
+ * the heaviest is at the ceiling, the lighter sets below it ask one more, so
+ * the session can reach what the load gate waits for. The weights are not
+ * touched; each set keeps the load it already prefills.
  *
  * Null when the session did not climb (one weight throughout: the
  * missed-reps rule answers that), or when there is nothing to read.
@@ -763,7 +795,21 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   // flagged area (onboarding's promise), and not on a day recovery holds.
   const mayAdd =
     !input.cautionArea && input.fatigueSignal !== 'high' && input.fatigueSignal !== 'elevated';
-  if (mayAdd && Math.abs(own.loadKg - top) < 0.001 && own.reps < repsMax) {
+  if (!mayAdd || own.reps >= repsMax) {
+    return own.reps;
+  }
+  const atTop = (set: { loadKg: number }) => Math.abs(set.loadKg - top) < 0.001;
+  if (atTop(own)) {
+    return own.reps + REP_INCREMENT;
+  }
+  // The top set at the ceiling, the lighter sets the load gate reads (every
+  // one before the last heaviest, lib/warmupSets gatingSets) climb next. They
+  // repeated their own reps for good, and the gate wants every one of them at
+  // the ceiling before the weight moves: 40 × 10, 50 × 8, 60 × 12 opened on
+  // the same numbers session after session and the load never went up (bug
+  // hunt, 2026-10-09). A back-off after the heaviest is exempt, and repeats.
+  const topDone = done.filter(atTop).every((set) => set.reps >= repsMax);
+  if (topDone && gatingSets(entry.sets).includes(own)) {
     return own.reps + REP_INCREMENT;
   }
   return own.reps;

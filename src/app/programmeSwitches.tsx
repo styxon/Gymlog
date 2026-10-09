@@ -3,11 +3,12 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { evaluateProgramAdoption, removeActiveProgram } from '../lib/activeProgramSet';
+import { programCapFullMessage } from '../lib/programCapNotice';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { liveSessionBlocksProgrammeDelete } from '../lib/programmeDeletion';
-import { resumeProgramme, stopProgramme, switchActiveProgramme } from '../lib/runningProgrammes';
+import { resumeProgramme, runningSetWithout, stopProgramme, switchActiveProgramme } from '../lib/runningProgrammes';
 import type { useAppContext } from '../state/AppProvider';
 import type { WorkoutPlan } from '../types/models';
 import { haptics } from '../utils/haptics';
@@ -77,16 +78,32 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
    * can be held under a plan id minted by onboarding, by adoption, or by a
    * season — and all three are equally "this programme".
    */
-  async function promoteHeldProgramToLead(workoutTemplateId: string) {
+  async function promoteHeldProgramToLead(workoutTemplateId: string, replacingPlanId?: string) {
     const plan = database.workoutPlans.find(
       (entry) =>
         preferences.activePlanIds.includes(entry.id) &&
         entry.entries[0]?.workoutTemplateId === workoutTemplateId,
     );
-    if (!plan || preferences.activePlanId === plan.id) {
+    if (!plan) {
       return;
     }
-    await updatePreferences({ activePlanId: plan.id });
+    // A finished programme this one replaces gives up its running slot in the
+    // same write (runningSetWithout).
+    const running = replacingPlanId
+      ? runningSetWithout({
+          activePlanId: preferences.activePlanId,
+          activePlanIds: preferences.activePlanIds,
+          plans: database.workoutPlans,
+          replacingPlanId,
+        })
+      : null;
+    if (!running && preferences.activePlanId === plan.id) {
+      return;
+    }
+    await updatePreferences({
+      ...(running ? { activePlanIds: running.activePlanIds } : {}),
+      activePlanId: plan.id,
+    });
   }
 
   /**
@@ -143,7 +160,7 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return;
     }
     await updatePreferences({ activePlanIds: resumed.activePlanIds, activePlanId: resumed.activePlanId });

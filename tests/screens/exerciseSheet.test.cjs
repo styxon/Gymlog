@@ -132,7 +132,7 @@ module.exports = [
         path.join(__dirname, '..', '..', 'src', 'features', 'workout', 'workoutState.ts'),
         'utf8',
       );
-      assert.match(stateSource, /const latest = selectLatestUsableEntry\(entries\)/);
+      assert.match(stateSource, /const latest = selectLatestUsableEntry\(entries, nowMs\)/);
     },
   },
   {
@@ -165,7 +165,7 @@ module.exports = [
      */
     name: 'the walk-up card names the rest the timer actually runs',
     run() {
-      assert.match(playerSource, /rest: instance\.restSecondsMin,/);
+      assert.match(playerSource, /rest: guidedRestSeconds\(instance\.restSecondsMin\),/);
       assert.doesNotMatch(playerSource, /rest: instance\.restSecondsMax,/);
       // The one place the plan's rest reaches the step machine, unchanged.
       assert.match(playerSource, /restSeconds: exercise\.restSecondsMin,/);

@@ -16,6 +16,7 @@
  */
 
 import { splitCsvRecords } from './csvRecords';
+import { isLiftableWeight } from './weightLimits';
 
 export interface HevyImportedSet {
   weightKg: number;
@@ -43,6 +44,13 @@ export interface HevyImportPreview {
   lastDate: string | null;
   /** Rows with no countable set — duration-only cardio, empty lines. */
   skippedRowCount: number;
+  /**
+   * Sets heavier than the app holds (weightLimits). The loader refuses such a
+   * set for good, so it is left out here, where it can be said — counted in
+   * `setCount` it promised a set the history would never show, and a workout
+   * of nothing else was later reported as one that "already existed".
+   */
+  overweightSetCount: number;
   errors: string[];
 }
 
@@ -176,6 +184,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     firstDate: null,
     lastDate: null,
     skippedRowCount: 0,
+    overweightSetCount: 0,
     errors: [],
   };
   // The separator first, off the header line: the record splitter needs it
@@ -218,6 +227,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
   const workoutsByKey = new Map<string, HevyImportedWorkout>();
   let setCount = 0;
   let skippedRowCount = 0;
+  let overweightSetCount = 0;
 
   for (let i = 1; i < lines.length; i += 1) {
     if (!lines[i].trim()) {
@@ -244,6 +254,13 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     // v1 imports the lifting history and counts the rest out loud.
     if (!reps || reps <= 0) {
       skippedRowCount += 1;
+      continue;
+    }
+
+    // Before the workout is opened: one with only such sets must not exist.
+    const setWeightKg = Math.max(0, Math.round((weightKg ?? 0) * 100) / 100);
+    if (!isLiftableWeight(setWeightKg)) {
+      overweightSetCount += 1;
       continue;
     }
 
@@ -286,7 +303,7 @@ export function parseHevyCsv(text: string): HevyImportPreview {
       }
     }
     exercise.sets.push({
-      weightKg: Math.max(0, Math.round((weightKg ?? 0) * 100) / 100),
+      weightKg: setWeightKg,
       reps: Math.max(1, Math.round(reps)),
       kind: setKind(columns.setType >= 0 ? fields[columns.setType] : undefined),
     });
@@ -301,6 +318,61 @@ export function parseHevyCsv(text: string): HevyImportPreview {
     firstDate: dates[0] ?? null,
     lastDate: dates[dates.length - 1] ?? null,
     skippedRowCount,
+    overweightSetCount,
     errors: workouts.length === 0 ? ['NO_WORKOUTS'] : [],
   };
+}
+
+/**
+ * The session id one Hevy workout is saved under: its start time, so the same
+ * file imported twice finds its own workouts instead of doubling them.
+ */
+export function hevySessionId(workout: Pick<HevyImportedWorkout, 'startedAt'>): string {
+  return `hevy_${Date.parse(workout.startedAt)}`;
+}
+
+/** One imported workout as "last time" files it: the shape of a logged session. */
+export interface HevyLoggedSession {
+  performedAt: string;
+  sessionId: string;
+  templateName: string;
+  exercises: Array<{
+    exerciseName: string;
+    sets: Array<{ setIndex: number; loadKg: number; reps: number; completedAt: string }>;
+  }>;
+}
+
+/**
+ * Imported workouts, as the weight a set opens on and the "Last time" card
+ * read them.
+ *
+ * The import wrote the database only, and those two read the workout store's
+ * slot history — so a reader who brought years of Hevy history in opened every
+ * lift at nothing, under a Progress page that showed the same history (hunt,
+ * 2026-10-09). The work only, as a finished empty workout files it: a warm-up
+ * is neither a weight to open on nor one to progress from, and a load nobody
+ * could lift is dropped as the database loader drops it. Only the workouts in
+ * `filed` — the ones the database holds — so "last time" never names a
+ * session History does not have.
+ */
+export function hevyWorkoutsToLoggedSessions(
+  workouts: readonly HevyImportedWorkout[],
+  filed: ReadonlySet<string>,
+): HevyLoggedSession[] {
+  return workouts
+    .filter((workout) => filed.has(hevySessionId(workout)))
+    .map((workout) => {
+      const performedAt = workout.endedAt ?? workout.startedAt;
+      return {
+        performedAt,
+        sessionId: hevySessionId(workout),
+        templateName: workout.name,
+        exercises: workout.exercises.map((exercise) => ({
+          exerciseName: exercise.name,
+          sets: exercise.sets
+            .filter((set) => set.kind !== 'warmup' && set.reps > 0 && isLiftableWeight(set.weightKg))
+            .map((set, setIndex) => ({ setIndex, loadKg: set.weightKg, reps: set.reps, completedAt: performedAt })),
+        })),
+      };
+    });
 }

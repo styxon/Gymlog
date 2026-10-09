@@ -35,7 +35,12 @@ import { syncPlannedNotifications } from '../utils/appNotifications';
  * once the real data arrived. A launch that died or failed to load in between
  * left the reader with none (bug hunt, 2026-10-05).
  */
-export function useScheduledNotifications(database: AppDatabase, hydrated: boolean) {
+export function useScheduledNotifications(
+  database: AppDatabase,
+  hydrated: boolean,
+  /** When the workout in progress began, or null (activeWorkoutStartedAt). */
+  activeWorkoutStartedAtMs: number | null = null,
+) {
   const { notificationPrefs, appLanguage, setupAvailableDays, trainingBreak } = database.preferences;
   const [foregroundTick, setForegroundTick] = useState(0);
   const queueRef = useRef<Promise<unknown>>(Promise.resolve());
@@ -152,6 +157,8 @@ export function useScheduledNotifications(database: AppDatabase, hydrated: boole
       onTrainingBreak,
       lastSessionAtMs: signals.lastSessionAtMs,
       lastWorkoutAtMs: signals.lastWorkoutAtMs,
+      // Starting the session re-plans, which retires today's reminder.
+      activeWorkoutStartedAtMs,
       weekSessionCount: signals.weekSessionCount,
       weekVolumeKg: signals.weekVolumeKg,
       latestPr: signals.latestPr,
@@ -187,6 +194,7 @@ export function useScheduledNotifications(database: AppDatabase, hydrated: boole
     onTrainingBreak,
     signals.lastSessionAtMs,
     signals.lastWorkoutAtMs,
+    activeWorkoutStartedAtMs,
     signals.lastBodyweightAtMs,
     signals.weekSessionCount,
     signals.weekVolumeKg,

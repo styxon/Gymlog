@@ -64,7 +64,8 @@ export interface SessionTotals {
  * once instead of in the surfaces that happen to recompute.
  */
 export function getSessionTotals(
-  logs: readonly Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'>[],
+  logs: readonly (Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>)[],
 ): SessionTotals {
   return {
     setsCompleted: getCompletedSetCount(logs),
@@ -94,9 +95,14 @@ export function getSessionTotals(
  */
 export function withLoggedSessionTotals<T extends Pick<WorkoutSession, 'id'>>(
   sessions: readonly T[],
-  logs: readonly Pick<ExerciseLog, 'sessionId' | 'sets' | 'weight' | 'repsPerSet' | 'skipped'>[],
+  logs: readonly (Pick<ExerciseLog, 'sessionId' | 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>)[],
 ): Array<T & Partial<SessionTotals>> {
-  const logsBySession = new Map<string, Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'>[]>();
+  const logsBySession = new Map<
+    string,
+    (Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
+      Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>)[]
+  >();
   for (const log of logs) {
     const list = logsBySession.get(log.sessionId);
     if (list) {

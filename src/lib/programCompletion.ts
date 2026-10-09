@@ -82,6 +82,41 @@ export function resolveCompletionCard(input: CompletionCardInput): CompletionCar
 }
 
 /**
+ * The dismissals once these plan records are gone or rebuilt.
+ *
+ * The dismissal is keyed by plan id, and a ready programme's id is
+ * deterministic (`ready_plan_<template>`): remove it from "my programmes",
+ * adopt it again, and the new round's plan carried the OLD answer, so its
+ * completion card never showed (hunt 9, 2026-10-09). A dismissal answers the
+ * card for the plan record it was given to, so it goes with that record.
+ */
+export function forgetCompletionDismissals(
+  dismissedPlanIds: readonly string[],
+  planIds: readonly string[],
+): string[] {
+  return dismissedPlanIds.filter((id) => !planIds.includes(id));
+}
+
+/**
+ * The dismissals once a plan's block moves to a new plan record.
+ *
+ * Editing one lift of a ready programme copies it into the reader's own
+ * template under a new plan id, and the copy inherits the block, finished or
+ * not (useProgramExerciseEdit). A card the reader had answered for the ready
+ * plan asked again for the copy: same block, new key. When the old plan was
+ * dismissed the new one is too.
+ */
+export function carryCompletionDismissal(
+  dismissedPlanIds: readonly string[],
+  fromPlanId: string,
+  toPlanId: string,
+): string[] {
+  return dismissedPlanIds.includes(fromPlanId) && !dismissedPlanIds.includes(toPlanId)
+    ? [...dismissedPlanIds, toPlanId]
+    : [...dismissedPlanIds];
+}
+
+/**
  * Sessions logged against the plan's templates since a boundary — the count a
  * restarted plan begins from.
  *

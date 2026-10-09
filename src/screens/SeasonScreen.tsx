@@ -325,7 +325,7 @@ export function SeasonScreen({
                 : t(language, 'season.week', { week, total: SEASON_WEEKS })}
             </Text>
             <Text style={styles.heroTrackLabel}>
-              {t(language, 'season.weeksLeft', { count: weeksLeft })}
+              {t(language, weeksLeft === 1 ? 'season.weeksLeftOne' : 'season.weeksLeft', { count: weeksLeft })}
             </Text>
           </View>
         </View>

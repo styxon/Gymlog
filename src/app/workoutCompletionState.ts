@@ -109,6 +109,7 @@ export function buildSessionMovement({
           todayTopKg: best.kg,
           todayTopReps: best.reps,
           previousTopKg: previousTops[exercise.exerciseName.trim().toLowerCase()] ?? null,
+          repsMax: exercise.repsMax ?? null,
         },
       };
     })

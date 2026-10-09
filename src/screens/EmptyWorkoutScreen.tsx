@@ -47,6 +47,8 @@ import {
   FreestyleDraftSnapshot,
   FreestyleExerciseSnapshot,
   resolveFreestyleDraftStart,
+  resolveFreestyleFinish,
+  resolveFreestyleLastEdit,
   resolveFreestyleSessionId,
 } from '../lib/emptyWorkoutSession';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryItems, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
@@ -549,10 +551,28 @@ export function EmptyWorkoutScreen({
     sessionIdRef.current = resolveFreestyleSessionId(freestyleDraft);
   }
   const startCountedRef = useRef(freestyleDraft != null);
+  /**
+   * The last time the board was touched: free sets carry no times, so this is
+   * what a Finish tapped hours later is pinned to (resolveFreestyleFinish).
+   * Seeded from the draft, not from opening the screen, and moved by an edit
+   * to the lifts or the rest, not by the write that saves them.
+   */
+  const lastEditMsRef = useRef<number | null>(null);
+  if (lastEditMsRef.current === null) {
+    lastEditMsRef.current = resolveFreestyleLastEdit(freestyleDraft, startedAtMs, Date.now());
+  }
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [rest, setRest] = useState<{ totalSeconds: number; endsAtMs: number; startedAtMs: number } | null>(() =>
     freestyleDraft?.rest && freestyleDraft.rest.endsAtMs > Date.now() ? freestyleDraft.rest : null,
   );
+  const editedBoardRef = useRef<{ exercises: typeof exercises; rest: typeof rest } | null>(null);
+  useEffect(() => {
+    const seen = editedBoardRef.current;
+    if (seen && (seen.exercises !== exercises || seen.rest !== rest)) {
+      lastEditMsRef.current = Date.now();
+    }
+    editedBoardRef.current = { exercises, rest };
+  }, [exercises, rest]);
   const draftSinkRef = useRef({ onSaveDraft, onClearDraft });
   draftSinkRef.current = { onSaveDraft, onClearDraft };
   /** The write that has not happened yet, so a discard can take it with it. */
@@ -803,7 +823,11 @@ export function EmptyWorkoutScreen({
         session: t(language, 'emptyWorkout.title'),
         exercise: current?.name ?? '',
       }),
-      body: t(language, 'rest.notify.sessionBody', { done: doneSetCount, total: totalSetCount, time }),
+      body: t(language, totalSetCount === 1 ? 'rest.notify.sessionBodyOne' : 'rest.notify.sessionBody', {
+        done: doneSetCount,
+        total: totalSetCount,
+        time,
+      }),
     };
   }, [doneSetCount, exercises, hasExercises, language, startedAtMs, totalSetCount]);
 
@@ -1062,12 +1086,18 @@ export function EmptyWorkoutScreen({
     finishingRef.current = true;
     setIsSaving(true);
     try {
+      // Tapped long after the last edit, the workout ended at that edit.
+      const finish = resolveFreestyleFinish({
+        startedAtMs,
+        lastEditMs: lastEditMsRef.current ?? Date.now(),
+        nowMs: Date.now(),
+      });
       const { draft, summary } = buildFreestyleFinish({
         exercises,
         workoutName: t(language, 'emptyWorkout.title'),
         startedAtIso: new Date(startedAtMs ?? Date.now()).toISOString(),
-        performedAtIso: new Date().toISOString(),
-        elapsedSeconds,
+        performedAtIso: new Date(finish.performedAtMs).toISOString(),
+        elapsedSeconds: finish.elapsedSeconds,
         exercisePrLookup: exercisePrLookupBefore(sessionIdRef.current),
         sessionId: sessionIdRef.current ?? undefined,
       });

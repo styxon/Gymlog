@@ -132,4 +132,25 @@ module.exports = [
       assert.equal(view.bestSetLabel, '14 reps');
     },
   },
+  {
+    // Hunt 2026-10-09: bars mixed kilos and reps in one series, so 15 plain
+    // dips stood taller than the 10 kg dip after them, and +20 kg was a record
+    // only because 20 is more than 15.
+    name: 'a lift done both plain and loaded measures every bar in kilos, and the first load is no record',
+    run() {
+      const past = [
+        session('2026-09-01T10:00:00.000Z', [[0, 12]]),
+        session('2026-09-08T10:00:00.000Z', [[0, 14]]),
+        session('2026-09-15T10:00:00.000Z', [[0, 15]]),
+      ];
+      const first = buildExerciseSheetHistory(past, session('today', [[10, 8]]), 'en');
+      assert.deepEqual(first.bars.map((bar) => bar.value), [0, 0, 0, 10], 'the weighted session is the tallest');
+      assert.equal(first.rows[0].isPr, false, 'nothing loaded before it to beat');
+      assert.equal(buildExerciseSheetHistory(past, session('today', [[20, 8]]), 'en').rows[0].isPr, false);
+
+      const loaded = [...past, session('2026-09-22T10:00:00.000Z', [[10, 8]])];
+      assert.equal(buildExerciseSheetHistory(loaded, session('today', [[12.5, 8]]), 'en').rows[0].isPr, true, 'heavier than the last load');
+      assert.equal(buildExerciseSheetHistory(loaded, session('today', [[0, 20]]), 'en').rows[0].isPr, false, 'a plain set beats no load');
+    },
+  },
 ];

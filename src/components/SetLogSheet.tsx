@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef } from 'react';
 import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path, Rect } from 'react-native-svg';
 
-import { ExerciseSetLog, SET_LOG_SESSIONS } from '../lib/exerciseSetLog';
+import { ExerciseSetLog, formatSetLogSet, SET_LOG_SESSIONS } from '../lib/exerciseSetLog';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { FREE_RECORD_MONTHS } from '../lib/historyWindow';
 import { I18nKey, t } from '../lib/i18n';
@@ -54,7 +54,8 @@ interface SetLogSheetProps {
 function decimal(value: number, language: AppLanguage) {
   // The separator is format.ts's business now — it reads the app language
   // once instead of every caller deciding again.
-  return removeTrailingZeros(Math.round(value * 10) / 10);
+  // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
+  return removeTrailingZeros(Math.round(value * 100) / 100);
 }
 
 function thousands(value: number, language: AppLanguage) {
@@ -107,10 +108,12 @@ function CheckGlyph({ color }: { color: string }) {
 /** One session: the day, its volume, and the sets as chips. */
 function SessionRow({
   session,
+  timed,
   language,
   last,
 }: {
   session: ExerciseSetLog['sessions'][number];
+  timed: boolean;
   language: AppLanguage;
   last?: boolean;
 }) {
@@ -127,9 +130,13 @@ function SessionRow({
             {weekday(session.performedAt, language)}
           </Text>
         </View>
-        <Text style={styles.sessionVolume}>
-          {thousands(session.volumeKg, language)} kg
-        </Text>
+        {/* Kilos of volume only where there were kilos: "0 kg" under a
+            plank or a set of pull-ups is a number about nothing. */}
+        {session.volumeKg > 0 ? (
+          <Text style={styles.sessionVolume}>
+            {thousands(session.volumeKg, language)} kg
+          </Text>
+        ) : null}
       </View>
       <View style={styles.chipRow}>
         {session.sets.map((set, index) => (
@@ -138,7 +145,7 @@ function SessionRow({
             style={[styles.chip, set.isRecord && styles.chipRecord]}
           >
             <Text style={[styles.chipText, set.isRecord && styles.chipTextRecord]}>
-              {set.reps} × {decimal(set.weightKg, language)}
+              {formatSetLogSet(set, timed, language)}
             </Text>
             {set.isRecord ? (
               <Text style={styles.chipBadge}>{t(language, 'setlog.pr')}</Text>
@@ -207,7 +214,7 @@ export function SetLogSheet({
    */
   const blurredSets = log.sessions
     .slice(0, 3)
-    .map((session) => session.sets.map((set) => `${set.reps} × ${decimal(set.weightKg, language)}`).join('   '))
+    .map((session) => session.sets.map((set) => formatSetLogSet(set, log.timed, language)).join('   '))
     .join('\n');
   // "5 most recent" is a lie when there are three. Say what is shown.
   const shownLabel = empty
@@ -432,6 +439,7 @@ export function SetLogSheet({
               <SessionRow
                 key={session.performedAt}
                 session={session}
+                timed={log.timed}
                 language={language}
                 last={index === log.sessions.length - 1}
               />

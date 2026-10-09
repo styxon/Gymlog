@@ -15,6 +15,7 @@ import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
 import { haptics } from './src/utils/haptics';
 import { useScheduledNotifications } from './src/hooks/useScheduledNotifications';
+import { activeWorkoutStartedAt } from './src/lib/notificationPlan';
 import { usePendingAiLogDeletions } from './src/hooks/usePendingAiLogDeletions';
 import { ThemeProvider, themeForName } from './src/theming';
 import {
@@ -36,6 +37,8 @@ import {
   addActiveProgram,
   evaluateProgramAdoption,
 } from './src/lib/activeProgramSet';
+import { programCapFullMessage } from './src/lib/programCapNotice';
+import { runningSetWithout, type AdoptReadyOptions } from './src/lib/runningProgrammes';
 import {
   buildReadyProgramPlanId,
   buildCustomProgramPlanId,
@@ -74,8 +77,10 @@ import {
   applySessionAdaptation,
   HeldSessionAdaptations,
   heldAdaptationFor,
+  moveHeldAdaptations,
   NO_HELD_SESSION_ADAPTATIONS,
   SessionAdaptation,
+  sessionHasNoExercises,
   spendHeldAdaptation,
   updateHeldAdaptation,
 } from './src/lib/sessionAdaptation';
@@ -269,6 +274,10 @@ function VinhaApp() {
     onRestored: async () => {
       setCoachAdviceMemory([]);
       setCoachChatMemory(null);
+      // Today's held swaps and drops are one more thing outside both: catalogue
+      // ids are the same on every phone, so the previous state's holds would
+      // otherwise show on the restored account's Home (hunt 9, 2026-10-09).
+      setHeldSessionAdaptations(NO_HELD_SESSION_ADAPTATIONS);
       // Awaited: useAccountBackup's applyRestore holds the restore open
       // until this settles, so a process kill cannot land the restore while
       // the erase is still on disk (recheck round, 2026-09-29).
@@ -377,7 +386,12 @@ function VinhaApp() {
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.
-  useScheduledNotifications(database, hydrated);
+  // A workout under way retires today's training reminder: starting it re-plans.
+  const activeWorkoutStartedAtMs = activeWorkoutStartedAt(
+    workout.activeSession,
+    workout.freestyleDraft?.startedAtMs,
+  );
+  useScheduledNotifications(database, hydrated, activeWorkoutStartedAtMs);
 
   const { navigateToActiveWorkoutRef, finishFromNotificationRef } = useSessionNotifications({
     workout,
@@ -890,12 +904,17 @@ function VinhaApp() {
    */
   async function handleAdoptReadyProgram(
     workoutTemplateId: string,
-    options?: { lead?: boolean },
+    adoption?: AdoptReadyOptions,
   ): Promise<boolean> {
     const template = getWorkoutTemplateById(workoutTemplateId);
     if (!template) {
       return false;
     }
+    // Taking a finished programme's place is taking its lead.
+    const options: AdoptReadyOptions = {
+      lead: Boolean(adoption?.lead || adoption?.replacingPlanId),
+      replacingPlanId: adoption?.replacingPlanId,
+    };
 
     // Already running this programme under some other plan id (an onboarding
     // pick, say) — joining again would spend a cap slot on a duplicate. But
@@ -903,8 +922,8 @@ function VinhaApp() {
     // return on both: the only way to change the lead was to REMOVE the other
     // programme, which is a destructive answer to a question about ordering.
     if (activeProgramTemplateIds.includes(workoutTemplateId)) {
-      if (options?.lead) {
-        await promoteHeldProgramToLead(workoutTemplateId);
+      if (options.lead) {
+        await promoteHeldProgramToLead(workoutTemplateId, options.replacingPlanId);
       }
       // Already held is already running, which is what the caller asked for.
       return true;
@@ -937,8 +956,8 @@ function VinhaApp() {
     );
     if (copyTemplateId) {
       if (activeProgramTemplateIds.includes(copyTemplateId)) {
-        if (options?.lead) {
-          await promoteHeldProgramToLead(copyTemplateId);
+        if (options.lead) {
+          await promoteHeldProgramToLead(copyTemplateId, options.replacingPlanId);
         }
         return true;
       }
@@ -961,8 +980,16 @@ function VinhaApp() {
       return resumedHeld;
     }
     const planId = buildReadyProgramPlanId(workoutTemplateId);
-    const decision = evaluateProgramAdoption({
+    // The cap counts what will be running: a finished programme this one
+    // replaces has already given up its slot (runningSetWithout).
+    const running = runningSetWithout({
+      activePlanId: preferences.activePlanId,
       activePlanIds: preferences.activePlanIds,
+      plans: database.workoutPlans,
+      replacingPlanId: options.replacingPlanId,
+    });
+    const decision = evaluateProgramAdoption({
+      activePlanIds: running.activePlanIds,
       targetPlanId: planId,
       proUnlocked: resolveProEntitlement(preferences).unlocked,
     });
@@ -980,7 +1007,7 @@ function VinhaApp() {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return false;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return false;
     }
 
@@ -1005,13 +1032,15 @@ function VinhaApp() {
     });
 
     await upsertWorkoutPlan(plan);
-    const nextActivePlanIds = addActiveProgram(preferences.activePlanIds, plan.id);
+    // One write: the finished programme leaves the running set as this one
+    // joins it, so the reader never holds both.
+    const nextActivePlanIds = addActiveProgram(running.activePlanIds, plan.id);
     await updatePreferences({
       activePlanIds: nextActivePlanIds,
       // Joining a season must not quietly demote the programme already at the
       // top of Home — but stepping up FROM a finished programme is the reader
       // explicitly choosing a new lead, so the completion flow passes `lead`.
-      activePlanId: options?.lead ? plan.id : preferences.activePlanId ?? plan.id,
+      activePlanId: options.lead ? plan.id : running.activePlanId ?? plan.id,
     });
     /*
      * Counted where a programme has started running: after the write.
@@ -1180,15 +1209,21 @@ function VinhaApp() {
       return;
     }
 
+    const sessionRef = { programId: workoutTemplateId, sessionId };
+    const runtimeTemplate = applySessionAdaptation(
+      buildCustomSessionRuntimeTemplate(customTemplate, sessionId),
+      sessionAdaptationFor(sessionRef),
+    );
+    // Every row left out for today: the same refusal as the ready start.
+    if (sessionHasNoExercises(runtimeTemplate)) {
+      showToast(t(preferences.appLanguage, 'toast.everyLiftDropped'));
+      return;
+    }
+
     guardStrengthStartOverCardio(() => {
       // Nor here: training leaves the active programme where it is, as on the
       // ready path above.
       void updatePreferences({ trainingFirstRunDismissed: true });
-      const sessionRef = { programId: workoutTemplateId, sessionId };
-      const runtimeTemplate = applySessionAdaptation(
-        buildCustomSessionRuntimeTemplate(customTemplate, sessionId),
-        sessionAdaptationFor(sessionRef),
-      );
       startProgrammeWorkout(runtimeTemplate, unitPreference);
       setHeldSessionAdaptations((held) => spendHeldAdaptation(held, sessionRef));
       navigateToGuidedWorkout(workoutTemplateId);
@@ -1292,6 +1327,7 @@ function VinhaApp() {
     navigate,
     showToast,
     adaptSession,
+    moveHeldAdaptations: (moves) => setHeldSessionAdaptations((held) => moveHeldAdaptations(held, moves)),
     setProgramLimitVisible,
   });
 
@@ -1359,7 +1395,7 @@ function VinhaApp() {
         setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
         return false;
       }
-      showToast(t(preferences.appLanguage, 'programs.cap.full', { cap: decision.cap }));
+      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return false;
     }
 
@@ -1952,6 +1988,8 @@ function VinhaApp() {
       preferences,
       updatePreferences,
       workout,
+      hasFreestyleBoard: freestyleDraft != null,
+      discardFreestyleBoard: workout.clearFreestyleDraft,
       cardioSessions,
       cardioSaving,
       setCardioSaving,
@@ -2328,6 +2366,7 @@ function VinhaApp() {
     teachExerciseName,
     upsertWorkoutTemplate,
     importWorkoutHistory,
+    recordLoggedWorkouts: workout.recordLoggedWorkouts,
     showToast,
     programLimitVisible,
     setProgramLimitVisible,

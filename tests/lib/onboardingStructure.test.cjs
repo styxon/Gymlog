@@ -381,7 +381,9 @@ module.exports = [
       // Three setups only; heavy home gear decides home_gym vs minimal_equipment.
       assert.doesNotMatch(onboardingSource, /id: 'minimal_equipment'/);
       assert.doesNotMatch(onboardingSource, /id: 'running_hybrid'/);
-      assert.match(onboardingSource, /setTrainingEnvironment\(hasHeavy \? 'home_gym' : 'minimal_equipment'\)/);
+      assert.match(onboardingSource, /equipmentSetupForChips\(option, items\)/);
+      const cardSetup = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'equipmentCardSetup.ts'), 'utf8');
+      assert.match(cardSetup, /trainingEnvironment: hasHeavy \? 'home_gym' : 'minimal_equipment'/);
       // Chip labels persist into the setup selection and preferences.
       assert.match(onboardingSource, /const \[equipmentItems, setEquipmentItems\] = useState<string\[\]>\(setupSeed\.equipmentItems \?\? \[\]\)/);
       assert.match(handoffSource, /setupEquipmentItems: selection\.equipmentItems \?\? \[\]/);

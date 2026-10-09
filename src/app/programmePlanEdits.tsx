@@ -6,6 +6,7 @@ import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { t } from '../lib/i18n';
 import { SetCountChange, setCountChanges, setCountToastParts } from '../lib/setCountChanges';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
+import type { AdoptReadyOptions } from '../lib/runningProgrammes';
 import { planLabelsFromWeekdays, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
 import type { useAppContext } from '../state/AppProvider';
 import { SetupDaysPerWeek, SetupWeekday } from '../types/models';
@@ -40,7 +41,7 @@ export interface ProgrammePlanEditsDeps {
   /** VinhaApp's hoisted showToast. */
   showToast: (message: string) => void;
   /** VinhaApp's hoisted adoption of a ready programme. */
-  handleAdoptReadyProgram: (workoutTemplateId: string, options?: { lead?: boolean }) => Promise<boolean>;
+  handleAdoptReadyProgram: (workoutTemplateId: string, options?: AdoptReadyOptions) => Promise<boolean>;
   completedSessionsForTemplate: ReturnType<typeof createProgrammeStarts>['completedSessionsForTemplate'];
 }
 
@@ -74,7 +75,12 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // adoption was attempted, so a reader at the free programme cap saw the
     // paywall, said no — and the step-up offer was gone for good, with no way
     // back to it (2026-09-16).
-    const adopted = await handleAdoptReadyProgram(nextTemplateId, { lead: true });
+    // The next programme REPLACES the finished one: its running slot goes in
+    // the same write that starts the next. Added beside it, a free reader at
+    // 2/2 met the "places full, unlock Pro" sheet after a single step-up, for a
+    // programme they had just finished (#bugs 2026-10-09). The finished
+    // programme stays held, history and block intact, just not running.
+    const adopted = await handleAdoptReadyProgram(nextTemplateId, { lead: true, replacingPlanId: planId });
     if (adopted) {
       await dismissCompletionCard(planId);
     }

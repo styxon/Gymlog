@@ -294,7 +294,7 @@ module.exports = [
       const none = {
         paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,
         addExerciseOpen: false, restEditOpen: false, runSheetOpen: false, ownBlockActive: false,
-        restAlertsAskOpen: false,
+        restAlertsAskOpen: false, confirmingEnd: false, confirmingSkipExercise: false,
       };
       assert.equal(guidedClockHeld(none), false);
       assert.equal(guidedClockHeld({ ...none, runSheetOpen: true }), false, 'the contents sheet never holds the clock');

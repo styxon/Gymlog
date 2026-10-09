@@ -1,5 +1,6 @@
 import { groupByMonth } from './monthGroups';
 import { getComparableLogSets } from './exerciseLog';
+import { isHoldLogEntry } from './holdExercises';
 import { isMinutesLogEntry } from './minutesExercises';
 import type { ExerciseLog } from '../types/models';
 
@@ -77,7 +78,7 @@ export interface PersonalRecord {
 
 /**
  * The sets a log offers the records: its comparable sets, as a record reads
- * them — and none at all for minutes.
+ * them — and none at all for minutes, nor for a hold (seconds held, not reps).
  *
  * Twenty minutes on a bike is a dose, not a repetition count, and its weight
  * is zero: read as a set it was a "20 reps" record that a longer ride would
@@ -89,7 +90,7 @@ export function recordSetsOfLog(
   log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
     Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
 ): RecordSet[] {
-  if (isMinutesLogEntry(log)) {
+  if (isMinutesLogEntry(log) || isHoldLogEntry(log)) {
     return [];
   }
   return getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps }));

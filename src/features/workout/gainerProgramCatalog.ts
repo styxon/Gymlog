@@ -5,7 +5,7 @@ const Vinha_PROGRESSION_RULES = {
   primary: "Use double progression on anchor lifts. Add load after the top of the rep range is repeatable with clean form.",
   secondary: "Progress secondary lifts by adding reps first, then load once the range is stable across working sets.",
   accessory: "Keep accessories controlled. Add reps before load and avoid form breakdown near fatigue.",
-  failureHandling: "If repsMin is missed, repeat the load next time. If it happens twice, reduce load 5-10% and rebuild.",
+  failureHandling: "If repsMin is missed, keep the same load and build the reps back up before adding weight.",
 } as const;
 
 // Pattern-coherent swap pools for the imported programmes. These used to be

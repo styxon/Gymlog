@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { isStoreBillingConfigured } from '../features/billing/storeBilling';
+import { paymentsAreLive } from '../lib/billingCopy';
+import { isDemoBuild } from '../lib/demoMode';
 import { formatDate, formatTime } from '../lib/format';
 import { countWord } from '../lib/countWord';
 import { CutSurface } from '../components/CutSurface';
@@ -286,9 +289,10 @@ export function PremiumUnlockScreen({
 
         {/*
           The package, and the truth about it. The design put a renewal date
-          here ("renews 15.9.2026"); the app has no billing to know one, and
-          the paywall two screens back says so out loud. Inventing a date on
-          the receipt would be the one lie a reader could check.
+          here ("renews 15.9.2026"); the renewal below is counted from the
+          store's own purchase record, never invented. The "payments are not
+          live" note belongs to a build with no billing behind it and goes the
+          moment one has charged the reader (hunt 9, 2026-10-09).
         */}
         <Animated.View style={[styles.receipt, ready && riseStyle(stops - 1)]}>
           {trialEndsAt ? (
@@ -321,7 +325,9 @@ export function PremiumUnlockScreen({
                       price: t(language, receipt.priceKey),
                     })}
               </Text>
-              <Text style={styles.receiptNote}>{t(language, 'pro.v3.notice')}</Text>
+              {paymentsAreLive(isDemoBuild(), isStoreBillingConfigured()) ? null : (
+                <Text style={styles.receiptNote}>{t(language, 'pro.v3.notice')}</Text>
+              )}
             </>
           )}
           <Pressable accessibilityRole="button" onPress={onManageSubscription} hitSlop={6}>

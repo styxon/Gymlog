@@ -245,7 +245,10 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
     void scheduleIdleNudge({
       atMs,
       title: t(language, 'rest.notify.idleTitle', { minutes: IDLE_NUDGE_MINUTES }),
-      body: t(language, 'rest.notify.idleBody', { session: sessionName, done: completedSetCount }),
+      body: t(language, completedSetCount === 1 ? 'rest.notify.idleBodyOne' : 'rest.notify.idleBody', {
+        session: sessionName,
+        done: completedSetCount,
+      }),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [

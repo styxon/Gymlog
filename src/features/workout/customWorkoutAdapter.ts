@@ -5,7 +5,11 @@ import {
   WorkoutRuntimeTemplate,
   WorkoutTemplateExercise,
   WorkoutTrackingMode,
+  customSlotId,
 } from './workoutTypes';
+
+// Re-exported: the spelling lives with the types, so lib can share it.
+export { customSlotId };
 
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
@@ -125,7 +129,7 @@ function adaptExercise(
     id: exercise.id,
     persistedExerciseTemplateId: exercise.id,
     exerciseName: exercise.name,
-    slotId: `custom_slot_${exercise.id}`,
+    slotId: customSlotId(exercise.id),
     role: getRole(exercise, libraryItem),
     progressionPriority: getPriority(exercise, libraryItem),
     trackingMode: getTrackingMode(exercise, libraryItem),

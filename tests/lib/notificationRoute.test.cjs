@@ -143,7 +143,7 @@ module.exports = [
       // Held until the store is loaded, like the widget's target — a route
       // reset into a half-built app lands somewhere about to re-render.
       assert.match(appWiring, /if \(!appHydrated \|\| !pendingNotificationRoute\)/);
-      assert.match(appWiring, /resetToRoute\(pendingNotificationRoute\)/);
+      assert.match(appWiring, /resetToRoute\(\s*pendingNotificationRoute\.tab === 'progress'[\s\S]*?: pendingNotificationRoute,\s*\)/);
       // And the older listener still guards its own notifications, so merging
       // the two cannot quietly hand rest actions to the router.
       assert.match(appWiring, /data\[SESSION_NOTIFICATION_MARKER\] !== true/);
@@ -190,6 +190,34 @@ module.exports = [
       assert.match(sessionHook, /action === ACTION_STILL_GOING\) \{\s*setActivityTick\(/);
       assert.match(sessionHook, /if \(state === 'active'\) \{\s*setActivityTick\(/);
       assert.match(sessionHook, /completedSetCount,\s*activityTick,/);
+    },
+  },
+  {
+    // Bug hunt 9, 2026-10-09: Progress holds the section and measure as state
+    // the reader can change, and the route's own values compare equal on a
+    // second tap, so neither effect ran again.
+    name: 'a second tap for the same Progress destination brings the reader back to it',
+    run() {
+      const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8');
+      const hook = read('src/app/useNotificationRoute.ts');
+      assert.match(
+        hook,
+        /pendingNotificationRoute\.tab === 'progress' && pendingNotificationRoute\.screen === 'list'\s*\?\s*\{ \.\.\.pendingNotificationRoute, openedAt: Date\.now\(\) \}/,
+      );
+      assert.match(
+        read('src/app/renderProgressTab.tsx'),
+        /routeOpenedAt=\{route\.screen === 'list' \? route\.openedAt : undefined\}/,
+      );
+      const screen = read('src/screens/ProgressScreen.tsx');
+      assert.match(screen, /setProgressSection\(initialSection\);\s*\}\s*\}, \[initialSection, routeOpenedAt\]\);/);
+      assert.match(screen, /\}, \[initialMeasure, routeOpenedAt\]\);/);
+      assert.match(read('src/navigation/routes.ts'), /openedAt\?: number;/);
+      // The mapping itself stays a plain destination: the stamp is the hook's.
+      assert.deepEqual(routeForNotification({ gymlogPlan: true, category: 'record' }), {
+        tab: 'progress',
+        screen: 'list',
+        section: 'records',
+      });
     },
   },
 ];

@@ -318,12 +318,15 @@ export function buildRecommendationReasonLines(
   const weightTargetReason = buildWeightTargetReason(selection, language);
   const goalSpecificReason = buildGoalSpecificReason(selection, language, options.runWork ?? null);
 
-  reasons.push(
-    t(language, projectedDays === 1 ? 'recExp.daysOne' : 'recExp.days', {
-      days: projectedDays,
-      goal: getGoalLabel(selection, language),
-    }),
-  );
+  // "6 days for run + mobility" opened the lines over a bodyweight push-pull-legs
+  // week with no runs at all (a pro reader at six days has no run programme to
+  // be given). The opening line says what the week is instead of the goal it
+  // is not serving.
+  const noRuns = selection.goal === 'run_mobility' && options.runWork === 'none';
+  const daysKey = noRuns
+    ? projectedDays === 1 ? 'recExp.daysOneNoRun' : 'recExp.daysNoRun'
+    : projectedDays === 1 ? 'recExp.daysOne' : 'recExp.days';
+  reasons.push(t(language, daysKey, { days: projectedDays, goal: getGoalLabel(selection, language) }));
 
   if (selection.equipment !== 'gym') {
     reasons.push(getBuiltForLine(selection.equipment, language));

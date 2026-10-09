@@ -26,7 +26,6 @@ const KEPT_FAILURE_KEYS = [
   'account.backupFailed',
   'toast.saveWorkoutFailed',
   'toast.lastExerciseInDay',
-  'programs.cap.full',
 ];
 
 module.exports = [
@@ -68,6 +67,13 @@ module.exports = [
           `${key} explains why nothing happened and must stay`,
         );
       }
+      // The full-set refusal is one message for every door, built in
+      // programCapNotice (it names the excess past the cap, hunt 9, 2026-10-09).
+      assert.match(
+        wiring,
+        /showToast\(programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)\)/,
+        'programs.cap.full explains why nothing happened and must stay',
+      );
     },
   },
 ];

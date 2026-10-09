@@ -795,7 +795,8 @@ module.exports = [
       // Blurred from the REAL sets, in the same words the unlocked list uses.
       // Inventing figures would be a lie the blur only hides.
       assert.match(sheet, /const blurredSets = log\.sessions/);
-      assert.match(sheet, /set\.reps\} × \$\{decimal\(set\.weightKg, language\)/);
+      // The same words the unlocked chips use (lib/exerciseSetLog formatSetLogSet).
+      assert.match(sheet, /session\.sets\.map\(\(set\) => formatSetLogSet\(set, log\.timed, language\)\)/);
       // And the preview is fed those lines, not a constant.
       assert.match(sheet, /content=\{\{ kind: 'text', text: blurredSets/);
 

@@ -510,6 +510,42 @@ module.exports = [
     },
   },
   {
+    name: 'widgetPayload: a workout from another programme does not skip the day this plan still owes',
+    run() {
+      // Mon/Wed/Fri, three sessions, Wednesday, session 2 (index 1) not yet
+      // trained. A freestyle workout logged this morning puts today in the
+      // all-programmes list, but the forecast says THIS plan is untrained
+      // today. Skipping today made the widget (and its tap) name session 3 on
+      // Friday while Home offers session 2 today and again on Friday.
+      const three = [SESSIONS[0], SESSIONS[1], { ...SESSIONS[1], id: 's3' }];
+      const wednesday = at(2026, 10, 7, 12);
+      const todayStart = new Date(2026, 9, 7).getTime();
+      const input = {
+        nowMs: wednesday,
+        schedule: weekdaySchedule([0, 2, 4]),
+        sessions: three,
+        completedWorkoutDayStarts: [todayStart],
+        sessionForecast: { fromDayStart: todayStart, nextSlot: 1, trainedToday: false },
+      };
+      const owed = findHomeWidgetNextSession(input);
+      assert.equal(owed.offset, 0);
+      assert.equal(owed.session.id, 's2');
+
+      // This plan WAS trained today: the forecast says so, today is skipped and
+      // Friday gets the following slot.
+      const done = findHomeWidgetNextSession({
+        ...input,
+        sessionForecast: { fromDayStart: todayStart, nextSlot: 2, trainedToday: true },
+      });
+      assert.equal(done.offset, 2);
+      assert.equal(done.session.id, 's3');
+
+      // Without a forecast the logged days decide, as before.
+      const noForecast = findHomeWidgetNextSession({ ...input, sessionForecast: null });
+      assert.equal(noForecast.offset, 2);
+    },
+  },
+  {
     name: 'widgetPayload: nothing to name returns nothing rather than a guess',
     run() {
       assert.equal(findHomeWidgetNextSession({ nowMs: at(2026, 7, 30), schedule: weekdaySchedule([]), sessions: SESSIONS }), null);

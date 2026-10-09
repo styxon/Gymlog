@@ -9,6 +9,7 @@ import { compareByShownName, listPickerExercises } from '../lib/exercisePicker';
 import { getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { HevyImportPreview, isHevyHistoryCsv, parseHevyCsv } from '../lib/hevyImport';
 import { I18nKey, t } from '../lib/i18n';
+import { WEIGHT_DIAL_MAX_KG } from '../lib/weightLimits';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { ProLockIcon, ProPill } from './ProLockMarks';
 import type { AppLanguage, ExerciseLibraryItem, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
@@ -560,6 +561,14 @@ export function NewProgramSheet({
                   {hevyPreview.skippedRowCount > 0 ? (
                     <Text style={styles.errorNote}>
                       {t(language, 'hevy.skipped', { count: hevyPreview.skippedRowCount })}
+                    </Text>
+                  ) : null}
+                  {hevyPreview.overweightSetCount > 0 ? (
+                    <Text style={styles.errorNote}>
+                      {t(language, 'hevy.overweight', {
+                        count: hevyPreview.overweightSetCount,
+                        max: WEIGHT_DIAL_MAX_KG,
+                      })}
                     </Text>
                   ) : null}
                   {hevyPreview.workouts.length > 0 && onImportHistory ? (

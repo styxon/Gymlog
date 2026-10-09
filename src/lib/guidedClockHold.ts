@@ -37,6 +37,10 @@ export interface GuidedOverlayState {
   ownBlockActive: boolean;
   /** The one-time rest-alert permission ask. */
   restAlertsAskOpen: boolean;
+  /** "End the workout?" — asked after the exit sheet has closed. */
+  confirmingEnd: boolean;
+  /** "Skip this exercise?" */
+  confirmingSkipExercise: boolean;
 }
 
 export function guidedClockHeld(state: GuidedOverlayState): boolean {
@@ -49,6 +53,8 @@ export function guidedClockHeld(state: GuidedOverlayState): boolean {
     state.addExerciseOpen ||
     state.restEditOpen ||
     state.ownBlockActive ||
-    state.restAlertsAskOpen
+    state.restAlertsAskOpen ||
+    state.confirmingEnd ||
+    state.confirmingSkipExercise
   );
 }

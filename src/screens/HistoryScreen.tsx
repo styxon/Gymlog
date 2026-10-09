@@ -653,7 +653,9 @@ export function HistoryScreen({
                           </Pressable>
                         ) : (
                           <Text style={styles.monthCount}>
-                            {t(language, 'history.browse.meta', { sessions: group.items.length })}
+                            {t(language, group.items.length === 1 ? 'history.browse.metaOne' : 'history.browse.meta', {
+                              sessions: group.items.length,
+                            })}
                           </Text>
                         )}
                       </View>

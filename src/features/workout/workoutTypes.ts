@@ -48,6 +48,14 @@ export const WORKOUT_TRACKING_MODES: readonly WorkoutTrackingMode[] = [
  * passed on. Every reader of a persisted mode goes through here, so a mode
  * added later cannot reach a switch that has no case for it.
  */
+/**
+ * The slot a custom programme's row runs under. Today's held swaps and drops
+ * are keyed by it, so whatever moves them to a copy needs the same spelling.
+ */
+export function customSlotId(exerciseId: string): string {
+  return `custom_slot_${exerciseId}`;
+}
+
 export function readStoredTrackingMode(value: unknown): WorkoutTrackingMode | null {
   return WORKOUT_TRACKING_MODES.includes(value as WorkoutTrackingMode) ? (value as WorkoutTrackingMode) : null;
 }
@@ -357,6 +365,12 @@ export interface GuidedResumeAnchor {
   slotId?: string;
   setIndex?: number;
   drillName?: string;
+  /**
+   * A running rest only: the wall-clock time it ends. Without it a reopened
+   * rest could only start over at its full length (lib/guidedPlayer
+   * guidedRestOpeningMs).
+   */
+  restEndsAtMs?: number;
 }
 
 export interface WorkoutUiState {

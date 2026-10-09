@@ -37,7 +37,7 @@ module.exports = [
     run() {
       // Both anchors asserted: a fork with no replace branch after it fails
       // here rather than reading on to the end of the shell.
-      const fork = sourceSlices.between(wiring, 'const replacedPlan = wasHeld', "if (edit.kind === 'replace')");
+      const fork = sourceSlices.between(wiring, 'const replacedPlan = wasHeld', "if (edit.kind === 'replace' &&");
       // On the record, not on the running set: a programme switched off
       // still has its plan, and editing a lift in one left that record
       // behind while the copy started from week 1 (CI review of #161).
@@ -54,7 +54,7 @@ module.exports = [
       // The helper and the rhythm editor over the shell: both move to src/app
       // in phase C (2026-10-01). The rhythm is read to its first
       // setupScheduleMode inside its own body, not on to whatever follows it.
-      assert.match(wiring, /async function resumeHeldProgramme\([\s\S]{0,400}resumeProgramme\(\{/, 'and the helper is the one that resumes');
+      assert.match(wiring, /async function resumeHeldProgramme\([\s\S]{0,900}resumeProgramme\(\{/, 'and the helper is the one that resumes');
 
       const rhythm = sourceSlices.between(
         sourceSlices.functionBody(wiring, 'async function handleSaveRhythm('),

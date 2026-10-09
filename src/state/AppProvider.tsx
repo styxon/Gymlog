@@ -29,7 +29,8 @@ import {
   PersistCompletedWorkoutInput,
   SessionSaveSummary,
 } from './completedWorkoutPersistence';
-import type { HevyImportedWorkout } from '../lib/hevyImport';
+import { HevyImportedWorkout, hevySessionId } from '../lib/hevyImport';
+import { forgetCompletionDismissals } from '../lib/programCompletion';
 import { planIdsHoldingTemplate, stopProgramme } from '../lib/runningProgrammes';
 import {
   getBodyweightProgress,
@@ -188,7 +189,7 @@ interface AppContextValue {
    */
   importWorkoutHistory: (
     workouts: HevyImportedWorkout[],
-  ) => Promise<{ imported: number; duplicates: number }>;
+  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[]; skipped: number }>;
   saveCardioSession: (input: {
     activityType: CardioActivityType;
     startedAt: string;
@@ -931,13 +932,21 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         plans: current.workoutPlans,
         templateId: workoutTemplateId,
       });
-      const nextDatabase = workoutPlanRepository.removeMany(
-        current,
-        planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId),
-      );
+      const removedPlanIds = planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId);
+      const nextDatabase = workoutPlanRepository.removeMany(current, removedPlanIds);
       await commit({
         ...nextDatabase,
-        preferences: stopped ? { ...nextDatabase.preferences, ...stopped } : nextDatabase.preferences,
+        preferences: {
+          ...nextDatabase.preferences,
+          ...stopped,
+          // Whatever the removed plans were answered with goes too: adopting
+          // the programme again builds the same plan id, and a round that
+          // inherits the last one's answer never gets its completion card.
+          dismissedCompletionPlanIds: forgetCompletionDismissals(
+            nextDatabase.preferences.dismissedCompletionPlanIds,
+            removedPlanIds,
+          ),
+        },
       });
     });
   }
@@ -956,7 +965,16 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         templateId: workoutTemplateId,
       });
       const nextDatabase = workoutTemplateRepository.remove(current, workoutTemplateId);
-      const preferences = stopped ? { ...nextDatabase.preferences, ...stopped } : nextDatabase.preferences;
+      const preferences = {
+        ...nextDatabase.preferences,
+        ...stopped,
+        // Its plans are emptied with it, and a plan id answered once is not
+        // asked again: the dismissals go with the records (forgetHeldProgramme).
+        dismissedCompletionPlanIds: forgetCompletionDismissals(
+          nextDatabase.preferences.dismissedCompletionPlanIds,
+          planIdsHoldingTemplate(current.workoutPlans, workoutTemplateId),
+        ),
+      };
       const nextActivePlanId = preferences.activePlanId
         ? workoutPlanRepository.findById(nextDatabase, preferences.activePlanId)?.id ?? null
         : null;
@@ -1307,9 +1325,8 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       // quadratic and froze the app, #bugs). Duplicate counting, the "already
       // existed" number and every field below are unchanged.
       const inputs: PersistCompletedWorkoutInput[] = workouts.map((workout) => {
-        const startedMs = Date.parse(workout.startedAt);
         return {
-          sessionId: `hevy_${startedMs}`,
+          sessionId: hevySessionId(workout),
           // Not a template that exists, and does not need to be: ready
           // programme sessions reference ids outside the database too, and
           // every history surface reads the snapshots.
@@ -1345,7 +1362,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       if (result.imported > 0) {
         await commit(result.database);
       }
-      return { imported: result.imported, duplicates: result.duplicates };
+      // The ids the database now holds, so the caller can file the same
+      // sessions as "last time" (lib/hevyImport hevyWorkoutsToLoggedSessions).
+      return { imported: result.imported, duplicates: result.duplicates, sessionIds: result.sessionIds, skipped: result.skipped };
     });
   }
 

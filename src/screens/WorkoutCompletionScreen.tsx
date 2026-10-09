@@ -293,8 +293,9 @@ function formatPrNote(pr: WorkoutCompletionPrCard, language: AppLanguage) {
   // The delta alone made the reader do the arithmetic mid-celebration
   // (user 2026-08-23): the number they want is the new best itself.
   return t(language, 'complete.pr.delta', {
-    delta: removeTrailingZeros(Number(delta.toFixed(1))),
-    max: removeTrailingZeros(Number(pr.performedWeightKg.toFixed(1))),
+    // Hundredths: a 1.25 kg step is "+1,25 kg", not "+1,3".
+    delta: removeTrailingZeros(Number(delta.toFixed(2))),
+    max: removeTrailingZeros(Number(pr.performedWeightKg.toFixed(2))),
   });
 }
 

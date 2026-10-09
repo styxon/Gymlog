@@ -80,9 +80,14 @@ module.exports = [
     name: 'session adaptations: a kept swap is spent on its own day, and "Reset all data" lets all of them go',
     run() {
       const kept = wiring.match(/adaptSession\(\{ programId, sessionId \}, \(current\) => withoutSessionSwapsTo\(current, edit\.exerciseName\)\);/g) ?? [];
-      // Once in the custom-programme branch, once where a ready programme is
-      // copied to take the edit.
-      assert.equal(kept.length, 2);
+      // In the custom-programme branch; where a ready programme is copied to
+      // take the edit the swap is spent on the COPY's day (hunt 9 #13), the
+      // catalogue's ref being left behind with everything else held for it.
+      assert.equal(kept.length, 1);
+      assert.match(
+        wiring,
+        /adaptSession\(\{ programId: workoutTemplateId, sessionId: copiedSessions\[dayIndex\]\.id \}, \(current\) =>\s*withoutSessionSwapsTo\(current, edit\.exerciseName\),/,
+      );
       const reset = between('const handleResetAllData = useCallback(async () => {', '}, [resetAllData]);');
       assert.match(reset, /setHeldSessionAdaptations\(NO_HELD_SESSION_ADAPTATIONS\);/);
     },

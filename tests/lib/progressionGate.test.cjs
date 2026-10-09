@@ -117,13 +117,49 @@ module.exports = [
     },
   },
   {
-    name: 'progression: a session after a 7-day gap never adds load',
+    name: 'progression: a session after a break never adds load',
     run() {
-      const decision = gate({ history: [entry(60, 12, 0), entry(60, 12, 8)] });
+      // A missed week of a weekly lift.
+      const decision = gate({ history: [entry(60, 12, 0), entry(60, 12, 14)] });
 
       assert.equal(decision.recommendation, 'hold');
       assert.equal(decision.holdReason, 'gap_return');
       assert.equal(decision.loadKg, 60, 'the hold still tells the logger what to repeat');
+
+      // The edge: ten calendar days is a break, nine is not.
+      assert.equal(gate({ history: [entry(60, 12, 0), entry(60, 12, 10)] }).holdReason, 'gap_return');
+      assert.equal(gate({ history: [entry(60, 12, 0), entry(60, 12, 9)] }).recommendation, 'increase');
+    },
+  },
+  {
+    // Bug hunt 2026-10-09: slot history is kept per programme day, so a weekly
+    // programme's lift is 7 days from its last session every time. At a 7-day
+    // break the jump was held whenever this week's finish came a few minutes
+    // later in the day than last week's — about every other week.
+    name: 'progression: a lift trained once a week is on its cadence, not back from a break',
+    run() {
+      const weekly = [entry(60, 12, 0), entry(60, 12, 7), entry(60, 12, 14)];
+      const jitter = [entry(60, 12, 0), entry(60, 12, 7 + 3 / 24), entry(60, 12, 14 - 2 / 24)];
+      for (const history of [weekly, jitter]) {
+        for (const level of ['beginner', 'advanced']) {
+          const decision = gate({ history, level });
+          assert.equal(decision.recommendation, 'increase', `${level}: ${JSON.stringify(decision)}`);
+          assert.equal(decision.loadKg, 62.5);
+        }
+      }
+
+      // The bodyweight rep gate reads the same rule.
+      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const reps = resolveProgressedReps({
+        history: [entry(0, 12, 0), entry(0, 12, 7)],
+        templateTargetReps: 12,
+        targetSets: 3,
+        level: 'beginner',
+        trackingMode: 'bodyweight',
+        automatedProgressionEnabled: true,
+      });
+      assert.equal(reps.progressed, true);
+      assert.equal(reps.targetReps, 13);
     },
   },
   {
@@ -219,8 +255,11 @@ module.exports = [
       // back as the break rule counts it, the first session moves nothing —
       // and without a clock the gate does not guess.
       assert.equal(gate({ history: [entry(40, [14, 14, 14], 90)], level: 'beginner', nowMs: NOW }).recommendation, 'silent');
-      assert.equal(gate({ history: [entry(40, [14, 14, 14], 7)], level: 'beginner', nowMs: NOW }).recommendation, 'silent');
-      assert.equal(gate({ history: [entry(40, [14, 14, 14], 6)], level: 'beginner', nowMs: NOW }).recommendation, 'increase');
+      assert.equal(gate({ history: [entry(40, [14, 14, 14], 10)], level: 'beginner', nowMs: NOW }).recommendation, 'silent');
+      assert.equal(gate({ history: [entry(40, [14, 14, 14], 9)], level: 'beginner', nowMs: NOW }).recommendation, 'increase');
+      // A weekly lift's second visit is a week after its first: recent, not a
+      // break (bug hunt, 2026-10-09).
+      assert.equal(gate({ history: [entry(40, [14, 14, 14], 7)], level: 'beginner', nowMs: NOW }).recommendation, 'increase');
       assert.equal(gate({ history: [entry(40, [14, 14, 14], 0)], level: 'beginner' }).recommendation, 'silent');
 
       // At the ceiling, or past it on only some sets: the baseline still waits.
@@ -242,25 +281,29 @@ module.exports = [
     },
   },
   {
-    // Break round, 2026-09-28: a week off across the spring clock change is
-    // 6.96 days of elapsed time and was not read as a break.
-    name: 'progression: a week off across the spring clock change is a break',
+    // Break round, 2026-09-28: a break across the spring clock change is an
+    // hour short in elapsed time and was not read as one. The break is ten
+    // days since 2026-10-09 (a weekly lift's week is its cadence); the clock
+    // change still must not shorten it.
+    name: 'progression: a break across the spring clock change is a break',
     run() {
       const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
       withHelsinkiClocks(() => {
         // At the ceiling both times, so the break is the only reason to hold.
         const at = (iso) => ({ ...entry(40, 12, 0), performedAt: new Date(iso).toISOString() });
+        // Ten calendar days, 9.96 of elapsed time.
         const decision = gate({
-          history: [at('2026-03-29T10:00:00'), at('2026-03-22T10:00:00')],
+          history: [at('2026-03-29T10:00:00'), at('2026-03-19T10:00:00')],
           level: 'beginner',
         });
         assert.equal(decision.recommendation, 'hold');
         assert.equal(decision.holdReason, 'gap_return');
 
-        // CI review of #223: counting midnights made 23:00 to 01:00 six days
-        // later a week. It is barely six days, and not a break.
+        // CI review of #223: counting midnights made 23:00 to 01:00 a few days
+        // later a full count of days. Ten midnights here, barely nine days,
+        // and not a break.
         const late = gate({
-          history: [at('2026-05-08T01:00:00'), at('2026-05-01T23:00:00')],
+          history: [at('2026-05-11T01:00:00'), at('2026-05-01T23:00:00')],
           level: 'beginner',
         });
         assert.notEqual(late.holdReason, 'gap_return');
@@ -535,6 +578,148 @@ module.exports = [
       assert.equal(at(ramp, 2, { cautionArea: 'lower_back' }), 5);
       assert.equal(at(ramp, 2, { fatigueSignal: 'elevated' }), 5);
       assert.equal(at(ramp, 2, { fatigueSignal: 'normal' }), 6);
+    },
+  },
+  {
+    // Bug hunt 2026-10-09: 40×10 | 50×8 | 60×7 … 60×12 and then the same
+    // numbers for good — only the top set's target rose, and the load gate
+    // waits for every set up to it at the ceiling.
+    name: 'resolveRampSetTarget: once the top set is at the ceiling, the lighter sets climb, and the ramp earns its jump',
+    run() {
+      const { resolveRampSetTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const RAMP_NOW = Date.parse('2026-10-09T12:00:00.000Z');
+      const at = (sets, setIndex, extra = {}) =>
+        resolveRampSetTarget({
+          entry: { performedAt: '2026-10-06T09:00:00.000Z', exerciseName: 'Bench Press', skipped: false,
+            sets: sets.map(([loadKg, reps], index) => ({ setIndex: index, loadKg, reps })) },
+          setIndex,
+          repsMax: 12,
+          automatedProgressionEnabled: true,
+          nowMs: RAMP_NOW,
+          ...extra,
+        });
+
+      // Top set short of the ceiling: unchanged, the top set climbs alone.
+      assert.deepEqual([0, 1, 2].map((i) => at([[40, 10], [50, 8], [60, 7]], i)), [10, 8, 8]);
+      // Top set at the ceiling: the lighter sets ask one more, the top holds.
+      assert.deepEqual([0, 1, 2].map((i) => at([[40, 10], [50, 8], [60, 12]], i)), [11, 9, 12]);
+      // Never past the ceiling.
+      assert.deepEqual([0, 1, 2].map((i) => at([[40, 12], [50, 11], [60, 12]], i)), [12, 12, 12]);
+      // Every set at the top weight has to be there first.
+      assert.deepEqual([0, 1, 2].map((i) => at([[50, 8], [60, 12], [60, 10]], i)), [8, 12, 11]);
+      // A back-off after the heaviest is exempt from the gate, and repeats.
+      assert.deepEqual([0, 1, 2].map((i) => at([[50, 8], [60, 12], [40, 9]], i)), [9, 12, 9]);
+      // A flagged area or a recovery hold adds nothing anywhere.
+      assert.equal(at([[40, 10], [50, 8], [60, 12]], 0, { cautionArea: 'lower_back' }), 10);
+      assert.equal(at([[40, 10], [50, 8], [60, 12]], 0, { fatigueSignal: 'high' }), 10);
+
+      // Followed session after session, the dials reach the gate's ceiling and
+      // the load moves.
+      let sets = [[40, 10], [50, 8], [60, 6]];
+      const history = [];
+      let jumped = false;
+      for (let session = 0; session < 20 && !jumped; session += 1) {
+        const daysAgo = 40 - session * 2;
+        history.unshift(entry(0, 0, daysAgo, {
+          sets: sets.map(([loadKg, reps], setIndex) => ({ setIndex, loadKg, reps, completedAt: '' })),
+        }));
+        const opens = sets.map(([loadKg], setIndex) => {
+          const reps = resolveRampSetTarget({
+            entry: history[0], setIndex, repsMax: 12, automatedProgressionEnabled: true, nowMs: NOW - (daysAgo - 1) * DAY_MS,
+          });
+          return [loadKg, reps];
+        });
+        const load = resolveProgressedLoadKg({
+          history, repsMin: 8, repsMax: 12, targetSets: 3, level: 'beginner',
+          automatedProgressionEnabled: true, fallbackLoadKg: 60, fallbackReps: 12,
+        });
+        jumped = load.progressed;
+        sets = opens;
+      }
+      assert.equal(jumped, true, `the ramp stalled at ${JSON.stringify(sets)}`);
+    },
+  },
+  {
+    // Bug hunt 2026-10-09: a finished session files an entry with no sets for
+    // every lift left pending or skipped. As the newest entry it silenced the
+    // gate and dropped a jump already earned; as the one before, it hid a
+    // five-week break from the break rule.
+    name: 'progression: a visit that logged nothing is not a session — it neither drops a jump nor hides a break',
+    run() {
+      const pending = (daysAgo) => ({ ...entry(60, 12, daysAgo), sets: [] });
+      const skipped = (daysAgo) => ({ ...entry(60, 12, daysAgo), sets: [], skipped: true });
+
+      for (const empty of [pending, skipped]) {
+        // Earned, then one visit with nothing logged: still earned.
+        const beginner = gate({ history: [empty(1), entry(60, 12, 4), entry(60, 12, 7)], level: 'beginner' });
+        assert.equal(beginner.recommendation, 'increase', JSON.stringify(beginner));
+        assert.equal(beginner.loadKg, 62.5);
+        // The confirmation count looks through it too.
+        const confirmed = gate({ history: [empty(1), entry(60, 12, 4), entry(60, 12, 7), entry(60, 12, 10)], level: 'advanced' });
+        assert.equal(confirmed.recommendation, 'increase', JSON.stringify(confirmed));
+        const interleaved = gate({ history: [entry(60, 12, 0), empty(2), entry(60, 12, 4), entry(60, 12, 6)], level: 'advanced' });
+        assert.equal(interleaved.recommendation, 'increase', JSON.stringify(interleaved));
+
+        // The break is measured against the lift's last real session.
+        const back = gate({ history: [entry(60, 12, 1), empty(3), entry(60, 12, 38)], level: 'beginner' });
+        assert.equal(back.recommendation, 'hold');
+        assert.equal(back.holdReason, 'gap_return');
+      }
+
+      // A skipped entry that did log sets still holds, as it always has.
+      assert.equal(gate({ history: [entry(60, 12, 0, { skipped: true }), entry(60, 12, 3)] }).holdReason, 'set_skipped');
+
+      // The bodyweight rep gate reads the same sessions, and climbs from the
+      // newest real one.
+      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const reps = resolveProgressedReps({
+        history: [pending(1), entry(0, 14, 3), entry(0, 12, 6)],
+        templateTargetReps: 12,
+        targetSets: 3,
+        level: 'beginner',
+        trackingMode: 'bodyweight',
+        automatedProgressionEnabled: true,
+      });
+      assert.equal(reps.progressed, true);
+      assert.equal(reps.targetReps, 15);
+    },
+  },
+  {
+    // Bug hunt 2026-10-09: 3 × 8 as asked plus a tired fourth set at the same
+    // weight held the jump; a lighter fourth did not. The missed-reps rule
+    // already says a set past the programme must not hold back a target every
+    // programmed set met (review of #202).
+    name: 'progression: a set past the programme count neither blocks a jump nor sets the load',
+    run() {
+      const asked = entry(60, [8, 8, 8], 3);
+      const bonus = (load, reps) => entry(60, [8, 8, 8], 0, {
+        sets: [...entry(60, [8, 8, 8], 0).sets, { setIndex: 3, loadKg: load, reps, completedAt: '' }],
+      });
+      for (const extra of [bonus(60, 5), bonus(50, 5), bonus(70, 2)]) {
+        const decision = gate({ history: [extra, asked], repsMin: 8, repsMax: 8, targetSets: 3 });
+        assert.equal(decision.recommendation, 'increase', JSON.stringify(decision));
+        assert.equal(decision.fromLoadKg, 60);
+        assert.equal(decision.loadKg, 62.5);
+      }
+      // A programmed set short of the ceiling still holds.
+      const short = gate({ history: [entry(60, [8, 8, 6], 0), asked], repsMin: 8, repsMax: 8, targetSets: 3 });
+      assert.equal(short.holdReason, 'rep_ceiling_not_reached');
+
+      // The bodyweight rep gate: a tired extra set is not the proven floor.
+      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const withExtra = entry(0, [12, 12, 12], 0, {
+        sets: [...entry(0, [12, 12, 12], 0).sets, { setIndex: 3, loadKg: 0, reps: 5, completedAt: '' }],
+      });
+      const reps = resolveProgressedReps({
+        history: [withExtra, entry(0, 12, 3)],
+        templateTargetReps: 12,
+        targetSets: 3,
+        level: 'beginner',
+        trackingMode: 'bodyweight',
+        automatedProgressionEnabled: true,
+      });
+      assert.equal(reps.progressed, true);
+      assert.equal(reps.targetReps, 13);
     },
   },
 ];

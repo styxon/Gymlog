@@ -220,8 +220,17 @@ const FOCUS_FI: Record<string, string> = {
 
 const DICTIONARIES: Partial<Record<AppLanguage, Record<string, string>>> = { fi: FOCUS_FI };
 
+/**
+ * The dictionary's own entry for a key, or undefined. Free text is looked up
+ * here, and a plain index finds "constructor" and "valueOf" on Object.prototype
+ * and hands back a function as the label.
+ */
+function entryFor(dictionary: Record<string, string>, key: string): string | undefined {
+  return Object.prototype.hasOwnProperty.call(dictionary, key) ? dictionary[key] : undefined;
+}
+
 function translateWord(word: string, dictionary: Record<string, string>): string {
-  return dictionary[word.trim().toLowerCase()] ?? word.trim();
+  return entryFor(dictionary, word.trim().toLowerCase()) ?? word.trim();
 }
 
 /**
@@ -236,7 +245,7 @@ export function localizeWorkoutFocus(focus: string, language: AppLanguage = 'en'
   }
 
   // A whole-phrase hit wins over decomposition ("Full Body Circuit").
-  const whole = dictionary[raw.toLowerCase()];
+  const whole = entryFor(dictionary, raw.toLowerCase());
   if (whole) {
     return whole;
   }
@@ -266,7 +275,7 @@ export function localizeWorkoutFocus(focus: string, language: AppLanguage = 'en'
       // The dictionary's own answer, or null when it has none. Which of the
       // two it is decides whether the word may be lowered below, so the miss
       // has to stay visible here rather than behind translateWord's fallback.
-      const translated = dictionary[segment.trim().toLowerCase()] ?? null;
+      const translated = entryFor(dictionary, segment.trim().toLowerCase()) ?? null;
       const text = translated ?? segment.trim();
       // "Kyykky ja penkki", not "Kyykky ja Penkki": the words are stored
       // capitalized because each can open a name.

@@ -133,6 +133,7 @@ export function renderProgressTab(deps: ProgressTabDeps): React.ReactElement | n
       initialSection={route.screen === 'list' ? route.section : undefined}
       initialMeasure={route.screen === 'list' ? route.measure : undefined}
       scrollToTarget={route.screen === 'list' ? route.scrollTo : undefined}
+      routeOpenedAt={route.screen === 'list' ? route.openedAt : undefined}
       showBodyweightDetail={route.screen === 'bodyweight'}
       /*
        * Removing a reading is silent the same way adding one is: the row

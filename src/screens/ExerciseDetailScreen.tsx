@@ -299,7 +299,9 @@ export function ExerciseDetailScreen({
   const personalBest = unloaded
     ? minutesLift
       ? t(language, 'logger.minutesValue', { count: bestMinutes })
-      : t(language, 'exDetail.bestReps', { count: history?.bestReps ?? 0 })
+      : t(language, history?.bestReps === 1 ? 'exDetail.bestRepsOne' : 'exDetail.bestReps', {
+          count: history?.bestReps ?? 0,
+        })
     : history?.bestWeight != null && history.bestWeight > 0
       ? `${removeTrailingZeros(convertWeightFromKg(history.bestWeight, unitPreference))} ${unitPreference}`
       : '—';

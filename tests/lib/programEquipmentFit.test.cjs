@@ -280,7 +280,12 @@ module.exports = [
 
       // Home with every chip unticked is "nothing", not "unknown gear".
       const onboarding = fs.readFileSync(path.join(root, 'src', 'screens', 'OnboardingScreen.tsx'), 'utf8');
-      assert.match(onboarding, /if \(items\.length === 0\) \{\s*setEquipment\('home'\);\s*setTrainingEnvironment\('bodyweight_only'\);/);
+      assert.match(onboarding, /equipmentSetupForChips\(option, items\)/);
+      const { equipmentSetupForChips } = require('../../.test-dist/lib/equipmentCardSetup.js');
+      assert.deepEqual(equipmentSetupForChips({ id: 'home_gym', equipment: 'home', trainingEnvironment: 'home_gym' }, []), {
+        equipment: 'home',
+        trainingEnvironment: 'bodyweight_only',
+      });
 
       // Onboarding's ready catalog quotes the same minutes as every other card.
       const readyCatalog = fs.readFileSync(path.join(root, 'src', 'screens', 'OnboardingReadyCatalogScreen.tsx'), 'utf8');

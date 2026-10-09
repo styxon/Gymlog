@@ -192,7 +192,8 @@ module.exports = [
     name: 'Finnish output carries the same figures',
     run() {
       const fi = buildSessionAnalysis({ ...TWO_SESSIONS, sessionId: 's2', language: 'fi' });
-      assert.match(fi.verdict.text, /\+8%/);
+      // formatPercent: Finnish puts a non-breaking space before the sign.
+      assert.match(fi.verdict.text, /\+8\u00a0%/);
       assert.match(fi.title, /Koko keho/);
       assert.ok(fi.metaParts.some((part) => /sarjaa/.test(part)));
     },

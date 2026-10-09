@@ -128,3 +128,21 @@ export function splitCsvRecords(text: string, delimiter: string): CsvRecordSplit
 export function collapseCellWhitespace(value: string): string {
   return value.replace(/\s+/g, ' ').trim();
 }
+
+/**
+ * A text cell a spreadsheet would read as a formula: it starts with =, +, -, @,
+ * a tab or a carriage return. Sheets and Excel run those on open, and the
+ * export screen invites the reader to "drop it in Sheets" — a day named
+ * `=HYPERLINK(...)` that came in from an imported sheet would run there.
+ */
+const FORMULA_START = /^'*[=+\-@\t\r]/;
+
+/** The cell as it is written to a file: a leading apostrophe defuses a formula. Text cells only. */
+export function guardCsvFormula(text: string): string {
+  return FORMULA_START.test(text) ? `'${text}` : text;
+}
+
+/** The inverse, for a cell read back: one apostrophe that guardCsvFormula put there goes. */
+export function unguardCsvFormula(text: string): string {
+  return text.startsWith("'") && FORMULA_START.test(text) ? text.slice(1) : text;
+}
