@@ -1474,6 +1474,35 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Polje jokainen blokki päivän vaatimalla teholla: kevyenä päivänä juttelutahtia, tempopäivänä reippaasti mutta hallitusti. Sarjan luku on blokin pituus minuutteina.',
     'Polje blokkien välissä hitaasti ohjelman lepoajan verran ja aloita sitten seuraava.',
   ],
+  // Rows a swap reaches rather than a programme: the swap pools put them in
+  // front of a reader as surely as a prescribed lift, and these four were
+  // English (bug hunt, 2026-10-09). Butterfly is the pec deck.
+  Butterfly: [
+    'Istu laitteeseen selkä tiiviisti selkänojaa vasten.',
+    'Tartu kahvoihin. Säädä laite niin, että olkavarret ovat lattian suuntaisesti.',
+    'Tuo kahvat hitaasti yhteen edessäsi ja purista rintaa keskeltä. Pidä supistus sekunnin ajan.',
+    'Palaa hitaasti alkuasentoon, kunnes tunnet rinnassa venytyksen.',
+    'Toista suositeltu määrä toistoja.',
+  ],
+  'Band Assisted Pull-Up': [
+    'Kiedo kuminauha leuanvetotangon keskelle. Eri vahvuisilla nauhoilla saat eri määrän apua.',
+    'Vedä nauhan pää alas ja aseta koukistettu polvi lenkkiin niin, ettei se pääse lipsumaan. Ota tangosta keskileveä tai leveä ote.',
+    'Vedä itsesi ylös leveillä selkälihaksilla koukistaen kyynärpäitä. Tuo kyynärpäät kylkiä kohti ja pyri saamaan leuka tangon yläpuolelle. Älä heilauta tai nykäise.',
+    'Pidä lyhyt tauko ja laskeudu takaisin alkuasentoon.',
+  ],
+  'Rope Straight-Arm Pulldown': [
+    'Kiinnitä köysi ylätaljaan ja valitse paino. Seiso pari askelta taljasta taaksepäin jalat porrastettuina ja tartu köyteen molemmin käsin. Kallistu lonkasta eteen selkä suorana, kädet suorina ylhäällä edessäsi.',
+    'Pidä kädet suorina ja vedä köysi alas reisiä kohti olkanivelestä.',
+    'Pidä tauko ala-asennossa ja purista leveitä selkälihaksia.',
+    'Palaa alkuasentoon päästämättä painoa lepäämään pinoon.',
+  ],
+  'EZ-Bar Curl': [
+    'Seiso ryhdikkäästi ja tartu EZ-tankoon sen leveistä ulkokahvoista. Kämmenet osoittavat eteen ja hieman sisäänpäin tangon muodon mukaan. Pidä kyynärpäät lähellä vartaloa.',
+    'Pidä olkavarret paikallaan ja käännä tanko ylös hauiksilla. Vain kyynärvarret liikkuvat.',
+    'Jatka, kunnes hauikset ovat täysin supistuneet ja tanko on hartioiden korkeudella. Purista hetki yläasennossa.',
+    'Laske tanko hitaasti takaisin alkuasentoon.',
+    'Toista suositeltu määrä toistoja.',
+  ],
 };
 
 /**

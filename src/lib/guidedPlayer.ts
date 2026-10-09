@@ -1432,6 +1432,10 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // programmes prescribe it with no weight to a reader who may own none.
   'diamond push-up': 'push-ups - close triceps position',
   'nordic hamstring curl': 'natural glute ham raise',
+  // The pec deck machine is the library's "Butterfly": the same seat, pads
+  // and steps. It is in the chest-fly swap pool and opened nothing (bug hunt,
+  // 2026-10-09).
+  'pec deck': 'butterfly',
 
   // ── Dosages of the app's own rows (extraExerciseLibrary) ───────────────
   //

@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
-const { WORKOUT_TEMPLATES_V1 } = dist('features/workout/workoutCatalog.js');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = dist('features/workout/workoutCatalog.js');
 const { RECOMMENDATION_PROGRAMS } = dist('lib/recommendationCatalog.js');
 const { createSeedExerciseLibrary } = dist('data/seed.js');
 const { findGuidedLibraryIndex, GUIDED_LIBRARY_ALIASES } = dist('lib/guidedPlayer.js');
@@ -121,6 +121,30 @@ module.exports = [
       // And every slot gets there without the containment guess.
       const guessed = slots().filter(({ exercise }) => resolveWithoutGuessing(exercise.exerciseName) === null).map(where);
       assert.deepEqual(guessed, []);
+    },
+  },
+  {
+    name: 'ready programme audit: every name a swap pool offers has a library row with a photo, reached by its own name or an alias',
+    run() {
+      // The swap sheet lists every member of a row's group, so a pool name is
+      // put in front of a reader as surely as a prescribed one. Nothing walked
+      // the pools: "Pec Deck", "Hamstring Walkout" and the hyphenated
+      // "Single-Leg Glute Bridge" opened initials and no steps, and "Squat"
+      // and "Assisted Pull-Up" reached a row only by the containment guess
+      // (bug hunt, 2026-10-09).
+      const offenders = [];
+      for (const group of WORKOUT_SUBSTITUTION_GROUPS) {
+        for (const name of group.allowedExerciseNames) {
+          const index = resolveWithoutGuessing(name);
+          if (index === null) {
+            const guess = findGuidedLibraryIndex(name, LIBRARY_NAMES);
+            offenders.push(`${group.id} / ${name} -> ${guess === null ? 'no row' : `guess ${LIBRARY_NAMES[guess]}`}`);
+          } else if (!LIBRARY[index].imageKey && !LIBRARY[index].id.startsWith('extra_')) {
+            offenders.push(`${group.id} / ${name} -> ${LIBRARY_NAMES[index]} has no photo`);
+          }
+        }
+      }
+      assert.deepEqual(offenders, []);
     },
   },
   {

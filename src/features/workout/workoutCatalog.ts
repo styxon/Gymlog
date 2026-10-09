@@ -10,12 +10,12 @@ function session(sessionDef: WorkoutTemplateSession) {
 }
 
 export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
-  { id: 'squat_pattern', allowedExerciseNames: ['Back Squat', 'Front Squat', 'Hack Squat', 'Leg Press', 'Competition Back Squat', 'Pause Squat', 'Squat', 'Goblet Squat', 'Goblet Squat (Light)', 'Sumo Squat', 'Leg Extension'] },
+  { id: 'squat_pattern', allowedExerciseNames: ['Back Squat', 'Front Squat', 'Hack Squat', 'Leg Press', 'Competition Back Squat', 'Pause Squat', 'Goblet Squat', 'Goblet Squat (Light)', 'Sumo Squat', 'Leg Extension'] },
   { id: 'hinge_pattern', allowedExerciseNames: ['Romanian Deadlift', 'Trap Bar Deadlift', 'Hip Thrust', 'Romanian Deadlift (Light)', 'Single-Leg RDL', 'Single-Leg Romanian Deadlift', 'Cable Pull-Through', 'Stiff-Legged Dumbbell Deadlift'] },
   { id: 'horizontal_press', allowedExerciseNames: ['Bench Press', 'Dumbbell Bench Press', 'Machine Chest Press', 'Incline Bench Press', 'Incline Dumbbell Press', 'Barbell Bench Press', 'Competition Bench Press', 'Paused Bench Press', 'Incline Barbell Press', 'Dumbbell Floor Press'] },
   { id: 'vertical_press', allowedExerciseNames: ['Overhead Press', 'Dumbbell Shoulder Press', 'Machine Shoulder Press', 'Standing Overhead Press', 'Seated Dumbbell Press', 'Arnold Press', 'Standing Dumbbell Shoulder Press', 'Push Press', 'Dumbbell Thruster'] },
   { id: 'horizontal_pull', allowedExerciseNames: ['Chest-Supported Row', 'Seated Cable Row', 'Barbell Row', 'T-Bar Row', 'Chest-Supported T-Bar Row', 'Dumbbell Row', 'Single-Arm Dumbbell Row', 'Pendlay Row', 'Bent-Over Row', 'Bent Over Two-Dumbbell Row'] },
-  { id: 'vertical_pull', allowedExerciseNames: ['Lat Pulldown', 'Assisted Pull-Up', 'Pull-Up', 'Weighted Pull-Up', 'Chin-Up', 'Explosive Pull-Up', 'Muscle-Up Progression (Negative)', 'Lat Pulldown (Wide Grip)'] },
+  { id: 'vertical_pull', allowedExerciseNames: ['Lat Pulldown', 'Band Assisted Pull-Up', 'Pull-Up', 'Weighted Pull-Up', 'Chin-Up', 'Explosive Pull-Up', 'Muscle-Up Progression (Negative)', 'Lat Pulldown (Wide Grip)'] },
   { id: 'single_leg', allowedExerciseNames: ['Reverse Lunge', 'Walking Lunge', 'Bulgarian Split Squat', 'Curtsy Lunge', 'Lateral Lunge', 'Step-Up', 'Step-Up (High Box)', 'Step-Up (Low Box)'] },
   { id: 'accessory_arms', allowedExerciseNames: ['Triceps Pushdown', 'Dumbbell Curl', 'Hammer Curl', 'Band Curl'] },
   // The upright row joined this group when it became a target lift (user,
@@ -39,7 +39,14 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: 'bodyweight_press', allowedExerciseNames: ['Incline Push-Up', 'Push-Up Wide', 'Decline Push-Up', 'Push-Up', 'Wall Push-Up', 'Push-Up (or Knee Push-Up)', 'Push-Up (20s on / 10s off)', 'Diamond Push-Up', 'Pike Push-Up', 'Pike Push-Up (Elevated)'] },
   { id: 'bodyweight_pull', allowedExerciseNames: ['Inverted Row', 'Pull-Up', 'Inverted Row (Table)', 'Rows (Bar or Rings)'] },
   { id: 'bodyweight_core', allowedExerciseNames: ['Plank', 'Mountain Climbers', 'Push Up to Side Plank', 'Hollow Body Hold', 'Dead Bug', 'Dead Bug (Modified)', 'Bird Dog', 'Mountain Climber', 'Mountain Climber (20s on / 10s off)'] },
-  { id: 'bodyweight_hinge', allowedExerciseNames: ['Glute Bridge', 'Single-Leg Glute Bridge', 'Single Leg Glute Bridge', 'Hamstring Walkout'] },
+  // Every name in these lists is one a swap can put in front of a reader, so
+  // each has to open its own library row (photo and steps) by its name or an
+  // alias. Four did not: "Single-Leg Glute Bridge" beside the library's
+  // "Single Leg Glute Bridge" (the swap sheet kept the hyphenated one), a
+  // "Hamstring Walkout" and a "Squat" with no row, and "Assisted Pull-Up",
+  // which only a substring guess placed on the band-assisted row (bug hunt,
+  // 2026-10-09). The pec deck is the library's "Butterfly", by alias.
+  { id: 'bodyweight_hinge', allowedExerciseNames: ['Glute Bridge', 'Single Leg Glute Bridge'] },
   { id: 'chest_fly', allowedExerciseNames: ['Cable Fly', 'Dumbbell Fly', 'Pec Deck', 'Cable Crossover'] },
   // The pullover is a lat lift. It sat in chest_fly, so a pull day's lat
   // accessory offered chest flies as swaps. Stored rows that still carry
