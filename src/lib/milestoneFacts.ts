@@ -4,6 +4,7 @@ import {
   getCanonicalCardioSessions,
   getCanonicalCompletedSessions,
 } from './completedSessions';
+import { collapseToLatestPerDay } from './bodyweightCard';
 import { getSessionDurationMinutes } from './dashboard';
 import { getWorkedLogSets } from './exerciseLog';
 import { isHoldLogEntry } from './holdExercises';
@@ -181,11 +182,16 @@ export function getMilestoneFacts(
 
   // Weigh-ins are stored as written (the loader does not normalize them), so
   // an entry without a readable date is not a point — the page would hand it
-  // to a date formatter that throws.
+  // to a date formatter that throws. A day has one weigh-in, as on the weight
+  // card (collapseToLatestPerDay): a mistyped weight corrected the same day
+  // reached the 5 and 10 weigh-ins rungs in one morning.
   timelines.bodyweight = accumulate(
-    (database.bodyweightEntries ?? [])
+    collapseToLatestPerDay(
+      (database.bodyweightEntries ?? []).filter(
+        (entry) => typeof entry.recordedAt === 'string' && Number.isFinite(Date.parse(entry.recordedAt)),
+      ),
+    )
       .map((entry) => entry.recordedAt)
-      .filter((at): at is string => typeof at === 'string' && Number.isFinite(Date.parse(at)))
       .sort((left, right) => timestamp(left) - timestamp(right)),
     () => 1,
   );

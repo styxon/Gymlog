@@ -542,6 +542,11 @@ export const FREESTYLE_DRAFT_CLOCK_MAX_AGE_MS = 12 * 60 * 60 * 1000;
  * A `savedAtMs` in the future — the device clock moved back — is not fresh
  * either, for the same reason: nothing can be said about how long ago that
  * was.
+ *
+ * A fresh draft that was left alone for longer than SESSION_IDLE_MS is the
+ * same session with that stretch taken off (skipFreestyleIdle): two sets in
+ * the morning and a workout five hours later saved 322 minutes for twenty
+ * minutes of work (hunt 10, 2026-10-09).
  */
 export function resolveFreestyleDraftStart(
   draft: { startedAtMs: number | null; savedAtMs: number } | null | undefined,
@@ -551,7 +556,28 @@ export function resolveFreestyleDraftStart(
     return null;
   }
   const age = now - draft.savedAtMs;
-  return age >= 0 && age <= FREESTYLE_DRAFT_CLOCK_MAX_AGE_MS ? draft.startedAtMs : now;
+  if (!(age >= 0 && age <= FREESTYLE_DRAFT_CLOCK_MAX_AGE_MS)) {
+    return now;
+  }
+  return skipFreestyleIdle(draft.startedAtMs, draft.savedAtMs, now);
+}
+
+/**
+ * The session's start with a stretch of nothing done taken off: when the board
+ * was last touched more than SESSION_IDLE_MS before `nowMs`, the start moves
+ * forward by that stretch, so the clock (now minus start) carries on from where
+ * it stood at the last edit — the way the guided player's sessionClock drops
+ * time away. Free sets carry no times of their own, so the last edit is the
+ * only mark there is. resolveFreestyleFinish pins a gap at the END of the
+ * session; this one is for a gap with more work after it. An edit before the
+ * start says nothing about a stretch inside the session and changes nothing.
+ */
+export function skipFreestyleIdle(startedAtMs: number, lastEditMs: number, nowMs: number): number {
+  const idleMs = nowMs - lastEditMs;
+  if (!Number.isFinite(idleMs) || idleMs <= SESSION_IDLE_MS || lastEditMs < startedAtMs) {
+    return startedAtMs;
+  }
+  return Math.min(nowMs, startedAtMs + idleMs);
 }
 
 /**
@@ -816,9 +842,17 @@ export function freestyleRestSecondsForTick(
   const group = index === -1 ? [] : supersetGroupMembers(exercises, index);
 
   // A superset's whole point: A1 runs straight into A2, so ticking A1 starts
-  // nothing. The rest belongs after the last lift of the group.
+  // nothing. The rest belongs after the last lift of the group that has a set
+  // in this round: a lift with more sets than its partner carries on alone
+  // (supersetRoundOrder), and a tick with nothing after it in its round is
+  // that last one. Without this, Bench (3 sets) linked to Row (1 set) started
+  // no rest for any Bench tick (hunt 10, 2026-10-09).
   if (group.length > 1 && index < exercises.length - 1 && isSupersetLinked(exercises, index)) {
-    return null;
+    const round = exercise.sets.findIndex((entry) => entry.localKey === set.localKey);
+    const position = group.findIndex((member) => member.localKey === exercise.localKey);
+    if (round < 0 || group.slice(position + 1).some((member) => member.sets.length > round)) {
+      return null;
+    }
   }
 
   // Nothing below a second is a rest. Both numbers can arrive unusable — a

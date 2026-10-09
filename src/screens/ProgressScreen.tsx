@@ -27,6 +27,7 @@ import {
   capRangeDays,
   earliestEntryMs,
   measureRangeDays,
+  windowValueDelta,
 } from '../lib/bodyweightCard';
 import type { HomeRecentSessionItem } from './HomeScreen';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
@@ -529,15 +530,6 @@ function convertMeasurementValue(value: number, fromUnit: MeasurementUnit, toUni
   }
 
   return fromUnit === 'cm' && toUnit === 'in' ? value * CM_TO_IN : value / CM_TO_IN;
-}
-
-function getMeasurementRangeStart(range: MeasureRange) {
-  if (range === 'all') {
-    return null;
-  }
-
-  const now = new Date();
-  return range === '3m' ? subtractCalendarMonths(now, 3) : subtractCalendarMonths(now, 12);
 }
 
 function getSignalPriority(kind: ReturnType<typeof getExerciseProgressSignal>['kind']) {
@@ -1274,19 +1266,6 @@ export function ProgressScreen({
   // The unit-follows-the-measure effect went with the text field: the ruler
   // dials the measure's own unit and there is no draft to clear between them.
 
-  const selectedMeasureRangePoints = useMemo(() => {
-    const start = getMeasurementRangeStart(resolvedMeasureRange);
-    const points: Array<{ label: string; value: number }> = [];
-    selectedMeasureModel.values.forEach((value, index) => {
-      const recordedAt = selectedMeasureModel.dates[index];
-      if (start && new Date(recordedAt).getTime() < start.getTime()) {
-        return;
-      }
-      points.push({ label: formatShortDate(recordedAt), value });
-    });
-    return points;
-  }, [resolvedMeasureRange, selectedMeasureModel]);
-
   /**
    * The same calendar-days axis the weight card draws (the photo the user
    * sent, 2026-08-25, is the reference): orange line, hollow dots, a day per
@@ -1307,10 +1286,10 @@ export function ProgressScreen({
   const selectedMeasureLatest = selectedMeasureModel.values.length
     ? selectedMeasureModel.values[selectedMeasureModel.values.length - 1]
     : null;
-  const selectedMeasureDelta =
-    selectedMeasureRangePoints.length >= 2
-      ? selectedMeasureRangePoints[selectedMeasureRangePoints.length - 1].value - selectedMeasureRangePoints[0].value
-      : null;
+  // Read off the window the chart beside it draws, so the pill and the line
+  // cannot disagree. A range start of its own sent '7d' back twelve months and
+  // the pill showed a change since last winter (hunt 10, 2026-10-09).
+  const selectedMeasureDelta = windowValueDelta(selectedMeasureWindow);
 
   async function handleSaveMeasure(value: number) {
     if (!Number.isFinite(value) || value <= 0) {

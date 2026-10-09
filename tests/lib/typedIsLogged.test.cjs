@@ -36,7 +36,7 @@ module.exports = [
       assert.match(screen, /const distanceInvalid = !isCardioDistanceTextSavable\(distanceText\);/);
       assert.match(
         screen,
-        /onPress=\{isSaving \|\| distanceInvalid \? undefined : \(\) => void onComplete\(distanceKm, feel\)\}/,
+        /onPress=\{\s*isSaving \|\| distanceInvalid \|\| finish\.durationSec === null\s*\? undefined\s*: \(\) => void onComplete\(distanceKm, feel, minutesText\)\s*\}/,
       );
     },
   },

@@ -147,6 +147,7 @@ const suites = [
   ...require('./lib/minutesTracking.test.cjs'),
   ...require('./lib/cardio.test.cjs'),
   ...require('./lib/cardioAudit.test.cjs'),
+  ...require('./lib/hunt10CardioFree.test.cjs'),
   ...require('./lib/activeWorkout.test.cjs'),
   ...require('./lib/guidedSaveTarget.test.cjs'),
   ...require('./lib/boardResave.test.cjs'),

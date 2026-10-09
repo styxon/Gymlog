@@ -67,9 +67,9 @@ module.exports = [
       // Every read of the range goes through the resolver. A single raw read
       // is a chart that ignores the entitlement.
       assert.match(progress, /getOverviewRangeStart\(resolvedOverviewRange\)/);
-      assert.match(progress, /getMeasurementRangeStart\(resolvedMeasureRange\)/);
+      assert.match(progress, /measureRangeDays\(resolvedMeasureRange,/);
       assert.doesNotMatch(progress, /getOverviewRangeStart\(overviewRange\)/);
-      assert.doesNotMatch(progress, /getMeasurementRangeStart\(measureRange\)/);
+      assert.doesNotMatch(progress, /measureRangeDays\(measureRange,/);
 
       // Locked options are shown with a lock, not removed: a reader who never
       // learns the long view exists cannot want it.

@@ -442,6 +442,16 @@ export function earliestEntryMs(recordedAts: ReadonlyArray<string>): number | nu
   return earliest;
 }
 
+/**
+ * The change across a window: the last day's value minus the first day's that
+ * has one. Null with fewer than two days of readings, where there is no change
+ * to speak of.
+ */
+export function windowValueDelta(days: ReadonlyArray<Pick<WeightWindowDay, 'value'>>): number | null {
+  const values = days.map((day) => day.value).filter((value): value is number => value !== null);
+  return values.length >= 2 ? values[values.length - 1] - values[0] : null;
+}
+
 export function buildValueWindow(
   entries: ReadonlyArray<{ recordedAt: string; value: number }>,
   nowMs: number,

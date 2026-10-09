@@ -182,7 +182,8 @@ module.exports = [
       const screen = fs
         .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'ProgressScreen.tsx'), 'utf8');
       assert.match(screen, /case '1m':\s*return subtractCalendarMonths\(now, 1\);/);
-      assert.match(screen, /return range === '3m' \? subtractCalendarMonths\(now, 3\) : subtractCalendarMonths\(now, 12\);/);
+      // The measure ranges are windows of calendar days (measureRangeDays), not a start date of their own.
+      assert.doesNotMatch(screen, /function getMeasurementRangeStart/);
       assert.doesNotMatch(screen, /start\.setMonth\(start\.getMonth\(\) - \d\)/);
     },
   },

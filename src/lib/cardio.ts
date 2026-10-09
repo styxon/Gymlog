@@ -314,6 +314,58 @@ export function getCardioEndedAt(session: ActiveCardioSession, nowMs: number): s
   return new Date(nowMs).toISOString();
 }
 
+/**
+ * A clock that has run longer than this is asked about at Finish rather than
+ * saved. A cardio clock has no sets to say when the reader stopped, so a run
+ * started on Friday and ended on Monday read 63 hours and went into the week,
+ * the month and the Progress charts as 63 hours of running (hunt 10,
+ * 2026-10-09). The free workout pins a forgotten board to its last edit; this
+ * has nothing to pin to, so the reader says how long it was.
+ */
+export const CARDIO_CONFIRM_ELAPSED_MS = 8 * 60 * 60 * 1000;
+
+/** The longest run the reader can type in: a day. */
+export const CARDIO_MAX_ENTERED_MINUTES = 24 * 60;
+
+/** Whole minutes from the field, or null when it is empty or not a minute count. */
+export function parseCardioMinutes(input: string): number | null {
+  const trimmed = input.trim();
+  if (!/^\d{1,4}$/.test(trimmed)) {
+    return null;
+  }
+  const minutes = Number(trimmed);
+  return minutes >= 1 && minutes <= CARDIO_MAX_ENTERED_MINUTES ? minutes : null;
+}
+
+export interface CardioFinish {
+  /** The clock's own reading is too long to take as the run: the reader is asked. */
+  needsMinutes: boolean;
+  /** What would be saved; null while the reader still owes a duration. */
+  durationSec: number | null;
+  endedAt: string;
+}
+
+/**
+ * Duration and end of a run at Finish. The clock's reading while it is a
+ * plausible run; past CARDIO_CONFIRM_ELAPSED_MS only what the reader typed,
+ * ending that long after the start (the run was the start of the stretch, not
+ * the day the app was opened again).
+ */
+export function resolveCardioFinish(session: ActiveCardioSession, nowMs: number, minutesText = ''): CardioFinish {
+  const elapsedMs = getCardioElapsedMs(session, nowMs);
+  if (elapsedMs <= CARDIO_CONFIRM_ELAPSED_MS) {
+    return { needsMinutes: false, durationSec: Math.round(elapsedMs / 1000), endedAt: getCardioEndedAt(session, nowMs) };
+  }
+  const minutes = parseCardioMinutes(minutesText);
+  if (minutes === null) {
+    return { needsMinutes: true, durationSec: null, endedAt: getCardioEndedAt(session, nowMs) };
+  }
+  const durationSec = minutes * 60;
+  const startedMs = new Date(session.startedAt).getTime();
+  const endedMs = Math.min(nowMs, startedMs + durationSec * 1000);
+  return { needsMinutes: true, durationSec, endedAt: new Date(endedMs).toISOString() };
+}
+
 /** Normalizes a persisted active-cardio blob; null when unusable. */
 export function normalizeActiveCardioSession(input: unknown): ActiveCardioSession | null {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {

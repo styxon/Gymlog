@@ -96,6 +96,40 @@ export function recordSetsOfLog(
   return getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps }));
 }
 
+/**
+ * A lift's logs as the records read them: one entry per SESSION.
+ *
+ * A lift can be logged twice in one workout (a custom programme with it added
+ * or swapped in; trainingHistory documents the case). Read a log at a time, the
+ * volume record held only the larger block and the set log listed the same
+ * day twice and counted a third session that never happened (hunt 10,
+ * 2026-10-09). Sets of one session are joined, in the order the logs come; a
+ * log with no session id stands alone.
+ */
+export function recordEntriesOfLogs(
+  logs: ReadonlyArray<
+    Pick<ExerciseLog, 'sessionId' | 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
+      Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'> & { performedAt: string }
+  >,
+): RecordEntry[] {
+  const entries: RecordEntry[] = [];
+  const bySession = new Map<string, RecordEntry>();
+  for (const log of logs) {
+    const sets = recordSetsOfLog(log);
+    const held = log.sessionId ? bySession.get(log.sessionId) : undefined;
+    if (held) {
+      held.sets.push(...sets);
+      continue;
+    }
+    const entry: RecordEntry = { performedAt: log.performedAt, sets };
+    entries.push(entry);
+    if (log.sessionId) {
+      bySession.set(log.sessionId, entry);
+    }
+  }
+  return entries;
+}
+
 /** How recent a record has to be to read as new. */
 export const FRESH_RECORD_DAYS = 30;
 
