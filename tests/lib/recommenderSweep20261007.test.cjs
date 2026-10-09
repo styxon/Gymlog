@@ -5,6 +5,7 @@ const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring 
 const { composeProgramWeekForSelection } = dist('lib/programDayComposer.js');
 const { buildRecommendationInput } = dist('lib/recommendationInput.js');
 const { selectWaterfallDecision } = dist('lib/recommendationWaterfall.js');
+const { programRunWork } = dist('lib/recommendationWeekFit.js');
 const { getRecommendationProgramDefinition } = dist('lib/recommendationCatalog.js');
 const { programGearUse } = dist('lib/programEquipmentFit.js');
 const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = dist('lib/equipmentExerciseFilter.js');
@@ -195,8 +196,14 @@ module.exports = [
           if (goal !== 'run_mobility' && programGearUse(result.featuredProgramId, available) < programGearUse(pick, available)) {
             offenders.push(`${why} uses less gear`);
           }
+          // A run + mobility reader handed a week with no runs reads "running
+          // is not the main work here" instead (hunt, 2026-10-09).
+          const noRuns = goal === 'run_mobility' && programRunWork(result.featuredProgramId, buildRecommendationInput(answers)) === 'none';
+          if (noRuns && result.waterfall.whyPrimary !== 'wf.run_mobility.closestPrimary') {
+            offenders.push(`${why} has no runs and reads ${result.waterfall.whyPrimary}`);
+          }
           // The home reason names the tier of the programme it is printed over.
-          if (result.waterfall.rule === 'home_equipment') {
+          if (result.waterfall.rule === 'home_equipment' && !noRuns) {
             const want = shown.equipmentTier === 'low_equipment' ? 'wf.home_equipment.primary' : 'wf.home_gear.primary';
             if (result.waterfall.whyPrimary !== want) offenders.push(`${why} reads ${result.waterfall.whyPrimary}`);
           }

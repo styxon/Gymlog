@@ -2812,6 +2812,10 @@ const EN = {
   // ── "Why it fits" lines (bug hunt, 2026-10-04: these were hard-coded English) ──
   'recExp.days': '{days} days for {goal}.',
   'recExp.daysOne': '1 day for {goal}.',
+  // The same opening line over a week with no runs in it, for a reader whose
+  // goal is run + mobility: "6 days for run + mobility" would promise runs.
+  'recExp.daysNoRun': '{days} days a week. There is no running in this program.',
+  'recExp.daysOneNoRun': '1 day a week. There is no running in this program.',
   'recExp.goal.strength': 'strength',
   'recExp.goal.muscleGain': 'muscle gain',
   'recExp.goal.muscleBuilding': 'muscle-building',
@@ -6107,6 +6111,8 @@ const FI: Record<I18nKey, string> = {
   'setup.day.default': 'Päivä',
   'recExp.days': '{days} päivää viikossa, tavoite: {goal}.',
   'recExp.daysOne': '1 päivä viikossa, tavoite: {goal}.',
+  'recExp.daysNoRun': '{days} päivää viikossa. Ohjelmassa ei ole juoksua.',
+  'recExp.daysOneNoRun': '1 päivä viikossa. Ohjelmassa ei ole juoksua.',
   'recExp.goal.strength': 'voima',
   'recExp.goal.muscleGain': 'lihaskasvu',
   'recExp.goal.muscleBuilding': 'lihasmassan kasvatus',

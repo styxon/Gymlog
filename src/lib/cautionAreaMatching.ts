@@ -107,14 +107,103 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'cone drill',
     'ladder drill',
   ],
-  elbows: ['curl', 'skull crusher', 'triceps', 'close-grip', 'pushdown', 'dip', 'dippi'],
+  elbows: [
+    'curl',
+    'skull crusher',
+    'triceps',
+    // The singular is the library's own spelling for half its triceps work
+    // (Lying Dumbbell Tricep Extension, Tricep Dumbbell Kickback), and a
+    // whole-word match on "triceps" does not match the word "tricep" (hunt,
+    // 2026-10-09).
+    'tricep',
+    'jm press',
+    'close-grip',
+    'diamond',
+    'pushdown',
+    'dip',
+    'dippi',
+  ],
   // A dip holds the wrist in loaded extension: a wrists "avoid" week dropped
   // every push-up and kept Bench Dips (persona hunt, 2026-10-08). Elbows and
   // shoulders already list it, with the Finnish compounds the rule catches.
-  wrists: ['barbell curl', 'push-up', 'front squat', 'handstand', 'wrist', 'dip', 'dippi'],
-  hips: ['hip thrust', 'sumo', 'adductor', 'abductor', 'bulgarian', 'pistol'],
-  neck: ['shrug', 'neck', 'behind-the-neck'],
-  ankles: ['calf raise', 'calf press', 'jump', 'skipping', 'sprint', 'run', 'jog', 'treadmill', 'stride'],
+  wrists: [
+    'barbell curl',
+    'push-up',
+    'front squat',
+    'handstand',
+    'wrist',
+    'dip',
+    'dippi',
+    // Weight carried on the palms in wrist extension: a wrists "avoid" week
+    // kept Tuck Planche Hold, L-Sit Hold and the plank variants done on the
+    // hands while every push-up was gone (hunt, 2026-10-09). A plain Plank and
+    // Side Plank are forearm work and stay.
+    'planche',
+    'l-sit',
+    'plank jack',
+    'plank shoulder tap',
+    'plank to pike',
+    'plank-up',
+    'inchworm',
+    'crawl',
+  ],
+  hips: [
+    'hip thrust',
+    'sumo',
+    'adductor',
+    'abductor',
+    'bulgarian',
+    'pistol',
+    // The hip mobility and activation work: hips "avoid" left the whole Hip
+    // Opening Flow day, Hip Circles and Kneeling Hip Flexor in the week while
+    // saying the area was out (hunt, 2026-10-09). Any name with the word "hip"
+    // is a hip drill (Hip Flexor Stretch, 90/90 Hip Stretch, Hip Extension with
+    // Bands). "Butterfly" alone is the chest fly machine, so it takes "stretch".
+    'hip',
+    'pigeon',
+    'couch stretch',
+    'frog',
+    'cossack',
+    'butterfly stretch',
+    'deep squat hold',
+    'fire hydrant',
+  ],
+  neck: [
+    'shrug',
+    'neck',
+    'behind-the-neck',
+    // A neck stretch that does not say "neck", and the head-loaded inversions.
+    'chin to chest',
+    'handstand',
+  ],
+  ankles: [
+    'calf raise',
+    'calf press',
+    'jump',
+    'skipping',
+    'sprint',
+    'run',
+    'jog',
+    'treadmill',
+    'stride',
+    // The landings and cuts the knees list took in on 2026-10-05 (B8) load the
+    // ankle as much: ankles "avoid" kept Lateral Bound, Cone Drill, Ladder
+    // Drill, High Knees, Burpee and Pogo Hops (hunt, 2026-10-09).
+    'bound',
+    'hop',
+    'leap',
+    'skip',
+    'pogo',
+    'skater',
+    'burpee',
+    'mountain climber',
+    'high knee',
+    'shuffle',
+    'carioca',
+    'agility',
+    'cone drill',
+    'ladder drill',
+  ],
 };
 
 // Phrases that contain a pattern word but do not load the area. Their words are

@@ -30,6 +30,7 @@ import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { applyDecimalSeparator, convertWeightToKg, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
+import { equipmentSetupForChips } from '../lib/equipmentCardSetup';
 import { equipmentItemLabel, I18nKey, t } from '../lib/i18n';
 import {
   buildFirstRunPromptSuggestions,
@@ -674,9 +675,6 @@ const EQUIPMENT_DEFAULT_ITEMS: Partial<Record<LocationSelectionOptionId, string[
   home_gym: ['Dumbbells', 'Bench', 'Resistance bands'],
   bodyweight_only: [],
 };
-
-// Heavy home gear upgrades the derived environment from minimal_equipment to home_gym.
-const HOME_HEAVY_EQUIPMENT_ITEMS = ['Barbell & plates', 'Squat rack'];
 
 const GOAL_SELECTION_OPTIONS: Array<{
   id: SetupGoal;
@@ -1842,22 +1840,10 @@ export function OnboardingScreen({
   }
 
   function applyEquipmentEnvironment(option: (typeof LOCATION_SELECTION_OPTIONS)[number], items: string[]) {
-    if (option.id === 'home_gym') {
-      // Every chip unticked is an answer: nothing. Saved as minimal with no
-      // chips it read as "unknown gear", and the reader was handed dumbbell
-      // work (bug hunt, 2026-10-04).
-      if (items.length === 0) {
-        setEquipment('home');
-        setTrainingEnvironment('bodyweight_only');
-        return;
-      }
-      const hasHeavy = items.some((item) => HOME_HEAVY_EQUIPMENT_ITEMS.includes(item));
-      setEquipment(hasHeavy ? 'home' : 'minimal');
-      setTrainingEnvironment(hasHeavy ? 'home_gym' : 'minimal_equipment');
-      return;
-    }
-    setEquipment(option.equipment);
-    setTrainingEnvironment(option.trainingEnvironment);
+    // Every chip unticked is an answer: nothing, on the gym card as on the home one.
+    const setup = equipmentSetupForChips(option, items);
+    setEquipment(setup.equipment);
+    setTrainingEnvironment(setup.trainingEnvironment);
   }
 
   function selectEquipmentSetup(option: (typeof LOCATION_SELECTION_OPTIONS)[number]) {

@@ -51,8 +51,9 @@ export const AREA_CAREFUL_SWAPS: Record<SetupCautionArea, Array<[string, string]
     ['thruster', 'Landmine Press'],
     ['upright row', 'Lateral Raise'],
     ['upright barbell row', 'Lateral Raise'],
-    ['incline bench press', 'Machine Chest Press'],
-    ['bench press', 'Machine Chest Press'],
+    // No bench press row: a swap is only looked up for a name the area test
+    // calls a shoulder lift, and the bench press is not one (the area's avoid
+    // list leaves the flat press to the chest). Rows for it here never fired.
     ['dip', 'Machine Chest Press'],
     ['dippi', 'Machine Chest Press'],
   ],
@@ -108,7 +109,6 @@ export const AREA_BODYWEIGHT_SWAPS: Record<SetupCautionArea, Array<[string, stri
     ['overhead press', 'Incline Push-Up'],
     ['shoulder press', 'Incline Push-Up'],
     ['seated dumbbell press', 'Incline Push-Up'],
-    ['bench press', 'Push-Up Wide'],
   ],
   lower_back: [
     ['deadlift', 'Glute Bridge'],
