@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const dist = '../../.test-dist/';
 const {
   DEFAULT_FIRST_RUN_SELECTION,
+  buildFirstRunRecommendationReasons,
   resolveFirstRunRecommendationWithTailoring,
 } = require(dist + 'lib/firstRunSetup.js');
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
@@ -13,7 +14,11 @@ const {
   isRecoveryOnlyProgram,
   RECOMMENDATION_PROGRAMS,
 } = require(dist + 'lib/recommendationCatalog.js');
-const { lowerBodyOnlyAgainstFocus, trainsLowerBodyOnly } = require(dist + 'lib/recommendationWeekFit.js');
+const {
+  lowerBodyOnlyAgainstFocus,
+  programHoldsConditioning,
+  trainsLowerBodyOnly,
+} = require(dist + 'lib/recommendationWeekFit.js');
 const { classifySessionFocus } = require(dist + 'lib/homeSessionHero.js');
 const { t } = require(dist + 'lib/i18n.js');
 
@@ -152,6 +157,35 @@ module.exports = [
         const legs = selection({ gender, goal: 'lean_athletic', level: 'advanced', daysPerWeek: 2, focusAreas: ['legs'] });
         assert.equal(featured(legs).featuredProgramId, RUNNERS_STRENGTH, `${gender} legs`);
       }
+      // At home too, where it took most of its readers: a bar, a barbell and
+      // rack, dumbbells and bands.
+      const HOME = [['Pull-up bar'], ['Barbells', 'Squat rack', 'Bench'], ['Dumbbells', 'Resistance bands']];
+      for (const equipmentItems of HOME) {
+        for (const days of [2, 3, 4]) {
+          const gear = { equipment: 'home', trainingEnvironment: 'home_gym', equipmentItems };
+          const sel = selection({ gear, gender: 'male', goal: 'lean_athletic', level: 'advanced', daysPerWeek: days });
+          assert.notEqual(featured(sel).featuredProgramId, RUNNERS_STRENGTH, `${equipmentItems.join('+')} ${days}d`);
+        }
+      }
+    },
+  },
+  {
+    // Review, 2026-10-09: with Runner's Strength gone, a home lean-athletic
+    // reader with a barbell and rack was handed Strength Base under "Balanced
+    // strength and conditioning", a week with no conditioning set in it.
+    name: 'recommender fit: the lean-athletic line names conditioning only over a week that holds some',
+    run() {
+      const line = t('en', 'recExp.why.leanAthletic');
+      const reasonsFor = (sel, programId) =>
+        buildFirstRunRecommendationReasons(sel, { projectedDaysPerWeek: sel.daysPerWeek, language: 'en', programId });
+      const lean = selection({ gender: 'male', goal: 'lean_athletic', level: 'advanced', daysPerWeek: 2 });
+      assert.equal(programHoldsConditioning('tpl_shred_v1'), true);
+      assert.ok(reasonsFor(lean, 'tpl_shred_v1').includes(line), 'SHRED keeps it');
+      for (const programId of ['tpl_3_day_strength_base_v1', 'tpl_home_bodyweight_full_body_v1', 'tpl_home_dumbbell_upper_lower_v1']) {
+        assert.equal(programHoldsConditioning(programId), false, programId);
+        assert.ok(!reasonsFor(lean, programId).includes(line), programId);
+      }
+      assert.equal(programHoldsConditioning('tpl_no_such_programme'), null);
     },
   },
   {

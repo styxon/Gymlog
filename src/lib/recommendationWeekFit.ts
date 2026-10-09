@@ -2,6 +2,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { isMinutesRun, runStandInKind, type RunStandInKind } from './cautionExerciseFilter';
 import { classifySessionFocus } from './homeSessionHero';
 import { emphasisAreaForExercise, type EmphasisArea } from './programEmphasis';
+import { buildProgramFocusSplit } from './programFocusSplit';
 import { applyReaderFiltersToDay } from './readerDayFilters';
 import type { RecommendationInput } from '../types/recommendation';
 import type { SetupFocusArea } from '../types/models';
@@ -217,6 +218,36 @@ export function focusProgrammeLosesItsPoint(programId: string, input: Recommenda
     ).adjusted.exercises;
     return areaSets(kept) * 2 < before;
   });
+}
+
+/**
+ * The share of a week's sets that must be conditioning for a lean-athletic
+ * line to call it "strength and conditioning": the bar the accuracy matrix
+ * holds the pick to (G2 in tests/recommendation/recommendationMatrix.cjs).
+ */
+const LEAN_CONDITIONING_PCT = 15;
+
+const conditioningPrograms = new Map<string, boolean | null>();
+
+/**
+ * Whether this programme's week holds conditioning enough to be called
+ * strength and conditioning; null for a programme the catalog does not know.
+ * The line sat over Strength Base and the bodyweight full body, neither with a
+ * conditioning set in it, once Runner's Strength stopped taking those readers
+ * (review, 2026-10-09).
+ */
+export function programHoldsConditioning(programId: string): boolean | null {
+  const cached = conditioningPrograms.get(programId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const template = getWorkoutTemplateById(programId);
+  const holds = template
+    ? (buildProgramFocusSplit(template.sessions).find((segment) => segment.quality === 'Conditioning')?.pct ?? 0)
+      >= LEAN_CONDITIONING_PCT
+    : null;
+  conditioningPrograms.set(programId, holds);
+  return holds;
 }
 
 /** What a programme's runs are for the reader, or 'none' when it holds no runs. */
