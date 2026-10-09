@@ -13,9 +13,11 @@ import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseT
 import { calendarDaysBetween } from '../lib/completedSessions';
 import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
 import { t } from '../lib/i18n';
+import { isLiftBestLocked } from '../lib/liftBestGate';
 import { exerciseMechanic, exerciseTypeOf } from '../lib/exerciseClassification';
 import { exercisePickerLabel } from '../lib/exercisePicker';
 import { ExerciseProgressSummary } from '../lib/progression';
+import { ProLockIcon } from '../components/ProLockMarks';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 
@@ -23,6 +25,14 @@ import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } fr
 interface ExerciseDetailScreenProps {
   item: ExerciseLibraryItem;
   history?: ExerciseProgressSummary | null;
+  /**
+   * Whether the reader has Pro. The personal best is a record's figure, and
+   * a record older than the free window is locked on the Records list, so it
+   * is locked here too for Free. Unset reads as Free.
+   */
+  proUnlocked?: boolean;
+  /** The lock's way out: the Pro page. */
+  onOpenPro?: () => void;
   unitPreference?: UnitPreference;
   language?: AppLanguage;
   onBack: () => void;
@@ -172,27 +182,60 @@ function SectionLabel({ children, right }: { children: string; right?: React.Rea
   );
 }
 
-function StatCard({ label, value, meta }: { label: string; value: string; meta?: string }) {
+function StatCard({
+  label,
+  value,
+  meta,
+  lock,
+  onPress,
+}: {
+  label: string;
+  value: string;
+  meta?: string;
+  /** The figure is behind the record lock: the card prints this instead of it. */
+  lock?: { value: string; meta: string };
+  onPress?: () => void;
+}) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
 
-  return (
-    <View style={styles.statCard}>
+  const body = (
+    <>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text numberOfLines={1} style={styles.statValue}>
-        {value}
-      </Text>
-      {meta ? (
+      {lock ? (
+        <View style={styles.statLocked}>
+          <ProLockIcon color={theme.muted} size={13} />
+          <Text numberOfLines={1} style={styles.statLockedText}>
+            {lock.value}
+          </Text>
+        </View>
+      ) : (
+        <Text numberOfLines={1} style={styles.statValue}>
+          {value}
+        </Text>
+      )}
+      {(lock ? lock.meta : meta) ? (
         <Text numberOfLines={1} style={styles.statMeta}>
-          {meta}
+          {lock ? lock.meta : meta}
         </Text>
       ) : null}
-    </View>
+    </>
+  );
+
+  return lock && onPress ? (
+    <Pressable accessibilityRole="button" onPress={onPress} style={styles.statCard}>
+      {body}
+    </Pressable>
+  ) : (
+    <View style={styles.statCard}>{body}</View>
   );
 }
 
 export function ExerciseDetailScreen({
   item,
   history = null,
+  proUnlocked = false,
+  onOpenPro,
   unitPreference = 'kg',
   language = 'en',
   onBack,
@@ -308,6 +351,15 @@ export function ExerciseDetailScreen({
       ? `${removeTrailingZeros(convertWeightFromKg(history.bestWeight, unitPreference))} ${unitPreference}`
       : '—';
 
+  // The personal best is a record's figure: the one the Records list locks when
+  // it is older than the free window. Which log set it depends on the figure
+  // the card prints (weight, session reps, or minutes).
+  const bestLocked = isLiftBestLocked(
+    unitLogs,
+    unloaded ? (minutesLift ? 'minutes' : 'reps') : 'weight',
+    proUnlocked,
+  );
+
   return (
     <View style={styles.screen}>
       <View style={styles.topBar}>
@@ -407,6 +459,12 @@ export function ExerciseDetailScreen({
                   label={t(language, 'exDetail.personalBest')}
                   value={personalBest}
                   meta={t(language, unloaded ? 'exDetail.bestSession' : 'exDetail.topSet')}
+                  lock={
+                    bestLocked
+                      ? { value: t(language, 'pr.locked.value'), meta: t(language, 'pr.locked.cta') }
+                      : undefined
+                  }
+                  onPress={onOpenPro}
                 />
                 <StatCard
                   label={t(language, 'exDetail.lastDone')}
@@ -967,6 +1025,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     letterSpacing: 0.3,
     color: theme.faint,
   },
+  statLocked: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 5 },
+  statLockedText: { color: theme.muted, fontSize: 19, fontWeight: '800', letterSpacing: -0.3 },
   statValue: {
     fontSize: 19,
     fontWeight: '800',

@@ -295,6 +295,7 @@ const suites = [
   ...require('./lib/exerciseNameBook.test.cjs'),
   ...require('./lib/programImageImport.test.cjs'),
   ...require('./lib/recordWindow.test.cjs'),
+  ...require('./lib/liftPageProGates.test.cjs'),
   ...require('./lib/exerciseSetLog.test.cjs'),
   ...require('./lib/slotHistoryLastTime.test.cjs'),
   ...require('./lib/hevyImportLastTime.test.cjs'),

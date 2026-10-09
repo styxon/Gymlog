@@ -1132,6 +1132,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         tailoringPreferences={tailoringPreferences}
         exerciseLibrary={exerciseLibrary}
         liftHistory={liftHistory}
+        proUnlocked={proUnlocked}
+        onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
         plateauNotice={plateauNotice}
         soundCuesEnabled={preferences.soundCuesEnabled}
         onToggleSoundCues={(next) => void updatePreferences({ soundCuesEnabled: next })}
@@ -1223,6 +1225,9 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // "Barbell Bench Press - Medium Grip". A variation filed as its own
         // row (sumo, trap bar) stays on its own page.
         history={exerciseProgressFor(exercise.name)}
+        // The best figure follows the Records list's lock for a Free reader.
+        proUnlocked={proUnlocked}
+        onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
         unitPreference={unitPreference}
         // Decides whether this lift's caution is for this reader.
         cautionFlags={preferences.setupCautionFlags}

@@ -119,7 +119,7 @@ import {
 } from '../lib/accessibilityLabels';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { getExerciseTeaching } from '../lib/exerciseTeaching';
-import { buildExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
+import { buildExerciseSheetHistory, gateExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
 import { programmeSetCount, toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
@@ -324,6 +324,14 @@ interface GuidedPlayerScreenProps {
    * install only has in slot history, is still this slot's past.
    */
   liftHistory?: (exerciseName: string) => readonly LiftHistoryEntry[] | null;
+  /**
+   * Whether the reader has Pro. The exercise sheet's History tab is the
+   * per-lift set log and carries records, so Free reads it through the same
+   * locks as Progress; without the flag the sheet is the Free one.
+   */
+  proUnlocked?: boolean;
+  /** The lock's way out: the Pro page. */
+  onOpenPro?: () => void;
   /**
    * The plateau reminder for the lift being walked to, or null when it is
    * not currently stalled. Same detection Home's card shows (lib/proInsights
@@ -1540,6 +1548,8 @@ function GuidedPlayer({
   tailoringPreferences = null,
   exerciseLibrary,
   liftHistory,
+  proUnlocked = false,
+  onOpenPro,
   plateauNotice,
   soundCuesEnabled,
   keepScreenAwake = false,
@@ -3135,7 +3145,7 @@ function GuidedPlayer({
     // the whole series of the lift — a date format per session — on every
     // step change and logged set, and was thrown away unseen.
     if (!setPanelsOpen) {
-      return buildExerciseSheetHistory([], null, language);
+      return gateExerciseSheetHistory(buildExerciseSheetHistory([], null, language), proUnlocked);
     }
     const slotId = step.type === 'set' ? step.slotId : null;
     const instance = slotId ? exerciseBySlot.get(slotId) ?? null : null;
@@ -3161,14 +3171,17 @@ function GuidedPlayer({
     const todaySets = (instance?.sets ?? [])
       .filter((set) => set.status === 'completed')
       .map((set) => ({ loadKg: set.actualLoadKg ?? 0, reps: set.actualReps ?? 0 }));
-    return buildExerciseSheetHistory(
-      past,
-      todaySets.length > 0 ? { performedAt: new Date().toISOString(), sets: todaySets } : null,
-      language,
-      instance?.trackingMode ?? 'load_and_reps',
-      unitPreference,
+    return gateExerciseSheetHistory(
+      buildExerciseSheetHistory(
+        past,
+        todaySets.length > 0 ? { performedAt: new Date().toISOString(), sets: todaySets } : null,
+        language,
+        instance?.trackingMode ?? 'load_and_reps',
+        unitPreference,
+      ),
+      proUnlocked,
     );
-  }, [exerciseBySlot, language, liftHistory, setPanelsOpen, step, unitPreference, workout.history]);
+  }, [exerciseBySlot, language, liftHistory, proUnlocked, setPanelsOpen, step, unitPreference, workout.history]);
 
   /* ── rest screen ───────────────────────────────────────────────────────── */
   /**
@@ -4667,6 +4680,7 @@ function GuidedPlayer({
           learn={sheetLearn}
           watchFor={sheetWatchFor}
           history={sheetHistory}
+          onOpenPro={onOpenPro}
           bottomInset={screenInsets.bottom}
           onClose={() => setSetPanelsOpen(false)}
         />

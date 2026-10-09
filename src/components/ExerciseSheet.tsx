@@ -12,10 +12,12 @@ import {
   View,
 } from 'react-native';
 
-import { ExerciseSheetHistory, SHEET_HISTORY_SESSIONS } from '../lib/exerciseSheetHistory';
+import { GatedExerciseSheetHistory, SHEET_HISTORY_SESSIONS } from '../lib/exerciseSheetHistory';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { removeTrailingZeros } from '../lib/format';
+import { FREE_RECORD_MONTHS } from '../lib/historyWindow';
 import { t } from '../lib/i18n';
+import { ProLockIcon, ProPill } from './ProLockMarks';
 import { Theme, useThemedStyles, useTheme } from '../theming';
 import { AppLanguage } from '../types/models';
 
@@ -84,7 +86,13 @@ interface ExerciseSheetProps {
    */
   learn: ExerciseSheetLearn | null;
   watchFor: ExerciseSheetWatchFor[];
-  history: ExerciseSheetHistory;
+  /**
+   * Already gated for the reader's tier (`gateExerciseSheetHistory`): what
+   * Free may not read arrives withheld, with the lock flags this sheet draws.
+   */
+  history: GatedExerciseSheetHistory;
+  /** Where the lock's button goes: the Pro page. */
+  onOpenPro?: () => void;
   initialTab?: ExerciseSheetTab;
   /**
    * The screen's bottom safe-area inset. This sheet read its own, and inside
@@ -97,6 +105,18 @@ interface ExerciseSheetProps {
 
 const ALL_TABS: ExerciseSheetTab[] = ['learn', 'howTo', 'history'];
 
+/** Where a figure would be, when the record lock holds it back. */
+function LockedFigure({ label }: { label: string }) {
+  const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
+  return (
+    <View style={styles.lockedFigure}>
+      <ProLockIcon color={theme.muted} size={13} />
+      <Text style={styles.lockedFigureText}>{label}</Text>
+    </View>
+  );
+}
+
 export function ExerciseSheet({
   visible,
   language,
@@ -107,6 +127,7 @@ export function ExerciseSheet({
   learn,
   watchFor,
   history,
+  onOpenPro,
   initialTab,
   bottomInset = 0,
   onClose,
@@ -368,21 +389,49 @@ export function ExerciseSheet({
                 <View style={styles.statRow}>
                   <View style={styles.stat}>
                     <Text style={styles.sectionLabel}>{t(language, 'guided.sheet.bestSet')}</Text>
-                    <Text style={styles.statValue}>{history.bestSetLabel ?? '—'}</Text>
+                    {history.bestLocked ? (
+                      <LockedFigure label={t(language, 'pr.locked.value')} />
+                    ) : (
+                      <Text style={styles.statValue}>{history.bestSetLabel ?? '—'}</Text>
+                    )}
                   </View>
                   <View style={styles.stat}>
                     <Text style={styles.sectionLabel}>{t(language, 'guided.sheet.oneRepMax')}</Text>
-                    <Text style={styles.statValue}>
-                      {history.estimatedOneRepMaxKg
-                        ? `${removeTrailingZeros(Math.round(history.estimatedOneRepMaxKg))} kg`
-                        : '—'}
-                    </Text>
+                    {history.bestLocked ? (
+                      <LockedFigure label={t(language, 'pr.locked.value')} />
+                    ) : (
+                      <Text style={styles.statValue}>
+                        {history.estimatedOneRepMaxKg
+                          ? `${removeTrailingZeros(Math.round(history.estimatedOneRepMaxKg))} kg`
+                          : '—'}
+                      </Text>
+                    )}
                   </View>
                   <View style={styles.stat}>
                     <Text style={styles.sectionLabel}>{t(language, 'guided.sheet.sessions')}</Text>
                     <Text style={styles.statValue}>{history.sessionCount}</Text>
                   </View>
                 </View>
+
+                {/* The same words the Records list locks its older figures with. */}
+                {history.bestLocked ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!onOpenPro}
+                    onPress={onOpenPro}
+                    style={styles.lockCard}
+                  >
+                    <View style={styles.lockCardIcon}>
+                      <ProLockIcon color={theme.purple} size={16} />
+                    </View>
+                    <View style={styles.lockCardCopy}>
+                      <Text style={styles.lockCardBody}>
+                        {t(language, 'pr.locked.body', { months: FREE_RECORD_MONTHS })}
+                      </Text>
+                    </View>
+                    <Text style={styles.lockCardCta}>{t(language, 'pr.locked.cta')}</Text>
+                  </Pressable>
+                ) : null}
 
                 {history.bars.length > 0 ? (
                   <View style={{ gap: 8 }}>
@@ -430,9 +479,33 @@ export function ExerciseSheet({
                       </View>
                     ))}
                   </View>
-                ) : (
+                ) : history.lockedSessionCount === 0 ? (
                   <Text style={styles.empty}>{t(language, 'guided.sheet.noHistory')}</Text>
-                )}
+                ) : null}
+
+                {/* The sets behind the earlier sessions are the per-lift set
+                    log: the same lock, the same words, the same way out as the
+                    set-log sheet on Progress. */}
+                {history.lockedSessionCount > 0 ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    disabled={!onOpenPro}
+                    onPress={onOpenPro}
+                    style={styles.lockCard}
+                  >
+                    <View style={styles.lockCardIcon}>
+                      <ProLockIcon color={theme.purple} size={16} />
+                    </View>
+                    <View style={styles.lockCardCopy}>
+                      <View style={styles.lockCardTitleLine}>
+                        <Text style={styles.lockCardTitle}>{t(language, 'setlog.lock.title')}</Text>
+                        <ProPill />
+                      </View>
+                      <Text style={styles.lockCardBody}>{t(language, 'guided.sheet.setsLocked')}</Text>
+                    </View>
+                    <Text style={styles.lockCardCta}>{t(language, 'setlog.lock.cta')}</Text>
+                  </Pressable>
+                ) : null}
               </View>
             ) : null}
           </ScrollView>
@@ -609,6 +682,31 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontVariant: ['tabular-nums'],
   },
+  lockedFigure: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  lockedFigureText: { fontSize: 15, fontWeight: '800', color: theme.muted },
+  lockCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: theme.surface,
+    borderWidth: 1.5,
+    borderColor: theme.purpleLight,
+    borderRadius: 16,
+    padding: 14,
+  },
+  lockCardIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: theme.surfaceSoft,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lockCardCopy: { flex: 1, gap: 3 },
+  lockCardTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  lockCardTitle: { fontSize: 14, fontWeight: '800', color: theme.ink },
+  lockCardBody: { fontSize: 12.5, fontWeight: '600', color: theme.muted, lineHeight: 17 },
+  lockCardCta: { fontSize: 13, fontWeight: '800', color: theme.purple },
   prPill: {
     backgroundColor: theme.greenSoft,
     borderRadius: 999,

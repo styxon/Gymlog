@@ -11,6 +11,7 @@
  * a record only once it actually beats every session before it.
  */
 import { formatShortDate, removeTrailingZeros } from './format';
+import { isRecordLocked, isSetLogLocked } from './historyWindow';
 import { t } from './i18n';
 import { beatsBest } from './personalRecords';
 import { estimateOneRepMaxKg } from './workoutCompletionSummary';
@@ -85,6 +86,11 @@ export interface ExerciseSheetHistory {
   /** "60 kg × 8", "14 reps", "45 s" — the heaviest set ever logged here. */
   bestSetLabel: string | null;
   estimatedOneRepMaxKg: number | null;
+  /**
+   * The session that set the best set: the first to reach it, which is the one
+   * the Records list dates the record by. Null when nothing is logged.
+   */
+  bestSetPerformedAt: string | null;
   sessionCount: number;
   /** Oldest to newest, left to right, today last. Empty when nothing is logged. */
   bars: SheetHistoryBar[];
@@ -204,6 +210,11 @@ export function buildExerciseSheetHistory(
 
   const allSets = series.flatMap((item) => item.session.sets);
   const best = topSetOf(allSets);
+  // Oldest first, so a best that was matched later is dated by the session
+  // that first reached it — the records rule (`beatsBest` is strict).
+  const bestSession = best
+    ? series.find((item) => item.session.sets.some((set) => set.loadKg === best.loadKg && set.reps === best.reps))
+    : undefined;
 
   return {
     bestSetLabel: getTopSetLabel(
@@ -212,8 +223,54 @@ export function buildExerciseSheetHistory(
       trackingMode,
     ),
     estimatedOneRepMaxKg: best ? estimateOneRepMaxKg(best.loadKg, best.reps) : null,
+    bestSetPerformedAt: bestSession ? bestSession.session.performedAt : null,
     sessionCount: series.length,
     bars,
     rows,
+  };
+}
+
+/**
+ * The sheet's history as the reader's tier may read it.
+ *
+ * Two of the Pro page's promises reach this tab, and it kept neither: it was
+ * built from the lift's whole log with no entitlement in sight, so the set log
+ * ("sessions side by side", sold on the Pro page and on the set-log lock) and
+ * the records past three months were both free here (hunt, 2026-10-09).
+ *
+ *  - The sets behind each earlier session are the per-lift set log. Free reads
+ *    the curve (the bars, the session count) and today's own sets, which the
+ *    set screen shows anyway; the earlier sessions' rows are locked.
+ *    `isSetLogLocked` decides, and `lockedSessionCount` says how many rows
+ *    the lock covers.
+ *  - The best set and the estimate drawn from it are a record's figure, so
+ *    they follow `isRecordLocked` on the session that set it: older than the
+ *    free window and Free sees the lock, not the number. A best from inside
+ *    the window reads as it always did.
+ *
+ * Pro gets the view back untouched.
+ */
+export interface GatedExerciseSheetHistory extends ExerciseSheetHistory {
+  /** The best set and the 1RM estimate are withheld (both null). */
+  bestLocked: boolean;
+  /** Earlier sessions' rows withheld by the set-log lock. */
+  lockedSessionCount: number;
+}
+
+export function gateExerciseSheetHistory(
+  history: ExerciseSheetHistory,
+  proUnlocked: boolean,
+  now: Date = new Date(),
+): GatedExerciseSheetHistory {
+  const bestLocked =
+    history.bestSetPerformedAt !== null && isRecordLocked(history.bestSetPerformedAt, proUnlocked, now);
+  const rows = isSetLogLocked(proUnlocked) ? history.rows.filter((row) => row.isToday) : history.rows;
+  return {
+    ...history,
+    bestSetLabel: bestLocked ? null : history.bestSetLabel,
+    estimatedOneRepMaxKg: bestLocked ? null : history.estimatedOneRepMaxKg,
+    rows,
+    bestLocked,
+    lockedSessionCount: history.rows.length - rows.length,
   };
 }
