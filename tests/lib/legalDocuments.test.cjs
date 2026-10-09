@@ -395,20 +395,13 @@ module.exports = [
       }
 
       // The emails already in the store stay there on one condition: nothing
-      // shows them to anyone (user decision, 2026-09-16). What the reader
-      // endpoint returns is shaped by shapeTranscriptEntry, whose behaviour
-      // tests/lib/transcriptEntry.test.cjs checks; this only makes sure every
-      // entry goes through it and none is handed back as parsed.
-      const reader = read('api/transcripts.ts');
-      assert.match(reader, /return shapeTranscriptEntry\(pathname, JSON\.parse\(text\)\)/,
-        'api/transcripts.ts must return each stored entry through shapeTranscriptEntry');
-      assert.ok(
-        !/\.\.\.\s*\(?\s*JSON\.parse/.test(reader) && !/\.\.\.\s*(parsed|stored|record)\b/.test(reader),
-        'api/transcripts.ts spreads a parsed entry into its answer — an email in the store would go with it',
-      );
-      for (const tool of ['scripts/coach-transcripts.cjs', 'scripts/analytics-dashboard.cjs']) {
-        assert.ok(!/\.reporter\b/.test(read(tool)), `${tool} reads the email field the endpoint withholds`);
+      // shows them to anyone (user decision, 2026-09-16). Since 2026-10-09
+      // nothing reads the store back at all: the reader endpoint and its
+      // script are gone (docs/play-data-safety.md §3), and no tool reads the field.
+      for (const gone of ['api/transcripts.ts', 'scripts/coach-transcripts.cjs']) {
+        assert.ok(!fs.existsSync(path.join(root, gone)), `${gone} is back: it read coach copies out of the store`);
       }
+      assert.ok(!/\.reporter\b/.test(read('scripts/analytics-dashboard.cjs')), 'the dashboard reads the email field');
 
       // And nothing on the phone puts one into a coach request. The files are
       // found by what they import, not listed by hand: the composer and the

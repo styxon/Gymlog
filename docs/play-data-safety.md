@@ -157,11 +157,12 @@ label, not on the line; the policy says the same since 2026-09-16.)
 
 ## 3. True on the day of submission
 
-- The development switch is off: `AI_COACH_DEBUG_TRANSCRIPTS = false` in
-  `src/lib/aiCoachDebug.ts`, the Vercel variable and `TRANSCRIPT_READ_SECRET`
-  unset, `api/transcripts.ts` and `scripts/coach-transcripts.cjs` deleted. Since
-  #92 the switch writes nothing; what it still turns on is the effort and model
-  overrides and the endpoint that reads the folder back.
+- The development switch is gone. **Code done 2026-10-09:** `src/lib/aiCoachDebug.ts`,
+  `api/transcripts.ts` and `scripts/coach-transcripts.cjs` deleted, the effort and
+  model overrides removed from `api/ai-coach.ts`, the dashboard's coach-log section
+  removed; `tests/releaseReadiness.test.cjs` fails if any of it comes back.
+  **Still by hand:** unset `AI_COACH_DEBUG_TRANSCRIPTS` and `TRANSCRIPT_READ_SECRET`
+  in Vercel (and `TRANSCRIPT_READ_SECRET` in `.env.local`).
 
   **Clean `transcripts/` by name, not wholesale.** Two kinds of entry live there:
 
@@ -175,10 +176,15 @@ label, not on the line; the policy says the same since 2026-09-16.)
   One more pass over the kind that stays: a chat copy written before #128 was
   deployed carries the signed-in email in a `reporter` field. Strip the field, or
   delete those entries, before the Email row in §2 can be answered as transient.
-  The reader endpoint never returns the address; `node scripts/coach-transcripts.cjs
-  --withheld --limit 500` lists the entries that hold one. The endpoint returns at
-  most 500 of the newest, so check the total it reports: past 500, the list is not
-  the whole store.
+  With the reader endpoint gone, the cleanup reads the store directly with the
+  production `BLOB_READ_WRITE_TOKEN` and `@vercel/blob` (`list` on the
+  `transcripts/` prefix, `get` with `access: 'private'`, `del`). The rules, so
+  any one-off can apply them: a name with `--` stays; a name without `--` whose
+  day is 2026-09-11 or earlier is deleted; a name without `--` dated later is
+  reported, not deleted (it would mean an old deploy wrote without consent); a
+  kept copy whose JSON has a non-empty `reporter` is reported by path only, never
+  printing the value. Dry run first, delete second. The owner's copy of such a
+  script is `private/scripts/clean-dev-transcripts.cjs`, outside the repo.
 
   **As it stood on 2026-09-16:** 123 entries, every one of them the pre-#92 kind — no
   label, and all dated 2026-08-23 to 2026-09-08, none after 11 September. 44 of them

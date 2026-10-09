@@ -82,7 +82,7 @@ lainkaan.
 | `ANTHROPIC_API_KEY` | Vercel env | Käyttää Claudea sinun laskullasi. Ei käyttäjädataa. | Claude Console → Revoke → uusi avain Verceliin → redeploy. Vaikutus käyttäjiin: ei mitään. |
 | Vercel-tili | Kirjautuminen | **Kaiken:** Blob-säilö, ympäristömuuttujat, deploy | Salasana ja 2FA heti, istunnot ulos, tarkista tiimin jäsenet ja tokenit (Settings → Tokens), sitten kaikki alla olevat. |
 | `BACKUP_PATH_SECRET` | Vercel env | Yksin ei mitään: säilö on yksityinen. Yhdessä Blob-pääsyn kanssa kertoo, mikä tiedosto on kenen. | ⚠️ **Vaihto orpouttaa kaikki varmuuskopiot.** Vaihda vain, jos myös Blob-pääsy on vuotanut, ja siirrä tiedostot uusiin nimiin samalla. |
-| `CRON_SECRET`, `ANALYTICS_READ_SECRET`, `TRANSCRIPT_READ_SECRET` | Vercel env, `.env.local` | Lukevat tilastoja tai ajavat siivouksen | Vaihda vapaasti: uusi arvo Verceliin ja `.env.local`iin, redeploy. |
+| `CRON_SECRET`, `ANALYTICS_READ_SECRET` | Vercel env, `.env.local` | Lukevat tilastoja tai ajavat siivouksen | Vaihda vapaasti: uusi arvo Verceliin ja `.env.local`iin, redeploy. |
 | `AI_COACH_APP_KEY` | Vercel env **ja APK** | Kutsuu valmentajaa ohi apin. Arvo on jokaisessa APK:ssa, joten se ei ole aito salaisuus. Suojana ovat pyyntörajat. | Uusi arvo vaatii uuden appiversion. Pakota päivitys update gatella (`docs/app-updates.md`). |
 | `SLACK_WEBHOOK_BUGS` | Ympäristömuuttuja | Postaa #bugs-kanavalle | Slack → poista webhook → uusi. |
 | GitHub-tili tai -token | Kirjautuminen | Koodi ja Actions-salaisuudet. **Repo on julkinen**, joten koodi ei ole salaisuus. | Salasana, 2FA, tokenit pois, Actions-salaisuudet uusiksi. |

@@ -15,38 +15,6 @@ const { execFile } = require('node:child_process');
 
 const { fetchEvents, aggregate, coverageWarning, share, TIME_ZONE } = require('./analytics-report.cjs');
 
-/**
- * The coach log, for the same page. Best-effort: the transcript tap is a
- * development switch, so when it is off (as it must be by release) this
- * returns null and the dashboard simply drops the section.
- */
-async function fetchTranscripts() {
-  try {
-    const raw = fs.readFileSync(path.join(__dirname, '..', '.env.local'), 'utf8');
-    const get = (key) => (raw.match(new RegExp('^' + key + '=(.*)$', 'm')) ?? [])[1]?.trim();
-    const base = (get('EXPO_PUBLIC_AI_COACH_API_URL') ?? '').replace('/ai-coach', '/transcripts');
-    const secret = get('TRANSCRIPT_READ_SECRET') ?? '';
-    if (!base || !secret) return null;
-    const response = await fetch(`${base}?limit=40`, { headers: { 'x-transcript-secret': secret } });
-    if (!response.ok) return null;
-    const payload = await response.json();
-    return (payload.entries ?? [])
-      .map((entry) => ({
-        at: String(entry.at ?? ''),
-        prompt: String(entry.prompt ?? ''),
-        takeaway: String(entry.answer?.takeaway ?? ''),
-        source: String(entry.source ?? ''),
-        // The label the endpoint read out of the path. Nothing else
-        // identifies a phone here: the endpoint withholds the email some old
-        // entries still hold.
-        label: entry.label ? String(entry.label) : null,
-      }))
-      .filter((entry) => entry.prompt);
-  } catch {
-    return null;
-  }
-}
-
 const esc = (value) => String(value).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 /**
@@ -91,7 +59,7 @@ function renderErrors({ appErrors, operations }) {
     <p class="meta" style="margin-top:10px">Virheilmoitusten tekstiä ei lähetetä: vain virheen tyyppi, kohta koodissa (paketti:rivi:sarake — hae lähdekartasta), ruutu ja versio.</p></div>`;
 }
 
-function render({ dailies, funnels, retention, installsSeen, errors }, transcripts, meta) {
+function render({ dailies, funnels, retention, installsSeen, errors }, meta) {
   const errorsSection = renderErrors(errors ?? { appErrors: [], operations: [] });
   const maxActives = Math.max(1, ...dailies.map((row) => row.actives));
   const dayBars = dailies
@@ -137,23 +105,6 @@ function render({ dailies, funnels, retention, installsSeen, errors }, transcrip
     )
     .join('');
 
-  const transcriptSection = transcripts === null
-    ? ''
-    : `<div class="card wide"><h2>AI-loki — viimeisimmät keskustelut</h2>${
-        transcripts.length === 0
-          ? '<p class="meta">ei keskusteluja vielä</p>'
-          : transcripts
-              .slice(0, 20)
-              .map(
-                (entry) => `<div class="chat">
-        <div class="chatmeta">${esc(entry.at.slice(0, 16).replace('T', ' '))} · ${esc(entry.source)}${entry.label ? ' · ' + esc(entry.label) : ''}</div>
-        <div class="q">${esc(entry.prompt)}</div>
-        <div class="a">${esc(entry.takeaway)}</div>
-      </div>`,
-              )
-              .join('')
-      }<p class="meta" style="margin-top:10px">Kehitysajan loki — sammuu ennen julkaisua, jolloin tämä osio katoaa sivulta itsestään.</p></div>`;
-
   return `<!doctype html>
 <html lang="fi"><head><meta charset="utf-8">
 <title>Vinha — käyttötilastot</title>
@@ -186,11 +137,6 @@ function render({ dailies, funnels, retention, installsSeen, errors }, transcrip
   th { color:var(--muted); font-weight:600; font-size:11px; text-transform:uppercase; letter-spacing:0.8px; }
   .wide { grid-column:1 / -1; }
   .note { color:var(--muted); font-size:12px; margin-top:20px; }
-  .chat { border-top:1px solid var(--line); padding:10px 0; }
-  .chat:first-of-type { border-top:none; }
-  .chatmeta { color:var(--muted); font-size:11px; }
-  .q { font-weight:700; margin:2px 0; }
-  .a { color:var(--muted); font-size:13.5px; }
 </style></head><body>
 <h1>Vinha <b>käyttötilastot</b></h1>
 <p class="meta">Päivitetty ${esc(meta.generatedAt)} · ${meta.eventCount} tapahtumaa, ${meta.batchesFetched}/${meta.batchTotal} erää · päivät ${esc(TIME_ZONE)} · lataukset ja rahat: Play Console</p>
@@ -206,7 +152,6 @@ ${meta.warning ? `<p class="warn">${esc(meta.warning)}</p>` : ''}
     <table><tr><th>Päivä</th><th>Aktiiviset</th><th>Avaukset</th><th>Treenit</th><th>Coach</th><th>Paywall</th></tr>${dailyRows}</table>
   </div>
   ${errorsSection}
-  ${transcriptSection}
 </div>
 <p class="note">Sivu on staattinen: luvut haettiin skriptillä koneellesi, selain ei kutsu mitään eikä lukusalaisuus ole tässä tiedostossa. Päivitä ajamalla analytics.cmd uudestaan.</p>
 </body></html>`;
@@ -216,9 +161,8 @@ async function main() {
   const fetched = await fetchEvents(undefined);
   const warning = coverageWarning(fetched);
   if (warning) console.warn(warning);
-  const transcripts = await fetchTranscripts();
   const summary = aggregate(fetched.events);
-  const html = render(summary, transcripts, {
+  const html = render(summary, {
     generatedAt: new Date().toLocaleString('fi-FI'),
     eventCount: fetched.events.length,
     batchTotal: fetched.batchTotal,

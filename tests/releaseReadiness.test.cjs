@@ -407,30 +407,25 @@ module.exports = [
       // that is a shipped feature that stays. What the flag still switches on
       // is development-only — the per-request effort and model overrides, and
       // api/transcripts.ts, which reads the folder back — and neither belongs
-      // in a release. The folder also still holds entries the development log
-      // wrote before #92 without asking; those are removed by hand, not here.
+      // in a release. All of it was deleted on 2026-10-09, so this now holds
+      // the line: nothing comes back. The folder also still holds entries the
+      // development log wrote before #92 without asking; those are removed by
+      // hand, by name (docs/play-data-safety.md §3), not here.
       const fs = require('node:fs');
-      const debugPath = path.join(root, 'src', 'lib', 'aiCoachDebug.ts');
-      if (!fs.existsSync(debugPath)) {
-        return; // deleted — the cleanest way to turn it off
+      for (const gone of ['src/lib/aiCoachDebug.ts', 'api/transcripts.ts', 'scripts/coach-transcripts.cjs']) {
+        assert.ok(
+          !fs.existsSync(path.join(root, gone)),
+          `${gone} is back. The development transcript reader and its switch were removed before release; `
+            + 'leave the consented copies alone: the 24-month cron sweeps them and the Settings switch deletes them.',
+        );
       }
-      const debug = read('src/lib/aiCoachDebug.ts');
-      const match = debug.match(/export const AI_COACH_DEBUG_TRANSCRIPTS = (true|false);/);
-      assert.ok(match, 'aiCoachDebug.ts must declare AI_COACH_DEBUG_TRANSCRIPTS as a literal boolean');
-      // Same permission slip as the paywall guards: fine while the build
-      // declares itself a demo, a lie the moment that flag is cleared to ship.
-      if (readJson('app.json')?.expo?.extra?.demoBuild === true) {
-        return;
+      const endpoint = read('api/ai-coach.ts');
+      for (const forbidden of ['AI_COACH_DEBUG_TRANSCRIPTS', 'effortOverride', 'modelOverride']) {
+        assert.ok(
+          !endpoint.includes(forbidden),
+          `api/ai-coach.ts mentions ${forbidden}: a request must not choose the model or the effort in production.`,
+        );
       }
-      assert.equal(
-        match[1],
-        'false',
-        'AI_COACH_DEBUG_TRANSCRIPTS is still true: the coach endpoint still honours the effort and model '
-          + 'overrides, and api/transcripts.ts still reads the log back. Flip it to false (or delete '
-          + 'src/lib/aiCoachDebug.ts) and unset AI_COACH_DEBUG_TRANSCRIPTS in Vercel. Leave the consented copies '
-          + 'alone: they are what the reader allowed, the 24-month cron sweeps them, and the Settings switch '
-          + 'deletes them.',
-      );
     },
   },
   {
