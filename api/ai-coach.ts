@@ -70,8 +70,8 @@ const CLAUDE_MODEL = process.env.AI_COACH_CLAUDE_MODEL ?? AI_COACH_DEFAULT_MODEL
 // answer out of three ("eikän", "viikonon"); medium was clean in every run
 // and no slower (probe, 2026-08-23).
 const EFFORT_SETTING = (process.env.AI_COACH_EFFORT ?? 'medium').trim();
-function effortConfig(setting: string, model: string = CLAUDE_MODEL): Record<string, unknown> {
-  if (/haiku/.test(model)) return {};
+function effortConfig(setting: string): Record<string, unknown> {
+  if (/haiku/.test(CLAUDE_MODEL)) return {};
   if (setting === 'off') return { thinking: { type: 'disabled' } };
   return { output_config: { effort: ['low', 'medium', 'high'].includes(setting) ? setting : 'low' } };
 }

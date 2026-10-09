@@ -177,9 +177,14 @@ label, not on the line; the policy says the same since 2026-09-16.)
   deployed carries the signed-in email in a `reporter` field. Strip the field, or
   delete those entries, before the Email row in §2 can be answered as transient.
   With the reader endpoint gone, the cleanup reads the store directly with the
-  Blob token: a one-off script kept outside the repo (`private/scripts/clean-dev-transcripts.cjs`
-  on the owner's machine) lists both kinds and the entries holding a `reporter`,
-  prints counts without printing any address, and deletes only with `--delete`.
+  production `BLOB_READ_WRITE_TOKEN` and `@vercel/blob` (`list` on the
+  `transcripts/` prefix, `get` with `access: 'private'`, `del`). The rules, so
+  any one-off can apply them: a name with `--` stays; a name without `--` whose
+  day is 2026-09-11 or earlier is deleted; a name without `--` dated later is
+  reported, not deleted (it would mean an old deploy wrote without consent); a
+  kept copy whose JSON has a non-empty `reporter` is reported by path only, never
+  printing the value. Dry run first, delete second. The owner's copy of such a
+  script is `private/scripts/clean-dev-transcripts.cjs`, outside the repo.
 
   **As it stood on 2026-09-16:** 123 entries, every one of them the pre-#92 kind — no
   label, and all dated 2026-08-23 to 2026-09-08, none after 11 September. 44 of them
