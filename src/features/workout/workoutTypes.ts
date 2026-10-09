@@ -357,6 +357,12 @@ export interface GuidedResumeAnchor {
   slotId?: string;
   setIndex?: number;
   drillName?: string;
+  /**
+   * A running rest only: the wall-clock time it ends. Without it a reopened
+   * rest could only start over at its full length (lib/guidedPlayer
+   * guidedRestOpeningMs).
+   */
+  restEndsAtMs?: number;
 }
 
 export interface WorkoutUiState {

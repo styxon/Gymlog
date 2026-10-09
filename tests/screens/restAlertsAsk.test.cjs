@@ -177,7 +177,7 @@ module.exports = [
       // The OS mirror goes through one wrapper that reads restAlerts.alerts;
       // the raw hook result is only handed the rest again when permission
       // has just landed.
-      assert.match(guided, /syncRestEndAlert\(restAlerts\.alerts \? endsAtMs : null, nextName\)/);
+      assert.match(guided, /syncRestEndAlert\(restAlerts\.alerts \? endsAtMs : null, nextName, recovery\)/);
       const rawCalls = (guided.match(/syncRestEndAlert\(/g) ?? []).length;
       assert.equal(rawCalls, 1, 'the raw sync is called from the wrapper only');
       // The sheet freezes the step, so a short rest cannot expire behind the

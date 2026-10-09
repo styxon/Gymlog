@@ -74,6 +74,9 @@ import {
   resolveGuidedSetTarget,
   restRoundCorrections,
   loggedSetsOf,
+  guidedRestSeconds,
+  guidedRestOpeningMs,
+  withGuidedRestDeadline,
 } from '../lib/guidedPlayer';
 import {
   buildOverviewColumns,
@@ -1733,7 +1736,11 @@ function GuidedPlayer({
   // Seeded from the opening step, not from zero: mounting straight onto a
   // timed step (a walk-up, a drill) with nothing on the clock would expire it
   // on the first tick.
-  const openingMs = stepSeconds(steps[openingStep] ?? { type: 'finish' }) * 1000;
+  // A reopened rest has what it had left, not its full length (#19, hunt 2026-10-09).
+  const openingStepShown = steps[openingStep] ?? { type: 'finish' as const };
+  const openingMs =
+    guidedRestOpeningMs(session?.ui.guidedResumeAnchor, openingStepShown, Date.now()) ??
+    stepSeconds(openingStepShown) * 1000;
   const [remainingMs, setRemainingMs] = useState(openingMs);
   const remainingRef = useRef(openingMs);
   /**
@@ -1786,8 +1793,8 @@ function GuidedPlayer({
    * nothing fired, and nothing said so.
    */
   const syncRestNotification = useCallback(
-    (endsAtMs: number | null, nextName?: string | null) =>
-      syncRestEndAlert(restAlerts.alerts ? endsAtMs : null, nextName),
+    (endsAtMs: number | null, nextName?: string | null, recovery?: boolean) =>
+      syncRestEndAlert(restAlerts.alerts ? endsAtMs : null, nextName, recovery),
     [restAlerts.alerts, syncRestEndAlert],
   );
 
@@ -1797,7 +1804,11 @@ function GuidedPlayer({
   useEffect(
     () =>
       subscribeRestActions((action) => {
-        if (stepRef.current?.type !== 'rest') {
+        const shown = stepRef.current;
+        // An interval's recovery is neither stretched nor skipped (the rest
+        // screen hides both, #bugs 2026-08-26): a tap on the lock screen is
+        // the same move and gets the same answer.
+        if (shown?.type !== 'rest' || shown.recoveryKind) {
           return;
         }
         if (action.kind === 'extend') {
@@ -1993,6 +2004,8 @@ function GuidedPlayer({
     runSheetOpen,
     ownBlockActive: ownBlock !== null,
     restAlertsAskOpen: restAsk.sheetOpen,
+    confirmingEnd,
+    confirmingSkipExercise,
   });
   // Seconds since the reader said they would do it themselves. Derived from
   // the session clock's tick so it needs no timer of its own.
@@ -2035,6 +2048,16 @@ function GuidedPlayer({
     setPaused(false);
     workout.resumeWorkout();
   }, [workout]);
+  /**
+   * Into the pause: the screen's and the session clock's together, from every
+   * timed step. Only the set screen used to stop the session clock, so a
+   * Pause on a rest, a drill or an interval bout froze the ring while the
+   * header clock and the saved duration ran on (hunt 2026-10-09).
+   */
+  const pause = useCallback(() => {
+    setPaused(true);
+    workout.pauseWorkout();
+  }, [workout]);
 
   const goTo = useCallback(
     (index: number) => {
@@ -2064,14 +2087,35 @@ function GuidedPlayer({
     [steps, workout, cue, unpause],
   );
 
+  /**
+   * A running rest's end time goes into the resume anchor, so a screen that
+   * is torn down mid-rest (Android killing the app) finds the time left and
+   * not a fresh full rest. The goTo that leaves the rest writes the plain
+   * anchor again.
+   */
+  const persistRestDeadline = (endsAtMs: number | null) => {
+    if (step.type === 'rest') {
+      workout.setGuidedStep(stepIndex, withGuidedRestDeadline(getGuidedStepAnchor(step), endsAtMs));
+    }
+  };
+
   /** ±15s / +10s: shift the leftover time, the deadline and any pending alert. */
   const adjustRemaining = (deltaMs: number, floorMs = 0) => {
-    const next = Math.max(floorMs, remainingRef.current + deltaMs);
+    // From the deadline when one is running: `remainingRef` is only as fresh as
+    // the last tick, and a lock-screen "+30 s" lands before the app has had one
+    // since it was backgrounded, so it would add to the time left at lock.
+    const left = endsAtRef.current !== null ? endsAtRef.current - Date.now() : remainingRef.current;
+    const next = Math.max(floorMs, left + deltaMs);
     remainingRef.current = next;
     if (endsAtRef.current !== null) {
       endsAtRef.current = Date.now() + next;
+      persistRestDeadline(endsAtRef.current);
       if (step.type === 'rest') {
-        void syncRestNotification(endsAtRef.current, exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''));
+        void syncRestNotification(
+          endsAtRef.current,
+          exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+          step.recoveryKind !== undefined,
+        );
       }
     }
     setRemainingMs(next);
@@ -2098,6 +2142,7 @@ function GuidedPlayer({
     if (mode !== 'player' || frozen) {
       // Pausing freezes the leftover time; the deadline is re-derived on resume.
       endsAtRef.current = null;
+      persistRestDeadline(null);
       return;
     }
     // Not `position` any more: walking to another machine is not time-bound,
@@ -2113,13 +2158,18 @@ function GuidedPlayer({
       return;
     }
     endsAtRef.current = Date.now() + Math.max(0, remainingRef.current);
+    persistRestDeadline(endsAtRef.current);
 
     // A rest is the one wait long enough to put the phone down for, so its
     // deadline also goes to the OS — that alert is what reaches the user when
     // Android has suspended us. Not once it has already passed, though: a
     // deadline in the past is an alert that fires the moment it is set.
     if (step.type === 'rest' && endsAtRef.current > Date.now()) {
-      void syncRestNotification(endsAtRef.current, exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''));
+      void syncRestNotification(
+        endsAtRef.current,
+        exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+        step.recoveryKind !== undefined,
+      );
     }
 
     const settle = () => {
@@ -3126,7 +3176,7 @@ function GuidedPlayer({
                   return shown;
                 }, [])
                 .join('/'),
-              rest: instance.restSecondsMin,
+              rest: guidedRestSeconds(instance.restSecondsMin),
             })
         : loweredTarget
           ? t(language, 'guided.walk.planLowered', {
@@ -3134,7 +3184,7 @@ function GuidedPlayer({
               reps: target.reps,
               // The programme's own reps — a range reads as one ("8–12").
               programme: formatProgrammeReps(firstSet!),
-              rest: instance.restSecondsMin,
+              rest: guidedRestSeconds(instance.restSecondsMin),
             })
           : t(language, 'guided.walk.plan', {
             sets: instance.sets.length,
@@ -3147,8 +3197,11 @@ function GuidedPlayer({
              * and the ring thirty seconds later said 2:00 (review, PR #57). The
              * comment that used to sit here claimed the opposite, which is why the
              * number went unchecked.
+             *
+             * And the ring's own floor: a stretch prescribed 0 s still runs the
+             * shortest ring, so the card says that, not "0 s".
              */
-            rest: instance.restSecondsMin,
+            rest: guidedRestSeconds(instance.restSecondsMin),
           }),
       // Last time's own span, the same way the set card's chips show it —
       // one weight when every set matched, the range when they did not.
@@ -3751,7 +3804,7 @@ function GuidedPlayer({
                       if (paused) {
                         unpause();
                       } else {
-                        setPaused(true);
+                        pause();
                         setPauseSheetOpen(true);
                       }
                     }}
@@ -4038,7 +4091,7 @@ function GuidedPlayer({
                     label={t(language, paused ? 'guided.resume' : 'guided.pause')}
                     icon={paused ? 'play' : 'pause'}
                     color={paused ? undefined : theme.ink}
-                    onPress={() => setPaused((value) => !value)}
+                    onPress={paused ? unpause : pause}
                   />
                   {/* Paused, the one other thing worth offering: leaving this
                       exercise. An interval has no set to log, no weight to
@@ -4078,8 +4131,7 @@ function GuidedPlayer({
                   unpause();
                   return;
                 }
-                setPaused(true);
-                workout.pauseWorkout();
+                pause();
               }}
               onOpenActions={() => setPauseSheetOpen(true)}
               onAddSet={() => {
@@ -4300,7 +4352,7 @@ function GuidedPlayer({
                         icon={paused ? 'play' : 'pause'}
                         tint={theme.amberInk}
                         label={t(language, paused ? 'guided.resume' : 'guided.pause')}
-                        onPress={() => setPaused((value) => !value)}
+                        onPress={paused ? unpause : pause}
                       />
                     </View>
                   </View>

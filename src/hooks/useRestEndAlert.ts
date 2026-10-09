@@ -39,7 +39,8 @@ export interface RestAlertOptions {
  * our JS: screen off, another app in front, or the process killed outright.
  *
  * Every rest surface drives the same contract: call `sync(endsAtMs, nextName)`
- * when a rest starts or its deadline moves, and `sync(null)` when it is
+ * when a rest starts or its deadline moves (`recovery`: an interval's, whose
+ * card offers no "+30 s" or "skip"), and `sync(null)` when it is
  * skipped, paused or finished. Between rests the card shows the session.
  *
  * Permission is NOT requested here. The design asks at the first rest, in
@@ -68,7 +69,7 @@ export function useRestEndAlert(language: AppLanguage, options: RestAlertOptions
   }, []);
 
   const sync = useCallback(
-    async (endsAtMs: number | null, nextName?: string | null) => {
+    async (endsAtMs: number | null, nextName?: string | null, recovery = false) => {
       const { warning = true, ongoing = true, session = null } = optionsRef.current;
 
       if (endsAtMs === null) {
@@ -84,7 +85,16 @@ export function useRestEndAlert(language: AppLanguage, options: RestAlertOptions
 
       const next = nextName?.trim() ? nextName.trim() : null;
       const endsAt = formatEndsAt(endsAtMs);
-      if (ongoing) {
+      if (ongoing && recovery) {
+        // An interval's recovery is not stretched or skipped, so its card is
+        // the session's, which has neither button. The ladder still tells the
+        // reader the bout is on.
+        if (session) {
+          void showOngoingSession({ kind: 'session', title: session.title, body: session.body });
+        } else {
+          void clearOngoingSession();
+        }
+      } else if (ongoing) {
         // The card states the END TIME, not a countdown it could not keep
         // honest while the app is suspended — the bar in the app says the same.
         void showOngoingSession({

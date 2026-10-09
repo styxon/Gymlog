@@ -29,6 +29,20 @@ import { AppLanguage, SetupCautionArea } from '../types/models';
 export type GuidedPhase = 'warmup' | 'work' | 'cooldown';
 
 export const GUIDED_READY_SECONDS = 3;
+
+/** The shortest rest ring the player runs between two sets. */
+export const GUIDED_REST_FLOOR_SECONDS = 15;
+
+/**
+ * How long the ring between two sets runs for a prescribed rest. The walk-up
+ * card quotes this too, so a stretch prescribed 0 s does not say "rest 0 s"
+ * and then run fifteen. A value that is not a number gets the floor.
+ */
+export function guidedRestSeconds(prescribedSeconds: number): number {
+  return Number.isFinite(prescribedSeconds)
+    ? Math.max(GUIDED_REST_FLOOR_SECONDS, prescribedSeconds)
+    : GUIDED_REST_FLOOR_SECONDS;
+}
 /**
  * The walk-up step's nominal length.
  *
@@ -370,7 +384,7 @@ export function buildGuidedSteps(
           // is still a squat.
           seconds: interval
             ? interval.recoverySeconds
-            : Math.max(15, ...members.map((member) => member.restSeconds)),
+            : Math.max(...members.map((member) => guidedRestSeconds(member.restSeconds))),
           groupIndex,
           ...(interval ? { recoveryKind: interval.recoveryKind } : {}),
         });
@@ -854,6 +868,44 @@ export function getGuidedStepAnchor(step: GuidedStep): GuidedResumeAnchor {
     case 'rest':
       return { type: step.type, phase: 'work', slotId: step.slotId, setIndex: step.setIndex };
   }
+}
+
+/** The anchor of a rest with the time it ends — or without one, once it is paused or over. */
+export function withGuidedRestDeadline(anchor: GuidedResumeAnchor, endsAtMs: number | null): GuidedResumeAnchor {
+  const { restEndsAtMs: _dropped, ...plain } = anchor;
+  return endsAtMs === null ? plain : { ...plain, restEndsAtMs: endsAtMs };
+}
+
+/** No rest is stretched past this on reopening: a clock set back must not strand the reader. */
+const GUIDED_REST_REOPEN_CAP_MS = 30 * 60 * 1000;
+
+/**
+ * What a rest has left when the screen opens on it, or null when the anchor
+ * carries nothing about this rest and the nominal length stands.
+ *
+ * The rest runs off a wall-clock deadline, and the deadline has to outlive the
+ * screen: Android killing the app mid-rest used to bring it back as a new,
+ * full-length rest with a new OS alert, however long ago the old one ended.
+ * Zero means it ended while the reader was away — the timer then moves on to
+ * the set at once.
+ */
+export function guidedRestOpeningMs(
+  anchor: GuidedResumeAnchor | null | undefined,
+  step: GuidedStep,
+  nowMs: number,
+): number | null {
+  if (
+    step.type !== 'rest' ||
+    !anchor ||
+    anchor.type !== 'rest' ||
+    anchor.slotId !== step.slotId ||
+    anchor.setIndex !== step.setIndex ||
+    typeof anchor.restEndsAtMs !== 'number' ||
+    !Number.isFinite(anchor.restEndsAtMs)
+  ) {
+    return null;
+  }
+  return Math.min(GUIDED_REST_REOPEN_CAP_MS, Math.max(0, anchor.restEndsAtMs - nowMs));
 }
 
 /** The index of the step an anchor names in *this* list, or null if it is gone. */
