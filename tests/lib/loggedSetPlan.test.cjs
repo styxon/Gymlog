@@ -186,7 +186,8 @@ module.exports = [
             },
             sessionOrderIndex: 1,
             unitPreference: 'kg',
-            progression: { automatedProgressionEnabled: true, setupLevel: 'beginner' },
+            // The clock the history is dated against: today is a break from it.
+            progression: { automatedProgressionEnabled: true, setupLevel: 'beginner', nowMs: now },
           },
         },
       );

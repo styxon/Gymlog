@@ -616,7 +616,8 @@ function resolveHistoricalSetDraft(
     fatigueSignal: options.fatigueSignal,
     fallbackLoadKg: matched.loadKg,
     fallbackReps: matched.reps,
-    // The early jump reads a single session, and only a recent one counts.
+    // The early jump reads a single session, and only a recent one counts;
+    // the break rule counts the days since the newest one.
     nowMs: options.nowMs ?? Date.now(),
     cautionArea,
   });
@@ -633,6 +634,7 @@ function resolveHistoricalSetDraft(
     automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
     fatigueSignal: options.fatigueSignal,
     cautionArea,
+    nowMs: options.nowMs ?? Date.now(),
   });
 
   // Reps short of the programme last time: the same weight, a target the

@@ -372,4 +372,45 @@ module.exports = [
       assert.equal(bench.sets[0].plannedTargetReps, undefined);
     },
   },
+  {
+    // Hunt 2026-10-09: the 90 days were 90 × 24 hours, so the same 90 calendar
+    // days read stale across the autumn clock change and fresh in summer.
+    name: 'missed reps and the ramp: 90 calendar days is the same age across a clock change',
+    run() {
+      const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
+      const { resolveRampSetTarget } = require('../../.test-dist/lib/progressionGate.js');
+      withHelsinkiClocks(() => {
+        const at = (local, reps, loads) => {
+          const iso = new Date(local).toISOString();
+          return entry(reps, {
+            performedAt: iso,
+            sets: reps.map((count, setIndex) => ({ setIndex, loadKg: loads ? loads[setIndex] : 60, reps: count, completedAt: iso })),
+          });
+        };
+        const spans = [
+          ['2026-08-03T18:00:00', '2026-11-01T18:00:00'], // across the autumn change
+          ['2026-06-03T18:00:00', '2026-09-01T18:00:00'], // no change
+          ['2026-01-01T18:00:00', '2026-04-01T18:00:00'], // across the spring change
+        ];
+        for (const [performed, now] of spans) {
+          const nowMs = new Date(now).getTime();
+          const fresh = rule([at(performed, [6, 6, 6, 6])], { nowMs });
+          assert.deepEqual(fresh, { targetReps: 6, fromAverage: 6 }, `${performed} -> ${now}`);
+          const ramp = at(performed, [10, 8, 5], [40, 50, 60]);
+          assert.equal(
+            resolveRampSetTarget({ entry: ramp, setIndex: 2, repsMax: 12, trackingMode: 'load_and_reps', automatedProgressionEnabled: true, nowMs }),
+            6,
+            `ramp ${performed} -> ${now}`,
+          );
+          // A minute past the 90th day is stale either way.
+          const later = nowMs + 60_000;
+          assert.equal(rule([at(performed, [6, 6, 6, 6])], { nowMs: later }), null, `stale ${performed}`);
+          assert.equal(
+            resolveRampSetTarget({ entry: ramp, setIndex: 2, repsMax: 12, trackingMode: 'load_and_reps', automatedProgressionEnabled: true, nowMs: later }),
+            null,
+          );
+        }
+      });
+    },
+  },
 ];
