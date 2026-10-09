@@ -110,12 +110,20 @@ function topSetOf(sets: ReadonlyArray<SheetHistorySet>): SheetHistorySet | null 
   return best;
 }
 
-/** What the bar's height stands for: the load, or the reps on an unloaded lift. */
-function barValueOf(set: SheetHistorySet | null): number {
+/**
+ * What the bars measure: the load, or the reps on a lift that never carried
+ * one. One measure for the whole series — chosen set by set, a dip done for
+ * 15 bodyweight reps stood taller than the 10 kg dip after it, the first
+ * weighted session read as a drop, and +20 kg was a record only because 20 is
+ * more than 15 (hunt, 2026-10-09).
+ */
+type BarMeasure = 'load' | 'reps';
+
+function barValueOf(set: SheetHistorySet | null, measure: BarMeasure): number {
   if (!set) {
     return 0;
   }
-  return set.loadKg > 0 ? set.loadKg : set.reps;
+  return measure === 'load' ? set.loadKg : set.reps;
 }
 
 export function buildExerciseSheetHistory(
@@ -134,8 +142,9 @@ export function buildExerciseSheetHistory(
     ...(todayHasSets && today ? [{ session: today, isToday: true }] : []),
   ];
 
+  const measure: BarMeasure = series.some((item) => item.session.sets.some((set) => set.loadKg > 0)) ? 'load' : 'reps';
   const window = series.slice(-SHEET_HISTORY_SESSIONS);
-  const values = window.map((item) => barValueOf(topSetOf(item.session.sets)));
+  const values = window.map((item) => barValueOf(topSetOf(item.session.sets), measure));
   const tallest = values.reduce((max, value) => Math.max(max, value), 0);
 
   /*
@@ -154,12 +163,14 @@ export function buildExerciseSheetHistory(
     isToday: item.isToday,
   }));
 
-  const priorBest = sorted.reduce((max, session) => Math.max(max, barValueOf(topSetOf(session.sets))), 0);
+  const priorBest = sorted.reduce((max, session) => Math.max(max, barValueOf(topSetOf(session.sets), measure)), 0);
   const todayTop = todayHasSets && today ? topSetOf(today.sets) : null;
   // A loaded lift's record is the records rule (`beatsBest`): heavier, or the
   // same load for more reps — the pill used to ask for a heavier bar only,
   // and 100 × 5 after 100 × 3 went unmarked here while the Records tab called
   // it new (2026-09-26). An unloaded lift's bar is its reps, as before.
+  // On a loaded lift a session with no load beats nothing, and the first
+  // loaded one has no loaded best to beat (priorBest is 0 kg).
   const priorTop = topSetOf(sorted.flatMap((session) => session.sets));
   // Minutes are a dose, not a record: a longer ride than last time is not a
   // personal best to badge (2026-10-06, same rule as the Records tab).
@@ -167,9 +178,11 @@ export function buildExerciseSheetHistory(
     !isMinutesTrackingMode(trackingMode) &&
     todayTop !== null &&
     priorBest > 0 &&
-    (todayTop.loadKg > 0 && priorTop !== null && priorTop.loadKg > 0
-      ? beatsBest({ weight: todayTop.loadKg, reps: todayTop.reps }, { weight: priorTop.loadKg, reps: priorTop.reps })
-      : barValueOf(todayTop) > priorBest);
+    (measure === 'load'
+      ? todayTop.loadKg > 0 &&
+        priorTop !== null &&
+        beatsBest({ weight: todayTop.loadKg, reps: todayTop.reps }, { weight: priorTop.loadKg, reps: priorTop.reps })
+      : barValueOf(todayTop, measure) > priorBest);
 
   const rows: SheetHistoryRow[] = [...series]
     .reverse()

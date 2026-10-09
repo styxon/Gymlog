@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   SET_LOG_SESSIONS,
   buildExerciseSetLog,
+  formatSetLogSet,
 } = require('../../.test-dist/lib/exerciseSetLog.js');
 const { isSetLogLocked } = require('../../.test-dist/lib/historyWindow.js');
 const { PRO_LIVE_BENEFITS } = require('../../.test-dist/lib/proBenefits.js');
@@ -133,6 +134,48 @@ module.exports = [
       assert.deepEqual(marked, ['2026-09-09#1']);
       assert.equal(log.bestWeight.companion, 8);
       assert.equal(log.bestReps.companion, 60, 'most reps, and at the heavier bar');
+    },
+  },
+  {
+    // Hunt 2026-10-09: dips done weighted and then plain dropped to 0 kg in a
+    // line that measures kilos, and a plank's 60 s read as "60 × 0".
+    name: 'a lift done both loaded and plain draws its weight only where it carried one',
+    run() {
+      const log = buildExerciseSetLog(
+        {
+          key: 'dips',
+          name: 'Dips',
+          entries: [
+            { performedAt: at(2026, 7, 20), sets: [{ weight: 10, reps: 8 }] },
+            { performedAt: at(2026, 7, 27), sets: [{ weight: 0, reps: 15 }] },
+            { performedAt: at(2026, 8, 3), sets: [{ weight: 12.5, reps: 8 }] },
+          ],
+        },
+        { now: NOW },
+      );
+      assert.deepEqual(log.curve, [10, 12.5], 'no fall to zero on the plain session');
+      assert.equal(log.timed, false);
+    },
+  },
+  {
+    name: 'a set reads as its count, in seconds for a hold, with the weight only when there was one',
+    run() {
+      require('../../.test-dist/lib/format.js').setNumberLanguage('en');
+      const plank = buildExerciseSetLog(
+        { key: 'plank', name: 'Plank', entries: [{ performedAt: at(2026, 8, 1), sets: [{ weight: 0, reps: 60 }] }] },
+        { now: NOW },
+      );
+      assert.equal(plank.timed, true);
+      assert.equal(formatSetLogSet(plank.sessions[0].sets[0], plank.timed, 'en'), '60 s');
+      assert.equal(formatSetLogSet({ weightKg: 0, reps: 15 }, false, 'en'), '15');
+      assert.equal(formatSetLogSet({ weightKg: 82.5, reps: 3 }, false, 'en'), '3 × 82.5');
+      assert.equal(formatSetLogSet({ weightKg: 10, reps: 45 }, true, 'en'), '45 s × 10');
+
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const sheet = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'SetLogSheet.tsx'), 'utf8');
+      assert.match(sheet, /\{formatSetLogSet\(set, timed, language\)\}/, 'the chips say it through the one formatter');
+      assert.match(sheet, /\{session\.volumeKg > 0 \? \(/, 'and a session that moved no kilos shows no "0 kg"');
     },
   },
 ];
