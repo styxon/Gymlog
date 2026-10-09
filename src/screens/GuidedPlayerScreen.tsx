@@ -5753,77 +5753,101 @@ function SetStepView({
               </Text>
             </View>
           </View>
-          {panels?.history ? (
-            <View style={styles.setExerciseLast}>
-              {/* One heading, whichever day the history came from. Borrowed
-                  history got its own "ERI PÄIVÄ" line on 2026-09-09; the
-                  reader asked for it gone (#bugs 2026-09-30, "jätä tuo
-                  viimekerralla mutta pois eri päivä"). The card's
-                  accessibility label above still says it. */}
-              <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.lastTime')}</Text>
-              {/* Only a uniform session gets the single heading number — a
-                  ramp has no one weight to lead with, and the per-set chips
-                  below already say the whole thing (decision "a", #bugs
-                  2026-09-29). */}
-              {historyChips?.uniform !== false && !minutesMode ? (
-                <Text style={styles.setExerciseLastLoad}>
-                  {/* The same number decides and is shown. Guarding on the
-                      FIRST set while printing the heaviest hid a real top set
-                      behind a dash whenever set 1 was logged at 0 kg — which is
-                      what the dial offers on a lift with no history (review,
-                      PR #57). */}
-                  {heaviestOf(panels.history) > 0
-                    ? `${removeTrailingZeros(heaviestOf(panels.history))} kg`
-                    : '—'}
-                </Text>
-              ) : null}
-              <View style={styles.setExerciseLastPills}>
-                {panels.history.sets.map((set, index) => (
-                  <View key={set.setIndex} style={styles.setExerciseLastPill}>
-                    <Text style={styles.setExerciseLastPillText}>
-                      {minutesMode
-                        ? t(language, 'logger.minutesValue', { count: set.reps })
-                        : historyChips?.chips[index] ?? set.reps}
-                    </Text>
-                  </View>
-                ))}
+          {/* Last time over today, one line each with a small gap between
+              (#bugs 2026-10-09, "yhteen riviin nätisti ja pieni väli vain").
+              Both lines put their chips against the right edge, so set 1 of
+              last time stands over set 1 of today. A line with more chips
+              than the card is wide scrolls sideways instead of wrapping: a
+              ramp's "16,25×8" chips used to wrap, and so, on the phone's
+              larger font, did five plain ones, which is what made the card
+              tall. */}
+          <View style={styles.setExerciseRows}>
+            {panels?.history ? (
+              <View style={styles.setExerciseRow}>
+                {/* One heading, whichever day the history came from. Borrowed
+                    history got its own "ERI PÄIVÄ" line on 2026-09-09; the
+                    reader asked for it gone (#bugs 2026-09-30, "jätä tuo
+                    viimekerralla mutta pois eri päivä"). The card's
+                    accessibility label above still says it. */}
+                <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.lastTime')}</Text>
+                {/* Only a uniform session gets the single heading number — a
+                    ramp has no one weight to lead with, and the per-set chips
+                    already say the whole thing (decision "a", #bugs
+                    2026-09-29). */}
+                {historyChips?.uniform !== false && !minutesMode ? (
+                  <Text style={styles.setExerciseLastLoad}>
+                    {/* The same number decides and is shown. Guarding on the
+                        FIRST set while printing the heaviest hid a real top set
+                        behind a dash whenever set 1 was logged at 0 kg — which is
+                        what the dial offers on a lift with no history (review,
+                        PR #57). */}
+                    {heaviestOf(panels.history) > 0
+                      ? `${removeTrailingZeros(heaviestOf(panels.history))} kg`
+                      : '—'}
+                  </Text>
+                ) : null}
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.setExerciseChipScroll}
+                  contentContainerStyle={styles.setExerciseLastPills}
+                >
+                  {panels.history.sets.map((set, index) => (
+                    <View key={set.setIndex} style={styles.setExerciseLastPill}>
+                      <Text style={styles.setExerciseLastPillText}>
+                        {minutesMode
+                          ? t(language, 'logger.minutesValue', { count: set.reps })
+                          : historyChips?.chips[index] ?? set.reps}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-            </View>
-          ) : (
-            <Text style={styles.setExerciseFirstTime}>{t(language, 'guided.card.firstTime')}</Text>
-          )}
-          {/* Today's sets beside last time's, set by set: done ones as done,
-              the one being done ringed, the rest at what their dial will open
-              on (lib/guidedPlayer resolveGuidedSetPlan; #bugs 2026-10-08,
-              "näkyviin koko sarja mitä pitäisi tehdä"). Not for a bout of
-              minutes, which is one number on its clock. */}
-          {todayPlan.length > 0 ? (
-            <View style={styles.setExerciseToday}>
-              <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.today')}</Text>
-              <View style={styles.setExerciseLastPills}>
-                {todayPlan.map((chip, index) => (
-                  <View
-                    key={index}
-                    style={[
-                      styles.setExerciseLastPill,
-                      chip.status === 'done' && { backgroundColor: theme.greenSoft },
-                      chip.status === 'current' && styles.setExerciseTodayCurrent,
-                    ]}
-                  >
-                    <Text
+            ) : (
+              <Text style={styles.setExerciseFirstTime}>{t(language, 'guided.card.firstTime')}</Text>
+            )}
+            {/* Today's sets beside last time's, set by set: done ones as done,
+                the one being done ringed, the rest at what their dial will open
+                on (lib/guidedPlayer resolveGuidedSetPlan; #bugs 2026-10-08,
+                "näkyviin koko sarja mitä pitäisi tehdä"). Not for a bout of
+                minutes, which is one number on its clock.
+
+                Warm-ups stay off both lines (#bugs 2026-10-09, "ylhäällä ei
+                näytetä sielläkään lämmittelyitä"): the card is about the
+                work. Warm-up mode's own heading counts them. */}
+            {todayPlan.length > 0 ? (
+              <View style={styles.setExerciseRow}>
+                <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.today')}</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.setExerciseChipScroll}
+                  contentContainerStyle={styles.setExerciseLastPills}
+                >
+                  {todayPlan.map((chip, index) => (
+                    <View
+                      key={index}
                       style={[
-                        styles.setExerciseLastPillText,
-                        chip.status === 'done' && { color: theme.greenInk },
-                        chip.status === 'current' && { color: theme.ink },
+                        styles.setExerciseLastPill,
+                        chip.status === 'done' && { backgroundColor: theme.greenSoft },
+                        chip.status === 'current' && styles.setExerciseTodayCurrent,
                       ]}
                     >
-                      {chip.reps ?? '–'}
-                    </Text>
-                  </View>
-                ))}
+                      <Text
+                        style={[
+                          styles.setExerciseLastPillText,
+                          chip.status === 'done' && { color: theme.greenInk },
+                          chip.status === 'current' && { color: theme.ink },
+                        ]}
+                      >
+                        {chip.reps ?? '–'}
+                      </Text>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-            </View>
-          ) : null}
+            ) : null}
+          </View>
         </Pressable>
 
         {/* The set counter, its dots and the add button — and nothing else.
@@ -5837,6 +5861,26 @@ function SetStepView({
             <View style={styles.setMetaLeft}>
               <View style={styles.warmupDot} />
               <Text style={styles.setCounter}>{t(language, 'guided.warmup.title', { index: warmups.length + 1 })}</Text>
+              {/* Takes back the last warm-up logged, the way the red − beside
+                  the sets takes back the last set. The warm-ups had a row of
+                  chips with an × each; the reader asked for it gone — the
+                  working sets have no such row either (#bugs 2026-10-09).
+                  The heading beside it counts them. */}
+              {warmups.length > 0 ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t(language, 'guided.warmup.remove', {
+                    index: warmups.length,
+                    kg: removeTrailingZeros(warmups[warmups.length - 1].loadKg),
+                    reps: warmups[warmups.length - 1].reps,
+                  })}
+                  hitSlop={8}
+                  onPress={() => onRemoveWarmup(warmups.length - 1)}
+                  style={[styles.setAddBtn, { flexShrink: 0, borderColor: theme.danger }]}
+                >
+                  <GPIcon name="minus" size={13} color={theme.danger} sw={3} />
+                </Pressable>
+              ) : null}
             </View>
           ) : (
           <View style={styles.setMetaLeft}>
@@ -5899,46 +5943,27 @@ function SetStepView({
             </Pressable>
           </View>
           )}
+          {/* The warm-up's own door, at the far end of the row: a blue +, as
+              many times as the reader wants. It was a dashed pill on a row of
+              its own (#bugs 2026-10-09, "vie liikaa tilaa"). Only before the
+              first working set — once the work has started, a warm-up is not
+              what comes next. In warm-up mode the same place leaves it. */}
+          {inWarmup ? (
+            <Pressable accessibilityRole="button" hitSlop={8} onPress={leaveWarmup} style={styles.warmupCancel}>
+              <Text style={styles.warmupCancelText}>{t(language, 'guided.warmup.cancel')}</Text>
+            </Pressable>
+          ) : canWarmUp ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(language, 'guided.warmup.add')}
+              hitSlop={8}
+              onPress={enterWarmup}
+              style={styles.warmupAdd}
+            >
+              <GPIcon name="plus" size={13} color={theme.blue} sw={3} />
+            </Pressable>
+          ) : null}
         </View>
-
-        {/* The warm-ups logged so far, and the button that adds one. Only on
-            the first working set: once the work has started, a warm-up is not
-            what comes next. A logged one is taken back with its ×. */}
-        {canWarmUp && (warmups.length > 0 || !inWarmup) ? (
-          <View style={styles.warmupRow}>
-            {warmups.map((warmup, index) => (
-              <Pressable
-                key={`${index}-${warmup.completedAt}`}
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'guided.warmup.remove', {
-                  index: index + 1,
-                  kg: removeTrailingZeros(warmup.loadKg),
-                  reps: warmup.reps,
-                })}
-                hitSlop={8}
-                onPress={() => onRemoveWarmup(index)}
-                style={styles.warmupChip}
-              >
-                <Text style={styles.warmupChipText}>
-                  {t(language, 'guided.warmup.chip', { kg: removeTrailingZeros(warmup.loadKg), reps: warmup.reps })}
-                </Text>
-                <GPIcon name="x" size={11} color={theme.muted} sw={2.6} />
-              </Pressable>
-            ))}
-            {!inWarmup ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'guided.warmup.add')}
-                hitSlop={8}
-                onPress={enterWarmup}
-                style={styles.warmupAdd}
-              >
-                <GPIcon name="plus" size={12} color={theme.blue} sw={3} />
-                <Text style={styles.warmupAddText}>{t(language, 'guided.warmup.add')}</Text>
-              </Pressable>
-            ) : null}
-          </View>
-        ) : null}
 
 
         <View style={styles.setTargetArea}>
@@ -6098,29 +6123,50 @@ function SetStepView({
           </View>
         </View>
 
-        <View style={{ paddingHorizontal: 22 }}>
+        {/* One row (#bugs 2026-10-09, "kirjaa sarja + tauko ja treenin
+            toiminnot yhteen riviin"): pause and the menu on the left, the log
+            button taking the rest. Pause and the menu stay the only two
+            (user 2026-08-23) — mute and swap live behind the dots.
+
+            The circles lost their captions with the row: two captions under
+            two circles were a row of their own. Their names are still read
+            out, and the reader drew the row this way knowing it. */}
+        <View style={styles.setControls}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t(language, paused ? 'guided.resume' : 'guided.pause')}
+            onPress={onPause}
+            style={styles.setRoundBtn}
+          >
+            <GPIcon name={paused ? 'play' : 'pause'} size={22} color={theme.ink} sw={2.2} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t(language, 'guided.a11y.actions')}
+            onPress={onOpenActions}
+            style={styles.setRoundBtn}
+          >
+            <GPIcon name="dots" size={22} color={theme.ink} sw={2.2} />
+          </Pressable>
           {inWarmup ? (
-            <>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'guided.warmup.log')}
-                accessibilityState={{ disabled: logBlocked || kg <= 0 }}
-                // No weight, no warm-up: the store refuses 0 kg, and the
-                // screen must not leave as if it had been saved.
-                disabled={logBlocked || kg <= 0}
-                onPress={() => {
-                  onLogWarmup(kg, reps);
-                  leaveWarmup();
-                }}
-                style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, (logBlocked || kg <= 0) && { opacity: 0.4 }]}
-              >
-                <GPIcon name="check" size={18} color={theme.blue} sw={2.8} />
-                <Text style={styles.warmupLogButtonText}>{t(language, 'guided.warmup.log')}</Text>
-              </Pressable>
-              <Pressable accessibilityRole="button" hitSlop={8} onPress={leaveWarmup} style={styles.warmupCancel}>
-                <Text style={styles.warmupCancelText}>{t(language, 'guided.warmup.cancel')}</Text>
-              </Pressable>
-            </>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(language, 'guided.warmup.log')}
+              accessibilityState={{ disabled: logBlocked || kg <= 0 }}
+              // No weight, no warm-up: the store refuses 0 kg, and the
+              // screen must not leave as if it had been saved.
+              disabled={logBlocked || kg <= 0}
+              onPress={() => {
+                onLogWarmup(kg, reps);
+                leaveWarmup();
+              }}
+              style={({ pressed }) => [styles.warmupLogButton, pressed && { opacity: 0.9 }, (logBlocked || kg <= 0) && { opacity: 0.4 }]}
+            >
+              <GPIcon name="check" size={18} color={theme.blue} sw={2.8} />
+              <Text style={styles.warmupLogButtonText} numberOfLines={1} adjustsFontSizeToFit>
+                {t(language, 'guided.warmup.log')}
+              </Text>
+            </Pressable>
           ) : (
           <Pressable
             accessibilityRole="button"
@@ -6147,46 +6193,11 @@ function SetStepView({
             ]}
           >
             <GPIcon name="check" size={18} color={theme.onHighlight} sw={2.8} />
-            <Text style={styles.setLogButtonText}>
+            <Text style={styles.setLogButtonText} numberOfLines={1} adjustsFontSizeToFit>
               {t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             </Text>
           </Pressable>
           )}
-        </View>
-
-        {/* Two buttons, no more (user 2026-08-23): pause, and the menu.
-            Mute and swap moved behind the dots with the rest of the
-            "something else" actions — a set screen's own controls are the
-            ones you use mid-set.
-
-            Labelled, though. A bare circle is a control the reader has to
-            press to find out what it does, and one of these two ends up
-            being pressed to find out. */}
-        <View style={styles.setControls}>
-          <View style={styles.setControl}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t(language, paused ? 'guided.resume' : 'guided.pause')}
-              onPress={onPause}
-              style={styles.setRoundBtn}
-            >
-              <GPIcon name={paused ? 'play' : 'pause'} size={24} color={theme.ink} sw={2.2} />
-            </Pressable>
-            <Text style={styles.setControlLabel}>
-              {t(language, paused ? 'guided.resume' : 'guided.pause')}
-            </Text>
-          </View>
-          <View style={styles.setControl}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t(language, 'guided.a11y.actions')}
-              onPress={onOpenActions}
-              style={styles.setRoundBtn}
-            >
-              <GPIcon name="dots" size={24} color={theme.ink} sw={2.2} />
-            </Pressable>
-            <Text style={styles.setControlLabel}>{t(language, 'guided.a11y.actions')}</Text>
-          </View>
         </View>
         {/* No "Seuraava · …" line here: on a set it named the same lift's next
             set, which the dots above already say. The drills keep theirs — a
@@ -6781,14 +6792,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Bigger, and one claim rather than a list of three tab names the reader
   // has to have opened the sheet once to understand (user 2026-09-04).
   setExerciseHint: { marginTop: 4, fontSize: 14, fontWeight: '600', color: theme.muted },
-  setExerciseLast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
+  // Last time over today under one rule, 6 apart (#bugs 2026-10-09: the two
+  // lines sat 17 apart and the first one wrapped).
+  setExerciseRows: {
+    gap: 6,
     borderTopWidth: 1,
     borderTopColor: theme.border,
     paddingTop: 9,
   },
+  setExerciseRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  // The chips take what the label and the load leave, and scroll inside it.
+  setExerciseChipScroll: { flex: 1 },
   setExerciseLastLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1, color: theme.faint },
   setExerciseLastLoad: {
     fontSize: 14.5,
@@ -6797,14 +6811,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   // A ramp's chips are "16,25×8" (7-8 characters), not the bare 1-2 digit rep
-  // count this row was built for — five of them on one line can run past the
-  // card's right edge with `justifyContent: 'flex-end'` pushing the overflow
-  // off the near (left) side instead of clipping visibly (review, #bugs
-  // 2026-09-29). `flexWrap` lets a wide row fall to a second line instead.
+  // count this row was built for — five of them can run past the card's right
+  // edge, and `justifyContent: 'flex-end'` on a plain row pushed the overflow
+  // off the near (left) side (review, #bugs 2026-09-29). The row wrapped to a
+  // second line for that, which made the card tall (#bugs 2026-10-09); it is
+  // the content of a sideways ScrollView now. `flexGrow` keeps a short row
+  // against the right edge; a long one starts at the left and scrolls.
   setExerciseLastPills: {
-    flex: 1,
+    flexGrow: 1,
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'flex-end',
     gap: 4,
   },
@@ -6822,14 +6837,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontVariant: ['tabular-nums'],
   },
-  // Last time's row again, for today: the same chips under the same rule.
-  setExerciseToday: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 7 },
   // The set being done: ringed in the action colour, as its dot is below.
   setExerciseTodayCurrent: { borderWidth: 1.5, borderColor: theme.highlight, paddingHorizontal: 3.5, paddingVertical: 1.5 },
   setExerciseFirstTime: {
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-    paddingTop: 9,
     fontSize: 12.5,
     fontWeight: '600',
     color: theme.muted,
@@ -6988,6 +6998,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // 64 → 52 and a lighter shadow: the button had the height of the two dials
   // above it put together, and the shadow made it read taller still.
   setLogButton: {
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 12,
     height: 52,
     borderRadius: 18,
     // `accent`, the app's "do the thing" colour — the same one the session's
@@ -7004,10 +7017,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     shadowRadius: 18,
     elevation: 6,
   },
-  setLogButtonText: { fontSize: 17, fontWeight: '800', color: theme.onHighlight, letterSpacing: -0.17 },
-  setControls: { flexDirection: 'row', justifyContent: 'center', alignItems: 'flex-start', gap: 26, paddingTop: 14, paddingBottom: 10 },
-  setControl: { alignItems: 'center', gap: 5 },
-  setControlLabel: { fontSize: 11.5, fontWeight: '700', color: theme.muted },
+  setLogButtonText: { flexShrink: 1, fontSize: 17, fontWeight: '800', color: theme.onHighlight, letterSpacing: -0.17 },
+  setControls: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 22, paddingTop: 4, paddingBottom: 12 },
   setAddBtn: {
     width: 26,
     height: 26,
@@ -7029,51 +7040,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 5,
     backgroundColor: theme.blue,
   },
-  warmupRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 22,
-    marginTop: 8,
-  },
-  warmupChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    // 36 high and 8 of slop each way: the 48 a tap needs (review, 2026-10-05).
-    minHeight: 36,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1.5,
-    borderColor: theme.blue,
-    backgroundColor: theme.surface,
-  },
-  warmupChipText: {
-    color: theme.ink,
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  // The blue + at the end of the set row: the green one's shape, dashed, so
+  // it reads as "something before the sets", not one more set.
   warmupAdd: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    minHeight: 36,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
+    width: 26,
+    height: 26,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderStyle: 'dashed',
     borderColor: theme.blue,
-  },
-  warmupAddText: {
-    color: theme.ink,
-    fontSize: 13,
-    fontWeight: '700',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
   },
   warmupLogButton: {
-    height: 56,
+    flex: 1,
+    minWidth: 0,
+    paddingHorizontal: 12,
+    height: 52,
     borderRadius: 18,
     borderWidth: 2,
     borderColor: theme.blue,
@@ -7084,13 +7068,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 10,
   },
   warmupLogButtonText: {
+    flexShrink: 1,
     color: theme.ink,
     fontSize: 17,
     fontWeight: '800',
   },
   warmupCancel: {
-    alignSelf: 'center',
-    paddingVertical: 10,
+    flexShrink: 0,
+    paddingVertical: 4,
+    paddingLeft: 10,
   },
   warmupCancelText: {
     color: theme.muted,
@@ -7098,8 +7084,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
   },
   setRoundBtn: {
-    width: 60,
-    height: 60,
+    width: 52,
+    height: 52,
     borderRadius: 999,
     backgroundColor: theme.surface,
     borderWidth: 1,
