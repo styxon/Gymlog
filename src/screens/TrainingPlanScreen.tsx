@@ -9,7 +9,7 @@ import { CsvLibraryEntry } from '../lib/csvProgramImport';
 import { I18nKey, t } from '../lib/i18n';
 import { scheduleDraftSave } from '../lib/scheduleDraft';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
-import { cycleSchedule, patternFromOnOff, trainsOn } from '../lib/trainingSchedule';
+import { cycleSchedule, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import type { AppLanguage, ExerciseLibraryItem, SetupWeekday, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
@@ -269,7 +269,9 @@ export function TrainingPlanScreen({
     if (!showCycle) {
       return [];
     }
-    const anchor = editingSchedule || !trainingCycle ? todayStart() : trainingCycle.anchorDayStart;
+    // The anchor Done will write: a pattern the reader has not changed keeps
+    // the stored one, so the preview shows the week Home will show.
+    const anchor = resolveCycleAnchor(cyclePattern, trainingCycle, new Date())?.anchorDayStart ?? todayStart();
     const schedule = cycleSchedule(cyclePattern, anchor);
     const now = new Date();
     return Array.from({ length: CYCLE_PREVIEW_DAYS }, (_, offset) => {

@@ -11,7 +11,7 @@ import { ToggleSwitch } from '../components/SettingsUi';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatPercent } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
-import { cycleSchedule, sessionSlotOn } from '../lib/trainingSchedule';
+import { cycleSchedule, resolveCycleAnchor, sessionSlotOn } from '../lib/trainingSchedule';
 import { sessionForSlot } from '../lib/homeCalendar';
 import { ProgramDetailViewModel } from '../lib/programDetails';
 import { progressionRuleLabel } from '../lib/progressionRuleLabel';
@@ -675,14 +675,11 @@ export function ProgramDetailScreen({
   }, [trainingCycle]);
 
   const applyPreset = (preset: (typeof RHYTHM_PRESETS)[number]) => {
-    // Anchored to the day it was chosen — the same "starts today" rule
-    // adoption follows.
-    const now = new Date();
+    // A new rhythm is anchored to the day it was chosen — the same "starts
+    // today" rule adoption follows. The one already stored keeps its anchor:
+    // tapping the highlighted chip must not move the rest day.
     setDraftDays(null);
-    onChangeTrainingCycle?.({
-      pattern: preset.pattern,
-      anchorDayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-    });
+    onChangeTrainingCycle?.(resolveCycleAnchor(preset.pattern, trainingCycle, new Date()));
   };
 
   /**

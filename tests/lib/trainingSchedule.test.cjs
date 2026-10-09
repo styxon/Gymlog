@@ -262,6 +262,24 @@ module.exports = [
     },
   },
   {
+    // Bug hunt 9, 2026-10-09: the programme page's preset chips and the
+    // training-plan screen's rhythm preview anchored on today whatever was
+    // stored, while the rule above says an unchanged pattern keeps its anchor.
+    name: 'cycle anchor: the preset chips and the plan screen preview follow the same rule',
+    run() {
+      const read = (file) => require('node:fs').readFileSync(require('node:path').join(__dirname, '..', '..', file), 'utf8');
+      const detail = read('src/screens/ProgramDetailScreen.tsx');
+      const apply = detail.slice(detail.indexOf('const applyPreset'), detail.indexOf('const cycleWeek'));
+      assert.ok(apply.length > 0);
+      assert.match(apply, /resolveCycleAnchor\(preset\.pattern, trainingCycle, new Date\(\)\)/);
+      assert.doesNotMatch(apply, /anchorDayStart:/, 'a chip must not write today as the anchor itself');
+
+      const plan = read('src/screens/TrainingPlanScreen.tsx');
+      assert.match(plan, /resolveCycleAnchor\(cyclePattern, trainingCycle, new Date\(\)\)\?\.anchorDayStart/);
+      assert.doesNotMatch(plan, /editingSchedule \|\| !trainingCycle \? todayStart\(\)/);
+    },
+  },
+  {
     // Bug hunt, 2026-10-04: the setup preview anchored a re-run's unchanged
     // cycle on today while the save kept the old anchor.
     name: 'cycle anchor: an unchanged pattern keeps its anchor, a changed one starts today',
