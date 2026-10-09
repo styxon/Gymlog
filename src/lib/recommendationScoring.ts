@@ -6,7 +6,7 @@ import {
   readerAskedForRecovery,
 } from './recommendationCatalog';
 import { selectWaterfallDecision } from './recommendationWaterfall';
-import { focusProgrammeLosesItsPoint, programRunStandInKind, programRunWork, splitsReaderWeek } from './recommendationWeekFit';
+import { focusProgrammeLosesItsPoint, lowerBodyOnlyAgainstFocus, programRunStandInKind, programRunWork, splitsReaderWeek } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
@@ -488,6 +488,9 @@ function genderAllows(definition: RecommendationProgramDefinition, input: Recomm
  * A specialisation block the avoid flags strip goes there too: the waterfall's
  * focus lane turned the arms block down for a reader avoiding their elbows,
  * and the score handed it back (bug hunt, 2026-10-08).
+ *
+ * And a lower-body-only week for a reader who did not name the lower body,
+ * which the waterfall's lanes already turn down (bug hunt, 2026-10-09, #10).
  */
 function levelFirst(candidates: RecommendationCandidate[], input: RecommendationInput) {
   const askedForRecovery = readerAskedForRecovery(input);
@@ -496,7 +499,8 @@ function levelFirst(candidates: RecommendationCandidate[], input: Recommendation
     const recoveryOnly = !askedForRecovery && definition !== null && isRecoveryOnlyProgram(definition);
     const splitsWeek = definition !== null && splitsReaderWeek(definition, input);
     const losesPoint = focusProgrammeLosesItsPoint(candidate.programId, input);
-    return (splitsWeek || losesPoint ? 4 : 0) + (fitsLevel(candidate, input) ? 0 : 2) + (recoveryOnly ? 1 : 0);
+    const lowerOnly = lowerBodyOnlyAgainstFocus(candidate.programId, input);
+    return (splitsWeek || losesPoint || lowerOnly ? 4 : 0) + (fitsLevel(candidate, input) ? 0 : 2) + (recoveryOnly ? 1 : 0);
   };
   return [0, 1, 2, 3, 4, 5, 6, 7].flatMap((tier) => candidates.filter((candidate) => rank(candidate) === tier));
 }

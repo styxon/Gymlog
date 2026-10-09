@@ -74,9 +74,13 @@ export function splitsReaderWeek(
 const lowerBodyOnlyPrograms = new Map<string, boolean>();
 
 /**
- * Whether this programme trains the lower body and nothing above the waist:
- * lifts for the legs and hips, and not one set for the chest, back, shoulders
- * or arms. Glute Foundations is the one such programme in the catalog.
+ * Whether this programme trains the lower body and next to nothing above the
+ * waist: lifts for the legs and hips, and less than the share of its lifting
+ * sets that would make an upper-body week. Glute Foundations has no upper set
+ * at all. Runner's Strength has a side plank, and asked for "not one set" it
+ * was handed to a two-day lean-athletic reader as "balanced strength and
+ * conditioning" with 0 sets for the chest, back or shoulders (bug hunt,
+ * 2026-10-09, #10).
  */
 export function trainsLowerBodyOnly(programId: string): boolean {
   const cached = lowerBodyOnlyPrograms.get(programId);
@@ -87,7 +91,7 @@ export function trainsLowerBodyOnly(programId: string): boolean {
   let lowerOnly = false;
   if (template) {
     const week = template.sessions.map((session) => halfSets(session.exercises));
-    lowerOnly = sumOf(week, 'upper') === 0 && sumOf(week, 'lower') >= MIN_HALF_SETS;
+    lowerOnly = sumOf(week, 'lower') >= MIN_HALF_SETS && !hasShare(week, 'upper');
   }
   lowerBodyOnlyPrograms.set(programId, lowerOnly);
   return lowerOnly;

@@ -72,15 +72,19 @@ function featured(sel) {
 }
 
 const GLUTE_FOUNDATIONS = 'tpl_gainer_glute_foundations_v1';
+const RUNNERS_STRENGTH = 'tpl_gainer_runners_strength_v1';
 
 module.exports = [
   {
-    name: 'recommender fit: only Glute Foundations trains the lower body and nothing else',
+    name: 'recommender fit: Glute Foundations and Runner\'s Strength train the lower body and next to nothing else',
     run() {
       const lowerOnly = RECOMMENDATION_PROGRAMS.filter((definition) => trainsLowerBodyOnly(definition.programId)).map(
         (definition) => definition.programId,
       );
-      assert.deepEqual(lowerOnly, [GLUTE_FOUNDATIONS]);
+      // Runner's Strength by share: one side plank is 3 of its 44 lifting sets
+      // (bug hunt, 2026-10-09, #10). Advanced Glutes keeps its upper day, a
+      // fifth of the week, and is not one.
+      assert.deepEqual(lowerOnly.sort(), [GLUTE_FOUNDATIONS, RUNNERS_STRENGTH]);
       // The rule asks the reader's focus, and a run or mobility ask is not it.
       assert.equal(lowerBodyOnlyAgainstFocus(GLUTE_FOUNDATIONS, { goal: 'muscle', focusAreas: [] }), true);
       assert.equal(lowerBodyOnlyAgainstFocus(GLUTE_FOUNDATIONS, { goal: 'muscle', focusAreas: ['chest', 'back'] }), true);
@@ -127,6 +131,27 @@ module.exports = [
       }
       const man = selection({ gender: 'male', goal: 'muscle', level: 'beginner', daysPerWeek: 3, focusAreas: ['glutes'] });
       assert.notEqual(featured(man).featuredProgramId, GLUTE_FOUNDATIONS);
+    },
+  },
+  {
+    // Bug hunt, 2026-10-09, #10: a two-day lean-athletic reader at the gym was
+    // featured Runner's Strength, 38 sets for the legs and 0 above the waist,
+    // under "Balanced strength and conditioning". The old rule asked for not
+    // one upper set, and its side plank counted as one.
+    name: 'recommender fit: an advanced reader who did not name the lower body is not handed Runner\'s Strength',
+    run() {
+      for (const gender of ['male', 'female']) {
+        for (const goal of ['lean_athletic', 'general_fitness']) {
+          for (const days of [2, 3, 4]) {
+            const sel = selection({ gender, goal, level: 'advanced', daysPerWeek: days });
+            assert.notEqual(featured(sel).featuredProgramId, RUNNERS_STRENGTH, `${gender} ${goal} ${days}d`);
+          }
+        }
+        // The runner it is written for, and the reader who asks for legs, keep it.
+        assert.equal(lowerBodyOnlyAgainstFocus(RUNNERS_STRENGTH, { goal: 'run_mobility', focusAreas: [] }), false);
+        const legs = selection({ gender, goal: 'lean_athletic', level: 'advanced', daysPerWeek: 2, focusAreas: ['legs'] });
+        assert.equal(featured(legs).featuredProgramId, RUNNERS_STRENGTH, `${gender} legs`);
+      }
     },
   },
   {
