@@ -5517,6 +5517,22 @@ function SetStepView({
   const logBlocked = dial === 'weight' && weightTextInvalid;
 
   /**
+   * Today's line scrolls once it is wider than the card, and it opens at its
+   * left end. The ringed chip — the set being done — would then sit past the
+   * right edge from set 5 or 6 of a long ramp on, so the line is moved just
+   * far enough to show it, whichever of the two layouts lands last.
+   */
+  const todayScrollRef = useRef<ScrollView>(null);
+  const todayScrollWidth = useRef(0);
+  const todayCurrentEnd = useRef(0);
+  const revealTodayCurrent = () => {
+    const over = todayCurrentEnd.current - todayScrollWidth.current;
+    if (todayScrollWidth.current > 0 && over > 0) {
+      todayScrollRef.current?.scrollTo({ x: over + 4, animated: false });
+    }
+  };
+
+  /**
    * "+ Warm-up set" (user, 2026-10-05): the screen turns blue and logs a
    * warm-up instead of the set — kept apart from the working sets, so the
    * count, the steps and progression never see it. Offered before the first
@@ -5755,8 +5771,7 @@ function SetStepView({
           </View>
           {/* Last time over today, one line each with a small gap between
               (#bugs 2026-10-09, "yhteen riviin nätisti ja pieni väli vain").
-              Both lines put their chips against the right edge, so set 1 of
-              last time stands over set 1 of today. A line with more chips
+              Both lines put their chips against the right edge. A line with more chips
               than the card is wide scrolls sideways instead of wrapping: a
               ramp's "16,25×8" chips used to wrap, and so, on the phone's
               larger font, did five plain ones, which is what made the card
@@ -5791,6 +5806,9 @@ function SetStepView({
                   showsHorizontalScrollIndicator={false}
                   style={styles.setExerciseChipScroll}
                   contentContainerStyle={styles.setExerciseLastPills}
+                  // The card's own label already speaks these numbers; a
+                  // scroll view inside it would be a stop of its own.
+                  importantForAccessibility="no-hide-descendants"
                 >
                   {panels.history.sets.map((set, index) => (
                     <View key={set.setIndex} style={styles.setExerciseLastPill}>
@@ -5819,14 +5837,29 @@ function SetStepView({
               <View style={styles.setExerciseRow}>
                 <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.today')}</Text>
                 <ScrollView
+                  ref={todayScrollRef}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.setExerciseChipScroll}
                   contentContainerStyle={styles.setExerciseLastPills}
+                  importantForAccessibility="no-hide-descendants"
+                  onLayout={(event) => {
+                    todayScrollWidth.current = event.nativeEvent.layout.width;
+                    revealTodayCurrent();
+                  }}
                 >
                   {todayPlan.map((chip, index) => (
                     <View
                       key={index}
+                      onLayout={
+                        chip.status === 'current'
+                          ? (event) => {
+                              const { x, width } = event.nativeEvent.layout;
+                              todayCurrentEnd.current = x + width;
+                              revealTodayCurrent();
+                            }
+                          : undefined
+                      }
                       style={[
                         styles.setExerciseLastPill,
                         chip.status === 'done' && { backgroundColor: theme.greenSoft },
@@ -5874,7 +5907,7 @@ function SetStepView({
                     kg: removeTrailingZeros(warmups[warmups.length - 1].loadKg),
                     reps: warmups[warmups.length - 1].reps,
                   })}
-                  hitSlop={8}
+                  hitSlop={11}
                   onPress={() => onRemoveWarmup(warmups.length - 1)}
                   style={[styles.setAddBtn, { flexShrink: 0, borderColor: theme.danger }]}
                 >
@@ -5956,7 +5989,9 @@ function SetStepView({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t(language, 'guided.warmup.add')}
-              hitSlop={8}
+              // 26 + 11 each way: the 48 a tap needs. The pill this
+              // replaced was sized to it (review, 2026-10-05).
+              hitSlop={11}
               onPress={enterWarmup}
               style={styles.warmupAdd}
             >

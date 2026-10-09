@@ -190,7 +190,8 @@ module.exports = [
       assert.match(view, /setKg\(kept\?\.kg \?\? target\?\.loadKg \?\? 0\);/);
       assert.match(view, /const canWarmUp = !bodyweight && firstSetOpen;/);
       // The blue + sits at the end of the set row, and only where a warm-up is offered.
-      assert.match(view, /\) : canWarmUp \? \(\s*<Pressable[\s\S]{0,200}onPress=\{enterWarmup\}/);
+      const addButton = view.slice(view.indexOf(') : canWarmUp ? ('));
+      assert.match(addButton.slice(0, addButton.indexOf('</Pressable>')), /onPress=\{enterWarmup\}/);
       // The last warm-up is taken back from warm-up mode's own heading.
       assert.match(view, /onPress=\{\(\) => onRemoveWarmup\(warmups\.length - 1\)\}/);
       // Opened on last time's warm-up or the ladder, never on the working set's numbers.

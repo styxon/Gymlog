@@ -75,11 +75,16 @@ module.exports = [
       );
       assert.doesNotMatch(pillsStyle, /flexWrap/);
       assert.match(pillsStyle, /flexGrow:\s*1/);
-      const scrolls =
-        playerSource.match(
-          /<ScrollView\s+horizontal\s+showsHorizontalScrollIndicator=\{false\}\s+style=\{styles\.setExerciseChipScroll\}\s+contentContainerStyle=\{styles\.setExerciseLastPills\}/g,
-        ) ?? [];
+      // Each ScrollView element holding the chips, read up to its own `>`.
+      const scrolls = playerSource
+        .split('<ScrollView')
+        .slice(1)
+        .map((rest) => rest.slice(0, rest.indexOf('\n                >')))
+        .filter((props) => props.includes('contentContainerStyle={styles.setExerciseLastPills}'));
       assert.equal(scrolls.length, 2, 'last time and today each scroll on their own line');
+      for (const props of scrolls) {
+        assert.match(props, /\bhorizontal\b/);
+      }
     },
   },
   {
