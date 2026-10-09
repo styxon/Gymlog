@@ -7,7 +7,6 @@ import { classifyCoachScope } from '../src/lib/aiCoachScope';
 import { coachHistoryBeforeCrisis } from '../src/lib/coachCrisisTurn';
 import { buildAiCoachContextText } from '../src/lib/aiCoachSystemContext';
 import { normalizeAiCoachTrainingContext } from '../src/lib/aiTrainingContext';
-import { AI_COACH_DEBUG_TRANSCRIPTS } from '../src/lib/aiCoachDebug';
 import { COACH_COPIES_KEPT, LOG_ID_PATTERN } from '../src/lib/aiCoachLogId';
 import { formatCoachReportForSlack, readCoachReport } from '../src/lib/coachAnswerReport';
 import { AI_COACH_DEFAULT_MODEL } from '../src/lib/aiCoachModel';
@@ -570,20 +569,6 @@ function parseBody(body: unknown): ParsedBody | null {
       typeof candidate.logId === 'string' && LOG_ID_PATTERN.test(candidate.logId)
         ? candidate.logId
         : undefined,
-    effortOverride:
-      AI_COACH_DEBUG_TRANSCRIPTS
-      && process.env.AI_COACH_DEBUG_TRANSCRIPTS === '1'
-      && typeof candidate.effortOverride === 'string'
-      && ['low', 'medium', 'high', 'off'].includes(candidate.effortOverride)
-        ? candidate.effortOverride
-        : undefined,
-    modelOverride:
-      AI_COACH_DEBUG_TRANSCRIPTS
-      && process.env.AI_COACH_DEBUG_TRANSCRIPTS === '1'
-      && typeof candidate.modelOverride === 'string'
-      && /^claude-[a-z0-9.-]{2,40}$/.test(candidate.modelOverride)
-        ? candidate.modelOverride
-        : undefined,
   };
 }
 
@@ -844,10 +829,8 @@ async function requestClaude(input: AICoachAdviceRequest) {
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: input.modelOverride ?? CLAUDE_MODEL,
-        ...(input.modelOverride || input.effortOverride
-          ? effortConfig(input.effortOverride ?? EFFORT_SETTING, input.modelOverride ?? CLAUDE_MODEL)
-          : EFFORT_CONFIG),
+        model: CLAUDE_MODEL,
+        ...EFFORT_CONFIG,
         max_tokens: CLAUDE_MAX_TOKENS,
         // Rules first, then this user's training context. Two cache
         // breakpoints: the rules block is identical for every user, so it

@@ -197,7 +197,7 @@ module.exports = [
         [step(a, 'welcome'), step(a, 'path'), ev(a, 'app_open', '2026-09-10T08:00:00.000Z')],
         { now: new Date('2026-09-21T12:00:00.000Z') },
       );
-      const html = render(summary, null, {
+      const html = render(summary, {
         generatedAt: 'now',
         eventCount: 3,
         batchTotal: 2,
@@ -274,7 +274,7 @@ module.exports = [
 
       const summary = report.aggregate(events, { now: new Date('2026-10-04T12:00:00.000Z') });
       assert.equal(summary.errors.appErrors.length, 2);
-      const html = render(summary, null, { generatedAt: 'now', eventCount: events.length, batchTotal: 1, batchesFetched: 1, warning: null });
+      const html = render(summary, { generatedAt: 'now', eventCount: events.length, batchTotal: 1, batchesFetched: 1, warning: null });
       assert.doesNotMatch(html, /undefined|NaN/);
       assert.match(html, /Virheet/);
       assert.match(html, /aaaaaaaaaaaa01/);
@@ -284,7 +284,7 @@ module.exports = [
         [ev(a, 'app_error', '2026-10-01T08:00:00.000Z', { signature: 'cc01', name: '<script>alert(1)</script>', frames: [], kind: 'render' })],
         { now: new Date('2026-10-04T12:00:00.000Z') },
       );
-      const page = render(hostile, null, { generatedAt: 'now', eventCount: 1, batchTotal: 1, batchesFetched: 1, warning: null });
+      const page = render(hostile, { generatedAt: 'now', eventCount: 1, batchTotal: 1, batchesFetched: 1, warning: null });
       assert.doesNotMatch(page, /<script>alert/);
     },
   },

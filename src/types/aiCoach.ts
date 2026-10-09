@@ -540,15 +540,6 @@ export interface AICoachAdviceRequest {
    * absent, which is what an older client sends.
    */
   language?: 'fi' | 'en';
-  /**
-   * TEMPORARY, development only: per-request thinking-effort override
-   * (low | medium | high | off) so latency settings can be A/B-measured
-   * against production without a deploy per setting. Honored only while
-   * AI_COACH_DEBUG_TRANSCRIPTS is on; ignored otherwise.
-   */
-  effortOverride?: string;
-  /** TEMPORARY, development only: per-request model override under the same debug gate. */
-  modelOverride?: string;
 }
 
 export interface AICoachAdviceSuccess {
