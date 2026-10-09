@@ -28,6 +28,14 @@ import {
   isValidEvent,
   takeBatch,
 } from '../../lib/analytics';
+import {
+  ANALYTICS_FLUSH_PACING,
+  EMPTY_PACING,
+  notePacingOutcome,
+  notePacingSent,
+  pacingWaitMs,
+  type PacingState,
+} from '../../lib/requestPacing';
 import { appVersionHeaders, noteServerAnswer } from '../appUpdate/appUpdateSignal';
 
 const ANALYTICS_URL = (process.env.EXPO_PUBLIC_ANALYTICS_URL ?? '').trim();
@@ -43,6 +51,11 @@ const STORAGE_KEY = '@vinha/analytics/v1';
 const CRASH_KEY = '@vinha/analytics/crash';
 /** Small waits batch a burst of steps into one request. */
 const FLUSH_DELAY_MS = 5000;
+/**
+ * Timer-driven retries of a failed batch before the client waits for the next
+ * tracked event instead (the waits are 1, 2, 4 and 8 minutes: lib/requestPacing).
+ */
+const MAX_SCHEDULED_RETRIES = 4;
 
 interface StoredState {
   installId: string;
@@ -60,6 +73,13 @@ let memory: StoredState | null = null;
 let earlyEvents: AnalyticsEvent[] = [];
 let flushTimer: ReturnType<typeof setTimeout> | null = null;
 let flushing = false;
+/**
+ * When batches left and how the last ones fared (lib/requestPacing). Whatever
+ * raises events - however often - at most ANALYTICS_FLUSH_PACING's budget of
+ * requests leaves the phone, and a server that is failing is not asked again
+ * every five seconds for as long as the reader keeps tapping.
+ */
+let pacing: PacingState = EMPTY_PACING;
 /**
  * null until App.tsx has read the preference: events raised before that are
  * queued, and dropped if the answer turns out to be no. Only an explicit
@@ -171,13 +191,28 @@ async function flush(): Promise<void> {
   if (flushing || !ANALYTICS_URL || enabled !== true) {
     return;
   }
-  const state = await loadState();
-  if (!state || state.queue.length === 0) {
+  // The ceiling is enforced here, where the request starts, and not only in
+  // the delay scheduleFlush chose: that delay was worked out from the state
+  // of the moment an event arrived, which may be before an earlier batch
+  // recorded its start - and a caller that is not the timer would skip it.
+  if (pacingWaitMs(pacing, ANALYTICS_FLUSH_PACING, Date.now()) > 0) {
+    scheduleFlush();
     return;
   }
+  // Claimed before the first await: a second flush that starts while this
+  // one is loading the queue finds it taken, and the start is recorded
+  // together with the batch it belongs to.
   flushing = true;
-  const batch = takeBatch(state.queue);
+  let sent = false;
+  let settled = false;
   try {
+    const state = await loadState();
+    if (!state || state.queue.length === 0) {
+      return;
+    }
+    const batch = takeBatch(state.queue);
+    pacing = notePacingSent(pacing, ANALYTICS_FLUSH_PACING, Date.now());
+    sent = true;
     const response = await fetch(ANALYTICS_URL, {
       method: 'POST',
       headers: { 'content-type': 'application/json', ...appVersionHeaders() },
@@ -191,11 +226,13 @@ async function flush(): Promise<void> {
     // final refusal (a 400: the server will say the same tomorrow) kept at the
     // head was retried forever, and no event behind it ever left the phone.
     // What stays queued is what a later try can fix: no network, a 5xx, a rate
-    // limit, "update the app" (lib/analytics isFinalRefusal) — and an answer
+    // limit, "update the app" (lib/analytics isFinalRefusal) - and an answer
     // that is not our server's own JSON (a captive portal's 403 says nothing
     // about this batch).
     const ownRefusal = body !== null && body.ok === false && typeof body.error === 'string';
     if (response.ok || (ownRefusal && isFinalRefusal(response.status))) {
+      settled = true;
+      pacing = notePacingOutcome(pacing, true, Date.now());
       state.queue = state.queue.slice(batch.length);
       await persist();
       if (state.queue.length > 0) {
@@ -203,9 +240,21 @@ async function flush(): Promise<void> {
       }
     }
   } catch {
-    // Offline. The queue holds; the next foreground tries again.
+    // Offline. The queue holds; a failed batch is retried below, a bounded
+    // number of times, and after that by the next event that is tracked.
   } finally {
     flushing = false;
+    // A batch the server took or refused for good is an answer; anything
+    // else - no network, a 5xx, a rate limit - is a failure the next try waits out.
+    if (sent && !settled) {
+      pacing = notePacingOutcome(pacing, false, Date.now());
+      // Retried once the backoff is over, MAX_SCHEDULED_RETRIES times in a
+      // row: events that are not followed by more events still leave once the
+      // network is back, and a server that stays down is not asked for ever.
+      if (enabled === true && pacing.failures <= MAX_SCHEDULED_RETRIES) {
+        scheduleFlush();
+      }
+    }
   }
 }
 
@@ -216,7 +265,10 @@ function scheduleFlush(): void {
   flushTimer = setTimeout(() => {
     flushTimer = null;
     void flush();
-  }, FLUSH_DELAY_MS);
+  }, Math.max(FLUSH_DELAY_MS, pacingWaitMs(pacing, ANALYTICS_FLUSH_PACING, Date.now())));
+  // A retry can be minutes away; under Node (the test runner) it must not keep
+  // the process alive. The phone's timers are numbers and have no unref.
+  (flushTimer as unknown as { unref?: () => void }).unref?.();
 }
 
 /**

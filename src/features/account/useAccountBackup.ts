@@ -54,6 +54,7 @@ import {
   uploadNeedsConsent,
 } from '../../lib/accountBackup';
 import { randomHex } from '../../lib/aiCoachLogId';
+import { AUTO_BACKUP_PACING, EMPTY_PACING, notePacingSent, pacingWaitMs, type PacingState } from '../../lib/requestPacing';
 import { reportOperationFailed } from '../errorReporting/errorReporter';
 import {
   BACKUP_CHANGED,
@@ -321,6 +322,9 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   accountRef.current = account;
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+  /** The automatic backup's starts, for its budget; and the look waiting for the budget to have room. */
+  const backupPacingRef = useRef<PacingState>(EMPTY_PACING);
+  const pacedLookTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Bumped by sign-out — and so by Reset, which signs out before it wipes.
@@ -1013,6 +1017,17 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       if (!available || !current) {
         return { kind: 'failed' };
       }
+      // The automatic backup's budget (lib/requestPacing) is spent when a
+      // request to our server is about to start, once per run - not when the
+      // run begins: a run that stops before the network (paused, offline, a
+      // question open) sends nothing and must not use up the hour's slots.
+      let slotSpent = false;
+      const spendAutoSlot = () => {
+        if (!interactive && !slotSpent) {
+          slotSpent = true;
+          backupPacingRef.current = notePacingSent(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
+        }
+      };
       if (pendingRestoreRef.current || pendingUploadRef.current) {
         // The reader has not answered restore-or-keep, or whether this phone's
         // data goes to this account, yet. An upload now would answer for them.
@@ -1069,6 +1084,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // restored, or — after a look — the one it has just read.
         let expectedVersion = current.cloudVersion;
         if (plan === 'look') {
+          spendAutoSlot();
           const remote = await screenSession(idToken, await downloadBackup(idToken), generation);
           ensureCurrent(generation);
           if (
@@ -1164,6 +1180,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
             return { kind: 'failed' };
           }
         }
+        spendAutoSlot();
         const uploaded = await uploadCurrent(idToken, current, generation, expectedVersion);
         if (uploaded === 'done') {
           // Landed without needing a yes (the check above held it otherwise):
@@ -1472,6 +1489,15 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   /** A look that came while another account operation ran; taken once that ends. */
   const lookWaitingRef = useRef(false);
   const lookRef = useRef<() => void>(() => undefined);
+  useEffect(
+    () => () => {
+      if (pacedLookTimerRef.current) {
+        clearTimeout(pacedLookTimerRef.current);
+        pacedLookTimerRef.current = null;
+      }
+    },
+    [],
+  );
   lookRef.current = () => {
     const current = accountRef.current;
     const { database, hydrated, workoutHistory } = latestRef.current;
@@ -1484,6 +1510,20 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
     }
     lookWaitingRef.current = false;
     if (current.lastBackupFingerprint === accountBackupFingerprint(database, workoutHistory)) {
+      return;
+    }
+    // The ceiling under every trigger (lib/requestPacing): a bug that keeps
+    // changing the data would otherwise upload the whole history every
+    // quiet pause for as long as the app is open. Held back, the look is
+    // taken again when the budget has room - nothing is dropped.
+    const wait = pacingWaitMs(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
+    if (wait > 0) {
+      if (!pacedLookTimerRef.current) {
+        pacedLookTimerRef.current = setTimeout(() => {
+          pacedLookTimerRef.current = null;
+          lookRef.current();
+        }, wait);
+      }
       return;
     }
     void backupNowRef.current();

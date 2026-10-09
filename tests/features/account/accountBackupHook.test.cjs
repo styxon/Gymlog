@@ -1828,4 +1828,69 @@ module.exports = [
       assert.match(t('en', 'account.restore.incomplete'), /partly/);
     },
   },
+  {
+    // 2026-10-09: Vercel is on on-demand billing, so a bug that keeps changing
+    // the data must not turn into an upload every quiet pause. The ceiling is
+    // lib/requestPacing AUTO_BACKUP_PACING; nothing is dropped, the look waits.
+    name: 'account hook: data that changes after every backup cannot start more than sixty automatic backups an hour, and the rest is taken when the budget has room',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const realNow = Date.now;
+      let now = 1_900_000_000_000;
+      Date.now = () => now;
+      try {
+        await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
+          // A loop that edits the data once per quiet pause, for ninety minutes of the clock.
+          for (let round = 0; round < 675; round += 1) {
+            now += QUIET_MS;
+            await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: `n${round}` } }));
+            await env.advance(QUIET_MS);
+          }
+          // 675 quiet pauses are ninety minutes: sixty in the first hour, then the budget refills.
+          assert.ok(env.calls.upload <= 60 + 60, `${env.calls.upload} uploads in ninety minutes`);
+          assert.ok(env.calls.upload >= 60, 'the budget is a ceiling, not a stop');
+
+          // Nothing was lost: once the budget has room the latest data is the cloud copy.
+          now += 2 * 60 * 60 * 1000;
+          await env.advance(2 * 60 * 60 * 1000);
+          assert.equal(env.server.blob.database.preferences.profileName, 'n674', 'the held-back look never ran');
+        });
+      } finally {
+        Date.now = realNow;
+      }
+    },
+  },
+  {
+    // Review of #346: the hourly budget was spent when a look was taken, so
+    // looks that stopped before the network (automatic backup paused) used up
+    // the slots a real backup needed.
+    name: 'account hook: looks that stop before the network do not spend the automatic backup\'s hourly budget',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const realNow = Date.now;
+      let now = 1_900_000_000_000;
+      Date.now = () => now;
+      try {
+        await withHook({ local, stored: syncedAccount(local, { autoBackupPaused: true }), cloud: cloudCopy(local) }, async (env) => {
+          for (let round = 0; round < 90; round += 1) {
+            now += QUIET_MS;
+            await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: `p${round}` } }));
+            await env.advance(QUIET_MS);
+          }
+          assert.equal(env.calls.upload, 0, 'a paused automatic backup uploaded');
+          assert.equal(env.calls.download, 0, 'and looked at the cloud copy');
+
+          // The reader lifts the pause with a backup of their own; the next edit is backed up at once.
+          assert.equal((await env.api.backUpOrAsk()).kind, 'backed_up');
+          const uploads = env.calls.upload;
+          now += QUIET_MS;
+          await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: 'after' } }));
+          await env.advance(QUIET_MS);
+          assert.equal(env.calls.upload, uploads + 1, 'ninety no-op looks had used up the budget');
+        });
+      } finally {
+        Date.now = realNow;
+      }
+    },
+  },
 ];

@@ -99,6 +99,14 @@ What is worth flagging in this repo, beyond ordinary correctness:
   catches a disaster, not a slow drift; `npm run measure:startup` on the
   device catches the drift.
 
+- **A new request to our own server.** Vercel bills by use (Pro, on-demand
+  since 2026-10-09), so a client loop costs money. Every call site, and every
+  caller of one, is listed in `tests/lib/serverCallsAreBounded.test.cjs` with
+  its trigger and what stops it running again and again (a tap, once per
+  launch, a throttle, a batch, `src/lib/requestPacing.ts`). A new one fails
+  that test until its bound is stated; an effect that calls a request function
+  directly fails it too.
+
 ## Architecture
 
 ### App shell
