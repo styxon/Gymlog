@@ -53,16 +53,40 @@ function buildScopedSlotId(templateId: string, templateSessionId: string, slotId
  * is dropped; an entry without its sets list is dropped too, since every
  * reader of an entry walks its sets.
  */
-/** A logged set as every reader of "last time" uses it: the three numbers. */
+/**
+ * A logged set as every reader of "last time" uses it: the three numbers, and
+ * a load somebody could have lifted. Finite was all it asked, so a 5122.5 kg
+ * set (the stuck dial of 2026-09-05) or a negative one stayed in this copy of
+ * the history after the database loader had dropped it, and the next session
+ * opened on it — the progression gate even stepped up from it (hunt,
+ * 2026-10-09). The same ceiling the dial and the database use.
+ */
 function isHistorySet(value: unknown): boolean {
   return (
     isObject(value) &&
     typeof value.setIndex === 'number' &&
     Number.isFinite(value.setIndex) &&
-    typeof value.loadKg === 'number' &&
-    Number.isFinite(value.loadKg) &&
+    isLiftableWeight(value.loadKg) &&
     typeof value.reps === 'number' &&
     Number.isFinite(value.reps)
+  );
+}
+
+/**
+ * An entry's own fields, as the readers of "last time" use them: a name they
+ * can trim and a date they can sort and print. A name that is there but not a
+ * string threw in the lookup ("name.trim is not a function") and took the
+ * player down; a date that is not one ranked as the oldest and then broke the
+ * card that printed it. An entry with no name at all is an older install's
+ * and stays (see entriesForLift).
+ */
+function isHistoryEntry(value: unknown): value is Record<string, unknown> & { sets: unknown[] } {
+  return (
+    isObject(value) &&
+    Array.isArray(value.sets) &&
+    (value.exerciseName === undefined || typeof value.exerciseName === 'string') &&
+    typeof value.performedAt === 'string' &&
+    Number.isFinite(Date.parse(value.performedAt))
   );
 }
 
@@ -131,7 +155,7 @@ function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'
       continue;
     }
     slots[slotId] = entries
-      .filter((entry): entry is Record<string, unknown> & { sets: unknown[] } => isObject(entry) && Array.isArray(entry.sets))
+      .filter(isHistoryEntry)
       // And every set in it: a list holding `null`, or a set without its
       // numbers, reached `set.loadKg` in the "last time" lookup and took
       // down every lift of that name (recheck of #221, 2026-09-28).

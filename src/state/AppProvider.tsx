@@ -29,7 +29,7 @@ import {
   PersistCompletedWorkoutInput,
   SessionSaveSummary,
 } from './completedWorkoutPersistence';
-import type { HevyImportedWorkout } from '../lib/hevyImport';
+import { HevyImportedWorkout, hevySessionId } from '../lib/hevyImport';
 import { planIdsHoldingTemplate, stopProgramme } from '../lib/runningProgrammes';
 import {
   getBodyweightProgress,
@@ -188,7 +188,7 @@ interface AppContextValue {
    */
   importWorkoutHistory: (
     workouts: HevyImportedWorkout[],
-  ) => Promise<{ imported: number; duplicates: number }>;
+  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[] }>;
   saveCardioSession: (input: {
     activityType: CardioActivityType;
     startedAt: string;
@@ -1307,9 +1307,8 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       // quadratic and froze the app, #bugs). Duplicate counting, the "already
       // existed" number and every field below are unchanged.
       const inputs: PersistCompletedWorkoutInput[] = workouts.map((workout) => {
-        const startedMs = Date.parse(workout.startedAt);
         return {
-          sessionId: `hevy_${startedMs}`,
+          sessionId: hevySessionId(workout),
           // Not a template that exists, and does not need to be: ready
           // programme sessions reference ids outside the database too, and
           // every history surface reads the snapshots.
@@ -1345,7 +1344,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       if (result.imported > 0) {
         await commit(result.database);
       }
-      return { imported: result.imported, duplicates: result.duplicates };
+      // The ids the database now holds, so the caller can file the same
+      // sessions as "last time" (lib/hevyImport hevyWorkoutsToLoggedSessions).
+      return { imported: result.imported, duplicates: result.duplicates, sessionIds: result.sessionIds };
     });
   }
 

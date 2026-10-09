@@ -132,7 +132,7 @@ module.exports = [
         path.join(__dirname, '..', '..', 'src', 'features', 'workout', 'workoutState.ts'),
         'utf8',
       );
-      assert.match(stateSource, /const latest = selectLatestUsableEntry\(entries\)/);
+      assert.match(stateSource, /const latest = selectLatestUsableEntry\(entries, nowMs\)/);
     },
   },
   {

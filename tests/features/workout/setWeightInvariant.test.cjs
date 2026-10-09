@@ -534,9 +534,17 @@ function runSequence(seed, steps) {
     log.push(`complete session at ${performedAt}`);
     const preExercises = current.activeSession.exercises;
     const { splitExerciseByLift } = require('../../../.test-dist/lib/liftSegments.js');
+    // A segment is filed when it has something to say: a completed set, an
+    // explicit skip (the slot's current lift only), or the slot's warm-ups on
+    // its first lift. A lift left pending files nothing (hunt, 2026-10-09).
     const expectedSegments = preExercises.map((exercise) => ({
       slotId: exercise.slotId,
-      segments: splitExerciseByLift(exercise),
+      segments: splitExerciseByLift(exercise).filter(
+        (segment, segmentIndex) =>
+          segment.sets.some((set) => set.status === 'completed' && typeof set.actualLoadKg === 'number' && typeof set.actualReps === 'number') ||
+          (segment.current && exercise.status === 'skipped') ||
+          (segmentIndex === 0 && (exercise.warmups ?? []).length > 0),
+      ),
     }));
 
     const finished = workoutReducer(current, { type: 'session/finishWorkout', payload: { performedAt } });

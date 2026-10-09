@@ -84,6 +84,12 @@ export interface BatchImportResult {
   database: AppDatabase;
   imported: number;
   duplicates: number;
+  /**
+   * The inputs' session ids the returned database holds — written now or
+   * already there — so what is filed elsewhere (the workout store's "last
+   * time") names only sessions History has.
+   */
+  sessionIds: string[];
 }
 
 function createEmptySummary(): SessionSaveSummary {
@@ -336,12 +342,14 @@ export function persistCompletedWorkoutSessionsToDatabase(
   const seenSessionIds = new Set(database.workoutSessions.map((session) => session.id));
   const newSessions: WorkoutSession[] = [];
   const newLogs: ExerciseLog[] = [];
+  const sessionIds: string[] = [];
   let imported = 0;
   let duplicates = 0;
 
   for (const input of inputs) {
     if (seenSessionIds.has(input.sessionId)) {
       duplicates += 1;
+      sessionIds.push(input.sessionId);
       continue;
     }
     const record = buildCompletedWorkoutRecord(input, createIdFn);
@@ -350,17 +358,18 @@ export function persistCompletedWorkoutSessionsToDatabase(
       continue;
     }
     seenSessionIds.add(input.sessionId);
+    sessionIds.push(input.sessionId);
     newSessions.push(record.session);
     newLogs.push(...record.logs);
     imported += 1;
   }
 
   if (newSessions.length === 0) {
-    return { database, imported, duplicates };
+    return { database, imported, duplicates, sessionIds };
   }
 
   let nextDatabase = workoutSessionRepository.appendMany(database, newSessions);
   nextDatabase = exerciseLogRepository.appendMany(nextDatabase, newLogs);
 
-  return { database: nextDatabase, imported, duplicates };
+  return { database: nextDatabase, imported, duplicates, sessionIds };
 }

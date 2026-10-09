@@ -2328,6 +2328,7 @@ function VinhaApp() {
     teachExerciseName,
     upsertWorkoutTemplate,
     importWorkoutHistory,
+    recordLoggedWorkouts: workout.recordLoggedWorkouts,
     showToast,
     programLimitVisible,
     setProgramLimitVisible,

@@ -32,6 +32,20 @@ function parseTime(iso: string): number {
   return Number.isFinite(value) ? value : 0;
 }
 
+/**
+ * Where an entry ranks for "the newest": its time, unless that time is still
+ * ahead of now. A session saved while the phone's clock ran ahead was "last
+ * time" until its date came round, over every real session after it — the
+ * prefill and the card both opened on it for months (hunt, 2026-10-09). It
+ * ranks below every session dated up to now instead, as the progression gate
+ * already treats one (progressionGate, "Not in the future either"). Without a
+ * now, the time alone.
+ */
+function rankTime(iso: string, nowMs: number | undefined): number {
+  const time = parseTime(iso);
+  return typeof nowMs === 'number' && Number.isFinite(nowMs) && time > nowMs ? -1 : time;
+}
+
 function heaviestLoadKg(entry: WorkoutSlotHistoryEntry): number {
   return entry.sets.reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
@@ -52,6 +66,8 @@ export interface NamedHistoryOptions {
    * `entryMatchesRepWindow`.
    */
   repWindow?: RepWindow | null;
+  /** The present, so an entry dated after it does not count as the newest. See rankTime. */
+  nowMs?: number;
 }
 
 /**
@@ -85,7 +101,7 @@ export function findLatestEntryForExerciseName(
       if (!entryMatchesRepWindow(entry, options.repWindow)) {
         return;
       }
-      const time = parseTime(entry.performedAt);
+      const time = rankTime(entry.performedAt, options.nowMs);
       if (time > bestTime) {
         best = entry;
         bestTime = time;
@@ -193,6 +209,38 @@ export function isUsableEntry(entry: WorkoutSlotHistoryEntry | null | undefined)
   return Boolean(entry) && !entry!.skipped && entry!.sets.length > 0;
 }
 
+/** How many sessions a slot keeps, newest first. */
+export const SLOT_HISTORY_LIMIT = 10;
+
+/**
+ * A slot's entries, newest first, cut to the cap — without cutting away any
+ * lift's last real session.
+ *
+ * The cap counted positions, and a skipped day takes a position like a real
+ * one. A lift skipped ten times in a row on its day lost the session it was
+ * last done in, and opened blank with no "Last time" although the database
+ * still held it (hunt, 2026-10-09). So each lift's newest usable entry stays
+ * past the cap until a newer one replaces it: the list holds at most one
+ * extra entry per lift the slot has held.
+ */
+export function capSlotEntries(
+  entries: readonly WorkoutSlotHistoryEntry[],
+  limit: number = SLOT_HISTORY_LIMIT,
+): WorkoutSlotHistoryEntry[] {
+  const kept = entries.slice(0, limit);
+  const answered = new Set(
+    kept.filter(isUsableEntry).map((entry) => normalizeExerciseName(entry.exerciseName ?? '')),
+  );
+  entries.slice(limit).forEach((entry) => {
+    const name = normalizeExerciseName(entry.exerciseName ?? '');
+    if (isUsableEntry(entry) && !answered.has(name)) {
+      kept.push(entry);
+      answered.add(name);
+    }
+  });
+  return kept;
+}
+
 /**
  * A slot's entries that were this lift.
  *
@@ -229,6 +277,7 @@ export function entriesForLift(
  */
 export function selectLatestUsableEntry(
   entries: readonly WorkoutSlotHistoryEntry[] | null | undefined,
+  nowMs?: number,
 ): WorkoutSlotHistoryEntry | null {
   let best: WorkoutSlotHistoryEntry | null = null;
   let bestTime = -Infinity;
@@ -236,7 +285,7 @@ export function selectLatestUsableEntry(
     if (!isUsableEntry(entry)) {
       return;
     }
-    const time = parseTime(entry.performedAt);
+    const time = rankTime(entry.performedAt, nowMs);
     if (time > bestTime) {
       best = entry;
       bestTime = time;
@@ -256,6 +305,8 @@ export interface LastTimeQuery {
   requireLoaded?: boolean;
   /** Null for lifts where the prescription does not gate the borrow. */
   repWindow?: RepWindow | null;
+  /** The present: an entry dated after it is not the newest (rankTime). */
+  nowMs?: number;
 }
 
 export interface ResolvedLastTime {
@@ -284,12 +335,21 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   // The scoped key is this day's own history, and it is never gated: whatever
   // reps were done here last time, they were done HERE.
   // …as long as it was THIS lift. See entriesForLift.
-  const scoped = selectLatestUsableEntry(entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName));
+  const scoped = selectLatestUsableEntry(
+    entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName),
+    query.nowMs,
+  );
   if (scoped) {
     return { entry: scoped, borrowed: false };
   }
 
-  const legacy = selectLegacySlotEntry(query.slotHistory, query.templateSlotId, query.repWindow, query.exerciseName);
+  const legacy = selectLegacySlotEntry(
+    query.slotHistory,
+    query.templateSlotId,
+    query.repWindow,
+    query.exerciseName,
+    query.nowMs,
+  );
   if (legacy) {
     return { entry: legacy, borrowed: false };
   }
@@ -297,6 +357,7 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   const borrowed = findLatestEntryForExerciseName(query.slotHistory, query.exerciseName, {
     requireLoaded: query.requireLoaded,
     repWindow: query.repWindow,
+    nowMs: query.nowMs,
   });
   return borrowed ? { entry: borrowed, borrowed: true } : null;
 }
@@ -316,11 +377,12 @@ export function selectLegacySlotEntry(
   templateSlotId: string | null | undefined,
   repWindow: RepWindow | null | undefined,
   exerciseName?: string | null,
+  nowMs?: number,
 ): WorkoutSlotHistoryEntry | null {
   if (!templateSlotId) {
     return null;
   }
-  const latest = selectLatestUsableEntry(entriesForLift(slotHistory?.[templateSlotId], exerciseName));
+  const latest = selectLatestUsableEntry(entriesForLift(slotHistory?.[templateSlotId], exerciseName), nowMs);
   if (!latest || !entryMatchesRepWindow(latest, repWindow)) {
     return null;
   }

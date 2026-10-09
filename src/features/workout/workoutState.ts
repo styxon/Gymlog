@@ -35,12 +35,14 @@ import {
   splitExerciseByLift,
 } from '../../lib/liftSegments';
 import {
+  capSlotEntries,
   entriesForLift,
   findHistoricalSetForIndex,
   findLatestEntryForExerciseName,
   RepWindow,
   selectLatestUsableEntry,
   selectLegacySlotEntry,
+  SLOT_HISTORY_LIMIT,
 } from '../../lib/exerciseHistoryLookup';
 
 export interface WorkoutFeatureState {
@@ -52,6 +54,17 @@ export interface WorkoutFeatureState {
   /** A freestyle session in flight; see FreestyleDraftSnapshot. */
   freestyleDraft: FreestyleDraftSnapshot | null;
   completionSummary: WorkoutSessionSummary | null;
+}
+
+/** A session logged outside the guided player, as its history files it. */
+export interface LoggedHistorySession {
+  performedAt: string;
+  sessionId: string;
+  templateName: string;
+  exercises: Array<{
+    exerciseName: string;
+    sets: Array<{ setIndex: number; loadKg: number; reps: number; completedAt?: string | null }>;
+  }>;
 }
 
 export type WorkoutAction =
@@ -127,18 +140,13 @@ export type WorkoutAction =
    * database all along. The named lookup already reads across every slot, so
    * this only has to put the entry somewhere.
    */
-  | {
-      type: 'history/recordLogged';
-      payload: {
-        performedAt: string;
-        sessionId: string;
-        templateName: string;
-        exercises: Array<{
-          exerciseName: string;
-          sets: Array<{ setIndex: number; loadKg: number; reps: number; completedAt?: string | null }>;
-        }>;
-      };
-    }
+  | { type: 'history/recordLogged'; payload: LoggedHistorySession }
+  /**
+   * Many logged sessions at once: a history import. One action, not one per
+   * session — each pass copies the whole slot history, and a multi-year
+   * import dispatched once per workout was quadratic again.
+   */
+  | { type: 'history/recordLoggedMany'; payload: { sessions: LoggedHistorySession[] } }
   /**
    * A saved workout the reader deleted, taken out of what the next session
    * reads. Deleting in History removed the session and its logs from the
@@ -268,17 +276,18 @@ function getHistoryEntries(
   templateSlotId: string | undefined,
   legacyRepWindow: RepWindow | null | undefined,
   exerciseName: string,
+  nowMs?: number,
 ) {
   // Only the entries that were this lift: a swap writes under the same slot id
   // (see entriesForLift).
   const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName);
   // Something real under the scoped key: that is the answer. A key holding
   // only skipped days is not — it says the lift did not happen here.
-  if (selectLatestUsableEntry(scopedEntries) || !templateSlotId) {
+  if (selectLatestUsableEntry(scopedEntries, nowMs) || !templateSlotId) {
     return scopedEntries;
   }
 
-  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName);
+  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs);
   return legacy ? entriesForLift(history.slotHistory[templateSlotId], exerciseName) : scopedEntries;
 }
 
@@ -400,6 +409,8 @@ function findCurrentLiftEntry(
   const pendingSets = exercise.sets.filter((set) => set.status === 'pending');
   const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
     requireLoaded: !isUnloadedTrackingMode(exercise.trackingMode),
+    // A session dated ahead by a wrong clock is not the newest (rankTime).
+    nowMs: Date.now(),
     // Same gate as the session's own prefill: the swapped-in lift's weight
     // only carries over from sessions run at reps this slot is asking for.
     // Asked of the sets still ahead: a set logged before the swap carries
@@ -490,6 +501,8 @@ function resolveNamedHistoryDraft(
     // no load to get wrong on bodyweight work, and refusing the borrow there
     // would hide a real "last time" for nothing.
     repWindow: resolveBorrowRepWindow(exercise),
+    // A session dated ahead by a wrong clock is not the newest (rankTime).
+    nowMs: options.nowMs ?? Date.now(),
   });
   // Working sets only, numbered as done: set 1 reads the first working set,
   // not a warm-up logged before it (lib/warmupSets).
@@ -552,12 +565,13 @@ function resolveHistoricalSetDraft(
 ): ResolvedSetDraft {
   // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
   // an ordinary set neither seeds set 1 nor climbs with the work.
-  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName)
+  const nowMs = options.nowMs ?? Date.now();
+  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs)
     .map((entry) => toWorkingHistoryEntry(entry, exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
-  const latest = selectLatestUsableEntry(entries);
+  const latest = selectLatestUsableEntry(entries, nowMs);
   const matched = findHistoricalSetForIndex(latest, setIndex);
 
   if (!matched) {
@@ -1899,46 +1913,17 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
      * recorded again, and two entries of one session ate the ten-entry cap and
      * doubled it in the progression gate.
      */
-    case 'history/recordLogged': {
-      const { performedAt, sessionId, templateName, exercises } = action.payload;
-      const slotHistory: WorkoutHistoryStore['slotHistory'] = {};
-      Object.entries(state.history.slotHistory).forEach(([key, entries]) => {
-        slotHistory[key] = key.startsWith('logged:') ? entries.filter((item) => item.sessionId !== sessionId) : entries;
-      });
+    case 'history/recordLogged':
+      return { ...state, history: { ...state.history, slotHistory: fileLoggedSessions(state.history.slotHistory, [action.payload]) } };
 
-      exercises.forEach((exercise) => {
-        const name = exercise.exerciseName?.trim();
-        // A row with no sets is an exercise that was listed and not done. It
-        // is not a weight, and prefilling from it would open the next session
-        // on nothing while claiming a source.
-        if (!name || exercise.sets.length === 0) {
-          return;
-        }
-        // Keyed by the lift, not by a slot it never had. The named lookup
-        // reads across every key, so this only has to be stable and its own.
-        const slotId = `logged:${name.toLowerCase()}`;
-        const entry: WorkoutSlotHistoryEntry = {
-          slotId,
-          templateId: '',
-          templateName,
-          exerciseName: name,
-          substitutionGroup: '',
-          performedAt,
-          sessionId,
-          sets: exercise.sets.map((set) => ({
-            setIndex: set.setIndex,
-            loadKg: set.loadKg,
-            reps: set.reps,
-            completedAt: set.completedAt ?? performedAt,
-            effort: null,
-          })),
-          skipped: false,
-        };
-        slotHistory[slotId] = [entry, ...(slotHistory[slotId] ?? [])].slice(0, 10);
-      });
-
-      return { ...state, history: { ...state.history, slotHistory } };
-    }
+    case 'history/recordLoggedMany':
+      if (action.payload.sessions.length === 0) {
+        return state;
+      }
+      return {
+        ...state,
+        history: { ...state.history, slotHistory: fileLoggedSessions(state.history.slotHistory, action.payload.sessions) },
+      };
 
     case 'history/forgetSession': {
       const { sessionId } = action.payload;
@@ -2482,6 +2467,75 @@ function loweredTargetOf(segment: { sets: WorkoutSetInstance[] }) {
   return { targetReps: target };
 }
 
+/**
+ * Logged sessions (see 'history/recordLogged'), filed under their lifts.
+ *
+ * Each lift's list is put in date order before the cap, not just prepended
+ * to: a freestyle finish is the newest thing there, but an imported history
+ * is years of sessions older than what the reader has logged since, and
+ * prepending them would have let a 2023 bench stand in front of last week's
+ * (hunt, 2026-10-09). A session already filed is filed again rather than
+ * twice, so a board saved again or a file imported again changes nothing.
+ */
+function fileLoggedSessions(
+  current: WorkoutHistoryStore['slotHistory'],
+  sessions: readonly LoggedHistorySession[],
+): WorkoutHistoryStore['slotHistory'] {
+  const sessionIds = new Set(sessions.map((session) => session.sessionId));
+  const slotHistory: WorkoutHistoryStore['slotHistory'] = {};
+  Object.entries(current).forEach(([key, entries]) => {
+    slotHistory[key] = key.startsWith('logged:') ? entries.filter((item) => !sessionIds.has(item.sessionId)) : entries;
+  });
+
+  const touched = new Set<string>();
+  sessions.forEach(({ performedAt, sessionId, templateName, exercises }) => {
+    exercises.forEach((exercise) => {
+      const name = exercise.exerciseName?.trim();
+      // A row with no sets is an exercise that was listed and not done. It
+      // is not a weight, and prefilling from it would open the next session
+      // on nothing while claiming a source.
+      if (!name || exercise.sets.length === 0) {
+        return;
+      }
+      // Keyed by the lift, not by a slot it never had. The named lookup
+      // reads across every key, so this only has to be stable and its own.
+      const slotId = `logged:${name.toLowerCase()}`;
+      const entry: WorkoutSlotHistoryEntry = {
+        slotId,
+        templateId: '',
+        templateName,
+        exerciseName: name,
+        substitutionGroup: '',
+        performedAt,
+        sessionId,
+        sets: exercise.sets.map((set) => ({
+          setIndex: set.setIndex,
+          loadKg: set.loadKg,
+          reps: set.reps,
+          completedAt: set.completedAt ?? performedAt,
+          effort: null,
+        })),
+        skipped: false,
+      };
+      slotHistory[slotId] = [entry, ...(slotHistory[slotId] ?? [])];
+      touched.add(slotId);
+    });
+  });
+
+  // Newest first by date — stable, so entries of one moment keep the order
+  // they were filed in — then cut once per lift.
+  const timeOf = (entry: WorkoutSlotHistoryEntry) => {
+    const value = Date.parse(entry.performedAt);
+    return Number.isFinite(value) ? value : 0;
+  };
+  touched.forEach((slotId) => {
+    slotHistory[slotId] = [...slotHistory[slotId]]
+      .sort((left, right) => timeOf(right) - timeOf(left))
+      .slice(0, SLOT_HISTORY_LIMIT);
+  });
+  return slotHistory;
+}
+
 export function completeWorkoutSession(state: WorkoutFeatureState, performedAt = new Date().toISOString()) {
   if (!state.activeSession) {
     return state;
@@ -2509,7 +2563,7 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
     // lift's history, not the new one's, and the next session of either lift
     // opens on what that lift actually did (lib/liftSegments).
     const warmups = (exercise.warmups ?? []).map(({ loadKg, reps }) => ({ loadKg, reps }));
-    const entries = splitExerciseByLift(exercise).map((segment, segmentIndex): WorkoutSlotHistoryEntry => ({
+    const filed = splitExerciseByLift(exercise).map((segment, segmentIndex): WorkoutSlotHistoryEntry => ({
       slotId: exercise.slotId,
       templateId: session.templateId,
       templateName: session.templateName,
@@ -2535,9 +2589,19 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // the slot started as: the first segment.
       ...(segmentIndex === 0 && warmups.length > 0 ? { warmups } : {}),
     }));
+    // A lift still pending at Finish was not done, and not skipped either: it
+    // has nothing to file. Filed, it wrote an entry with no sets every time,
+    // and ten finishes with an accessory left untouched pushed its last real
+    // session out of the cap — it opened blank, with no "Last time" (hunt,
+    // 2026-10-09). A skip is a decision the progression gate reads, and a
+    // warm-up was done, so those stay.
+    const entries = filed.filter((entry) => entry.sets.length > 0 || entry.skipped || entry.warmups !== undefined);
+    if (entries.length === 0) {
+      return;
+    }
 
     // Newest first, like the list it joins: the lift the slot ended on leads.
-    slotHistory[exercise.slotId] = [...entries.reverse(), ...(slotHistory[exercise.slotId] ?? [])].slice(0, 10);
+    slotHistory[exercise.slotId] = capSlotEntries([...entries.reverse(), ...(slotHistory[exercise.slotId] ?? [])]);
   });
 
   return {

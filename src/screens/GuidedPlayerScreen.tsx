@@ -2407,6 +2407,8 @@ function GuidedPlayer({
         exerciseName,
         requireLoaded: instance ? !isUnloadedTrackingMode(instance.trackingMode) : false,
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
+        // As the prefill reads it: a session dated ahead of now is not the newest.
+        nowMs: Date.now(),
       });
       const found = resolved?.entry ?? null;
       if (!found) {

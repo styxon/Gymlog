@@ -162,8 +162,8 @@ module.exports = [
           lastSelectedTemplateId: null,
           slotHistory: {
             [SLOT]: [
-              { slotId: SLOT, sets: [{ setIndex: 0, loadKg: 60, reps: 8 }], warmups: [{ loadKg: 40, reps: 10 }, { loadKg: 9999, reps: 1 }] },
-              { slotId: SLOT, sets: [{ setIndex: 0, loadKg: 60, reps: 8 }], warmups: 'junk' },
+              { slotId: SLOT, performedAt: '2026-10-01T10:00:00.000Z', sets: [{ setIndex: 0, loadKg: 60, reps: 8 }], warmups: [{ loadKg: 40, reps: 10 }, { loadKg: 9999, reps: 1 }] },
+              { slotId: SLOT, performedAt: '2026-09-28T10:00:00.000Z', sets: [{ setIndex: 0, loadKg: 60, reps: 8 }], warmups: 'junk' },
             ],
           },
         },

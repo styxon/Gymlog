@@ -286,6 +286,8 @@ const suites = [
   ...require('./lib/programImageImport.test.cjs'),
   ...require('./lib/recordWindow.test.cjs'),
   ...require('./lib/exerciseSetLog.test.cjs'),
+  ...require('./lib/slotHistoryLastTime.test.cjs'),
+  ...require('./lib/hevyImportLastTime.test.cjs'),
   ...require('./lib/logRecordedWork.test.cjs'),
   ...require('./lib/authoredProgramCount.test.cjs'),
   ...require('./lib/uncalledExports.test.cjs'),

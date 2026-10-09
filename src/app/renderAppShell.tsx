@@ -9,6 +9,7 @@ import { RateAppSheet } from '../components/RateAppSheet';
 import { ThemeChoiceDialog } from '../components/ThemeChoiceDialog';
 import { AppUpdateDialog } from '../features/appUpdate/AppUpdateDialog';
 import { ServerNoticeDialog } from '../features/serverNotice/ServerNoticeDialog';
+import { hevyWorkoutsToLoggedSessions, HevyLoggedSession } from '../lib/hevyImport';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { ProgramSlots } from '../lib/programSlots';
@@ -65,7 +66,9 @@ export interface AppShellDeps {
   upsertWorkoutTemplate: (draft: WorkoutTemplateDraft) => Promise<string>;
   importWorkoutHistory: (
     workouts: Parameters<NonNullable<SettingsImportSheetProps['onImportHistory']>>[0]['workouts'],
-  ) => Promise<{ imported: number; duplicates: number }>;
+  ) => Promise<{ imported: number; duplicates: number; sessionIds: string[] }>;
+  /** The workout store's bulk filing, so imported lifts open on their last time. */
+  recordLoggedWorkouts: (sessions: HevyLoggedSession[]) => void;
   showToast: (message: string) => void;
   programLimitVisible: boolean;
   setProgramLimitVisible: React.Dispatch<React.SetStateAction<boolean>>;
@@ -111,6 +114,7 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
     teachExerciseName,
     upsertWorkoutTemplate,
     importWorkoutHistory,
+    recordLoggedWorkouts,
     showToast,
     programLimitVisible,
     setProgramLimitVisible,
@@ -263,6 +267,12 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
             console.error('Failed to import workout history', error);
             throw error;
           }
+          // The database has them; the weight a set opens on and its "Last
+          // time" card read the workout store, which the import never wrote
+          // (hunt, 2026-10-09). Every workout the database now holds, those
+          // it already had included, so importing the file again mends an
+          // import made before this.
+          recordLoggedWorkouts(hevyWorkoutsToLoggedSessions(preview.workouts, new Set(result.sessionIds)));
           setSettingsImportVisible(false);
           showToast(
             t(

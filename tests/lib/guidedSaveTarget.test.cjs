@@ -305,8 +305,11 @@ module.exports = [
       state = workoutReducer(state, { type: 'session/adoptSessionId', payload: { sessionId: 'session_b' } });
       assert.equal(state.activeSession.sessionId, 'session_b');
       assert.deepEqual({ ...state.activeSession, sessionId: before.sessionId }, before, 'nothing else about the session moved');
-      state = workoutReducer(state, { type: 'set/updateDraft', payload: { slotId: 'press', setIndex: 0, patch: { loadText: '80', repsText: '8' } } });
-      state = workoutReducer(state, { type: 'set/complete', payload: { slotId: 'press', setIndex: 0, nowMs: Date.now(), unitPreference: 'kg' } });
+      // The session's own slot id (scoped by template and day), so the set is
+      // really logged: a lift left pending files no history entry.
+      const slotId = before.exercises[0].slotId;
+      state = workoutReducer(state, { type: 'set/updateDraft', payload: { slotId, setIndex: 0, patch: { loadText: '80', repsText: '8' } } });
+      state = workoutReducer(state, { type: 'set/complete', payload: { slotId, setIndex: 0, nowMs: Date.now(), unitPreference: 'kg' } });
       state = workoutReducer(state, { type: 'session/finishWorkout', payload: { performedAt: '2026-10-03T10:00:00.000Z' } });
       assert.equal(state.history.sessions[0].sessionId, 'session_b', 'the history is stamped with the adopted id');
       assert.equal(Object.values(state.history.slotHistory).flat()[0].sessionId, 'session_b');
