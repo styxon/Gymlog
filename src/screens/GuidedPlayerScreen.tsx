@@ -176,6 +176,13 @@ import {
   WorkoutExerciseInstance,
 } from '../features/workout/workoutTypes';
 
+// A bundled picture carries its own pixel size, and React Native uses it
+// as the Image's default width and height, which absoluteFill's edges do not
+// override: the picture drew at full size from the corner and was cropped to
+// its top-left (#bugs 2026-10-09). A remote uri had no size, so this never
+// showed before the pictures were bundled.
+const FILL_SIZE = { width: '100%', height: '100%' } as const;
+
 /**
  * Duotone ramps: where black lands, and where white lands. Light theme keeps
  * the photo airy so it sits on the lilac surface; dark theme keeps it deep so
@@ -5722,7 +5729,7 @@ function SetStepView({
           <View style={styles.setExerciseTop}>
             <View style={styles.setExerciseThumb}>
               {thumbSource ? (
-                <Image source={thumbSource} style={StyleSheet.absoluteFill} resizeMode="cover" />
+                <Image source={thumbSource} style={[StyleSheet.absoluteFill, FILL_SIZE]} resizeMode="cover" />
               ) : (
                 <Text style={styles.setExerciseInitials}>{panels?.initials ?? ''}</Text>
               )}

@@ -108,11 +108,28 @@ function FilterPillGroup<T extends string>({
   onSelect,
 }: FilterPillGroupProps<T>) {
   const styles = useThemedStyles(makeStyles);
+  const rowRef = useRef<ScrollView>(null);
+  const revealed = useRef(false);
+  // A filter chosen before the sheet opened (Swap preselects the lift's body
+  // part) can sit past the right edge; bring it into view once, on open.
+  const revealActive = (x: number) => {
+    if (revealed.current) return;
+    revealed.current = true;
+    if (x > 0) rowRef.current?.scrollTo({ x: Math.max(0, x - spacing.md), animated: false });
+  };
 
   return (
     <View style={styles.filterGroup}>
       <Text style={styles.filterTitle}>{title}</Text>
-      <View style={styles.filterRow}>
+      {/* One row that scrolls sideways: wrapped, the three groups filled the
+          sheet and pushed the exercises below the fold (#bugs 2026-10-09). */}
+      <ScrollView
+        ref={rowRef}
+        horizontal
+        keyboardShouldPersistTaps="handled"
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterRow}
+      >
         {options.map((option) => {
           const active = option === selected;
           return (
@@ -122,6 +139,7 @@ function FilterPillGroup<T extends string>({
               accessibilityState={{ selected: active }}
               hitSlop={PILL_SLOP}
               onPress={() => onSelect(option)}
+              onLayout={active ? (event) => revealActive(event.nativeEvent.layout.x) : undefined}
               style={[styles.filterPill, active && styles.filterPillActive]}
             >
               <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
@@ -130,7 +148,7 @@ function FilterPillGroup<T extends string>({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -975,8 +993,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // rows (10) is wider than two slops, so they never overlap.
   filterRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.sm,
+    paddingRight: spacing.md,
     paddingVertical: PILL_SLOP.top,
     marginVertical: -PILL_SLOP.top,
   },
