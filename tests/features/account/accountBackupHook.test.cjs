@@ -1860,4 +1860,37 @@ module.exports = [
       }
     },
   },
+  {
+    // Review of #346: the hourly budget was spent when a look was taken, so
+    // looks that stopped before the network (automatic backup paused) used up
+    // the slots a real backup needed.
+    name: 'account hook: looks that stop before the network do not spend the automatic backup\'s hourly budget',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const realNow = Date.now;
+      let now = 1_900_000_000_000;
+      Date.now = () => now;
+      try {
+        await withHook({ local, stored: syncedAccount(local, { autoBackupPaused: true }), cloud: cloudCopy(local) }, async (env) => {
+          for (let round = 0; round < 90; round += 1) {
+            now += QUIET_MS;
+            await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: `p${round}` } }));
+            await env.advance(QUIET_MS);
+          }
+          assert.equal(env.calls.upload, 0, 'a paused automatic backup uploaded');
+          assert.equal(env.calls.download, 0, 'and looked at the cloud copy');
+
+          // The reader lifts the pause with a backup of their own; the next edit is backed up at once.
+          assert.equal((await env.api.backUpOrAsk()).kind, 'backed_up');
+          const uploads = env.calls.upload;
+          now += QUIET_MS;
+          await env.edit((db) => ({ ...db, preferences: { ...db.preferences, profileName: 'after' } }));
+          await env.advance(QUIET_MS);
+          assert.equal(env.calls.upload, uploads + 1, 'ninety no-op looks had used up the budget');
+        });
+      } finally {
+        Date.now = realNow;
+      }
+    },
+  },
 ];

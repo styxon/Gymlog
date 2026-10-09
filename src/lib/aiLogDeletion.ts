@@ -115,6 +115,9 @@ export function withoutOwedCoachLog<T extends CoachLogFields>(preferences: T): T
   };
 }
 
+/** How one label's delete ended: gone and final, confirmed but not yet final, or not confirmed at all. */
+type AiLogDeleteOutcome = 'deleted' | 'unsettled' | 'refused';
+
 export interface AiLogDeletionRunnerOptions {
   /**
    * Whether this build can reach the coach server with its key. A build that
@@ -147,27 +150,27 @@ export interface AiLogDeletionRunnerOptions {
  * whether its own label went.
  */
 export function createAiLogDeletionRunner(options: AiLogDeletionRunnerOptions) {
-  const inFlight = new Map<string, Promise<boolean>>();
+  const inFlight = new Map<string, Promise<AiLogDeleteOutcome>>();
 
-  const deleteOne = (logId: string): Promise<boolean> => {
+  const deleteOne = (logId: string): Promise<AiLogDeleteOutcome> => {
     const running = inFlight.get(logId);
     if (running) {
       return running;
     }
-    const attempt = (async () => {
+    const attempt = (async (): Promise<AiLogDeleteOutcome> => {
       const sentAt = (options.now ?? Date.now)();
       try {
         const answer = await options.forget(logId);
         if (!answer.ok) {
-          return false;
+          return 'refused';
         }
       } catch {
-        return false;
+        return 'refused';
       }
       if (aiLogDeleteSettlesAt(options.lastCarriedAt?.(logId) ?? null, sentAt) !== null) {
         // Everything that was there is gone, but a copy may still be on its
         // way: owed until a delete sent after it has landed says so.
-        return false;
+        return 'unsettled';
       }
       try {
         await options.onDeleted([logId]);
@@ -175,7 +178,7 @@ export function createAiLogDeletionRunner(options: AiLogDeletionRunnerOptions) {
         // The copies are gone; only the note of it failed to save. The label
         // stays owed, and the next retry's delete finds nothing and succeeds.
       }
-      return true;
+      return 'deleted';
     })().finally(() => {
       inFlight.delete(logId);
     });
@@ -183,12 +186,27 @@ export function createAiLogDeletionRunner(options: AiLogDeletionRunnerOptions) {
     return attempt;
   };
 
-  return async function run(labels: readonly string[]): Promise<string[]> {
+  /**
+   * Like `run`, but says why a label is still owed: `refused` - the request
+   * failed or the server said no, which is what a retry backoff is for - or
+   * `unsettled` - the server confirmed, and the label waits out its write
+   * window, which is not a failure.
+   */
+  async function runDetailed(labels: readonly string[]): Promise<{ owed: string[]; refused: string[] }> {
     if (!options.live) {
-      return [];
+      return { owed: [], refused: [] };
     }
     const unique = normalizePendingAiLogDeletions(labels);
     const results = await Promise.all(unique.map(deleteOne));
-    return unique.filter((_, index) => !results[index]);
-  };
+    return {
+      owed: unique.filter((_, index) => results[index] !== 'deleted'),
+      refused: unique.filter((_, index) => results[index] === 'refused'),
+    };
+  }
+
+  async function run(labels: readonly string[]): Promise<string[]> {
+    return (await runDetailed(labels)).owed;
+  }
+
+  return Object.assign(run, { detailed: runDetailed });
 }

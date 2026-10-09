@@ -322,6 +322,9 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   accountRef.current = account;
   const phaseRef = useRef(phase);
   phaseRef.current = phase;
+  /** The automatic backup's starts, for its budget; and the look waiting for the budget to have room. */
+  const backupPacingRef = useRef<PacingState>(EMPTY_PACING);
+  const pacedLookTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Bumped by sign-out — and so by Reset, which signs out before it wipes.
@@ -1014,6 +1017,17 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       if (!available || !current) {
         return { kind: 'failed' };
       }
+      // The automatic backup's budget (lib/requestPacing) is spent when a
+      // request to our server is about to start, once per run - not when the
+      // run begins: a run that stops before the network (paused, offline, a
+      // question open) sends nothing and must not use up the hour's slots.
+      let slotSpent = false;
+      const spendAutoSlot = () => {
+        if (!interactive && !slotSpent) {
+          slotSpent = true;
+          backupPacingRef.current = notePacingSent(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
+        }
+      };
       if (pendingRestoreRef.current || pendingUploadRef.current) {
         // The reader has not answered restore-or-keep, or whether this phone's
         // data goes to this account, yet. An upload now would answer for them.
@@ -1070,6 +1084,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // restored, or — after a look — the one it has just read.
         let expectedVersion = current.cloudVersion;
         if (plan === 'look') {
+          spendAutoSlot();
           const remote = await screenSession(idToken, await downloadBackup(idToken), generation);
           ensureCurrent(generation);
           if (
@@ -1165,6 +1180,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
             return { kind: 'failed' };
           }
         }
+        spendAutoSlot();
         const uploaded = await uploadCurrent(idToken, current, generation, expectedVersion);
         if (uploaded === 'done') {
           // Landed without needing a yes (the check above held it otherwise):
@@ -1473,9 +1489,6 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   /** A look that came while another account operation ran; taken once that ends. */
   const lookWaitingRef = useRef(false);
   const lookRef = useRef<() => void>(() => undefined);
-  /** The automatic backup's starts, for its budget; and the look waiting for the budget to have room. */
-  const backupPacingRef = useRef<PacingState>(EMPTY_PACING);
-  const pacedLookTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(
     () => () => {
       if (pacedLookTimerRef.current) {
@@ -1513,7 +1526,6 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       }
       return;
     }
-    backupPacingRef.current = notePacingSent(backupPacingRef.current, AUTO_BACKUP_PACING, Date.now());
     void backupNowRef.current();
   };
 

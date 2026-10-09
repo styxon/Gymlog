@@ -347,4 +347,27 @@ module.exports = [
       assert.match(hook, /void run\(pendingRef\.current\);\s*\}\s*\}, at - Date\.now\(\) \+ SETTLE_MARGIN_MS\);/);
     },
   },
+  {
+    // Review of #346: the retry backoff counted a delete the server had
+    // confirmed, still inside its write window, as a failure.
+    name: 'aiLogDeletion: the runner tells a delete the server refused from one it confirmed that is not yet final',
+    async run() {
+      const { forget } = scriptedForget({ [A]: true, [B]: false });
+      const run = createAiLogDeletionRunner({
+        live: true,
+        forget,
+        onDeleted: async () => undefined,
+        // A's last request left the phone at 5 s: a delete sent at 10 s can still miss its copy.
+        lastCarriedAt: (logId) => (logId === A ? 5_000 : null),
+        now: () => 10_000,
+      });
+      const result = await run.detailed([A, B]);
+      assert.deepEqual(result.owed, [A, B], 'both are still owed');
+      assert.deepEqual(result.refused, [B], 'but only B was refused');
+      assert.deepEqual(await run([A, B]), [A, B], 'run keeps answering with what is owed');
+
+      const idle = createAiLogDeletionRunner({ live: false, forget, onDeleted: async () => undefined });
+      assert.deepEqual(await idle.detailed([A]), { owed: [], refused: [] });
+    },
+  },
 ];

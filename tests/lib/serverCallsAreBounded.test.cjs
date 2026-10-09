@@ -48,6 +48,11 @@ const RATE_BOUNDS = ['once-per-launch', 'once-per-foreground', 'throttled', 'pac
 const ANALYTICS_GUARDS = [
   { file: 'src/features/analytics/analyticsClient.ts', text: 'ANALYTICS_FLUSH_PACING' },
   { file: 'src/features/analytics/analyticsClient.ts', text: 'pacingWaitMs(pacing' },
+  // Enforced where the request starts, not only in the delay that was armed.
+  { file: 'src/features/analytics/analyticsClient.ts', text: 'pacingWaitMs(pacing, ANALYTICS_FLUSH_PACING, Date.now()) > 0' },
+  { file: 'src/features/analytics/analyticsClient.ts', text: 'notePacingSent(pacing' },
+  // The failed batch is retried a bounded number of times, then left to the next event.
+  { file: 'src/features/analytics/analyticsClient.ts', text: 'MAX_SCHEDULED_RETRIES' },
   { file: 'src/features/analytics/analyticsClient.ts', text: 'notePacingOutcome(' },
   { file: 'src/features/analytics/analyticsClient.ts', text: 'FLUSH_DELAY_MS' },
   { file: 'src/features/analytics/analyticsClient.ts', text: 'takeBatch(' },
@@ -91,6 +96,7 @@ const ENTRY_POINTS = {
           { file: 'src/hooks/usePendingAiLogDeletions.ts', text: 'AI_LOG_RETRY_PACING' },
           { file: 'src/hooks/usePendingAiLogDeletions.ts', text: 'pacingWaitMs(pacingRef.current' },
           { file: 'src/hooks/usePendingAiLogDeletions.ts', text: 'notePacingOutcome(' },
+          { file: 'src/hooks/usePendingAiLogDeletions.ts', text: 'run.detailed(' },
           { file: 'src/lib/aiLogDeletion.ts', text: 'inFlight.get(logId)' },
           { file: 'src/lib/aiLogDeletion.ts', text: 'MAX_PENDING_AI_LOG_DELETIONS' },
         ],
@@ -146,6 +152,7 @@ const ENTRY_POINTS = {
           { file: 'src/features/account/useAccountBackup.ts', text: 'AUTO_BACKUP_QUIET_MS' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'AUTO_BACKUP_PACING' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'pacingWaitMs(backupPacingRef.current' },
+          { file: 'src/features/account/useAccountBackup.ts', text: 'notePacingSent(backupPacingRef.current' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'current.lastBackupFingerprint === accountBackupFingerprint(database, workoutHistory)' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'unseenCopyFoundRef.current' },
           // uploadCurrent's loop: one silent retry, a second refusal returns.
@@ -203,14 +210,14 @@ const ENTRY_POINTS = {
     ],
   },
   'src/features/analytics/analyticsClient.ts#trackEvent': {
-    trigger: 'any usage event or error report raised anywhere in the app - it only queues; a flush sends the queue',
-    bounds: ['batched', 'paced', 'debounced', 'in-flight-guard'],
+    trigger: 'any usage event or error report raised anywhere in the app - it only queues; a flush sends the queue, and a failed batch is retried after its backoff at most MAX_SCHEDULED_RETRIES times',
+    bounds: ['batched', 'paced', 'debounced', 'in-flight-guard', 'max-retries'],
     callers: 'internal',
     guards: ANALYTICS_GUARDS,
   },
   'src/features/analytics/analyticsClient.ts#setUsageStatisticsEnabled': {
     trigger: 'App.tsx hands the reader\'s Usage statistics switch over; turning it on lets the queue flush',
-    bounds: ['batched', 'paced', 'debounced', 'in-flight-guard'],
+    bounds: ['batched', 'paced', 'debounced', 'in-flight-guard', 'max-retries'],
     callers: 'internal',
     guards: ANALYTICS_GUARDS,
   },
@@ -614,6 +621,10 @@ module.exports = [
       const removals = [
         ['src/features/analytics/analyticsClient.ts', 'pacingWaitMs(pacing'],
         ['src/features/analytics/analyticsClient.ts', 'if (flushTimer)'],
+        ['src/features/analytics/analyticsClient.ts', 'MAX_SCHEDULED_RETRIES'],
+        ['src/features/analytics/analyticsClient.ts', 'pacingWaitMs(pacing, ANALYTICS_FLUSH_PACING, Date.now()) > 0'],
+        ['src/features/account/useAccountBackup.ts', 'notePacingSent(backupPacingRef.current'],
+        ['src/hooks/usePendingAiLogDeletions.ts', 'run.detailed('],
         ['src/features/account/useAccountBackup.ts', 'pacingWaitMs(backupPacingRef.current'],
         ['src/features/account/useAccountBackup.ts', 'if (attempt > 0)'],
         ['src/hooks/usePendingAiLogDeletions.ts', 'pacingWaitMs(pacingRef.current'],

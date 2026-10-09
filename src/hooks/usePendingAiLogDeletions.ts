@@ -83,11 +83,14 @@ export function usePendingAiLogDeletions(input: {
         return;
       }
       pacingRef.current = notePacingSent(pacingRef.current, AI_LOG_RETRY_PACING, Date.now());
-      const settle = (confirmed: boolean) => {
-        pacingRef.current = notePacingOutcome(pacingRef.current, confirmed, Date.now());
+      const settle = (answered: boolean) => {
+        pacingRef.current = notePacingOutcome(pacingRef.current, answered, Date.now());
       };
-      void run(pendingRef.current).then(
-        (stillOwed) => settle(stillOwed.length === 0),
+      // Only a request that failed or was refused is a failure that grows the
+      // backoff; a delete the server confirmed that is still inside its write
+      // window is owed, but it was answered.
+      void run.detailed(pendingRef.current).then(
+        (result) => settle(result.refused.length === 0),
         () => settle(false),
       );
     };

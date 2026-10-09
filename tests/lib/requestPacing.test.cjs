@@ -108,7 +108,24 @@ async function driveAnalytics(answers, work) {
       await flush();
       return armed[0].ms;
     }
-    await work({ step, fetched, clock });
+    /** The timers armed now, as {fn, ms}, taken off the list. */
+    const takeArmed = () => timers.splice(0);
+    /** Runs every armed timer after the clock has moved by the longest delay (or by `moveBy`). */
+    async function fire(moveBy) {
+      const armed = takeArmed();
+      if (armed.length === 0) {
+        return null;
+      }
+      const ms = Math.max(...armed.map((timer) => timer.ms));
+      clock.t += moveBy ?? ms;
+      for (const timer of armed) {
+        timer.fn();
+      }
+      await flush();
+      await flush();
+      return ms;
+    }
+    await work({ step, fetched, clock, fire, takeArmed, client });
     client.setUsageStatisticsEnabled(false);
   } finally {
     Date.now = saved.now;
@@ -222,6 +239,102 @@ module.exports = [
     },
   },
   {
+    // Review of #346: the delay scheduleFlush armed was the only enforcement,
+    // computed before an in-flight batch recorded its start.
+    name: 'analytics client: a flush that starts early or twice sends nothing before its pacing allows, and re-arms for the wait that is left',
+    async run() {
+      await driveAnalytics(
+        () => ACCEPTED,
+        async ({ step, fetched, fire, takeArmed, client }) => {
+          await step();
+          assert.equal(fetched.length, 1);
+
+          // A timer that fires with the clock where it was: not a minute gap later, no request.
+          client.trackEvent('app_open');
+          await flush();
+          await flush();
+          assert.equal(await fire(0), 5000);
+          assert.equal(fetched.length, 1, 'a flush that ran inside the minimum gap sent a batch');
+          const rearmed = takeArmed();
+          assert.equal(rearmed.length, 1, 'and it must be tried again');
+          assert.equal(rearmed[0].ms, 5000, 'for the wait that was left');
+
+          // Two flushes at the same moment: one batch.
+          const clockAfter = fetched.length;
+          const again = rearmed[0];
+          // (the clock moves on, then the same timer function is run twice in one turn)
+          again.fn();
+          again.fn();
+          await flush();
+          await flush();
+          assert.equal(fetched.length, clockAfter, 'still inside the gap: no batch');
+        },
+      );
+
+      // Two flushes racing for the same batch while the gap is open.
+      await driveAnalytics(
+        () => ACCEPTED,
+        async ({ fetched, fire, takeArmed, client, clock }) => {
+          client.trackEvent('app_open');
+          await flush();
+          await flush();
+          const [timer] = takeArmed();
+          clock.t += timer.ms;
+          timer.fn();
+          timer.fn();
+          await flush();
+          await flush();
+          assert.equal(fetched.length, 1, 'two flushes started in one turn sent two batches');
+          assert.equal(await fire(), null, 'nothing left to arm');
+        },
+      );
+    },
+  },
+  {
+    // Review of #346: after a failed batch nothing re-armed; events waited for
+    // the next tracked event, and a comment promised a foreground that is not there.
+    name: 'analytics client: a failed batch is retried after its backoff, a bounded number of times, then left to the next event',
+    async run() {
+      await driveAnalytics(
+        () => UNAVAILABLE,
+        async ({ step, fetched, fire, takeArmed, client }) => {
+          // One event, no more events after it.
+          assert.equal(await step(), 5000);
+          assert.equal(fetched.length, 1);
+          const delays = [];
+          for (let guard = 0; guard < 20; guard += 1) {
+            const ms = await fire();
+            if (ms === null) {
+              break;
+            }
+            delays.push(ms);
+          }
+          assert.equal(fetched.length, 5, `1 + 4 timer-driven retries, got ${fetched.length}`);
+          assert.deepEqual(delays.map((ms) => ms / MINUTE), [1, 2, 4, 8], 'each retry waits out the doubled backoff');
+          assert.equal(takeArmed().length, 0, 'and then it stops');
+
+          // The next tracked event is what starts it again.
+          client.trackEvent('app_open');
+          await flush();
+          await flush();
+          const [armed] = takeArmed();
+          assert.ok(armed && armed.ms >= 15 * MINUTE, 'at the backoff cap');
+        },
+      );
+
+      // A success in between ends the run of retries.
+      await driveAnalytics(
+        (call) => (call === 1 ? UNAVAILABLE : ACCEPTED),
+        async ({ step, fetched, fire, takeArmed }) => {
+          await step();
+          assert.equal(await fire(), MINUTE);
+          assert.equal(fetched.length, 2);
+          assert.equal(takeArmed().length, 0, 'sent: nothing more to retry');
+        },
+      );
+    },
+  },
+  {
     name: 'analytics client: an event raised in a loop for a day sends no more batches than the hourly budget',
     async run() {
       await driveAnalytics(
@@ -249,7 +362,7 @@ module.exports = [
       const A = '0123abcd-0000-4000-8000-00000000000a';
       const runtime = createHookRuntime();
       const listeners = new Set();
-      const answers = { forget: { ok: false, removed: 0 }, calls: 0 };
+      const answers = { forget: { ok: false, removed: 0 }, calls: 0, carriedAt: null };
       const realNow = Date.now;
       let now = 1_900_000_000_000;
       Date.now = () => now;
@@ -266,7 +379,7 @@ module.exports = [
           },
           '../lib/aiCoachClient': {
             isAiCoachLiveConfigured: () => true,
-            lastAiLogCarriedAt: () => null,
+            lastAiLogCarriedAt: () => answers.carriedAt,
             async forgetAiCoachLog() {
               answers.calls += 1;
               return answers.forget;
@@ -302,6 +415,24 @@ module.exports = [
         now += 30 * SECOND;
         await foreground();
         assert.equal(answers.calls, 3);
+
+        // A delete the server confirmed that is still inside its write window
+        // is owed, but it was answered: it does not grow the backoff.
+        // (Review of #346.)
+        answers.forget = { ok: true, removed: 1 };
+        now += 20 * MINUTE;
+        answers.carriedAt = now - 10 * SECOND;
+        const beforeUnsettled = answers.calls;
+        await foreground();
+        assert.equal(answers.calls, beforeUnsettled + 1);
+        now += 2 * SECOND;
+        answers.carriedAt = now - 5 * SECOND;
+        await foreground();
+        assert.equal(answers.calls, beforeUnsettled + 2, 'a confirmed-but-unsettled delete was counted as a failure');
+        answers.carriedAt = null;
+        answers.forget = { ok: false, removed: 0 };
+        now += 20 * MINUTE;
+        await foreground();
 
         // A day of a return every minute: bounded by the backoff, not by the minutes.
         const before = answers.calls;

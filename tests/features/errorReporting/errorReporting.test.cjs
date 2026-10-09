@@ -416,8 +416,14 @@ module.exports = [
         const savedTimeout = globalThis.setTimeout;
         const savedClear = globalThis.clearTimeout;
         const savedFetch = globalThis.fetch;
-        globalThis.setTimeout = (fn) => {
-          timers.push(fn);
+        // A clock the timers move: the client refuses to start a batch before
+        // its pacing allows (lib/requestPacing), so running a timer is only a
+        // flush if the time it was armed for has come.
+        const savedNow = Date.now;
+        let clockNow = 2_000_000_000_000;
+        Date.now = () => clockNow;
+        globalThis.setTimeout = (fn, ms) => {
+          timers.push({ fn, ms: ms ?? 0 });
           return timers.length;
         };
         globalThis.clearTimeout = () => undefined;
@@ -436,12 +442,14 @@ module.exports = [
           await flush();
           await work({ client, storage, sent, runTimers: async () => {
             const due = timers.splice(0);
-            for (const fn of due) fn();
+            clockNow += Math.max(0, ...due.map((timer) => timer.ms));
+            for (const timer of due) timer.fn();
             await flush();
             await flush();
           } });
           client.setUsageStatisticsEnabled(false);
         } finally {
+          Date.now = savedNow;
           globalThis.setTimeout = savedTimeout;
           globalThis.clearTimeout = savedClear;
           globalThis.fetch = savedFetch;
