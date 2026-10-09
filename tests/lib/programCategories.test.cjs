@@ -44,8 +44,9 @@ module.exports = [
   {
     name: 'the hand-listed categories name programs that exist',
     run() {
-      // Fat loss and conditioning cannot be derived — the catalog does not
-      // encode "this is a cut" — so they name their members, which is the id
+      // Fat loss cannot be derived — the catalog does not encode "this is a
+      // cut" — so it names its members (and mobility and the runner's gym
+      // week theirs), which is the id
       // typo trap that has bitten this codebase twice. A wrong id here does
       // not throw; the row is just one program short.
       const ids = new Set(WORKOUT_TEMPLATES_V1.map((template) => template.id));
@@ -59,6 +60,54 @@ module.exports = [
         (id) => !ids.has(id),
       );
       assert.deepEqual(unknown, [], `not in the catalog: ${unknown.join(', ')}`);
+    },
+  },
+  {
+    name: 'the conditioning and home tiles list what the sessions hold, not a hand-kept list',
+    run() {
+      // Both were id lists, and they drifted: "Running & conditioning" held
+      // Calisthenics Mastery at 4% conditioning and missed SHRED, Fat Burn
+      // HIIT and five more at 25% or over; "Home" missed Fat Burn HIIT, RUN
+      // and Mobility Flow (bug hunt, 2026-10-09). The tile now answers what
+      // the Cardio chip and the equipment bucket answer, for every programme.
+      const { meetsCardioFocus } = require('../../.test-dist/lib/programCatalogFocus.js');
+      const { resolveProgramEquipmentBucket } = require('../../.test-dist/lib/programEquipment.js');
+      const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
+      const names = (template) => template.sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
+      const RUNNERS = new Set(['tpl_gainer_runners_strength_v1']);
+      const drift = [];
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        const conditioning = meetsCardioFocus(template) || RUNNERS.has(template.id);
+        if (isInCategory(template, 'conditioning') !== conditioning) {
+          drift.push(`${template.name}: conditioning tile ${isInCategory(template, 'conditioning')}, content ${conditioning}`);
+        }
+        const home = resolveProgramEquipmentBucket(names(template)) === 'low_equipment';
+        if (isInCategory(template, 'home') !== home) {
+          drift.push(`${template.name}: home tile ${isInCategory(template, 'home')}, gear ${home}`);
+        }
+        // And the recommender's tier, which sells "nothing in it needs a gym".
+        const definition = RECOMMENDATION_PROGRAMS.find((entry) => entry.programId === template.id);
+        if (definition && isInCategory(template, 'home') !== (definition.equipmentTier === 'low_equipment')) {
+          drift.push(`${template.name}: home tile ${isInCategory(template, 'home')}, recommender ${definition.equipmentTier}`);
+        }
+      }
+      assert.deepEqual(drift, []);
+
+      // The cases the hand lists got wrong, by name.
+      const byName = (name) => {
+        const template = WORKOUT_TEMPLATES_V1.find((entry) => entry.name === name);
+        assert.ok(template, name);
+        return template;
+      };
+      assert.equal(isInCategory(byName('Calisthenics Mastery'), 'conditioning'), false);
+      for (const name of ['SHRED', 'Fat Burn HIIT', 'Summer Conditioning', 'FIT Elite', 'Athletic Starter', 'RUN']) {
+        assert.equal(isInCategory(byName(name), 'conditioning'), true, name);
+      }
+      for (const name of ['Fat Burn HIIT', 'RUN', 'Mobility Flow', 'Calisthenics Mastery']) {
+        assert.equal(isInCategory(byName(name), 'home'), true, name);
+      }
+      // A runner's gym week holds no running and stays where runners look.
+      assert.equal(isInCategory(byName("Runner's Strength"), 'conditioning'), true);
     },
   },
   {

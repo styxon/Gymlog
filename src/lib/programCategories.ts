@@ -1,5 +1,7 @@
 import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
 import { I18nKey } from './i18n';
+import { meetsCardioFocus } from './programCatalogFocus';
+import { resolveProgramEquipmentBucket } from './programEquipment';
 
 /**
  * Nine ways into 55 programs.
@@ -138,12 +140,11 @@ export const PROGRAM_CATEGORIES: readonly ProgramCategory[] = [
 ];
 
 /**
- * Ids whose family cannot be read off goalType alone.
+ * Ids whose family cannot be read off goalType or the sessions.
  *
  * Kept small and explicit. Cutting programs are `general` like a dozen others,
- * and running programs are `general` with a hybrid split like the single-muscle
- * days — the catalog simply does not encode "this is a cut" or "this is a run
- * block", so those two categories name their members. Everything else derives.
+ * and the catalog simply does not encode "this is a cut", so that category
+ * names its members.
  */
 const FAT_LOSS_IDS = new Set([
   'tpl_shred_v1',
@@ -152,30 +153,13 @@ const FAT_LOSS_IDS = new Set([
   'tpl_gainer_fat_burn_hiit_v1',
 ]);
 
-const CONDITIONING_IDS = new Set([
-  'tpl_3_day_run_mobility_v1',
-  'tpl_gainer_runners_strength_v1',
-  'tpl_gainer_athlete_conditioning_v1',
-  'tpl_athletic_upper_lower_4_day_v1',
-  'tpl_athletic_performance_5_day_v1',
-  'tpl_gainer_calisthenics_mastery_v1',
-]);
-
-const HOME_IDS = new Set([
-  'tpl_2_day_minimal_full_body_v1',
-  'tpl_home_dumbbell_upper_lower_v1',
-  'tpl_home_dumbbell_ppl_v1',
-  'tpl_home_dumbbell_strength_v1',
-  'tpl_home_dumbbell_strength_split_v1',
-  'tpl_home_bodyweight_upper_lower_v1',
-  'tpl_home_athletic_5_day_v1',
-  'tpl_home_dumbbell_athletic_5_day_v1',
-  'tpl_home_bodyweight_strength_3_day_v1',
-  'tpl_home_calisthenics_strength_5_day_v1',
-  'tpl_home_bodyweight_full_body_v1',
-  'tpl_home_bodyweight_ppl_v1',
-  'tpl_gainer_at_home_beginner_v1',
-]);
+/**
+ * Conditioning is read off the sessions (meetsCardioFocus) — except for a
+ * runner's gym week, which holds no running because the reader brings their
+ * own. Its card says it is for runners, and a runner browsing "Running &
+ * conditioning" is who it is for.
+ */
+const BUILT_FOR_RUNNERS_IDS = new Set(['tpl_gainer_runners_strength_v1']);
 
 const MOBILITY_IDS = new Set([
   'tpl_2_day_mobility_reset_v1',
@@ -183,6 +167,38 @@ const MOBILITY_IDS = new Set([
   'tpl_gainer_mobility_flow_v1',
   'tpl_gainer_joint_friendly_v1',
 ]);
+
+/**
+ * The two categories read off a template's content, worked out once per
+ * template: the tiles, their counts and the catalog chips each ask about every
+ * programme, and the answer never changes.
+ *
+ * Both used to be hand-kept id lists, and they drifted from what the
+ * programmes hold. "Running & conditioning" listed Calisthenics Mastery at 4%
+ * conditioning and left out SHRED, Fat Burn HIIT, Summer Conditioning and four
+ * more at 25% or over; "Home" left out Fat Burn HIIT, which the recommender
+ * hands to home readers as needing no gym, and RUN and Mobility Flow (bug
+ * hunt, 2026-10-09).
+ */
+const contentCategories = new WeakMap<WorkoutTemplateV1, { conditioning: boolean; home: boolean }>();
+
+function readContentCategories(template: WorkoutTemplateV1) {
+  let entry = contentCategories.get(template);
+  if (!entry) {
+    const exerciseNames = template.sessions.flatMap((session) =>
+      session.exercises.map((exercise) => exercise.exerciseName),
+    );
+    entry = {
+      // The Cardio chip's threshold, so the tile and the chip agree.
+      conditioning: meetsCardioFocus(template) || BUILT_FOR_RUNNERS_IDS.has(template.id),
+      // The bucket the recommender's equipment tier and the low-equipment chip
+      // read: a programme whose gear a reader can own at home.
+      home: resolveProgramEquipmentBucket(exerciseNames) === 'low_equipment',
+    };
+    contentCategories.set(template, entry);
+  }
+  return entry;
+}
 
 export function isInCategory(template: WorkoutTemplateV1, key: ProgramCategoryKey): boolean {
   switch (key) {
@@ -203,9 +219,9 @@ export function isInCategory(template: WorkoutTemplateV1, key: ProgramCategoryKe
     case 'fatloss':
       return FAT_LOSS_IDS.has(template.id);
     case 'conditioning':
-      return CONDITIONING_IDS.has(template.id);
+      return readContentCategories(template).conditioning;
     case 'home':
-      return HOME_IDS.has(template.id);
+      return readContentCategories(template).home;
     case 'mobility':
       return MOBILITY_IDS.has(template.id);
     case 'focus':
