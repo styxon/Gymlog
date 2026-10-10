@@ -124,6 +124,14 @@ import { programmeSetCount, toWorkingHistoryEntry, warmupOffer } from '../lib/wa
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
 import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
+import {
+  GUIDED_CARD_CHIP_CAP,
+  GUIDED_SET_BOX_CAP,
+  guidedBoxesThatFit,
+  guidedLoadTrend,
+  guidedTodayLoadKg,
+  guidedWindow,
+} from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
 import { ExerciseSheet } from '../components/ExerciseSheet';
 import { CtaShimmer } from '../components/CtaShimmer';
@@ -233,8 +241,13 @@ const GPD = {
 
 const SPLASH_MS = 2300;
 
-/** How many set dots the row will draw before it stops counting in dots. */
-const SET_DOT_CAP = 9;
+/**
+ * A set box and the gap between two, for the row to work out how many fit
+ * (lib/guidedSetRow guidedBoxesThatFit). The cap is GUIDED_SET_BOX_CAP, six
+ * since #bugs 2026-10-10; it was nine, which did not fit the phone.
+ */
+const SET_DOT_SIZE = 18;
+const SET_DOT_GAP = 4;
 
 /** The walk-up's one-line notices — a stall in amber, a step up in green — share one shape. */
 const WALK_BANNER = { borderWidth: 1, borderRadius: 14, padding: 12 } as const;
@@ -332,6 +345,12 @@ interface GuidedPlayerScreenProps {
   proUnlocked?: boolean;
   /** The lock's way out: the Pro page. */
   onOpenPro?: () => void;
+  /**
+   * Automated progression is on and paid for (lib/proEntitlement
+   * resolveProgressionOptions). Today's weight on the set card gets its arrow
+   * only then (#bugs 2026-10-10).
+   */
+  progressionOn?: boolean;
   /**
    * The plateau reminder for the lift being walked to, or null when it is
    * not currently stalled. Same detection Home's card shows (lib/proInsights
@@ -441,6 +460,7 @@ function GPIcon({ name, size = 22, color = '#fff', sw = 2.2 }: { name: string; s
     // Pencil: the "this card opens" mark on a closed dial.
     edit: <Path d="M4 20h4l10.5-10.5a2.1 2.1 0 00-3-3L5 17v3zM13.5 6.5l3 3" />,
     arrowUp: <Path d="M12 19V5M6 11l6-6 6 6" />,
+    arrowDown: <Path d="M12 5v14M6 13l6 6 6-6" />,
     list: <Path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01" />,
     // Two arrows passing: swapping one lift for another.
     swap: <Path d="M4 8h13l-3.5-3.5M20 16H7l3.5 3.5" />,
@@ -1550,6 +1570,7 @@ function GuidedPlayer({
   liftHistory,
   proUnlocked = false,
   onOpenPro,
+  progressionOn = false,
   plateauNotice,
   soundCuesEnabled,
   keepScreenAwake = false,
@@ -4201,6 +4222,7 @@ function GuidedPlayer({
               superset={supersetGroupBySlot.get(step.slotId) ?? null}
               language={language}
               paused={paused}
+              progressionOn={progressionOn}
               resolveTarget={resolveTarget}
               // Pause pauses, and nothing else. It used to open the actions
               // sheet on the way, so the one control you reach for when the
@@ -5410,6 +5432,7 @@ function SetStepView({
   superset,
   language,
   paused,
+  progressionOn,
   resolveTarget,
   onPause,
   onOpenActions,
@@ -5431,6 +5454,8 @@ function SetStepView({
   superset: { members: Array<{ slotId: string; name: string }> } | null;
   language: AppLanguage;
   paused: boolean;
+  /** Automated progression on: today's weight gets its arrow. */
+  progressionOn: boolean;
   /** Opens the exercise sheet; the card is the only door to it. */
   onOpenSheet: () => void;
   resolveTarget: (slotId: string, setIndex: number) => GuidedSetTarget | null;
@@ -5589,20 +5614,27 @@ function SetStepView({
   const logBlocked = dial === 'weight' && weightTextInvalid;
 
   /**
-   * Today's line scrolls once it is wider than the card, and it opens at its
-   * left end. The ringed chip — the set being done — would then sit past the
-   * right edge from set 5 or 6 of a long ramp on, so the line is moved just
-   * far enough to show it, whichever of the two layouts lands last.
+   * Five chips a line (#bugs 2026-10-10, "näytetään vain 5 kerralla"): an
+   * 11-set lift scrolled to a row of ten with the last one cut at the edge.
+   * Each line's window moves with the set being done, so today's ringed chip
+   * is always one of its five and, while both lines are long, last time's
+   * chips stay over today's. Each is held to its own length: one shared
+   * window cut a three-set last time down to one chip by set 7.
    */
-  const todayScrollRef = useRef<ScrollView>(null);
-  const todayScrollWidth = useRef(0);
-  const todayCurrentEnd = useRef(0);
-  const revealTodayCurrent = () => {
-    const over = todayCurrentEnd.current - todayScrollWidth.current;
-    if (todayScrollWidth.current > 0 && over > 0) {
-      todayScrollRef.current?.scrollTo({ x: over + 4, animated: false });
-    }
-  };
+  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, step.setIndex, GUIDED_CARD_CHIP_CAP);
+  const todayChipWindow = guidedWindow(todayPlan.length, step.setIndex, GUIDED_CARD_CHIP_CAP);
+  /**
+   * The set row's boxes: up to six, as many as the row has room for, so none
+   * is drawn cut in half — and the −/+ after them stand still however many
+   * sets there are (#bugs 2026-10-10, "+- merkit ei saisi liikkua
+   * mihinkään"). The counter says the true number.
+   */
+  const [setBoxRoom, setSetBoxRoom] = useState(0);
+  const setBoxCount = Math.min(
+    step.setCount,
+    guidedBoxesThatFit(setBoxRoom, SET_DOT_SIZE, SET_DOT_GAP, GUIDED_SET_BOX_CAP),
+  );
+  const setBoxWindow = guidedWindow(step.setCount, step.setIndex, setBoxCount);
 
   /**
    * "+ Warm-up set" (user, 2026-10-05): the screen turns blue and logs a
@@ -5616,6 +5648,28 @@ function SetStepView({
   const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
   const canWarmUp = !bodyweight && firstSetOpen;
   const inWarmup = warmupMode && canWarmUp;
+  /**
+   * Today's weight beside today's chips, as last time's stands beside its own
+   * (#bugs 2026-10-10). The set being done counts at its dial, so the number
+   * moves with the thumb — but not in warm-up mode, where the dial holds the
+   * warm-up's load and not the set's. Not for a lift that carries no weight.
+   */
+  const todayKg =
+    exercise && !bodyweight && !minutesMode
+      ? guidedTodayLoadKg({
+          sets: exercise.sets,
+          currentSetIndex: step.setIndex,
+          currentKg: !inWarmup && Number.isFinite(kg) && kg > 0 ? kg : null,
+          trackingMode: exercise.trackingMode,
+          swappedAfterSetIndex: exercise.swappedAfterSetIndex,
+        })
+      : null;
+  const todayTrend = guidedLoadTrend({
+    lastKg: heaviestOf(panels?.history) > 0 ? heaviestOf(panels?.history) : null,
+    todayKg,
+    progressionOn,
+  });
+
   /**
    * The set's own numbers while a warm-up borrows the dials: a weight dialled
    * for set 1 before "+ Warm-up set" comes back after it, not the plan's
@@ -5882,12 +5936,12 @@ function SetStepView({
                   // scroll view inside it would be a stop of its own.
                   importantForAccessibility="no-hide-descendants"
                 >
-                  {panels.history.sets.map((set, index) => (
+                  {panels.history.sets.slice(lastChipWindow.start, lastChipWindow.end).map((set, offset) => (
                     <View key={set.setIndex} style={styles.setExerciseLastPill}>
                       <Text style={styles.setExerciseLastPillText}>
                         {minutesMode
                           ? t(language, 'logger.minutesValue', { count: set.reps })
-                          : historyChips?.chips[index] ?? set.reps}
+                          : historyChips?.chips[lastChipWindow.start + offset] ?? set.reps}
                       </Text>
                     </View>
                   ))}
@@ -5908,30 +5962,32 @@ function SetStepView({
             {todayPlan.length > 0 ? (
               <View style={styles.setExerciseRow}>
                 <Text style={styles.setExerciseLastLabel}>{t(language, 'guided.card.today')}</Text>
+                {/* Today's weight, and an arrow when automated progression
+                    moved it from last time: green up, red down, none when
+                    the same (#bugs 2026-10-10). */}
+                {todayKg !== null ? (
+                  <View style={styles.setExerciseTodayLoad}>
+                    <Text style={styles.setExerciseLastLoad}>{`${removeTrailingZeros(todayKg)} kg`}</Text>
+                    {todayTrend ? (
+                      <GPIcon
+                        name={todayTrend === 'up' ? 'arrowUp' : 'arrowDown'}
+                        size={14}
+                        color={todayTrend === 'up' ? theme.green : theme.danger}
+                        sw={2.8}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
                 <ScrollView
-                  ref={todayScrollRef}
                   horizontal
                   showsHorizontalScrollIndicator={false}
                   style={styles.setExerciseChipScroll}
                   contentContainerStyle={styles.setExerciseLastPills}
                   importantForAccessibility="no-hide-descendants"
-                  onLayout={(event) => {
-                    todayScrollWidth.current = event.nativeEvent.layout.width;
-                    revealTodayCurrent();
-                  }}
                 >
-                  {todayPlan.map((chip, index) => (
+                  {todayPlan.slice(todayChipWindow.start, todayChipWindow.end).map((chip, offset) => (
                     <View
-                      key={index}
-                      onLayout={
-                        chip.status === 'current'
-                          ? (event) => {
-                              const { x, width } = event.nativeEvent.layout;
-                              todayCurrentEnd.current = x + width;
-                              revealTodayCurrent();
-                            }
-                          : undefined
-                      }
+                      key={todayChipWindow.start + offset}
                       style={[
                         styles.setExerciseLastPill,
                         chip.status === 'done' && { backgroundColor: theme.greenSoft },
@@ -5992,13 +6048,22 @@ function SetStepView({
             <Text style={styles.setCounter}>
               {t(language, 'guided.setOfCount', { index: step.setIndex + 1, count: step.setCount })}
             </Text>
-            {/* Capped at nine. The reader can add sets without limit and the
-                row cannot grow without limit — past nine the dots were thinner
-                than the gaps between them and the +/− were against the edge
-                (user 2026-09-04). Beyond the cap the counter above still says
-                the true number. */}
-            <View style={styles.setDots}>
-              {Array.from({ length: Math.min(step.setCount, SET_DOT_CAP) }).map((_, index) => {
+            {/* Six at most, and only as many as the room between the counter
+                and the buttons holds (setBoxWindow above). The reader can add
+                sets without limit and the row cannot grow without limit: at
+                nine the dots were thinner than their gaps (user 2026-09-04),
+                and at six on the phone the last one was cut in half and the
+                buttons were pushed into the blue + (#bugs 2026-10-10). The
+                boxes take the room that is left; the buttons keep theirs. */}
+            <View
+              style={styles.setDots}
+              onLayout={(event) => {
+                const width = Math.round(event.nativeEvent.layout.width);
+                setSetBoxRoom((current) => (current === width ? current : width));
+              }}
+            >
+              {Array.from({ length: setBoxWindow.end - setBoxWindow.start }).map((_, offset) => {
+                const index = setBoxWindow.start + offset;
                 const done = index < step.setIndex;
                 const current = index === step.setIndex;
                 return (
@@ -6036,7 +6101,11 @@ function SetStepView({
               >
                 <GPIcon name="minus" size={13} color={theme.danger} sw={3} />
               </Pressable>
-            ) : null}
+            ) : (
+              // Its place is kept when it hides, so the + beside it does not
+              // jump each time a set is logged (#bugs 2026-10-10).
+              <View style={[styles.setAddBtn, styles.setAddBtnSpacer]} />
+            )}
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t(language, 'guided.action.addSet')}
@@ -6796,10 +6865,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    // The blue + sat flush against the green one when the boxes ran long
+    // (#bugs 2026-10-10); the row keeps a gap of its own now.
+    gap: 8,
     paddingTop: 18,
     paddingHorizontal: 24,
   },
-  setMetaLeft: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
+  setMetaLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
   // `highlight`, not `purple`. The player's own rule two hundred lines up is
   // "anything pressable is orange, violet carries brand", and the set counter,
   // the open dial's border, its label and its +/- buttons were all still
@@ -6807,11 +6879,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // 2026-09-07, "otetaan vahan tuota purppuraa pois"). `highlight` is orange
   // in dark and the same violet in light, so this repaints the theme that was
   // complained about and leaves the other one exactly as it is.
-  setCounter: { fontSize: 19, fontWeight: '800', letterSpacing: -0.4, color: theme.highlight, fontVariant: ['tabular-nums'] },
+  setCounter: { flexShrink: 0, fontSize: 19, fontWeight: '800', letterSpacing: -0.4, color: theme.highlight, fontVariant: ['tabular-nums'] },
   // The dots are the one part of this row that grows without a bound — one
   // per set, and a reader can keep adding sets. They give way first, and the
   // counter beside them still says how many there are.
-  setDots: { flexDirection: 'row', gap: 5, flexShrink: 1, overflow: 'hidden' },
+  // They take the room between the counter and the buttons, and the row draws
+  // only as many as that room holds (guidedBoxesThatFit), so the buttons stay
+  // put at its right end.
+  setDots: { flexDirection: 'row', gap: SET_DOT_GAP, flex: 1, minWidth: 0, overflow: 'hidden' },
   // Above the lift, because it changes what the next tap means: log this and
   // you are walking to the other station, not starting a rest.
   setSupersetPill: {
@@ -6851,8 +6926,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '900',
   },
   setDot: {
-    width: 19,
-    height: 19,
+    width: SET_DOT_SIZE,
+    height: SET_DOT_SIZE,
     borderRadius: 6,
     borderWidth: 1.5,
     alignItems: 'center',
@@ -6944,6 +7019,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontVariant: ['tabular-nums'],
   },
+  // Today's weight and its arrow, one unit beside the label.
+  setExerciseTodayLoad: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   // The set being done: ringed in the action colour, as its dot is below.
   setExerciseTodayCurrent: { borderWidth: 1.5, borderColor: theme.highlight, paddingHorizontal: 3.5, paddingVertical: 1.5 },
   setExerciseFirstTime: {
@@ -7126,6 +7203,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   setLogButtonText: { flexShrink: 1, fontSize: 17, fontWeight: '800', color: theme.onHighlight, letterSpacing: -0.17 },
   setControls: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 22, paddingTop: 4, paddingBottom: 12 },
+  /** The − button's place, kept while it is hidden. */
+  setAddBtnSpacer: { borderWidth: 0, backgroundColor: 'transparent', flexShrink: 0 },
   setAddBtn: {
     width: 26,
     height: 26,

@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 import { emitRestAction } from '../hooks/useRestEndAlert';
+import { isRepeatedRestOverExtend } from '../lib/restActionBus';
 import { IDLE_NUDGE_MINUTES, idleNudgeAtMs } from '../lib/restSchedule';
 import { minutesBoutDueMs } from '../lib/minutesExercises';
 import {
@@ -83,6 +84,8 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
   /** A session action that launched the app, held until both stores load. */
   const coldSessionResponseRef = useRef<Notifications.NotificationResponse | null>(null);
 
+  /** When a rest-over alert's "+60 s" was last passed on; repeats inside the window are dropped. */
+  const lastRestOverExtendAtRef = useRef<number | null>(null);
   // Lock-screen actions. Every action opens the app; the running rest is then
   // told over the bus, because it lives in screen state. Only refs and a
   // state setter inside, so the mount-time closure stays current.
@@ -101,6 +104,13 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
     if (action === ACTION_EXTEND_30) {
       emitRestAction({ kind: 'extend', seconds: 30 }, sessionId);
     } else if (action === ACTION_EXTEND_60) {
+      // The rest-over alert answers once: a second press before the app has
+      // dismissed it is the same tap, not another minute (lib/restActionBus).
+      const now = Date.now();
+      if (isRepeatedRestOverExtend(lastRestOverExtendAtRef.current, now)) {
+        return;
+      }
+      lastRestOverExtendAtRef.current = now;
       emitRestAction({ kind: 'extend', seconds: 60 }, sessionId);
     } else if (action === ACTION_SKIP_REST) {
       emitRestAction({ kind: 'skip' }, sessionId);

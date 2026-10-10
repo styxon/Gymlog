@@ -260,6 +260,7 @@ const suites = [
   ...require('./lib/missedRepsTarget.test.cjs'),
   ...require('./lib/liftPraise.test.cjs'),
   ...require('./lib/guidedSetPlan.test.cjs'),
+  ...require('./lib/guidedSetRow.test.cjs'),
   ...require('./lib/coachChatMemory.test.cjs'),
   ...require('./lib/coachCrisisTurn.test.cjs'),
   ...require('./lib/coachAdviceMemory.test.cjs'),

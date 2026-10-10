@@ -1134,6 +1134,9 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         liftHistory={liftHistory}
         proUnlocked={proUnlocked}
         onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
+        // The toggle under the same entitlement resolveProgressionOptions
+        // applies; read here for the arrow only, not to start anything.
+        progressionOn={proUnlocked && preferences.automatedProgressionEnabled}
         plateauNotice={plateauNotice}
         soundCuesEnabled={preferences.soundCuesEnabled}
         onToggleSoundCues={(next) => void updatePreferences({ soundCuesEnabled: next })}

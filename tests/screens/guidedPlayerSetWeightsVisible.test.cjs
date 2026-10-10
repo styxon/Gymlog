@@ -33,7 +33,9 @@ module.exports = [
       assert.match(playerSource, /historyChips\?\.uniform !== false && !minutesMode \? \(/);
       // Each chip reads from the summary, falling back to the plain rep only
       // if for some reason the summary and the history sets disagree in length.
-      assert.match(playerSource, /: historyChips\?\.chips\[index\] \?\? set\.reps\}/);
+      // The line shows a window of five (#bugs 2026-10-10), so a chip's index
+      // into the summary is the window's start plus its place in it.
+      assert.match(playerSource, /: historyChips\?\.chips\[lastChipWindow\.start \+ offset\] \?\? set\.reps\}/);
     },
   },
   {
