@@ -47,7 +47,7 @@ module.exports = [
       // for a hook in the phase-C split (2026-10-01).
       const shell = require('../helpers/appWiringSource.cjs').readAppWiring();
       assert.match(shell, /const lead = resolveLeadPlanId\(\{/);
-      assert.match(shell, /if \(lead !== preferences\.activePlanId\) \{\s*void updatePreferences\(\{ activePlanId: lead \}\);/);
+      assert.match(shell, /if \(lead !== preferences\.activePlanId\) \{\s*tryOnce\(`lead:\$\{lead\}`, \(\) => updatePreferences\(\{ activePlanId: lead \}\)\);/);
     },
   },
   {

@@ -48,9 +48,9 @@ export function useLeadPlanRepair(deps: LeadPlanRepairDeps) {
       activePlanIds: preferences.activePlanIds,
       plans: database.workoutPlans,
     });
+    // Once per session and lead (tryOnce): a refused write is rolled back, which broke the
+    // invariant again and ran this again, forever.
     if (lead !== preferences.activePlanId) {
-      // Once per session and lead: a refused write is rolled back, which broke the invariant
-      // again and ran this again, forever.
       tryOnce(`lead:${lead}`, () => updatePreferences({ activePlanId: lead }));
     }
   }, [appHydrated, database.workoutPlans, preferences.activePlanId, preferences.activePlanIds, tryOnce, updatePreferences]);

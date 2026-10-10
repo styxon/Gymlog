@@ -109,7 +109,7 @@ module.exports = [
       assert.match(wiring, /adopted: preferences\.accountNameAdopted,/);
       assert.match(
         wiring,
-        /void updatePreferences\(\{ profileName: step\.name, accountNameAdopted: true \}\);/,
+        /tryOnce\(`accountName:adopt:\$\{name\}`, \(\) => updatePreferences\(\{ profileName: name, accountNameAdopted: true \}\)\);/,
       );
       // The old rule, which filled a cleared name straight back in.
       assert.doesNotMatch(wiring, /if \(!googleName \|\| preferences\.profileName\?\.trim\(\)\) \{/);
