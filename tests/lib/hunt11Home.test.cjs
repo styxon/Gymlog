@@ -21,20 +21,21 @@ module.exports = [
         { id: 'b', exerciseCount: 3 },
         { id: 'c', exerciseCount: 3 },
       ];
-      assert.equal(programmeStartSessionId(days, 'b'), 'b');
-      assert.equal(programmeStartSessionId(days, null), 'a', 'not leading: the first day with lifts');
-      assert.equal(programmeStartSessionId(days, 'gone'), 'a', 'a day no longer in the programme');
-      assert.equal(programmeStartSessionId([{ id: 'a', exerciseCount: 0 }, ...days.slice(1)], 'a'), 'b', 'an empty day is not offered');
-      assert.equal(programmeStartSessionId([{ id: 'a', exerciseCount: 0 }], 'a'), null);
+      const card = { programId: 'P', nextSession: { id: 'b' } };
+      assert.equal(programmeStartSessionId(days, 'P', card), 'b');
+      assert.equal(programmeStartSessionId(days, 'P', null), 'a', 'no programme leading: the first day with lifts');
+      assert.equal(programmeStartSessionId(days, 'Q', card), 'a', 'the card belongs to another programme');
+      assert.equal(programmeStartSessionId(days, 'P', { programId: 'P', nextSession: { id: 'gone' } }), 'a', 'a day no longer in the programme');
+      assert.equal(programmeStartSessionId([{ id: 'a', exerciseCount: 0 }, ...days.slice(1)], 'P', { programId: 'P', nextSession: { id: 'a' } }), 'b', 'an empty day is not offered');
+      assert.equal(programmeStartSessionId([{ id: 'a', exerciseCount: 0 }], 'P', card), null);
     },
   },
   {
-    name: 'hunt 11 home #1: App.tsx starts a custom programme through the helper with the hero\'s session',
+    name: 'hunt 11 home #1: App.tsx starts a custom programme through the helper with the programme id and the Home card',
     run() {
-      const app = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../App.tsx'), 'utf8');
+      const app = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../App.tsx'), 'utf8').replace(/\r\n/g, '\n');
       const fn = app.slice(app.indexOf('function handleStartCustomProgram('));
-      assert.match(fn.slice(0, 900), /programmeStartSessionId\(/);
-      assert.match(fn.slice(0, 900), /homeActivePlanCard\.nextSession\?\.id/);
+      assert.match(fn.slice(0, 900), /programmeStartSessionId\(\n[^\n]*\n\s+workoutTemplateId,\n\s+homeActivePlanCard,\n/);
     },
   },
   {
@@ -49,6 +50,26 @@ module.exports = [
       assert.equal(sessionIsOnPlanToday({ ...base, hasNextSession: false }), false);
       const hook = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../src/app/useCoachContext.ts'), 'utf8');
       assert.match(hook, /trainedToday: homeActivePlanCard\.sessionForecast\?\.trainedToday === true,/, 'the intro reads the forecast');
+    },
+  },
+  {
+    name: 'hunt 11 home #2: the opening line after training today says so, not that today is a rest day',
+    run() {
+      const { buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachContextChips } = require(`${DIST}/lib/coachChat.js`);
+      const input = { todaySessionTitle: null, nextSessionTitle: 'Lower', sessionsThisWeek: 1, weeklyRead: [], fatigue: null, hasProgramme: true };
+      assert.equal(buildCoachOpeningLine({ ...input, trainedToday: true }, 'en'), 'You have trained today. Next on the plan: Lower.');
+      assert.equal(buildCoachOpeningLine({ ...input, trainedToday: true }, 'fi'), 'Olet treenannut tänään. Seuraavana ohjelmassa: Lower.');
+      assert.match(buildCoachOpeningLine(input, 'en'), /^Today is a rest day/, 'a real rest day keeps its line');
+      assert.match(buildCoachOpeningLine(input, 'fi'), /^Tänään on lepopäivä/);
+      // The chip and the offer follow the same state: no "today" chip, and the offer names the NEXT session.
+      const trained = { ...input, trainedToday: true };
+      assert.equal(buildCoachContextChips(trained, 'en').some((chip) => chip.key === 'today'), false);
+      assert.match(buildCoachOpeningOffer(trained, 'en').question, /next session, Lower/);
+      const hook = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../src/app/useCoachContext.ts'), 'utf8').replace(/\r\n/g, '\n');
+      assert.match(hook, /trainedToday:\n\s+homeActivePlanCard\?\.sessionForecast\?\.trainedToday === true && !homeActivePlanCard\.todayPickSessionId,/);
+      // A pick made after training is today's session again, and wins.
+      const picked = { ...input, todaySessionTitle: 'Pull', trainedToday: false };
+      assert.match(buildCoachOpeningLine(picked, 'en'), /^Pull is on the plan today/);
     },
   },
   {

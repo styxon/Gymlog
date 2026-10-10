@@ -2062,6 +2062,7 @@ const EN = {
   'coachChat.open.stalled': 'Your {lift} has not moved in a while. Want me to look at why?',
   'coachChat.open.plan': '{session} is on the plan today. Want me to walk through it?',
   'coachChat.open.rest': 'Today is a rest day — nothing to lift. Next on the plan: {session}.',
+  'coachChat.open.trained': 'You have trained today. Next on the plan: {session}.',
   'coachChat.readout.today': 'Today',
   'coachChat.online.title': 'Vinha Fitness',
   'coachChat.online.body':
@@ -5461,6 +5462,7 @@ const FI: Record<I18nKey, string> = {
   'coachChat.open.stalled': '{Lift} ei ole liikkunut vähään aikaan. Katsotaanko miksi?',
   'coachChat.open.plan': '{session} on tänään ohjelmassa. Käydäänkö se läpi?',
   'coachChat.open.rest': 'Tänään on lepopäivä — ei nostettavaa. Seuraavana ohjelmassa: {session}.',
+  'coachChat.open.trained': 'Olet treenannut tänään. Seuraavana ohjelmassa: {session}.',
   'coachChat.readout.today': 'Tänään',
   'coachChat.online.title': 'Vinha Fitness',
   'coachChat.online.body':

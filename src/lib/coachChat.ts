@@ -51,6 +51,12 @@ export interface CoachChatIntroInput {
    * empty rather than the offer being bolted onto readers who are mid-block.
    */
   hasProgramme?: boolean;
+  /**
+   * Today's workout is already done and nothing else was picked for today.
+   * Then the next session is not today's, and today is not a rest day either:
+   * the opening says what happened rather than either of those.
+   */
+  trainedToday?: boolean;
   sessionsThisWeek: number;
   weeklyRead: WeeklyReadRow[];
   fatigue: FatigueResult | null;
@@ -238,6 +244,9 @@ export function buildCoachOpeningLine(input: CoachChatIntroInput, language: AppL
   }
   if (input.todaySessionTitle) {
     return t(language, 'coachChat.open.plan', { session: input.todaySessionTitle });
+  }
+  if (input.nextSessionTitle && input.trainedToday) {
+    return t(language, 'coachChat.open.trained', { session: input.nextSessionTitle });
   }
   if (input.nextSessionTitle) {
     // A rest day with a programme running: say so, and name what is next

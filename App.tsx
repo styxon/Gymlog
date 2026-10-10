@@ -1456,7 +1456,8 @@ function VinhaApp() {
     // lifts in it.
     const firstSessionId = programmeStartSessionId(
       (customTemplate?.sessions ?? []).map((session) => ({ id: session.id, exerciseCount: session.exercises.length })),
-      homeActivePlanCard?.programId === workoutTemplateId ? homeActivePlanCard.nextSession?.id : null,
+      workoutTemplateId,
+      homeActivePlanCard,
     );
     if (!firstSessionId) {
       showToast(t(preferences.appLanguage, 'toast.addExercisesTemplate'));

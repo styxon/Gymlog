@@ -97,8 +97,10 @@ export function nextStartableSessionIndex(exerciseCounts: ReadonlyArray<number>,
  */
 export function programmeStartSessionId(
   sessions: ReadonlyArray<{ id: string; exerciseCount: number }>,
-  leadingNextId: string | null | undefined,
+  programId: string,
+  card: { programId: string; nextSession?: { id: string } | null } | null | undefined,
 ): string | null {
+  const leadingNextId = card?.programId === programId ? card.nextSession?.id : null;
   const offered = leadingNextId ? sessions.find((session) => session.id === leadingNextId) : null;
   if (offered && offered.exerciseCount > 0) {
     return offered.id;

@@ -310,6 +310,8 @@ export function useCoachContext(deps: CoachContextDeps) {
               preferences.appLanguage,
             )
           : null,
+      trainedToday:
+        homeActivePlanCard?.sessionForecast?.trainedToday === true && !homeActivePlanCard.todayPickSessionId,
       nextSessionTitle: homeActivePlanCard?.nextSession
         ? localizeSessionFocus(
             formatWorkoutDisplayLabel(homeActivePlanCard.nextSession.title),
