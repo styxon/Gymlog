@@ -1549,6 +1549,7 @@ const EN = {
   // was the only sign, and red is not read aloud (accessibility audit,
   // 2026-09-21).
   'guided.weightInvalid': 'Not a valid weight',
+  'guided.repsInvalid': 'Not a valid number',
   // The ✕ and the sound toggle in the player's top bar were bare icons.
   'guided.a11y.exit': 'Leave guided mode',
   'guided.a11y.soundCues': 'Sound cues',
@@ -4998,6 +4999,7 @@ const FI: Record<I18nKey, string> = {
   'guided.a11y.weightDown': 'Vähennä painoa {kg} kg',
   'guided.a11y.weightUp': 'Lisää painoa {kg} kg',
   'guided.weightInvalid': 'Ei kelvollinen paino',
+  'guided.repsInvalid': 'Ei kelvollinen luku',
   'guided.a11y.exit': 'Poistu ohjatusta tilasta',
   'guided.a11y.soundCues': 'Äänimerkit',
   'guided.a11y.lastTime': 'Viime kerralla',

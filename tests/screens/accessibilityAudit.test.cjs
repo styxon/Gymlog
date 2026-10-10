@@ -162,10 +162,12 @@ module.exports = [
       const setStep = player.slice(player.indexOf('function SetStepView('), player.indexOf('function FinishView('));
       assert.match(
         setStep,
-        /\{logBlocked \? \(\s*<View style=\{styles\.setWeightError\} accessibilityLiveRegion="polite">\s*<Text style=\{styles\.setWeightErrorText\}>\{t\(language, 'guided\.weightInvalid'\)\}<\/Text>/,
+        /\{logBlocked \? \(\s*<View style=\{styles\.setWeightError\} accessibilityLiveRegion="polite">\s*<Text style=\{styles\.setWeightErrorText\}>\s*\{t\(language, dial === 'reps' \? 'guided\.repsInvalid' : 'guided\.weightInvalid'\)\}\s*<\/Text>/,
       );
       assert.match(i18n, /'guided\.weightInvalid': 'Not a valid weight'/);
       assert.match(i18n, /'guided\.weightInvalid': 'Ei kelvollinen paino'/);
+      assert.match(i18n, /'guided\.repsInvalid': 'Not a valid number'/);
+      assert.match(i18n, /'guided\.repsInvalid': 'Ei kelvollinen luku'/);
     },
   },
   {

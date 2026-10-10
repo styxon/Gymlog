@@ -119,6 +119,8 @@ const suites = [
   ...require('./lib/guidedHunt20261009.test.cjs'),
   ...require('./lib/guidedRestDeadline20261010.test.cjs'),
   ...require('./screens/guidedPlayerHunt20261009.test.cjs'),
+  ...require('./lib/guidedPlayerHunt11.test.cjs'),
+  ...require('./screens/guidedPlayerHunt11.test.cjs'),
   ...require('./lib/sheetScrollBound.test.cjs'),
   ...require('./lib/guidedRunPreview.test.cjs'),
   ...require('./lib/guidedSetWeightSummary.test.cjs'),

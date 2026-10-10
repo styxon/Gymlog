@@ -52,16 +52,16 @@ module.exports = [
       assert.match(goTo, /\bunpause\(\);/, 'moving on resumes');
       assert.match(
         player,
-        /\{pauseSheetOpen && \(\s*<GPSheet\s*title=\{[^}]*\}\s*language=\{language\}\s*onClose=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*unpause\(\);/,
-        'closing the actions sheet resumes',
+        /\{pauseSheetOpen && \(\s*<GPSheet\s*title=\{[^}]*\}\s*language=\{language\}\s*onClose=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*closeActionsMenu\(\);/,
+        'closing the actions sheet resumes, unless the menu opened over a pause the reader had chosen (closeActionsMenu)',
       );
       // Updated 2026-09-29 (#bugs, swap sheet v2): the close handler now also
       // resets the sheet's browse-all state (setSwapBrowseOpen/setSwapBodyPartFilter)
       // between the query reset and unpause — still one path out, unpause still last.
       assert.match(
         player,
-        /<ExercisePickerSheet\s*visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?onClose=\{\(\) => \{\s*setSwapOpen\(false\);\s*setSwapQuery\(''\);\s*setSwapBodyPartFilter\(null\);\s*setSwapCategoryPick\(null\);\s*setSwapEquipment\('all'\);\s*unpause\(\);/,
-        'closing the swap sheet resumes',
+        /<ExercisePickerSheet\s*visible=\{swapOpen && Boolean\(actionExercise\)\}[\s\S]*?onClose=\{\(\) => \{\s*setSwapOpen\(false\);\s*setSwapQuery\(''\);\s*setSwapBodyPartFilter\(null\);\s*setSwapCategoryPick\(null\);\s*setSwapEquipment\('all'\);\s*closeActionsMenu\(\);/,
+        'closing the swap sheet resumes, unless the menu opened over a pause the reader had chosen (closeActionsMenu)',
       );
       const applySwap = player.slice(player.indexOf('const applySwap = ('), player.indexOf('const resyncTargetRef'));
       assert.match(applySwap, /workout\.swapExercise\([\s\S]*unpause\(\);\s*\};/);

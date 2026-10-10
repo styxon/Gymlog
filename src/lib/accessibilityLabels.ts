@@ -45,14 +45,35 @@ export function exerciseCardAccessibilityLabel(
    * for the card's children, so the row is said here or not at all.
    */
   todayReps?: ReadonlyArray<number | null> | null,
+  /**
+   * What each set's number counts. A hold's is seconds and a bout's minutes,
+   * and said as "reps" TalkBack read a 20-minute ride as 20 reps.
+   */
+  unit: CountUnit = 'reps',
 ): string {
-  const label = lastTimeCardLabel(language, name, lastTime);
+  const label = lastTimeCardLabel(language, name, lastTime, unit);
   return todayReps && todayReps.length > 0
-    ? `${label}. ${t(language, 'guided.card.todayA11y', { reps: todayReps.map((reps) => reps ?? '–').join(', ') })}`
+    ? `${label}. ${t(language, 'guided.card.todayA11y', {
+        reps: todayReps.map((reps) => (reps === null ? '–' : countLabel(language, reps, unit))).join(', '),
+      })}`
     : label;
 }
 
-function lastTimeCardLabel(language: AppLanguage, name: string, lastTime: LastTimeSummary | null): string {
+export type CountUnit = 'reps' | 'seconds' | 'minutes';
+
+/** A set's number with its unit: a bare count for reps, "20 min" / "60 s" otherwise. */
+function countLabel(language: AppLanguage, count: number, unit: CountUnit): string {
+  return unit === 'reps'
+    ? String(count)
+    : t(language, unit === 'minutes' ? 'logger.minutesValue' : 'logger.secondsValue', { count });
+}
+
+function lastTimeCardLabel(
+  language: AppLanguage,
+  name: string,
+  lastTime: LastTimeSummary | null,
+  unit: CountUnit,
+): string {
   if (!lastTime) {
     return `${name}. ${t(language, 'guided.card.firstTime')}`;
   }
@@ -65,7 +86,11 @@ function lastTimeCardLabel(language: AppLanguage, name: string, lastTime: LastTi
   const reps = lastTime.sets.map((set) => set.reps);
   const details = [
     heaviestKg > 0 ? `${removeTrailingZeros(heaviestKg)} kg` : null,
-    reps.length > 0 ? t(language, 'guided.a11y.lastTimeReps', { reps: reps.join(', ') }) : null,
+    reps.length > 0
+      ? unit === 'reps'
+        ? t(language, 'guided.a11y.lastTimeReps', { reps: reps.join(', ') })
+        : reps.map((count) => countLabel(language, count, unit)).join(', ')
+      : null,
   ].filter((part): part is string => part !== null);
   return details.length > 0 ? `${name}. ${lead}: ${details.join(', ')}` : `${name}. ${lead}`;
 }

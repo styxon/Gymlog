@@ -12,7 +12,7 @@ import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
 import { pauseStopwatch, type SessionMinutesClock } from '../../lib/minutesExercises';
-import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
+import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL, WARMUP_REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
@@ -1783,7 +1783,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // The same bounds a working set is held to, and a load: a warm-up is
       // offered on loaded lifts only, and 0 kg there is no warm-up (it was then
       // offered back every session — breaker, 2026-10-05).
-      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
+      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < WARMUP_REPS_DIAL.min || reps > WARMUP_REPS_DIAL.max) {
         return state;
       }
       const session = cloneSession(state.activeSession);
