@@ -54,7 +54,7 @@ module.exports = [
       // Lock-screen card and the notification's finish action.
       assert.match(
         appSource,
-        /navigateToActiveWorkoutRef\.current = \(\) => navigateToActiveWorkout\(\{ resume: true \}\)/,
+        /navigateToActiveWorkoutRef\.current = \(\) => navigateToActiveWorkoutThroughGuard\(\{ resume: true \}\)/,
       );
       // The coach's resume_workout action used to be the third entry point.
       // It is gone with the screen that drew it: nothing could reach

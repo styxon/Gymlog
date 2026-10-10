@@ -71,7 +71,7 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
   /** Read by the lock-screen action closure below, which is built once. */
   const activeSessionIdRef = useRef<string | null>(activeSessionId);
   activeSessionIdRef.current = activeSessionId;
-  const navigateToActiveWorkoutRef = useRef<() => boolean>(() => false);
+  const navigateToActiveWorkoutRef = useRef<() => void>(() => {});
   const finishFromNotificationRef = useRef<() => void>(() => {});
   /**
    * Bumped by "Still going" and by the app coming back to the foreground, and

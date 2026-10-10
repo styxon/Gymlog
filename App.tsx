@@ -533,7 +533,10 @@ function VinhaApp() {
     startTransition(() =>
       setNavigationState((current) => ({
         route: nextRoute,
-        history: current.history,
+        // No copy of the landing left on top: a builder opened from a
+        // programme page saves back onto that page, and the first Back popped
+        // the page it was already on (hunt 11).
+        history: withoutTrailingRoute(current.history, nextRoute),
       })),
     );
   }
@@ -585,6 +588,22 @@ function VinhaApp() {
       return;
     }
     leave();
+  }
+
+  /**
+   * The same question for the exits that arrive from outside the screen: a
+   * widget tap, a notification tap, the lock screen's resume. They reset the
+   * route directly and unmounted an unsaved builder without asking. The
+   * question is answerable, so a resume is held for it, not blocked.
+   */
+  function resetToRouteThroughGuard(nextRoute: AppRoute) {
+    leaveThroughScreenGuard(() => resetToRoute(nextRoute));
+  }
+
+  function navigateToActiveWorkoutThroughGuard(options?: { message?: string; resume?: boolean }) {
+    leaveThroughScreenGuard(() => {
+      navigateToActiveWorkout(options);
+    });
   }
 
   /**
@@ -867,11 +886,11 @@ function VinhaApp() {
     );
   }
 
-  navigateToActiveWorkoutRef.current = () => navigateToActiveWorkout({ resume: true });
+  navigateToActiveWorkoutRef.current = () => navigateToActiveWorkoutThroughGuard({ resume: true });
   finishFromNotificationRef.current = () => {
     // "Finish workout" from the lock screen opens the session; ending it is a
     // confirmed step on that screen, not a silent write from a notification.
-    navigateToActiveWorkout({ resume: true });
+    navigateToActiveWorkoutThroughGuard({ resume: true });
   };
 
   function getWorkoutLoggerFallbackRoute() {
@@ -1811,11 +1830,11 @@ function VinhaApp() {
     homeTrainingSchedule,
     recommendedReadyTemplate,
     widgetCompletedWorkoutDayStarts,
-    resetToRoute,
-    navigateToActiveWorkout,
+    resetToRoute: resetToRouteThroughGuard,
+    navigateToActiveWorkout: navigateToActiveWorkoutThroughGuard,
   });
 
-  useNotificationRoute({ appHydrated, resetToRoute });
+  useNotificationRoute({ appHydrated, resetToRoute: resetToRouteThroughGuard });
 
   const {
     exportablePlans,

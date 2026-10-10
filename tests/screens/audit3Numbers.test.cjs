@@ -190,10 +190,11 @@ module.exports = [
       // Written once the programme is running (hunt 10, #11).
       assert.match(tab, /handleEnrolSeason\(seasonInView, seasonWindow\.year\)/);
       assert.doesNotMatch(tab, /const window = resolveSeasonWindow\(\);\s*handleEnrolSeason/);
-      // And the record the join writes is finally read: the CTA decided
-      // everything from the active plan, which is what enrolment exists to
-      // stop deciding.
-      assert.match(tab, /isEnrolled\(preferences\.seasonEnrolments, seasonInView, seasonWindow\.year\)/);
+      // The pill and the CTA say what the plans say: the sign-up outlives a
+      // stop, so reading it showed "running" over a switched-off programme
+      // (hunt 11).
+      assert.doesNotMatch(tab, /isEnrolled\(/);
+      assert.match(tab, /running={isReadyProgrammeRunning\(seasonProgramId, activeProgramTemplateIds, database\.workoutTemplates\)}/);
     },
   },
   {

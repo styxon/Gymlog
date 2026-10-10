@@ -575,6 +575,7 @@ const suites = [
   ...require('./lib/programmeLifecycleHunt.test.cjs'),
   ...require('./lib/navLifecycleHunt10.test.cjs'),
   ...require('./screens/navLifecycleHunt10.test.cjs'),
+  ...require('./screens/navLifecycleHunt11.test.cjs'),
   ...require('./lib/emptyWorkoutSession.test.cjs'),
   ...require('./lib/exerciseSelectionOrder.test.cjs'),
   ...require('./lib/restPreference.test.cjs'),

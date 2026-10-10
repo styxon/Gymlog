@@ -15,7 +15,7 @@ import { placesToFree } from '../lib/activeProgramSet';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
-import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
+import { findHeldReadyProgrammeCopyId, isReadyProgrammeRunning } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
   buildReadyProgramDetail,
@@ -44,7 +44,6 @@ import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgra
 import { AdaptedSessionRef, SessionAdaptation, withSessionSwap } from '../lib/sessionAdaptation';
 import { isReaderNamedSession } from '../lib/sessionNameLabel';
 import { nextSeasonWindow, resolveSeasonWindow } from '../lib/season';
-import { isEnrolled } from '../lib/seasonEnrolment';
 import { computeSeasonProgress, countSeasonRecords, resolveSeasonBadges } from '../lib/seasonScoring';
 import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
@@ -673,11 +672,17 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             // here, on the programme they asked for; otherwise the switch
             // that replaces the button says it is running, and the toast says
             // so after the write, not before.
-            void handleAdoptReadyProgram(route.workoutTemplateId, { lead: true }).then((adopted) => {
-              if (adopted) {
-                showToast(t(preferences.appLanguage, 'toast.programStarted'));
-              }
-            });
+            void handleAdoptReadyProgram(route.workoutTemplateId, { lead: true })
+              .then((adopted) => {
+                if (adopted) {
+                  showToast(t(preferences.appLanguage, 'toast.programStarted'));
+                }
+              })
+              .catch((error) => {
+                console.error('Failed to start the programme', error);
+                void haptics.error();
+                showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+              });
             return;
           }
 
@@ -696,11 +701,17 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
 
           // Held but not leading, or not held at all — both are answered by
           // adoption, which now promotes rather than returning early.
-          void handleAdoptCustomProgram(route.workoutTemplateId, { lead: true }).then((adopted) => {
-            if (adopted) {
-              showToast(t(preferences.appLanguage, 'toast.programStarted'));
-            }
-          });
+          void handleAdoptCustomProgram(route.workoutTemplateId, { lead: true })
+            .then((adopted) => {
+              if (adopted) {
+                showToast(t(preferences.appLanguage, 'toast.programStarted'));
+              }
+            })
+            .catch((error) => {
+              console.error('Failed to start the programme', error);
+              void haptics.error();
+              showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+            });
         }}
         onStartSession={(sessionId) => {
           if (route.programType === 'ready') {
@@ -1366,19 +1377,13 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // could not be joined at all. It joins now, and joining ADDS: the
         // reader's own programme stays exactly where it was.
         /*
-         * In the season, or not — read from the sign-up as well as the plan.
-         *
-         * `seasonEnrolments` was written by the join and read by nothing:
-         * `isEnrolled` was imported into App.tsx and never called, so the CTA
-         * still decided everything from the active plan. Which is the exact
-         * thing the enrolment record exists to stop — "changing programme
-         * mid-season used to silently un-join you… It no longer can", says
-         * `seasonEnrolment.ts`, and it still could (audit 3, 2026-09-19).
+         * Running, or not — read off the plans, the programme or the reader's
+         * own copy of it. The sign-up outlives a stop (handleStopProgram leaves
+         * it), so reading it here kept "you are running this" and a Start
+         * button over a programme that was switched off. Not running, the
+         * button is the join, which resumes the held programme.
          */
-        running={
-          activeProgramTemplateIds.includes(seasonProgramId) ||
-          isEnrolled(preferences.seasonEnrolments, seasonInView, seasonWindow.year)
-        }
+        running={isReadyProgrammeRunning(seasonProgramId, activeProgramTemplateIds, database.workoutTemplates)}
         onJoinSeason={() => {
           // Two things, and they are genuinely two: the row that says you are
           // in the season, and the programme swap that makes it trainable.

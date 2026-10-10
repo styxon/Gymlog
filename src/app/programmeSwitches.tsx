@@ -274,13 +274,17 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
   }
 
   async function handleRemoveActiveProgram(planId: string) {
-    await updatePreferences({
-      activePlanIds: removeActiveProgram(preferences.activePlanIds, planId),
-      activePlanId:
-        preferences.activePlanId === planId
-          ? removeActiveProgram(preferences.activePlanIds, planId)[0] ?? null
-          : preferences.activePlanId,
-    });
+    try {
+      await updatePreferences({
+        activePlanIds: removeActiveProgram(preferences.activePlanIds, planId),
+        activePlanId:
+          preferences.activePlanId === planId
+            ? removeActiveProgram(preferences.activePlanIds, planId)[0] ?? null
+            : preferences.activePlanId,
+      });
+    } catch (error) {
+      saveRefused(error);
+    }
   }
 
   function handleStartReadyProgram(workoutTemplateId: string) {

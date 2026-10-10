@@ -58,6 +58,16 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
   } = deps;
 
   /**
+   * A write the disk refused. The card's answers are wired as `void`, so a
+   * rejection was a press that did nothing and said nothing (hunt 11).
+   */
+  function saveRefused(error: unknown) {
+    console.error('Failed to save the programme card answer', error);
+    void haptics.error();
+    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+  }
+
+  /**
    * The completion card's three answers. Each one dismisses the card for this
    * plan id — the card is a question, and every branch is an answer to it.
    */
@@ -65,9 +75,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     if (preferences.dismissedCompletionPlanIds.includes(planId)) {
       return;
     }
-    await updatePreferences({
-      dismissedCompletionPlanIds: [...preferences.dismissedCompletionPlanIds, planId],
-    });
+    try {
+      await updatePreferences({
+        dismissedCompletionPlanIds: [...preferences.dismissedCompletionPlanIds, planId],
+      });
+    } catch (error) {
+      saveRefused(error);
+    }
   }
 
   async function handleCompletionStartNext(planId: string, nextTemplateId: string) {
@@ -80,7 +94,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // 2/2 met the "places full, unlock Pro" sheet after a single step-up, for a
     // programme they had just finished (#bugs 2026-10-09). The finished
     // programme stays held, history and block intact, just not running.
-    const adopted = await handleAdoptReadyProgram(nextTemplateId, { lead: true, replacingPlanId: planId });
+    let adopted = false;
+    try {
+      adopted = await handleAdoptReadyProgram(nextTemplateId, { lead: true, replacingPlanId: planId });
+    } catch (error) {
+      saveRefused(error);
+      return;
+    }
     if (adopted) {
       await dismissCompletionCard(planId);
     }
@@ -298,7 +318,12 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // A fresh `updatedAt` IS the restart: the hero counts sessions from the
     // plan record's own boundary, so the new round begins at 0 of N without
     // touching a single logged session.
-    await upsertWorkoutPlan({ ...plan, updatedAt: new Date().toISOString() });
+    try {
+      await upsertWorkoutPlan({ ...plan, updatedAt: new Date().toISOString() });
+    } catch (error) {
+      saveRefused(error);
+      return;
+    }
     // The card goes because the block is no longer finished — 0 of N — not
     // because it was dismissed. Dismissing put the plan id on a list that is
     // never cleared, so the reader who restarted a programme was never
@@ -306,9 +331,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     // ever (2026-09-16). A new round is a new card, so the old dismissal is
     // dropped here rather than added to.
     if (preferences.dismissedCompletionPlanIds.includes(planId)) {
-      await updatePreferences({
-        dismissedCompletionPlanIds: preferences.dismissedCompletionPlanIds.filter((id) => id !== planId),
-      });
+      try {
+        await updatePreferences({
+          dismissedCompletionPlanIds: preferences.dismissedCompletionPlanIds.filter((id) => id !== planId),
+        });
+      } catch (error) {
+        saveRefused(error);
+      }
     }
     // The hero counts 0 of N and the completion card is gone: the restart is
     // the thing on screen, not a sentence about it.

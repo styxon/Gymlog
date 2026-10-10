@@ -34,7 +34,7 @@ export interface WidgetTapsDeps {
   /** The workout-only day list the widget was drawn with (useHomeWidgetFeed). */
   widgetCompletedWorkoutDayStarts: number[];
   resetToRoute: (route: AppRoute) => void;
-  navigateToActiveWorkout: (options?: { message?: string; resume?: boolean }) => boolean;
+  navigateToActiveWorkout: (options?: { message?: string; resume?: boolean }) => void;
 }
 
 export function useWidgetTaps(deps: WidgetTapsDeps): void {
