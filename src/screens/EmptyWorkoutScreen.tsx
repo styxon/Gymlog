@@ -50,6 +50,7 @@ import {
   resolveFreestyleFinish,
   resolveFreestyleLastEdit,
   resolveFreestyleSessionId,
+  skipFreestyleIdle,
 } from '../lib/emptyWorkoutSession';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryItems, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
 import { t } from '../lib/i18n';
@@ -569,7 +570,13 @@ export function EmptyWorkoutScreen({
   useEffect(() => {
     const seen = editedBoardRef.current;
     if (seen && (seen.exercises !== exercises || seen.rest !== rest)) {
-      lastEditMsRef.current = Date.now();
+      // A board left alone for hours and then touched: the stretch between is
+      // not training time, so the clock's start moves past it (the end-of-session
+      // case is resolveFreestyleFinish's).
+      const editedAtMs = Date.now();
+      const previousEditMs = lastEditMsRef.current ?? editedAtMs;
+      setStartedAtMs((current) => (current === null ? current : skipFreestyleIdle(current, previousEditMs, editedAtMs)));
+      lastEditMsRef.current = editedAtMs;
     }
     editedBoardRef.current = { exercises, rest };
   }, [exercises, rest]);

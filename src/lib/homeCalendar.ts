@@ -277,6 +277,51 @@ export function sessionForSlot<T extends { exercises: ReadonlyArray<unknown> }>(
 }
 
 /**
+ * The session a date is shown with: the rhythm decides whether it trains, the
+ * forecast (when there is one) which session.
+ *
+ * From today on the forecast counts turns, and a day with nothing in it takes
+ * none: `forecastSlotOn` alone counts raw slots and `sessionForSlot` hands an
+ * empty one on at lookup, so with A, an empty B, C, D after A was trained,
+ * today and the next training day both landed on C and every chip after them
+ * was one session off what the hero then walked (bug hunt 10, 2026-10-09).
+ * The walk here starts at the first day that can be trained and steps through
+ * the filled days only. Days before today, a call with no forecast, and a
+ * session already trained today keep `forecastSlotOn`'s own answer.
+ */
+export function sessionForForecastDay<T extends { exercises: ReadonlyArray<unknown> }>(
+  sessions: ReadonlyArray<T>,
+  schedule: TrainingSchedule,
+  date: Date,
+  forecast: SessionForecast | null,
+): T | null {
+  const slot = forecastSlotOn(schedule, date, forecast);
+  const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  if (slot === null || !forecast || dayStart < forecast.fromDayStart) {
+    return sessionForSlot(sessions, slot);
+  }
+  if (forecast.trainedToday && dayStart === forecast.fromDayStart) {
+    return sessionForSlot(sessions, slot);
+  }
+  const filled: number[] = [];
+  sessions.forEach((session, index) => {
+    if (session.exercises.length > 0) {
+      filled.push(index);
+    }
+  });
+  const start = nextStartableSessionIndex(
+    sessions.map((session) => session.exercises.length),
+    forecast.nextSlot,
+  );
+  if (start === null) {
+    return null;
+  }
+  // forecastSlotOn answers nextSlot + turn, turn counted from zero.
+  const turn = slot - forecast.nextSlot;
+  return sessions[filled[(filled.indexOf(start) + turn) % filled.length]] ?? null;
+}
+
+/**
  * What one day is for.
  *
  * The schedule decides whether the day trains and which slot of the programme
@@ -291,8 +336,7 @@ export function getHomeDayView(
   /** Where the rotation stands; from today on, days are named by it (forecastSlotOn). */
   forecast: SessionForecast | null = null,
 ): HomeDayView {
-  const trainingSlotIndex = forecastSlotOn(schedule, new Date(day.dayStart), forecast);
-  const session = sessionForSlot(sessions, trainingSlotIndex);
+  const session = sessionForForecastDay(sessions, schedule, new Date(day.dayStart), forecast);
 
   if (session) {
     return {

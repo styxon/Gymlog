@@ -31,13 +31,14 @@ module.exports = [
     name: 'cardio wiring: two quick taps on Complete save the run once',
     run() {
       const screen = code(read('src', 'screens', 'CardioScreen.tsx'));
-      const complete = slice(screen, 'onComplete={async (distanceKm, feel) => {', 'onLeave();');
+      const complete = slice(screen, 'onComplete={async (distanceKm, feel, minutesText) => {', 'onLeave();');
       // The guard answers before anything is awaited; App's isSaving lands a
       // render too late to stop the second tap.
       assert.match(
         complete,
-        /^onComplete=\{async \(distanceKm, feel\) => \{\s*if \(completeInFlightRef\.current\) \{\s*return;\s*\}\s*completeInFlightRef\.current = true;/,
+        /^onComplete=\{async \(distanceKm, feel, minutesText\) => \{\s*if \(completeInFlightRef\.current\) \{\s*return;\s*\}/,
       );
+      assert.ok(complete.indexOf('completeInFlightRef.current = true') !== -1);
       assert.ok(complete.indexOf('completeInFlightRef.current = true') < complete.indexOf('await onSaveCardioSession('));
       // Only a failed save opens it again, so the retry is a real retry.
       assert.match(complete, /\} catch \{\s*completeInFlightRef\.current = false;\s*return;\s*\}/);
@@ -49,15 +50,20 @@ module.exports = [
     run() {
       const screen = code(read('src', 'screens', 'CardioScreen.tsx'));
       const finish = slice(screen, 'function CardioFinishView(', 'function CardioSheet(');
-      assert.match(finish, /const \[weekMinutes\] = useState\(\s*\(\) =>\s*getWeekCardioMinutes\(cardioSessions,/);
-      assert.doesNotMatch(finish, /const weekMinutes = /);
+      // The stored rows are frozen when Finish opens; the run joins them as a row
+      // and the seconds are rounded once (hunt 10: two roundings read a minute short).
+      assert.match(finish, /const \[storedAtOpen\] = useState\(cardioSessions\);/);
+      assert.match(finish, /const weekMinutes = getWeekCardioMinutes\(\s*\[\.\.\.storedAtOpen, \{ performedAt: finish\.endedAt, durationSec \}\],/);
+      assert.doesNotMatch(finish, /getWeekCardioMinutes\(cardioSessions/);
+      assert.doesNotMatch(finish, /Math\.round\(durationSec \/ 60\)/);
     },
   },
   {
     name: 'cardio wiring: the saved run carries the moment it stopped',
     run() {
       const screen = code(read('src', 'screens', 'CardioScreen.tsx'));
-      assert.match(screen, /endedAt: getCardioEndedAt\(activeCardio, nowMs\),/);
+      assert.match(screen, /const finish = resolveCardioFinish\(activeCardio, nowMs, minutesText\);/);
+      assert.match(screen, /endedAt: finish\.endedAt,/);
       const provider = code(read('src', 'state', 'AppProvider.tsx'));
       const save = slice(provider, 'function saveCardioSession(', 'function resetAllData(');
       assert.match(save, /performedAt:\s*input\.endedAt && Number\.isFinite\(Date\.parse\(input\.endedAt\)\)\s*\?\s*input\.endedAt/);

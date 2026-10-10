@@ -722,4 +722,121 @@ module.exports = [
       assert.equal(reps.targetReps, 13);
     },
   },
+  {
+    // Hunt 2026-10-09: the break rule compared the last two sessions only, so
+    // the first session back after five weeks away opened at +2.5 kg and the
+    // hold landed on the second one back.
+    name: 'progression: the first session back after a break holds, by the days since the newest session',
+    run() {
+      const earned = [entry(60, 12, 0), entry(60, 12, 7)];
+      const DAY = DAY_MS;
+      // Days after the newest session, at the same time of day.
+      const at = (days) => gate({ history: earned, nowMs: NOW + days * DAY });
+
+      assert.equal(at(7).recommendation, 'increase', 'a week on is the cadence');
+      assert.equal(at(9).recommendation, 'increase');
+      for (const days of [10, 35, 112]) {
+        const decision = at(days);
+        assert.equal(decision.recommendation, 'hold', `${days} days: ${JSON.stringify(decision)}`);
+        assert.equal(decision.holdReason, 'gap_return');
+        assert.equal(decision.loadKg, 60);
+      }
+      // Without a clock only the gap between sessions counts, as before.
+      assert.equal(gate({ history: earned }).recommendation, 'increase');
+
+      // An empty visit in between still does not silence the gate (#350): the
+      // break is counted from the newest session that logged something.
+      const empty = entry(60, 12, -3, { sets: [] });
+      assert.equal(gate({ history: [empty, ...earned], nowMs: NOW + 5 * DAY }).recommendation, 'increase');
+      assert.equal(gate({ history: [empty, ...earned], nowMs: NOW + 35 * DAY }).holdReason, 'gap_return');
+
+      // The bodyweight rep gate reads the same rule.
+      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const reps = (days) =>
+        resolveProgressedReps({
+          history: [entry(0, 12, 0), entry(0, 12, 7)],
+          templateTargetReps: 12,
+          targetSets: 3,
+          level: 'beginner',
+          trackingMode: 'bodyweight',
+          automatedProgressionEnabled: true,
+          nowMs: NOW + days * DAY,
+        });
+      assert.equal(reps(7).progressed, true);
+      assert.equal(reps(35).progressed, false);
+      assert.equal(reps(35).targetReps, 12);
+    },
+  },
+  {
+    name: 'progression: the first session back holds end to end, five weeks after the last one',
+    run() {
+      const { workoutReducer } = require('../../.test-dist/features/workout/workoutState');
+      const template = {
+        id: 'tpl_back',
+        name: 'Push',
+        defaultScheduleMode: 'weekly',
+        sessions: [
+          {
+            id: 'push',
+            name: 'Push',
+            orderIndex: 0,
+            exercises: [
+              { id: 'e_bench', exerciseName: 'Bench Press', slotId: 'bench', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'bench' },
+              { id: 'e_dips', exerciseName: 'Dips', slotId: 'dips', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'dips' },
+            ],
+          },
+        ],
+      };
+      const startAt = (state, ms) =>
+        workoutReducer(state, {
+          type: 'session/startFromRuntimeTemplate',
+          payload: { template, sessionOrderIndex: 0, unitPreference: 'kg', progression: { automatedProgressionEnabled: true, setupLevel: 'beginner', nowMs: ms } },
+        });
+      let state = { activeSession: null, completionSummary: null, history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null }, nowMs: 0 };
+      for (const ms of [NOW - 7 * DAY_MS, NOW]) {
+        state = startAt(state, ms);
+        for (const [slotId, load, reps] of [['bench', '60', '8'], ['dips', '0', '10']]) {
+          const slot = state.activeSession.exercises.find((exercise) => exercise.slotId.endsWith(slotId)).slotId;
+          for (let setIndex = 0; setIndex < 3; setIndex += 1) {
+            state = workoutReducer(state, { type: 'set/updateDraft', payload: { slotId: slot, setIndex, patch: { loadText: load, repsText: reps } } });
+            state = workoutReducer(state, { type: 'set/complete', payload: { slotId: slot, setIndex, nowMs: ms, unitPreference: 'kg' } });
+          }
+        }
+        state = workoutReducer(state, { type: 'session/finishWorkout', payload: { performedAt: new Date(ms).toISOString() } });
+        state = workoutReducer(state, { type: 'session/clearCompletedSession' });
+      }
+      const opening = (ms) => {
+        const [bench, dips] = startAt(state, ms).activeSession.exercises;
+        return { load: bench.sets[0].plannedLoadKg, auto: bench.sets[0].autoProgressedFromKg, reps: dips.sets[0].plannedTargetReps };
+      };
+      assert.deepEqual(opening(NOW + 7 * DAY_MS), { load: 62.5, auto: 60, reps: 11 }, 'a week on, both climb');
+      assert.deepEqual(opening(NOW + 35 * DAY_MS), { load: 60, auto: undefined, reps: undefined }, 'back after five weeks, both repeat');
+    },
+  },
+  {
+    // Hunt 2026-10-09: a session saved while the phone's clock ran ahead stayed
+    // the gate's newest after the clock was fixed. The months to it read as a
+    // break and held a jump the real sessions had earned.
+    name: 'progression: a session dated after now ranks below the real ones',
+    run() {
+      const ahead = entry(60, 12, -90);
+      const real = [entry(60, 12, 0), entry(60, 12, 7)];
+      const decision = gate({ history: [ahead, ...real], nowMs: NOW + DAY_MS });
+      assert.equal(decision.recommendation, 'increase', JSON.stringify(decision));
+      assert.equal(decision.loadKg, 62.5);
+
+      // And the target the missed-reps rule reads is the real last session.
+      const { resolveMissedRepsTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const short = entry(60, [6, 6, 6], 0);
+      const target = resolveMissedRepsTarget({
+        history: [entry(60, 12, -90), short],
+        repsMin: 12,
+        targetSets: 3,
+        trackingMode: 'load_and_reps',
+        automatedProgressionEnabled: true,
+        nowMs: NOW + DAY_MS,
+      });
+      assert.deepEqual(target, { targetReps: 6, fromAverage: 6 });
+    },
+  },
 ];

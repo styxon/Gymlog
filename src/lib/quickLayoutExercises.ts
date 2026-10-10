@@ -34,7 +34,9 @@ type QuickLayoutFocus =
 const FOCUS_LIFTS: Record<QuickLayoutFocus, string[]> = {
   push: ['Bench Press', 'Overhead Press', 'Incline Dumbbell Press', 'Triceps Pushdown'],
   pull: ['Barbell Row', 'Lat Pulldown', 'Seated Cable Row', 'Dumbbell Curl'],
-  legs: ['Back Squat', 'Romanian Deadlift', 'Leg Press', 'Lying Leg Curls'],
+  // Not the lower day's list: a week that holds both (Push / Pull / Legs /
+  // Upper / Lower) squatted, hinged and pressed the same four lifts twice.
+  legs: ['Back Squat', 'Romanian Deadlift', 'Leg Extension', 'Standing Calf Raise'],
   upper: ['Bench Press', 'Barbell Row', 'Overhead Press', 'Lat Pulldown'],
   lower: ['Back Squat', 'Romanian Deadlift', 'Leg Press', 'Lying Leg Curls'],
   full_body: ['Back Squat', 'Bench Press', 'Barbell Row'],
@@ -46,6 +48,39 @@ const FOCUS_LIFTS: Record<QuickLayoutFocus, string[]> = {
   biceps: ['Dumbbell Curl', 'Hammer Curl'],
   glutes: ['Hip Thrust', 'Bulgarian Split Squat'],
 };
+
+/**
+ * A day name can also say how it is trained: "Upper Heavy", "Push Volume",
+ * "Lower Pump". The cards for those layouts promise a rotation of intensities,
+ * and every focus used to read only its first word, so Heavy and Pump days came
+ * out as the same four lifts (hunt 2026-10-09). A name with no qualifier, and
+ * "Strength", which is the focus's usual day, takes the usual lifts above. Only
+ * a day that names a single focus is asked.
+ */
+type QuickLayoutIntensity = 'heavy' | 'pump';
+
+const INTENSITY_LIFTS: Partial<Record<QuickLayoutFocus, Partial<Record<QuickLayoutIntensity, string[]>>>> = {
+  push: { pump: ['Incline Dumbbell Press', 'Cable Fly', 'Lateral Raise', 'Triceps Pushdown'] },
+  pull: { pump: ['Lat Pulldown', 'Seated Cable Row', 'Face Pull', 'Hammer Curl'] },
+  legs: { pump: ['Leg Press', 'Bulgarian Split Squat', 'Lying Leg Curls', 'Standing Calf Raise'] },
+  upper: {
+    heavy: ['Incline Bench Press', 'T-Bar Row', 'Dumbbell Shoulder Press', 'Lat Pulldown'],
+    pump: ['Incline Dumbbell Press', 'Seated Cable Row', 'Lateral Raise', 'Dumbbell Curl'],
+  },
+  lower: {
+    heavy: ['Deadlift', 'Front Squat', 'Hip Thrust', 'Seated Leg Curl'],
+    pump: ['Leg Press', 'Bulgarian Split Squat', 'Lying Leg Curls', 'Standing Calf Raise'],
+  },
+};
+
+const INTENSITY_PATTERNS: Array<[QuickLayoutIntensity, RegExp]> = [
+  ['heavy', /\bheavy\b/i],
+  ['pump', /\b(?:pump|volume)\b/i],
+];
+
+function parseQuickLayoutIntensity(dayName: string): QuickLayoutIntensity | null {
+  return INTENSITY_PATTERNS.find(([, pattern]) => pattern.test(dayName))?.[0] ?? null;
+}
 
 /**
  * "Full Body A / B / C" are three different days, not one day three times:
@@ -104,9 +139,11 @@ export function quickLayoutLiftNames(dayName: string): string[] {
   }
 
   const perFocus = focuses.length === 1 ? 4 : 2;
+  const intensity = focuses.length === 1 ? parseQuickLayoutIntensity(dayName) : null;
   const names: string[] = [];
   for (const focus of focuses.slice(0, 2)) {
-    for (const name of FOCUS_LIFTS[focus].slice(0, perFocus)) {
+    const lifts = (intensity && INTENSITY_LIFTS[focus]?.[intensity]) || FOCUS_LIFTS[focus];
+    for (const name of lifts.slice(0, perFocus)) {
       if (!names.includes(name)) {
         names.push(name);
       }

@@ -616,7 +616,8 @@ function resolveHistoricalSetDraft(
     fatigueSignal: options.fatigueSignal,
     fallbackLoadKg: matched.loadKg,
     fallbackReps: matched.reps,
-    // The early jump reads a single session, and only a recent one counts.
+    // The early jump reads a single session, and only a recent one counts;
+    // the break rule counts the days since the newest one.
     nowMs: options.nowMs ?? Date.now(),
     cautionArea,
   });
@@ -633,6 +634,7 @@ function resolveHistoricalSetDraft(
     automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
     fatigueSignal: options.fatigueSignal,
     cautionArea,
+    nowMs: options.nowMs ?? Date.now(),
   });
 
   // Reps short of the programme last time: the same weight, a target the
@@ -2487,7 +2489,11 @@ function fileLoggedSessions(
     slotHistory[key] = key.startsWith('logged:') ? entries.filter((item) => !sessionIds.has(item.sessionId)) : entries;
   });
 
-  const touched = new Set<string>();
+  // Each lift's new entries, in the order they are filed. Gathered, then laid
+  // in front of the old ones once: copying the lift's whole list for every
+  // entry was quadratic in the sessions per lift, and a multi-year import
+  // files thousands under one bench (hunt, 2026-10-09).
+  const filedBySlot = new Map<string, WorkoutSlotHistoryEntry[]>();
   sessions.forEach(({ performedAt, sessionId, templateName, exercises }) => {
     exercises.forEach((exercise) => {
       const name = exercise.exerciseName?.trim();
@@ -2517,8 +2523,12 @@ function fileLoggedSessions(
         })),
         skipped: false,
       };
-      slotHistory[slotId] = [entry, ...(slotHistory[slotId] ?? [])];
-      touched.add(slotId);
+      const filed = filedBySlot.get(slotId);
+      if (filed) {
+        filed.push(entry);
+      } else {
+        filedBySlot.set(slotId, [entry]);
+      }
     });
   });
 
@@ -2528,8 +2538,9 @@ function fileLoggedSessions(
     const value = Date.parse(entry.performedAt);
     return Number.isFinite(value) ? value : 0;
   };
-  touched.forEach((slotId) => {
-    slotHistory[slotId] = [...slotHistory[slotId]]
+  // The last filed goes first, as one at a time in front of the list put it.
+  filedBySlot.forEach((filed, slotId) => {
+    slotHistory[slotId] = [...filed.reverse(), ...(slotHistory[slotId] ?? [])]
       .sort((left, right) => timeOf(right) - timeOf(left))
       .slice(0, SLOT_HISTORY_LIMIT);
   });

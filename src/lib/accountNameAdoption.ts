@@ -1,3 +1,5 @@
+import { storedProfileName } from './profileName';
+
 /**
  * The name from a signed-in account, taken once.
  *
@@ -9,7 +11,7 @@
  * back (2026-09-16). A flag records that the account has had its say.
  */
 
-export const MAX_PROFILE_NAME_LENGTH = 32;
+export { MAX_PROFILE_NAME_LENGTH } from './profileName';
 
 export type AccountNameStep =
   /** Nothing to write. */
@@ -36,5 +38,5 @@ export function accountNameStep(input: {
   if (!accountName) {
     return { kind: 'none' };
   }
-  return { kind: 'adopt', name: accountName.slice(0, MAX_PROFILE_NAME_LENGTH) };
+  return { kind: 'adopt', name: storedProfileName(accountName) };
 }

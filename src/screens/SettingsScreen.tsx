@@ -10,6 +10,7 @@ import type { SignInProvider } from '../features/account/accountAuth';
 import { buildFeedbackMailto } from '../lib/feedbackLink';
 import { formatDateNumeric } from '../lib/format';
 import { LEGAL_ENTITY } from '../lib/legalDocuments';
+import { profileInitials } from '../lib/profileName';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
@@ -58,7 +59,8 @@ interface SettingsScreenProps {
    */
   initialScrollOffset?: number;
   onScrollOffsetChange?: (offsetY: number) => void;
-  onResetAllData: () => void;
+  /** Reports its own failures; the dialog closes when it is confirmed, not when this resolves. */
+  onResetAllData: () => void | Promise<void>;
   /**
    * Shown only while the crash screen's set-aside copy of the workout data is on
    * the phone (WorkoutProvider setAsideWorkoutAvailable). Called after the
@@ -85,22 +87,18 @@ interface SettingsScreenProps {
     onSignIn: (provider: SignInProvider) => void;
     onBackupNow: () => void;
     onSignOut: () => void;
+    /**
+     * Whether the cloud copy is older than the phone, read when the Reset
+     * dialog opens: "your cloud backup stays" is only a promise of a restore
+     * when the copy holds everything.
+     */
+    cloudCopyBehind: () => boolean;
     onDeleteRemote: () => void;
     /** Deletes the cloud copy and the server's sign-in, then signs out (App Review 5.1.1(v)). */
     onDeleteAccount: () => void;
   } | null;
 }
 
-
-function getInitials(name: string | null) {
-  if (!name?.trim()) {
-    return 'V';
-  }
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  const first = parts[0]?.charAt(0) ?? 'V';
-  const second = parts.length > 1 ? parts[parts.length - 1].charAt(0) : '';
-  return (first + second).toUpperCase();
-}
 
 /*
  * Prototype icon set (psuite-shared.jsx `Ic`): 24x24 strokes, 20px in the tile.
@@ -303,6 +301,7 @@ export function SettingsScreen({
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [resetVisible, setResetVisible] = useState(false);
+  const [resetCloudBehind, setResetCloudBehind] = useState(false);
   const [restoreAsideVisible, setRestoreAsideVisible] = useState(false);
   const language = preferences.appLanguage;
   // A redeemed promo is Pro too, so the badge cannot read the preview switch.
@@ -363,7 +362,7 @@ export function SettingsScreen({
               </Defs>
               <Circle cx={26} cy={26} r={26} fill="url(#chipAv)" />
             </Svg>
-            <Text style={styles.profileChipInitials}>{getInitials(preferences.profileName)}</Text>
+            <Text style={styles.profileChipInitials}>{profileInitials(preferences.profileName)}</Text>
           </View>
           <View style={styles.profileChipCopy}>
             {/* Just the name. The "member since / new here" line under it was
@@ -678,7 +677,10 @@ export function SettingsScreen({
               danger
               last
               disabled={account?.busy === true}
-              onPress={() => setResetVisible(true)}
+              onPress={() => {
+                setResetCloudBehind(account?.signedIn ? account.cloudCopyBehind() : false);
+                setResetVisible(true);
+              }}
             />
           </View>
           {/* Under the red rows, in green: sign in when signed out, Back up
@@ -764,14 +766,21 @@ export function SettingsScreen({
         language={language}
         visible={resetVisible}
         title={t(language, 'settings.resetData')}
-        message={t(language, account?.signedIn ? 'settings.resetDialog.message.signedIn' : 'settings.resetDialog.message')}
+        message={t(
+          language,
+          !account?.signedIn
+            ? 'settings.resetDialog.message'
+            : resetCloudBehind
+              ? 'settings.resetDialog.message.signedInBehind'
+              : 'settings.resetDialog.message.signedIn',
+        )}
         confirmLabel={t(language, 'settings.resetDialog.confirm')}
         cancelLabel={t(language, 'common.cancel')}
         destructive
         onCancel={() => setResetVisible(false)}
         onConfirm={() => {
           setResetVisible(false);
-          onResetAllData();
+          void onResetAllData();
         }}
       />
       <ConfirmDialog

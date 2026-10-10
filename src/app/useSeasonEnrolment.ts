@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 
 import type { ProgramSeason } from '../lib/programSeasons';
 import { addSeasonEnrolment } from '../lib/seasonEnrolment';
+import type { PreferencesPatch } from '../state/AppProvider';
 import type { AppPreferences } from '../types/models';
 
 /**
@@ -16,7 +17,7 @@ export interface SeasonEnrolmentDeps {
   /** The reader's preferences: the season enrolments already stored. */
   preferences: AppPreferences;
   /** The app context's preference writer. */
-  updatePreferences: (patch: Partial<AppPreferences>) => Promise<unknown>;
+  updatePreferences: (patch: PreferencesPatch) => Promise<unknown>;
 }
 
 export function useSeasonEnrolment(deps: SeasonEnrolmentDeps) {
@@ -25,21 +26,23 @@ export function useSeasonEnrolment(deps: SeasonEnrolmentDeps) {
   /**
    * Signing up for a season — the whole act, in one place.
    *
-   * It writes a row and nothing else. Adopting the season programme is a
-   * separate decision made on the season screen, because it replaces what you
-   * are training today and that needs the sentence next to it.
+   * It writes a row and nothing else. The season screen writes it only after
+   * the season's programme is running: the row is what turns the screen to
+   * "running", and it was written before a cap refusal (hunt 10, #11).
+   *
+   * From the stored enrolments: it runs after the adoption's awaited write,
+   * and this render's snapshot predates that.
    */
   const handleEnrolSeason = useCallback(
-    (season: ProgramSeason, year: number) => {
-      void updatePreferences({
-        seasonEnrolments: addSeasonEnrolment(preferences.seasonEnrolments, {
+    (season: ProgramSeason, year: number) =>
+      updatePreferences((current) => ({
+        seasonEnrolments: addSeasonEnrolment(current.seasonEnrolments, {
           season,
           year,
           joinedAt: new Date().toISOString(),
         }),
-      });
-    },
-    [preferences.seasonEnrolments, updatePreferences],
+      })),
+    [updatePreferences],
   );
 
   return {

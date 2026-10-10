@@ -256,7 +256,9 @@ export function RecordsList({
               </View>
               <View style={styles.lockCardCopy}>
                 <Text style={styles.lockCardTitle}>
-                  {t(language, 'pr.locked.title', { count: lockedCount })}
+                  {lockedCount === 1
+                    ? t(language, 'pr.locked.titleOne')
+                    : t(language, 'pr.locked.title', { count: lockedCount })}
                 </Text>
                 <Text style={styles.lockCardBody}>
                   {t(language, 'pr.locked.body', { months: FREE_RECORD_MONTHS })}

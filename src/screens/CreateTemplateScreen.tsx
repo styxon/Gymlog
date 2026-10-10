@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -35,6 +35,7 @@ import {
   baseSignature,
   clampDayCount,
   canJumpToTemplateBuilderStep,
+  PROGRAMME_NAME_MAX,
   initialTemplateBuilderStep,
   laterTemplateBuilderStep,
   nextTemplateBuilderStep,
@@ -53,8 +54,21 @@ interface TemplateSessionState {
   localKey: string;
   id?: string;
   name: string;
+  /**
+   * The reader typed this name into the day's field. A layout's name, a blank
+   * day's "Päivä 2" and a name loaded from a saved programme are not typed,
+   * and are read by the app's usual naming rules.
+   */
+  nameTyped?: boolean;
   exercises: TemplateExerciseState[];
 }
+
+/**
+ * Asked before a way out the screen does not own (a tab, the AI button) leaves
+ * it. True means the screen took the leaving over: it asks first, and runs
+ * `leave` only if the reader confirms.
+ */
+export type TemplateLeaveGuard = (leave: () => void) => boolean;
 
 interface CreateTemplateScreenProps {
   initialDraft: WorkoutTemplateDraft;
@@ -64,6 +78,11 @@ interface CreateTemplateScreenProps {
   language?: AppLanguage;
   onBack: () => void;
   onSave: (draft: WorkoutTemplateDraft) => Promise<void> | void;
+  /**
+   * Where the shell reads the guard. The tab bar and the AI button unmount
+   * this screen without passing its Back, and dropped a draft nothing stores.
+   */
+  leaveGuardRef?: React.MutableRefObject<TemplateLeaveGuard | null>;
 }
 
 const STEP_LABEL_KEYS: Record<TemplateBuilderStep, I18nKey> = {
@@ -141,8 +160,13 @@ function buildTemplateDraft(
     // was "New template", stored in English on a Finnish programme (2026-09-14).
     name: name.trim() || t(language, 'tpl.namePlaceholder'),
     sessions: sessions.map((session, index) => ({
-      id: session.id,
+      // Every day leaves with an id, minted here for a new one (the provider
+      // mints the same kind): the names the reader typed are remembered against
+      // it once the programme is stored, and the id of a new day is not known
+      // to the screen after that.
+      id: session.id ?? createId('workout_template_session'),
       name: session.name.trim() || `${t(language, 'tpl.dayWord')} ${index + 1}`,
+      nameTyped: session.nameTyped,
       exercises: session.exercises.map(({ localKey: _localKey, ...exercise }) => exercise),
     })),
   };
@@ -174,6 +198,7 @@ export function CreateTemplateScreen({
   language = 'en',
   onBack,
   onSave,
+  leaveGuardRef,
 }: CreateTemplateScreenProps) {
   const theme = useTheme();
   // The add-exercise sheet is a Modal and cannot read this itself.
@@ -198,6 +223,8 @@ export function CreateTemplateScreen({
    * the length of the fade.
    */
   const lastDayDropCount = useRef(1);
+  /** The day whose Remove button was pressed while it held lifts; asked before it goes. */
+  const [pendingDayRemoval, setPendingDayRemoval] = useState<string | null>(null);
 
   // The guided path. An edit opens on the days, with every step behind it
   // already reached.
@@ -208,6 +235,8 @@ export function CreateTemplateScreen({
   const lastBaseSignature = useRef<string | null>(null);
   const [pendingBase, setPendingBase] = useState<{ preset: SplitPreset | null } | null>(null);
   const [confirmingLeave, setConfirmingLeave] = useState(false);
+  /** The way out the leave dialog confirms; null is the screen's own Back. */
+  const pendingLeaveRef = useRef<(() => void) | null>(null);
   const scrollRef = useRef<ScrollView>(null);
 
   const sessionCount = clampDayCount(sessions.length);
@@ -362,6 +391,7 @@ export function CreateTemplateScreen({
       return;
     }
     if (hasUnsavedWork) {
+      pendingLeaveRef.current = null;
       setConfirmingLeave(true);
       return;
     }
@@ -372,6 +402,34 @@ export function CreateTemplateScreen({
   // so the key walks the steps the way the header's chevron does.
   useHardwareBack(handleBack);
 
+  // The shell's ways out ask the same question Back does, in the same dialog.
+  // Read through a ref: the guard is registered once and must see this
+  // render's draft.
+  const unsavedWorkRef = useRef(hasUnsavedWork);
+  unsavedWorkRef.current = hasUnsavedWork;
+  useEffect(() => {
+    if (!leaveGuardRef) {
+      return undefined;
+    }
+    const guard: TemplateLeaveGuard = (leave) => {
+      if (savingRef.current) {
+        return true;
+      }
+      if (!unsavedWorkRef.current) {
+        return false;
+      }
+      pendingLeaveRef.current = leave;
+      setConfirmingLeave(true);
+      return true;
+    };
+    leaveGuardRef.current = guard;
+    return () => {
+      if (leaveGuardRef.current === guard) {
+        leaveGuardRef.current = null;
+      }
+    };
+  }, [leaveGuardRef]);
+
   function updateSessionName(sessionKey: string, nextName: string) {
     setSessions((current) =>
       current.map((session) =>
@@ -379,10 +437,26 @@ export function CreateTemplateScreen({
           ? {
               ...session,
               name: nextName,
+              nameTyped: true,
             }
           : session,
       ),
     );
+  }
+
+  /**
+   * The same question the day-count chips ask, for the same loss: Remove sits
+   * in the day's header, a thumb from the title, and took the day with every
+   * lift in it and nothing to undo it with. An empty day is not worth asking
+   * about.
+   */
+  function requestSessionRemoval(sessionKey: string) {
+    const target = sessions.find((session) => session.localKey === sessionKey);
+    if (!target || target.exercises.length === 0) {
+      removeSession(sessionKey);
+      return;
+    }
+    setPendingDayRemoval(sessionKey);
   }
 
   function removeSession(sessionKey: string) {
@@ -505,6 +579,7 @@ export function CreateTemplateScreen({
           <TextInput
             value={templateName}
             onChangeText={setTemplateName}
+            maxLength={PROGRAMME_NAME_MAX}
             placeholder={t(language, 'tpl.namePlaceholder')}
             placeholderTextColor={theme.faint}
             selectionColor={theme.purple}
@@ -665,7 +740,7 @@ export function CreateTemplateScreen({
                 </View>
 
                 {sessions.length > 1 ? (
-                  <Pressable onPress={() => removeSession(session.localKey)} style={styles.sessionRemoveButton}>
+                  <Pressable onPress={() => requestSessionRemoval(session.localKey)} style={styles.sessionRemoveButton}>
                     <Text style={styles.sessionRemoveButtonText}>{t(language, 'tpl.remove')}</Text>
                   </Pressable>
                 ) : null}
@@ -674,6 +749,7 @@ export function CreateTemplateScreen({
               <TextInput
                 value={session.name}
                 onChangeText={(value) => updateSessionName(session.localKey, value)}
+                maxLength={PROGRAMME_NAME_MAX}
                 placeholder={t(language, 'tpl.day', { index: index + 1 })}
                 placeholderTextColor={theme.faint}
                 selectionColor={theme.purple}
@@ -906,6 +982,24 @@ export function CreateTemplateScreen({
         }}
       />
 
+      {/* One day's Remove button, asked on the same terms as the chips above. */}
+      <ConfirmDialog
+        language={language}
+        visible={pendingDayRemoval !== null}
+        destructive
+        title={t(language, 'tpl.removeDay.title')}
+        message={t(language, 'tpl.removeDay.body')}
+        confirmLabel={t(language, 'tpl.dropDays.confirm')}
+        onCancel={() => setPendingDayRemoval(null)}
+        onConfirm={() => {
+          const target = pendingDayRemoval;
+          setPendingDayRemoval(null);
+          if (target) {
+            removeSession(target);
+          }
+        }}
+      />
+
       {/* A base replaces the days; asked only when the lifts in them are the
           reader's own rather than what the last base put there. */}
       <ConfirmDialog
@@ -932,10 +1026,15 @@ export function CreateTemplateScreen({
         title={t(language, 'tpl.leave.title')}
         message={t(language, 'tpl.leave.body')}
         confirmLabel={t(language, 'tpl.leave.confirm')}
-        onCancel={() => setConfirmingLeave(false)}
-        onConfirm={() => {
+        onCancel={() => {
+          pendingLeaveRef.current = null;
           setConfirmingLeave(false);
-          onBack();
+        }}
+        onConfirm={() => {
+          const leave = pendingLeaveRef.current ?? onBack;
+          pendingLeaveRef.current = null;
+          setConfirmingLeave(false);
+          leave();
         }}
       />
     </View>

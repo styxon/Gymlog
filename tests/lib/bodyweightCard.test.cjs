@@ -559,9 +559,13 @@ module.exports = [
       assert.equal(measureRangeDays('7d', now, now), 7);
       assert.equal(measureRangeDays('7d', firstOld, now), 7);
 
-      // "All" is unchanged: a fortnight at least, two years at most.
+      // "All": a fortnight at least, and then the first entry — not cut at two
+      // years (bug hunt, 2026-10-09; the guard is ALL_RANGE_CEILING_DAYS).
       assert.equal(measureRangeDays('all', null, now), MIN_RANGE_DAYS);
-      assert.equal(measureRangeDays('all', day(2020, 1, 1), now), 730);
+      assert.equal(
+        measureRangeDays('all', day(2020, 1, 1), now),
+        Math.round((now - day(2020, 1, 1)) / 86400000) + 1,
+      );
 
       // No entries at all: the floor, ending today.
       const empty = buildValueWindow([], now, measureRangeDays('3m', null, now));

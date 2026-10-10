@@ -30,6 +30,7 @@ export function ProgramLimitSheet({
   kind = 'own',
   used,
   limit,
+  replacingStop = null,
   language,
   onClose,
   onSeePro,
@@ -43,13 +44,15 @@ export function ProgramLimitSheet({
   kind?: 'own' | 'running';
   used: number;
   limit: number;
+  /** A refused Start next: how many others to stop (RunningCapRefusal). */
+  replacingStop?: number | null;
   language: AppLanguage;
   onClose: () => void;
   onSeePro: () => void;
 }) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
-  const copy = programLimitSheetCopy(kind, used, limit);
+  const copy = programLimitSheetCopy(kind, used, limit, replacingStop);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

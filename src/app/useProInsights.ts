@@ -11,6 +11,7 @@ import {
   detectPlateau,
   pickCompletionLift,
   plateauEpisodeKey,
+  recentLifts,
 } from '../lib/proInsights';
 import { toProgressionFatigueSignal } from '../lib/progressionGate';
 import { buildLiftHistories } from '../lib/trainingHistory';
@@ -38,10 +39,14 @@ export interface ProInsightsDeps {
   database: AppDatabase;
   /** The reader's preferences: language, level and the dismissed plateau episodes. */
   preferences: AppPreferences;
+  /** The workout the completion screen is showing; its lock names a lift from it. */
+  completedSessionId: string | null;
+  /** Today's local date key: what "lately" is counted back from. */
+  todayKey: string;
 }
 
 export function useProInsights(deps: ProInsightsDeps) {
-  const { database, preferences } = deps;
+  const { database, preferences, completedSessionId, todayKey } = deps;
 
   // The paywall-moments data layer: real lift histories → detections (free)
   // and deterministic conclusions (Pro / blurred). Pure, from logged sets.
@@ -82,9 +87,17 @@ export function useProInsights(deps: ProInsightsDeps) {
     () => new Set(preferences.dismissedPlateauEpisodes),
     [preferences.dismissedPlateauEpisodes],
   );
+  // Findings about now (Home's card, the weekly read) are made of lifts
+  // trained lately; the whole histories stay for charts, records and goals.
+  const proRecentLifts = useMemo(
+    () => recentLifts(proLiftHistories, Date.now()),
+    // todayKey is the clock: the window moves on at midnight, not on a new log.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [proLiftHistories, todayKey],
+  );
   const proPlateauLift = useMemo(
-    () => detectPlateau(proLiftHistories, dismissedPlateauEpisodes, preferences.setupCautionFlags),
-    [proLiftHistories, dismissedPlateauEpisodes, preferences.setupCautionFlags],
+    () => detectPlateau(proRecentLifts, dismissedPlateauEpisodes, preferences.setupCautionFlags),
+    [proRecentLifts, dismissedPlateauEpisodes, preferences.setupCautionFlags],
   );
   const proPlateau = useMemo(
     () =>
@@ -101,17 +114,17 @@ export function useProInsights(deps: ProInsightsDeps) {
   const proWeeklyRead = useMemo(
     () =>
       buildWeeklyRead(
-        proLiftHistories,
+        proRecentLifts,
         proFatigue,
         preferences.appLanguage,
         preferences.setupLevel,
         preferences.setupCautionFlags,
       ),
-    [preferences.appLanguage, preferences.setupCautionFlags, preferences.setupLevel, proFatigue, proLiftHistories],
+    [preferences.appLanguage, preferences.setupCautionFlags, preferences.setupLevel, proFatigue, proRecentLifts],
   );
   const proCompletionLift = useMemo(
-    () => pickCompletionLift(proLiftHistories, preferences.setupCautionFlags),
-    [preferences.setupCautionFlags, proLiftHistories],
+    () => pickCompletionLift(proLiftHistories, preferences.setupCautionFlags, completedSessionId),
+    [completedSessionId, preferences.setupCautionFlags, proLiftHistories],
   );
   const proCompletionMoment = useMemo(
     () =>

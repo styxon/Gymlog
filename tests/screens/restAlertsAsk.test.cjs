@@ -308,7 +308,7 @@ module.exports = [
       const call = momentCall(guided, 'GuidedPlayerScreen');
       assert.match(
         call,
-        /onGranted: \(\) => \{\s*const endsAt = endsAtRef\.current;\s*if \(stepRef\.current\?\.type === 'rest' && endsAt !== null && endsAt > Date\.now\(\)\) \{\s*void syncRestNotification\(endsAt, /,
+        /onGranted: \(\) => \{\s*const endsAt = endsAtRef\.current;\s*const shown = stepRef\.current;\s*if \(shown\?\.type === 'rest' && endsAt !== null && endsAt > Date\.now\(\)\) \{\s*void syncRestNotification\(\s*endsAt,\s/,
         'the guided player does not re-arm the rest when permission lands',
       );
       // Through the wrapper that honours the rest-alert switch, never the raw sync.

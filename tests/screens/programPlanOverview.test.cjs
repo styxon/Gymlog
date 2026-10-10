@@ -804,7 +804,8 @@ module.exports = [
       // No other programme: switched off, then the catalogue.
       assert.match(
         app,
-        /onBrowseProgrammes=\{\(\) => \{\s*void onStopProgram\(route\.workoutTemplateId\)\.then\(\(\) => navigate\(\{ tab: 'workout', screen: 'catalog' \}\)\);/,
+        // Only once the stop is written (hunt 10, #37).
+        /onBrowseProgrammes=\{\(\) => \{\s*(?:\/\/[^\n]*\n\s*)*void onStopProgram\(route\.workoutTemplateId\)\.then\(\(stopped\) => \{\s*if \(stopped\) \{\s*navigate\(\{ tab: 'workout', screen: 'catalog' \}\);/,
       );
       // And the switch is one write, not a stop and a resume that would read
       // the running set from the render before the stop.

@@ -16,7 +16,7 @@ const {
 } = require('../../.test-dist/lib/exerciseInstructions.js');
 const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
 const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
 const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
 const { EQUIPMENT_FALLBACKS } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
 
@@ -41,6 +41,15 @@ function reachableLibraryEntries() {
   // prescribed as surely as the rows above — and five of them were English.
   for (const [, candidates] of EQUIPMENT_FALLBACKS) {
     for (const name of candidates) {
+      names.add(name);
+    }
+  }
+  // And the swap sheet offers every member of a row's group. Band Assisted
+  // Pull-Up, Rope Straight-Arm Pulldown, EZ-Bar Curl and the pec deck were
+  // reachable only from there, and all four opened English steps (bug hunt,
+  // 2026-10-09).
+  for (const group of WORKOUT_SUBSTITUTION_GROUPS) {
+    for (const name of group.allowedExerciseNames) {
       names.add(name);
     }
   }

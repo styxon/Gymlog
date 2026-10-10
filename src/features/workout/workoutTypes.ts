@@ -371,6 +371,11 @@ export interface GuidedResumeAnchor {
    * guidedRestOpeningMs).
    */
   restEndsAtMs?: number;
+  /**
+   * A paused rest only: what it had left. The pause has no deadline to keep,
+   * and without this the rest reopens at its full length.
+   */
+  restLeftMs?: number;
 }
 
 export interface WorkoutUiState {

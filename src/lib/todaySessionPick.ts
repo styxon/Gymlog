@@ -83,6 +83,19 @@ export function resolveTodaySessionPick<T extends { id: string }>(input: {
 }
 
 /**
+ * The pick the hero can actually offer. The day picker lists every day of the
+ * programme, an empty one ("Lisää päivä", not yet filled) too, and the hero
+ * passes such a pick over for the rotation's next filled day. Everything else
+ * that reads the pick — the widget, the week chip, the rest-day caption, the
+ * widget tap — has to pass it over the same way, so it is decided once, here
+ * (bug hunt 10, 2026-10-09: the card still carried the empty day, and the 2x1
+ * read "Workout" on a rest day).
+ */
+export function offerablePick<T extends { exercises: ReadonlyArray<unknown> }>(picked: T | null): T | null {
+  return picked && picked.exercises.length > 0 ? picked : null;
+}
+
+/**
  * The pick, followed onto the copy of its programme. A ready programme's first
  * edit copies it under new programme and day ids; a pick keyed by the old ones
  * resolved to nothing, and Home went back to the rotation's day. A pick made in

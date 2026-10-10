@@ -29,9 +29,8 @@ import { useTourScroller } from '../features/tour/useTourScroller';
 import { CardioIconKind, getCardioActivity } from '../lib/cardio';
 import { HomeStatCard } from '../lib/homeStatCards';
 import { VinhaIcon } from '../components/VinhaIcon';
-import { getHomeMiniCalendarDays, getHomeMonthCalendar, HomeDaySessionSummary, sessionForSlot } from '../lib/homeCalendar';
+import { getHomeMiniCalendarDays, getHomeMonthCalendar, HomeDaySessionSummary, sessionForForecastDay } from '../lib/homeCalendar';
 import {
-  forecastSlotOn,
   isScheduleKnown,
   SessionForecast,
   TrainingSchedule,
@@ -637,7 +636,7 @@ export function HomeScreen({
    * from the schedule, the same source the calendar lights its dots from
    * (the plan's STORED weekday labels survive a switch to a cycle untouched:
    * the card said MON/THU while the calendar walked a six-day rotation, user
-   * 2026-08-25). An empty day hands its slot on (`sessionForSlot`).
+   * 2026-08-25). An empty day hands its slot on (`sessionForForecastDay`).
    *
    * One walk for the chips and for what a screen reader hears: the label was
    * built separately from each session's next date, and after empty days
@@ -663,8 +662,7 @@ export function HomeScreen({
     return {
       date,
       session:
-        picked ??
-        sessionForSlot(planSessions, forecastSlotOn(trainingSchedule, date, activePlan?.sessionForecast ?? null)),
+        picked ?? sessionForForecastDay(planSessions, trainingSchedule, date, activePlan?.sessionForecast ?? null),
     };
   });
   useEffect(() => {

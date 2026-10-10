@@ -1,9 +1,12 @@
 import { getWorkedLogSets } from './exerciseLog';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { I18nKey, t } from './i18n';
+import { PLATEAU_STALL_SESSIONS, buildPlateauConclusion, isLiftHeldForCaution } from './proInsights';
+import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
 import { localizeSessionName } from './sessionNameLabel';
 import { isExerciseDone } from './sessionTotals';
 import {
+  LiftHistory,
   buildLiftHistories,
   comparableSessions,
   normalizedName,
@@ -11,7 +14,14 @@ import {
   sessionVolumeKg,
   topSetOf,
 } from './trainingHistory';
-import { AppLanguage, ExerciseLog, ExerciseLogSetEffort, WorkoutSession } from '../types/models';
+import {
+  AppLanguage,
+  ExerciseLog,
+  ExerciseLogSetEffort,
+  SetupCautionFlag,
+  SetupLevel,
+  WorkoutSession,
+} from '../types/models';
 import { formatPercent, getDateTimeFormat, removeTrailingZeros } from './format';
 
 /**
@@ -125,6 +135,13 @@ export interface SessionAnalysisInput {
   language: AppLanguage;
   /** Week number of the plan, when one is running. */
   weekNumber?: number | null;
+  /**
+   * The reader's flagged areas and level, for the "next session" advice: a lift
+   * that loads a flagged area is held on purpose and is never told to go up,
+   * and the step is the level's own. Left out, no lift is held.
+   */
+  cautionFlags?: SetupCautionFlag[] | null;
+  level?: SetupLevel | null;
 }
 
 const MAX_VOLUME_BARS = 6;
@@ -170,6 +187,8 @@ export function buildSessionAnalysis({
   logs,
   language,
   weekNumber = null,
+  cautionFlags = null,
+  level = null,
 }: SessionAnalysisInput): SessionAnalysis | null {
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session) {
@@ -276,7 +295,10 @@ export function buildSessionAnalysis({
     keyNumbers.push({
       labelKey: 'analysis.key.sets',
       value: `${setCount}`,
-      sub: t(language, 'analysis.key.setsSub', { count: sessionLogs.length }),
+      sub:
+        sessionLogs.length === 1
+          ? t(language, 'analysis.key.setsSubOne')
+          : t(language, 'analysis.key.setsSub', { count: sessionLogs.length }),
       grow: 0.85,
     });
   }
@@ -285,6 +307,14 @@ export function buildSessionAnalysis({
   const currentTime = sessionTime(session);
   const liftsByKey = new Map(
     buildLiftHistories(sessions, logs).map((lift) => [lift.key, lift] as const),
+  );
+  // What a lift's run looked like when this session ended: a stall counted past
+  // it is a later session's, not this one's to advise on.
+  const liftsAsOfSession = new Map(
+    buildLiftHistories(
+      sessions.filter((entry) => sessionTime(entry) <= currentTime),
+      logs,
+    ).map((lift) => [lift.key, lift] as const),
   );
 
   const exercises: AnalysisExerciseRow[] = [];
@@ -372,9 +402,30 @@ export function buildSessionAnalysis({
   // ── next session ────────────────────────────────────────────────────────
   const nextActions: AnalysisText[] = [];
 
-  if (heaviest) {
-    const liftName = exerciseNameLabel(language, heaviest.log.exerciseNameSnapshot);
-    const nextWeight = `${removeTrailingZeros(round(heaviest.weight + 2.5))} kg`;
+  // The heaviest lift of the session that the plan is not holding on purpose,
+  // read as of this session: the same rules as the plateau card and the
+  // completion lock. It used to be the heaviest top set, plus a flat 2.5 kg —
+  // a deadlift for a reader with a flagged back, a bench stalled for five
+  // sessions (bug hunt, 2026-10-09).
+  let nextLift: { lift: LiftHistory; log: ExerciseLog; weight: number } | null = null;
+  for (const log of sessionLogs) {
+    const top = topSetOf(log);
+    const lift = liftsAsOfSession.get(normalizedName(log.exerciseNameSnapshot));
+    if (!top || !lift || isLiftHeldForCaution(lift, cautionFlags)) {
+      continue;
+    }
+    if (!nextLift || top.weight > nextLift.weight) {
+      nextLift = { lift, log, weight: top.weight };
+    }
+  }
+
+  if (nextLift && nextLift.lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
+    // Stuck at this weight: the plateau card's advice, reps first, not a bump.
+    nextActions.push({ text: buildPlateauConclusion(nextLift.lift, language, level).body, highlights: [] });
+  } else if (nextLift) {
+    const liftName = exerciseNameLabel(language, nextLift.log.exerciseNameSnapshot);
+    const step = PROGRESSION_LEVEL_PARAMS[getProgressionTier(level)].loadIncrementKg;
+    const nextWeight = `${removeTrailingZeros(round(nextLift.weight + step))} kg`;
     nextActions.push({
       text: t(language, 'analysis.next.progress', { lift: liftName, weight: nextWeight }),
       highlights: [nextWeight],

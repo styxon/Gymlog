@@ -3,7 +3,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { evaluateProgramAdoption, removeActiveProgram } from '../lib/activeProgramSet';
-import { programCapFullMessage } from '../lib/programCapNotice';
+import { programCapFullMessage, RunningCapRefusal } from '../lib/programCapNotice';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
@@ -45,7 +45,7 @@ export interface ProgrammeSwitchesDeps {
   forgetHeldProgramme: AppContextValue['forgetHeldProgramme'];
   workout: ReturnType<typeof useWorkoutContext>;
   /** Opens the running-programmes limit sheet. */
-  setRunningCapSheet: Dispatch<SetStateAction<{ visible: boolean; used: number; cap: number }>>;
+  setRunningCapSheet: Dispatch<SetStateAction<{ visible: boolean } & RunningCapRefusal>>;
   /** VinhaApp's hoisted plan builder for a programme of the reader's own. */
   buildCustomProgrammePlan: (workoutTemplateId: string) => WorkoutPlan | null;
   /** VinhaApp's hoisted leave from a programme's pages. */
@@ -69,6 +69,17 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
     handleStartReadyProgramSession,
     showToast,
   } = deps;
+
+  /**
+   * A switch write the disk refused. Each press below is wired as `void`, and
+   * a rejection there was the switch springing back with no word about it
+   * (hunt 10, #37).
+   */
+  function saveRefused(error: unknown) {
+    console.error('Failed to save the programme switch', error);
+    void haptics.error();
+    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+  }
 
   /** The reader dropping a programme — the only path that removes one. */
   /**
@@ -115,7 +126,8 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
    * plan pointing at this programme goes, or the switch would read off while
    * the programme was still running under the other id.
    */
-  async function handleStopProgram(workoutTemplateId: string) {
+  /** Resolves false when the write was refused, so a caller can stay put. */
+  async function handleStopProgram(workoutTemplateId: string): Promise<boolean> {
     const stopped = stopProgramme({
       activePlanId: preferences.activePlanId,
       activePlanIds: preferences.activePlanIds,
@@ -123,9 +135,15 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
       templateId: workoutTemplateId,
     });
     if (!stopped) {
-      return;
+      return true;
     }
-    await updatePreferences(stopped);
+    try {
+      await updatePreferences(stopped);
+    } catch (error) {
+      saveRefused(error);
+      return false;
+    }
+    return true;
   }
 
   /**
@@ -157,13 +175,18 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
     });
     if (decision.kind === 'blocked') {
       if (decision.canUpgrade) {
-        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
+        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap, replacingStop: null });
         return;
       }
       showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
       return;
     }
-    await updatePreferences({ activePlanIds: resumed.activePlanIds, activePlanId: resumed.activePlanId });
+    try {
+      await updatePreferences({ activePlanIds: resumed.activePlanIds, activePlanId: resumed.activePlanId });
+    } catch (error) {
+      saveRefused(error);
+      return;
+    }
     // A programme switched back on is a programme taken into use; one that
     // was running already and only became the lead is not (analytics audit,
     // 2026-09-21).
@@ -187,14 +210,19 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
     // below counts it among the plans (CI review of #179).
     let plans = database.workoutPlans;
     let toPlanId = to.planId;
-    if (!toPlanId) {
-      const plan = buildCustomProgrammePlan(to.templateId);
-      if (!plan) {
-        return;
+    try {
+      if (!toPlanId) {
+        const plan = buildCustomProgrammePlan(to.templateId);
+        if (!plan) {
+          return;
+        }
+        await upsertWorkoutPlan(plan);
+        plans = [...plans.filter((entry) => entry.id !== plan.id), plan];
+        toPlanId = plan.id;
       }
-      await upsertWorkoutPlan(plan);
-      plans = [...plans.filter((entry) => entry.id !== plan.id), plan];
-      toPlanId = plan.id;
+    } catch (error) {
+      saveRefused(error);
+      return;
     }
     const next = switchActiveProgramme({
       activePlanId: preferences.activePlanId,
@@ -203,7 +231,12 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
       fromTemplateId,
       toPlanId,
     });
-    await updatePreferences(next);
+    try {
+      await updatePreferences(next);
+    } catch (error) {
+      saveRefused(error);
+      return;
+    }
     // A programme switched back on is a programme taken into use.
     if (joinedRunningSet(preferences.activePlanIds, next.activePlanIds)) {
       trackEvent('plan_adopted');
@@ -228,7 +261,14 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
       showToast(t(preferences.appLanguage, 'toast.programDeleteWorkoutRunning'));
       return;
     }
-    await forgetHeldProgramme(workoutTemplateId);
+    try {
+      await forgetHeldProgramme(workoutTemplateId);
+    } catch (error) {
+      console.error('Failed to remove the programme', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.programDeleteFailed'));
+      return;
+    }
     void haptics.success();
     leaveDeletedProgramme(workoutTemplateId);
   }

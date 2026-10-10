@@ -13,6 +13,15 @@ What this does, for every `imageKey` in src/data/generatedExerciseLibrary.ts:
   3. rewrites src/assets/exerciseImages.ts, the lazy map the app reads.
 
 Only the first picture of an exercise is ever shown, so only that one is kept.
+
+free-exercise-db reuses one photo for several different exercises. After the
+files are written every byte-identical group is checked against
+ACCEPTED_SHARED_FRAMES (frames that fairly picture each exercise using them),
+and the run stops on any other. A key whose shared frame shows another
+movement is in NO_PICTURE: it gets no file and no map entry, so the app shows
+its placeholder (owner decision 2026-10-09). Both sets live in
+scripts/exercise-pictures.json, which the library generator and
+tests/lib/exerciseImagesBundled.test.cjs read too.
 Existing .webp files are skipped, so re-running is cheap; delete a file to
 refetch it. Run it (it needs Pillow with WebP, and the network) with:
 
@@ -21,7 +30,9 @@ refetch it. Run it (it needs Pillow with WebP, and the network) with:
 `npm run exercise:sync` runs the library generator first and this after it.
 """
 
+import hashlib
 import io
+import json
 import re
 import sys
 import urllib.request
@@ -34,10 +45,15 @@ ROOT = Path(__file__).resolve().parent.parent
 LIBRARY = ROOT / "src" / "data" / "generatedExerciseLibrary.ts"
 OUT_DIR = ROOT / "assets" / "exercises"
 MAP_FILE = ROOT / "src" / "assets" / "exerciseImages.ts"
+PICTURE_RULES = ROOT / "scripts" / "exercise-pictures.json"
 SOURCE = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/{key}/0.jpg"
 WIDTH = 720
 QUALITY = 75
 KEY_PATTERN = re.compile(r"^[A-Za-z0-9_-]+$")
+
+_rules = json.loads(PICTURE_RULES.read_text(encoding="utf8"))
+NO_PICTURE = frozenset(_rules["noPicture"])
+ACCEPTED_SHARED_FRAMES = [frozenset(group) for group in _rules["acceptedSharedFrames"]]
 
 
 def library_keys():
@@ -46,7 +62,20 @@ def library_keys():
     for key in keys:
         if not KEY_PATTERN.match(key):
             sys.exit(f"Unsafe image key in the library: {key!r}")
-    return keys
+    return [key for key in keys if key not in NO_PICTURE]
+
+
+def unaccepted_shared_frames(keys):
+    """Groups of keys whose written files are byte-identical and not allowlisted."""
+    by_hash = {}
+    for key in keys:
+        digest = hashlib.sha1((OUT_DIR / file_name(key)).read_bytes()).hexdigest()
+        by_hash.setdefault(digest, set()).add(key)
+    return [
+        sorted(group)
+        for group in by_hash.values()
+        if len(group) > 1 and not any(group <= accepted for accepted in ACCEPTED_SHARED_FRAMES)
+    ]
 
 
 def file_name(key):
@@ -130,6 +159,14 @@ def main():
         if stale.name not in wanted:
             stale.unlink()
             print(f"Removed {stale.name}: no exercise uses it any more")
+    clashes = unaccepted_shared_frames(keys)
+    if clashes:
+        for group in clashes:
+            print(f"  same picture for different exercises: {', '.join(group)}")
+        sys.exit(
+            "Look at the pictures, then add each key to NO_PICTURE or the group to "
+            "ACCEPTED_SHARED_FRAMES in scripts/exercise-pictures.json"
+        )
     write_map(keys)
     print(f"Wrote {MAP_FILE}")
 

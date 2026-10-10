@@ -18,13 +18,22 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyn
  *  - no source file names the CDN, apart from the one resolver that has to
  *    recognise the URLs old installs stored;
  *  - that resolver maps those URLs to the bundled picture, and anything else
- *    that looks like an address to null, so nothing can ever be fetched.
+ *    that looks like an address to null, so nothing can ever be fetched;
+ *  - two different exercises never ship byte-identical pictures unless the
+ *    group is named in scripts/exercise-pictures.json: upstream reuses one
+ *    photo for several exercises, and a frame that shows another movement is
+ *    worse than the placeholder (owner decision 2026-10-09).
  */
 
 const ROOT = path.join(__dirname, '..', '..');
 const DIST = path.join(ROOT, '.test-dist');
 const IMAGE_DIR = path.join(ROOT, 'assets', 'exercises');
 const MAP_SOURCE = path.join(ROOT, 'src', 'assets', 'exerciseImages.ts');
+const RULES = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'exercise-pictures.json'), 'utf8'));
+const NO_PICTURE = RULES.noPicture;
+const ACCEPTED_SHARED_FRAMES = RULES.acceptedSharedFrames;
+// The library generator's id for a source key (scripts/generate_free_exercise_library.mjs toId).
+const libraryIdOf = (key) => `free_${key.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`;
 const RESOLVER_SOURCE = path.join('src', 'lib', 'exerciseImageKey.ts');
 
 const { GENERATED_EXERCISE_LIBRARY } = require(path.join(DIST, 'data', 'generatedExerciseLibrary.js'));
@@ -94,7 +103,11 @@ module.exports = [
       );
       assert.deepEqual(stale.map((item) => item.id), [], 'a row still carries imageUrls');
       const without = GENERATED_EXERCISE_LIBRARY.filter((item) => typeof item.imageKey !== 'string');
-      assert.deepEqual(without.map((item) => item.id), [], 'generated rows without a picture key');
+      assert.deepEqual(
+        without.map((item) => item.id).sort(),
+        NO_PICTURE.map(libraryIdOf).sort(),
+        'generated rows without a picture key must be exactly the NO_PICTURE ones',
+      );
       for (const key of libraryKeys()) {
         assert.match(key, /^[A-Za-z0-9_-]+$/, `unsafe key ${key}`);
       }
@@ -169,6 +182,70 @@ module.exports = [
     },
   },
   {
+    // free-exercise-db reuses one frame for several exercises, and the bundler
+    // wrote each key's file separately, so the copies were silently identical:
+    // Quad Stretch showed the Hamstring Stretch pose, Side Lying Groin Stretch
+    // showed Windmills. A group is only allowed when scripts/exercise-pictures.json
+    // names it after somebody looked at the frame.
+    name: 'exercise pictures: two different exercises never ship byte-identical files unless the group is accepted',
+    run() {
+      const crypto = require('node:crypto');
+      const byHash = new Map();
+      for (const key of libraryKeys()) {
+        const digest = crypto
+          .createHash('sha1')
+          .update(fs.readFileSync(path.join(IMAGE_DIR, `${key.toLowerCase()}.webp`)))
+          .digest('hex');
+        if (!byHash.has(digest)) byHash.set(digest, new Set());
+        byHash.get(digest).add(key);
+      }
+      const unaccepted = [...byHash.values()]
+        .filter((group) => group.size > 1)
+        .filter((group) => !ACCEPTED_SHARED_FRAMES.some((accepted) => [...group].every((key) => accepted.includes(key))))
+        .map((group) => [...group].sort().join(' = '));
+      assert.deepEqual(
+        unaccepted,
+        [],
+        'these exercises share one picture: view it, then add the key to noPicture or the group to acceptedSharedFrames in scripts/exercise-pictures.json',
+      );
+    },
+  },
+  {
+    name: 'exercise pictures: the allowlist is honest, every accepted group is still one shared frame of keys that exist',
+    run() {
+      const keys = new Set(libraryKeys());
+      const seen = new Set();
+      for (const group of ACCEPTED_SHARED_FRAMES) {
+        assert.ok(group.length > 1, `accepted group ${group} shares nothing`);
+        const files = new Set();
+        for (const key of group) {
+          assert.ok(keys.has(key), `${key} is in acceptedSharedFrames but has no picture`);
+          assert.ok(!seen.has(key), `${key} is in two accepted groups`);
+          seen.add(key);
+          files.add(fs.readFileSync(path.join(IMAGE_DIR, `${key.toLowerCase()}.webp`)).toString('base64'));
+        }
+        assert.equal(files.size, 1, `accepted group ${group.join(', ')} no longer shares one frame; drop it from the list`);
+      }
+      for (const key of NO_PICTURE) {
+        assert.ok(!seen.has(key), `${key} cannot be both noPicture and in an accepted group`);
+      }
+    },
+  },
+  {
+    name: 'exercise pictures: a noPicture exercise keeps its library row but has no key, no file and no map entry, so the placeholder shows',
+    run() {
+      const { text } = readMapEntries();
+      const files = new Set(fs.readdirSync(IMAGE_DIR));
+      for (const key of NO_PICTURE) {
+        const row = GENERATED_EXERCISE_LIBRARY.find((item) => item.id === libraryIdOf(key));
+        assert.ok(row, `the library lost ${key}; drop it from noPicture`);
+        assert.equal(row.imageKey, undefined, `${key} still names a picture`);
+        assert.ok(!files.has(`${key.toLowerCase()}.webp`), `assets/exercises still holds ${key}`);
+        assert.ok(!text.includes(`'${key}'`), `the map still names ${key}`);
+      }
+    },
+  },
+  {
     // The map is read when a picture is shown, never when the module loads.
     name: 'exercise pictures: the generated map is lazy, every value a function that requires one file',
     run() {
@@ -203,6 +280,10 @@ module.exports = [
           const file = path.join(IMAGE_DIR, `${key.toLowerCase()}.webp`);
           assert.equal(getExerciseImageSource(key), file, `key ${key}`);
           assert.equal(getExerciseImageSource(LEGACY(key)), file, `legacy url for ${key}`);
+        }
+        for (const key of NO_PICTURE) {
+          assert.equal(getExerciseImageSource(key), null, `${key} has no picture`);
+          assert.equal(getExerciseImageSource(LEGACY(key)), null, `legacy url for ${key} has no picture`);
         }
         assert.equal(getExerciseImageSource('Not_A_Real_Exercise'), null);
         assert.equal(getExerciseImageSource(null), null);

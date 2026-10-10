@@ -119,7 +119,8 @@ module.exports = [
         shell,
         /const startableIndex = nextStartableSessionIndex\(\s*homeSessions\.map\(\(session\) => session\.exercises\.length\),\s*nextSessionIndex,\s*\);/,
       );
-      assert.match(shell, /\(pickedToday && pickedToday\.exercises\.length > 0 \? pickedToday : null\) \?\?/);
+      assert.match(shell, /const usablePick = offerablePick\(pickedToday\);/);
+      assert.match(shell, /const nextSession =\s*usablePick \?\?/);
       // The old fallback chain must not come back anywhere in the shell,
       // App.tsx or a src/app module (phase-B split, 2026-09-30).
       assert.doesNotMatch(

@@ -141,12 +141,12 @@ const ENTRY_POINTS = {
     callers: [{ file: 'src/app/renderHomeScreens.tsx', trigger: 'the chat\'s onComposeProgramme', bounds: ['user-action', 'in-flight-guard'] }],
   },
   'src/features/account/backupApi.ts#uploadBackup': {
-    trigger: 'sign-in, "Back up now", an answered restore-or-keep question, and the automatic backup',
+    trigger: 'sign-in, "Back up now", Reset (one backup before the wipe, only when the cloud copy is older than the phone), an answered restore-or-keep question, and the automatic backup',
     bounds: ['user-action', 'debounced', 'paced', 'max-retries'],
     callers: [
       {
         file: 'src/features/account/useAccountBackup.ts',
-        trigger: 'user actions, or the automatic backup after an 8 s quiet pause when the data differs from the cloud copy',
+        trigger: 'user actions (Reset awaits one interactive backup per confirmed tap), or the automatic backup after an 8 s quiet pause when the data differs from the cloud copy',
         bounds: ['user-action', 'debounced', 'paced', 'max-retries'],
         automatic: true,
         guards: [
@@ -156,6 +156,9 @@ const ENTRY_POINTS = {
           { file: 'src/features/account/useAccountBackup.ts', text: 'notePacingSent(backupPacingRef.current' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'current.lastBackupFingerprint === accountBackupFingerprint(database, workoutHistory)' },
           { file: 'src/features/account/useAccountBackup.ts', text: 'unseenCopyFoundRef.current' },
+          // Reset's one backup: behind the confirm tap, and only when the cloud copy differs from the phone.
+          { file: 'src/app/renderProfileTab.tsx', text: 'if (accountBackup.cloudCopyBehind()) {' },
+          { file: 'src/features/account/useAccountBackup.ts', text: 'current.lastBackupFingerprint !== accountBackupFingerprint(database, workoutHistory)' },
           // uploadCurrent's loop: one silent retry, a second refusal returns.
           { file: 'src/features/account/useAccountBackup.ts', text: 'if (attempt > 0)' },
         ],

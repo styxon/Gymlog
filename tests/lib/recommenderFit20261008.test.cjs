@@ -8,7 +8,7 @@ const {
 } = require(dist + 'lib/firstRunSetup.js');
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
 const { buildRecommendationInput } = require(dist + 'lib/recommendationInput.js');
-const { selectWaterfallDecision } = require(dist + 'lib/recommendationWaterfall.js');
+const { reasonOverProgramme, selectWaterfallDecision } = require(dist + 'lib/recommendationWaterfall.js');
 const {
   getRecommendationProgramDefinition,
   isRecoveryOnlyProgram,
@@ -186,6 +186,82 @@ module.exports = [
         assert.ok(!reasonsFor(lean, programId).includes(line), programId);
       }
       assert.equal(programHoldsConditioning('tpl_no_such_programme'), null);
+    },
+  },
+  {
+    // Bug hunt, 2026-10-09: the reason belonged to the lane, not the week.
+    // "A balanced week that covers strength, condition, and energy" sat over
+    // FIT, HOME Starter and the six-day HUGE Elite, and "a balanced base with
+    // less conditioning" over FIT; none of them has a conditioning set.
+    name: 'recommender fit: a reason that names conditioning sits only over a week that holds some',
+    run() {
+      const CLAIMS = new Set(['wf.general.primary', 'wf.lean_athletic.alt']);
+      const DISCLAIMS = new Set(['wf.general.primaryStrength', 'wf.lean_athletic.altStrength']);
+      const offenders = [];
+      const seen = { claims: 0, disclaims: 0 };
+      const check = (label, key, programId) => {
+        if (!key || !programId) return;
+        const holds = programHoldsConditioning(programId);
+        if (CLAIMS.has(key)) {
+          seen.claims += 1;
+          if (holds !== true) offenders.push(`${label}: ${key} over ${programId}`);
+        }
+        if (DISCLAIMS.has(key)) {
+          seen.disclaims += 1;
+          if (holds !== false) offenders.push(`${label}: ${key} over ${programId}`);
+        }
+      };
+      for (const [gearName, gear] of Object.entries(GEARS)) {
+        for (const gender of ['male', 'female']) {
+          for (const level of ['beginner', 'advanced', 'pro']) {
+            for (const days of [2, 3, 4, 5, 6]) {
+              for (const goal of ['general', 'general_fitness', 'lean_athletic']) {
+                const sel = selection({ gear, gender, goal, level, daysPerWeek: days });
+                const label = `${gearName} ${gender} ${goal} ${level} ${days}d`;
+                // The waterfall's own decision, and the one the cards print
+                // after the scoring's swaps.
+                const decision = selectWaterfallDecision(buildRecommendationInput(sel));
+                check(`${label} waterfall`, decision.whyPrimary, decision.primaryProgramId);
+                check(`${label} waterfall`, decision.whyAlternative, decision.alternativeProgramId);
+                const applied = featured(sel).waterfall;
+                if (applied) {
+                  check(`${label} applied`, applied.whyPrimary, applied.primaryProgramId);
+                  check(`${label} applied`, applied.whyAlternative, applied.alternativeProgramId);
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(offenders, []);
+      assert.ok(seen.claims > 0 && seen.disclaims > 0, JSON.stringify(seen));
+
+      // The cases the hunt found, by name.
+      const general = featured(selection({ gender: 'male', goal: 'general_fitness', level: 'advanced', daysPerWeek: 5 })).waterfall;
+      assert.equal(general.primaryProgramId, 'tpl_6_day_ppl_v1');
+      assert.equal(general.whyPrimary, 'wf.general.primaryStrength');
+      const lean = selectWaterfallDecision(
+        buildRecommendationInput(selection({ gender: 'male', goal: 'lean_athletic', level: 'advanced', daysPerWeek: 2 })),
+      );
+      assert.equal(lean.alternativeProgramId, 'tpl_3_day_full_body_v1');
+      assert.equal(lean.whyAlternative, 'wf.lean_athletic.altStrength');
+      // The scoring asks again after a swap, with whichever form the waterfall
+      // chose: each form turns into the one the new programme needs.
+      for (const key of ['wf.general.primary', 'wf.general.primaryStrength']) {
+        assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.general.primary', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.general.primaryStrength', key);
+      }
+      for (const key of ['wf.lean_athletic.alt', 'wf.lean_athletic.altStrength']) {
+        assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.lean_athletic.alt', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.lean_athletic.altStrength', key);
+      }
+      // Other lines, and a programme the catalog does not know, pass through.
+      assert.equal(reasonOverProgramme('wf.muscle.primary', 'tpl_3_day_full_body_v1'), 'wf.muscle.primary');
+      assert.equal(reasonOverProgramme('wf.general.primary', 'tpl_no_such_programme'), 'wf.general.primary');
+      for (const language of ['en', 'fi']) {
+        assert.doesNotMatch(t(language, 'wf.general.primaryStrength'), /condition|kunto|energ/i, language);
+        assert.doesNotMatch(t(language, 'wf.lean_athletic.altStrength'), /less|vähemmän/i, language);
+      }
     },
   },
   {

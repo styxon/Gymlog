@@ -870,10 +870,23 @@ export function getGuidedStepAnchor(step: GuidedStep): GuidedResumeAnchor {
   }
 }
 
-/** The anchor of a rest with the time it ends — or without one, once it is paused or over. */
+/**
+ * The anchor of a rest with the time it ends, or without one once it is over.
+ * A paused rest carries its leftover instead (withGuidedRestPaused).
+ */
 export function withGuidedRestDeadline(anchor: GuidedResumeAnchor, endsAtMs: number | null): GuidedResumeAnchor {
-  const { restEndsAtMs: _dropped, ...plain } = anchor;
+  const { restEndsAtMs: _dropped, restLeftMs: _left, ...plain } = anchor;
   return endsAtMs === null ? plain : { ...plain, restEndsAtMs: endsAtMs };
+}
+
+/**
+ * The anchor of a rest that is standing still, with the time it has left. A
+ * pause has no deadline to store, and without this the reopened rest had only
+ * its nominal length to start from.
+ */
+export function withGuidedRestPaused(anchor: GuidedResumeAnchor, leftMs: number): GuidedResumeAnchor {
+  const { restEndsAtMs: _dropped, restLeftMs: _left, ...plain } = anchor;
+  return Number.isFinite(leftMs) ? { ...plain, restLeftMs: Math.max(0, Math.round(leftMs)) } : plain;
 }
 
 /** No rest is stretched past this on reopening: a clock set back must not strand the reader. */
@@ -887,7 +900,7 @@ const GUIDED_REST_REOPEN_CAP_MS = 30 * 60 * 1000;
  * screen: Android killing the app mid-rest used to bring it back as a new,
  * full-length rest with a new OS alert, however long ago the old one ended.
  * Zero means it ended while the reader was away — the timer then moves on to
- * the set at once.
+ * the set at once. A paused rest has no deadline, only the time it had left.
  */
 export function guidedRestOpeningMs(
   anchor: GuidedResumeAnchor | null | undefined,
@@ -899,13 +912,70 @@ export function guidedRestOpeningMs(
     !anchor ||
     anchor.type !== 'rest' ||
     anchor.slotId !== step.slotId ||
-    anchor.setIndex !== step.setIndex ||
-    typeof anchor.restEndsAtMs !== 'number' ||
-    !Number.isFinite(anchor.restEndsAtMs)
+    anchor.setIndex !== step.setIndex
   ) {
     return null;
   }
-  return Math.min(GUIDED_REST_REOPEN_CAP_MS, Math.max(0, anchor.restEndsAtMs - nowMs));
+  if (typeof anchor.restEndsAtMs === 'number' && Number.isFinite(anchor.restEndsAtMs)) {
+    return Math.min(GUIDED_REST_REOPEN_CAP_MS, Math.max(0, anchor.restEndsAtMs - nowMs));
+  }
+  if (typeof anchor.restLeftMs === 'number' && Number.isFinite(anchor.restLeftMs)) {
+    return Math.min(GUIDED_REST_REOPEN_CAP_MS, Math.max(0, anchor.restLeftMs));
+  }
+  return null;
+}
+
+/**
+ * A timer's new time left after a "+15 s" or a lock-screen "+60 s".
+ *
+ * Counted from the deadline when one runs, and never from before now: a rest
+ * that has ended is not a debt the added time pays off. The "Rest over" alert
+ * is the one that offers "+60 s", so it is tapped after the end as a matter of
+ * course, and the free workout (restSchedule.extendRest) makes a new rest of
+ * the added length there. Never below `floorMs`.
+ */
+export function guidedAdjustedMs(input: {
+  endsAtMs: number | null;
+  remainingMs: number;
+  nowMs: number;
+  deltaMs: number;
+  floorMs?: number;
+}): number {
+  const left = Math.max(0, input.endsAtMs !== null ? input.endsAtMs - input.nowMs : input.remainingMs);
+  return Math.max(input.floorMs ?? 0, left + input.deltaMs);
+}
+
+/**
+ * Whether "+60 s" on the lock screen reaches back to a rest that has just run
+ * out into its set. The reader cannot tell the alert from the player's own
+ * advance: coming back to the app settles the clock before, or after, the tap
+ * is delivered, and the answer must not depend on which. Only the set that
+ * follows that very rest qualifies — any other step is somewhere the reader
+ * went on purpose.
+ */
+export function guidedRestToExtend(
+  steps: GuidedStep[],
+  expiredRestIndex: number | null,
+  shownIndex: number,
+): number | null {
+  if (expiredRestIndex === null || shownIndex !== expiredRestIndex + 1) {
+    return null;
+  }
+  const rest = steps[expiredRestIndex];
+  const shown = steps[shownIndex];
+  if (rest?.type !== 'rest' || rest.recoveryKind || shown?.type === 'rest') {
+    return null;
+  }
+  return expiredRestIndex;
+}
+
+/**
+ * Whether the rest-over cue is worth sounding. Only for a rest that ran out in
+ * front of the reader: one that opened with nothing left ended while the
+ * screen was gone, and its cue would be the late noise the timer avoids.
+ */
+export function guidedRestCueDue(openedWithMs: number, nextMs: number): boolean {
+  return openedWithMs > 0 && nextMs > -1500;
 }
 
 /** The index of the step an anchor names in *this* list, or null if it is gone. */
@@ -1362,6 +1432,10 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // programmes prescribe it with no weight to a reader who may own none.
   'diamond push-up': 'push-ups - close triceps position',
   'nordic hamstring curl': 'natural glute ham raise',
+  // The pec deck machine is the library's "Butterfly": the same seat, pads
+  // and steps. It is in the chest-fly swap pool and opened nothing (bug hunt,
+  // 2026-10-09).
+  'pec deck': 'butterfly',
 
   // ── Dosages of the app's own rows (extraExerciseLibrary) ───────────────
   //

@@ -48,9 +48,10 @@ import { isEnrolled } from '../lib/seasonEnrolment';
 import { computeSeasonProgress, countSeasonRecords, resolveSeasonBadges } from '../lib/seasonScoring';
 import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
+import { typedSessionNames } from '../lib/templateBuilderSteps';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { haptics } from '../utils/haptics';
-import { CreateTemplateScreen } from '../screens/CreateTemplateScreen';
+import { CreateTemplateScreen, TemplateLeaveGuard } from '../screens/CreateTemplateScreen';
 import { EmptyWorkoutScreen } from '../screens/EmptyWorkoutScreen';
 import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
 import { ExercisesScreen } from '../screens/ExercisesScreen';
@@ -111,7 +112,8 @@ export interface WorkoutTabDeps {
   setupRecommendation: { featuredProgramId?: string | null; secondaryProgramId?: string | null; mismatchNote?: string | null } | null;
   tailoringPreferences: Parameters<typeof buildTailoringBadgeLabels>[0];
   activeProgramTemplateIds: string[];
-  onStopProgram: (workoutTemplateId: string) => Promise<void>;
+  /** False when the write was refused (the toast has said so). */
+  onStopProgram: (workoutTemplateId: string) => Promise<boolean>;
   /** The Active switch turned on — see handleResumeProgram. */
   onResumeProgram: (workoutTemplateId: string) => Promise<void>;
   /** The active programme switched off in favour of another — see handleSwitchActiveProgram. */
@@ -190,6 +192,8 @@ export interface WorkoutTabDeps {
   sessionAdaptationFor: (ref: AdaptedSessionRef | null | undefined) => SessionAdaptation;
   adaptSession: (ref: AdaptedSessionRef, change: (current: SessionAdaptation) => SessionAdaptation) => void;
   templateBuilderDraft: React.ComponentProps<typeof CreateTemplateScreen>['initialDraft'];
+  /** The builder's unsaved-work question, for the tab bar and the AI button. */
+  templateLeaveGuardRef: React.MutableRefObject<TemplateLeaveGuard | null>;
   exerciseBrowserItems: React.ComponentProps<typeof ExercisesScreen>['items'];
   recentExerciseBrowserItems: React.ComponentProps<typeof CreateTemplateScreen>['recentExerciseLibraryItems'];
   upsertWorkoutTemplate: (draft: WorkoutTemplateDraft) => Promise<string>;
@@ -235,7 +239,7 @@ export interface WorkoutTabDeps {
   syncPlanToTemplate: (workoutTemplateId: string) => Promise<void>;
   trackedProgress: Array<{ logs: Array<{ weight: number; repsPerSet: number[]; performedAt: string }> }>;
   workoutSessions: Parameters<typeof computeSeasonProgress>[0];
-  handleEnrolSeason: (season: ProgramSeason, year: number) => void;
+  handleEnrolSeason: (season: ProgramSeason, year: number) => Promise<unknown>;
   programsCatalogItems: ProgramsHomeProps['catalogItems'];
   /** Whether AI-assisted composition opens the chat or the paywall. */
   proUnlocked: boolean;
@@ -300,6 +304,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     sessionAdaptationFor,
     adaptSession,
     templateBuilderDraft,
+    templateLeaveGuardRef,
     exerciseBrowserItems,
     recentExerciseBrowserItems,
     upsertWorkoutTemplate,
@@ -607,7 +612,13 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             : undefined
         }
         onBrowseProgrammes={() => {
-          void onStopProgram(route.workoutTemplateId).then(() => navigate({ tab: 'workout', screen: 'catalog' }));
+          // To the catalogue only once the programme is stopped: a refused
+          // write leaves the reader on its page, with the toast saying why.
+          void onStopProgram(route.workoutTemplateId).then((stopped) => {
+            if (stopped) {
+              navigate({ tab: 'workout', screen: 'catalog' });
+            }
+          });
         }}
         // Only the adopt answers make this programme active; the button's
         // other answers start a session, open an editor or the reader's own
@@ -986,6 +997,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         exerciseLibrary={exerciseBrowserItems}
         recentExerciseLibraryItems={recentExerciseBrowserItems}
         defaultRestSeconds={preferences.defaultRestSeconds}
+        leaveGuardRef={templateLeaveGuardRef}
         onBack={() => navigateBack(workoutHomeRoute)}
         onSave={async (draft) => {
           let workoutTemplateId: string;
@@ -1004,6 +1016,21 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             void haptics.error();
             showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
             return;
+          }
+          // The names the reader typed for the days, remembered as the page's
+          // pencil remembers its own, so the programme page they land on shows
+          // "A" and "Workout B" as typed instead of reading them as placeholders.
+          // Its own write, after the template's: a failure here must not be told
+          // as a failed save.
+          const typedDayNames = typedSessionNames(draft.sessions);
+          if (Object.keys(typedDayNames).length > 0) {
+            try {
+              await updatePreferences((current) => ({
+                readerSessionNames: { ...current.readerSessionNames, ...typedDayNames },
+              }));
+            } catch (error) {
+              console.error('Failed to remember the typed day names', error);
+            }
           }
           // And the plan follows the days. The template is half the record:
           // the plan pins each day to a weekday and decides which comes next,
@@ -1105,6 +1132,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         tailoringPreferences={tailoringPreferences}
         exerciseLibrary={exerciseLibrary}
         liftHistory={liftHistory}
+        proUnlocked={proUnlocked}
+        onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
         plateauNotice={plateauNotice}
         soundCuesEnabled={preferences.soundCuesEnabled}
         onToggleSoundCues={(next) => void updatePreferences({ soundCuesEnabled: next })}
@@ -1196,6 +1225,9 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // "Barbell Bench Press - Medium Grip". A variation filed as its own
         // row (sumo, trap bar) stays on its own page.
         history={exerciseProgressFor(exercise.name)}
+        // The best figure follows the Records list's lock for a Free reader.
+        proUnlocked={proUnlocked}
+        onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
         unitPreference={unitPreference}
         // Decides whether this lift's caution is for this reader.
         cautionFlags={preferences.setupCautionFlags}
@@ -1354,8 +1386,18 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           // filed the reader into summer and handed them the winter programme
           // (audit 3, 2026-09-19). `seasonWindow` above already resolves this
           // correctly, and every other number on the screen reads it.
-          handleEnrolSeason(seasonInView, seasonWindow.year);
-          void handleAdoptReadyProgram(seasonProgramId);
+          //
+          // The programme FIRST, and the row only if it landed, as the goal
+          // flow does. The row was written first, so a join the cap refused
+          // left the screen saying "running" over a programme that was not
+          // (hunt 10, #11).
+          void handleAdoptReadyProgram(seasonProgramId)
+            .then((joined) => (joined ? handleEnrolSeason(seasonInView, seasonWindow.year) : undefined))
+            .catch((error) => {
+              console.error('Failed to join the season', error);
+              void haptics.error();
+              showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+            });
         }}
         onBack={() => navigateBack({ tab: 'workout', screen: 'programs_home' })}
         onOpenProgram={handleOpenProgramDetail}

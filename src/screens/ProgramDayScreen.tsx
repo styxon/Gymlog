@@ -44,6 +44,7 @@ import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { buildSwapAlternatives } from '../lib/swapPickerLists';
 import { formatPlanSessionTitle, localizeSessionName } from '../lib/sessionNameLabel';
 import { formatClock } from '../lib/restSchedule';
+import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
 import { doseUnitSuffix } from '../lib/format';
 import { layout, radii, spacing } from '../theme';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
@@ -1015,7 +1016,7 @@ export function ProgramDayScreen({
               onChangeText={setNameDraft}
               autoFocus
               selectTextOnFocus
-              maxLength={60}
+              maxLength={PROGRAMME_NAME_MAX}
               placeholderTextColor={theme.faint}
               style={styles.titleInput}
               onSubmitEditing={commitRename}

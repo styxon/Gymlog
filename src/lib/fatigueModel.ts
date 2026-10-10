@@ -124,7 +124,13 @@ export function buildFatigueModel(input: FatigueModelInput, referenceDate?: Date
     earliest !== null &&
     latest !== null &&
     earliest <= getRollingWindowStart(new Date(latest), MIN_SPAN_DAYS_FOR_CONFIDENCE);
-  const confident = sessions28d.length >= MIN_SESSIONS_FOR_CONFIDENCE && spanIsWideEnough;
+  // And some load to compare: the load is kilograms lifted, so a bodyweight,
+  // hold, mobility or cardio month adds none. Four such sessions counted as
+  // confidence, and the recovery sheet read "about 100% lighter than your usual
+  // week, you are rested" of a reader who had trained three times (bug hunt,
+  // 2026-10-09). With nothing to measure against there is no ratio to read.
+  const confident =
+    sessions28d.length >= MIN_SESSIONS_FOR_CONFIDENCE && spanIsWideEnough && chronicLoadKg > 0;
 
   return {
     acuteLoadKg: Math.round(acuteLoadKg),

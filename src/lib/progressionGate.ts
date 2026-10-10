@@ -119,9 +119,12 @@ export interface ProgressionGateInput {
   /** Bodyweight exercises accumulate reps; load never moves. */
   trackingMode?: string;
   /**
-   * The caller's clock. Only the early jump reads it: a single session is its
+   * The caller's clock. The early jump reads it: a single session is its
    * whole case, so there is no session before it for the break rule to see.
-   * Absent, no early jump.
+   * The break rule reads it too, for the break that is still going on: the
+   * time between the newest session and today. And a session dated after it
+   * ranks below every real one (sessionsOf). Absent, no early jump and only
+   * the gap between sessions counts as a break.
    */
   nowMs?: number;
 }
@@ -221,8 +224,34 @@ function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, target
  * rule (bug hunt, 2026-10-09). The prefill and the "Last time" card look past
  * them too (selectLatestUsableEntry), and so does the missed-reps target.
  */
-function sessionsOf(history: readonly WorkoutSlotHistoryEntry[]): WorkoutSlotHistoryEntry[] {
-  return history.filter((entry) => entry.sets.length > 0);
+function sessionsOf(history: readonly WorkoutSlotHistoryEntry[], nowMs?: number): WorkoutSlotHistoryEntry[] {
+  const logged = history.filter((entry) => entry.sets.length > 0);
+  if (typeof nowMs !== 'number' || !Number.isFinite(nowMs)) {
+    return logged;
+  }
+  // A session saved while the phone's clock ran ahead stayed history[0] once
+  // the clock was fixed: the gate measured the months to it as a break and
+  // held a jump two clean sessions had earned, while "Last time" showed the
+  // real last session (hunt, 2026-10-09). It ranks below every session dated
+  // up to now, as rankTime in exerciseHistoryLookup ranks it.
+  const isAhead = (entry: WorkoutSlotHistoryEntry) => Date.parse(entry.performedAt) > nowMs;
+  return [...logged.filter((entry) => !isAhead(entry)), ...logged.filter(isAhead)];
+}
+
+/**
+ * Whether today is a break from the newest session: BREAK_DAYS or more since
+ * it, by the caller's clock.
+ *
+ * The gap between the last two sessions only sees a break once the session
+ * after it is logged, so the first session back opened on a raised weight
+ * and the hold landed on the second (hunt, 2026-10-09). A newest session
+ * dated after now is a wrong clock, not a break.
+ */
+function isBreakSince(latest: WorkoutSlotHistoryEntry, nowMs: number | undefined): boolean {
+  if (typeof nowMs !== 'number' || !Number.isFinite(nowMs) || !(Date.parse(latest.performedAt) <= nowMs)) {
+    return false;
+  }
+  return isAtLeastDaysBefore(latest.performedAt, new Date(nowMs).toISOString(), BREAK_DAYS);
 }
 
 /** No load to gate: bodyweight, a hold, a bout of minutes (workoutTypes). */
@@ -233,7 +262,7 @@ function isUnloadedMode(trackingMode: string | undefined): boolean {
 
 export function evaluateProgression(input: ProgressionGateInput): ProgressionDecision {
   const { repsMin, repsMax, targetSets, fatigueSignal, trackingMode } = input;
-  const history = sessionsOf(input.history);
+  const history = sessionsOf(input.history, input.nowMs);
   const params = PROGRESSION_LEVEL_PARAMS[getProgressionTier(input.level)];
 
   // ── Silence: no target to evaluate against, or not enough baseline ────────
@@ -302,9 +331,13 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     return { recommendation: 'hold', holdReason: 'low_completion_rate', loadKg: currentLoadKg };
   }
 
-  // A session that follows a long break is not the moment to add load.
+  // A session that follows a long break is not the moment to add load, and
+  // neither is the first one back from it.
   const previous = history[1];
-  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) {
+  if (
+    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    isBreakSince(latest, input.nowMs)
+  ) {
     return { recommendation: 'hold', holdReason: 'gap_return', loadKg: currentLoadKg };
   }
 
@@ -498,13 +531,15 @@ export interface ProgressedRepsInput {
   automatedProgressionEnabled: boolean;
   /** The flagged area this exercise loads, if any — see resolveProgressedLoadKg. */
   cautionArea?: SetupCautionArea | null;
+  /** The caller's clock, read as the load gate reads it (ProgressionGateInput). */
+  nowMs?: number;
 }
 
 type RepsRecommendation = 'silent' | 'hold' | 'increase';
 
 function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation {
   const { templateTargetReps, targetSets, fatigueSignal } = input;
-  const history = sessionsOf(input.history);
+  const history = sessionsOf(input.history, input.nowMs);
   const params = PROGRESSION_LEVEL_PARAMS[getProgressionTier(input.level)];
 
   if (!(templateTargetReps > 0) || !(targetSets > 0)) {
@@ -528,7 +563,10 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
   }
 
   const previous = history[1];
-  if (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) {
+  if (
+    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    isBreakSince(latest, input.nowMs)
+  ) {
     return 'hold';
   }
 
@@ -584,7 +622,10 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
     // The floor can sit above the template target when the user has been
     // overshooting it; raising from the proven floor is what keeps +1 honest.
     // The session the gate just read: the newest that logged sets.
-    const fromReps = Math.max(input.templateTargetReps, entryMinReps(sessionsOf(input.history)[0], input.targetSets));
+    const fromReps = Math.max(
+      input.templateTargetReps,
+      entryMinReps(sessionsOf(input.history, input.nowMs)[0], input.targetSets),
+    );
     return {
       targetReps: fromReps + REP_INCREMENT,
       progressed: true,
@@ -630,6 +671,15 @@ export interface MissedRepsInput {
  * written for (break round 2026-09-28).
  */
 export const MISSED_REPS_STALE_DAYS = 90;
+
+/**
+ * Older than MISSED_REPS_STALE_DAYS calendar days, at the same time of day.
+ * Ninety fixed 24-hour days ran an hour short or long over a clock change, so
+ * the same 90 days read stale in autumn and fresh in summer (hunt, 2026-10-09).
+ */
+function isStale(performedMs: number, nowMs: number): boolean {
+  return performedMs < getRollingWindowStart(nowMs, MISSED_REPS_STALE_DAYS);
+}
 
 export interface MissedRepsResolution {
   /** What every set's reps dial opens on, below the programme's floor. */
@@ -680,7 +730,8 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   // The newest entry that logged something — the same reading the set
   // screen's prefill takes (selectLatestUsableEntry); an opened-and-abandoned
   // lift must not hide the short session before it.
-  const latest = history.find((entry) => entry.sets.length > 0);
+  // One dated ahead of now by a wrong clock ranks below the real ones.
+  const latest = sessionsOf(history, input.nowMs)[0];
   if (!latest || latest.skipped) {
     return null;
   }
@@ -688,7 +739,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   // 7/6/4/4, and lowering today's target on it is a guess dressed as a plan.
   if (typeof input.nowMs === 'number' && Number.isFinite(input.nowMs)) {
     const performedMs = Date.parse(latest.performedAt);
-    if (!Number.isFinite(performedMs) || input.nowMs - performedMs > MISSED_REPS_STALE_DAYS * 86_400_000) {
+    if (!Number.isFinite(performedMs) || isStale(performedMs, input.nowMs)) {
       return null;
     }
   }
@@ -772,7 +823,7 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   }
   if (typeof input.nowMs === 'number' && Number.isFinite(input.nowMs)) {
     const performedMs = Date.parse(entry.performedAt);
-    if (!Number.isFinite(performedMs) || input.nowMs - performedMs > MISSED_REPS_STALE_DAYS * 86_400_000) {
+    if (!Number.isFinite(performedMs) || isStale(performedMs, input.nowMs)) {
       return null;
     }
   }

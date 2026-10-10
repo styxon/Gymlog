@@ -407,12 +407,21 @@ export function capRangeDays(
   return Math.min(ceilingDays, Math.max(floor, history));
 }
 
+/**
+ * How far "All" may reach back: ten years. It is sold as all of the history, so
+ * it follows the first entry; the bound is only a guard against one entry
+ * stamped by a wrong clock (1970) drawing twenty thousand slots. It was 730,
+ * and a reader with three years of weigh-ins saw the last two (bug hunt,
+ * 2026-10-09).
+ */
+export const ALL_RANGE_CEILING_DAYS = 3660;
+
 /** The measure tab's four chips, in days. */
 const MEASURE_CEILING: Record<'7d' | '3m' | '1y' | 'all', number> = {
   '7d': 7,
   '3m': 91,
   '1y': 365,
-  all: 730,
+  all: ALL_RANGE_CEILING_DAYS,
 };
 
 export function measureRangeDays(
@@ -440,6 +449,16 @@ export function earliestEntryMs(recordedAts: ReadonlyArray<string>): number | nu
     }
   }
   return earliest;
+}
+
+/**
+ * The change across a window: the last day's value minus the first day's that
+ * has one. Null with fewer than two days of readings, where there is no change
+ * to speak of.
+ */
+export function windowValueDelta(days: ReadonlyArray<Pick<WeightWindowDay, 'value'>>): number | null {
+  const values = days.map((day) => day.value).filter((value): value is number => value !== null);
+  return values.length >= 2 ? values[values.length - 1] - values[0] : null;
 }
 
 export function buildValueWindow(

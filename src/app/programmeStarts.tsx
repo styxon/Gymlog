@@ -4,7 +4,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { evaluateProgramAdoption } from '../lib/activeProgramSet';
-import { programCapFullMessage } from '../lib/programCapNotice';
+import { RunningCapRefusal, runningCapRefusal, runningCapRefusalMessage } from '../lib/programCapNotice';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { t } from '../lib/i18n';
@@ -66,7 +66,7 @@ export interface ProgrammeStartsDeps {
   sessionAdaptationFor: (ref: AdaptedSessionRef | null | undefined) => SessionAdaptation;
   setHeldSessionAdaptations: Dispatch<SetStateAction<HeldSessionAdaptations>>;
   /** Opens the running-programmes limit sheet. */
-  setRunningCapSheet: Dispatch<SetStateAction<{ visible: boolean; used: number; cap: number }>>;
+  setRunningCapSheet: Dispatch<SetStateAction<{ visible: boolean } & RunningCapRefusal>>;
   /** VinhaApp's hoisted navigate. */
   navigate: (nextRoute: AppRoute) => void;
   /** VinhaApp's hoisted navigateToGuidedWorkout. */
@@ -388,11 +388,13 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
       proUnlocked: resolveProEntitlement(preferences).unlocked,
     });
     if (decision.kind === 'blocked') {
+      // In the count running now, not the one without the finished programme.
+      const refusal = runningCapRefusal(preferences.activePlanIds, decision);
       if (decision.canUpgrade) {
-        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap });
+        setRunningCapSheet({ visible: true, ...refusal });
         return false;
       }
-      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
+      showToast(runningCapRefusalMessage(preferences.appLanguage, refusal));
       return false;
     }
     await updatePreferences({

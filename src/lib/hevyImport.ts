@@ -15,7 +15,9 @@
  * same file twice cannot duplicate a single workout.
  */
 
+import type { ExerciseNameBookEntry } from '../types/models';
 import { splitCsvRecords } from './csvRecords';
+import { resolveImportedExerciseName } from './hevyExerciseName';
 import { isLiftableWeight } from './weightLimits';
 
 export interface HevyImportedSet {
@@ -354,10 +356,15 @@ export interface HevyLoggedSession {
  * could lift is dropped as the database loader drops it. Only the workouts in
  * `filed` — the ones the database holds — so "last time" never names a
  * session History does not have.
+ *
+ * Filed under the app's name for the lift, not Hevy's title: "last time" is
+ * found by name, and "Bench Press (Barbell)" is never the programme's "Bench
+ * Press" (lib/hevyExerciseName; hunt, 2026-10-09).
  */
 export function hevyWorkoutsToLoggedSessions(
   workouts: readonly HevyImportedWorkout[],
   filed: ReadonlySet<string>,
+  nameBook: readonly ExerciseNameBookEntry[] = [],
 ): HevyLoggedSession[] {
   return workouts
     .filter((workout) => filed.has(hevySessionId(workout)))
@@ -368,7 +375,7 @@ export function hevyWorkoutsToLoggedSessions(
         sessionId: hevySessionId(workout),
         templateName: workout.name,
         exercises: workout.exercises.map((exercise) => ({
-          exerciseName: exercise.name,
+          exerciseName: resolveImportedExerciseName(exercise.name, nameBook),
           sets: exercise.sets
             .filter((set) => set.kind !== 'warmup' && set.reps > 0 && isLiftableWeight(set.weightKg))
             .map((set, setIndex) => ({ setIndex, loadKg: set.weightKg, reps: set.reps, completedAt: performedAt })),

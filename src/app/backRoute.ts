@@ -57,8 +57,31 @@ export function getBackRoute(route: AppRoute, workoutHome: AppRoute): AppRoute |
     return ROOT_ROUTES.profile;
   }
 
+  // The rest of Profile's pages, each to where its own back arrow goes. A
+  // widget landing leaves the history empty, and the key answered null there:
+  // Android closed the app from Training plan while the arrow went to
+  // Profile (hunt 10, #39).
+  if (route.tab === 'profile') {
+    return PROFILE_BACK_FALLBACK[route.screen] ?? null;
+  }
+
   return null;
 }
+
+/** The fallback each Profile page's own back arrow passes (renderProfileTab). */
+const PROFILE_BACK_FALLBACK: Partial<Record<Extract<AppRoute, { tab: 'profile' }>['screen'], AppRoute>> = {
+  settings: ROOT_ROUTES.profile,
+  training_plan: ROOT_ROUTES.profile,
+  milestones: ROOT_ROUTES.profile,
+  notifications: { tab: 'profile', screen: 'settings' },
+  training_break: { tab: 'profile', screen: 'settings' },
+  subscription: { tab: 'profile', screen: 'settings' },
+  legal: { tab: 'profile', screen: 'settings' },
+  edit_profile: { tab: 'profile', screen: 'settings' },
+  my_data: { tab: 'profile', screen: 'settings' },
+  export_plan: { tab: 'profile', screen: 'settings' },
+  membership_end: { tab: 'profile', screen: 'subscription' },
+};
 
 /**
  * Whether the back route above is the destination rather than a fallback.

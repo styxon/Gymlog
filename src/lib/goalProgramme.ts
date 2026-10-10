@@ -1,5 +1,6 @@
 import { PLAIN_EXERCISE_NAMES } from './exerciseNameLabel';
 import { findFiledLibraryIndex, findGuidedLibraryIndex } from './guidedPlayer';
+import { resolveImportedExerciseName } from './hevyExerciseName';
 import { isSameLiftByGroup, liftGroupNames, liftGroupOf } from './liftIdentity';
 import { StrengthGoal } from './strengthGoals';
 
@@ -207,7 +208,21 @@ function liftGroupOfName(name: string, withLibrary: boolean): number | null {
   return liftGroupOf(groupSpelling(name, withLibrary));
 }
 
-export function isSameLift(left: string, right: string, libraryNames?: readonly string[]): boolean {
+/**
+ * A logged name in the app's words before it is compared. A Hevy import keeps
+ * Hevy's titles in the history: "Squat (Barbell)" matched no squat target,
+ * while the library's bracket strip filed "Bench Press (Dumbbell)" and
+ * "Deadlift (Smith Machine)" under the barbell lifts (hunt, 2026-10-09).
+ * Read the way the import files "last time" (lib/hevyExerciseName), the
+ * barbell lift is the bare name and any other implement stays its own lift.
+ */
+function liftSpelling(name: string): string {
+  return resolveImportedExerciseName(name);
+}
+
+export function isSameLift(rawLeft: string, rawRight: string, libraryNames?: readonly string[]): boolean {
+  const left = liftSpelling(rawLeft);
+  const right = liftSpelling(rawRight);
   const a = normalize(left);
   const b = normalize(right);
   if (!a || !b) {
@@ -276,10 +291,11 @@ function libraryRowsNamedByGroup(group: number, libraryNames: readonly string[])
  * And never when `isSameLift` says it is a different lift: this only narrows.
  */
 export function isSameLiftAsLibraryRow(
-  loggedName: string,
+  rawLoggedName: string,
   libraryRowName: string,
   libraryNames: readonly string[],
 ): boolean {
+  const loggedName = liftSpelling(rawLoggedName);
   const logged = normalize(loggedName);
   const row = normalize(libraryRowName);
   if (!logged || !row) {

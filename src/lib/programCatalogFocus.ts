@@ -50,6 +50,16 @@ const CARDIO_TAG_MIN_PCT = 25;
  */
 const MOBILITY_TAG_MIN_PCT = 35;
 
+/**
+ * Whether a template carries the Cardio tag. The catalog's "Running &
+ * conditioning" tile asks the same question (programCategories), so the chip
+ * and the tile cannot disagree about which programmes are conditioning ones.
+ */
+export function meetsCardioFocus(template: WorkoutTemplateV1): boolean {
+  const split = buildProgramFocusSplit(template.sessions);
+  return (split.find((segment) => segment.quality === 'Conditioning')?.pct ?? 0) >= CARDIO_TAG_MIN_PCT;
+}
+
 /** Focus tags for one template, in the order the filter chips are shown. */
 export function getProgramFocusTags(template: WorkoutTemplateV1): CatalogFocusKey[] {
   const split = buildProgramFocusSplit(template.sessions);

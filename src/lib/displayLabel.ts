@@ -78,8 +78,16 @@ export function formatDisplayLabel(
     : normalized;
 }
 
+/**
+ * A programme's or a day's name. One character is a name: "A", "B", "5" were
+ * shown as "Custom workout" (English, on a Finnish phone) because the two-
+ * character floor meant for a lift name mangled by an import applied to the
+ * names the reader types, and the builder accepts any non-blank one (hunt
+ * 2026-10-09). Only a name that is nothing once the copy suffix is taken off
+ * still falls back.
+ */
 export function formatWorkoutDisplayLabel(value: string | null | undefined, fallback = 'Custom workout') {
-  return formatDisplayLabel(value, { fallback });
+  return formatDisplayLabel(value, { fallback, minimumCoreLength: 1 });
 }
 
 export function formatLiftDisplayLabel(value: string | null | undefined, fallback = 'Unnamed lift') {

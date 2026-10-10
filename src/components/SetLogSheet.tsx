@@ -293,17 +293,11 @@ export function SetLogSheet({
                 {[part, shownLabel].filter(Boolean).join(' · ')}
               </Text>
             </View>
-            {locked ? (
-              <View style={styles.freePill}>
-                <Text style={styles.freePillText}>
-                  {t(language, 'setlog.freePill', { months: FREE_RECORD_MONTHS })}
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.proTag}>
-                <Text style={styles.proTagText}>PRO</Text>
-              </View>
-            )}
+            {/* The same tag locked or not: the whole sheet is Pro, so a pill
+                naming a free window of months read as set-level data Free gets. */}
+            <View style={styles.proTag}>
+              <Text style={styles.proTagText}>PRO</Text>
+            </View>
           </View>
         </View>
 
@@ -531,20 +525,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 13,
     fontWeight: '900',
     letterSpacing: 1,
-  },
-  freePill: {
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.bg,
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-  },
-  freePillText: {
-    color: theme.muted,
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '800',
   },
   body: {
     paddingBottom: 12,

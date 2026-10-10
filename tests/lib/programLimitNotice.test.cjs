@@ -79,7 +79,7 @@ module.exports = [
 
       const sheet = read('src', 'components', 'ProgramLimitSheet.tsx');
       // The words are picked in programLimitSheetCopy (at the limit or past it).
-      assert.match(sheet, /programLimitSheetCopy\(kind, used, limit\)/);
+      assert.match(sheet, /programLimitSheetCopy\(kind, used, limit, replacingStop\)/);
       assert.doesNotMatch(sheet, /programLimit\.count/, 'the count is in the title now, not said twice');
     },
   },
@@ -94,7 +94,10 @@ module.exports = [
         /if \(decision\.canUpgrade\) \{\s*navigate\(\{ tab: 'profile', screen: 'premium', reason: 'program_cap' \}\)/,
         'a free reader at the running limit is still sent straight to the paywall',
       );
-      const sheetBlock = /if \(decision\.canUpgrade\) \{\s*setRunningCapSheet\(\{ visible: true, used: decision\.used, cap: decision\.cap \}\)/g;
+      // The sheet takes the decision's numbers, or — on a door that can
+      // replace a finished programme — the refusal built from them
+      // (runningCapRefusal, hunt 10, #20).
+      const sheetBlock = /if \(decision\.canUpgrade\) \{\s*setRunningCapSheet\(\{ visible: true, (?:used: decision\.used, cap: decision\.cap, replacingStop: null|\.\.\.refusal) \}\)/g;
       // Both adoption paths, switching a held programme back on — which runs
       // under the same cap (device, 2026-09-16) — and resuming a held one from
       // an adoption, which is the same cap again (audit round 4, 2026-09-20).

@@ -86,6 +86,45 @@ export function programCapFullMessage(language: AppLanguage, used: number, cap: 
 }
 
 /**
+ * A running-cap refusal, in the numbers the reader can see.
+ *
+ * Start next measures the cap without the finished programme it replaces
+ * (runningSetWithout), and the sheet and the toast were handed that reduced
+ * count: a lapsed Pro reader running five read "4 are running" while the
+ * Programs tab said 5/2, and at three, "full 2/2" (hunt 10, #20). The count
+ * shown is the set running now; when it is larger than the one the decision
+ * measured, a replacement is pending, and `replacingStop` is how many of the
+ * others to stop — measured on the set without the finished one.
+ */
+export interface RunningCapRefusal {
+  used: number;
+  cap: number;
+  /** Null unless the refused start replaces a finished programme. */
+  replacingStop: number | null;
+}
+
+export function runningCapRefusal(
+  runningNow: readonly string[],
+  decision: { used: number; cap: number },
+): RunningCapRefusal {
+  const now = new Set(runningNow).size;
+  return now > decision.used
+    ? { used: now, cap: decision.cap, replacingStop: placesToFree(decision.used, decision.cap) }
+    : { used: decision.used, cap: decision.cap, replacingStop: null };
+}
+
+/** The refusal toast (programCapFullMessage), with the replacement said. */
+export function runningCapRefusalMessage(language: AppLanguage, refusal: RunningCapRefusal): string {
+  return refusal.replacingStop !== null
+    ? t(language, 'programs.cap.fullReplace', {
+        used: refusal.used,
+        cap: refusal.cap,
+        count: refusal.replacingStop,
+      })
+    : programCapFullMessage(language, refusal.used, refusal.cap);
+}
+
+/**
  * The limit sheet's words for how full the set is.
  *
  * The same sheet for both limits (own programmes, programmes running), and for
@@ -97,9 +136,18 @@ export function programLimitSheetCopy(
   kind: 'own' | 'running',
   used: number,
   limit: number,
+  /** RunningCapRefusal's: how many others to stop when a finished one makes way. */
+  replacingStop: number | null = null,
 ): { titleKey: I18nKey; bodyKey: I18nKey; vars: { used: number; limit: number; count: number } } {
   const over = used > limit;
   const vars = { used, limit, count: placesToFree(used, limit) };
+  if (kind === 'running' && replacingStop !== null) {
+    return {
+      titleKey: 'programLimit.running.overTitle',
+      bodyKey: 'programLimit.running.replaceBody',
+      vars: { used, limit, count: replacingStop },
+    };
+  }
   if (kind === 'running') {
     return over
       ? { titleKey: 'programLimit.running.overTitle', bodyKey: 'programLimit.running.overBody', vars }

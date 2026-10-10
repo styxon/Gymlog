@@ -176,8 +176,9 @@ export interface SubscriptionView {
    * trial. Both are real grants on a real clock — nothing to manage, nothing to
    * cancel, and no billing rows may be shown even in a demo build, so the
    * screen must not dress either in an invented card and receipt history.
-   * `lapsed` keeps 'promo', because an expired promo is the only lapse the app
-   * can prove. Null for a purchase and for never subscribed.
+   * `lapsed` keeps the grant that ran out — an expired promo or an expired
+   * trial are the lapses the app can prove. Null for a purchase and for never
+   * subscribed.
    */
   grant: 'promo' | 'trial' | null;
 }
@@ -186,9 +187,13 @@ export interface SubscriptionView {
  * The screen's whole state, from the entitlement plus the two mock switches.
  *
  * `lapsed` is the one state that is genuinely knowable today: a promoProUntil
- * in the past means this reader really did have Pro and really did lose it. The
- * app can say so without inventing anything, which is why it gets its own state
- * rather than collapsing into `none`.
+ * or a proTrialUntil in the past means this reader really did have Pro and
+ * really did lose it. The app can say so without inventing anything, which is
+ * why it gets its own state rather than collapsing into `none`. (A purchase
+ * that ran out is not provable: the store clears its record.) The trial is the
+ * common one — it lives in proTrialUntil, not promoProUntil, and a reader whose
+ * 14 days were over was told "No active subscription" and sold Pro, not told
+ * that their history is all here (bug hunt, 2026-10-09).
  */
 export function resolveSubscriptionView(input: {
   entitlement: ProEntitlement;
@@ -206,6 +211,8 @@ export function resolveSubscriptionView(input: {
   purchasedAt?: string | null;
   /** A promoProUntil that has already passed, if any. */
   lapsedPromoUntil?: string | null;
+  /** A proTrialUntil that has already passed, if any. */
+  lapsedTrialUntil?: string | null;
   now?: Date;
 }): SubscriptionView {
   const {
@@ -214,6 +221,7 @@ export function resolveSubscriptionView(input: {
     mockCancelled,
     purchasedAt = null,
     lapsedPromoUntil = null,
+    lapsedTrialUntil = null,
     now = new Date(),
   } = input;
   const chargedFrom = purchasedAt ?? MOCK_BILLING.lastChargedAt;
@@ -257,16 +265,19 @@ export function resolveSubscriptionView(input: {
     };
   }
 
-  const lapsedTime = lapsedPromoUntil ? new Date(lapsedPromoUntil).getTime() : Number.NaN;
-  const lapsed = Number.isFinite(lapsedTime);
+  // Whichever grant ran out last is the one that ended the reader's Pro.
+  const promoTime = lapsedPromoUntil ? new Date(lapsedPromoUntil).getTime() : Number.NaN;
+  const trialTime = lapsedTrialUntil ? new Date(lapsedTrialUntil).getTime() : Number.NaN;
+  const trialLast = Number.isFinite(trialTime) && (!Number.isFinite(promoTime) || trialTime > promoTime);
+  const lapsed = Number.isFinite(promoTime) || Number.isFinite(trialTime);
 
   return {
     state: lapsed ? 'lapsed' : 'none',
     term: null,
     cancelled: false,
-    endsAt: lapsed ? lapsedPromoUntil : null,
+    endsAt: !lapsed ? null : trialLast ? lapsedTrialUntil : lapsedPromoUntil,
     nextChargeAt: null,
-    grant: lapsed ? 'promo' : null,
+    grant: !lapsed ? null : trialLast ? 'trial' : 'promo',
   };
 }
 

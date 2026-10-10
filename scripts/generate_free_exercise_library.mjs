@@ -9,6 +9,12 @@ const EQUIPMENT_OVERRIDES = JSON.parse(
   await fs.readFile(path.resolve(process.cwd(), 'scripts/exercise-equipment-overrides.json'), 'utf8'),
 ).overrides;
 
+// Keys whose upstream photo shows another movement; they get no imageKey, so
+// the app shows its placeholder. See scripts/exercise-pictures.json.
+const NO_PICTURE = new Set(
+  JSON.parse(await fs.readFile(path.resolve(process.cwd(), 'scripts/exercise-pictures.json'), 'utf8')).noPicture,
+);
+
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     https
@@ -147,6 +153,9 @@ function mapCategory(entry, mappedBodyPart) {
 function toImageKey(images) {
   const first = Array.isArray(images) ? String(images[0] ?? '') : '';
   const slug = first.split('/')[0];
+  if (NO_PICTURE.has(slug)) {
+    return null;
+  }
   return /^[A-Za-z0-9_-]+$/.test(slug) ? slug : null;
 }
 

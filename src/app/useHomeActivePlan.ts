@@ -23,7 +23,8 @@ import { getProgrammeBlockWeeks } from '../lib/readyProgramDuration';
 import type { AdaptedSessionRef, SessionAdaptation } from '../lib/sessionAdaptation';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
-import { resolveTodaySessionPick } from '../lib/todaySessionPick';
+import { offerablePick, resolveTodaySessionPick } from '../lib/todaySessionPick';
+import { forecastFromPick } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences, WorkoutTemplateSessionWithExercises } from '../types/models';
 import { formatGoalLabel, formatHomeSessionTitle } from './homeSessionTitle';
 import type { buildSetupSelectionFromPreferences } from './onboardingHandoff';
@@ -265,14 +266,6 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
       // and the start button logged the wrong session against the plan.
       const completedForTemplate = completedSessionsForTemplate(firstEntry.workoutTemplateId, completedPlanSessions);
       const nextSessionIndex = resolveNextPlanEntryIndex(rotationEntries, completedForTemplate);
-      // Where the rotation stands, for the calendars: they name days from here
-      // on by what Home will offer, not by counting calendar days
-      // (trainingSchedule forecastSlotOn).
-      const sessionForecast = {
-        fromDayStart: todayDayStart,
-        nextSlot: nextSessionIndex,
-        trainedToday: planTrainedOnDay(rotationEntries, completedForTemplate, todayDayStart),
-      };
       // The reader's own answer wins for the day they gave it. The rotation
       // knows what comes next in the programme and cannot know that today is
       // legs — but it is right again tomorrow, so the override is dated rather
@@ -296,10 +289,18 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         pick: preferences.todaySession,
         sessions: homeSessions,
         todayDayStart,
-        completed: completedPlanSessions,
+        // Aligned to the copy's day ids like the rotation above. The pick was
+        // moved onto the copy's ids (movePickToCopy), and history under the
+        // catalogue's ids no longer matched them: a pick already answered by
+        // a trained session came alive again after the first edit of the
+        // programme (bug hunt 10, 2026-10-09).
+        completed: completedForTemplate,
         toDayStart: toDayStartMs,
         templateIds: planTemplateIds,
       });
+      // A pick of a day with nothing in it is passed over, here and by every
+      // reader of the card.
+      const usablePick = offerablePick(pickedToday);
       // A day named but not yet filled is not a session to offer: its turn
       // goes to the next day that has something in it (2026-09-26). A pick of
       // an empty day is passed over the same way.
@@ -308,9 +309,21 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
         nextSessionIndex,
       );
       const nextSession =
-        (pickedToday && pickedToday.exercises.length > 0 ? pickedToday : null) ??
-        (startableIndex === null ? null : homeSessions[startableIndex]) ??
-        null;
+        usablePick ?? (startableIndex === null ? null : homeSessions[startableIndex]) ?? null;
+      // Where the rotation stands, for the calendars: they name days from here
+      // on by what Home will offer, not by counting calendar days
+      // (trainingSchedule forecastSlotOn). Continued from the pick when there
+      // is one: today is the session the reader chose, so the days after it
+      // follow that one.
+      const sessionForecast = forecastFromPick(
+        {
+          fromDayStart: todayDayStart,
+          nextSlot: nextSessionIndex,
+          trainedToday: planTrainedOnDay(rotationEntries, completedForTemplate, todayDayStart),
+        },
+        usablePick ? homeSessions.indexOf(usablePick) : null,
+        homeSessions.length,
+      );
       if (activeTemplate && nextSession) {
         // Counted from the plan record's own start, not all time. Plan records
         // are only written at onboarding, adoption and restart, so `updatedAt`
@@ -405,7 +418,7 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           // The reader's own answer for today, apart from the rotation's. The
           // widget needs the difference: a pick makes today a training day,
           // the rotation's next session does not.
-          todayPickSessionId: pickedToday?.id ?? null,
+          todayPickSessionId: usablePick?.id ?? null,
           sessionForecast,
 
           // The catalog lookup, not the DB one, but by SOURCE id for a copy:

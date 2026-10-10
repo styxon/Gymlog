@@ -35,10 +35,10 @@ import {
   getCardioActivity,
   getCardioAvgPaceSecPerKm,
   getCardioElapsedMs,
-  getCardioEndedAt,
   getWeekCardioMinutes,
   isCardioDistanceTextSavable,
   parseCardioDistanceKm,
+  resolveCardioFinish,
 } from '../lib/cardio';
 import { I18nKey, t } from '../lib/i18n';
 import { haptics } from '../utils/haptics';
@@ -179,19 +179,24 @@ export function CardioScreen({
           session={activeCardio}
           cardioSessions={cardioSessions}
           isSaving={isSaving}
-          onComplete={async (distanceKm, feel) => {
+          onComplete={async (distanceKm, feel, minutesText) => {
             if (completeInFlightRef.current) {
               return;
             }
-            completeInFlightRef.current = true;
             const nowMs = Date.now();
-            const durationSec = Math.round(getCardioElapsedMs(activeCardio, nowMs) / 1000);
+            const finish = resolveCardioFinish(activeCardio, nowMs, minutesText);
+            // A clock that ran for days is saved as the minutes the reader
+            // typed or not at all; the button is held, this is the second door.
+            if (finish.durationSec === null) {
+              return;
+            }
+            completeInFlightRef.current = true;
             try {
               await onSaveCardioSession({
                 activityType: activeCardio.activityType,
                 startedAt: activeCardio.startedAt,
-                endedAt: getCardioEndedAt(activeCardio, nowMs),
-                durationSec,
+                endedAt: finish.endedAt,
+                durationSec: finish.durationSec,
                 distanceKm,
                 feel,
               });
@@ -493,13 +498,16 @@ function CardioFinishView({
   session: ActiveCardioSession;
   cardioSessions: CardioSession[];
   isSaving: boolean;
-  onComplete: (distanceKm: number | null, feel: CardioFeel | null) => Promise<void>;
+  onComplete: (distanceKm: number | null, feel: CardioFeel | null, minutesText: string) => Promise<void>;
 }) {
   const theme = useTheme();
 
   const styles = useThemedStyles(makeStyles);
 
-  const durationSec = Math.round(getCardioElapsedMs(session, Date.now()) / 1000);
+  const [minutesText, setMinutesText] = useState('');
+  const finish = resolveCardioFinish(session, Date.now(), minutesText);
+  // Null only while a clock left running is waiting for the reader's minutes.
+  const durationSec = finish.durationSec ?? 0;
   const [distanceText, setDistanceText] = useState('');
   const [feel, setFeel] = useState<CardioFeel | null>(null);
 
@@ -507,14 +515,17 @@ function CardioFinishView({
   // Text that is not a distance holds the save rather than dropping the distance.
   const distanceInvalid = !isCardioDistanceTextSavable(distanceText);
   const pace = getCardioAvgPaceSecPerKm(durationSec, distanceKm);
-  // Worked out once, when Finish opened this view. Recomputed per render it
-  // counted the run twice while the save was pending: the new row is in
-  // `cardioSessions` before the disk write finishes, and this run was added
+  // The stored rows are the ones there were when Finish opened this view. Read
+  // live they counted the run twice while the save was pending: the new row is
+  // in `cardioSessions` before the disk write finishes, and this run was added
   // on top of it. The week is the run's own — the one its row will be dated in.
-  const [weekMinutes] = useState(
-    () =>
-      getWeekCardioMinutes(cardioSessions, new Date(getCardioEndedAt(session, Date.now()))) +
-      Math.round(durationSec / 60),
+  const [storedAtOpen] = useState(cardioSessions);
+  // The run joins the stored rows as one more row and the total is rounded
+  // once over the seconds, as Progress reads it after the save. Rounding the
+  // week and the run apart read a minute less (40 where the saved week says 41).
+  const weekMinutes = getWeekCardioMinutes(
+    [...storedAtOpen, { performedAt: finish.endedAt, durationSec }],
+    new Date(finish.endedAt),
   );
 
   return (
@@ -530,11 +541,32 @@ function CardioFinishView({
         </Text>
 
         <View style={[styles.finishCard, { alignItems: 'center' }]}>
-          <Text style={styles.finishHeroStat}>{formatCardioDuration(durationSec)}</Text>
+          <Text style={styles.finishHeroStat}>
+            {finish.durationSec === null ? '–' : formatCardioDuration(finish.durationSec)}
+          </Text>
           <Text style={{ fontSize: 10.5, fontWeight: '800', letterSpacing: 1.2, color: theme.muted, marginTop: 4 }}>
             {t(language, 'cardio.stat.duration')}
           </Text>
         </View>
+
+        {finish.needsMinutes ? (
+          <View style={styles.finishCard}>
+            <Text style={{ fontSize: 13, fontWeight: '700', lineHeight: 18, color: theme.ink }}>
+              {t(language, 'cardio.clockLong', {
+                time: formatCardioDuration(Math.round(getCardioElapsedMs(session, Date.now()) / 1000)),
+              })}
+            </Text>
+            <TextInput
+              value={minutesText}
+              onChangeText={setMinutesText}
+              placeholder={t(language, 'cardio.addMinutes')}
+              placeholderTextColor={theme.faint}
+              keyboardType="number-pad"
+              maxLength={4}
+              style={styles.distanceInput}
+            />
+          </View>
+        ) : null}
 
         <View style={styles.finishCard}>
           <Text style={{ fontSize: 10.5, fontWeight: '800', letterSpacing: 1.5, color: theme.purple }}>
@@ -596,9 +628,13 @@ function CardioFinishView({
       <View style={styles.finishFooter}>
         <Pressable
           accessibilityRole="button"
-          style={[styles.completeBtn, { opacity: isSaving || distanceInvalid ? 0.6 : 1 }]}
-          accessibilityState={{ disabled: isSaving || distanceInvalid }}
-          onPress={isSaving || distanceInvalid ? undefined : () => void onComplete(distanceKm, feel)}
+          style={[styles.completeBtn, { opacity: isSaving || distanceInvalid || finish.durationSec === null ? 0.6 : 1 }]}
+          accessibilityState={{ disabled: isSaving || distanceInvalid || finish.durationSec === null }}
+          onPress={
+            isSaving || distanceInvalid || finish.durationSec === null
+              ? undefined
+              : () => void onComplete(distanceKm, feel, minutesText)
+          }
         >
           <Text style={{ fontSize: 15.5, fontWeight: '800', color: '#fff' }}>
             {t(language, isSaving ? 'cardio.saving' : 'cardio.complete')}

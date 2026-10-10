@@ -179,7 +179,7 @@ module.exports = [
       assert.ok(built.rows.length >= 8);
       const player = source('src/screens/GuidedPlayerScreen.tsx');
       const memo = between(player, '  const sheetHistory = useMemo(() => {', '  /* ── rest screen');
-      assert.match(memo, /if \(!setPanelsOpen\) \{\s*return buildExerciseSheetHistory\(\[\], null, language\);/, 'a closed sheet builds nothing');
+      assert.match(memo, /if \(!setPanelsOpen\) \{\s*return gateExerciseSheetHistory\(buildExerciseSheetHistory\(\[\], null, language\), proUnlocked\);/, 'a closed sheet builds nothing');
       assert.match(memo, /\}, \[[^\]]*\bsetPanelsOpen\b[^\]]*\]\);/, 'the memo must be keyed on the sheet being open');
       assert.ok(
         player.indexOf('<ExerciseSheet') > 0 && /setPanelsOpen && step\.type === 'set' \? \(\s*<ExerciseSheet/.test(player),

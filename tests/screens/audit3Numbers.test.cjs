@@ -187,7 +187,8 @@ module.exports = [
       const tab = strip(read('src', 'app', 'renderWorkoutTab.tsx'));
       // It re-resolved from today for the enrolment while adopting the VIEWED
       // season's programme.
-      assert.match(tab, /handleEnrolSeason\(seasonInView, seasonWindow\.year\);/);
+      // Written once the programme is running (hunt 10, #11).
+      assert.match(tab, /handleEnrolSeason\(seasonInView, seasonWindow\.year\)/);
       assert.doesNotMatch(tab, /const window = resolveSeasonWindow\(\);\s*handleEnrolSeason/);
       // And the record the join writes is finally read: the CTA decided
       // everything from the active plan, which is what enrolment exists to

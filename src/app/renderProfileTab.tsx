@@ -2,7 +2,7 @@ import React from 'react';
 import { Alert, Linking, Platform } from 'react-native';
 
 import type { SignInProvider } from '../features/account/accountAuth';
-import { AccountBackupApi } from '../features/account/useAccountBackup';
+import { AccountBackupApi, SignInOutcome } from '../features/account/useAccountBackup';
 import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
@@ -127,7 +127,7 @@ export interface ProfileTabDeps {
   handleAddHomeWidget: () => Promise<void>;
   accountBackup: AccountBackupApi;
   handleAccountSignIn: (provider?: SignInProvider) => Promise<unknown>;
-  handleAccountBackupNow: () => Promise<unknown>;
+  handleAccountBackupNow: () => Promise<SignInOutcome['kind']>;
   showToast: (message: string) => void;
   setSettingsImportVisible: (visible: boolean) => void;
   setRatingSheetVisible: (visible: boolean) => void;
@@ -261,6 +261,23 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
       planEntries: livePlanEntries(leadPlan?.entries ?? [], templateSessionsReader(database)),
       availableDays: preferences.setupAvailableDays,
     });
+
+  /**
+   * A preference write the reader waits on: resolves with whether it landed.
+   * A refused write has already been rolled back by the provider, so the
+   * editor that asked must stay open and say so rather than close over a
+   * value that is no longer there.
+   */
+  const savePreferences = async (patch: PreferencesPatch): Promise<boolean> => {
+    try {
+      await updatePreferences(patch);
+      return true;
+    } catch (error) {
+      console.error('Preference write failed', error);
+      showToast(t(preferences.appLanguage, 'toast.prefsSaveFailed'));
+      return false;
+    }
+  };
 
   if (route.screen === 'premium') {
     return (
@@ -590,6 +607,8 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // Only an *expired* promo means "lapsed". A live one is active Pro and
         // resolveSubscriptionView reads it from the entitlement instead.
         lapsedPromoUntil={proEntitlement.unlocked ? null : preferences.promoProUntil}
+        // The same for the free trial, which ends in its own field.
+        lapsedTrialUntil={proEntitlement.unlocked ? null : preferences.proTrialUntil}
         mockTerm={preferences.mockSubscriptionTerm}
         mockCancelled={preferences.mockSubscriptionCancelledAt !== null}
         purchasedAt={preferences.mockSubscriptionPurchasedAt}
@@ -724,7 +743,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         language={preferences.appLanguage}
         initialName={preferences.profileName}
         onBack={() => navigateBack({ tab: 'profile', screen: 'settings' })}
-        onSave={(name) => void updatePreferences({ profileName: name })}
+        onSave={(name) => savePreferences({ profileName: name })}
       />
     );
   }
@@ -735,7 +754,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         language={preferences.appLanguage}
         preferences={preferences}
         onBack={() => navigateBack({ tab: 'profile', screen: 'settings' })}
-        onSaveBasics={(patch) => void updatePreferences(patch)}
+        onSaveBasics={(patch) => savePreferences(patch)}
         latestWeighInKg={latestWeighInKg}
         onOpenWeighIns={() => navigate({ tab: 'progress', screen: 'bodyweight' })}
         onEditLimitations={() => navigate({ tab: 'profile', screen: 'setup', stage: 'avoid' })}
@@ -797,13 +816,15 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         onOpenEditProfile={() => navigate({ tab: 'profile', screen: 'edit_profile' })}
         onBack={() => navigateBack(ROOT_ROUTES.profile)}
         onPreferencesChange={async (patch) => {
-          await updatePreferences(patch);
+          await savePreferences(patch);
         }}
         onOpenMyData={() => navigate({ tab: 'profile', screen: 'my_data' })}
-        onReplayTour={() => {
-          // Home's tour gets its first time back.
-          void deps.updatePreferences({ firstRunToursSeen: [] });
-          deps.resetToRoute(ROOT_ROUTES.home);
+        onReplayTour={async () => {
+          // Home's tour gets its first time back — once the write has landed,
+          // or Home would open with the tour still marked as seen.
+          if (await savePreferences({ firstRunToursSeen: [] })) {
+            deps.resetToRoute(ROOT_ROUTES.home);
+          }
         }}
         onImportPlan={() => setSettingsImportVisible(true)}
         onExportPlan={() => navigate({ tab: 'profile', screen: 'export_plan' })}
@@ -830,7 +851,14 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
                 // success, and it is already on screen. A phone that has never
                 // synced may be asked restore-or-keep first, as at sign-in.
                 onBackupNow: () => void handleAccountBackupNow(),
-                onSignOut: () => void accountBackup.signOut(),
+                onSignOut: () =>
+                  void accountBackup.signOut().catch((error) => {
+                    // The row already reads signed out; the record or the
+                    // provider's session may still be there, so say so.
+                    console.error('Sign-out failed', error);
+                    showToast(t(preferences.appLanguage, 'account.signOutFailed'));
+                  }),
+                cloudCopyBehind: () => accountBackup.cloudCopyBehind(),
                 onDeleteRemote: () => {
                   Alert.alert(
                     t(preferences.appLanguage, 'account.deleteRemote'),
@@ -1025,25 +1053,63 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
           // fails is retried on the next start or foreground until the server
           // confirms it.
           const logId = preferences.aiLogId;
-          // Sign out BEFORE wiping: reset while signed in would let the
-          // auto-backup push the freshly emptied database over the cloud
-          // copy — the reset would silently destroy the one safety net it
-          // is the safety net for. Signed out, the cloud copy survives and
-          // the next sign-in offers it back.
-          await accountBackup.signOut();
-          //
-          // The workout bundle (active session + slot history) goes BEFORE the
-          // database write: that write is the one that makes the app open as
-          // reset (onboarding showing), so a kill between the two used to
-          // leave a reset-looking app with the old active session and slot
-          // history resurfacing. In this order a kill or a failed database
-          // write leaves the app not reset, with the database intact but the
-          // active session and the "last time" loads already gone — the lesser
-          // loss, and a retry finishes the job (bug hunt, 2026-10-04).
-          await workout.resetWorkoutData();
-          setCompletionSummary(null);
-          setFinishSaveState({ status: 'idle', sessionId: null });
-          await resetAllData();
+          try {
+            // Sign-out below ends the account's backups, so what the cloud holds
+            // when Reset starts is what signing back in will restore. A copy
+            // older than the phone gets one interactive backup first (one upload
+            // per tap); if that does not land, the reader decides knowing it.
+            if (accountBackup.cloudCopyBehind()) {
+              const outcome = await handleAccountBackupNow();
+              if (outcome === 'choice' || outcome === 'confirm_upload' || outcome === 'cancelled') {
+                // A question is open (restore-or-keep, upload to this account)
+                // or sign-out overtook the backup: Reset waits for the reader.
+                return;
+              }
+              if (outcome !== 'backed_up' && outcome !== 'restored') {
+                const language = preferences.appLanguage;
+                const goOn = await new Promise<boolean>((resolve) => {
+                  Alert.alert(
+                    t(language, 'settings.resetBehind.title'),
+                    t(language, 'settings.resetBehind.message'),
+                    [
+                      { text: t(language, 'common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+                      { text: t(language, 'settings.resetBehind.confirm'), style: 'destructive', onPress: () => resolve(true) },
+                    ],
+                    { cancelable: true, onDismiss: () => resolve(false) },
+                  );
+                });
+                if (!goOn) {
+                  return;
+                }
+              }
+            }
+            // Sign out BEFORE wiping: reset while signed in would let the
+            // auto-backup push the freshly emptied database over the cloud
+            // copy — the reset would silently destroy the one safety net it
+            // is the safety net for. Signed out, the cloud copy survives and
+            // the next sign-in offers it back.
+            await accountBackup.signOut();
+            //
+            // The workout bundle (active session + slot history) goes BEFORE the
+            // database write: that write is the one that makes the app open as
+            // reset (onboarding showing), so a kill between the two used to
+            // leave a reset-looking app with the old active session and slot
+            // history resurfacing. In this order a kill or a failed database
+            // write leaves the app not reset, with the database intact but the
+            // active session and the "last time" loads already gone — the lesser
+            // loss, and a retry finishes the job (bug hunt, 2026-10-04).
+            await workout.resetWorkoutData();
+            setCompletionSummary(null);
+            setFinishSaveState({ status: 'idle', sessionId: null });
+            await resetAllData();
+          } catch (error) {
+            // A step the phone refused: the reader hears that Reset did not
+            // happen, instead of a closed dialog and nothing. What ran before
+            // the failure stays done; a second Reset finishes the job.
+            console.error('Reset failed', error);
+            showToast(t(preferences.appLanguage, 'toast.resetFailed'));
+            return;
+          }
           // Both wipes have resolved: nobody's data is on this phone, so the
           // accounts it was signed out of have nothing left to ask about. Not
           // earlier — a failed wipe throws above and keeps the marks. A failure

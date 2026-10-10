@@ -1,4 +1,5 @@
 import { ExerciseLibraryItem, AppLanguage } from '../types/models';
+import { isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { oneRowPerShownName } from './exerciseSearch';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { ExercisePickerFilters, listPickerExercises, matchesExercisePickerFilters } from './exercisePicker';
@@ -36,6 +37,12 @@ export interface SwapAlternativesInput {
  * The player once showed every member and Home and the programme day three
  * plus three, so the same lift was a card in one and missing in the other
  * (bug hunt 2026-10-07); all three call this now, and nothing is cut.
+ *
+ * Nothing the reader's gear cannot do is a card, as in the week the composer
+ * built for them: at home with a pair of dumbbells the sheet over Goblet Squat
+ * offered Back Squat, Pause Squat and Hip Thrust first, because the score reads
+ * only the equipment tier and most squat and hinge variants tie on it (hunt
+ * 2026-10-09). Gear that is unknown leaves the pool as it was.
  */
 export function buildSwapAlternatives({
   currentName,
@@ -45,12 +52,18 @@ export function buildSwapAlternatives({
   query,
   language,
 }: SwapAlternativesInput): string[] {
+  const availableEquipment = resolveAvailableEquipment({
+    trainingEnvironment: preferences?.setupTrainingEnvironment,
+    equipmentItems: preferences?.setupEquipmentItems,
+  });
   const { variations, related } = buildSwapShortlist(
     currentName,
-    buildSwapOptionsForSlot(substitutionGroup, currentName, preferences).map((option) => ({
-      ...option,
-      searchLabel: exerciseNameLabel(language, option.exerciseName),
-    })),
+    buildSwapOptionsForSlot(substitutionGroup, currentName, preferences)
+      .filter((option) => isExerciseAllowedWithEquipment(option.exerciseName, availableEquipment))
+      .map((option) => ({
+        ...option,
+        searchLabel: exerciseNameLabel(language, option.exerciseName),
+      })),
     // The lift being swapped is left out with the others, whether or not the
     // caller's session list holds it under this name.
     { alreadyInSession: [currentName, ...sessionLifts], query, language },

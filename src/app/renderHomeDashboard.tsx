@@ -5,7 +5,7 @@ import { isWorkoutInProgress, isWorkoutInProgressFor } from '../lib/activeWorkou
 import type { HomePrompt } from '../lib/homePrompts';
 import { isMeasurementCardKey } from '../lib/homeStatCards';
 import { SessionAdaptation, withoutSessionDrop, withSessionDrop, withSessionSwap } from '../lib/sessionAdaptation';
-import { AppRoute, ROOT_ROUTES, RootTabKey } from '../navigation/routes';
+import { AppRoute, RootTabKey } from '../navigation/routes';
 import { HomeScreen } from '../screens/HomeScreen';
 import type { PreferencesPatch } from '../state/AppProvider';
 import { AppDatabase, AppPreferences } from '../types/models';
@@ -147,7 +147,9 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
       onCompletionDismiss={(planId) => void dismissCompletionCard(planId)}
       onCompletionBrowse={(planId) => {
         void dismissCompletionCard(planId);
-        navigate(ROOT_ROUTES.workout);
+        // The tab's real root, as onFindProgram below: ROOT_ROUTES.workout is
+        // the legacy exercise list, and "Browse programs" landed there.
+        navigate(resolveTabRoute('workout'));
       }}
       otherPrograms={homeOtherPrograms}
       programCapLine={programCapLine}

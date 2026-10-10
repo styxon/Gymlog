@@ -44,6 +44,7 @@ import {
 import { normalizeSupersetGroups } from '../lib/supersetGrouping';
 import { savedPrescription } from '../lib/singleRepTarget';
 import { reconcileRunningSet } from '../lib/activeProgramSet';
+import { reconcileCompletionDismissals } from '../lib/programCompletion';
 import { moveTrainingCycleToLeadPlan } from '../lib/planTrainingCycle';
 import { buildLegacyTemplateSessions, getLegacyTemplateSessionId } from '../lib/workoutTemplateSessions';
 import {
@@ -57,6 +58,7 @@ import {
   WorkoutTemplateSessionRecord,
 } from '../types/models';
 import { normalizeSeenNoticeIds } from '../lib/serverNotice';
+import { storedProfileName } from '../lib/profileName';
 
 const CAUTION_AREAS = ['neck', 'shoulders', 'elbows', 'wrists', 'lower_back', 'hips', 'knees', 'ankles'] as const;
 const CAUTION_LEVELS = ['info', 'careful', 'avoid'] as const;
@@ -1046,7 +1048,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           : fallback.preferences.selectedAccessTier,
       profileName:
         typeof input?.preferences?.profileName === 'string' && input.preferences.profileName.trim().length
-          ? input.preferences.profileName.trim().slice(0, 32)
+          ? storedProfileName(input.preferences.profileName)
           : input?.preferences?.profileName === null
             ? null
             : fallback.preferences.profileName,
@@ -1459,8 +1461,9 @@ export async function loadDatabase() {
     const preferences = await loadStoredPreferences(database.preferences);
     // After the overlay, not inside normalizeDatabase: the preferences key is
     // normalized without the plans, and it is the copy that wins. This is
-    // where an install carrying a running id with no plan behind it heals.
-    const reconciled = { ...database, preferences: reconcileRunningSet(preferences, database.workoutPlans) };
+    // where an install carrying a running id with no plan behind it heals,
+    // and a completion dismissal for a plan that is gone (hunt 10, #19).
+    const reconciled = { ...database, preferences: reconcileWithPlans(preferences, database.workoutPlans) };
     return await withTrainingCycleMoved(reconciled);
   } catch {
     // Unreadable storage is a corrupt install, not a new one — but inventing
@@ -1492,7 +1495,7 @@ export async function loadDatabase() {
     // key's copy, so the key itself is left as it was.
     const blank = normalizeDatabase(createEmptyDatabase(resolveDeviceLanguage()));
     const stored = await loadStoredPreferences(blank.preferences);
-    const empty = { ...blank, preferences: reconcileRunningSet(stored, blank.workoutPlans) };
+    const empty = { ...blank, preferences: reconcileWithPlans(stored, blank.workoutPlans) };
     await saveDatabase(empty);
     return empty;
   }
@@ -1542,6 +1545,11 @@ async function readStoredDatabase(): Promise<string | null> {
     }
     throw error;
   }
+}
+
+/** The preferences that describe plans, made to agree with the stored plans. */
+function reconcileWithPlans(preferences: AppPreferences, plans: AppDatabase['workoutPlans']): AppPreferences {
+  return reconcileCompletionDismissals(reconcileRunningSet(preferences, plans), plans);
 }
 
 /**

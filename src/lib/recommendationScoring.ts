@@ -5,7 +5,7 @@ import {
   isRecoveryOnlyProgram,
   readerAskedForRecovery,
 } from './recommendationCatalog';
-import { selectWaterfallDecision } from './recommendationWaterfall';
+import { reasonOverProgramme, selectWaterfallDecision } from './recommendationWaterfall';
 import { focusProgrammeLosesItsPoint, lowerBodyOnlyAgainstFocus, programRunStandInKind, programRunWork, splitsReaderWeek } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
@@ -645,6 +645,18 @@ export function recommendPrograms(
         ...(standInReason ? { whyPrimary: standInReason } : {}),
       }
     : null;
+  // A reason that speaks of conditioning follows the programme it ends up
+  // over: the swaps above can trade the waterfall's pick, or its two cards,
+  // for a variant that holds none (bug hunt, 2026-10-09).
+  if (appliedWaterfall) {
+    appliedWaterfall.whyPrimary = reasonOverProgramme(appliedWaterfall.whyPrimary, appliedWaterfall.primaryProgramId);
+    if (appliedWaterfall.whyAlternative && appliedWaterfall.alternativeProgramId) {
+      appliedWaterfall.whyAlternative = reasonOverProgramme(
+        appliedWaterfall.whyAlternative,
+        appliedWaterfall.alternativeProgramId,
+      );
+    }
+  }
   const rankedCandidates = waterfallPrimary
     ? [
         waterfallPrimary,

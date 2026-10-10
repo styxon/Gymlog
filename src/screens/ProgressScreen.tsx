@@ -21,12 +21,14 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { BmiEditSheet, MeasureLogSheet, WeightLogSheet } from '../components/MeasureRulerSheet';
 import { WeightBmiCards } from '../components/WeightBmiCards';
 import {
+  ALL_RANGE_CEILING_DAYS,
   buildBodyweightCardStats,
   buildValueWindow,
   buildWeightWindow,
   capRangeDays,
   earliestEntryMs,
   measureRangeDays,
+  windowValueDelta,
 } from '../lib/bodyweightCard';
 import type { HomeRecentSessionItem } from './HomeScreen';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
@@ -531,15 +533,6 @@ function convertMeasurementValue(value: number, fromUnit: MeasurementUnit, toUni
   return fromUnit === 'cm' && toUnit === 'in' ? value * CM_TO_IN : value / CM_TO_IN;
 }
 
-function getMeasurementRangeStart(range: MeasureRange) {
-  if (range === 'all') {
-    return null;
-  }
-
-  const now = new Date();
-  return range === '3m' ? subtractCalendarMonths(now, 3) : subtractCalendarMonths(now, 12);
-}
-
 function getSignalPriority(kind: ReturnType<typeof getExerciseProgressSignal>['kind']) {
   switch (kind) {
     case 'new_best':
@@ -891,12 +884,20 @@ export function ProgressScreen({
   };
   useEffect(() => {
     if (scrollToTarget === 'activity') {
+      // The y belongs to an overview that is on screen. Asked from another
+      // section it is a leftover of an earlier visit, the block mounts again
+      // under a new layout, and the scroll has to wait for that one.
+      if (progressSection !== 'overview') {
+        activityBlockY.current = null;
+      }
       setProgressSection('overview');
       pendingActivityScroll.current = true;
       scrollToActivityBlock();
     }
+    // routeOpenedAt: a second tap on the widget's calendar names the same
+    // target as the first, and only its stamp says "go there again".
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [scrollToTarget]);
+  }, [scrollToTarget, routeOpenedAt]);
 
   function switchSection(section: ProgressSection) {
     setProgressSection(section);
@@ -978,7 +979,7 @@ export function ProgressScreen({
     // why THIS card was the one photographed drawing an axis into November.
     const ceilingByRange: Record<string, number> = { '7d': 7, '1m': 31, '3m': 91, '6m': 183 };
     const first = earliestEntryMs(bodyweightProgress.entries.map((entry) => entry.recordedAt));
-    const days = capRangeDays(ceilingByRange[resolvedOverviewRange] ?? 730, first, nowMs);
+    const days = capRangeDays(ceilingByRange[resolvedOverviewRange] ?? ALL_RANGE_CEILING_DAYS, first, nowMs);
     // The window follows the data, as the weight card's does: the range chip
     // caps the width and the history sets it, so a short history is a short
     // axis rather than eleven empty weeks before the first entry (user
@@ -1266,19 +1267,6 @@ export function ProgressScreen({
   // The unit-follows-the-measure effect went with the text field: the ruler
   // dials the measure's own unit and there is no draft to clear between them.
 
-  const selectedMeasureRangePoints = useMemo(() => {
-    const start = getMeasurementRangeStart(resolvedMeasureRange);
-    const points: Array<{ label: string; value: number }> = [];
-    selectedMeasureModel.values.forEach((value, index) => {
-      const recordedAt = selectedMeasureModel.dates[index];
-      if (start && new Date(recordedAt).getTime() < start.getTime()) {
-        return;
-      }
-      points.push({ label: formatShortDate(recordedAt), value });
-    });
-    return points;
-  }, [resolvedMeasureRange, selectedMeasureModel]);
-
   /**
    * The same calendar-days axis the weight card draws (the photo the user
    * sent, 2026-08-25, is the reference): orange line, hollow dots, a day per
@@ -1299,10 +1287,10 @@ export function ProgressScreen({
   const selectedMeasureLatest = selectedMeasureModel.values.length
     ? selectedMeasureModel.values[selectedMeasureModel.values.length - 1]
     : null;
-  const selectedMeasureDelta =
-    selectedMeasureRangePoints.length >= 2
-      ? selectedMeasureRangePoints[selectedMeasureRangePoints.length - 1].value - selectedMeasureRangePoints[0].value
-      : null;
+  // Read off the window the chart beside it draws, so the pill and the line
+  // cannot disagree. A range start of its own sent '7d' back twelve months and
+  // the pill showed a change since last winter (hunt 10, 2026-10-09).
+  const selectedMeasureDelta = windowValueDelta(selectedMeasureWindow);
 
   async function handleSaveMeasure(value: number) {
     if (!Number.isFinite(value) || value <= 0) {

@@ -1,6 +1,11 @@
 import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
-import { focusProgrammeLosesItsPoint, lowerBodyOnlyAgainstFocus, splitsReaderWeek } from './recommendationWeekFit';
+import {
+  focusProgrammeLosesItsPoint,
+  lowerBodyOnlyAgainstFocus,
+  programHoldsConditioning,
+  splitsReaderWeek,
+} from './recommendationWeekFit';
 import type { I18nKey } from './i18n';
 import type {
   RecommendationInput,
@@ -173,6 +178,36 @@ function byId(programId: string) {
 }
 
 /**
+ * Reason lines that speak of conditioning, and the line each becomes over a
+ * week that holds none (programHoldsConditioning).
+ *
+ * A reason belongs to the programme it is printed over, not to the lane that
+ * picked it. The general lane's "covers strength, condition, and energy" sat
+ * over FIT, HOME Starter and HUGE Elite, none of which has a conditioning
+ * set, and the lean lane's "a balanced base with less conditioning" over FIT,
+ * which has none to have less of (bug hunt, 2026-10-09).
+ */
+const NO_CONDITIONING_REASONS: Partial<Record<I18nKey, I18nKey>> = {
+  'wf.general.primary': 'wf.general.primaryStrength',
+  'wf.lean_athletic.alt': 'wf.lean_athletic.altStrength',
+};
+
+/**
+ * The reason to print over this programme: the lane's line, or its
+ * no-conditioning form when the week holds none. Takes either form, so a
+ * reason can be asked again after the scoring swaps the programme under it.
+ */
+export function reasonOverProgramme(key: I18nKey, programId: string): I18nKey {
+  const base = (Object.keys(NO_CONDITIONING_REASONS) as I18nKey[]).find(
+    (lane) => lane === key || NO_CONDITIONING_REASONS[lane] === key,
+  );
+  if (!base) {
+    return key;
+  }
+  return programHoldsConditioning(programId) === false ? NO_CONDITIONING_REASONS[base] ?? base : base;
+}
+
+/**
  * The reasons are i18n keys, not sentences.
  *
  * They used to be English prose baked into the decision, which meant a Finnish
@@ -187,12 +222,13 @@ function decision(
   whyPrimary: I18nKey,
   whyAlternative: I18nKey | null,
 ): RecommendationWaterfallDecision {
+  const second = alternative && alternative.programId !== primary.programId ? alternative : null;
   return {
     rule,
     primaryProgramId: primary.programId,
-    alternativeProgramId: alternative && alternative.programId !== primary.programId ? alternative.programId : null,
-    whyPrimary,
-    whyAlternative: alternative && alternative.programId !== primary.programId ? whyAlternative : null,
+    alternativeProgramId: second ? second.programId : null,
+    whyPrimary: reasonOverProgramme(whyPrimary, primary.programId),
+    whyAlternative: second && whyAlternative ? reasonOverProgramme(whyAlternative, second.programId) : null,
   };
 }
 

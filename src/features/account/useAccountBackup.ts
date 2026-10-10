@@ -197,6 +197,11 @@ export interface AccountBackupApi {
   backUpOrAsk: () => Promise<SignInOutcome>;
   signOut: () => Promise<void>;
   /**
+   * True when the signed-in account's cloud copy is older than this phone's
+   * data. Reset asks before wiping: signing back in restores that older copy.
+   */
+  cloudCopyBehind: () => boolean;
+  /**
    * Reset's last step, once the wipe has resolved: the phone holds nobody's
    * data now, so the accounts it was signed out of have nothing left to ask
    * about. Not before — a wipe that failed leaves the data, and the marks.
@@ -1275,8 +1280,15 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       if (leaving) {
         await markSignedOut(leaving.sub);
       }
-      await persistAccount(null);
-      await signOutAccount();
+      // Two steps that do not depend on each other: a record the disk would
+      // not clear used to skip the provider's sign-out, leaving the screen
+      // signed out while the next launch loaded the account and signed in
+      // again. The record's failure still reaches the caller afterwards.
+      try {
+        await persistAccount(null);
+      } finally {
+        await signOutAccount();
+      }
     })();
     const tracked = finish.then(
       () => undefined,
@@ -1291,6 +1303,20 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       }
     }
   }, [markSignedOut, persistAccount]);
+
+  /**
+   * Whether the cloud copy is older than this phone: signed in, and the data
+   * differs from what the last upload carried. Read when Reset is asked about,
+   * not on every render — the fingerprint walks the whole history.
+   */
+  const cloudCopyBehind = useCallback((): boolean => {
+    const current = accountRef.current;
+    if (!available || !current) {
+      return false;
+    }
+    const { database, workoutHistory } = latestRef.current;
+    return current.lastBackupFingerprint !== accountBackupFingerprint(database, workoutHistory);
+  }, [available]);
 
   const forgetSignedOutAccounts = useCallback(async () => {
     await forgetSignedOutAccount();
@@ -1615,6 +1641,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
     backupNow,
     backUpOrAsk,
     signOut,
+    cloudCopyBehind,
     forgetSignedOutAccounts,
     deleteRemoteBackup,
     deleteAccount,

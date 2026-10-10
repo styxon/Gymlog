@@ -230,6 +230,7 @@ const EN = {
   'pr.kind.volume': 'Volume',
   'pr.locked.value': 'Pro',
   'pr.locked.title': '{count} older records are locked',
+  'pr.locked.titleOne': '1 older record is locked',
   'pr.locked.body': 'Free reads the last {months} months. Your older bests are still here — Pro shows the figures.',
   'pr.locked.cta': 'See Pro',
   'pr.new': 'NEW',
@@ -272,6 +273,8 @@ const EN = {
   'tpl.dropDays.bodyMany':
     'This drops the last {count} days and the exercises in them. Nothing is saved until you press Save.',
   'tpl.dropDays.confirm': 'Remove',
+  'tpl.removeDay.title': 'Remove this day?',
+  'tpl.removeDay.body': 'This removes the day and the exercises in it. Nothing is saved until you press Save.',
   'csv.photo.notice.title': 'The photo is sent to be read',
   'csv.photo.notice.body':
     'Reading a table from a photo is the coach’s online mode: the photo you pick is sent to our server and on from there to the model that reads it. Nothing else about you goes with it, and it is deleted after 30 days. No copy is kept unless you allow it in Settings.',
@@ -295,7 +298,6 @@ const EN = {
   'setlog.best.weight': 'BEST WEIGHT',
   'setlog.best.reps': 'BEST REPS',
   'setlog.best.volume': 'BEST SESSION',
-  'setlog.freePill': 'Free · {months} months',
   'setlog.lock.title': 'Set-level log',
   'setlog.lock.b1.t': 'Every set, not just the curve',
   'setlog.lock.b1.b': 'Free: you see the curve',
@@ -476,6 +478,9 @@ const EN = {
   // A programme with a workout of it running is not deleted: the workout
   // would have nowhere to be saved to (see lib/programmeDeletion).
   'toast.programDeleteWorkoutRunning': 'A workout of this program is in progress — save or discard it first',
+  // The delete is applied in memory first and rolls back when the disk
+  // refuses, so the programme reappears; this says why (hunt 10, #37).
+  'toast.programDeleteFailed': 'Could not delete the program — it is back in your list',
   'toast.programEditWorkoutRunning': 'A workout of this program is in progress — edit the program once it is saved',
   'export.log.tooBig': 'The log could not be handed over — it has grown past what a share can carry. Export your programme instead, and tell us: we will add a file export.',
   'toast.entrySaveFailed': 'Could not save that entry',
@@ -879,6 +884,7 @@ const EN = {
   'wf.female_targeted.alt': 'Rather train the classic route? Same week, different emphasis.',
   'wf.lean_athletic.primary': 'Strength sets with conditioning finishers built in.',
   'wf.lean_athletic.alt': 'Prefer a calmer week? A balanced base with less conditioning.',
+  'wf.lean_athletic.altStrength': 'Prefer a calmer week? A balanced strength base without conditioning finishers.',
   'wf.lean_athletic.primaryLoss': 'Keeps your strength while conditioning finishers drive the fat loss.',
   'wf.lean_athletic.altLoss': 'Prefer a calmer week? A balanced base still supports fat loss.',
   'wf.muscle_focus.primary': 'A specialisation block that trains your focus area twice a week.',
@@ -888,6 +894,7 @@ const EN = {
   'wf.strength.primary': 'Heavy compounds first — the numbers on the bar lead the plan.',
   'wf.strength.alt': 'Want more size with your strength? This one leans that way.',
   'wf.general.primary': 'A balanced week that covers strength, condition, and energy.',
+  'wf.general.primaryStrength': 'A week of strength work that covers the whole body.',
   'wf.general.alt': 'Want fat loss to lead? Add conditioning finishers to the mix.',
   'wf.fallback.primary': 'A safe, balanced starting point.',
   'wf.fallback.alt': 'The lowest-friction alternative if the week gets busy.',
@@ -1123,6 +1130,16 @@ const EN = {
   'settings.resetDialog.message': 'Everything on this phone is deleted.',
   'settings.resetDialog.message.signedIn':
     'Everything on this phone is deleted and you are signed out. Your cloud backup stays — sign in again to restore it.',
+  // The cloud copy is older than the phone: the dialog cannot promise it holds everything.
+  'settings.resetDialog.message.signedInBehind':
+    'Everything on this phone is deleted and you are signed out. Your cloud backup is older than this phone, so the app backs up first.',
+  'settings.resetBehind.title': 'Backup did not finish',
+  'settings.resetBehind.message':
+    'The cloud copy is older than this phone. Resetting now deletes what was added since, and signing in again restores only the older copy.',
+  'settings.resetBehind.confirm': 'Reset anyway',
+  'toast.resetFailed': 'Reset did not finish. Try again.',
+  'toast.prefsSaveFailed': 'Could not save. Try again.',
+  'account.signOutFailed': 'Sign-out did not finish. Try again.',
   'settings.resetDialog.confirm': 'Reset',
 
   // ── Exercise tags (category/equipment → display label) ─────────────────
@@ -1301,6 +1318,8 @@ const EN = {
   'cardio.stat.duration': 'DURATION',
   'cardio.stat.distance': 'DISTANCE',
   'cardio.addDistance': 'Add distance (km)',
+  'cardio.clockLong': 'The clock ran for {time}. How many minutes was the workout?',
+  'cardio.addMinutes': 'Minutes',
   'cardio.avgPace': 'Avg. pace',
   'cardio.thisWeek': 'THIS WEEK',
   'cardio.weekMinutes': '{min} min',
@@ -1466,6 +1485,7 @@ const EN = {
   'guided.sheet.sessions': 'SESSIONS',
   'guided.sheet.topSets': 'TOP SET, LAST {count} SESSIONS',
   'guided.sheet.noHistory': 'No sets logged here yet. Today is the first.',
+  'guided.sheet.setsLocked': 'Free shows the curve. Pro shows the sets behind every earlier session.',
   'guided.sheet.noInstructions': 'No written steps for this lift yet.',
   'guided.sheet.watchFor': 'WATCH FOR',
   'guided.sheet.pr': 'PR',
@@ -2242,6 +2262,7 @@ const EN = {
   'pro.sheet.next.eyebrow': 'NEXT SESSION',
   'pro.sheet.next.title': 'One change for your next session',
   'pro.sheet.next.leadClimb': 'Your {lift} climbed {from} → {to} in {weeks} weeks. The coach reads your sets and sets the next load.',
+  'pro.sheet.next.leadClimbOne': 'Your {lift} climbed {from} → {to} in 1 week. The coach reads your sets and sets the next load.',
   'pro.sheet.next.leadFlat': 'Your {lift} has {count} logged sessions. The coach reads them and sets the next load.',
   'pro.sheet.next.barLabel': '{lift} TOP SET · LAST {count} SESSIONS',
   'pro.sheet.nextBar': 'next',
@@ -2258,6 +2279,7 @@ const EN = {
   'pro.read.title': 'YOUR LIFTS THIS WEEK',
   'pro.read.improving': 'Improving',
   'pro.read.improvingMeta': '+{change} in {weeks} weeks',
+  'pro.read.improvingMetaOne': '+{change} in 1 week',
   'pro.read.stalled': 'Stalled',
   'pro.read.stalledMeta': 'Same top set × {count}',
   'pro.read.declining': 'Declining',
@@ -2269,6 +2291,7 @@ const EN = {
   'pro.read.recoveryElevated': 'Running hot',
   'pro.read.recoveryLow': 'Running low',
   'pro.read.recoveryMeta': '{count} sessions in the last 7 days',
+  'pro.read.recoveryMetaOne': '1 session in the last 7 days',
   'pro.read.recoveryTeaser': 'Why — and what to do',
   'recovery.lead.green': 'Your load is in line with your usual week. Your body has time to recover between sessions.',
   'recovery.lead.light': 'This week is about {pct}% lighter than your usual week. You are rested — there is room to push.',
@@ -2312,6 +2335,8 @@ const EN = {
   'recovery.a11y.trained': 'trained',
   'pro.read.recoveryBody':
     '{count} hard sessions this week is above your usual load — an easier session protects next week.',
+  'pro.read.recoveryBodyOne':
+    '1 hard session this week is above your usual load — an easier session protects next week.',
   'pro.read.lockedTeaser': 'Why — and what to do',
   'pro.read.lockedCta': 'Unlock the read',
 
@@ -2738,6 +2763,9 @@ const EN = {
   // one is not enough, so the text says how many.
   'programLimit.running.overTitle': 'Programme places over the limit · {used}/{limit}',
   'programLimit.running.overBody': 'Free runs {limit} programmes at the same time, and {used} are running. Stop {count} to start another, or unlock more with Pro. Ready-made programmes and your training history stay free.',
+  // Start next past the limit: the next programme takes the finished one's
+  // place, so the count to stop is of the others (hunt 10, #20).
+  'programLimit.running.replaceBody': 'Free runs {limit} programmes at the same time, and {used} are running. The next programme takes the place of the finished one; stop {count} more to start it, or unlock more with Pro. Ready-made programmes and your training history stay free.',
   'programLimit.overTitle': 'Your own programmes are over the limit · {used}/{limit}',
   'programLimit.overBody': 'Free keeps {limit} programmes of your own, and you have {used}. Delete {count} to make a new one, or unlock more with Pro. Ready-made programmes and your training history stay free.',
   'programLimit.over': '{used}/{limit} programmes of your own · delete {count} to make another',
@@ -3106,6 +3134,7 @@ const EN = {
   'programs.cap.atCap': '{used}/{cap} programmes running · drop one to take on another',
   'programs.cap.over': '{used}/{cap} programmes running · drop {count} to take on another',
   'programs.cap.fullOver': 'You are running {used} programmes, and {cap} fit. Drop {count} to take on another.',
+  'programs.cap.fullReplace': 'You are running {used} programmes, and {cap} fit. The next one takes the place of the finished one; drop {count} more to take it on.',
   'season.oneProgram': 'One program for the whole season, the same one for everyone, and it does not change. Everything else in the catalog still works — it is just not the season, and it does not score.',
   'season.how.records': 'Beat a lift you have logged before: {perRecord} points. Each lift can do that once per block, so the points come from new ground rather than repeating one good day. Carry a block to its end: {perBlock}.',
   'season.badges': 'SEASON BADGES · {earned} / {total}',
@@ -3534,6 +3563,7 @@ const EN = {
   'analysis.key.topSet': 'TOP SET',
   'analysis.key.sets': 'SETS',
   'analysis.key.setsSub': 'over {count} exercises',
+  'analysis.key.setsSubOne': 'over 1 exercise',
   'analysis.volumeLabel': 'VOLUME · LAST SESSIONS',
   'analysis.volumeSingle': 'One session so far — the bars fill in as you log more.',
   'analysis.breakdown': 'EXERCISE BREAKDOWN',
@@ -3754,6 +3784,7 @@ const FI: Record<I18nKey, string> = {
   'pr.kind.volume': 'Volyymi',
   'pr.locked.value': 'Pro',
   'pr.locked.title': '{count} vanhempaa ennätystä on lukossa',
+  'pr.locked.titleOne': '1 vanhempi ennätys on lukossa',
   'pr.locked.body': 'Ilmainen lukee {months} kuukautta taaksepäin. Vanhemmat ennätyksesi ovat yhä tallessa — Pro näyttää lukemat.',
   'pr.locked.cta': 'Katso Pro',
   'pr.new': 'UUSI',
@@ -3796,6 +3827,8 @@ const FI: Record<I18nKey, string> = {
   'tpl.dropDays.bodyMany':
     'Tämä pudottaa {count} viimeistä päivää ja niiden liikkeet. Mitään ei tallenneta ennen kuin painat Tallenna.',
   'tpl.dropDays.confirm': 'Poista',
+  'tpl.removeDay.title': 'Poistetaanko tämä päivä?',
+  'tpl.removeDay.body': 'Tämä poistaa päivän ja sen liikkeet. Mitään ei tallenneta ennen kuin painat Tallenna.',
   'csv.photo.notice.title': 'Kuva lähetetään luettavaksi',
   'csv.photo.notice.body':
     'Taulukon lukeminen kuvasta on valmentajan verkkotila: valitsemasi kuva lähetetään palvelimellemme ja sieltä mallille, joka lukee sen. Mukana ei lähde muuta sinusta, ja kuva poistetaan 30 päivän kuluttua. Kopiota ei säilytetä, ellet salli sitä asetuksissa.',
@@ -3819,7 +3852,6 @@ const FI: Record<I18nKey, string> = {
   'setlog.best.weight': 'PARAS PAINO',
   'setlog.best.reps': 'PARHAAT TOISTOT',
   'setlog.best.volume': 'PARAS TREENI',
-  'setlog.freePill': 'Ilmainen · {months} kk',
   'setlog.lock.title': 'Sarjatason loki',
   'setlog.lock.b1.t': 'Jokainen sarja, ei vain käyrä',
   'setlog.lock.b1.b': 'Ilmaisella näet käyrän',
@@ -3986,6 +4018,7 @@ const FI: Record<I18nKey, string> = {
   'toast.deleteFailed': 'Treeniä ei voitu poistaa',
   'toast.entryDeleteFailed': 'Merkintää ei voitu poistaa — se on takaisin listassa',
   'toast.programDeleteWorkoutRunning': 'Tämän ohjelman treeni on kesken — tallenna tai hylkää se ensin',
+  'toast.programDeleteFailed': 'Ohjelmaa ei voitu poistaa — se on taas listallasi',
   'toast.programEditWorkoutRunning': 'Tämän ohjelman treeni on kesken — muokkaa ohjelmaa, kun treeni on tallennettu',
   'export.log.tooBig': 'Lokia ei saatu luovutettua — se on kasvanut isommaksi kuin jako pystyy kantamaan. Vie ohjelmasi sen sijaan ja kerro meille: lisäämme tiedostoviennin.',
   'toast.entrySaveFailed': 'Merkintää ei voitu tallentaa',
@@ -4380,6 +4413,7 @@ const FI: Record<I18nKey, string> = {
   'wf.female_targeted.alt': 'Haluatko mieluummin klassisen reitin? Sama viikko, eri painotus.',
   'wf.lean_athletic.primary': 'Voimasarjat ja kunto-osuudet samassa viikossa.',
   'wf.lean_athletic.alt': 'Haluatko rauhallisemman viikon? Tasapainoinen pohja, vähemmän kunto-osuuksia.',
+  'wf.lean_athletic.altStrength': 'Haluatko rauhallisemman viikon? Tasapainoinen voimapohja ilman kunto-osuuksia.',
   'wf.lean_athletic.primaryLoss': 'Säilyttää voimasi, kun kunto-osuudet hoitavat rasvanpolton.',
   'wf.lean_athletic.altLoss': 'Haluatko rauhallisemman viikon? Tasapainoinen pohja tukee silti rasvanpolttoa.',
   'wf.muscle_focus.primary': 'Erikoistumisjakso, joka treenaa fokusaluettasi kahdesti viikossa.',
@@ -4389,6 +4423,7 @@ const FI: Record<I18nKey, string> = {
   'wf.strength.primary': 'Raskaat perusliikkeet ensin — tangon luvut ohjaavat ohjelmaa.',
   'wf.strength.alt': 'Haluatko voiman lisäksi kokoa? Tämä kallistuu siihen suuntaan.',
   'wf.general.primary': 'Tasapainoinen viikko, joka kattaa voiman, kunnon ja energian.',
+  'wf.general.primaryStrength': 'Voimaharjoittelun viikko, joka kattaa koko kehon.',
   'wf.general.alt': 'Onko rasvanpoltto tärkein? Ota kunto-osuudet mukaan.',
   'wf.fallback.primary': 'Turvallinen ja tasapainoinen lähtökohta.',
   'wf.fallback.alt': 'Kevyin vaihtoehto, jos viikko ruuhkautuu.',
@@ -4615,6 +4650,15 @@ const FI: Record<I18nKey, string> = {
   'settings.resetDialog.message': 'Kaikki tässä puhelimessa poistetaan.',
   'settings.resetDialog.message.signedIn':
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopiosi säilyy — kirjaudu uudelleen palauttaaksesi sen.',
+  'settings.resetDialog.message.signedInBehind':
+    'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopio on puhelinta vanhempi, joten sovellus varmuuskopioi ensin.',
+  'settings.resetBehind.title': 'Varmuuskopiointi ei valmistunut',
+  'settings.resetBehind.message':
+    'Pilvikopio on puhelinta vanhempi. Nollaus poistaa sen jälkeen lisätyt tiedot, eikä uudelleen kirjautuminen palauta kuin vanhemman kopion.',
+  'settings.resetBehind.confirm': 'Nollaa silti',
+  'toast.resetFailed': 'Nollaus ei valmistunut. Yritä uudelleen.',
+  'toast.prefsSaveFailed': 'Tallennus ei onnistunut. Yritä uudelleen.',
+  'account.signOutFailed': 'Uloskirjautuminen ei valmistunut. Yritä uudelleen.',
   'settings.resetDialog.confirm': 'Nollaa',
 
   // ── Exercise tags ──────────────────────────────────────────────────────
@@ -4773,6 +4817,8 @@ const FI: Record<I18nKey, string> = {
   'cardio.stat.duration': 'KESTO',
   'cardio.stat.distance': 'MATKA',
   'cardio.addDistance': 'Lisää matka (km)',
+  'cardio.clockLong': 'Kello kävi {time}. Montako minuuttia treeni kesti?',
+  'cardio.addMinutes': 'Minuutit',
   'cardio.avgPace': 'Keskivauhti',
   'cardio.thisWeek': 'TÄLLÄ VIIKOLLA',
   'cardio.weekMinutes': '{min} min',
@@ -4906,6 +4952,7 @@ const FI: Record<I18nKey, string> = {
   'guided.sheet.sessions': 'KERTAA',
   'guided.sheet.topSets': 'PARAS SARJA, {count} VIIME KERTAA',
   'guided.sheet.noHistory': 'Tälle liikkeelle ei ole vielä kirjauksia. Tänään on ensimmäinen.',
+  'guided.sheet.setsLocked': 'Ilmaisella näet käyrän. Pro näyttää jokaisen aiemman treenin sarjat.',
   'guided.sheet.noInstructions': 'Tälle liikkeelle ei ole vielä kirjoitettuja ohjeita.',
   'guided.sheet.watchFor': 'VARO NÄITÄ',
   'guided.sheet.pr': 'ENNÄTYS',
@@ -5610,6 +5657,7 @@ const FI: Record<I18nKey, string> = {
   'pro.sheet.next.eyebrow': 'SEURAAVA TREENI',
   'pro.sheet.next.title': 'Yksi muutos seuraavaan treeniisi',
   'pro.sheet.next.leadClimb': '{lift} nousi {from} → {to} {weeks} viikossa. Valmentaja lukee sarjasi ja asettaa seuraavan kuorman.',
+  'pro.sheet.next.leadClimbOne': '{lift} nousi {from} → {to} 1 viikossa. Valmentaja lukee sarjasi ja asettaa seuraavan kuorman.',
   'pro.sheet.next.leadFlat': '{lift} — {count} kirjattua treeniä. Valmentaja lukee ne ja asettaa seuraavan kuorman.',
   'pro.sheet.next.barLabel': '{lift} · HUIPPUSARJA · VIIMEISET {count}',
   'pro.sheet.nextBar': 'seur.',
@@ -5626,6 +5674,7 @@ const FI: Record<I18nKey, string> = {
   'pro.read.title': 'LIIKKEESI TÄLLÄ VIIKOLLA',
   'pro.read.improving': 'Kehittyy',
   'pro.read.improvingMeta': '+{change} / {weeks} viikkoa',
+  'pro.read.improvingMetaOne': '+{change} / 1 viikko',
   'pro.read.stalled': 'Jumissa',
   'pro.read.stalledMeta': 'Sama huippusarja × {count}',
   'pro.read.declining': 'Laskussa',
@@ -5637,6 +5686,7 @@ const FI: Record<I18nKey, string> = {
   'pro.read.recoveryElevated': 'Koholla',
   'pro.read.recoveryLow': 'Vähissä',
   'pro.read.recoveryMeta': '{count} treeniä viimeisen 7 päivän aikana',
+  'pro.read.recoveryMetaOne': '1 treeni viimeisen 7 päivän aikana',
   'pro.read.recoveryTeaser': 'Miksi — ja mitä tehdä',
   'recovery.lead.green': 'Kuormasi on linjassa tavallisen viikkosi kanssa. Keho ehtii palautua treenien välissä.',
   'recovery.lead.light': 'Tämä viikko on noin {pct} % kevyempi kuin tavallinen viikkosi. Olet levännyt — tahtia voi nostaa.',
@@ -5680,6 +5730,8 @@ const FI: Record<I18nKey, string> = {
   'recovery.a11y.trained': 'treenattu',
   'pro.read.recoveryBody':
     '{count} kovaa treeniä viikossa on yli tavanomaisen kuormasi — kevyempi treeni suojaa ensi viikkoa.',
+  'pro.read.recoveryBodyOne':
+    '1 kova treeni viikossa on yli tavanomaisen kuormasi — kevyempi treeni suojaa ensi viikkoa.',
   'pro.read.lockedTeaser': 'Miksi — ja mitä tehdä',
   'pro.read.lockedCta': 'Avaa analyysi',
 
@@ -6063,6 +6115,7 @@ const FI: Record<I18nKey, string> = {
   'programLimit.running.body': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan. Lopeta yksi aloittaaksesi uuden, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.running.overTitle': 'Ohjelmapaikat yli rajan · {used}/{limit}',
   'programLimit.running.overBody': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan, ja sinulla on {used} käynnissä. Lopeta {count} aloittaaksesi uuden, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
+  'programLimit.running.replaceBody': 'Ilmaisella voit pitää {limit} ohjelmaa käynnissä samaan aikaan, ja sinulla on {used} käynnissä. Seuraava ohjelma tulee juuri päättyneen tilalle; lopeta lisäksi {count} aloittaaksesi sen, tai avaa lisää Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.overTitle': 'Omia ohjelmia yli rajan · {used}/{limit}',
   'programLimit.overBody': 'Ilmaisella voit pitää {limit} omaa ohjelmaa, ja sinulla on {used}. Poista {count} tehdäksesi uuden, tai avaa lisää ohjelmia Prolla. Valmiit ohjelmat ja treenihistoriasi pysyvät ilmaisina.',
   'programLimit.over': '{used}/{limit} omaa ohjelmaa · poista {count} tehdäksesi uuden',
@@ -6412,6 +6465,7 @@ const FI: Record<I18nKey, string> = {
   'programs.cap.atCap': '{used}/{cap} ohjelmaa käynnissä · poista yksi ottaaksesi uuden',
   'programs.cap.over': '{used}/{cap} ohjelmaa käynnissä · poista {count} ottaaksesi uuden',
   'programs.cap.fullOver': 'Sinulla on {used} ohjelmaa käynnissä, ja {cap} mahtuu. Poista {count} ottaaksesi uuden.',
+  'programs.cap.fullReplace': 'Sinulla on {used} ohjelmaa käynnissä, ja {cap} mahtuu. Seuraava tulee juuri päättyneen tilalle; poista lisäksi {count} ottaaksesi sen.',
   'season.oneProgram': 'Yksi ohjelma koko kaudelle, sama kaikille, eikä se vaihdu. Kirjaston muut ohjelmat toimivat edelleen — ne eivät vain ole kausi eivätkä pisteytä.',
   'season.how.records': 'Ylität liikkeessä aiemman tuloksesi: {perRecord} pistettä. Jokainen liike voi tehdä sen kerran per blokki, joten pisteet tulevat uudesta maasta eivätkä yhden hyvän päivän toistamisesta. Vedät blokin loppuun: {perBlock}.',
   'season.badges': 'KAUDEN MERKIT · {earned} / {total}',
@@ -6805,6 +6859,7 @@ const FI: Record<I18nKey, string> = {
   'analysis.key.topSet': 'RASKAIN SARJA',
   'analysis.key.sets': 'SARJAT',
   'analysis.key.setsSub': '{count} liikkeessä',
+  'analysis.key.setsSubOne': '1 liikkeessä',
   'analysis.volumeLabel': 'VOLYYMI · VIIME TREENIT',
   'analysis.volumeSingle': 'Toistaiseksi yksi treeni — pylväät täyttyvät, kun kirjaat lisää.',
   'analysis.breakdown': 'LIIKE-ERITTELY',
