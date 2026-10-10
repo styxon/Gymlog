@@ -52,7 +52,14 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'back squat', requires: [BARBELL, ['Squat rack']] },
   { pattern: 'front squat', requires: [BARBELL, ['Squat rack']] },
   { pattern: 'box squat', requires: [BARBELL, ['Squat rack']] },
-  { pattern: 'bench press', requires: [BARBELL, ['Bench']] },
+  // The barbell lift. The dumbbell and machine presses carry the words too and
+  // are asked for what they use, below and by the rules for those words: a
+  // dumbbells-and-bench reader was refused Dumbbell Bench Press and handed a
+  // floor press for the bench press (hunt 11, 2026-10-10).
+  { pattern: 'bench press', unless: ['dumbbell', 'db bench', 'machine'], requires: [BARBELL, ['Bench']] },
+  { pattern: 'dumbbell bench press', requires: [['Dumbbells'], ['Bench']] },
+  { pattern: 'db bench press', requires: [['Dumbbells'], ['Bench']] },
+  { pattern: 'incline dumbbell press', requires: [['Dumbbells'], ['Bench']] },
   { pattern: 'barbell', requires: [BARBELL] },
   // A barbell with one end in a corner. With no rule the careful-shoulders
   // swap handed Landmine Press to a reader whose only gear was dumbbells
@@ -81,6 +88,14 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   // raise machine (bug hunt, 2026-10-04).
   { pattern: 'donkey calf', requires: [['Machines']] },
   { pattern: 'preacher curl', requires: [['Bench', 'Machines']] },
+  // The curl rule above lets dumbbells stand in for any curl, and the pec deck
+  // had no rule at all, so both reached readers without the bar or the machine
+  // (hunt 11, 2026-10-10). The library's "Butterfly" is the same machine; the
+  // hip stretch of that name is not.
+  { pattern: 'ez-bar', requires: [BARBELL] },
+  { pattern: 'ez bar', requires: [BARBELL] },
+  { pattern: 'pec deck', requires: [['Machines']] },
+  { pattern: 'butterfly', unless: ['stretch'], requires: [['Machines']] },
   { pattern: 'lateral raise', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'rear delt', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'curl', unless: ['nordic hamstring curl', 'lower back curl'], requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
@@ -205,7 +220,10 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   // are seconds or metres: 3 × 40 of a carry became 3 × 40 bridges. A brace
   // held for those seconds is the carry without the weight (CI review of #172).
   ['farmer', ['Plank']],
-  ['bench press', ['Leverage Chest Press', 'Dumbbell Floor Press', 'Push-Up Wide']],
+  // Ahead of "bench press", which it contains: the incline press is the
+  // incline dumbbell press when there are dumbbells and a bench to set it on.
+  ['incline bench press', ['Incline Dumbbell Press']],
+  ['bench press', ['Leverage Chest Press', 'Dumbbell Bench Press', 'Dumbbell Floor Press', 'Push-Up Wide']],
   ['back squat', ['Goblet Squat', 'Bodyweight Squat']],
   ['front squat', ['Goblet Squat', 'Bodyweight Squat']],
   ['box squat', ['Goblet Squat', 'Bodyweight Squat']],
@@ -229,6 +247,7 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['triceps pushdown', ['Bench Dips']],
   ['preacher curl', ['Dumbbell Bicep Curl', 'Band Curl']],
   ['barbell curl', ['Dumbbell Bicep Curl', 'Band Curl']],
+  ['ez-bar curl', ['Dumbbell Bicep Curl', 'Band Curl']],
   ['dumbbell curl', ['Reverse Plate Curls', 'Band Curl']],
   ['hammer curl', ['Dumbbell Bicep Curl', 'Reverse Plate Curls', 'Band Curl']],
   ['rear delt', ['Band Pull Apart']],

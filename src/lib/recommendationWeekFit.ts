@@ -228,6 +228,7 @@ export function focusProgrammeLosesItsPoint(programId: string, input: Recommenda
 const LEAN_CONDITIONING_PCT = 15;
 
 const conditioningPrograms = new Map<string, boolean | null>();
+const mobilityPrograms = new Map<string, boolean | null>();
 
 /**
  * Whether this programme's week holds conditioning enough to be called
@@ -247,6 +248,26 @@ export function programHoldsConditioning(programId: string): boolean | null {
       >= LEAN_CONDITIONING_PCT
     : null;
   conditioningPrograms.set(programId, holds);
+  return holds;
+}
+
+/**
+ * Whether this programme's week holds mobility enough to be said to keep it,
+ * by the share conditioning is held to; null for a programme the catalog does
+ * not know. "Also keeps mobility." sat over weeks with none (hunt 11,
+ * 2026-10-10).
+ */
+export function programHoldsMobility(programId: string): boolean | null {
+  const cached = mobilityPrograms.get(programId);
+  if (cached !== undefined) {
+    return cached;
+  }
+  const template = getWorkoutTemplateById(programId);
+  const holds = template
+    ? (buildProgramFocusSplit(template.sessions).find((segment) => segment.quality === 'Mobility')?.pct ?? 0)
+      >= LEAN_CONDITIONING_PCT
+    : null;
+  mobilityPrograms.set(programId, holds);
   return holds;
 }
 

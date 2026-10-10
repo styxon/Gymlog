@@ -28,6 +28,11 @@ export const MAX_TEMPLATE_DAYS: TemplateDayCount = 6;
  */
 export const PROGRAMME_NAME_MAX = 60;
 
+/** A typed name as it is stored: trimmed, and no longer than the inputs allow. */
+export function clampProgrammeName(name: string): string {
+  return name.trim().slice(0, PROGRAMME_NAME_MAX).trim();
+}
+
 /**
  * The day names the reader typed, by day id, for the preference that makes the
  * programme page show a name as typed (isReaderNamedSession).

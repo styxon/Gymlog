@@ -491,6 +491,7 @@ const suites = [
   ...require('./lib/focusEmphasis.test.cjs'),
   ...require('./lib/composerDaysTruth.test.cjs'),
   ...require('./lib/equipmentExerciseFilter.test.cjs'),
+  ...require('./lib/builderCatalogHunt11.test.cjs'),
   ...require('./lib/programmeMinutes.test.cjs'),
   ...require('./lib/savedCopyFidelity.test.cjs'),
   ...require('./lib/programEquipmentFit.test.cjs'),

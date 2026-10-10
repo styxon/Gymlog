@@ -6,6 +6,7 @@ import { syncPlanEntriesToTemplate } from '../lib/planTemplateSync';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { newProgramSessionName, removeProgramSession } from '../lib/programSessionList';
 import { reorderProgramSessions } from '../lib/programSessionOrder';
+import { clampProgrammeName } from '../lib/templateBuilderSteps';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import type {
   PreferencesPatch,
@@ -75,7 +76,9 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * before they draw the pencil.
    */
   async function handleRenameProgramSession(templateId: string, sessionId: string, name: string) {
-    const trimmed = name.trim();
+    // Capped as the inputs are: Home's field had no limit, and a pasted
+    // paragraph was saved as a day's name.
+    const trimmed = clampProgrammeName(name);
     if (!trimmed) {
       return;
     }

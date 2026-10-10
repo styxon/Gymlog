@@ -431,7 +431,9 @@ export function formatPlanSessionTitle(
     return `${t(language, 'facet.fullBody')} ${minimal[1].toUpperCase()}`;
   }
 
-  if (/^workout\s+[a-z]$/.test(normalizedSession)) {
+  // "Treeni A" too: a copy made of a ready programme stores the Finnish name
+  // (customProgramDuplication), and the original's days read "Treeni 1/2/3".
+  if (/^(?:workout|treeni)\s+[a-z]$/.test(normalizedSession)) {
     return t(language, 'detail.workoutPlaceholder', { index: index + 1 });
   }
 

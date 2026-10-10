@@ -168,7 +168,7 @@ module.exports = [
       );
       assert.deepEqual(
         dumbbellsOnly.exercises.map((entry) => entry.exerciseName),
-        ['Dumbbell Floor Press', 'Goblet Squat', 'Inverted Row'],
+        ['Dumbbell Bench Press', 'Goblet Squat', 'Inverted Row'],
       );
 
       const nothing = applyEquipmentToExercises([exercise('Barbell Bench Press')], []);

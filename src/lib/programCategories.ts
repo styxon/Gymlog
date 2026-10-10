@@ -1,6 +1,6 @@
 import { WorkoutTemplateV1 } from '../features/workout/workoutTypes';
 import { I18nKey } from './i18n';
-import { meetsCardioFocus } from './programCatalogFocus';
+import { meetsCardioFocus, meetsMobilityFocus } from './programCatalogFocus';
 import { resolveProgramEquipmentBucket } from './programEquipment';
 
 /**
@@ -161,26 +161,20 @@ const FAT_LOSS_IDS = new Set([
  */
 const BUILT_FOR_RUNNERS_IDS = new Set(['tpl_gainer_runners_strength_v1']);
 
-const MOBILITY_IDS = new Set([
-  'tpl_2_day_mobility_reset_v1',
-  'tpl_2_day_yoga_recovery_v1',
-  'tpl_gainer_mobility_flow_v1',
-  'tpl_gainer_joint_friendly_v1',
-]);
-
 /**
- * The two categories read off a template's content, worked out once per
+ * The three categories read off a template's content, worked out once per
  * template: the tiles, their counts and the catalog chips each ask about every
  * programme, and the answer never changes.
  *
- * Both used to be hand-kept id lists, and they drifted from what the
+ * All three used to be hand-kept id lists, and they drifted from what the
  * programmes hold. "Running & conditioning" listed Calisthenics Mastery at 4%
  * conditioning and left out SHRED, Fat Burn HIIT, Summer Conditioning and four
  * more at 25% or over; "Home" left out Fat Burn HIIT, which the recommender
  * hands to home readers as needing no gym, and RUN and Mobility Flow (bug
- * hunt, 2026-10-09).
+ * hunt, 2026-10-09). "Mobility" kept the joint-friendly gym week at 4% and left
+ * out Run + Mobility at 48% (hunt 11, 2026-10-10).
  */
-const contentCategories = new WeakMap<WorkoutTemplateV1, { conditioning: boolean; home: boolean }>();
+const contentCategories = new WeakMap<WorkoutTemplateV1, { conditioning: boolean; home: boolean; mobility: boolean }>();
 
 function readContentCategories(template: WorkoutTemplateV1) {
   let entry = contentCategories.get(template);
@@ -194,6 +188,8 @@ function readContentCategories(template: WorkoutTemplateV1) {
       // The bucket the recommender's equipment tier and the low-equipment chip
       // read: a programme whose gear a reader can own at home.
       home: resolveProgramEquipmentBucket(exerciseNames) === 'low_equipment',
+      // The Mobility chip's threshold.
+      mobility: meetsMobilityFocus(template),
     };
     contentCategories.set(template, entry);
   }
@@ -223,7 +219,7 @@ export function isInCategory(template: WorkoutTemplateV1, key: ProgramCategoryKe
     case 'home':
       return readContentCategories(template).home;
     case 'mobility':
-      return MOBILITY_IDS.has(template.id);
+      return readContentCategories(template).mobility;
     case 'focus':
       return template.id.startsWith('tpl_focus_');
     case 'beginner':

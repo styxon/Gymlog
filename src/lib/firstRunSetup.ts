@@ -5,7 +5,7 @@ import { buildRecommendationInput } from './recommendationInput';
 import { getRecommendationProgramDefinition } from './recommendationCatalog';
 import { recommendPrograms } from './recommendationScoring';
 import { runStandInKind } from './cautionExerciseFilter';
-import { programHoldsConditioning, programRunWork } from './recommendationWeekFit';
+import { programHoldsConditioning, programHoldsMobility, programRunWork } from './recommendationWeekFit';
 import { resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { buildTailoringRecommendationNote, TailoringPreferencesInput } from './tailoringFit';
 import { t } from './i18n';
@@ -371,7 +371,8 @@ export function buildFirstRunRecommendationReasons(
     ? programRunWork(options.programId, buildRecommendationInput(selection))
     : null;
   const conditioning = options.programId ? programHoldsConditioning(options.programId) : null;
-  return buildRecommendationReasonLines(selection, { ...options, runWork, conditioning }, tailoringPreferences);
+  const mobility = options.programId ? programHoldsMobility(options.programId) : null;
+  return buildRecommendationReasonLines(selection, { ...options, runWork, conditioning, mobility }, tailoringPreferences);
 }
 
 
