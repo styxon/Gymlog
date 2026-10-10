@@ -2,7 +2,8 @@ import type { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import type { FatigueResult } from './fatigueModel';
 import { applyDecimalSeparator } from './format';
 import { t } from './i18n';
-import type { ProgressionFatigueSignal } from './progressionGate';
+import { progressionFatigueSignalAt, type ProgressionFatigueSignal } from './progressionGate';
+import type { FatigueModelInput } from './fatigueModel';
 import type { AppLanguage } from '../types/models';
 import { nearestDayStart } from './trainingSchedule';
 
@@ -299,6 +300,25 @@ export function lightenRuntimeTemplate(template: WorkoutRuntimeTemplate): Workou
  */
 export function lightenedFatigueSignal(signal: ProgressionFatigueSignal): ProgressionFatigueSignal {
   return signal === 'high' ? 'high' : 'elevated';
+}
+
+/**
+ * The template and recovery signal a programme session starts with.
+ *
+ * Recovery is read as of `now`, the moment of the start: a signal kept from the
+ * last save still counted a heavy week as this one days after it ended. A
+ * pending lighter session shortens the template and holds its loads.
+ */
+export function resolveProgrammeStart(
+  template: WorkoutRuntimeTemplate,
+  lighten: boolean,
+  fatigueInput: FatigueModelInput,
+  now: Date,
+): { template: WorkoutRuntimeTemplate; fatigueSignal: ProgressionFatigueSignal } {
+  const fatigueSignal = progressionFatigueSignalAt(fatigueInput, now);
+  return lighten
+    ? { template: lightenRuntimeTemplate(template), fatigueSignal: lightenedFatigueSignal(fatigueSignal) }
+    : { template, fatigueSignal };
 }
 
 // ── "Lisää lepopäivä huomiselle" ───────────────────────────────────────────

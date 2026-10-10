@@ -5,7 +5,6 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { evaluateProgramAdoption } from '../lib/activeProgramSet';
 import { RunningCapRefusal, runningCapRefusal, runningCapRefusalMessage } from '../lib/programCapNotice';
-import { progressionFatigueSignalAt } from '../lib/progressionGate';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { t } from '../lib/i18n';
@@ -13,7 +12,7 @@ import { resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { resolveProEntitlement, resolveProgressionOptions } from '../lib/proEntitlement';
 import { buildReadySessionRuntimeTemplate } from '../lib/programDetails';
 import { alignHistoryToCopiedDays, programmeHistoryIds } from '../lib/programLineage';
-import { isLightenPending, lightenedFatigueSignal, lightenRuntimeTemplate } from '../lib/recoverySheet';
+import { isLightenPending, resolveProgrammeStart } from '../lib/recoverySheet';
 import { resumeProgramme, runningSetWithout, type AdoptReadyOptions } from '../lib/runningProgrammes';
 import {
   type AdaptedSessionRef,
@@ -242,12 +241,12 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     const lighten = isLightenPending(preferences.lightNextSession, now);
     // Recovery as of this start. The memo behind the recovery sheet is only as
     // fresh as the last save, and a heavy week had not yet rolled out of it.
-    const fatigueSignal = progressionFatigueSignalAt(database, now);
+    const start = resolveProgrammeStart(runtimeTemplate, lighten, database, now);
     return {
-      template: lighten ? lightenRuntimeTemplate(runtimeTemplate) : runtimeTemplate,
+      template: start.template,
       options: {
         ...resolveProgressionOptions(preferences),
-        fatigueSignal: lighten ? lightenedFatigueSignal(fatigueSignal) : fatigueSignal,
+        fatigueSignal: start.fatigueSignal,
       },
     };
   }

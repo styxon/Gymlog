@@ -822,6 +822,9 @@ function VinhaApp() {
     preferences,
     completedSessionId: completionSummary?.sessionId ?? null,
     todayKey,
+    workoutTemplates,
+    getWorkoutTemplateSessions,
+    exerciseLibrary,
   });
   // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
   // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
@@ -1859,6 +1862,7 @@ function VinhaApp() {
     guidedNextUp,
   } = usePlanReadouts({
     workoutTemplates,
+    exerciseLibrary,
     getWorkoutTemplateSessions,
     homeActivePlanCard,
     analysisSessionId,

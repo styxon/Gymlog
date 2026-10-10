@@ -5,6 +5,7 @@ import { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { formatShortDate, formatWeight } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { t } from './i18n';
+import { NO_NEXT_SESSION_ADVICE, type NextSessionAdvice } from './nextSessionAdvice';
 import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
 import {
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -306,30 +307,6 @@ export function nextStepKg(lift: LiftHistory, level: SetupLevel | null | undefin
   return lift.latest.topSetWeightKg + PROGRESSION_LEVEL_PARAMS[tier].loadIncrementKg;
 }
 
-/**
- * Whether the latest session kept the reps this weight has shown before.
- *
- * The raise is earned when every working set reaches the top of the rep range
- * (progressionGate). The logs do not carry the programme's range, so the best
- * set reps the lift has shown at this weight stand in for its top: a session
- * that fell short of them on any set has not earned the raise, and 60 kg
- * 8/8/8 followed by 5/4/4 was told to try 62,5 (hunt, 2026-10-10). A weight
- * with no earlier session at it has nothing to fall short of.
- */
-export function repsKeptAtTopWeight(lift: Pick<LiftHistory, 'points' | 'latest'>): boolean {
-  const latest = lift.latest;
-  const earlierBest = lift.points
-    .filter((point) => point.sessionId !== latest.sessionId && point.topSetWeightKg === latest.topSetWeightKg)
-    .reduce((best, point) => Math.max(best, ...(point.setReps.length > 0 ? point.setReps : [point.topSetReps])), 0);
-  const latestWorst = latest.setReps.length > 0 ? Math.min(...latest.setReps) : latest.topSetReps;
-  return latestWorst >= earlierBest;
-}
-
-/** What the next session opens on: the step up once the reps held, else this weight again. */
-export function nextSessionKg(lift: LiftHistory, level: SetupLevel | null | undefined): number {
-  return repsKeptAtTopWeight(lift) ? nextStepKg(lift, level) : lift.latest.topSetWeightKg;
-}
-
 /** The window the far bar looks ahead to. Four weeks reads as "a month". */
 export const HORIZON_DAYS = 28;
 /**
@@ -404,6 +381,7 @@ export function buildNextSessionMoment(
   lift: LiftHistory,
   language: AppLanguage,
   level: SetupLevel | null | undefined,
+  advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
 ): ProMomentContent {
   const liftLabel = exerciseNameLabel(language, lift.name);
   const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
@@ -422,8 +400,11 @@ export function buildNextSessionMoment(
         })
       : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
     bars,
-    nextValue: nextSessionKg(lift, level),
-    horizonValue: horizon.kg,
+    // What the gate says the next session opens on: the step up when it earned
+    // one, this weight while the reps are rebuilt, and no bar when it says
+    // neither (a break, a first session at a weight, a workout with no programme).
+    nextValue: advice.kind === 'raise' ? advice.toKg : advice.kind === 'rebuild_reps' ? advice.kg : null,
+    horizonValue: advice.kind === 'raise' ? horizon.kg : null,
     horizonSessions: horizon.sessions,
     barLabel: t(language, 'pro.sheet.next.barLabel', {
       lift: liftLabel.toUpperCase(),
@@ -465,24 +446,27 @@ export function buildCompletionConclusion(
   lift: LiftHistory,
   language: AppLanguage,
   level: SetupLevel | null | undefined,
+  advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
 ): LockedConclusion {
   const liftLabel = exerciseNameLabel(language, lift.name);
   if (lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
     return buildPlateauConclusion(lift, language, level);
   }
-  if (!repsKeptAtTopWeight(lift)) {
-    // The reps fell short of what this weight has shown: no raise to offer.
+  // The gate's answer for the next session (nextSessionAdvice), not a step added
+  // to the top set: a raise only where the gate raises, the reps first where
+  // they fell, and nothing about a weight otherwise.
+  if (advice.kind === 'raise') {
     return {
       teaser: t(language, 'pro.completion.teaser'),
-      body: t(language, 'analysis.next.recover', { lift: liftLabel }),
+      body: t(language, 'pro.completion.body', { lift: liftLabel, weight: formatWeight(advice.toKg, 'kg') }),
     };
   }
   return {
     teaser: t(language, 'pro.completion.teaser'),
-    body: t(language, 'pro.completion.body', {
-      lift: liftLabel,
-      weight: formatWeight(nextStepKg(lift, level), 'kg'),
-    }),
+    body:
+      advice.kind === 'rebuild_reps'
+        ? t(language, 'analysis.next.recover', { lift: liftLabel })
+        : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
   };
 }
 

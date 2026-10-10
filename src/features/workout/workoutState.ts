@@ -728,6 +728,7 @@ function materializeExercise(
       rampTargetReps: resolved.rampTargetReps,
       status: 'pending',
       edited: false,
+      ...(typeof exercise.programmeSets === 'number' ? { programmeSets: exercise.programmeSets } : {}),
     };
   });
 

@@ -235,6 +235,14 @@ export interface WorkoutSetInstance {
    */
   addedMidSession?: boolean;
   /**
+   * The programme's own set count for this lift, on every set of a lightened
+   * session whose `sets` is one fewer (lib/recoverySheet lightenRuntimeTemplate).
+   * What programmeSetCount reads first, so the prefill, a swap and the "Last
+   * time" panel all tell last time's warm-ups from its work against the same
+   * number. Absent on every ordinary session and on any saved before it.
+   */
+  programmeSets?: number;
+  /**
    * An added set whose opening weight a swap re-resolved from the new lift's
    * own history: the number is the app's now (`borrowed` or `none` in
    * lib/loggedSetPlan), not the reader's carried-over one. Absent: untouched

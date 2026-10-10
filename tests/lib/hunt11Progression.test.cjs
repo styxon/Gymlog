@@ -11,8 +11,10 @@ const {
   toProgressionFatigueSignal,
 } = require(L + 'progressionGate.js');
 const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');
-const { buildRecoverySheet, lightenRuntimeTemplate } = require(L + 'recoverySheet.js');
-const { buildCompletionConclusion, nextSessionKg, repsKeptAtTopWeight } = require(L + 'proInsights.js');
+const { buildRecoverySheet, lightenRuntimeTemplate, resolveProgrammeStart } = require(L + 'recoverySheet.js');
+const { programmeSetCount, toWorkingHistoryEntry } = require(L + 'warmupSets.js');
+const { buildCompletionConclusion, buildNextSessionMoment } = require(L + 'proInsights.js');
+const { buildNextSessionAdvice } = require(L + 'nextSessionAdvice.js');
 const { buildLiftHistories } = require(L + 'trainingHistory.js');
 const { workoutReducer } = require('../../.test-dist/features/workout/workoutState.js');
 
@@ -63,6 +65,103 @@ const entry = (iso, reps, load) => ({
   sets: reps.map((r, i) => ({ setIndex: i, loadKg: load, reps: r, completedAt: iso, effort: null })),
 });
 
+
+// ── next-session advice scenarios ────────────────────────────────────────────
+const EIGHT = { repsMax: 8, targetSets: 3, level: 'beginner' };
+const dayAt = (daysAgo) => new Date(2026, 9, 10 - daysAgo, 18).toISOString();
+
+/** One session per spec, all of programme day "day" of programme "tpl". */
+function sessionsFor(specs, { dayId = 'day' } = {}) {
+  const sessions = [];
+  const logs = [];
+  specs.forEach((spec, index) => {
+    const id = `s${index}`;
+    sessions.push({
+      id,
+      workoutTemplateId: 'tpl',
+      workoutTemplateSessionId: dayId,
+      workoutNameSnapshot: 'Push',
+      performedAt: dayAt(spec.daysAgo),
+    });
+    logs.push({
+      id: `l${index}`,
+      sessionId: id,
+      exerciseTemplateId: null,
+      exerciseNameSnapshot: 'Bench Press',
+      weight: spec.weight,
+      repsPerSet: spec.reps,
+      tracked: true,
+      orderIndex: 0,
+      templateSlotId: 'bench',
+    });
+  });
+  return { sessions, logs };
+}
+
+function templateFor(config) {
+  return {
+    sessions: [
+      {
+        id: 'day',
+        exercises: [
+          {
+            exerciseName: 'Bench Press',
+            slotId: 'bench',
+            sets: config.targetSets,
+            repsMin: config.repsMax === 12 ? 8 : config.repsMax,
+            repsMax: config.repsMax,
+            trackingMode: 'load_and_reps',
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function currentOf(specs, sessions) {
+  const newest = specs.reduce((best, spec) => (spec.daysAgo < best.daysAgo ? spec : best), specs[0]);
+  return sessions[specs.indexOf(newest)];
+}
+
+function adviceFor(specs, config, opts = {}) {
+  const { sessions, logs } = sessionsFor(specs, opts);
+  const lookup = 'lookup' in opts ? opts.lookup : () => templateFor(config);
+  return buildNextSessionAdvice({
+    liftName: 'Bench Press',
+    sessionId: currentOf(specs, sessions).id,
+    sessions,
+    logs,
+    lookupTemplate: lookup,
+    level: config.level,
+  });
+}
+
+/** The gate on the same history, built by hand the way the logger files it. */
+function gateFor(specs, config) {
+  const ordered = [...specs].sort((a, b) => a.daysAgo - b.daysAgo);
+  const history = ordered.map((spec) => entry(dayAt(spec.daysAgo), spec.reps, spec.weight));
+  return evaluateProgression({
+    history,
+    repsMin: config.repsMax === 12 ? 8 : config.repsMax,
+    repsMax: config.repsMax,
+    targetSets: config.targetSets,
+    level: config.level,
+    nowMs: Date.parse(dayAt(Math.min(...specs.map((spec) => spec.daysAgo)))),
+  });
+}
+
+function analyse(specs, config, opts = {}) {
+  const { sessions, logs } = sessionsFor(specs, opts);
+  return buildSessionAnalysis({
+    sessionId: currentOf(specs, sessions).id,
+    sessions,
+    logs,
+    language: 'en',
+    level: config.level,
+    lookupTemplate: 'lookup' in opts ? opts.lookup : () => templateFor(config),
+  });
+}
+
 module.exports = [
   // 1. recovery is read for the moment a workout starts
   {
@@ -83,71 +182,184 @@ module.exports = [
     },
   },
   {
+    name: 'a programme start resolves recovery at the start clock, and a lighter session holds its loads',
+    run() {
+      const sessions = [];
+      let id = 0;
+      const add = (y, m, d, vol) =>
+        sessions.push({ id: `s${id++}`, performedAt: new Date(y, m, d, 18).toISOString(), totalVolumeKg: vol, workoutNameSnapshot: 'x' });
+      for (const w of [0, 7, 14]) for (const o of [0, 2, 4]) add(2026, 8, 14 + w + o, 5000);
+      for (const o of [21, 23, 25]) add(2026, 8, 14 + o, 9000);
+      const input = { workoutSessions: sessions, exerciseLogs: [] };
+      const template = {
+        id: 't',
+        name: 'T',
+        defaultScheduleMode: 'weekly',
+        sessions: [{ id: 'd', name: 'D', orderIndex: 0, exercises: [{ id: 'e', exerciseName: 'Bench Press', slotId: 'b', sets: 4, repsMin: 8, repsMax: 8 }] }],
+      };
+      const justSaved = resolveProgrammeStart(template, false, input, new Date(2026, 9, 9, 19, 30));
+      const nextWeek = resolveProgrammeStart(template, false, input, new Date(2026, 9, 14, 18, 0));
+      assert.equal(justSaved.fatigueSignal, 'elevated');
+      assert.equal(nextWeek.fatigueSignal, 'normal');
+      assert.equal(nextWeek.template.sessions[0].exercises[0].sets, 4);
+      const lighter = resolveProgrammeStart(template, true, input, new Date(2026, 9, 14, 18, 0));
+      assert.equal(lighter.fatigueSignal, 'elevated');
+      assert.equal(lighter.template.sessions[0].exercises[0].sets, 3);
+    },
+  },
+  {
     name: 'a programme start asks for recovery at its own clock, and the shared memo moves on with the day',
     run() {
       const starts = read('src', 'app', 'programmeStarts.tsx');
-      assert.match(starts, /progressionFatigueSignalAt\(database, now\)/);
+      assert.match(starts, /resolveProgrammeStart\(runtimeTemplate, lighten, database, now\)/);
       assert.doesNotMatch(starts, /progressionFatigueSignal\b(?!At)/, 'no stale memo passed in');
       const insights = read('src', 'app', 'useProInsights.ts');
       assert.match(insights, /\[database\.exerciseLogs, database\.workoutSessions, todayKey\]/);
     },
   },
 
-  // 2. next-session advice follows the reps
+  // 2. next-session advice is the gate's own answer
   {
     name: 'post-session advice does not raise the weight after the reps collapsed',
     run() {
-      const { sessions, logs } = build([
-        { sid: 's1', name: 'Bench Press', date: day(7), weight: 60, reps: [8, 8, 8], vol: 1440 },
-        { sid: 's2', name: 'Bench Press', date: day(0), weight: 60, reps: [5, 4, 4], vol: 780 },
-      ]);
-      const analysis = buildSessionAnalysis({ sessionId: 's2', sessions, logs, language: 'en', level: 'beginner' });
+      const analysis = analyse([
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [5, 4, 4] },
+      ], EIGHT);
       const text = analysis.nextActions.map((a) => a.text).join(' | ');
       assert.doesNotMatch(text, /62[.,]5/);
       assert.match(text, /Hold Bench Press where it is and get the reps back first/);
-      // The gate says the same of the same history.
-      const decision = evaluateProgression({
-        history: [entry(day(0), [5, 4, 4], 60), entry(day(7), [8, 8, 8], 60)],
-        repsMin: 8,
-        repsMax: 8,
-        targetSets: 3,
-        level: 'beginner',
-        nowMs: Date.parse(day(-2)),
-      });
-      assert.equal(decision.recommendation, 'hold');
     },
   },
   {
-    name: 'post-session advice still raises when the reps held, and at a weight not yet tried',
+    name: 'advice equals the gate in each ordinary case, raise and hold alike',
     run() {
-      const held = build([
-        { sid: 'h1', name: 'Bench Press', date: day(7), weight: 60, reps: [8, 8, 8], vol: 1440 },
-        { sid: 'h2', name: 'Bench Press', date: day(0), weight: 60, reps: [8, 8, 8], vol: 1440 },
-      ]);
-      const a = buildSessionAnalysis({ sessionId: 'h2', sessions: held.sessions, logs: held.logs, language: 'en', level: 'beginner' });
-      assert.match(a.nextActions.map((x) => x.text).join(' | '), /62[.,]5/);
-      // First session at a new weight: the earlier 8s were at 57.5.
-      const stepped = build([
-        { sid: 'p1', name: 'Bench Press', date: day(7), weight: 57.5, reps: [8, 8, 8], vol: 1380 },
-        { sid: 'p2', name: 'Bench Press', date: day(0), weight: 60, reps: [6, 6, 6], vol: 1080 },
-      ]);
-      const b = buildSessionAnalysis({ sessionId: 'p2', sessions: stepped.sessions, logs: stepped.logs, language: 'en', level: 'beginner' });
-      assert.match(b.nextActions.map((x) => x.text).join(' | '), /62[.,]5/);
+      const climbing = { repsMax: 12, targetSets: 3, level: 'beginner' };
+      const intermediate = { repsMax: 8, targetSets: 3, level: 'intermediate' };
+      const intermediate12 = { repsMax: 12, targetSets: 3, level: 'intermediate' };
+      // [name, specs, config, expected advice kind]
+      const cases = [
+        ['reps climbing inside a range', [
+          { daysAgo: 7, weight: 60, reps: [9, 9, 9] }, { daysAgo: 0, weight: 60, reps: [10, 10, 10] }], climbing, 'none'],
+        ['first session at a new weight after 12s at the old one', [
+          { daysAgo: 7, weight: 57.5, reps: [12, 12, 12] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], climbing, 'none'],
+        ['intermediate waits for a second ceiling session', [
+          { daysAgo: 14, weight: 57.5, reps: [12, 12, 12] }, { daysAgo: 7, weight: 57.5, reps: [12, 12, 12] },
+          { daysAgo: 0, weight: 60, reps: [12, 12, 12] }], intermediate12, 'none'],
+        ['intermediate with three ceiling sessions', [
+          { daysAgo: 14, weight: 60, reps: [8, 8, 8] }, { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+          { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], intermediate, 'raise'],
+        ['after a 40-day break', [
+          { daysAgo: 40, weight: 60, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], EIGHT, 'none'],
+        ['one session ever', [{ daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT, 'none'],
+        ['an old higher-rep record from 700 days ago', [
+          { daysAgo: 700, weight: 60, reps: [15, 12, 10] }, { daysAgo: 14, weight: 60, reps: [8, 8, 8] },
+          { daysAgo: 7, weight: 60, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], EIGHT, 'raise'],
+        ['one big set earlier (8/8/12), now 8/8/8 twice', [
+          { daysAgo: 14, weight: 60, reps: [8, 8, 12] }, { daysAgo: 7, weight: 60, reps: [8, 8, 8] }], EIGHT, 'raise'],
+        ['a tired extra set (8/8/8/5)', [
+          { daysAgo: 7, weight: 60, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8, 5] }], EIGHT, 'raise'],
+        ['10/9/8 then 8/8/8 against a ceiling of 8', [
+          { daysAgo: 7, weight: 60, reps: [10, 9, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], EIGHT, 'raise'],
+        ['10/9/8 twice against a ceiling of 8: the gate raises', [
+          { daysAgo: 7, weight: 60, reps: [10, 9, 8] }, { daysAgo: 0, weight: 60, reps: [10, 9, 8] }], EIGHT, 'raise'],
+        ['10/9/8 twice inside a range to 12: held, but not a fall', [
+          { daysAgo: 7, weight: 60, reps: [10, 9, 8] }, { daysAgo: 0, weight: 60, reps: [10, 9, 8] }], climbing, 'none'],
+        ['reps fell after two clean sessions', [
+          { daysAgo: 14, weight: 60, reps: [8, 8, 8] }, { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+          { daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT, 'rebuild_reps'],
+        ['early jump on a weight far too light', [{ daysAgo: 0, weight: 60, reps: [10, 10, 10] }], EIGHT, 'raise'],
+      ];
+      for (const [name, specs, config, expected] of cases) {
+        const advice = adviceFor(specs, config);
+        const decision = gateFor(specs, config);
+        assert.equal(advice.kind, expected, `${name}: ${JSON.stringify(advice)} vs gate ${JSON.stringify(decision)}`);
+        // Advice raises exactly where the gate raises, and to the gate's weight.
+        assert.equal(advice.kind === 'raise', decision.recommendation === 'increase', name);
+        if (advice.kind === 'raise') {
+          assert.equal(advice.toKg, decision.loadKg, name);
+        }
+        if (advice.kind === 'rebuild_reps') {
+          assert.equal(decision.holdReason, 'rep_ceiling_not_reached', name);
+        }
+      }
     },
   },
   {
-    name: 'the Pro next-session moment and completion lock hold the weight after collapsed reps',
+    name: 'post-session advice names a weight only when the gate raises, and the reps only when they fell',
     run() {
-      const { sessions, logs } = build([
-        { sid: 'c1', name: 'Bench Press', date: day(7), weight: 60, reps: [8, 8, 8] },
-        { sid: 'c2', name: 'Bench Press', date: day(0), weight: 60, reps: [5, 4, 4] },
-      ]);
-      const lift = buildLiftHistories(sessions, logs)[0];
-      assert.equal(repsKeptAtTopWeight(lift), false);
-      assert.equal(nextSessionKg(lift, 'beginner'), 60);
-      const lock = buildCompletionConclusion(lift, 'en', 'beginner');
-      assert.doesNotMatch(lock.body, /62,5|62\.5/);
-      assert.match(lock.body, /get the reps back first/);
+      const text = (specs, config) => analyse(specs, config).nextActions.map((a) => a.text).join(' | ');
+      assert.match(
+        text([{ daysAgo: 7, weight: 60, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], EIGHT),
+        /62[.,]5/,
+      );
+      // First session at 60 after 57.5 x 8/8/8 with 6/6/6: the gate holds, reps did not fall at 60.
+      const stepped = text([{ daysAgo: 7, weight: 57.5, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT);
+      assert.doesNotMatch(stepped, /62[.,]5/);
+      assert.doesNotMatch(stepped, /get the reps back/);
+      const same = text([{ daysAgo: 7, weight: 60, reps: [10, 9, 8] }, { daysAgo: 0, weight: 60, reps: [10, 9, 8] }], { repsMax: 12, targetSets: 3, level: 'beginner' });
+      assert.doesNotMatch(same, /get the reps back|62[.,]5/);
+    },
+  },
+  {
+    name: 'the analysis and the completion lock are given the programme to read the gate against',
+    run() {
+      assert.match(read('src', 'app', 'usePlanReadouts.tsx'), /lookupTemplate: createAdviceTemplateLookup\(/);
+      const insights = read('src', 'app', 'useProInsights.ts');
+      assert.match(insights, /buildNextSessionAdvice\(/);
+      assert.match(insights, /buildCompletionConclusion\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
+      assert.match(insights, /buildNextSessionMoment\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
+    },
+  },
+  {
+    name: 'no advice about a weight when the programme cannot be found',
+    run() {
+      const specs = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8] },
+      ];
+      assert.deepEqual(adviceFor(specs, EIGHT, { lookup: () => null }), { kind: 'none' });
+      assert.deepEqual(adviceFor(specs, EIGHT, { lookup: null }), { kind: 'none' });
+      // A freestyle workout names no programme day.
+      assert.deepEqual(adviceFor(specs, EIGHT, { dayId: null }), { kind: 'none' });
+      // A day the programme no longer has.
+      assert.deepEqual(adviceFor(specs, EIGHT, { dayId: 'gone' }), { kind: 'none' });
+      const analysis = analyse(specs, EIGHT, { lookup: () => null });
+      assert.ok(!analysis.nextActions.some((a) => /62[.,]5|Hold Bench/.test(a.text)));
+    },
+  },
+  {
+    name: 'the Pro next-session moment and completion lock follow the gate, and say nothing of a weight otherwise',
+    run() {
+      const lockFor = (specs, config) => {
+        const { sessions, logs } = sessionsFor(specs);
+        const lift = buildLiftHistories(sessions, logs)[0];
+        const advice = adviceFor(specs, config);
+        return {
+          advice,
+          conclusion: buildCompletionConclusion(lift, 'en', config.level, advice),
+          moment: buildNextSessionMoment(lift, 'en', config.level, advice),
+        };
+      };
+      const raise = lockFor([{ daysAgo: 7, weight: 60, reps: [8, 8, 8] }, { daysAgo: 0, weight: 60, reps: [8, 8, 8] }], EIGHT);
+      assert.equal(raise.advice.kind, 'raise');
+      assert.match(raise.conclusion.body, /62[.,]5/);
+      assert.equal(raise.moment.nextValue, 62.5);
+      assert.notEqual(raise.moment.horizonValue, null);
+
+      const fell = lockFor([
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT);
+      assert.equal(fell.advice.kind, 'rebuild_reps');
+      assert.match(fell.conclusion.body, /get the reps back first/);
+      assert.equal(fell.moment.nextValue, 60);
+      assert.equal(fell.moment.horizonValue, null);
+
+      const waiting = lockFor([{ daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT);
+      assert.equal(waiting.advice.kind, 'none');
+      assert.doesNotMatch(waiting.conclusion.body, /62[.,]5|ready to try|reps back/);
+      assert.equal(waiting.moment.nextValue, null);
+      assert.equal(waiting.moment.horizonValue, null);
     },
   },
 
@@ -240,6 +452,21 @@ module.exports = [
       const lighter = lightenRuntimeTemplate(template);
       assert.equal(lighter.sessions[0].exercises[0].sets, 3);
       assert.deepEqual(loads(lighter), ['60', '80', '100']);
+
+      // The swap path and the "Last time" panel read the live sets: one number.
+      const lightSets = start(lighter).activeSession.exercises[0].sets;
+      assert.equal(programmeSetCount(lightSets), 4);
+      const found = state.history.slotHistory[slotId][0];
+      assert.deepEqual(
+        toWorkingHistoryEntry(found, programmeSetCount(lightSets)).sets.map((set) => set.loadKg),
+        [60, 80, 100, 100],
+      );
+      // An ordinary session, and one saved before the field existed, count as before.
+      const ordinarySets = start(template).activeSession.exercises[0].sets;
+      assert.equal(ordinarySets.some((set) => 'programmeSets' in set), false);
+      assert.equal(programmeSetCount(ordinarySets), 4);
+      assert.equal(programmeSetCount(lightSets.map(({ programmeSets, ...rest }) => rest)), 3);
+      assert.equal(programmeSetCount([{ programmeSets: 'x' }, { addedMidSession: true }]), 1);
     },
   },
 
