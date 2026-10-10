@@ -19,11 +19,20 @@
  */
 
 /**
+ * Sessions the guided player did not run, by the template id they carry. Free
+ * logging has its own template (flagged 'freestyle'); an imported history
+ * (Hevy and the like) is written under one shared id, with no template behind
+ * it. Neither has met the screen the tour is about.
+ */
+export const IMPORTED_HISTORY_TEMPLATE_ID = 'hevy_import';
+
+/**
  * Does the database hold a finished programme workout? Every stored session
  * was saved at its end, so a session existing is the proof. Freestyle logging
  * is not the guided player - its template is flagged 'freestyle' - and does
  * not count: a reader who has only ever logged free workouts has not met the
- * screen the tour is about.
+ * screen the tour is about. Nor does an import: someone who brought their
+ * history from another app has never opened the player.
  *
  * A session whose template is gone (deleted since) counts: it was a programme
  * workout when it was done, and nothing says otherwise. A ready programme has
@@ -40,7 +49,10 @@ export function hasCompletedProgrammeWorkout(
     }
   }
   return sessions.some(
-    (session) => typeof session.workoutTemplateId === 'string' && !freestyle.has(session.workoutTemplateId),
+    (session) =>
+      typeof session.workoutTemplateId === 'string' &&
+      session.workoutTemplateId !== IMPORTED_HISTORY_TEMPLATE_ID &&
+      !freestyle.has(session.workoutTemplateId),
   );
 }
 

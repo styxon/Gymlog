@@ -136,6 +136,11 @@ export interface WorkoutTourStep {
   kind: 'set' | 'rest';
   /** The blue + that logs a warm-up set is on the set row. */
   canWarmUp: boolean;
+  /**
+   * The red − is drawn: the lift has a set to take back. A one-set lift, or one
+   * whose last set is already logged, shows a blank place instead.
+   */
+  canRemove: boolean;
   /** A weight dial is on screen (a bodyweight lift has reps only). */
   loaded: boolean;
   /** There is a "last time" line to point at, not the first-time note. */
@@ -172,6 +177,7 @@ export function resolveTourBeats(
     case 'workoutSet': {
       const step = options.workout;
       const canWarmUp = step?.canWarmUp ?? false;
+      const canRemove = step?.canRemove ?? true;
       const loaded = step?.loaded ?? true;
       const hasHistory = step?.hasHistory ?? false;
       return [
@@ -192,7 +198,7 @@ export function resolveTourBeats(
           place: 'below',
           // The row carries the page's 24 dp margin and 18 dp of air above.
           inset: { x: 24, top: 18 },
-          copyKey: canWarmUp ? 'tour.workout.sets' : 'tour.workout.setsNoWarmup',
+          copyKey: setRowCopyKey(canRemove, canWarmUp),
         },
         {
           kind: 'section',
@@ -211,7 +217,20 @@ export function resolveTourBeats(
       ];
     }
     case 'workoutRest':
-      return [{ kind: 'section', target: 'workout.rest', place: 'above', copyKey: 'tour.workout.rest' }];
+      return [
+        {
+          kind: 'section',
+          // The -15s / +15s / Pause row and Skip rest: what the sentence is about.
+          target: 'workout.rest',
+          // The callout goes above, over the empty part of the page: below it
+          // there is only the rail, and the callout would be pushed back onto
+          // the buttons.
+          place: 'above',
+          // The block carries the page's 24 dp margin and 10 dp under it.
+          inset: { x: 24, bottom: 10 },
+          copyKey: 'tour.workout.rest',
+        },
+      ];
     case 'home': {
       const beats: TourBeat[] = [
         { kind: 'section', target: 'home.week', place: 'below', copyKey: 'tour.home.week' },
@@ -245,6 +264,17 @@ export function resolveTourBeats(
     default:
       return [];
   }
+}
+
+/**
+ * Which sentence the set row gets: one for each combination of the buttons it
+ * can have. The green + is always there; the red − and the blue + come and go.
+ */
+export function setRowCopyKey(canRemove: boolean, canWarmUp: boolean): I18nKey {
+  if (canRemove) {
+    return canWarmUp ? 'tour.workout.sets' : 'tour.workout.setsNoWarmup';
+  }
+  return canWarmUp ? 'tour.workout.setsNoRemove' : 'tour.workout.setsAddOnly';
 }
 
 export const TOUR_BAR_STOP_COPY_KEY: Record<TourBarStop, I18nKey> = {

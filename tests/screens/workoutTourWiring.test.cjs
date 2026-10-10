@@ -30,31 +30,50 @@ function setStepView() {
 
 module.exports = [
   {
-    name: 'workout tour: the set screen registers the five things the beats ring, as real views',
+    name: 'workout tour: the set screen registers the five things the beats ring, as real views, once',
     run() {
       const set = setStepView();
-      for (const id of ['workout.name', 'workout.history', 'workout.setRow', 'workout.dials', 'workout.log']) {
-        const found = set.match(new RegExp(`<View\\s+ref=\\{\\(node\\) => tourTargets\\?\\.register\\('${id.replace('.', '\\.')}', node\\)\\}\\s+collapsable=\\{false\\}`));
+      const views = [
+        ['workout.name', 'nameRef', 'setExerciseTop'],
+        ['workout.history', 'historyRef', 'setExerciseRows'],
+        ['workout.setRow', 'setRowRef', 'setMetaRow'],
+        ['workout.dials', 'dialsRef', 'setDialRow'],
+        ['workout.log', 'logRef', 'setControls'],
+      ];
+      for (const [id, ref, style] of views) {
+        // Made once per mount, not per render: an inline ref callback is a new
+        // function every render, and the player renders every second.
+        assert.match(set, new RegExp(`const ${ref} = useTourTarget\\(tourTargets, '${id.replace('.', '\\.')}'\\);`), id);
         // collapsable={false}: a View with only layout props is flattened away
-        // on Android and there is nothing left to measure.
-        assert.ok(found, id);
+        // on Android and there is nothing left to measure. And each ref is on
+        // the view the beat's copy describes.
+        assert.match(set, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}\\s+style=\\{styles\\.${style}\\}`), id);
       }
-      // Each registers once.
-      assert.equal((set.match(/tourTargets\?\.register\(/g) || []).length, 5);
-      // And each target is the view the beat's copy describes.
-      assert.match(set, /register\('workout\.name', node\)\}\s+collapsable=\{false\}\s+style=\{styles\.setExerciseTop\}/);
-      assert.match(set, /register\('workout\.history', node\)\}\s+collapsable=\{false\}\s+style=\{styles\.setExerciseRows\}/);
-      assert.match(set, /register\('workout\.setRow', node\)\}\s+collapsable=\{false\}\s+style=\{styles\.setMetaRow\}/);
-      assert.match(set, /register\('workout\.dials', node\)\}\s+collapsable=\{false\}\s+style=\{styles\.setDialRow\}/);
-      assert.match(set, /register\('workout\.log', node\)\}\s+collapsable=\{false\}\s+style=\{styles\.setControls\}/);
+      assert.doesNotMatch(set, /tourTargets\?\.register\(/, 'no inline registering');
+      assert.equal((set.match(/useTourTarget\(/g) || []).length, 5);
+      // The hook memoises on the registry and the id.
+      assert.match(reporter, /return useCallback\(\(node: unknown\) => tourTargets\?\.register\(id, node\), \[tourTargets, id\]\);/);
     },
   },
   {
-    name: 'workout tour: the rest ring is registered through the ring itself',
+    name: 'workout tour: the rest beat rings the controls block - the -15s / +15s / Pause row and Skip rest',
     run() {
-      assert.match(player, /tourRef=\{\(node\) => tourTargets\?\.register\('workout\.rest', node\)\}/);
+      assert.match(player, /const restControlsRef = useTourTarget\(tourTargets, 'workout\.rest'\);/);
+      // The block's own view: the row of buttons and the skip button inside it,
+      // not the countdown ring above.
+      const rest = between(player, "{step.type === 'rest' && (", '<ProgressRail');
+      assert.match(
+        rest,
+        /<View\s+ref=\{restControlsRef\}\s+collapsable=\{false\}\s+style=\{\{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 \}\}\s*>/,
+      );
+      const block = rest.slice(rest.indexOf('ref={restControlsRef}'));
+      assert.match(block, /label="−15s"/);
+      assert.match(block, /label="\+15s"/);
+      assert.match(block, /onPress=\{startRestNextSet\}/);
+      assert.doesNotMatch(block, /<RestRing/, 'the ring is outside the block');
+      // And the ring no longer carries a tour handle.
       const ring = between(player, 'function RestRing({', 'function TopBar({');
-      assert.match(ring, /<View\s+ref=\{tourRef\}\s+collapsable=\{false\}/);
+      assert.doesNotMatch(ring, /tourRef/);
     },
   },
   {
@@ -64,7 +83,7 @@ module.exports = [
       // Not a superset round, not a clock, not a hold.
       assert.match(set, /<GuidedTourReport[\s\S]{0,200}kind="set"[\s\S]{0,120}plain=\{!superset && !minutesMode && !timed\}/);
       // What the beats' sentences depend on.
-      assert.match(set, /canWarmUp=\{canWarmUp\}\s+loaded=\{!bodyweight\}\s+hasHistory=\{Boolean\(panels\?\.history\)\}/);
+      assert.match(set, /canWarmUp=\{canWarmUp\}\s+canRemove=\{Boolean\(onRemoveSet\)\}\s+loaded=\{!bodyweight\}\s+hasHistory=\{Boolean\(panels\?\.history\)\}/);
       // An interval bout is a different step view altogether.
       assert.match(player, /\{step\.type === 'set' && !step\.interval && \(\s*<SetStepView/);
       // A rest with a recovery kind is an interval's easy half: no buttons to describe.
@@ -72,7 +91,7 @@ module.exports = [
       // A sheet open, the workout paused, the permission ask up: the tour steps aside.
       assert.match(player, /tourReport=\{frozen \? undefined : onTourStep\}/);
       // And the reporter takes its report back when held or unmounted.
-      assert.match(reporter, /if \(!report \|\| !plain\) \{\s*return undefined;\s*\}\s*report\(\{ kind, canWarmUp, loaded, hasHistory \}\);\s*return \(\) => report\(null\);/);
+      assert.match(reporter, /if \(!report \|\| !plain\) \{\s*return undefined;\s*\}\s*report\(\{ kind, canWarmUp, canRemove, loaded, hasHistory \}\);\s*return \(\) => report\(null\);/);
     },
   },
   {
@@ -132,7 +151,6 @@ module.exports = [
       const read = between(layer, 'const readSpot = useCallback(', 'const finish = useCallback(');
       assert.match(read, /const targetRect = measuredTarget \? insetRect\(measuredTarget, beat\.inset\) : null;/);
       // A target the step does not have is skipped, not rung on nothing.
-      assert.match(layer, /if \(!next\) \{\s*stepTo\(index \+ 1\);/);
       // Leaving mid-tour marks only what was shown (unchanged for the workout).
       assert.match(layer, /if \(shownRef\.current\) \{\s*finishRef\.current\(\);\s*\}/);
     },
@@ -177,6 +195,49 @@ module.exports = [
       assert.match(stripComments(read('src/data/seed.ts')), /firstRunToursReplayed: false,/);
       assert.match(stripComments(read('src/state/AppProvider.tsx')), /firstRunToursReplayed: false,/);
       assert.match(stripComments(read('src/types/models.ts')), /firstRunToursReplayed: boolean;/);
+    },
+  },
+  {
+    // The player's own back listener opens its End-workout sheet; the shield
+    // does not stop the hardware key, so with a callout up "back" used to
+    // reach the screen under the tour.
+    name: 'first-run tour: the back key with a callout up skips the tour, and the layer stays the newest listener',
+    run() {
+      const effect = between(layer, "if (phase !== 'beat' || !spot) {\n      return undefined;\n    }\n    const subscription = BackHandler", '  const onRootLayout');
+      assert.match(effect, /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{\s*skip\(\);\s*return true;\s*\}\);/);
+      assert.match(effect, /return \(\) => subscription\.remove\(\);\s*\}\);/, 'no dependency list: re-subscribed with the shell, so it stays newest');
+      // Only while a callout is on screen: not during the start delay.
+      assert.match(effect, /phase !== 'beat' \|\| !spot/);
+      // And the player's own listener is the thing being outranked.
+      assert.match(player, /BackHandler\.addEventListener\('hardwareBackPress'[\s\S]{0,400}setExitOpen\(true\)/);
+    },
+  },
+  {
+    name: 'first-run tour: a tour with nothing on screen is not marked seen, and the counter counts only what was shown',
+    run() {
+      const finish = between(layer, 'const finish = useCallback(', 'const skip = useCallback');
+      assert.match(finish, /if \(shownRef\.current\) \{\s*onFinish\(surface, reason\);\s*\}/);
+      assert.equal((layer.match(/const shownRef = useRef\(false\);/g) || []).length, 1);
+      // A beat whose target is missing is passed over and counted as such.
+      assert.match(layer, /if \(!next\) \{\s*setPassedOver\(\(count\) => count \+ 1\);\s*stepTo\(index \+ 1\);/);
+      assert.match(layer, /\$\{index \+ 1 - passedOver\}\/\$\{shownTotal\}/);
+      assert.match(layer, /const shownTotal = beats\.length - passedOver;/);
+    },
+  },
+  {
+    name: 'first-run tour: a one-beat tour has no counter and no Skip, only Done',
+    run() {
+      const render = stripComments(layer.slice(layer.indexOf('  return (\n    <View ref={rootRef}')));
+      assert.match(render, /const single|\{single \? null/);
+      assert.match(layer, /const single = beats\.length === 1;/);
+      // The counter and the skip link both go; the button stays and says Done.
+      assert.match(render, /\{single \? null : \(\s*<Text style=\{\[styles\.counter/);
+      assert.match(render, /\{single \? null : \(\s*<Pressable[\s\S]{0,260}onPress=\{skip\}/);
+      assert.match(render, /'tour\.done' : 'tour\.next'/);
+      assert.match(layer, /isLast = index \+ 1 >= beats\.length/);
+      // A single beat is the rest tour; Home and the set tour keep both.
+      const lib = stripComments(read('src/lib/firstRunTour.ts'));
+      assert.match(lib, /case 'workoutRest':\s*return \[\s*\{/);
     },
   },
 ];

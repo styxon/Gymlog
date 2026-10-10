@@ -235,6 +235,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
       tourHasProgram,
       tourSurface,
       workoutTourStep?.canWarmUp,
+      workoutTourStep?.canRemove,
       workoutTourStep?.hasHistory,
       workoutTourStep?.kind,
       workoutTourStep?.loaded,

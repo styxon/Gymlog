@@ -124,8 +124,8 @@ module.exports = [
         assert.ok(text.length > 20, `${key} is suspiciously short, did the match stop early: ${text}`);
         // Verbs that ask for a press. "Painamalla X voit…" describes what a
         // button does and is fine; "Paina X" is an order the shield refuses.
-        assert.doesNotMatch(text, /\b(Napauta|Napsauta|Klikkaa|Tap|Click)\b/, `${key}: ${text}`);
-        assert.doesNotMatch(text, /^(Paina|Press) /, `${key}: ${text}`);
+        assert.doesNotMatch(text, /(?<![\p{L}])(Napauta|Napsauta|Klikkaa|Valitse|Pidä|Tap|Click|Hold)(?![\p{L}])/u, `${key}: ${text}`);
+        assert.doesNotMatch(text, /(^|[.;]\s+)(Paina|Press) /, `${key}: ${text}`);
       }
       // The way out is still one tap, and it is on every beat — a guided tour
       // that could not be left would be a trap.

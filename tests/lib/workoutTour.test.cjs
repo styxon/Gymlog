@@ -14,7 +14,17 @@ const eligibility = require('../../.test-dist/lib/workoutTourEligibility');
  * the overlay only draws.
  */
 
-const SET_STEP = { kind: 'set', canWarmUp: true, loaded: true, hasHistory: true };
+const SET_STEP = { kind: 'set', canWarmUp: true, canRemove: true, loaded: true, hasHistory: true };
+
+/**
+ * The words that give an order. The page under a beat is shielded, so a tour
+ * that opens a sentence with one of these - in either language - asks for
+ * something it will not let the reader do. Matched at the start of a clause:
+ * "holding a button" describes, and "Hold" opening a sentence commands.
+ */
+const IMPERATIVE_AT_CLAUSE_START =
+  /(^|[.;:!?]\s+)(Napauta|Napsauta|Klikkaa|Valitse|Paina|Pidä|Tap|Click|Press|Hold|Select|Choose)(?![\p{L}])/u;
+const TAP_WORD_ANYWHERE = /(?<![\p{L}])(Napauta|Napsauta|Klikkaa|Tap|Click)(?![\p{L}])/u;
 const read = (file) =>
   fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8').replace(/\r\n/g, '\n');
 
@@ -63,9 +73,35 @@ module.exports = [
         Object.fromEntries(
           tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: step }).map((beat) => [beat.target, beat.copyKey]),
         );
-      // No warm-up + (a bodyweight lift, or a set past the first): the sentence about it goes.
+      // The set row's buttons come and go: the red − when there is a set to take
+      // back (not on a one-set lift, not when the last set is logged), the blue +
+      // on the first set of a loaded lift. The green + is always there.
       assert.equal(keysFor(SET_STEP)['workout.setRow'], 'tour.workout.sets');
       assert.equal(keysFor({ ...SET_STEP, canWarmUp: false })['workout.setRow'], 'tour.workout.setsNoWarmup');
+      assert.equal(keysFor({ ...SET_STEP, canRemove: false })['workout.setRow'], 'tour.workout.setsNoRemove');
+      assert.equal(
+        keysFor({ ...SET_STEP, canRemove: false, canWarmUp: false })['workout.setRow'],
+        'tour.workout.setsAddOnly',
+      );
+      assert.equal(tour.setRowCopyKey(true, true), 'tour.workout.sets');
+            const blueWarmup = /(blue \+|sininen \+)/;
+      const warmUpWord = /(warm-up|lämmittely)/i;
+      for (const [key, hasMinus, hasWarmup] of [
+        ['tour.workout.sets', true, true],
+        ['tour.workout.setsNoWarmup', true, false],
+        ['tour.workout.setsNoRemove', false, true],
+        ['tour.workout.setsAddOnly', false, false],
+      ]) {
+        const { en, fi } = copyOf(key);
+        assert.equal(/Red −/.test(en), hasMinus, `${key} en: the red −`);
+        assert.equal(/Punainen −/.test(fi), hasMinus, `${key} fi: the red −`);
+        assert.equal(blueWarmup.test(en), hasWarmup, `${key} en: the blue +`);
+        assert.equal(blueWarmup.test(fi), hasWarmup, `${key} fi: the blue +`);
+        assert.equal(warmUpWord.test(en), hasWarmup, `${key} en: a warm-up`);
+        assert.equal(warmUpWord.test(fi), hasWarmup, `${key} fi: a warm-up`);
+        assert.match(en, /(green|Green) \+/, `${key} en: the green + is always there`);
+        assert.match(fi, /Vihreä \+|vihreä \+/, `${key} fi: the green + is always there`);
+      }
       // No weight dial on a bodyweight lift.
       assert.equal(keysFor(SET_STEP)['workout.dials'], 'tour.workout.dials');
       assert.equal(keysFor({ ...SET_STEP, loaded: false })['workout.dials'], 'tour.workout.dialsReps');
@@ -73,9 +109,6 @@ module.exports = [
       assert.equal(keysFor(SET_STEP)['workout.history'], 'tour.workout.history');
       assert.equal(keysFor({ ...SET_STEP, hasHistory: false })['workout.history'], 'tour.workout.historyFirst');
 
-      const without = copyOf('tour.workout.setsNoWarmup');
-      assert.doesNotMatch(without.en, /warm-up/i);
-      assert.doesNotMatch(without.fi, /lämmittely/i);
       const reps = copyOf('tour.workout.dialsReps');
       assert.doesNotMatch(reps.en, /weight/i);
       assert.doesNotMatch(reps.fi, /paino/i);
@@ -255,34 +288,96 @@ module.exports = [
     },
   },
   {
+    // Hevy's import writes every session under one shared id (AppProvider
+    // importWorkoutHistory), with no template behind it. An importer who has
+    // never opened the guided player is exactly who the tour is for.
+    name: 'workout tour: imported history is not a programme workout, so an importer still gets the tour',
+    run() {
+      assert.equal(eligibility.IMPORTED_HISTORY_TEMPLATE_ID, 'hevy_import');
+      const app = read('src/state/AppProvider.tsx');
+      assert.match(app, /workoutTemplateId: 'hevy_import'/, 'the id the importer really writes');
+      const imported = Array.from({ length: 40 }, () => ({ workoutTemplateId: 'hevy_import' }));
+      assert.equal(eligibility.hasCompletedProgrammeWorkout(imported, []), false);
+      assert.equal(eligibility.isWorkoutTourEligible({ replayed: false, sessions: imported, templates: [] }), true);
+      // ...until they finish one in the player.
+      assert.equal(
+        eligibility.isWorkoutTourEligible({
+          replayed: false,
+          sessions: [...imported, { workoutTemplateId: 'custom_1' }],
+          templates: [{ id: 'custom_1', origin: 'authored' }],
+        }),
+        false,
+      );
+      // Imports and free workouts together are still no programme workout.
+      assert.equal(
+        eligibility.isWorkoutTourEligible({
+          replayed: false,
+          sessions: [...imported, { workoutTemplateId: 'free_1' }],
+          templates: [{ id: 'free_1', origin: 'freestyle' }],
+        }),
+        true,
+      );
+    },
+  },
+  {
     name: 'workout tour: every beat has copy in both languages that says what is there, never what to tap',
     run() {
       const keys = new Set();
-      for (const step of [
-        SET_STEP,
-        { ...SET_STEP, canWarmUp: false },
-        { ...SET_STEP, loaded: false },
-        { ...SET_STEP, hasHistory: false },
-      ]) {
-        for (const beat of tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: step })) {
-          keys.add(beat.copyKey);
+      for (const canRemove of [true, false]) {
+        for (const canWarmUp of [true, false]) {
+          for (const loaded of [true, false]) {
+            for (const hasHistory of [true, false]) {
+              const step = { ...SET_STEP, canRemove, canWarmUp, loaded, hasHistory };
+              for (const beat of tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: step })) {
+                keys.add(beat.copyKey);
+              }
+            }
+          }
         }
       }
       for (const beat of tour.resolveTourBeats('workoutRest', { hasProgram: false })) {
         keys.add(beat.copyKey);
       }
-      assert.equal(keys.size, 9, 'five beats, four variants, one rest');
+      assert.equal(keys.size, 11, 'name, two histories, four set rows, two dials, the log button, the rest');
       for (const key of keys) {
         const { en, fi } = copyOf(key);
         for (const [language, text] of [['en', en], ['fi', fi]]) {
           assert.ok(text.length > 40, `${key} ${language} is suspiciously short: ${text}`);
-          // The page under a beat is shielded: a tour that says "tap" lies.
-          assert.doesNotMatch(text, /\b(Napauta|Napsauta|Klikkaa|Tap|Click)\b/, `${key} ${language}: ${text}`);
-          assert.doesNotMatch(text, /^(Paina|Press) /, `${key} ${language}: ${text}`);
+          // The page under a beat is shielded: a tour that orders the reader
+          // to tap, press, hold or pick something lies.
+          assert.doesNotMatch(text, TAP_WORD_ANYWHERE, `${key} ${language}: ${text}`);
+          assert.doesNotMatch(text, IMPERATIVE_AT_CLAUSE_START, `${key} ${language}: ${text}`);
         }
         assert.notEqual(en, fi, `${key} is translated`);
         // British spelling, the dictionary's own.
         assert.doesNotMatch(en, /\bprogram\b/i, key);
+      }
+    },
+  },
+  {
+    name: 'workout tour: the imperative check itself catches what it is for',
+    run() {
+      // The guard is only worth its regex if it fires on the sentences it is
+      // for, in both languages, and leaves description alone.
+      for (const bad of [
+        'Tap the name to open it.',
+        'Press the red button.',
+        'Hold a button to run the number.',
+        'Select a set. Then go on.',
+        'Napauta nimeä.',
+        'Valitse sarja.',
+        'Pidä painiketta pohjassa.',
+        'Paina kirjaa. Sitten jatka.',
+        'Hyvä. Pidä painiketta pohjassa.',
+      ]) {
+        assert.ok(IMPERATIVE_AT_CLAUSE_START.test(bad) || TAP_WORD_ANYWHERE.test(bad), bad);
+      }
+      for (const fine of [
+        'Holding a button changes the number faster.',
+        'painiketta pohjassa pitämällä luku vaihtuu nopeammin.',
+        'Logging a set moves on to the rest.',
+      ]) {
+        assert.ok(!IMPERATIVE_AT_CLAUSE_START.test(fine) && !TAP_WORD_ANYWHERE.test(fine), fine);
       }
     },
   },
@@ -303,13 +398,39 @@ module.exports = [
       assert.match(dict, /'guided\.skipRest': 'Ohita lepo'/);
       assert.match(rest.en, /Skip rest/);
       assert.match(rest.fi, /Ohita lepo/);
-      // The log button's own label.
-      assert.match(copyOf('tour.workout.log').en, /^Log set /);
-      assert.match(copyOf('tour.workout.log').fi, /^Kirjaa sarja /);
-      // The two row labels the history beat quotes.
-      const history = copyOf('tour.workout.history');
-      assert.match(history.en, /LAST TIME[\s\S]*TODAY/);
-      assert.match(history.fi, /VIIMEKSI[\s\S]*TÄNÄÄN/);
+      // A rest only follows a set when another round follows (guidedPlayer
+      // buildGuidedSteps), so "logging starts the rest" would be false after
+      // the last set of a lift. The sentence says both.
+      const log = copyOf('tour.workout.log');
+      assert.doesNotMatch(log.en, /^Logging a set starts the rest/);
+      assert.match(log.en, /rest, or to the next exercise after the last set/);
+      assert.match(log.fi, /lepoon, tai viimeisen sarjan jälkeen seuraavaan liikkeeseen/);
+      const steps = read('src/lib/guidedPlayer.ts');
+      assert.match(steps, /Rest when the round is over and another round follows/);
+      // What Pause and the menu do, as the screen has them.
+      assert.match(log.en, /Pause stops the workout clock/);
+      assert.match(log.en, /menu beside it swaps or skips this exercise/);
+      assert.match(player, /GPIcon name=\{paused \? 'play' : 'pause'\}/);
+      assert.match(dict, /'guided\.action\.swap': 'Swap this exercise'/);
+      assert.match(dict, /'guided\.action\.skipExercise': 'Skip this exercise'/);
+      // The history beat: TODAY is a row label on the card, and the first-time
+      // sentence quotes it as the card prints it in each language.
+      assert.match(copyOf('tour.workout.historyFirst').en, /^TODAY /);
+      assert.match(copyOf('tour.workout.historyFirst').fi, /^TÄNÄÄN-rivillä /);
+      assert.match(dict, /'guided\.card\.today': 'TODAY'/);
+      assert.match(dict, /'guided\.card\.today': 'TÄNÄÄN'/);
+    },
+  },
+  {
+    name: 'workout tour: the rest beat rings the controls block, with the callout above it',
+    run() {
+      const [beat, ...others] = tour.resolveTourBeats('workoutRest', { hasProgram: false });
+      assert.equal(others.length, 0);
+      assert.equal(beat.target, 'workout.rest');
+      // Above: below the block there is only the rail, and a callout pushed back
+      // up would sit on the very buttons its sentence is about.
+      assert.equal(beat.place, 'above');
+      assert.deepEqual(beat.inset, { x: 24, bottom: 10 });
     },
   },
 ];

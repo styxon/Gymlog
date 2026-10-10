@@ -136,7 +136,7 @@ import {
   guidedWindow,
 } from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
-import { GuidedTourReport } from '../features/tour/GuidedTourReport';
+import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
 import type { TourTargetRegistry } from '../features/tour/tourTargets';
 import type { WorkoutTourStep } from '../lib/firstRunTour';
 import { ExerciseSheet } from '../components/ExerciseSheet';
@@ -705,11 +705,8 @@ function RestRing({
   size = 244,
   /** The arc's colour. An interval's work bout draws it in the highlight. */
   stroke,
-  tourRef,
   children,
 }: {
-  /** The first-run tour's handle on the ring. */
-  tourRef?: (node: View | null) => void;
   stepKey: number;
   leftSeconds: number;
   plannedSeconds: number;
@@ -745,11 +742,7 @@ function RestRing({
   const fraction = over ? 1 : Math.max(0, Math.min(1, leftSeconds / total));
 
   return (
-    <View
-      ref={tourRef}
-      collapsable={false}
-      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
-    >
+    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         {/* The track was a light-theme hex on both themes: a bright lilac ring
             on a near-black page, brighter than the arc it was backing. */}
@@ -1616,6 +1609,8 @@ function GuidedPlayer({
 }: GuidedPlayerScreenProps) {
   // Read here, on the screen: inside the sheet's Modal it is always 0.
   const screenInsets = useSafeAreaInsets();
+  /** The rest screen's controls, for the workout tour. */
+  const restControlsRef = useTourTarget(tourTargets, 'workout.rest');
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   // The resolved theme, for the status bar: the player has its own dark
@@ -4446,7 +4441,6 @@ function GuidedPlayer({
                 ) : null}
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                   <RestRing
-                    tourRef={(node) => tourTargets?.register('workout.rest', node)}
                     stepKey={stepIndex}
                     leftSeconds={Math.max(0, secondsLeft)}
                     plannedSeconds={step.seconds}
@@ -4483,7 +4477,11 @@ function GuidedPlayer({
                       2026-09-09, from the gym). What was logged, how long is
                       left, three controls, skip. */}
                 </View>
-                <View style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}>
+                <View
+                  ref={restControlsRef}
+                  collapsable={false}
+                  style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}
+                >
                   {/* What comes back after the easy half — the same forward
                       look the work bout gives. */}
                   {step.recoveryKind ? (
@@ -5574,6 +5572,12 @@ function SetStepView({
 
   const styles = useThemedStyles(makeStyles);
 
+  const nameRef = useTourTarget(tourTargets, 'workout.name');
+  const historyRef = useTourTarget(tourTargets, 'workout.history');
+  const setRowRef = useTourTarget(tourTargets, 'workout.setRow');
+  const dialsRef = useTourTarget(tourTargets, 'workout.dials');
+  const logRef = useTourTarget(tourTargets, 'workout.log');
+
   const target = resolveTarget(step.slotId, step.setIndex);
   // A hold logs no weight either, so it takes the same wide layout — but its
   // number is seconds, and seconds are dialled in fives, not ones.
@@ -5924,6 +5928,7 @@ function SetStepView({
         kind="set"
         plain={!superset && !minutesMode && !timed}
         canWarmUp={canWarmUp}
+        canRemove={Boolean(onRemoveSet)}
         loaded={!bodyweight}
         hasHistory={Boolean(panels?.history)}
       />
@@ -6008,7 +6013,7 @@ function SetStepView({
           style={styles.setExerciseCard}
         >
           <View
-            ref={(node) => tourTargets?.register('workout.name', node)}
+            ref={nameRef}
             collapsable={false}
             style={styles.setExerciseTop}
           >
@@ -6046,7 +6051,7 @@ function SetStepView({
               larger font, did five plain ones, which is what made the card
               tall. */}
           <View
-            ref={(node) => tourTargets?.register('workout.history', node)}
+            ref={historyRef}
             collapsable={false}
             style={styles.setExerciseRows}
           >
@@ -6165,7 +6170,7 @@ function SetStepView({
             kello ei voi olla vierekkäin"). It sits on the name row now, where
             nothing grows, and the dots absorb the squeeze here. */}
         <View
-          ref={(node) => tourTargets?.register('workout.setRow', node)}
+          ref={setRowRef}
           collapsable={false}
           style={styles.setMetaRow}
         >
@@ -6329,7 +6334,7 @@ function SetStepView({
             </View>
           ) : null}
           <View
-            ref={(node) => tourTargets?.register('workout.dials', node)}
+            ref={dialsRef}
             collapsable={false}
             style={styles.setDialRow}
           >
@@ -6478,7 +6483,7 @@ function SetStepView({
             two circles were a row of their own. Their names are still read
             out, and the reader drew the row this way knowing it. */}
         <View
-          ref={(node) => tourTargets?.register('workout.log', node)}
+          ref={logRef}
           collapsable={false}
           style={styles.setControls}
         >
