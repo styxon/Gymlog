@@ -1934,6 +1934,31 @@ module.exports = [
     },
   },
   {
+    // Bug hunt 11: Reset after "Delete cloud backup" asked cloudCopyBehind (null fingerprint != the
+    // phone's), ran an interactive backup, and the first-backup path uploaded the whole history to the
+    // account the reader had just emptied — then signed out, leaving the deleted copy back.
+    name: 'account hook: cloudCopyBehind is false while backups are held, so Reset after a delete uploads nothing',
+    async run() {
+      const local = database({ workoutSessions: workouts(10) });
+      await withHook({ local }, async (env) => {
+        assert.equal((await env.api.signIn()).kind, 'backed_up');
+        assert.equal(await env.api.deleteRemoteBackup(), 'done');
+        assert.equal(env.server.blob, null);
+        assert.equal(env.store.account.autoBackupPaused, true);
+        assert.equal(env.api.cloudCopyBehind(), false, 'a deleted copy was reported as older than the phone');
+        assert.equal(env.calls.upload, 1, 'only the sign-in upload so far');
+        // "Back up now" is the reader's own way back: the pause lifts and the question is live again.
+        await env.edit((db) => ({ ...db, workoutSessions: [...db.workoutSessions, workout('w10')] }));
+        assert.equal(env.api.cloudCopyBehind(), false, 'still held until the reader backs up');
+      });
+      // A held account that never had a copy (an upload not agreed to) is not behind either.
+      await withHook({ local, stored: { ...syncedAccount(local), lastBackupAt: null, lastBackupFingerprint: null, autoBackupPaused: true } }, async (env) => {
+        await env.settle();
+        assert.equal(env.api.cloudCopyBehind(), false);
+      });
+    },
+  },
+  {
     // Bug hunt 10: a record the disk would not clear skipped the provider's sign-out, so the
     // screen said signed out while the next launch loaded the account and signed in again.
     name: 'account hook: a sign-out whose record could not be cleared still ends the provider session, and tells the caller',

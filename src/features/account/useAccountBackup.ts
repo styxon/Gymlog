@@ -1308,10 +1308,15 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
    * Whether the cloud copy is older than this phone: signed in, and the data
    * differs from what the last upload carried. Read when Reset is asked about,
    * not on every render — the fingerprint walks the whole history.
+   *
+   * Not while backups are held: a deleted copy (deleteRemoteBackup,
+   * copyWasDeleted) or an upload the reader has not agreed to leaves no copy,
+   * and Reset's backup would send the whole history to the account they just
+   * emptied, or never agreed to, before the sign-out.
    */
   const cloudCopyBehind = useCallback((): boolean => {
     const current = accountRef.current;
-    if (!available || !current) {
+    if (!available || !current || current.autoBackupPaused) {
       return false;
     }
     const { database, workoutHistory } = latestRef.current;
