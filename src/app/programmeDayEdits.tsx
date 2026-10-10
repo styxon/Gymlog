@@ -1,4 +1,3 @@
-import { t } from '../lib/i18n';
 import { createId } from '../lib/ids';
 import { reorderPlanWeek } from '../lib/planSessionOrder';
 import type { PlanRotationSession } from '../lib/planRotation';
@@ -14,7 +13,7 @@ import type {
   WorkoutTemplateSessionsEditResult,
 } from '../state/AppProvider';
 import type { AppDatabase, AppPreferences, WorkoutPlan, WorkoutTemplateSessionWithExercises } from '../types/models';
-import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 
 /**
  * A custom programme's days: renaming one, renaming the programme, moving,
@@ -99,9 +98,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
         return;
       }
     } catch (error) {
-      console.error('Failed to rename a day of the programme', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      reportPlanSaveFailed('Failed to rename a day of the programme', error, preferences.appLanguage, showToast);
       return;
     }
     // Remembered once the name is stored, so the display rule shows it as
@@ -130,9 +127,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
     try {
       await renameWorkoutTemplate(workoutTemplateId, name);
     } catch (error) {
-      console.error('Failed to rename the programme', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      reportPlanSaveFailed('Failed to rename the programme', error, preferences.appLanguage, showToast);
     }
   }
 
@@ -152,9 +147,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
     try {
       await writeSessionReorder(workoutTemplateId, sessionId, toIndex);
     } catch (error) {
-      console.error('Failed to reorder the days of the programme', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      reportPlanSaveFailed('Failed to reorder the days of the programme', error, preferences.appLanguage, showToast);
     }
   }
 

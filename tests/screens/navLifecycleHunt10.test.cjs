@@ -122,7 +122,7 @@ module.exports = [
       }
       assert.match(
         functionBody(switches, '  function saveRefused('),
-        /void haptics\.error\(\);\s*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+        /reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
       );
 
       const { t } = require('../../.test-dist/lib/i18n.js');

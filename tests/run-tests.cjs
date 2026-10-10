@@ -649,6 +649,7 @@ const suites = [
   ...require('./lib/requestPacing.test.cjs'),
   ...require('./lib/settingsHunt11.test.cjs'),
   ...require('./lib/hunt11Progression.test.cjs'),
+  ...require('./lib/hunt11Review.test.cjs'),
 ];
 
 (async () => {

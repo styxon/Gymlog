@@ -91,7 +91,7 @@ module.exports = [
       const edits = read('src', 'app', 'programmePlanEdits.tsx');
       assert.match(
         functionBody(edits, '  function saveRefused('),
-        /showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+        /reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
       );
       for (const signature of [
         '  async function dismissCompletionCard(',
@@ -156,7 +156,7 @@ module.exports = [
       ]) {
         assert.match(
           functionBody(days, signature),
-          /catch \(error\) \{[\s\S]*haptics\.error\(\);\s*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+          /catch \(error\) \{[\s\S]*reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
           signature,
         );
       }
@@ -167,11 +167,11 @@ module.exports = [
       );
       assert.match(
         functionBody(read('App.tsx'), '  async function handlePickTodaySession('),
-        /catch \(error\) \{[\s\S]*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+        /catch \(error\) \{[\s\S]*reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
       );
       assert.match(
         read('src', 'app', 'useProgramExerciseEdit.tsx'),
-        /return next\.catch\(\(error\) => \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);\s*return false;/,
+        /return next\.catch\(\(error\) => \{[\s\S]*?reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);\s*return false;/,
       );
     },
   },

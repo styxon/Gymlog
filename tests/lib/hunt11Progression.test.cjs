@@ -320,8 +320,20 @@ module.exports = [
   {
     name: 'the analysis and the completion lock are given the programme to read the gate against',
     run() {
-      assert.match(read('src', 'app', 'usePlanReadouts.tsx'), /lookupTemplate: createAdviceTemplateLookup\(/);
+      // One lookup, built once in App.tsx and handed to both: built inside each memo it was rebuilt
+      // (its cache thrown away) whenever either memo ran.
+      assert.match(read('src', 'app', 'usePlanReadouts.tsx'), /lookupTemplate: adviceTemplateLookup,/);
+      assert.doesNotMatch(read('src', 'app', 'usePlanReadouts.tsx'), /createAdviceTemplateLookup\(/);
       const insights = read('src', 'app', 'useProInsights.ts');
+      assert.match(insights, /lookupTemplate: adviceTemplateLookup,/);
+      assert.doesNotMatch(insights, /createAdviceTemplateLookup\(/);
+      const app = read('App.tsx');
+      assert.equal(app.match(/createAdviceTemplateLookup\(/g)?.length, 1);
+      assert.match(
+        app,
+        /const adviceTemplateLookup = useMemo\(\s*\(\) =>\s*createAdviceTemplateLookup\(\{[^]*?\}\),\s*\[workoutTemplates, getWorkoutTemplateSessions, exerciseLibrary, preferences\.defaultRestSeconds\],\s*\);/,
+      );
+      assert.equal(app.match(/\badviceTemplateLookup,/g)?.length, 2);
       assert.match(insights, /buildNextSessionAdvice\(/);
       assert.match(insights, /buildCompletionConclusion\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
       assert.match(insights, /buildNextSessionMoment\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);

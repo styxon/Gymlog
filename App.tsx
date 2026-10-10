@@ -15,6 +15,7 @@ import { formatTime, pluralize } from './src/lib/format';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
 import { haptics } from './src/utils/haptics';
+import { reportPlanSaveFailed } from './src/app/planSaveFailure';
 import { useScheduledNotifications } from './src/hooks/useScheduledNotifications';
 import { activeWorkoutStartedAt } from './src/lib/notificationPlan';
 import { usePendingAiLogDeletions } from './src/hooks/usePendingAiLogDeletions';
@@ -131,6 +132,7 @@ import { useSetupReadings } from './src/app/useSetupReadings';
 import { useLeadPlanRepair } from './src/app/useLeadPlanRepair';
 import { useTemplateBuilderDraft } from './src/app/useTemplateBuilderDraft';
 import { useProInsights } from './src/app/useProInsights';
+import { createAdviceTemplateLookup } from './src/app/adviceTemplateLookup';
 import { useHomeStatCards } from './src/app/useHomeStatCards';
 import { useCoachAdviceMemory } from './src/app/useCoachAdviceMemory';
 import { useCustomProgramViews } from './src/app/useCustomProgramViews';
@@ -809,6 +811,17 @@ function VinhaApp() {
     unitPreference,
     todayKey,
   });
+  // One lookup for the session analysis and the completion lock, so the programmes it adapts are adapted once.
+  const adviceTemplateLookup = useMemo(
+    () =>
+      createAdviceTemplateLookup({
+        workoutTemplates,
+        getWorkoutTemplateSessions,
+        exerciseLibrary,
+        defaultRestSeconds: preferences.defaultRestSeconds,
+      }),
+    [workoutTemplates, getWorkoutTemplateSessions, exerciseLibrary, preferences.defaultRestSeconds],
+  );
   const {
     proLiftHistories,
     proFatigue,
@@ -822,9 +835,7 @@ function VinhaApp() {
     preferences,
     completedSessionId: completionSummary?.sessionId ?? null,
     todayKey,
-    workoutTemplates,
-    getWorkoutTemplateSessions,
-    exerciseLibrary,
+    adviceTemplateLookup,
   });
   // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
   // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
@@ -1328,9 +1339,7 @@ function VinhaApp() {
       });
     } catch (error) {
       // Wired as `void`: a refused write was a pick that sprang back unsaid.
-      console.error('Failed to save the picked session', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      reportPlanSaveFailed('Failed to save the picked session', error, preferences.appLanguage, showToast);
     }
   }
 
@@ -1862,7 +1871,7 @@ function VinhaApp() {
     guidedNextUp,
   } = usePlanReadouts({
     workoutTemplates,
-    exerciseLibrary,
+    adviceTemplateLookup,
     getWorkoutTemplateSessions,
     homeActivePlanCard,
     analysisSessionId,

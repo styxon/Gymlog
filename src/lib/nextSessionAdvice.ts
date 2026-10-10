@@ -173,8 +173,18 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
       entries.push(entry);
     }
   }
-  entries.sort((left, right) => Date.parse(right.performedAt) - Date.parse(left.performedAt));
-  const history = entries.slice(0, SLOT_HISTORY_LIMIT);
+  // Newest first; a date that does not parse goes last, and equal times keep
+  // the order the logs came in. A NaN in the comparison is no order at all, and
+  // the cut below could then drop a real session.
+  const ranked = entries.map((entry, index) => {
+    const time = Date.parse(entry.performedAt);
+    return { entry, index, time, valid: Number.isFinite(time) };
+  });
+  ranked.sort(
+    (left, right) =>
+      Number(right.valid) - Number(left.valid) || (left.valid ? right.time - left.time : 0) || left.index - right.index,
+  );
+  const history = ranked.slice(0, SLOT_HISTORY_LIMIT).map(({ entry }) => entry);
 
   const decision = evaluateProgression({
     history,

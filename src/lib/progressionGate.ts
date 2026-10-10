@@ -246,18 +246,19 @@ function sessionsOf(history: readonly WorkoutSlotHistoryEntry[], nowMs?: number)
   // had earned, while "Last time" showed the real last one (hunt, 2026-10-10).
   // One saved while the clock ran ahead ranks below every session dated up to
   // now (hunt, 2026-10-09), as rankTime in exerciseHistoryLookup ranks it.
-  // Equal times keep the array order (a stable sort).
+  // A date that does not parse ranks below all of those: it says nothing about
+  // when the session was. Equal times keep the array order (a stable sort).
   const hasNow = typeof nowMs === 'number' && Number.isFinite(nowMs);
   const rank = (entry: WorkoutSlotHistoryEntry) => {
     const time = Date.parse(entry.performedAt);
     if (!Number.isFinite(time)) {
-      return 0;
+      return { tier: 0, time: 0 };
     }
-    return hasNow && time > (nowMs as number) ? -1 : time;
+    return hasNow && time > (nowMs as number) ? { tier: 1, time: 0 } : { tier: 2, time };
   };
   return logged
-    .map((entry, index) => ({ entry, index, time: rank(entry) }))
-    .sort((left, right) => right.time - left.time || left.index - right.index)
+    .map((entry, index) => ({ entry, index, ...rank(entry) }))
+    .sort((left, right) => right.tier - left.tier || right.time - left.time || left.index - right.index)
     .map(({ entry }) => entry);
 }
 

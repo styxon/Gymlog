@@ -7,11 +7,11 @@ import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
 import { t, type I18nKey } from '../lib/i18n';
+import type { AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import { buildSessionAnalysis } from '../lib/sessionAnalysis';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
 import type { ExportablePlan } from '../screens/ExportPlanScreen';
 import type { AppDatabase, AppPreferences, WorkoutTemplateSessionWithExercises } from '../types/models';
-import { createAdviceTemplateLookup } from './adviceTemplateLookup';
 import type { useHomeActivePlan } from './useHomeActivePlan';
 
 /**
@@ -33,8 +33,8 @@ import type { useHomeActivePlan } from './useHomeActivePlan';
 export interface PlanReadoutsDeps {
   /** The app context's custom programmes, every one of which the export carries. */
   workoutTemplates: AppDatabase['workoutTemplates'];
-  /** The app context's exercise library: the rows of a custom programme come from it. */
-  exerciseLibrary: AppDatabase['exerciseLibrary'];
+  /** Finds the programme a session was started from, for the gate's rep range (built once in App.tsx). */
+  adviceTemplateLookup: AdviceTemplateLookup;
   /** The app context's session reader for one custom programme. */
   getWorkoutTemplateSessions: (workoutTemplateId: string) => WorkoutTemplateSessionWithExercises[];
   /** Home's hero card, as useHomeActivePlan builds it. */
@@ -60,7 +60,7 @@ export interface PlanReadoutsDeps {
 export function usePlanReadouts(deps: PlanReadoutsDeps) {
   const {
     workoutTemplates,
-    exerciseLibrary,
+    adviceTemplateLookup,
     getWorkoutTemplateSessions,
     homeActivePlanCard,
     analysisSessionId,
@@ -125,12 +125,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
             cautionFlags: preferences.setupCautionFlags,
             level: preferences.setupLevel,
             // The programme the session was started from, for the gate's rep range.
-            lookupTemplate: createAdviceTemplateLookup({
-              workoutTemplates,
-              getWorkoutTemplateSessions,
-              exerciseLibrary,
-              defaultRestSeconds: preferences.defaultRestSeconds,
-            }),
+            lookupTemplate: adviceTemplateLookup,
             // The week the analysed session filled, not the week the reader
             // is in: right after a week's last session those are two weeks,
             // and the analysis read "WEEK 2" beside a summary that had just
@@ -148,17 +143,14 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
           })
         : null,
     [
+      adviceTemplateLookup,
       analysisSessionId,
       database,
-      exerciseLibrary,
-      getWorkoutTemplateSessions,
       homeActivePlanCard,
       preferences.appLanguage,
-      preferences.defaultRestSeconds,
       preferences.setupCautionFlags,
       preferences.setupLevel,
       workoutSessions,
-      workoutTemplates,
     ],
   );
 

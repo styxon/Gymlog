@@ -37,7 +37,15 @@ module.exports = [
       assert.match(player, /const logBlocked = dial !== null && typedTextInvalid;/);
       assert.match(player, /const repsBounds = inWarmup \? WARMUP_REPS_DIAL/);
       // Both the warm-up and the working log buttons wait on it.
-      assert.equal(player.match(/disabled=\{logBlocked/g)?.length, 2);
+      assert.equal(player.match(/disabled=\{logDisabled/g)?.length, 2);
+      assert.doesNotMatch(player, /disabled=\{logBlocked/);
+      // Log is dead only once the field is flagged. A pending text ("3" on the
+      // way to 30 s) keeps the button live: a press shows the message and logs
+      // nothing, rather than doing nothing silently.
+      assert.match(player, /const logDisabled = logBlocked && !typedTextPending;/);
+      const waits = between(player, 'const logWaitsOnTypedText = () => {', '\n  };');
+      assert.match(waits, /if \(!logBlocked\) \{\s*return false;\s*\}\s*setTypedTextPending\(false\);\s*return true;/);
+      assert.equal(player.match(/if \(logWaitsOnTypedText\(\)\) \{\s*return;\s*\}/g)?.length, 2);
       assert.match(player, /'guided\.repsInvalid'/);
     },
   },

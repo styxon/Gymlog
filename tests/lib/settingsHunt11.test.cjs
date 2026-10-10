@@ -212,14 +212,19 @@ module.exports = [
     },
   },
   {
-    name: 'cloudCopyState: held backups with no backup time are none, a held account with a time is current, otherwise the fingerprint decides',
+    name: 'cloudCopyState: held backups with no backup time are none, otherwise the fingerprint decides, held or not',
     run() {
       const { cloudCopyState } = require(path.join(dist, 'lib', 'accountBackup.js'));
       const never = () => {
-        throw new Error('walked the history for a held account');
+        throw new Error('walked the history for a held account with no copy');
       };
       assert.equal(cloudCopyState({ autoBackupPaused: true, lastBackupAt: null, lastBackupFingerprint: null }, never), 'none');
-      assert.equal(cloudCopyState({ autoBackupPaused: true, lastBackupAt: '2026-10-01T00:00:00.000Z', lastBackupFingerprint: 'a' }, never), 'current');
+      // Held for a yes with the old copy's time kept (an unattended upload to another account): the copy
+      // is there, and a phone that has moved on since is behind it, not current.
+      const heldWithCopy = { autoBackupPaused: true, lastBackupAt: '2026-10-01T00:00:00.000Z', lastBackupFingerprint: 'a' };
+      assert.equal(cloudCopyState(heldWithCopy, () => 'b'), 'behind');
+      assert.equal(cloudCopyState(heldWithCopy, () => 'a'), 'current');
+      assert.equal(cloudCopyState({ ...heldWithCopy, lastBackupFingerprint: null }, () => 'a'), 'behind');
       assert.equal(cloudCopyState({ autoBackupPaused: false, lastBackupAt: 'x', lastBackupFingerprint: 'a' }, () => 'b'), 'behind');
       assert.equal(cloudCopyState({ autoBackupPaused: false, lastBackupAt: 'x', lastBackupFingerprint: 'a' }, () => 'a'), 'current');
     },

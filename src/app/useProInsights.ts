@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { buildFatigueModel } from '../lib/fatigueModel';
-import { buildNextSessionAdvice } from '../lib/nextSessionAdvice';
+import { buildNextSessionAdvice, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import {
   buildCompletionConclusion,
   buildNextSessionMoment,
@@ -16,8 +16,7 @@ import {
 } from '../lib/proInsights';
 import { toProgressionFatigueSignal } from '../lib/progressionGate';
 import { buildLiftHistories } from '../lib/trainingHistory';
-import type { AppDatabase, AppPreferences, WorkoutTemplateSessionWithExercises } from '../types/models';
-import { createAdviceTemplateLookup } from './adviceTemplateLookup';
+import type { AppDatabase, AppPreferences } from '../types/models';
 
 /**
  * The paywall moments' data layer: lift histories and the fatigue model built
@@ -46,13 +45,12 @@ export interface ProInsightsDeps {
   /** Today's local date key: what "lately" is counted back from. */
   todayKey: string;
   /**
-   * The reader's own programmes and the library their rows come from: the
-   * completion lock asks the progression gate about the lift just trained, and
-   * the gate needs the programme's rep range (lib/nextSessionAdvice).
+   * Finds the programme a session was started from: the completion lock asks
+   * the progression gate about the lift just trained, and the gate needs the
+   * programme's rep range (lib/nextSessionAdvice). Built once in App.tsx and
+   * shared with the session analysis, so its cache is not thrown away per memo.
    */
-  workoutTemplates: AppDatabase['workoutTemplates'];
-  getWorkoutTemplateSessions: (workoutTemplateId: string) => WorkoutTemplateSessionWithExercises[];
-  exerciseLibrary: AppDatabase['exerciseLibrary'];
+  adviceTemplateLookup: AdviceTemplateLookup;
 }
 
 export function useProInsights(deps: ProInsightsDeps) {
@@ -61,9 +59,7 @@ export function useProInsights(deps: ProInsightsDeps) {
     preferences,
     completedSessionId,
     todayKey,
-    workoutTemplates,
-    getWorkoutTemplateSessions,
-    exerciseLibrary,
+    adviceTemplateLookup,
   } = deps;
 
   // The paywall-moments data layer: real lift histories → detections (free)
@@ -158,12 +154,7 @@ export function useProInsights(deps: ProInsightsDeps) {
       sessionId: proCompletionLift.latest.sessionId,
       sessions: database.workoutSessions,
       logs: database.exerciseLogs,
-      lookupTemplate: createAdviceTemplateLookup({
-        workoutTemplates,
-        getWorkoutTemplateSessions,
-        exerciseLibrary,
-        defaultRestSeconds: preferences.defaultRestSeconds,
-      }),
+      lookupTemplate: adviceTemplateLookup,
       level: preferences.setupLevel,
     });
     const conclusion = buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice);
@@ -176,15 +167,12 @@ export function useProInsights(deps: ProInsightsDeps) {
       moment: buildNextSessionMoment(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice),
     };
   }, [
+    adviceTemplateLookup,
     database.exerciseLogs,
     database.workoutSessions,
-    exerciseLibrary,
-    getWorkoutTemplateSessions,
     preferences.appLanguage,
-    preferences.defaultRestSeconds,
     preferences.setupLevel,
     proCompletionLift,
-    workoutTemplates,
   ]);
   // The Pro page's coach specimen: the deterministic read of the user's own
   // stalled lift — the same text Pro unlocks at the plateau moments.

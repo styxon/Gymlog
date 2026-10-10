@@ -5695,6 +5695,20 @@ function SetStepView({
   }, [dial, stepIndex]);
   const logBlocked = dial !== null && typedTextInvalid;
   const typedErrorShown = logBlocked && !typedTextPending;
+  /**
+   * Log is dead only when the field is flagged. While the text could still
+   * become loggable ("3" on the way to 30 s) the button stays pressable: a
+   * press then shows the message and logs nothing, instead of a button that
+   * does nothing and says nothing.
+   */
+  const logDisabled = logBlocked && !typedTextPending;
+  const logWaitsOnTypedText = () => {
+    if (!logBlocked) {
+      return false;
+    }
+    setTypedTextPending(false);
+    return true;
+  };
 
   /**
    * Five chips a line (#bugs 2026-10-10, "näytetään vain 5 kerralla"): an
@@ -6435,8 +6449,11 @@ function SetStepView({
               accessibilityState={{ disabled: logBlocked || kg <= 0 }}
               // No weight, no warm-up: the store refuses 0 kg, and the
               // screen must not leave as if it had been saved.
-              disabled={logBlocked || kg <= 0}
+              disabled={logDisabled || kg <= 0}
               onPress={() => {
+                if (logWaitsOnTypedText()) {
+                  return;
+                }
                 onLogWarmup(kg, reps);
                 leaveWarmup();
               }}
@@ -6452,8 +6469,11 @@ function SetStepView({
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             accessibilityState={{ disabled: logBlocked }}
-            disabled={logBlocked}
+            disabled={logDisabled}
             onPress={() => {
+              if (logWaitsOnTypedText()) {
+                return;
+              }
               setDial(null);
               // The minutes on the dial — the clock's, the prescription's or
               // the reader's own — are what was done. The clock is read now:

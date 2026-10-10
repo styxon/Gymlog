@@ -11,6 +11,7 @@ import { planLabelsFromWeekdays, weekdaysFromPlanLabels } from '../lib/trainingW
 import type { useAppContext } from '../state/AppProvider';
 import { SetupDaysPerWeek, SetupWeekday } from '../types/models';
 import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 import { templateSessionsReader } from './planTemplateSessions';
 import type { createProgrammeStarts } from './programmeStarts';
 
@@ -62,9 +63,7 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
    * rejection was a press that did nothing and said nothing (hunt 11).
    */
   function saveRefused(error: unknown) {
-    console.error('Failed to save a programme change', error);
-    void haptics.error();
-    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+    reportPlanSaveFailed('Failed to save a programme change', error, preferences.appLanguage, showToast);
   }
 
   /**

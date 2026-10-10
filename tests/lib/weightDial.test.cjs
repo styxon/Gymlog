@@ -116,7 +116,8 @@ module.exports = [
       );
       // While the field holds no loggable weight, the set is not logged.
       assert.match(screen, /const logBlocked = dial !== null && typedTextInvalid;/);
-      assert.match(screen, /disabled=\{logBlocked\}/);
+      assert.match(screen, /const logDisabled = logBlocked && !typedTextPending;/);
+      assert.match(screen, /disabled=\{logDisabled\}/);
       // And only while the typed text is what the field shows. The keyboard
       // going away, or a step, puts the card's own number back in the field;
       // the lock stayed on over a good weight (CI review of #174).

@@ -843,8 +843,11 @@ export function cloudCopyState(
   sync: Pick<BackupSyncState, 'autoBackupPaused' | 'lastBackupAt'> & { lastBackupFingerprint: string | null },
   phoneFingerprint: () => string,
 ): CloudCopyState {
-  if (sync.autoBackupPaused) {
-    return sync.lastBackupAt ? 'current' : 'none';
+  // Held backups with no backup time: no copy. Held with one (the unattended
+  // upload waiting for a yes keeps the time of the copy that is there): a copy
+  // exists, and what it holds is the fingerprint's to say, not the hold's.
+  if (sync.autoBackupPaused && !sync.lastBackupAt) {
+    return 'none';
   }
   return sync.lastBackupFingerprint !== phoneFingerprint() ? 'behind' : 'current';
 }

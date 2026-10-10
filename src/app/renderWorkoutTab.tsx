@@ -50,6 +50,7 @@ import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
 import { typedSessionNames } from '../lib/templateBuilderSteps';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 import { CreateTemplateScreen, TemplateLeaveGuard } from '../screens/CreateTemplateScreen';
 import { EmptyWorkoutScreen } from '../screens/EmptyWorkoutScreen';
 import { ExerciseDetailScreen } from '../screens/ExerciseDetailScreen';
@@ -679,9 +680,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                 }
               })
               .catch((error) => {
-                console.error('Failed to start the programme', error);
-                void haptics.error();
-                showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                reportPlanSaveFailed('Failed to start the programme', error, preferences.appLanguage, showToast);
               });
             return;
           }
@@ -708,9 +707,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
               }
             })
             .catch((error) => {
-              console.error('Failed to start the programme', error);
-              void haptics.error();
-              showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+              reportPlanSaveFailed('Failed to start the programme', error, preferences.appLanguage, showToast);
             });
         }}
         onStartSession={(sessionId) => {
@@ -768,9 +765,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                     });
                   },
                   (error) => {
-                    console.error('Failed to add a day to the programme', error);
-                    void haptics.error();
-                    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                    reportPlanSaveFailed('Failed to add a day to the programme', error, preferences.appLanguage, showToast);
                   },
                 )
             : undefined
@@ -786,9 +781,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                     }
                   },
                   (error) => {
-                    console.error('Failed to save the programme rhythm', error);
-                    void haptics.error();
-                    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                    reportPlanSaveFailed('Failed to save the programme rhythm', error, preferences.appLanguage, showToast);
                   },
                 )
             : undefined
@@ -803,9 +796,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           rhythmPlan
             ? (cycle) =>
                 void setPlanTrainingCycle(rhythmPlan.id, cycle).catch((error) => {
-                  console.error('Failed to save the programme rhythm', error);
-                  void haptics.error();
-                  showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                  reportPlanSaveFailed('Failed to save the programme rhythm', error, preferences.appLanguage, showToast);
                 })
             : undefined
         }
@@ -984,9 +975,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                     }
                   },
                   (error) => {
-                    console.error('Failed to remove a day from the programme', error);
-                    void haptics.error();
-                    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+                    reportPlanSaveFailed('Failed to remove a day from the programme', error, preferences.appLanguage, showToast);
                   },
                 );
               }
@@ -1023,9 +1012,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
               setProgramLimitVisible(true);
               return false;
             }
-            console.error('Failed to save the programme', error);
-            void haptics.error();
-            showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+            reportPlanSaveFailed('Failed to save the programme', error, preferences.appLanguage, showToast);
             return false;
           }
           // The names the reader typed for the days, remembered as the page's
@@ -1402,9 +1389,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           void handleAdoptReadyProgram(seasonProgramId)
             .then((joined) => (joined ? handleEnrolSeason(seasonInView, seasonWindow.year) : undefined))
             .catch((error) => {
-              console.error('Failed to join the season', error);
-              void haptics.error();
-              showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+              reportPlanSaveFailed('Failed to join the season', error, preferences.appLanguage, showToast);
             });
         }}
         onBack={() => navigateBack({ tab: 'workout', screen: 'programs_home' })}
