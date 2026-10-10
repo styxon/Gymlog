@@ -7,6 +7,7 @@ const { resolveGuidedSetPlan, buildGuidedSteps, getGuidedNextName } = require('.
 const { guidedTodayLoadKg } = require('../../.test-dist/lib/guidedSetRow.js');
 const {
   isLoggableTypedReps,
+  isTypedRepsPossiblyValid,
   REPS_DIAL,
   HOLD_DIAL,
   MINUTES_DIAL,
@@ -111,6 +112,28 @@ module.exports = [
     },
   },
   {
+    name: 'hunt 11 #2: a draft that can still become loggable is not flagged; one that cannot is',
+    run() {
+      // A hold typed 30: the first digit is under the floor of 5 but on its way.
+      assert.equal(isLoggableTypedReps('3', HOLD_DIAL), false);
+      assert.equal(isTypedRepsPossiblyValid('3', HOLD_DIAL), true);
+      assert.equal(isTypedRepsPossiblyValid('30', HOLD_DIAL), true);
+      assert.equal(isTypedRepsPossiblyValid('', HOLD_DIAL), true);
+      // Reps: 1 is a rep count; 35 is fine; 350 is above 300 and no digit fixes it.
+      assert.equal(isTypedRepsPossiblyValid('3', REPS_DIAL), true);
+      assert.equal(isTypedRepsPossiblyValid('350', REPS_DIAL), false);
+      assert.equal(isTypedRepsPossiblyValid('0', REPS_DIAL), false);
+      assert.equal(isTypedRepsPossiblyValid('abc', REPS_DIAL), false);
+      assert.equal(isTypedRepsPossiblyValid('3,x', REPS_DIAL), false);
+      // Warm-up: 10 can become 100, 101 cannot be saved.
+      assert.equal(isTypedRepsPossiblyValid('10', WARMUP_REPS_DIAL), true);
+      assert.equal(isTypedRepsPossiblyValid('101', WARMUP_REPS_DIAL), false);
+      // Minutes.
+      assert.equal(isTypedRepsPossiblyValid('3', MINUTES_DIAL), true);
+      assert.equal(isTypedRepsPossiblyValid('3000', MINUTES_DIAL), false);
+    },
+  },
+  {
     name: 'hunt 11 #3: the warm-up dial stops where the store does',
     run() {
       assert.equal(isLoggableTypedReps('100', WARMUP_REPS_DIAL), true);
@@ -131,7 +154,7 @@ module.exports = [
     run() {
       const bike = exerciseCardAccessibilityLabel(
         'fi',
-        'KuntopyorÃ¤',
+        'Kuntopyörä',
         { sets: [{ loadKg: 0, reps: 20 }], borrowed: false },
         null,
         'minutes',

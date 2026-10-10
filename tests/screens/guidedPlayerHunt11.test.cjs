@@ -28,9 +28,12 @@ module.exports = [
   {
     name: 'hunt 11: typed reps / seconds / minutes block Log like a typed weight, and a warm-up is held to 100',
     run() {
-      const reps = between(player, 'label={t(language, minutesMode ?', 'onDraftCleared={() => setTypedTextInvalid(false)}');
+      const reps = between(player, 'label={t(language, minutesMode ?', 'onDraftCleared');
       assert.match(reps, /setTypedTextInvalid\(!isLoggableTypedReps\(text, repsBounds\)\)/);
-      assert.match(reps, /invalid=\{logBlocked\}/);
+      assert.match(reps, /invalid=\{typedErrorShown\}/);
+      // A text that can still become loggable ("3" on the way to 30 s) is not flagged yet; Log still waits.
+      assert.match(reps, /setTypedTextPending\(!isLoggableTypedReps\(text, repsBounds\) && isTypedRepsPossiblyValid\(text, repsBounds\)\)/);
+      assert.match(player, /const typedErrorShown = logBlocked && !typedTextPending;/);
       assert.match(player, /const logBlocked = dial !== null && typedTextInvalid;/);
       assert.match(player, /const repsBounds = inWarmup \? WARMUP_REPS_DIAL/);
       // Both the warm-up and the working log buttons wait on it.
@@ -50,6 +53,26 @@ module.exports = [
       assert.match(between(player, "title={t(language, 'guided.pauseSheet.title')}", 'bottomInset'), /closeActionsMenu\(\);/);
       // Cancelling the swap opened from the menu does not resume a chosen pause either.
       assert.match(between(player, "setSwapEquipment('all');\n          closeActionsMenu", '}}'), /closeActionsMenu/);
+    },
+  },
+  {
+    name: 'hunt 11: the menu gives a bout its clock back only when the menu stopped it',
+    run() {
+      const open = between(player, 'const openActions = () => {', '};');
+      assert.match(open, /menuStoppedWatchRef\.current = minutesMode && !paused && watch\.runningSinceMs !== null;/);
+      const effect = between(player, 'if (paused && watch.runningSinceMs !== null) {', '[paused]');
+      assert.match(effect, /else if \(!paused && menuStoppedWatchRef\.current\) \{\s*[^]*menuStoppedWatchRef\.current = false;[^]*startStopwatch\(watch, now\)/);
+      assert.match(player, /onPress=\{openActions\}/);
+    },
+  },
+  {
+    name: 'hunt 11: both card lines follow the set within the lift, and the menu exits that move on clear the held pause',
+    run() {
+      assert.match(player, /guidedWindow\(panels\?\.history\?\.sets\.length \?\? 0, liftPosition,/);
+      assert.match(player, /guidedWindow\(todayPlan\.length, liftPosition,/);
+      const moveOn = between(player, 'const moveOnFromMenu = () => {', '};');
+      assert.match(moveOn, /menuHeldPauseRef\.current = false;\s*unpause\(\);/);
+      assert.equal(player.match(/moveOnFromMenu\(\);/g)?.length, 4);
     },
   },
   {

@@ -112,7 +112,7 @@ module.exports = [
       assert.match(screen, /onStep=\{\(direction\) => setKg\(\(current\) => stepDialWeight\(current, direction\)\)\}/);
       assert.match(
         screen,
-        /onCommit=\{\(text\) => \{\s*setTypedTextInvalid\(!isLoggableTypedWeight\(text\)\);\s*setKg\(\(current\) => commitDialWeight\(text, current\)\);\s*\}\}/,
+        /onCommit=\{\(text\) => \{\s*setTypedTextInvalid\(!isLoggableTypedWeight\(text\)\);\s*setTypedTextPending\(false\);\s*setKg\(\(current\) => commitDialWeight\(text, current\)\);\s*\}\}/,
       );
       // While the field holds no loggable weight, the set is not logged.
       assert.match(screen, /const logBlocked = dial !== null && typedTextInvalid;/);
@@ -120,7 +120,7 @@ module.exports = [
       // And only while the typed text is what the field shows. The keyboard
       // going away, or a step, puts the card's own number back in the field;
       // the lock stayed on over a good weight (CI review of #174).
-      assert.match(screen, /onDraftCleared=\{\(\) => setTypedTextInvalid\(false\)\}/);
+      assert.match(screen, /onDraftCleared=\{\(\) => \{\s*setTypedTextInvalid\(false\);/);
       assert.match(screen, /onBlur=\{\(\) => \{\s*setDraft\(null\);\s*onDraftCleared\?\.\(\);\s*\}\}/);
       // Both step buttons clear the typed text. Since the accessibility audit
       // (2026-09-21) a screen reader's swipe steps the card too, so the three

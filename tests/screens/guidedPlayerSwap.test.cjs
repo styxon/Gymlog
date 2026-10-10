@@ -407,7 +407,7 @@ module.exports = [
       // stopped behind it (live-session audit, 2026-09-20).
       assert.match(
         playerSource,
-        /label=\{t\(language, 'guided\.runSheet\.title'\)\}\s*onPress=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*unpause\(\);\s*setRunSheetOpen\(true\);/,
+        /label=\{t\(language, 'guided\.runSheet\.title'\)\}\s*onPress=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*moveOnFromMenu\(\);\s*setRunSheetOpen\(true\);/,
       );
     },
   },

@@ -146,3 +146,31 @@ export function isLoggableTypedReps(text: string, { min, max }: RepsDialBounds):
   const whole = Math.round(parsed);
   return whole >= min && whole <= max;
 }
+
+/**
+ * Whether typed text is, or can still become, a loggable count: "3" for a hold
+ * is under the dial's floor of 5 but is the start of 30. The field flags the
+ * text only once no further digit could fix it — a value above the ceiling,
+ * 0, or not a number — while the log button waits on `isLoggableTypedReps`
+ * throughout. An empty field is mid-edit.
+ */
+export function isTypedRepsPossiblyValid(text: string, bounds: RepsDialBounds): boolean {
+  if (text.trim() === '' || isLoggableTypedReps(text, bounds)) {
+    return true;
+  }
+  const digits = text.trim();
+  if (!/^\d+$/.test(digits)) {
+    return false;
+  }
+  const typed = Number(digits);
+  if (typed <= 0) {
+    return false;
+  }
+  // Some longer number starting with these digits lands inside the bounds.
+  for (let scale = 10; typed * scale <= bounds.max; scale *= 10) {
+    if (typed * scale + scale - 1 >= bounds.min) {
+      return true;
+    }
+  }
+  return false;
+}

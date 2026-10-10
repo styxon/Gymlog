@@ -98,6 +98,7 @@ import {
   commitDialWeight,
   isLoggableTypedReps,
   isLoggableTypedWeight,
+  isTypedRepsPossiblyValid,
   stepDialReps,
   stepDialWeight,
 } from '../lib/weightDial';
@@ -2147,6 +2148,16 @@ function GuidedPlayer({
     }
     menuHeldPauseRef.current = false;
   };
+  /**
+   * Moving on from the menu (the contents sheet, doing a block your own way,
+   * skipping the exercise, adding a set) resumes the workout whatever the
+   * menu found: the reader has gone on to something, which is not the pause
+   * they chose. Only closing the menu gives the earlier pause back.
+   */
+  const moveOnFromMenu = () => {
+    menuHeldPauseRef.current = false;
+    unpause();
+  };
 
   const goTo = useCallback(
     (index: number, openingMs?: number) => {
@@ -2843,7 +2854,7 @@ function GuidedPlayer({
     resyncTargetRef.current = blockStart >= 0 ? blockStart : stepIndex;
     workout.skipExercise(actionSlotId);
     setPauseSheetOpen(false);
-    unpause();
+    moveOnFromMenu();
   };
 
   const handleAddSet = () => {
@@ -2852,7 +2863,7 @@ function GuidedPlayer({
     }
     workout.addSet(actionSlotId);
     setPauseSheetOpen(false);
-    unpause();
+    moveOnFromMenu();
   };
 
   /**
@@ -4976,7 +4987,7 @@ function GuidedPlayer({
               label={t(language, 'guided.runSheet.title')}
               onPress={() => {
                 setPauseSheetOpen(false);
-                unpause();
+                moveOnFromMenu();
                 setRunSheetOpen(true);
               }}
             />
@@ -4994,7 +5005,7 @@ function GuidedPlayer({
                 label={t(language, `guided.own.${skippablePhase}` as 'guided.own.warmup')}
                 onPress={() => {
                   setPauseSheetOpen(false);
-                  unpause();
+                  moveOnFromMenu();
                   setOwnBlock({ phase: skippablePhase, startedAt: Date.now() });
                 }}
               />
@@ -5625,9 +5636,22 @@ function SetStepView({
   useEffect(() => {
     if (paused && watch.runningSinceMs !== null) {
       keepWatch(pauseStopwatch(watch, Date.now()));
+    } else if (!paused && menuStoppedWatchRef.current) {
+      // The menu stopped it, not a Pause the reader chose: the menu giving
+      // the workout back gives the bout its clock back.
+      menuStoppedWatchRef.current = false;
+      const now = Date.now();
+      setWatchNowMs(now);
+      keepWatch(startStopwatch(watch, now));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused]);
+  /** Set when the actions menu opened over a running bout clock (it pauses the workout, and the clock with it). */
+  const menuStoppedWatchRef = useRef(false);
+  const openActions = () => {
+    menuStoppedWatchRef.current = minutesMode && !paused && watch.runningSinceMs !== null;
+    onOpenActions();
+  };
   const toggleWatch = () => {
     const now = Date.now();
     setWatchNowMs(now);
@@ -5660,10 +5684,17 @@ function SetStepView({
    * Only while the field is open: closing it shows the number the dial kept.
    */
   const [typedTextInvalid, setTypedTextInvalid] = useState(false);
+  /**
+   * The text is short of the floor but could still get there ("3" on the way
+   * to 30 s): Log waits, and the field is not flagged yet.
+   */
+  const [typedTextPending, setTypedTextPending] = useState(false);
   useEffect(() => {
     setTypedTextInvalid(false);
+    setTypedTextPending(false);
   }, [dial, stepIndex]);
   const logBlocked = dial !== null && typedTextInvalid;
+  const typedErrorShown = logBlocked && !typedTextPending;
 
   /**
    * Five chips a line (#bugs 2026-10-10, "näytetään vain 5 kerralla"): an
@@ -5673,12 +5704,11 @@ function SetStepView({
    * chips stay over today's. Each is held to its own length: one shared
    * window cut a three-set last time down to one chip by set 7.
    */
-  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, step.setIndex, GUIDED_CARD_CHIP_CAP);
-  const todayChipWindow = guidedWindow(
-    todayPlan.length,
-    liftSets.filter((set) => set.setIndex < step.setIndex).length,
-    GUIDED_CARD_CHIP_CAP,
-  );
+  // Both lines follow the set's place within the lift, not the slot: after a
+  // swap the slot's earlier sets were another lift's.
+  const liftPosition = liftSets.filter((set) => set.setIndex < step.setIndex).length;
+  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, liftPosition, GUIDED_CARD_CHIP_CAP);
+  const todayChipWindow = guidedWindow(todayPlan.length, liftPosition, GUIDED_CARD_CHIP_CAP);
   /**
    * The set row's boxes: up to six, as many as the row has room for, so none
    * is drawn cut in half — and the −/+ after them stand still however many
@@ -6250,6 +6280,7 @@ function SetStepView({
               }
               onCommit={(text) => {
                 setTypedTextInvalid(!isLoggableTypedReps(text, repsBounds));
+                setTypedTextPending(!isLoggableTypedReps(text, repsBounds) && isTypedRepsPossiblyValid(text, repsBounds));
                 if (minutesMode) {
                   commitMinutes(text);
                 } else {
@@ -6267,8 +6298,11 @@ function SetStepView({
               editHint={t(language, 'guided.a11y.tapToEdit')}
               wide={bodyweight}
               faint={false}
-              invalid={logBlocked}
-              onDraftCleared={() => setTypedTextInvalid(false)}
+              invalid={typedErrorShown}
+              onDraftCleared={() => {
+                setTypedTextInvalid(false);
+                setTypedTextPending(false);
+              }}
             />
 
             {/* Weight is decided BEFORE the set. Loaded lifts always get it —
@@ -6288,6 +6322,7 @@ function SetStepView({
                 onStep={(direction) => setKg((current) => stepDialWeight(current, direction))}
                 onCommit={(text) => {
                   setTypedTextInvalid(!isLoggableTypedWeight(text));
+                  setTypedTextPending(false);
                   setKg((current) => commitDialWeight(text, current));
                 }}
                 // From the dial's own step, not a number in the copy — the
@@ -6297,8 +6332,11 @@ function SetStepView({
                 editHint={t(language, 'guided.a11y.tapToEdit')}
                 wide={false}
                 faint={kg <= 0}
-                invalid={logBlocked}
-                onDraftCleared={() => setTypedTextInvalid(false)}
+                invalid={typedErrorShown}
+                onDraftCleared={() => {
+                  setTypedTextInvalid(false);
+                  setTypedTextPending(false);
+                }}
               />
             ) : null}
           </View>
@@ -6307,7 +6345,7 @@ function SetStepView({
               red was the only sign, and colour is neither read aloud nor seen
               by everyone (accessibility audit, 2026-09-21). Polite, so it is
               announced once when it appears and not on every keystroke. */}
-          {logBlocked ? (
+          {typedErrorShown ? (
             <View style={styles.setWeightError} accessibilityLiveRegion="polite">
               <Text style={styles.setWeightErrorText}>
                 {t(language, dial === 'reps' ? 'guided.repsInvalid' : 'guided.weightInvalid')}
@@ -6385,7 +6423,7 @@ function SetStepView({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.a11y.actions')}
-            onPress={onOpenActions}
+            onPress={openActions}
             style={styles.setRoundBtn}
           >
             <GPIcon name="dots" size={22} color={theme.ink} sw={2.2} />

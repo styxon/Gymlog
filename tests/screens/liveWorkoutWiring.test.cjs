@@ -66,7 +66,7 @@ module.exports = [
       const applySwap = player.slice(player.indexOf('const applySwap = ('), player.indexOf('const resyncTargetRef'));
       assert.match(applySwap, /workout\.swapExercise\([\s\S]*unpause\(\);\s*\};/);
       const skip = player.slice(player.indexOf('const handleSkipExercise = () => {'), player.indexOf('const handleAddSet = () => {'));
-      assert.match(skip, /workout\.skipExercise\(actionSlotId\);\s*setPauseSheetOpen\(false\);\s*unpause\(\);/);
+      assert.match(skip, /workout\.skipExercise\(actionSlotId\);\s*setPauseSheetOpen\(false\);\s*moveOnFromMenu\(\);/);
     },
   },
   {
