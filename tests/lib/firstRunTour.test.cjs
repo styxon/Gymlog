@@ -107,11 +107,12 @@ module.exports = [
     },
   },
   {
-    // User 2026-10-03: the tour runs on Home only. Progress and Profile had
-    // two beats each; a stray surface name must not bring them back.
-    name: 'firstRunTour: Home is the only surface',
+    // User 2026-10-03: Progress and Profile had two beats each and went; a
+    // stray surface name must not bring them back. The guided workout joined
+    // Home on 2026-10-10 with two surfaces of its own (workoutTour.test.cjs).
+    name: 'firstRunTour: Home and the two workout surfaces are the only ones',
     run() {
-      assert.deepEqual([...tour.TOUR_SURFACES], ['home']);
+      assert.deepEqual([...tour.TOUR_SURFACES], ['home', 'workoutSet', 'workoutRest']);
       for (const surface of ['progress', 'profile']) {
         assert.deepEqual(tour.resolveTourBeats(surface, { hasProgram: true }), [], surface);
         assert.equal(tour.isTourSurface(surface), false, surface);

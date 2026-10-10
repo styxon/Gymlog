@@ -136,6 +136,9 @@ import {
   guidedWindow,
 } from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
+import { GuidedTourReport } from '../features/tour/GuidedTourReport';
+import type { TourTargetRegistry } from '../features/tour/tourTargets';
+import type { WorkoutTourStep } from '../lib/firstRunTour';
 import { ExerciseSheet } from '../components/ExerciseSheet';
 import { CtaShimmer } from '../components/CtaShimmer';
 import { SupersetBorder } from '../components/SupersetBorder';
@@ -410,6 +413,10 @@ interface GuidedPlayerScreenProps {
    * asking a question the reader has already answered.
    */
   autoResume?: boolean;
+  /** The first-run tour's target registry: the set and rest screens register what the tour rings. */
+  tourTargets?: TourTargetRegistry;
+  /** Where the player reports its plain set / rest to the shell, for the workout tour. */
+  onTourStep?: (step: WorkoutTourStep | null) => void;
 }
 
 /** The heaviest load in a session's sets, or 0 when there is none to show. */
@@ -698,8 +705,11 @@ function RestRing({
   size = 244,
   /** The arc's colour. An interval's work bout draws it in the highlight. */
   stroke,
+  tourRef,
   children,
 }: {
+  /** The first-run tour's handle on the ring. */
+  tourRef?: (node: View | null) => void;
   stepKey: number;
   leftSeconds: number;
   plannedSeconds: number;
@@ -735,7 +745,11 @@ function RestRing({
   const fraction = over ? 1 : Math.max(0, Math.min(1, leftSeconds / total));
 
   return (
-    <View style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}>
+    <View
+      ref={tourRef}
+      collapsable={false}
+      style={{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }}
+    >
       <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
         {/* The track was a light-theme hex on both themes: a bright lilac ring
             on a near-black page, brighter than the arc it was backing. */}
@@ -1597,6 +1611,8 @@ function GuidedPlayer({
   onRestAlertsAnswered,
   onOpenSystemSettings,
   autoResume = false,
+  tourTargets,
+  onTourStep,
 }: GuidedPlayerScreenProps) {
   // Read here, on the screen: inside the sheet's Modal it is always 0.
   const screenInsets = useSafeAreaInsets();
@@ -4374,12 +4390,16 @@ function GuidedPlayer({
               onMinutesReached={() => cue('rest')}
               minutesClock={workout.activeSession?.minutesClock ?? null}
               onMinutesClockChange={workout.setMinutesClock}
+              tourTargets={tourTargets}
+              // Held while a sheet is open or the workout is paused.
+              tourReport={frozen ? undefined : onTourStep}
             />
           )}
 
           {step.type === 'rest' && (
             <StepIn stepKey={`rest-${stepIndex}`}>
               <View style={{ flex: 1, minHeight: 0 }}>
+                <GuidedTourReport report={frozen ? undefined : onTourStep} kind="rest" plain={!step.recoveryKind} />
                 {/* What was just logged, and a way to fix it.
                     Rest is when a mis-typed rep count is noticed, and until
                     now the only way back was the hardware back button. */}
@@ -4426,6 +4446,7 @@ function GuidedPlayer({
                 ) : null}
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
                   <RestRing
+                    tourRef={(node) => tourTargets?.register('workout.rest', node)}
                     stepKey={stepIndex}
                     leftSeconds={Math.max(0, secondsLeft)}
                     plannedSeconds={step.seconds}
@@ -5506,6 +5527,8 @@ function SetStepView({
   onMinutesReached,
   minutesClock,
   onMinutesClockChange,
+  tourTargets,
+  tourReport,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5542,6 +5565,10 @@ function SetStepView({
   minutesClock?: SessionMinutesClock | null;
   /** The stopwatch started or paused, for the session to keep. */
   onMinutesClockChange?: (clock: SessionMinutesClock) => void;
+  /** The first-run tour: where the card, the rows and the buttons are. */
+  tourTargets?: TourTargetRegistry;
+  /** Reports this set to the workout tour; undefined while the player is held. */
+  tourReport?: (step: WorkoutTourStep | null) => void;
 }) {
   const theme = useTheme();
 
@@ -5891,6 +5918,15 @@ function SetStepView({
 
   return (
     <StepIn stepKey={`set-${stepIndex}`}>
+      {/* Only a plain set is the tour's: no superset round, hold or clock. */}
+      <GuidedTourReport
+        report={tourReport}
+        kind="set"
+        plain={!superset && !minutesMode && !timed}
+        canWarmUp={canWarmUp}
+        loaded={!bodyweight}
+        hasHistory={Boolean(panels?.history)}
+      />
       {/* The whole screen is the "close the dial" target: a tap that no
           card, button or control claims lands here and shuts whichever dial
           is open. Nested Pressables take their own taps first, so this only
@@ -5971,7 +6007,11 @@ function SetStepView({
           onPress={onOpenSheet}
           style={styles.setExerciseCard}
         >
-          <View style={styles.setExerciseTop}>
+          <View
+            ref={(node) => tourTargets?.register('workout.name', node)}
+            collapsable={false}
+            style={styles.setExerciseTop}
+          >
             <View style={styles.setExerciseThumb}>
               {thumbSource ? (
                 <Image source={thumbSource} style={[StyleSheet.absoluteFill, FILL_SIZE]} resizeMode="cover" />
@@ -6005,7 +6045,11 @@ function SetStepView({
               ramp's "16,25×8" chips used to wrap, and so, on the phone's
               larger font, did five plain ones, which is what made the card
               tall. */}
-          <View style={styles.setExerciseRows}>
+          <View
+            ref={(node) => tourTargets?.register('workout.history', node)}
+            collapsable={false}
+            style={styles.setExerciseRows}
+          >
             {panels?.history ? (
               <View style={styles.setExerciseRow}>
                 {/* One heading, whichever day the history came from. Borrowed
@@ -6120,7 +6164,11 @@ function SetStepView({
             next one pushed it off the screen (#bugs 2026-08-26, "sarja ja
             kello ei voi olla vierekkäin"). It sits on the name row now, where
             nothing grows, and the dots absorb the squeeze here. */}
-        <View style={styles.setMetaRow}>
+        <View
+          ref={(node) => tourTargets?.register('workout.setRow', node)}
+          collapsable={false}
+          style={styles.setMetaRow}
+        >
           {inWarmup ? (
             <View style={styles.setMetaLeft}>
               <View style={styles.warmupDot} />
@@ -6280,7 +6328,11 @@ function SetStepView({
               </Pressable>
             </View>
           ) : null}
-          <View style={styles.setDialRow}>
+          <View
+            ref={(node) => tourTargets?.register('workout.dials', node)}
+            collapsable={false}
+            style={styles.setDialRow}
+          >
             <DialCard
               label={t(language, minutesMode ? 'guided.minutes' : timed ? 'guided.seconds' : 'guided.reps')}
               value={String(minutesMode ? shownMinutes : reps)}
@@ -6425,7 +6477,11 @@ function SetStepView({
             The circles lost their captions with the row: two captions under
             two circles were a row of their own. Their names are still read
             out, and the reader drew the row this way knowing it. */}
-        <View style={styles.setControls}>
+        <View
+          ref={(node) => tourTargets?.register('workout.log', node)}
+          collapsable={false}
+          style={styles.setControls}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, paused ? 'guided.resume' : 'guided.pause')}

@@ -710,11 +710,16 @@ export interface AppPreferences {
    */
   setupHandoffCompleted: boolean;
   /**
-   * Which surfaces have run their first-run tour. Home, Progress and Profile
-   * each get exactly one first time; Settings can hand them all back.
-   * See lib/firstRunTour.ts.
+   * Which surfaces have run their first-run tour. Each gets exactly one first
+   * time; Settings can hand them all back. See lib/firstRunTour.ts.
    */
   firstRunToursSeen: TourSurface[];
+  /**
+   * The reader pressed "Show the tour again". The workout tour is otherwise
+   * only for a reader with no programme workout behind them; this is what lets
+   * one with history see it. See lib/workoutTourEligibility.ts.
+   */
+  firstRunToursReplayed: boolean;
   entryFlowCompleted: boolean;
   trainingFirstRunDismissed: boolean;
   selectedSignInMethod: SignInMethod | null;

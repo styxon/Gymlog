@@ -30,6 +30,7 @@ import { createTourTargetRegistry } from './src/features/tour/tourTargets';
 import {
   TourBarStop,
   TourTargetId,
+  WorkoutTourStep,
 } from './src/lib/firstRunTour';
 import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
@@ -389,6 +390,12 @@ function VinhaApp() {
    * state, and should not, so it says where it is and the screen decides.
    */
   const [tourFocus, setTourFocus] = useState<TourTargetId | null>(null);
+  /**
+   * The guided player's plain set or rest, as the player reports it, for the
+   * workout tour. The route says only "the player"; which step it is on is the
+   * player's own state. Null on every other screen and every other step.
+   */
+  const [workoutTourStep, setWorkoutTourStep] = useState<WorkoutTourStep | null>(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useDeviceSwitches({ hydrated, preferences });
@@ -1766,6 +1773,7 @@ function VinhaApp() {
     homeActivePlanCard,
     workout,
     tourRegistry,
+    workoutTourStep,
     setTourSweep,
     setTourFocus,
     setupHandoffActiveRef,
@@ -2195,6 +2203,8 @@ function VinhaApp() {
       exerciseLibrary,
       liftHistory,
       plateauNotice,
+      tourRegistry,
+      setWorkoutTourStep,
       exerciseProgressFor,
       guidedEntryEyebrow,
       guidedWeekProgress,

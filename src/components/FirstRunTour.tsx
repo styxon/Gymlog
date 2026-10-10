@@ -10,6 +10,7 @@ import {
   CALLOUT_LEAVE_MS,
   CALLOUT_SIDE_INSET,
   dimCutoutPath,
+  insetRect,
   notchOffset,
   placeCallout,
   rectChanged,
@@ -23,6 +24,7 @@ import {
   TOUR_REMEASURE_MS,
   TOUR_RESCROLL_QUIET_MS,
   TourBarStop,
+  TourFinishReason,
   TourRect,
   TourRingShape,
   TourSectionBeat,
@@ -92,9 +94,11 @@ interface FirstRunTourProps {
   onBeatChange?: (target: TourTargetId | null) => void;
   /**
    * Done, skipped, or left mid-way: the surface is marked seen either way.
-   * Leaving early is not failure, and the app gets out of the way.
+   * Leaving early is not failure, and the app gets out of the way. The reason
+   * is 'skipped' only for the reader's own "Skip the tour" - the one answer
+   * that can carry on to a surface after this one (the workout's rest tour).
    */
-  onFinish: (surface: TourSurface) => void;
+  onFinish: (surface: TourSurface, reason: TourFinishReason) => void;
 }
 
 interface Origin {
@@ -205,11 +209,14 @@ export function FirstRunTour({
   const readSpot = useCallback(
     async (beat: TourSectionBeat, options: { fallback: boolean }): Promise<TourSpot | null> => {
       const wantsAnchor = beat.anchor !== undefined && beat.anchor !== beat.target;
-      const [targetRect, anchorRect, origin] = await Promise.all([
+      const [measuredTarget, anchorRect, origin] = await Promise.all([
         registry.measure(beat.target),
         wantsAnchor ? registry.measure(beat.anchor as TourTargetId) : Promise.resolve(null),
         measureOrigin(),
       ]);
+      // A row that measures edge to edge because its page margin is padding
+      // is rung inside the margin (beat.inset), not across the screen.
+      const targetRect = measuredTarget ? insetRect(measuredTarget, beat.inset) : null;
       if (!options.fallback && (!targetRect || (wantsAnchor && !anchorRect))) {
         return null;
       }
@@ -226,16 +233,21 @@ export function FirstRunTour({
     [measureOrigin, registry],
   );
 
-  const finish = useCallback(() => {
-    if (finishedRef.current) {
-      return;
-    }
-    finishedRef.current = true;
-    onSweep(null);
-    onBeatChange?.(null);
-    setPhase('done');
-    onFinish(surface);
-  }, [onBeatChange, onFinish, onSweep, surface]);
+  const finish = useCallback(
+    (reason: TourFinishReason = 'done') => {
+      if (finishedRef.current) {
+        return;
+      }
+      finishedRef.current = true;
+      onSweep(null);
+      onBeatChange?.(null);
+      setPhase('done');
+      onFinish(surface, reason);
+    },
+    [onBeatChange, onFinish, onSweep, surface],
+  );
+  /** "Skip the tour": the reader's no, which is not the same as reaching the end. */
+  const skip = useCallback(() => finish('skipped'), [finish]);
 
   // Leaving mid-tour — a tab press, a workout started — still counts as seen,
   // but only once a callout has actually been on screen. Leaving during the
@@ -272,9 +284,9 @@ export function FirstRunTour({
     if (reduceMotion === null || phase !== 'waiting') {
       return;
     }
-    const timer = setTimeout(() => setPhase('beat'), tourStartDelayMs(reduceMotion));
+    const timer = setTimeout(() => setPhase('beat'), tourStartDelayMs(reduceMotion, surface));
     return () => clearTimeout(timer);
-  }, [phase, reduceMotion]);
+  }, [phase, reduceMotion, surface]);
 
   const stepTo = useCallback(
     (next: number) => {
@@ -705,7 +717,7 @@ export function FirstRunTour({
           <View style={styles.footer}>
             <Pressable
               accessibilityRole="button"
-              onPress={finish}
+              onPress={skip}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
               style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
             >

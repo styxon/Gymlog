@@ -820,9 +820,11 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         }}
         onOpenMyData={() => navigate({ tab: 'profile', screen: 'my_data' })}
         onReplayTour={async () => {
-          // Home's tour gets its first time back — once the write has landed,
-          // or Home would open with the tour still marked as seen.
-          if (await savePreferences({ firstRunToursSeen: [] })) {
+          // Every tour gets its first time back — once the write has landed,
+          // or Home would open with the tour still marked as seen. The flag
+          // is what lets a reader with workouts behind them see the workout
+          // tour too (lib/workoutTourEligibility).
+          if (await savePreferences({ firstRunToursSeen: [], firstRunToursReplayed: true })) {
             deps.resetToRoute(ROOT_ROUTES.home);
           }
         }}

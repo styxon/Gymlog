@@ -1815,6 +1815,25 @@ const EN = {
   'tour.bar.ai': 'Your personal coach analyses your training data and provides recommendations.',
   'tour.bar.progress': 'Track your progress, personal records, and training history.',
   'tour.bar.profile': 'Manage your settings, personal information, and app preferences.',
+  // The guided workout's tour: the first plain set, and the first rest after it.
+  // Each says what is on the screen, never "tap": the page under a beat is shielded.
+  'tour.workout.name': 'The exercise name opens its picture and step-by-step instructions.',
+  'tour.workout.history':
+    'LAST TIME shows the sets you did before and TODAY the sets for this session. Logged sets turn green and the current one is outlined.',
+  'tour.workout.historyFirst':
+    'First time on this exercise, so there is no LAST TIME to compare with. TODAY lists the planned reps; logged sets turn green and the current one is outlined.',
+  'tour.workout.sets':
+    "The boxes are this exercise's sets. The red − takes the last set away, the green + adds one, and the blue + adds a warm-up set.",
+  'tour.workout.setsNoWarmup':
+    "The boxes are this exercise's sets. The red − takes the last set away and the green + adds one.",
+  'tour.workout.dials':
+    'Reps and weight start at the suggested values for this set. The − and + under each number change it, and holding a button runs the number.',
+  'tour.workout.dialsReps':
+    'Reps start at the suggested number for this set. The − and + under it change it, and holding a button runs the number.',
+  'tour.workout.log':
+    'Log set saves the set and moves on to the rest. Pause holds the workout clock, and the menu beside it swaps or skips this exercise.',
+  'tour.workout.rest':
+    'The ring counts the rest down. −15s and +15s below it shorten or extend the rest, and Skip rest moves straight on to the next set.',
   'settings.replayTour': 'Replay the tour',
   'settings.widget': 'Home screen widget',
   'settings.widget.sub': 'Your training month, your streak and today, on the home screen.',
@@ -5231,6 +5250,23 @@ const FI: Record<I18nKey, string> = {
   'tour.bar.ai': 'Henkilökohtainen valmentajasi analysoi harjoittelutietojasi ja antaa suosituksia.',
   'tour.bar.progress': 'Seuraa edistymistäsi, ennätyksiäsi ja harjoitteluhistoriaasi.',
   'tour.bar.profile': 'Hallitse asetuksiasi, tietojasi ja muita sovelluksen toimintoja.',
+  'tour.workout.name': 'Liikkeen nimestä avautuvat kuva ja vaiheittaiset ohjeet.',
+  'tour.workout.history':
+    'VIIMEKSI näyttää aiemmin tekemäsi sarjat ja TÄNÄÄN tämän treenin sarjat. Kirjatut sarjat vihertyvät ja nykyinen on kehystetty.',
+  'tour.workout.historyFirst':
+    'Ensimmäinen kerta tällä liikkeellä, joten VIIMEKSI-riviä ei vielä ole. TÄNÄÄN-rivillä näkyvät suunnitellut toistot; kirjatut sarjat vihertyvät ja nykyinen on kehystetty.',
+  'tour.workout.sets':
+    'Ruudut ovat tämän liikkeen sarjat. Punainen − poistaa viimeisen sarjan, vihreä + lisää sarjan ja sininen + lisää lämmittelysarjan.',
+  'tour.workout.setsNoWarmup':
+    'Ruudut ovat tämän liikkeen sarjat. Punainen − poistaa viimeisen sarjan ja vihreä + lisää sarjan.',
+  'tour.workout.dials':
+    'Toistot ja paino alkavat ehdotetuista arvoista. Lukujen alla olevat − ja + muuttavat niitä, ja painikkeen pitäminen pohjassa juoksuttaa lukua.',
+  'tour.workout.dialsReps':
+    'Toistot alkavat ehdotetusta määrästä. Luvun alla olevat − ja + muuttavat sitä, ja painikkeen pitäminen pohjassa juoksuttaa lukua.',
+  'tour.workout.log':
+    'Kirjaa sarja tallentaa sarjan ja siirtyy lepoon. Tauko pysäyttää treenin kellon, ja sen vieressä olevasta valikosta voi vaihtaa tai ohittaa liikkeen.',
+  'tour.workout.rest':
+    'Rengas laskee lepoa alaspäin. Sen alla olevat −15s ja +15s lyhentävät tai pidentävät lepoa, ja Ohita lepo siirtää suoraan seuraavaan sarjaan.',
   'settings.replayTour': 'Näytä esittely uudestaan',
   'settings.widget': 'Kotinäytön widget',
   'settings.widget.sub': 'Treenikuukausi, putki ja tämä päivä kotinäytöllä.',

@@ -93,7 +93,7 @@ module.exports = [
       assert.match(profileTab, /onSave=\{\(name\) => savePreferences\(\{ profileName: name \}\)\}/);
       assert.match(profileTab, /onSaveBasics=\{\(patch\) => savePreferences\(patch\)\}/);
       assert.match(profileTab, /await savePreferences\(patch\)/);
-      assert.match(profileTab, /if \(await savePreferences\(\{ firstRunToursSeen: \[\] \}\)\) \{\s*deps\.resetToRoute\(ROOT_ROUTES\.home\);/);
+      assert.match(profileTab, /if \(await savePreferences\(\{ firstRunToursSeen: \[\], firstRunToursReplayed: true \}\)\) \{\s*deps\.resetToRoute\(ROOT_ROUTES\.home\);/);
       assert.match(profileTab, /catch \(error\) \{[\s\S]{0,400}toast\.prefsSaveFailed[\s\S]{0,100}return false;/);
       assert.ok(!/void updatePreferences\(\{ profileName/.test(profileTab));
       assert.ok(!/void deps\.updatePreferences\(\{ firstRunToursSeen/.test(profileTab));
