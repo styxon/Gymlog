@@ -2,6 +2,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { isMinutesRun, runStandInKind, type RunStandInKind } from './cautionExerciseFilter';
 import { classifySessionFocus } from './homeSessionHero';
 import { emphasisAreaForExercise, type EmphasisArea } from './programEmphasis';
+import { meetsMobilityFocus } from './programCatalogFocus';
 import { buildProgramFocusSplit } from './programFocusSplit';
 import { applyReaderFiltersToDay } from './readerDayFilters';
 import type { RecommendationInput } from '../types/recommendation';
@@ -249,6 +250,17 @@ export function programHoldsConditioning(programId: string): boolean | null {
     : null;
   conditioningPrograms.set(programId, holds);
   return holds;
+}
+
+/**
+ * Whether mobility leads this programme's week, by the share the Mobility tile
+ * and chip ask for (meetsMobilityFocus); null for a programme the catalog does
+ * not know. "Recovery and mobility lead this block" sat over the joint-friendly
+ * gym week, which holds 4 % (hunt 11 review).
+ */
+export function programLeadsWithMobility(programId: string): boolean | null {
+  const template = getWorkoutTemplateById(programId);
+  return template ? meetsMobilityFocus(template) : null;
 }
 
 /**

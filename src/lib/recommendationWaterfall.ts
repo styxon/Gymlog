@@ -4,6 +4,7 @@ import {
   focusProgrammeLosesItsPoint,
   lowerBodyOnlyAgainstFocus,
   programHoldsConditioning,
+  programLeadsWithMobility,
   splitsReaderWeek,
 } from './recommendationWeekFit';
 import type { I18nKey } from './i18n';
@@ -193,6 +194,14 @@ const NO_CONDITIONING_REASONS: Partial<Record<I18nKey, I18nKey>> = {
 };
 
 /**
+ * The same for the line that says mobility leads (programLeadsWithMobility):
+ * the joint-friendly week is picked for its low stress and holds little of it.
+ */
+const NO_MOBILITY_LEAD_REASONS: Partial<Record<I18nKey, I18nKey>> = {
+  'wf.mobility_first.primary': 'wf.mobility_first.primaryGentle',
+};
+
+/**
  * The reason to print over this programme: the lane's line, or its
  * no-conditioning form when the week holds none. Takes either form, so a
  * reason can be asked again after the scoring swaps the programme under it.
@@ -201,10 +210,16 @@ export function reasonOverProgramme(key: I18nKey, programId: string): I18nKey {
   const base = (Object.keys(NO_CONDITIONING_REASONS) as I18nKey[]).find(
     (lane) => lane === key || NO_CONDITIONING_REASONS[lane] === key,
   );
-  if (!base) {
+  if (base) {
+    return programHoldsConditioning(programId) === false ? NO_CONDITIONING_REASONS[base] ?? base : base;
+  }
+  const mobilityBase = (Object.keys(NO_MOBILITY_LEAD_REASONS) as I18nKey[]).find(
+    (lane) => lane === key || NO_MOBILITY_LEAD_REASONS[lane] === key,
+  );
+  if (!mobilityBase) {
     return key;
   }
-  return programHoldsConditioning(programId) === false ? NO_CONDITIONING_REASONS[base] ?? base : base;
+  return programLeadsWithMobility(programId) === false ? NO_MOBILITY_LEAD_REASONS[mobilityBase] ?? mobilityBase : mobilityBase;
 }
 
 /**

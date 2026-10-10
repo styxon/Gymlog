@@ -95,7 +95,7 @@ const EQUIPMENT_RULES: EquipmentRule[] = [
   { pattern: 'ez-bar', requires: [BARBELL] },
   { pattern: 'ez bar', requires: [BARBELL] },
   { pattern: 'pec deck', requires: [['Machines']] },
-  { pattern: 'butterfly', unless: ['stretch'], requires: [['Machines']] },
+  { pattern: 'butterfly', exact: true, requires: [['Machines']] },
   { pattern: 'lateral raise', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'rear delt', requires: [['Dumbbells', 'Cables', 'Resistance bands']] },
   { pattern: 'curl', unless: ['nordic hamstring curl', 'lower back curl'], requires: [[...BARBELL, 'Dumbbells', 'Resistance bands']] },
@@ -220,6 +220,10 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   // are seconds or metres: 3 × 40 of a carry became 3 × 40 bridges. A brace
   // held for those seconds is the carry without the weight (CI review of #172).
   ['farmer', ['Plank']],
+  // The incline dumbbell press needs a bench, and a reader with dumbbells and
+  // none lost it with no answer: ten days lost all their pressing (review of
+  // hunt 11). The floor press is the press without a bench.
+  ['incline dumbbell press', ['Dumbbell Floor Press', 'Incline Push-Up', 'Push-Up Wide']],
   // Ahead of "bench press", which it contains: the incline press is the
   // incline dumbbell press when there are dumbbells and a bench to set it on.
   ['incline bench press', ['Incline Dumbbell Press']],
@@ -248,6 +252,7 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['preacher curl', ['Dumbbell Bicep Curl', 'Band Curl']],
   ['barbell curl', ['Dumbbell Bicep Curl', 'Band Curl']],
   ['ez-bar curl', ['Dumbbell Bicep Curl', 'Band Curl']],
+  ['ez bar curl', ['Dumbbell Bicep Curl', 'Band Curl']],
   ['dumbbell curl', ['Reverse Plate Curls', 'Band Curl']],
   ['hammer curl', ['Dumbbell Bicep Curl', 'Reverse Plate Curls', 'Band Curl']],
   ['rear delt', ['Band Pull Apart']],

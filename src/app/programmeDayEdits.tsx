@@ -227,6 +227,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
     name: string,
   ): Promise<{ sessionId: string; weekSynced: boolean } | null> {
     const newSessionId = createId('workout_template_session');
+    const typedName = clampProgrammeName(name);
     const result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => ({
       kind: 'save',
       sessions: [
@@ -239,13 +240,25 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
           })),
         {
           id: newSessionId,
-          name: name.trim() || newProgramSessionName(sessions.length, preferences.appLanguage),
+          name: typedName || newProgramSessionName(sessions.length, preferences.appLanguage),
           exercises: [],
         },
       ],
     }));
     if (!result.saved) {
       return null;
+    }
+    // A name the reader typed is remembered once it is stored, as the rename
+    // does: "Treeni A" would otherwise read as the placeholder "Treeni 3". Its
+    // own write, so a failure here is not a failed add.
+    if (typedName) {
+      try {
+        await updatePreferences((current) => ({
+          readerSessionNames: { ...current.readerSessionNames, [newSessionId]: typedName },
+        }));
+      } catch (error) {
+        console.error('Failed to remember a typed day name', error);
+      }
     }
     // The week gets the new day on one of the reader's training days.
     return { sessionId: newSessionId, weekSynced: await syncPlanAfterDayEdit(workoutTemplateId) };

@@ -315,4 +315,111 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'hunt 11 review: a reader with dumbbells and no bench keeps a press where the week had one',
+    run() {
+      const PRESS = /press|push-up|dip/i;
+      const others = ['Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar', 'Barbell & plates', 'Squat rack', 'Machines'];
+      // Counted once at 212dd1ae, before the bench rules: removals and days
+      // left with no press, for the dumbbell presets. Neither may rise.
+      const BASELINE = {
+        db: { gear: ['Dumbbells'], removed: 104, pressless: 26 },
+        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 79, pressless: 26 },
+        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 75, pressless: 26 },
+        bench: { gear: ['Dumbbells', 'Bench'], removed: 102, pressless: 26 },
+        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 86, pressless: 26 },
+      };
+      const count = (gear) => {
+        let removed = 0;
+        let pressless = 0;
+        for (const template of WORKOUT_TEMPLATES_V1) {
+          for (const session of template.sessions) {
+            const adjusted = eq.applyEquipmentToExercises(session.exercises, gear);
+            removed += adjusted.removed.length;
+            if (
+              session.exercises.some((entry) => PRESS.test(entry.exerciseName)) &&
+              !adjusted.exercises.some((entry) => PRESS.test(entry.exerciseName))
+            ) {
+              pressless += 1;
+            }
+            if (!gear.includes('Bench')) {
+              assert.ok(
+                !adjusted.removed.includes('Incline Dumbbell Press'),
+                `${template.id}: Incline Dumbbell Press removed for ${gear.join('+')}`,
+              );
+            }
+          }
+        }
+        return { removed, pressless };
+      };
+      for (const [preset, expected] of Object.entries(BASELINE)) {
+        const now = count(expected.gear);
+        assert.ok(now.removed <= expected.removed, `${preset}: ${now.removed} removed against ${expected.removed}`);
+        assert.ok(now.pressless <= expected.pressless, `${preset}: ${now.pressless} days with no press against ${expected.pressless}`);
+      }
+      // Every chip combination with dumbbells in it.
+      for (let mask = 0; mask < 1 << others.length; mask += 1) {
+        count(['Dumbbells', ...others.filter((_, index) => (mask >> index) & 1)]);
+      }
+      // The case itself: the day that lost its pressing.
+      const day = eq.applyEquipmentToExercises([exercise('Incline Dumbbell Press'), exercise('Dumbbell Floor Press')], ['Dumbbells']);
+      assert.deepEqual(
+        day.exercises.map((entry) => entry.exerciseName),
+        ['Incline Push-Up', 'Dumbbell Floor Press'],
+      );
+    },
+  },
+  {
+    name: 'hunt 11 review: a programme name is cut on characters, never through an emoji',
+    run() {
+      const cut = clampProgrammeName(`${'a'.repeat(59)}\u{1F600}`);
+      assert.equal(cut, `${'a'.repeat(59)}\u{1F600}`);
+      const longer = clampProgrammeName(`${'a'.repeat(60)}\u{1F600}`);
+      assert.equal(longer, 'a'.repeat(60));
+      assert.doesNotMatch(clampProgrammeName(`${'\u{1F600}'.repeat(80)}`), /[\uD800-\uDBFF](?![\uDC00-\uDFFF])/);
+      assert.equal(Array.from(clampProgrammeName('\u{1F600}'.repeat(80))).length, PROGRAMME_NAME_MAX);
+    },
+  },
+  {
+    name: 'hunt 11 review: the butterfly rule is the machine alone and the EZ bar curl has a fallback with either spelling',
+    run() {
+      assert.equal(eq.isExerciseAllowedWithEquipment('Butterfly', []), false);
+      assert.equal(eq.isExerciseAllowedWithEquipment('Butterfly Stretch', []), true);
+      assert.equal(eq.isExerciseAllowedWithEquipment('Butterfly Yoga Pose', []), true);
+      for (const name of ['EZ-Bar Curl', 'Close-Grip EZ Bar Curl']) {
+        const swapped = eq.applyEquipmentToExercises([exercise(name)], ['Dumbbells']);
+        assert.deepEqual(swapped.removed, [], name);
+        assert.equal(swapped.exercises[0].exerciseName, 'Dumbbell Bicep Curl', name);
+      }
+    },
+  },
+  {
+    name: 'hunt 11 review: a day added by name is clamped and remembered as typed',
+    run() {
+      const source = read('src', 'app', 'programmeDayEdits.tsx');
+      const add = source.slice(source.indexOf('async function handleAddProgramSession'));
+      const body = add.slice(0, add.indexOf('async function syncPlanAfterDayEdit'));
+      assert.match(body, /const typedName = clampProgrammeName\(name\);/);
+      assert.match(body, /typedName \|\| newProgramSessionName/);
+      assert.match(body, /readerSessionNames: \{ \.\.\.current\.readerSessionNames, \[newSessionId\]: typedName \}/);
+    },
+  },
+  {
+    name: 'hunt 11 review: "mobility leads this block" is printed only over a week where it does',
+    run() {
+      const { reasonOverProgramme } = require('../../.test-dist/lib/recommendationWaterfall');
+      const { programLeadsWithMobility } = require('../../.test-dist/lib/recommendationWeekFit');
+      const { t } = require('../../.test-dist/lib/i18n');
+      assert.equal(programLeadsWithMobility('tpl_gainer_joint_friendly_v1'), false);
+      assert.equal(programLeadsWithMobility('tpl_2_day_mobility_reset_v1'), true);
+      for (const key of ['wf.mobility_first.primary', 'wf.mobility_first.primaryGentle']) {
+        assert.equal(reasonOverProgramme(key, 'tpl_gainer_joint_friendly_v1'), 'wf.mobility_first.primaryGentle', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_2_day_mobility_reset_v1'), 'wf.mobility_first.primary', key);
+      }
+      assert.equal(reasonOverProgramme('wf.mobility_first.primary', 'tpl_no_such_programme'), 'wf.mobility_first.primary');
+      for (const language of ['en', 'fi']) {
+        assert.doesNotMatch(t(language, 'wf.mobility_first.primaryGentle'), /liikkuvuus|mobility/i, language);
+      }
+    },
+  },
 ];
