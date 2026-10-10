@@ -1135,6 +1135,9 @@ const EN = {
   // The cloud copy is older than the phone: the dialog cannot promise it holds everything.
   'settings.resetDialog.message.signedInBehind':
     'Everything on this phone is deleted and you are signed out. Your cloud backup is older than this phone, so the app backs up first.',
+  // No cloud copy of this data at all (deleted, or the upload was declined): signing in again restores nothing.
+  'settings.resetDialog.message.signedInNoCopy':
+    'Everything on this phone is deleted and you are signed out. There is no cloud backup of this data, so it cannot be restored.',
   'settings.resetBehind.title': 'Backup did not finish',
   'settings.resetBehind.message':
     'The cloud copy is older than this phone. Resetting now deletes what was added since, and signing in again restores only the older copy.',
@@ -4647,6 +4650,8 @@ const FI: Record<I18nKey, string> = {
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopiosi säilyy — kirjaudu uudelleen palauttaaksesi sen.',
   'settings.resetDialog.message.signedInBehind':
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopio on puhelinta vanhempi, joten sovellus varmuuskopioi ensin.',
+  'settings.resetDialog.message.signedInNoCopy':
+    'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Tästä datasta ei ole pilvivarmuuskopiota, joten sitä ei voi palauttaa.',
   'settings.resetBehind.title': 'Varmuuskopiointi ei valmistunut',
   'settings.resetBehind.message':
     'Pilvikopio on puhelinta vanhempi. Nollaus poistaa sen jälkeen lisätyt tiedot, eikä uudelleen kirjautuminen palauta kuin vanhemman kopion.',

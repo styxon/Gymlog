@@ -141,11 +141,16 @@ module.exports = [
     name: 'install stamps: a preference write the disk refuses is not re-issued on every render',
     async run() {
       const runtime = createHookRuntime();
-      const useAttemptOnce = requireWithStubs(path.join(dist, 'app', 'useAttemptOnce.js'), { react: runtime.react }).useAttemptOnce;
+      const useAttemptOnce = requireWithStubs(path.join(dist, 'app', 'useAttemptOnce.js'), {
+        react: runtime.react,
+        'react-native': { AppState: { addEventListener: () => ({ remove: () => undefined }) } },
+      }).useAttemptOnce;
       const { useInstallStamps } = requireWithStubs(path.join(dist, 'app', 'useInstallStamps.js'), {
         react: runtime.react,
         './useAttemptOnce': { useAttemptOnce },
       });
+      const realWarn = console.warn;
+      console.warn = () => undefined;
       const writes = [];
       const updatePreferences = (patch) => {
         writes.push(Object.keys(patch).join());
@@ -159,6 +164,7 @@ module.exports = [
         runtime.render(useInstallStamps, { appHydrated: true, preferences: { ...preferences }, updatePreferences });
         await flush();
       }
+      console.warn = realWarn;
       assert.deepEqual(writes.sort(), ['firstLaunchAt', 'hasOpenedAppBefore'], 'a refused stamp was written again');
       runtime.unmount();
     },
@@ -181,6 +187,140 @@ module.exports = [
       const overlays = read('src/app/useSetupHandoffOverlays.tsx');
       assert.match(overlays, /tryOnce\('setupHandoffCompleted'/);
       assert.doesNotMatch(overlays, /void updatePreferences\(\{ setupHandoffCompleted/);
+    },
+  },
+  {
+    name: 'reset dialog: the no-copy text says nothing can be restored, in both languages, and the other texts keep their promise',
+    run() {
+      const { t } = require(path.join(dist, 'lib', 'i18n.js'));
+      assert.equal(
+        t('en', 'settings.resetDialog.message.signedInNoCopy'),
+        'Everything on this phone is deleted and you are signed out. There is no cloud backup of this data, so it cannot be restored.',
+      );
+      assert.equal(
+        t('fi', 'settings.resetDialog.message.signedInNoCopy'),
+        'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Tästä datasta ei ole pilvivarmuuskopiota, joten sitä ei voi palauttaa.',
+      );
+      for (const language of ['en', 'fi']) {
+        assert.doesNotMatch(t(language, 'settings.resetDialog.message.signedInNoCopy'), /stays|säilyy/i);
+      }
+      const { resetDialogMessageKey } = require(path.join(dist, 'lib', 'accountBackup.js'));
+      assert.equal(resetDialogMessageKey(false, 'none'), 'settings.resetDialog.message');
+      assert.equal(resetDialogMessageKey(true, 'none'), 'settings.resetDialog.message.signedInNoCopy');
+      assert.equal(resetDialogMessageKey(true, 'behind'), 'settings.resetDialog.message.signedInBehind');
+      assert.equal(resetDialogMessageKey(true, 'current'), 'settings.resetDialog.message.signedIn');
+    },
+  },
+  {
+    name: 'cloudCopyState: held backups with no backup time are none, a held account with a time is current, otherwise the fingerprint decides',
+    run() {
+      const { cloudCopyState } = require(path.join(dist, 'lib', 'accountBackup.js'));
+      const never = () => {
+        throw new Error('walked the history for a held account');
+      };
+      assert.equal(cloudCopyState({ autoBackupPaused: true, lastBackupAt: null, lastBackupFingerprint: null }, never), 'none');
+      assert.equal(cloudCopyState({ autoBackupPaused: true, lastBackupAt: '2026-10-01T00:00:00.000Z', lastBackupFingerprint: 'a' }, never), 'current');
+      assert.equal(cloudCopyState({ autoBackupPaused: false, lastBackupAt: 'x', lastBackupFingerprint: 'a' }, () => 'b'), 'behind');
+      assert.equal(cloudCopyState({ autoBackupPaused: false, lastBackupAt: 'x', lastBackupFingerprint: 'a' }, () => 'a'), 'current');
+    },
+  },
+  {
+    // A transient refusal got no second chance for the whole session, and said nothing.
+    name: 'lead plan repair: a refused write is not looped and is logged; the app returning to the front tries once more, and a changed lead is repaired at once',
+    async run() {
+      const runtime = createHookRuntime();
+      const listeners = new Set();
+      const AppState = {
+        addEventListener(_type, listener) {
+          listeners.add(listener);
+          return { remove: () => listeners.delete(listener) };
+        },
+      };
+      const { useAttemptOnce } = requireWithStubs(path.join(dist, 'app', 'useAttemptOnce.js'), {
+        react: runtime.react,
+        'react-native': { AppState },
+      });
+      const { useLeadPlanRepair } = requireWithStubs(path.join(dist, 'app', 'useLeadPlanRepair.js'), {
+        react: runtime.react,
+        './useAttemptOnce': { useAttemptOnce },
+      });
+      const plan = (id) => ({ id, name: id, entries: [{ workoutTemplateId: `tpl_${id}` }] });
+      const writes = [];
+      let refuse = true;
+      const updatePreferences = (patch) => {
+        writes.push(patch.activePlanId);
+        return refuse ? Promise.reject(new Error('storage: refused')) : Promise.resolve();
+      };
+      const props = (activePlanId, ids, plans) => ({
+        appHydrated: true,
+        preferences: { activePlanId, activePlanIds: ids },
+        database: { workoutPlans: plans },
+        updatePreferences,
+      });
+      const warned = [];
+      const realWarn = console.warn;
+      console.warn = (...args) => warned.push(args.join(' '));
+      try {
+        // Lead missing, plan p1 held: the repair names p1. Refused, the lead reads missing again on every render.
+        for (let render = 0; render < 5; render += 1) {
+          runtime.render(useLeadPlanRepair, props(null, ['p1'], [plan('p1')]));
+          await flush();
+        }
+        assert.deepEqual(writes, ['p1'], 'a refused repair was written again');
+        assert.equal(warned.length, 1, 'the refusal was not logged once');
+        assert.match(warned[0], /lead:p1/, 'the log does not name the key');
+        // Back to the front: one more try, and only one.
+        refuse = false;
+        for (const listener of [...listeners]) {
+          listener('background');
+        }
+        runtime.render(useLeadPlanRepair, props(null, ['p1'], [plan('p1')]));
+        await flush();
+        assert.deepEqual(writes, ['p1'], 'a background change released the key');
+        for (const listener of [...listeners]) {
+          listener('active');
+        }
+        runtime.render(useLeadPlanRepair, props(null, ['p1'], [plan('p1')]));
+        await flush();
+        // The write landed: the lead is p1 now, and nothing more is owed.
+        for (let render = 0; render < 3; render += 1) {
+          runtime.render(useLeadPlanRepair, props('p1', ['p1'], [plan('p1')]));
+          await flush();
+        }
+        assert.deepEqual(writes, ['p1', 'p1'], 'returning to the front did not retry exactly once');
+        // A different lead is a different repair, tried at once.
+        runtime.render(useLeadPlanRepair, props(null, ['p2'], [plan('p2')]));
+        await flush();
+        assert.deepEqual(writes, ['p1', 'p1', 'p2']);
+        // And a foreground with nothing refused changes nothing.
+        for (const listener of [...listeners]) {
+          listener('active');
+        }
+        runtime.render(useLeadPlanRepair, props('p2', ['p2'], [plan('p2')]));
+        await flush();
+        assert.deepEqual(writes, ['p1', 'p1', 'p2']);
+      } finally {
+        console.warn = realWarn;
+        runtime.unmount();
+      }
+    },
+  },
+  {
+    name: 'attemptOnce: releaseRefused hands back only the refused keys, once',
+    async run() {
+      const { releaseRefused } = require(path.join(dist, 'lib', 'attemptOnce.js'));
+      const tried = new Set(['a', 'b']);
+      const refused = new Set(['a']);
+      assert.equal(releaseRefused(tried, refused), true);
+      assert.deepEqual([...tried], ['b']);
+      assert.equal(releaseRefused(tried, refused), false);
+      const seen = [];
+      const set = new Set();
+      attemptOnce(set, 'k', () => Promise.reject(new Error('no')), (error) => seen.push(error.message));
+      await flush();
+      assert.deepEqual(seen, ['no']);
+      attemptOnce(set, 'k', () => Promise.reject(new Error('again')), (error) => seen.push(error.message));
+      assert.deepEqual(seen, ['no'], 'a held key was tried again');
     },
   },
 ];

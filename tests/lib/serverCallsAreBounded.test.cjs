@@ -158,7 +158,8 @@ const ENTRY_POINTS = {
           { file: 'src/features/account/useAccountBackup.ts', text: 'unseenCopyFoundRef.current' },
           // Reset's one backup: behind the confirm tap, and only when the cloud copy differs from the phone.
           { file: 'src/app/renderProfileTab.tsx', text: 'if (accountBackup.cloudCopyBehind()) {' },
-          { file: 'src/features/account/useAccountBackup.ts', text: 'current.lastBackupFingerprint !== accountBackupFingerprint(database, workoutHistory)' },
+          { file: 'src/features/account/useAccountBackup.ts', text: "cloudCopyStateNow() === 'behind'" },
+          { file: 'src/lib/accountBackup.ts', text: 'sync.lastBackupFingerprint !== phoneFingerprint()' },
           // uploadCurrent's loop: one silent retry, a second refusal returns.
           { file: 'src/features/account/useAccountBackup.ts', text: 'if (attempt > 0)' },
         ],

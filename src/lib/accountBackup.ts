@@ -823,6 +823,55 @@ export interface BackupSyncState {
 }
 
 /**
+ * What the cloud holds, as far as Reset's dialog needs to say it.
+ * - 'none': nothing of this phone's data. Backups are held and no copy was
+ *   written or restored: after "Delete cloud backup", a copy deleted elsewhere,
+ *   or "Not now" on uploading to a different account. Every place that holds
+ *   backups (useAccountBackup: copyWasDeleted, the sign-in and unattended
+ *   consent holds, deleteRemoteBackup) clears the backup time with it, and
+ *   every place that lifts the hold (a backup, a restore) sets one.
+ * - 'behind': a copy older than the phone.
+ * - 'current': a copy that holds everything, or no account to ask about.
+ */
+export type CloudCopyState = 'behind' | 'current' | 'none';
+
+/**
+ * `phoneFingerprint` is a function because it walks the whole history, which
+ * the held states do not need.
+ */
+export function cloudCopyState(
+  sync: Pick<BackupSyncState, 'autoBackupPaused' | 'lastBackupAt'> & { lastBackupFingerprint: string | null },
+  phoneFingerprint: () => string,
+): CloudCopyState {
+  if (sync.autoBackupPaused) {
+    return sync.lastBackupAt ? 'current' : 'none';
+  }
+  return sync.lastBackupFingerprint !== phoneFingerprint() ? 'behind' : 'current';
+}
+
+/**
+ * The Reset dialog's text. A signed-in reader is told what signing in again
+ * will give back: everything, the older copy, or nothing.
+ */
+export function resetDialogMessageKey(
+  signedIn: boolean,
+  copy: CloudCopyState,
+):
+  | 'settings.resetDialog.message'
+  | 'settings.resetDialog.message.signedIn'
+  | 'settings.resetDialog.message.signedInBehind'
+  | 'settings.resetDialog.message.signedInNoCopy' {
+  if (!signedIn) {
+    return 'settings.resetDialog.message';
+  }
+  return copy === 'behind'
+    ? 'settings.resetDialog.message.signedInBehind'
+    : copy === 'none'
+      ? 'settings.resetDialog.message.signedInNoCopy'
+      : 'settings.resetDialog.message.signedIn';
+}
+
+/**
  * What a backup does before it touches the network: stay out, read the cloud
  * copy first, or upload.
  *

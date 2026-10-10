@@ -36,6 +36,8 @@ import {
   BackupContents,
   BackupLookResult,
   buildAccountBackupPayload,
+  cloudCopyState,
+  CloudCopyState,
   countBackup,
   countBackupContents,
   decideAfterLook,
@@ -201,6 +203,8 @@ export interface AccountBackupApi {
    * data. Reset asks before wiping: signing back in restores that older copy.
    */
   cloudCopyBehind: () => boolean;
+  /** What the cloud holds, for the Reset dialog: older than the phone, current, or nothing (cloudCopyState). */
+  cloudCopyState: () => CloudCopyState;
   /**
    * Reset's last step, once the wipe has resolved: the phone holds nobody's
    * data now, so the accounts it was signed out of have nothing left to ask
@@ -1305,23 +1309,27 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
   }, [markSignedOut, persistAccount]);
 
   /**
-   * Whether the cloud copy is older than this phone: signed in, and the data
-   * differs from what the last upload carried. Read when Reset is asked about,
-   * not on every render — the fingerprint walks the whole history.
+   * What the cloud holds, for Reset's dialog and its backup (cloudCopyState):
+   * 'behind' when the data differs from what the last upload carried. Read
+   * when Reset is asked about, not on every render — the fingerprint walks the
+   * whole history.
    *
-   * Not while backups are held: a deleted copy (deleteRemoteBackup,
+   * Not 'behind' while backups are held: a deleted copy (deleteRemoteBackup,
    * copyWasDeleted) or an upload the reader has not agreed to leaves no copy,
    * and Reset's backup would send the whole history to the account they just
-   * emptied, or never agreed to, before the sign-out.
+   * emptied, or never agreed to, before the sign-out. That state is 'none'.
    */
-  const cloudCopyBehind = useCallback((): boolean => {
+  const cloudCopyStateNow = useCallback((): CloudCopyState => {
     const current = accountRef.current;
-    if (!available || !current || current.autoBackupPaused) {
-      return false;
+    if (!available || !current) {
+      return 'current';
     }
-    const { database, workoutHistory } = latestRef.current;
-    return current.lastBackupFingerprint !== accountBackupFingerprint(database, workoutHistory);
+    return cloudCopyState(current, () => {
+      const { database, workoutHistory } = latestRef.current;
+      return accountBackupFingerprint(database, workoutHistory);
+    });
   }, [available]);
+  const cloudCopyBehind = useCallback((): boolean => cloudCopyStateNow() === 'behind', [cloudCopyStateNow]);
 
   const forgetSignedOutAccounts = useCallback(async () => {
     await forgetSignedOutAccount();
@@ -1647,6 +1655,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
     backUpOrAsk,
     signOut,
     cloudCopyBehind,
+    cloudCopyState: cloudCopyStateNow,
     forgetSignedOutAccounts,
     deleteRemoteBackup,
     deleteAccount,

@@ -1959,6 +1959,38 @@ module.exports = [
     },
   },
   {
+    // Bug hunt 11: after a delete, or "Not now" on uploading to another account, the signed-in Reset
+    // dialog promised "Your cloud backup stays - sign in again to restore it" over no copy at all.
+    name: 'account hook: the Reset dialog says no cloud backup after a delete or a declined upload, older for a real older copy, and plain when current or signed out',
+    async run() {
+      const keyOf = async (env) => {
+        await env.settle();
+        return lib.resetDialogMessageKey(env.api.state.status !== 'signed_out', env.api.cloudCopyState());
+      };
+      const local = database({ workoutSessions: workouts(10) });
+      await withHook({ local }, async (env) => {
+        assert.equal((await env.api.signIn()).kind, 'backed_up');
+        assert.equal(await keyOf(env), 'settings.resetDialog.message.signedIn', 'a current copy');
+        await env.edit((db) => ({ ...db, workoutSessions: [...db.workoutSessions, workout('w10')] }));
+        assert.equal(await keyOf(env), 'settings.resetDialog.message.signedInBehind', 'a real older copy');
+        assert.equal(await env.api.deleteRemoteBackup(), 'done');
+        assert.equal(await keyOf(env), 'settings.resetDialog.message.signedInNoCopy', 'a deleted copy');
+        // The reader's own backup brings a copy back, and the promise with it.
+        assert.equal((await env.api.backUpOrAsk()).kind, 'backed_up');
+        assert.equal(await keyOf(env), 'settings.resetDialog.message.signedIn');
+        await env.api.signOut();
+        assert.equal(await keyOf(env), 'settings.resetDialog.message', 'signed out');
+      });
+      await withHook({ local: database({ workoutSessions: workouts(50) }) }, async (env) => {
+        await switchToNewAccount(env);
+        assert.equal((await env.api.signIn()).kind, 'confirm_upload');
+        assert.equal(await env.api.resolveUploadChoice('skip'), 'done');
+        assert.equal(env.server.blob, null);
+        assert.equal(await keyOf(env), 'settings.resetDialog.message.signedInNoCopy', '"Not now" on another account');
+      });
+    },
+  },
+  {
     // Bug hunt 10: a record the disk would not clear skipped the provider's sign-out, so the
     // screen said signed out while the next launch loaded the account and signed in again.
     name: 'account hook: a sign-out whose record could not be cleared still ends the provider session, and tells the caller',

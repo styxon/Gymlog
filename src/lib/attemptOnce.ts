@@ -6,10 +6,16 @@
  * (AppProvider.updatePreferences), so the value the effect watches flips
  * back and the effect runs again - a refused write was retried for as long as
  * the app stayed open, each try another failed write and another unhandled
- * rejection. Tried once per key: a refusal is left for the next launch, and a
- * write that landed forgets the key, so the same repair can be owed again.
+ * rejection. Tried once per key; a write that landed forgets the key, so the
+ * same repair can be owed again. A refusal is handed to `onRefused`, and the
+ * key stays until releaseRefused.
  */
-export function attemptOnce(tried: Set<string>, key: string, attempt: () => Promise<unknown>): void {
+export function attemptOnce(
+  tried: Set<string>,
+  key: string,
+  attempt: () => Promise<unknown>,
+  onRefused?: (error: unknown) => void,
+): void {
   if (tried.has(key)) {
     return;
   }
@@ -17,13 +23,30 @@ export function attemptOnce(tried: Set<string>, key: string, attempt: () => Prom
   let running: Promise<unknown>;
   try {
     running = Promise.resolve(attempt());
-  } catch {
+  } catch (error) {
+    onRefused?.(error);
     return;
   }
   running.then(
     () => {
       tried.delete(key);
     },
-    () => undefined,
+    (error) => onRefused?.(error),
   );
+}
+
+/**
+ * Forgets the keys whose write was refused, so each gets one more try. True
+ * when there was any: the caller then re-runs its effects. Called when the app
+ * returns to the foreground, so a refusal costs one retry per foreground, not a loop.
+ */
+export function releaseRefused(tried: Set<string>, refused: Set<string>): boolean {
+  if (refused.size === 0) {
+    return false;
+  }
+  for (const key of refused) {
+    tried.delete(key);
+  }
+  refused.clear();
+  return true;
 }
