@@ -77,8 +77,16 @@ export function toWorkingHistoryEntry(
  * added today does not change which of last time's sets were warm-ups — which
  * holds only while every added set keeps its mark, a swap included (bug hunt
  * W11, 2026-10-05).
+ *
+ * A lightened session has one set fewer than the programme asks, and carries
+ * the programme's number on its sets (`programmeSets`): read against the
+ * lighter count, a pyramid's first set looked like a warm-up (hunt, 2026-10-10).
  */
-export function programmeSetCount(sets: readonly { addedMidSession?: boolean }[]): number {
+export function programmeSetCount(sets: readonly { addedMidSession?: boolean; programmeSets?: number }[]): number {
+  const declared = sets.find((set) => typeof set.programmeSets === 'number' && Number.isFinite(set.programmeSets));
+  if (declared && declared.programmeSets! > 0) {
+    return Math.floor(declared.programmeSets!);
+  }
   return sets.filter((set) => !set.addedMidSession).length;
 }
 

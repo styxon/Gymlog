@@ -12,7 +12,7 @@ import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
 import { parseIntervalScheme } from '../../lib/intervalScheme';
 import { pauseStopwatch, type SessionMinutesClock } from '../../lib/minutesExercises';
-import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL } from '../../lib/weightDial';
+import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL, WARMUP_REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
@@ -506,7 +506,7 @@ function resolveNamedHistoryDraft(
   });
   // Working sets only, numbered as done: set 1 reads the first working set,
   // not a warm-up logged before it (lib/warmupSets).
-  const entry = found ? toWorkingHistoryEntry(found, exercise.sets) : null;
+  const entry = found ? toWorkingHistoryEntry(found, exercise.programmeSets ?? exercise.sets) : null;
   const matched = findHistoricalSetForIndex(entry, setIndex);
   if (!entry || !matched) {
     return blank;
@@ -567,7 +567,7 @@ function resolveHistoricalSetDraft(
   // an ordinary set neither seeds set 1 nor climbs with the work.
   const nowMs = options.nowMs ?? Date.now();
   const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs)
-    .map((entry) => toWorkingHistoryEntry(entry, exercise.sets));
+    .map((entry) => toWorkingHistoryEntry(entry, exercise.programmeSets ?? exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
@@ -728,6 +728,7 @@ function materializeExercise(
       rampTargetReps: resolved.rampTargetReps,
       status: 'pending',
       edited: false,
+      ...(typeof exercise.programmeSets === 'number' ? { programmeSets: exercise.programmeSets } : {}),
     };
   });
 
@@ -1782,7 +1783,7 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       // The same bounds a working set is held to, and a load: a warm-up is
       // offered on loaded lifts only, and 0 kg there is no warm-up (it was then
       // offered back every session — breaker, 2026-10-05).
-      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < 1 || reps > 100) {
+      if (!isLiftableWeight(loadKg) || !(loadKg > 0) || !Number.isInteger(reps) || reps < WARMUP_REPS_DIAL.min || reps > WARMUP_REPS_DIAL.max) {
         return state;
       }
       const session = cloneSession(state.activeSession);

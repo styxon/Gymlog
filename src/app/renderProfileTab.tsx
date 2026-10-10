@@ -858,7 +858,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
                     console.error('Sign-out failed', error);
                     showToast(t(preferences.appLanguage, 'account.signOutFailed'));
                   }),
-                cloudCopyBehind: () => accountBackup.cloudCopyBehind(),
+                cloudCopyState: () => accountBackup.cloudCopyState(),
                 onDeleteRemote: () => {
                   Alert.alert(
                     t(preferences.appLanguage, 'account.deleteRemote'),

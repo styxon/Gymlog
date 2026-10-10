@@ -1,4 +1,3 @@
-import { t } from '../lib/i18n';
 import { createId } from '../lib/ids';
 import { reorderPlanWeek } from '../lib/planSessionOrder';
 import type { PlanRotationSession } from '../lib/planRotation';
@@ -6,6 +5,7 @@ import { syncPlanEntriesToTemplate } from '../lib/planTemplateSync';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { newProgramSessionName, removeProgramSession } from '../lib/programSessionList';
 import { reorderProgramSessions } from '../lib/programSessionOrder';
+import { clampProgrammeName } from '../lib/templateBuilderSteps';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import type {
   PreferencesPatch,
@@ -13,7 +13,7 @@ import type {
   WorkoutTemplateSessionsEditResult,
 } from '../state/AppProvider';
 import type { AppDatabase, AppPreferences, WorkoutPlan, WorkoutTemplateSessionWithExercises } from '../types/models';
-import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 
 /**
  * A custom programme's days: renaming one, renaming the programme, moving,
@@ -75,7 +75,9 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * before they draw the pencil.
    */
   async function handleRenameProgramSession(templateId: string, sessionId: string, name: string) {
-    const trimmed = name.trim();
+    // Capped as the inputs are: Home's field had no limit, and a pasted
+    // paragraph was saved as a day's name.
+    const trimmed = clampProgrammeName(name);
     if (!trimmed) {
       return;
     }
@@ -96,9 +98,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
         return;
       }
     } catch (error) {
-      console.error('Failed to rename a day of the programme', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      reportPlanSaveFailed('Failed to rename a day of the programme', error, preferences.appLanguage, showToast);
       return;
     }
     // Remembered once the name is stored, so the display rule shows it as
@@ -124,7 +124,11 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * type over it (user 2026-09-08).
    */
   async function handleRenameCustomProgram(workoutTemplateId: string, name: string) {
-    await renameWorkoutTemplate(workoutTemplateId, name);
+    try {
+      await renameWorkoutTemplate(workoutTemplateId, name);
+    } catch (error) {
+      reportPlanSaveFailed('Failed to rename the programme', error, preferences.appLanguage, showToast);
+    }
   }
 
   /**
@@ -136,6 +140,18 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * mean copying it, and the reader has not asked for a copy by dragging.
    */
   async function handleReorderProgramSession(
+    workoutTemplateId: string,
+    sessionId: string,
+    toIndex: number,
+  ) {
+    try {
+      await writeSessionReorder(workoutTemplateId, sessionId, toIndex);
+    } catch (error) {
+      reportPlanSaveFailed('Failed to reorder the days of the programme', error, preferences.appLanguage, showToast);
+    }
+  }
+
+  async function writeSessionReorder(
     workoutTemplateId: string,
     sessionId: string,
     toIndex: number,
@@ -204,6 +220,7 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
     name: string,
   ): Promise<{ sessionId: string; weekSynced: boolean } | null> {
     const newSessionId = createId('workout_template_session');
+    const typedName = clampProgrammeName(name);
     const result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => ({
       kind: 'save',
       sessions: [
@@ -216,13 +233,25 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
           })),
         {
           id: newSessionId,
-          name: name.trim() || newProgramSessionName(sessions.length, preferences.appLanguage),
+          name: typedName || newProgramSessionName(sessions.length, preferences.appLanguage),
           exercises: [],
         },
       ],
     }));
     if (!result.saved) {
       return null;
+    }
+    // A name the reader typed is remembered once it is stored, as the rename
+    // does: "Treeni A" would otherwise read as the placeholder "Treeni 3". Its
+    // own write, so a failure here is not a failed add.
+    if (typedName) {
+      try {
+        await updatePreferences((current) => ({
+          readerSessionNames: { ...current.readerSessionNames, [newSessionId]: typedName },
+        }));
+      } catch (error) {
+        console.error('Failed to remember a typed day name', error);
+      }
     }
     // The week gets the new day on one of the reader's training days.
     return { sessionId: newSessionId, weekSynced: await syncPlanAfterDayEdit(workoutTemplateId) };

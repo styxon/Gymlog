@@ -32,6 +32,11 @@ export interface RecommendationReasonOptions {
    */
   conditioning?: boolean | null;
   /**
+   * The same for mobility (programHoldsMobility): "Also keeps mobility." is
+   * said only over a week that holds some. Null when unknown.
+   */
+  mobility?: boolean | null;
+  /**
    * One plain line for what the reader's caution flags changed in the week
    * they were handed (buildCautionAdaptationLine), or null when nothing was.
    * It goes in ahead of the generic goal line, which is the one it displaces
@@ -318,8 +323,15 @@ export function buildRecommendationReasonLines(
       ? resolveProjectedTrainingDays(selection.availableDays, projectedDays)
       : null;
   const scheduleDays = projectedWeekdays ? formatWeekdayList(projectedWeekdays, language) : null;
+  // "Also keeps" claims what the week holds: a strength week with no
+  // conditioning in it said it kept conditioning (hunt 11, 2026-10-10).
   const outcomeSummary = formatSecondaryOutcomeList(
-    selection.secondaryOutcomes.filter((outcome) => outcome !== 'consistency'),
+    selection.secondaryOutcomes.filter(
+      (outcome) =>
+        outcome !== 'consistency' &&
+        !(outcome === 'conditioning' && options.conditioning === false) &&
+        !(outcome === 'mobility' && options.mobility === false),
+    ),
     language,
   );
   const focusSummary = formatFocusAreaList(selection.focusAreas, language);

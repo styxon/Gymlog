@@ -94,6 +94,12 @@ export const REPS_DIAL = { min: 1, step: 1, max: 300 } as const;
 export const HOLD_DIAL = { min: 5, step: 5, max: 1800 } as const;
 /** Steady cardio's dial counts whole minutes; five hours is past any bout. */
 export const MINUTES_DIAL = { min: 1, step: 1, max: 300 } as const;
+/**
+ * A warm-up's reps: the working dial's floor, a lower ceiling. The store keeps
+ * a warm-up of up to 100 and refuses more, so the dial stops where the store
+ * does (workoutState `exercise/logWarmup`).
+ */
+export const WARMUP_REPS_DIAL = { min: 1, step: 1, max: 100 } as const;
 
 interface RepsDialBounds {
   min: number;
@@ -121,4 +127,50 @@ export function commitDialReps(text: string, previous: number, { min, max }: Rep
     return clamp(previous);
   }
   return clamp(Math.round(parsed));
+}
+
+/**
+ * Whether text typed into a reps, seconds or minutes dial is a count the set
+ * can log — the reps counterpart of `isLoggableTypedWeight`.
+ *
+ * `commitDialReps` clamps, so "0" logged 1 and "350" logged 300 while the
+ * field kept showing what was typed. A set must log what the field says: out
+ * of range, or not a number, the dial keeps its last good value and the log
+ * button waits. 0 is no set at all — the store refuses it too (`set/complete`).
+ */
+export function isLoggableTypedReps(text: string, { min, max }: RepsDialBounds): boolean {
+  const parsed = parseNumberInput(text);
+  if (parsed === null) {
+    return false;
+  }
+  const whole = Math.round(parsed);
+  return whole >= min && whole <= max;
+}
+
+/**
+ * Whether typed text is, or can still become, a loggable count: "3" for a hold
+ * is under the dial's floor of 5 but is the start of 30. The field flags the
+ * text only once no further digit could fix it — a value above the ceiling,
+ * 0, or not a number — while the log button waits on `isLoggableTypedReps`
+ * throughout. An empty field is mid-edit.
+ */
+export function isTypedRepsPossiblyValid(text: string, bounds: RepsDialBounds): boolean {
+  if (text.trim() === '' || isLoggableTypedReps(text, bounds)) {
+    return true;
+  }
+  const digits = text.trim();
+  if (!/^\d+$/.test(digits)) {
+    return false;
+  }
+  const typed = Number(digits);
+  if (typed <= 0) {
+    return false;
+  }
+  // Some longer number starting with these digits lands inside the bounds.
+  for (let scale = 10; typed * scale <= bounds.max; scale *= 10) {
+    if (typed * scale + scale - 1 >= bounds.min) {
+      return true;
+    }
+  }
+  return false;
 }

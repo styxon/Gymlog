@@ -116,7 +116,7 @@ module.exports = [
       // rename — the name is already stored by then (review, 2026-09-28).
       assert.match(
         body,
-        /showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);\s*return;\s*\}\s*try \{\s*await updatePreferences\(\(current\) => \(\{\s*readerSessionNames: \{ \.\.\.current\.readerSessionNames, \[sessionId\]: trimmed \},\s*\}\)\);\s*\} catch \(error\) \{\s*console\.error\(/,
+        /reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);\s*return;\s*\}\s*try \{\s*await updatePreferences\(\(current\) => \(\{\s*readerSessionNames: \{ \.\.\.current\.readerSessionNames, \[sessionId\]: trimmed \},\s*\}\)\);\s*\} catch \(error\) \{\s*console\.error\(/,
       );
       assert.ok(body.indexOf('editWorkoutTemplateSessions(') < body.indexOf('readerSessionNames'));
     },

@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const DIST = path.join(__dirname, '..', '..', '.test-dist');
-const { clampProfileName, clipToCodePoints, codePointLength, MAX_PROFILE_NAME_LENGTH, profileInitials, storedProfileName } = require(path.join(DIST, 'lib', 'profileName.js'));
+const { clampProfileName, clipToCharacters, characterCount, MAX_PROFILE_NAME_LENGTH, profileInitials, storedProfileName } = require(path.join(DIST, 'lib', 'profileName.js'));
 const { accountNameStep } = require(path.join(DIST, 'lib', 'accountNameAdoption.js'));
 const { normalizeDatabase } = require(path.join(DIST, 'storage', 'database.js'));
 const { createEmptyDatabase } = require(path.join(DIST, 'data', 'seed.js'));
@@ -26,14 +26,14 @@ module.exports = [
       const name = `${'A'.repeat(MAX_PROFILE_NAME_LENGTH - 1)}\u{1F600}tail`;
       const clipped = clampProfileName(name);
       assert.ok(wellFormed(clipped), 'cut through the middle of an emoji');
-      assert.equal(codePointLength(clipped), MAX_PROFILE_NAME_LENGTH);
+      assert.equal(characterCount(clipped), MAX_PROFILE_NAME_LENGTH);
       assert.ok(clipped.endsWith('\u{1F600}'));
-      assert.equal(clipToCodePoints('abc', 5), 'abc');
+      assert.equal(clipToCharacters('abc', 5), 'abc');
       // The cut can land after a space; the stored name is the same when stored again.
       const spaced = `${'A'.repeat(MAX_PROFILE_NAME_LENGTH - 1)} B`;
       assert.equal(storedProfileName(spaced), 'A'.repeat(MAX_PROFILE_NAME_LENGTH - 1));
       assert.equal(storedProfileName(storedProfileName(spaced)), storedProfileName(spaced));
-      assert.equal(clipToCodePoints('\u{1F600}\u{1F600}\u{1F600}', 2), '\u{1F600}\u{1F600}');
+      assert.equal(clipToCharacters('\u{1F600}\u{1F600}\u{1F600}', 2), '\u{1F600}\u{1F600}');
     },
   },
   {
@@ -49,7 +49,7 @@ module.exports = [
       const base = createEmptyDatabase('en');
       const loaded = normalizeDatabase({ ...base, preferences: { ...base.preferences, profileName: `${accountName}${'B'.repeat(10)}` } });
       assert.ok(wellFormed(loaded.preferences.profileName), 'the loader kept a lone surrogate');
-      assert.equal(codePointLength(loaded.preferences.profileName), MAX_PROFILE_NAME_LENGTH);
+      assert.equal(characterCount(loaded.preferences.profileName), MAX_PROFILE_NAME_LENGTH);
     },
   },
   {

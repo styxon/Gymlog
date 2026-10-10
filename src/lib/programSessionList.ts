@@ -86,6 +86,29 @@ export function nextStartableSessionIndex(exerciseCounts: ReadonlyArray<number>,
 }
 
 /**
+ * The day a programme's own "start" button runs.
+ *
+ * A programme Home is leading with starts what Home offers (`leadingNextId`):
+ * the rotation's next day, or the day the reader picked for today. The button
+ * said "Start next workout" and ran the first day with lifts in it, whatever
+ * the rotation had reached (bug hunt 11, home). A programme that is not
+ * leading has no rotation to read, so it starts its first day with lifts.
+ * Null when no day has anything in it.
+ */
+export function programmeStartSessionId(
+  sessions: ReadonlyArray<{ id: string; exerciseCount: number }>,
+  programId: string,
+  card: { programId: string; nextSession?: { id: string } | null } | null | undefined,
+): string | null {
+  const leadingNextId = card?.programId === programId ? card.nextSession?.id : null;
+  const offered = leadingNextId ? sessions.find((session) => session.id === leadingNextId) : null;
+  if (offered && offered.exerciseCount > 0) {
+    return offered.id;
+  }
+  return sessions.find((session) => session.exerciseCount > 0)?.id ?? null;
+}
+
+/**
  * A new day's stored name: the placeholder the template editor writes, "Päivä
  * N" in the reader's language. The day list prints a placeholder as "Treeni N"
  * by position, and Home names it from its lifts — both already know this

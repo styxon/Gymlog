@@ -496,7 +496,7 @@ module.exports = [
       const settings = read('src', 'screens', 'SettingsScreen.tsx');
       assert.match(
         settings,
-        /!account\?\.signedIn\s*\? 'settings\.resetDialog\.message'\s*:\s*resetCloudBehind\s*\? 'settings\.resetDialog\.message\.signedInBehind'\s*:\s*'settings\.resetDialog\.message\.signedIn'/,
+        /resetDialogMessageKey\(account\?\.signedIn === true, resetCloudCopy\)/,
       );
       assert.equal(
         t('en', 'account.deleteAccount.message.apple').includes('the next time they connect to our server'),

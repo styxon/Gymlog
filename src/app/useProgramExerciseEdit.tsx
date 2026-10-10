@@ -39,6 +39,7 @@ import type {
   WorkoutTemplateSessionWithExercises,
 } from '../types/models';
 import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 
 /**
  * Editing one lift of a programme from wherever the reader is looking at it:
@@ -226,7 +227,12 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       }
     };
     void next.then(settle, settle);
-    return next;
+    // Every caller presses it as `void`: a write the disk refused was an edit
+    // that sprang back with no word.
+    return next.catch((error) => {
+      reportPlanSaveFailed('Failed to edit the programme', error, preferences.appLanguage, showToast);
+      return false;
+    });
   }
 
   /** Resolves true when the programme actually changed. */

@@ -7,6 +7,7 @@ import {
   FirstRunSetupSelection,
 } from '../lib/firstRunSetup';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
+import { storedProfileName } from '../lib/profileName';
 import { resolveCycleAnchor } from '../lib/trainingSchedule';
 import { planLabelsForProgramme } from '../lib/trainingWeekSync';
 import { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
@@ -191,7 +192,9 @@ export function buildSetupPreferencePatch(
     // one since 2026-09-09, so a re-run whose seed had none wrote null over
     // the reader's own name — and over the account's, which is taken once and
     // not again (2026-09-16).
-    ...(selection.profileName?.trim() ? { profileName: selection.profileName.trim().slice(0, 32) } : {}),
+    // Stored the way Edit profile and the account adoption store it: cut on
+    // characters, so a re-run does not shorten or split a name that was valid.
+    ...(selection.profileName?.trim() ? { profileName: storedProfileName(selection.profileName) } : {}),
     setupGender: selection.gender,
     setupAge: selection.age ?? null,
     setupAgeRange: selection.ageRange ?? null,

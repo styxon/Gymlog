@@ -12,6 +12,7 @@ import { resumeProgramme, runningSetWithout, stopProgramme, switchActiveProgramm
 import type { useAppContext } from '../state/AppProvider';
 import type { WorkoutPlan } from '../types/models';
 import { haptics } from '../utils/haptics';
+import { reportPlanSaveFailed } from './planSaveFailure';
 import type { createProgrammeStarts } from './programmeStarts';
 
 type AppContextValue = ReturnType<typeof useAppContext>;
@@ -76,9 +77,7 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
    * (hunt 10, #37).
    */
   function saveRefused(error: unknown) {
-    console.error('Failed to save the programme switch', error);
-    void haptics.error();
-    showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+    reportPlanSaveFailed('Failed to save the programme switch', error, preferences.appLanguage, showToast);
   }
 
   /** The reader dropping a programme — the only path that removes one. */
@@ -274,13 +273,17 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
   }
 
   async function handleRemoveActiveProgram(planId: string) {
-    await updatePreferences({
-      activePlanIds: removeActiveProgram(preferences.activePlanIds, planId),
-      activePlanId:
-        preferences.activePlanId === planId
-          ? removeActiveProgram(preferences.activePlanIds, planId)[0] ?? null
-          : preferences.activePlanId,
-    });
+    try {
+      await updatePreferences({
+        activePlanIds: removeActiveProgram(preferences.activePlanIds, planId),
+        activePlanId:
+          preferences.activePlanId === planId
+            ? removeActiveProgram(preferences.activePlanIds, planId)[0] ?? null
+            : preferences.activePlanId,
+      });
+    } catch (error) {
+      saveRefused(error);
+    }
   }
 
   function handleStartReadyProgram(workoutTemplateId: string) {

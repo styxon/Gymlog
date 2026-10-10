@@ -129,8 +129,8 @@ module.exports = [
       // And a refused write is answered rather than swallowed: this was the
       // one caller of upsertWorkoutTemplate with no catch at all.
       assert.match(save, /catch \(error\) \{/);
-      assert.match(save, /if \(error instanceof ProgramLimitReachedError\) \{\s*setProgramLimitVisible\(true\);\s*return;/);
-      assert.match(save, /showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/);
+      assert.match(save, /if \(error instanceof ProgramLimitReachedError\) \{\s*setProgramLimitVisible\(true\);\s*return false;/);
+      assert.match(save, /reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/);
       // The success state still follows the write, never precedes it.
       assert.ok(save.indexOf('haptics.success()') > save.indexOf('await syncPlanToTemplate'));
       // And the plan write has an answer of its own. It rethrows on a refusal

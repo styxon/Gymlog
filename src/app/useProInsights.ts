@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { buildFatigueModel } from '../lib/fatigueModel';
+import { buildNextSessionAdvice, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import {
   buildCompletionConclusion,
   buildNextSessionMoment,
@@ -43,10 +44,23 @@ export interface ProInsightsDeps {
   completedSessionId: string | null;
   /** Today's local date key: what "lately" is counted back from. */
   todayKey: string;
+  /**
+   * Finds the programme a session was started from: the completion lock asks
+   * the progression gate about the lift just trained, and the gate needs the
+   * programme's rep range (lib/nextSessionAdvice). Built once in App.tsx and
+   * shared with the session analysis, so its cache is not thrown away per memo.
+   */
+  adviceTemplateLookup: AdviceTemplateLookup;
 }
 
 export function useProInsights(deps: ProInsightsDeps) {
-  const { database, preferences, completedSessionId, todayKey } = deps;
+  const {
+    database,
+    preferences,
+    completedSessionId,
+    todayKey,
+    adviceTemplateLookup,
+  } = deps;
 
   // The paywall-moments data layer: real lift histories → detections (free)
   // and deterministic conclusions (Pro / blurred). Pure, from logged sets.
@@ -60,7 +74,10 @@ export function useProInsights(deps: ProInsightsDeps) {
         workoutSessions: database.workoutSessions,
         exerciseLogs: database.exerciseLogs,
       }),
-    [database.exerciseLogs, database.workoutSessions],
+    // todayKey: the windows count back from today, so the day moving on changes
+    // the answer without a new log (a heavy week stayed "this week").
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [database.exerciseLogs, database.workoutSessions, todayKey],
   );
   /**
    * Recovery, in the shape the progression gate acts on.
@@ -126,16 +143,37 @@ export function useProInsights(deps: ProInsightsDeps) {
     () => pickCompletionLift(proLiftHistories, preferences.setupCautionFlags, completedSessionId),
     [completedSessionId, preferences.setupCautionFlags, proLiftHistories],
   );
-  const proCompletionMoment = useMemo(
-    () =>
-      proCompletionLift
-        ? {
-            conclusion: buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel),
-            moment: buildNextSessionMoment(proCompletionLift, preferences.appLanguage, preferences.setupLevel),
-          }
-        : null,
-    [preferences.appLanguage, preferences.setupLevel, proCompletionLift],
-  );
+  const proCompletionMoment = useMemo(() => {
+    if (!proCompletionLift) {
+      return null;
+    }
+    // The progression gate's answer for the lift's next session, from the
+    // programme it was trained in; nothing about a weight when that is gone.
+    const advice = buildNextSessionAdvice({
+      liftName: proCompletionLift.name,
+      sessionId: proCompletionLift.latest.sessionId,
+      sessions: database.workoutSessions,
+      logs: database.exerciseLogs,
+      lookupTemplate: adviceTemplateLookup,
+      level: preferences.setupLevel,
+    });
+    const conclusion = buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice);
+    // No change from the gate and no plateau: no lock, rather than one that promises a change.
+    if (!conclusion) {
+      return null;
+    }
+    return {
+      conclusion,
+      moment: buildNextSessionMoment(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice),
+    };
+  }, [
+    adviceTemplateLookup,
+    database.exerciseLogs,
+    database.workoutSessions,
+    preferences.appLanguage,
+    preferences.setupLevel,
+    proCompletionLift,
+  ]);
   // The Pro page's coach specimen: the deterministic read of the user's own
   // stalled lift — the same text Pro unlocks at the plateau moments.
   const proCoachSpecimen = useMemo(

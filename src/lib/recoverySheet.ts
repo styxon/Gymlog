@@ -2,7 +2,8 @@ import type { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import type { FatigueResult } from './fatigueModel';
 import { applyDecimalSeparator } from './format';
 import { t } from './i18n';
-import type { ProgressionFatigueSignal } from './progressionGate';
+import { progressionFatigueSignalAt, type ProgressionFatigueSignal } from './progressionGate';
+import type { FatigueModelInput } from './fatigueModel';
 import type { AppLanguage } from '../types/models';
 import { nearestDayStart } from './trainingSchedule';
 
@@ -165,7 +166,11 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
         : fatigue.signal === 'undertrained'
           ? fatigue.sessionCount7d === 0
             ? t(language, 'recovery.lead.rested')
-            : t(language, 'recovery.lead.light', { pct: under })
+            : fatigue.acuteLoadKg === 0
+              ? // Sessions with no weight on the bar (bodyweight, holds, cardio) are
+                // not a rested week, and 0 against a loaded month is not "100% lighter".
+                t(language, 'recovery.lead.noLoad')
+              : t(language, 'recovery.lead.light', { pct: under })
           : t(language, 'recovery.lead.green');
 
   const todos =
@@ -281,7 +286,9 @@ export function lightenRuntimeTemplate(template: WorkoutRuntimeTemplate): Workou
     sessions: template.sessions.map((session) => ({
       ...session,
       exercises: session.exercises.map((exercise) =>
-        exercise.sets >= 2 ? { ...exercise, sets: exercise.sets - 1 } : exercise,
+        exercise.sets >= 2
+          ? { ...exercise, sets: exercise.sets - 1, programmeSets: exercise.programmeSets ?? exercise.sets }
+          : exercise,
       ),
     })),
   };
@@ -293,6 +300,25 @@ export function lightenRuntimeTemplate(template: WorkoutRuntimeTemplate): Workou
  */
 export function lightenedFatigueSignal(signal: ProgressionFatigueSignal): ProgressionFatigueSignal {
   return signal === 'high' ? 'high' : 'elevated';
+}
+
+/**
+ * The template and recovery signal a programme session starts with.
+ *
+ * Recovery is read as of `now`, the moment of the start: a signal kept from the
+ * last save still counted a heavy week as this one days after it ended. A
+ * pending lighter session shortens the template and holds its loads.
+ */
+export function resolveProgrammeStart(
+  template: WorkoutRuntimeTemplate,
+  lighten: boolean,
+  fatigueInput: FatigueModelInput,
+  now: Date,
+): { template: WorkoutRuntimeTemplate; fatigueSignal: ProgressionFatigueSignal } {
+  const fatigueSignal = progressionFatigueSignalAt(fatigueInput, now);
+  return lighten
+    ? { template: lightenRuntimeTemplate(template), fatigueSignal: lightenedFatigueSignal(fatigueSignal) }
+    : { template, fatigueSignal };
 }
 
 // ── "Lisää lepopäivä huomiselle" ───────────────────────────────────────────

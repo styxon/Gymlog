@@ -157,7 +157,7 @@ module.exports = [
       // reader at the free cap saw the paywall, said no, and lost the offer.
       assert.match(
         code,
-        /const adopted = await handleAdoptReadyProgram\(nextTemplateId, \{ lead: true, replacingPlanId: planId \}\);\s*if \(adopted\) \{\s*await dismissCompletionCard\(planId\);/,
+        /adopted = await handleAdoptReadyProgram\(nextTemplateId, \{ lead: true, replacingPlanId: planId \}\);[\s\S]*?if \(adopted\) \{[\s\S]*?await writeCompletionDismissal\(planId\);/,
       );
       // And a restart clears the dismissal rather than adding one: the card
       // hides because the block is no longer finished, and the list it was

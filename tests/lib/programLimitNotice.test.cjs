@@ -131,7 +131,7 @@ module.exports = [
       for (const adopt of ['handleAdoptReadyProgram', 'handleAdoptCustomProgram']) {
         assert.match(
           workoutTab,
-          new RegExp(`void ${adopt}\\(route\\.workoutTemplateId, \\{ lead: true \\}\\)\\.then\\(\\(adopted\\) => \\{\\s*if \\(adopted\\) \\{\\s*showToast\\(t\\(preferences\\.appLanguage, 'toast\\.programStarted'\\)\\);`),
+          new RegExp(`void ${adopt}\\(route\\.workoutTemplateId, \\{ lead: true \\}\\)\\s*\\.then\\(\\(adopted\\) => \\{\\s*if \\(adopted\\) \\{\\s*showToast\\(t\\(preferences\\.appLanguage, 'toast\\.programStarted'\\)\\);`),
           `${adopt} confirms before the write resolves, or leaves the page`,
         );
       }

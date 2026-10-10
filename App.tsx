@@ -10,10 +10,12 @@ import { isWorkoutInProgress } from './src/lib/activeWorkout';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
 import { settleSavedCardioRun } from './src/lib/cardio';
 import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
+import { programmeStartSessionId } from './src/lib/programSessionList';
 import { formatTime, pluralize } from './src/lib/format';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
 import { haptics } from './src/utils/haptics';
+import { reportPlanSaveFailed } from './src/app/planSaveFailure';
 import { useScheduledNotifications } from './src/hooks/useScheduledNotifications';
 import { activeWorkoutStartedAt } from './src/lib/notificationPlan';
 import { usePendingAiLogDeletions } from './src/hooks/usePendingAiLogDeletions';
@@ -113,6 +115,7 @@ import { createOnboardingFinishes } from './src/app/onboardingFinishes';
 import { useDeviceSwitches } from './src/app/useDeviceSwitches';
 import { useStoreBillingSync } from './src/app/useStoreBillingSync';
 import { useFunnelAnalytics } from './src/app/useFunnelAnalytics';
+import { useAttemptOnce } from './src/app/useAttemptOnce';
 import { useInstallStamps } from './src/app/useInstallStamps';
 import { useSetupWeightSeed } from './src/app/useSetupWeightSeed';
 import { useTodayKey } from './src/app/useTodayKey';
@@ -129,6 +132,7 @@ import { useSetupReadings } from './src/app/useSetupReadings';
 import { useLeadPlanRepair } from './src/app/useLeadPlanRepair';
 import { useTemplateBuilderDraft } from './src/app/useTemplateBuilderDraft';
 import { useProInsights } from './src/app/useProInsights';
+import { createAdviceTemplateLookup } from './src/app/adviceTemplateLookup';
 import { useHomeStatCards } from './src/app/useHomeStatCards';
 import { useCoachAdviceMemory } from './src/app/useCoachAdviceMemory';
 import { useCustomProgramViews } from './src/app/useCustomProgramViews';
@@ -431,6 +435,8 @@ function VinhaApp() {
 
   const { todayKey, todayStartMs } = useTodayKey();
 
+  const tryOnce = useAttemptOnce();
+
   useInstallStamps({ appHydrated, preferences, updatePreferences });
 
   // A saved run that came back running (its pause and its clear both lost) is stopped where it was
@@ -532,7 +538,10 @@ function VinhaApp() {
     startTransition(() =>
       setNavigationState((current) => ({
         route: nextRoute,
-        history: current.history,
+        // No copy of the landing left on top: a builder opened from a
+        // programme page saves back onto that page, and the first Back popped
+        // the page it was already on (hunt 11).
+        history: withoutTrailingRoute(current.history, nextRoute),
       })),
     );
   }
@@ -584,6 +593,22 @@ function VinhaApp() {
       return;
     }
     leave();
+  }
+
+  /**
+   * The same question for the exits that arrive from outside the screen: a
+   * widget tap, a notification tap, the lock screen's resume. They reset the
+   * route directly and unmounted an unsaved builder without asking. The
+   * question is answerable, so a resume is held for it, not blocked.
+   */
+  function resetToRouteThroughGuard(nextRoute: AppRoute) {
+    leaveThroughScreenGuard(() => resetToRoute(nextRoute));
+  }
+
+  function navigateToActiveWorkoutThroughGuard(options?: { message?: string; resume?: boolean }) {
+    leaveThroughScreenGuard(() => {
+      navigateToActiveWorkout(options);
+    });
   }
 
   /**
@@ -786,6 +811,17 @@ function VinhaApp() {
     unitPreference,
     todayKey,
   });
+  // One lookup for the session analysis and the completion lock, so the programmes it adapts are adapted once.
+  const adviceTemplateLookup = useMemo(
+    () =>
+      createAdviceTemplateLookup({
+        workoutTemplates,
+        getWorkoutTemplateSessions,
+        exerciseLibrary,
+        defaultRestSeconds: preferences.defaultRestSeconds,
+      }),
+    [workoutTemplates, getWorkoutTemplateSessions, exerciseLibrary, preferences.defaultRestSeconds],
+  );
   const {
     proLiftHistories,
     proFatigue,
@@ -799,6 +835,7 @@ function VinhaApp() {
     preferences,
     completedSessionId: completionSummary?.sessionId ?? null,
     todayKey,
+    adviceTemplateLookup,
   });
   // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
   // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
@@ -866,11 +903,11 @@ function VinhaApp() {
     );
   }
 
-  navigateToActiveWorkoutRef.current = () => navigateToActiveWorkout({ resume: true });
+  navigateToActiveWorkoutRef.current = () => navigateToActiveWorkoutThroughGuard({ resume: true });
   finishFromNotificationRef.current = () => {
     // "Finish workout" from the lock screen opens the session; ending it is a
     // confirmed step on that screen, not a silent write from a notification.
-    navigateToActiveWorkout({ resume: true });
+    navigateToActiveWorkoutThroughGuard({ resume: true });
   };
 
   function getWorkoutLoggerFallbackRoute() {
@@ -903,7 +940,6 @@ function VinhaApp() {
     updatePreferences,
     deleteCompletedWorkoutSession,
     workout,
-    progressionFatigueSignal,
     sessionAdaptationFor,
     setHeldSessionAdaptations,
     setRunningCapSheet,
@@ -1288,18 +1324,23 @@ function VinhaApp() {
    */
   async function handlePickTodaySession(sessionId: string) {
     const now = new Date();
-    await updatePreferences({
-      todaySession: {
-        dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-        sessionId,
-        // Session ids repeat across programmes; this says which one's day.
-        workoutTemplateId: homeActivePlanCard?.programId ?? null,
-        // The instant matters, not just the day: picking a session you already
-        // trained today is how you say "again", and without a timestamp it was
-        // indistinguishable from the stale pick left over from this morning.
-        pickedAt: now.getTime(),
-      },
-    });
+    try {
+      await updatePreferences({
+        todaySession: {
+          dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
+          sessionId,
+          // Session ids repeat across programmes; this says which one's day.
+          workoutTemplateId: homeActivePlanCard?.programId ?? null,
+          // The instant matters, not just the day: picking a session you already
+          // trained today is how you say "again", and without a timestamp it was
+          // indistinguishable from the stale pick left over from this morning.
+          pickedAt: now.getTime(),
+        },
+      });
+    } catch (error) {
+      // Wired as `void`: a refused write was a pick that sprang back unsaid.
+      reportPlanSaveFailed('Failed to save the picked session', error, preferences.appLanguage, showToast);
+    }
   }
 
   const {
@@ -1451,7 +1492,13 @@ function VinhaApp() {
 
   function handleStartCustomProgram(workoutTemplateId: string) {
     const customTemplate = customWorkoutRuntimeMap[workoutTemplateId];
-    const firstSessionId = customTemplate?.sessions.find((session) => session.exercises.length > 0)?.id;
+    // The day Home offers when this programme leads, else its first day with
+    // lifts in it.
+    const firstSessionId = programmeStartSessionId(
+      (customTemplate?.sessions ?? []).map((session) => ({ id: session.id, exerciseCount: session.exercises.length })),
+      workoutTemplateId,
+      homeActivePlanCard,
+    );
     if (!firstSessionId) {
       showToast(t(preferences.appLanguage, 'toast.addExercisesTemplate'));
       navigate({ tab: 'workout', screen: 'template', workoutTemplateId });
@@ -1757,16 +1804,20 @@ function VinhaApp() {
       profileName: preferences.profileName,
       adopted: preferences.accountNameAdopted,
     });
+    // Once per session (useAttemptOnce): a write the disk refuses is rolled
+    // back, which puts this effect's inputs back and ran it again, forever.
     if (step.kind === 'markAdopted') {
-      void updatePreferences({ accountNameAdopted: true });
+      tryOnce('accountName:mark', () => updatePreferences({ accountNameAdopted: true }));
     } else if (step.kind === 'adopt') {
-      void updatePreferences({ profileName: step.name, accountNameAdopted: true });
+      const name = step.name;
+      tryOnce(`accountName:adopt:${name}`, () => updatePreferences({ profileName: name, accountNameAdopted: true }));
     }
   }, [
     accountBackup.state.name,
     appHydrated,
     preferences.accountNameAdopted,
     preferences.profileName,
+    tryOnce,
     updatePreferences,
   ]);
 
@@ -1804,11 +1855,11 @@ function VinhaApp() {
     homeTrainingSchedule,
     recommendedReadyTemplate,
     widgetCompletedWorkoutDayStarts,
-    resetToRoute,
-    navigateToActiveWorkout,
+    resetToRoute: resetToRouteThroughGuard,
+    navigateToActiveWorkout: navigateToActiveWorkoutThroughGuard,
   });
 
-  useNotificationRoute({ appHydrated, resetToRoute });
+  useNotificationRoute({ appHydrated, resetToRoute: resetToRouteThroughGuard });
 
   const {
     exportablePlans,
@@ -1820,6 +1871,7 @@ function VinhaApp() {
     guidedNextUp,
   } = usePlanReadouts({
     workoutTemplates,
+    adviceTemplateLookup,
     getWorkoutTemplateSessions,
     homeActivePlanCard,
     analysisSessionId,

@@ -142,6 +142,20 @@ export function liftOfSet(exercise: LiftIdentityExercise, set: LiftIdentitySourc
 }
 
 /**
+ * The slot's sets that belong to the lift it holds now, in slot order: the
+ * pending ones, and those logged as this lift. After a swap the sets done
+ * before it stay on the lift they were done as (`liftBeforeSwap`), so what
+ * "today" means for the current lift — its top set, its history row, its chips
+ * — leaves them out: a 100 kg barbell set is not a dumbbell press of 100 kg
+ * (hunt 11).
+ */
+export function setsOfCurrentLift<T extends LiftIdentitySource>(
+  exercise: LiftIdentityExercise & { sets: readonly T[] },
+): T[] {
+  return exercise.sets.filter((set) => liftBeforeSwap(exercise, set) === null);
+}
+
+/**
  * Where a set sits within the lift it belongs to — the number that lift's
  * history knows it by.
  *

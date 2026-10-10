@@ -327,7 +327,8 @@ module.exports = [
       const lifts = history({ weights: [60, 62.5, 65] });
       const lift = pickCompletionLift(lifts);
       assert.ok(lift);
-      const conclusion = buildCompletionConclusion(lift, 'en', 'beginner');
+      // The step is the progression gate's answer (lib/nextSessionAdvice).
+      const conclusion = buildCompletionConclusion(lift, 'en', 'beginner', { kind: 'raise', fromKg: 65, toKg: 67.5 });
       assert.match(conclusion.body, /67\.5 kg/);
       assert.match(conclusion.body, /top of its rep range/);
     },
@@ -407,7 +408,7 @@ module.exports = [
     name: 'both pro moments hand the sheet a month-out bar',
     run() {
       const climbing = history({ weights: [80, 82.5, 85, 87.5] })[0];
-      const nextMoment = buildNextSessionMoment(climbing, 'en', null);
+      const nextMoment = buildNextSessionMoment(climbing, 'en', null, { kind: 'raise', fromKg: 87.5, toKg: 90 });
       assert.equal(nextMoment.horizonValue, horizonStepKg(climbing, null).kg);
       assert.equal(nextMoment.horizonSessions, 7);
       assert.ok(nextMoment.horizonValue > nextMoment.nextValue);

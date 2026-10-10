@@ -164,3 +164,18 @@ export function expandRunningIdsWithSources(
   }
   return [...ids];
 }
+
+/**
+ * Whether a ready programme is running now — itself, or the reader's own copy
+ * of it. A stopped programme is not: only ids a plan is running count.
+ */
+export function isReadyProgrammeRunning(
+  readyTemplateId: string,
+  runningTemplateIds: readonly string[],
+  templates: readonly ProgrammeCopyTemplate[],
+): boolean {
+  return (
+    runningTemplateIds.includes(readyTemplateId)
+    || findHeldReadyProgrammeCopyId(readyTemplateId, templates, runningTemplateIds) !== null
+  );
+}

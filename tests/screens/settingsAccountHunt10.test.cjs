@@ -43,8 +43,8 @@ module.exports = [
     name: 'reset: the dialog does not promise a restorable copy when the cloud copy is behind',
     run() {
       const settings = strip(read('src/screens/SettingsScreen.tsx'));
-      assert.match(settings, /cloudCopyBehind\(\)/);
-      assert.match(settings, /'settings\.resetDialog\.message\.signedInBehind'/);
+      assert.match(settings, /cloudCopyState\(\)/);
+      assert.match(settings, /resetDialogMessageKey\(/);
       for (const language of ['en', 'fi']) {
         const text = t(language, 'settings.resetDialog.message.signedInBehind');
         assert.notEqual(text, t(language, 'settings.resetDialog.message.signedIn'));

@@ -1,8 +1,9 @@
 import { FatigueSignal } from './fatigueModel';
 import { I18nKey } from './i18n';
-import { isLiftPlateaued } from './proInsights';
+import { exerciseNameLabel } from './exerciseNameLabel';
+import { isLiftPlateaued, recentLifts } from './proInsights';
 import { LiftHistory, sessionBestPoints } from './trainingHistory';
-import type { SetupCautionFlag } from '../types/models';
+import type { AppLanguage, SetupCautionFlag } from '../types/models';
 
 /**
  * The three coach answers a free reader gets, at moments the app chooses.
@@ -79,6 +80,8 @@ export interface CoachDemoMomentInput {
   fatigueSignal: FatigueSignal | null;
   /** Flagged body areas: a lift held for one is not a stall to ask about. */
   cautionFlags?: SetupCautionFlag[] | null;
+  /** The reader's language: a lift is named in it inside the question. */
+  language: AppLanguage;
   now?: Date;
 }
 
@@ -136,7 +139,7 @@ function decliningLift(lifts: readonly LiftHistory[]): LiftHistory | null {
  */
 export function pickDemoQuestion(
   key: CoachDemoMomentKey,
-  input: Pick<CoachDemoMomentInput, 'lifts' | 'fatigueSignal' | 'cautionFlags'>,
+  input: Pick<CoachDemoMomentInput, 'lifts' | 'fatigueSignal' | 'cautionFlags' | 'language'>,
 ): CoachDemoMoment {
   if (key === 'week1') {
     // Nothing has a trend yet at a week. The question that pays off here is
@@ -147,15 +150,16 @@ export function pickDemoQuestion(
   }
 
   if (key === 'month1') {
+    const { language } = input;
     const stalled = stalledLift(input.lifts, input.cautionFlags);
     if (stalled) {
       // The strongest one available: this is the exact conclusion the reader
       // has been seeing blurred on Home and Progress for a month.
-      return { key, questionKey: 'coach.demo.month1.stalled', vars: { lift: stalled.name } };
+      return { key, questionKey: 'coach.demo.month1.stalled', vars: { lift: exerciseNameLabel(language, stalled.name) } };
     }
     const declining = decliningLift(input.lifts);
     if (declining) {
-      return { key, questionKey: 'coach.demo.month1.declining', vars: { lift: declining.name } };
+      return { key, questionKey: 'coach.demo.month1.declining', vars: { lift: exerciseNameLabel(language, declining.name) } };
     }
     return { key, questionKey: 'coach.demo.month1.pace' };
   }
@@ -200,7 +204,9 @@ export function resolveDueCoachDemoMoment(input: CoachDemoMomentInput): CoachDem
       // hardest question to the emptiest log.
       return null;
     }
-    return pickDemoQuestion(spec.key, input);
+    // The question is about now: a lift dropped months ago keeps its stall
+    // run and would be asked about, as Home's plateau card once did.
+    return pickDemoQuestion(spec.key, { ...input, lifts: recentLifts([...input.lifts], now) });
   }
 
   return null;

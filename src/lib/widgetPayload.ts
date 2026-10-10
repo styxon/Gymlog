@@ -609,10 +609,15 @@ export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayloa
       // does: the logged days are every programme's and freestyle's too, and a
       // freestyle workout made the card say "Done" while its own tap and Home
       // still offered this plan's session (bug hunt 10, 2026-10-09).
+      //
+      // Unless the reader has since picked a session for today: a standing
+      // pick is by definition not yet trained (resolveTodaySessionPick drops
+      // one that was), Home offers it and the tap opens it, so the card says
+      // "Treeni", not "Valmis" (bug hunt 11, home).
       const done =
         session !== null &&
         (offset === 0 && input.sessionForecast
-          ? input.sessionForecast.trainedToday
+          ? input.sessionForecast.trainedToday && picked === null
           : workoutDoneDays.has(toDayStartMs(date)));
       return {
         kind: done ? ('done' as const) : session ? ('work' as const) : ('rest' as const),

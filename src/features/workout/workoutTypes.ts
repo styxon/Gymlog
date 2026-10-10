@@ -106,6 +106,12 @@ export interface WorkoutTemplateExercise {
   progressionPriority: WorkoutProgressionPriority;
   trackingMode: WorkoutTrackingMode;
   sets: number;
+  /**
+   * The programme's own set count, when today's session was lightened and
+   * `sets` is one fewer. Which of last time's sets were warm-ups is read
+   * against what the programme asks, not against today's lighter dose.
+   */
+  programmeSets?: number;
   repsMin: number;
   repsMax: number;
   restSecondsMin: number;
@@ -228,6 +234,14 @@ export interface WorkoutSetInstance {
    * as set 1 (bug hunt W11, 2026-10-05).
    */
   addedMidSession?: boolean;
+  /**
+   * The programme's own set count for this lift, on every set of a lightened
+   * session whose `sets` is one fewer (lib/recoverySheet lightenRuntimeTemplate).
+   * What programmeSetCount reads first, so the prefill, a swap and the "Last
+   * time" panel all tell last time's warm-ups from its work against the same
+   * number. Absent on every ordinary session and on any saved before it.
+   */
+  programmeSets?: number;
   /**
    * An added set whose opening weight a swap re-resolved from the new lift's
    * own history: the number is the app's now (`borrowed` or `none` in

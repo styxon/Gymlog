@@ -10,6 +10,7 @@ import type { SignInProvider } from '../features/account/accountAuth';
 import { buildFeedbackMailto } from '../lib/feedbackLink';
 import { formatDateNumeric } from '../lib/format';
 import { LEGAL_ENTITY } from '../lib/legalDocuments';
+import { type CloudCopyState, resetDialogMessageKey } from '../lib/accountBackup';
 import { profileInitials } from '../lib/profileName';
 import { t } from '../lib/i18n';
 import { resolveProEntitlement } from '../lib/proEntitlement';
@@ -88,11 +89,12 @@ interface SettingsScreenProps {
     onBackupNow: () => void;
     onSignOut: () => void;
     /**
-     * Whether the cloud copy is older than the phone, read when the Reset
-     * dialog opens: "your cloud backup stays" is only a promise of a restore
-     * when the copy holds everything.
+     * What the cloud holds, read when the Reset dialog opens: "your cloud
+     * backup stays" is only a promise of a restore when the copy holds
+     * everything, and false when there is no copy (a deleted one, an upload
+     * the reader declined).
      */
-    cloudCopyBehind: () => boolean;
+    cloudCopyState: () => CloudCopyState;
     onDeleteRemote: () => void;
     /** Deletes the cloud copy and the server's sign-in, then signs out (App Review 5.1.1(v)). */
     onDeleteAccount: () => void;
@@ -301,7 +303,7 @@ export function SettingsScreen({
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const [resetVisible, setResetVisible] = useState(false);
-  const [resetCloudBehind, setResetCloudBehind] = useState(false);
+  const [resetCloudCopy, setResetCloudCopy] = useState<CloudCopyState>('current');
   const [restoreAsideVisible, setRestoreAsideVisible] = useState(false);
   const language = preferences.appLanguage;
   // A redeemed promo is Pro too, so the badge cannot read the preview switch.
@@ -678,7 +680,7 @@ export function SettingsScreen({
               last
               disabled={account?.busy === true}
               onPress={() => {
-                setResetCloudBehind(account?.signedIn ? account.cloudCopyBehind() : false);
+                setResetCloudCopy(account?.signedIn ? account.cloudCopyState() : 'current');
                 setResetVisible(true);
               }}
             />
@@ -766,14 +768,7 @@ export function SettingsScreen({
         language={language}
         visible={resetVisible}
         title={t(language, 'settings.resetData')}
-        message={t(
-          language,
-          !account?.signedIn
-            ? 'settings.resetDialog.message'
-            : resetCloudBehind
-              ? 'settings.resetDialog.message.signedInBehind'
-              : 'settings.resetDialog.message.signedIn',
-        )}
+        message={t(language, resetDialogMessageKey(account?.signedIn === true, resetCloudCopy))}
         confirmLabel={t(language, 'settings.resetDialog.confirm')}
         cancelLabel={t(language, 'common.cancel')}
         destructive

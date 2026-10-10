@@ -65,7 +65,7 @@ module.exports = [
       const fs = require('node:fs');
       const path = require('node:path');
       const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
-      assert.match(player, /exercise && !minutesMode\s*\?\s*resolveGuidedSetPlan\(exercise\.sets, step\.setIndex, exercise\.trackingMode, exercise\.swappedAfterSetIndex\)/);
+      assert.match(player, /exercise && !minutesMode\s*\?\s*resolveGuidedSetPlan\(liftSets, step\.setIndex, exercise\.trackingMode, exercise\.swappedAfterSetIndex\)/);
       assert.match(player, /t\(language, 'guided\.card\.today'\)/);
       const { t } = require('../../.test-dist/lib/i18n.js');
       assert.equal(t('fi', 'guided.card.today'), 'TÄNÄÄN');

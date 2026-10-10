@@ -5,6 +5,7 @@ import { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { formatShortDate, formatWeight } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { t } from './i18n';
+import { NO_NEXT_SESSION_ADVICE, type NextSessionAdvice } from './nextSessionAdvice';
 import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
 import {
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -380,6 +381,7 @@ export function buildNextSessionMoment(
   lift: LiftHistory,
   language: AppLanguage,
   level: SetupLevel | null | undefined,
+  advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
 ): ProMomentContent {
   const liftLabel = exerciseNameLabel(language, lift.name);
   const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
@@ -398,8 +400,11 @@ export function buildNextSessionMoment(
         })
       : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
     bars,
-    nextValue: nextStepKg(lift, level),
-    horizonValue: horizon.kg,
+    // What the gate says the next session opens on: the step up when it earned
+    // one, this weight while the reps are rebuilt, and no bar when it says
+    // neither (a break, a first session at a weight, a workout with no programme).
+    nextValue: advice.kind === 'raise' ? advice.toKg : advice.kind === 'rebuild_reps' ? advice.kg : null,
+    horizonValue: advice.kind === 'raise' ? horizon.kg : null,
     horizonSessions: horizon.sessions,
     barLabel: t(language, 'pro.sheet.next.barLabel', {
       lift: liftLabel.toUpperCase(),
@@ -441,17 +446,28 @@ export function buildCompletionConclusion(
   lift: LiftHistory,
   language: AppLanguage,
   level: SetupLevel | null | undefined,
-): LockedConclusion {
+  advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
+): LockedConclusion | null {
   const liftLabel = exerciseNameLabel(language, lift.name);
   if (lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
     return buildPlateauConclusion(lift, language, level);
   }
+  // The gate's answer for the next session (nextSessionAdvice), not a step added
+  // to the top set: a raise only where the gate raises, the reps first where
+  // they fell. Where the gate has no change for the next session there is no
+  // lock at all: the teaser promises "one change for next time".
+  if (advice.kind === 'none') {
+    return null;
+  }
+  if (advice.kind === 'raise') {
+    return {
+      teaser: t(language, 'pro.completion.teaser'),
+      body: t(language, 'pro.completion.body', { lift: liftLabel, weight: formatWeight(advice.toKg, 'kg') }),
+    };
+  }
   return {
     teaser: t(language, 'pro.completion.teaser'),
-    body: t(language, 'pro.completion.body', {
-      lift: liftLabel,
-      weight: formatWeight(nextStepKg(lift, level), 'kg'),
-    }),
+    body: t(language, 'analysis.next.recover', { lift: liftLabel }),
   };
 }
 

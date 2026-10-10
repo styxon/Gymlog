@@ -177,6 +177,14 @@ const EXERCISE_METADATA: Record<string, ExercisePreferenceMetadata> = {
     homeFriendly: true,
     jointFriendly: { shoulders: true, elbows: true },
   },
+  // The swap pool's name for it since the rename; under the old key alone it
+  // fell to the generic pull-up rule and scored 1.75 against 4.47 (hunt 11).
+  'band assisted pull-up': {
+    modality: 'bodyweight',
+    lowEquipmentFriendly: true,
+    homeFriendly: true,
+    jointFriendly: { shoulders: true, elbows: true },
+  },
   'pull-up': {
     modality: 'bodyweight',
     lowEquipmentFriendly: true,

@@ -293,7 +293,7 @@ module.exports = [
         .replace(/^\s*\/\/.*$/gm, '');
       assert.match(
         wiring,
-        /const lead = resolveLeadPlanId\(\{\s*activePlanId: preferences\.activePlanId,\s*activePlanIds: preferences\.activePlanIds,\s*plans: database\.workoutPlans,\s*\}\);\s*if \(lead !== preferences\.activePlanId\) \{\s*void updatePreferences\(\{ activePlanId: lead \}\);/,
+        /const lead = resolveLeadPlanId\(\{\s*activePlanId: preferences\.activePlanId,\s*activePlanIds: preferences\.activePlanIds,\s*plans: database\.workoutPlans,\s*\}\);\s*if \(lead !== preferences\.activePlanId\) \{\s*tryOnce\(`lead:\$\{lead\}`, \(\) => updatePreferences\(\{ activePlanId: lead \}\)\);/,
       );
       // The old repair, which looked only for an empty lead.
       assert.doesNotMatch(wiring, /if \(!appHydrated \|\| preferences\.activePlanId\) \{/);

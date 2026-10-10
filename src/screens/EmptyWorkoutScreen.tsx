@@ -679,6 +679,10 @@ export function EmptyWorkoutScreen({
     // way out (audit round 4, 2026-09-20).
     if (exercises.length <= 1) {
       setRest(null);
+      // An emptied board is no session: the next first lift starts the clock
+      // anew, as the draft and its id are made new beside it. Kept, a 90 min
+      // gap showed 1:30:00 at the first set and was saved.
+      setStartedAtMs(null);
     }
   };
 

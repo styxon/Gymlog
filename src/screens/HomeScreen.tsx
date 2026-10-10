@@ -58,6 +58,7 @@ import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
 import { localizeSessionFocus, localizeSessionName, localizeWorkoutFocus } from '../lib/sessionNameLabel';
 import { weekdayCodeForDate, weekdayLabel } from '../lib/planWeekdays';
 import { I18nKey, t } from '../lib/i18n';
+import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
 import { ProMomentContent } from '../lib/proInsights';
 import { CutButton } from '../components/CutButton';
 import { VinhaWordmark } from '../components/VinhaWordmark';
@@ -2182,6 +2183,7 @@ export function HomeScreen({
                     onChangeText={setRenameDraft}
                     autoFocus
                     selectTextOnFocus
+                    maxLength={PROGRAMME_NAME_MAX}
                     placeholderTextColor={theme.faint}
                     style={styles.todayRenameInput}
                     onSubmitEditing={() => {

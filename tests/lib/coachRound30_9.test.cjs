@@ -45,7 +45,7 @@ module.exports = [
       const app = require('../helpers/appWiringSource.cjs').readAppWiring().replace(/\r\n/g, '\n');
       assert.match(
         app,
-        /homeActivePlanCard\?\.nextSession &&\s*\(Boolean\(homeActivePlanCard\.todayPickSessionId\) \|\| trainsOn\(homeTrainingSchedule, new Date\(todayStartMs\)\)\)/,
+        /homeActivePlanCard\?\.nextSession &&\s*sessionIsOnPlanToday\(\{[^}]*pickStands: Boolean\(homeActivePlanCard\.todayPickSessionId\),[^}]*scheduledToday: trainsOn\(homeTrainingSchedule, new Date\(todayStartMs\)\),/,
       );
     },
   },

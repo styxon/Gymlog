@@ -9,6 +9,7 @@
  * here; the screen only draws it.
  */
 import type { I18nKey } from './i18n';
+import { clipToCharacters } from './profileName';
 
 export type TemplateBuilderStep = 'name' | 'days' | 'base' | 'build' | 'review';
 
@@ -27,6 +28,11 @@ export const MAX_TEMPLATE_DAYS: TemplateDayCount = 6;
  * one door and impossible to type through the other (hunt 2026-10-09).
  */
 export const PROGRAMME_NAME_MAX = 60;
+
+/** A typed name as it is stored: trimmed, and no longer than the inputs allow. */
+export function clampProgrammeName(name: string): string {
+  return clipToCharacters(name.trim(), PROGRAMME_NAME_MAX).trim();
+}
 
 /**
  * The day names the reader typed, by day id, for the preference that makes the

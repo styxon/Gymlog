@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { AppDatabase, AppPreferences } from '../types/models';
+import { useAttemptOnce } from './useAttemptOnce';
 
 /**
  * The weight given in setup becomes the first weigh-in: once, ever, and
@@ -28,6 +29,7 @@ export interface SetupWeightSeedDeps {
 
 export function useSetupWeightSeed(deps: SetupWeightSeedDeps): void {
   const { hydrated, preferences, database, addBodyweightEntry, updatePreferences } = deps;
+  const tryOnce = useAttemptOnce();
   useEffect(() => {
     if (!hydrated || !preferences.onboardingCompleted) {
       return;
@@ -52,7 +54,8 @@ export function useSetupWeightSeed(deps: SetupWeightSeedDeps): void {
      */
     if (preferences.setupWeightSeeded || database.bodyweightEntries.length > 0) {
       if (!preferences.setupWeightSeeded && database.bodyweightEntries.length > 0) {
-        void updatePreferences({ setupWeightSeeded: true });
+        // Once per session: a refused write is rolled back and this ran again.
+        tryOnce('setupWeightSeeded', () => updatePreferences({ setupWeightSeeded: true }));
       }
       return;
     }
@@ -69,6 +72,7 @@ export function useSetupWeightSeed(deps: SetupWeightSeedDeps): void {
     preferences.onboardingCompleted,
     preferences.setupCurrentWeightKg,
     preferences.setupWeightSeeded,
+    tryOnce,
     updatePreferences,
   ]);
 }

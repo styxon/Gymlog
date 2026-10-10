@@ -235,6 +235,7 @@ const EN = {
   'pr.locked.cta': 'See Pro',
   'pr.new': 'NEW',
   'pr.liftCount': '{count} EXERCISES',
+  'pr.liftCountOne': '1 EXERCISE',
   'pr.value.weight': '{weight} kg × {reps}',
   'pr.value.reps': '{reps} × {weight} kg',
   'pr.value.repsBodyweight': '{reps} × bodyweight',
@@ -877,6 +878,7 @@ const EN = {
   'wf.run_mobility.walkPrimary': 'Walking comes first, with mobility built in. The runs are walks for the same minutes, to spare the joint you flagged.',
   'wf.run_mobility.ridePrimary': 'Cycling comes first, with mobility built in. The runs are stationary bike rides for the same minutes, to spare the ankle you flagged.',
   'wf.mobility_first.primary': 'Low-stress movement first — recovery and mobility lead this block.',
+  'wf.mobility_first.primaryGentle': 'Low-stress movement first — a gentle, joint-friendly block.',
   'wf.mobility_first.alt': 'A balanced full-body base if you want more lifting in the week.',
   'wf.beginner_first.primary': 'Experience first: a start you can repeat beats an ambitious one.',
   'wf.beginner_first.alt': 'A balanced full-body alternative if you want the simplest possible week.',
@@ -1133,6 +1135,9 @@ const EN = {
   // The cloud copy is older than the phone: the dialog cannot promise it holds everything.
   'settings.resetDialog.message.signedInBehind':
     'Everything on this phone is deleted and you are signed out. Your cloud backup is older than this phone, so the app backs up first.',
+  // No cloud copy of this data at all (deleted, or the upload was declined): signing in again restores nothing.
+  'settings.resetDialog.message.signedInNoCopy':
+    'Everything on this phone is deleted and you are signed out. There is no cloud backup of this data, so it cannot be restored.',
   'settings.resetBehind.title': 'Backup did not finish',
   'settings.resetBehind.message':
     'The cloud copy is older than this phone. Resetting now deletes what was added since, and signing in again restores only the older copy.',
@@ -1544,6 +1549,7 @@ const EN = {
   // was the only sign, and red is not read aloud (accessibility audit,
   // 2026-09-21).
   'guided.weightInvalid': 'Not a valid weight',
+  'guided.repsInvalid': 'Not a valid number',
   // The ✕ and the sound toggle in the player's top bar were bare icons.
   'guided.a11y.exit': 'Leave guided mode',
   'guided.a11y.soundCues': 'Sound cues',
@@ -2061,6 +2067,7 @@ const EN = {
   'coachChat.open.stalled': 'Your {lift} has not moved in a while. Want me to look at why?',
   'coachChat.open.plan': '{session} is on the plan today. Want me to walk through it?',
   'coachChat.open.rest': 'Today is a rest day — nothing to lift. Next on the plan: {session}.',
+  'coachChat.open.trained': 'You have trained today. Next on the plan: {session}.',
   'coachChat.readout.today': 'Today',
   'coachChat.online.title': 'Vinha Fitness',
   'coachChat.online.body':
@@ -2284,6 +2291,7 @@ const EN = {
   'recovery.lead.green': 'Your load is in line with your usual week. Your body has time to recover between sessions.',
   'recovery.lead.light': 'This week is about {pct}% lighter than your usual week. You are rested — there is room to push.',
   'recovery.lead.rested': 'Nothing logged in the last 7 days. You are rested — a good moment to get back to it.',
+  'recovery.lead.noLoad': 'No weight was lifted in the sessions this week, so there is no load to set against your usual week.',
   'recovery.lead.amber': 'This week is about {pct}% heavier than your usual week. Still manageable, but not the time to add more.',
   'recovery.lead.red': 'Your load is {pct}% over your usual week. This is where stalls and injuries become more likely.',
   'recovery.lead.redTimes': 'Your load is {times} times your usual week. This is where stalls and injuries become more likely.',
@@ -3192,7 +3200,9 @@ const EN = {
   'goalFlow.deltaOnBest': '+{kg} {unit} on your best',
   'goalFlow.typeTarget': 'Type the weight you are aiming at',
   'goalFlow.weeksAtRate': '≈ {weeks} weeks at your rate',
+  'goalFlow.weeksAtRateOne': '≈ 1 week at your rate',
   'goalFlow.rateBody': 'You have added {kg} {unit} over {weeks} weeks across your last {sessions} sessions. This is arithmetic on your own log, not a promise.',
+  'goalFlow.rateBodyOne': 'You have added {kg} {unit} over 1 week across your last {sessions} sessions. This is arithmetic on your own log, not a promise.',
   'goalFlow.rateBodyNone': 'Log this lift a few times and the estimate appears — it is division on your own sets, and there is nothing to divide yet.',
   // Reachable by typing a target UNDER your current best — isValidTarget
   // accepts any positive number to 1000, so best 140 and a typed 100 lands
@@ -3560,6 +3570,8 @@ const EN = {
   'analysis.obs.volume': 'Total volume came in {change} against the previous session of this name.',
   'analysis.obs.volumeFlat': 'Total volume matched the previous session of this name exactly.',
   'analysis.change.flat': 'unchanged',
+  'analysis.change.reps': '{change} reps',
+  'analysis.change.repsOne': '{change} rep',
   'analysis.obs.up': '{lifts} moved up from last time.',
   'analysis.obs.down': '{lifts} came in lighter than last time.',
   'analysis.next': 'NEXT SESSION',
@@ -3777,6 +3789,7 @@ const FI: Record<I18nKey, string> = {
   'pr.locked.cta': 'Katso Pro',
   'pr.new': 'UUSI',
   'pr.liftCount': '{count} LIIKETTÄ',
+  'pr.liftCountOne': '1 LIIKE',
   'pr.value.weight': '{weight} kg × {reps}',
   'pr.value.reps': '{reps} × {weight} kg',
   'pr.value.repsBodyweight': '{reps} × oma paino',
@@ -4394,6 +4407,7 @@ const FI: Record<I18nKey, string> = {
   'wf.run_mobility.walkPrimary': 'Kävely edellä, liikkuvuus mukana. Juoksut ovat kävelyä samoin minuutein, jotta merkitsemäsi nivel säästyy.',
   'wf.run_mobility.ridePrimary': 'Pyöräily edellä, liikkuvuus mukana. Juoksut ovat kuntopyöräilyä samoin minuutein, jotta merkitsemäsi nilkka säästyy.',
   'wf.mobility_first.primary': 'Kevyt liike ensin — palautuminen ja liikkuvuus vetävät tämän jakson.',
+  'wf.mobility_first.primaryGentle': 'Kevyt liike ensin — lempeä, nivelystävällinen jakso.',
   'wf.mobility_first.alt': 'Tasapainoinen koko kehon pohja, jos haluat viikkoon enemmän nostoja.',
   'wf.beginner_first.primary': 'Kokemus edellä: toistettava aloitus voittaa kunnianhimoisen.',
   'wf.beginner_first.alt': 'Tasapainoinen koko kehon vaihtoehto, jos haluat mahdollisimman yksinkertaisen viikon.',
@@ -4640,6 +4654,8 @@ const FI: Record<I18nKey, string> = {
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopiosi säilyy — kirjaudu uudelleen palauttaaksesi sen.',
   'settings.resetDialog.message.signedInBehind':
     'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Pilvivarmuuskopio on puhelinta vanhempi, joten sovellus varmuuskopioi ensin.',
+  'settings.resetDialog.message.signedInNoCopy':
+    'Kaikki tässä puhelimessa poistetaan ja sinut kirjataan ulos. Tästä datasta ei ole pilvivarmuuskopiota, joten sitä ei voi palauttaa.',
   'settings.resetBehind.title': 'Varmuuskopiointi ei valmistunut',
   'settings.resetBehind.message':
     'Pilvikopio on puhelinta vanhempi. Nollaus poistaa sen jälkeen lisätyt tiedot, eikä uudelleen kirjautuminen palauta kuin vanhemman kopion.',
@@ -4983,6 +4999,7 @@ const FI: Record<I18nKey, string> = {
   'guided.a11y.weightDown': 'Vähennä painoa {kg} kg',
   'guided.a11y.weightUp': 'Lisää painoa {kg} kg',
   'guided.weightInvalid': 'Ei kelvollinen paino',
+  'guided.repsInvalid': 'Ei kelvollinen luku',
   'guided.a11y.exit': 'Poistu ohjatusta tilasta',
   'guided.a11y.soundCues': 'Äänimerkit',
   'guided.a11y.lastTime': 'Viime kerralla',
@@ -5457,6 +5474,7 @@ const FI: Record<I18nKey, string> = {
   'coachChat.open.stalled': '{Lift} ei ole liikkunut vähään aikaan. Katsotaanko miksi?',
   'coachChat.open.plan': '{session} on tänään ohjelmassa. Käydäänkö se läpi?',
   'coachChat.open.rest': 'Tänään on lepopäivä — ei nostettavaa. Seuraavana ohjelmassa: {session}.',
+  'coachChat.open.trained': 'Olet treenannut tänään. Seuraavana ohjelmassa: {session}.',
   'coachChat.readout.today': 'Tänään',
   'coachChat.online.title': 'Vinha Fitness',
   'coachChat.online.body':
@@ -5667,6 +5685,7 @@ const FI: Record<I18nKey, string> = {
   'recovery.lead.green': 'Kuormasi on linjassa tavallisen viikkosi kanssa. Keho ehtii palautua treenien välissä.',
   'recovery.lead.light': 'Tämä viikko on noin {pct} % kevyempi kuin tavallinen viikkosi. Olet levännyt — tahtia voi nostaa.',
   'recovery.lead.rested': 'Viimeisen 7 päivän aikana ei ole kirjattu treenejä. Olet levännyt — hyvä hetki palata.',
+  'recovery.lead.noLoad': 'Tämän viikon treeneissä ei nostettu painoja, joten kuormaa ei voi verrata tavalliseen viikkoosi.',
   'recovery.lead.amber': 'Tämä viikko on noin {pct} % raskaampi kuin tavallinen viikkosi. Vielä hallittavissa, mutta ei kannata lisätä.',
   'recovery.lead.red': 'Kuorma on {pct} % yli tavallisen viikkosi. Nyt jumittumisen ja loukkaantumisen riski kasvaa.',
   'recovery.lead.redTimes': 'Kuorma on {times}-kertainen tavalliseen viikkoosi nähden. Nyt jumittumisen ja loukkaantumisen riski kasvaa.',
@@ -6500,7 +6519,9 @@ const FI: Record<I18nKey, string> = {
   'goalFlow.deltaOnBest': '+{kg} {unit} parhaaseesi',
   'goalFlow.typeTarget': 'Kirjoita paino jota tavoittelet',
   'goalFlow.weeksAtRate': '≈ {weeks} viikkoa omalla tahdillasi',
+  'goalFlow.weeksAtRateOne': '≈ 1 viikko omalla tahdillasi',
   'goalFlow.rateBody': 'Olet lisännyt {kg} {unit} {weeks} viikossa viimeisen {sessions} treenin aikana. Tämä on laskutoimitus omasta lokistasi, ei lupaus.',
+  'goalFlow.rateBodyOne': 'Olet lisännyt {kg} {unit} 1 viikossa viimeisen {sessions} treenin aikana. Tämä on laskutoimitus omasta lokistasi, ei lupaus.',
   'goalFlow.rateBodyNone': 'Kirjaa tämä liike muutaman kerran, niin arvio ilmestyy — se on jakolasku omista sarjoistasi, eikä jaettavaa ole vielä.',
   'goalFlow.estimate.reached': 'Olet jo siellä',
   'goalFlow.estimate.noRate': 'Ei vielä tahtia mistä laskea',
@@ -6844,6 +6865,8 @@ const FI: Record<I18nKey, string> = {
   'analysis.obs.volume': 'Kokonaisvolyymi tuli {change} edelliseen samannimiseen treeniin verrattuna.',
   'analysis.obs.volumeFlat': 'Kokonaisvolyymi oli täsmälleen sama kuin edellisessä samannimisessä treenissä.',
   'analysis.change.flat': 'ennallaan',
+  'analysis.change.reps': '{change} toistoa',
+  'analysis.change.repsOne': '{change} toisto',
   'analysis.obs.up': 'Nousua edellisestä: {lifts}.',
   'analysis.obs.down': 'Edellistä kevyempänä: {lifts}.',
   'analysis.next': 'SEURAAVA TREENI',

@@ -1,13 +1,16 @@
 import { getWorkedLogSets } from './exerciseLog';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { I18nKey, t } from './i18n';
+import { AdviceTemplateLookup, buildNextSessionAdvice } from './nextSessionAdvice';
 import { PLATEAU_STALL_SESSIONS, buildPlateauConclusion, isLiftHeldForCaution } from './proInsights';
-import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
 import { localizeSessionName } from './sessionNameLabel';
+import { isHoldLogEntry } from './holdExercises';
+import { isMinutesLogEntry } from './minutesExercises';
 import { isExerciseDone } from './sessionTotals';
 import {
   LiftHistory,
   buildLiftHistories,
+  buildRepsLiftHistories,
   comparableSessions,
   normalizedName,
   sessionTime,
@@ -142,6 +145,12 @@ export interface SessionAnalysisInput {
    */
   cautionFlags?: SetupCautionFlag[] | null;
   level?: SetupLevel | null;
+  /**
+   * Finds the programme a session was started from, for the rep range the
+   * progression gate reads. Left out, or a programme that is gone: no advice
+   * about a weight (lib/nextSessionAdvice).
+   */
+  lookupTemplate?: AdviceTemplateLookup | null;
 }
 
 const MAX_VOLUME_BARS = 6;
@@ -189,6 +198,7 @@ export function buildSessionAnalysis({
   weekNumber = null,
   cautionFlags = null,
   level = null,
+  lookupTemplate = null,
 }: SessionAnalysisInput): SessionAnalysis | null {
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session) {
@@ -317,10 +327,42 @@ export function buildSessionAnalysis({
     ).map((lift) => [lift.key, lift] as const),
   );
 
+  const repsLiftsByKey = new Map(buildRepsLiftHistories(sessions, logs).map((lift) => [lift.key, lift] as const));
+
   const exercises: AnalysisExerciseRow[] = [];
   for (const log of sessionLogs) {
     const top = topSetOf(log);
     if (!top) {
+      // No weight on the bar: pull-ups, push-ups, dips. Its row is the reps,
+      // against the lift's previous session; a session of only these came back
+      // with no rows and told the reader to log one more (hunt, 2026-10-10).
+      // Minutes and holds are not repetitions and stay out.
+      const repsOnly = workedSetsWithReps(log).map((set) => set.reps);
+      if (repsOnly.length === 0 || isMinutesLogEntry(log) || isHoldLogEntry(log)) {
+        continue;
+      }
+      const earlierPoints =
+        repsLiftsByKey
+          .get(normalizedName(log.exerciseNameSnapshot))
+          ?.points.filter((point) => point.time < currentTime && point.sessionId !== session.id) ?? [];
+      const sumOf = (values: number[]) => values.reduce((sum, value) => sum + value, 0);
+      const repsDelta =
+        earlierPoints.length > 0 ? sumOf(repsOnly) - sumOf(earlierPoints[earlierPoints.length - 1].reps) : null;
+      exercises.push({
+        key: log.id,
+        name: exerciseNameLabel(language, log.exerciseNameSnapshot),
+        detail: `${repsOnly.length} × ${repsOnly.every((count) => count === repsOnly[0]) ? repsOnly[0] : repsOnly.join('/')}`,
+        topSet: null,
+        trend: repsDelta === null ? null : repsDelta > 0 ? 'up' : repsDelta < 0 ? 'down' : 'flat',
+        trendLabel:
+          repsDelta === null
+            ? null
+            : repsDelta === 0
+              ? t(language, 'analysis.change.flat')
+              : t(language, Math.abs(repsDelta) === 1 ? 'analysis.change.repsOne' : 'analysis.change.reps', {
+                  change: `${repsDelta > 0 ? '+' : '-'}${Math.abs(repsDelta)}`,
+                }),
+      });
       continue;
     }
 
@@ -423,16 +465,34 @@ export function buildSessionAnalysis({
     // Stuck at this weight: the plateau card's advice, reps first, not a bump.
     nextActions.push({ text: buildPlateauConclusion(nextLift.lift, language, level).body, highlights: [] });
   } else if (nextLift) {
-    const liftName = exerciseNameLabel(language, nextLift.log.exerciseNameSnapshot);
-    const step = PROGRESSION_LEVEL_PARAMS[getProgressionTier(level)].loadIncrementKg;
-    const nextWeight = `${removeTrailingZeros(round(nextLift.weight + step))} kg`;
-    nextActions.push({
-      text: t(language, 'analysis.next.progress', { lift: liftName, weight: nextWeight }),
-      highlights: [nextWeight],
+    // The progression gate's own answer for this lift (lib/nextSessionAdvice):
+    // a raise only where it raises, the reps first where they fell from last
+    // time, and nothing about a weight where it holds for another reason or the
+    // programme cannot be found.
+    const advice = buildNextSessionAdvice({
+      liftName: nextLift.log.exerciseNameSnapshot,
+      sessionId: session.id,
+      sessions,
+      logs,
+      lookupTemplate,
+      level,
     });
+    const liftName = exerciseNameLabel(language, nextLift.log.exerciseNameSnapshot);
+    if (advice.kind === 'raise') {
+      const nextWeight = `${removeTrailingZeros(round(advice.toKg))} kg`;
+      nextActions.push({
+        text: t(language, 'analysis.next.progress', { lift: liftName, weight: nextWeight }),
+        highlights: [nextWeight],
+      });
+    } else if (advice.kind === 'rebuild_reps') {
+      nextActions.push({
+        text: t(language, 'analysis.next.recover', { lift: liftName }),
+        highlights: [liftName],
+      });
+    }
   }
 
-  if (dropped.length > 0) {
+  if (dropped.length > 0 && !nextActions.some((action) => action.highlights.includes(dropped[0].name))) {
     const name = dropped[0].name;
     nextActions.push({
       text: t(language, 'analysis.next.recover', { lift: name }),
@@ -440,7 +500,9 @@ export function buildSessionAnalysis({
     });
   }
 
-  if (volumeBars.length < 2) {
+  // No earlier session of this name to set it against. Counted off the sessions,
+  // not the volume bars: a bodyweight session has no volume and still has a trend.
+  if (!previous) {
     nextActions.push({ text: t(language, 'analysis.next.logAnother'), highlights: [] });
   }
 

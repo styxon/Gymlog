@@ -60,6 +60,16 @@ export function meetsCardioFocus(template: WorkoutTemplateV1): boolean {
   return (split.find((segment) => segment.quality === 'Conditioning')?.pct ?? 0) >= CARDIO_TAG_MIN_PCT;
 }
 
+/**
+ * Whether a template carries the Mobility tag; the "Mobility" tile asks the
+ * same question (programCategories). It was a list of four ids, which kept the
+ * joint-friendly gym week (4% mobility) and left out Run + Mobility (48%).
+ */
+export function meetsMobilityFocus(template: WorkoutTemplateV1): boolean {
+  const split = buildProgramFocusSplit(template.sessions);
+  return (split.find((segment) => segment.quality === 'Mobility')?.pct ?? 0) >= MOBILITY_TAG_MIN_PCT;
+}
+
 /** Focus tags for one template, in the order the filter chips are shown. */
 export function getProgramFocusTags(template: WorkoutTemplateV1): CatalogFocusKey[] {
   const split = buildProgramFocusSplit(template.sessions);

@@ -447,12 +447,14 @@ export function StrengthGoalFlowScreen({
           <View style={styles.noteCard}>
             <Text style={styles.noteTitle}>
               {estimate.kind === 'weeks'
-                ? t(language, 'goalFlow.weeksAtRate', { weeks: estimate.weeks })
+                ? estimate.weeks === 1
+                  ? t(language, 'goalFlow.weeksAtRateOne')
+                  : t(language, 'goalFlow.weeksAtRate', { weeks: estimate.weeks })
                 : t(language, `goalFlow.estimate.${estimate.kind}` as 'goalFlow.estimate.noRate')}
             </Text>
             <Text style={styles.noteBody}>
               {estimate.kind === 'weeks' || estimate.kind === 'noGain' || estimate.kind === 'beyondHorizon'
-                ? t(language, 'goalFlow.rateBody', {
+                ? t(language, Math.round(estimate.rate.spanWeeks) === 1 ? 'goalFlow.rateBodyOne' : 'goalFlow.rateBody', {
                     kg: removeTrailingZeros(Math.round(estimate.rate.gainKg * 10) / 10),
                     weeks: Math.round(estimate.rate.spanWeeks),
                     sessions: estimate.rate.sessions,

@@ -51,10 +51,12 @@ export function useCoachDemoMoment(deps: CoachDemoMomentDeps) {
         lifts: proLiftHistories,
         fatigueSignal: proFatigue?.confident ? proFatigue.signal : null,
         cautionFlags: preferences.setupCautionFlags,
+        language: preferences.appLanguage,
       }),
     [
       coachProUnlocked,
       database.workoutSessions.length,
+      preferences.appLanguage,
       preferences.coachDemoMomentsUsed,
       preferences.firstLaunchAt,
       preferences.setupCautionFlags,

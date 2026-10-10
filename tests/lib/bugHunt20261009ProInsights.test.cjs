@@ -190,13 +190,22 @@ module.exports = [
         ['Barbell Bench Press', (i) => 60 + i * 2.5, [8, 8, 8]],
       ]);
       const last = sessions[sessions.length - 1];
-      const open = buildSessionAnalysis({ sessionId: last.id, sessions, logs, language: 'en' });
+      // The advice is the progression gate's: it needs the programme day's own rows.
+      sessions.forEach((session) => { session.workoutTemplateSessionId = 'day'; });
+      const lookupTemplate = () => ({
+        sessions: [{ id: 'day', exercises: [
+          { exerciseName: 'Barbell Deadlift', slotId: 'dl', sets: 1, repsMin: 5, repsMax: 5, trackingMode: 'load_and_reps' },
+          { exerciseName: 'Barbell Bench Press', slotId: 'bp', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps' },
+        ] }],
+      });
+      const open = buildSessionAnalysis({ sessionId: last.id, sessions, logs, language: 'en', lookupTemplate });
       assert.match(open.nextActions[0].text, /Deadlift/, 'with no flag the heaviest lift leads');
       const held = buildSessionAnalysis({
         sessionId: last.id,
         sessions,
         logs,
         language: 'en',
+        lookupTemplate,
         cautionFlags: LOWER_BACK_AVOID,
       });
       assert.ok(held.nextActions.length > 0);

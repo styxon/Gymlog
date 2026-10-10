@@ -9,6 +9,7 @@ const {
   formatCardioPace,
   buildCardioStatsLine,
   getWeekCardioMinutes,
+  getWeekCardioMinutesWithRun,
   startCardioSession,
   getCardioElapsedMs,
   pauseCardioSession,
@@ -154,6 +155,23 @@ module.exports = [
       assert.equal(normalizeActiveCardioSession(null), null);
       assert.equal(normalizeActiveCardioSession({ startedAt: 'nope' }), null);
       assert.equal(normalizeActiveCardioSession('string'), null);
+    },
+  },
+  {
+    name: 'finish card week total counts a run already stored once, not twice',
+    run() {
+      const t0 = Date.parse('2026-10-07T07:00:00Z');
+      const end = new Date(t0 + 1800e3).toISOString();
+      const stored = { id: 'c1', activityType: 'run', startedAt: new Date(t0).toISOString(), performedAt: end, durationSec: 1800 };
+      const run = { activityType: 'run', startedAt: stored.startedAt, performedAt: end, durationSec: 1800 };
+      assert.equal(getWeekCardioMinutesWithRun([stored], run), 30);
+      // A different run with the same start (other activity) is another row.
+      assert.equal(getWeekCardioMinutesWithRun([{ ...stored, activityType: 'walk' }], run), 60);
+      // A new run adds to the week as before.
+      const other = { ...stored, id: 'c2', startedAt: new Date(t0 - 7200e3).toISOString(), performedAt: new Date(t0 - 5400e3).toISOString() };
+      assert.equal(getWeekCardioMinutesWithRun([other], run), 60);
+      // The carried-on run replaces its row with the longer reading.
+      assert.equal(getWeekCardioMinutesWithRun([stored], { ...run, durationSec: 2400 }), 40);
     },
   },
 ];

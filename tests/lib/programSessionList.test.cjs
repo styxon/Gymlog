@@ -79,7 +79,7 @@ module.exports = [
       const write = between(add, 'editWorkoutTemplateSessions(', 'if (!result.saved)');
       assert.match(
         write,
-        /id: newSessionId,\s*name: name\.trim\(\) \|\| newProgramSessionName\(sessions\.length, preferences\.appLanguage\),\s*exercises: \[\],/,
+        /id: newSessionId,\s*name: typedName \|\| newProgramSessionName\(sessions\.length, preferences\.appLanguage\),\s*exercises: \[\],/,
       );
       // Every existing day is carried through whole — the writer replaces the
       // record, and a hand copy that forgets a field erases it.

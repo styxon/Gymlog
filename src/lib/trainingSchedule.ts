@@ -215,6 +215,12 @@ export interface SessionForecast {
   /** Index into the plan's session list of the session Home offers next. */
   nextSlot: number;
   trainedToday: boolean;
+  /**
+   * The reader has picked today's session (set by forecastFromPick). On a
+   * rest day that pick is today's workout, so the first training day after it
+   * continues from it instead of repeating it (forecastSlotOn).
+   */
+  pickedToday?: boolean;
 }
 
 /**
@@ -238,7 +244,11 @@ export function forecastFromPick(
   if (pickedIndex === null || pickedIndex < 0 || pickedIndex >= sessionCount) {
     return forecast;
   }
-  return { ...forecast, nextSlot: (pickedIndex + (forecast.trainedToday ? 1 : 0)) % sessionCount };
+  return {
+    ...forecast,
+    nextSlot: (pickedIndex + (forecast.trainedToday ? 1 : 0)) % sessionCount,
+    pickedToday: true,
+  };
 }
 
 /**
@@ -279,7 +289,13 @@ export function forecastSlotOn(schedule: TrainingSchedule, date: Date, forecast:
     }
     cursor.setDate(cursor.getDate() + 1);
   }
-  return forecast.nextSlot + turn - 1;
+  // A pick made on a rest day is that day's session, and the rotation goes on
+  // from it: Mon/Wed/Fri A B C with A trained, C picked on Tuesday, then
+  // Wednesday is A, not C a second time (bug hunt 11, home). On a training day
+  // the pick takes that day's own turn, and trained it moves nextSlot on.
+  const restDayPick =
+    forecast.pickedToday === true && !forecast.trainedToday && !trainsOn(schedule, new Date(forecast.fromDayStart));
+  return forecast.nextSlot + turn - 1 + (restDayPick ? 1 : 0);
 }
 
 /**

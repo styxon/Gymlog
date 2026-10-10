@@ -93,9 +93,12 @@ import {
   HOLD_DIAL,
   MINUTES_DIAL,
   REPS_DIAL,
+  WARMUP_REPS_DIAL,
   commitDialReps,
   commitDialWeight,
+  isLoggableTypedReps,
   isLoggableTypedWeight,
+  isTypedRepsPossiblyValid,
   stepDialReps,
   stepDialWeight,
 } from '../lib/weightDial';
@@ -179,7 +182,7 @@ import {
   resolveInstanceBorrowRepWindow,
 } from '../features/workout/workoutState';
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
-import { liftOfSet } from '../lib/liftSegments';
+import { liftOfSet, setsOfCurrentLift } from '../lib/liftSegments';
 import { resolveLiftPraise } from '../lib/liftPraise';
 import {
   isMinutesTrackingMode,
@@ -2043,7 +2046,7 @@ function GuidedPlayer({
         // buttonless session card, not a rest with "+30 s" and "Skip".
         void syncRestNotification(
           endsAt,
-          exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+          getGuidedNextName(steps, stepIndex, language) ?? '',
           shown.recoveryKind !== undefined,
         );
       }
@@ -2097,6 +2100,8 @@ function GuidedPlayer({
     sound[kind]();
   }, []);
 
+  /** Set when the actions menu opened over a pause the reader had chosen. */
+  const menuHeldPauseRef = useRef(false);
   /**
    * Out of the pause, on the screen and on the session clock together.
    *
@@ -2120,9 +2125,39 @@ function GuidedPlayer({
    * header clock and the saved duration ran on (hunt 2026-10-09).
    */
   const pause = useCallback(() => {
+    menuHeldPauseRef.current = false;
     setPaused(true);
     workout.pauseWorkout();
   }, [workout]);
+  /**
+   * The actions menu pauses while it is open, as its title says, and closing
+   * it gives back the state it found: a pause the reader chose stays chosen
+   * (hunt 11 — dots, close, and the workout was running again).
+   */
+  const openActionsMenu = () => {
+    const found = paused;
+    if (!found) {
+      pause();
+    }
+    menuHeldPauseRef.current = found;
+    setPauseSheetOpen(true);
+  };
+  const closeActionsMenu = () => {
+    if (!menuHeldPauseRef.current) {
+      unpause();
+    }
+    menuHeldPauseRef.current = false;
+  };
+  /**
+   * Moving on from the menu (the contents sheet, doing a block your own way,
+   * skipping the exercise, adding a set) resumes the workout whatever the
+   * menu found: the reader has gone on to something, which is not the pause
+   * they chose. Only closing the menu gives the earlier pause back.
+   */
+  const moveOnFromMenu = () => {
+    menuHeldPauseRef.current = false;
+    unpause();
+  };
 
   const goTo = useCallback(
     (index: number, openingMs?: number) => {
@@ -2194,10 +2229,15 @@ function GuidedPlayer({
       if (step.type === 'rest') {
         void syncRestNotification(
           endsAtRef.current,
-          exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+          getGuidedNextName(steps, stepIndex, language) ?? '',
           step.recoveryKind !== undefined,
         );
       }
+    } else if (mode === 'player') {
+      // Frozen — paused, or a sheet over the rest: the leftover is what the
+      // anchor holds, so a change to it is stored too. A kill while paused
+      // reopened with the time from before the ±15 s / lock-screen +30 s.
+      persistRestLeft(next);
     }
     setRemainingMs(next);
   };
@@ -2256,7 +2296,7 @@ function GuidedPlayer({
     if (step.type === 'rest' && endsAtRef.current > Date.now()) {
       void syncRestNotification(
         endsAtRef.current,
-        exerciseNameLabel(language, getGuidedNextName(steps, stepIndex) ?? ''),
+        getGuidedNextName(steps, stepIndex, language) ?? '',
         step.recoveryKind !== undefined,
       );
     }
@@ -2324,6 +2364,24 @@ function GuidedPlayer({
       void syncRestNotification(null, null);
     };
   }, [mode, frozen, stepIndex, step.type, cue, steps, syncRestNotification]);
+
+  /**
+   * Pause clears every notification of the session (the shade is swept while
+   * its status is not 'active'), the lock-screen card with them, and nothing
+   * put it back: from a set screen the card stayed gone until the next timed
+   * step. A resume posts it once. Not over a rest — that effect above posts the
+   * rest's own card with its new deadline.
+   */
+  const sessionStatus = session?.status ?? null;
+  const lastSessionStatusRef = useRef(sessionStatus);
+  useEffect(() => {
+    const was = lastSessionStatusRef.current;
+    lastSessionStatusRef.current = sessionStatus;
+    if (was === 'paused' && sessionStatus === 'active' && mode === 'player' && step.type !== 'rest') {
+      void syncRestNotification(null, null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionStatus]);
 
   /* ── hardware back: exit sheet in player, plain leave on entry ── */
   useEffect(() => {
@@ -2796,7 +2854,7 @@ function GuidedPlayer({
     resyncTargetRef.current = blockStart >= 0 ? blockStart : stepIndex;
     workout.skipExercise(actionSlotId);
     setPauseSheetOpen(false);
-    unpause();
+    moveOnFromMenu();
   };
 
   const handleAddSet = () => {
@@ -2805,7 +2863,7 @@ function GuidedPlayer({
     }
     workout.addSet(actionSlotId);
     setPauseSheetOpen(false);
-    unpause();
+    moveOnFromMenu();
   };
 
   /**
@@ -3189,7 +3247,9 @@ function GuidedPlayer({
           sets: entry.sets.map((set) => ({ loadKg: set.loadKg, reps: set.reps })),
         })),
     ];
-    const todaySets = (instance?.sets ?? [])
+    // Only what was logged as the lift in the slot now: after a swap the sets
+    // before it belong to the other lift's history.
+    const todaySets = (instance ? setsOfCurrentLift(instance) : [])
       .filter((set) => set.status === 'completed')
       .map((set) => ({ loadKg: set.actualLoadKg ?? 0, reps: set.actualReps ?? 0 }));
     return gateExerciseSheetHistory(
@@ -4234,7 +4294,7 @@ function GuidedPlayer({
                 }
                 pause();
               }}
-              onOpenActions={() => setPauseSheetOpen(true)}
+              onOpenActions={openActionsMenu}
               onAddSet={() => {
                 void haptics.select();
                 workout.addSet(step.slotId);
@@ -4912,7 +4972,7 @@ function GuidedPlayer({
           language={language}
           onClose={() => {
             setPauseSheetOpen(false);
-            unpause();
+            closeActionsMenu();
           }}
           bottomInset={screenInsets.bottom}
         >
@@ -4927,7 +4987,7 @@ function GuidedPlayer({
               label={t(language, 'guided.runSheet.title')}
               onPress={() => {
                 setPauseSheetOpen(false);
-                unpause();
+                moveOnFromMenu();
                 setRunSheetOpen(true);
               }}
             />
@@ -4945,7 +5005,7 @@ function GuidedPlayer({
                 label={t(language, `guided.own.${skippablePhase}` as 'guided.own.warmup')}
                 onPress={() => {
                   setPauseSheetOpen(false);
-                  unpause();
+                  moveOnFromMenu();
                   setOwnBlock({ phase: skippablePhase, startedAt: Date.now() });
                 }}
               />
@@ -5089,7 +5149,7 @@ function GuidedPlayer({
           setSwapBodyPartFilter(null);
           setSwapCategoryPick(null);
           setSwapEquipment('all');
-          unpause();
+          closeActionsMenu();
         }}
       />
 
@@ -5512,9 +5572,11 @@ function SetStepView({
    * where it stood, still running, instead of at zero (#bugs 2026-10-06).
    */
   const minutesMode = exercise ? isMinutesTrackingMode(exercise.trackingMode) : false;
+  // The lift in the slot now: sets done before a swap were another lift's.
+  const liftSets = exercise ? setsOfCurrentLift(exercise) : [];
   const todayPlan =
     exercise && !minutesMode
-      ? resolveGuidedSetPlan(exercise.sets, step.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex)
+      ? resolveGuidedSetPlan(liftSets, step.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex)
       : [];
   const plannedMinutes = target?.reps ?? 0;
   const keptWatch = () =>
@@ -5574,9 +5636,22 @@ function SetStepView({
   useEffect(() => {
     if (paused && watch.runningSinceMs !== null) {
       keepWatch(pauseStopwatch(watch, Date.now()));
+    } else if (!paused && menuStoppedWatchRef.current) {
+      // The menu stopped it, not a Pause the reader chose: the menu giving
+      // the workout back gives the bout its clock back.
+      menuStoppedWatchRef.current = false;
+      const now = Date.now();
+      setWatchNowMs(now);
+      keepWatch(startStopwatch(watch, now));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paused]);
+  /** Set when the actions menu opened over a running bout clock (it pauses the workout, and the clock with it). */
+  const menuStoppedWatchRef = useRef(false);
+  const openActions = () => {
+    menuStoppedWatchRef.current = minutesMode && !paused && watch.runningSinceMs !== null;
+    onOpenActions();
+  };
   const toggleWatch = () => {
     const now = Date.now();
     setWatchNowMs(now);
@@ -5602,16 +5677,38 @@ function SetStepView({
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
   /**
-   * The weight field holds text that is not a weight — "825" for 82,5, or
-   * "82,,5". The dial keeps its last good number meanwhile, so logging would
+   * The open field holds text that is not a weight — "825" for 82,5, or
+   * "82,,5" — or a count the set cannot have: 0 reps, 350, a hold under five
+   * seconds. The dial keeps its last good number meanwhile, so logging would
    * write a number the field does not show; the log button waits instead.
    * Only while the field is open: closing it shows the number the dial kept.
    */
-  const [weightTextInvalid, setWeightTextInvalid] = useState(false);
+  const [typedTextInvalid, setTypedTextInvalid] = useState(false);
+  /**
+   * The text is short of the floor but could still get there ("3" on the way
+   * to 30 s): Log waits, and the field is not flagged yet.
+   */
+  const [typedTextPending, setTypedTextPending] = useState(false);
   useEffect(() => {
-    setWeightTextInvalid(false);
+    setTypedTextInvalid(false);
+    setTypedTextPending(false);
   }, [dial, stepIndex]);
-  const logBlocked = dial === 'weight' && weightTextInvalid;
+  const logBlocked = dial !== null && typedTextInvalid;
+  const typedErrorShown = logBlocked && !typedTextPending;
+  /**
+   * Log is dead only when the field is flagged. While the text could still
+   * become loggable ("3" on the way to 30 s) the button stays pressable: a
+   * press then shows the message and logs nothing, instead of a button that
+   * does nothing and says nothing.
+   */
+  const logDisabled = logBlocked && !typedTextPending;
+  const logWaitsOnTypedText = () => {
+    if (!logBlocked) {
+      return false;
+    }
+    setTypedTextPending(false);
+    return true;
+  };
 
   /**
    * Five chips a line (#bugs 2026-10-10, "näytetään vain 5 kerralla"): an
@@ -5621,8 +5718,11 @@ function SetStepView({
    * chips stay over today's. Each is held to its own length: one shared
    * window cut a three-set last time down to one chip by set 7.
    */
-  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, step.setIndex, GUIDED_CARD_CHIP_CAP);
-  const todayChipWindow = guidedWindow(todayPlan.length, step.setIndex, GUIDED_CARD_CHIP_CAP);
+  // Both lines follow the set's place within the lift, not the slot: after a
+  // swap the slot's earlier sets were another lift's.
+  const liftPosition = liftSets.filter((set) => set.setIndex < step.setIndex).length;
+  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, liftPosition, GUIDED_CARD_CHIP_CAP);
+  const todayChipWindow = guidedWindow(todayPlan.length, liftPosition, GUIDED_CARD_CHIP_CAP);
   /**
    * The set row's boxes: up to six, as many as the row has room for, so none
    * is drawn cut in half — and the −/+ after them stand still however many
@@ -5648,6 +5748,8 @@ function SetStepView({
   const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
   const canWarmUp = !bodyweight && firstSetOpen;
   const inWarmup = warmupMode && canWarmUp;
+  /** What the reps dial accepts: a warm-up is held to the store's lower ceiling. */
+  const repsBounds = inWarmup ? WARMUP_REPS_DIAL : minutesMode ? MINUTES_DIAL : timed ? HOLD_DIAL : REPS_DIAL;
   /**
    * Today's weight beside today's chips, as last time's stands beside its own
    * (#bugs 2026-10-10). The set being done counts at its dial, so the number
@@ -5657,7 +5759,7 @@ function SetStepView({
   const todayKg =
     exercise && !bodyweight && !minutesMode
       ? guidedTodayLoadKg({
-          sets: exercise.sets,
+          sets: liftSets,
           currentSetIndex: step.setIndex,
           currentKg: !inWarmup && Number.isFinite(kg) && kg > 0 ? kg : null,
           trackingMode: exercise.trackingMode,
@@ -5863,6 +5965,7 @@ function SetStepView({
                 }
               : null,
             todayPlan.map((chip) => chip.reps),
+            minutesMode ? 'minutes' : timed ? 'seconds' : 'reps',
           )}
           accessibilityHint={t(language, 'guided.panelsToggle')}
           onPress={onOpenSheet}
@@ -6187,13 +6290,17 @@ function SetStepView({
               onStep={(direction) =>
                 minutesMode
                   ? stepMinutes(direction)
-                  : setReps((current) => stepDialReps(current, direction, timed ? HOLD_DIAL : REPS_DIAL))
+                  : setReps((current) => stepDialReps(current, direction, repsBounds))
               }
-              onCommit={(text) =>
-                minutesMode
-                  ? commitMinutes(text)
-                  : setReps((current) => commitDialReps(text, current, timed ? HOLD_DIAL : REPS_DIAL))
-              }
+              onCommit={(text) => {
+                setTypedTextInvalid(!isLoggableTypedReps(text, repsBounds));
+                setTypedTextPending(!isLoggableTypedReps(text, repsBounds) && isTypedRepsPossiblyValid(text, repsBounds));
+                if (minutesMode) {
+                  commitMinutes(text);
+                } else {
+                  setReps((current) => commitDialReps(text, current, repsBounds));
+                }
+              }}
               downLabel={t(
                 language,
                 minutesMode ? 'guided.a11y.minutesDown' : timed ? 'guided.a11y.secondsDown' : 'guided.a11y.repsDown',
@@ -6205,6 +6312,11 @@ function SetStepView({
               editHint={t(language, 'guided.a11y.tapToEdit')}
               wide={bodyweight}
               faint={false}
+              invalid={typedErrorShown}
+              onDraftCleared={() => {
+                setTypedTextInvalid(false);
+                setTypedTextPending(false);
+              }}
             />
 
             {/* Weight is decided BEFORE the set. Loaded lifts always get it —
@@ -6223,7 +6335,8 @@ function SetStepView({
                 // stopping it. See lib/weightDial.
                 onStep={(direction) => setKg((current) => stepDialWeight(current, direction))}
                 onCommit={(text) => {
-                  setWeightTextInvalid(!isLoggableTypedWeight(text));
+                  setTypedTextInvalid(!isLoggableTypedWeight(text));
+                  setTypedTextPending(false);
                   setKg((current) => commitDialWeight(text, current));
                 }}
                 // From the dial's own step, not a number in the copy — the
@@ -6233,8 +6346,11 @@ function SetStepView({
                 editHint={t(language, 'guided.a11y.tapToEdit')}
                 wide={false}
                 faint={kg <= 0}
-                invalid={logBlocked}
-                onDraftCleared={() => setWeightTextInvalid(false)}
+                invalid={typedErrorShown}
+                onDraftCleared={() => {
+                  setTypedTextInvalid(false);
+                  setTypedTextPending(false);
+                }}
               />
             ) : null}
           </View>
@@ -6243,9 +6359,11 @@ function SetStepView({
               red was the only sign, and colour is neither read aloud nor seen
               by everyone (accessibility audit, 2026-09-21). Polite, so it is
               announced once when it appears and not on every keystroke. */}
-          {logBlocked ? (
+          {typedErrorShown ? (
             <View style={styles.setWeightError} accessibilityLiveRegion="polite">
-              <Text style={styles.setWeightErrorText}>{t(language, 'guided.weightInvalid')}</Text>
+              <Text style={styles.setWeightErrorText}>
+                {t(language, dial === 'reps' ? 'guided.repsInvalid' : 'guided.weightInvalid')}
+              </Text>
             </View>
           ) : null}
 
@@ -6319,7 +6437,7 @@ function SetStepView({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.a11y.actions')}
-            onPress={onOpenActions}
+            onPress={openActions}
             style={styles.setRoundBtn}
           >
             <GPIcon name="dots" size={22} color={theme.ink} sw={2.2} />
@@ -6331,8 +6449,11 @@ function SetStepView({
               accessibilityState={{ disabled: logBlocked || kg <= 0 }}
               // No weight, no warm-up: the store refuses 0 kg, and the
               // screen must not leave as if it had been saved.
-              disabled={logBlocked || kg <= 0}
+              disabled={logDisabled || kg <= 0}
               onPress={() => {
+                if (logWaitsOnTypedText()) {
+                  return;
+                }
                 onLogWarmup(kg, reps);
                 leaveWarmup();
               }}
@@ -6348,8 +6469,11 @@ function SetStepView({
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             accessibilityState={{ disabled: logBlocked }}
-            disabled={logBlocked}
+            disabled={logDisabled}
             onPress={() => {
+              if (logWaitsOnTypedText()) {
+                return;
+              }
               setDial(null);
               // The minutes on the dial — the clock's, the prescription's or
               // the reader's own — are what was done. The clock is read now:

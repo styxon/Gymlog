@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { t } from '../lib/i18n';
-import { clampProfileName, codePointLength, storedProfileName, MAX_PROFILE_NAME_LENGTH, profileInitials } from '../lib/profileName';
+import { clampProfileName, characterCount, storedProfileName, MAX_PROFILE_NAME_LENGTH, profileInitials } from '../lib/profileName';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage } from '../types/models';
@@ -100,7 +100,7 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
           <View style={styles.fieldLabelRow}>
             <Text style={styles.fieldLabel}>{t(language, 'editProfile.displayName')}</Text>
             <Text style={styles.fieldCounter}>
-              {codePointLength(name)}/{MAX_PROFILE_NAME_LENGTH}
+              {characterCount(name)}/{MAX_PROFILE_NAME_LENGTH}
             </Text>
           </View>
           <TextInput

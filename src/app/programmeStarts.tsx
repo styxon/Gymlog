@@ -12,7 +12,7 @@ import { resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { resolveProEntitlement, resolveProgressionOptions } from '../lib/proEntitlement';
 import { buildReadySessionRuntimeTemplate } from '../lib/programDetails';
 import { alignHistoryToCopiedDays, programmeHistoryIds } from '../lib/programLineage';
-import { isLightenPending, lightenedFatigueSignal, lightenRuntimeTemplate } from '../lib/recoverySheet';
+import { isLightenPending, resolveProgrammeStart } from '../lib/recoverySheet';
 import { resumeProgramme, runningSetWithout, type AdoptReadyOptions } from '../lib/runningProgrammes';
 import {
   type AdaptedSessionRef,
@@ -61,7 +61,6 @@ export interface ProgrammeStartsDeps {
   updatePreferences: AppContextValue['updatePreferences'];
   deleteCompletedWorkoutSession: AppContextValue['deleteCompletedWorkoutSession'];
   workout: ReturnType<typeof useWorkoutContext>;
-  progressionFatigueSignal: ReturnType<typeof useProInsights>['progressionFatigueSignal'];
   /** VinhaApp's reader of what is held for a session today. */
   sessionAdaptationFor: (ref: AdaptedSessionRef | null | undefined) => SessionAdaptation;
   setHeldSessionAdaptations: Dispatch<SetStateAction<HeldSessionAdaptations>>;
@@ -89,7 +88,6 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     updatePreferences,
     deleteCompletedWorkoutSession,
     workout,
-    progressionFatigueSignal,
     sessionAdaptationFor,
     setHeldSessionAdaptations,
     setRunningCapSheet,
@@ -241,11 +239,14 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
    */
   function programmeStart(runtimeTemplate: Parameters<typeof workout.startCustomWorkout>[0], now: Date = new Date()) {
     const lighten = isLightenPending(preferences.lightNextSession, now);
+    // Recovery as of this start. The memo behind the recovery sheet is only as
+    // fresh as the last save, and a heavy week had not yet rolled out of it.
+    const start = resolveProgrammeStart(runtimeTemplate, lighten, database, now);
     return {
-      template: lighten ? lightenRuntimeTemplate(runtimeTemplate) : runtimeTemplate,
+      template: start.template,
       options: {
         ...resolveProgressionOptions(preferences),
-        fatigueSignal: lighten ? lightenedFatigueSignal(progressionFatigueSignal) : progressionFatigueSignal,
+        fatigueSignal: start.fatigueSignal,
       },
     };
   }
