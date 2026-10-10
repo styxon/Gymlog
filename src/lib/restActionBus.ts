@@ -86,3 +86,28 @@ export function createRestActionBus(now: () => number = Date.now): RestActionBus
     },
   };
 }
+
+/**
+ * How long after one "+60 s" from a rest-over alert another one is the same
+ * tap again. The alert stays on the lock screen until the app has opened and
+ * re-armed the rest, which dismisses it; a second press in that gap — a
+ * double tap, a press that seemed not to take, the repeat alert under the
+ * first — arrived as a second "+60 s", and the rest that had run out came
+ * back at 2:00 instead of 1:00, some times and not others (#bugs 2026-10-10).
+ * The next real rest-over alert cannot come sooner than the minute just
+ * added, so half of it is safe.
+ */
+export const REST_OVER_REPEAT_WINDOW_MS = 30000;
+
+/**
+ * Whether a rest-over alert's "+60 s" is a repeat of the one handled at
+ * `lastHandledAtMs`, and so is dropped. Only that button: the running
+ * rest's "+30 s" stays on its card on purpose and may be pressed twice.
+ */
+export function isRepeatedRestOverExtend(lastHandledAtMs: number | null, nowMs: number): boolean {
+  return (
+    lastHandledAtMs !== null &&
+    nowMs >= lastHandledAtMs &&
+    nowMs - lastHandledAtMs < REST_OVER_REPEAT_WINDOW_MS
+  );
+}

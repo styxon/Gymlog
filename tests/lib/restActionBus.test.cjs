@@ -2,7 +2,9 @@ const assert = require('node:assert/strict');
 
 const {
   PENDING_REST_ACTION_TTL_MS,
+  REST_OVER_REPEAT_WINDOW_MS,
   createRestActionBus,
+  isRepeatedRestOverExtend,
 } = require('../../.test-dist/lib/restActionBus.js');
 
 function clock(start = 1000000) {
@@ -140,6 +142,36 @@ module.exports = [
       assert.ok(app.indexOf("emitRestAction({ kind: 'skip' }, sessionId)") < timeoutAt);
       const player = read('src/screens/GuidedPlayerScreen.tsx');
       assert.match(player, /subscribeRestActions\(\(action\) => \{[\s\S]*?\}, session\?\.sessionId \?\? null\)/);
+    },
+  },
+  {
+    // #bugs 2026-10-10: "+60 s" on the rest-over alert gave 2:00 one time and
+    // 1:00 the next. The alert stays on the lock screen until the app has
+    // opened and re-armed the rest; a second press in that gap arrived as a
+    // second minute.
+    name: 'rest-over +60 s: a second press inside the window is the same tap, a later one is a new minute',
+    run() {
+      assert.equal(isRepeatedRestOverExtend(null, 1000), false);
+      assert.equal(isRepeatedRestOverExtend(1000, 1000), true);
+      assert.equal(isRepeatedRestOverExtend(1000, 1000 + REST_OVER_REPEAT_WINDOW_MS - 1), true);
+      assert.equal(isRepeatedRestOverExtend(1000, 1000 + REST_OVER_REPEAT_WINDOW_MS), false);
+      // A clock that went back is not a repeat to swallow.
+      assert.equal(isRepeatedRestOverExtend(5000, 1000), false);
+      // Shorter than the minute it adds: the next real alert is never dropped.
+      assert.ok(REST_OVER_REPEAT_WINDOW_MS < 60000);
+
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const hook = fs
+        .readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useSessionNotifications.ts'), 'utf8')
+        .replace(/\r\n/g, '\n');
+      const branch = hook.slice(hook.indexOf('} else if (action === ACTION_EXTEND_60) {'));
+      const guardAt = branch.indexOf('isRepeatedRestOverExtend(');
+      const emitAt = branch.indexOf("emitRestAction({ kind: 'extend', seconds: 60 }");
+      assert.ok(guardAt > 0 && emitAt > guardAt, 'the +60 s branch asks before it emits');
+      // The +30 s on the running card is not filtered: pressed twice on purpose, it is a minute.
+      const thirty = hook.slice(hook.indexOf('if (action === ACTION_EXTEND_30) {'), hook.indexOf('} else if (action === ACTION_EXTEND_60) {'));
+      assert.doesNotMatch(thirty, /isRepeatedRestOverExtend/);
     },
   },
 ];
