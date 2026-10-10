@@ -1221,17 +1221,6 @@ const EN = {
   'emptyWorkout.recent': 'Recent exercises',
   'emptyWorkout.popular': 'Popular exercises',
   'emptyWorkout.seeAll': 'See all',
-  'emptyWorkout.sheet.subtitle': 'Add the next lift to this workout.',
-  'emptyWorkout.sheet.close': 'Close',
-  'emptyWorkout.sheet.search': 'Search exercises',
-  'emptyWorkout.sheet.popularTitle': 'Popular to start',
-  'emptyWorkout.sheet.popularSub': 'Common first picks for a new workout.',
-  'emptyWorkout.sheet.allTitle': 'All exercises',
-  'emptyWorkout.sheet.available': '{count} available',
-  'emptyWorkout.sheet.noMatch': 'No exercises match “{query}”.',
-  'emptyWorkout.sheet.addOne': 'Add 1 exercise',
-  'emptyWorkout.sheet.addMany': 'Add {count} exercises',
-  'emptyWorkout.sheet.selectPrompt': 'Select one or more exercises',
   'emptyWorkout.col.reps': 'REPS',
   'emptyWorkout.addSet': 'Add set',
   'emptyWorkout.finishWorkout': 'Finish workout',
@@ -1256,7 +1245,6 @@ const EN = {
   // One round for the whole superset, so the label says the block rather than
   // a lift: the button moves both.
   'emptyWorkout.a11y.addSetToBlock': 'Add a round to this superset',
-  'emptyWorkout.a11y.addSelected': 'Add selected exercises',
 
   // ── Workout complete ───────────────────────────────────────────────────
   'complete.kicker.record': 'New record',
@@ -4733,17 +4721,6 @@ const FI: Record<I18nKey, string> = {
   'emptyWorkout.recent': 'Viimeisimmät liikkeet',
   'emptyWorkout.popular': 'Suositut liikkeet',
   'emptyWorkout.seeAll': 'Näytä kaikki',
-  'emptyWorkout.sheet.subtitle': 'Lisää seuraava liike tähän treeniin.',
-  'emptyWorkout.sheet.close': 'Sulje',
-  'emptyWorkout.sheet.search': 'Hae liikkeitä',
-  'emptyWorkout.sheet.popularTitle': 'Suositut aloitukseen',
-  'emptyWorkout.sheet.popularSub': 'Yleisimmät ensimmäiset valinnat uuteen treeniin.',
-  'emptyWorkout.sheet.allTitle': 'Kaikki liikkeet',
-  'emptyWorkout.sheet.available': '{count} saatavilla',
-  'emptyWorkout.sheet.noMatch': 'Yksikään liike ei vastaa hakua “{query}”.',
-  'emptyWorkout.sheet.addOne': 'Lisää 1 liike',
-  'emptyWorkout.sheet.addMany': 'Lisää {count} liikettä',
-  'emptyWorkout.sheet.selectPrompt': 'Valitse vähintään yksi liike',
   'emptyWorkout.col.reps': 'TOISTOT',
   'emptyWorkout.addSet': 'Lisää sarja',
   'emptyWorkout.finishWorkout': 'Lopeta treeni',
@@ -4762,7 +4739,6 @@ const FI: Record<I18nKey, string> = {
   'a11y.setField.kgInLift': '{name}, sarja {index}, paino, kg',
   'a11y.setField.repsInLift': '{name}, sarja {index}, toistot',
   'emptyWorkout.a11y.addSetToBlock': 'Lisää kierros tähän supersarjaan',
-  'emptyWorkout.a11y.addSelected': 'Lisää valitut liikkeet',
 
   // ── Workout complete ───────────────────────────────────────────────────
   'complete.kicker.record': 'Uusi ennätys',

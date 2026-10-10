@@ -38,12 +38,12 @@ module.exports = [
       for (const screen of [
         'src/screens/ProgramDayScreen.tsx',
         'src/screens/CreateTemplateScreen.tsx',
+        // The free workout drew its own copy of this sheet until #bugs
+        // 2026-10-10; it opens this one now and hands the inset over too.
+        'src/screens/EmptyWorkoutScreen.tsx',
       ]) {
         assert.match(read(screen), /bottomInset=\{\w+\.bottom\}/, `${screen} should pass the inset`);
       }
-      // The free workout has its own copy of this sheet, with the same bug.
-      const empty = read('src/screens/EmptyWorkoutScreen.tsx');
-      assert.match(empty, /styles\.sheetFooter, \{ paddingBottom: bottomInset \+ 16 \}/);
     },
   },
   {
