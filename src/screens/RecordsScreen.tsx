@@ -209,7 +209,11 @@ export function RecordsList({
           onChange={setKind}
         />
         {shown.length > 0 ? (
-          <Text style={styles.liftCount}>{t(language, 'pr.liftCount', { count: shown.length })}</Text>
+          <Text style={styles.liftCount}>
+            {shown.length === 1
+              ? t(language, 'pr.liftCountOne')
+              : t(language, 'pr.liftCount', { count: shown.length })}
+          </Text>
         ) : null}
       </View>
 
