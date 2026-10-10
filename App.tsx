@@ -10,6 +10,7 @@ import { isWorkoutInProgress } from './src/lib/activeWorkout';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
 import { settleSavedCardioRun } from './src/lib/cardio';
 import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
+import { programmeStartSessionId } from './src/lib/programSessionList';
 import { formatTime, pluralize } from './src/lib/format';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
@@ -1451,7 +1452,12 @@ function VinhaApp() {
 
   function handleStartCustomProgram(workoutTemplateId: string) {
     const customTemplate = customWorkoutRuntimeMap[workoutTemplateId];
-    const firstSessionId = customTemplate?.sessions.find((session) => session.exercises.length > 0)?.id;
+    // The day Home offers when this programme leads, else its first day with
+    // lifts in it.
+    const firstSessionId = programmeStartSessionId(
+      (customTemplate?.sessions ?? []).map((session) => ({ id: session.id, exerciseCount: session.exercises.length })),
+      homeActivePlanCard?.programId === workoutTemplateId ? homeActivePlanCard.nextSession?.id : null,
+    );
     if (!firstSessionId) {
       showToast(t(preferences.appLanguage, 'toast.addExercisesTemplate'));
       navigate({ tab: 'workout', screen: 'template', workoutTemplateId });

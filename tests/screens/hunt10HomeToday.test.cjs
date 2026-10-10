@@ -57,7 +57,7 @@ module.exports = [
       const payload = read('src/lib/widgetPayload.ts');
       assert.match(
         payload,
-        /offset === 0 && input\.sessionForecast\s*\?\s*input\.sessionForecast\.trainedToday\s*:\s*workoutDoneDays\.has\(toDayStartMs\(date\)\)/,
+        /offset === 0 && input\.sessionForecast\s*\?\s*input\.sessionForecast\.trainedToday\s*&&\s*picked === null\s*:\s*workoutDoneDays\.has\(toDayStartMs\(date\)\)/,
       );
     },
   },

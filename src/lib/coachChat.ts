@@ -199,6 +199,27 @@ export function nameVars(key: string, name: string): Record<string, string> {
 }
 
 /**
+ * Whether the coach may say the next session "is on the plan today".
+ *
+ * Only a session still to be done today: the rhythm puts one on today and it
+ * is not yet trained, or the reader picked one for today (a pick stands only
+ * until it is trained). After today's workout the next session is the next
+ * one, not today's, and the coach says so with the rest-day line (bug hunt 11,
+ * home).
+ */
+export function sessionIsOnPlanToday(input: {
+  hasNextSession: boolean;
+  pickStands: boolean;
+  trainedToday: boolean;
+  scheduledToday: boolean;
+}): boolean {
+  if (!input.hasNextSession) {
+    return false;
+  }
+  return input.pickStands || (input.scheduledToday && !input.trainedToday);
+}
+
+/**
  * The line the coach opens with. It names what it can see and offers the two
  * obvious next moves; it never claims a trend it has not got the data for.
  */

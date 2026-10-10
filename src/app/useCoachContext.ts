@@ -12,6 +12,7 @@ import type { ProgrammeCardInput } from '../lib/aiCoachProgramme';
 import { buildAiTrainingContext } from '../lib/aiTrainingContext';
 import type { CoachAdviceMemoryEntry } from '../lib/coachAdviceMemory';
 import { silencedSuggestionKinds } from '../lib/coachSuggestions';
+import { sessionIsOnPlanToday } from '../lib/coachChat';
 import type { getHomeSummary } from '../lib/dashboard';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import type { buildFatigueModel } from '../lib/fatigueModel';
@@ -73,7 +74,7 @@ export interface CoachContextDeps {
   selectedCustomProgram: ReturnType<typeof selectHomeCustomProgram>;
   /** Home's composed programme card; only what these memos read is typed here. */
   homeActivePlanCard:
-    | (ProgrammeCardInput & { nextSession: { title: string } | null; todayPickSessionId: string | null })
+    | (ProgrammeCardInput & { nextSession: { title: string } | null; todayPickSessionId: string | null; sessionForecast?: { trainedToday: boolean } | null })
     | null;
   homePinnedStatCardKeys: ReturnType<typeof resolveHomeStatCardKeys>;
   homeTrainingSchedule: Parameters<typeof trainsOn>[0];
@@ -295,9 +296,15 @@ export function useCoachContext(deps: CoachContextDeps) {
       // here was only as fresh as whatever last changed this memo's inputs.
       todaySessionTitle:
         // Or the reader picked today's session on a rest day — Home's hero
-        // then treats today as training, and so does the coach.
+        // then treats today as training, and so does the coach. Not once
+        // today's workout is done: the next session is then the next one.
         homeActivePlanCard?.nextSession &&
-        (Boolean(homeActivePlanCard.todayPickSessionId) || trainsOn(homeTrainingSchedule, new Date(todayStartMs)))
+        sessionIsOnPlanToday({
+          hasNextSession: true,
+          pickStands: Boolean(homeActivePlanCard.todayPickSessionId),
+          trainedToday: homeActivePlanCard.sessionForecast?.trainedToday === true,
+          scheduledToday: trainsOn(homeTrainingSchedule, new Date(todayStartMs)),
+        })
           ? localizeSessionFocus(
               formatWorkoutDisplayLabel(homeActivePlanCard.nextSession.title),
               preferences.appLanguage,
