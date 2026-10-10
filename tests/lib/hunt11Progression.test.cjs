@@ -74,12 +74,15 @@ const dayAt = (daysAgo) => new Date(2026, 9, 10 - daysAgo, 18).toISOString();
 function sessionsFor(specs, { dayId = 'day' } = {}) {
   const sessions = [];
   const logs = [];
+  // A spec may also say: dayId / templateId (another day or programme), skipped,
+  // name (the lift as logged), slot (null: a log with no slot), and sets
+  // ([[kg, reps], ...]) when the loads differ within the session.
   specs.forEach((spec, index) => {
     const id = `s${index}`;
     sessions.push({
       id,
-      workoutTemplateId: 'tpl',
-      workoutTemplateSessionId: dayId,
+      workoutTemplateId: spec.templateId ?? 'tpl',
+      workoutTemplateSessionId: 'dayId' in spec ? spec.dayId : dayId,
       workoutNameSnapshot: 'Push',
       performedAt: dayAt(spec.daysAgo),
     });
@@ -87,12 +90,25 @@ function sessionsFor(specs, { dayId = 'day' } = {}) {
       id: `l${index}`,
       sessionId: id,
       exerciseTemplateId: null,
-      exerciseNameSnapshot: 'Bench Press',
-      weight: spec.weight,
-      repsPerSet: spec.reps,
+      exerciseNameSnapshot: spec.name ?? 'Bench Press',
+      weight: spec.sets ? Math.max(...spec.sets.map(([kg]) => kg)) : spec.weight,
+      repsPerSet: spec.sets ? spec.sets.map(([, reps]) => reps) : spec.reps,
+      ...(spec.sets
+        ? {
+            sets: spec.sets.map(([kg, reps], order) => ({
+              orderIndex: order,
+              weight: kg,
+              reps,
+              kind: 'working',
+              outcome: 'completed',
+              status: 'completed',
+            })),
+          }
+        : {}),
       tracked: true,
       orderIndex: 0,
-      templateSlotId: 'bench',
+      ...(spec.skipped ? { skipped: true } : {}),
+      ...(spec.slot === null ? {} : { templateSlotId: spec.slot ?? 'bench' }),
     });
   });
   return { sessions, logs };
@@ -118,17 +134,17 @@ function templateFor(config) {
   };
 }
 
-function currentOf(specs, sessions) {
-  const newest = specs.reduce((best, spec) => (spec.daysAgo < best.daysAgo ? spec : best), specs[0]);
-  return sessions[specs.indexOf(newest)];
+function currentOf(specs, sessions, daysAgo) {
+  const target = daysAgo ?? Math.min(...specs.map((spec) => spec.daysAgo));
+  return sessions[specs.findIndex((spec) => spec.daysAgo === target)];
 }
 
 function adviceFor(specs, config, opts = {}) {
   const { sessions, logs } = sessionsFor(specs, opts);
-  const lookup = 'lookup' in opts ? opts.lookup : () => templateFor(config);
+  const lookup = 'lookup' in opts ? opts.lookup : () => opts.template ?? templateFor(config);
   return buildNextSessionAdvice({
-    liftName: 'Bench Press',
-    sessionId: currentOf(specs, sessions).id,
+    liftName: opts.liftName ?? 'Bench Press',
+    sessionId: currentOf(specs, sessions, opts.currentDaysAgo).id,
     sessions,
     logs,
     lookupTemplate: lookup,
@@ -328,6 +344,161 @@ module.exports = [
       assert.ok(!analysis.nextActions.some((a) => /62[.,]5|Hold Bench/.test(a.text)));
     },
   },
+  // Each input the advice hands the gate has its own guard; one test apiece.
+  {
+    name: 'advice reads last time\'s warm-ups against the programme\'s set count',
+    run() {
+      // 40 x 5 then 3 x 60 x 8, twice, on a three-set programme: the 40 is a warm-up.
+      const sets = [[40, 5], [60, 8], [60, 8], [60, 8]];
+      const advice = adviceFor([{ daysAgo: 7, sets }, { daysAgo: 0, sets }], EIGHT);
+      assert.deepEqual(advice, { kind: 'raise', fromKg: 60, toKg: 62.5 });
+    },
+  },
+  {
+    name: 'advice stops at the session it follows: a newer session of the lift does not count',
+    run() {
+      const specs = [
+        { daysAgo: 14, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [4, 4, 4] },
+      ];
+      assert.deepEqual(adviceFor(specs, EIGHT, { currentDaysAgo: 7 }), { kind: 'raise', fromKg: 60, toKg: 62.5 });
+      assert.equal(adviceFor(specs, EIGHT, { currentDaysAgo: 0 }).kind, 'rebuild_reps');
+      // Nor does a later session make the earlier one a baseline it did not have.
+      const two = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8] },
+      ];
+      assert.equal(adviceFor(two, EIGHT, { currentDaysAgo: 7 }).kind, 'none');
+    },
+  },
+  {
+    name: 'advice tells two rows of one lift apart by slot, and takes the done log when another was skipped',
+    run() {
+      const twoRows = {
+        sessions: [
+          {
+            id: 'day',
+            exercises: [
+              { exerciseName: 'Bench Press', slotId: 'benchA', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps' },
+              { exerciseName: 'Bench Press', slotId: 'benchB', sets: 3, repsMin: 8, repsMax: 12, trackingMode: 'load_and_reps' },
+            ],
+          },
+        ],
+      };
+      // 8/8/8 twice in the row whose range runs to 12: held, where the 8-rep row would raise.
+      const inB = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8], slot: 'benchB' },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8], slot: 'benchB' },
+      ];
+      assert.equal(adviceFor(inB, EIGHT, { template: twoRows }).kind, 'none');
+      const inA = inB.map((spec) => ({ ...spec, slot: 'benchA' }));
+      assert.equal(adviceFor(inA, EIGHT, { template: twoRows }).kind, 'raise');
+      // The session also holds a skipped log of the lift under the other row: the done one decides.
+      const { sessions, logs } = sessionsFor(inA);
+      logs.unshift({ ...logs[logs.length - 1], id: 'skipped', skipped: true, templateSlotId: 'benchB' });
+      const advice = buildNextSessionAdvice({
+        liftName: 'Bench Press',
+        sessionId: 's1',
+        sessions,
+        logs,
+        lookupTemplate: () => twoRows,
+        level: 'beginner',
+      });
+      assert.equal(advice.kind, 'raise');
+    },
+  },
+  {
+    name: 'advice counts only sessions of the same programme day',
+    run() {
+      // One session of this day and one of another: a single session is not a baseline.
+      const specs = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8], dayId: 'other' },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8] },
+      ];
+      assert.equal(adviceFor(specs, EIGHT).kind, 'none');
+      assert.equal(gateFor([specs[1]], EIGHT).recommendation, 'silent');
+    },
+  },
+  {
+    name: 'advice counts only sessions of the same programme',
+    run() {
+      const specs = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8], templateId: 'elsewhere' },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8] },
+      ];
+      assert.equal(adviceFor(specs, EIGHT).kind, 'none');
+    },
+  },
+  {
+    name: 'advice ignores a skipped lift in history, and says nothing when this session skipped it',
+    run() {
+      const skippedBefore = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8], skipped: true },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8] },
+      ];
+      assert.equal(adviceFor(skippedBefore, EIGHT).kind, 'none');
+      const skippedNow = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8] },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8], skipped: true },
+      ];
+      assert.equal(adviceFor(skippedNow, EIGHT).kind, 'none');
+    },
+  },
+  {
+    name: 'advice does not pick between two rows of a lift by guessing: a log with no slot needs one row',
+    run() {
+      const twoRows = {
+        sessions: [
+          {
+            id: 'day',
+            exercises: [
+              { exerciseName: 'Bench Press', slotId: 'benchA', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps' },
+              { exerciseName: 'Bench Press', slotId: 'benchB', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps' },
+            ],
+          },
+        ],
+      };
+      const noSlot = [
+        { daysAgo: 7, weight: 60, reps: [8, 8, 8], slot: null },
+        { daysAgo: 0, weight: 60, reps: [8, 8, 8], slot: null },
+      ];
+      assert.equal(adviceFor(noSlot, EIGHT, { template: twoRows }).kind, 'none');
+      // The same history on a programme with the one row, a log with no slot, is read by the lift's name.
+      assert.equal(adviceFor(noSlot, EIGHT).kind, 'raise');
+    },
+  },
+  {
+    name: 'advice follows the slot a log was filed under: a swapped-in lift has no row of its own',
+    run() {
+      const template = {
+        sessions: [
+          {
+            id: 'day',
+            exercises: [
+              { exerciseName: 'Bench Press', slotId: 'benchA', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps' },
+              { exerciseName: 'Incline Press', slotId: 'incl', sets: 3, repsMin: 12, repsMax: 12, trackingMode: 'load_and_reps' },
+            ],
+          },
+        ],
+      };
+      // Incline Press swapped into the bench slot, twice: that is not the incline row's history.
+      const swapped = [
+        { daysAgo: 7, weight: 30, reps: [12, 12, 12], name: 'Incline Press', slot: 'benchA' },
+        { daysAgo: 0, weight: 30, reps: [12, 12, 12], name: 'Incline Press', slot: 'benchA' },
+      ];
+      assert.equal(adviceFor(swapped, EIGHT, { template, liftName: 'Incline Press' }).kind, 'none');
+      // Done in its own slot it is read against its own row.
+      const own = swapped.map((spec) => ({ ...spec, slot: 'incl' }));
+      assert.deepEqual(adviceFor(own, EIGHT, { template, liftName: 'Incline Press' }), { kind: 'raise', fromKg: 30, toKg: 32.5 });
+      // And a session of the lift under the other slot is not pooled into this slot's history.
+      const mixed = [
+        { daysAgo: 7, weight: 30, reps: [12, 12, 12], name: 'Incline Press', slot: 'benchA' },
+        { daysAgo: 0, weight: 30, reps: [12, 12, 12], name: 'Incline Press', slot: 'incl' },
+      ];
+      assert.equal(adviceFor(mixed, EIGHT, { template, liftName: 'Incline Press' }).kind, 'none');
+    },
+  },
   {
     name: 'the Pro next-session moment and completion lock follow the gate, and say nothing of a weight otherwise',
     run() {
@@ -357,9 +528,15 @@ module.exports = [
 
       const waiting = lockFor([{ daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT);
       assert.equal(waiting.advice.kind, 'none');
-      assert.doesNotMatch(waiting.conclusion.body, /62[.,]5|ready to try|reps back/);
+      // No change from the gate and no plateau: no lock, so no promise of one.
+      assert.equal(waiting.conclusion, null);
       assert.equal(waiting.moment.nextValue, null);
       assert.equal(waiting.moment.horizonValue, null);
+      // On a plateau the lock stays, whatever the gate says.
+      const stuck = lockFor([
+        { daysAgo: 14, weight: 60, reps: [6, 6, 6] }, { daysAgo: 7, weight: 60, reps: [6, 6, 6] },
+        { daysAgo: 0, weight: 60, reps: [6, 6, 6] }], EIGHT);
+      assert.notEqual(stuck.conclusion, null);
     },
   },
 

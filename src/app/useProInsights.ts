@@ -166,8 +166,13 @@ export function useProInsights(deps: ProInsightsDeps) {
       }),
       level: preferences.setupLevel,
     });
+    const conclusion = buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice);
+    // No change from the gate and no plateau: no lock, rather than one that promises a change.
+    if (!conclusion) {
+      return null;
+    }
     return {
-      conclusion: buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice),
+      conclusion,
       moment: buildNextSessionMoment(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice),
     };
   }, [

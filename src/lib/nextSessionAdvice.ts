@@ -61,6 +61,11 @@ export interface NextSessionAdviceInput {
 
 const SAME_LOAD_KG = 0.001;
 
+/** The programme slot a log was filed under, or null on a log with none. */
+function slotOf(log: ExerciseLog): string | null {
+  return typeof log.templateSlotId === 'string' && log.templateSlotId.length > 0 ? log.templateSlotId : null;
+}
+
 function sameLift(log: ExerciseLog, liftKey: string) {
   return normalizedName(log.exerciseNameSnapshot) === liftKey;
 }
@@ -127,17 +132,19 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
     return NO_NEXT_SESSION_ADVICE;
   }
 
-  // The programme's own row for this lift on this day. Two rows of one lift
-  // are told apart by the slot the log was filed under; a swapped lift has no
-  // row of its own, and its range is not the programme's.
+  // The programme's own row for this lift on this day. A log filed under a slot
+  // belongs to that slot's row: a lift swapped into a slot has no row of its
+  // own there, and the row the same lift has elsewhere that day is not its
+  // range. A log with no slot (older ones) is told by the lift's name.
   const liftKey = normalizedName(liftName);
   const rows = day.exercises.filter((exercise) => normalizedName(exercise.exerciseName) === liftKey);
   const currentLog = logs.find((log) => log.sessionId === session.id && sameLift(log, liftKey) && !log.skipped);
-  const exercise =
-    rows.length === 1
-      ? rows[0]
-      : rows.find((row) => currentLog && (row.slotId === currentLog.templateSlotId || row.slotId === currentLog.slotId)) ?? null;
-  if (!exercise || !currentLog) {
+  if (!currentLog) {
+    return NO_NEXT_SESSION_ADVICE;
+  }
+  const currentSlot = slotOf(currentLog);
+  const exercise = currentSlot ? rows.find((row) => row.slotId === currentSlot) ?? null : rows.length === 1 ? rows[0] : null;
+  if (!exercise) {
     return NO_NEXT_SESSION_ADVICE;
   }
 
@@ -151,6 +158,8 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
       !owner ||
       log.skipped ||
       !sameLift(log, liftKey) ||
+      // Filed under another slot of the day: that row's history, not this one's.
+      (slotOf(log) !== null && slotOf(log) !== exercise.slotId) ||
       seen.has(owner.id) ||
       owner.workoutTemplateId !== session.workoutTemplateId ||
       (owner.workoutTemplateSessionId ?? null) !== session.workoutTemplateSessionId ||

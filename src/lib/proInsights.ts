@@ -447,14 +447,18 @@ export function buildCompletionConclusion(
   language: AppLanguage,
   level: SetupLevel | null | undefined,
   advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
-): LockedConclusion {
+): LockedConclusion | null {
   const liftLabel = exerciseNameLabel(language, lift.name);
   if (lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
     return buildPlateauConclusion(lift, language, level);
   }
   // The gate's answer for the next session (nextSessionAdvice), not a step added
   // to the top set: a raise only where the gate raises, the reps first where
-  // they fell, and nothing about a weight otherwise.
+  // they fell. Where the gate has no change for the next session there is no
+  // lock at all: the teaser promises "one change for next time".
+  if (advice.kind === 'none') {
+    return null;
+  }
   if (advice.kind === 'raise') {
     return {
       teaser: t(language, 'pro.completion.teaser'),
@@ -463,10 +467,7 @@ export function buildCompletionConclusion(
   }
   return {
     teaser: t(language, 'pro.completion.teaser'),
-    body:
-      advice.kind === 'rebuild_reps'
-        ? t(language, 'analysis.next.recover', { lift: liftLabel })
-        : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
+    body: t(language, 'analysis.next.recover', { lift: liftLabel }),
   };
 }
 
