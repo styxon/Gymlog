@@ -298,7 +298,9 @@ module.exports = [
       assert.match(read('src', 'components', 'CutButton.tsx'), /variant === 'primary'\s*\?\s*theme\.purpleFill/);
       assert.match(read('src', 'components', 'PrimaryCTAButton.tsx'), /button: \{[^}]*backgroundColor: theme\.purpleFill,/);
       const freestyle = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
-      for (const style of ['emptyCta', 'finishButton', 'sheetChipActive', 'sheetConfirm']) {
+      // Its add sheet is the shared AddExerciseSheet now (#bugs 2026-10-10),
+      // whose chips and commit bar are checked with that component.
+      for (const style of ['emptyCta', 'finishButton']) {
         assert.match(
           freestyle,
           new RegExp(`\\n  ${style}: \\{[^}]*backgroundColor: theme\\.purpleFill,`),

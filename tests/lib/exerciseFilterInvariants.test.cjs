@@ -320,8 +320,9 @@ module.exports = [
       const browser = read('src/components/ExerciseLibraryBrowser.tsx');
       assert.match(browser, /category: categoryFilter/);
       assert.doesNotMatch(browser, /item\.category !== categoryFilter/);
+      // The free workout lists through the add sheet above (#bugs 2026-10-10).
       const empty = read('src/screens/EmptyWorkoutScreen.tsx');
-      assert.match(empty, /listPickerExercises\(items, \{\s*query: normalizedQuery,/);
+      assert.match(empty, /<AddExerciseSheet\b/);
       // The swap list (player and Home) lives in lib/swapPickerLists since 2026-10-07.
       const swapLists = read('src/lib/swapPickerLists.ts');
       assert.match(swapLists, /listPickerExercises\(library, \{\s*query: typed,\s*filters,/);

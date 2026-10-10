@@ -16,14 +16,13 @@ const read = (relative) => fs.readFileSync(path.join(__dirname, '../..', relativ
  *   lib/swapPickerLists      — every swap sheet's list (same component, swap
  *                              mode): the guided player, and since 2026-10-07
  *                              Home and the programme day
- *   EmptyWorkoutScreen       — the free workout's add sheet
+ *   EmptyWorkoutScreen       — draws AddExerciseSheet since 2026-10-10
  *   ExerciseLibraryBrowser   — the exercise library screen
  *   NewProgramSheet          — the import's "which lift did you mean" list
  */
 const PICKER_FILES = {
   'add sheet': 'src/components/AddExerciseSheet.tsx',
   'swap lists': 'src/lib/swapPickerLists.ts',
-  'empty workout': 'src/screens/EmptyWorkoutScreen.tsx',
   'library screen': 'src/components/ExerciseLibraryBrowser.tsx',
   'import teach list': 'src/components/NewProgramSheet.tsx',
 };
@@ -75,9 +74,11 @@ module.exports = [
     run() {
       const sheet = read(PICKER_FILES['add sheet']);
       assert.match(sheet, /options=\{BODY_PART_FILTERS\}|BODY_PART_FILTERS\.map\(/);
-      const empty = read(PICKER_FILES['empty workout']);
-      assert.match(empty, /BODY_PART_FILTERS\.map\(/, 'the empty workout keeps its own six chips');
-      assert.doesNotMatch(empty, /EMPTY_WORKOUT_MUSCLE_FILTERS|matchesMuscleFilter/);
+      // The free workout's sheet is the add sheet itself (#bugs 2026-10-10),
+      // so it has no chips of its own to keep in step.
+      const empty = read('src/screens/EmptyWorkoutScreen.tsx');
+      assert.match(empty, /<AddExerciseSheet\b/);
+      assert.doesNotMatch(empty, /BODY_PART_FILTERS|EMPTY_WORKOUT_MUSCLE_FILTERS|matchesMuscleFilter/);
       const browser = read(PICKER_FILES['library screen']);
       assert.match(browser, /const bodyPartOptions = BODY_PART_FILTERS;/, 'the library screen derives its chips from stored body parts');
       assert.match(browser, /const equipmentOptions = EQUIPMENT_FILTERS;/);
@@ -97,9 +98,9 @@ module.exports = [
       const sheet = read(PICKER_FILES['add sheet']);
       assert.match(sheet, /exercisePickerChipLabel\(option, language\)/);
       assert.match(read(PICKER_FILES['library screen']), /exercisePickerChipLabel\(option, language\)/);
-      assert.match(read(PICKER_FILES['empty workout']), /exercisePickerChipLabel\(option, language\)/);
       assert.match(sheet, /exercisePickerRowLabels\(item, language\)/);
-      assert.match(read(PICKER_FILES['empty workout']), /exercisePickerRowMeta\(item, language\)/);
+      // The free workout's quick-add rows on the board, under the shared words.
+      assert.match(read('src/screens/EmptyWorkoutScreen.tsx'), /exercisePickerRowMeta\(item, language\)/);
       assert.match(read(PICKER_FILES['library screen']), /exercisePickerRowMeta\(/);
       // The programme builder's rows print the displayed equipment too.
       const builder = read('src/screens/CreateTemplateScreen.tsx');

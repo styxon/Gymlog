@@ -2,8 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   BackHandler,
-  FlatList,
-  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -12,8 +10,9 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Svg, { Path } from 'react-native-svg';
 
+import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { PlatePop } from '../components/PlatePop';
 import { REST_BAR_BOTTOM, RestBar } from '../components/RestBar';
 import {
@@ -28,9 +27,7 @@ import { SupersetBorder } from '../components/SupersetBorder';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
-import { BODY_PART_FILTERS, BodyPartFilter } from '../lib/exerciseBrowseFilter';
-import { compareByShownName, exercisePickerChipLabel, exercisePickerLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
-import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
+import { exercisePickerLabel, exercisePickerRowMeta } from '../lib/exercisePicker';
 import { parseNumberInput, removeTrailingZeros } from '../lib/format';
 import {
   FreestyleExerciseDraft,
@@ -52,7 +49,7 @@ import {
   resolveFreestyleSessionId,
   skipFreestyleIdle,
 } from '../lib/emptyWorkoutSession';
-import { getExerciseTemplateDefaults, getPopularExerciseLibraryItems, getPopularExerciseLibraryOrder } from '../lib/exerciseSuggestions';
+import { getExerciseTemplateDefaults, getPopularExerciseLibraryItems } from '../lib/exerciseSuggestions';
 import { t } from '../lib/i18n';
 import { createId } from '../lib/ids';
 import { ExercisePrLookup } from '../lib/workoutCompletionSummary';
@@ -246,259 +243,8 @@ function SetCheckButton({ done, label, onPress }: { done: boolean; label: string
   );
 }
 
-// ── Add-exercise sheet ───────────────────────────────────────────────────
-
-interface AddSheetProps {
-  visible: boolean;
-  /**
-   * Height of the phone's system-button bar, read by the SCREEN.
-   *
-   * This sheet is a Modal, and a Modal is its own native window: inside one
-   * this app gets zero for the bottom inset from the root provider, from a
-   * provider added inside the modal, and from `initialWindowMetrics` alike —
-   * all three tried on the emulator with three-button navigation while the
-   * confirm button sat half under the bar ("alla olevat napit ei näy kunnolla
-   * jää puhelimen nappien taakse", #bugs 2026-08-28). Outside the modal the
-   * same hook is right, which is why the tab bar has never had this problem.
-   */
-  bottomInset?: number;
-  items: ExerciseLibraryItem[];
-  language: AppLanguage;
-  onClose: () => void;
-  onAdd: (items: ExerciseLibraryItem[]) => void;
-}
-
-function SelectTogglePill({ selected }: { selected: boolean }) {
-  const theme = useTheme();
-
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <View style={[styles.selectPill, selected && styles.selectPillOn]}>
-      {selected ? <CheckIcon size={16} color="#FFFFFF" strokeWidth={2.8} /> : <PlusIcon size={16} color={theme.purple} />}
-    </View>
-  );
-}
-
-function AddExerciseSheetHG({ visible, items, language, onClose, onAdd, bottomInset = 0 }: AddSheetProps) {
-  const theme = useTheme();
-
-  const styles = useThemedStyles(makeStyles);
-  const AW3 = useAW3();
-
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  // The pickers' body-part chips, "Etureidet" and the arms among them: this
-  // sheet had six of its own, and no way to the leg extension but "Jalat".
-  const [filter, setFilter] = useState<BodyPartFilter>('all');
-  const [query, setQuery] = useState('');
-
-  useEffect(() => {
-    if (!visible) {
-      setSelectedIds([]);
-      setFilter('all');
-      setQuery('');
-    }
-  }, [visible]);
-
-  const toggle = (id: string) =>
-    setSelectedIds((current) => (current.includes(id) ? current.filter((value) => value !== id) : [...current, id]));
-
-  const normalizedQuery = query.trim().toLowerCase();
-  const popularOrder = useMemo(() => getPopularExerciseLibraryOrder(items), [items]);
-  // Best answer first: the plain lat pulldown before the twelve variants
-  // that also contain "ylätalja". See rankExerciseMatches.
-  const matches = useMemo(
-    () =>
-      // Every picker's one list (lib/exercisePicker): no stretches, drills or
-      // strongman implements until the reader types (#bugs 2026-10-06).
-      listPickerExercises(items, {
-        query: normalizedQuery,
-        filters: { bodyPart: filter },
-        language,
-        popularity: (item) => popularOrder.get(item.id),
-      }),
-    [filter, items, language, normalizedQuery, popularOrder],
-  );
-
-  const popularItems = useMemo(() => {
-    const matchIds = new Set(matches.map((item) => item.id));
-    return getPopularExerciseLibraryItems(items, 8)
-      .filter((item) => matchIds.has(item.id))
-      .slice(0, 4);
-  }, [items, matches]);
-
-  const popularIds = useMemo(() => new Set(popularItems.map((item) => item.id)), [popularItems]);
-  const listItems = useMemo(() => {
-    const rest = matches.filter((item) => !popularIds.has(item.id));
-    // Alphabet is for browsing; a query already put the best answer first.
-    // By the name on screen, as the add sheet sorts — not the stored English.
-    return normalizedQuery ? rest : rest.sort(compareByShownName(language));
-  }, [matches, normalizedQuery, popularIds]);
-
-  const confirm = () => {
-    if (!selectedIds.length) {
-      return;
-    }
-    // In tap order, not library order — see orderExercisesBySelection.
-    onAdd(orderExercisesBySelection(items, selectedIds));
-  };
-
-  const listHeader = (
-    <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.sheetChipRow}>
-        {BODY_PART_FILTERS.map((option) => {
-          const active = option === filter;
-          return (
-            <Pressable key={option} onPress={() => setFilter(option)} style={[styles.sheetChip, active && styles.sheetChipActive]}>
-              <Text style={[styles.sheetChipText, active && styles.sheetChipTextActive]}>
-                {exercisePickerChipLabel(option, language)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
-      {popularItems.length > 0 ? (
-        <>
-          <View style={styles.sheetSectionHeader}>
-            <Text style={styles.sheetSectionTitle}>{t(language, 'emptyWorkout.sheet.popularTitle')}</Text>
-            <Text style={styles.sheetSectionSubtitle}>{t(language, 'emptyWorkout.sheet.popularSub')}</Text>
-          </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.popularRow}>
-            {popularItems.map((item) => {
-              const selected = selectedIds.includes(item.id);
-              return (
-                <Pressable
-                  key={item.id}
-                  onPress={() => toggle(item.id)}
-                  style={[styles.popularCard, selected && styles.popularCardSelected]}
-                >
-                  <View>
-                    <View style={styles.popularTile}>
-                      <Text style={styles.popularTileText}>{exerciseInitials(exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise')))}</Text>
-                    </View>
-                    <View style={styles.popularToggle}>
-                      <SelectTogglePill selected={selected} />
-                    </View>
-                  </View>
-                  <Text
-                    numberOfLines={2}
-                    style={styles.popularName}
-                    accessibilityLabel={exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
-                  >
-                    {exerciseListLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
-                  </Text>
-                  <Text numberOfLines={1} style={styles.popularMeta}>
-                    {buildMetaLabel(item, language)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </>
-      ) : null}
-
-      <View style={styles.sheetSectionHeaderAll}>
-        <Text style={styles.sheetSectionTitle}>{t(language, 'emptyWorkout.sheet.allTitle')}</Text>
-        <Text style={styles.sheetSectionSubtitle}>{t(language, 'emptyWorkout.sheet.available', { count: listItems.length })}</Text>
-      </View>
-    </>
-  );
-
-  return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.sheetOverlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
-        <View style={styles.sheet}>
-          <View style={styles.sheetGripRow}>
-            <View style={styles.sheetGrip} />
-          </View>
-          <View style={styles.sheetHead}>
-            <View style={styles.sheetHeadRow}>
-              <View style={styles.sheetHeadCopy}>
-                <Text style={styles.sheetTitle}>{t(language, 'emptyWorkout.addExercise')}</Text>
-                <Text style={styles.sheetSubtitle}>{t(language, 'emptyWorkout.sheet.subtitle')}</Text>
-              </View>
-              <Pressable accessibilityRole="button" accessibilityLabel={t(language, 'emptyWorkout.sheet.close')} onPress={onClose} hitSlop={8}>
-                <Text style={styles.sheetClose}>{t(language, 'emptyWorkout.sheet.close')}</Text>
-              </Pressable>
-            </View>
-            <View style={styles.searchField}>
-              <Svg viewBox="0 0 24 24" width={18} height={18}>
-                <Circle cx={11} cy={11} r={7} stroke={theme.faint} strokeWidth={2} fill="none" />
-                <Path d="M20 20l-3.5-3.5" stroke={theme.faint} strokeWidth={2} fill="none" strokeLinecap="round" />
-              </Svg>
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                placeholder={t(language, 'emptyWorkout.sheet.search')}
-                placeholderTextColor={AW3.ghost}
-                selectionColor={theme.purple}
-                style={styles.searchInput}
-              />
-            </View>
-          </View>
-
-          <FlatList
-            data={listItems}
-            keyExtractor={(item) => item.id}
-            initialNumToRender={12}
-            maxToRenderPerBatch={16}
-            windowSize={8}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.sheetListContent}
-            ListHeaderComponent={listHeader}
-            ListEmptyComponent={
-              popularItems.length === 0 ? (
-                <Text style={styles.sheetEmptyText}>{t(language, 'emptyWorkout.sheet.noMatch', { query })}</Text>
-              ) : null
-            }
-            renderItem={({ item }) => {
-              const selected = selectedIds.includes(item.id);
-              return (
-                <Pressable onPress={() => toggle(item.id)} style={[styles.sheetRow, selected && styles.sheetRowSelected]}>
-                  <Tile initials={exerciseInitials(exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise')))} size={46} />
-                  <View style={styles.sheetRowCopy}>
-                    <Text
-                      numberOfLines={2}
-                      style={styles.sheetRowName}
-                      accessibilityLabel={exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
-                    >
-                      {exerciseListLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.sheetRowMeta}>
-                      {buildMetaLabel(item, language)}
-                    </Text>
-                  </View>
-                  <SelectTogglePill selected={selected} />
-                </Pressable>
-              );
-            }}
-          />
-
-          <View style={[styles.sheetFooter, { paddingBottom: bottomInset + 16 }]}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t(language, 'emptyWorkout.a11y.addSelected')}
-              onPress={confirm}
-              disabled={selectedIds.length === 0}
-              style={[styles.sheetConfirm, selectedIds.length === 0 && styles.sheetConfirmDisabled]}
-            >
-              <Text style={[styles.sheetConfirmText, selectedIds.length === 0 && styles.sheetConfirmTextDisabled]}>
-                {selectedIds.length === 0
-                  ? t(language, 'emptyWorkout.sheet.selectPrompt')
-                  : selectedIds.length === 1
-                    ? t(language, 'emptyWorkout.sheet.addOne')
-                    : t(language, 'emptyWorkout.sheet.addMany', { count: selectedIds.length })}
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      </View>
-    </Modal>
-  );
-}
+/** The add sheet is multi-select here: a tap marks a card, the commit bar adds. */
+const noSingleSelect = () => undefined;
 
 // ── screen ───────────────────────────────────────────────────────────────
 
@@ -892,6 +638,13 @@ export function EmptyWorkoutScreen({
     return source.slice(0, 4);
   }, [exerciseLibrary, recentExerciseLibraryItems]);
   const quickListTitle = t(language, recentExerciseLibraryItems.length > 0 ? 'emptyWorkout.recent' : 'emptyWorkout.popular');
+
+  // What is on the board already, so the sheet's unsearched list leads with
+  // what goes with it (the day editor hands over its day the same way).
+  const boardLibraryIds = useMemo(
+    () => exercises.map((exercise) => exercise.libraryItemId).filter((id): id is string => typeof id === 'string'),
+    [exercises],
+  );
 
   const addExercises = (items: ExerciseLibraryItem[]) => {
     // Closing comes first. A confirmed selection can resolve to nothing — an
@@ -1557,13 +1310,25 @@ export function EmptyWorkoutScreen({
         onLater={restAsk.later}
       />
 
-      <AddExerciseSheetHG
+      {/* The library sheet every other "Lisää liike" opens (the programme
+          builder, the programme day): the same search, the same body-part
+          row, the same cards, and the kit's commit bar that appears once
+          something is picked. This screen drew its own copy, with its own
+          chips and a pale full-width "Valitse vähintään yksi liike" bar
+          ("samanlaiseksi kun muutkin lisää liike lehdet", #bugs 2026-10-10). */}
+      <AddExerciseSheet
         bottomInset={sheetInsets.bottom}
         visible={sheetVisible}
-        items={exerciseLibrary}
         language={language}
+        items={exerciseLibrary}
+        recentItems={recentExerciseLibraryItems}
+        currentItemIds={boardLibraryIds}
+        title={t(language, 'emptyWorkout.addExercise')}
+        subtitle={t(language, 'emptyWorkout.title')}
+        multiSelect
         onClose={() => setSheetVisible(false)}
-        onAdd={addExercises}
+        onSelectItem={noSingleSelect}
+        onConfirmSelection={addExercises}
       />
 
       <ConfirmDialog
@@ -2095,281 +1860,6 @@ const makeStyles = (theme: Theme) => {
     fontWeight: '800',
     color: theme.purpleDark,
     letterSpacing: 0.3,
-  },
-
-  // add-exercise sheet
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(16,12,40,0.42)',
-  },
-  sheet: {
-    maxHeight: '90%',
-    borderTopLeftRadius: 26,
-    borderTopRightRadius: 26,
-    backgroundColor: theme.bg,
-    overflow: 'hidden',
-  },
-  sheetGripRow: {
-    alignItems: 'center',
-    paddingTop: 9,
-    paddingBottom: 4,
-  },
-  sheetGrip: {
-    width: 38,
-    height: 4.5,
-    borderRadius: 999,
-    backgroundColor: '#D8CFEC',
-  },
-  sheetHead: {
-    paddingTop: 6,
-    paddingBottom: 12,
-    paddingHorizontal: 20,
-  },
-  sheetHeadRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
-  },
-  sheetHeadCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  sheetTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: theme.ink,
-    letterSpacing: -0.22,
-  },
-  sheetSubtitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: theme.muted,
-    marginTop: 3,
-  },
-  sheetClose: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: theme.purple,
-    paddingTop: 4,
-  },
-  searchField: {
-    marginTop: 14,
-    height: 46,
-    borderRadius: 13,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: AW3.fieldBorder,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    paddingHorizontal: 14,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    fontWeight: '700',
-    color: theme.ink,
-    paddingVertical: 0,
-  },
-  sheetChipRow: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 20,
-    paddingBottom: 14,
-  },
-  sheetChip: {
-    height: 36,
-    paddingHorizontal: 16,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: AW3.fieldBorder,
-  },
-  sheetChipActive: {
-    backgroundColor: theme.purpleFill,
-    borderColor: theme.purpleFill,
-  },
-  sheetChipText: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: theme.ink,
-  },
-  sheetChipTextActive: {
-    color: '#FFFFFF',
-  },
-  sheetSectionHeader: {
-    paddingHorizontal: 20,
-  },
-  sheetSectionHeaderAll: {
-    paddingHorizontal: 20,
-    paddingTop: 18,
-    paddingBottom: 12,
-  },
-  sheetSectionTitle: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    color: theme.ink,
-  },
-  sheetSectionSubtitle: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: theme.muted,
-    marginTop: 2,
-  },
-  popularRow: {
-    flexDirection: 'row',
-    gap: 12,
-    paddingHorizontal: 20,
-    paddingTop: 13,
-    paddingBottom: 4,
-  },
-  popularCard: {
-    width: 148,
-    flexShrink: 0,
-    borderRadius: 16,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: AW3.fieldBorder,
-    padding: 12,
-    shadowColor: '#28185A',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 14,
-    elevation: 2,
-  },
-  popularCardSelected: {
-    borderColor: theme.purple,
-    shadowColor: theme.purple,
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.18,
-    shadowRadius: 22,
-    elevation: 5,
-  },
-  popularTile: {
-    height: 78,
-    borderRadius: 12,
-    backgroundColor: theme.purpleLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  popularTileText: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: theme.purpleDark,
-  },
-  popularToggle: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-  },
-  popularName: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: theme.ink,
-    marginTop: 10,
-    lineHeight: 17,
-  },
-  popularMeta: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: theme.faint,
-    marginTop: 4,
-  },
-  selectPill: {
-    width: 30,
-    height: 30,
-    borderRadius: 999,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: AW3.fieldBorder,
-    shadowColor: '#28185A',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
-    flexShrink: 0,
-  },
-  selectPillOn: {
-    backgroundColor: theme.green,
-    borderColor: theme.green,
-  },
-  sheetListContent: {
-    paddingBottom: 12,
-  },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    padding: 11,
-    borderRadius: 14,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: AW3.fieldBorder,
-    marginHorizontal: 20,
-    marginBottom: 8,
-  },
-  sheetRowSelected: {
-    borderColor: theme.purple,
-  },
-  sheetRowCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  sheetRowName: {
-    fontSize: 15,
-    fontWeight: '800',
-    color: theme.ink,
-  },
-  sheetRowMeta: {
-    fontSize: 12.5,
-    fontWeight: '700',
-    color: theme.faint,
-    marginTop: 2,
-  },
-  sheetEmptyText: {
-    textAlign: 'center',
-    paddingVertical: 30,
-    fontSize: 14,
-    fontWeight: '700',
-    color: theme.faint,
-  },
-  sheetFooter: {
-    paddingTop: 12,
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: AW3.hair,
-    backgroundColor: theme.bg,
-  },
-  sheetConfirm: {
-    height: 54,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.purpleFill,
-    shadowColor: theme.purple,
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.32,
-    shadowRadius: 26,
-    elevation: 10,
-  },
-  sheetConfirmDisabled: {
-    backgroundColor: '#E7E1F2',
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  sheetConfirmText: {
-    fontSize: 16.5,
-    fontWeight: '800',
-    color: '#FFFFFF',
-  },
-  sheetConfirmTextDisabled: {
-    color: theme.faint,
   },
   });
 };
