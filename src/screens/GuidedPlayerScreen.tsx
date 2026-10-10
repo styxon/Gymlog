@@ -137,6 +137,7 @@ import {
 } from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
 import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
+import { consumeBackForTour } from '../features/tour/tourBack';
 import type { TourTargetRegistry } from '../features/tour/tourTargets';
 import type { WorkoutTourStep } from '../lib/firstRunTour';
 import { ExerciseSheet } from '../components/ExerciseSheet';
@@ -2400,6 +2401,10 @@ function GuidedPlayer({
       // The player is locked while Finish saves (the overlay at the end of the render); the sheet
       // this opens holds a discard, which is not for the middle of a save either.
       if (isSavingWorkout) {
+        return true;
+      }
+      // A tour callout over the player takes the key (it skips the tour).
+      if (consumeBackForTour()) {
         return true;
       }
       if (mode === 'player') {

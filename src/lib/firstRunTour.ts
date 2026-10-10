@@ -594,6 +594,19 @@ export function isTourReady(seen: readonly TourSurface[], surface: TourSurface):
   return surface !== 'workoutRest' || !isTourDue(seen, 'workoutSet');
 }
 
+/** Is this one of the guided workout's surfaces (as opposed to Home's)? */
+export function isWorkoutTourSurface(surface: TourSurface): boolean {
+  return (WORKOUT_TOUR_SURFACES as readonly string[]).includes(surface);
+}
+
+/**
+ * Is either workout tour still owed? Once both are seen the player has nothing
+ * to report, and the shell is not to be re-rendered for it.
+ */
+export function workoutToursPending(seen: readonly TourSurface[]): boolean {
+  return WORKOUT_TOUR_SURFACES.some((surface) => isTourDue(seen, surface));
+}
+
 /** Which surface a route is the root of, if the tour has one for it: Home's dashboard only. */
 export function resolveTourSurface(route: {
   tab: string;

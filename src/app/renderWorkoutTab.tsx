@@ -213,7 +213,7 @@ export interface WorkoutTabDeps {
   plateauNotice: React.ComponentProps<typeof GuidedPlayerScreen>['plateauNotice'];
   /** The first-run tour's target registry, and where the player reports its step. */
   tourRegistry: TourTargetRegistry;
-  setWorkoutTourStep: (step: WorkoutTourStep | null) => void;
+  setWorkoutTourStep: ((step: WorkoutTourStep | null) => void) | undefined;
   /** The exercise page's logged history by name — see useExerciseDetailHistory. */
   exerciseProgressFor: (exerciseName: string) => ExerciseProgressSummary;
   guidedEntryEyebrow: GuidedProps['entryEyebrow'];

@@ -8,6 +8,7 @@ import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { isWorkoutTourEligible } from '../lib/workoutTourEligibility';
 import {
   isTourReady,
+  workoutToursPending,
   markToursSeen,
   resolveTourBeats,
   resolveTourSurface,
@@ -188,20 +189,26 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
   // Home's dashboard, or - in the guided player only - its first plain set and
   // the first rest after it (the player reports which step it is on).
   const tourSurface = resolveTourSurface(route) ?? resolveWorkoutTourSurface(route, workoutTourStep);
-  // The workout tour is for a reader with no programme workout behind them, or
-  // one who asked for the tours again. Read only while the player has a step
-  // up: the sessions are scanned for it, and Home never asks.
-  const workoutStepUp = workoutTourStep !== null;
-  const workoutTourOwed = useMemo(
+  // Is a workout tour still owed to this reader? One of the two unseen AND the
+  // reader has no programme workout behind them (or asked for the tours again).
+  // Decided from what is stored, not from the step on screen, so it changes
+  // only when a tour is finished or a workout is saved - never per step - and
+  // the session scan behind it is skipped altogether once both are seen. It is
+  // also what lets the player be inert: it is handed the report channel only
+  // while this is true (App.tsx), so a reader past the tours does not re-render
+  // the shell twice a step for the life of the install.
+  const workoutPending = workoutToursPending(preferences.firstRunToursSeen);
+  const workoutTourDue = useMemo(
     () =>
-      !workoutStepUp ||
+      workoutPending &&
       isWorkoutTourEligible({
         replayed: preferences.firstRunToursReplayed,
         sessions: database.workoutSessions,
         templates: database.workoutTemplates,
       }),
-    [database.workoutSessions, database.workoutTemplates, preferences.firstRunToursReplayed, workoutStepUp],
+    [workoutPending, database.workoutSessions, database.workoutTemplates, preferences.firstRunToursReplayed],
   );
+  const workoutTourOwed = workoutTourStep === null || workoutTourDue;
   const tourActive =
     brandSplashDone &&
     !onboardingActive &&
@@ -358,6 +365,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     setupHandoffActive,
     legalConsentDue,
     homeTourActive,
+    workoutTourDue,
     homePrompt,
     tourElement,
     handleServerNoticeSeen,

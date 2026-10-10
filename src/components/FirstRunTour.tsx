@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, BackHandler, Easing, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 
+import { holdBackForTour } from '../features/tour/tourBack';
 import { measureNode, TourTargetRegistry } from '../features/tour/tourTargets';
 import { cutCornerPath } from '../lib/cutCorner';
 import {
@@ -11,6 +12,7 @@ import {
   CALLOUT_SIDE_INSET,
   dimCutoutPath,
   insetRect,
+  isWorkoutTourSurface,
   notchOffset,
   placeCallout,
   rectChanged,
@@ -250,9 +252,11 @@ export function FirstRunTour({
       onSweep(null);
       onBeatChange?.(null);
       setPhase('done');
-      // Nothing was on screen - every target failed to measure - so there is
-      // nothing to mark seen: the tour comes back when the screen next mounts.
-      if (shownRef.current) {
+      // The workout's tours: nothing was on screen - every target failed to
+      // measure - so there is nothing to mark seen, and the tour comes back
+      // when the screen next mounts. Home keeps what it always did: a tour that
+      // ran out of targets is consumed, not re-run on every visit.
+      if (shownRef.current || !isWorkoutTourSurface(surface)) {
         onFinish(surface, reason);
       }
     },
@@ -599,22 +603,21 @@ export function FirstRunTour({
    * page is shielded, so "back" to the reader means "not now", and it used to
    * reach the screen under the tour (the player opened its End-workout sheet).
    *
-   * No dependency list, on purpose. BackHandler calls the newest listener
-   * first, and the player re-subscribes its own whenever the shell re-renders
-   * (its onLeave is a new function each time); this layer re-renders with the
-   * shell, and its effects run after the page's, so re-subscribing here keeps
-   * it newest.
+   * Held once per callout, not subscribed: which BackHandler listener is the
+   * newest is an accident of effect order, so the key is taken in
+   * features/tour/tourBack, and the player's and the route's listeners ask
+   * there first. The handler goes through a ref so the hold is not remade when
+   * `skip` is (the 300 ms remeasure tick re-renders this layer).
    */
+  const skipRef = useRef(skip);
+  skipRef.current = skip;
+  const calloutUp = phase === 'beat' && spot !== null;
   useEffect(() => {
-    if (phase !== 'beat' || !spot) {
+    if (!calloutUp) {
       return undefined;
     }
-    const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
-      skip();
-      return true;
-    });
-    return () => subscription.remove();
-  });
+    return holdBackForTour(() => skipRef.current());
+  }, [calloutUp]);
 
   const onRootLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;

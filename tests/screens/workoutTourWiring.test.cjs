@@ -200,23 +200,108 @@ module.exports = [
   {
     // The player's own back listener opens its End-workout sheet; the shield
     // does not stop the hardware key, so with a callout up "back" used to
-    // reach the screen under the tour.
-    name: 'first-run tour: the back key with a callout up skips the tour, and the layer stays the newest listener',
+    // reach the screen under the tour. Which BackHandler listener is newest is
+    // an accident of effect order, so precedence is explicit: the layer holds
+    // the key (features/tour/tourBack) and the listeners under it ask first.
+    name: 'first-run tour: the back key with a callout up skips the tour, by an explicit hold and not by listener order',
     run() {
-      const effect = between(layer, "if (phase !== 'beat' || !spot) {\n      return undefined;\n    }\n    const subscription = BackHandler", '  const onRootLayout');
-      assert.match(effect, /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{\s*skip\(\);\s*return true;\s*\}\);/);
-      assert.match(effect, /return \(\) => subscription\.remove\(\);\s*\}\);/, 'no dependency list: re-subscribed with the shell, so it stays newest');
-      // Only while a callout is on screen: not during the start delay.
-      assert.match(effect, /phase !== 'beat' \|\| !spot/);
-      // And the player's own listener is the thing being outranked.
-      assert.match(player, /BackHandler\.addEventListener\('hardwareBackPress'[\s\S]{0,400}setExitOpen\(true\)/);
+      // Held once per callout - not subscribed, not re-made by the 300 ms tick.
+      const hold = between(layer, 'const skipRef = useRef(skip);', 'const onRootLayout');
+      assert.match(hold, /skipRef\.current = skip;/);
+      assert.match(hold, /const calloutUp = phase === 'beat' && spot !== null;/);
+      assert.match(hold, /if \(!calloutUp\) \{\s*return undefined;\s*\}\s*return holdBackForTour\(\(\) => skipRef\.current\(\)\);\s*\}, \[calloutUp\]\);/);
+      assert.doesNotMatch(layer, /BackHandler/, 'the layer no longer subscribes: it holds');
+      // The two listeners that could answer under it ask first, and stand down.
+      assert.match(
+        player,
+        // After the save lock (which stays the first thing asked), before the exit sheet.
+        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{\s*if \(isSavingWorkout\) \{\s*return true;\s*\}\s*if \(consumeBackForTour\(\)\) \{\s*return true;\s*\}\s*if \(mode === 'player'\) \{\s*setExitOpen\(true\)/,
+      );
+      const routeBack = stripComments(read('src/app/useRouteBack.ts'));
+      assert.match(
+        routeBack,
+        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{\s*if \(consumeBackForTour\(\)\) \{\s*return true;\s*\}/,
+      );
+    },
+  },
+  {
+    name: 'first-run tour: the back hold is the tour\'s own, and a replaced layer cannot clear the one that took over',
+    run() {
+      const back = require('../../.test-dist/features/tour/tourBack');
+      assert.equal(back.consumeBackForTour(), false, 'nothing held: the listener does its own thing');
+      assert.equal(back.isBackHeldByTour(), false);
+      let skipped = 0;
+      const release = back.holdBackForTour(() => {
+        skipped += 1;
+      });
+      assert.equal(back.isBackHeldByTour(), true);
+      assert.equal(back.consumeBackForTour(), true, 'the key is taken');
+      assert.equal(skipped, 1, 'and answered by skipping the tour');
+      // Home's layer gives way to the player's: the late release of the first
+      // must not let go of the second's hold.
+      let second = 0;
+      const releaseSecond = back.holdBackForTour(() => {
+        second += 1;
+      });
+      release();
+      assert.equal(back.consumeBackForTour(), true);
+      assert.equal(second, 1);
+      releaseSecond();
+      assert.equal(back.consumeBackForTour(), false);
+      assert.equal(back.isBackHeldByTour(), false);
+    },
+  },
+  {
+    name: 'workout tour: the player reports only while a workout tour is still owed, and eligibility is not re-read per step',
+    run() {
+      const wiringApp = stripComments(readAppWiring().replace(/\r\n/g, '\n'));
+      // App.tsx hands the player the report channel only while one is due.
+      assert.match(wiringApp, /setWorkoutTourStep: workoutTourDue \? setWorkoutTourStep : undefined,/);
+      // The decision: a tour unseen, and an eligible reader - from what is stored.
+      const due = between(overlays, 'const workoutPending =', 'const workoutTourOwed');
+      assert.match(due, /workoutToursPending\(preferences\.firstRunToursSeen\)/);
+      assert.match(due, /workoutPending &&\s*isWorkoutTourEligible\(/);
+      // The memo is keyed on the stored data, never on the current step, and
+      // short-circuits (no session scan) once both are seen.
+      assert.match(
+        due,
+        /\[workoutPending, database\.workoutSessions, database\.workoutTemplates, preferences\.firstRunToursReplayed\]/,
+      );
+      assert.doesNotMatch(due, /workoutTourStep/);
+      assert.match(overlays, /const workoutTourOwed = workoutTourStep === null \|\| workoutTourDue;/);
+      assert.match(overlays, /\n    workoutTourDue,\n/, 'the hook hands it to the shell');
+      // The reporter is inert without a channel.
+      assert.match(stripComments(read('src/features/tour/GuidedTourReport.tsx')), /if \(!report \|\| !plain\) \{\s*return undefined;/);
+    },
+  },
+  {
+    // A tour that ran out of targets: Home was always consumed, the workout's
+    // is retried. Pinned both ways.
+    name: 'first-run tour: nothing-shown is not marked for the workout surfaces only; Home keeps being consumed',
+    run() {
+      const finish = between(layer, 'const finish = useCallback(', 'const skip = useCallback');
+      assert.match(finish, /if \(shownRef\.current \|\| !isWorkoutTourSurface\(surface\)\) \{\s*onFinish\(surface, reason\);\s*\}/);
+      const tour = require('../../.test-dist/lib/firstRunTour');
+      assert.equal(tour.isWorkoutTourSurface('workoutSet'), true);
+      assert.equal(tour.isWorkoutTourSurface('workoutRest'), true);
+      assert.equal(tour.isWorkoutTourSurface('home'), false);
+      // Evaluated the way the layer does: (shown || !workout) decides onFinish.
+      const marks = (surface, shown) => shown || !tour.isWorkoutTourSurface(surface);
+      assert.equal(marks('home', false), true, 'Home with no target measured is still consumed');
+      assert.equal(marks('home', true), true);
+      assert.equal(marks('workoutSet', false), false, 'the workout tour with nothing shown is retried');
+      assert.equal(marks('workoutRest', false), false);
+      assert.equal(marks('workoutSet', true), true);
+      assert.equal(tour.workoutToursPending([]), true);
+      assert.equal(tour.workoutToursPending(['home', 'workoutSet']), true);
+      assert.equal(tour.workoutToursPending(['workoutRest', 'workoutSet']), false);
     },
   },
   {
     name: 'first-run tour: a tour with nothing on screen is not marked seen, and the counter counts only what was shown',
     run() {
       const finish = between(layer, 'const finish = useCallback(', 'const skip = useCallback');
-      assert.match(finish, /if \(shownRef\.current\) \{\s*onFinish\(surface, reason\);\s*\}/);
+      assert.match(finish, /if \(shownRef\.current \|\| !isWorkoutTourSurface\(surface\)\) \{\s*onFinish\(surface, reason\);\s*\}/);
       assert.equal((layer.match(/const shownRef = useRef\(false\);/g) || []).length, 1);
       // A beat whose target is missing is passed over and counted as such.
       assert.match(layer, /if \(!next\) \{\s*setPassedOver\(\(count\) => count \+ 1\);\s*stepTo\(index \+ 1\);/);

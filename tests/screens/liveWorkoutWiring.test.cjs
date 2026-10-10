@@ -92,7 +92,7 @@ module.exports = [
       assert.match(
         player,
         // The one new first line is the save lock: while Finish saves the player answers back and does nothing.
-        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{(?:\s*\/\/[^\n]*)*\s*if \(isSavingWorkout\) \{\s*return true;\s*\}\s*if \(mode === 'player'\) \{\s*setExitOpen\(true\);\s*return true;\s*\}\s*onLeave\(\);\s*return true;\s*\}\);/,
+        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{(?:\s*\/\/[^\n]*)*\s*if \(isSavingWorkout\) \{\s*return true;\s*\}(?:\s*\/\/[^\n]*)*\s*if \(consumeBackForTour\(\)\) \{\s*return true;\s*\}\s*if \(mode === 'player'\) \{\s*setExitOpen\(true\);\s*return true;\s*\}\s*onLeave\(\);\s*return true;\s*\}\);/,
       );
     },
   },
