@@ -60,7 +60,10 @@ export function useProInsights(deps: ProInsightsDeps) {
         workoutSessions: database.workoutSessions,
         exerciseLogs: database.exerciseLogs,
       }),
-    [database.exerciseLogs, database.workoutSessions],
+    // todayKey: the windows count back from today, so the day moving on changes
+    // the answer without a new log (a heavy week stayed "this week").
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [database.exerciseLogs, database.workoutSessions, todayKey],
   );
   /**
    * Recovery, in the shape the progression gate acts on.

@@ -926,7 +926,6 @@ function VinhaApp() {
     updatePreferences,
     deleteCompletedWorkoutSession,
     workout,
-    progressionFatigueSignal,
     sessionAdaptationFor,
     setHeldSessionAdaptations,
     setRunningCapSheet,

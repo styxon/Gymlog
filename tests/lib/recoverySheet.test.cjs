@@ -346,7 +346,9 @@ module.exports = [
       assert.match(door, /const start = programmeStart\(runtimeTemplate\);\s*workout\.startCustomWorkout\(start\.template, unit, start\.options\);/);
       const start = between(wiring, 'function programmeStart(', '\n  }\n');
       assert.match(start, /lighten \? lightenRuntimeTemplate\(runtimeTemplate\) : runtimeTemplate/);
-      assert.match(start, /fatigueSignal: lighten \? lightenedFatigueSignal\(progressionFatigueSignal\) : progressionFatigueSignal/);
+      // Recovery as of the start's own clock, not the memo (hunt 11).
+      assert.match(start, /const fatigueSignal = progressionFatigueSignalAt\(database, now\);/);
+      assert.match(start, /fatigueSignal: lighten \? lightenedFatigueSignal\(fatigueSignal\) : fatigueSignal,/);
       assert.match(door, /updatePreferences\(\{ lightNextSession: null \}\)\.catch\(/, 'a refused spend is swallowed');
       assert.match(door, /'recovery\.toast\.spendFailed'/);
       assert.doesNotMatch(door, /void updatePreferences\(\{ lightNextSession: null \}\)/);

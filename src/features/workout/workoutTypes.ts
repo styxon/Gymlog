@@ -106,6 +106,12 @@ export interface WorkoutTemplateExercise {
   progressionPriority: WorkoutProgressionPriority;
   trackingMode: WorkoutTrackingMode;
   sets: number;
+  /**
+   * The programme's own set count, when today's session was lightened and
+   * `sets` is one fewer. Which of last time's sets were warm-ups is read
+   * against what the programme asks, not against today's lighter dose.
+   */
+  programmeSets?: number;
   repsMin: number;
   repsMax: number;
   restSecondsMin: number;

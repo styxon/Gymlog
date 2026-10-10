@@ -646,6 +646,7 @@ const suites = [
   ...require('./lib/historyStatsTruth.test.cjs'),
   ...require('./lib/requestPacing.test.cjs'),
   ...require('./lib/settingsHunt11.test.cjs'),
+  ...require('./lib/hunt11Progression.test.cjs'),
 ];
 
 (async () => {

@@ -306,6 +306,30 @@ export function nextStepKg(lift: LiftHistory, level: SetupLevel | null | undefin
   return lift.latest.topSetWeightKg + PROGRESSION_LEVEL_PARAMS[tier].loadIncrementKg;
 }
 
+/**
+ * Whether the latest session kept the reps this weight has shown before.
+ *
+ * The raise is earned when every working set reaches the top of the rep range
+ * (progressionGate). The logs do not carry the programme's range, so the best
+ * set reps the lift has shown at this weight stand in for its top: a session
+ * that fell short of them on any set has not earned the raise, and 60 kg
+ * 8/8/8 followed by 5/4/4 was told to try 62,5 (hunt, 2026-10-10). A weight
+ * with no earlier session at it has nothing to fall short of.
+ */
+export function repsKeptAtTopWeight(lift: Pick<LiftHistory, 'points' | 'latest'>): boolean {
+  const latest = lift.latest;
+  const earlierBest = lift.points
+    .filter((point) => point.sessionId !== latest.sessionId && point.topSetWeightKg === latest.topSetWeightKg)
+    .reduce((best, point) => Math.max(best, ...(point.setReps.length > 0 ? point.setReps : [point.topSetReps])), 0);
+  const latestWorst = latest.setReps.length > 0 ? Math.min(...latest.setReps) : latest.topSetReps;
+  return latestWorst >= earlierBest;
+}
+
+/** What the next session opens on: the step up once the reps held, else this weight again. */
+export function nextSessionKg(lift: LiftHistory, level: SetupLevel | null | undefined): number {
+  return repsKeptAtTopWeight(lift) ? nextStepKg(lift, level) : lift.latest.topSetWeightKg;
+}
+
 /** The window the far bar looks ahead to. Four weeks reads as "a month". */
 export const HORIZON_DAYS = 28;
 /**
@@ -398,7 +422,7 @@ export function buildNextSessionMoment(
         })
       : t(language, 'pro.sheet.next.leadFlat', { lift: liftLabel, count: sessionBestPoints(lift).length }),
     bars,
-    nextValue: nextStepKg(lift, level),
+    nextValue: nextSessionKg(lift, level),
     horizonValue: horizon.kg,
     horizonSessions: horizon.sessions,
     barLabel: t(language, 'pro.sheet.next.barLabel', {
@@ -445,6 +469,13 @@ export function buildCompletionConclusion(
   const liftLabel = exerciseNameLabel(language, lift.name);
   if (lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
     return buildPlateauConclusion(lift, language, level);
+  }
+  if (!repsKeptAtTopWeight(lift)) {
+    // The reps fell short of what this weight has shown: no raise to offer.
+    return {
+      teaser: t(language, 'pro.completion.teaser'),
+      body: t(language, 'analysis.next.recover', { lift: liftLabel }),
+    };
   }
   return {
     teaser: t(language, 'pro.completion.teaser'),

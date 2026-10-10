@@ -2,6 +2,7 @@ import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupLevel } from '../types/models';
 import { getRollingWindowStart } from './completedSessions';
+import { buildFatigueModel, type FatigueModelInput } from './fatigueModel';
 import { gatingSets } from './warmupSets';
 
 /**
@@ -100,6 +101,18 @@ export function toProgressionFatigueSignal(
   }
   // 'undertrained' is not a reason to hold — it is room to add.
   return 'normal';
+}
+
+/**
+ * The recovery signal for the moment a workout starts.
+ *
+ * A signal kept in memory was built when the last session was saved, and a
+ * window built then still counted a heavy week as "this week" on the Wednesday
+ * after: ACWR 1.39 held the loads, where the same logs read 1.07 on the day
+ * (bug hunt, 2026-10-10). A start asks the clock it is started on.
+ */
+export function progressionFatigueSignalAt(input: FatigueModelInput, now: Date): ProgressionFatigueSignal {
+  return toProgressionFatigueSignal(buildFatigueModel(input, now));
 }
 
 export type ProgressionDecision =
@@ -226,16 +239,26 @@ function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, target
  */
 function sessionsOf(history: readonly WorkoutSlotHistoryEntry[], nowMs?: number): WorkoutSlotHistoryEntry[] {
   const logged = history.filter((entry) => entry.sets.length > 0);
-  if (typeof nowMs !== 'number' || !Number.isFinite(nowMs)) {
-    return logged;
-  }
-  // A session saved while the phone's clock ran ahead stayed history[0] once
-  // the clock was fixed: the gate measured the months to it as a break and
-  // held a jump two clean sessions had earned, while "Last time" showed the
-  // real last session (hunt, 2026-10-09). It ranks below every session dated
-  // up to now, as rankTime in exerciseHistoryLookup ranks it.
-  const isAhead = (entry: WorkoutSlotHistoryEntry) => Date.parse(entry.performedAt) > nowMs;
-  return [...logged.filter((entry) => !isAhead(entry)), ...logged.filter(isAhead)];
+  // Newest by the time on the entry, not by where it sits in the array. A
+  // session is stored at the front when it is saved, so one saved while the
+  // phone's clock ran behind stayed history[0] over every real session: the
+  // gate read the months to it as a break and held a jump two clean sessions
+  // had earned, while "Last time" showed the real last one (hunt, 2026-10-10).
+  // One saved while the clock ran ahead ranks below every session dated up to
+  // now (hunt, 2026-10-09), as rankTime in exerciseHistoryLookup ranks it.
+  // Equal times keep the array order (a stable sort).
+  const hasNow = typeof nowMs === 'number' && Number.isFinite(nowMs);
+  const rank = (entry: WorkoutSlotHistoryEntry) => {
+    const time = Date.parse(entry.performedAt);
+    if (!Number.isFinite(time)) {
+      return 0;
+    }
+    return hasNow && time > (nowMs as number) ? -1 : time;
+  };
+  return logged
+    .map((entry, index) => ({ entry, index, time: rank(entry) }))
+    .sort((left, right) => right.time - left.time || left.index - right.index)
+    .map(({ entry }) => entry);
 }
 
 /**

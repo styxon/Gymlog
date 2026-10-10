@@ -506,7 +506,7 @@ function resolveNamedHistoryDraft(
   });
   // Working sets only, numbered as done: set 1 reads the first working set,
   // not a warm-up logged before it (lib/warmupSets).
-  const entry = found ? toWorkingHistoryEntry(found, exercise.sets) : null;
+  const entry = found ? toWorkingHistoryEntry(found, exercise.programmeSets ?? exercise.sets) : null;
   const matched = findHistoricalSetForIndex(entry, setIndex);
   if (!entry || !matched) {
     return blank;
@@ -567,7 +567,7 @@ function resolveHistoricalSetDraft(
   // an ordinary set neither seeds set 1 nor climbs with the work.
   const nowMs = options.nowMs ?? Date.now();
   const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs)
-    .map((entry) => toWorkingHistoryEntry(entry, exercise.sets));
+    .map((entry) => toWorkingHistoryEntry(entry, exercise.programmeSets ?? exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
