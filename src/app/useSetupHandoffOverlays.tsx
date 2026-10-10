@@ -5,7 +5,19 @@ import { FirstRunTour } from '../components/FirstRunTour';
 import { LegalConsentSheet } from '../components/LegalConsentSheet';
 import { createTourTargetRegistry } from '../features/tour/tourTargets';
 import { isWorkoutInProgress } from '../lib/activeWorkout';
-import { isTourDue, markTourSeen, resolveTourBeats, resolveTourSurface, TourSurface } from '../lib/firstRunTour';
+import { isWorkoutTourEligible } from '../lib/workoutTourEligibility';
+import {
+  isTourReady,
+  workoutToursPending,
+  markToursSeen,
+  resolveTourBeats,
+  resolveTourSurface,
+  resolveWorkoutTourSurface,
+  surfacesSeenOnFinish,
+  TourFinishReason,
+  TourSurface,
+  WorkoutTourStep,
+} from '../lib/firstRunTour';
 import { resolveHomePrompt } from '../lib/homePrompts';
 import { acceptLegal, legalAcceptanceDue } from '../lib/legalAcceptance';
 import { formatLegalDate, LEGAL_VERSION, type LegalDocumentId } from '../lib/legalDocuments';
@@ -48,11 +60,13 @@ export interface SetupHandoffOverlaysDeps {
   homePinnedStatCardKeys: string[];
   homeSuggestedStatCardKeys: string[];
   accountBackup: { available: boolean; state: { status: string } };
-  database: Pick<AppDatabase, 'workoutSessions' | 'cardioSessions'>;
+  database: Pick<AppDatabase, 'workoutSessions' | 'cardioSessions' | 'workoutTemplates'>;
   /** Only whether the running plan has any sessions is read. */
   homeActivePlanCard: { sessions: readonly unknown[] } | null;
   workout: { activeSession: { status: string } | null };
   tourRegistry: ReturnType<typeof createTourTargetRegistry>;
+  /** The guided player's plain set or rest, when it is on one; see App.tsx. */
+  workoutTourStep: WorkoutTourStep | null;
   setTourSweep: React.ComponentProps<typeof FirstRunTour>['onSweep'];
   setTourFocus: React.ComponentProps<typeof FirstRunTour>['onBeatChange'];
   setupHandoffActiveRef: { current: boolean };
@@ -81,6 +95,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     homeActivePlanCard,
     workout,
     tourRegistry,
+    workoutTourStep,
     setTourSweep,
     setTourFocus,
     setupHandoffActiveRef,
@@ -171,7 +186,29 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
    * one-card prompt queue — the widget offer and the card suggestion wait
    * until the surface is marked seen. See lib/firstRunTour.ts.
    */
-  const tourSurface = resolveTourSurface(route);
+  // Home's dashboard, or - in the guided player only - its first plain set and
+  // the first rest after it (the player reports which step it is on).
+  const tourSurface = resolveTourSurface(route) ?? resolveWorkoutTourSurface(route, workoutTourStep);
+  // Is a workout tour still owed to this reader? One of the two unseen AND the
+  // reader has no programme workout behind them (or asked for the tours again).
+  // Decided from what is stored, not from the step on screen, so it changes
+  // only when a tour is finished or a workout is saved - never per step - and
+  // the session scan behind it is skipped altogether once both are seen. It is
+  // also what lets the player be inert: it is handed the report channel only
+  // while this is true (App.tsx), so a reader past the tours does not re-render
+  // the shell twice a step for the life of the install.
+  const workoutPending = workoutToursPending(preferences.firstRunToursSeen);
+  const workoutTourDue = useMemo(
+    () =>
+      workoutPending &&
+      isWorkoutTourEligible({
+        replayed: preferences.firstRunToursReplayed,
+        sessions: database.workoutSessions,
+        templates: database.workoutTemplates,
+      }),
+    [workoutPending, database.workoutSessions, database.workoutTemplates, preferences.firstRunToursReplayed],
+  );
+  const workoutTourOwed = workoutTourStep === null || workoutTourDue;
   const tourActive =
     brandSplashDone &&
     !onboardingActive &&
@@ -179,7 +216,9 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     // The tour waits for the terms: it points at a screen the sheet covers.
     legalConsentDue === null &&
     tourSurface !== null &&
-    isTourDue(preferences.firstRunToursSeen, tourSurface);
+    workoutTourOwed &&
+    // The rest tour waits for the set tour (lib/firstRunTour isTourReady).
+    isTourReady(preferences.firstRunToursSeen, tourSurface);
   const homeTourActive = tourActive && tourSurface === 'home';
   // The queue decides with the tour in it, so it is computed here, after
   // the tour, rather than up with the suggester.
@@ -192,20 +231,36 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
   });
   const tourHasProgram = Boolean(homeActivePlanCard && homeActivePlanCard.sessions.length > 0);
   const tourBeats = useMemo(
-    () => (tourSurface ? resolveTourBeats(tourSurface, { hasProgram: tourHasProgram }) : []),
-    [tourHasProgram, tourSurface],
+    () =>
+      tourSurface
+        ? resolveTourBeats(tourSurface, { hasProgram: tourHasProgram, workout: workoutTourStep })
+        : [],
+    // The workout's sentences depend on which buttons the step has, which are
+    // fixed for the step: its flags, not the object the player made.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      tourHasProgram,
+      tourSurface,
+      workoutTourStep?.canWarmUp,
+      workoutTourStep?.canRemove,
+      workoutTourStep?.hasHistory,
+      workoutTourStep?.kind,
+      workoutTourStep?.loaded,
+    ],
   );
   const firstRunToursSeenRef = useRef(preferences.firstRunToursSeen);
   firstRunToursSeenRef.current = preferences.firstRunToursSeen;
   // Stable: the layer calls this from its unmount, and a fresh closure per
   // render would be a fresh reason to fire it.
   const handleTourFinish = useCallback(
-    (surface: TourSurface) => {
+    (surface: TourSurface, reason: TourFinishReason = 'done') => {
       const seen = firstRunToursSeenRef.current;
-      if (!isTourDue(seen, surface)) {
+      // Skipping the set tour skips the rest tour too (surfacesSeenOnFinish).
+      const next = markToursSeen(seen, surfacesSeenOnFinish(surface, reason));
+      if (next.length === seen.length) {
         return;
       }
-      void updatePreferences({ firstRunToursSeen: markTourSeen(seen, surface) });
+      void updatePreferences({ firstRunToursSeen: next });
     },
     [updatePreferences],
   );
@@ -310,6 +365,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     setupHandoffActive,
     legalConsentDue,
     homeTourActive,
+    workoutTourDue,
     homePrompt,
     tourElement,
     handleServerNoticeSeen,

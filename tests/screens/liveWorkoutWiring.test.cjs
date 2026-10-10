@@ -88,11 +88,13 @@ module.exports = [
       );
       // Standing down is safe only because the player answers back in both
       // of its modes, and always says it did.
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      // Line comments dropped first, so the pattern below needs no repeated
+      // comment group (one nested in `\s*` backtracks exponentially).
+      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx').replace(/^[ \t]*\/\/[^\n]*\n/gm, '');
       assert.match(
         player,
         // The one new first line is the save lock: while Finish saves the player answers back and does nothing.
-        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{(?:\s*\/\/[^\n]*)*\s*if \(isSavingWorkout\) \{\s*return true;\s*\}\s*if \(mode === 'player'\) \{\s*setExitOpen\(true\);\s*return true;\s*\}\s*onLeave\(\);\s*return true;\s*\}\);/,
+        /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{\s*if \(isSavingWorkout\) \{\s*return true;\s*\}\s*if \(consumeBackForTour\(\)\) \{\s*return true;\s*\}\s*if \(mode === 'player'\) \{\s*setExitOpen\(true\);\s*return true;\s*\}\s*onLeave\(\);\s*return true;\s*\}\);/,
       );
     },
   },

@@ -84,6 +84,7 @@ const DEFAULT_PREFERENCES = {
   coachSuggestionState: {},
   setupHandoffCompleted: false,
   firstRunToursSeen: [] as TourSurface[],
+  firstRunToursReplayed: false,
   entryFlowCompleted: false,
   trainingFirstRunDismissed: false,
   selectedSignInMethod: null,

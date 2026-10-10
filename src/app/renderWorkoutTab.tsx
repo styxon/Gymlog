@@ -1,7 +1,9 @@
 import React from 'react';
 import { View } from 'react-native';
 
+import type { TourTargetRegistry } from '../features/tour/tourTargets';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
+import type { WorkoutTourStep } from '../lib/firstRunTour';
 import type { FirstRunSetupSelection } from '../lib/firstRunSetup';
 import { buildReadyProgramFitExplanation } from '../lib/readyProgramFit';
 import { restAlertsAnswered } from '../lib/restAlertAnswer';
@@ -209,6 +211,9 @@ export interface WorkoutTabDeps {
   liftHistory: React.ComponentProps<typeof GuidedPlayerScreen>['liftHistory'];
   /** The plateau reminder for whichever lift is walked to next, by name. */
   plateauNotice: React.ComponentProps<typeof GuidedPlayerScreen>['plateauNotice'];
+  /** The first-run tour's target registry, and where the player reports its step. */
+  tourRegistry: TourTargetRegistry;
+  setWorkoutTourStep: ((step: WorkoutTourStep | null) => void) | undefined;
   /** The exercise page's logged history by name — see useExerciseDetailHistory. */
   exerciseProgressFor: (exerciseName: string) => ExerciseProgressSummary;
   guidedEntryEyebrow: GuidedProps['entryEyebrow'];
@@ -314,6 +319,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     exerciseLibrary,
     liftHistory,
     plateauNotice,
+    tourRegistry,
+    setWorkoutTourStep,
     freestyleDraft,
     saveFreestyleDraft,
     clearFreestyleDraft,
@@ -1136,6 +1143,8 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // applies; read here for the arrow only, not to start anything.
         progressionOn={proUnlocked && preferences.automatedProgressionEnabled}
         plateauNotice={plateauNotice}
+        tourTargets={tourRegistry}
+        onTourStep={setWorkoutTourStep}
         soundCuesEnabled={preferences.soundCuesEnabled}
         onToggleSoundCues={(next) => void updatePreferences({ soundCuesEnabled: next })}
         language={preferences.appLanguage}

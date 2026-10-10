@@ -992,6 +992,8 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       // The rule lives in lib (which surfaces exist, no duplicates); the
       // loader only hands over whatever was stored.
       firstRunToursSeen: normalizeFirstRunToursSeen(input?.preferences?.firstRunToursSeen),
+      // Consent-shaped: anything but exactly true is "not asked for".
+      firstRunToursReplayed: input?.preferences?.firstRunToursReplayed === true,
       aiOnlineNoticeAcknowledged:
         typeof input?.preferences?.aiOnlineNoticeAcknowledged === 'boolean'
           ? input.preferences.aiOnlineNoticeAcknowledged

@@ -311,6 +311,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       coachSuggestionState: {},
       setupHandoffCompleted: false,
       firstRunToursSeen: [],
+      firstRunToursReplayed: false,
       entryFlowCompleted: false,
       trainingFirstRunDismissed: false,
       selectedSignInMethod: null,

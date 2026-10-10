@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BackHandler } from 'react-native';
 
+import { consumeBackForTour } from '../features/tour/tourBack';
 import { type LegalDocumentId } from '../lib/legalDocuments';
 import { AppRoute } from '../navigation/routes';
 import { backSkipsHistory, getBackRoute } from './backRoute';
@@ -115,6 +116,11 @@ export function useRouteBack(deps: RouteBackDeps): void {
     }
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => {
+      // A tour callout over this screen (Home's) takes the key first: it skips
+      // the tour and the reader stays where they are.
+      if (consumeBackForTour()) {
+        return true;
+      }
       // A document open over the hand-off is not a route; back closes it
       // before anything behind it moves. Asked here as well as below, because
       // this listener re-subscribes on route changes and can end up newest.

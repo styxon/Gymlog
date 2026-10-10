@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Easing, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 
+import { holdBackForTour } from '../features/tour/tourBack';
 import { measureNode, TourTargetRegistry } from '../features/tour/tourTargets';
 import { cutCornerPath } from '../lib/cutCorner';
 import {
@@ -10,6 +11,8 @@ import {
   CALLOUT_LEAVE_MS,
   CALLOUT_SIDE_INSET,
   dimCutoutPath,
+  insetRect,
+  isWorkoutTourSurface,
   notchOffset,
   placeCallout,
   rectChanged,
@@ -23,6 +26,7 @@ import {
   TOUR_REMEASURE_MS,
   TOUR_RESCROLL_QUIET_MS,
   TourBarStop,
+  TourFinishReason,
   TourRect,
   TourRingShape,
   TourSectionBeat,
@@ -92,9 +96,11 @@ interface FirstRunTourProps {
   onBeatChange?: (target: TourTargetId | null) => void;
   /**
    * Done, skipped, or left mid-way: the surface is marked seen either way.
-   * Leaving early is not failure, and the app gets out of the way.
+   * Leaving early is not failure, and the app gets out of the way. The reason
+   * is 'skipped' only for the reader's own "Skip the tour" - the one answer
+   * that can carry on to a surface after this one (the workout's rest tour).
    */
-  onFinish: (surface: TourSurface) => void;
+  onFinish: (surface: TourSurface, reason: TourFinishReason) => void;
 }
 
 interface Origin {
@@ -143,7 +149,15 @@ export function FirstRunTour({
   const [spot, setSpot] = useState<TourSpot | null>(null);
   const [barTop, setBarTop] = useState<number | null>(null);
   const [calloutHeight, setCalloutHeight] = useState(0);
+  /**
+   * Beats passed over because their target was not on screen. The counter
+   * counts the beats the reader sees: "2/4" after a skipped beat would be a
+   * number with a hole in it.
+   */
+  const [passedOver, setPassedOver] = useState(0);
   const finishedRef = useRef(false);
+  /** A callout has been on screen at least once. */
+  const shownRef = useRef(false);
   /** Set when a beat's rect lands; the enter animation starts once it is drawn. */
   const pendingShowRef = useRef<boolean | null>(null);
   /** When the page last moved under the reader's own finger. */
@@ -205,11 +219,14 @@ export function FirstRunTour({
   const readSpot = useCallback(
     async (beat: TourSectionBeat, options: { fallback: boolean }): Promise<TourSpot | null> => {
       const wantsAnchor = beat.anchor !== undefined && beat.anchor !== beat.target;
-      const [targetRect, anchorRect, origin] = await Promise.all([
+      const [measuredTarget, anchorRect, origin] = await Promise.all([
         registry.measure(beat.target),
         wantsAnchor ? registry.measure(beat.anchor as TourTargetId) : Promise.resolve(null),
         measureOrigin(),
       ]);
+      // A row that measures edge to edge because its page margin is padding
+      // is rung inside the margin (beat.inset), not across the screen.
+      const targetRect = measuredTarget ? insetRect(measuredTarget, beat.inset) : null;
       if (!options.fallback && (!targetRect || (wantsAnchor && !anchorRect))) {
         return null;
       }
@@ -226,16 +243,27 @@ export function FirstRunTour({
     [measureOrigin, registry],
   );
 
-  const finish = useCallback(() => {
-    if (finishedRef.current) {
-      return;
-    }
-    finishedRef.current = true;
-    onSweep(null);
-    onBeatChange?.(null);
-    setPhase('done');
-    onFinish(surface);
-  }, [onBeatChange, onFinish, onSweep, surface]);
+  const finish = useCallback(
+    (reason: TourFinishReason = 'done') => {
+      if (finishedRef.current) {
+        return;
+      }
+      finishedRef.current = true;
+      onSweep(null);
+      onBeatChange?.(null);
+      setPhase('done');
+      // The workout's tours: nothing was on screen - every target failed to
+      // measure - so there is nothing to mark seen, and the tour comes back
+      // when the screen next mounts. Home keeps what it always did: a tour that
+      // ran out of targets is consumed, not re-run on every visit.
+      if (shownRef.current || !isWorkoutTourSurface(surface)) {
+        onFinish(surface, reason);
+      }
+    },
+    [onBeatChange, onFinish, onSweep, surface],
+  );
+  /** "Skip the tour": the reader's no, which is not the same as reaching the end. */
+  const skip = useCallback(() => finish('skipped'), [finish]);
 
   // Leaving mid-tour — a tab press, a workout started — still counts as seen,
   // but only once a callout has actually been on screen. Leaving during the
@@ -243,7 +271,6 @@ export function FirstRunTour({
   // reader who flicks through the tabs on their first open would otherwise
   // burn all three tours without seeing one. Through refs, so a re-created
   // callback can never fire this early.
-  const shownRef = useRef(false);
   const finishRef = useRef(finish);
   finishRef.current = finish;
   useEffect(
@@ -272,9 +299,9 @@ export function FirstRunTour({
     if (reduceMotion === null || phase !== 'waiting') {
       return;
     }
-    const timer = setTimeout(() => setPhase('beat'), tourStartDelayMs(reduceMotion));
+    const timer = setTimeout(() => setPhase('beat'), tourStartDelayMs(reduceMotion, surface));
     return () => clearTimeout(timer);
-  }, [phase, reduceMotion]);
+  }, [phase, reduceMotion, surface]);
 
   const stepTo = useCallback(
     (next: number) => {
@@ -337,6 +364,7 @@ export function FirstRunTour({
         return;
       }
       if (!next) {
+        setPassedOver((count) => count + 1);
         stepTo(index + 1);
         return;
       }
@@ -570,6 +598,27 @@ export function FirstRunTour({
     });
   }, [beats, calloutAnim, index, phase, reduceMotion, ringAnim, stepTo, stopIndex]);
 
+  /**
+   * Android's back key with a callout up is the way out, the same as Skip: the
+   * page is shielded, so "back" to the reader means "not now", and it used to
+   * reach the screen under the tour (the player opened its End-workout sheet).
+   *
+   * Held once per callout, not subscribed: which BackHandler listener is the
+   * newest is an accident of effect order, so the key is taken in
+   * features/tour/tourBack, and the player's and the route's listeners ask
+   * there first. The handler goes through a ref so the hold is not remade when
+   * `skip` is (the 300 ms remeasure tick re-renders this layer).
+   */
+  const skipRef = useRef(skip);
+  skipRef.current = skip;
+  const calloutUp = phase === 'beat' && spot !== null;
+  useEffect(() => {
+    if (!calloutUp) {
+      return undefined;
+    }
+    return holdBackForTour(() => skipRef.current());
+  }, [calloutUp]);
+
   const onRootLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
     if (width !== size.width || height !== size.height) {
@@ -599,6 +648,9 @@ export function FirstRunTour({
   const listAllStops = isBar && reduceMotion === true;
   const isLast = index + 1 >= beats.length && (!isBar || listAllStops || stopIndex >= beat.stops.length - 1);
   const outlined = spot.shape === 'section' || spot.shape === 'chevron';
+  // One beat is not a tour to count through or to skip: a Done button is all.
+  const single = beats.length === 1;
+  const shownTotal = beats.length - passedOver;
 
   // In light, the callout is the app's own dark-violet layer — the Pro sheets'
   // and the coach's — with the ink those sheets use on it. In dark it lifts.
@@ -685,10 +737,14 @@ export function FirstRunTour({
         ]}
       >
         <CutSurface size="lg" fill={co.surface} speedLine={{ color: accent }} style={styles.callout}>
-          <View style={styles.headRow}>
-            <Text style={[styles.counter, { color: co.muted }]}>{`${index + 1}/${beats.length}`}</Text>
-            {title && !listAllStops ? <Text style={[styles.title, { color: co.ink }]}>{title}</Text> : null}
-          </View>
+          {single && !(title && !listAllStops) ? null : (
+            <View style={styles.headRow}>
+              {single ? null : (
+                <Text style={[styles.counter, { color: co.muted }]}>{`${index + 1 - passedOver}/${shownTotal}`}</Text>
+              )}
+              {title && !listAllStops ? <Text style={[styles.title, { color: co.ink }]}>{title}</Text> : null}
+            </View>
+          )}
           {listAllStops ? (
             <View style={styles.stopList}>
               {beat.stops.map((item) => (
@@ -702,15 +758,17 @@ export function FirstRunTour({
           ) : (
             <Text style={[styles.body, { color: co.ink }]}>{body}</Text>
           )}
-          <View style={styles.footer}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={finish}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
-            >
-              <Text style={[styles.skipText, { color: co.muted }]}>{t(language, 'tour.skip')}</Text>
-            </Pressable>
+          <View style={[styles.footer, single && styles.footerEnd]}>
+            {single ? null : (
+              <Pressable
+                accessibilityRole="button"
+                onPress={skip}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={({ pressed }) => [styles.skip, pressed && styles.pressed]}
+              >
+                <Text style={[styles.skipText, { color: co.muted }]}>{t(language, 'tour.skip')}</Text>
+              </Pressable>
+            )}
             <CutButton size="md" variant="accent" label={t(language, isLast ? 'tour.done' : 'tour.next')} onPress={advance} />
           </View>
         </CutSurface>
@@ -776,6 +834,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     marginTop: 10,
+  },
+  footerEnd: {
+    justifyContent: 'flex-end',
   },
   // A text link, but a 44 dp target: the padding and hitSlop together clear
   // the minimum even though the underline stays small.

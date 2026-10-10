@@ -25,14 +25,26 @@ import { cutCornerPath } from './cutCorner';
 import type { I18nKey } from './i18n';
 
 /**
- * Home is the only surface (user 2026-10-03): the tour runs once, on Home,
- * and nowhere else. Progress and Profile had two beats each that a reader
- * met on their first visit to the tab; those are gone. An old install's
- * stored 'progress'/'profile' entries are dropped by the normaliser.
+ * Home, and the guided workout (user 2026-10-10).
+ *
+ * Home's tour runs once on Home. Progress and Profile had two beats each that
+ * a reader met on their first visit to the tab; those went on 2026-10-03, and
+ * an old install's stored 'progress'/'profile' entries are dropped by the
+ * normaliser.
+ *
+ * The workout has two surfaces because it has two screens a first-time
+ * reader meets in turn: the first plain set ('workoutSet') and the first rest
+ * after it ('workoutRest'). Each is marked seen when it is finished or
+ * skipped, so a reader who leaves the workout between the two still gets the
+ * rest the next time. Only the guided programme player has them - not the
+ * free workout, not cardio.
  */
-export type TourSurface = 'home';
+export type TourSurface = 'home' | 'workoutSet' | 'workoutRest';
 
-export const TOUR_SURFACES: readonly TourSurface[] = ['home'];
+export const TOUR_SURFACES: readonly TourSurface[] = ['home', 'workoutSet', 'workoutRest'];
+
+/** The surfaces that live in the guided player, set first. */
+export const WORKOUT_TOUR_SURFACES: readonly TourSurface[] = ['workoutSet', 'workoutRest'];
 
 /** Every element a screen or the bar can register for the tour to point at. */
 export type TourTargetId =
@@ -42,6 +54,12 @@ export type TourTargetId =
   | 'home.workoutChevron'
   | 'home.program'
   | 'home.cards'
+  | 'workout.name'
+  | 'workout.history'
+  | 'workout.setRow'
+  | 'workout.dials'
+  | 'workout.log'
+  | 'workout.rest'
   | 'bar.pill'
   | 'bar.home'
   | 'bar.programs'
@@ -73,8 +91,60 @@ export interface TourSectionBeat {
    * short and drew half a section).
    */
   scroll?: 'target' | 'end';
+  /**
+   * How much of the measured box is the screen's own padding rather than the
+   * thing the beat is about. A row that carries its page margin as padding
+   * measures edge to edge, and a ring drawn on that spills off the screen.
+   */
+  inset?: TourInset;
   /** The dictionary key for the callout's one sentence. */
   copyKey: I18nKey;
+}
+
+export interface TourInset {
+  x?: number;
+  top?: number;
+  bottom?: number;
+}
+
+/**
+ * A measured box with its padding taken off. Only ever shrinks: an inset that
+ * would leave nothing is ignored rather than producing a negative size.
+ */
+export function insetRect(rect: TourRect, inset: TourInset | undefined): TourRect {
+  if (!inset) {
+    return rect;
+  }
+  const x = inset.x ?? 0;
+  const top = inset.top ?? 0;
+  const bottom = inset.bottom ?? 0;
+  if (rect.width - x * 2 <= 0 || rect.height - top - bottom <= 0) {
+    return rect;
+  }
+  return { x: rect.x + x, y: rect.y + top, width: rect.width - x * 2, height: rect.height - top - bottom };
+}
+
+/**
+ * What the guided player tells the shell about the step it is on, for the
+ * workout tour. The player reports only a PLAIN step - a loaded or bodyweight
+ * set with dials, or a timed rest - so an interval bout, a superset round, a
+ * hold or a clock never reaches the tour at all. The three flags pick the
+ * sentence that is true of this screen: a beat must not describe a button
+ * that is not on it.
+ */
+export interface WorkoutTourStep {
+  kind: 'set' | 'rest';
+  /** The blue + that logs a warm-up set is on the set row. */
+  canWarmUp: boolean;
+  /**
+   * The red − is drawn: the lift has a set to take back. A one-set lift, or one
+   * whose last set is already logged, shows a blank place instead.
+   */
+  canRemove: boolean;
+  /** A weight dial is on screen (a bodyweight lift has reps only). */
+  loaded: boolean;
+  /** There is a "last time" line to point at, not the first-time note. */
+  hasHistory: boolean;
 }
 
 /**
@@ -99,8 +169,68 @@ export type TourBeat = TourSectionBeat | TourBarBeat;
  * open and the rows carry their own names, so a callout on either restates
  * what is already on screen.
  */
-export function resolveTourBeats(surface: TourSurface, options: { hasProgram: boolean }): TourBeat[] {
+export function resolveTourBeats(
+  surface: TourSurface,
+  options: { hasProgram: boolean; workout?: WorkoutTourStep | null },
+): TourBeat[] {
   switch (surface) {
+    case 'workoutSet': {
+      const step = options.workout;
+      const canWarmUp = step?.canWarmUp ?? false;
+      const canRemove = step?.canRemove ?? true;
+      const loaded = step?.loaded ?? true;
+      const hasHistory = step?.hasHistory ?? false;
+      return [
+        // The card's top is the lift's name and picture, and all of it opens
+        // the same sheet.
+        { kind: 'section', target: 'workout.name', place: 'below', copyKey: 'tour.workout.name' },
+        {
+          kind: 'section',
+          target: 'workout.history',
+          place: 'below',
+          // The block is a hairline and 9 dp of padding above its first line.
+          inset: { top: 9 },
+          copyKey: hasHistory ? 'tour.workout.history' : 'tour.workout.historyFirst',
+        },
+        {
+          kind: 'section',
+          target: 'workout.setRow',
+          place: 'below',
+          // The row carries the page's 24 dp margin and 18 dp of air above.
+          inset: { x: 24, top: 18 },
+          copyKey: setRowCopyKey(canRemove, canWarmUp),
+        },
+        {
+          kind: 'section',
+          target: 'workout.dials',
+          place: 'above',
+          copyKey: loaded ? 'tour.workout.dials' : 'tour.workout.dialsReps',
+        },
+        {
+          kind: 'section',
+          target: 'workout.log',
+          place: 'above',
+          // 22 dp page margin; 4 above the buttons and 12 under them.
+          inset: { x: 22, top: 4, bottom: 12 },
+          copyKey: 'tour.workout.log',
+        },
+      ];
+    }
+    case 'workoutRest':
+      return [
+        {
+          kind: 'section',
+          // The -15s / +15s / Pause row and Skip rest: what the sentence is about.
+          target: 'workout.rest',
+          // The callout goes above, over the empty part of the page: below it
+          // there is only the rail, and the callout would be pushed back onto
+          // the buttons.
+          place: 'above',
+          // The block carries the page's 24 dp margin and 10 dp under it.
+          inset: { x: 24, bottom: 10 },
+          copyKey: 'tour.workout.rest',
+        },
+      ];
     case 'home': {
       const beats: TourBeat[] = [
         { kind: 'section', target: 'home.week', place: 'below', copyKey: 'tour.home.week' },
@@ -136,6 +266,17 @@ export function resolveTourBeats(surface: TourSurface, options: { hasProgram: bo
   }
 }
 
+/**
+ * Which sentence the set row gets: one for each combination of the buttons it
+ * can have. The green + is always there; the red − and the blue + come and go.
+ */
+export function setRowCopyKey(canRemove: boolean, canWarmUp: boolean): I18nKey {
+  if (canRemove) {
+    return canWarmUp ? 'tour.workout.sets' : 'tour.workout.setsNoWarmup';
+  }
+  return canWarmUp ? 'tour.workout.setsNoRemove' : 'tour.workout.setsAddOnly';
+}
+
 export const TOUR_BAR_STOP_COPY_KEY: Record<TourBarStop, I18nKey> = {
   home: 'tour.bar.home',
   programs: 'tour.bar.programs',
@@ -156,6 +297,13 @@ export const HOME_UNFOLD_SETTLED_MS = 600 + 500;
 export const TOUR_START_AFTER_UNFOLD_MS = HOME_UNFOLD_SETTLED_MS + 50;
 /** Under reduced motion there is no unfold to wait for. */
 export const TOUR_START_REDUCED_MS = 30;
+/**
+ * The player's step comes in with a 320 ms fade and rise (StepIn), and the
+ * rail and the card under it settle in the same breath. The beat waits until
+ * the step has stopped moving and the reader has had a look at it.
+ */
+export const WORKOUT_TOUR_START_MS = 900;
+export const WORKOUT_TOUR_START_REDUCED_MS = 150;
 
 export const CALLOUT_ENTER_MS = 260;
 export const CALLOUT_LEAVE_MS = 160;
@@ -178,7 +326,10 @@ export const TOUR_RESCROLL_QUIET_MS = 600;
 /** Sub-pixel measurement jitter is not a move. */
 export const RECT_EPSILON = 0.5;
 
-export function tourStartDelayMs(reduceMotion: boolean): number {
+export function tourStartDelayMs(reduceMotion: boolean, surface: TourSurface = 'home'): number {
+  if (surface !== 'home') {
+    return reduceMotion ? WORKOUT_TOUR_START_REDUCED_MS : WORKOUT_TOUR_START_MS;
+  }
   return reduceMotion ? TOUR_START_REDUCED_MS : TOUR_START_AFTER_UNFOLD_MS;
 }
 
@@ -408,6 +559,54 @@ export function markTourSeen(seen: readonly TourSurface[], surface: TourSurface)
   return seen.includes(surface) ? [...seen] : [...seen, surface];
 }
 
+/**
+ * How a tour ended. Skipping is an answer ("I don't want the tour"); finishing
+ * and leaving mid-way are not, and mark only the surface that was on.
+ */
+export type TourFinishReason = 'done' | 'skipped';
+
+/**
+ * Which surfaces a finished tour marks as seen. Skipping the set tour skips
+ * the rest tour with it: one "no" is one answer, and a reader who just said no
+ * should not be shown the second half of what they declined. Everything else
+ * marks only itself - Home's skip does not reach into the workout.
+ */
+export function surfacesSeenOnFinish(surface: TourSurface, reason: TourFinishReason): TourSurface[] {
+  if (reason === 'skipped' && surface === 'workoutSet') {
+    return [...WORKOUT_TOUR_SURFACES];
+  }
+  return [surface];
+}
+
+export function markToursSeen(seen: readonly TourSurface[], surfaces: readonly TourSurface[]): TourSurface[] {
+  return surfaces.reduce<TourSurface[]>((list, surface) => markTourSeen(list, surface), [...seen]);
+}
+
+/**
+ * Is this surface's turn, given what has been seen? The rest tour comes after
+ * the set tour, always: a first rest reached before any plain set (a superset
+ * opens the workout, say) waits, so the two never arrive in the wrong order.
+ */
+export function isTourReady(seen: readonly TourSurface[], surface: TourSurface): boolean {
+  if (!isTourDue(seen, surface)) {
+    return false;
+  }
+  return surface !== 'workoutRest' || !isTourDue(seen, 'workoutSet');
+}
+
+/** Is this one of the guided workout's surfaces (as opposed to Home's)? */
+export function isWorkoutTourSurface(surface: TourSurface): boolean {
+  return (WORKOUT_TOUR_SURFACES as readonly string[]).includes(surface);
+}
+
+/**
+ * Is either workout tour still owed? Once both are seen the player has nothing
+ * to report, and the shell is not to be re-rendered for it.
+ */
+export function workoutToursPending(seen: readonly TourSurface[]): boolean {
+  return WORKOUT_TOUR_SURFACES.some((surface) => isTourDue(seen, surface));
+}
+
 /** Which surface a route is the root of, if the tour has one for it: Home's dashboard only. */
 export function resolveTourSurface(route: {
   tab: string;
@@ -418,4 +617,20 @@ export function resolveTourSurface(route: {
     return 'home';
   }
   return null;
+}
+
+/**
+ * The workout's surface, if the reader is on the guided player's first plain
+ * set or first rest. The route says only "the player"; the step it is on is
+ * the player's to report (WorkoutTourStep), and a player that reports nothing
+ * - an entry screen, a splash, a drill, an interval, a superset - has no tour.
+ */
+export function resolveWorkoutTourSurface(
+  route: { tab: string; screen: string },
+  step: Pick<WorkoutTourStep, 'kind'> | null,
+): TourSurface | null {
+  if (route.tab !== 'workout' || route.screen !== 'guided' || !step) {
+    return null;
+  }
+  return step.kind === 'set' ? 'workoutSet' : 'workoutRest';
 }

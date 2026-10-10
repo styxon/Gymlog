@@ -124,12 +124,12 @@ module.exports = [
         assert.ok(text.length > 20, `${key} is suspiciously short, did the match stop early: ${text}`);
         // Verbs that ask for a press. "Painamalla X voit…" describes what a
         // button does and is fine; "Paina X" is an order the shield refuses.
-        assert.doesNotMatch(text, /\b(Napauta|Napsauta|Klikkaa|Tap|Click)\b/, `${key}: ${text}`);
-        assert.doesNotMatch(text, /^(Paina|Press) /, `${key}: ${text}`);
+        assert.doesNotMatch(text, /(?<![\p{L}])(Napauta|Napsauta|Klikkaa|Valitse|Pidä|Tap|Click|Hold)(?![\p{L}])/u, `${key}: ${text}`);
+        assert.doesNotMatch(text, /(^|[.;]\s+)(Paina|Press) /, `${key}: ${text}`);
       }
       // The way out is still one tap, and it is on every beat — a guided tour
       // that could not be left would be a trap.
-      assert.match(tourRender(), /onPress=\{finish\}[\s\S]{0,400}'tour\.skip'/);
+      assert.match(tourRender(), /onPress=\{skip\}[\s\S]{0,400}'tour\.skip'/);
     },
   },
   {
@@ -242,7 +242,7 @@ module.exports = [
     run() {
       const render = tourRender();
       assert.match(render, /onPress=\{advance\}/);
-      assert.match(render, /onPress=\{finish\}[\s\S]{0,400}'tour\.skip'/);
+      assert.match(render, /onPress=\{skip\}[\s\S]{0,400}'tour\.skip'/);
       // A 44 dp target on a small underlined link: padding plus hitSlop.
       assert.match(render, /hitSlop=\{\{ top: 12, bottom: 12, left: 12, right: 12 \}\}/);
       assert.match(render, /'tour\.done' : 'tour\.next'/);
@@ -349,7 +349,7 @@ module.exports = [
       assert.match(trigger, /brandSplashDone/);
       assert.match(trigger, /!onboardingActive/);
       assert.match(trigger, /!setupHandoffActive/);
-      assert.match(trigger, /isTourDue\(preferences\.firstRunToursSeen, tourSurface\)/);
+      assert.match(trigger, /isTourReady\(preferences\.firstRunToursSeen, tourSurface\)/);
       // The three Home cards wait for the tour: the two queued ones through
       // the queue itself (lib/homePrompts), the widget card at its own gate.
       const queue = between(wiring, 'const homePrompt = resolveHomePrompt(', '});');

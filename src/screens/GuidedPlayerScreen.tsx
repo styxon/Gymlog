@@ -136,6 +136,10 @@ import {
   guidedWindow,
 } from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
+import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
+import { consumeBackForTour } from '../features/tour/tourBack';
+import type { TourTargetRegistry } from '../features/tour/tourTargets';
+import type { WorkoutTourStep } from '../lib/firstRunTour';
 import { ExerciseSheet } from '../components/ExerciseSheet';
 import { CtaShimmer } from '../components/CtaShimmer';
 import { SupersetBorder } from '../components/SupersetBorder';
@@ -410,6 +414,10 @@ interface GuidedPlayerScreenProps {
    * asking a question the reader has already answered.
    */
   autoResume?: boolean;
+  /** The first-run tour's target registry: the set and rest screens register what the tour rings. */
+  tourTargets?: TourTargetRegistry;
+  /** Where the player reports its plain set / rest to the shell, for the workout tour. */
+  onTourStep?: (step: WorkoutTourStep | null) => void;
 }
 
 /** The heaviest load in a session's sets, or 0 when there is none to show. */
@@ -1597,9 +1605,13 @@ function GuidedPlayer({
   onRestAlertsAnswered,
   onOpenSystemSettings,
   autoResume = false,
+  tourTargets,
+  onTourStep,
 }: GuidedPlayerScreenProps) {
   // Read here, on the screen: inside the sheet's Modal it is always 0.
   const screenInsets = useSafeAreaInsets();
+  /** The rest screen's controls, for the workout tour. */
+  const restControlsRef = useTourTarget(tourTargets, 'workout.rest');
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   // The resolved theme, for the status bar: the player has its own dark
@@ -2389,6 +2401,10 @@ function GuidedPlayer({
       // The player is locked while Finish saves (the overlay at the end of the render); the sheet
       // this opens holds a discard, which is not for the middle of a save either.
       if (isSavingWorkout) {
+        return true;
+      }
+      // A tour callout over the player takes the key (it skips the tour).
+      if (consumeBackForTour()) {
         return true;
       }
       if (mode === 'player') {
@@ -4374,12 +4390,16 @@ function GuidedPlayer({
               onMinutesReached={() => cue('rest')}
               minutesClock={workout.activeSession?.minutesClock ?? null}
               onMinutesClockChange={workout.setMinutesClock}
+              tourTargets={tourTargets}
+              // Held while a sheet is open or the workout is paused.
+              tourReport={frozen ? undefined : onTourStep}
             />
           )}
 
           {step.type === 'rest' && (
             <StepIn stepKey={`rest-${stepIndex}`}>
               <View style={{ flex: 1, minHeight: 0 }}>
+                <GuidedTourReport report={frozen ? undefined : onTourStep} kind="rest" plain={!step.recoveryKind} />
                 {/* What was just logged, and a way to fix it.
                     Rest is when a mis-typed rep count is noticed, and until
                     now the only way back was the hardware back button. */}
@@ -4462,7 +4482,11 @@ function GuidedPlayer({
                       2026-09-09, from the gym). What was logged, how long is
                       left, three controls, skip. */}
                 </View>
-                <View style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}>
+                <View
+                  ref={restControlsRef}
+                  collapsable={false}
+                  style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}
+                >
                   {/* What comes back after the easy half — the same forward
                       look the work bout gives. */}
                   {step.recoveryKind ? (
@@ -5506,6 +5530,8 @@ function SetStepView({
   onMinutesReached,
   minutesClock,
   onMinutesClockChange,
+  tourTargets,
+  tourReport,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5542,10 +5568,20 @@ function SetStepView({
   minutesClock?: SessionMinutesClock | null;
   /** The stopwatch started or paused, for the session to keep. */
   onMinutesClockChange?: (clock: SessionMinutesClock) => void;
+  /** The first-run tour: where the card, the rows and the buttons are. */
+  tourTargets?: TourTargetRegistry;
+  /** Reports this set to the workout tour; undefined while the player is held. */
+  tourReport?: (step: WorkoutTourStep | null) => void;
 }) {
   const theme = useTheme();
 
   const styles = useThemedStyles(makeStyles);
+
+  const nameRef = useTourTarget(tourTargets, 'workout.name');
+  const historyRef = useTourTarget(tourTargets, 'workout.history');
+  const setRowRef = useTourTarget(tourTargets, 'workout.setRow');
+  const dialsRef = useTourTarget(tourTargets, 'workout.dials');
+  const logRef = useTourTarget(tourTargets, 'workout.log');
 
   const target = resolveTarget(step.slotId, step.setIndex);
   // A hold logs no weight either, so it takes the same wide layout — but its
@@ -5891,6 +5927,16 @@ function SetStepView({
 
   return (
     <StepIn stepKey={`set-${stepIndex}`}>
+      {/* Only a plain set is the tour's: no superset round, hold or clock. */}
+      <GuidedTourReport
+        report={tourReport}
+        kind="set"
+        plain={!superset && !minutesMode && !timed}
+        canWarmUp={canWarmUp}
+        canRemove={Boolean(onRemoveSet)}
+        loaded={!bodyweight}
+        hasHistory={Boolean(panels?.history)}
+      />
       {/* The whole screen is the "close the dial" target: a tap that no
           card, button or control claims lands here and shuts whichever dial
           is open. Nested Pressables take their own taps first, so this only
@@ -5971,7 +6017,11 @@ function SetStepView({
           onPress={onOpenSheet}
           style={styles.setExerciseCard}
         >
-          <View style={styles.setExerciseTop}>
+          <View
+            ref={nameRef}
+            collapsable={false}
+            style={styles.setExerciseTop}
+          >
             <View style={styles.setExerciseThumb}>
               {thumbSource ? (
                 <Image source={thumbSource} style={[StyleSheet.absoluteFill, FILL_SIZE]} resizeMode="cover" />
@@ -6005,7 +6055,11 @@ function SetStepView({
               ramp's "16,25×8" chips used to wrap, and so, on the phone's
               larger font, did five plain ones, which is what made the card
               tall. */}
-          <View style={styles.setExerciseRows}>
+          <View
+            ref={historyRef}
+            collapsable={false}
+            style={styles.setExerciseRows}
+          >
             {panels?.history ? (
               <View style={styles.setExerciseRow}>
                 {/* One heading, whichever day the history came from. Borrowed
@@ -6120,7 +6174,11 @@ function SetStepView({
             next one pushed it off the screen (#bugs 2026-08-26, "sarja ja
             kello ei voi olla vierekkäin"). It sits on the name row now, where
             nothing grows, and the dots absorb the squeeze here. */}
-        <View style={styles.setMetaRow}>
+        <View
+          ref={setRowRef}
+          collapsable={false}
+          style={styles.setMetaRow}
+        >
           {inWarmup ? (
             <View style={styles.setMetaLeft}>
               <View style={styles.warmupDot} />
@@ -6280,7 +6338,11 @@ function SetStepView({
               </Pressable>
             </View>
           ) : null}
-          <View style={styles.setDialRow}>
+          <View
+            ref={dialsRef}
+            collapsable={false}
+            style={styles.setDialRow}
+          >
             <DialCard
               label={t(language, minutesMode ? 'guided.minutes' : timed ? 'guided.seconds' : 'guided.reps')}
               value={String(minutesMode ? shownMinutes : reps)}
@@ -6425,7 +6487,11 @@ function SetStepView({
             The circles lost their captions with the row: two captions under
             two circles were a row of their own. Their names are still read
             out, and the reader drew the row this way knowing it. */}
-        <View style={styles.setControls}>
+        <View
+          ref={logRef}
+          collapsable={false}
+          style={styles.setControls}
+        >
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, paused ? 'guided.resume' : 'guided.pause')}
