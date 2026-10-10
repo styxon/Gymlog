@@ -146,6 +146,19 @@ export function getWeekCardioMinutes(
 }
 
 /**
+ * The week's cardio minutes with `run` counted once: the finish card's total. A run whose earlier
+ * save is already stored (the clear was lost and it came back paused) is that stored row, so it
+ * stands in for the row rather than adding to it (30 min read as 60). Rounded once over the total.
+ */
+export function getWeekCardioMinutesWithRun(
+  stored: ReadonlyArray<Pick<CardioSession, 'activityType' | 'startedAt' | 'performedAt' | 'durationSec'>>,
+  run: Pick<CardioSession, 'activityType' | 'startedAt' | 'performedAt' | 'durationSec'>,
+): number {
+  const others = stored.filter((session) => findSavedCardioRun([session], run) === null);
+  return getWeekCardioMinutes([...others, run], new Date(run.performedAt));
+}
+
+/**
  * Whole minutes of cardio, rounded once over the total rather than per run,
  * so ten 90-second strides are 15 minutes and not 20.
  */

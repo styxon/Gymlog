@@ -53,7 +53,7 @@ module.exports = [
       // The stored rows are frozen when Finish opens; the run joins them as a row
       // and the seconds are rounded once (hunt 10: two roundings read a minute short).
       assert.match(finish, /const \[storedAtOpen\] = useState\(cardioSessions\);/);
-      assert.match(finish, /const weekMinutes = getWeekCardioMinutes\(\s*\[\.\.\.storedAtOpen, \{ performedAt: finish\.endedAt, durationSec \}\],/);
+      assert.match(finish, /const weekMinutes = getWeekCardioMinutesWithRun\(storedAtOpen, \{\s*activityType: session\.activityType,\s*startedAt: session\.startedAt,\s*performedAt: finish\.endedAt,\s*durationSec,\s*\}\);/);
       assert.doesNotMatch(finish, /getWeekCardioMinutes\(cardioSessions/);
       assert.doesNotMatch(finish, /Math\.round\(durationSec \/ 60\)/);
     },

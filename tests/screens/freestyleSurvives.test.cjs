@@ -127,4 +127,14 @@ module.exports = [
       assert.match(screen, /const adoptSessionId = \(id: string\) => \{\s*sessionIdRef\.current = id;/, 'the board keeps the id the save filed under');
     },
   },
+  {
+    name: 'freestyle: emptying the board resets the clock, so the next first lift starts it fresh',
+    run() {
+      const screen = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
+      const removal = functionBody(screen, 'const removeExercise = (exerciseKey: string) =>');
+      assert.match(removal, /if \(exercises\.length <= 1\) \{[^}]*setStartedAtMs\(null\);/, 'the last lift going takes the start with it');
+      const add = functionBody(screen, 'const addExercises = (items: ExerciseLibraryItem[]) =>');
+      assert.match(add, /setStartedAtMs\(\(current\) => current \?\? Date\.now\(\)\)/, 'the first lift on an empty board starts the clock');
+    },
+  },
 ];

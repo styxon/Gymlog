@@ -35,7 +35,7 @@ import {
   getCardioActivity,
   getCardioAvgPaceSecPerKm,
   getCardioElapsedMs,
-  getWeekCardioMinutes,
+  getWeekCardioMinutesWithRun,
   isCardioDistanceTextSavable,
   parseCardioDistanceKm,
   resolveCardioFinish,
@@ -523,10 +523,14 @@ function CardioFinishView({
   // The run joins the stored rows as one more row and the total is rounded
   // once over the seconds, as Progress reads it after the save. Rounding the
   // week and the run apart read a minute less (40 where the saved week says 41).
-  const weekMinutes = getWeekCardioMinutes(
-    [...storedAtOpen, { performedAt: finish.endedAt, durationSec }],
-    new Date(finish.endedAt),
-  );
+  // A run whose earlier save is already stored (a lost clear) stands in for
+  // its row; it read 60 minutes for a 30 minute run.
+  const weekMinutes = getWeekCardioMinutesWithRun(storedAtOpen, {
+    activityType: session.activityType,
+    startedAt: session.startedAt,
+    performedAt: finish.endedAt,
+    durationSec,
+  });
 
   return (
     <View style={{ flex: 1, minHeight: 0 }}>
