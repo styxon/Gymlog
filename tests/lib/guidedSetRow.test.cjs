@@ -101,9 +101,11 @@ module.exports = [
   {
     name: 'set screen: the card and the row read these helpers, and the − keeps its place when hidden',
     run() {
-      // Both lines slice one window, so last time's chips stay over today's.
-      assert.match(playerSource, /panels\.history\.sets\.slice\(chipWindow\.start, chipWindow\.end\)/);
-      assert.match(playerSource, /todayPlan\.slice\(chipWindow\.start, chipWindow\.end\)/);
+      // Each line slices its own window of five, held to its own length.
+      assert.match(playerSource, /panels\.history\.sets\.slice\(lastChipWindow\.start, lastChipWindow\.end\)/);
+      assert.match(playerSource, /todayPlan\.slice\(todayChipWindow\.start, todayChipWindow\.end\)/);
+      // Warm-up mode's dial is the warm-up's load, not the set's.
+      assert.match(playerSource, /currentKg: !inWarmup && /);
       // The boxes come from the measured window, not a fixed count.
       assert.match(playerSource, /length: setBoxWindow\.end - setBoxWindow\.start/);
       assert.doesNotMatch(playerSource, /SET_DOT_CAP/);

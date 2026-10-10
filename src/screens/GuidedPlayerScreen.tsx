@@ -5614,38 +5614,15 @@ function SetStepView({
   const logBlocked = dial === 'weight' && weightTextInvalid;
 
   /**
-   * Five chips a line, the same five sets on both lines (#bugs 2026-10-10,
-   * "näytetään vain 5 kerralla"): an 11-set lift scrolled to a row of ten
-   * with the last one cut at the edge. The window moves with the set being
-   * done, so its ringed chip is always one of the five, and last time's chips
-   * stay over today's.
+   * Five chips a line (#bugs 2026-10-10, "näytetään vain 5 kerralla"): an
+   * 11-set lift scrolled to a row of ten with the last one cut at the edge.
+   * Each line's window moves with the set being done, so today's ringed chip
+   * is always one of its five and, while both lines are long, last time's
+   * chips stay over today's. Each is held to its own length: one shared
+   * window cut a three-set last time down to one chip by set 7.
    */
-  const chipWindow = guidedWindow(
-    Math.max(panels?.history?.sets.length ?? 0, todayPlan.length),
-    step.setIndex,
-    GUIDED_CARD_CHIP_CAP,
-  );
-  /**
-   * Today's weight beside today's chips, as last time's stands beside its own
-   * (#bugs 2026-10-10). The set being done counts at its dial, so the number
-   * moves with the thumb. Not for a lift that carries no weight.
-   */
-  const todayKg =
-    exercise && !bodyweight && !minutesMode
-      ? guidedTodayLoadKg({
-          sets: exercise.sets,
-          currentSetIndex: step.setIndex,
-          currentKg: Number.isFinite(kg) && kg > 0 ? kg : null,
-          trackingMode: exercise.trackingMode,
-          swappedAfterSetIndex: exercise.swappedAfterSetIndex,
-        })
-      : null;
-  const todayTrend = guidedLoadTrend({
-    lastKg: heaviestOf(panels?.history) > 0 ? heaviestOf(panels?.history) : null,
-    todayKg,
-    progressionOn,
-  });
-
+  const lastChipWindow = guidedWindow(panels?.history?.sets.length ?? 0, step.setIndex, GUIDED_CARD_CHIP_CAP);
+  const todayChipWindow = guidedWindow(todayPlan.length, step.setIndex, GUIDED_CARD_CHIP_CAP);
   /**
    * The set row's boxes: up to six, as many as the row has room for, so none
    * is drawn cut in half — and the −/+ after them stand still however many
@@ -5671,6 +5648,28 @@ function SetStepView({
   const firstSetOpen = exercise !== null && step.setIndex === 0 && exercise.sets[0]?.status !== 'completed';
   const canWarmUp = !bodyweight && firstSetOpen;
   const inWarmup = warmupMode && canWarmUp;
+  /**
+   * Today's weight beside today's chips, as last time's stands beside its own
+   * (#bugs 2026-10-10). The set being done counts at its dial, so the number
+   * moves with the thumb — but not in warm-up mode, where the dial holds the
+   * warm-up's load and not the set's. Not for a lift that carries no weight.
+   */
+  const todayKg =
+    exercise && !bodyweight && !minutesMode
+      ? guidedTodayLoadKg({
+          sets: exercise.sets,
+          currentSetIndex: step.setIndex,
+          currentKg: !inWarmup && Number.isFinite(kg) && kg > 0 ? kg : null,
+          trackingMode: exercise.trackingMode,
+          swappedAfterSetIndex: exercise.swappedAfterSetIndex,
+        })
+      : null;
+  const todayTrend = guidedLoadTrend({
+    lastKg: heaviestOf(panels?.history) > 0 ? heaviestOf(panels?.history) : null,
+    todayKg,
+    progressionOn,
+  });
+
   /**
    * The set's own numbers while a warm-up borrows the dials: a weight dialled
    * for set 1 before "+ Warm-up set" comes back after it, not the plan's
@@ -5937,12 +5936,12 @@ function SetStepView({
                   // scroll view inside it would be a stop of its own.
                   importantForAccessibility="no-hide-descendants"
                 >
-                  {panels.history.sets.slice(chipWindow.start, chipWindow.end).map((set, offset) => (
+                  {panels.history.sets.slice(lastChipWindow.start, lastChipWindow.end).map((set, offset) => (
                     <View key={set.setIndex} style={styles.setExerciseLastPill}>
                       <Text style={styles.setExerciseLastPillText}>
                         {minutesMode
                           ? t(language, 'logger.minutesValue', { count: set.reps })
-                          : historyChips?.chips[chipWindow.start + offset] ?? set.reps}
+                          : historyChips?.chips[lastChipWindow.start + offset] ?? set.reps}
                       </Text>
                     </View>
                   ))}
@@ -5986,9 +5985,9 @@ function SetStepView({
                   contentContainerStyle={styles.setExerciseLastPills}
                   importantForAccessibility="no-hide-descendants"
                 >
-                  {todayPlan.slice(chipWindow.start, chipWindow.end).map((chip, offset) => (
+                  {todayPlan.slice(todayChipWindow.start, todayChipWindow.end).map((chip, offset) => (
                     <View
-                      key={chipWindow.start + offset}
+                      key={todayChipWindow.start + offset}
                       style={[
                         styles.setExerciseLastPill,
                         chip.status === 'done' && { backgroundColor: theme.greenSoft },

@@ -35,7 +35,7 @@ module.exports = [
       // if for some reason the summary and the history sets disagree in length.
       // The line shows a window of five (#bugs 2026-10-10), so a chip's index
       // into the summary is the window's start plus its place in it.
-      assert.match(playerSource, /: historyChips\?\.chips\[chipWindow\.start \+ offset\] \?\? set\.reps\}/);
+      assert.match(playerSource, /: historyChips\?\.chips\[lastChipWindow\.start \+ offset\] \?\? set\.reps\}/);
     },
   },
   {
