@@ -124,7 +124,13 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * type over it (user 2026-09-08).
    */
   async function handleRenameCustomProgram(workoutTemplateId: string, name: string) {
-    await renameWorkoutTemplate(workoutTemplateId, name);
+    try {
+      await renameWorkoutTemplate(workoutTemplateId, name);
+    } catch (error) {
+      console.error('Failed to rename the programme', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+    }
   }
 
   /**
@@ -136,6 +142,20 @@ export function createProgrammeDayEdits(deps: ProgrammeDayEditsDeps) {
    * mean copying it, and the reader has not asked for a copy by dragging.
    */
   async function handleReorderProgramSession(
+    workoutTemplateId: string,
+    sessionId: string,
+    toIndex: number,
+  ) {
+    try {
+      await writeSessionReorder(workoutTemplateId, sessionId, toIndex);
+    } catch (error) {
+      console.error('Failed to reorder the days of the programme', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+    }
+  }
+
+  async function writeSessionReorder(
     workoutTemplateId: string,
     sessionId: string,
     toIndex: number,

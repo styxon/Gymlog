@@ -1021,12 +1021,12 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
             // message, no retry, no sign it had been refused (audit 3).
             if (error instanceof ProgramLimitReachedError) {
               setProgramLimitVisible(true);
-              return;
+              return false;
             }
             console.error('Failed to save the programme', error);
             void haptics.error();
             showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
-            return;
+            return false;
           }
           // The names the reader typed for the days, remembered as the page's
           // pencil remembers its own, so the programme page they land on shows

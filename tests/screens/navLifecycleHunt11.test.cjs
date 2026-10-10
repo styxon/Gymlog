@@ -6,6 +6,7 @@ const { between, functionBody } = require('../helpers/sourceSlices.cjs');
 const { isReadyProgrammeRunning } = require('../../.test-dist/lib/programmeCopyLink.js');
 const { stopProgramme, listRunningProgrammes } = require('../../.test-dist/lib/runningProgrammes.js');
 const { addSeasonEnrolment } = require('../../.test-dist/lib/seasonEnrolment.js');
+const { createTemplateLeaveGuard, releaseHeldLeave } = require('../../.test-dist/lib/templateLeaveGuard.js');
 const { pushRoute, popRoute, withoutTrailingRoute } = require('../../.test-dist/navigation/routeHistory.js');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '../..', ...parts), 'utf8').replace(/\r\n/g, '\n');
@@ -141,6 +142,111 @@ module.exports = [
       assert.match(
         functionBody(app, '  function replaceRoute('),
         /history: withoutTrailingRoute\(current\.history, nextRoute\),/,
+      );
+    },
+  },
+  {
+    // Review follow-up: the sibling writes wired as `void` answered nothing too.
+    name: 'hunt 11 #3b: programme rename, day reorder, training days, Home pick and Home edits answer a refused write',
+    run() {
+      const days = read('src', 'app', 'programmeDayEdits.tsx');
+      for (const signature of [
+        '  async function handleRenameCustomProgram(',
+        '  async function handleReorderProgramSession(',
+      ]) {
+        assert.match(
+          functionBody(days, signature),
+          /catch \(error\) \{[\s\S]*haptics\.error\(\);\s*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+          signature,
+        );
+      }
+      const edits = read('src', 'app', 'programmePlanEdits.tsx');
+      assert.match(
+        functionBody(edits, '  async function handleChangeTrainingDays('),
+        /await writeTrainingDays\(days\);\s*\} catch \(error\) \{\s*saveRefused\(error\);/,
+      );
+      assert.match(
+        functionBody(read('App.tsx'), '  async function handlePickTodaySession('),
+        /catch \(error\) \{[\s\S]*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);/,
+      );
+      assert.match(
+        read('src', 'app', 'useProgramExerciseEdit.tsx'),
+        /return next\.catch\(\(error\) => \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\);\s*return false;/,
+      );
+    },
+  },
+  {
+    // The main action succeeded; its follow-up bookkeeping failing is not a
+    // failed programme.
+    name: 'hunt 11 #3c: a refused follow-up dismissal after a successful start or restart is not told as a failure',
+    run() {
+      const edits = read('src', 'app', 'programmePlanEdits.tsx');
+      const startNext = functionBody(edits, '  async function handleCompletionStartNext(');
+      assert.match(startNext, /await writeCompletionDismissal\(planId\);\s*\} catch \(error\) \{\s*console\.error\(/);
+      assert.doesNotMatch(startNext.slice(startNext.indexOf('if (adopted)')), /saveRefused/);
+      const restart = functionBody(edits, '  async function handleCompletionRestart(');
+      const tail = restart.slice(restart.indexOf('dismissedCompletionPlanIds.includes(planId)'));
+      assert.match(tail, /catch \(error\) \{\s*\/\/[^\n]*\n\s*console\.error\(/);
+      assert.doesNotMatch(tail, /saveRefused/);
+      // The card's own Dismiss is the main action, and still answers.
+      assert.match(
+        functionBody(edits, '  async function dismissCompletionCard('),
+        /catch \(error\) \{\s*saveRefused\(error\);/,
+      );
+    },
+  },
+  {
+    name: 'hunt 11 #5: an exit that arrives while the builder saves is held, then runs once the save landed',
+    run() {
+      let saving = false;
+      let unsaved = true;
+      let held = null;
+      let asked = null;
+      const guard = createTemplateLeaveGuard({
+        isSaving: () => saving,
+        hasUnsavedWork: () => unsaved,
+        hold: (leave) => { held = leave; },
+        ask: (leave) => { asked = leave; },
+      });
+      const ran = [];
+      const leave = (name) => () => ran.push(name);
+
+      // Clean draft: let go at once.
+      unsaved = false;
+      assert.equal(guard(leave('clean')), false);
+      assert.deepEqual(ran, []);
+
+      // Unsaved work: the question is asked, nothing runs yet.
+      unsaved = true;
+      assert.equal(guard(leave('asked')), true);
+      assert.ok(asked);
+      assert.deepEqual(ran, []);
+
+      // Mid-save: held, not dropped, and not asked.
+      asked = null;
+      saving = true;
+      assert.equal(guard(leave('held')), true);
+      assert.equal(asked, null);
+      assert.ok(held);
+      assert.deepEqual(ran, []);
+
+      // The save landed: the held exit goes on.
+      releaseHeldLeave(held, true, (next) => { asked = next; });
+      assert.deepEqual(ran, ['held']);
+      assert.equal(asked, null);
+
+      // The save was refused: the draft is still unsaved, so it asks instead.
+      const refused = leave('refused');
+      releaseHeldLeave(refused, false, (next) => { asked = next; });
+      assert.deepEqual(ran, ['held']);
+      assert.equal(asked, refused);
+
+      const screen = read('src', 'screens', 'CreateTemplateScreen.tsx');
+      assert.match(screen, /hold: \(leave\) => \{\s*heldLeaveRef\.current = leave;/);
+      assert.match(screen, /releaseHeldLeave\(held, saved, askToLeave\);/);
+      assert.match(
+        between(read('src', 'app', 'renderWorkoutTab.tsx'), '<CreateTemplateScreen', 'onBack={() => navigateBack(workoutHomeRoute)}'),
+        /leaveGuardRef=\{templateLeaveGuardRef\}/,
       );
     },
   },

@@ -62,7 +62,7 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
    * rejection was a press that did nothing and said nothing (hunt 11).
    */
   function saveRefused(error: unknown) {
-    console.error('Failed to save the programme card answer', error);
+    console.error('Failed to save a programme change', error);
     void haptics.error();
     showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
   }
@@ -72,16 +72,21 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
    * plan id — the card is a question, and every branch is an answer to it.
    */
   async function dismissCompletionCard(planId: string) {
-    if (preferences.dismissedCompletionPlanIds.includes(planId)) {
-      return;
-    }
     try {
-      await updatePreferences({
-        dismissedCompletionPlanIds: [...preferences.dismissedCompletionPlanIds, planId],
-      });
+      await writeCompletionDismissal(planId);
     } catch (error) {
       saveRefused(error);
     }
+  }
+
+  /** The write alone, for the answer that has already done its main work. */
+  async function writeCompletionDismissal(planId: string) {
+    if (preferences.dismissedCompletionPlanIds.includes(planId)) {
+      return;
+    }
+    await updatePreferences({
+      dismissedCompletionPlanIds: [...preferences.dismissedCompletionPlanIds, planId],
+    });
   }
 
   async function handleCompletionStartNext(planId: string, nextTemplateId: string) {
@@ -102,7 +107,13 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
       return;
     }
     if (adopted) {
-      await dismissCompletionCard(planId);
+      // The new programme is running by now; a refused dismissal is not a
+      // failed start, so it is logged and not told as one.
+      try {
+        await writeCompletionDismissal(planId);
+      } catch (error) {
+        console.error('Failed to put the completion card away', error);
+      }
     }
   }
 
@@ -200,6 +211,14 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
    * one picker would move days on programmes this screen never showed.
    */
   async function handleChangeTrainingDays(days: SetupWeekday[]) {
+    try {
+      await writeTrainingDays(days);
+    } catch (error) {
+      saveRefused(error);
+    }
+  }
+
+  async function writeTrainingDays(days: SetupWeekday[]) {
     // Same invariants as the onboarding day question: picking specific days
     // makes the schedule self-managed and the count follows, 2–6.
     const clamped = Math.min(6, Math.max(2, days.length)) as SetupDaysPerWeek;
@@ -336,7 +355,8 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
           dismissedCompletionPlanIds: preferences.dismissedCompletionPlanIds.filter((id) => id !== planId),
         });
       } catch (error) {
-        saveRefused(error);
+        // The round has restarted; only the old dismissal lingers.
+        console.error('Failed to clear the completion dismissal', error);
       }
     }
     // The hero counts 0 of N and the completion card is gone: the restart is

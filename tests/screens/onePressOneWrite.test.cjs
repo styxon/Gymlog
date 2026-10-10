@@ -26,10 +26,10 @@ module.exports = [
       const screen = strip(read('src', 'screens', 'CreateTemplateScreen.tsx'));
       assert.match(
         screen,
-        /async function handleSave\(\) \{\s*if \(!canSave \|\| savingRef\.current\) \{\s*return;\s*\}\s*savingRef\.current = true;\s*setSaving\(true\);\s*try \{\s*await onSave\(/,
+        /async function handleSave\(\) \{\s*if \(!canSave \|\| savingRef\.current\) \{\s*return;\s*\}\s*savingRef\.current = true;\s*setSaving\(true\);\s*let saved = false;\s*try \{\s*saved = \(await onSave\(/,
       );
       // Released only after the save settles, so a refused save can be retried.
-      assert.match(screen, /\} finally \{\s*savingRef\.current = false;\s*setSaving\(false\);\s*\}/);
+      assert.match(screen, /\} finally \{\s*savingRef\.current = false;\s*setSaving\(false\);/);
       // Both save buttons, the header's and the bottom one, go quiet meanwhile.
       assert.match(screen, /onRightActionPress=\{canSave && !saving \? \(\) => void handleSave\(\) : undefined\}/);
       // And the header's word goes with its action: a Save with nothing behind

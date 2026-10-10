@@ -1308,18 +1308,25 @@ function VinhaApp() {
    */
   async function handlePickTodaySession(sessionId: string) {
     const now = new Date();
-    await updatePreferences({
-      todaySession: {
-        dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-        sessionId,
-        // Session ids repeat across programmes; this says which one's day.
-        workoutTemplateId: homeActivePlanCard?.programId ?? null,
-        // The instant matters, not just the day: picking a session you already
-        // trained today is how you say "again", and without a timestamp it was
-        // indistinguishable from the stale pick left over from this morning.
-        pickedAt: now.getTime(),
-      },
-    });
+    try {
+      await updatePreferences({
+        todaySession: {
+          dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
+          sessionId,
+          // Session ids repeat across programmes; this says which one's day.
+          workoutTemplateId: homeActivePlanCard?.programId ?? null,
+          // The instant matters, not just the day: picking a session you already
+          // trained today is how you say "again", and without a timestamp it was
+          // indistinguishable from the stale pick left over from this morning.
+          pickedAt: now.getTime(),
+        },
+      });
+    } catch (error) {
+      // Wired as `void`: a refused write was a pick that sprang back unsaid.
+      console.error('Failed to save the picked session', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+    }
   }
 
   const {

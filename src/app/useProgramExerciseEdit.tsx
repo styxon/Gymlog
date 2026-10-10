@@ -226,7 +226,14 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       }
     };
     void next.then(settle, settle);
-    return next;
+    // Every caller presses it as `void`: a write the disk refused was an edit
+    // that sprang back with no word.
+    return next.catch((error) => {
+      console.error('Failed to edit the programme', error);
+      void haptics.error();
+      showToast(t(preferences.appLanguage, 'toast.planSaveFailed'));
+      return false;
+    });
   }
 
   /** Resolves true when the programme actually changed. */

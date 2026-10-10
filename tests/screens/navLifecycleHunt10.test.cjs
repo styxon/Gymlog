@@ -45,7 +45,7 @@ module.exports = [
       // of a clean draft.
       assert.match(
         screen,
-        /const guard: TemplateLeaveGuard = \(leave\) => \{\s*if \(savingRef\.current\) \{\s*return true;\s*\}\s*if \(!unsavedWorkRef\.current\) \{\s*return false;\s*\}\s*pendingLeaveRef\.current = leave;\s*setConfirmingLeave\(true\);\s*return true;\s*\};\s*leaveGuardRef\.current = guard;/,
+        /const guard: TemplateLeaveGuard = createTemplateLeaveGuard\(\{\s*isSaving: \(\) => savingRef\.current,\s*hasUnsavedWork: \(\) => unsavedWorkRef\.current,[\s\S]*?ask: askToLeave,\s*\}\);\s*leaveGuardRef\.current = guard;/,
       );
       // Unregistered on the way out, so a later screen is not asked.
       assert.match(screen, /return \(\) => \{\s*if \(leaveGuardRef\.current === guard\) \{\s*leaveGuardRef\.current = null;\s*\}\s*\};/);

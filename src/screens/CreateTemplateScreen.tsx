@@ -25,6 +25,7 @@ import {
 import { createId } from '../lib/ids';
 import { resolveQuickLayoutExercises } from '../lib/quickLayoutExercises';
 import { localizeWorkoutFocus } from '../lib/sessionNameLabel';
+import { createTemplateLeaveGuard, releaseHeldLeave } from '../lib/templateLeaveGuard';
 import {
   SplitPreset,
   TEMPLATE_BUILDER_STEPS,
@@ -77,7 +78,8 @@ interface CreateTemplateScreenProps {
   defaultRestSeconds: number;
   language?: AppLanguage;
   onBack: () => void;
-  onSave: (draft: WorkoutTemplateDraft) => Promise<void> | void;
+  /** Resolves false when nothing was saved (a refusal it has already told). */
+  onSave: (draft: WorkoutTemplateDraft) => Promise<boolean | void> | boolean | void;
   /**
    * Where the shell reads the guard. The tab bar and the AI button unmount
    * this screen without passing its Back, and dropped a draft nothing stores.
@@ -411,17 +413,14 @@ export function CreateTemplateScreen({
     if (!leaveGuardRef) {
       return undefined;
     }
-    const guard: TemplateLeaveGuard = (leave) => {
-      if (savingRef.current) {
-        return true;
-      }
-      if (!unsavedWorkRef.current) {
-        return false;
-      }
-      pendingLeaveRef.current = leave;
-      setConfirmingLeave(true);
-      return true;
-    };
+    const guard: TemplateLeaveGuard = createTemplateLeaveGuard({
+      isSaving: () => savingRef.current,
+      hasUnsavedWork: () => unsavedWorkRef.current,
+      hold: (leave) => {
+        heldLeaveRef.current = leave;
+      },
+      ask: askToLeave,
+    });
     leaveGuardRef.current = guard;
     return () => {
       if (leaveGuardRef.current === guard) {
@@ -429,6 +428,11 @@ export function CreateTemplateScreen({
       }
     };
   }, [leaveGuardRef]);
+
+  function askToLeave(leave: () => void) {
+    pendingLeaveRef.current = leave;
+    setConfirmingLeave(true);
+  }
 
   function updateSessionName(sessionKey: string, nextName: string) {
     setSessions((current) =>
@@ -511,6 +515,7 @@ export function CreateTemplateScreen({
    * them after.
    */
   const savingRef = useRef(false);
+  const heldLeaveRef = useRef<(() => void) | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function handleSave() {
@@ -520,11 +525,19 @@ export function CreateTemplateScreen({
 
     savingRef.current = true;
     setSaving(true);
+    let saved = false;
     try {
-      await onSave(buildTemplateDraft(templateName, sessions, initialDraft, language));
+      saved = (await onSave(buildTemplateDraft(templateName, sessions, initialDraft, language))) !== false;
     } finally {
       savingRef.current = false;
       setSaving(false);
+      // An exit that arrived mid-save waited for it: it goes on once the
+      // programme is saved, and asks the leave question if it was not.
+      const held = heldLeaveRef.current;
+      heldLeaveRef.current = null;
+      if (held) {
+        releaseHeldLeave(held, saved, askToLeave);
+      }
     }
   }
 
