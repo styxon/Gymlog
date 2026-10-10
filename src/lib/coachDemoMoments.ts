@@ -81,7 +81,7 @@ export interface CoachDemoMomentInput {
   /** Flagged body areas: a lift held for one is not a stall to ask about. */
   cautionFlags?: SetupCautionFlag[] | null;
   /** The reader's language: a lift is named in it inside the question. */
-  language?: AppLanguage;
+  language: AppLanguage;
   now?: Date;
 }
 
@@ -150,7 +150,7 @@ export function pickDemoQuestion(
   }
 
   if (key === 'month1') {
-    const language = input.language ?? 'en';
+    const { language } = input;
     const stalled = stalledLift(input.lifts, input.cautionFlags);
     if (stalled) {
       // The strongest one available: this is the exact conclusion the reader
