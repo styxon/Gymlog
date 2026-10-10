@@ -645,6 +645,7 @@ const suites = [
   ...require('./lib/serverCallsAreBounded.test.cjs'),
   ...require('./lib/historyStatsTruth.test.cjs'),
   ...require('./lib/requestPacing.test.cjs'),
+  ...require('./lib/settingsHunt11.test.cjs'),
 ];
 
 (async () => {

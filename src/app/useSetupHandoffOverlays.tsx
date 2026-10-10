@@ -15,6 +15,7 @@ import { planSetupHandoff } from '../lib/setupHandoff';
 import { AppRoute } from '../navigation/routes';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { AppDatabase, AppPreferences } from '../types/models';
+import { useAttemptOnce } from './useAttemptOnce';
 
 /**
  * What is drawn over the app once onboarding is done, and in what order: the
@@ -90,6 +91,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     setHandoffLegalDocument,
     LEGAL_OVER_CONSENT,
   } = deps;
+  const tryOnce = useAttemptOnce();
 
   // ── The hand-off after onboarding ────────────────────────────────────────
   // Onboarding used to end by dropping the reader on Home with the widget
@@ -296,9 +298,10 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
   // door rather than leave it to open on some later launch.
   useEffect(() => {
     if (setupHandoffReady && setupHandoffPlan && !setupHandoffPlan.shouldShow) {
-      void updatePreferences({ setupHandoffCompleted: true });
+      // Once per session: a refused write is rolled back, which re-planned the hand-off and ran this again.
+      tryOnce('setupHandoffCompleted', () => updatePreferences({ setupHandoffCompleted: true }));
     }
-  }, [setupHandoffPlan, setupHandoffReady, updatePreferences]);
+  }, [setupHandoffPlan, setupHandoffReady, tryOnce, updatePreferences]);
 
   return {
     setupHandoffHeldRef,

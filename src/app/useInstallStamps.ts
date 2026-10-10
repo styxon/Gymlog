@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 
 import { AppPreferences } from '../types/models';
+import { useAttemptOnce } from './useAttemptOnce';
 
 /**
  * The two install stamps, written once both stores have loaded:
@@ -26,15 +27,20 @@ export interface InstallStampsDeps {
 
 export function useInstallStamps(deps: InstallStampsDeps): void {
   const { appHydrated, preferences, updatePreferences } = deps;
+  // Both stamps are tried once per session: a refused write is rolled back,
+  // which put the missing value back and ran the effect again, forever.
+  const tryOnce = useAttemptOnce();
   useEffect(() => {
     if (!appHydrated || preferences.hasOpenedAppBefore) {
       return;
     }
 
-    void updatePreferences({
-      hasOpenedAppBefore: true,
-    });
-  }, [appHydrated, preferences.hasOpenedAppBefore, updatePreferences]);
+    tryOnce('hasOpenedAppBefore', () =>
+      updatePreferences({
+        hasOpenedAppBefore: true,
+      }),
+    );
+  }, [appHydrated, preferences.hasOpenedAppBefore, tryOnce, updatePreferences]);
 
   /**
    * The install date the coach demo moments count their 7 / 30 / 90 days from.
@@ -48,6 +54,6 @@ export function useInstallStamps(deps: InstallStampsDeps): void {
     if (!appHydrated || preferences.firstLaunchAt) {
       return;
     }
-    void updatePreferences({ firstLaunchAt: new Date().toISOString() });
-  }, [appHydrated, preferences.firstLaunchAt, updatePreferences]);
+    tryOnce('firstLaunchAt', () => updatePreferences({ firstLaunchAt: new Date().toISOString() }));
+  }, [appHydrated, preferences.firstLaunchAt, tryOnce, updatePreferences]);
 }

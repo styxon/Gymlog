@@ -114,6 +114,7 @@ import { createOnboardingFinishes } from './src/app/onboardingFinishes';
 import { useDeviceSwitches } from './src/app/useDeviceSwitches';
 import { useStoreBillingSync } from './src/app/useStoreBillingSync';
 import { useFunnelAnalytics } from './src/app/useFunnelAnalytics';
+import { useAttemptOnce } from './src/app/useAttemptOnce';
 import { useInstallStamps } from './src/app/useInstallStamps';
 import { useSetupWeightSeed } from './src/app/useSetupWeightSeed';
 import { useTodayKey } from './src/app/useTodayKey';
@@ -431,6 +432,8 @@ function VinhaApp() {
   });
 
   const { todayKey, todayStartMs } = useTodayKey();
+
+  const tryOnce = useAttemptOnce();
 
   useInstallStamps({ appHydrated, preferences, updatePreferences });
 
@@ -1790,16 +1793,20 @@ function VinhaApp() {
       profileName: preferences.profileName,
       adopted: preferences.accountNameAdopted,
     });
+    // Once per session (useAttemptOnce): a write the disk refuses is rolled
+    // back, which puts this effect's inputs back and ran it again, forever.
     if (step.kind === 'markAdopted') {
-      void updatePreferences({ accountNameAdopted: true });
+      tryOnce('accountName:mark', () => updatePreferences({ accountNameAdopted: true }));
     } else if (step.kind === 'adopt') {
-      void updatePreferences({ profileName: step.name, accountNameAdopted: true });
+      const name = step.name;
+      tryOnce(`accountName:adopt:${name}`, () => updatePreferences({ profileName: name, accountNameAdopted: true }));
     }
   }, [
     accountBackup.state.name,
     appHydrated,
     preferences.accountNameAdopted,
     preferences.profileName,
+    tryOnce,
     updatePreferences,
   ]);
 

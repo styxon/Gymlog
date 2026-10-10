@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 
 import { resolveLeadPlanId } from '../lib/runningProgrammes';
 import type { AppDatabase, AppPreferences } from '../types/models';
+import { useAttemptOnce } from './useAttemptOnce';
 
 /**
  * Moved verbatim from VinhaApp in App.tsx in the phase-C split (2026-10-01).
@@ -23,6 +24,7 @@ export interface LeadPlanRepairDeps {
 
 export function useLeadPlanRepair(deps: LeadPlanRepairDeps) {
   const { appHydrated, preferences, database, updatePreferences } = deps;
+  const tryOnce = useAttemptOnce();
 
   /**
    * Home must never say "find a programme" while one is running.
@@ -47,7 +49,9 @@ export function useLeadPlanRepair(deps: LeadPlanRepairDeps) {
       plans: database.workoutPlans,
     });
     if (lead !== preferences.activePlanId) {
-      void updatePreferences({ activePlanId: lead });
+      // Once per session and lead: a refused write is rolled back, which broke the invariant
+      // again and ran this again, forever.
+      tryOnce(`lead:${lead}`, () => updatePreferences({ activePlanId: lead }));
     }
-  }, [appHydrated, database.workoutPlans, preferences.activePlanId, preferences.activePlanIds, updatePreferences]);
+  }, [appHydrated, database.workoutPlans, preferences.activePlanId, preferences.activePlanIds, tryOnce, updatePreferences]);
 }
