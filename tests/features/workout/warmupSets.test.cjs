@@ -189,12 +189,17 @@ module.exports = [
       assert.match(view, /setNumbersRef\.current = \{ reps, kg \};/);
       assert.match(view, /setKg\(kept\?\.kg \?\? target\?\.loadKg \?\? 0\);/);
       assert.match(view, /const canWarmUp = !bodyweight && firstSetOpen;/);
-      assert.match(view, /\{canWarmUp && \(warmups\.length > 0 \|\| !inWarmup\) \? \(/);
+      // The blue + sits at the end of the set row, and only where a warm-up is offered.
+      const addButton = view.slice(view.indexOf(') : canWarmUp ? ('));
+      assert.match(addButton.slice(0, addButton.indexOf('</Pressable>')), /onPress=\{enterWarmup\}/);
+      // The last warm-up is taken back from warm-up mode's own heading.
+      assert.match(view, /onPress=\{\(\) => onRemoveWarmup\(warmups\.length - 1\)\}/);
       // Opened on last time's warm-up or the ladder, never on the working set's numbers.
       assert.match(view, /warmupOffer\(panels\?\.history\?\.warmups, warmups\.length, target\?\.loadKg \?\? null\)/);
       // The blue button logs a warm-up, not the set, and goes back to the set.
       assert.match(view, /onLogWarmup\(kg, reps\);\s*leaveWarmup\(\);/);
-      assert.doesNotMatch(view.slice(view.indexOf('{inWarmup ? (\n            <>'), view.indexOf(') : (\n          <Pressable')), /onConfirm\(/);
+      const warmupLog = view.slice(view.indexOf("accessibilityLabel={t(language, 'guided.warmup.log')}"));
+      assert.doesNotMatch(warmupLog.slice(0, warmupLog.indexOf(') : (')), /onConfirm\(/);
       // No progression badge speaks about a warm-up.
       assert.match(view, /\{inWarmup \? null : autoDeltaKg !== null && autoDeltaKg !== 0 \? \(/);
       // A new step leaves warm-up mode.

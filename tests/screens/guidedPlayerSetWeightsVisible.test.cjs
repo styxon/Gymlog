@@ -60,19 +60,31 @@ module.exports = [
     },
   },
   {
-    name: 'guided set card: the last-time pill row wraps instead of overflowing for a wide ramp',
+    name: 'guided set card: last time and today each stay on one line and scroll sideways when wide',
     run() {
       // A ramp's chips are "16,25×8" (7-8 characters) where this row used to
-      // hold a bare 1-2 digit rep count. A 5-set ramp (the reported
-      // Lantionnosto laitteessa case) at 360dp has no room for five such
-      // pills on one line; without `flexWrap: 'wrap'`,
-      // `justifyContent: 'flex-end'` pushes the overflow off the near (left)
-      // edge instead of clipping visibly (review, #bugs 2026-09-29).
+      // hold a bare 1-2 digit rep count. On a plain row `justifyContent:
+      // 'flex-end'` pushed the overflow off the near (left) edge (review,
+      // #bugs 2026-09-29); the fix wrapped it to a second line, and on the
+      // phone's larger font five plain chips wrapped too, which made the card
+      // tall (#bugs 2026-10-09). Now each line is the content of a sideways
+      // ScrollView: one line, nothing pushed off, the rest a swipe away.
       const pillsStyle = playerSource.slice(
         playerSource.indexOf('setExerciseLastPills: {'),
         playerSource.indexOf('setExerciseLastPill: {'),
       );
-      assert.match(pillsStyle, /flexWrap:\s*'wrap'/);
+      assert.doesNotMatch(pillsStyle, /flexWrap/);
+      assert.match(pillsStyle, /flexGrow:\s*1/);
+      // Each ScrollView element holding the chips, read up to its own `>`.
+      const scrolls = playerSource
+        .split('<ScrollView')
+        .slice(1)
+        .map((rest) => rest.slice(0, rest.indexOf('\n                >')))
+        .filter((props) => props.includes('contentContainerStyle={styles.setExerciseLastPills}'));
+      assert.equal(scrolls.length, 2, 'last time and today each scroll on their own line');
+      for (const props of scrolls) {
+        assert.match(props, /\bhorizontal\b/);
+      }
     },
   },
   {
