@@ -2,7 +2,7 @@ import { getWorkedLogSets } from './exerciseLog';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { I18nKey, t } from './i18n';
 import { AdviceTemplateLookup, buildNextSessionAdvice } from './nextSessionAdvice';
-import { PLATEAU_STALL_SESSIONS, buildPlateauConclusion, isLiftHeldForCaution } from './proInsights';
+import { buildPlateauConclusion, isLiftHeldForCaution, isLiftPlateaued, withProgrammeReads } from './proInsights';
 import { localizeSessionName } from './sessionNameLabel';
 import { isHoldLogEntry } from './holdExercises';
 import { isMinutesLogEntry } from './minutesExercises';
@@ -461,9 +461,15 @@ export function buildSessionAnalysis({
     }
   }
 
-  if (nextLift && nextLift.lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
+  // Read against the programme row it was logged under, as the plateau card
+  // reads it: a run the gate is on schedule through is not a stall, and the
+  // gate's own answer follows below.
+  const stalledLift = nextLift
+    ? withProgrammeReads([nextLift.lift], { sessions, logs, lookupTemplate })[0]
+    : null;
+  if (nextLift && stalledLift && isLiftPlateaued(stalledLift)) {
     // Stuck at this weight: the plateau card's advice, reps first, not a bump.
-    nextActions.push({ text: buildPlateauConclusion(nextLift.lift, language, level).body, highlights: [] });
+    nextActions.push({ text: buildPlateauConclusion(stalledLift, language, level).body, highlights: [] });
   } else if (nextLift) {
     // The progression gate's own answer for this lift (lib/nextSessionAdvice):
     // a raise only where it raises, the reps first where they fell from last

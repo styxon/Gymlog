@@ -1,0 +1,214 @@
+process.env.TZ = process.env.TZ || 'Europe/Helsinki';
+const assert = require('node:assert/strict');
+
+/**
+ * Progression hunt 12, advice cluster: what the stall surfaces, the Pro
+ * next-step numbers, the coach context and the Progress chip say after a
+ * session, held against the progression gate's own answer.
+ */
+const L = '../../.test-dist/lib/';
+const { buildNextSessionAdvice, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
+const {
+  buildCompletionConclusion,
+  buildNextSessionMoment,
+  buildPlateauConclusion,
+  buildWeeklyRead,
+  detectPlateau,
+  findPlateauDetection,
+  horizonStepKg,
+  isLiftPlateaued,
+  nextStepKg,
+  withProgrammeReads,
+} = require(L + 'proInsights.js');
+const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');
+const { buildLiftHistories } = require(L + 'trainingHistory.js');
+const { nextTimeDirection } = require(L + 'aiCoachSystemContext.js');
+const { pickDemoQuestion } = require(L + 'coachDemoMoments.js');
+const { getExerciseProgressSignal, getTrackedExerciseProgress } = require(L + 'progression.js');
+const { t } = require(L + 'i18n.js');
+
+const dayAt = (daysAgo) => new Date(2026, 9, 10 - daysAgo, 18).toISOString();
+
+/**
+ * One session per spec, a week apart by default, all of programme day "day"
+ * of programme "tpl". A spec's sets are [kg, reps] pairs; `added` are sets
+ * the reader added after the programme's ones (saved with basis 'added').
+ */
+function sessionsFor(specs, { name = 'Bench Press', templateId = 'tpl' } = {}) {
+  const sessions = [];
+  const logs = [];
+  specs.forEach((spec, index) => {
+    const id = `s${index}`;
+    sessions.push({
+      id,
+      workoutTemplateId: templateId,
+      workoutTemplateSessionId: 'day',
+      workoutNameSnapshot: 'Push',
+      performedAt: dayAt(spec.daysAgo),
+    });
+    const sets = [
+      ...spec.sets.map(([kg, reps]) => ({ kg, reps, added: false })),
+      ...(spec.added ?? []).map(([kg, reps]) => ({ kg, reps, added: true })),
+    ];
+    logs.push({
+      id: `l${index}`,
+      sessionId: id,
+      exerciseTemplateId: null,
+      exerciseNameSnapshot: name,
+      weight: Math.max(...sets.map((set) => set.kg)),
+      repsPerSet: sets.map((set) => set.reps),
+      sets: sets.map((set, order) => ({
+        orderIndex: order,
+        weight: set.kg,
+        reps: set.reps,
+        kind: 'working',
+        outcome: 'completed',
+        status: 'completed',
+        ...(set.added
+          ? {
+              planned: {
+                loadKg: null,
+                repsMin: 0,
+                repsMax: 0,
+                targetReps: null,
+                basis: 'added',
+                fromKg: null,
+                fromReps: null,
+                cautionArea: null,
+              },
+            }
+          : {}),
+      })),
+      tracked: true,
+      orderIndex: 0,
+      templateSlotId: 'bench',
+    });
+  });
+  return { sessions, logs };
+}
+
+function programme({ sets = 3, repsMin = 8, repsMax = 8 } = {}) {
+  const template = {
+    sessions: [
+      {
+        id: 'day',
+        exercises: [{ exerciseName: 'Bench Press', slotId: 'bench', sets, repsMin, repsMax, trackingMode: 'load_and_reps' }],
+      },
+    ],
+  };
+  return () => template;
+}
+
+const flat = (kg, ...reps) => reps.map((count) => [kg, count]);
+const weekly = (...sessionSets) =>
+  sessionSets.map((sets, index) => ({ daysAgo: 7 * (sessionSets.length - 1 - index), sets }));
+
+/** Everything a stall surface reads, for one history. */
+function surfaces(specs, { lookup = programme(), level = 'intermediate' } = {}) {
+  const { sessions, logs } = sessionsFor(specs);
+  const latest = sessions[sessions.length - 1];
+  const lifts = withProgrammeReads(buildLiftHistories(sessions, logs), { sessions, logs, lookupTemplate: lookup });
+  const lift = lifts.find((entry) => entry.name === 'Bench Press');
+  const advice = buildNextSessionAdvice({
+    liftName: 'Bench Press',
+    sessionId: latest.id,
+    sessions,
+    logs,
+    lookupTemplate: lookup,
+    level,
+  });
+  const analysis = buildSessionAnalysis({
+    sessionId: latest.id,
+    sessions,
+    logs,
+    language: 'en',
+    level,
+    lookupTemplate: lookup,
+  });
+  return { sessions, logs, lifts, lift, advice, analysis, level };
+}
+
+const stalledLabel = t('en', 'pro.read.stalled');
+
+module.exports = [
+  // ── A12-1: the session the gate earns its raise is not a stall ─────────────
+  {
+    name: 'hunt12 A12-1: three ceiling sessions at a first weight raise, and no surface calls the lift stuck',
+    run() {
+      const { lift, lifts, advice, analysis, level } = surfaces(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8)));
+      assert.equal(lift.stalledSessions, 3, 'the count itself is unchanged: charts read it');
+      assert.deepEqual(advice, { kind: 'raise', fromKg: 100, toKg: 102.5 });
+      assert.equal(isLiftPlateaued(lift), false);
+      assert.equal(detectPlateau(lifts, new Set()), null);
+      assert.equal(findPlateauDetection(lifts, 'Bench Press', 'en'), null);
+      const rows = buildWeeklyRead(lifts, null, 'en', level);
+      assert.ok(rows.length > 0);
+      assert.ok(rows.every((row) => row.status !== stalledLabel), JSON.stringify(rows));
+      const completion = buildCompletionConclusion(lift, 'en', level, advice);
+      assert.ok(completion && /102[.,]5 kg/.test(completion.body), completion && completion.body);
+      assert.match(analysis.nextActions[0].text, /102[.,]5 kg/);
+      const demo = pickDemoQuestion('month1', { lifts, cautionFlags: null, language: 'en' });
+      assert.notEqual(demo.questionKey, 'coach.demo.month1.stalled');
+    },
+  },
+  {
+    name: 'hunt12 A12-1: the completion lock never contradicts a raise the gate gave, even on a lift read without its programme',
+    run() {
+      const { sessions, logs, advice, level } = surfaces(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8)));
+      const bare = buildLiftHistories(sessions, logs).find((entry) => entry.name === 'Bench Press');
+      assert.equal(bare.stalledSessions, 3);
+      const completion = buildCompletionConclusion(bare, 'en', level, advice);
+      assert.ok(completion && /102[.,]5 kg/.test(completion.body), completion && completion.body);
+      assert.doesNotMatch(completion.body, /× 9/);
+    },
+  },
+  {
+    name: 'hunt12 A12-1: a ready session waiting for its confirmation is not a stall either',
+    run() {
+      const { lift, lifts, advice, analysis, level } = surfaces(weekly(flat(100, 8, 8, 8), flat(100, 8, 7, 8), flat(100, 8, 8, 8)));
+      assert.equal(lift.stalledSessions, 3);
+      assert.deepEqual(advice, { kind: 'none' });
+      assert.equal(lift.programme.onSchedule, true);
+      assert.equal(detectPlateau(lifts, new Set()), null);
+      assert.equal(findPlateauDetection(lifts, 'Bench Press', 'en'), null);
+      assert.ok(buildWeeklyRead(lifts, null, 'en', level).every((row) => row.status !== stalledLabel));
+      assert.equal(buildCompletionConclusion(lift, 'en', level, advice), null);
+      assert.ok(analysis.nextActions.every((action) => !/every set/.test(action.text)), JSON.stringify(analysis.nextActions));
+    },
+  },
+  {
+    name: 'hunt12 A12-1 control: reps short of the ceiling three times is the plateau it always was',
+    run() {
+      const { lift, lifts, analysis, level } = surfaces(weekly(flat(100, 6, 6, 6), flat(100, 6, 6, 6), flat(100, 6, 6, 6)));
+      assert.equal(lift.programme.onSchedule, false);
+      assert.equal(detectPlateau(lifts, new Set()), lift);
+      assert.ok(findPlateauDetection(lifts, 'Bench Press', 'en'));
+      assert.ok(buildWeeklyRead(lifts, null, 'en', level).some((row) => row.status === stalledLabel));
+      const body = buildPlateauConclusion(lift, 'en', level).body;
+      assert.match(body, /100 kg × 7 on every set/);
+      assert.match(analysis.nextActions[0].text, /100 kg × 7 on every set/);
+      assert.equal(pickDemoQuestion('month1', { lifts, cautionFlags: null, language: 'en' }).questionKey, 'coach.demo.month1.stalled');
+    },
+  },
+  {
+    name: 'hunt12 A12-1: the plateau text never asks for reps above the programme ceiling',
+    run() {
+      // Two of three sets, three times: not ready (too few sets), a real stall.
+      const { lift, lifts, level } = surfaces(weekly(flat(100, 8, 8), flat(100, 8, 8), flat(100, 8, 8)));
+      assert.equal(detectPlateau(lifts, new Set()), lift);
+      const body = buildPlateauConclusion(lift, 'en', level).body;
+      assert.match(body, /100 kg × 8 on every set/);
+      assert.doesNotMatch(body, /× 9/);
+    },
+  },
+  {
+    name: 'hunt12 A12-1: a lift with no programme to read keeps the old count',
+    run() {
+      const { lift, lifts } = surfaces(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8)), { lookup: () => null });
+      assert.ok(!lift.programme);
+      assert.equal(detectPlateau(lifts, new Set()), lift);
+      assert.equal(readLiftProgramme({ liftName: 'Bench Press', sessionId: 's2', sessions: [], logs: [], lookupTemplate: null }), null);
+    },
+  },
+
+];

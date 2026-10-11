@@ -1,10 +1,13 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
+import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { ExerciseLog, SetupLevel, WorkoutSession } from '../types/models';
 import { SLOT_HISTORY_LIMIT } from './exerciseHistoryLookup';
 import { getWorkedLogSets } from './exerciseLog';
-import { evaluateProgression } from './progressionGate';
-import { normalizedName, sessionTime } from './trainingHistory';
+import { evaluateProgression, isProgressionReadySession } from './progressionGate';
+import { LiftProgrammeRead, normalizedName, sessionTime } from './trainingHistory';
 import { toWorkingHistoryEntry } from './warmupSets';
+
+export type { LiftProgrammeRead };
 
 /**
  * What to say about a lift's weight after a session, from the progression
@@ -120,8 +123,23 @@ function topLoad(entry: WorkoutSlotHistoryEntry, targetSets: number) {
     .reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
 
-export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessionAdvice {
-  const { liftName, sessionId, sessions, logs, lookupTemplate, level } = input;
+/** The programme row a lift was logged under, and its history as the gate reads it. */
+interface ProgrammeHistory {
+  exercise: AdviceTemplateExercise;
+  /** Newest first, up to the session asked about. */
+  history: WorkoutSlotHistoryEntry[];
+  asOfMs: number;
+}
+
+type ProgrammeHistoryInput = Pick<NextSessionAdviceInput, 'liftName' | 'sessionId' | 'sessions' | 'logs' | 'lookupTemplate'>;
+
+/**
+ * The history the gate reads for this lift at this session: the lift's
+ * sessions of this programme day, filed under its row. NO_NEXT_SESSION_ADVICE
+ * when there is no row to read it against.
+ */
+function readProgrammeHistory(input: ProgrammeHistoryInput): ProgrammeHistory | NextSessionAdvice {
+  const { liftName, sessionId, sessions, logs, lookupTemplate } = input;
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session || !lookupTemplate || !session.workoutTemplateSessionId) {
     return NO_NEXT_SESSION_ADVICE;
@@ -185,13 +203,22 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
       Number(right.valid) - Number(left.valid) || (left.valid ? right.time - left.time : 0) || left.index - right.index,
   );
   const history = ranked.slice(0, SLOT_HISTORY_LIMIT).map(({ entry }) => entry);
+  return { exercise, history, asOfMs };
+}
+
+export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessionAdvice {
+  const read = readProgrammeHistory(input);
+  if ('kind' in read) {
+    return read;
+  }
+  const { exercise, history, asOfMs } = read;
 
   const decision = evaluateProgression({
     history,
     repsMin: exercise.repsMin,
     repsMax: exercise.repsMax,
     targetSets: exercise.sets,
-    level,
+    level: input.level,
     trackingMode: exercise.trackingMode,
     nowMs: asOfMs,
   });
@@ -214,4 +241,45 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
     }
   }
   return NO_NEXT_SESSION_ADVICE;
+}
+
+/**
+ * Where a lift stands against its programme row at a session: whether that
+ * session reached the row's top reps on every set the row asks for — the
+ * gate's own test of a session that earns a raise (isProgressionReadySession)
+ * — and the load and reps of the row's working sets in it.
+ *
+ * A lifter on schedule is not stuck. At the ceiling, reps cannot rise (load
+ * and reps lifts never step reps), so a run of sessions with no rep best is
+ * what doing exactly what the gate asks looks like, and the gate raises on
+ * the third of them at a first weight. The stall surfaces called that session
+ * a plateau and asked for a ninth rep on an eight-rep programme (hunt,
+ * 2026-10-11).
+ *
+ * Null when the row cannot be found (a freestyle workout, a deleted
+ * programme) or the row is not loaded: there the question has no answer.
+ */
+export function readLiftProgramme(input: ProgrammeHistoryInput): LiftProgrammeRead | null {
+  const read = readProgrammeHistory(input);
+  if ('kind' in read) {
+    return null;
+  }
+  const { exercise, history } = read;
+  const mode = readStoredTrackingMode(exercise.trackingMode);
+  if (mode !== null && isUnloadedTrackingMode(mode)) {
+    return null;
+  }
+  const latest = history[0];
+  if (!latest || latest.sessionId !== input.sessionId || !(exercise.sets > 0) || !(exercise.repsMax > 0)) {
+    return null;
+  }
+  // The row's own sets, in order: an added set past them is extra work, as
+  // the gate reads it (programmedSets).
+  const working = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, exercise.sets);
+  return {
+    onSchedule: isProgressionReadySession(latest, exercise.repsMax, exercise.sets),
+    repsMax: exercise.repsMax,
+    workingKg: topLoad(latest, exercise.sets),
+    workingReps: working.map((set) => set.reps),
+  };
 }

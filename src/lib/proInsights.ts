@@ -5,7 +5,12 @@ import { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { formatShortDate, formatWeight } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { t } from './i18n';
-import { NO_NEXT_SESSION_ADVICE, type NextSessionAdvice } from './nextSessionAdvice';
+import {
+  NO_NEXT_SESSION_ADVICE,
+  readLiftProgramme,
+  type AdviceTemplateLookup,
+  type NextSessionAdvice,
+} from './nextSessionAdvice';
 import { PROGRESSION_LEVEL_PARAMS, getProgressionTier } from './progressionGate';
 import {
   DEFAULT_HISTORY_WINDOW_DAYS,
@@ -14,7 +19,7 @@ import {
   sessionBestPoints,
   stalledRunPoints,
 } from './trainingHistory';
-import { AppLanguage, SetupCautionFlag, SetupLevel } from '../types/models';
+import { AppLanguage, ExerciseLog, SetupCautionFlag, SetupLevel, WorkoutSession } from '../types/models';
 
 /**
  * The paywall-moments layer (design: Vinha Paywall Moments).
@@ -164,12 +169,66 @@ export function isLiftHeldForCaution(
 }
 
 /**
+ * The lifts a stall surface could name, read against the programme row their
+ * latest session was logged under (lib/nextSessionAdvice readLiftProgramme).
+ * Only those at a stall count are read: the read asks the gate's history, and
+ * no other lift needs it. The rest come back as they were.
+ */
+export function withProgrammeReads(
+  lifts: LiftHistory[],
+  source: {
+    sessions: readonly WorkoutSession[];
+    logs: readonly ExerciseLog[];
+    lookupTemplate: AdviceTemplateLookup | null | undefined;
+  },
+): LiftHistory[] {
+  if (!source.lookupTemplate) {
+    return lifts;
+  }
+  return lifts.map((lift) =>
+    lift.stalledSessions >= PLATEAU_STALL_SESSIONS
+      ? {
+          ...lift,
+          programme: readLiftProgramme({
+            liftName: lift.name,
+            sessionId: lift.latest.sessionId,
+            sessions: source.sessions,
+            logs: source.logs,
+            lookupTemplate: source.lookupTemplate,
+          }),
+        }
+      : lift,
+  );
+}
+
+/**
+ * The lift's latest session did what the programme asks: every set at the
+ * row's top reps. Its run without a rep best is the gate's schedule — it
+ * raises next time, or wants one more such session at this weight, or holds
+ * for recovery or a break — not a lifter who is stuck. The gate's own raise,
+ * when the caller has it, says the same.
+ */
+function isOnSchedule(lift: LiftHistory, advice?: NextSessionAdvice): boolean {
+  return advice?.kind === 'raise' || lift.programme?.onSchedule === true;
+}
+
+/**
+ * Stuck at this weight: PLATEAU_STALL_SESSIONS or more sessions without a rep
+ * best, the latest of them short of what the programme asks. Without a
+ * programme to read (a freestyle workout), the count alone, as before.
+ */
+function isStalledRun(lift: LiftHistory, advice?: NextSessionAdvice): boolean {
+  return lift.stalledSessions >= PLATEAU_STALL_SESSIONS && !isOnSchedule(lift, advice);
+}
+
+/**
  * Is this lift, right now, the plateau the paywall moments would find?
- * Never one the plan holds on purpose, when the flags are given.
+ * Never one the plan holds on purpose, when the flags are given, and never
+ * one on the gate's schedule.
  */
 export function isLiftPlateaued(lift: LiftHistory, cautionFlags?: SetupCautionFlag[] | null): boolean {
   return (
-    lift.stalledSessions >= PLATEAU_STALL_SESSIONS &&
+    isStalledRun(lift) &&
     lift.latest.topSetWeightKg > 0 &&
     !isLiftHeldForCaution(lift, cautionFlags)
   );
@@ -246,11 +305,13 @@ function latestSetsLabel(lift: LiftHistory): string {
 /**
  * One rep more than the weakest set, on every set: from 6/6/7 the next step
  * is 7/7/7, not 8/8/8. Top set + 1 asked for two reps more on two of three
- * sets (#bugs 2026-10-01).
+ * sets (#bugs 2026-10-01). Never past the programme's ceiling: 8/8 on a
+ * three-set, eight-rep row asked for nine (hunt, 2026-10-11).
  */
 function nextRepsTarget(lift: LiftHistory): number {
   const reps = lift.latest.setReps;
-  return (reps.length > 0 ? Math.min(...reps) : lift.latest.topSetReps) + 1;
+  const next = (reps.length > 0 ? Math.min(...reps) : lift.latest.topSetReps) + 1;
+  return lift.programme ? Math.min(next, lift.programme.repsMax) : next;
 }
 
 export function buildPlateauDetection(lift: LiftHistory, language: AppLanguage): PlateauDetection {
@@ -449,7 +510,10 @@ export function buildCompletionConclusion(
   advice: NextSessionAdvice = NO_NEXT_SESSION_ADVICE,
 ): LockedConclusion | null {
   const liftLabel = exerciseNameLabel(language, lift.name);
-  if (lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
+  // A run the gate is on schedule through is no plateau: the lock says what
+  // the gate does next. On the session the gate earned its raise it read
+  // "100 kg × 9 on every set" above an eight-rep programme (hunt, 2026-10-11).
+  if (isStalledRun(lift, advice)) {
     return buildPlateauConclusion(lift, language, level);
   }
   // The gate's answer for the next session (nextSessionAdvice), not a step added
@@ -493,7 +557,7 @@ export function buildWeeklyRead(
     // A lift held for a flagged area is not "stalled" and gets no "move up"
     // fix; its status is still read from the weights, as for any other lift.
     const held = isLiftHeldForCaution(lift, cautionFlags);
-    if (!held && lift.stalledSessions >= PLATEAU_STALL_SESSIONS) {
+    if (!held && isStalledRun(lift)) {
       rows.push({
         key: lift.key,
         tone: 'amber',
