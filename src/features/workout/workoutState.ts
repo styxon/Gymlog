@@ -35,6 +35,7 @@ import {
   splitExerciseByLift,
 } from '../../lib/liftSegments';
 import {
+  answersLoadedLift,
   capSlotEntries,
   entriesForLift,
   entryMatchesDose,
@@ -285,7 +286,10 @@ function getHistoryEntries(
    */
   dose?: ProgrammedDose | null,
 ) {
-  const matchesDose = (entry: WorkoutSlotHistoryEntry) => entryMatchesDose(entry, dose);
+  // An all-zero session is no weight for a loaded lift (answersLoadedLift).
+  const requireLoaded = dose ? !isUnloadedTrackingMode(dose.trackingMode) : false;
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) =>
+    entryMatchesDose(entry, dose) && answersLoadedLift(entry, requireLoaded);
   // Only the entries that were this lift: a swap writes under the same slot id
   // (see entriesForLift).
   const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName).filter(matchesDose);

@@ -51,6 +51,18 @@ function heaviestLoadKg(entry: WorkoutSlotHistoryEntry): number {
   return entry.sets.reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
 
+/**
+ * Whether an entry may answer for a lift that is loaded (requireLoaded): a
+ * real session at some weight. One whose every set is 0 kg is the absence of
+ * a weight — from the slot's own history as much as from a borrow: it opened
+ * a loaded lift at 0 kg with "Last time" listing 0/0/0, where the same data
+ * borrowed opened 60 (hunt, 2026-10-11). A set-less entry has no weight to be
+ * missing and is left to the readers that skip it.
+ */
+export function answersLoadedLift(entry: WorkoutSlotHistoryEntry, requireLoaded: boolean | undefined): boolean {
+  return !requireLoaded || entry.sets.length === 0 || heaviestLoadKg(entry) > 0;
+}
+
 export interface NamedHistoryOptions {
   /**
    * Reject entries where every set was logged at 0 kg. For a loaded lift such
@@ -420,7 +432,8 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   // reps were done here last time, they were done HERE.
   // …as long as it was THIS lift. See entriesForLift.
   // …and run under the dose the slot asks for now (entryMatchesDose).
-  const matchesDose = (entry: WorkoutSlotHistoryEntry) => queryMatchesDose(entry, query);
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) =>
+    queryMatchesDose(entry, query) && answersLoadedLift(entry, query.requireLoaded);
   const scoped = selectLatestUsableEntry(
     entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName).filter(matchesDose),
     query.nowMs,

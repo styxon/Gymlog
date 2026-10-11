@@ -604,6 +604,28 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A5-5: an all-zero session in the slot is no weight for a loaded lift, in the prefill and in Last time',
+    run() {
+      withHelsinkiClocks(() => {
+        const key = keyOf('bench');
+        const h = stateWith({ [key]: [entry(at(2026, 10, 5), [12, 12, 12], 0, { slotId: key }), entry(at(2026, 9, 28), [12, 12, 12], 60, { slotId: key }), entry(at(2026, 9, 21), [12, 12, 12], 60, { slotId: key })] });
+        const now = at(2026, 10, 6);
+        const opened = start(h, BENCH, now, { automatedProgressionEnabled: false });
+        assert.deepEqual(planned(opened), [60, 60, 60]);
+        const panel = resolveLastTimeEntry({ slotHistory: h.history.slotHistory, slotId: key, templateSlotId: 'bench', exerciseName: 'Bench Press', requireLoaded: true, repWindow: { min: 8, max: 12 }, nowMs: Date.parse(now) });
+        assert.equal(panel.entry.performedAt, at(2026, 9, 28));
+        assert.equal(panel.borrowed, false);
+        // Bodyweight work: 0 kg is the honest answer, and still the newest.
+        const pk = keyOf('pull');
+        const pullTpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 12 }]);
+        const bw = stateWith({ [pk]: [entry(at(2026, 10, 5), [9, 9, 9], 0, { slotId: pk, exerciseName: 'Pull-Up' }), entry(at(2026, 9, 28), [8, 8, 8], 0, { slotId: pk, exerciseName: 'Pull-Up' })] });
+        assert.deepEqual(planned(start(bw, pullTpl, now, { automatedProgressionEnabled: false }), 'pull'), [0, 0, 0]);
+        const bwPanel = resolveLastTimeEntry({ slotHistory: bw.history.slotHistory, slotId: pk, templateSlotId: 'pull', exerciseName: 'Pull-Up', requireLoaded: false, repWindow: null, nowMs: Date.parse(now) });
+        assert.equal(bwPanel.entry.performedAt, at(2026, 10, 5));
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };
