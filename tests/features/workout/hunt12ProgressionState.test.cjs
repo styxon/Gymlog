@@ -644,6 +644,32 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A8-2: the loader checks every field of a stored last-time entry, so junk cannot hold a lift',
+    run() {
+      withHelsinkiClocks(() => {
+        const key = keyOf('bench');
+        const load = (entries) => normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [key]: entries }, lastSelectedTemplateId: null } }).history;
+        const real = (iso, extra = {}) => entry(iso, [12, 12, 12], 60, { slotId: key, ...extra });
+        // skipped "yes" read as a skip and held the newest real session.
+        const history = load([real(W2, { skipped: 'yes' }), real(W1)]);
+        assert.equal(history.slotHistory[key][0].skipped, false);
+        assert.deepEqual(autos(start({ ...stateWith({}), history }, BENCH, W3)), [60, 60, 60]);
+        assert.equal(load([real(W2, { skipped: true, sets: [] })]).slotHistory[key][0].skipped, true);
+        const one = (extra) => load([real(W2, extra)]).slotHistory[key][0];
+        ['6', -3, 0, 6.5, 1e9, null].forEach((junk) => assert.equal('targetReps' in one({ targetReps: junk }), false, `targetReps ${junk}`));
+        assert.equal(one({ targetReps: 6 }).targetReps, 6);
+        [5, {}, null].forEach((junk) => assert.equal('swappedFrom' in one({ swappedFrom: junk }), false, `swappedFrom ${JSON.stringify(junk)}`));
+        assert.equal(one({ swappedFrom: 'Bench Press' }).swappedFrom, 'Bench Press');
+        assert.equal(one({ sessionId: 5 }).sessionId, '5');
+        assert.equal(one({ sessionId: {} }).sessionId, '');
+        assert.equal(one({ slotId: null }).slotId, '');
+        // A well-formed entry loads exactly as stored.
+        const clean = real(W2, { targetReps: 6, swappedFrom: 'Bench Press' });
+        assert.deepEqual(one(clean), clean);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

@@ -176,6 +176,9 @@ function withOptional<T extends Record<string, unknown>>(target: T, key: string,
   return (value === undefined ? rest : { ...rest, [key]: value }) as T;
 }
 
+/** Past this, a stored rep target is no target anyone was given (the reps dial stops far below it). */
+const MAX_TARGET_REPS = 1000;
+
 /** A whole count of one or more, or undefined: what a stored count of sets has to be. */
 function positiveCount(value: unknown): number | undefined {
   return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
@@ -191,7 +194,24 @@ function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[
     .filter(isHistorySet)
     // A set added mid-session is marked `true`; anything else there is no mark.
     .map((set) => withOptional(set as Record<string, unknown>, 'addedMidSession', (set as Record<string, unknown>).addedMidSession === true ? true : undefined));
-  let normalized: Record<string, unknown> = { ...entry, sets };
+  // An id the lookups compare as text; a number is read as one, anything else as none.
+  const text = (value: unknown) =>
+    typeof value === 'string' ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+  let normalized: Record<string, unknown> = {
+    ...entry,
+    sets,
+    slotId: text(entry.slotId),
+    sessionId: text(entry.sessionId),
+    // Only `true` is a skip: "yes" held the newest real session as skipped (hunt, 2026-10-11).
+    skipped: entry.skipped === true,
+  };
+  // A lowered target the gate can read: a whole number of reps, at most what a dial can ask.
+  normalized = withOptional(
+    normalized,
+    'targetReps',
+    positiveCount(entry.targetReps) !== undefined && (entry.targetReps as number) <= MAX_TARGET_REPS ? entry.targetReps : undefined,
+  );
+  normalized = withOptional(normalized, 'swappedFrom', typeof entry.swappedFrom === 'string' ? entry.swappedFrom : undefined);
   normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
   // The sets a lighter session asked for (Q3, 2026-10-11).
   normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
