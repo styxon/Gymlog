@@ -270,6 +270,37 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 Q3 x advice: a lighter session is saved with its set count, and the advice agrees with the next start',
+    run() {
+      withHelsinkiClocks(() => {
+        const { adaptCompletedWorkoutSessionForAppDatabase } = require(D + 'features/workout/workoutAppAdapter.js');
+        const { buildCompletedWorkoutRecord } = require(D + 'state/completedWorkoutPersistence.js');
+        const { buildNextSessionAdvice } = require(D + 'lib/nextSessionAdvice.js');
+        let db = { workoutSessions: [], exerciseLogs: [] };
+        let ids = 0;
+        const save = (state, tpl, when, sets, progression) => {
+          let s = start(state, tpl, when, progression);
+          sets.forEach(([kg, reps], index) => { s = logSet(s, 'bench', index, kg, reps, addMinutes(when, 3 * (index + 1))); });
+          const performedAt = addMinutes(when, 30);
+          const finished = workoutReducer(s, { type: 'session/finishWorkout', payload: { performedAt } });
+          const record = buildCompletedWorkoutRecord(adaptCompletedWorkoutSessionForAppDatabase(finished.activeSession, Date.parse(performedAt)), () => `id${(ids += 1)}`);
+          db = { workoutSessions: [...db.workoutSessions, record.session], exerciseLogs: [...db.exerciseLogs, ...record.logs] };
+          return { state: workoutReducer(finished, { type: 'session/clearCompletedSession' }), sessionId: record.session.id, logs: record.logs };
+        };
+        let run = save(stateWith({}), BENCH, W1, [[60, 12], [60, 12], [60, 12]], {});
+        run = save(run.state, BENCH, W2, [[60, 12], [60, 12], [60, 12]], { fatigueSignal: 'elevated' });
+        run = save(run.state, lightenRuntimeTemplate(BENCH), W3, [[60, 12], [60, 12]], { fatigueSignal: 'elevated' });
+        assert.deepEqual(run.logs.map((log) => log.plannedSets), [2]);
+        const tplLookup = () => ({ sessions: [{ id: 'day_a', exercises: [{ exerciseName: 'Bench Press', slotId: 'bench', sets: 3, repsMin: 8, repsMax: 12, trackingMode: 'load_and_reps' }] }] });
+        const advice = buildNextSessionAdvice({ liftName: 'Bench Press', sessionId: run.sessionId, sessions: db.workoutSessions, logs: db.exerciseLogs, lookupTemplate: tplLookup, level: 'beginner' });
+        assert.deepEqual(advice, { kind: 'raise', fromKg: 60, toKg: 62.5 });
+        assert.deepEqual(planned(start(run.state, BENCH, W4, { fatigueSignal: 'normal' })), [62.5, 62.5, 62.5]);
+        // An ordinary session saves no count.
+        assert.equal('plannedSets' in save(run.state, BENCH, W4, [[62.5, 12], [62.5, 12]], {}).logs[0], false);
+      });
+    },
+  },
+  {
     name: 'hunt12 A6-3/A5-2/A8-3: a set last time did not reach opens on the set before it, repeated, with no badge',
     run() {
       withHelsinkiClocks(() => {

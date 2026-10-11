@@ -153,6 +153,8 @@ function buildPersistedLogs(
       notes: log.notes ?? null,
       swappedFrom: log.swappedFrom ?? null,
       ...(log.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
+      // A lighter session's count (ExerciseLog.plannedSets), checked by the draft's normalizer.
+      ...(typeof log.plannedSets === 'number' ? { plannedSets: log.plannedSets } : {}),
     }));
 }
 

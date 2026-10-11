@@ -118,6 +118,9 @@ function entryOf(
       sessionId: session.id,
       sets,
       skipped: false,
+      // A lighter session's count (Q3): the gate measures the entry against
+      // it, so the advice agrees with the next start's raise.
+      ...(typeof log.plannedSets === 'number' ? { plannedSets: log.plannedSets } : {}),
     },
     exercise.sets,
   );
@@ -135,6 +138,27 @@ function topLoad(entry: WorkoutSlotHistoryEntry, targetSets: number) {
     .sort((left, right) => left.setIndex - right.setIndex)
     .slice(0, Math.max(0, targetSets))
     .reduce((max, set) => Math.max(max, set.loadKg), 0);
+}
+
+/**
+ * The heaviest load among the sets a lighter session left out (it carries
+ * plannedSets), each from the newest earlier session that did it; 0 when it
+ * left none out.
+ */
+function leftOutTopKg(history: readonly WorkoutSlotHistoryEntry[], targetSets: number): number {
+  const [latest, ...earlier] = history;
+  if (!latest || typeof latest.plannedSets !== 'number') {
+    return 0;
+  }
+  let top = 0;
+  for (let setIndex = 0; setIndex < targetSets; setIndex += 1) {
+    if (latest.sets.some((set) => set.setIndex === setIndex)) {
+      continue;
+    }
+    const own = earlier.map((entry) => entry.sets.find((set) => set.setIndex === setIndex)).find((set) => set !== undefined);
+    top = Math.max(top, own?.loadKg ?? 0);
+  }
+  return top;
 }
 
 /** The programme row a lift was logged under, and its history as the gate reads it. */
@@ -246,7 +270,11 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
   });
 
   if (decision.recommendation === 'increase') {
-    return { kind: 'raise', fromKg: decision.fromLoadKg, toKg: decision.loadKg };
+    // The top set the next start opens: a set a lighter session left out
+    // climbs from its own load in the newest earlier session that did it
+    // (workoutState missingSetFallback), a pyramid's top among them.
+    const fromKg = Math.max(decision.fromLoadKg, leftOutTopKg(history, exercise.sets));
+    return { kind: 'raise', fromKg, toKg: fromKg + decision.incrementKg };
   }
   if (decision.recommendation === 'hold' && decision.holdReason === 'rep_ceiling_not_reached') {
     // "Get the reps back" is only true of reps that fell: fewer than last time

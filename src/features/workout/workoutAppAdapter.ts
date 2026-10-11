@@ -9,6 +9,7 @@ import {
 import { sessionLastActiveMs, workoutSecondsUntil } from '../../lib/sessionClock';
 import { LiftSegment, splitExerciseByLift } from '../../lib/liftSegments';
 import { buildLoggedSetPlan } from '../../lib/loggedSetPlan';
+import { programmeSetCount } from '../../lib/warmupSets';
 
 export type LegacyWorkoutDataMismatch =
   | 'template_exercise_id_not_mapped';
@@ -267,6 +268,18 @@ function adaptWarmupsToLogSets(exercise: WorkoutExerciseInstance): ExerciseLogDr
   }));
 }
 
+/**
+ * The sets a lighter session asked for, saved on each of its logs as the slot
+ * history files it (workoutState plannedSetsOf): off the start's stamp, so a
+ * set the reader took off as well still reads as dropped.
+ */
+function plannedSetsOf(exercise: WorkoutExerciseInstance): { plannedSets?: number } {
+  const stamped = exercise.sets.find(
+    (set) => typeof set.plannedSets === 'number' && Number.isInteger(set.plannedSets) && set.plannedSets > 0,
+  )?.plannedSets;
+  return typeof stamped === 'number' && stamped < programmeSetCount(exercise.sets) ? { plannedSets: stamped } : {};
+}
+
 function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLogDraft[] {
   return savedLifts(exercise).map(
     (lift, liftIndex) =>
@@ -292,6 +305,8 @@ function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLo
         // The unit is the lift's own, set by set: a slot swapped from a bike
         // to a lift mid-way saves two logs, and only the bike's is minutes.
         ...(isMinutesTrackingMode(lift.segment.trackingMode) ? { repsUnit: 'minutes' as const } : {}),
+        // A lighter session's count, so the advice reads it as the gate does.
+        ...plannedSetsOf(exercise),
       }) satisfies ExerciseLogDraft,
   );
 }

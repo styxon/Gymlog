@@ -430,6 +430,14 @@ export interface ExerciseLog {
    * logged rather than leaving a reader to guess from the name.
    */
   repsUnit?: 'minutes';
+  /**
+   * The sets the app asked for, when it asked for fewer than the programme: a
+   * lighter session (lib/recoverySheet), as the slot history files it
+   * (WorkoutSlotHistoryEntry.plannedSets). The next-session advice reads the
+   * log against it, as the gate reads the slot history. Absent on every
+   * ordinary log and on every log saved before 2026-10-12.
+   */
+  plannedSets?: number;
 }
 
 export interface BodyweightEntry {
@@ -1010,4 +1018,6 @@ export interface ExerciseLogDraft {
   swappedFrom?: string | null;
   /** See ExerciseLog.repsUnit. */
   repsUnit?: 'minutes';
+  /** See ExerciseLog.plannedSets. */
+  plannedSets?: number;
 }

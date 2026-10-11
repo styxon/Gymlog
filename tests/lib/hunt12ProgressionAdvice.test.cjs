@@ -291,6 +291,44 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 Q3 x advice: after a lighter session the advice promises the raise the next start gives',
+    run() {
+      const { normalizeExerciseLog } = require(L + 'exerciseLog.js');
+      // Two ceiling sessions at 60, then a lighter one (two of three sets, the
+      // app asked for two): the next start raises to 62.5 (Q3). The advice read
+      // the saved two sets as one dropped and said nothing.
+      const specs = weekly(flat(60, 12, 12, 12), flat(60, 12, 12, 12), flat(60, 12, 12));
+      const { sessions, logs } = sessionsFor(specs);
+      const asked = logs.map((log, index) => (index === logs.length - 1 ? normalizeExerciseLog({ ...log, plannedSets: 2 }) : log));
+      assert.equal(asked[asked.length - 1].plannedSets, 2, 'the loader keeps the count');
+      const advise = (withLogs, level) =>
+        buildNextSessionAdvice({ liftName: 'Bench Press', sessionId: sessions[sessions.length - 1].id, sessions, logs: withLogs, lookupTemplate: programme({ repsMin: 8, repsMax: 12 }), level });
+      ['beginner', 'intermediate'].forEach((level) => {
+        assert.deepEqual(advise(asked, level), { kind: 'raise', fromKg: 60, toKg: 62.5 }, level);
+        // Without the count (a log saved before it, or a set the reader dropped): no promise, as today.
+        assert.deepEqual(advise(logs, level), { kind: 'none' }, level);
+      });
+      // The loader keeps only a positive whole count.
+      ['2', -1, 0, 2.5, null].forEach((junk) => assert.equal('plannedSets' in normalizeExerciseLog({ ...logs[0], plannedSets: junk }), false, String(junk)));
+    },
+  },
+  {
+    name: 'hunt12 Q3 x advice: after a lighter pyramid the raise names the top set the next start opens',
+    run() {
+      const { normalizeExerciseLog } = require(L + 'exerciseLog.js');
+      // 50/55/60 twice, then a lighter 50/55: the next start opens
+      // 52.5/57.5/62.5, the left-out top set climbing from its own 60. The
+      // advice named the lighter session's top, 55 -> 57.5.
+      const pyramid = [[50, 12], [55, 12], [60, 12]];
+      const { sessions, logs } = sessionsFor(weekly(pyramid, pyramid, pyramid.slice(0, 2)));
+      const asked = logs.map((log, index) => (index === logs.length - 1 ? normalizeExerciseLog({ ...log, plannedSets: 2 }) : log));
+      ['beginner', 'intermediate'].forEach((level) => {
+        const advice = buildNextSessionAdvice({ liftName: 'Bench Press', sessionId: sessions[sessions.length - 1].id, sessions, logs: asked, lookupTemplate: programme({ repsMin: 8, repsMax: 12 }), level });
+        assert.deepEqual(advice, { kind: 'raise', fromKg: 60, toKg: 62.5 }, level);
+      });
+    },
+  },
+  {
     name: 'hunt12 A12-2 controls: straight sets and a pyramid whose top set is the work keep their numbers',
     run() {
       const straight = surfaces(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(60, 10, 10, 10)), {
