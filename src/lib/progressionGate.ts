@@ -677,8 +677,12 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
 function provenFloorReps(input: ProgressedRepsInput): number {
   const newest = sessionsOf(input.history, input.nowMs)[0];
   // A session short of the programme's sets proved no floor: 1 × 20 and quit
-  // asked for 3 × 20 next time (review, 2026-10-11).
-  const floor = newest && newest.sets.length >= input.targetSets ? entryMinReps(newest, input.targetSets) : Number.NaN;
+  // asked for 3 × 20 next time (review, 2026-10-11). A lighter session that
+  // logged every set it asked for (plannedSets) did prove it (owner, Q3).
+  const floor =
+    newest && newest.sets.length >= setsNeeded(newest, input.targetSets)
+      ? entryMinReps(newest, input.targetSets)
+      : Number.NaN;
   return Number.isFinite(floor) ? Math.max(input.templateTargetReps, floor) : input.templateTargetReps;
 }
 
