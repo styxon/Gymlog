@@ -591,6 +591,28 @@ function missingSetFallback(
   return before ? { set: before, entry: latest } : null;
 }
 
+/**
+ * The seconds a hold opens on: what this set held last time, inside the
+ * programme's range (owner, A2-7 2026-10-11). It always opened at the top of
+ * the range — a 30-60 s plank held 40 s twice asked for 60 every time. A hold
+ * never progresses (truth rule 2): this repeats, it does not add, so there is
+ * no AUTO arrow and Free keeps the programme's number. Undefined when it is
+ * the top of the range, the template's own target.
+ */
+function heldSecondsTarget(
+  exercise: WorkoutTemplateExercise,
+  heldSeconds: number,
+  automatedProgressionEnabled: boolean,
+): number | undefined {
+  if (!automatedProgressionEnabled || exercise.trackingMode !== 'hold' || !(heldSeconds > 0)) {
+    return undefined;
+  }
+  const low = Math.min(exercise.repsMin, exercise.repsMax);
+  const high = Math.max(exercise.repsMin, exercise.repsMax);
+  const target = Math.round(Math.min(high, Math.max(low, heldSeconds)));
+  return Number.isFinite(target) && target > 0 && target !== exercise.repsMax ? target : undefined;
+}
+
 function resolveHistoricalSetDraft(
   history: WorkoutHistoryStore,
   slotId: string,
@@ -729,7 +751,7 @@ function resolveHistoricalSetDraft(
         ? missedReps.targetReps
         : repsResolution.targetReps !== exercise.repsMax
           ? repsResolution.targetReps
-          : undefined,
+          : heldSecondsTarget(exercise, matched.reps, options.automatedProgressionEnabled ?? false),
     autoProgressedFromReps: repsResolution.fromReps ?? undefined,
     rampTargetReps: rampTarget ?? undefined,
   };

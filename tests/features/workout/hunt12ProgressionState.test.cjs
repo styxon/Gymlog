@@ -11,6 +11,7 @@ const { resolveGuidedSetTarget } = require(D + 'lib/guidedPlayer.js');
 const { lightenRuntimeTemplate } = require(D + 'lib/recoverySheet.js');
 const { programmeSetCount, toWorkingHistoryEntry } = require(D + 'lib/warmupSets.js');
 const { resolveLastTimeEntry } = require(D + 'lib/exerciseHistoryLookup.js');
+const { buildLoggedSetPlan } = require(D + 'lib/loggedSetPlan.js');
 
 /**
  * Automatic progression, the stored half (hunt 12, fixer F2): what a finished
@@ -375,6 +376,27 @@ module.exports = [
         } finally {
           gate.resolveProgressedReps = real;
         }
+      });
+    },
+  },
+  {
+    name: 'hunt12 A2-7: a hold opens on the seconds it held last time, inside the programme range, and never climbs',
+    run() {
+      withHelsinkiClocks(() => {
+        const tpl = template([{ slotId: 'pl', name: 'Plank', trackingMode: 'hold', sets: 3, repsMin: 30, repsMax: 60 }]);
+        const key = keyOf('pl');
+        const held = (seconds) =>
+          stateWith({ [key]: [entry(W2, seconds, 0, { slotId: key, exerciseName: 'Plank' }), entry(W1, seconds, 0, { slotId: key, exerciseName: 'Plank' })] });
+        const targets = (state, progression) => exerciseOf(start(state, tpl, W3, progression), 'pl').sets.map((set) => set.plannedTargetReps);
+        assert.deepEqual(targets(held([40, 40, 45])), [40, 40, 45]);
+        const opened = exerciseOf(start(held([40, 40, 40]), tpl, W3), 'pl').sets[0];
+        assert.equal(opened.autoProgressedFromReps, undefined);
+        assert.equal(buildLoggedSetPlan(opened).basis, 'repeat');
+        assert.equal(buildLoggedSetPlan(opened).targetReps, 40);
+        // Clamped to the range; the top of it is the template's own number, so no target.
+        assert.deepEqual(targets(held([20, 70, 60])), [30, undefined, undefined]);
+        // Free repeats the programme's numbers.
+        assert.deepEqual(targets(held([40, 40, 40]), { automatedProgressionEnabled: false }), [undefined, undefined, undefined]);
       });
     },
   },
