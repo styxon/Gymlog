@@ -24,6 +24,19 @@ export const WARMUP_SHARE_TENTHS = 7;
 
 const SAME_LOAD_KG = 0.001;
 
+/**
+ * One weight dial step: loads this close are the same load to the gate (owner,
+ * 2026-10-11, Q6). A 61.25 nudge between two 60 kg sessions is the same work,
+ * and reset an intermediate's confirmation when compared to the gram. Every
+ * between-sessions step is 2.5 kg, so a real change of load is never this close.
+ */
+export const SAME_LOAD_TOLERANCE_KG = 1.25;
+
+/** Whether `lighter` is within one dial step of `heavier` (float slack included). */
+export function isWithinOneDialStep(heavier: number, lighter: number): boolean {
+  return Math.abs(heavier - lighter) <= SAME_LOAD_TOLERANCE_KG + SAME_LOAD_KG;
+}
+
 function byOrder(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[] {
   return [...sets].sort((left, right) => left.setIndex - right.setIndex);
 }
@@ -98,6 +111,11 @@ export function programmeSetCount(sets: readonly { addedMidSession?: boolean; pr
  * 70×12 on top does not earn a jump on the strength of the top set (spec
  * review, 2026-10-05). Straight sets and an ascending pyramid: every set, as
  * before.
+ *
+ * "At the heaviest" is within one dial step of it (SAME_LOAD_TOLERANCE_KG):
+ * 61.25 × 10 then 60 × 7, 60 × 6 read the 60s as a back-off and raised sets
+ * that missed the ceiling by four reps (hunt, 2026-10-11). A real drop is at
+ * least a between-sessions step under the top, and stays exempt.
  */
 export function gatingSets(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[] {
   const ordered = byOrder(sets);
@@ -106,7 +124,7 @@ export function gatingSets(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotH
   }
   const heaviest = ordered.reduce((max, set) => Math.max(max, set.loadKg), Number.NEGATIVE_INFINITY);
   let lastHeavy = ordered.length - 1;
-  while (lastHeavy > 0 && Math.abs(ordered[lastHeavy].loadKg - heaviest) >= SAME_LOAD_KG) {
+  while (lastHeavy > 0 && !isWithinOneDialStep(heaviest, ordered[lastHeavy].loadKg)) {
     lastHeavy -= 1;
   }
   return ordered.slice(0, lastHeavy + 1);

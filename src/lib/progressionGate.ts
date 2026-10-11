@@ -3,7 +3,7 @@ import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/work
 import { SetupCautionArea, SetupLevel } from '../types/models';
 import { getRollingWindowStart } from './completedSessions';
 import { buildFatigueModel, type FatigueModelInput } from './fatigueModel';
-import { gatingSets } from './warmupSets';
+import { gatingSets, isWithinOneDialStep } from './warmupSets';
 
 /**
  * Double progression, as specified (ADR-004 + progression-gating-rules.md).
@@ -377,7 +377,9 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     }
     // Only sessions at the same load count toward confirmation; a lighter
     // session that happened to hit the ceiling proves nothing about this load.
-    if (Math.abs(entryLoadKg(entry, targetSets) - currentLoadKg) > 0.001) {
+    // The same load is within one dial step of the newest session's (owner,
+    // 2026-10-11, Q6), always compared with the newest, never chained.
+    if (!isWithinOneDialStep(entryLoadKg(entry, targetSets), currentLoadKg)) {
       break;
     }
     consecutive += 1;
@@ -475,7 +477,10 @@ export function resolveProgressedLoadKg(
     // as every set did before.
     const own = input.fallbackLoadKg;
     if (own > 0) {
-      const isHeaviest = Math.abs(own - decision.fromLoadKg) < 0.001;
+      // "Heaviest" as the gate read it: within one dial step of the top
+      // (lib/warmupSets gatingSets), so the drop exemption covers the sets
+      // the gate exempted and no others.
+      const isHeaviest = own >= decision.fromLoadKg || isWithinOneDialStep(decision.fromLoadKg, own);
       if (!isHeaviest && typeof input.fallbackReps === 'number' && input.fallbackReps < input.repsMin) {
         return { loadKg: own, progressed: false, fromLoadKg: null, heldForFatigue: false, heldForCautionArea: null };
       }
