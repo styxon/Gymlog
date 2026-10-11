@@ -430,8 +430,10 @@ module.exports = [
       for (const name of notLandings) {
         assert.equal(exerciseHitsCautionArea(name, 'knees'), false, name);
       }
-      // The ankle list is its own: a bike sprint still counts there as it did.
-      assert.equal(exerciseHitsCautionArea('Bike HIIT (45s sprint / 15s rest)', 'ankles'), true);
+      // Nor an ankle one since progression hunt 12 (2026-10-11): a bike sprint
+      // has no landing, and the alias table files it under the plain Bike HIIT
+      // row, which never matched the ankles.
+      assert.equal(exerciseHitsCautionArea('Bike HIIT (45s sprint / 15s rest)', 'ankles'), false);
     },
   },
   {

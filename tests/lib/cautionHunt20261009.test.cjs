@@ -84,12 +84,15 @@ module.exports = [
         'Pigeon Pose (each side)', 'Couch Stretch (each side)', '90/90 Hip Stretch', 'Frog Stretch', 'Cossack Squat',
         'Deep Squat Hold', 'Supported Deep Squat Hold', 'Hip Circles', 'Butterfly Stretch', 'Kneeling Hip Flexor',
         'Hip Flexor Stretch', 'Banded Fire Hydrant', 'Hip Thrust', 'Sumo Squat',
+        // The owner widened hips on 2026-10-11 (progression hunt 12): the
+        // bridges, every lunge and the hip-hinge deadlifts load the hip too.
+        'Glute Bridge', 'Romanian Deadlift',
       ]) {
         assert.equal(hits(name, 'hips'), true, `${name} must hit hips`);
       }
-      // The pec fly machine is called "Butterfly", the bridge is the careful
-      // stand-in for a hip thrust, and the rest of the lower body stays out.
-      for (const name of ['Butterfly', 'Glute Bridge', 'Back Squat', 'Romanian Deadlift', 'Bench Press', 'Lat Pulldown']) {
+      // The pec fly machine is called "Butterfly", and squats and the upper
+      // body stay out.
+      for (const name of ['Butterfly', 'Back Squat', 'Bench Press', 'Lat Pulldown']) {
         assert.equal(hits(name, 'hips'), false, `${name} must not hit hips`);
       }
 

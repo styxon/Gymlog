@@ -18,7 +18,8 @@ import { SetupCautionArea, SetupCautionFlag } from '../types/models';
  * the patterns are tried, and VETO phrases take a whole area out ("head on
  * bench" is not a hinge). A few words a reader's own Finnish names compound on
  * (Penkkidippi, Hauiscurl) also match at the end of a longer word, which is
- * what the old substring rule caught.
+ * what the old substring rule caught. And a pattern of several words matches
+ * the one word they make run together ("push-up" in "Pushups").
  */
 
 // Broad per-area stress patterns. `avoid` removes every match.
@@ -43,6 +44,40 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'handstand',
     'dip',
     'dippi',
+    // The same presses and raises under the library's own names: Standing
+    // Military Press, a jerk or a snatch, Pike Push-Up and Cable Front Raise
+    // all got AUTO +2.5 kg under a careful shoulder (progression hunt,
+    // 2026-10-11, A13-1). Named one by one rather than as "front * raise",
+    // which would take Front Leg Raises too.
+    'military',
+    'press behind neck',
+    'bradford',
+    'cuban press',
+    'seesaw press',
+    'see-saw press',
+    'clean and press',
+    'jerk',
+    'snatch',
+    'pike push-up',
+    'front raise',
+    'front cable raise',
+    'front dumbbell raise',
+    'front incline dumbbell raise',
+    'front plate raise',
+    'front two-dumbbell raise',
+    'front barbell raise',
+    'front delt raise',
+    'deltoid raise',
+    'landmine press',
+    'standing dumbbell press',
+    'alternating dumbbell press',
+    'palms-in dumbbell press',
+    'one-arm dumbbell press',
+    'kettlebell press',
+    'reverse fly',
+    'reverse flye',
+    'reverse machine fly',
+    'reverse pec deck',
   ],
   lower_back: [
     'deadlift',
@@ -66,6 +101,10 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'stiff-legged',
     'stiff legs',
     'hyperextension',
+    // A deadlift from pins, and the rows done unsupported (owner, 2026-10-11).
+    // A chest-supported or lying T-bar row is vetoed or excluded below.
+    'rack pull',
+    't-bar row',
   ],
   knees: [
     'squat',
@@ -134,6 +173,8 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'wrist',
     'dip',
     'dippi',
+    // The library's name for the front squat breaks the pair apart.
+    'front barbell squat',
     // Weight carried on the palms in wrist extension: a wrists "avoid" week
     // kept Tuck Planche Hold, L-Sit Hold and the plank variants done on the
     // hands while every push-up was gone (hunt, 2026-10-09). A plain Plank and
@@ -167,6 +208,23 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'butterfly stretch',
     'deep squat hold',
     'fire hydrant',
+    // The names the alias table calls the same movement as a Hip Thrust, a
+    // Bulgarian Split Squat and a Sumo Squat (progression hunt, 2026-10-11).
+    'glute bridge',
+    'butt lift',
+    'split squat',
+    'plie',
+    // Owner, 2026-10-11: glute kickbacks, every lunge (lateral and curtsy
+    // too) and the hip-hinge deadlifts. Not squats or step-ups. "Kickback"
+    // alone is also the triceps kickback, so the glute ones are named.
+    'glute kickback',
+    'cable kickback',
+    'lunge',
+    'deadlift',
+    'romanian',
+    'rdl',
+    'stiff-legged',
+    'stiff legs',
   ],
   neck: [
     'shrug',
@@ -211,10 +269,17 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
 // the name still counts ("Leg Curl and Triceps Pushdown" is still a triceps
 // lift). Add one only for a name that is a real false positive.
 const AREA_EXCLUDE_PATTERNS: Record<SetupCautionArea, string[]> = {
-  shoulders: [],
+  // The snatch's pulls end at the hips or the shoulders' shrug, not overhead.
+  shoulders: ['snatch pull', 'snatch deadlift', 'snatch shrug'],
   // A grip, rows done upright or supported on a bench, and the reverse
   // hyperextension (hips swung over a bench, a back-friendly lift) are not a hinge.
-  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row', 'reverse hyperextension'],
+  lower_back: [
+    'clean grip',
+    'upright barbell row',
+    'lying cambered barbell row',
+    'lying t-bar row',
+    'reverse hyperextension',
+  ],
   // The leg press of a calf press is done with straight legs.
   knees: ['calf press on the leg press'],
   // "curl" is also the hamstring curl and the prone back raise, and the
@@ -256,6 +321,10 @@ const AREA_VETO_PHRASES: Partial<Record<SetupCautionArea, string[]>> = {
   // sprint / 15s rest)" is what the ankle swap hands a runner, and is the
   // knee-friendly conditioning, not a run.
   knees: ['bike'],
+  // Nor an ankle one: a bike sprint has no landing (progression hunt,
+  // 2026-10-11), and the alias table files both bike prescriptions under the
+  // plain Bike HIIT row, which never matched.
+  ankles: ['bike'],
 };
 
 const phraseCache = new Map<string, string[]>();
@@ -316,10 +385,28 @@ export function findPhrase(nameWords: Array<string | null>, phrase: string[]): n
   return -1;
 }
 
+/**
+ * A pattern of several words also matches ONE name word spelled as those words
+ * run together: "push-up" is in "Pushups", "skull crusher" in "EZ-Bar
+ * Skullcrusher" -- the library's spellings of lifts the catalog hyphenates
+ * (progression hunt, 2026-10-11). Joined per call; nothing is built at load.
+ */
+function hasPhrase(nameWords: Array<string | null>, pattern: string): boolean {
+  const phrase = phraseWords(pattern);
+  if (findPhrase(nameWords, phrase) !== -1) {
+    return true;
+  }
+  if (phrase.length < 2) {
+    return false;
+  }
+  const joined = phrase.join('');
+  return nameWords.some((word) => wordMatches(word, joined));
+}
+
 export function exerciseHitsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
   const nameWords: Array<string | null> = words(exerciseName);
   for (const veto of AREA_VETO_PHRASES[area] ?? []) {
-    if (findPhrase(nameWords, phraseWords(veto)) !== -1) {
+    if (hasPhrase(nameWords, veto)) {
       return false;
     }
   }
@@ -331,7 +418,7 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
       }
     }
   }
-  return AREA_AVOID_PATTERNS[area].some((pattern) => findPhrase(nameWords, phraseWords(pattern)) !== -1);
+  return AREA_AVOID_PATTERNS[area].some((pattern) => hasPhrase(nameWords, pattern));
 }
 
 /**
