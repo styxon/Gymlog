@@ -175,4 +175,107 @@ module.exports = [
       assert.equal(realDrop.progressed, false);
     },
   },
+
+  // ── A1-2 (owner Q7): one Helsinki calendar date is one session ───────────
+  {
+    name: 'hunt12 Q7: two sessions on one Helsinki date are one session for the gate',
+    run() {
+      inHelsinki(() => {
+        const nowMs = Date.parse(at(2026, 10, 13, 12));
+        const gate = (history, level) =>
+          evaluateProgression({ history, repsMin: 6, repsMax: 10, targetSets: 3, level, nowMs });
+        const ceiling = (iso) => entry(iso, [10, 10, 10], 60);
+
+        // Beginner: morning and evening of 12.10. are one session, short of two.
+        assert.equal(gate([ceiling(at(2026, 10, 12, 18)), ceiling(at(2026, 10, 12, 8))], 'beginner').recommendation, 'silent');
+        // Stored the other way round, the same answer.
+        assert.equal(gate([ceiling(at(2026, 10, 12, 8)), ceiling(at(2026, 10, 12, 18))], 'beginner').recommendation, 'silent');
+        // A week before makes the second.
+        assert.equal(
+          gate([ceiling(at(2026, 10, 12, 18)), ceiling(at(2026, 10, 12, 8)), ceiling(at(2026, 10, 5, 18))], 'beginner')
+            .recommendation,
+          'increase',
+        );
+
+        // Advanced: three on one date, three on two dates — short of three sessions.
+        assert.equal(
+          gate([ceiling(at(2026, 10, 12, 20)), ceiling(at(2026, 10, 12, 14)), ceiling(at(2026, 10, 12, 8))], 'advanced')
+            .recommendation,
+          'silent',
+        );
+        assert.equal(
+          gate([ceiling(at(2026, 10, 12, 18)), ceiling(at(2026, 10, 12, 8)), ceiling(at(2026, 10, 5, 18))], 'advanced')
+            .recommendation,
+          'silent',
+        );
+        assert.equal(
+          gate([ceiling(at(2026, 10, 12, 18)), ceiling(at(2026, 10, 8, 18)), ceiling(at(2026, 10, 5, 18))], 'advanced')
+            .recommendation,
+          'increase',
+        );
+
+        // Either side of midnight is two dates: 12.10. 23:30 and 13.10. 00:30.
+        assert.equal(gate([ceiling(at(2026, 10, 13, 0, 30)), ceiling(at(2026, 10, 12, 23, 30))], 'beginner').recommendation, 'increase');
+      });
+    },
+  },
+  {
+    name: 'hunt12 Q7: the 25-hour day of 25.10.2026 is one date, and a session belongs to the date it finished on',
+    run() {
+      inHelsinki(() => {
+        const nowMs = Date.parse(at(2026, 10, 26, 12));
+        const gate = (history) =>
+          evaluateProgression({ history, repsMin: 6, repsMax: 10, targetSets: 3, level: 'beginner', nowMs });
+        const ceiling = (iso, extra) => entry(iso, [10, 10, 10], 60, extra);
+
+        // 00:30 is still summer time (21:30Z the day before), 23:30 is winter
+        // time: 23 hours on the wall clock, 24 elapsed, two UTC dates, one
+        // Helsinki date.
+        const early = at(2026, 10, 25, 0, 30);
+        const late = at(2026, 10, 25, 23, 30);
+        assert.equal(Date.parse(late) - Date.parse(early), 24 * 3600000);
+        assert.notEqual(early.slice(0, 10), late.slice(0, 10));
+        assert.equal(gate([ceiling(late), ceiling(early)]).recommendation, 'silent');
+        // 24.10. 23:30 and 25.10. 00:30 are two dates across the change.
+        assert.equal(gate([ceiling(early), ceiling(at(2026, 10, 24, 23, 30))]).recommendation, 'increase');
+
+        // Started 24.10. 23:40, finished 25.10. 00:20: filed on 25.10.
+        const pastMidnight = ceiling(at(2026, 10, 25, 0, 20), { startedAt: at(2026, 10, 24, 23, 40) });
+        assert.equal(gate([ceiling(late), pastMidnight]).recommendation, 'silent');
+        assert.equal(gate([pastMidnight, ceiling(at(2026, 10, 24, 18))]).recommendation, 'increase');
+      });
+    },
+  },
+  {
+    name: 'hunt12 Q7: the newest session of the day represents it; the bodyweight reps gate counts days too',
+    run() {
+      inHelsinki(() => {
+        const nowMs = Date.parse(at(2026, 10, 13, 12));
+        const base = { repsMin: 6, repsMax: 10, targetSets: 3, level: 'beginner', nowMs };
+        // Morning at the ceiling, evening short: the evening is the day.
+        const decision = evaluateProgression({
+          ...base,
+          history: [
+            entry(at(2026, 10, 12, 18), [10, 10, 7], 60),
+            entry(at(2026, 10, 12, 8), [10, 10, 10], 60),
+            entry(at(2026, 10, 5, 18), [10, 10, 10], 60),
+          ],
+        });
+        assert.equal(decision.recommendation, 'hold');
+        assert.equal(decision.holdReason, 'rep_ceiling_not_reached');
+
+        // Bodyweight: two 13/13/13 on one date are one session for a beginner.
+        const reps = resolveProgressedReps({
+          history: [entry(at(2026, 10, 12, 18), [13, 13, 13], 0), entry(at(2026, 10, 12, 8), [13, 13, 13], 0)],
+          templateTargetReps: 12,
+          targetSets: 3,
+          level: 'beginner',
+          trackingMode: 'bodyweight',
+          automatedProgressionEnabled: true,
+          nowMs,
+        });
+        assert.equal(reps.progressed, false);
+      });
+    },
+  },
 ];

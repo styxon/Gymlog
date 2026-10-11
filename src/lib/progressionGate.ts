@@ -1,7 +1,7 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupLevel } from '../types/models';
-import { getRollingWindowStart } from './completedSessions';
+import { getRollingWindowStart, localDateKey } from './completedSessions';
 import { buildFatigueModel, type FatigueModelInput } from './fatigueModel';
 import { gatingSets, isWithinOneDialStep } from './warmupSets';
 
@@ -226,7 +226,8 @@ function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, target
 }
 
 /**
- * The sessions the gate reads: entries with a logged set, newest first.
+ * The sessions the gate reads: entries with a logged set, newest first, one
+ * per local calendar date.
  *
  * An entry with no sets is a day this lift did not happen — skipped, left
  * pending when the workout ended, or junk dropped on load — and a finished
@@ -256,9 +257,29 @@ function sessionsOf(history: readonly WorkoutSlotHistoryEntry[], nowMs?: number)
     }
     return hasNow && time > (nowMs as number) ? { tier: 1, time: 0 } : { tier: 2, time };
   };
+  // One local calendar date is one session (owner, 2026-10-11, Q7): a morning
+  // and an evening of the same day met a beginner's two-session baseline in an
+  // afternoon. The day's newest stands for it — the session the prefill and
+  // "Last time" read — and the earlier ones of that date drop out. The device's
+  // own date, never a UTC slice or a division by DAY_MS: 00:30 in Helsinki is
+  // the previous day in UTC, and 25.10.2026 has 25 hours. A session is dated
+  // by its finish, so one that ran past midnight belongs to the day it ended.
+  // Only dated, past entries collapse; the rest say nothing about the day.
+  const seenDates = new Set<string>();
   return logged
     .map((entry, index) => ({ entry, index, ...rank(entry) }))
     .sort((left, right) => right.tier - left.tier || right.time - left.time || left.index - right.index)
+    .filter(({ tier, time }) => {
+      if (tier !== 2) {
+        return true;
+      }
+      const date = localDateKey(time);
+      if (seenDates.has(date)) {
+        return false;
+      }
+      seenDates.add(date);
+      return true;
+    })
     .map(({ entry }) => entry);
 }
 
