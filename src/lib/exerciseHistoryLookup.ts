@@ -270,29 +270,50 @@ export function isUsableEntry(entry: WorkoutSlotHistoryEntry | null | undefined)
 export const SLOT_HISTORY_LIMIT = 10;
 
 /**
- * A slot's entries, newest first, cut to the cap — without cutting away any
- * lift's last real session.
+ * A slot's entries, newest first by date, cut to the cap — without cutting
+ * away any lift's last real session.
  *
- * The cap counted positions, and a skipped day takes a position like a real
- * one. A lift skipped ten times in a row on its day lost the session it was
- * last done in, and opened blank with no "Last time" although the database
- * still held it (hunt, 2026-10-09). So each lift's newest usable entry stays
- * past the cap until a newer one replaces it: the list holds at most one
- * extra entry per lift the slot has held.
+ * The cap counted positions, and a skipped day took a position like a real
+ * one: a lift skipped ten times in a row on its day lost the session it was
+ * last done in, and an intermediate lifter's confirming session went with
+ * ten warm-up-only days (hunt, 2026-10-09 and 2026-10-11). So only real
+ * sessions count toward the cap; of the set-less entries (a skip, warm-ups
+ * only) each lift keeps its newest, whose warm-ups are offered next time.
+ * And each lift's newest real entry stays past the cap until a newer one
+ * replaces it, for a slot that has held more than one lift.
+ *
+ * Sorted first, stably: the finish puts its entries in front whatever their
+ * date, and a finish stamped by a clock running behind kept itself and cut a
+ * newer real session (hunt, 2026-10-11). Every reader ranks by date anyway.
  */
 export function capSlotEntries(
   entries: readonly WorkoutSlotHistoryEntry[],
   limit: number = SLOT_HISTORY_LIMIT,
 ): WorkoutSlotHistoryEntry[] {
-  const kept = entries.slice(0, limit);
-  const answered = new Set(
-    kept.filter(isUsableEntry).map((entry) => normalizeExerciseName(entry.exerciseName ?? '')),
-  );
-  entries.slice(limit).forEach((entry) => {
+  const ordered = entries
+    .map((entry, index) => ({ entry, index, time: parseTime(entry.performedAt) }))
+    .sort((left, right) => right.time - left.time || left.index - right.index)
+    .map(({ entry }) => entry);
+  const kept: WorkoutSlotHistoryEntry[] = [];
+  const answered = new Set<string>();
+  const setLess = new Set<string>();
+  let counted = 0;
+  ordered.forEach((entry) => {
     const name = normalizeExerciseName(entry.exerciseName ?? '');
-    if (isUsableEntry(entry) && !answered.has(name)) {
-      kept.push(entry);
+    if (!isUsableEntry(entry)) {
+      if (!setLess.has(name)) {
+        setLess.add(name);
+        kept.push(entry);
+      }
+      return;
+    }
+    if (counted < limit) {
+      counted += 1;
       answered.add(name);
+      kept.push(entry);
+    } else if (!answered.has(name)) {
+      answered.add(name);
+      kept.push(entry);
     }
   });
   return kept;

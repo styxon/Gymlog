@@ -70,4 +70,29 @@ module.exports = [
       assert.equal(lookup.resolveLastTimeEntry({ ...query, dose: dose('load_and_reps', 4, 6), repWindow: { min: 4, max: 6 } }), null);
     },
   },
+  {
+    name: 'hunt12 A7-3/A4-4/A5-6 cap: newest first by date, set-less entries do not count and only the newest is kept per lift',
+    run() {
+      const day = (d) => new Date(Date.UTC(2026, 8, d, 10)).toISOString();
+      // Two real sessions, then ten skipped days and ten warm-up-only days: both real ones stay.
+      const reals = [entry(day(2), [12, 12, 12], 60), entry(day(1), [12, 12, 12], 60)];
+      const skips = Array.from({ length: 10 }, (_, i) => entry(day(3 + i), [], 0, { skipped: true, sets: [] })).reverse();
+      const warmOnly = Array.from({ length: 10 }, (_, i) => entry(day(14 + i), [], 0, { sets: [], warmups: [{ loadKg: 40, reps: 10 + i }] })).reverse();
+      const capped = lookup.capSlotEntries([...warmOnly, ...skips, ...reals]);
+      assert.deepEqual(capped.filter(lookup.isUsableEntry).map((item) => item.performedAt), [day(2), day(1)]);
+      const setless = capped.filter((item) => !lookup.isUsableEntry(item));
+      assert.equal(setless.length, 1, 'one set-less entry per lift');
+      assert.deepEqual(setless[0].warmups, [{ loadKg: 40, reps: 19 }], 'the newest, whose warm-ups are offered');
+      // A finish dated behind the list (a phone clock running late) lands in date order and is the one cut.
+      const ten = Array.from({ length: 10 }, (_, i) => entry(day(1 + i), [12, 12, 12], 60 + i)).reverse();
+      const backdated = entry(new Date(Date.UTC(2025, 9, 9, 10)).toISOString(), [12, 12, 12], 50);
+      const cut = lookup.capSlotEntries([backdated, ...ten]);
+      assert.deepEqual(cut.map((item) => item.performedAt), ten.map((item) => item.performedAt));
+      const two = lookup.capSlotEntries([entry(day(3), [8], 60), entry(day(5), [8], 62.5)]);
+      assert.deepEqual(two.map((item) => item.performedAt), [day(5), day(3)]);
+      // Another lift's newest real session in the same slot (a swap) still stays past the cap.
+      const swapped = entry(day(0), [10], 30, { exerciseName: 'Incline Dumbbell Press' });
+      assert.ok(lookup.capSlotEntries([...ten, swapped]).includes(swapped));
+    },
+  },
 ];

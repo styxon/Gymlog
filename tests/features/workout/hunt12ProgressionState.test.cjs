@@ -587,6 +587,23 @@ module.exports = [
       assert.match(source, /progressionOn=\{workout\.activeSession\?\.progressionOn \?\? \(proUnlocked && preferences\.automatedProgressionEnabled\)\}/);
     },
   },
+  {
+    name: 'hunt12 A7-3: ten finishes with the lift skipped keep the sessions an intermediate lifter needs to progress',
+    run() {
+      withHelsinkiClocks(() => {
+        let s = stateWith({});
+        [W1, W2, W3].forEach((when) => { s = runSession(s, BENCH, when, [[60, 12], [60, 12], [60, 12]], { setupLevel: 'intermediate' }); });
+        for (let i = 0; i < 10; i += 1) {
+          const when = addMinutes(addDays(W3, 1), 60 * i);
+          const skipping = start(s, BENCH, when, { setupLevel: 'intermediate' });
+          s = finish(act(skipping, 'exercise/skip', { slotId: exerciseOf(skipping).slotId }), addMinutes(when, 5));
+        }
+        const entries = s.history.slotHistory[keyOf('bench')];
+        assert.equal(entries.filter((item) => item.sets.length > 0).length, 3);
+        assert.deepEqual(autos(start(s, BENCH, addDays(W3, 7), { setupLevel: 'intermediate' })), [60, 60, 60]);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };
