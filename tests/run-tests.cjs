@@ -657,6 +657,8 @@ const suites = [
   ...require('./lib/hunt11Review.test.cjs'),
   ...require('./lib/hunt12ProgressionGate.test.cjs'),
   ...require('./lib/hunt12ProgressionAdvice.test.cjs'),
+  ...require('./lib/hunt12ProgressionState.test.cjs'),
+  ...require('./features/workout/hunt12ProgressionState.test.cjs'),
   ...require('./features/workout/progressionInvariant.test.cjs'),
   ...require('./lib/hunt12ProgressionRecovery.test.cjs'),
 ];

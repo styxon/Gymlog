@@ -145,6 +145,24 @@ function withOptional<T extends Record<string, unknown>>(target: T, key: string,
   return (value === undefined ? rest : { ...rest, [key]: value }) as T;
 }
 
+/** A whole count of one or more, or undefined: what a stored count of sets has to be. */
+function positiveCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+/**
+ * One stored "last time" entry, every field its readers rely on checked. The
+ * optional fields added after the first release are kept only in the shape
+ * the app writes them, and an entry from before any of them loads unchanged.
+ */
+function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[] }) {
+  let normalized: Record<string, unknown> = { ...entry, sets: entry.sets.filter(isHistorySet) };
+  normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
+  // The sets a lighter session asked for (Q3, 2026-10-11).
+  normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
+  return normalized;
+}
+
 function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'] {
   if (!isObject(input)) {
     return {};
@@ -159,9 +177,7 @@ function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'
       // And every set in it: a list holding `null`, or a set without its
       // numbers, reached `set.loadKg` in the "last time" lookup and took
       // down every lift of that name (recheck of #221, 2026-09-28).
-      .map((entry) =>
-        withOptional({ ...entry, sets: entry.sets.filter(isHistorySet) }, 'warmups', normalizeWarmups(entry.warmups, false)),
-      ) as unknown as WorkoutHistoryStore['slotHistory'][string];
+      .map((entry) => normalizeHistoryEntry(entry)) as unknown as WorkoutHistoryStore['slotHistory'][string];
   }
   return slots;
 }

@@ -112,9 +112,17 @@ function oracleOwnSessions(slotHistory, slotId, liftName, nowMs) {
     .map(({ entry }) => entry);
 }
 
+/**
+ * The sets an entry had to log: the programme's, or fewer when the app asked
+ * for fewer (a lighter session files plannedSets; owner Q3: one held session
+ * is enough, the next normal one progresses as if it had been a full one).
+ */
+const needOf = (entry, targetSets) =>
+  Number.isInteger(entry && entry.plannedSets) && entry.plannedSets > 0 && entry.plannedSets < targetSets ? entry.plannedSets : targetSets;
+
 /** Every programmed set up to the last heaviest at the ceiling, and enough of them. */
 function oracleReady(working, repsMax, targetSets) {
-  if (!working || working.sets.length < targetSets) return false;
+  if (!working || working.sets.length < needOf(working, targetSets)) return false;
   const programmed = working.sets.slice(0, targetSets);
   const heaviest = Math.max(...programmed.map((set) => set.loadKg));
   let last = programmed.length - 1;
@@ -132,7 +140,7 @@ const topOf = (working, targetSets) => Math.max(0, ...working.sets.slice(0, targ
 function oracleEarned(own, latest, { nowMs, repsMax, targetSets, programmeSets, level }) {
   const against = [];
   if (!latest) return { against: ['no session of its own'], clear: false };
-  if (latest.sets.length < targetSets) against.push(`too few sets (${latest.sets.length} < ${targetSets})`);
+  if (latest.sets.length < needOf(latest, targetSets)) against.push(`too few sets (${latest.sets.length} < ${needOf(latest, targetSets)})`);
   const latestMs = Date.parse(own[0].performedAt);
   if (isBreak(latestMs, nowMs)) against.push('break since the last session');
   if (own[1] && isBreak(Date.parse(own[1].performedAt), latestMs)) against.push('first session back from a break');

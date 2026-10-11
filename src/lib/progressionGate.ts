@@ -165,6 +165,20 @@ function programmedSets(entry: WorkoutSlotHistoryEntry, targetSets: number) {
   return [...entry.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, Math.max(0, targetSets));
 }
 
+/**
+ * The sets this entry had to log: the programme's count, or fewer when the
+ * app itself asked for fewer — a lighter session files `plannedSets`. One held
+ * session is enough: the next normal one progresses as if the lighter one had
+ * been a full one at its sets (owner, Q3 2026-10-11). Read defensively, like
+ * givenTarget: slot history is stored as written.
+ */
+function setsNeeded(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
+  const planned = (entry as { plannedSets?: unknown }).plannedSets;
+  return typeof planned === 'number' && Number.isInteger(planned) && planned > 0 && planned < targetSets
+    ? planned
+    : targetSets;
+}
+
 /** The heaviest load the programmed sets used, which is what we progress from. */
 function entryLoadKg(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
   return programmedSets(entry, targetSets).reduce((max, set) => Math.max(max, set.loadKg), 0);
@@ -187,7 +201,7 @@ export function isProgressionReadySession(
   if (entry.skipped || entry.sets.length === 0) {
     return false;
   }
-  if (entry.sets.length < targetSets) {
+  if (entry.sets.length < setsNeeded(entry, targetSets)) {
     return false;
   }
   return gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax);
@@ -217,7 +231,7 @@ function isAtLeastDaysBefore(earlierIso: string, laterIso: string, days: number)
 function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, targetSets: number, margin: number): boolean {
   return (
     !entry.skipped &&
-    entry.sets.length >= targetSets &&
+    entry.sets.length >= setsNeeded(entry, targetSets) &&
     entry.sets.length > 0 &&
     gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax + margin)
   );
@@ -391,7 +405,7 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   if (latest.skipped) {
     return { recommendation: 'hold', holdReason: 'set_skipped', loadKg: currentLoadKg };
   }
-  if (latest.sets.length < targetSets) {
+  if (latest.sets.length < setsNeeded(latest, targetSets)) {
     return { recommendation: 'hold', holdReason: 'insufficient_sets', loadKg: currentLoadKg };
   }
 
@@ -627,7 +641,7 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
   if (fatigueSignal === 'high' || fatigueSignal === 'elevated') {
     return 'hold';
   }
-  if (latest.skipped || latest.sets.length < targetSets) {
+  if (latest.skipped || latest.sets.length < setsNeeded(latest, targetSets)) {
     return 'hold';
   }
 
@@ -856,7 +870,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   // 10/10/10/10 on a target of 6 does not come back as 8.
   // "Every set" means every set the programme asks for, and fewer than that
   // did not meet it.
-  if (given !== null && reps.length >= targetSets && reps.every((count) => count >= given)) {
+  if (given !== null && reps.length >= setsNeeded(latest, targetSets) && reps.every((count) => count >= given)) {
     const mayClimb = !input.cautionArea;
     const climbed = given + (reps.every((count) => count > given) ? 2 : 1);
     const next = Math.max(mayClimb ? climbed : given, averageTarget);

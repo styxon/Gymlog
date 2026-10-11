@@ -243,6 +243,14 @@ export interface WorkoutSetInstance {
    */
   programmeSets?: number;
   /**
+   * How many sets this session asked for, on every set of a lightened session
+   * (one fewer than `programmeSets`). Stamped at the start rather than counted
+   * at Finish, so a set the reader took off with "Remove set" still reads as
+   * dropped. Filed on the history entry as `plannedSets`. Absent on every
+   * ordinary session.
+   */
+  plannedSets?: number;
+  /**
    * An added set whose opening weight a swap re-resolved from the new lift's
    * own history: the number is the app's now (`borrowed` or `none` in
    * lib/loggedSetPlan), not the reader's carried-over one. Absent: untouched
@@ -484,6 +492,14 @@ export interface WorkoutSlotHistoryEntry {
   sets: WorkoutSlotHistorySet[];
   skipped: boolean;
   swappedFrom?: string;
+  /**
+   * The sets the app asked for, when it asked for fewer than the programme: a
+   * lighter session (lib/recoverySheet). The gate measures this entry against
+   * it, so one held session is enough and the next normal one progresses as
+   * if this had been a full one (owner, Q3 2026-10-11). Absent on every
+   * ordinary entry and on entries saved before 2026-10-11.
+   */
+  plannedSets?: number;
   /**
    * The reps every set was asked for, when the app lowered them below the
    * programme's floor after a short session (lib/progressionGate
