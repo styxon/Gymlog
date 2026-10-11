@@ -844,6 +844,11 @@ export interface RampSetTargetInput {
   setIndex: number;
   /** The programme's rep ceiling: the top set's +1 stops there. */
   repsMax: number;
+  /**
+   * The programme's rep floor, which a lowered target is read against. Absent,
+   * any target filed on the entry counts: one is filed only below the floor.
+   */
+  repsMin?: number;
   trackingMode?: string;
   automatedProgressionEnabled: boolean;
   /** As for the missed-reps target: a session older than 90 days says nothing about today. */
@@ -884,6 +889,15 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
       return null;
     }
   }
+  // A session given a lowered target was prescribed flat: one weight, a
+  // target under the floor. A set the reader moved off that weight is their
+  // adjustment, not a ramp, and the missed-reps rule — the one that reads the
+  // target given — answers: 60/60/62.5 at a given 6 opened 6/6/7 rather than
+  // 7/7/7 (hunt, 2026-10-11).
+  const floorForGiven = typeof input.repsMin === 'number' && input.repsMin > 0 ? input.repsMin : Number.POSITIVE_INFINITY;
+  if (givenTarget(entry, floorForGiven) !== null) {
+    return null;
+  }
   const done = entry.sets.filter((set) => set.reps > 0 && Number.isFinite(set.loadKg) && set.loadKg > 0);
   if (done.length < 2) {
     return null;
@@ -904,7 +918,10 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   const mayAdd =
     !input.cautionArea && input.fatigueSignal !== 'high' && input.fatigueSignal !== 'elevated';
   if (!mayAdd || own.reps >= repsMax) {
-    return own.reps;
+    // Never past the ceiling: 14/14/14 on 8-12 asked for 14 again at the
+    // raised load, where the same reps on straight sets open on 12 (hunt,
+    // 2026-10-11).
+    return repsMax > 0 ? Math.min(own.reps, repsMax) : own.reps;
   }
   const atTop = (set: { loadKg: number }) => Math.abs(set.loadKg - top) < 0.001;
   if (atTop(own)) {

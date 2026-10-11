@@ -457,4 +457,77 @@ module.exports = [
       assert.equal(reps({ trackingMode: 'load_and_reps' }).targetReps, 12);
     },
   },
+
+  // ── A3-3 / A3-4: the ramp rule's edges ───────────────────────────────────
+  {
+    name: 'hunt12 A3-3: a ramp done past the ceiling asks for the ceiling, raised or held',
+    run() {
+      const ramp = entry(ago(0), [14, 14, 14], [40, 50, 60]);
+      const target = (setIndex, overrides = {}) =>
+        resolveRampSetTarget({
+          entry: ramp,
+          setIndex,
+          repsMax: 12,
+          trackingMode: 'load_and_reps',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+          ...overrides,
+        });
+      assert.deepEqual([0, 1, 2].map((index) => target(index)), [12, 12, 12]);
+      assert.deepEqual([0, 1, 2].map((index) => target(index, { fatigueSignal: 'high' })), [12, 12, 12]);
+      assert.deepEqual([0, 1, 2].map((index) => target(index, { cautionArea: 'shoulders' })), [12, 12, 12]);
+      // Under the ceiling, as before.
+      const climbing = entry(ago(0), [10, 8, 5], [40, 50, 60]);
+      assert.deepEqual([0, 1, 2].map((index) => target(index, { entry: climbing })), [10, 8, 6]);
+    },
+  },
+  {
+    name: 'hunt12 A3-4: a session given a lowered target is not a ramp, whatever one set weighed',
+    run() {
+      const given = (loads) => entry(ago(0), [6, 6, 6], loads, { targetReps: 6 });
+      for (const loads of [[60, 60, 60], [60, 60, 57.5], [60, 60, 62.5]]) {
+        const last = given(loads);
+        for (const repsMin of [undefined, 8]) {
+          for (const setIndex of [0, 1, 2]) {
+            assert.equal(
+              resolveRampSetTarget({
+                entry: last,
+                setIndex,
+                repsMax: 12,
+                repsMin,
+                trackingMode: 'load_and_reps',
+                automatedProgressionEnabled: true,
+                nowMs: NOW_UTC,
+              }),
+              null,
+              `${loads} set ${setIndex} repsMin ${repsMin}`,
+            );
+          }
+        }
+        const missed = resolveMissedRepsTarget({
+          history: [last],
+          repsMin: 8,
+          targetSets: 3,
+          trackingMode: 'load_and_reps',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+        });
+        assert.equal(missed.targetReps, 7, String(loads));
+      }
+      // A target that is not a lowered one (at or over the floor) does not count.
+      const notLowered = entry(ago(0), [10, 8, 5], [40, 50, 60], { targetReps: 9 });
+      assert.equal(
+        resolveRampSetTarget({
+          entry: notLowered,
+          setIndex: 2,
+          repsMax: 12,
+          repsMin: 8,
+          trackingMode: 'load_and_reps',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+        }),
+        6,
+      );
+    },
+  },
 ];
