@@ -190,4 +190,29 @@ module.exports = [
       assert.deepEqual(advice('Bench Press'), { kind: 'raise', fromKg: 60, toKg: 62.5 });
     },
   },
+  {
+    name: 'hunt 12 review: one reading of a lighter session set count, shared by the slot history and the saved logs',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const { lighterSessionPlannedSets } = require('../../.test-dist/lib/warmupSets.js');
+      const set = (extra = {}) => ({ programmeSets: 3, ...extra });
+      // Stamped 2 of a programme's 3: the lighter session's count.
+      assert.deepEqual(lighterSessionPlannedSets([set({ plannedSets: 2 }), set({ plannedSets: 2 })]), { plannedSets: 2 });
+      // No stamp, a stamp equal to the programme's, or junk: nothing.
+      assert.deepEqual(lighterSessionPlannedSets([set(), set(), set()]), {});
+      assert.deepEqual(lighterSessionPlannedSets([set({ plannedSets: 3 })]), {});
+      assert.deepEqual(lighterSessionPlannedSets([set({ plannedSets: 2.5 })]), {});
+      // A set the reader took off as well still reads as dropped: the stamp, not the count.
+      assert.deepEqual(lighterSessionPlannedSets([set({ plannedSets: 2 })]), { plannedSets: 2 });
+      // Both writers call it; neither keeps a copy that could drift (the gate
+      // reads the slot history's, the advice the log's).
+      const root = path.join(__dirname, '..', '..');
+      for (const file of ['src/features/workout/workoutState.ts', 'src/features/workout/workoutAppAdapter.ts']) {
+        const source = fs.readFileSync(path.join(root, file), 'utf8');
+        assert.match(source, /lighterSessionPlannedSets\(exercise\.sets\)/, file);
+        assert.doesNotMatch(source, /function plannedSetsOf/, file);
+      }
+    },
+  },
 ];

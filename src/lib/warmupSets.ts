@@ -133,6 +133,22 @@ export function programmeSetCount(sets: readonly { addedMidSession?: boolean; pr
 }
 
 /**
+ * The sets a lighter session asked for, when that is fewer than the programme
+ * asks (Q3, 2026-10-11): read off the stamp the start put on the sets, not off
+ * how many were logged, so a set the reader took off as well still counts as
+ * dropped. The slot history files it on the entry and the save on each log;
+ * one reading, so the gate and the next-session advice cannot drift apart.
+ */
+export function lighterSessionPlannedSets(
+  sets: readonly { addedMidSession?: boolean; programmeSets?: number; plannedSets?: number }[],
+): { plannedSets?: number } {
+  const stamped = sets.find(
+    (set) => typeof set.plannedSets === 'number' && Number.isInteger(set.plannedSets) && set.plannedSets > 0,
+  )?.plannedSets;
+  return typeof stamped === 'number' && stamped < programmeSetCount(sets) ? { plannedSets: stamped } : {};
+}
+
+/**
  * The sets that decide whether a session earned more load: every set up to and
  * including the last one at the session's heaviest load. The lighter sets after
  * it — a drop or a back-off, 80/75/70 — are exempt, or a descending pattern

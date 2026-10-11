@@ -25,7 +25,7 @@ import {
   resolveProgressedReps,
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
-import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
+import { lighterSessionPlannedSets, programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap } from '../../lib/catalogExercisePools';
 import { doseAfterSwap, isSameLiftName } from '../../lib/swapDose';
 import {
@@ -893,7 +893,7 @@ function materializeExercise(
       // did not have (hunt, 2026-10-11).
       programmeSets: exercise.programmeSets ?? exercise.sets,
       // A lighter session: the count it asked for, filed as the entry's
-      // plannedSets (see plannedSetsOf).
+      // plannedSets (see lighterSessionPlannedSets).
       ...(typeof exercise.programmeSets === 'number' && exercise.sets < exercise.programmeSets
         ? { plannedSets: exercise.sets }
         : {}),
@@ -2659,20 +2659,6 @@ function loweredTargetOf(segment: { sets: WorkoutSetInstance[] }) {
 }
 
 /**
- * The sets a lighter session asked for, when that is fewer than the programme
- * asks: filed on the entry so the gate does not read the set the app left out
- * as one the reader dropped (Q3, 2026-10-11). Read off the stamp the start put
- * on the sets, not off how many were logged, so a set the reader took off as
- * well still counts as dropped.
- */
-function plannedSetsOf(exercise: WorkoutExerciseInstance) {
-  const stamped = exercise.sets.find(
-    (set) => typeof set.plannedSets === 'number' && Number.isInteger(set.plannedSets) && set.plannedSets > 0,
-  )?.plannedSets;
-  return typeof stamped === 'number' && stamped < programmeSetCount(exercise.sets) ? { plannedSets: stamped } : {};
-}
-
-/**
  * The mode and rep range a lift's sets were asked for, filed with its entry so
  * a later programme edit can tell its history from the slot's new dose
  * (exerciseHistoryLookup entryMatchesDose). Off a set logged as that lift —
@@ -2826,7 +2812,7 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // The lowered target this session asked for, if it asked for one, so
       // the next can ask one more (lib/progressionGate resolveMissedRepsTarget).
       ...loweredTargetOf(segment),
-      ...plannedSetsOf(exercise),
+      ...lighterSessionPlannedSets(exercise.sets),
       ...doseOf(segment),
       // Warm-ups come before the first working set, so they belong to the lift
       // the slot started as: the first segment.
