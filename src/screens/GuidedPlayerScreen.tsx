@@ -3417,6 +3417,9 @@ function GuidedPlayer({
       done.sets,
       resolveSlotHistory(before.slotId, done.exerciseName)?.sets ?? null,
       done.trackingMode,
+      // Last time's sets up to the programme's count: a set last time added
+      // does not hold back praise for every programme set raised and met.
+      programmeSetCount(done.sets),
     );
     if (!praise) {
       return null;

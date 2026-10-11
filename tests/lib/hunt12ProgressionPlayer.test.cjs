@@ -199,6 +199,50 @@ module.exports = [
     },
   },
   {
+    name: 'hunt 12 A11-4: praise compares up to the programme\'s set count when last time had more sets',
+    run() {
+      const { resolveLiftPraise } = require('../../.test-dist/lib/liftPraise.js');
+      const done = (count, extra = {}) =>
+        Array.from({ length: count }, () => ({ status: 'completed', plannedLoadKg: 62.5, plannedRepsMax: 8, actualLoadKg: 62.5, actualReps: 8, ...extra }));
+      const last = (loads) => loads.map((loadKg) => ({ loadKg, reps: 8 }));
+      // Programme 2, last time 3 × 60 × 8: both programme sets raised and met.
+      assert.deepEqual(resolveLiftPraise(done(2), last([60, 60, 60]), 'load_and_reps', 2), { reps: [8, 8], loadKg: 62.5 });
+      // Last time's extra set was heavier: today's two still stand for the first two.
+      assert.deepEqual(resolveLiftPraise(done(2), last([60, 60, 70]), 'load_and_reps', 2), { reps: [8, 8], loadKg: 62.5 });
+      // Controls: a genuinely worse session is not praised.
+      assert.equal(resolveLiftPraise(done(2, { actualReps: 7 }), last([60, 60, 60]), 'load_and_reps', 2), null);
+      assert.equal(resolveLiftPraise(done(2, { plannedLoadKg: 57.5, actualLoadKg: 57.5 }), last([60, 60, 60]), 'load_and_reps', 2), null);
+      assert.equal(resolveLiftPraise(done(2, { plannedLoadKg: 60, actualLoadKg: 60 }), last([60, 60, 60]), 'load_and_reps', 2), null);
+      // The programme asks 3 and only 2 were done: fewer than planned stays unpraised.
+      assert.equal(resolveLiftPraise(done(2), last([60, 60, 60]), 'load_and_reps', 3), null);
+      // Without the programme's count the old rule holds.
+      assert.equal(resolveLiftPraise(done(2), last([60, 60, 60]), 'load_and_reps'), null);
+      assert.deepEqual(resolveLiftPraise(done(3), last([60, 60, 60]), 'load_and_reps', 3), { reps: [8, 8, 8], loadKg: 62.5 });
+      // The walk-up passes the programme's count.
+      const praise = between(playerSource, 'const walkPraise = (() => {', '})();');
+      assert.match(praise, /programmeSetCount\(done\.sets\)/);
+    },
+  },
+  {
+    name: 'hunt 12 A2-7: a hold opens on the seconds its set carries from last time, inside the row\'s range',
+    run() {
+      const hold = (extra = {}) => set(0, { plannedLoadKg: 0, draftLoadText: '0', plannedRepsMin: 30, plannedRepsMax: 60, ...extra });
+      assert.equal(resolveGuidedSetTarget([hold({ plannedTargetReps: 40 })], 0, 'hold').reps, 40);
+      // Clamped into the range, never above the top nor below the floor.
+      assert.equal(resolveGuidedSetTarget([hold({ plannedTargetReps: 75 })], 0, 'hold').reps, 60);
+      assert.equal(resolveGuidedSetTarget([hold({ plannedTargetReps: 20 })], 0, 'hold').reps, 30);
+      // Nothing carried: the top of the range, as before.
+      assert.equal(resolveGuidedSetTarget([hold()], 0, 'hold').reps, 60);
+      // Never a badge: a hold does not progress.
+      const target = resolveGuidedSetTarget([hold({ plannedTargetReps: 40, autoProgressedFromReps: 35 })], 0, 'hold');
+      assert.equal(target.autoProgressedFromReps, null);
+      // Chips and walk-up read the same number.
+      const sets = [0, 1, 2].map((index) => ({ ...hold({ plannedTargetReps: 40 }), setIndex: index }));
+      assert.deepEqual(chipReps(sets, 'hold'), [40, 40, 40]);
+      assert.deepEqual(guided.resolveGuidedWalkPlan(sets, 'hold'), { kind: 'plain', reps: [40] });
+    },
+  },
+  {
     name: 'hunt 12 A6-2: a set taken back below the swap line and logged again as the new lift carries to the next set',
     run() {
       const lift = { exerciseName: 'Incline Dumbbell Press', sourceExerciseName: 'Bench Press', swappedAfterSetIndex: 1, trackingMode: 'load_and_reps' };

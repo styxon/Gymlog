@@ -938,7 +938,14 @@ export function resolveGuidedSetTarget(
     // fallback, and the previous completed set still wins — mid-session the
     // day's own numbers are the better prescription.
     const suggestedReps = trackingMode === 'bodyweight' ? set.plannedTargetReps : undefined;
-    const reps = previous?.actualReps ?? suggestedReps ?? set.plannedRepsMax;
+    // A hold repeats the seconds its set carries from last time, inside the
+    // row's range — not always the top of it (owner, 2026-10-11, hunt 12
+    // A2-7). Never a climb: a hold does not progress, and claims nothing.
+    const heldSeconds =
+      trackingMode === 'hold' && typeof set.plannedTargetReps === 'number' && Number.isFinite(set.plannedTargetReps)
+        ? Math.min(set.plannedRepsMax, Math.max(set.plannedRepsMin, set.plannedTargetReps))
+        : undefined;
+    const reps = previous?.actualReps ?? suggestedReps ?? heldSeconds ?? set.plannedRepsMax;
     // Same rule as the load badges below: the claim follows the number. Once
     // the shown reps are not the ones the gate picked, it has nothing to
     // point at.
