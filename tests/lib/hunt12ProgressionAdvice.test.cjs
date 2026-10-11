@@ -30,6 +30,7 @@ const { buildLiftHistories } = require(L + 'trainingHistory.js');
 const { nextTimeDirection } = require(L + 'aiCoachSystemContext.js');
 const { pickDemoQuestion } = require(L + 'coachDemoMoments.js');
 const {
+  buildAiCoachLastSession,
   buildAiTrainingContext,
   normalizeAiCoachTrainingContext,
 } = require(L + 'aiTrainingContext.js');
@@ -462,6 +463,96 @@ module.exports = [
       assert.ok(!('onSchedule' in posted(undefined)));
       assert.ok(!('onSchedule' in posted('yes')));
       assert.ok(!('onSchedule' in posted(false)));
+    },
+  },
+  // ── The coach's "next time" names each set's own load ──────────────────────
+  {
+    name: 'hunt12 C-1: a ramp\'s next time lists each set at its own load, against the same sets',
+    run() {
+      const day = new Date(2026, 9, 8, 18).toISOString();
+      const sessions = [{ id: 'r', workoutTemplateId: 'tpl', workoutNameSnapshot: 'Push', performedAt: day }];
+      const logs = [
+        {
+          id: 'rl',
+          sessionId: 'r',
+          exerciseTemplateId: null,
+          exerciseNameSnapshot: 'Bench Press',
+          weight: 60,
+          repsPerSet: [10, 10, 10],
+          sets: [40, 50, 60].map((kg, order) => ({ orderIndex: order, weight: kg, reps: 10, kind: 'working', outcome: 'completed', status: 'completed' })),
+          tracked: true,
+          orderIndex: 0,
+        },
+        {
+          id: 'fl',
+          sessionId: 'r',
+          exerciseTemplateId: null,
+          exerciseNameSnapshot: 'Row',
+          weight: 50,
+          repsPerSet: [10, 10],
+          tracked: true,
+          orderIndex: 1,
+        },
+      ];
+      const next = [
+        { exerciseName: 'Bench Press', sets: [42.5, 52.5, 62.5].map((loadKg) => ({ loadKg, reps: 10 })) },
+        { exerciseName: 'Row', sets: [52.5, 52.5].map((loadKg) => ({ loadKg, reps: 10 })) },
+      ];
+      const last = buildAiCoachLastSession(sessions, logs, new Date(2026, 9, 10, 12), next);
+      const bench = last.exercises.find((exercise) => exercise.name === 'Bench Press');
+      const row = last.exercises.find((exercise) => exercise.name === 'Row');
+      assert.deepEqual(bench.next, { loadKg: 42.5, reps: [10, 10, 10], loads: [42.5, 52.5, 62.5] });
+      assert.deepEqual(row.next, { loadKg: 52.5, reps: [10, 10] }, 'one load for every set needs no list');
+
+      const base = normalizeAiCoachTrainingContext({ lastSession: last });
+      assert.deepEqual(base.lastSession.exercises[0].next.loads, [42.5, 52.5, 62.5]);
+      const text = buildAiCoachContextText(base, 'en');
+      assert.ok(
+        text.includes(
+          "next time (the app's own prescription): 42.5 kg x 10, 52.5 kg x 10, 62.5 kg x 10 — up from 40/50/60 kg: moving on",
+        ),
+        text,
+      );
+      assert.ok(text.includes("next time (the app's own prescription): 52.5 kg x 10, 10 — up from 50 kg: moving on"), text);
+
+      assert.equal(
+        nextTimeDirection(
+          [40, 50, 60].map((weightKg) => ({ weightKg, reps: 10 })),
+          { loadKg: 37.5, reps: [10, 10, 10], loads: [37.5, 47.5, 57.5] },
+          false,
+        ),
+        "lighter than this session's 40/50/60 kg",
+      );
+      assert.equal(
+        nextTimeDirection(
+          [40, 50, 60].map((weightKg) => ({ weightKg, reps: 10 })),
+          { loadKg: 42.5, reps: [10, 10, 10], loads: [42.5, 50, 57.5] },
+          false,
+        ),
+        null,
+        'one set up and one down says nothing about the direction',
+      );
+    },
+  },
+  {
+    name: 'hunt12 C-1: per-set loads are optional on the wire and dropped when they do not fit',
+    run() {
+      const posted = (next) =>
+        normalizeAiCoachTrainingContext({
+          lastSession: {
+            day: '2026-10-08',
+            name: 'Push',
+            exercises: [{ name: 'Bench Press', sets: [{ weightKg: 60, reps: 10 }], next }],
+            truncated: false,
+            previousSameName: null,
+          },
+        }).lastSession.exercises[0].next;
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, 10] }), { loadKg: 42.5, reps: [10, 10] });
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, 10], loads: [42.5, 52.5] }), { loadKg: 42.5, reps: [10, 10], loads: [42.5, 52.5] });
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, 10], loads: [42.5] }), { loadKg: 42.5, reps: [10, 10] });
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, 10], loads: [42.5, 'x'] }), { loadKg: 42.5, reps: [10, 10] });
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, 10], loads: [42.5, 5000] }), { loadKg: 42.5, reps: [10, 10] });
+      assert.deepEqual(posted({ loadKg: 42.5, reps: [10, -1, 10], loads: [42.5, 47.5, 52.5] }), { loadKg: 42.5, reps: [10, 10] });
     },
   },
 ];

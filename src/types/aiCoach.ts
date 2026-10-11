@@ -140,7 +140,18 @@ export interface AICoachLastSessionExercise {
    * prescription (workoutState previewNextSession). The coach's example quotes
    * it. Null or absent when the lift is not in a programme the app can start.
    */
-  next?: { loadKg: number | null; reps: number[] } | null;
+  next?: {
+    /** The first set's load: the screen opens there. */
+    loadKg: number | null;
+    reps: number[];
+    /**
+     * Each set's own load, one per `reps` entry, when they differ (a ramp, a
+     * pyramid): "42.5 kg x 10, 10, 10" was set 1's load printed over a ramp
+     * the screen opens at 42.5 / 52.5 / 62.5. Absent when every set has the
+     * one load, and from an app older than the field.
+     */
+    loads?: number[];
+  } | null;
   /**
    * 'minutes' when the sets' reps are minutes of steady work (a bike, a run
    * block) — read as reps, "20 with no added load" was twenty of something.

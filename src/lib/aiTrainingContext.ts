@@ -580,22 +580,26 @@ export function buildAiCoachCardio(
 }
 
 /**
- * A lift's next-session targets as the context carries them: one load (the
- * first set's — the screen opens there) and every set's reps. Null when the
- * app has nothing to open on.
+ * A lift's next-session targets as the context carries them: the first set's
+ * load (the screen opens there), every set's reps, and every set's own load
+ * when they differ. Null when the app has nothing to open on.
  */
 function nextFor(
   lift: { sets: { loadKg: number | null; reps: number }[] } | undefined,
-): { loadKg: number | null; reps: number[] } | null {
+): { loadKg: number | null; reps: number[]; loads?: number[] } | null {
   if (!lift || lift.sets.length === 0) {
     return null;
   }
-  const reps = lift.sets.map((set) => set.reps).filter((count) => Number.isFinite(count) && count > 0);
+  const sets = lift.sets.filter((set) => Number.isFinite(set.reps) && set.reps > 0);
+  const reps = sets.map((set) => set.reps);
   if (reps.length === 0) {
     return null;
   }
   const loadKg = lift.sets[0].loadKg;
-  return { loadKg: typeof loadKg === 'number' && Number.isFinite(loadKg) && loadKg > 0 ? loadKg : null, reps };
+  const positive = (value: number | null): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
+  const loads = sets.map((set) => set.loadKg);
+  const perSet = loads.every(positive) && loads.some((load) => load !== loads[0]) ? { loads: loads as number[] } : {};
+  return { loadKg: positive(loadKg) ? loadKg : null, reps, ...perSet };
 }
 
 /**
@@ -1292,17 +1296,29 @@ function normalizeLastSession(input: unknown): AICoachLastSession | null {
             : undefined;
       const streak = exercise?.sessionsAtThisWeight;
       const rawNext = exercise?.next;
-      const nextReps = Array.isArray(rawNext?.reps)
-        ? rawNext.reps
-            .slice(0, MAX_LAST_SESSION_SETS)
-            .filter((count): count is number => typeof count === 'number' && Number.isInteger(count) && count > 0 && count <= 500)
-        : [];
+      const rawReps: unknown[] = Array.isArray(rawNext?.reps) ? rawNext.reps.slice(0, MAX_LAST_SESSION_SETS) : [];
+      const nextReps = rawReps.filter(
+        (count): count is number => typeof count === 'number' && Number.isInteger(count) && count > 0 && count <= 500,
+      );
       const nextLoad = rawNext?.loadKg;
+      const isLoad = (value: unknown): value is number =>
+        typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1000;
+      // One load per set, read only when the reps came through whole: a
+      // dropped rep count leaves no way to tell which load was whose.
+      const rawLoads: unknown = rawNext?.loads;
+      const nextLoads =
+        Array.isArray(rawLoads) &&
+        nextReps.length === rawReps.length &&
+        rawLoads.length === nextReps.length &&
+        rawLoads.every(isLoad)
+          ? (rawLoads as number[])
+          : null;
       const next =
         nextReps.length > 0
           ? {
-              loadKg: typeof nextLoad === 'number' && Number.isFinite(nextLoad) && nextLoad > 0 && nextLoad <= 1000 ? nextLoad : null,
+              loadKg: isLoad(nextLoad) ? nextLoad : null,
               reps: nextReps,
+              ...(nextLoads ? { loads: nextLoads } : {}),
             }
           : null;
       return {

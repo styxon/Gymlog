@@ -646,7 +646,7 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
  */
 export function nextTimeDirection(
   sets: readonly { weightKg: number; reps: number }[],
-  next: { loadKg: number | null; reps: readonly number[] },
+  next: { loadKg: number | null; reps: readonly number[]; loads?: readonly number[] },
   recoveryHold: boolean,
 ): string | null {
   if (sets.length === 0 || next.reps.length === 0) {
@@ -673,12 +673,38 @@ export function nextTimeDirection(
     },
     next.reps.length,
   ).sets.slice(0, next.reps.length);
-  const first = working[0].loadKg;
-  if (next.loadKg !== null && next.loadKg > first) {
-    return first > 0 ? `up from ${trim(first)} kg: moving on` : 'adds load: moving on';
-  }
-  if (next.loadKg !== null && next.loadKg < first) {
-    return `lighter than this session's ${trim(first)} kg`;
+  // Every set's own load, when the app sent them: each set against its own.
+  if (next.loads && next.loads.length === next.reps.length) {
+    const pairs = Math.min(working.length, next.loads.length);
+    let heavier = 0;
+    let lighter = 0;
+    for (let index = 0; index < pairs; index += 1) {
+      if (next.loads[index] > working[index].loadKg) heavier += 1;
+      if (next.loads[index] < working[index].loadKg) lighter += 1;
+    }
+    const these = working
+      .slice(0, pairs)
+      .map((entry) => trim(entry.loadKg))
+      .filter((load, index, all) => index === 0 || load !== all[index - 1])
+      .join('/');
+    if (heavier > 0 && lighter > 0) {
+      return null;
+    }
+    if (heavier > 0) {
+      return `up from ${these} kg: moving on`;
+    }
+    if (lighter > 0) {
+      return `lighter than this session's ${these} kg`;
+    }
+  } else {
+    // One load, the first set's: against the first set.
+    const first = working[0].loadKg;
+    if (next.loadKg !== null && next.loadKg > first) {
+      return first > 0 ? `up from ${trim(first)} kg: moving on` : 'adds load: moving on';
+    }
+    if (next.loadKg !== null && next.loadKg < first) {
+      return `lighter than this session's ${trim(first)} kg`;
+    }
   }
   // Same weight: the reps say the rest. Compared set by set, over the
   // programme sets both have.
@@ -802,12 +828,21 @@ function renderLastSession(
       }
       // The app's own next prescription, which the answer's example quotes.
       if (exercise.next) {
+        const { loads } = exercise.next;
         const reps = exercise.next.reps.join(', ');
         const direction = nextTimeDirection(exercise.sets, exercise.next, recoveryHold);
+        // Each set at its own load when they differ: one load over a ramp
+        // read as every set at the first one's.
+        const perSet =
+          loads && loads.length === exercise.next.reps.length
+            ? exercise.next.reps.map((count, index) => `${trim(loads[index])} kg x ${count}`).join(', ')
+            : null;
         parts.push(
-          (exercise.next.loadKg !== null
-            ? `next time (the app's own prescription): ${trim(exercise.next.loadKg)} kg x ${reps}`
-            : `next time (the app's own prescription): ${reps} reps`) + (direction ? ` — ${direction}` : ''),
+          (perSet !== null
+            ? `next time (the app's own prescription): ${perSet}`
+            : exercise.next.loadKg !== null
+              ? `next time (the app's own prescription): ${trim(exercise.next.loadKg)} kg x ${reps}`
+              : `next time (the app's own prescription): ${reps} reps`) + (direction ? ` — ${direction}` : ''),
         );
       }
       return `- ${liftName(exercise.name)} — ${parts.join(' | ')}`;
