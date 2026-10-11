@@ -278,4 +278,43 @@ module.exports = [
       });
     },
   },
+
+  // ── A1-6: the completion-rate hold could never fire ──────────────────────
+  {
+    name: 'hunt12 A1-6: the gate holds only on reasons it can reach; no low_completion_rate left in src',
+    run() {
+      const reached = new Set();
+      for (const level of ['beginner', 'advanced']) {
+        for (let targetSets = 1; targetSets <= 12; targetSets += 1) {
+          for (let logged = 1; logged <= 20; logged += 1) {
+            const reps = Array.from({ length: logged }, () => 10);
+            const decision = evaluateProgression({
+              history: [entry(ago(0), reps, 60), entry(ago(3), reps, 60), entry(ago(6), reps, 60)],
+              repsMin: 6,
+              repsMax: 10,
+              targetSets,
+              level,
+              nowMs: NOW_UTC,
+            });
+            reached.add(decision.recommendation === 'hold' ? decision.holdReason : decision.recommendation);
+          }
+        }
+      }
+      assert.deepEqual([...reached].sort(), ['increase', 'insufficient_sets']);
+
+      const walk = (dir, out = []) => {
+        for (const item of fs.readdirSync(dir, { withFileTypes: true })) {
+          const full = path.join(dir, item.name);
+          if (item.isDirectory()) walk(full, out);
+          else if (/\.tsx?$/.test(item.name)) out.push(full);
+        }
+        return out;
+      };
+      const root = path.join(__dirname, '..', '..');
+      const offenders = [...walk(path.join(root, 'src')), path.join(root, 'App.tsx')].filter((file) =>
+        /low_completion_rate|MIN_COMPLETION_RATE/.test(fs.readFileSync(file, 'utf8')),
+      );
+      assert.deepEqual(offenders.map((file) => path.relative(root, file)), []);
+    },
+  },
 ];

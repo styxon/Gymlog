@@ -69,7 +69,6 @@ export type ProgressionHoldReason =
   | 'fatigue_elevated'
   | 'set_skipped'
   | 'insufficient_sets'
-  | 'low_completion_rate'
   | 'rep_ceiling_not_reached'
   | 'gap_return'
   | 'awaiting_confirmation';
@@ -153,7 +152,6 @@ export interface ProgressionGateInput {
  * a missed week, 14 days, as the break it is.
  */
 const BREAK_DAYS = 10;
-const MIN_COMPLETION_RATE = 0.8;
 
 /**
  * The sets the programme asked for: the first `targetSets`, in set order.
@@ -371,9 +369,6 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   }
   if (latest.sets.length < targetSets) {
     return { recommendation: 'hold', holdReason: 'insufficient_sets', loadKg: currentLoadKg };
-  }
-  if (latest.sets.length / targetSets < MIN_COMPLETION_RATE) {
-    return { recommendation: 'hold', holdReason: 'low_completion_rate', loadKg: currentLoadKg };
   }
 
   // A session that follows a long break is not the moment to add load, and
