@@ -518,6 +518,7 @@ function resolveNamedHistoryDraft(
     entry,
     setIndex,
     repsMax: exercise.repsMax,
+    repsMin: exercise.repsMin,
     trackingMode: exercise.trackingMode,
     automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
     nowMs: options.nowMs ?? Date.now(),
@@ -710,6 +711,7 @@ function resolveHistoricalSetDraft(
         entry: source?.entry ?? latest,
         setIndex: own ? setIndex : matched.setIndex,
         repsMax: exercise.repsMax,
+        repsMin: exercise.repsMin,
         trackingMode: exercise.trackingMode,
         automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
         nowMs: options.nowMs ?? Date.now(),
@@ -2530,7 +2532,7 @@ function cloneSession(session: WorkoutSessionRuntime) {
 /**
  * The reps a lift's sets were asked for when the app lowered them below the
  * programme's floor, read off the first set logged as that lift. Nothing for
- * an ordinary session or a bodyweight lift.
+ * an ordinary session.
  *
  * Read off the sets, not off whether the lift was swapped in: a lift swapped
  * on Home is materialized from its own history and can be given a lowered

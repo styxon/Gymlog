@@ -400,6 +400,31 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 R1: both ramp-target readings are told the programme floor, so only a lowered target filed below it wins over a ramp',
+    run() {
+      withHelsinkiClocks(() => {
+        const gate = require(D + 'lib/progressionGate.js');
+        const real = gate.resolveRampSetTarget;
+        const seen = [];
+        gate.resolveRampSetTarget = (input) => {
+          seen.push(input.repsMin);
+          return real(input);
+        };
+        try {
+          // The slot's own history, and a lift borrowed by name from a free workout.
+          const own = stateWith({ [keyOf('bench')]: [entry(W1, [10, 8, 6], [40, 50, 60], { slotId: keyOf('bench') })] });
+          start(own, BENCH, W2);
+          const borrowed = stateWith({ 'logged:bench press': [entry(W1, [10, 8, 6], [40, 50, 60], { slotId: 'logged:bench press', templateId: '' })] });
+          start(borrowed, BENCH, W2);
+        } finally {
+          gate.resolveRampSetTarget = real;
+        }
+        assert.ok(seen.length >= 6, `ramp read ${seen.length} times`);
+        assert.deepEqual([...new Set(seen)], [8]);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };
