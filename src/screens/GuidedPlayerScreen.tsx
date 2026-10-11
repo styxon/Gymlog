@@ -188,6 +188,7 @@ import {
   getHistoryEntriesForExercise,
   repsCeilingFor,
   resolveInstanceBorrowRepWindow,
+  resolveInstanceDose,
 } from '../features/workout/workoutState';
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet, setsOfCurrentLift } from '../lib/liftSegments';
@@ -2633,6 +2634,9 @@ function GuidedPlayer({
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
         // As the prefill reads it: a session dated ahead of now is not the newest.
         nowMs: Date.now(),
+        // And under the dose it reads: a hold's seconds filed in this slot are
+        // not "last time" above a dial opened on bodyweight reps (P7).
+        dose: instance ? resolveInstanceDose(instance) : null,
       });
       const found = resolved?.entry ?? null;
       if (!found) {

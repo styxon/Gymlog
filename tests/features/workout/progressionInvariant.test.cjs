@@ -11,7 +11,7 @@ const { adaptCompletedWorkoutSessionForAppDatabase } = require(D + 'features/wor
 const { buildCompletedWorkoutRecord } = require(D + 'state/completedWorkoutPersistence.js');
 const { resolveGuidedSetTarget, resolveGuidedSetPlan } = require(D + 'lib/guidedPlayer.js');
 const { resolveLastTimeEntry } = require(D + 'lib/exerciseHistoryLookup.js');
-const { resolveInstanceBorrowRepWindow } = require(D + 'features/workout/workoutState.js');
+const { resolveInstanceBorrowRepWindow, resolveInstanceDose } = require(D + 'features/workout/workoutState.js');
 const { toWorkingHistoryEntry, programmeSetCount, warmupOffer } = require(D + 'lib/warmupSets.js');
 const { buildNextSessionAdvice } = require(D + 'lib/nextSessionAdvice.js');
 const { lightenRuntimeTemplate, lightenedFatigueSignal } = require(D + 'lib/recoverySheet.js');
@@ -348,6 +348,8 @@ function checkStart(ctx, counters) {
     requireLoaded: !unloaded,
     repWindow: resolveInstanceBorrowRepWindow(exercise),
     nowMs,
+    // As the screen asks (GuidedPlayerScreen resolveSlotHistory).
+    dose: resolveInstanceDose(exercise),
   });
   const borrowedAt = exercise.sets.map((set) => set.prefilledFromPerformedAt).find((value) => value !== undefined);
   counters.P7 += 1;

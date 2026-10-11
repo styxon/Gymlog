@@ -545,6 +545,39 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 P7: the Last time panel reads the session the prefill read when the slot mode changed (hold vs bodyweight)',
+    run() {
+      withHelsinkiClocks(() => {
+        const { resolveInstanceDose, resolveInstanceBorrowRepWindow } = require(D + 'features/workout/workoutState.js');
+        const key = keyOf('pull');
+        const tpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 12 }]);
+        const dosed = (reps, mode, min, max, iso) => entry(iso, reps, 0, { slotId: key, exerciseName: 'Pull-Up', dose: { trackingMode: mode, repsMin: min, repsMax: max } });
+        // Newest: the slot was a 30-60 s hold. Before it: the bodyweight reps the slot asks for now.
+        const held = dosed([60, 60, 60], 'hold', 30, 60, W2);
+        const reps = dosed([10, 10, 10], 'bodyweight', 8, 12, W1);
+        const s = start(stateWith({ [key]: [held, reps] }), tpl, W3);
+        const instance = exerciseOf(s, 'pull');
+        // The prefill reads the bodyweight session: 10 reps proved, never 61 off the seconds.
+        assert.equal(instance.sets[0].plannedTargetReps, undefined);
+        const panel = resolveLastTimeEntry({
+          slotHistory: s.history.slotHistory,
+          slotId: instance.slotId,
+          templateSlotId: instance.templateSlotId ?? null,
+          exerciseName: instance.exerciseName,
+          requireLoaded: false,
+          repWindow: resolveInstanceBorrowRepWindow(instance),
+          nowMs: Date.parse(W3),
+          dose: resolveInstanceDose(instance),
+        });
+        assert.equal(panel.borrowed, false);
+        assert.equal(panel.entry.sessionId, reps.sessionId, 'the panel listed the 60 s hold above a dial opened on reps');
+        // A loaded slot whose history is in its own dose reads it as before.
+        const bench = start(stateWith({ [keyOf('bench')]: [entry(W2, [10, 10, 10], 60, { slotId: keyOf('bench'), dose: { trackingMode: 'load_and_reps', repsMin: 8, repsMax: 12 } })] }), BENCH, W3);
+        assert.deepEqual(resolveInstanceDose(exerciseOf(bench)), { trackingMode: 'load_and_reps', repsMin: 8, repsMax: 12 });
+      });
+    },
+  },
+  {
     name: 'hunt12 A6-1: swapping away and back to the programme lift restores what the gate decided for the sets still ahead',
     run() {
       withHelsinkiClocks(() => {

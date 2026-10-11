@@ -296,4 +296,12 @@ module.exports = [
       assert.match(playerSource, /resolveGuidedSetTarget\(\s*exercise\.sets,\s*setIndex,\s*exercise\.trackingMode,\s*exercise\.swappedAfterSetIndex,\s*exercise,\s*\)/);
     },
   },
+  {
+    name: 'hunt 12 P7 wiring: the Last time panel asks with the dose the slot asks for now, as the prefill does',
+    run() {
+      const call = between(playerSource, 'const resolved = resolveLastTimeEntry({', '});');
+      assert.match(call, /dose: instance \? resolveInstanceDose\(instance\) : null/);
+      assert.match(playerSource, /import \{[^}]*\bresolveInstanceDose\b[^}]*\} from '\.\.\/features\/workout\/workoutState'/);
+    },
+  },
 ];

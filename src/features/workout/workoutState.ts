@@ -394,6 +394,22 @@ export function resolveBorrowRepWindow(exercise: {
  * the first set speaks for the exercise — they are materialized from one
  * template row.
  */
+/**
+ * The mode and rep range a live exercise asks for now, as the start read its
+ * slot's history (getHistoryEntries' dose): the "Last time" panel asks with
+ * it, so an entry filed under another dose (a hold's seconds above a
+ * bodyweight slot's reps) is not listed above a dial that did not read it.
+ */
+export function resolveInstanceDose(
+  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'sets'>,
+): ProgrammedDose | null {
+  const first = exercise.sets[0];
+  if (!first || !Number.isFinite(first.plannedRepsMin) || !Number.isFinite(first.plannedRepsMax)) {
+    return null;
+  }
+  return { trackingMode: exercise.trackingMode, repsMin: first.plannedRepsMin, repsMax: first.plannedRepsMax };
+}
+
 export function resolveInstanceBorrowRepWindow(
   exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'sets'>,
 ): RepWindow | null {
