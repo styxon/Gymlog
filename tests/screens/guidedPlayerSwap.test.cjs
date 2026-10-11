@@ -440,7 +440,7 @@ module.exports = [
       assert.match(playerSource, /const planSet = lift \? planSetOf\(lift\.sets\) : undefined;/);
       assert.match(playerSource, /return sets\.find\(\(set\) => set\.status === 'pending'\) \?\? sets\[sets\.length - 1\];/);
       assert.doesNotMatch(playerSource, /formatRepRangeLabel\(exercise\.sets\[0\]\)/);
-      assert.equal((playerSource.match(/formatRepRangeLabel\(planSetOf\(exercise\.sets\)\)/g) ?? []).length, 2);
+      assert.equal((playerSource.match(/formatRepRangeLabel\(planSetOf\(exercise\.sets\), exercise\.trackingMode\)/g) ?? []).length, 2);
       // The walk-up reads its set through lib/guidedPlayer resolveGuidedWalkPlan,
       // which takes the next set still to do the same way (hunt 12).
       assert.match(playerSource, /resolveGuidedWalkPlan\(\s*instance\.sets,/);

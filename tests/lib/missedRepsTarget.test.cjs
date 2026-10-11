@@ -152,8 +152,8 @@ module.exports = [
       // One number for one set across the player (review, 2026-09-28).
       // Since hunt 12 the decision is lib/guidedPlayer's (planRepsBounds,
       // resolveGuidedWalkPlan), tested there; the screen reads it.
-      assert.match(player, /return formatGuidedRepsLabel\(set\);/);
-      assert.match(player, /const bounds = planRepsBounds\(planSet\);/);
+      assert.match(player, /return formatGuidedRepsLabel\(set, trackingMode\);/);
+      assert.match(player, /const bounds = planRepsBounds\(planSet, lift\.trackingMode\);/);
       assert.match(player, /programme: walkPlan\.programme,/);
       const guided = require('../../.test-dist/lib/guidedPlayer.js');
       assert.equal(guided.formatGuidedRepsLabel({ plannedRepsMin: 8, plannedRepsMax: 12, plannedTargetReps: 6 }), '6');

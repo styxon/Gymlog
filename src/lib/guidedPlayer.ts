@@ -795,13 +795,27 @@ export function isLoweredGuidedTarget(set: { plannedRepsMin: number; plannedTarg
  * own target where it falls outside it — lowered after a short session, or a
  * bodyweight lift raised past the top (hunt 12, A2-5). A target inside the
  * range agrees with the range, so the range stays: mark the exception.
+ *
+ * A hold opens on its carried seconds clamped into the range (see
+ * resolveGuidedSetTarget), so its label names that same clamped number and
+ * never seconds the dial cannot open on.
  */
-export function planRepsBounds(set: {
-  plannedRepsMin: number;
-  plannedRepsMax: number;
-  plannedTargetReps?: number;
-}): { min: number; max: number } {
+export function planRepsBounds(
+  set: {
+    plannedRepsMin: number;
+    plannedRepsMax: number;
+    plannedTargetReps?: number;
+  },
+  trackingMode?: string,
+): { min: number; max: number } {
   const target = set.plannedTargetReps;
+  if (trackingMode === 'hold') {
+    if (typeof target !== 'number' || !Number.isFinite(target)) {
+      return { min: set.plannedRepsMin, max: set.plannedRepsMax };
+    }
+    const seconds = Math.min(set.plannedRepsMax, Math.max(set.plannedRepsMin, target));
+    return { min: seconds, max: seconds };
+  }
   if (typeof target === 'number' && (target < set.plannedRepsMin || target > set.plannedRepsMax)) {
     return { min: target, max: target };
   }
@@ -816,12 +830,15 @@ export function formatGuidedProgrammeReps(set: { plannedRepsMin: number; planned
 }
 
 /** "8–12", "8", or the set's target where it falls outside the range (planRepsBounds). */
-export function formatGuidedRepsLabel(set: {
-  plannedRepsMin: number;
-  plannedRepsMax: number;
-  plannedTargetReps?: number;
-}): string {
-  const { min, max } = planRepsBounds(set);
+export function formatGuidedRepsLabel(
+  set: {
+    plannedRepsMin: number;
+    plannedRepsMax: number;
+    plannedTargetReps?: number;
+  },
+  trackingMode?: string,
+): string {
+  const { min, max } = planRepsBounds(set, trackingMode);
   return formatGuidedProgrammeReps({ plannedRepsMin: min, plannedRepsMax: max });
 }
 

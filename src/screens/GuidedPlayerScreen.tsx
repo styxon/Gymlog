@@ -2442,7 +2442,7 @@ function GuidedPlayer({
     // The target where it falls outside the programme's range (lowered, or a
     // bodyweight lift raised past the top) — the plan says what the dial
     // will open on.
-    const bounds = planRepsBounds(planSet);
+    const bounds = planRepsBounds(planSet, lift.trackingMode);
     return formatSetScheme(lift.sets.length, bounds.min, bounds.max, lift.trackingMode);
   };
 
@@ -3159,7 +3159,7 @@ function GuidedPlayer({
           exerciseName: exercise.exerciseName,
           bodyPart: libraryFor(exercise.exerciseName)?.bodyPart ?? null,
           setCount: exercise.sets.length,
-          repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
+          repsLabel: formatRepRangeLabel(planSetOf(exercise.sets), exercise.trackingMode),
           timed: isTimedTrackingMode(exercise.trackingMode),
           minutes: isMinutesTrackingMode(exercise.trackingMode),
           loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
@@ -3602,7 +3602,7 @@ function GuidedPlayer({
                               {
                                 exerciseName: exercise.exerciseName,
                                 setCount: exercise.sets.length,
-                                repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
+                                repsLabel: formatRepRangeLabel(planSetOf(exercise.sets), exercise.trackingMode),
                                 timed: isTimedTrackingMode(exercise.trackingMode),
                                 minutes: isMinutesTrackingMode(exercise.trackingMode),
                                 loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
@@ -5248,15 +5248,17 @@ function formatDrillLength(seconds: number): string {
  * "3–5" from the planned rep range, collapsing equal bounds to "5" — or the
  * set's target where it falls outside the range: lowered after a short
  * session, or a bodyweight lift raised past the top (lib/guidedPlayer
- * planRepsBounds). The overview says what the dial will open on.
+ * planRepsBounds; a hold's carried seconds clamped as its dial clamps them).
+ * The overview says what the dial will open on.
  */
 function formatRepRangeLabel(
   set: { plannedRepsMin: number; plannedRepsMax: number; plannedTargetReps?: number } | undefined,
+  trackingMode: string,
 ): string {
   if (!set) {
     return '';
   }
-  return formatGuidedRepsLabel(set);
+  return formatGuidedRepsLabel(set, trackingMode);
 }
 
 /**

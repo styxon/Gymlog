@@ -204,7 +204,7 @@ function checkStart(ctx, counters) {
       if (!borrowedSet || Math.abs(borrowedSet.loadKg - set.plannedLoadKg) >= EPS) {
         throw violation('P2', `${tag}: borrowed load ${set.plannedLoadKg} is not the borrowed set's ${borrowedSet && borrowedSet.loadKg}`);
       }
-      const shown = resolveGuidedSetTarget(exercise.sets, set.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex);
+      const shown = resolveGuidedSetTarget(exercise.sets, set.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise);
       if (shown && (shown.autoProgressedFromKg !== null || shown.heldForFatigue || shown.heldForCautionArea !== null)) {
         throw violation('P2', `${tag}: the dial shows a badge on a borrowed weight`);
       }
@@ -284,7 +284,7 @@ function checkStart(ctx, counters) {
 
   // P3 — button warm-ups: never part of the work, never offered heavier than repeated.
   if (lastWarmups && lastWarmups.length > 0 && !unloaded) {
-    const opening = resolveGuidedSetTarget(exercise.sets, exercise.sets[0].setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex);
+    const opening = resolveGuidedSetTarget(exercise.sets, exercise.sets[0].setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise);
     const work = opening && opening.loadKg;
     if (latest && setAt(latest, 0) && work != null) {
       counters.P3 += 1;
@@ -342,8 +342,8 @@ function checkSurfaces(ctx, counters) {
   const { exercise, asPlanned } = ctx;
   if (!asPlanned || exercise.sets.some((set) => set.status !== 'pending')) return;
   const sets = exercise.sets;
-  const chips = resolveGuidedSetPlan(sets, sets[0].setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex);
-  const resolve = (index) => resolveGuidedSetTarget(sets, index, exercise.trackingMode, exercise.swappedAfterSetIndex);
+  const chips = resolveGuidedSetPlan(sets, sets[0].setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise);
+  const resolve = (index) => resolveGuidedSetTarget(sets, index, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise);
   const first = resolve(sets[0].setIndex);
   // GuidedPlayerScreen walkNext, its numbers.
   const ramp = sets.some((set) => set.rampTargetReps !== undefined);
@@ -447,7 +447,7 @@ function dialAsPlanned(state, slotId, startMs) {
   const exercise = s.activeSession.exercises.find((item) => item.slotId === slotId);
   for (const set of exercise.sets.filter((item) => item.status === 'pending')) {
     const current = s.activeSession.exercises.find((item) => item.slotId === slotId);
-    const target = resolveGuidedSetTarget(current.sets, set.setIndex, current.trackingMode, current.swappedAfterSetIndex);
+    const target = resolveGuidedSetTarget(current.sets, set.setIndex, current.trackingMode, current.swappedAfterSetIndex, current);
     if (!target || (!isUnloaded(current.trackingMode) && target.loadKg === null)) return null;
     out.push({ loadKg: target.loadKg, reps: target.reps });
     clock += 60000;
@@ -607,7 +607,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
         continue;
       }
       if (behaviour === 'button' && !isUnloaded(current().trackingMode)) {
-        const first = resolveGuidedSetTarget(current().sets, 0, current().trackingMode, current().swappedAfterSetIndex);
+        const first = resolveGuidedSetTarget(current().sets, 0, current().trackingMode, current().swappedAfterSetIndex, current());
         const work = first && first.loadKg ? first.loadKg : lift.base;
         const count = 1 + Math.floor(random() * 2);
         for (let index = 0; index < count; index += 1) {
@@ -644,7 +644,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
           state = workoutReducer(state, { type: 'exercise/skip', payload: { slotId } });
           break;
         }
-        const shown = resolveGuidedSetTarget(exercise.sets, set.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex);
+        const shown = resolveGuidedSetTarget(exercise.sets, set.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise);
         const unloaded = isUnloaded(exercise.trackingMode);
         let load = unloaded ? null : shown.loadKg ?? (lift.base || 20);
         let reps = shown.reps;
@@ -664,7 +664,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
         state = workoutReducer(state, { type: 'set/updateDraft', payload: { slotId, setIndex: set.setIndex, patch: { loadText: load === null ? '' : String(load), repsText: String(reps) } } });
         if (!unloaded && load !== shown.loadKg) {
           const after = current();
-          guard(() => checkTouched({ shown: resolveGuidedSetTarget(after.sets, set.setIndex, after.trackingMode, after.swappedAfterSetIndex), tag }, counters));
+          guard(() => checkTouched({ shown: resolveGuidedSetTarget(after.sets, set.setIndex, after.trackingMode, after.swappedAfterSetIndex, after), tag }, counters));
         }
         state = workoutReducer(state, { type: 'set/complete', payload: { slotId, setIndex: set.setIndex, nowMs: tick(), unitPreference: 'kg' } });
         const unloadedFirstOnly = unloaded && exercise.sets.some((item) => item.status === 'completed');
@@ -681,7 +681,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
       if ((behaviour === 'addSet' || behaviour === 'warmRows') && current().sets.every((item) => item.status !== 'pending')) {
         state = workoutReducer(state, { type: 'exercise/addSet', payload: { slotId } });
         const added = current().sets[current().sets.length - 1];
-        const shown = resolveGuidedSetTarget(current().sets, added.setIndex, current().trackingMode, current().swappedAfterSetIndex);
+        const shown = resolveGuidedSetTarget(current().sets, added.setIndex, current().trackingMode, current().swappedAfterSetIndex, current());
         const load = isUnloaded(current().trackingMode) ? '' : String(shown.loadKg ?? lift.base + (behaviour === 'addSet' && chance(0.5) ? 5 : 0));
         state = workoutReducer(state, { type: 'set/updateDraft', payload: { slotId, setIndex: added.setIndex, patch: { loadText: load, repsText: String(Math.max(1, shown.reps - 2)) } } });
         state = workoutReducer(state, { type: 'set/complete', payload: { slotId, setIndex: added.setIndex, nowMs: tick(), unitPreference: 'kg' } });

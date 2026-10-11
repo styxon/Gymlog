@@ -152,9 +152,9 @@ module.exports = [
     name: 'hunt 12 A2-5/A3-2: the overview label and the contents line both read planRepsBounds',
     run() {
       const label = between(playerSource, 'function formatRepRangeLabel(', '\n}\n');
-      assert.match(label, /formatGuidedRepsLabel\(set\)/);
+      assert.match(label, /formatGuidedRepsLabel\(set, trackingMode\)/);
       const runPlan = between(playerSource, 'const runPlanLine = (slotId: string | null): string => {', '\n  };\n');
-      assert.match(runPlan, /planRepsBounds\(planSet\)/);
+      assert.match(runPlan, /planRepsBounds\(planSet, lift\.trackingMode\)/);
       assert.doesNotMatch(runPlan, /isLoweredTarget/);
     },
   },
@@ -240,6 +240,35 @@ module.exports = [
       const sets = [0, 1, 2].map((index) => ({ ...hold({ plannedTargetReps: 40 }), setIndex: index }));
       assert.deepEqual(chipReps(sets, 'hold'), [40, 40, 40]);
       assert.deepEqual(guided.resolveGuidedWalkPlan(sets, 'hold'), { kind: 'plain', reps: [40] });
+    },
+  },
+  {
+    name: 'hunt 12 review: a hold row\'s label never names seconds its dial cannot open on',
+    run() {
+      const { planRepsBounds, formatGuidedRepsLabel } = guided;
+      const hold = (plannedTargetReps) => ({ ...set(0, { plannedLoadKg: 0, draftLoadText: '0', plannedRepsMin: 30, plannedRepsMax: 60 }), plannedTargetReps });
+      for (const [carried, opens] of [[75, 60], [40, 40], [20, 30]]) {
+        const row = hold(carried);
+        assert.equal(resolveGuidedSetTarget([row], 0, 'hold').reps, opens);
+        assert.deepEqual(planRepsBounds(row, 'hold'), { min: opens, max: opens });
+        assert.equal(formatGuidedRepsLabel(row, 'hold'), `${opens}`);
+      }
+      // Nothing carried: the range.
+      assert.equal(formatGuidedRepsLabel(hold(undefined), 'hold'), '30–60');
+      // The screen hands both labels the lift's mode.
+      assert.match(playerSource, /const bounds = planRepsBounds\(planSet, lift\.trackingMode\);/);
+      assert.match(playerSource, /return formatGuidedRepsLabel\(set, trackingMode\);/);
+      assert.equal((playerSource.match(/formatRepRangeLabel\(planSetOf\(exercise\.sets\), exercise\.trackingMode\)/g) ?? []).length, 2);
+    },
+  },
+  {
+    name: 'hunt 12 review: the walk-up reads the next set still to do, not set 1, for a lowered target',
+    run() {
+      const sets = [
+        set(0, { plannedTargetReps: 6, status: 'completed', actualReps: 6, actualLoadKg: 60 }),
+        set(1),
+      ];
+      assert.equal(guided.resolveGuidedWalkPlan(sets, 'load_and_reps').kind, 'plain');
     },
   },
   {
