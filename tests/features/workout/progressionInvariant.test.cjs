@@ -746,12 +746,6 @@ const SESSIONS = 7;
 
 /** Known, recorded failures: the suite prints SKIP rather than go red (tests/hunt/run12/progression/findings.json). */
 const KNOWN = {
-  P5: {
-    finding: 'P0-1',
-    reason:
-      'a set last time did not reach (no prefill of its own) shows the programme reps on the TODAY chips, while the dial and the walk-up line carry the set before',
-    matches: (error) => error.shape === 'unplanned-set',
-  },
   P4: {
     finding: 'P0-2',
     reason: "a bodyweight set opened on the programme's reps is saved with planned.basis 'borrowed' when the slot borrowed a 0 kg session",
@@ -822,19 +816,6 @@ module.exports = [
       assert.ok(c.P2swap > 0, `no swap ever replanned a set (P2swap=${c.P2swap})`);
       assert.ok(c.P4touched > 0, `no set was ever logged off its opening (P4touched=${c.P4touched})`);
       assert.ok(c.P6held > 0, `no earned jump was ever held (P6held=${c.P6held})`);
-      // KNOWN passes over its one shape only: the doctored P5 ramp below is not it.
-      const rampViolation = (() => {
-        try {
-          checkSurfaces({
-            exercise: baseExercise([baseSet({ rampTargetReps: 10 }), baseSet({ setIndex: 1, plannedLoadKg: 50, rampTargetReps: 8 })]),
-            asPlanned: [{ loadKg: 60, reps: 10 }, { loadKg: 50, reps: 9 }],
-          }, makeCounters());
-        } catch (error) {
-          return error;
-        }
-        return null;
-      })();
-      assert.ok(rampViolation && rampViolation.invariant === 'P5' && !KNOWN.P5.matches(rampViolation), 'KNOWN.P5 swallows a ramp violation');
       assert.ok(!KNOWN.P4.matches(violation('P4', 'x')), 'KNOWN.P4 swallows an unshaped violation');
     },
   },

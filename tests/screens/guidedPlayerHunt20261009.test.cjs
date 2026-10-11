@@ -74,7 +74,10 @@ module.exports = [
     name: 'guided walk-up card: the rest it quotes is the ring the player runs',
     run() {
       assert.doesNotMatch(player, /rest: instance\.restSecondsMin/);
-      assert.equal(player.match(/rest: guidedRestSeconds\(instance\.restSecondsMin\)/g)?.length, 3);
+      // One rest for the walk-up's lines (hunt 12: the plain and the superset
+      // lines share it since the reps part moved to resolveGuidedWalkPlan).
+      assert.equal(player.match(/const rest = guidedRestSeconds\(instance\.restSecondsMin\);/g)?.length, 1);
+      assert.doesNotMatch(player, /rest: guidedRestSeconds\(/);
     },
   },
   {
