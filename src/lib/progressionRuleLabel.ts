@@ -74,7 +74,7 @@ const FI: Record<string, string> = {
   'Progress secondary lifts by adding reps first, then load once the range is stable across working sets.':
     'Etene tukiliikkeissä lisäämällä ensin toistoja, sitten painoa kun toistohaarukka on vakaa kaikissa työsarjoissa.',
   'Secondary compounds add pressure without matching anchor fatigue; they climb by the same rule.':
-    'Tukevat moninivelliikkeet lisäävät painetta ilman ankkurin väsytystä — ne nousevat samalla säännöllä.',
+    'Tukevat moninivelliikkeet lisäävät painetta ilman ankkurin väsytystä; ne nousevat samalla säännöllä.',
   'Secondary compounds add volume and rise by the same rule as the anchor of the day.':
     'Tukevat moninivelliikkeet tuovat volyymia ja nousevat samalla säännöllä kuin päivän ankkuri.',
   'Secondary compounds drive total weekly volume. Keep them technical; load rises by the same rule as the anchor.':

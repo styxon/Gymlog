@@ -101,10 +101,6 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'stiff-legged',
     'stiff legs',
     'hyperextension',
-    // A deadlift from pins, and the rows done unsupported (owner, 2026-10-11).
-    // A chest-supported or lying T-bar row is vetoed or excluded below.
-    'rack pull',
-    't-bar row',
   ],
   knees: [
     'squat',
@@ -208,23 +204,6 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'butterfly stretch',
     'deep squat hold',
     'fire hydrant',
-    // The names the alias table calls the same movement as a Hip Thrust, a
-    // Bulgarian Split Squat and a Sumo Squat (progression hunt, 2026-10-11).
-    'glute bridge',
-    'butt lift',
-    'split squat',
-    'plie',
-    // Owner, 2026-10-11: glute kickbacks, every lunge (lateral and curtsy
-    // too) and the hip-hinge deadlifts. Not squats or step-ups. "Kickback"
-    // alone is also the triceps kickback, so the glute ones are named.
-    'glute kickback',
-    'cable kickback',
-    'lunge',
-    'deadlift',
-    'romanian',
-    'rdl',
-    'stiff-legged',
-    'stiff legs',
   ],
   neck: [
     'shrug',
@@ -262,6 +241,36 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'cone drill',
     'ladder drill',
   ],
+};
+
+/**
+ * Lifts that load the area enough to HOLD their weight, but that an `avoid`
+ * does not take out of the week (owner, 2026-10-11, progression hunt A13-3).
+ *
+ * The owner widened hips and the lower back for the hold: a careful hip keeps
+ * the load on bridges, glute kickbacks, every lunge and the hip-hinge
+ * deadlifts, and a careful lower back on rack pulls and the unsupported T-bar
+ * row. Removing them all under `avoid` would have emptied the glute and
+ * lower-body days, so the exercise filter reads AREA_AVOID_PATTERNS alone and
+ * these only reach `cautionAreaLoadedBy`. Squats are not here, split squats
+ * and the plie included: the owner counts those as squats. "Kickback" alone is
+ * also the triceps kickback, so the glute ones are named.
+ */
+const AREA_HOLD_ONLY_PATTERNS: Partial<Record<SetupCautionArea, string[]>> = {
+  hips: [
+    'glute bridge',
+    'butt lift',
+    'glute kickback',
+    'cable kickback',
+    'lunge',
+    'deadlift',
+    'romanian',
+    'rdl',
+    'stiff-legged',
+    'stiff legs',
+  ],
+  // A chest-supported or lying T-bar row is vetoed or excluded below.
+  lower_back: ['rack pull', 't-bar row'],
 };
 
 // Phrases that contain a pattern word but do not load the area. Their words are
@@ -403,7 +412,21 @@ function hasPhrase(nameWords: Array<string | null>, pattern: string): boolean {
   return nameWords.some((word) => wordMatches(word, joined));
 }
 
+/**
+ * Whether a lift loads the area as far as the exercise FILTER is concerned:
+ * an `avoid` removes it, a `careful` swaps it. The progression hold reads the
+ * wider `exerciseLoadsCautionArea`.
+ */
 export function exerciseHitsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
+  return matchesArea(exerciseName, area, false);
+}
+
+/** The filter's lifts plus the ones that are held but stay in the week. */
+export function exerciseLoadsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
+  return matchesArea(exerciseName, area, true);
+}
+
+function matchesArea(exerciseName: string, area: SetupCautionArea, withHoldOnly: boolean): boolean {
   const nameWords: Array<string | null> = words(exerciseName);
   for (const veto of AREA_VETO_PHRASES[area] ?? []) {
     if (hasPhrase(nameWords, veto)) {
@@ -418,7 +441,10 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
       }
     }
   }
-  return AREA_AVOID_PATTERNS[area].some((pattern) => hasPhrase(nameWords, pattern));
+  const matches = (pattern: string) => hasPhrase(nameWords, pattern);
+  return (
+    AREA_AVOID_PATTERNS[area].some(matches) || (withHoldOnly && (AREA_HOLD_ONLY_PATTERNS[area] ?? []).some(matches))
+  );
 }
 
 /**
@@ -429,14 +455,15 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
  * but a lift the reader added by hand can, and it is held the same way. The
  * same name patterns as the filter decide "loads this area", so a swap the
  * filter picked because it spares the area (Leg Press -> Hip Thrust for knees)
- * progresses normally, and one that still loads it (Box Squat) is held.
+ * progresses normally, and one that still loads it (Box Squat) is held -- plus
+ * the hold-only lifts an `avoid` leaves in the week (AREA_HOLD_ONLY_PATTERNS).
  */
 export function cautionAreaLoadedBy(
   exerciseName: string,
   flags: SetupCautionFlag[] | null | undefined,
 ): SetupCautionArea | null {
   for (const flag of flags ?? []) {
-    if (flag.level !== 'info' && exerciseHitsCautionArea(exerciseName, flag.area)) {
+    if (flag.level !== 'info' && exerciseLoadsCautionArea(exerciseName, flag.area)) {
       return flag.area;
     }
   }

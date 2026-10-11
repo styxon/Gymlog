@@ -66,4 +66,22 @@ module.exports = [
       assert.equal(progressionRuleLabel('fi', EN), FI);
     },
   },
+  {
+    // Review nit: one reworded secondary rule joined its clauses with ";" in
+    // English and a dash in Finnish.
+    name: 'hunt 12 A14: a rendered rule joins its clauses the same way in English and Finnish',
+    run() {
+      const mismatched = new Set();
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const key of RENDERED) {
+          const rule = template.progressionRules[key];
+          const fi = progressionRuleLabel('fi', rule);
+          if (rule.includes(';') !== fi.includes(';') || rule.includes('—') !== fi.includes('—')) {
+            mismatched.add(`${rule} | ${fi}`);
+          }
+        }
+      }
+      assert.deepEqual([...mismatched], []);
+    },
+  },
 ];
