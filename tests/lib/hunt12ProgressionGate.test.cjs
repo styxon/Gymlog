@@ -317,4 +317,95 @@ module.exports = [
       assert.deepEqual(offenders.map((file) => path.relative(root, file)), []);
     },
   },
+
+  // ── A4-1 + A4-2: a set added mid-session is not last time's reference ────
+  {
+    name: 'hunt12 A4: warm-ups are inferred among the programme sets only; added sets follow them',
+    run() {
+      const mark = (built, ...indices) => ({
+        ...built,
+        sets: built.sets.map((set) => (indices.includes(set.setIndex) ? { ...set, addedMidSession: true } : set)),
+      });
+
+      // 3 x 60 as asked, then a heavy 90 added: nothing is a warm-up.
+      const heavyAdded = mark(entry(ago(0), [8, 8, 8, 5], [60, 60, 60, 90]), 3);
+      const read = toWorkingHistoryEntry(heavyAdded, 3);
+      assert.deepEqual(loadsOf(read.sets), [60, 60, 60, 90]);
+      assert.deepEqual(read.sets.map((set) => set.setIndex), [0, 1, 2, 3]);
+
+      // A ramp of four with a 100 added on top keeps its four rungs.
+      const rampAdded = mark(entry(ago(0), [5, 5, 5, 5, 5], [60, 70, 80, 90, 100]), 4);
+      assert.deepEqual(loadsOf(toWorkingHistoryEntry(rampAdded, 4).sets), [60, 70, 80, 90, 100]);
+
+      // Unmarked (legacy, or nothing added): read exactly as before.
+      const legacy = entry(ago(0), [8, 8, 8, 8], [40, 60, 100, 100]);
+      assert.deepEqual(loadsOf(toWorkingHistoryEntry(legacy, 3).sets), [100, 100]);
+      assert.equal(toWorkingHistoryEntry(entry(ago(0), [8, 8, 8], 60), 3).sets.length, 3);
+
+      // Inference still runs over the programme sets when they ran over.
+      const overAndAdded = mark(entry(ago(0), [8, 8, 8, 8, 5], [40, 100, 100, 100, 120]), 4);
+      const overRead = toWorkingHistoryEntry(overAndAdded, 3);
+      assert.deepEqual(loadsOf(overRead.sets), [100, 100, 100, 120]);
+      assert.deepEqual(overRead.sets.map((set) => set.setIndex), [0, 1, 2, 3]);
+      assert.equal(overRead.sets[3].addedMidSession, true);
+
+      // The documented cost: a warm-up logged as set 1 and made up with an
+      // added set is not inferred (exact programme count, as A4-5).
+      const madeUp = mark(entry(ago(0), [10, 8, 8, 8], [30, 60, 60, 60]), 3);
+      assert.deepEqual(loadsOf(toWorkingHistoryEntry(madeUp, 3).sets), [30, 60, 60, 60]);
+    },
+  },
+  {
+    name: 'hunt12 A4: last time with a heavy added set opens the programme sets on their own loads',
+    run() {
+      const exercise = {
+        id: 'e_bp',
+        exerciseName: 'Barbell Bench Press',
+        slotId: 'bp',
+        role: 'primary',
+        progressionPriority: 'high',
+        trackingMode: 'load_and_reps',
+        sets: 3,
+        repsMin: 8,
+        repsMax: 8,
+        restSecondsMin: 90,
+        restSecondsMax: 120,
+        substitutionGroup: 'press',
+      };
+      const template = {
+        id: 'tpl',
+        name: 'Push',
+        defaultScheduleMode: 'weekly',
+        sessions: [{ id: 'day_a', name: 'Push', orderIndex: 0, exercises: [exercise] }],
+      };
+      const nowMs = Date.parse('2026-10-10T09:00:00.000Z');
+      const empty = {
+        activeSession: null,
+        completionSummary: null,
+        history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null },
+        nowMs: 0,
+      };
+      const start = (state, automatedProgressionEnabled) =>
+        workoutReducer(state, {
+          type: 'session/startFromRuntimeTemplate',
+          payload: {
+            template,
+            sessionOrderIndex: 0,
+            unitPreference: 'kg',
+            progression: { automatedProgressionEnabled, setupLevel: 'beginner', nowMs },
+          },
+        });
+      const slotId = start(empty, false).activeSession.exercises[0].slotId;
+      const last = entry('2026-10-07T09:00:00.000Z', [8, 8, 8, 5], [60, 60, 60, 90], {
+        slotId,
+        exerciseName: 'Barbell Bench Press',
+      });
+      last.sets[3] = { ...last.sets[3], addedMidSession: true };
+      const state = { ...empty, history: { ...empty.history, slotHistory: { [slotId]: [last] } } };
+      for (const pro of [false, true]) {
+        const sets = start(state, pro).activeSession.exercises[0].sets;
+        assert.deepEqual(sets.map((set) => set.draftLoadText), ['60', '60', '60'], `pro ${pro}`);
+      }
+    },
+  },
 ];

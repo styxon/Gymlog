@@ -56,26 +56,55 @@ function byOrder(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[
  *
  * Nothing inferred: the entry comes back as it was, set numbers untouched, so
  * every session without a warm-up reads exactly as it did before.
+ *
+ * A set the reader added mid-session (filed with `addedMidSession`) is not one
+ * of the programme's: it neither makes the session run over nor is the load
+ * the others are measured against. 3 × 60 with a 90 added read the 60s as
+ * warm-ups and opened set 1 at 90 (hunt, 2026-10-11). So the inference reads
+ * the programme's sets alone, and the added ones follow them as work. The
+ * cost, as with an exact count: a warm-up logged as set 1 and made up with an
+ * added set stays work — "+ Warm-up set" is the way to log one.
  */
 export function toWorkingHistoryEntry(
   entry: WorkoutSlotHistoryEntry,
   targetSets: number,
 ): WorkoutSlotHistoryEntry {
-  const cap = Math.max(0, entry.sets.length - Math.max(0, Math.floor(targetSets)));
-  if (cap === 0) {
+  const added = byOrder(entry.sets.filter((set) => set.addedMidSession === true));
+  if (added.length === 0) {
+    return inferWarmups(entry, entry.sets, targetSets) ?? entry;
+  }
+  const programme = byOrder(entry.sets.filter((set) => set.addedMidSession !== true));
+  const working = inferWarmups(entry, programme, targetSets)?.sets ?? programme;
+  const ordered = [...working, ...added];
+  const stored = byOrder(entry.sets);
+  const unchanged = ordered.length === stored.length && ordered.every((set, ordinal) => set === stored[ordinal]);
+  if (unchanged) {
     return entry;
   }
-  const ordered = byOrder(entry.sets);
+  return { ...entry, sets: ordered.map((set, ordinal) => ({ ...set, setIndex: ordinal })) };
+}
+
+/** The 70 % rule over `sets`; null when nothing in them reads as a warm-up. */
+function inferWarmups(
+  entry: WorkoutSlotHistoryEntry,
+  sets: readonly WorkoutSlotHistorySet[],
+  targetSets: number,
+): WorkoutSlotHistoryEntry | null {
+  const cap = Math.max(0, sets.length - Math.max(0, Math.floor(targetSets)));
+  if (cap === 0) {
+    return null;
+  }
+  const ordered = byOrder(sets);
   const heaviest = ordered.reduce((max, set) => Math.max(max, set.loadKg), 0);
   if (!(heaviest > 0)) {
-    return entry;
+    return null;
   }
   const firstHeavy = ordered.findIndex((set) => Math.abs(set.loadKg - heaviest) < SAME_LOAD_KG);
   const candidates = ordered
     .slice(0, firstHeavy)
     .filter((set) => set.loadKg > 0 && set.loadKg * 10 < heaviest * WARMUP_SHARE_TENTHS - 1e-9);
   if (candidates.length === 0) {
-    return entry;
+    return null;
   }
   const warmups = new Set(candidates);
   const working = ordered

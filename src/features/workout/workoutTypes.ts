@@ -470,6 +470,7 @@ export interface WorkoutSlotHistorySet {
   reps: number;
   completedAt: string;
   effort?: WorkoutSetEffort | null;
+  addedMidSession?: boolean;
 }
 
 export interface WorkoutSlotHistoryEntry {
@@ -496,6 +497,7 @@ export interface WorkoutSlotHistoryEntry {
    * entries with none and on entries saved before 2026-10-05.
    */
   warmups?: { loadKg: number; reps: number }[];
+  startedAt?: string;
 }
 
 export interface WorkoutSessionSummary {
