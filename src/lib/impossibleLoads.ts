@@ -37,7 +37,9 @@ export function setCarriesImpossibleLoad(set: WorkoutSetInstance): boolean {
 
 /**
  * Every load on an affected set goes together — planned, drafted, actual and
- * the "we moved this up for you" marker — because they all describe one bar.
+ * the "we moved this up for you" marker — because they all describe one bar,
+ * and so does everything the gate said about that bar: its holds, where it
+ * was borrowed from and the rep targets set with it.
  * Keeping any one of them would leave the set arguing with itself.
  *
  * Sets and exercises that are already fine keep their identity: this runs on
@@ -76,7 +78,21 @@ export function scrubImpossibleSessionLoads(session: WorkoutSessionRuntime): Wor
 
       exerciseChanged = true;
       sessionChanged = true;
-      const { plannedLoadKg, actualLoadKg, autoProgressedFromKg, ...rest } = set;
+      // The gate's badges and targets go with the load they were about: a
+      // hold left on a set with no weight saved the reader's own number as
+      // 'held_recovery' (hunt, 2026-10-11).
+      const {
+        plannedLoadKg,
+        actualLoadKg,
+        autoProgressedFromKg,
+        heldForFatigue,
+        heldForCautionArea,
+        prefilledFromPerformedAt,
+        plannedTargetReps,
+        autoProgressedFromReps,
+        rampTargetReps,
+        ...rest
+      } = set;
       return { ...rest, draftLoadText: '' };
     });
 

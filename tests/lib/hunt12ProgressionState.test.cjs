@@ -95,4 +95,28 @@ module.exports = [
       assert.ok(lookup.capSlotEntries([...ten, swapped]).includes(swapped));
     },
   },
+  {
+    name: 'hunt12 A8-1: an impossible load scrubbed from an open session takes the gate badges on that set with it',
+    run() {
+      const { scrubImpossibleSessionLoads } = require('../../.test-dist/lib/impossibleLoads.js');
+      const { buildLoggedSetPlan } = require('../../.test-dist/lib/loggedSetPlan.js');
+      const set = (i, extra) => ({ setIndex: i, plannedRepsMin: 8, plannedRepsMax: 12, draftLoadText: '60', draftRepsText: '', plannedLoadKg: 60, status: 'pending', edited: false, heldForFatigue: true, ...extra });
+      const session = {
+        exercises: [{ slotId: 's', sets: [
+          set(0, { plannedLoadKg: 5122.5, draftLoadText: '5122,5', heldForCautionArea: 'knees', prefilledFromPerformedAt: '2026-10-01T10:00:00.000Z', plannedTargetReps: 13, autoProgressedFromReps: 12, rampTargetReps: 9 }),
+          set(1),
+          set(2, { autoProgressedFromKg: 9000 }),
+        ] }],
+      };
+      const [first, second, third] = scrubImpossibleSessionLoads(session).exercises[0].sets;
+      for (const key of ['plannedLoadKg', 'autoProgressedFromKg', 'heldForFatigue', 'heldForCautionArea', 'prefilledFromPerformedAt', 'plannedTargetReps', 'autoProgressedFromReps', 'rampTargetReps']) {
+        assert.equal(key in first, false, `set 1 keeps ${key}`);
+        assert.equal(key in third, false, `set 3 keeps ${key}`);
+      }
+      assert.equal(first.draftLoadText, '');
+      assert.equal(buildLoggedSetPlan({ ...first, actualLoadKg: 60 }).basis, 'none');
+      assert.equal(second.heldForFatigue, true, 'an untouched set keeps its hold');
+      assert.equal(buildLoggedSetPlan(second).basis, 'held_recovery');
+    },
+  },
 ];
