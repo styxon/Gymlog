@@ -554,6 +554,43 @@ function resolveNamedHistoryDraft(
   };
 }
 
+/**
+ * A set last time has no set for: what it opens on, from the slot's own
+ * history.
+ *
+ * A lighter session left the set out (it files `plannedSets`): the set's own
+ * load from the newest earlier session that did it, so it climbs or holds
+ * with the rest. It opened blank, and on a pyramid the dial then carried set
+ * 2's load onto the top set — 55 where its own was 60 (hunt, 2026-10-11).
+ * Any other set last time did not reach — the session ended short, a set was
+ * added to the programme, the loader dropped an impossible one — opens on the
+ * set before it, as the dial carries it in play: blank, the prefill and the
+ * walk-up line said nothing where the dial said that load (same hunt).
+ */
+function missingSetFallback(
+  entries: readonly WorkoutSlotHistoryEntry[],
+  latest: WorkoutSlotHistoryEntry | null,
+  setIndex: number,
+  nowMs: number,
+): { set: WorkoutSlotHistorySet; entry: WorkoutSlotHistoryEntry } | null {
+  if (!latest || latest.sets.length === 0) {
+    return null;
+  }
+  if (typeof latest.plannedSets === 'number') {
+    const earlier = selectLatestUsableEntry(
+      entries.filter((entry) => entry !== latest && entry.sets.some((set) => set.setIndex === setIndex)),
+      nowMs,
+    );
+    const own = earlier?.sets.find((set) => set.setIndex === setIndex);
+    if (earlier && own) {
+      return { set: own, entry: earlier };
+    }
+  }
+  const ordered = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex);
+  const before = ordered.filter((set) => set.setIndex < setIndex).pop() ?? ordered[ordered.length - 1];
+  return before ? { set: before, entry: latest } : null;
+}
+
 function resolveHistoricalSetDraft(
   history: WorkoutHistoryStore,
   slotId: string,
@@ -572,12 +609,15 @@ function resolveHistoricalSetDraft(
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
   const latest = selectLatestUsableEntry(entries, nowMs);
-  const matched = findHistoricalSetForIndex(latest, setIndex);
+  const own = findHistoricalSetForIndex(latest, setIndex);
+  // A set last time had no set for reads the set it opens on — its reps
+  // target too, so the chips say what the dial will (missingSetFallback).
+  const source = own ? { set: own, entry: latest } : missingSetFallback(entries, latest, setIndex, nowMs);
+  const matched = source?.set ?? null;
 
   if (!matched) {
-    // This slot has been trained before, this set index just was not reached
-    // (a template that added a set). Unchanged: the slot is the better source
-    // and it has nothing for this index.
+    // This slot has been trained before and has nothing to say for this set.
+    // Unchanged: the slot is the better source.
     if (latest) {
       return {
         draftLoadText: '',
@@ -645,8 +685,8 @@ function resolveHistoricalSetDraft(
   const rampTarget = repsResolution.progressed
     ? null
     : resolveRampSetTarget({
-        entry: latest,
-        setIndex,
+        entry: source?.entry ?? latest,
+        setIndex: own ? setIndex : matched.setIndex,
         repsMax: exercise.repsMax,
         trackingMode: exercise.trackingMode,
         automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,

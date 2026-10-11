@@ -227,6 +227,55 @@ module.exports = [
       assert.deepEqual(old.history.slotHistory[key][0], base);
     },
   },
+  {
+    name: 'hunt12 A9-2/A1-4: the set a lighter session left out opens on its own last load and climbs with the rest',
+    run() {
+      withHelsinkiClocks(() => {
+        // A pyramid: the lighter session drops the top set; it opened blank and the dial carried set 2's 55.
+        const pyramid = afterLightened('beginner', [50, 55, 60], [50, 55]);
+        const next = start(pyramid, BENCH, W4, { fatigueSignal: 'normal' });
+        assert.deepEqual(planned(next), [52.5, 57.5, 62.5]);
+        assert.deepEqual(autos(next), [50, 55, 60]);
+        let played = logSet(next, 'bench', 0, 52.5, 12, addMinutes(W4, 3));
+        played = logSet(played, 'bench', 1, 57.5, 12, addMinutes(W4, 6));
+        const top = exerciseOf(played);
+        assert.equal(resolveGuidedSetTarget(top.sets, 2, top.trackingMode, top.swappedAfterSetIndex).loadKg, 62.5);
+        // Straight sets: the third set is no longer blank and carries the AUTO badge like the others.
+        const flat = start(afterLightened('beginner', [60, 60, 60], [60, 60]), BENCH, W4, { fatigueSignal: 'normal' });
+        assert.deepEqual(planned(flat), [62.5, 62.5, 62.5]);
+        assert.deepEqual(autos(flat), [60, 60, 60]);
+      });
+    },
+  },
+  {
+    name: 'hunt12 A6-3/A5-2/A8-3: a set last time did not reach opens on the set before it, repeated, with no badge',
+    run() {
+      withHelsinkiClocks(() => {
+        // Ended after two sets (skip): set 3 repeats the 62.5 the session reached.
+        let s = stateWith({});
+        s = runSession(s, BENCH, W1, [[60, 12], [60, 12], [60, 12]]);
+        s = runSession(s, BENCH, W2, [[60, 12], [60, 12], [60, 12]]);
+        let w3 = start(s, BENCH, W3);
+        assert.deepEqual(planned(w3), [62.5, 62.5, 62.5]);
+        w3 = logSet(w3, 'bench', 0, 62.5, 12, addMinutes(W3, 3));
+        w3 = logSet(w3, 'bench', 1, 62.5, 12, addMinutes(W3, 6));
+        w3 = act(w3, 'exercise/skip', { slotId: exerciseOf(w3).slotId });
+        const w4 = start(finish(w3, addMinutes(W3, 30)), BENCH, W4);
+        assert.deepEqual(planned(w4), [62.5, 62.5, 62.5]);
+        assert.deepEqual(autos(w4), [null, null, null]);
+        assert.ok(exerciseOf(w4).sets.every((set) => !set.heldForFatigue && set.prefilledFromPerformedAt === undefined));
+        // A fourth set added to the programme over a three-set history: it opens on the third's 60.
+        const four = template([{ slotId: 'bench', name: 'Bench Press', sets: 4, repsMin: 8, repsMax: 12 }]);
+        const h = stateWith({ [keyOf('bench')]: [entry(at(2026, 10, 2), [12, 12, 12], 60, { slotId: keyOf('bench') }), entry(at(2026, 9, 25), [12, 12, 12], 60, { slotId: keyOf('bench') })] });
+        assert.deepEqual(planned(start(h, four, at(2026, 10, 9))), [60, 60, 60, 60]);
+        // The newest session's last set dropped on load as impossible: set 3 carries set 2's load.
+        const mk = (iso, top) => entry(iso, [12, 12, 12], [60, 62.5, top], { slotId: keyOf('bench') });
+        const bundle = normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [keyOf('bench')]: [mk(at(2026, 10, 1), 6000), mk(at(2026, 9, 24), 65)] }, lastSelectedTemplateId: null } });
+        const dropped = start({ ...stateWith({}), history: bundle.history }, BENCH, at(2026, 10, 8));
+        assert.deepEqual(planned(dropped), [60, 62.5, 62.5]);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };
