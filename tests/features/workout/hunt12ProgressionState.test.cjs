@@ -488,6 +488,43 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 P0-2: a bodyweight set borrowed from a free workout opens on no borrowed number and is not saved as borrowed',
+    run() {
+      withHelsinkiClocks(() => {
+        const tpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8 }]);
+        const free = stateWith({ 'logged:pull-up': [entry(W1, [9, 9, 9], 0, { slotId: 'logged:pull-up', templateId: '', exerciseName: 'Pull-Up' })] });
+        const set = exerciseOf(start(free, tpl, W2), 'pull').sets[0];
+        assert.equal(set.prefilledFromPerformedAt, undefined);
+        assert.equal(set.plannedLoadKg, undefined);
+        assert.equal(buildLoggedSetPlan(set).basis, 'none');
+        // A loaded borrow still says where its weight came from.
+        const bench = stateWith({ 'logged:bench press': [entry(W1, [10, 10, 10], 55, { slotId: 'logged:bench press', templateId: '' })] });
+        const borrowed = exerciseOf(start(bench, BENCH, W2)).sets[0];
+        assert.equal(borrowed.plannedLoadKg, 55);
+        assert.equal(buildLoggedSetPlan(borrowed).basis, 'borrowed');
+      });
+    },
+  },
+  {
+    name: 'hunt12 A2-8: a slot whose mode changed reads no number in the old unit',
+    run() {
+      withHelsinkiClocks(() => {
+        const key = keyOf('pull');
+        const tpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 12 }]);
+        const dosed = (reps, kg, mode, min, max, iso) => entry(iso, reps, kg, { slotId: key, exerciseName: 'Pull-Up', dose: { trackingMode: mode, repsMin: min, repsMax: max } });
+        // Held seconds are not repetitions: no target of 61.
+        const holds = stateWith({ [key]: [dosed([60, 60, 60], 0, 'hold', 30, 60, W2), dosed([60, 60, 60], 0, 'hold', 30, 60, W1)] });
+        assert.deepEqual(exerciseOf(start(holds, tpl, W3), 'pull').sets.map((set) => [set.plannedTargetReps, set.autoProgressedFromReps]), [[undefined, undefined], [undefined, undefined], [undefined, undefined]]);
+        // A loaded history is no load for a bodyweight slot, nor a +1 rep.
+        const loaded = stateWith({ [key]: [dosed([12, 12, 12], 50, 'load_and_reps', 8, 12, W2), dosed([12, 12, 12], 50, 'load_and_reps', 8, 12, W1)] });
+        const opened = exerciseOf(start(loaded, tpl, W3), 'pull').sets[0];
+        assert.equal(opened.plannedLoadKg, undefined);
+        assert.equal(opened.plannedTargetReps, undefined);
+        assert.equal(opened.draftLoadText, '');
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

@@ -546,6 +546,14 @@ function resolveNamedHistoryDraft(
     cautionArea: cautionAreaLoadedBy(exercise.exerciseName, options.cautionFlags),
   });
 
+  // A lift with no load borrows no number the screen shows: the dial opens
+  // bodyweight work on reps alone, and a stamp saying a weight was borrowed
+  // saved the set as 'borrowed' when nothing borrowed was on screen (hunt 12,
+  // P0-2). A loaded history is no load for it either.
+  if (isUnloadedTrackingMode(exercise.trackingMode)) {
+    return { ...blank, plannedTargetReps: missedReps?.targetReps, rampTargetReps: rampTarget ?? undefined };
+  }
+
   return {
     draftLoadText: formatWeightInputValue(matched.loadKg, unitPreference),
     draftRepsText: '',

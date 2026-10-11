@@ -753,13 +753,7 @@ const SEQUENCES = 160;
 const SESSIONS = 7;
 
 /** Known, recorded failures: the suite prints SKIP rather than go red (tests/hunt/run12/progression/findings.json). */
-const KNOWN = {
-  P4: {
-    finding: 'P0-2',
-    reason: "a bodyweight set opened on the programme's reps is saved with planned.basis 'borrowed' when the slot borrowed a 0 kg session",
-    matches: (error) => error.shape === 'unloaded-borrowed',
-  },
-};
+const KNOWN = {};
 
 function invariantSuite(name, title, minimum) {
   return {
@@ -824,7 +818,6 @@ module.exports = [
       assert.ok(c.P2swap > 0, `no swap ever replanned a set (P2swap=${c.P2swap})`);
       assert.ok(c.P4touched > 0, `no set was ever logged off its opening (P4touched=${c.P4touched})`);
       assert.ok(c.P6held > 0, `no earned jump was ever held (P6held=${c.P6held})`);
-      assert.ok(!KNOWN.P4.matches(violation('P4', 'x')), 'KNOWN.P4 swallows an unshaped violation');
     },
   },
   {
