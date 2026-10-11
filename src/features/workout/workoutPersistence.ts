@@ -16,6 +16,7 @@ import {
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
   ProgrammedDose,
+  ProgrammedSetPlan,
   readStoredTrackingMode,
   WorkoutHistoryStore,
   WorkoutPersistenceBundle,
@@ -139,6 +140,36 @@ function normalizeProgrammedDose(input: unknown): ProgrammedDose | undefined {
   return { trackingMode, repsMin, repsMax };
 }
 
+/**
+ * The start's plan for a swapped-away lift's sets (added 2026-10-11): kept
+ * only as a list of plans whose every field has the shape the app writes and
+ * a load somebody could lift. Anything else drops the whole list — the swap
+ * back then re-plans by name, as it did before the list existed.
+ */
+function normalizeProgrammedSetPlans(input: unknown): ProgrammedSetPlan[] | undefined {
+  if (!Array.isArray(input) || input.length === 0) {
+    return undefined;
+  }
+  const optionalNumber = (value: unknown) => value === undefined || (typeof value === 'number' && Number.isFinite(value));
+  const optionalLoad = (value: unknown) => value === undefined || isLiftableWeight(value);
+  const valid = input.every(
+    (plan) =>
+      isObject(plan) &&
+      typeof plan.setIndex === 'number' &&
+      Number.isInteger(plan.setIndex) &&
+      typeof plan.draftLoadText === 'string' &&
+      optionalLoad(plan.plannedLoadKg) &&
+      optionalLoad(plan.autoProgressedFromKg) &&
+      (plan.heldForFatigue === undefined || typeof plan.heldForFatigue === 'boolean') &&
+      (plan.heldForCautionArea === undefined || typeof plan.heldForCautionArea === 'string') &&
+      (plan.prefilledFromPerformedAt === undefined || typeof plan.prefilledFromPerformedAt === 'string') &&
+      optionalNumber(plan.plannedTargetReps) &&
+      optionalNumber(plan.autoProgressedFromReps) &&
+      optionalNumber(plan.rampTargetReps),
+  );
+  return valid ? (input as ProgrammedSetPlan[]) : undefined;
+}
+
 /** Sets a key to a value, or takes the key away when the value is undefined. */
 function withOptional<T extends Record<string, unknown>>(target: T, key: string, value: unknown): T {
   const { [key]: _dropped, ...rest } = target;
@@ -253,7 +284,8 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
   const exercises = input.exercises
     .filter((exercise): exercise is Record<string, unknown> => isObject(exercise) && Array.isArray(exercise.sets))
     .map((exercise) => withOptional(exercise, 'warmups', normalizeWarmups(exercise.warmups, true)))
-    .map((exercise) => withOptional(exercise, 'programmedDose', normalizeProgrammedDose(exercise.programmedDose)));
+    .map((exercise) => withOptional(exercise, 'programmedDose', normalizeProgrammedDose(exercise.programmedDose)))
+    .map((exercise) => withOptional(exercise, 'programmedSetPlans', normalizeProgrammedSetPlans(exercise.programmedSetPlans)));
   if (exercises.length === 0) {
     return null;
   }

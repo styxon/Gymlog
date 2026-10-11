@@ -525,6 +525,45 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A6-1: swapping away and back to the programme lift restores what the gate decided for the sets still ahead',
+    run() {
+      withHelsinkiClocks(() => {
+        const swap = (state, slot, name) => act(state, 'exercise/swap', { slotId: exerciseOf(state, slot).slotId, exerciseName: name, substitutionGroup: exerciseOf(state, slot).substitutionGroup, unitPreference: 'kg' });
+        let s = stateWith({});
+        s = runSession(s, BENCH, W1, [[60, 12], [60, 12], [60, 12]]);
+        s = runSession(s, BENCH, W2, [[60, 12], [60, 12], [60, 12]]);
+        const opened = start(s, BENCH, W3);
+        assert.deepEqual(autos(opened), [60, 60, 60]);
+        const away = swap(opened, 'bench', 'Incline Dumbbell Press');
+        assert.deepEqual(autos(away), [null, null, null], 'a swap to another lift still clears the decision');
+        const back = swap(away, 'bench', 'Bench Press');
+        assert.deepEqual(planned(back), [62.5, 62.5, 62.5]);
+        assert.deepEqual(autos(back), [60, 60, 60]);
+        assert.ok(exerciseOf(back).sets.every((set) => set.prefilledFromPerformedAt === undefined));
+        assert.equal(buildLoggedSetPlan(exerciseOf(back).sets[0]).basis, 'progressed');
+        // Set 1 logged before the round trip: only the sets still ahead are restored.
+        let partly = logSet(opened, 'bench', 0, 62.5, 12, addMinutes(W3, 3));
+        partly = swap(swap(partly, 'bench', 'Incline Dumbbell Press'), 'bench', 'Bench Press');
+        assert.deepEqual(autos(partly).slice(1), [60, 60]);
+        // The snapshot survives a reload, and a malformed one is dropped.
+        const reloaded = reload(away);
+        assert.deepEqual(autos(swap(reloaded, 'bench', 'Bench Press')), [60, 60, 60]);
+        const junk = JSON.parse(JSON.stringify(away));
+        exerciseOf(junk).programmedSetPlans = [{ setIndex: 'x' }, 'nope', { setIndex: 1, plannedLoadKg: 5122.5, draftLoadText: '5122,5' }];
+        const cleaned = reload(junk);
+        assert.equal(exerciseOf(cleaned).programmedSetPlans, undefined);
+        exerciseOf(junk).programmedSetPlans = 'nope';
+        assert.equal(exerciseOf(reload(junk)).programmedSetPlans, undefined);
+        // Bodyweight: the earned +1 comes back.
+        const pullTpl = template([{ slotId: 'pu', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 6, repsMax: 10 }]);
+        const pk = keyOf('pu');
+        const pulls = stateWith({ [pk]: [entry(W2, [10, 10, 10], 0, { slotId: pk, exerciseName: 'Pull-Up' }), entry(W1, [10, 10, 10], 0, { slotId: pk, exerciseName: 'Pull-Up' })] });
+        const pull = swap(swap(start(pulls, pullTpl, W3), 'pu', 'Chin-Up'), 'pu', 'Pull-Up');
+        assert.deepEqual(exerciseOf(pull, 'pu').sets.map((set) => [set.plannedTargetReps, set.autoProgressedFromReps]), [[11, 10], [11, 10], [11, 10]]);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

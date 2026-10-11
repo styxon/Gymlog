@@ -17,7 +17,7 @@ import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
 import { elapsedSecondsOf, restSecondsLeft, restTimerHasEnded, settleSessionClock, workoutSecondsUntil } from '../../lib/sessionClock';
-import { GuidedResumeAnchor, ProgrammedDose, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
+import { GuidedResumeAnchor, ProgrammedDose, ProgrammedSetPlan, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
   resolveMissedRepsTarget,
@@ -477,6 +477,35 @@ function replanSetForCurrentLift(
   if (set.addedMidSession) {
     set.plannedBySwap = true;
   }
+}
+
+/** The start's decision for a set, as a swap away keeps it (ProgrammedSetPlan). */
+function programmedSetPlanOf(set: WorkoutSetInstance): ProgrammedSetPlan {
+  return {
+    setIndex: set.setIndex,
+    draftLoadText: set.draftLoadText,
+    ...(set.plannedLoadKg !== undefined ? { plannedLoadKg: set.plannedLoadKg } : {}),
+    ...(set.autoProgressedFromKg !== undefined ? { autoProgressedFromKg: set.autoProgressedFromKg } : {}),
+    ...(set.heldForFatigue ? { heldForFatigue: true } : {}),
+    ...(set.heldForCautionArea ? { heldForCautionArea: set.heldForCautionArea } : {}),
+    ...(set.prefilledFromPerformedAt !== undefined ? { prefilledFromPerformedAt: set.prefilledFromPerformedAt } : {}),
+    ...(set.plannedTargetReps !== undefined ? { plannedTargetReps: set.plannedTargetReps } : {}),
+    ...(set.autoProgressedFromReps !== undefined ? { autoProgressedFromReps: set.autoProgressedFromReps } : {}),
+    ...(set.rampTargetReps !== undefined ? { rampTargetReps: set.rampTargetReps } : {}),
+  };
+}
+
+/** Puts a set back on the start's decision for it — every field, absent ones cleared. */
+function restoreProgrammedSetPlan(set: WorkoutSetInstance, plan: ProgrammedSetPlan) {
+  set.draftLoadText = plan.draftLoadText;
+  set.plannedLoadKg = plan.plannedLoadKg;
+  set.autoProgressedFromKg = plan.autoProgressedFromKg;
+  set.heldForFatigue = plan.heldForFatigue;
+  set.heldForCautionArea = plan.heldForCautionArea;
+  set.prefilledFromPerformedAt = plan.prefilledFromPerformedAt;
+  set.plannedTargetReps = plan.plannedTargetReps;
+  set.autoProgressedFromReps = plan.autoProgressedFromReps;
+  set.rampTargetReps = plan.rampTargetReps;
 }
 
 function resolveNamedHistoryDraft(
@@ -2197,6 +2226,11 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           repsMin: exercise.sets[0]?.plannedRepsMin ?? 0,
           repsMax: exercise.sets[0]?.plannedRepsMax ?? 0,
         };
+        // And what the start decided for the sets still ahead, which the
+        // re-plan below drops: picked back, the programme's lift gets it back.
+        exercise.programmedSetPlans = exercise.sets
+          .filter((set) => set.status === 'pending')
+          .map(programmedSetPlanOf);
       }
       exercise.sourceExerciseName = exercise.sourceExerciseName ?? exercise.exerciseName;
       exercise.exerciseName = action.payload.exerciseName;
@@ -2265,8 +2299,20 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         }
         exercise.warmups = undefined;
       }
+      // The programme's own lift picked back: the start's plan for each set
+      // still ahead, as the gate decided it — not a re-plan by name, which
+      // dropped an earned raise and badged the slot's own weight borrowed.
+      const restoring = isSameLiftName(action.payload.exerciseName, exercise.sourceExerciseName)
+        ? exercise.programmedSetPlans
+        : undefined;
       exercise.sets.forEach((set) => {
-        if (set.status === 'pending') {
+        if (set.status !== 'pending') {
+          return;
+        }
+        const plan = restoring?.find((item) => item.setIndex === set.setIndex);
+        if (plan) {
+          restoreProgrammedSetPlan(set, plan);
+        } else {
           replanSetForCurrentLift(exercise, set, swappedInEntry, action.payload.unitPreference);
         }
       });

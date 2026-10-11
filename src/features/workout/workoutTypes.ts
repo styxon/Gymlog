@@ -151,6 +151,26 @@ export interface ProgrammedDose {
   repsMax: number;
 }
 
+/**
+ * What the start decided for one set of the programme's lift, kept at its
+ * first swap away: the opening weight, the gate's badges and rep targets.
+ * Picking the programme's lift back puts them back on the sets still ahead —
+ * re-resolved by name instead, an earned 62.5 came back as last time's 60
+ * badged as borrowed (hunt, 2026-10-11).
+ */
+export interface ProgrammedSetPlan {
+  setIndex: number;
+  draftLoadText: string;
+  plannedLoadKg?: number;
+  autoProgressedFromKg?: number;
+  heldForFatigue?: boolean;
+  heldForCautionArea?: SetupCautionArea;
+  prefilledFromPerformedAt?: string;
+  plannedTargetReps?: number;
+  autoProgressedFromReps?: number;
+  rampTargetReps?: number;
+}
+
 export interface WorkoutTemplateSession {
   id: string;
   name: string;
@@ -361,6 +381,13 @@ export interface WorkoutExerciseInstance {
    * builds — a swap back then takes the one swap rule.
    */
   programmedDose?: ProgrammedDose;
+  /**
+   * The start's plan for the sets that were still ahead at the first swap
+   * (ProgrammedSetPlan), restored when the programme's lift is picked back.
+   * Absent before any swap, after a swap made on Home, and on sessions from
+   * older builds — a swap back then re-plans the sets by name.
+   */
+  programmedSetPlans?: ProgrammedSetPlan[];
   notes?: string;
   isExpanded: boolean;
 }
