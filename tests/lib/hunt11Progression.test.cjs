@@ -656,9 +656,10 @@ module.exports = [
         toWorkingHistoryEntry(found, programmeSetCount(lightSets)).sets.map((set) => set.loadKg),
         [60, 80, 100, 100],
       );
-      // An ordinary session, and one saved before the field existed, count as before.
+      // An ordinary session carries the programme's count too (hunt 12, A4-3: "Remove set"
+      // must not change it); one saved before the field existed counts as before.
       const ordinarySets = start(template).activeSession.exercises[0].sets;
-      assert.equal(ordinarySets.some((set) => 'programmeSets' in set), false);
+      assert.equal(ordinarySets.every((set) => set.programmeSets === 4), true);
       assert.equal(programmeSetCount(ordinarySets), 4);
       assert.equal(programmeSetCount(lightSets.map(({ programmeSets, ...rest }) => rest)), 3);
       assert.equal(programmeSetCount([{ programmeSets: 'x' }, { addedMidSession: true }]), 1);

@@ -768,7 +768,11 @@ function materializeExercise(
       rampTargetReps: resolved.rampTargetReps,
       status: 'pending',
       edited: false,
-      ...(typeof exercise.programmeSets === 'number' ? { programmeSets: exercise.programmeSets } : {}),
+      // The programme's count on every set, not only a lighter session's: a
+      // set taken off with "Remove set" otherwise lowered it, and "Last time"
+      // and a swap read last time's first set as a warm-up the opened sets
+      // did not have (hunt, 2026-10-11).
+      programmeSets: exercise.programmeSets ?? exercise.sets,
       // A lighter session: the count it asked for, filed as the entry's
       // plannedSets (see plannedSetsOf).
       ...(typeof exercise.programmeSets === 'number' && exercise.sets < exercise.programmeSets

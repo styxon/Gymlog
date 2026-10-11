@@ -9,6 +9,8 @@ const { workoutReducer, workoutInitialState } = require(D + 'features/workout/wo
 const { normalizeWorkoutBundle } = require(D + 'features/workout/workoutPersistence.js');
 const { resolveGuidedSetTarget } = require(D + 'lib/guidedPlayer.js');
 const { lightenRuntimeTemplate } = require(D + 'lib/recoverySheet.js');
+const { programmeSetCount, toWorkingHistoryEntry } = require(D + 'lib/warmupSets.js');
+const { resolveLastTimeEntry } = require(D + 'lib/exerciseHistoryLookup.js');
 
 /**
  * Automatic progression, the stored half (hunt 12, fixer F2): what a finished
@@ -315,6 +317,31 @@ module.exports = [
           const bundle = normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [key]: [{ ...filed, startedAt: stored }] }, lastSelectedTemplateId: null } });
           assert.equal('startedAt' in bundle.history.slotHistory[key][0], kept, `startedAt ${JSON.stringify(stored)}`);
         });
+      });
+    },
+  },
+  {
+    name: 'hunt12 A4-3: removing a set keeps the programme count, so Last time and a swap still read last time as work',
+    run() {
+      withHelsinkiClocks(() => {
+        const tpl = template([
+          { slotId: 'sq', name: 'Back Squat', sets: 3, repsMin: 5, repsMax: 5 },
+          { slotId: 'lp', name: 'Leg Press', sets: 3, repsMin: 5, repsMax: 5 },
+        ]);
+        const t0 = at(2026, 10, 1);
+        const h = stateWith({
+          [keyOf('sq')]: [entry(t0, [5, 5, 5], [60, 80, 100], { slotId: keyOf('sq'), exerciseName: 'Back Squat' })],
+          [keyOf('lp')]: [entry(t0, [5, 5, 5], [60, 80, 100], { slotId: keyOf('lp'), exerciseName: 'Leg Press' })],
+        });
+        let s = start(h, tpl, addDays(t0, 7));
+        assert.deepEqual(planned(s, 'sq'), [60, 80, 100]);
+        s = act(s, 'exercise/removeSet', { slotId: exerciseOf(s, 'sq').slotId });
+        const squat = exerciseOf(s, 'sq');
+        assert.equal(programmeSetCount(squat.sets), 3);
+        const panel = resolveLastTimeEntry({ slotHistory: s.history.slotHistory, slotId: squat.slotId, templateSlotId: 'sq', exerciseName: 'Back Squat', requireLoaded: true, nowMs: Date.parse(addDays(t0, 7)) });
+        assert.deepEqual(toWorkingHistoryEntry(panel.entry, programmeSetCount(squat.sets)).sets.map((set) => set.loadKg), [60, 80, 100]);
+        s = act(s, 'exercise/swap', { slotId: squat.slotId, exerciseName: 'Leg Press', substitutionGroup: 'grp_sq', unitPreference: 'kg' });
+        assert.deepEqual(planned(s, 'sq'), [60, 80]);
       });
     },
   },

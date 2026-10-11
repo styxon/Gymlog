@@ -235,11 +235,13 @@ export interface WorkoutSetInstance {
    */
   addedMidSession?: boolean;
   /**
-   * The programme's own set count for this lift, on every set of a lightened
-   * session whose `sets` is one fewer (lib/recoverySheet lightenRuntimeTemplate).
-   * What programmeSetCount reads first, so the prefill, a swap and the "Last
-   * time" panel all tell last time's warm-ups from its work against the same
-   * number. Absent on every ordinary session and on any saved before it.
+   * The programme's own set count for this lift, on every set the start
+   * materialised — one more than `sets` on a lightened session (lib/recoverySheet
+   * lightenRuntimeTemplate). What programmeSetCount reads first, so the prefill,
+   * a swap and the "Last time" panel all tell last time's warm-ups from its work
+   * against the same number, whatever "Remove set" took off. Absent on a set
+   * added mid-session, an inserted lift, and sessions saved before 2026-10-11
+   * (before 2026-10-10 even on a lightened one).
    */
   programmeSets?: number;
   /**
