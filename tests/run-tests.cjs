@@ -317,6 +317,7 @@ const suites = [
   ...require('./lib/programEquipment.test.cjs'),
   ...require('./lib/programEquipmentBucket.test.cjs'),
   ...require('./lib/progressionRuleLabel.test.cjs'),
+  ...require('./lib/hunt12ProgressionCatalog.test.cjs'),
   ...require('./lib/singleRepTarget.test.cjs'),
   ...require('./lib/onboardingRepTarget.test.cjs'),
   ...require('./lib/intervalScheme.test.cjs'),
