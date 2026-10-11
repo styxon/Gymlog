@@ -63,6 +63,26 @@ export function answersLoadedLift(entry: WorkoutSlotHistoryEntry, requireLoaded:
   return !requireLoaded || entry.sets.length === 0 || heaviestLoadKg(entry) > 0;
 }
 
+/**
+ * A slot's own entries as a loaded lift reads them: the ones at some weight
+ * (answersLoadedLift), or every one when none of them is usable. A loaded row
+ * whose every session is 0 kg was done that way — a lunge at bodyweight, an
+ * interval logged without a load — and that is its last time; passing over
+ * all of it opened the lift blank with an empty Last time (review of A5-5,
+ * 2026-10-11). Only beside a real weight is a 0 kg session no weight.
+ */
+export function preferLoadedEntries(
+  entries: WorkoutSlotHistoryEntry[],
+  requireLoaded: boolean | undefined,
+  nowMs?: number,
+): WorkoutSlotHistoryEntry[] {
+  if (!requireLoaded) {
+    return entries;
+  }
+  const loaded = entries.filter((entry) => answersLoadedLift(entry, true));
+  return selectLatestUsableEntry(loaded, nowMs) ? loaded : entries;
+}
+
 export interface NamedHistoryOptions {
   /**
    * Reject entries where every set was logged at 0 kg. For a loaded lift such
@@ -432,24 +452,25 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   // reps were done here last time, they were done HERE.
   // …as long as it was THIS lift. See entriesForLift.
   // …and run under the dose the slot asks for now (entryMatchesDose).
-  const matchesDose = (entry: WorkoutSlotHistoryEntry) =>
-    queryMatchesDose(entry, query) && answersLoadedLift(entry, query.requireLoaded);
+  // …at some weight, for a loaded lift, unless it never had one
+  // (preferLoadedEntries).
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => queryMatchesDose(entry, query);
   const scoped = selectLatestUsableEntry(
-    entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName).filter(matchesDose),
+    preferLoadedEntries(
+      entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName).filter(matchesDose),
+      query.requireLoaded,
+      query.nowMs,
+    ),
     query.nowMs,
   );
   if (scoped) {
     return { entry: scoped, borrowed: false };
   }
 
-  const legacy = selectLegacySlotEntry(
-    query.slotHistory,
-    query.templateSlotId,
-    query.repWindow,
-    query.exerciseName,
-    query.nowMs,
-    matchesDose,
-  );
+  const legacyAt = (accept: (entry: WorkoutSlotHistoryEntry) => boolean) =>
+    selectLegacySlotEntry(query.slotHistory, query.templateSlotId, query.repWindow, query.exerciseName, query.nowMs, accept);
+  const legacy =
+    legacyAt((entry) => matchesDose(entry) && answersLoadedLift(entry, query.requireLoaded)) ?? legacyAt(matchesDose);
   if (legacy) {
     return { entry: legacy, borrowed: false };
   }

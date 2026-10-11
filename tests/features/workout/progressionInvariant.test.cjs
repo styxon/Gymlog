@@ -123,12 +123,14 @@ const setAt = (entry, index) => (entry ? entry.sets.find((set) => set.setIndex =
 /** The slot's own sessions for this lift, newest first by time (a date ahead of now ranks last). */
 function oracleOwnSessions(slotHistory, slotId, liftName, nowMs, requireLoaded = false) {
   const target = clean(liftName);
-  return (slotHistory[slotId] ?? [])
+  const usable = (slotHistory[slotId] ?? [])
     .filter((entry) => entry && (!clean(entry.exerciseName) || clean(entry.exerciseName) === target))
-    .filter((entry) => !entry.skipped && entry.sets.length > 0)
-    // An all-zero session is no weight for a loaded lift: the start passes over
-    // it to the session before (answersLoadedLift).
-    .filter((entry) => !requireLoaded || entry.sets.some((set) => set.loadKg > 0))
+    .filter((entry) => !entry.skipped && entry.sets.length > 0);
+  // An all-zero session is no weight for a loaded lift beside a real one: the
+  // start passes over it to the session before (preferLoadedEntries). A row
+  // only ever done at 0 kg keeps its 0 kg sessions.
+  const loaded = usable.filter((entry) => entry.sets.some((set) => set.loadKg > 0));
+  return (requireLoaded && loaded.length > 0 ? loaded : usable)
     .map((entry, index) => {
       const time = Date.parse(entry.performedAt);
       return { entry, index, rank: Number.isFinite(time) ? (time > nowMs ? -1 : time) : 0 };

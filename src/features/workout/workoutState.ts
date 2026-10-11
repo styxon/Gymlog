@@ -37,6 +37,7 @@ import {
 import {
   answersLoadedLift,
   capSlotEntries,
+  preferLoadedEntries,
   entriesForLift,
   entryMatchesDose,
   findHistoricalSetForIndex,
@@ -286,21 +287,30 @@ function getHistoryEntries(
    */
   dose?: ProgrammedDose | null,
 ) {
-  // An all-zero session is no weight for a loaded lift (answersLoadedLift).
+  // An all-zero session is no weight for a loaded lift beside a real one; a
+  // loaded row only ever done at 0 kg keeps it (preferLoadedEntries).
   const requireLoaded = dose ? !isUnloadedTrackingMode(dose.trackingMode) : false;
-  const matchesDose = (entry: WorkoutSlotHistoryEntry) =>
-    entryMatchesDose(entry, dose) && answersLoadedLift(entry, requireLoaded);
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => entryMatchesDose(entry, dose);
   // Only the entries that were this lift: a swap writes under the same slot id
   // (see entriesForLift).
-  const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName).filter(matchesDose);
+  const scopedEntries = preferLoadedEntries(
+    entriesForLift(history.slotHistory[slotId], exerciseName).filter(matchesDose),
+    requireLoaded,
+    nowMs,
+  );
   // Something real under the scoped key: that is the answer. A key holding
   // only skipped days is not — it says the lift did not happen here.
   if (selectLatestUsableEntry(scopedEntries, nowMs) || !templateSlotId) {
     return scopedEntries;
   }
 
-  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, matchesDose);
-  return legacy ? entriesForLift(history.slotHistory[templateSlotId], exerciseName).filter(matchesDose) : scopedEntries;
+  const loadedLegacy = (entry: WorkoutSlotHistoryEntry) => matchesDose(entry) && answersLoadedLift(entry, requireLoaded);
+  const legacy =
+    selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, loadedLegacy) ??
+    selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, matchesDose);
+  return legacy
+    ? preferLoadedEntries(entriesForLift(history.slotHistory[templateSlotId], exerciseName).filter(matchesDose), requireLoaded, nowMs)
+    : scopedEntries;
 }
 
 export function getHistoryEntriesForExercise(

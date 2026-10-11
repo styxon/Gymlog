@@ -679,6 +679,47 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 A5-5 review: a loaded row with only 0 kg sessions keeps them as last time (lunge at bodyweight, an interval logged without a load)',
+    run() {
+      withHelsinkiClocks(() => {
+        const { resolveInstanceDose, resolveInstanceBorrowRepWindow } = require(D + 'features/workout/workoutState.js');
+        const panelOf = (state, slot) => {
+          const instance = exerciseOf(state, slot);
+          return resolveLastTimeEntry({
+            slotHistory: state.history.slotHistory,
+            slotId: instance.slotId,
+            templateSlotId: instance.templateSlotId ?? null,
+            exerciseName: instance.exerciseName,
+            requireLoaded: true,
+            repWindow: resolveInstanceBorrowRepWindow(instance),
+            nowMs: Date.parse(W3),
+            dose: resolveInstanceDose(instance),
+          });
+        };
+        // A Reverse Lunge on a loaded 3 x 8 row, done at 0 kg x 6: it opens on 0
+        // with the lowered target 6, and Last time lists 0 x 6 (it opened blank, no target, no Last time).
+        const lungeTpl = template([{ slotId: 'lunge', name: 'Reverse Lunge', sets: 3, repsMin: 8, repsMax: 8 }]);
+        const lunged = runSession(stateWith({}), lungeTpl, W1, [[0, 6], [0, 6], [0, 6]], {}, 'lunge');
+        const lunge = start(lunged, lungeTpl, W2);
+        assert.deepEqual(exerciseOf(lunge, 'lunge').sets.map((set) => [set.draftLoadText, set.plannedTargetReps]), [['0', 6], ['0', 6], ['0', 6]]);
+        const lungePanel = panelOf(lunge, 'lunge');
+        assert.ok(lungePanel, 'Last time is empty');
+        assert.equal(lungePanel.borrowed, false);
+        assert.deepEqual(lungePanel.entry.sets.map((set) => [set.loadKg, set.reps]), [[0, 6], [0, 6], [0, 6]]);
+        // An interval row logged without a load keeps its Last time.
+        const rowing = WORKOUT_TEMPLATES_V1.flatMap((t) => t.sessions.flatMap((d) => d.exercises)).find((item) => item.exerciseName === 'Rowing Machine (500m intervals)');
+        const rowTpl = { id: 'tpl_h12', name: 'Hunt programme', defaultScheduleMode: 'weekly', sessions: [{ id: 'day_a', name: 'Day A', orderIndex: 0, exercises: [{ ...rowing, slotId: 'row', supersetGroup: null }] }] };
+        const rowed = runSession(stateWith({}), rowTpl, W1, rowing.sets ? Array.from({ length: rowing.sets }, () => [null, rowing.repsMax]) : [[null, rowing.repsMax]], {}, 'row');
+        const rowPanel = panelOf(start(rowed, rowTpl, W2), 'row');
+        assert.ok(rowPanel && !rowPanel.borrowed, 'the interval row lost its Last time');
+        // A5-5 still holds: with a real weight in the slot, a 0 kg session is passed over.
+        const key = keyOf('lunge');
+        const mixed = stateWith({ [key]: [entry(W2, [6, 6, 6], 0, { slotId: key, exerciseName: 'Reverse Lunge' }), entry(W1, [8, 8, 8], 20, { slotId: key, exerciseName: 'Reverse Lunge' })] });
+        assert.deepEqual(planned(start(mixed, lungeTpl, W3, { automatedProgressionEnabled: false }), 'lunge'), [20, 20, 20]);
+      });
+    },
+  },
+  {
     name: 'hunt12 A3-5: a middle set taken back and not redone is filed without a gap, numbered as done',
     run() {
       withHelsinkiClocks(() => {
