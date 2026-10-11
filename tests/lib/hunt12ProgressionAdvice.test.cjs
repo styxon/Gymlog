@@ -278,6 +278,19 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 A4-1 x advice: a warm-up row made up with an added set is work, as the next start reads it',
+    run() {
+      // 30/60/60 at the ceiling with a 60 added: the start files the added set
+      // (addedMidSession) and reads the programme's three as work, so it
+      // raises 60 -> 62.5 (V1 A4-1's pinned trade-off). The advice read the
+      // same log as four sets, took 30 as a warm-up and the short added set as
+      // the third programme set, and promised nothing.
+      const specs = weekly(...[0, 1, 2].map(() => [[30, 8], [60, 8], [60, 8]])).map((spec) => ({ ...spec, added: [[60, 6]] }));
+      const { advice } = surfaces(specs, { lookup: programme({ repsMin: 8, repsMax: 8 }) });
+      assert.deepEqual(advice, { kind: 'raise', fromKg: 60, toKg: 62.5 });
+    },
+  },
+  {
     name: 'hunt12 A12-2 controls: straight sets and a pyramid whose top set is the work keep their numbers',
     run() {
       const straight = surfaces(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(60, 10, 10, 10)), {

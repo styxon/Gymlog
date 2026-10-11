@@ -96,6 +96,11 @@ function entryOf(
       reps: set.reps,
       completedAt: set.completedAt ?? session.performedAt,
       effort: null,
+      // A set the reader added mid-session, as the slot history files it
+      // (addedMidSession): the warm-up rule reads the programme's sets alone
+      // and the added ones follow as work, so the advice reads the session the
+      // way the next start does.
+      ...(set.planned?.basis === 'added' ? { addedMidSession: true } : {}),
     }));
   if (sets.length === 0) {
     return null;
