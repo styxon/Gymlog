@@ -716,6 +716,26 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 P0-2 swap: a bodyweight lift swapped in takes no borrowed stamp from its history',
+    run() {
+      withHelsinkiClocks(() => {
+        const tpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8 }]);
+        const chins = stateWith({ 'logged:chin-up': [entry(W1, [9, 9, 9], 0, { slotId: 'logged:chin-up', templateId: '', exerciseName: 'Chin-Up' })] });
+        let s = start(chins, tpl, W2);
+        s = act(s, 'exercise/swap', { slotId: exerciseOf(s, 'pull').slotId, exerciseName: 'Chin-Up', substitutionGroup: 'grp_pull', unitPreference: 'kg' });
+        const set = exerciseOf(s, 'pull').sets[0];
+        assert.equal(exerciseOf(s, 'pull').exerciseName, 'Chin-Up');
+        assert.equal(set.prefilledFromPerformedAt, undefined);
+        assert.notEqual(buildLoggedSetPlan(set).basis, 'borrowed');
+        // A loaded lift swapped in still says where its weight came from.
+        const bench = stateWith({ 'logged:incline dumbbell press': [entry(W1, [10, 10, 10], 24, { slotId: 'logged:incline dumbbell press', templateId: '', exerciseName: 'Incline Dumbbell Press' })] });
+        let b = start(bench, BENCH, W2);
+        b = act(b, 'exercise/swap', { slotId: exerciseOf(b).slotId, exerciseName: 'Incline Dumbbell Press', substitutionGroup: 'grp_bench', unitPreference: 'kg' });
+        assert.equal(buildLoggedSetPlan(exerciseOf(b).sets[0]).basis, 'borrowed');
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

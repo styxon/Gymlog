@@ -456,7 +456,12 @@ function replanSetForCurrentLift(
 ) {
   // By its place within the new lift, which is how that lift's history
   // numbers it — not by its place in the slot (review of #170).
-  const historical = findHistoricalSetForIndex(entry, setIndexWithinLift(exercise, set));
+  // A lift with no load takes no number from the history found for it: the
+  // dial shows bodyweight work no weight, and a borrowed stamp saved the set
+  // as 'borrowed' for a number never on screen (hunt 12, P0-2).
+  const historical = isUnloadedTrackingMode(exercise.trackingMode)
+    ? null
+    : findHistoricalSetForIndex(entry, setIndexWithinLift(exercise, set));
   set.draftLoadText = historical ? formatWeightInputValue(historical.loadKg, unitPreference) : '';
   set.plannedLoadKg = historical?.loadKg;
   set.autoProgressedFromKg = undefined;
