@@ -275,4 +275,42 @@ module.exports = [
     },
   },
 
+  // ── C-1: the coach's "next time" direction compares like with like ────────
+  {
+    name: 'hunt12 C-1: a raised ramp is a step up, not "lighter than this session"',
+    run() {
+      const ramp = [
+        { weightKg: 40, reps: 10 },
+        { weightKg: 50, reps: 10 },
+        { weightKg: 60, reps: 10 },
+      ];
+      const raised = nextTimeDirection(ramp, { loadKg: 42.5, reps: [10, 10, 10] }, false);
+      assert.match(raised, /^up from 40 kg: moving on$/);
+      const repeated = nextTimeDirection(
+        [
+          { weightKg: 40, reps: 10 },
+          { weightKg: 50, reps: 8 },
+          { weightKg: 60, reps: 5 },
+        ],
+        { loadKg: 40, reps: [10, 8, 6] },
+        false,
+      );
+      assert.ok(repeated === null || !/lighter/.test(repeated), repeated);
+      const withAdded = nextTimeDirection(
+        [
+          { weightKg: 60, reps: 10 },
+          { weightKg: 60, reps: 10 },
+          { weightKg: 60, reps: 10 },
+          { weightKg: 80, reps: 3 },
+        ],
+        { loadKg: 62.5, reps: [10, 10, 10] },
+        false,
+      );
+      assert.equal(withAdded, 'up from 60 kg: moving on');
+      const straight = [0, 1, 2].map(() => ({ weightKg: 60, reps: 10 }));
+      assert.equal(nextTimeDirection(straight, { loadKg: 62.5, reps: [10, 10, 10] }, false), 'up from 60 kg: moving on');
+      assert.equal(nextTimeDirection(straight, { loadKg: 57.5, reps: [10, 10, 10] }, false), "lighter than this session's 60 kg");
+    },
+  },
+
 ];
