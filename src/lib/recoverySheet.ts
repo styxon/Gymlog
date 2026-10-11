@@ -2,6 +2,7 @@ import type { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import type { FatigueResult } from './fatigueModel';
 import { applyDecimalSeparator } from './format';
 import { t } from './i18n';
+import { isProUnlocked } from './proEntitlement';
 import { progressionFatigueSignalAt, type ProgressionFatigueSignal } from './progressionGate';
 import type { FatigueModelInput } from './fatigueModel';
 import type { AppLanguage } from '../types/models';
@@ -194,7 +195,10 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
               : t(language, 'recovery.todo.green.plan'),
             // Only when it is on: "progression stays on" for a reader who
             // switched it off would be the app describing a different app.
-            ...(input.automatedProgression ? [t(language, 'recovery.todo.green.progression')] : []),
+            // And only with Pro, the gate's other half: green is free in full,
+            // and a Free or lapsed-trial reader was told progression stays on
+            // while every start opened without it (bug hunt 12, 2026-10-11).
+            ...(input.automatedProgression && input.proUnlocked ? [t(language, 'recovery.todo.green.progression')] : []),
             t(language, 'recovery.todo.green.sleep'),
           ];
 
@@ -263,6 +267,20 @@ export function isLightenPending(request: LightNextSession | null | undefined, n
     return false;
   }
   return dayStartOf(at) > dayStartPlus(now, -LIGHT_SESSION_DAYS) && at.getTime() <= now.getTime() + 60_000;
+}
+
+/**
+ * A pending lighter session the start will honour: asked for, still fresh, and
+ * the reader has Pro at `now`. The request can only be made from the Pro sheet,
+ * and a trial that ended between the tap and the start left a Free reader with
+ * a shorter session and its Undo behind the lock (bug hunt 12, 2026-10-11).
+ * The start still spends the request either way.
+ */
+export function isLightenDue(
+  preferences: Parameters<typeof isProUnlocked>[0] & { lightNextSession: LightNextSession | null | undefined },
+  now: Date,
+): boolean {
+  return isLightenPending(preferences.lightNextSession, now) && isProUnlocked(preferences, now);
 }
 
 export function normalizeLightNextSession(raw: unknown): LightNextSession | null {

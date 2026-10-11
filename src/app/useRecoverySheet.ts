@@ -4,7 +4,7 @@ import { t } from '../lib/i18n';
 import {
   buildRecoverySheet,
   dayStartPlus,
-  isLightenPending,
+  isLightenDue,
   withoutRestDay,
   withRestDay,
   type RecoveryActionKind,
@@ -69,13 +69,17 @@ export function useRecoverySheet(deps: RecoverySheetDeps) {
       nextSessionTitle: homeActivePlanCard?.nextSession
         ? localizeSessionName(homeActivePlanCard.nextSession.title, preferences.appLanguage)
         : null,
-      automatedProgression: preferences.automatedProgressionEnabled,
+      // As the gate resolves it, Pro included: the bare preference defaults to
+      // on, and a Free reader's green sheet said progression stays on.
+      automatedProgression: preferences.automatedProgressionEnabled && coachProUnlocked,
       proUnlocked: coachProUnlocked,
       // Asked of the rhythm before any rest day, so a day already taken off
       // still reads as one the reader would have trained.
       tomorrowTrains: trainsOn(baseTrainingSchedule, tomorrow),
       restTomorrowMarked: preferences.restDayStarts.some((rest) => nearestDayStart(rest) === tomorrow.getTime()),
-      lightenQueued: isLightenPending(preferences.lightNextSession, now),
+      // What the start will do: a request outlives a lapsed trial, the
+      // lightening does not.
+      lightenQueued: isLightenDue(preferences, now),
       language: preferences.appLanguage,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

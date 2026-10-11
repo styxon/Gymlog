@@ -619,7 +619,7 @@ module.exports = [
       // which also applies a lighter session from the recovery sheet — so the
       // entitlement is resolved once, and both paths must use that door.
       assert.equal(
-        (appSource.match(/resolveProgressionOptions\((preferences|nextPreferences)\)/g) ?? []).length,
+        (appSource.match(/resolveProgressionOptions\((preferences|nextPreferences)(, now)?\)/g) ?? []).length,
         1,
         'a start path resolves progression on its own, past the shared door',
       );
