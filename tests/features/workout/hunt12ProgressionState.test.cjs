@@ -626,6 +626,24 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A3-5: a middle set taken back and not redone is filed without a gap, numbered as done',
+    run() {
+      withHelsinkiClocks(() => {
+        let s = start(stateWith({}), BENCH, W1);
+        s = logSet(s, 'bench', 0, 40, 10, addMinutes(W1, 3));
+        s = logSet(s, 'bench', 1, 50, 8, addMinutes(W1, 6));
+        s = logSet(s, 'bench', 2, 60, 6, addMinutes(W1, 9));
+        s = act(s, 'set/undo', { slotId: exerciseOf(s).slotId, setIndex: 1, unitPreference: 'kg' });
+        s = finish(s, addMinutes(W1, 30));
+        const filed = s.history.slotHistory[keyOf('bench')][0];
+        assert.deepEqual(filed.sets.map((set) => [set.setIndex, set.loadKg]), [[0, 40], [1, 60]]);
+        const next = start(s, BENCH, W2);
+        assert.deepEqual(planned(next).slice(0, 2), [40, 60]);
+        assert.deepEqual(exerciseOf(next).sets.slice(0, 2).map((set) => set.rampTargetReps), [10, 7]);
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

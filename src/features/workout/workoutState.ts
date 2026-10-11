@@ -2763,10 +2763,14 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // read it (lib/progressionGate), not at its finish (hunt, 2026-10-11).
       startedAt: session.startedAt,
       sessionId: session.sessionId,
+      // Numbered as done, 0, 1, 2 … in set order: a set taken back and not
+      // redone left a gap (0 and 2), and the next session read the last set
+      // for both set 2 and set 3 (hunt, 2026-10-11).
       sets: segment.sets
         .filter((set) => set.status === 'completed' && typeof set.actualLoadKg === 'number' && typeof set.actualReps === 'number')
-        .map((set) => ({
-          setIndex: set.setIndex,
+        .sort((left, right) => left.setIndex - right.setIndex)
+        .map((set, ordinal) => ({
+          setIndex: ordinal,
           loadKg: set.actualLoadKg ?? 0,
           reps: set.actualReps ?? 0,
           completedAt: set.completedAt ?? performedAt,
