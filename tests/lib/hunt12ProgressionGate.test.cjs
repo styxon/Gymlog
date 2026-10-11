@@ -451,6 +451,15 @@ module.exports = [
       assert.equal(reps({ nowMs: NOW_UTC + 20 * 86400000 }).targetReps, 13);
       // One session (beginner baseline is two): silent, still the floor proved.
       assert.equal(reps({ history: [entry(ago(0), [13, 13, 13], 0)] }).targetReps, 13);
+      // A session cut short proved no floor: 1 × 20 and quit opens on the
+      // template, not 3 × 20 (review R1, 2026-10-11). 3 × 13 held still opens 13.
+      assert.equal(reps({ history: [entry(ago(0), [20], 0), entry(ago(3), [13, 13, 13], 0)] }).targetReps, 12);
+      assert.equal(
+        reps({ history: [entry(ago(0), [20], 0), entry(ago(3), [13, 13, 13], 0)], fatigueSignal: 'high' }).targetReps,
+        12,
+      );
+      assert.equal(reps({ history: [entry(ago(0), [20], 0)] }).targetReps, 12);
+      assert.equal(reps({ fatigueSignal: 'high' }).targetReps, 13);
       // No history, Free, or not bodyweight: the template, as before.
       assert.equal(reps({ history: [] }).targetReps, 12);
       assert.equal(reps({ automatedProgressionEnabled: false }).targetReps, 12);
