@@ -109,6 +109,40 @@ module.exports = [
     },
   },
 
+  // ── Q3 x Q6: a lighter session confirms over the sets it has ─────────────
+  {
+    name: 'hunt12 Q3: an intermediate pyramid confirms on a lighter session over the set positions it logged',
+    run() {
+      const gate = (history) =>
+        evaluateProgression({ history, repsMin: 8, repsMax: 12, targetSets: 3, level: 'intermediate', nowMs: NOW_UTC });
+      const full = (daysAgo) => entry(ago(daysAgo), [12, 12, 12], [50, 55, 60]);
+      const lighter = (daysAgo, loads = [50, 55], extra = { plannedSets: 2 }) => entry(ago(daysAgo), [12, 12], loads, extra);
+
+      // Newest the lighter 50/55: its sets match the full session's first two.
+      const after = gate([lighter(3), full(6), full(9)]);
+      assert.equal(after.recommendation, 'increase');
+      assert.equal(after.fromLoadKg, 55);
+      // Every set climbs from its own load; the top set the lighter session left out from 60.
+      const raise = (own) =>
+        resolveProgressedLoadKg({
+          history: [lighter(3), full(6), full(9)], repsMin: 8, repsMax: 12, targetSets: 3, level: 'intermediate',
+          nowMs: NOW_UTC, automatedProgressionEnabled: true, fallbackLoadKg: own, fallbackReps: 12,
+        });
+      assert.deepEqual([50, 55, 60].map((own) => raise(own).loadKg), [52.5, 57.5, 62.5]);
+      // The lighter session as the confirmation behind a full newest one.
+      assert.equal(gate([full(3), lighter(6), full(9)]).recommendation, 'increase');
+
+      // Controls: a lighter session at another load confirms nothing; one the
+      // app did not ask for (no plannedSets) is two sets short.
+      const moved = gate([lighter(3, [50, 57.5]), full(6), full(9)]);
+      assert.equal(moved.recommendation, 'hold');
+      assert.equal(moved.holdReason, 'awaiting_confirmation');
+      assert.equal(gate([lighter(3, [50, 55], {}), full(6), full(9)]).holdReason, 'insufficient_sets');
+      // Full sessions only: unchanged.
+      assert.equal(gate([full(3), full(6), full(9)]).recommendation, 'increase');
+    },
+  },
+
   // ── A1-5: a one-step nudge on set 1 does not make the rest a back-off ────
   {
     name: 'hunt12 A1-5: 61.25 x 10 then 60 x 7, 60 x 6 holds every set; a real drop is still exempt',

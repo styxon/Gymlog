@@ -253,6 +253,23 @@ module.exports = [
     },
   },
   {
+    name: 'hunt12 Q3 intermediate pyramid: after a lighter session the next normal one climbs, every set from its own load',
+    run() {
+      withHelsinkiClocks(() => {
+        // 50/55/60 twice at the ceiling, then a lighter 50/55. The lighter
+        // session's top (55) was measured against the full session's (60) and
+        // the confirmation broke: held awaiting_confirmation a second session.
+        const pyramid = afterLightened('intermediate', [50, 55, 60], [50, 55]);
+        const next = start(pyramid, BENCH, W4, { setupLevel: 'intermediate', fatigueSignal: 'normal' });
+        assert.deepEqual(planned(next), [52.5, 57.5, 62.5]);
+        assert.deepEqual(autos(next), [50, 55, 60]);
+        // A lighter session at other loads than the full one confirmed nothing.
+        const moved = start(afterLightened('intermediate', [50, 55, 60], [50, 57.5]), BENCH, W4, { setupLevel: 'intermediate', fatigueSignal: 'normal' });
+        assert.deepEqual(autos(moved), [null, null, null]);
+      });
+    },
+  },
+  {
     name: 'hunt12 A6-3/A5-2/A8-3: a set last time did not reach opens on the set before it, repeated, with no badge',
     run() {
       withHelsinkiClocks(() => {

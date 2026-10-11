@@ -174,7 +174,9 @@ function oracleEarned(own, latest, { nowMs, repsMax, targetSets, programmeSets, 
   if (tierOf(level) === 'intermediate') {
     const before = own[1] ? oracleWorking(own[1], programmeSets) : null;
     const confirmed = before && oracleReady(before, repsMax, targetSets);
-    const gap = before ? Math.abs(topOf(before, targetSets) - topOf(latest, targetSets)) : Infinity;
+    // Over the positions both logged: a lighter session dropped its last set (owner Q3).
+    const positions = before ? Math.min(targetSets, before.sets.length, latest.sets.length) : 0;
+    const gap = before ? Math.abs(topOf(before, positions) - topOf(latest, positions)) : Infinity;
     if (!confirmed || gap > 1.25 + EPS) against.push('intermediate without a confirming session');
     clear = against.length === 0 && own.length >= 3 && gap < EPS;
   } else {

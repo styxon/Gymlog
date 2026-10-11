@@ -432,7 +432,11 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     // session that happened to hit the ceiling proves nothing about this load.
     // The same load is within one dial step of the newest session's (owner,
     // 2026-10-11, Q6), always compared with the newest, never chained.
-    if (!isWithinOneDialStep(entryLoadKg(entry, targetSets), currentLoadKg)) {
+    // Over the set positions both logged: a lighter session (plannedSets)
+    // drops the last set, a pyramid's top, so its 50/55 is the same work as
+    // the full session's 50/55/60, not a lighter load (owner, Q3).
+    const positions = Math.min(programmedSets(entry, targetSets).length, programmedSets(latest, targetSets).length);
+    if (!isWithinOneDialStep(entryLoadKg(entry, positions), entryLoadKg(latest, positions))) {
       break;
     }
     consecutive += 1;
