@@ -297,6 +297,30 @@ function isBreakSince(latest: WorkoutSlotHistoryEntry, nowMs: number | undefined
   return isAtLeastDaysBefore(latest.performedAt, new Date(nowMs).toISOString(), BREAK_DAYS);
 }
 
+/**
+ * When a session started, which is where the gap before it ends.
+ *
+ * The start reads the gap from the last finish to the moment it is started
+ * (isBreakSince), and the filed session was read to its finish: started 9 d
+ * 23 h 45 min after the last one, it opened raised and then, filed, counted as
+ * the return from a break and held the session after (hunt, 2026-10-11). The
+ * filed start; before it was filed, the first set's time; else the finish.
+ * A time after the finish is not a start.
+ */
+function sessionStartIso(entry: WorkoutSlotHistoryEntry): string {
+  const finishedMs = Date.parse(entry.performedAt);
+  const startedMs = typeof entry.startedAt === 'string' ? Date.parse(entry.startedAt) : Number.NaN;
+  const before = (ms: number) => Number.isFinite(ms) && (!Number.isFinite(finishedMs) || ms <= finishedMs);
+  if (before(startedMs)) {
+    return entry.startedAt as string;
+  }
+  const firstSet = entry.sets
+    .map((set) => ({ iso: set.completedAt, ms: typeof set.completedAt === 'string' ? Date.parse(set.completedAt) : Number.NaN }))
+    .filter((set) => before(set.ms))
+    .sort((left, right) => left.ms - right.ms)[0];
+  return firstSet ? firstSet.iso : entry.performedAt;
+}
+
 /** No load to gate: bodyweight, a hold, a bout of minutes (workoutTypes). */
 function isUnloadedMode(trackingMode: string | undefined): boolean {
   const mode = readStoredTrackingMode(trackingMode);
@@ -375,7 +399,7 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
   // neither is the first one back from it.
   const previous = history[1];
   if (
-    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    (previous && isAtLeastDaysBefore(previous.performedAt, sessionStartIso(latest), BREAK_DAYS)) ||
     isBreakSince(latest, input.nowMs)
   ) {
     return { recommendation: 'hold', holdReason: 'gap_return', loadKg: currentLoadKg };
@@ -609,7 +633,7 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
 
   const previous = history[1];
   if (
-    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    (previous && isAtLeastDaysBefore(previous.performedAt, sessionStartIso(latest), BREAK_DAYS)) ||
     isBreakSince(latest, input.nowMs)
   ) {
     return 'hold';

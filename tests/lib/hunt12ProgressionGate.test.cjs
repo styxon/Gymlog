@@ -530,4 +530,58 @@ module.exports = [
       );
     },
   },
+
+  // ── P0-3: the gap between sessions ends where this session started ──────
+  {
+    name: 'hunt12 P0-3: a session started under ten days after the last finish is not a return from a break once filed',
+    run() {
+      inHelsinki(() => {
+        const base = { repsMin: 6, repsMax: 8, targetSets: 3, level: 'beginner' };
+        const before = entry(at(2026, 10, 20, 18, 15), [8, 8, 8], 60);
+        const filed = (startHour, startMinute, extra = {}) =>
+          entry(at(2026, 10, 30, 18, 45), [8, 8, 8], 62.5, {
+            startedAt: at(2026, 10, 30, startHour, startMinute),
+            ...extra,
+          });
+        const gate = (latest, nowMs) =>
+          evaluateProgression({ ...base, history: [latest, before], nowMs: nowMs ?? Date.parse(at(2026, 11, 6, 18)) });
+
+        // At the start, 30.10. 18:00 is 9 d 23 h 45 min after the finish across
+        // the clock change: no break. Filed, the same reading.
+        const atStart = evaluateProgression({ ...base, history: [before, entry(at(2026, 10, 13, 18, 15), [8, 8, 8], 60)], nowMs: Date.parse(at(2026, 10, 30, 18)) });
+        assert.equal(atStart.recommendation, 'increase');
+        const after = gate(filed(18, 0));
+        assert.notEqual(after.holdReason, 'gap_return');
+        assert.equal(after.recommendation, 'increase');
+
+        // Started 18:20, ten days and five minutes on: a break at the start, and filed.
+        const lateStart = evaluateProgression({ ...base, history: [before, entry(at(2026, 10, 13, 18, 15), [8, 8, 8], 60)], nowMs: Date.parse(at(2026, 10, 30, 18, 20)) });
+        assert.equal(lateStart.holdReason, 'gap_return');
+        assert.equal(gate(filed(18, 20)).holdReason, 'gap_return');
+
+        // An entry saved before startedAt existed: its first set's time.
+        const legacy = entry(at(2026, 10, 30, 18, 45), [8, 8, 8], 62.5);
+        legacy.sets = legacy.sets.map((set, index) => ({ ...set, completedAt: at(2026, 10, 30, 18, 3 + 3 * index) }));
+        assert.equal(gate(legacy).recommendation, 'increase');
+        // Nothing to read but the finish: as before.
+        assert.equal(gate(entry(at(2026, 10, 30, 18, 45), [8, 8, 8], 62.5)).holdReason, 'gap_return');
+
+        // The bodyweight reps gate reads the same gap.
+        const bw = (latest) =>
+          resolveProgressedReps({
+            history: [latest, entry(at(2026, 10, 20, 18, 15), [8, 8, 8], 0)],
+            templateTargetReps: 8,
+            targetSets: 3,
+            level: 'beginner',
+            trackingMode: 'bodyweight',
+            automatedProgressionEnabled: true,
+            nowMs: Date.parse(at(2026, 11, 6, 18)),
+          });
+        const startedBefore = entry(at(2026, 10, 30, 18, 45), [8, 8, 8], 0, { startedAt: at(2026, 10, 30, 18, 0) });
+        assert.equal(bw(startedBefore).progressed, true);
+        const startedAfter = entry(at(2026, 10, 30, 18, 45), [8, 8, 8], 0, { startedAt: at(2026, 10, 30, 18, 20) });
+        assert.equal(bw(startedAfter).progressed, false);
+      });
+    },
+  },
 ];
