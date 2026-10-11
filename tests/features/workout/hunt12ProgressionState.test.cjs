@@ -12,6 +12,8 @@ const { lightenRuntimeTemplate } = require(D + 'lib/recoverySheet.js');
 const { programmeSetCount, toWorkingHistoryEntry } = require(D + 'lib/warmupSets.js');
 const { resolveLastTimeEntry } = require(D + 'lib/exerciseHistoryLookup.js');
 const { buildLoggedSetPlan } = require(D + 'lib/loggedSetPlan.js');
+const { WORKOUT_TEMPLATES_V1 } = require(D + 'features/workout/workoutCatalog.js');
+const { canCompleteSet } = require(D + 'features/workout/workoutState.js');
 
 /**
  * Automatic progression, the stored half (hunt 12, fixer F2): what a finished
@@ -667,6 +669,50 @@ module.exports = [
         // A well-formed entry loads exactly as stored.
         const clean = real(W2, { targetReps: 6, swappedFrom: 'Bench Press' });
         assert.deepEqual(one(clean), clean);
+      });
+    },
+  },
+  {
+    name: 'hunt12 A14-2/A2-1/A2-2: interval and distance rows repeat their dose; loaded carries and counted reps still progress',
+    run() {
+      withHelsinkiClocks(() => {
+        const allRows = WORKOUT_TEMPLATES_V1.flatMap((t) => t.sessions.flatMap((d) => d.exercises));
+        const catalogRow = (templateId, name) => {
+          const row = WORKOUT_TEMPLATES_V1.find((item) => item.id === templateId).sessions.flatMap((day) => day.exercises).find((item) => item.exerciseName === name);
+          assert.ok(row, `${templateId} has ${name}`);
+          return row;
+        };
+        // Three weeks on plan, logged at the dial's own numbers; the fourth start is read.
+        const weeks = (row, loadKg) => {
+          const tpl = { id: 'tpl_h12', name: 'Hunt programme', defaultScheduleMode: 'weekly', sessions: [{ id: 'day_a', name: 'Day A', orderIndex: 0, exercises: [{ ...row, slotId: 'row', supersetGroup: null }] }] };
+          let s = stateWith({});
+          [W1, W2, W3].forEach((when) => {
+            let live = start(s, tpl, when);
+            const ex = exerciseOf(live, 'row');
+            ex.sets.forEach((set) => {
+              const shown = resolveGuidedSetTarget(exerciseOf(live, 'row').sets, set.setIndex, ex.trackingMode);
+              live = logSet(live, 'row', set.setIndex, loadKg, shown.reps, addMinutes(when, 2 + set.setIndex));
+            });
+            assert.ok(exerciseOf(live, 'row').sets.every((item) => item.status === 'completed'), `${row.exerciseName} logs every set`);
+            s = finish(live, addMinutes(when, 40));
+          });
+          const next = exerciseOf(start(s, tpl, W4), 'row');
+          return next.sets.map((set) => [set.plannedLoadKg ?? null, set.autoProgressedFromKg ?? null, set.plannedTargetReps ?? null, set.autoProgressedFromReps ?? null, set.rampTargetReps ?? null]);
+        };
+        const repeat = (kg) => [kg, null, null, null, null];
+        assert.deepEqual(weeks(catalogRow('tpl_gainer_athlete_conditioning_v1', 'Sprint 40m'), null)[0], repeat(0), 'Sprint 40m stays 40 m');
+        assert.deepEqual(weeks(catalogRow('tpl_gainer_lean_shred_v1', 'Sprint Interval (200m)'), null)[0], repeat(0));
+        assert.deepEqual(weeks(catalogRow('tpl_gainer_fat_burn_hiit_v1', 'Burpee (20s on / 10s off)'), null)[0], repeat(0));
+        const winter = allRows.find((item) => item.id === 'season_winter_lower_a_bike');
+        assert.deepEqual(weeks(winter, 20)[0], repeat(20), 'Bike HIIT keeps the resistance typed');
+        // The 500 m rowing interval is logged with no load.
+        const rowing = allRows.find((item) => item.exerciseName === 'Rowing Machine (500m intervals)');
+        assert.equal(canCompleteSet(rowing, { setIndex: 0, plannedRepsMin: 500, plannedRepsMax: 500, draftLoadText: '', draftRepsText: '500', status: 'pending', edited: false }, 'kg'), true);
+        // Controls: a loaded carry still steps load, counted reps still step reps.
+        const walk = weeks(allRows.find((item) => item.exerciseName === "Farmer's Walk"), 24);
+        assert.deepEqual(walk[0].slice(0, 2), [26.5, 24]);
+        const pushUp = template([{ slotId: 'row', name: 'Push-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12 }]).sessions[0].exercises[0];
+        assert.deepEqual(weeks(pushUp, null)[0].slice(2, 4), [14, 13], '12, then 13, then 14');
       });
     },
   },

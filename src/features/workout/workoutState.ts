@@ -10,7 +10,7 @@ import {
 import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
-import { parseIntervalScheme } from '../../lib/intervalScheme';
+import { isFixedDoseExercise, parseIntervalScheme } from '../../lib/intervalScheme';
 import { pauseStopwatch, type SessionMinutesClock } from '../../lib/minutesExercises';
 import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL, WARMUP_REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
@@ -533,6 +533,9 @@ function resolveNamedHistoryDraft(
     rampTargetReps: undefined,
   };
 
+  // A fixed dose (an interval's seconds, a sprint's metres) is repeated, never
+  // stepped: no rep target off a borrowed session either (isFixedDoseExercise).
+  const progressionOn = (options.automatedProgressionEnabled ?? false) && !isFixedDoseExercise(exercise);
   const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
     // 0 kg is a real answer for bodyweight work and a missing one for a loaded
     // lift — the guided player used to hide the weight field, so zeroes exist.
@@ -561,7 +564,7 @@ function resolveNamedHistoryDraft(
     repsMax: exercise.repsMax,
     repsMin: exercise.repsMin,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     nowMs: options.nowMs ?? Date.now(),
     cautionArea: cautionAreaLoadedBy(exercise.exerciseName, options.cautionFlags),
     fatigueSignal: options.fatigueSignal,
@@ -574,7 +577,7 @@ function resolveNamedHistoryDraft(
     repsMin: exercise.repsMin,
     targetSets: exercise.sets,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     nowMs: options.nowMs ?? Date.now(),
     cautionArea: cautionAreaLoadedBy(exercise.exerciseName, options.cautionFlags),
   });
@@ -675,6 +678,10 @@ function resolveHistoricalSetDraft(
   // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
   // an ordinary set neither seeds set 1 nor climbs with the work.
   const nowMs = options.nowMs ?? Date.now();
+  // A fixed dose — an interval's seconds, a sprint's metres — repeats what was
+  // done: every resolver below reads it as progression off, so no AUTO, no
+  // +1 "rep" that is a metre, no lowered or ramp target (hunt, 2026-10-11).
+  const progressionOn = (options.automatedProgressionEnabled ?? false) && !isFixedDoseExercise(exercise);
   const dose = { trackingMode: exercise.trackingMode, repsMin: exercise.repsMin, repsMax: exercise.repsMax };
   const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs, dose)
     .map((entry) => toWorkingHistoryEntry(entry, exercise.programmeSets ?? exercise.sets));
@@ -722,7 +729,7 @@ function resolveHistoricalSetDraft(
     targetSets: exercise.sets,
     level: options.setupLevel,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     // Recovery, read once at session start. The gate has had these holds
     // since it was written; until now nothing passed a signal in, so they
     // never fired on a single set.
@@ -744,7 +751,7 @@ function resolveHistoricalSetDraft(
     targetSets: exercise.sets,
     level: options.setupLevel,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     fatigueSignal: options.fatigueSignal,
     cautionArea,
     nowMs: options.nowMs ?? Date.now(),
@@ -763,7 +770,7 @@ function resolveHistoricalSetDraft(
         repsMax: exercise.repsMax,
         repsMin: exercise.repsMin,
         trackingMode: exercise.trackingMode,
-        automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+        automatedProgressionEnabled: progressionOn,
         nowMs: options.nowMs ?? Date.now(),
         cautionArea,
         fatigueSignal: options.fatigueSignal,
@@ -775,7 +782,7 @@ function resolveHistoricalSetDraft(
         repsMin: exercise.repsMin,
         targetSets: exercise.sets,
         trackingMode: exercise.trackingMode,
-        automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+        automatedProgressionEnabled: progressionOn,
         nowMs: options.nowMs ?? Date.now(),
         cautionArea,
       });
@@ -803,7 +810,7 @@ function resolveHistoricalSetDraft(
         ? missedReps.targetReps
         : repsResolution.targetReps !== exercise.repsMax
           ? repsResolution.targetReps
-          : heldSecondsTarget(exercise, matched.reps, options.automatedProgressionEnabled ?? false),
+          : heldSecondsTarget(exercise, matched.reps, progressionOn),
     autoProgressedFromReps: repsResolution.fromReps ?? undefined,
     rampTargetReps: rampTarget ?? undefined,
   };
@@ -1283,7 +1290,7 @@ function resolveDraftReps(set: WorkoutSetInstance) {
  * was kept (break round 2026-09-28).
  */
 export function canCompleteSet(
-  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'exerciseName'>,
+  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'exerciseName'> & { substitutionGroup?: string | null },
   set: WorkoutSetInstance,
   unitPreference: 'kg' | 'lb',
 ): boolean {
@@ -1295,7 +1302,9 @@ export function canCompleteSet(
   // An interval work bout is logged by the player with no load: a treadmill
   // speed is not a weight. Its catalog rows are `reps_first`, so the load
   // rule refused every bout — eight sprints ran, and none of them was kept.
-  const unloaded = isUnloadedTrackingMode(exercise.trackingMode) || parseIntervalScheme(exercise.exerciseName) !== null;
+  // Nor is a rowing machine's 500 m interval, whose group says what its name
+  // does not (isFixedDoseExercise): it demanded a load (hunt, 2026-10-11).
+  const unloaded = isUnloadedTrackingMode(exercise.trackingMode) || isFixedDoseExercise(exercise);
   if (!unloaded && (loadKg === null || loadKg === undefined)) {
     return false;
   }

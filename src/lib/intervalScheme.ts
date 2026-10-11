@@ -78,3 +78,20 @@ export function parseIntervalScheme(name: string): IntervalScheme | null {
 export function intervalOffSeconds(name: string): number | null {
   return parseIntervalScheme(name)?.recoverySeconds ?? null;
 }
+
+/**
+ * A row whose numbers are a fixed dose (seconds of an interval, metres of a
+ * sprint or a row) rather than repetitions and a load to climb.
+ *
+ * Their rows are written as reps_first, load_and_reps or bodyweight, so the
+ * progression gate read 45 seconds as reps and 200 metres as reps: a Bike
+ * HIIT's typed resistance stepped 20, 22.5, 25 with AUTO, a 200 m sprint
+ * became 201, a tabata's 20 s became 21 (hunt, 2026-10-11). A named interval
+ * scheme says so in the name (the name is the source, above); the scheme-less
+ * rows, Sprint 40m and Rowing Machine (500m intervals), sit in the catalog's
+ * own 'cardio_intervals' group. Loaded carries (Farmer's Walk, Sled Push) are
+ * neither: a fixed distance with more load is how they progress.
+ */
+export function isFixedDoseExercise(exercise: { exerciseName: string; substitutionGroup?: string | null }): boolean {
+  return parseIntervalScheme(exercise.exerciseName ?? '') !== null || exercise.substitutionGroup === 'cardio_intervals';
+}

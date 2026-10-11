@@ -3,6 +3,7 @@ import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/work
 import { ExerciseLog, SetupLevel, WorkoutSession } from '../types/models';
 import { SLOT_HISTORY_LIMIT } from './exerciseHistoryLookup';
 import { getWorkedLogSets } from './exerciseLog';
+import { isFixedDoseExercise } from './intervalScheme';
 import { evaluateProgression, isProgressionReadySession, type ProgressionFatigueSignal } from './progressionGate';
 import { LiftProgrammeRead, normalizedName, sessionTime } from './trainingHistory';
 import { toWorkingHistoryEntry } from './warmupSets';
@@ -42,6 +43,8 @@ export interface AdviceTemplateExercise {
   repsMin: number;
   repsMax: number;
   trackingMode?: string;
+  /** What the row can be swapped for; 'cardio_intervals' marks a fixed dose (isFixedDoseExercise). */
+  substitutionGroup?: string;
 }
 
 export interface AdviceTemplate {
@@ -218,6 +221,11 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
     return read;
   }
   const { exercise, history, asOfMs } = read;
+  // A fixed dose (an interval's seconds, a sprint's metres) is repeated, never
+  // raised: the logger opens it as it was, and so does the advice.
+  if (isFixedDoseExercise(exercise)) {
+    return NO_NEXT_SESSION_ADVICE;
+  }
 
   const decision = evaluateProgression({
     history,

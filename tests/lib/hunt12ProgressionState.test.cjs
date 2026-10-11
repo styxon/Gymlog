@@ -142,4 +142,52 @@ module.exports = [
       assert.deepEqual(load({ targetSets: 4, repMin: 10, repMax: 10 }), [4, 10, 10]);
     },
   },
+  {
+    name: 'hunt12 A14-2/A2-1/A2-2 catalog: every interval or distance row is a fixed dose, and loaded carries are not',
+    run() {
+      const { isFixedDoseExercise } = require('../../.test-dist/lib/intervalScheme.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const rows = WORKOUT_TEMPLATES_V1.flatMap((template) => template.sessions.flatMap((session) => session.exercises));
+      const fixed = rows.filter((row) => /\(\s*\d+\s*s\s/i.test(row.exerciseName) || /\d+\s*m\b/i.test(row.exerciseName));
+      assert.ok(fixed.length >= 10, `the catalog has its interval and distance rows (${fixed.length})`);
+      fixed.forEach((row) => assert.equal(isFixedDoseExercise(row), true, `${row.exerciseName} (${row.trackingMode}, ${row.substitutionGroup})`));
+      ['Rowing Machine HIIT', 'Air Bike (30s sprint)', 'Sprint 40m', 'Rowing Machine (500m intervals)'].forEach((name) => {
+        const row = rows.find((item) => item.exerciseName === name);
+        assert.ok(row && isFixedDoseExercise(row), name);
+      });
+      ["Farmer's Walk", 'Sled Push', 'Push-Up', 'Bench Press', 'Burpee'].forEach((name) => {
+        const row = rows.find((item) => item.exerciseName === name);
+        assert.ok(row, `catalog has ${name}`);
+        assert.equal(isFixedDoseExercise(row), false, name);
+      });
+      assert.equal(isFixedDoseExercise({ exerciseName: 'Treadmill HIIT (30s on / 30s off)' }), true, 'the name alone, with no group');
+      assert.equal(isFixedDoseExercise({ exerciseName: 'Row', substitutionGroup: undefined }), false);
+    },
+  },
+  {
+    name: 'hunt12 A14-2 advice: a fixed-dose row gets no next-session advice, a lift beside it still does',
+    run() {
+      const { buildNextSessionAdvice } = require('../../.test-dist/lib/nextSessionAdvice.js');
+      const sessions = [];
+      const logs = [];
+      [0, 7].forEach((day, index) => {
+        const id = `s${index}`;
+        sessions.push({ id, workoutTemplateId: 'tpl', workoutTemplateSessionId: 'day', workoutNameSnapshot: 'Winter', performedAt: new Date(2026, 8, 1 + day, 18).toISOString() });
+        logs.push({ id: `bike${index}`, sessionId: id, exerciseTemplateId: null, exerciseNameSnapshot: 'Bike HIIT (45s sprint / 15s rest)', weight: 20, repsPerSet: [45, 45, 45], tracked: true, orderIndex: 0, templateSlotId: 'bike' });
+        logs.push({ id: `bench${index}`, sessionId: id, exerciseTemplateId: null, exerciseNameSnapshot: 'Bench Press', weight: 60, repsPerSet: [8, 8, 8], tracked: true, orderIndex: 1, templateSlotId: 'bench' });
+      });
+      const template = {
+        sessions: [{
+          id: 'day',
+          exercises: [
+            { exerciseName: 'Bike HIIT (45s sprint / 15s rest)', slotId: 'bike', sets: 3, repsMin: 45, repsMax: 45, trackingMode: 'reps_first', substitutionGroup: 'cardio_intervals' },
+            { exerciseName: 'Bench Press', slotId: 'bench', sets: 3, repsMin: 8, repsMax: 8, trackingMode: 'load_and_reps', substitutionGroup: 'press' },
+          ],
+        }],
+      };
+      const advice = (liftName) => buildNextSessionAdvice({ liftName, sessionId: 's1', sessions, logs, lookupTemplate: () => template, level: 'beginner' });
+      assert.deepEqual(advice('Bike HIIT (45s sprint / 15s rest)'), { kind: 'none' });
+      assert.deepEqual(advice('Bench Press'), { kind: 'raise', fromKg: 60, toKg: 62.5 });
+    },
+  },
 ];
