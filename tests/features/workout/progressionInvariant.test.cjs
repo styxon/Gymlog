@@ -84,26 +84,51 @@ function daysBack(laterMs, days) {
   return new Date(l.getFullYear(), l.getMonth(), l.getDate() - days, l.getHours(), l.getMinutes(), l.getSeconds(), l.getMilliseconds()).getTime();
 }
 const isBreak = (earlierMs, laterMs) => earlierMs <= daysBack(laterMs, 10);
+/**
+ * Where the gap before a session ends: when it started (filed startedAt), else
+ * its first set, else its finish; a time after the finish is not a start.
+ */
+function startOf(entry) {
+  const finish = Date.parse(entry.performedAt);
+  const ok = (ms) => Number.isFinite(ms) && (!Number.isFinite(finish) || ms <= finish);
+  const started = typeof entry.startedAt === 'string' ? Date.parse(entry.startedAt) : NaN;
+  if (ok(started)) return started;
+  const first = entry.sets.map((set) => Date.parse(set.completedAt)).filter(ok).sort((a, b) => a - b)[0];
+  return first ?? finish;
+}
 
-/** Working sets: light sets before the first heaviest, < 70 %, only when the session ran past the programme. */
+/**
+ * Working sets: light sets before the first heaviest, < 70 %, only when the
+ * session ran past the programme. A set filed as added mid-session is not one
+ * of the programme's: the rule reads the programme's sets alone and the added
+ * ones follow them as work (V1 A4-1, with its pinned trade-off: 30/60/60 + 60
+ * added on 3 stays 30/60/60/60).
+ */
 function oracleWorking(entry, programmeSets) {
   if (!entry) return null;
-  const ordered = [...entry.sets].sort((a, b) => a.setIndex - b.setIndex);
-  if (ordered.length <= programmeSets) return { ...entry, sets: ordered, inferred: [] };
+  const byIndex = (a, b) => a.setIndex - b.setIndex;
+  const added = entry.sets.filter((set) => set.addedMidSession === true).sort(byIndex);
+  const ordered = entry.sets.filter((set) => set.addedMidSession !== true).sort(byIndex);
+  const all = [...ordered, ...added];
+  const renumber = (sets) => (added.length ? sets.map((set, i) => ({ ...set, setIndex: i })) : sets);
+  if (ordered.length <= programmeSets) return { ...entry, sets: renumber(all), inferred: [] };
   const heaviest = Math.max(0, ...ordered.map((set) => set.loadKg));
-  if (!(heaviest > 0)) return { ...entry, sets: ordered, inferred: [] };
+  if (!(heaviest > 0)) return { ...entry, sets: renumber(all), inferred: [] };
   const firstHeavy = ordered.findIndex((set) => Math.abs(set.loadKg - heaviest) < EPS);
   const inferred = ordered.filter((set, i) => i < firstHeavy && set.loadKg > 0 && set.loadKg * 10 < heaviest * 7 - 1e-9);
-  return { ...entry, sets: ordered.filter((set) => !inferred.includes(set)).map((set, i) => ({ ...set, setIndex: i })), inferred };
+  return { ...entry, sets: all.filter((set) => !inferred.includes(set)).map((set, i) => ({ ...set, setIndex: i })), inferred };
 }
 const setAt = (entry, index) => (entry ? entry.sets.find((set) => set.setIndex === index) ?? entry.sets[index] ?? null : null);
 
 /** The slot's own sessions for this lift, newest first by time (a date ahead of now ranks last). */
-function oracleOwnSessions(slotHistory, slotId, liftName, nowMs) {
+function oracleOwnSessions(slotHistory, slotId, liftName, nowMs, requireLoaded = false) {
   const target = clean(liftName);
   return (slotHistory[slotId] ?? [])
     .filter((entry) => entry && (!clean(entry.exerciseName) || clean(entry.exerciseName) === target))
     .filter((entry) => !entry.skipped && entry.sets.length > 0)
+    // An all-zero session is no weight for a loaded lift: the start passes over
+    // it to the session before (answersLoadedLift).
+    .filter((entry) => !requireLoaded || entry.sets.some((set) => set.loadKg > 0))
     .map((entry, index) => {
       const time = Date.parse(entry.performedAt);
       return { entry, index, rank: Number.isFinite(time) ? (time > nowMs ? -1 : time) : 0 };
@@ -143,7 +168,7 @@ function oracleEarned(own, latest, { nowMs, repsMax, targetSets, programmeSets, 
   if (latest.sets.length < needOf(latest, targetSets)) against.push(`too few sets (${latest.sets.length} < ${needOf(latest, targetSets)})`);
   const latestMs = Date.parse(own[0].performedAt);
   if (isBreak(latestMs, nowMs)) against.push('break since the last session');
-  if (own[1] && isBreak(Date.parse(own[1].performedAt), latestMs)) against.push('first session back from a break');
+  if (own[1] && isBreak(Date.parse(own[1].performedAt), startOf(own[0]))) against.push('first session back from a break');
   if (!oracleReady(latest, repsMax, targetSets)) against.push('ceiling not reached');
   let clear = false;
   if (tierOf(level) === 'intermediate') {
@@ -180,7 +205,7 @@ function violation(name, message, shape) {
 /** P1 / P2 / P3 / P6 / P7 at a session start, for one exercise. */
 function checkStart(ctx, counters) {
   const { exercise, slotHistory, nowMs, options, programmeSets } = ctx;
-  const own = oracleOwnSessions(slotHistory, exercise.slotId, exercise.exerciseName, nowMs);
+  const own = oracleOwnSessions(slotHistory, exercise.slotId, exercise.exerciseName, nowMs, !isUnloaded(exercise.trackingMode));
   // Last time's button warm-ups ride on the slot's own entry (completeWorkoutSession).
   const lastWarmups = ctx.lastWarmups ?? (own[0] && own[0].warmups) ?? null;
   const latest = own[0] ? oracleWorking(own[0], programmeSets) : null;
@@ -604,10 +629,17 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
     const opened = new Map(); // `${slot}#${setIndex}` -> dial before logging, when logged as opened
     const tick = () => (clock += 60000 + Math.floor(random() * 180000));
     const slots = state.activeSession.exercises.map((exercise) => exercise.slotId);
+    // Slots whose warm-up rows are filed as an install from before the added
+    // set was marked (2026-10-11) would file them: no addedMidSession, no saved
+    // plan. Only there does the 70 % rule still infer a warm-up from sets
+    // (V1 A4-1: a marked added set leaves the programme's sets as work).
+    const legacySlots = new Set();
     for (const slotId of slots) {
       const lift = chosen.find((item) => item.key === state.activeSession.exercises.find((e) => e.slotId === slotId).templateSlotId);
       const behaviour = pick(['ceiling', 'ceiling', 'ceiling', 'ceiling', 'over', 'short', 'short', 'heavier', 'ramp', 'warmRows', 'button', 'skip', 'skipMid', 'addSet', 'swap', 'undo', 'pending', 'repeat']);
-      log.push(`  ${lift.name}: ${behaviour}`);
+      const legacy = behaviour === 'warmRows' && chance(0.5);
+      if (legacy) legacySlots.add(slotId);
+      log.push(`  ${lift.name}: ${behaviour}${legacy ? ' (filed as legacy)' : ''}`);
       const current = () => state.activeSession.exercises.find((e) => e.slotId === slotId);
       if (behaviour === 'pending') continue;
       if (behaviour === 'skip') {
@@ -619,7 +651,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
         const work = first && first.loadKg ? first.loadKg : lift.base;
         const count = 1 + Math.floor(random() * 2);
         for (let index = 0; index < count; index += 1) {
-          const ownLatest = oracleOwnSessions(state.history.slotHistory, slotId, current().exerciseName, clock)[0];
+          const ownLatest = oracleOwnSessions(state.history.slotHistory, slotId, current().exerciseName, clock, true)[0];
           const offer = warmupOffer(ownLatest && ownLatest.warmups, index, work);
           const loadKg = offer.loadKg ?? round(work * 0.5);
           if (loadKg > 0) state = workoutReducer(state, { type: 'exercise/logWarmup', payload: { slotId, loadKg, reps: offer.reps, completedAt: new Date(tick()).toISOString() } });
@@ -698,7 +730,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
 
     // ── finish and save ──
     const performedAt = new Date(tick()).toISOString();
-    const finished = workoutReducer(state, { type: 'session/finishWorkout', payload: { performedAt } });
+    let finished = workoutReducer(state, { type: 'session/finishWorkout', payload: { performedAt } });
     const done = finished.activeSession;
     const adapted = adaptCompletedWorkoutSessionForAppDatabase(done, Date.parse(performedAt));
     const record = buildCompletedWorkoutRecord(adapted, createId);
@@ -712,6 +744,24 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
         const where = record.logs.filter((item) => item.slotId === slotId).map((item) => `${item.exerciseNameSnapshot}[${(item.sets ?? []).map((set) => `${set.orderIndex}:${set.status}:${set.planned ? set.planned.basis : '-'}`).join(' ')}]`).join(' + ');
         guard(() => checkSaved({ opened: shown, savedSet, tag: `set ${setIndex} of ${liftName} (session ${session}; saved ${where})` }, counters));
       });
+    }
+    if (legacySlots.size > 0) {
+      const slotHistory = { ...finished.history.slotHistory };
+      legacySlots.forEach((slotId) => {
+        slotHistory[slotId] = (slotHistory[slotId] ?? []).map((entry) =>
+          entry.sessionId !== done.sessionId
+            ? entry
+            : { ...entry, sets: entry.sets.map(({ addedMidSession, ...set }) => set) });
+      });
+      finished = { ...finished, history: { ...finished.history, slotHistory } };
+      if (record) {
+        const own = new Set(record.logs.filter((item) => legacySlots.has(item.slotId)).map((item) => item.id));
+        db = {
+          ...db,
+          exerciseLogs: db.exerciseLogs.map((item) =>
+            own.has(item.id) ? { ...item, sets: (item.sets ?? []).map(({ planned, ...set }) => set) } : item),
+        };
+      }
     }
     pendingAdvice = [];
     done.exercises.forEach((exercise) => {
