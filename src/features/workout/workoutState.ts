@@ -2788,8 +2788,10 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
     // has nothing to file. Filed, it wrote an entry with no sets every time,
     // and ten finishes with an accessory left untouched pushed its last real
     // session out of the cap — it opened blank, with no "Last time" (hunt,
-    // 2026-10-09). A skip is a decision the progression gate reads, and a
-    // warm-up was done, so those stay.
+    // 2026-10-09). A skipped lift is filed with no sets for the history's
+    // sake (History, the cap, "Last time" see the decision); the progression
+    // gate looks past it to the session before (owner, Q8 2026-10-11). A
+    // warm-up was done, so it stays too.
     const entries = filed.filter((entry) => entry.sets.length > 0 || entry.skipped || entry.warmups !== undefined);
     if (entries.length === 0) {
       return;

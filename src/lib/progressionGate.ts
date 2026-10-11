@@ -67,7 +67,6 @@ export type ProgressionFatigueSignal = 'normal' | 'elevated' | 'high';
 export type ProgressionHoldReason =
   | 'fatigue_high'
   | 'fatigue_elevated'
-  | 'set_skipped'
   | 'insufficient_sets'
   | 'rep_ceiling_not_reached'
   | 'gap_return'
@@ -402,9 +401,9 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     return { recommendation: 'hold', holdReason: 'fatigue_elevated', loadKg: currentLoadKg };
   }
 
-  if (latest.skipped) {
-    return { recommendation: 'hold', holdReason: 'set_skipped', loadKg: currentLoadKg };
-  }
+  // No hold for a skip: a skipped lift is filed with no sets, which
+  // sessionsOf looks past (owner, Q8 2026-10-11). A skipped entry with sets is
+  // no shape the app writes; it is not a ready session, and holds below.
   if (latest.sets.length < setsNeeded(latest, targetSets)) {
     return { recommendation: 'hold', holdReason: 'insufficient_sets', loadKg: currentLoadKg };
   }
@@ -641,7 +640,7 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
   if (fatigueSignal === 'high' || fatigueSignal === 'elevated') {
     return 'hold';
   }
-  if (latest.skipped || latest.sets.length < setsNeeded(latest, targetSets)) {
+  if (latest.sets.length < setsNeeded(latest, targetSets)) {
     return 'hold';
   }
 

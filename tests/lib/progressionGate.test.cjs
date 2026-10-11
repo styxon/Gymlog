@@ -165,10 +165,14 @@ module.exports = [
   {
     name: 'progression: skipped or short sessions hold rather than progress',
     run() {
-      const skipped = gate({
-        history: [entry(60, 12, 0, { skipped: true }), entry(60, 12, 3)],
-      });
-      assert.equal(skipped.holdReason, 'set_skipped');
+      // A skipped lift is filed with no sets, and the gate looks past it (owner, Q8
+      // 2026-10-11): two ceiling sessions behind it still raise, one is still silent.
+      const skippedEntry = entry(60, 12, 0, { skipped: true, sets: [] });
+      assert.equal(gate({ history: [skippedEntry, entry(60, 12, 3), entry(60, 12, 6)] }).recommendation, 'increase');
+      assert.equal(gate({ history: [skippedEntry, entry(60, 12, 3)] }).recommendation, 'silent');
+      // A skipped entry with sets is no shape the app writes (legacy or hand-edited):
+      // it is not a ready session, so it still holds.
+      assert.equal(gate({ history: [entry(60, 12, 0, { skipped: true }), entry(60, 12, 3)] }).holdReason, 'rep_ceiling_not_reached');
 
       // Two sets logged where the template asked for three.
       const short = gate({ history: [entry(60, [12, 12], 0), entry(60, 12, 3)] });
@@ -666,8 +670,8 @@ module.exports = [
         assert.equal(back.holdReason, 'gap_return');
       }
 
-      // A skipped entry that did log sets still holds, as it always has.
-      assert.equal(gate({ history: [entry(60, 12, 0, { skipped: true }), entry(60, 12, 3)] }).holdReason, 'set_skipped');
+      // A skipped entry that did log sets (no shape the app files, Q8) still holds.
+      assert.equal(gate({ history: [entry(60, 12, 0, { skipped: true }), entry(60, 12, 3)] }).recommendation, 'hold');
 
       // The bodyweight rep gate reads the same sessions, and climbs from the
       // newest real one.
