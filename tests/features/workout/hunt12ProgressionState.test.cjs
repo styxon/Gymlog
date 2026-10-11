@@ -276,6 +276,48 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A4-1/A4-2: a set added mid-workout is filed as added, and the mark survives a reload',
+    run() {
+      withHelsinkiClocks(() => {
+        let s = start(stateWith({}), BENCH, W1);
+        [0, 1, 2].forEach((i) => { s = logSet(s, 'bench', i, 60, 8, addMinutes(W1, 3 * (i + 1))); });
+        s = act(s, 'exercise/addSet', { slotId: exerciseOf(s).slotId });
+        s = logSet(s, 'bench', 3, 90, 5, addMinutes(W1, 15));
+        s = finish(s, addMinutes(W1, 30));
+        const filed = s.history.slotHistory[keyOf('bench')][0];
+        assert.deepEqual(filed.sets.map((set) => set.addedMidSession), [undefined, undefined, undefined, true]);
+        assert.deepEqual(filed.sets.map((set) => 'addedMidSession' in set), [false, false, false, true]);
+        const reloaded = reload(s).history.slotHistory[keyOf('bench')][0];
+        assert.deepEqual(reloaded.sets.map((set) => set.addedMidSession), [undefined, undefined, undefined, true]);
+        // Only `true` is a mark; anything else stored there is dropped, and an unmarked entry loads unchanged.
+        const key = keyOf('bench');
+        const old = entry(at(2026, 10, 1), [8, 8, 8, 5], [60, 60, 60, 90], { slotId: key });
+        const junk = { ...old, sets: old.sets.map((set, i) => ({ ...set, addedMidSession: ['yes', false, 1, true][i] })) };
+        const bundle = normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [key]: [junk, old] }, lastSelectedTemplateId: null } });
+        assert.deepEqual(bundle.history.slotHistory[key][0].sets.map((set) => 'addedMidSession' in set), [false, false, false, true]);
+        assert.deepEqual(bundle.history.slotHistory[key][1], old);
+      });
+    },
+  },
+  {
+    name: 'hunt12 P0-3: each filed entry carries when its session started, and the loader keeps only a real date',
+    run() {
+      withHelsinkiClocks(() => {
+        const s = runSession(stateWith({}), BENCH, W1, [[60, 8], [60, 8], [60, 8]]);
+        const filed = s.history.slotHistory[keyOf('bench')][0];
+        // The session's start: its clock begins at the first set (lib/sessionClock).
+        assert.equal(filed.startedAt, addMinutes(W1, 3));
+        assert.equal(filed.performedAt, addMinutes(W1, 30));
+        assert.equal(reload(s).history.slotHistory[keyOf('bench')][0].startedAt, addMinutes(W1, 3));
+        const key = keyOf('bench');
+        [['nope', false], [5, false], [null, false], [W1, true]].forEach(([stored, kept]) => {
+          const bundle = normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [key]: [{ ...filed, startedAt: stored }] }, lastSelectedTemplateId: null } });
+          assert.equal('startedAt' in bundle.history.slotHistory[key][0], kept, `startedAt ${JSON.stringify(stored)}`);
+        });
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

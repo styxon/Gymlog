@@ -156,10 +156,20 @@ function positiveCount(value: unknown): number | undefined {
  * the app writes them, and an entry from before any of them loads unchanged.
  */
 function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[] }) {
-  let normalized: Record<string, unknown> = { ...entry, sets: entry.sets.filter(isHistorySet) };
+  const sets = entry.sets
+    .filter(isHistorySet)
+    // A set added mid-session is marked `true`; anything else there is no mark.
+    .map((set) => withOptional(set as Record<string, unknown>, 'addedMidSession', (set as Record<string, unknown>).addedMidSession === true ? true : undefined));
+  let normalized: Record<string, unknown> = { ...entry, sets };
   normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
   // The sets a lighter session asked for (Q3, 2026-10-11).
   normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
+  // When the session started (2026-10-11): a date, or nothing.
+  normalized = withOptional(
+    normalized,
+    'startedAt',
+    typeof entry.startedAt === 'string' && Number.isFinite(Date.parse(entry.startedAt)) ? entry.startedAt : undefined,
+  );
   return normalized;
 }
 

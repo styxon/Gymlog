@@ -2641,6 +2641,9 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       exerciseName: segment.exerciseName,
       substitutionGroup: exercise.substitutionGroup,
       performedAt,
+      // When the session started: the gap before it ends there, as the start
+      // read it (lib/progressionGate), not at its finish (hunt, 2026-10-11).
+      startedAt: session.startedAt,
       sessionId: session.sessionId,
       sets: segment.sets
         .filter((set) => set.status === 'completed' && typeof set.actualLoadKg === 'number' && typeof set.actualReps === 'number')
@@ -2650,6 +2653,11 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
           reps: set.actualReps ?? 0,
           completedAt: set.completedAt ?? performedAt,
           effort: set.effort ?? null,
+          // A set the reader added is past the programme's count: next time it
+          // neither makes the programme's sets read as warm-ups nor stands in
+          // for one of them (lib/warmupSets toWorkingHistoryEntry). Only when
+          // set, so every other filed set keeps the shape it always had.
+          ...(set.addedMidSession === true ? { addedMidSession: true } : {}),
         })),
       skipped: segment.current && exercise.status === 'skipped',
       swappedFrom: segment.swappedFrom ?? undefined,
