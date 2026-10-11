@@ -211,4 +211,45 @@ module.exports = [
     },
   },
 
+  // ── A12-2: next-step numbers read the programme's working sets ─────────────
+  {
+    name: 'hunt12 A12-2: an added heavier set does not move the plateau text or the next step',
+    run() {
+      const specs = weekly(...[0, 1, 2].map(() => flat(60, 10, 10, 10))).map((spec) => ({ ...spec, added: [[80, 5]] }));
+      const { lift, lifts, level } = surfaces(specs, { lookup: programme({ repsMin: 8, repsMax: 12 }) });
+      assert.equal(lift.latest.topSetWeightKg, 80, 'records keep the real heaviest set');
+      assert.equal(detectPlateau(lifts, new Set()), lift);
+      const body = buildPlateauConclusion(lift, 'en', level).body;
+      assert.match(body, /60 kg × 11 on every set/);
+      assert.match(body, /62[.,]5 kg/);
+      assert.doesNotMatch(body, /80 kg|82[.,]5/);
+      assert.equal(nextStepKg(lift, level), 62.5);
+      assert.equal(horizonStepKg(lift, level).kg, 60 + 2.5 * horizonStepKg(lift, level).sessions);
+    },
+  },
+  {
+    name: 'hunt12 A12-2: the next-session sheet projects from the weight the gate raises, not an added set',
+    run() {
+      const specs = weekly(...[0, 1, 2].map(() => flat(60, 12, 12, 12))).map((spec) => ({ ...spec, added: [[80, 5]] }));
+      const { lift, advice, level } = surfaces(specs, { lookup: programme({ repsMin: 8, repsMax: 12 }) });
+      assert.deepEqual(advice, { kind: 'raise', fromKg: 60, toKg: 62.5 });
+      const moment = buildNextSessionMoment(lift, 'en', level, advice);
+      assert.equal(moment.nextValue, 62.5);
+      assert.equal(moment.horizonValue, 60 + 2.5 * moment.horizonSessions);
+    },
+  },
+  {
+    name: 'hunt12 A12-2 controls: straight sets and a pyramid whose top set is the work keep their numbers',
+    run() {
+      const straight = surfaces(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(60, 10, 10, 10)), {
+        lookup: programme({ repsMin: 8, repsMax: 12 }),
+      });
+      assert.equal(nextStepKg(straight.lift, straight.level), 62.5);
+      const pyramid = [[60, 10], [80, 10], [100, 10]];
+      const ramp = surfaces(weekly(pyramid, pyramid, pyramid), { lookup: programme({ repsMin: 8, repsMax: 12 }) });
+      assert.equal(nextStepKg(ramp.lift, ramp.level), 102.5);
+      assert.match(buildPlateauConclusion(ramp.lift, 'en', ramp.level).body, /100 kg/);
+    },
+  },
+
 ];

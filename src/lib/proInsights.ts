@@ -309,9 +309,24 @@ function latestSetsLabel(lift: LiftHistory): string {
  * three-set, eight-rep row asked for nine (hunt, 2026-10-11).
  */
 function nextRepsTarget(lift: LiftHistory): number {
-  const reps = lift.latest.setReps;
+  const reps = workingRepsOf(lift);
   const next = (reps.length > 0 ? Math.min(...reps) : lift.latest.topSetReps) + 1;
   return lift.programme ? Math.min(next, lift.programme.repsMax) : next;
+}
+
+/**
+ * The load a next step is taken from: the programme's own sets when the lift
+ * was read against its row, the heaviest set logged otherwise. One heavier
+ * set added after 60 × 10/10/10 made the plateau text say "80 kg × 6, then
+ * 82,5 kg" while the gate and the set screen worked on 60 and 62,5 (hunt,
+ * 2026-10-11). Records and charts keep the heaviest set; this is advice.
+ */
+function workingKgOf(lift: LiftHistory): number {
+  return lift.programme && lift.programme.workingKg > 0 ? lift.programme.workingKg : lift.latest.topSetWeightKg;
+}
+
+function workingRepsOf(lift: LiftHistory): number[] {
+  return lift.programme && lift.programme.workingReps.length > 0 ? lift.programme.workingReps : lift.latest.setReps;
 }
 
 export function buildPlateauDetection(lift: LiftHistory, language: AppLanguage): PlateauDetection {
@@ -339,7 +354,7 @@ export function buildPlateauConclusion(
   language: AppLanguage,
   level: SetupLevel | null | undefined,
 ): LockedConclusion {
-  const weight = formatWeight(lift.latest.topSetWeightKg, 'kg');
+  const weight = formatWeight(workingKgOf(lift), 'kg');
   // The reps path says what to do next time, in the reader's own numbers:
   // this weight for one rep more than the weakest set, on every set, then
   // the next step up — the
@@ -362,10 +377,10 @@ export function buildPlateauConclusion(
   };
 }
 
-/** The honest next step: latest top set + the user's own progression increment. */
+/** The honest next step: the latest working load + the user's own progression increment. */
 export function nextStepKg(lift: LiftHistory, level: SetupLevel | null | undefined): number {
   const tier = getProgressionTier(level ?? null);
-  return lift.latest.topSetWeightKg + PROGRESSION_LEVEL_PARAMS[tier].loadIncrementKg;
+  return workingKgOf(lift) + PROGRESSION_LEVEL_PARAMS[tier].loadIncrementKg;
 }
 
 /** The window the far bar looks ahead to. Four weeks reads as "a month". */
@@ -406,12 +421,17 @@ export function liftCadenceDays(lift: LiftHistory): number {
  * It is an estimate and the sheet says so — the step lands when the reps are
  * hit, not automatically. Stating the assumption is what keeps it honest.
  */
-export function horizonStepKg(lift: LiftHistory, level: SetupLevel | null | undefined): { kg: number; sessions: number } {
+export function horizonStepKg(
+  lift: LiftHistory,
+  level: SetupLevel | null | undefined,
+  /** The load the steps start from; the latest working load when left out. */
+  fromKg: number = workingKgOf(lift),
+): { kg: number; sessions: number } {
   const tier = getProgressionTier(level ?? null);
   const increment = PROGRESSION_LEVEL_PARAMS[tier].loadIncrementKg;
   // At least two, so the far bar is never the same height as the next one.
   const sessions = Math.max(2, Math.round(HORIZON_DAYS / liftCadenceDays(lift)));
-  return { kg: lift.latest.topSetWeightKg + increment * sessions, sessions };
+  return { kg: fromKg + increment * sessions, sessions };
 }
 
 export function buildPlateauMoment(
@@ -447,7 +467,8 @@ export function buildNextSessionMoment(
   const liftLabel = exerciseNameLabel(language, lift.name);
   const bars = lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg));
   const climbed = lift.weightChangeKg > 0;
-  const horizon = horizonStepKg(lift, level);
+  // From the weight the gate raises, beside the next bar it names.
+  const horizon = horizonStepKg(lift, level, advice.kind === 'raise' ? advice.fromKg : undefined);
   const weeks = spanWeeks(lift);
   return {
     eyebrow: t(language, 'pro.sheet.next.eyebrow'),
