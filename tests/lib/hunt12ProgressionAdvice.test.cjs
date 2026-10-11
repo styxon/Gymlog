@@ -313,4 +313,42 @@ module.exports = [
     },
   },
 
+  // ── C-2: a bodyweight lift is read per set, not in total reps ──────────────
+  {
+    name: 'hunt12 C-2: one set fewer at the same reps is not "below last" for a bodyweight lift',
+    run() {
+      const pushUps = (...sessions) => {
+        const workoutSessions = sessions.map((_, index) => ({
+          id: `p${index}`,
+          workoutTemplateId: 'tpl',
+          workoutNameSnapshot: 'Push',
+          performedAt: dayAt(7 * (sessions.length - 1 - index)),
+        }));
+        const exerciseLogs = sessions.map((reps, index) => ({
+          id: `pl${index}`,
+          sessionId: `p${index}`,
+          exerciseTemplateId: null,
+          exerciseNameSnapshot: 'Push-Up',
+          weight: 0,
+          repsPerSet: reps,
+          sets: reps.map((count, order) => ({ orderIndex: order, weight: 0, reps: count, kind: 'working', outcome: 'completed', status: 'completed' })),
+          tracked: true,
+          orderIndex: 0,
+        }));
+        const summary = getTrackedExerciseProgress({
+          workoutSessions,
+          exerciseLogs,
+          exerciseTemplates: [],
+          preferences: { strengthGoals: [] },
+        }).find(
+          (entry) => entry.name === 'Push-Up',
+        );
+        return getExerciseProgressSignal(summary, 'en').kind;
+      };
+      assert.notEqual(pushUps([12, 12, 12], [12, 12]), 'below_last');
+      assert.equal(pushUps([12, 12, 12], [13, 13, 12]), 'new_best');
+      assert.equal(pushUps([12, 12, 12], [10, 10, 10]), 'below_last');
+      assert.equal(pushUps([14, 14, 14], [12, 12, 12], [13, 13, 13]), 'moving_up');
+    },
+  },
 ];
