@@ -119,4 +119,27 @@ module.exports = [
       assert.equal(buildLoggedSetPlan(second).basis, 'held_recovery');
     },
   },
+  {
+    name: 'hunt12 A14-9: a stored custom exercise loads with whole set and rep counts the gate can meet',
+    run() {
+      const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
+      const { normalizeDatabase } = loadAgainstFake(createFakeAsyncStorage(), (requireDist) => requireDist('storage/database.js'));
+      const row = (extra) => ({ id: 'e1', workoutTemplateId: 't1', workoutTemplateSessionId: 's1', name: 'Bench Press', targetSets: 3, repMin: 8, repMax: 12, restSeconds: 90, orderIndex: 0, trackingMode: 'load_and_reps', ...extra });
+      const load = (extra) => {
+        const [loaded] = normalizeDatabase({ exerciseTemplates: [row(extra)] }).exerciseTemplates;
+        return [loaded.targetSets, loaded.repMin, loaded.repMax];
+      };
+      const fractional = load({ targetSets: 2.5, repMin: 6.5, repMax: 8.5 });
+      assert.ok(fractional.every(Number.isInteger), JSON.stringify(fractional));
+      assert.equal(fractional[0], 3);
+      assert.equal(load({ targetSets: -2 })[0], 1);
+      assert.equal(load({ targetSets: 0 })[0], 1);
+      assert.equal(load({ targetSets: Number.NaN })[0], 3);
+      assert.equal(load({ targetSets: 1e6 })[0] <= 20, true);
+      const reps = load({ repMin: -4, repMax: 1e9 });
+      assert.ok(reps[1] >= 1 && reps[2] <= 1000 && reps[1] <= reps[2], JSON.stringify(reps));
+      // A row the app wrote loads as stored.
+      assert.deepEqual(load({ targetSets: 4, repMin: 10, repMax: 10 }), [4, 10, 10]);
+    },
+  },
 ];
