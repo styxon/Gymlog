@@ -102,8 +102,11 @@ export interface WorkoutTabDeps {
   database: AppDatabase;
   workout: {
     templates: Parameters<typeof resolveProgramAffinity>[1];
-    /** The workout running or paused, if any: a day's held swap cannot reach it. */
-    activeSession: Parameters<typeof isWorkoutInProgressFor>[0];
+    /**
+     * The workout running or paused, if any: a day's held swap cannot reach
+     * it. Its progressionOn is what the set screen's TODAY arrow follows.
+     */
+    activeSession: (NonNullable<Parameters<typeof isWorkoutInProgressFor>[0]> & { progressionOn?: boolean }) | null | undefined;
   };
   /** The freestyle session in flight, from the workout provider — see FreestyleDraftSnapshot. */
   freestyleDraft: React.ComponentProps<typeof EmptyWorkoutScreen>['freestyleDraft'];
@@ -1139,9 +1142,11 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         liftHistory={liftHistory}
         proUnlocked={proUnlocked}
         onOpenPro={() => navigate({ tab: 'profile', screen: 'premium' })}
-        // The toggle under the same entitlement resolveProgressionOptions
-        // applies; read here for the arrow only, not to start anything.
-        progressionOn={proUnlocked && preferences.automatedProgressionEnabled}
+        // As the session started: the AUTO badges on its sets were decided
+        // then, and the arrow beside them must not follow an entitlement that
+        // lapsed or began since. A session from an older build has no record:
+        // the toggle under the same entitlement resolveProgressionOptions applies.
+        progressionOn={workout.activeSession?.progressionOn ?? (proUnlocked && preferences.automatedProgressionEnabled)}
         plateauNotice={plateauNotice}
         tourTargets={tourRegistry}
         onTourStep={setWorkoutTourStep}

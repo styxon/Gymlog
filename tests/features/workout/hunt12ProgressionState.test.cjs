@@ -564,6 +564,29 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A10-2: the session records whether progression was on at its start, and the TODAY arrow reads that',
+    run() {
+      withHelsinkiClocks(() => {
+        const on = start(stateWith({}), BENCH, W1);
+        assert.equal(on.activeSession.progressionOn, true);
+        const off = start(stateWith({}), BENCH, W1, { automatedProgressionEnabled: false });
+        assert.equal(off.activeSession.progressionOn, false);
+        assert.equal(reload(on).activeSession.progressionOn, true);
+        assert.equal(reload(off).activeSession.progressionOn, false);
+        // An older session has none, and junk is none: the live entitlement then decides.
+        const junk = JSON.parse(JSON.stringify(on));
+        junk.activeSession.progressionOn = 'yes';
+        assert.equal('progressionOn' in reload(junk).activeSession, false);
+        delete junk.activeSession.progressionOn;
+        assert.equal('progressionOn' in reload(junk).activeSession, false);
+      });
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const source = fs.readFileSync(path.join(__dirname, '..', '..', '..', 'src', 'app', 'renderWorkoutTab.tsx'), 'utf8');
+      assert.match(source, /progressionOn=\{workout\.activeSession\?\.progressionOn \?\? \(proUnlocked && preferences\.automatedProgressionEnabled\)\}/);
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

@@ -495,6 +495,14 @@ export interface WorkoutSessionRuntime {
    */
   minutesClock?: SessionMinutesClock | null;
   activePlanMode: DefaultScheduleMode;
+  /**
+   * Whether automatic progression was on when the session started: what put
+   * the AUTO badges on its sets. The set screen's TODAY arrow reads it too,
+   * so the two come from one decision when Pro lapses or starts mid-session
+   * (hunt, 2026-10-11). Absent on sessions from older builds — the live
+   * entitlement then decides, as before.
+   */
+  progressionOn?: boolean;
   exercises: WorkoutExerciseInstance[];
   restTimer: WorkoutRestTimerState;
   ui: WorkoutUiState;

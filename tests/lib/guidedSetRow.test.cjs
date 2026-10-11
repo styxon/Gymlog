@@ -117,7 +117,8 @@ module.exports = [
       // The arrow is fed the reader's progression switch.
       assert.match(playerSource, /guidedLoadTrend\(\{[\s\S]{0,200}progressionOn,/);
       const shell = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderWorkoutTab.tsx'), 'utf8');
-      assert.match(shell, /progressionOn=\{proUnlocked && preferences\.automatedProgressionEnabled\}/);
+      // As the session started (hunt 12, A10-2); the live toggle for a session from an older build.
+      assert.match(shell, /progressionOn=\{workout\.activeSession\?\.progressionOn \?\? \(proUnlocked && preferences\.automatedProgressionEnabled\)\}/);
     },
   },
 ];

@@ -294,7 +294,7 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
     ? input.takenBackAt.filter((moment): moment is string => typeof moment === 'string')
     : undefined;
   return {
-    ...input,
+    ...withOptional(input, 'progressionOn', typeof input.progressionOn === 'boolean' ? input.progressionOn : undefined),
     takenBackAt,
     // Absent rather than null when there is none, so a session stored before
     // the clock existed comes back exactly as it was written.

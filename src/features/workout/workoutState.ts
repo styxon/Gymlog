@@ -946,6 +946,7 @@ function materializeWorkoutSessionFromTemplate(
     pausedMs: 0,
     pausedAt: null,
     activePlanMode: template.defaultScheduleMode,
+    progressionOn: options.automatedProgressionEnabled ?? false,
     exercises,
     restTimer: createInitialTimer(),
     ui: {
