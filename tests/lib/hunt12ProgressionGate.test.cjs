@@ -408,4 +408,53 @@ module.exports = [
       }
     },
   },
+
+  // ── A2-3: a held bodyweight lift repeats the reps it proved ─────────────
+  {
+    name: 'hunt12 A2-3: a bodyweight hold opens on the floor it proved, never below the template',
+    run() {
+      const history = (reps) => [entry(ago(0), reps, 0), entry(ago(3), reps, 0)];
+      const reps = (overrides) =>
+        resolveProgressedReps({
+          history: history([13, 13, 13]),
+          templateTargetReps: 12,
+          targetSets: 3,
+          level: 'beginner',
+          trackingMode: 'bodyweight',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+          ...overrides,
+        });
+
+      const earned = reps({});
+      assert.equal(earned.targetReps, 14);
+      assert.equal(earned.progressed, true);
+
+      const tired = reps({ fatigueSignal: 'high' });
+      assert.deepEqual(tired, {
+        targetReps: 13,
+        progressed: false,
+        fromReps: null,
+        heldForFatigue: true,
+        heldForCautionArea: null,
+      });
+
+      const careful = reps({ cautionArea: 'wrists' });
+      assert.equal(careful.targetReps, 13);
+      assert.equal(careful.progressed, false);
+      assert.equal(careful.fromReps, null);
+      assert.equal(careful.heldForCautionArea, 'wrists');
+
+      assert.equal(reps({ history: history([20, 20, 20]), fatigueSignal: 'high' }).targetReps, 20);
+      assert.equal(reps({ history: history([11, 12, 12]), fatigueSignal: 'high' }).targetReps, 12);
+      // A break: the reps it proved, not the template.
+      assert.equal(reps({ nowMs: NOW_UTC + 20 * 86400000 }).targetReps, 13);
+      // One session (beginner baseline is two): silent, still the floor proved.
+      assert.equal(reps({ history: [entry(ago(0), [13, 13, 13], 0)] }).targetReps, 13);
+      // No history, Free, or not bodyweight: the template, as before.
+      assert.equal(reps({ history: [] }).targetReps, 12);
+      assert.equal(reps({ automatedProgressionEnabled: false }).targetReps, 12);
+      assert.equal(reps({ trackingMode: 'load_and_reps' }).targetReps, 12);
+    },
+  },
 ];

@@ -634,13 +634,27 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
 }
 
 /**
+ * The reps the newest session the gate reads proved on every programmed set,
+ * never below the template's target; the template with no session to read.
+ */
+function provenFloorReps(input: ProgressedRepsInput): number {
+  const newest = sessionsOf(input.history, input.nowMs)[0];
+  const floor = newest ? entryMinReps(newest, input.targetSets) : Number.NaN;
+  return Number.isFinite(floor) ? Math.max(input.templateTargetReps, floor) : input.templateTargetReps;
+}
+
+/**
  * What the reps dial should open at, for exercises that progress by reps.
  *
  * The load resolver's counterpart for bodyweight work, where ADR-004 keeps the
  * load gate silent: an earned session moves the target one rep past the floor
- * the user proved, and every other outcome opens at the template target — which
- * is exactly what the dial did unconditionally before this existed. Holds are
- * excluded: their "reps" are seconds, and a seconds dose is not dialled by one.
+ * the user proved, and every other outcome repeats that floor — never below
+ * the template's target. Holds are excluded: their "reps" are seconds, and a
+ * seconds dose is not dialled by one.
+ *
+ * A hold used to open on the template: 13/13/13 earned, then held for recovery
+ * or a flagged area, asked for 12 under a badge that said the dose was held
+ * (hunt, 2026-10-11). A hold repeats, as the load gate's does.
  */
 export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRepsResolution {
   const base: ProgressedRepsResolution = {
@@ -657,9 +671,10 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
 
   // A flagged area holds reps the way it holds load: the dose on that area
   // does not climb on its own, and the hold is named only when it was earned.
+  const floorReps = provenFloorReps(input);
   if (input.cautionArea) {
     const earned = evaluateRepsProgression({ ...input, fatigueSignal: 'normal' }) === 'increase';
-    return { ...base, heldForCautionArea: earned ? input.cautionArea : null };
+    return { ...base, targetReps: floorReps, heldForCautionArea: earned ? input.cautionArea : null };
   }
 
   const recommendation = evaluateRepsProgression(input);
@@ -667,10 +682,7 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
     // The floor can sit above the template target when the user has been
     // overshooting it; raising from the proven floor is what keeps +1 honest.
     // The session the gate just read: the newest that logged sets.
-    const fromReps = Math.max(
-      input.templateTargetReps,
-      entryMinReps(sessionsOf(input.history, input.nowMs)[0], input.targetSets),
-    );
+    const fromReps = floorReps;
     return {
       targetReps: fromReps + REP_INCREMENT,
       progressed: true,
@@ -687,7 +699,7 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
     && (input.fatigueSignal === 'high' || input.fatigueSignal === 'elevated')
     && evaluateRepsProgression({ ...input, fatigueSignal: 'normal' }) === 'increase';
 
-  return { ...base, heldForFatigue };
+  return { ...base, targetReps: floorReps, heldForFatigue };
 }
 
 export interface MissedRepsInput {
