@@ -252,4 +252,27 @@ module.exports = [
     },
   },
 
+  // ── A12-3: a raise the next start holds for recovery is not advised ────────
+  {
+    name: 'hunt12 A12-3: advice reads the recovery signal the next start will apply',
+    run() {
+      const { sessions, logs } = sessionsFor(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8)));
+      const input = { liftName: 'Bench Press', sessionId: 's1', sessions, logs, lookupTemplate: programme(), level: 'beginner' };
+      assert.deepEqual(buildNextSessionAdvice(input), { kind: 'raise', fromKg: 100, toKg: 102.5 });
+      assert.deepEqual(buildNextSessionAdvice({ ...input, fatigueSignal: 'normal' }), { kind: 'raise', fromKg: 100, toKg: 102.5 });
+      assert.deepEqual(buildNextSessionAdvice({ ...input, fatigueSignal: 'elevated' }), { kind: 'none' });
+      assert.deepEqual(buildNextSessionAdvice({ ...input, fatigueSignal: 'high' }), { kind: 'none' });
+      const held = buildSessionAnalysis({
+        sessionId: 's1',
+        sessions,
+        logs,
+        language: 'en',
+        level: 'beginner',
+        lookupTemplate: programme(),
+        fatigueSignal: 'high',
+      });
+      assert.ok(held.nextActions.every((action) => !/102[.,]5/.test(action.text)), JSON.stringify(held.nextActions));
+    },
+  },
+
 ];

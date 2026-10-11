@@ -3,6 +3,7 @@ import { exerciseNameLabel } from './exerciseNameLabel';
 import { I18nKey, t } from './i18n';
 import { AdviceTemplateLookup, buildNextSessionAdvice } from './nextSessionAdvice';
 import { buildPlateauConclusion, isLiftHeldForCaution, isLiftPlateaued, withProgrammeReads } from './proInsights';
+import type { ProgressionFatigueSignal } from './progressionGate';
 import { localizeSessionName } from './sessionNameLabel';
 import { isHoldLogEntry } from './holdExercises';
 import { isMinutesLogEntry } from './minutesExercises';
@@ -151,6 +152,12 @@ export interface SessionAnalysisInput {
    * about a weight (lib/nextSessionAdvice).
    */
   lookupTemplate?: AdviceTemplateLookup | null;
+  /**
+   * The recovery signal the next start will read, for the advice about it.
+   * Pass it only for the newest session: an older one's next start has
+   * already happened. Left out, recovery reads as clear.
+   */
+  fatigueSignal?: ProgressionFatigueSignal;
 }
 
 const MAX_VOLUME_BARS = 6;
@@ -199,6 +206,7 @@ export function buildSessionAnalysis({
   cautionFlags = null,
   level = null,
   lookupTemplate = null,
+  fatigueSignal,
 }: SessionAnalysisInput): SessionAnalysis | null {
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session) {
@@ -482,6 +490,7 @@ export function buildSessionAnalysis({
       logs,
       lookupTemplate,
       level,
+      fatigueSignal,
     });
     const liftName = exerciseNameLabel(language, nextLift.log.exerciseNameSnapshot);
     if (advice.kind === 'raise') {

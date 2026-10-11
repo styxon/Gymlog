@@ -3,7 +3,7 @@ import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/work
 import { ExerciseLog, SetupLevel, WorkoutSession } from '../types/models';
 import { SLOT_HISTORY_LIMIT } from './exerciseHistoryLookup';
 import { getWorkedLogSets } from './exerciseLog';
-import { evaluateProgression, isProgressionReadySession } from './progressionGate';
+import { evaluateProgression, isProgressionReadySession, type ProgressionFatigueSignal } from './progressionGate';
 import { LiftProgrammeRead, normalizedName, sessionTime } from './trainingHistory';
 import { toWorkingHistoryEntry } from './warmupSets';
 
@@ -60,6 +60,12 @@ export interface NextSessionAdviceInput {
   logs: readonly ExerciseLog[];
   lookupTemplate: AdviceTemplateLookup | null | undefined;
   level: SetupLevel | null | undefined;
+  /**
+   * The recovery signal the next start will hand the gate, when the session
+   * advised on is the newest one. Left out, recovery reads as clear: right for
+   * an older session, whose next start has already happened.
+   */
+  fatigueSignal?: ProgressionFatigueSignal;
 }
 
 const SAME_LOAD_KG = 0.001;
@@ -219,6 +225,9 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
     repsMax: exercise.repsMax,
     targetSets: exercise.sets,
     level: input.level,
+    // The start holds a raise while recovery is elevated or high
+    // (programmeStarts passes the same signal): not a raise to promise.
+    fatigueSignal: input.fatigueSignal,
     trackingMode: exercise.trackingMode,
     nowMs: asOfMs,
   });
