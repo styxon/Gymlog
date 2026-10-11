@@ -29,6 +29,11 @@ const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');
 const { buildLiftHistories } = require(L + 'trainingHistory.js');
 const { nextTimeDirection } = require(L + 'aiCoachSystemContext.js');
 const { pickDemoQuestion } = require(L + 'coachDemoMoments.js');
+const {
+  buildAiTrainingContext,
+  normalizeAiCoachTrainingContext,
+} = require(L + 'aiTrainingContext.js');
+const { buildAiCoachContextText } = require(L + 'aiCoachSystemContext.js');
 const { getExerciseProgressSignal, getTrackedExerciseProgress } = require(L + 'progression.js');
 const { t } = require(L + 'i18n.js');
 
@@ -131,6 +136,32 @@ function surfaces(specs, { lookup = programme(), level = 'intermediate' } = {}) 
     lookupTemplate: lookup,
   });
   return { sessions, logs, lifts, lift, advice, analysis, level };
+}
+
+/** The coach's training context for one history, read the way the server reads a posted one. */
+function coachContextFor(specs, { lookup = programme() } = {}) {
+  const { sessions, logs } = sessionsFor(specs);
+  const trackedProgress = getTrackedExerciseProgress({
+    workoutSessions: sessions,
+    exerciseLogs: logs,
+    exerciseTemplates: [],
+    preferences: { strengthGoals: [] },
+  });
+  const context = buildAiTrainingContext({
+    unitPreference: 'kg',
+    activeWorkoutSummary: null,
+    homeSummary: { streak: { sessionsThisWeek: 1, sessionsLast30Days: 3, activity: { days: [] } } },
+    workoutSessions: sessions,
+    exerciseLogs: logs,
+    trackedProgress,
+    readyProgramCount: 3,
+    recommendedProgramId: null,
+    recommendedProgramTitle: null,
+    customProgramTitle: null,
+    adviceTemplateLookup: lookup,
+    now: new Date(2026, 9, 10, 21),
+  });
+  return { context, text: buildAiCoachContextText(normalizeAiCoachTrainingContext(context), 'en') };
 }
 
 const stalledLabel = t('en', 'pro.read.stalled');
@@ -392,6 +423,45 @@ module.exports = [
       assert.equal(isNewestSession(sessions, 'b'), true);
       assert.equal(isNewestSession(sessions, 'c'), false);
       assert.equal(isNewestSession(sessions, 'gone'), false);
+    },
+  },
+  // ── The coach context follows the same stall rule ──────────────────────────
+  {
+    name: 'hunt12 coach: a lift on the gate\'s schedule is not "no rep gain" or a plateau in the coach context',
+    run() {
+      const onPlan = coachContextFor(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8)));
+      const lift = onPlan.context.history.lifts.find((entry) => entry.name === 'Bench Press');
+      assert.equal(lift.stalledSessions, 3);
+      assert.equal(lift.onSchedule, true);
+      assert.ok(!onPlan.context.plateaus.some((entry) => entry.name === 'Bench Press'), JSON.stringify(onPlan.context.plateaus));
+      assert.doesNotMatch(onPlan.text, /Bench Press: no rep gain/);
+      assert.match(onPlan.text, /Bench Press: at the programme's top reps at 100 kg for 3 sessions/);
+      assert.doesNotMatch(onPlan.text, /Bench Press: \d+ sessions at 100 kg without improvement/);
+
+      const short = coachContextFor(weekly(flat(100, 6, 6, 6), flat(100, 6, 6, 6), flat(100, 6, 6, 6)));
+      const stuck = short.context.history.lifts.find((entry) => entry.name === 'Bench Press');
+      assert.ok(!('onSchedule' in stuck));
+      assert.match(short.text, /Bench Press: no rep gain at 100 kg for 3 sessions/);
+      assert.ok(short.context.plateaus.some((entry) => entry.name === 'Bench Press'));
+
+      // No programme to read: the count stands, as before.
+      const bare = coachContextFor(weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8)), { lookup: null });
+      assert.match(bare.text, /Bench Press: no rep gain at 100 kg for 3 sessions/);
+    },
+  },
+  {
+    name: 'hunt12 coach: the on-schedule mark is optional on the wire and only ever true',
+    run() {
+      const posted = (onSchedule) =>
+        normalizeAiCoachTrainingContext({
+          history: {
+            lifts: [{ name: 'Bench Press', weightSeriesKg: [100, 100, 100], stalledSessions: 3, latestWeightKg: 100, onSchedule }],
+          },
+        }).history.lifts[0];
+      assert.equal(posted(true).onSchedule, true);
+      assert.ok(!('onSchedule' in posted(undefined)));
+      assert.ok(!('onSchedule' in posted('yes')));
+      assert.ok(!('onSchedule' in posted(false)));
     },
   },
 ];

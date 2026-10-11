@@ -361,8 +361,12 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
     // 2026-10-01), not from when the weight last changed. Under two it says
     // nothing either way — one session at a weight, or a new best — so the
     // line claims no trend in reps at all.
-    const flat =
-      lift.stalledSessions >= 2
+    // At the programme's top reps on every set, reps cannot rise: the run is
+    // the app's schedule for adding weight, not a stall (hunt, 2026-10-11).
+    const onSchedule = lift.onSchedule === true;
+    const flat = onSchedule
+      ? `at the programme's top reps at ${trim(lift.latestWeightKg)} kg for ${lift.stalledSessions} sessions — the app adds weight on its own schedule, so this is not a stall`
+      : lift.stalledSessions >= 2
         ? `no rep gain at ${trim(lift.latestWeightKg)} kg for ${lift.stalledSessions} sessions`
         : `held at ${trim(lift.latestWeightKg)} kg`;
     const moved = `${lift.changeKg > 0 ? '+' : ''}${trim(lift.changeKg)} kg over ${lift.spanDays} day${lift.spanDays === 1 ? '' : 's'}`;
@@ -378,7 +382,7 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
         : `${moved}, ${heldText}`
       : lift.changeKg === 0
         ? flat
-        : lift.stalledSessions >= 3
+        : lift.stalledSessions >= 3 && !onSchedule
           ? `${moved}, but ${flat}`
           : moved;
     const best =

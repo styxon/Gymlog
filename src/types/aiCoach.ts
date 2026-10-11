@@ -162,6 +162,13 @@ export interface AICoachHistoryLift {
   stalledSessions: number;
   /** Top-set weight per logged session, oldest first. */
   weightSeriesKg: number[];
+  /**
+   * True when the latest session reached the programme's top reps on every
+   * set it asks for: the run without a rep best is the progression gate's
+   * schedule, not a stall (lib/nextSessionAdvice readLiftProgramme). Absent
+   * otherwise, and from an app older than the mark.
+   */
+  onSchedule?: true;
 }
 
 export interface AICoachHistoryRepsLift {
