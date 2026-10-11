@@ -156,9 +156,11 @@ module.exports = [
     },
   },
   {
-    name: 'bodyweight, holds, a skipped lift, Pro off and a malformed stored target are left alone',
+    name: 'minutes, holds, a skipped lift, Pro off and a malformed stored target are left alone',
     run() {
-      assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'bodyweight' }), null);
+      // Bodyweight gets the lowered target since 2026-10-11 (owner, A3-7):
+      // tests/lib/hunt12ProgressionGate.test.cjs.
+      assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'duration_minutes' }), null);
       assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'hold' }), null);
       assert.equal(rule([entry([7, 6, 4, 4], { skipped: true })]), null);
       assert.equal(rule([entry([7, 6, 4, 4])], { automatedProgressionEnabled: false }), null);

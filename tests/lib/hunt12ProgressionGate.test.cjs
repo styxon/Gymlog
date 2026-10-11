@@ -584,4 +584,99 @@ module.exports = [
       });
     },
   },
+
+  // ── A3-7 (owner, 2026-10-11): a bodyweight lift that fell short gets a target it can meet ──
+  {
+    name: 'hunt12 A3-7: bodyweight 6/5/4 on 8-12 asks for 5, then climbs; holds and minutes are left alone',
+    run() {
+      const rule = (history, overrides = {}) =>
+        resolveMissedRepsTarget({
+          history,
+          repsMin: 8,
+          targetSets: 3,
+          trackingMode: 'bodyweight',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+          ...overrides,
+        });
+      assert.deepEqual(rule([entry(ago(3), [6, 5, 4], 0)]), { targetReps: 5, fromAverage: 5 });
+      // Given 5 and met on every set: one more; past it on every set: two more.
+      assert.deepEqual(rule([entry(ago(3), [5, 5, 5], 0, { targetReps: 5 })]), { targetReps: 6, fromAverage: null });
+      assert.deepEqual(rule([entry(ago(3), [6, 6, 6], 0, { targetReps: 5 })]), { targetReps: 7, fromAverage: null });
+      // Recovery does not hold the climb (rule 6); a flagged area repeats it.
+      assert.equal(rule([entry(ago(3), [5, 5, 5], 0, { targetReps: 5 })], { cautionArea: 'shoulders' }).targetReps, 5);
+      // The floor met: the reps gate takes over.
+      assert.equal(rule([entry(ago(3), [8, 8, 8], 0)]), null);
+      // Seconds and minutes, and Free, are left alone.
+      assert.equal(rule([entry(ago(3), [6, 5, 4], 0)], { trackingMode: 'hold' }), null);
+      assert.equal(rule([entry(ago(3), [6, 5, 4], 0)], { trackingMode: 'duration_minutes' }), null);
+      assert.equal(rule([entry(ago(3), [6, 5, 4], 0)], { automatedProgressionEnabled: false }), null);
+
+      // The reps gate's floor never competes: a session short of the floor
+      // proves only the template, so the lowered target is the one that differs.
+      const short = [entry(ago(3), [6, 5, 4], 0), entry(ago(6), [6, 6, 6], 0)];
+      const raised = resolveProgressedReps({
+        history: short,
+        templateTargetReps: 12,
+        targetSets: 3,
+        level: 'beginner',
+        trackingMode: 'bodyweight',
+        automatedProgressionEnabled: true,
+        nowMs: NOW_UTC,
+      });
+      assert.equal(raised.progressed, false);
+      assert.equal(raised.targetReps, 12);
+    },
+  },
+  {
+    name: 'hunt12 A3-7: a pull-up that fell short opens every set on the lowered target, no AUTO arrow',
+    run() {
+      const exercise = {
+        id: 'e_pu',
+        exerciseName: 'Pull-Up',
+        slotId: 'pu',
+        role: 'primary',
+        progressionPriority: 'high',
+        trackingMode: 'bodyweight',
+        sets: 3,
+        repsMin: 8,
+        repsMax: 12,
+        restSecondsMin: 90,
+        restSecondsMax: 120,
+        substitutionGroup: 'pull',
+      };
+      const template = {
+        id: 'tpl_pu',
+        name: 'Pull',
+        defaultScheduleMode: 'weekly',
+        sessions: [{ id: 'day_a', name: 'Pull', orderIndex: 0, exercises: [exercise] }],
+      };
+      const nowMs = Date.parse('2026-10-10T09:00:00.000Z');
+      const empty = {
+        activeSession: null,
+        completionSummary: null,
+        history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null },
+        nowMs: 0,
+      };
+      const start = (state, automatedProgressionEnabled) =>
+        workoutReducer(state, {
+          type: 'session/startFromRuntimeTemplate',
+          payload: {
+            template,
+            sessionOrderIndex: 0,
+            unitPreference: 'kg',
+            progression: { automatedProgressionEnabled, setupLevel: 'beginner', nowMs },
+          },
+        });
+      const slotId = start(empty, false).activeSession.exercises[0].slotId;
+      const last = entry('2026-10-07T09:00:00.000Z', [6, 5, 4], 0, { slotId, exerciseName: 'Pull-Up' });
+      const state = { ...empty, history: { ...empty.history, slotHistory: { [slotId]: [last] } } };
+      const sets = start(state, true).activeSession.exercises[0].sets;
+      assert.deepEqual(sets.map((set) => set.plannedTargetReps), [5, 5, 5]);
+      assert.deepEqual(sets.map((set) => set.autoProgressedFromReps), [undefined, undefined, undefined]);
+      // Free: the programme's reps, as before.
+      const free = start(state, false).activeSession.exercises[0].sets;
+      assert.deepEqual(free.map((set) => set.plannedTargetReps), [undefined, undefined, undefined]);
+    },
+  },
 ];

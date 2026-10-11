@@ -789,8 +789,11 @@ function givenTarget(entry: WorkoutSlotHistoryEntry, repsMin: number): number | 
  *
  * The target the app gave is read back from the history entry, because "one
  * more than last time's target" cannot be worked out from the reps alone.
- * Bodyweight work progresses by reps already, and a hold is seconds: both are
- * left alone. Pro, like the rest of automated progression (user, 2026-09-28).
+ * A hold is seconds and a bout is minutes: both are left alone. Bodyweight
+ * work gets the target too (owner, 2026-10-11): 6/5/4 pull-ups on 8-12 asked
+ * for 12, the same impossible ask the rule was written for. Its reps still
+ * only rise through the reps gate; this asks for no more than the programme
+ * did. Pro, like the rest of automated progression (user, 2026-09-28).
  *
  * On a lift that loads a flagged area the climb is withheld, as the ramp
  * rule's +1 is: the target repeats what the sets last did rather than asking
@@ -805,7 +808,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   if (!input.automatedProgressionEnabled || !(repsMin > 0) || !(targetSets > 0)) {
     return null;
   }
-  if (isUnloadedMode(trackingMode)) {
+  if (isUnloadedMode(trackingMode) && readStoredTrackingMode(trackingMode) !== 'bodyweight') {
     return null;
   }
   // The newest entry that logged something — the same reading the set
