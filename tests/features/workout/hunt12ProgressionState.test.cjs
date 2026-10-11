@@ -425,6 +425,69 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A5-1: after a rep-range edit the slot reads its old sessions as borrowed: no AUTO, no lowered target off another range',
+    run() {
+      withHelsinkiClocks(() => {
+        const key = keyOf('bench');
+        const dosed = (reps, kg, min, max, iso) => entry(iso, reps, kg, { slotId: key, dose: { trackingMode: 'load_and_reps', repsMin: min, repsMax: max } });
+        const slot = (min, max) => template([{ slotId: 'bench', name: 'Bench Press', sets: 3, repsMin: min, repsMax: max }]);
+        const panel = (state, tpl) => {
+          const ex = exerciseOf(state);
+          return resolveLastTimeEntry({
+            slotHistory: state.history.slotHistory, slotId: ex.slotId, templateSlotId: 'bench', exerciseName: 'Bench Press',
+            requireLoaded: true, repWindow: { min: tpl.sessions[0].exercises[0].repsMin, max: tpl.sessions[0].exercises[0].repsMax }, nowMs: Date.parse(W3),
+          });
+        };
+        // 4-6 history, the slot now 12-15: it opened 120 kg with a lowered target of 5.
+        const heavy = stateWith({ [key]: [dosed([5, 5, 5], 120, 4, 6, W2), dosed([5, 5, 5], 120, 4, 6, W1)] });
+        const up = start(heavy, slot(12, 15), W3, { setupLevel: 'intermediate' });
+        assert.deepEqual(exerciseOf(up).sets.map((set) => [set.plannedLoadKg, set.autoProgressedFromKg, set.plannedTargetReps]), [[undefined, undefined, undefined], [undefined, undefined, undefined], [undefined, undefined, undefined]]);
+        assert.equal(panel(up, slot(12, 15)), null);
+        // 8-12 history, the slot now 4-6: no AUTO off a ceiling of another range.
+        const light = stateWith({ [key]: [dosed([12, 12, 12], 60, 8, 12, W2), dosed([12, 12, 12], 60, 8, 12, W1)] });
+        const down = start(light, slot(4, 6), W3);
+        assert.deepEqual(autos(down), [null, null, null]);
+        // 5-6 history in a 4-6 slot moved to 6-8: within two reps, still its own and still gated.
+        const near = stateWith({ [key]: [dosed([8, 8, 8], 60, 4, 6, W2), dosed([8, 8, 8], 60, 4, 6, W1)] });
+        assert.deepEqual(autos(start(near, slot(6, 8), W3)), [60, 60, 60]);
+        // Controls: an unchanged range still lowers a short session's target and still raises.
+        const short = stateWith({ [key]: [dosed([5, 5, 5], 60, 8, 12, W2)] });
+        assert.equal(exerciseOf(start(short, BENCH, W3)).sets[0].plannedTargetReps, 5);
+        assert.deepEqual(autos(start(light, BENCH, W3)), [60, 60, 60]);
+        // An entry from before the dose was filed reads as it always did.
+        const old = stateWith({ [key]: [entry(W2, [12, 12, 12], 60, { slotId: key }), entry(W1, [12, 12, 12], 60, { slotId: key })] });
+        assert.deepEqual(autos(start(old, slot(4, 6), W3)), [60, 60, 60]);
+      });
+    },
+  },
+  {
+    name: 'hunt12 A5-1 filing: each entry records the dose its sets were asked for, a swapped lift its own; the loader checks it',
+    run() {
+      withHelsinkiClocks(() => {
+        const s = runSession(stateWith({}), BENCH, W1, [[60, 12], [60, 12], [60, 12]]);
+        assert.deepEqual(s.history.slotHistory[keyOf('bench')][0].dose, { trackingMode: 'load_and_reps', repsMin: 8, repsMax: 12 });
+        const plank = template([{ slotId: 'core', name: 'Plank', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 60 }]);
+        let p = start(stateWith({}), plank, W1);
+        p = logSet(p, 'core', 0, null, 45, addMinutes(W1, 3));
+        p = act(p, 'exercise/swap', { slotId: exerciseOf(p, 'core').slotId, exerciseName: 'Hanging Leg Raise', substitutionGroup: 'grp_core', unitPreference: 'kg' });
+        const swappedMode = exerciseOf(p, 'core').trackingMode;
+        const swappedReps = [exerciseOf(p, 'core').sets[1].plannedRepsMin, exerciseOf(p, 'core').sets[1].plannedRepsMax];
+        p = logSet(p, 'core', 1, swappedMode === 'load_and_reps' ? 10 : null, swappedReps[1], addMinutes(W1, 6));
+        p = finish(p, addMinutes(W1, 30));
+        const filed = p.history.slotHistory[keyOf('core')];
+        const byName = Object.fromEntries(filed.map((item) => [item.exerciseName, item.dose]));
+        assert.deepEqual(byName.Plank, { trackingMode: 'hold', repsMin: 30, repsMax: 60 });
+        assert.deepEqual(byName['Hanging Leg Raise'], { trackingMode: swappedMode, repsMin: swappedReps[0], repsMax: swappedReps[1] });
+        const key = keyOf('bench');
+        const base = entry(W1, [12], 60, { slotId: key });
+        [[{ trackingMode: 'load_and_reps', repsMin: 8, repsMax: 12 }, true], [{ trackingMode: 'lifting', repsMin: 8, repsMax: 12 }, false], [{ trackingMode: 'hold', repsMin: 'x', repsMax: 9 }, false], ['8-12', false], [{ trackingMode: 'hold', repsMin: 9, repsMax: 8 }, false]].forEach(([stored, kept]) => {
+          const bundle = normalizeWorkoutBundle({ history: { sessions: [], slotHistory: { [key]: [{ ...base, dose: stored }] }, lastSelectedTemplateId: null } });
+          assert.equal('dose' in bundle.history.slotHistory[key][0], kept, JSON.stringify(stored));
+        });
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };

@@ -17,7 +17,7 @@ import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
 import { elapsedSecondsOf, restSecondsLeft, restTimerHasEnded, settleSessionClock, workoutSecondsUntil } from '../../lib/sessionClock';
-import { GuidedResumeAnchor, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
+import { GuidedResumeAnchor, ProgrammedDose, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
   resolveMissedRepsTarget,
@@ -37,6 +37,7 @@ import {
 import {
   capSlotEntries,
   entriesForLift,
+  entryMatchesDose,
   findHistoricalSetForIndex,
   findLatestEntryForExerciseName,
   RepWindow,
@@ -277,18 +278,25 @@ function getHistoryEntries(
   legacyRepWindow: RepWindow | null | undefined,
   exerciseName: string,
   nowMs?: number,
+  /**
+   * The dose the slot asks for now: an entry filed under another is read as
+   * borrowed — left to the name lookup, which may prefill from it and never
+   * gates on it (exerciseHistoryLookup entryMatchesDose). Absent: every entry.
+   */
+  dose?: ProgrammedDose | null,
 ) {
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => entryMatchesDose(entry, dose);
   // Only the entries that were this lift: a swap writes under the same slot id
   // (see entriesForLift).
-  const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName);
+  const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName).filter(matchesDose);
   // Something real under the scoped key: that is the answer. A key holding
   // only skipped days is not — it says the lift did not happen here.
   if (selectLatestUsableEntry(scopedEntries, nowMs) || !templateSlotId) {
     return scopedEntries;
   }
 
-  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs);
-  return legacy ? entriesForLift(history.slotHistory[templateSlotId], exerciseName) : scopedEntries;
+  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, matchesDose);
+  return legacy ? entriesForLift(history.slotHistory[templateSlotId], exerciseName).filter(matchesDose) : scopedEntries;
 }
 
 export function getHistoryEntriesForExercise(
@@ -626,7 +634,8 @@ function resolveHistoricalSetDraft(
   // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
   // an ordinary set neither seeds set 1 nor climbs with the work.
   const nowMs = options.nowMs ?? Date.now();
-  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs)
+  const dose = { trackingMode: exercise.trackingMode, repsMin: exercise.repsMin, repsMax: exercise.repsMax };
+  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs, dose)
     .map((entry) => toWorkingHistoryEntry(entry, exercise.programmeSets ?? exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
@@ -2565,6 +2574,21 @@ function plannedSetsOf(exercise: WorkoutExerciseInstance) {
 }
 
 /**
+ * The mode and rep range a lift's sets were asked for, filed with its entry so
+ * a later programme edit can tell its history from the slot's new dose
+ * (exerciseHistoryLookup entryMatchesDose). Off a set logged as that lift —
+ * the sets still ahead of a swap are converted to the next lift's dose — else
+ * its first set.
+ */
+function doseOf(segment: { trackingMode: WorkoutTrackingMode; sets: WorkoutSetInstance[] }): { dose?: ProgrammedDose } {
+  const asked = segment.sets.find((set) => set.status === 'completed') ?? segment.sets[0];
+  if (!asked || !Number.isFinite(asked.plannedRepsMin) || !Number.isFinite(asked.plannedRepsMax)) {
+    return {};
+  }
+  return { dose: { trackingMode: segment.trackingMode, repsMin: asked.plannedRepsMin, repsMax: asked.plannedRepsMax } };
+}
+
+/**
  * Logged sessions (see 'history/recordLogged'), filed under their lifts.
  *
  * Each lift's list is put in date order before the cap, not just prepended
@@ -2700,6 +2724,7 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       // the next can ask one more (lib/progressionGate resolveMissedRepsTarget).
       ...loweredTargetOf(segment),
       ...plannedSetsOf(exercise),
+      ...doseOf(segment),
       // Warm-ups come before the first working set, so they belong to the lift
       // the slot started as: the first segment.
       ...(segmentIndex === 0 && warmups.length > 0 ? { warmups } : {}),

@@ -503,6 +503,14 @@ export interface WorkoutSlotHistoryEntry {
    */
   plannedSets?: number;
   /**
+   * The mode and rep range the sets were asked for. A programme edit keeps
+   * the slot, so without it a 4-6 history opened a slot edited to 12-15 at
+   * 120 kg with a lowered target of 5; an entry whose dose differs from the
+   * slot's now is read as borrowed (lib/exerciseHistoryLookup entryMatchesDose).
+   * Absent on entries saved before 2026-10-11, which read as the slot's own.
+   */
+  dose?: ProgrammedDose;
+  /**
    * The reps every set was asked for, when the app lowered them below the
    * programme's floor after a short session (lib/progressionGate
    * resolveMissedRepsTarget). Kept so the next session can ask one more.

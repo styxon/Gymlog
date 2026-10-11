@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
 const { evaluateProgression, isProgressionReadySession } = require('../../.test-dist/lib/progressionGate.js');
+const lookup = require('../../.test-dist/lib/exerciseHistoryLookup.js');
 
 /**
  * Automatic progression, the pure half of the stored state (hunt 12, fixer F2):
@@ -45,6 +46,28 @@ module.exports = [
           assert.equal(isProgressionReadySession({ ...unmarked, plannedSets: junk }, 12, 3), false, `plannedSets ${JSON.stringify(junk)}`);
         });
       });
+    },
+  },
+  {
+    name: 'hunt12 A5-1/A2-8 lookup: an own entry under another dose is not the slot own history; Last time without a dose reads the same off its window',
+    run() {
+      const dose = (trackingMode, repsMin, repsMax) => ({ trackingMode, repsMin, repsMax });
+      const filed = entry(at(2026, 10, 1), [12, 12, 12], 60, { dose: dose('load_and_reps', 8, 12) });
+      assert.equal(lookup.entryMatchesDose(filed, dose('load_and_reps', 8, 12)), true);
+      assert.equal(lookup.entryMatchesDose(filed, dose('load_and_reps', 6, 10)), true, 'two reps either end is the same dose');
+      assert.equal(lookup.entryMatchesDose(filed, dose('load_and_reps', 4, 6)), false);
+      assert.equal(lookup.entryMatchesDose(filed, dose('bodyweight', 8, 12)), false);
+      assert.equal(lookup.entryMatchesDose({ ...filed, dose: undefined }, dose('hold', 30, 60)), true, 'an entry from before the dose');
+      assert.equal(lookup.entryMatchesDose(filed, null), true);
+      const slotHistory = { 'tpl:day:bench': [filed] };
+      const query = { slotHistory, slotId: 'tpl:day:bench', templateSlotId: 'bench', exerciseName: 'Bench Press', nowMs: Date.parse(at(2026, 10, 8)) };
+      // The set screen's query: requireLoaded and the rep window, no dose.
+      assert.equal(lookup.resolveLastTimeEntry({ ...query, requireLoaded: true, repWindow: { min: 8, max: 12 } }).borrowed, false);
+      assert.equal(lookup.resolveLastTimeEntry({ ...query, requireLoaded: true, repWindow: { min: 4, max: 6 } }), null);
+      // Now bodyweight: 12 reps of a loaded lift are borrowed, not its own.
+      const asBodyweight = lookup.resolveLastTimeEntry({ ...query, requireLoaded: false, repWindow: null });
+      assert.equal(asBodyweight.borrowed, true);
+      assert.equal(lookup.resolveLastTimeEntry({ ...query, dose: dose('load_and_reps', 4, 6), repWindow: { min: 4, max: 6 } }), null);
     },
   },
 ];

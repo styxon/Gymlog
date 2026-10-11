@@ -20,7 +20,8 @@
  * `entryMatchesRepWindow`.
  */
 
-import { WorkoutSlotHistoryEntry, WorkoutSlotHistorySet } from '../features/workout/workoutTypes';
+import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
+import type { ProgrammedDose, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet } from '../features/workout/workoutTypes';
 
 function normalizeExerciseName(name: string): string {
   return name.trim().toLowerCase();
@@ -198,6 +199,62 @@ export function entryMatchesRepWindow(
 }
 
 /**
+ * Whether a slot's own entry was run under the dose the slot asks for now.
+ *
+ * A programme edit keeps the slot's id, so the slot's own history ran under
+ * whatever range it had then: 4-6 history opened a slot edited to 12-15 at
+ * 120 kg with a lowered target of 5, and 12-rep history earned AUTO in a 4-6
+ * slot (hunt, 2026-10-11). An entry whose recorded dose differs — another
+ * mode, or a range end more than REP_WINDOW_TOLERANCE away — is not this
+ * slot's history any more: it may still be borrowed by name, never gated.
+ * Read by the dose recorded at filing, not by the reps performed: a short
+ * session in an unchanged programme is exactly what the missed-reps target
+ * reads. An entry with no dose (saved before it was recorded), or no dose to
+ * compare with, matches.
+ */
+export function entryMatchesDose(
+  entry: WorkoutSlotHistoryEntry,
+  dose: ProgrammedDose | null | undefined,
+): boolean {
+  const recorded = entry.dose;
+  if (!recorded || !dose) {
+    return true;
+  }
+  return (
+    readStoredTrackingMode(recorded.trackingMode) === readStoredTrackingMode(dose.trackingMode) &&
+    Math.abs(recorded.repsMin - dose.repsMin) <= REP_WINDOW_TOLERANCE &&
+    Math.abs(recorded.repsMax - dose.repsMax) <= REP_WINDOW_TOLERANCE
+  );
+}
+
+/**
+ * The same test for a "Last time" query that names no dose: as much of it as
+ * the query's own fields say — loaded or not, and the rep window of a loaded
+ * lift — so the panel agrees with the prefill without being told the mode.
+ */
+function queryMatchesDose(entry: WorkoutSlotHistoryEntry, query: LastTimeQuery): boolean {
+  if (query.dose) {
+    return entryMatchesDose(entry, query.dose);
+  }
+  const recorded = entry.dose;
+  if (!recorded) {
+    return true;
+  }
+  const mode = readStoredTrackingMode(recorded.trackingMode);
+  const unloaded = mode !== null && isUnloadedTrackingMode(mode);
+  if (typeof query.requireLoaded === 'boolean' && query.requireLoaded === unloaded) {
+    return false;
+  }
+  const window = query.repWindow;
+  return (
+    !window ||
+    unloaded ||
+    (Math.abs(recorded.repsMin - window.min) <= REP_WINDOW_TOLERANCE &&
+      Math.abs(recorded.repsMax - window.max) <= REP_WINDOW_TOLERANCE)
+  );
+}
+
+/**
  * A session that actually happened: not skipped, and with sets in it.
  *
  * Exported for the sheet's History tab, which lists a slot's entries: a
@@ -307,6 +364,12 @@ export interface LastTimeQuery {
   repWindow?: RepWindow | null;
   /** The present: an entry dated after it is not the newest (rankTime). */
   nowMs?: number;
+  /**
+   * The mode and range the slot asks for now: the slot's own entries filed
+   * under another are borrowed, not its own (entryMatchesDose). Absent, the
+   * query's requireLoaded and repWindow stand in for it.
+   */
+  dose?: ProgrammedDose | null;
 }
 
 export interface ResolvedLastTime {
@@ -335,8 +398,10 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   // The scoped key is this day's own history, and it is never gated: whatever
   // reps were done here last time, they were done HERE.
   // …as long as it was THIS lift. See entriesForLift.
+  // …and run under the dose the slot asks for now (entryMatchesDose).
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => queryMatchesDose(entry, query);
   const scoped = selectLatestUsableEntry(
-    entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName),
+    entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName).filter(matchesDose),
     query.nowMs,
   );
   if (scoped) {
@@ -349,6 +414,7 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
     query.repWindow,
     query.exerciseName,
     query.nowMs,
+    matchesDose,
   );
   if (legacy) {
     return { entry: legacy, borrowed: false };
@@ -378,11 +444,14 @@ export function selectLegacySlotEntry(
   repWindow: RepWindow | null | undefined,
   exerciseName?: string | null,
   nowMs?: number,
+  /** The slot's dose test (entryMatchesDose); absent, every entry. */
+  matchesDose?: (entry: WorkoutSlotHistoryEntry) => boolean,
 ): WorkoutSlotHistoryEntry | null {
   if (!templateSlotId) {
     return null;
   }
-  const latest = selectLatestUsableEntry(entriesForLift(slotHistory?.[templateSlotId], exerciseName), nowMs);
+  const entries = entriesForLift(slotHistory?.[templateSlotId], exerciseName);
+  const latest = selectLatestUsableEntry(matchesDose ? entries.filter(matchesDose) : entries, nowMs);
   if (!latest || !entryMatchesRepWindow(latest, repWindow)) {
     return null;
   }

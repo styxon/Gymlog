@@ -164,6 +164,8 @@ function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[
   normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
   // The sets a lighter session asked for (Q3, 2026-10-11).
   normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
+  // The dose the sets were asked for (2026-10-11): a known mode and a range.
+  normalized = withOptional(normalized, 'dose', normalizeProgrammedDose(entry.dose));
   // When the session started (2026-10-11): a date, or nothing.
   normalized = withOptional(
     normalized,
