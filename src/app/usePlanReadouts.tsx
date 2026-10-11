@@ -7,7 +7,8 @@ import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
 import { t, type I18nKey } from '../lib/i18n';
-import type { AdviceTemplateLookup } from '../lib/nextSessionAdvice';
+import { isNewestSession, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
+import { progressionFatigueSignalAt } from '../lib/progressionGate';
 import { buildSessionAnalysis } from '../lib/sessionAnalysis';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
 import type { ExportablePlan } from '../screens/ExportPlanScreen';
@@ -126,6 +127,15 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
             level: preferences.setupLevel,
             // The programme the session was started from, for the gate's rep range.
             lookupTemplate: adviceTemplateLookup,
+            // The recovery hold the next start applies, read as a start reads
+            // it, and only for the newest session: an older one's next start
+            // has already happened.
+            fatigueSignal: isNewestSession(workoutSessions, analysisSessionId)
+              ? progressionFatigueSignalAt(
+                  { workoutSessions: database.workoutSessions, exerciseLogs: database.exerciseLogs },
+                  new Date(),
+                )
+              : undefined,
             // The week the analysed session filled, not the week the reader
             // is in: right after a week's last session those are two weeks,
             // and the analysis read "WEEK 2" beside a summary that had just
@@ -150,6 +160,8 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
       preferences.appLanguage,
       preferences.setupCautionFlags,
       preferences.setupLevel,
+      // The recovery read is dated: the windows count back from today.
+      todayStartMs,
       workoutSessions,
     ],
   );

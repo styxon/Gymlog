@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 
 import { buildFatigueModel } from '../lib/fatigueModel';
-import { buildNextSessionAdvice, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
+import { buildNextSessionAdvice, isNewestSession, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import {
   buildCompletionConclusion,
   buildNextSessionMoment,
@@ -13,6 +13,7 @@ import {
   pickCompletionLift,
   plateauEpisodeKey,
   recentLifts,
+  withProgrammeReads,
 } from '../lib/proInsights';
 import { toProgressionFatigueSignal } from '../lib/progressionGate';
 import { buildLiftHistories } from '../lib/trainingHistory';
@@ -64,9 +65,18 @@ export function useProInsights(deps: ProInsightsDeps) {
 
   // The paywall-moments data layer: real lift histories → detections (free)
   // and deterministic conclusions (Pro / blurred). Pure, from logged sets.
+  // Read against the programme rows their latest sessions were logged under:
+  // a lift on the gate's schedule is not a plateau (hunt, 2026-10-11). Home's
+  // card, the weekly read, the in-workout reminder and the coach demo all
+  // read these histories.
   const proLiftHistories = useMemo(
-    () => buildLiftHistories(database.workoutSessions, database.exerciseLogs),
-    [database.exerciseLogs, database.workoutSessions],
+    () =>
+      withProgrammeReads(buildLiftHistories(database.workoutSessions, database.exerciseLogs), {
+        sessions: database.workoutSessions,
+        logs: database.exerciseLogs,
+        lookupTemplate: adviceTemplateLookup,
+      }),
+    [adviceTemplateLookup, database.exerciseLogs, database.workoutSessions],
   );
   const proFatigue = useMemo(
     () =>
@@ -156,6 +166,11 @@ export function useProInsights(deps: ProInsightsDeps) {
       logs: database.exerciseLogs,
       lookupTemplate: adviceTemplateLookup,
       level: preferences.setupLevel,
+      // The recovery hold the next start applies, said only of the newest
+      // session: an older one's next start has already happened.
+      fatigueSignal: isNewestSession(database.workoutSessions, proCompletionLift.latest.sessionId)
+        ? progressionFatigueSignal
+        : undefined,
     });
     const conclusion = buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice);
     // No change from the gate and no plateau: no lock, rather than one that promises a change.
@@ -172,6 +187,7 @@ export function useProInsights(deps: ProInsightsDeps) {
     database.workoutSessions,
     preferences.appLanguage,
     preferences.setupLevel,
+    progressionFatigueSignal,
     proCompletionLift,
   ]);
   // The Pro page's coach specimen: the deterministic read of the user's own

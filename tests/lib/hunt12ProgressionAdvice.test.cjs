@@ -1,5 +1,10 @@
 process.env.TZ = process.env.TZ || 'Europe/Helsinki';
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+
+const read = (...parts) =>
+  fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8').split('\r\n').join('\n');
 
 /**
  * Progression hunt 12, advice cluster: what the stall surfaces, the Pro
@@ -7,7 +12,7 @@ const assert = require('node:assert/strict');
  * session, held against the progression gate's own answer.
  */
 const L = '../../.test-dist/lib/';
-const { buildNextSessionAdvice, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
+const { buildNextSessionAdvice, isNewestSession, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
 const {
   buildCompletionConclusion,
   buildNextSessionMoment,
@@ -349,6 +354,44 @@ module.exports = [
       assert.equal(pushUps([12, 12, 12], [13, 13, 12]), 'new_best');
       assert.equal(pushUps([12, 12, 12], [10, 10, 10]), 'below_last');
       assert.equal(pushUps([14, 14, 14], [12, 12, 12], [13, 13, 13]), 'moving_up');
+    },
+  },
+
+  // ── Wiring: the app reads the fixed functions ──────────────────────────────
+  {
+    name: 'hunt12 wiring: the Pro insights read lift histories against their programme rows',
+    run() {
+      const source = read('src', 'app', 'useProInsights.ts');
+      // Every stall surface — Home's card, the weekly read, the in-workout
+      // reminder and the coach demo — reads proLiftHistories.
+      assert.match(
+        source,
+        /const proLiftHistories = useMemo\(\s*\(\) =>\s*withProgrammeReads\(buildLiftHistories\(database\.workoutSessions, database\.exerciseLogs\), \{\s*sessions: database\.workoutSessions,\s*logs: database\.exerciseLogs,\s*lookupTemplate: adviceTemplateLookup,/,
+      );
+      assert.match(source, /\[adviceTemplateLookup, database\.exerciseLogs, database\.workoutSessions\],/);
+    },
+  },
+  {
+    name: 'hunt12 wiring: the completion lock and the analysis read recovery for the newest session only',
+    run() {
+      const insights = read('src', 'app', 'useProInsights.ts');
+      assert.match(
+        insights,
+        /fatigueSignal: isNewestSession\(database\.workoutSessions, proCompletionLift\.latest\.sessionId\)\s*\? progressionFatigueSignal\s*: undefined,/,
+      );
+      const readouts = read('src', 'app', 'usePlanReadouts.tsx');
+      assert.match(
+        readouts,
+        /fatigueSignal: isNewestSession\(workoutSessions, analysisSessionId\)\s*\? progressionFatigueSignalAt\(/,
+      );
+      const sessions = [
+        { id: 'a', performedAt: dayAt(7) },
+        { id: 'b', performedAt: dayAt(0) },
+        { id: 'c', performedAt: dayAt(3) },
+      ];
+      assert.equal(isNewestSession(sessions, 'b'), true);
+      assert.equal(isNewestSession(sessions, 'c'), false);
+      assert.equal(isNewestSession(sessions, 'gone'), false);
     },
   },
 ];

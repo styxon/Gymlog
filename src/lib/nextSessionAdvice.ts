@@ -253,6 +253,21 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
 }
 
 /**
+ * Whether a session is the newest one logged: the only session whose next
+ * start is still to come, so the only one the recovery signal of now is
+ * about. Ties keep the first in the list.
+ */
+export function isNewestSession(sessions: readonly WorkoutSession[], sessionId: string | null | undefined): boolean {
+  let newest: WorkoutSession | null = null;
+  for (const session of sessions) {
+    if (!newest || sessionTime(session) > sessionTime(newest)) {
+      newest = session;
+    }
+  }
+  return newest !== null && newest.id === sessionId;
+}
+
+/**
  * Where a lift stands against its programme row at a session: whether that
  * session reached the row's top reps on every set the row asks for — the
  * gate's own test of a session that earns a raise (isProgressionReadySession)
