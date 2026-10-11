@@ -13,6 +13,8 @@ import {
 } from './trainingHistory';
 import { AppLanguage, ExerciseLog, SetupCautionFlag, WorkoutSession } from '../types/models';
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
+import type { AdviceTemplateLookup } from './nextSessionAdvice';
+import { isLiftPlateaued, withProgrammeReads } from './proInsights';
 import { removeTrailingZeros } from './format';
 import { WeightedSet, beatsBest } from './personalRecords';
 
@@ -82,6 +84,12 @@ export interface CoachModulesInput {
   now?: Date;
   /** Flagged body areas: a lift held for one is not a stall to suggest a fix for. */
   cautionFlags?: SetupCautionFlag[] | null;
+  /**
+   * Finds the programme a session was started from (app/adviceTemplateLookup):
+   * a lift whose latest session reached the programme's top reps on every set
+   * is on the gate's schedule, not stuck. Left out, the count alone.
+   */
+  lookupTemplate?: AdviceTemplateLookup | null;
 }
 
 const DEFAULT_RECENT_DAYS = 21;
@@ -261,11 +269,14 @@ function buildSuggestion(
   logs: ExerciseLog[],
   language: AppLanguage,
   cautionFlags?: SetupCautionFlag[] | null,
+  lookupTemplate?: AdviceTemplateLookup | null,
 ): CoachSuggestionModule | null {
   // The only suggestion this build can make honestly: a lift whose top set has
-  // not moved across three or more logged sessions.
-  for (const lift of buildLiftHistories(sessions, logs)) {
-    if (lift.stalledSessions < 3) {
+  // not moved across three or more logged sessions, the newest of them short
+  // of the programme's top reps — the plateau card's rule. At the ceiling on
+  // every set the gate raises on its own schedule (hunt, 2026-10-11).
+  for (const lift of withProgrammeReads(buildLiftHistories(sessions, logs), { sessions, logs, lookupTemplate })) {
+    if (!isLiftPlateaued(lift)) {
       continue;
     }
     // Held on purpose for a flagged area: the plan is working, not stuck.
@@ -300,6 +311,7 @@ export function buildCoachModules({
   recentDays = DEFAULT_RECENT_DAYS,
   now = new Date(),
   cautionFlags,
+  lookupTemplate = null,
 }: CoachModulesInput): CoachModules {
   // Calendar stepping, and a reference date rather than Date.now() read inline:
   // the first keeps the edge on the time of day the window claims across a
@@ -317,7 +329,7 @@ export function buildCoachModules({
   // is limited to what is recent enough to still be worth commenting on.
   const focus = buildFocus(sessions, logs, language);
   const analysis = buildAnalysis(recent, logs, language);
-  const suggestion = buildSuggestion(sessions, logs, language, cautionFlags);
+  const suggestion = buildSuggestion(sessions, logs, language, cautionFlags, lookupTemplate);
 
   return {
     focus,

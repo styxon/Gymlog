@@ -13,6 +13,7 @@ const read = (...parts) =>
  */
 const L = '../../.test-dist/lib/';
 const { buildNextSessionAdvice, isNewestSession, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
+const { buildCoachModules } = require(L + 'aiCoachModules.js');
 const {
   buildCompletionConclusion,
   buildNextSessionMoment,
@@ -23,6 +24,7 @@ const {
   horizonStepKg,
   isLiftPlateaued,
   nextStepKg,
+  pickCompletionLift,
   withProgrammeReads,
 } = require(L + 'proInsights.js');
 const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');
@@ -98,12 +100,12 @@ function sessionsFor(specs, { name = 'Bench Press', templateId = 'tpl' } = {}) {
   return { sessions, logs };
 }
 
-function programme({ sets = 3, repsMin = 8, repsMax = 8 } = {}) {
+function programme({ sets = 3, repsMin = 8, repsMax = 8, name = 'Bench Press' } = {}) {
   const template = {
     sessions: [
       {
         id: 'day',
-        exercises: [{ exerciseName: 'Bench Press', slotId: 'bench', sets, repsMin, repsMax, trackingMode: 'load_and_reps' }],
+        exercises: [{ exerciseName: name, slotId: 'bench', sets, repsMin, repsMax, trackingMode: 'load_and_reps' }],
       },
     ],
   };
@@ -569,6 +571,54 @@ module.exports = [
       const call = app.slice(app.indexOf('useCoachContext({'), app.indexOf('});', app.indexOf('useCoachContext({')));
       assert.match(call, /\n    adviceTemplateLookup,\n/);
       assert.equal((app.match(/createAdviceTemplateLookup\(/g) ?? []).length, 1);
+    },
+  },
+  // ── A13-4 guard: a lift held for a flagged area is never stuck or raised ───
+  {
+    name: 'hunt12 A13-4: an Overhead Press held for careful shoulders is no plateau and no raise on any surface',
+    run() {
+      const flags = [{ area: 'shoulders', level: 'careful', refinements: [] }];
+      const lookup = programme({ name: 'Overhead Press' });
+      const { sessions, logs } = sessionsFor(weekly(flat(50, 8, 8, 8), flat(50, 8, 8, 8), flat(50, 8, 8, 8)), {
+        name: 'Overhead Press',
+      });
+      const lifts = withProgrammeReads(buildLiftHistories(sessions, logs), { sessions, logs, lookupTemplate: lookup });
+      const lift = lifts.find((entry) => entry.name === 'Overhead Press');
+      assert.equal(isLiftPlateaued(lift, flags), false);
+      assert.equal(detectPlateau(lifts, new Set(), flags), null);
+      assert.equal(pickCompletionLift(lifts, flags, 's2'), null);
+      const rows = buildWeeklyRead(lifts, null, 'en', 'intermediate', flags);
+      assert.ok(rows.every((row) => row.status !== stalledLabel && row.locked === null), JSON.stringify(rows));
+      const analysis = buildSessionAnalysis({
+        sessionId: 's2',
+        sessions,
+        logs,
+        language: 'en',
+        level: 'intermediate',
+        cautionFlags: flags,
+        lookupTemplate: lookup,
+      });
+      assert.ok(
+        analysis.nextActions.every((action) => !/52[.,]5|every set/.test(action.text)),
+        JSON.stringify(analysis.nextActions),
+      );
+    },
+  },
+
+  // ── The coach tab's suggestion follows the same stall rule ─────────────────
+  {
+    name: 'hunt12 A12-1: the coach suggestion does not call a lift on the gate\'s schedule stuck',
+    run() {
+      const modulesFor = (specs, lookupTemplate) => {
+        const { sessions, logs } = sessionsFor(specs);
+        return buildCoachModules({ sessions, logs, language: 'en', lookupTemplate, now: new Date(2026, 9, 10, 21) });
+      };
+      const atCeiling = weekly(flat(100, 8, 8, 8), flat(100, 8, 8, 8), flat(100, 8, 8, 8));
+      assert.equal(modulesFor(atCeiling, programme()).suggestion, null);
+      const short = weekly(flat(100, 6, 6, 6), flat(100, 6, 6, 6), flat(100, 6, 6, 6));
+      assert.ok(modulesFor(short, programme()).suggestion, 'a real stall is still suggested');
+      // No programme to read: the count alone, as before.
+      assert.ok(modulesFor(atCeiling, null).suggestion);
     },
   },
 ];
