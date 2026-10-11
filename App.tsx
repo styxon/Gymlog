@@ -1722,6 +1722,7 @@ function VinhaApp() {
     homeActivePlanCard,
     homePinnedStatCardKeys,
     homeTrainingSchedule,
+    adviceTemplateLookup,
   });
   useLeadPlanRepair({
     appHydrated,

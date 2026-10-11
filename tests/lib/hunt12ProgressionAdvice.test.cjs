@@ -555,4 +555,20 @@ module.exports = [
       assert.deepEqual(posted({ loadKg: 42.5, reps: [10, -1, 10], loads: [42.5, 47.5, 52.5] }), { loadKg: 42.5, reps: [10, 10] });
     },
   },
+  {
+    name: 'hunt12 wiring: the coach context reads the same programme lookup as the advice',
+    run() {
+      const hook = read('src', 'app', 'useCoachContext.ts');
+      assert.match(hook, /adviceTemplateLookup: AdviceTemplateLookup;/);
+      // Passed to the context and listed in that memo's deps.
+      const memo = hook.slice(hook.indexOf('const aiCoachTrainingContext = useMemo('), hook.indexOf('const coachChatIntro'));
+      assert.match(memo, /buildAiTrainingContext\(\{[\s\S]*\n        adviceTemplateLookup,\n[\s\S]*\}\),/);
+      assert.match(memo, /\n      adviceTemplateLookup,\n[\s\S]*\],\n  \);/);
+      // The one lookup App.tsx builds, not a second.
+      const app = read('App.tsx');
+      const call = app.slice(app.indexOf('useCoachContext({'), app.indexOf('});', app.indexOf('useCoachContext({')));
+      assert.match(call, /\n    adviceTemplateLookup,\n/);
+      assert.equal((app.match(/createAdviceTemplateLookup\(/g) ?? []).length, 1);
+    },
+  },
 ];

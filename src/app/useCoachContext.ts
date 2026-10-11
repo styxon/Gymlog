@@ -17,6 +17,7 @@ import type { getHomeSummary } from '../lib/dashboard';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import type { buildFatigueModel } from '../lib/fatigueModel';
 import type { selectHomeCustomProgram } from '../lib/homeProgramSelection';
+import type { AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import type { resolveHomeStatCardKeys } from '../lib/homeStatCards';
 import type { buildWeeklyRead } from '../lib/proInsights';
 import { buildCustomSessionRuntimeTemplate, buildReadySessionRuntimeTemplate } from '../lib/programDetails';
@@ -78,6 +79,12 @@ export interface CoachContextDeps {
     | null;
   homePinnedStatCardKeys: ReturnType<typeof resolveHomeStatCardKeys>;
   homeTrainingSchedule: Parameters<typeof trainsOn>[0];
+  /**
+   * Finds the programme a session was started from (built once in App.tsx):
+   * a lift whose latest session reached the programme's top reps on every set
+   * is told to the coach as on schedule, not stalled — the plateau card's rule.
+   */
+  adviceTemplateLookup: AdviceTemplateLookup;
 }
 
 export function useCoachContext(deps: CoachContextDeps) {
@@ -102,6 +109,7 @@ export function useCoachContext(deps: CoachContextDeps) {
     homeActivePlanCard,
     homePinnedStatCardKeys,
     homeTrainingSchedule,
+    adviceTemplateLookup,
   } = deps;
 
   /**
@@ -215,6 +223,8 @@ export function useCoachContext(deps: CoachContextDeps) {
         // hears the reader's limitations; plannerSetup below never reaches it
         // (nothing sets aiSetupCompleted), so this is where they travel.
         cautionFlags: preferences.setupCautionFlags,
+        // The programme rows, so a lift at its top reps is not called stalled.
+        adviceTemplateLookup,
         plannerSetup: preferences.aiSetupCompleted
           ? {
               goal: preferences.aiPlannerGoal,
@@ -280,6 +290,7 @@ export function useCoachContext(deps: CoachContextDeps) {
       workout.templates.length,
       workoutSessions,
       database.exerciseLogs,
+      adviceTemplateLookup,
     ],
   );
   // Only a session the schedule actually puts on TODAY is "on the plan

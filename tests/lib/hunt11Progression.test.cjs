@@ -333,7 +333,8 @@ module.exports = [
         app,
         /const adviceTemplateLookup = useMemo\(\s*\(\) =>\s*createAdviceTemplateLookup\(\{[^]*?\}\),\s*\[workoutTemplates, getWorkoutTemplateSessions, exerciseLibrary, preferences\.defaultRestSeconds\],\s*\);/,
       );
-      assert.equal(app.match(/\badviceTemplateLookup,/g)?.length, 2);
+      // Handed to the analysis, the Pro insights and (hunt 12) the coach context.
+      assert.equal(app.match(/\badviceTemplateLookup,/g)?.length, 3);
       assert.match(insights, /buildNextSessionAdvice\(/);
       assert.match(insights, /buildCompletionConclusion\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
       assert.match(insights, /buildNextSessionMoment\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
