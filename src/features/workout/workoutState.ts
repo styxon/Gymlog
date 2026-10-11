@@ -718,11 +718,18 @@ function resolveHistoricalSetDraft(
     heldForCautionArea: (heldForCautionArea ?? repsResolution.heldForCautionArea) ?? undefined,
     // This slot's own history — the ordinary case, nothing to explain.
     prefilledFromPerformedAt: undefined,
+    // A raise, a lowered target when the newest session fell short, or the
+    // floor a held bodyweight lift proved (above the template, so never read
+    // as lowered): whichever differs from the template. The last two cannot
+    // both — one is under the programme's reps, the other over its target.
+    // Without the AUTO arrow, which only a raise sets (autoProgressedFromReps).
     plannedTargetReps: repsResolution.progressed
       ? repsResolution.targetReps
       : missedReps
         ? missedReps.targetReps
-        : undefined,
+        : repsResolution.targetReps !== exercise.repsMax
+          ? repsResolution.targetReps
+          : undefined,
     autoProgressedFromReps: repsResolution.fromReps ?? undefined,
     rampTargetReps: rampTarget ?? undefined,
   };

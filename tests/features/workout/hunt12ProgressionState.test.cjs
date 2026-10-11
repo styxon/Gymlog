@@ -345,6 +345,39 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'hunt12 A2-3: a held bodyweight lift opens on the floor the gate returns, with the hold badge and no AUTO arrow',
+    run() {
+      withHelsinkiClocks(() => {
+        // The gate branch (F1) returns the proven floor for a held bodyweight lift; stubbed
+        // here so this half — carrying it onto the set — is tested on its own.
+        const gate = require(D + 'lib/progressionGate.js');
+        const real = gate.resolveProgressedReps;
+        gate.resolveProgressedReps = (input) =>
+          input.trackingMode === 'bodyweight' && input.automatedProgressionEnabled
+            ? { targetReps: 13, progressed: false, fromReps: null, heldForFatigue: true, heldForCautionArea: null }
+            : real(input);
+        try {
+          const tpl = template([{ slotId: 'pull', name: 'Pull-Up', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12 }]);
+          const key = keyOf('pull');
+          const h = stateWith({ [key]: [entry(W2, [13, 13, 13], 0, { slotId: key, exerciseName: 'Pull-Up' }), entry(W1, [13, 13, 13], 0, { slotId: key, exerciseName: 'Pull-Up' })] });
+          const s = start(h, tpl, W3, { fatigueSignal: 'high' });
+          const set = exerciseOf(s, 'pull').sets[0];
+          assert.equal(set.plannedTargetReps, 13);
+          assert.equal(set.autoProgressedFromReps, undefined);
+          assert.equal(set.heldForFatigue, true);
+          const dial = resolveGuidedSetTarget(exerciseOf(s, 'pull').sets, 0, 'bodyweight');
+          assert.equal(dial.reps, 13);
+          assert.equal(dial.autoProgressedFromReps, null);
+          // The template's own number is no target to record.
+          gate.resolveProgressedReps = () => ({ targetReps: 12, progressed: false, fromReps: null, heldForFatigue: false, heldForCautionArea: null });
+          assert.equal(exerciseOf(start(h, tpl, W3), 'pull').sets[0].plannedTargetReps, undefined);
+        } finally {
+          gate.resolveProgressedReps = real;
+        }
+      });
+    },
+  },
 ];
 
 module.exports.helpers = { at, addDays, addMinutes, entry, template, keyOf, BENCH, stateWith, start, exerciseOf, planned, autos, logSet, act, finish, runSession, reload, W1, W2, W3, W4 };
