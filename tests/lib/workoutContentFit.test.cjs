@@ -101,7 +101,7 @@ module.exports = [
       // pistol squat for four), not loaded lifts. They are held to that instead of
       // being let through unchecked: every lead lift unloaded, five or six reps at
       // most, and enough of them (tests/lib/recommendationFixes20261005.test.cjs).
-      const BODYWEIGHT_STRENGTH = new Set(['tpl_home_bodyweight_strength_3_day_v1', 'tpl_home_calisthenics_strength_5_day_v1']);
+      const BODYWEIGHT_STRENGTH = new Set(['tpl_home_bodyweight_strength_3_day_v1', 'tpl_home_calisthenics_strength_5_day_v1', 'tpl_3_day_strong_bodyweight_v1']);
       const strengthTemplates = WORKOUT_TEMPLATES_V1.filter((template) => template.goalType === 'strength');
 
       assert.ok(strengthTemplates.length >= 3);

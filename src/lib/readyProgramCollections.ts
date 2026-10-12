@@ -46,6 +46,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_3_day_shred_home_easy_v1',
       'tpl_3_day_strong_home_v1',
       'tpl_3_day_huge_bodyweight_v1',
+      'tpl_3_day_strong_bodyweight_v1',
       'tpl_3_day_huge_guided_v1',
       'tpl_3_day_huge_home_v1',
     ],
@@ -65,6 +66,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_home_dumbbell_strength_split_v1',
       'tpl_3_day_guided_strength_v1',
       'tpl_3_day_strong_home_v1',
+      'tpl_3_day_strong_bodyweight_v1',
     ],
   },
   {

@@ -410,6 +410,16 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'The circuit keeps the rest short so it works as cardio too, and the walking blocks give a hard-and-easy rhythm without the impact of running. The moves get harder in small steps: a lower incline for the push-up, a deeper squat.',
   },
+  tpl_3_day_strong_bodyweight_v1: {
+    summary:
+      'Three full-body days with no equipment: split squats with the back foot raised, one-leg hinges and bridges, push-ups with the feet up, and rows under a table, with sets of six on the anchor lifts. The legs are trained every day.',
+    audience:
+      'Anyone who wants to get stronger with no equipment three days a week, at home or away, without weights, a bar or jumping.',
+    equipmentProfile:
+      'No equipment to buy: the floor, a sturdy chair or step for the back foot and for the feet, and a sturdy table to row under.',
+    whyItWorks:
+      'With no weight to add, a set of six is made heavy by the version of the lift: one leg instead of two, the feet raised for the push-up, a lower table for the row. The rests are long, there are as many sets of pulling as of pressing, and each set stops a rep short of failure. Once every set reaches six reps, make the lift harder: a higher rear foot, a longer pause at the bottom of each rep.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Three full-body gym days for muscle, mostly on machines and cables: leg press, chest press, pulldown and cable row, with a goblet squat, an incline dumbbell press and a chest-supported row around them. Every lift runs 10–15 reps, and the legs are trained every day.',

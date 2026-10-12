@@ -1994,6 +1994,61 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
+  // --- STRONG Bodyweight (owner, 2026-10-12) --------------------------------
+  //
+  // The last gap in the audit of 26,460 answers over 41: strength with no
+  // equipment at all (1,260 answers, no card fitting). Three full-body days of
+  // 40 minutes (card = estimate), one rep number per row, no jumps, no weights,
+  // legs on every day, and as much pulling as pressing.
+  //
+  // Without a load to add, a six is made heavy by the version of the lift: a
+  // rear foot on a chair, one leg for the hinge and the bridge, feet up for the
+  // push-up. Anchors are six reps, support lifts eight, so the week is not
+  // HUGE Bodyweight with its numbers turned down: fewer lifts, four sets, long
+  // rests, and a harder version each time the sets are met.
+  {
+    id: 'tpl_3_day_strong_bodyweight_v1',
+    name: 'STRONG Bodyweight',
+    goalType: 'strength',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Each anchor lift is a hard version of a bodyweight lift for six reps. When every set reaches six smooth, controlled reps, make it harder next time: a higher rear foot, feet raised for the push-up, a lower table for the row, or a one-second pause at the bottom of every rep.',
+      secondary: 'Finish the reps written on every set before changing the version, lowering each rep under control.',
+      accessory: 'Add reps before changing the version, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the six reps are missed, keep the same version and build the reps back up before making it harder.',
+    },
+    // The floor, a chair or a step for the rear foot and for the feet, and a
+    // sturdy table to row under: no chip on the equipment card is needed.
+    sessions: [
+      session({ id: 'strong_bodyweight_day1', name: 'Day 1: Legs & Push', orderIndex: 1, exercises: [
+        ex({ id: 'strong_bodyweight_day1_bulgarian_split_squat', exerciseName: 'Bulgarian Split Squat', slotId: 'primary_bulgarian_split_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_bodyweight_day1_decline_push_up', exerciseName: 'Decline Push-Up', slotId: 'primary_decline_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day1_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day1_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'strong_bodyweight_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_bodyweight_day2', name: 'Day 2: Hinge & Pull', orderIndex: 2, exercises: [
+        ex({ id: 'strong_bodyweight_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day2_single_leg_rdl', exerciseName: 'Single-Leg RDL', slotId: 'primary_single_leg_rdl', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_bodyweight_day2_pike_push_up', exerciseName: 'Pike Push-Up', slotId: 'secondary_pike_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day2_bodyweight_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'secondary_bodyweight_reverse_lunge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'strong_bodyweight_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_bodyweight_day3', name: 'Day 3: Full Body', orderIndex: 3, exercises: [
+        ex({ id: 'strong_bodyweight_day3_bulgarian_split_squat', exerciseName: 'Bulgarian Split Squat', slotId: 'primary_bulgarian_split_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_bodyweight_day3_push_up_or_knee_push_up', exerciseName: 'Push-Up (or Knee Push-Up)', slotId: 'primary_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day3_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'strong_bodyweight_day3_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+    ],
+  },
+
   // --- HUGE Guided and HUGE Home (owner, 2026-10-12) ----------------------
   //
   // A muscle week for the reader the age rule looks after over 41. Until these,

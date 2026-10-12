@@ -336,7 +336,12 @@ module.exports = [
       // And to 133 the same day: SHRED Guided pulls through a cable on two of
       // its days, a lower-back-avoid row each. Its days keep four lifts or
       // more; none went thin.
-      const expected = { hips: { removed: 92, thin: 2 }, lower_back: { removed: 133, thin: 3 } };
+      //
+      // Hips went to 94 and lower back to 134 with STRONG Bodyweight, content
+      // again: its Single Leg Glute Bridge on two days is a hip-avoid row (+2),
+      // and its Single-Leg RDL (+1) is a lower-back-avoid row. Every day keeps
+      // at least four lifts; no day went thin.
+      const expected = { hips: { removed: 94, thin: 2 }, lower_back: { removed: 134, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

@@ -595,6 +595,24 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     lowFriction: true,
     jointFriendly: true,
   }),
+  // STRONG Bodyweight (owner, 2026-10-12): strength with no equipment, the last
+  // gap in the audit of 26,460 answers over 41 (1,260 answers, no card fitting).
+  // Over 41 only (ageGateAllows). Sets of six on hard versions of bodyweight
+  // lifts (rear-foot-elevated split squat, one-leg hinge, feet-up push-up,
+  // table row), no jumps, no weights. Muscle as the backup; not general
+  // fitness: no minute of it is cardio.
+  defineProgram('tpl_3_day_strong_bodyweight_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+    jointFriendly: true,
+  }),
   // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
   // to 15 reps, at the gym on machines and cables, at home on dumbbells alone.
   // HUGE Guided goes to the two bands the age rule is about, as STRONG Guided
@@ -661,6 +679,7 @@ export const SHRED_GUIDED_PROGRAM_ID = 'tpl_3_day_shred_guided_v1';
 export const SHRED_HOME_EASY_PROGRAM_ID = 'tpl_3_day_shred_home_easy_v1';
 export const STRONG_HOME_PROGRAM_ID = 'tpl_3_day_strong_home_v1';
 export const HUGE_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_huge_bodyweight_v1';
+export const STRONG_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_strong_bodyweight_v1';
 export const HUGE_GUIDED_PROGRAM_ID = 'tpl_3_day_huge_guided_v1';
 export const HUGE_HOME_PROGRAM_ID = 'tpl_3_day_huge_home_v1';
 
@@ -779,6 +798,7 @@ export function ageGateAllows(
     definition.programId === HUGE_HOME_PROGRAM_ID
     || definition.programId === STRONG_HOME_PROGRAM_ID
     || definition.programId === HUGE_BODYWEIGHT_PROGRAM_ID
+    || definition.programId === STRONG_BODYWEIGHT_PROGRAM_ID
   ) {
     return input.ageRange === '41_plus';
   }
