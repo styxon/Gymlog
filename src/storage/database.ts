@@ -424,7 +424,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           repMin: storedRepMin,
           repMax: storedRepMax,
           // The writer's rule (savedRestSeconds): 0 is none, negative is
-          // unset, a day-long rest is capped (D6-4).
+          // unset, past an hour is capped (D6-4).
           restSeconds: normalizeStoredRestSeconds(exercise?.restSeconds),
           trackingMode: readStoredTrackingMode(exercise?.trackingMode),
         });
@@ -604,13 +604,19 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     }
     return typeof session?.performedAt === 'string' ? null : new Date().toISOString();
   };
+  // By id, and only an id no dated row also carries: a duplicate row with a
+  // bad date must not take its readable twin's logs with it.
+  const sessionRows: any[] = Array.isArray(input?.workoutSessions)
+    ? input.workoutSessions.filter((session: any) => session !== null && typeof session === 'object')
+    : [];
+  const datedSessionIds = new Set(
+    sessionRows.filter((session) => storedSessionDate(session) !== null).map((session) => String(session.id ?? '')),
+  );
   const undatedSessionIds = new Set(
-    Array.isArray(input?.workoutSessions)
-      ? input.workoutSessions
-          .filter((session: any) => session !== null && typeof session === 'object' && storedSessionDate(session) === null)
-          .map((session: any) => String(session.id ?? ''))
-          .filter((id: string) => id.length > 0)
-      : [],
+    sessionRows
+      .filter((session) => storedSessionDate(session) === null)
+      .map((session) => String(session.id ?? ''))
+      .filter((id: string) => id.length > 0 && !datedSessionIds.has(id)),
   );
 
   // Before the sessions: each session's totals are read off these.

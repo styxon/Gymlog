@@ -42,8 +42,16 @@ export function normalizeDefaultRestSeconds(value: unknown, fallback: number): n
 }
 
 /**
+ * The longest stored rest read back as written: an hour. Wider than the
+ * editor's 480 s on purpose — the frozen CSV/Hevy import stores whatever its
+ * file said (a 15-minute rest between heavy singles is real), and a cap the
+ * loader applied would be saved back over it. Past an hour is a damaged row.
+ */
+export const MAX_STORED_REST_SECONDS = 3600;
+
+/**
  * A stored exercise's own rest, made usable: null when it is not a number,
- * else rounded, at least 0 and at most MAX_DEFAULT_REST_SECONDS.
+ * else rounded, at least 0 and at most MAX_STORED_REST_SECONDS.
  *
  * The one rule the template loader, the template writer (singleRepTarget
  * savedRestSeconds) and the workout adapter read (duplicate sweep 13, D6-4).
@@ -53,11 +61,11 @@ export function normalizeDefaultRestSeconds(value: unknown, fallback: number): n
  * It differs from the default rest above on purpose, in one place: 0 is a
  * real rest here (a stretch is written with none) while a default rest of 0
  * is unusable. A negative number is unset (null), as the writer always read
- * it; past the ceiling is capped, as the default is.
+ * it; past the ceiling is capped, as the default is, but at a wider one.
  */
 export function normalizeStoredRestSeconds(value: unknown): number | null {
   if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
     return null;
   }
-  return Math.min(Math.round(value), MAX_DEFAULT_REST_SECONDS);
+  return Math.min(Math.round(value), MAX_STORED_REST_SECONDS);
 }

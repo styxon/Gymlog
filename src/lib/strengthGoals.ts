@@ -106,9 +106,9 @@ const sameName: GoalLiftMatcher = (left, right) => left === right;
  * Sets a target, replacing every target `matches` calls the same lift.
  *
  * @param matches passed in, as resolveGoalProgress takes it, so this module
- *   stays below the programme layer. The goal flow passes `isSameLift` — the
- *   rule it uses to tell the reader a target is already set and saving
- *   replaces it. Comparing names here instead kept a target stored under an
+ *   stays below the programme layer. The goal flow passes `isSameTargetLift`
+ *   — the rule it uses to tell the reader a target is already set and saving
+ *   replaces it; narrower than `isSameLift`, which folds in a lift's family. Comparing names here instead kept a target stored under an
  *   older spelling ("Back Squat", the presets' name until 2026-09-02) beside
  *   the new "Barbell Squat" one: two squat rows, one stuck at the old number
  *   (dup sweep 13, D4-2).

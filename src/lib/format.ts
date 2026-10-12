@@ -103,7 +103,7 @@ export function formatShortDate(dateString: string, language?: AppLanguage) {
  * D3-2). Intl wrote "klo 18.06" and "06:06 PM" here while the Progress
  * tooltip beside the same weigh-in read "18:06" (dup sweep 13 review, R2).
  */
-export function formatSessionDate(dateString: string, language?: AppLanguage) {
+export function formatSessionDate(dateString: string, language: AppLanguage) {
   const date = new Date(dateString);
   const day = getDateTimeFormat(localeFor(language), {
     weekday: 'short',

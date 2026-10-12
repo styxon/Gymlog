@@ -193,6 +193,17 @@ module.exports = [
       assert.equal(byId.s3.performedAt, '2026-10-02T09:00:00.000Z');
       // No date at all keeps the oldest fallback: a readable one.
       assert.ok(Number.isFinite(Date.parse(byId.s4.performedAt)));
+
+      // A duplicate row with a bad date does not take its readable twin's logs.
+      const twins = normalizeDatabase({
+        workoutSessions: [
+          { id: 'd1', performedAt: '2026-10-01T18:00:00.000Z' },
+          { id: 'd1', performedAt: 'garbage' },
+        ],
+        exerciseLogs: [logFor('d1')],
+      });
+      assert.deepEqual(twins.workoutSessions.map((session) => session.id), ['d1']);
+      assert.deepEqual(twins.exerciseLogs.map((entry) => entry.sessionId), ['d1']);
     },
   },
   {
@@ -306,8 +317,9 @@ module.exports = [
         restSeconds,
         orderIndex: 0,
       });
-      const out = normalizeDatabase({ exerciseTemplates: [row(-30), row(99999), row(0), row(90)] });
-      assert.deepEqual(out.exerciseTemplates.map((exercise) => exercise.restSeconds), [null, 600, 0, 90]);
+      // 900 s: an imported rest past the editor's 480 is kept, not saved back as less.
+      const out = normalizeDatabase({ exerciseTemplates: [row(-30), row(99999), row(0), row(90), row(900)] });
+      assert.deepEqual(out.exerciseTemplates.map((exercise) => exercise.restSeconds), [null, 3600, 0, 90, 900]);
     },
   },
 ];

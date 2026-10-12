@@ -113,7 +113,9 @@ module.exports = [
     run() {
       const cases = [
         [-30, null],
-        [99999, 600],
+        [99999, 3600],
+        // An imported 15-minute rest is kept: a loader cap would be saved back over it.
+        [900, 900],
         [2.5, 3],
         [0, 0],
         [90, 90],
@@ -146,7 +148,8 @@ module.exports = [
           120,
         ).sessions[0].exercises[0];
       assert.equal(adapt(-30).restSecondsMin, 120);
-      assert.equal(adapt(99999).restSecondsMax, 600);
+      assert.equal(adapt(99999).restSecondsMax, 3600);
+      assert.equal(adapt(900).restSecondsMax, 900);
       assert.equal(adapt(0).restSecondsMin, 0);
       assert.equal(adapt(null).restSecondsMin, 120);
     },
