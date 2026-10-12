@@ -1017,6 +1017,10 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Asetu kyljellesi. Pujota vyö, naru tai kuminauha ylemmän jalan jalkaterän ympäri. Koukista polvea ja ojenna lonkkaa yrittäen koskettaa kantapäällä pakaraa, ja pidä nauhasta kiinni käsilläsi.',
     'Pidä nauhaa olkapään yli tai pään yläpuolella ja vedä varovasti, jolloin etureiden venytys kasvaa. Pidä 10–20 sekuntia ja vaihda puolta.',
   ],
+  'Elliptical Trainer': [
+    'Astu crosstrainerille ja valitse valikosta haluamasi vaihtoehto. Useimmissa laitteissa on manuaaliasetus, tai voit valita valmiin ohjelman. Vastusta ja kaltevuutta säätämällä muutat kuormitusta.',
+    'Kahvoilla voit seurata sykettäsi, jotta pysyt sopivalla teholla.',
+  ],
   'Rowing, Stationary': [
     'Istu soutulaitteeseen. Varmista, että kantapäät ovat tukevasti poljinten pohjaa vasten ja hihnat kiristettyinä. Valitse haluamasi ohjelma, jos laitteessa on sellainen. Istu ryhdikkäästi ja taivuta lantiosta eteen.',
     'Vedossa on kolme vaihetta. Ensimmäisessä olet edessä: polvet koukussa lähellä rintaa ja ylävartalo hieman eteen nojaten mutta ryhdikkäänä. Työnnä sitten poljinlevyjä ja ojenna jalat samalla kun vedät kädet ylävatsalle ja puristat lapoja yhteen. Anna jalkojen ja lantion tehdä työ, niin selkä säästyy.',

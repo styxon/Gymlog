@@ -48,6 +48,12 @@ const FOCUS_FI: Record<string, string> = {
   'lower & push': 'Alavartalo ja työntö',
   'upper & balance': 'Ylävartalo ja tasapaino',
   'full body & walk': 'Koko keho ja kävely',
+  // SHRED Guided and SHRED Home Easy (2026-10-12).
+  'circuit & bike intervals': 'Piiri ja pyöräintervallit',
+  'circuit & rower intervals': 'Piiri ja soutuintervallit',
+  'circuit & cross-trainer': 'Piiri ja crosstrainer',
+  'circuit & brisk walk': 'Piiri ja reipas kävely',
+  'circuit & hill walk': 'Piiri ja mäkikävely',
   // STRONG Home (2026-10-12). "Press" alone is the overhead press, and this day's is on the floor.
   'squat & press': 'Kyykky ja työntö',
   'hinge & pull': 'Saranaliike ja veto',

@@ -1885,6 +1885,115 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
+  // --- SHRED Guided and SHRED Home Easy (owner, 2026-10-12) ---------------
+  //
+  // The fat-burn week for the reader the age rule looks after. Until these,
+  // the lean-and-athletic answer over 41 was SHRED (a barbell squat, burpees
+  // and treadmill sprints) or Fat Burn HIIT (jump squats, burpees, box jumps),
+  // and a 16-18-year-old at the gym had no lean week lifted on machines at
+  // all. Two programmes because the gear splits the readers: the gym has the
+  // machines, cables and cardio equipment, a home reader has a mat and
+  // pavement.
+  //
+  // Both: three full-body days of 40 minutes (card = estimate), no jump of any
+  // kind, no barbell, the lifts done one after another with 30 seconds' rest (a
+  // circuit; not supersets, which the catalog keeps for light accessory work)
+  // at 10 to 15 reps with one rep number, and the conditioning written as
+  // intervals or blocks rather than as a finisher: 29 % (Guided) and 34 %
+  // (Home Easy) of each week's time (buildProgramFocusSplit).
+  // The copy names the training, never an age.
+  {
+    id: 'tpl_3_day_shred_guided_v1',
+    name: 'SHRED Guided',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Go round the machines in order with short rests. When every set reaches the reps written with control, add the smallest step the stack allows next time.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Keep every hard interval at the same effort, and add a round or a minute before you go harder.',
+      failureHandling: 'If the minimum reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // Machines and cables in order, then one of three machines for the
+    // conditioning: the bike (45 s hard, 15 s easy), the rower (30 s and
+    // 30 s) and the cross-trainer (three hard two-minute rounds with a minute
+    // easy between). Legs on every day; as many sets of pulling as of
+    // pressing (nine a week each).
+    sessions: [
+      session({ id: 'shred_guided_day1', name: 'Day 1: Circuit & Bike Intervals', orderIndex: 1, exercises: [
+        ex({ id: 'shred_guided_day1_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day1_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_machine_chest_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'shred_guided_day1_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'secondary_seated_cable_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'shred_guided_day1_cable_pull_through', exerciseName: 'Cable Pull-Through', slotId: 'secondary_cable_pull_through', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'shred_guided_day1_bike_hiit', exerciseName: 'Bike HIIT (45s sprint / 15s rest)', slotId: 'conditioning_bike', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 45, repsMax: 45, restSecondsMin: 15, restSecondsMax: 15, substitutionGroup: 'cardio_intervals' }),
+      ] }),
+      session({ id: 'shred_guided_day2', name: 'Day 2: Circuit & Rower Intervals', orderIndex: 2, exercises: [
+        ex({ id: 'shred_guided_day2_leg_extension', exerciseName: 'Leg Extension', slotId: 'primary_leg_extension', role: 'primary', progressionPriority: 'high', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day2_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'primary_lat_pulldown', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'vertical_pull' }),
+        ex({ id: 'shred_guided_day2_machine_shoulder_press', exerciseName: 'Machine Shoulder Press', slotId: 'secondary_machine_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'shred_guided_day2_seated_leg_curl', exerciseName: 'Seated Leg Curl', slotId: 'secondary_seated_leg_curl', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'accessory_hamstrings' }),
+        ex({ id: 'shred_guided_day2_rowing_machine_hiit', exerciseName: 'Rowing Machine HIIT', slotId: 'conditioning_rower', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
+      ] }),
+      session({ id: 'shred_guided_day3', name: 'Day 3: Circuit & Cross-Trainer', orderIndex: 3, exercises: [
+        ex({ id: 'shred_guided_day3_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day3_seated_machine_row', exerciseName: 'Seated Machine Row', slotId: 'primary_seated_machine_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'cable_machine_row' }),
+        ex({ id: 'shred_guided_day3_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'secondary_machine_chest_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'shred_guided_day3_cable_pull_through', exerciseName: 'Cable Pull-Through', slotId: 'secondary_cable_pull_through', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'shred_guided_day3_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_cable_crunch', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'accessory_core' }),
+        ex({ id: 'shred_guided_day3_elliptical_trainer', exerciseName: 'Elliptical Trainer', slotId: 'conditioning_cross_trainer', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 2, repsMax: 2, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'steady_cardio' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_shred_home_easy_v1',
+    name: 'SHRED Home Easy',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower incline for the push-up, a deeper squat.',
+      secondary: 'Finish the reps written on every set before changing the movement.',
+      accessory: 'Walk each block briskly: breathing deep and quick, short sentences still possible. Add a minute to a block once every block feels steady.',
+      failureHandling: 'If the reps are missed, repeat the same version next time and build them back up.',
+    },
+    // The floor and a table: no weights, no jumps. Bodyweight moves one after
+    // another with short rests, and every day closes on two brisk (or uphill)
+    // walking blocks of four minutes with a minute of easy walking between them.
+    sessions: [
+      session({ id: 'shred_home_easy_day1', name: 'Day 1: Circuit & Brisk Walk', orderIndex: 1, exercises: [
+        ex({ id: 'shred_home_easy_day1_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day1_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'shred_home_easy_day1_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'shred_home_easy_day2', name: 'Day 2: Circuit & Hill Walk', orderIndex: 2, exercises: [
+        ex({ id: 'shred_home_easy_day2_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'primary_single_leg_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'shred_home_easy_day2_push_up', exerciseName: 'Push-Up', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day2_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day2_side_plank', exerciseName: 'Side Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'plank_variations' }),
+        ex({ id: 'shred_home_easy_day2_incline_walk_blocks', exerciseName: 'Incline Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'shred_home_easy_day3', name: 'Day 3: Circuit & Brisk Walk', orderIndex: 3, exercises: [
+        ex({ id: 'shred_home_easy_day3_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'shred_home_easy_day3_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day3_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'shred_home_easy_day3_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day3_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+    ],
+  },
+
   // --- HUGE Guided and HUGE Home (owner, 2026-10-12) ----------------------
   //
   // A muscle week for the reader the age rule looks after over 41. Until these,

@@ -560,6 +560,41 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     focusAreaTags: ['legs', 'chest', 'back'],
     jointFriendly: true,
   }),
+  // The fat-burn weeks over 41 (owner, 2026-10-12): three full-body days with
+  // the conditioning written as intervals and walking blocks, no jump in either
+  // and no barbell. SHRED Guided goes to the two bands the age rule is about,
+  // as STRONG Guided does (the gym's machines, cables and bike, rower or
+  // cross-trainer; it fills the 16-18 gym's lean gap too); SHRED Home Easy over
+  // 41 only (a mat, a table and pavement). The athletic_recomp family, as
+  // SHRED and Fat Burn HIIT: this is the week a lean answer opens, so it needs
+  // the conditioning tag the lean lane filters on, not the low_impact family
+  // that only the age rule reaches. Lean and athletic is the goal they are
+  // written for; general fitness is left to WALK and HOME Easy.
+  defineProgram('tpl_3_day_shred_guided_v1', {
+    familyId: 'athletic_recomp',
+    supportedGoals: ['lean_athletic'],
+    backupGoals: [],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['conditioning', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['conditioning', 'consistency'],
+    focusAreaTags: ['conditioning', 'legs', 'chest', 'back'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_shred_home_easy_v1', {
+    familyId: 'athletic_recomp',
+    supportedGoals: ['lean_athletic'],
+    backupGoals: [],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['conditioning', 'balanced'],
+    secondaryOutcomeTags: ['conditioning', 'consistency'],
+    focusAreaTags: ['conditioning', 'legs', 'chest', 'back'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
   // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
   // to 15 reps, at the gym on machines and cables, at home on dumbbells alone.
   // HUGE Guided goes to the two bands the age rule is about, as STRONG Guided
@@ -622,6 +657,8 @@ export function readerAskedForRecovery(
 export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
 export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
 export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
+export const SHRED_GUIDED_PROGRAM_ID = 'tpl_3_day_shred_guided_v1';
+export const SHRED_HOME_EASY_PROGRAM_ID = 'tpl_3_day_shred_home_easy_v1';
 export const STRONG_HOME_PROGRAM_ID = 'tpl_3_day_strong_home_v1';
 export const HUGE_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_huge_bodyweight_v1';
 export const HUGE_GUIDED_PROGRAM_ID = 'tpl_3_day_huge_guided_v1';
@@ -726,6 +763,14 @@ export function ageGateAllows(
 ): boolean {
   if (definition.familyId === 'low_impact') {
     return input.ageRange === '41_plus' && !walkingWeekAnswersLiftingGoal(input);
+  }
+  // SHRED Guided as STRONG Guided: the two bands the age rule is about. SHRED
+  // Home Easy over 41 only; at 16-18 the age rule asks for machines.
+  if (definition.programId === SHRED_GUIDED_PROGRAM_ID) {
+    return input.ageRange === '41_plus' || input.ageRange === '18';
+  }
+  if (definition.programId === SHRED_HOME_EASY_PROGRAM_ID) {
+    return input.ageRange === '41_plus';
   }
   if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID || definition.programId === HUGE_GUIDED_PROGRAM_ID) {
     return input.ageRange === '41_plus' || input.ageRange === '18';

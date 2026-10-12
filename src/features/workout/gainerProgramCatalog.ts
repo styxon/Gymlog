@@ -30,7 +30,7 @@ export const Vinha_PROGRAM_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: "shoulder_mobility", allowedExerciseNames: ["Doorway Pec Stretch", "Wall Slide", "Shoulder Dislocations (PVC)", "Sleeper Stretch", "Arm Circles"] },
   { id: "balance_stability", allowedExerciseNames: ["Single-Leg Balance Hold", "Single-Leg Balance Reach", "Supported Single-Leg Balance", "Heel-to-Toe Walk", "Standing Marching"] },
   { id: "cardio_intervals", allowedExerciseNames: ["Treadmill HIIT (30s on / 30s off)", "Bike HIIT (45s sprint / 15s rest)", "Rowing Machine HIIT", "Air Bike (30s sprint)", "Rowing Machine (500m intervals)", "Sprint Interval (200m)", "Sprint 40m"] },
-  { id: "steady_cardio", allowedExerciseNames: ["Stationary Bike (Easy Pace)", "Stairmaster (Moderate)"] },
+  { id: "steady_cardio", allowedExerciseNames: ["Stationary Bike (Easy Pace)", "Stairmaster (Moderate)", "Elliptical Trainer"] },
   { id: "conditioning_circuit", allowedExerciseNames: ["Burpee", "Burpee (20s on / 10s off)", "Burpee with Push-Up", "High Knees", "Jumping Jack", "Battle Rope Slam", "Battle Rope Wave", "Sled Push", "Farmer's Walk"] },
   { id: "jump_plyo", allowedExerciseNames: ["Box Jump", "Broad Jump", "Jump Squat", "Squat Jump (20s on / 10s off)", "Skater Jump", "Lateral Bound", "Bulgarian Split Squat (Jumping)", "Pogo Hops"] },
   { id: "explosive_power", allowedExerciseNames: ["Kettlebell Swing", "Power Clean", "Medicine Ball Slam"] },

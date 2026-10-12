@@ -38,6 +38,7 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // walk. STRONG Guided, the third programme added that day, is a gym week.
   'tpl_3_day_walk_mobility_v1',
   'tpl_3_day_home_easy_strength_v1',
+  'tpl_3_day_shred_home_easy_v1',
   // HUGE Home (2026-10-12): a pair of dumbbells and the floor.
   'tpl_3_day_huge_home_v1',
   // STRONG Home (a pair of dumbbells) and HUGE Bodyweight (nothing but the

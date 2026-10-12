@@ -205,7 +205,8 @@ module.exports = [
       //
       // HOME Easy and WALK prescribe the walk blocks the same way (owner,
       // 2026-10-12): the extra library's steps, minutes on the set screen,
-      // and the same rows a flagged knee already turned the runs into.
+      // and the same rows a flagged knee already turned the runs into. SHRED
+      // Home Easy closes each day on three of them.
       assert.deepEqual(offenders.sort(), [
         'At Home - No Equipment / Upper Body Bodyweight: Easy Run Blocks',
         'Bodyweight Upper/Lower / Day 1: Upper Body: Easy Run Blocks',
@@ -220,6 +221,9 @@ module.exports = [
         'RUN / Day 1: Easy Run: Easy Run Blocks',
         'RUN / Day 2: Tempo Run: Stride Finishers',
         'RUN / Day 2: Tempo Run: Tempo Run Blocks',
+        'SHRED Home Easy / Day 1: Circuit & Brisk Walk: Brisk Walk Blocks',
+        'SHRED Home Easy / Day 2: Circuit & Hill Walk: Incline Walk Blocks',
+        'SHRED Home Easy / Day 3: Circuit & Brisk Walk: Brisk Walk Blocks',
         'Summer Conditioning / Day 1: Push and Easy Run: Easy Run Blocks',
         'Summer Conditioning / Day 2: Strength and Tempo Run: Tempo Run Blocks',
         'Summer Conditioning / Day 3: Legs and Strides: Stride Finishers',

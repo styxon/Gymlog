@@ -332,7 +332,11 @@ module.exports = [
       // and its Single-Leg RDL (+1) and STRONG Home's two stiff-legged
       // dumbbell deadlifts and bent-over row (+3) are lower-back-avoid rows.
       // STRONG Home's hinge day keeps three lifts, not fewer; no day went thin.
-      const expected = { hips: { removed: 92, thin: 2 }, lower_back: { removed: 131, thin: 3 } };
+      //
+      // And to 133 the same day: SHRED Guided pulls through a cable on two of
+      // its days, a lower-back-avoid row each. Its days keep four lifts or
+      // more; none went thin.
+      const expected = { hips: { removed: 92, thin: 2 }, lower_back: { removed: 133, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;
