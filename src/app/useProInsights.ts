@@ -171,6 +171,7 @@ export function useProInsights(deps: ProInsightsDeps) {
       fatigueSignal: isNewestSession(database.workoutSessions, proCompletionLift.latest.sessionId)
         ? progressionFatigueSignal
         : undefined,
+      automatedProgressionEnabled: preferences.automatedProgressionEnabled,
     });
     const conclusion = buildCompletionConclusion(proCompletionLift, preferences.appLanguage, preferences.setupLevel, advice);
     // No change from the gate and no plateau: no lock, rather than one that promises a change.
@@ -186,6 +187,7 @@ export function useProInsights(deps: ProInsightsDeps) {
     database.exerciseLogs,
     database.workoutSessions,
     preferences.appLanguage,
+    preferences.automatedProgressionEnabled,
     preferences.setupLevel,
     progressionFatigueSignal,
     proCompletionLift,

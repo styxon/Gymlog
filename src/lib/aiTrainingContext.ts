@@ -230,6 +230,11 @@ export interface BuildAiTrainingContextInput {
    * the plateau card follows. Left out, the count alone, as before.
    */
   adviceTemplateLookup?: AdviceTemplateLookup | null;
+  /**
+   * The reader's automatic-progression switch. Off, nothing adds weight on a
+   * schedule, so no lift is told to the coach as on one. Left out, on.
+   */
+  automatedProgressionEnabled?: boolean;
   now?: Date;
 }
 
@@ -241,6 +246,7 @@ function onScheduleReader(
   sessions: WorkoutSession[],
   logs: ExerciseLog[],
   lookupTemplate: AdviceTemplateLookup | null,
+  automatedProgressionEnabled: boolean | undefined,
 ): (liftName: string, sessionId: string | null | undefined) => boolean {
   const asked = new Map<string, boolean>();
   return (liftName, sessionId) => {
@@ -250,7 +256,9 @@ function onScheduleReader(
     const key = `${normalizedName(liftName)}\u0000${sessionId}`;
     let answer = asked.get(key);
     if (answer === undefined) {
-      answer = readLiftProgramme({ liftName, sessionId, sessions, logs, lookupTemplate })?.onSchedule === true;
+      answer =
+        readLiftProgramme({ liftName, sessionId, sessions, logs, lookupTemplate, automatedProgressionEnabled })?.onSchedule ===
+        true;
       asked.set(key, answer);
     }
     return answer;
@@ -759,9 +767,10 @@ export function buildAiTrainingContext({
   nextSessionTargets = [],
   cautionFlags = [],
   adviceTemplateLookup = null,
+  automatedProgressionEnabled,
   now = new Date(),
 }: BuildAiTrainingContextInput): AICoachTrainingContext {
-  const onSchedule = onScheduleReader(workoutSessions, exerciseLogs, adviceTemplateLookup);
+  const onSchedule = onScheduleReader(workoutSessions, exerciseLogs, adviceTemplateLookup, automatedProgressionEnabled);
   const body = buildAiCoachBodyState(bodyweightEntries, measurementEntries, now);
   const recentCompletedSessions = [...workoutSessions]
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime())

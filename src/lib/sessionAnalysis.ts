@@ -158,6 +158,8 @@ export interface SessionAnalysisInput {
    * already happened. Left out, recovery reads as clear.
    */
   fatigueSignal?: ProgressionFatigueSignal;
+  /** The reader's automatic-progression switch: off, "move up to" is not said. */
+  automatedProgressionEnabled: boolean;
 }
 
 const MAX_VOLUME_BARS = 6;
@@ -207,6 +209,7 @@ export function buildSessionAnalysis({
   level = null,
   lookupTemplate = null,
   fatigueSignal,
+  automatedProgressionEnabled,
 }: SessionAnalysisInput): SessionAnalysis | null {
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session) {
@@ -491,6 +494,7 @@ export function buildSessionAnalysis({
       lookupTemplate,
       level,
       fatigueSignal,
+      automatedProgressionEnabled,
     });
     const liftName = exerciseNameLabel(language, nextLift.log.exerciseNameSnapshot);
     if (advice.kind === 'raise') {

@@ -127,6 +127,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
             level: preferences.setupLevel,
             // The programme the session was started from, for the gate's rep range.
             lookupTemplate: adviceTemplateLookup,
+            automatedProgressionEnabled: preferences.automatedProgressionEnabled,
             // The recovery hold the next start applies, read as a start reads
             // it, and only for the newest session: an older one's next start
             // has already happened.
@@ -158,6 +159,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
       database,
       homeActivePlanCard,
       preferences.appLanguage,
+      preferences.automatedProgressionEnabled,
       preferences.setupCautionFlags,
       preferences.setupLevel,
       // The recovery read is dated: the windows count back from today.

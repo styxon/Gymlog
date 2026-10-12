@@ -2895,7 +2895,7 @@ export function OnboardingScreen({
    * `resolveProgressionOptions` gates it behind Pro, and the row even said
    * "(Pro)" with nothing on the screen to explain what Pro was. Selling it is
    * the honest version of the same moment. The preference itself still defaults
-   * on and stays editable in plan settings for anyone who has Pro.
+   * on, and Settings has its switch for anyone who has Pro.
    */
   function renderPlanning() {
     const visibleFocusOptions = FOCUS_AREA_OPTIONS.filter((option) => option.area !== 'mobility');

@@ -5,6 +5,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 import { AppleSignInButton } from '../components/AppleSignInButton';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { ProPill } from '../components/ProLockMarks';
 import { CARD_SHADOW, SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { buildFeedbackMailto } from '../lib/feedbackLink';
@@ -128,6 +129,7 @@ const IC_PATHS = {
   doc: 'M7 3h7l4 4v14H7zM14 3v4h4',
   image: 'M4 5h16v14H4zM4 16l5-5 4 4 2-2 5 5M15 9.5h.01',
   analytics: 'M4 20V4M4 20h16M8 16l3-4 3 2 4-6',
+  climb: 'M4 17l6-6 4 4 6-7M15 8h5v5',
   sun: 'M12 17a5 5 0 100-10 5 5 0 000 10zM12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M19 5l-1.5 1.5M6.5 17.5L5 19',
   trash: 'M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13',
   calendar: 'M4 6h16v14H4zM4 10h16M8 3v4M16 3v4',
@@ -450,7 +452,33 @@ export function SettingsScreen({
         <View style={styles.section}>
           <SectionLabel label={t(language, 'settings.section.training')} />
           <View style={styles.card}>
-            {/* Smart progression removed — returns later as a Pro feature. */}
+            {/* Pro's switch, Free's way to Pro: resolveProgressionOptions ANDs
+                the preference with the entitlement, so a live switch on Free
+                would change nothing. Off, every start repeats last time and
+                no screen promises a raise (owner Q5, 2026-10-12). A start
+                already running keeps the answer it opened with. */}
+            {proUnlocked ? (
+              <Row
+                icon="climb"
+                title={t(language, 'settings.autoProgression')}
+                sub={t(language, 'settings.autoProgression.sub')}
+                control={
+                  <ToggleSwitch
+                    label={t(language, 'settings.autoProgression')}
+                    value={preferences.automatedProgressionEnabled}
+                    onChange={(next) => onPreferencesChange({ automatedProgressionEnabled: next })}
+                  />
+                }
+              />
+            ) : (
+              <Row
+                icon="climb"
+                title={t(language, 'settings.autoProgression')}
+                sub={t(language, 'settings.autoProgression.sub')}
+                control={<ProPill />}
+                onPress={onOpenPremium}
+              />
+            )}
             {/* Health Connect removed for v1 — returns in v2 as a workout
                 export rather than a body-stats import. */}
             <Row

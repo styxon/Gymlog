@@ -650,7 +650,11 @@ export interface AppPreferences {
    * each is shown once. Newest last, capped.
    */
   seenServerNoticeIds: string[];
-  /** Plan-review toggle: Vinha adjusts weekly load/progression automatically. */
+  /**
+   * The reader's automatic-progression switch (Settings, Pro). The gate reads
+   * it through resolveProgressionOptions, ANDed with the entitlement; the
+   * next-session advice reads it alone.
+   */
   automatedProgressionEnabled: boolean;
   aiSetupCompleted: boolean;
   hasOpenedAppBefore: boolean;
