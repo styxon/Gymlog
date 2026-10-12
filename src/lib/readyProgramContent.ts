@@ -140,13 +140,13 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_at_home_beginner_v1: {
     summary:
-      'Three bodyweight sessions a week at home: upper body, lower body and a full-body circuit. Push-ups, squats, lunges and planks, with a table for rows and a chair for dips.',
+      'Three bodyweight sessions a week at home: upper body with run blocks, lower body with jumping jacks, and a full-body circuit. Push-ups, squats, lunges and planks, with a table for rows and a chair for dips. About a third of the week is conditioning.',
     audience:
       'Beginners who want to start strength training at home with no equipment, three sessions a week.',
     equipmentProfile:
-      'No equipment: everything is bodyweight. A sturdy table for rows and a chair for dips are all it takes.',
+      'No equipment: everything is bodyweight. A sturdy table for rows, a chair for dips and somewhere to run are all it takes.',
     whyItWorks:
-      'Squat, push, pull and plank come back every week and progress comes from reps, so strength and fitness build without a kilo of iron.',
+      'Squat, push, pull and plank come back every week and progress comes from reps, while run blocks, jumping jacks, burpees and mountain climbers give the week conditioning that needs no gear.',
   },
   tpl_home_dumbbell_upper_lower_v1: {
     summary:
@@ -190,13 +190,13 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
-      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work.',
+      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work, with run blocks, jumping jacks, burpees and high knees closing the days. About a third of the week is conditioning.',
     audience:
       'Anyone training at home without equipment who is past the beginner stage and wants four sessions a week.',
     equipmentProfile:
-      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+      'No equipment. A sturdy table for rows, a chair for split squats and somewhere to run.',
     whyItWorks:
-      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first.',
+      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first, and each day ends with a conditioning block that needs no gear.',
   },
   tpl_home_bodyweight_full_body_v1: {
     summary:

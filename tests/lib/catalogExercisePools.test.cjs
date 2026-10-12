@@ -199,8 +199,12 @@ module.exports = [
       // Lite, FIT Elite, HOME Starter) were all lifting, and their running is
       // the same "Easy Run Blocks" row RUN uses — steps in the extra library,
       // minutes on the set screen, a walk or a ride for a reader who avoids
-      // their knees — rather than a new name.
+      // their knees — rather than a new name. The two no-equipment weeks the
+      // goal offers most (At Home - No Equipment, Bodyweight Upper/Lower) took
+      // the same row the same day, because a run needs no machine.
       assert.deepEqual(offenders.sort(), [
+        'At Home - No Equipment / Upper Body Bodyweight: Easy Run Blocks',
+        'Bodyweight Upper/Lower / Day 1: Upper Body: Easy Run Blocks',
         'FIT / Day 2: Full Body: Easy Run Blocks',
         'FIT Elite / Day 3: Upper Volume: Easy Run Blocks',
         'FIT Lite / Day 1: Upper Body + Run: Easy Run Blocks',

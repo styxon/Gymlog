@@ -27,8 +27,6 @@ const path = require('node:path');
  */
 const KNOWN_OUTSIDE = {
   // Muscle programmes that also list general fitness.
-  tpl_gainer_at_home_beginner_v1: 'At Home - No Equipment: a beginner bodyweight muscle week, 14 %',
-  tpl_home_bodyweight_upper_lower_v1: 'Bodyweight Upper/Lower: lists muscle outright (2026-10-05), 4 %',
   tpl_gainer_calisthenics_mastery_v1: 'Calisthenics Mastery: a skills and muscle week, 4 %',
   tpl_gainer_strong_lean_female_v1: 'Strong & Lean Female: a muscle week with one finisher, 12 %',
   tpl_6_day_ppl_v1: 'HUGE Elite: a six-day hypertrophy split, 0 %',

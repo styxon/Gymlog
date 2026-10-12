@@ -123,13 +123,13 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_at_home_beginner_v1: {
     summary:
-      'Kolme kehonpainotreeniä viikossa kotona: ylävartalo, alavartalo ja koko kehon kierto. Punnerruksia, kyykkyjä, askelkyykkyjä ja lankkuja, pöytä soutuun ja tuoli dippeihin.',
+      'Kolme kehonpainotreeniä viikossa kotona: ylävartalo juoksuosioilla, alavartalo hyppytähdillä ja koko kehon kierto. Punnerruksia, kyykkyjä, askelkyykkyjä ja lankkuja, pöytä soutuun ja tuoli dippeihin. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
       'Aloittelijalle, joka haluaa aloittaa voimatreenin kotona ilman välineitä kolmella treenillä viikossa.',
     equipmentProfile:
-      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin riittävät.',
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli dippeihin ja paikka juosta riittävät.',
     whyItWorks:
-      'Kyykky, punnerrus, veto ja lankku toistuvat joka viikko, ja eteneminen tulee toistoista, joten voima ja kunto kasvavat ilman kilon painoja.',
+      'Kyykky, punnerrus, veto ja lankku toistuvat joka viikko, ja eteneminen tulee toistoista, kun taas juoksuosiot, hyppytähdet, burpeet ja vuorikiipeilijät tuovat viikkoon kuntoharjoittelua ilman välineitä.',
   },
   tpl_home_dumbbell_upper_lower_v1: {
     summary:
@@ -173,13 +173,13 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
-      'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä.',
+      'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä, ja päivät päättyvät juoksuosioihin, hyppytähtiin, burpeeihin tai polvennostoihin. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
       'Kotona ilman välineitä treenaavalle, joka on aloittelijavaiheen ohi ja haluaa neljä treeniä viikossa.',
     equipmentProfile:
-      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli askelkyykkyihin ja paikka juosta.',
     whyItWorks:
-      'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista.',
+      'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista, ja jokainen päivä päättyy kuntoharjoitusosioon, joka ei tarvitse välineitä.',
   },
   tpl_home_bodyweight_full_body_v1: {
     summary:
