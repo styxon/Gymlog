@@ -18,6 +18,7 @@ import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import type { buildFatigueModel } from '../lib/fatigueModel';
 import type { selectHomeCustomProgram } from '../lib/homeProgramSelection';
 import type { AdviceTemplateLookup } from '../lib/nextSessionAdvice';
+import { resolveProgressionOptions } from '../lib/proEntitlement';
 import type { resolveHomeStatCardKeys } from '../lib/homeStatCards';
 import type { buildWeeklyRead } from '../lib/proInsights';
 import { buildCustomSessionRuntimeTemplate, buildReadySessionRuntimeTemplate } from '../lib/programDetails';
@@ -162,6 +163,9 @@ export function useCoachContext(deps: CoachContextDeps) {
     // because "the last session" and a pending lighter session are both dated.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customWorkoutRuntimeMap, preferences, progressionFatigueSignal, todayStartMs, unitPreference, workout.history, workoutSessions]);
+  // What the next start does, Pro included: a Free reader's switch defaults
+  // on, and the coach was told the app adds weight on its own schedule.
+  const progressionOn = resolveProgressionOptions(preferences).automatedProgressionEnabled;
   const aiCoachTrainingContext = useMemo(
     () =>
       buildAiTrainingContext({
@@ -225,6 +229,8 @@ export function useCoachContext(deps: CoachContextDeps) {
         cautionFlags: preferences.setupCautionFlags,
         // The programme rows, so a lift at its top reps is not called stalled.
         adviceTemplateLookup,
+        // Off, no lift is on the app's schedule: nothing adds weight on its own.
+        automatedProgressionEnabled: progressionOn,
         plannerSetup: preferences.aiSetupCompleted
           ? {
               goal: preferences.aiPlannerGoal,
@@ -291,6 +297,7 @@ export function useCoachContext(deps: CoachContextDeps) {
       workoutSessions,
       database.exerciseLogs,
       adviceTemplateLookup,
+      progressionOn,
     ],
   );
   // Only a session the schedule actually puts on TODAY is "on the plan

@@ -69,6 +69,13 @@ export interface NextSessionAdviceInput {
    * an older session, whose next start has already happened.
    */
   fatigueSignal?: ProgressionFatigueSignal;
+  /**
+   * The reader's automatic-progression switch (Settings). Off, the next start
+   * repeats last time, so a raise is not advice to give. A Free reader's
+   * switch is still on: the analysis and the completion lock sell the raise
+   * Pro would make.
+   */
+  automatedProgressionEnabled: boolean;
 }
 
 const SAME_LOAD_KG = 0.001;
@@ -270,6 +277,9 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
   });
 
   if (decision.recommendation === 'increase') {
+    if (input.automatedProgressionEnabled === false) {
+      return NO_NEXT_SESSION_ADVICE;
+    }
     // The top set the next start opens: a set a lighter session left out
     // climbs from its own load in the newest earlier session that did it
     // (workoutState missingSetFallback), a pyramid's top among them.
@@ -323,8 +333,15 @@ export function isNewestSession(sessions: readonly WorkoutSession[], sessionId: 
  *
  * Null when the row cannot be found (a freestyle workout, a deleted
  * programme) or the row is not loaded: there the question has no answer.
+ *
+ * With the reader's automatic progression off nothing raises on a schedule,
+ * so a run at the ceiling is not on one: the coach is told the reps and the
+ * weight that has not moved. The stall surfaces leave the switch out (on): a
+ * lifter at the ceiling did every rep, which is not a stall either way.
  */
-export function readLiftProgramme(input: ProgrammeHistoryInput): LiftProgrammeRead | null {
+export function readLiftProgramme(
+  input: ProgrammeHistoryInput & { automatedProgressionEnabled?: boolean },
+): LiftProgrammeRead | null {
   const read = readProgrammeHistory(input);
   if ('kind' in read) {
     return null;
@@ -342,7 +359,8 @@ export function readLiftProgramme(input: ProgrammeHistoryInput): LiftProgrammeRe
   // the gate reads it (programmedSets).
   const working = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, exercise.sets);
   return {
-    onSchedule: isProgressionReadySession(latest, exercise.repsMax, exercise.sets),
+    onSchedule:
+      input.automatedProgressionEnabled !== false && isProgressionReadySession(latest, exercise.repsMax, exercise.sets),
     repsMax: exercise.repsMax,
     workingKg: topLoad(latest, exercise.sets),
     workingReps: working.map((set) => set.reps),

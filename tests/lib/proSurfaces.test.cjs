@@ -606,20 +606,41 @@ module.exports = [
     name: 'automated progression is sold as Pro, so every start path gates it on Pro',
     run() {
       // App.tsx: all three start call sites go through the one helper that
-      // combines the toggle with the entitlement.
-      assert.doesNotMatch(
-        appSource,
-        /automatedProgressionEnabled: (preferences|nextPreferences)\.automatedProgressionEnabled/,
+      // combines the toggle with the entitlement. The advisers read the
+      // reader's own switch on purpose and start nothing: off, they promise no
+      // raise; on Free, the analysis and the completion lock sell the raise Pro
+      // makes (owner Q5, 2026-10-12).
+      const ADVISERS = new Set(['usePlanReadouts.tsx', 'useProInsights.ts']);
+      const appDir = path.join(__dirname, '..', '..', 'src', 'app');
+      const rawToggle = /automatedProgressionEnabled: (preferences|nextPreferences)\.automatedProgressionEnabled/;
+      const wiring = [
+        ['App.tsx', fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8')],
+        ...fs
+          .readdirSync(appDir)
+          .filter((name) => /\.tsx?$/.test(name))
+          .map((name) => [name, fs.readFileSync(path.join(appDir, name), 'utf8')]),
+      ];
+      const passing = wiring.filter(([, source]) => rawToggle.test(source)).map(([name]) => name);
+      assert.deepEqual(
+        passing.filter((name) => !ADVISERS.has(name)),
+        [],
         'a start call passing the raw toggle would hand a free user the paid prefill',
       );
+      assert.deepEqual(passing.sort(), [...ADVISERS].sort(), "each adviser passes the reader's own switch");
       // Two start paths now: ready and custom. The AI branch no longer starts
       // a workout of its own — it composes a programme that is saved as a
       // custom one and starts through the custom path like any other.
       // Since 2026-09-26 both go through one door, startProgrammeWorkout,
       // which also applies a lighter session from the recovery sheet — so the
-      // entitlement is resolved once, and both paths must use that door.
+      // entitlement is resolved once, and both paths must use that door. The
+      // coach context resolves it too, to tell the coach what the next start
+      // does; it starts nothing.
+      const resolving = wiring
+        .filter(([name]) => name !== 'useCoachContext.ts')
+        .map(([, source]) => source)
+        .join('\n');
       assert.equal(
-        (appSource.match(/resolveProgressionOptions\((preferences|nextPreferences)(, now)?\)/g) ?? []).length,
+        (resolving.match(/resolveProgressionOptions\((preferences|nextPreferences)(, now)?\)/g) ?? []).length,
         1,
         'a start path resolves progression on its own, past the shared door',
       );

@@ -553,6 +553,10 @@ module.exports = [
         // one mark per lift ("on schedule", 2026-10-11) to the trajectory the
         // workouts already carry.
         adviceTemplateLookup: 'programme',
+        // Not sent either: the reader's automatic-progression switch only
+        // takes that mark away when it is off (2026-10-12). A setting, not
+        // something about the reader.
+        automatedProgressionEnabled: null,
       };
       const PHRASES = {
         workouts: { en: /recent workouts/, fi: /viimeaikaiset treenisi/ },
