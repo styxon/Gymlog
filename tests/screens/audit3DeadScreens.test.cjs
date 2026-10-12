@@ -108,6 +108,9 @@ module.exports = [
       assert.doesNotMatch(routes, /screen: 'ai';/, "the 'ai' route is back");
       assert.doesNotMatch(routes, /screen: 'editor';/, "the 'editor' route is back");
       assert.doesNotMatch(routes, /screen: 'celebration';/, "the 'celebration' route is back");
+      // Seasons were parked on 2026-08-31 and removed for good on 2026-10-12.
+      assert.doesNotMatch(routes, /screen: 'season';/, "the 'season' route is back");
+      assert.ok(!exists('src', 'screens', 'SeasonScreen.tsx'), 'SeasonScreen is back');
       // The state it was the only reader of, and the setter threaded through
       // the profile tab to clear it.
       assert.doesNotMatch(read('src', 'app', 'workoutCompletionState.ts'), /WorkoutCelebrationState/);
@@ -273,20 +276,16 @@ module.exports = [
       }
 
       /*
-       * `season` is unreachable ON PURPOSE (decision 2026-08-31, written down
-       * in ProgramsHomeScreen where the section used to be): the screen and
-       * every library under it were left working so that putting the section
-       * back is one commit. An entry point absent by decision is not a bug,
-       * and deleting the screen would throw away what the decision kept.
+       * A route unreachable ON PURPOSE goes here, with the decision that keeps
+       * it. `workout/season` was the one entry (parked 2026-08-31); the season
+       * feature was removed on 2026-10-12, and its route with it.
        *
        * This guard's first run flagged `celebration` beside it, and that one
        * WAS dead: 83b718b rebuilt the post-finish flow onto `summary` and
        * WorkoutCompletionScreen, deleting the `replaceRoute` that opened the
-       * old one. It is removed in this commit rather than listed here — the
-       * difference between the two is a decision to come back, and only
-       * `season` has one.
+       * old one.
        */
-      const PARKED = new Set(['workout/season']);
+      const PARKED = new Set();
 
       const unreachable = [...declared].filter((k) => !reachable.has(k) && !PARKED.has(k)).sort();
       assert.deepEqual(unreachable, [], `nothing can open these routes: ${unreachable.join(', ')}`);

@@ -57,23 +57,6 @@ module.exports = [
     },
   },
   {
-    // #11: the season row was written before the adoption, so a join the cap
-    // refused left the season page saying "running".
-    name: 'hunt 10 #11: the season sign-up is written only once its programme is running',
-    run() {
-      const tab = read('src', 'app', 'renderWorkoutTab.tsx');
-      const join = between(tab, 'onJoinSeason={() => {', 'onBack={');
-      assert.match(
-        join,
-        /void handleAdoptReadyProgram\(seasonProgramId\)\s*\.then\(\(joined\) => \(joined \? handleEnrolSeason\(seasonInView, seasonWindow\.year\) : undefined\)\)\s*\.catch\(/,
-      );
-      assert.equal((join.match(/handleEnrolSeason\(/g) ?? []).length, 1, 'the sign-up is written in one place');
-      // Written from the stored list: it runs after the adoption's write.
-      const hook = read('src', 'app', 'useSeasonEnrolment.ts');
-      assert.match(hook, /updatePreferences\(\(current\) => \(\{\s*seasonEnrolments: addSeasonEnrolment\(current\.seasonEnrolments, \{/);
-    },
-  },
-  {
     // #20: the cap sheet and toast were handed the count without the finished
     // programme Start next replaces.
     name: 'hunt 10 #20: the doors that replace a finished programme report the count running now',

@@ -22,7 +22,7 @@ const PROGRAMME_MINUTES_NAMES = [
   'Stairmaster (Moderate)',
   // Prenatal Fitness, Low-Impact Cardio & Stability: 1 × 15 min.
   'Stationary Bike (Easy Pace)',
-  // Run & Mobility and the summer season: 4 × 5 min and 5 × 4 min, with a
+  // Run & Mobility and Summer Conditioning: 4 × 5 min and 5 × 4 min, with a
   // walk between blocks. The catalog's own progression rule says so: "Run
   // blocks progress by adding one block, never by running the same block
   // harder".

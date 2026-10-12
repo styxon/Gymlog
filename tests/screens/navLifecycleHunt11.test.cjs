@@ -3,9 +3,6 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { between, functionBody } = require('../helpers/sourceSlices.cjs');
 
-const { isReadyProgrammeRunning } = require('../../.test-dist/lib/programmeCopyLink.js');
-const { stopProgramme, listRunningProgrammes } = require('../../.test-dist/lib/runningProgrammes.js');
-const { addSeasonEnrolment } = require('../../.test-dist/lib/seasonEnrolment.js');
 const { createTemplateLeaveGuard, releaseHeldLeave } = require('../../.test-dist/lib/templateLeaveGuard.js');
 const { pushRoute, popRoute, withoutTrailingRoute } = require('../../.test-dist/navigation/routeHistory.js');
 
@@ -47,41 +44,6 @@ module.exports = [
         functionBody(app, '  function navigateToTab('),
         /resetToRoute\(resolveTabRoute\(tab\)\);/,
       );
-    },
-  },
-  {
-    // 2: the sign-up outlives a stop; the pill and the CTA follow the plans.
-    name: 'hunt 11 #2: a season programme that was stopped is not "running", sign-up or not',
-    run() {
-      const seasonProgramId = 'season_winter_program';
-      const plans = [
-        { id: `ready_plan_${seasonProgramId}`, name: 'Winter', entries: [{ workoutTemplateId: seasonProgramId }] },
-      ];
-      let prefs = { activePlanId: plans[0].id, activePlanIds: [plans[0].id], seasonEnrolments: [] };
-      prefs.seasonEnrolments = addSeasonEnrolment(prefs.seasonEnrolments, {
-        season: 'winter',
-        year: 2026,
-        joinedAt: '2026-10-01T10:00:00.000Z',
-      });
-      const runningIds = () => listRunningProgrammes({ ...prefs, plans }).map((row) => row.templateId);
-      assert.equal(isReadyProgrammeRunning(seasonProgramId, runningIds(), []), true);
-
-      prefs = { ...prefs, ...stopProgramme({ ...prefs, plans, templateId: seasonProgramId }) };
-      assert.equal(prefs.seasonEnrolments.length, 1, 'the sign-up stays');
-      assert.equal(isReadyProgrammeRunning(seasonProgramId, runningIds(), []), false);
-
-      // The reader's own copy of it counts while that copy is what runs.
-      const copy = { id: 'custom_copy', sourceTemplateId: seasonProgramId, sessions: [{ id: 's1' }] };
-      assert.equal(isReadyProgrammeRunning(seasonProgramId, ['custom_copy'], [copy]), true);
-      // A copy nothing runs is a leftover.
-      assert.equal(isReadyProgrammeRunning(seasonProgramId, [], [copy]), false);
-
-      const tab = read('src', 'app', 'renderWorkoutTab.tsx');
-      assert.match(
-        tab,
-        /running=\{isReadyProgrammeRunning\(seasonProgramId, activeProgramTemplateIds, database\.workoutTemplates\)\}/,
-      );
-      assert.doesNotMatch(tab, /isEnrolled\(/);
     },
   },
   {

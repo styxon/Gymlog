@@ -403,8 +403,8 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     await updatePreferences({
       activePlanIds: resumed.activePlanIds,
       // resumeProgramme names the resumed plan as activePlanId whichever way,
-      // so the lead is kept here: joining a season must not quietly demote the
-      // programme at the top of Home.
+      // so the lead is kept here: taking on another programme must not quietly
+      // demote the programme at the top of Home.
       activePlanId: options?.lead ? resumed.planId : running.activePlanId ?? resumed.planId,
     });
     // Counted here, after the write, for every door that resumes through

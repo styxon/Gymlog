@@ -367,7 +367,6 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       learnedExerciseLibraryItemIds: [],
       exerciseTechniqueChecks: {},
       strengthGoals: [],
-    seasonEnrolments: [],
       dismissedTipIds: [],
       dismissedCompletionPlanIds: [],
       dismissedCardSuggestionKeys: [],

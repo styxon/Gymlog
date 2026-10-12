@@ -85,8 +85,8 @@ export function createProgrammeSwitches(deps: ProgrammeSwitchesDeps) {
    * Make a programme you already hold the one Home leads with.
    *
    * Matched on the template rather than the plan id, because the same programme
-   * can be held under a plan id minted by onboarding, by adoption, or by a
-   * season — and all three are equally "this programme".
+   * can be held under a plan id minted by onboarding or by adoption — and
+   * both are equally "this programme".
    */
   async function promoteHeldProgramToLead(workoutTemplateId: string, replacingPlanId?: string) {
     const plan = database.workoutPlans.find(

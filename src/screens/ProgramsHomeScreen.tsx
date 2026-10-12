@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Dimensions,
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
@@ -42,7 +41,6 @@ import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { PROGRAM_CATEGORIES, ProgramCategoryKey } from '../lib/programCategories';
 import { GoalProgrammeSuggestionView } from '../lib/goalProgramme';
 import { StrengthGoalProgress } from '../lib/strengthGoals';
-import type { ProgramSeason } from '../lib/programSeasons';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import type { WorkoutLevel } from '../features/workout/workoutTypes';
 import type { AppLanguage, ExerciseLibraryItem, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
@@ -70,11 +68,6 @@ const SAVED_TILE: [string, string] = ['#00BAD1', '#0088A8'];
 // Tall enough for a two-line title, two lines of body AND the pill under
 // them. At 186 the CTA was clipped by the card's own bottom edge.
 const CAMPAIGN_H = 216;
-
-// Two cards, one gap, inside the page's 20px gutters.
-const SEASON_ROW_W = Dimensions.get('window').width - 40;
-const SEASON_CARD_W = Math.floor((SEASON_ROW_W - 12) / 2);
-const SEASON_CARD_H = 216;
 
 const COVER_W = 274;
 const COVER_H = 176;
@@ -500,10 +493,6 @@ const LEVEL_FILTERS: Array<{ level: WorkoutLevel | null; key: I18nKey }> = [
  * program in it, a filter on that level, and a sentence per program saying
  * what the training actually is. Browsing stays behind it, and closing is one
  * gesture.
- *
- * Seasons use the same sheet. Two mechanisms for "show me this subset" is one
- * too many, and the season rail's "Poista suodatin" link — which emptied the
- * section instead of narrowing it — was the price of having a second one.
  */
 function ProgramSheet({
   visible,
@@ -794,10 +783,7 @@ export function ProgramsHomeScreen({
   /**
    * Which sheet is open, if any.
    *
-   * Categories and seasons used to be two separate pieces of state driving two
-   * inline rails that behaved differently — the season one even had a "Poista
-   * suodatin" link that emptied the section rather than narrowing it. One
-   * state, one sheet, one way to close it.
+   * One state, one sheet, one way to close it.
    */
   // One variant left. The 'all' sheet's only door was the trending section's
   // "Kaikki" link, and both went together: the catalog screen answers that
@@ -808,8 +794,6 @@ export function ProgramsHomeScreen({
   const [createOpen, setCreateOpen] = useState(false);
   // The tile row scrolls to four and a half categories; this shows all nine.
   const [allCategories, setAllCategories] = useState(false);
-  // Where the season rows begin, measured rather than guessed — a hero CTA
-  // that says "Open the season" has to actually arrive there.
 
   // The open sheet's contents, drawn from the same sources the tiles count.
   // Resolved once, with the fallback here rather than on four props. Every
@@ -1077,20 +1061,6 @@ export function ProgramsHomeScreen({
             catalog, always open, in the same card size as four other rows. It
             is gone because the tiles above now are the way in, and a rail that
             is always there makes a menu above it look decorative. */}
-
-        {/* Seasons are PARKED, not deleted (decision 2026-08-31).
-
-            Still here and still working: the 'season' route, SeasonScreen, and
-            every library under it — the screen resolves its own window and its
-            own programme, so it needs nothing from this tab. Gone with the
-            section: the two cards, this screen's seasonRows/seasonCards props
-            and the App memos behind them, because a prop nothing reads is a
-            lie in the interface. Un-parking is one commit: put the section
-            back and re-add those three.
-
-            The target card below took the slot, because a dated commitment and
-            a number to aim at answer the same question and only one of them
-            was real. */}
 
         {/* Always here. It used to appear only once a lift had been logged,
             which hid the targets section from the one reader a target would
@@ -1870,90 +1840,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.4,
   },
-  // ── Season tiles (168 × 150) ─────────────────────────────────────────
-  seasonGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  seasonCard: {
-    height: SEASON_CARD_H,
-    borderRadius: 22,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  seasonCardBody: {
-    padding: 15,
-  },
-  seasonCardTitle: {
-    color: '#FFFFFF',
-    fontSize: 21,
-    lineHeight: 26,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    marginTop: 3,
-  },
-  seasonPill: {
-    position: 'absolute',
-    top: 13,
-    left: 13,
-    borderRadius: 999,
-    backgroundColor: 'rgba(255,255,255,0.94)',
-    paddingHorizontal: 9,
-    paddingVertical: 4,
-  },
-  seasonPillMuted: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  seasonPillText: {
-    color: '#191036',
-    fontSize: 9.5,
-    lineHeight: 12,
-    fontWeight: '900',
-    letterSpacing: 0.8,
-  },
-  seasonPillTextMuted: {
-    color: '#FFFFFF',
-  },
-  seasonTileMonths: {
-    color: 'rgba(255,255,255,0.82)',
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 1.2,
-  },
-  seasonTileCount: {
-    color: 'rgba(255,255,255,0.86)',
-    fontSize: 11.5,
-    lineHeight: 15,
-    marginTop: 2,
-  },
-  seasonTileLead: {
-    color: 'rgba(255,255,255,0.74)',
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '600',
-    marginTop: 8,
-  },
-  seasonTrack: {
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255,255,255,0.24)',
-    marginTop: 10,
-    overflow: 'hidden',
-  },
-  seasonTrackFill: {
-    height: 6,
-    borderRadius: 4,
-    backgroundColor: '#FFFFFF',
-  },
-  seasonDays: {
-    color: 'rgba(255,255,255,0.74)',
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 0.7,
-    marginTop: 11,
-  },
   ownProgramsLine: {
     color: theme.muted,
     fontSize: 13,
@@ -2181,7 +2067,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   sheetScrim: {
     ...StyleSheet.absoluteFillObject,
   },
-  // ── Category / season sheet ──────────────────────────────────────────
+  // ── Category sheet ──────────────────────────────────────────────────
   catSheet: {
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,

@@ -150,7 +150,6 @@ import { useHomeTrainingSchedule } from './src/app/useHomeTrainingSchedule';
 import { usePlanReadouts } from './src/app/usePlanReadouts';
 import { useRecentSessions } from './src/app/useRecentSessions';
 import { useProgramsCatalog } from './src/app/useProgramsCatalog';
-import { useSeasonEnrolment } from './src/app/useSeasonEnrolment';
 import { useProgramsCustomItems } from './src/app/useProgramsCustomItems';
 import { LaunchScreen } from './src/screens/LaunchScreen';
 import { setNumberLanguage } from './src/lib/format';
@@ -958,15 +957,17 @@ function VinhaApp() {
   });
 
   /**
-   * Take on a ready programme — what "Start season" promises.
+   * Take on a ready programme.
    *
    * It ADDS. Nothing here ever drops a programme the reader already has: a
-   * season is another commitment, not a replacement for the week they built.
+   * new programme is another commitment, not a replacement for the week they
+   * built.
    * The only thing standing between them and a fourth is the cap, and the only
    * thing that removes a programme is the reader asking for it.
    *
    * Before this existed, `activePlanId` was written by the two onboarding
-   * finishes and nowhere else, so a season could be opened but never joined.
+   * finishes and nowhere else, so a ready programme could be opened but never
+   * taken on.
    */
   /**
    * Returns whether the programme is running when this resolves.
@@ -1114,7 +1115,7 @@ function VinhaApp() {
     const nextActivePlanIds = addActiveProgram(running.activePlanIds, plan.id);
     await updatePreferences({
       activePlanIds: nextActivePlanIds,
-      // Joining a season must not quietly demote the programme already at the
+      // Adopting a programme must not quietly demote the one already at the
       // top of Home — but stepping up FROM a finished programme is the reader
       // explicitly choosing a new lead, so the completion flow passes `lead`.
       activePlanId: options.lead ? plan.id : running.activePlanId ?? plan.id,
@@ -1155,15 +1156,15 @@ function VinhaApp() {
    * Which programmes the active plans actually point at.
    *
    * Plan ids are not programme ids: onboarding writes onboarding_plan_<id> and
-   * adoption writes ready_plan_<id>, so a reader who picked the season
+   * adoption writes ready_plan_<id>, so a reader who picked a ready
    * programme during onboarding holds a different plan id for the same
    * programme. Membership has to be asked of the template, not the plan.
    */
   const activeProgramTemplateIds = useMemo(() => {
     const byId = new Map(database.workoutPlans.map((plan) => [plan.id, plan]));
     // The LEADER counts too. Several writers set `activePlanId` without
-    // adding it to `activePlanIds` (activating a held plan, the season
-    // paths), so the plan Home leads with could be missing from this set —
+    // adding it to `activePlanIds` (activating a held plan, among others),
+    // so the plan Home leads with could be missing from this set —
     // and its own detail page then offered "Start this programme" for a
     // programme that was already running (device, 2026-08-30).
     return [...new Set([preferences.activePlanId, ...preferences.activePlanIds])]
@@ -1178,7 +1179,7 @@ function VinhaApp() {
    * Its presentation title, the name its own page wears, and a plan whose
    * template is gone falls back to the plan's own name. A programme tagged
    * for a season used to go by the season's name here instead, and that tag
-   * covers twenty-odd ordinary programmes: STRONG Elite was "Talvikunto" in
+   * covered twenty-odd ordinary programmes: STRONG Elite was "Talvikunto" in
    * the list and STRONG Elite once opened (user 2026-09-21, "poistetaan
    * kaikki talvikunto kesäkunto").
    *
@@ -1202,7 +1203,7 @@ function VinhaApp() {
    * The programmes running alongside the one Home leads with.
    *
    * Home's hero still belongs to a single plan; these are the rest, listed
-   * under it so a season the reader joined is visible rather than merely
+   * under it so a programme the reader added is visible rather than merely
    * stored.
    */
   const homeOtherPrograms = useMemo(() => {
@@ -1922,7 +1923,7 @@ function VinhaApp() {
    * The rotating hero's slides, and the counts they promise.
    *
    * Every count is read off the same catalog the tiles filter, so a slide
-   * cannot advertise a season that has nothing in it.
+   * cannot advertise a category that has nothing in it.
    */
   const {
     toSetLogSource,
@@ -1941,15 +1942,6 @@ function VinhaApp() {
     lifetimeSummary,
     unitPreference,
   });
-
-  /**
-   * The strip under "Aloita treeni".
-   *
-   * Every input is read from state that is true right now: the season window
-   * the calendar is actually in, a recommendation the reader is not already
-   * running, and a target only once there are lifts to measure one from.
-   */
-  const { handleEnrolSeason } = useSeasonEnrolment({ preferences, updatePreferences });
 
   const {
     sameLibraryRow,
@@ -2230,9 +2222,6 @@ function VinhaApp() {
       programSlots,
       setProgramLimitVisible,
       syncPlanToTemplate,
-      trackedProgress,
-      workoutSessions,
-      handleEnrolSeason,
       programsCatalogItems,
       catalogScreenItems,
       proUnlocked: proEntitlement.unlocked,

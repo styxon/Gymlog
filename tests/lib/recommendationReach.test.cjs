@@ -16,9 +16,9 @@ const { recommendPrograms } = require('../../.test-dist/lib/recommendationScorin
  * a program to the catalog and forgetting the registry now fails here.
  */
 const BROWSE_ONLY = {
-  // Seasons are entered from the season carousel, not from a setup answer.
-  tpl_season_summer_v1: 'season entry',
-  tpl_season_winter_v1: 'season entry',
+  // Built for the season competition (removed 2026-10-12); never a setup answer.
+  tpl_season_summer_v1: 'former season programme',
+  tpl_season_winter_v1: 'former season programme',
   // Single muscle days are add-ons to a program, not a program to be given.
   tpl_focus_chest_v1: 'one-day add-on',
   tpl_focus_back_v1: 'one-day add-on',
