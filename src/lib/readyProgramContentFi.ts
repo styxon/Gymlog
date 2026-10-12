@@ -381,12 +381,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_3_day_full_body_v1: {
     summary:
-      'Kolme koko kehon treeniä, jotka pitävät voimaharjoittelun tiheänä samalla kun viikon kokonaisrasitus pysyy hallittavana.',
+      'Kolme koko kehon treeniä: ensin perusliikkeet, sitten pyöräily, juoksupätkät tai soutuintervallit. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
-      'Aloitteleville treenaajille tai kenelle tahansa, joka haluaa yksinkertaisen viikkorakenteen ja toistuvaa harjoittelua perusliikkeillä.',
-    equipmentProfile: 'Suositellaan täyttä salia: tanko, penkki, talja, jalkaprässi ja perusvetopaikka.',
+      'Aloitteleville treenaajille tai kenelle tahansa, joka haluaa yksinkertaisen viikkorakenteen, toistuvaa harjoittelua perusliikkeillä ja vähän kestävyyttä joka treeniin.',
+    equipmentProfile: 'Suositellaan täyttä salia: tanko, penkki, talja, jalkaprässi, perusvetopaikka sekä kuntopyörä, juoksumatto tai soutulaite.',
     whyItWorks:
-      'Pohja toistaa kyykky-, punnerrus-, veto- ja saranaliikkeet viikon aikana, joten eteneminen pysyy ilmiselvänä ilman monimutkaista jakoa.',
+      'Pohja toistaa kyykky-, punnerrus-, veto- ja saranaliikkeet viikon aikana, joten eteneminen pysyy ilmiselvänä, ja jokainen päivä päättyy omaan kunto-osuuteensa.',
   },
   tpl_4_day_upper_lower_v1: {
     summary:
@@ -408,12 +408,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_2_day_minimal_full_body_v1: {
     summary:
-      'Kevyt kahden päivän kehonpaino-ohjelma viikoille, joina haluat treenata koko kehon ilman salia.',
+      'Kevyt kahden päivän kehonpaino-ohjelma viikoille, joina haluat treenata koko kehon ilman salia. Jokainen päivä päättyy kevyisiin juoksupätkiin.',
     audience:
       'Aloittelijoille, kiireisiin viikkoihin, kotitreeneihin tai kenelle tahansa treeniin palaavalle, joka haluaa silti rakenteen ja etenemisen.',
-    equipmentProfile: 'Koti- ja kehonpainoystävällinen. Lattiatila ja tukeva soutupaikka riittävät ohjelman ytimeen.',
+    equipmentProfile: 'Koti- ja kehonpainoystävällinen. Lattiatila, tukeva soutupaikka ja paikka juosta riittävät ohjelman ytimeen.',
     whyItWorks:
-      'Pohja pitää kyykky-, työntö-, veto-, sarana- ja keskivartaloliikkeet viikossa ja käyttää kehonpainon etenemistä salivälineiden sijaan.',
+      'Pohja pitää kyykky-, työntö-, veto-, sarana- ja keskivartaloliikkeet viikossa ja käyttää kehonpainon etenemistä salivälineiden sijaan, ja juoksupätkät tuovat kuntoharjoittelun ilman välineitä.',
   },
   tpl_3_day_strength_base_v1: {
     summary:
@@ -445,12 +445,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
 
   tpl_3_day_upper_lower_lite_v1: {
     summary:
-      'Kevyempi kolmen päivän ylä/ala-jako, joka pitää viikon tasapainossa vaatimatta pitkiä tai liian tiiviitä treenejä.',
+      'Kevyempi yleiskuntoviikko: kolme lyhyempää treeniä, joissa kussakin kahdeksan voimasarjaa ja sen jälkeen juoksupätkät, pyöräily tai soutuintervallit. Lähes puolet viikosta on kuntoharjoittelua.',
     audience:
-      'Aloittelijoille, jotka haluavat koko kehon treeniä vaihtelevampaa mutta eivät ole vielä valmiita klassiseen nelipäiväiseen jakoon.',
-    equipmentProfile: 'Tavallinen täysi sali toimii parhaiten, mutta treenin pituus ja liikemäärä pysyvät maltillisina.',
+      'Aloittelijoille, jotka haluavat kestävyyttä ja voimaa yhtä paljon ja vähemmän nostoja kuin FIT-ohjelmassa.',
+    equipmentProfile: 'Tavallinen täysi sali toimii parhaiten: kuntopyörä, juoksumatto tai paikka juosta ja soutulaite sekä tavalliset punnerrus-, soutu- ja jalkalaitteet.',
     whyItWorks:
-      'Jako antaa ylävartalolle kaksi treeniä ja alavartalolle yhden isomman päivän, joten sekä tekniikkaharjoittelu että palautuminen pysyvät helposti hallinnassa.',
+      'Ylävartalopäivä, alavartalopäivä ja koko kehon päivä tuovat jalat viikkoon kahdesti, ja jokainen voimaosio pysyy niin lyhyenä, että sen jälkeiselle kestävyysosuudelle jää oikeasti aikaa.',
   },
 
   tpl_3_day_push_pull_legs_v1: {

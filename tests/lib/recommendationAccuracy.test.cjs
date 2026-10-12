@@ -57,8 +57,23 @@ const { execFileSync } = require('node:child_process');
  * E2s 37 -> 23. G1 25 -> 29 is the supply it hid: an advanced lean-athletic
  * reader at home with a bar, or a barbell and rack, has no programme that
  * lists the goal; HARD holds at 31.
+ *
+ * Owner, 2026-10-12: FIT, FIT Lite, FIT Elite and HOME Starter gained the
+ * conditioning a general-fitness week was missing. The ranker did not change;
+ * the eligible set did. FIT traded its cable crunches and pushdown for a bike,
+ * a run and a rower, so a gym without machines and cables, and a home with a
+ * barbell, rack, bench and dumbbells, can now run it (programFitsEquipment).
+ * It became the general-fitness answer there on three to six days, in place of
+ * At Home - No Equipment, Bodyweight Upper/Lower or FOCUS Glutes, which used
+ * none of that gear (three G1 failures went with them). On two days the reader
+ * keeps HOME Starter, the two-day rule of 2026-10-07, and now that FIT is
+ * eligible a day away those answers count: E2 2 -> 8 (six two-day answers
+ * at a full home), E4 13 -> 18 (six two-day beginner and advanced answers at
+ * a full home or a gym without machines in, one pro answer out), HARD
+ * 31 -> 34 (six in, three out). Same answers as before for those readers; a wider set of
+ * plans the matrix compares them with.
  */
-const CEILINGS = { E2: 2, E3: 0, E4: 13, L1: 0, S1: 0, C1: 0, HARD: 31 };
+const CEILINGS = { E2: 8, E3: 0, E4: 18, L1: 0, S1: 0, C1: 0, HARD: 34 };
 
 let cached = null;
 function matrix() {

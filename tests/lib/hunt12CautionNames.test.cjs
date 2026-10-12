@@ -308,7 +308,11 @@ module.exports = [
       // sets over the whole library and catalog are identical to it). The two
       // thin hip days were thin before: Heavy Glutes Strength and the Hip
       // Opening Flow.
-      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 122, thin: 4 } };
+      //
+      // Lower back went from four thin days to three on 2026-10-12 with the
+      // same 122 removals: FIT Elite's Upper Power took treadmill intervals,
+      // so when its barbell row and swings go it keeps three rows, not two.
+      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 122, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

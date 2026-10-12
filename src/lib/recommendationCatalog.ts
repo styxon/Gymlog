@@ -62,7 +62,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'low_equipment',
     recoveryDemand: 'low',
-    styleTags: ['express', 'balanced'],
+    // Not 'express' since 2026-10-12: each day closes on twelve minutes of
+    // run blocks, and the session is about fifty minutes.
+    styleTags: ['balanced'],
     secondaryOutcomeTags: ['consistency'],
     focusAreaTags: ['core', 'legs'],
     lowFriction: true,
@@ -125,7 +127,10 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'moderate',
-    styleTags: ['balanced', 'express'],
+    // Not 'express' since 2026-10-12: a conditioning block follows the lifts
+    // every day (about a third of the week), and the session is about fifty
+    // minutes. FIT Lite is the shorter one.
+    styleTags: ['balanced'],
     secondaryOutcomeTags: ['consistency'],
     focusAreaTags: ['legs', 'chest', 'back'],
     lowFriction: true,
@@ -139,7 +144,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     recoveryDemand: 'low',
     styleTags: ['balanced', 'express'],
     secondaryOutcomeTags: ['consistency'],
-    focusAreaTags: ['arms', 'back', 'chest'],
+    // Arms went on 2026-10-12, when the week became lighter lifting and close
+    // to half conditioning: it no longer trains them. Conditioning came in.
+    focusAreaTags: ['conditioning', 'back', 'chest', 'legs'],
     lowFriction: true,
     jointFriendly: true,
   }),

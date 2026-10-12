@@ -77,7 +77,11 @@ module.exports = [
       assert.deepEqual(offenders, []);
 
       const fit = template('tpl_fit_elite_v1');
-      const lifting = (session) => sumSets(session.exercises, (exercise) => exercise.substitutionGroup !== 'conditioning_circuit' && exercise.substitutionGroup !== 'explosive_power');
+      // Interval rounds and minutes of cardio are not lifting sets: FIT Elite
+      // took a treadmill, a bike and a run block on 2026-10-12, in groups the
+      // first version of this filter did not know.
+      const conditioningGroups = ['conditioning_circuit', 'explosive_power', 'cardio_intervals', 'running_blocks', 'steady_cardio'];
+      const lifting = (session) => sumSets(session.exercises, (exercise) => !conditioningGroups.includes(exercise.substitutionGroup));
       const upperA = fit.sessions.find((session) => session.id === 'fit_elite_upper_a');
       const upperB = fit.sessions.find((session) => session.id === 'fit_elite_upper_b');
       assert.ok(lifting(upperB) >= lifting(upperA), `Upper Volume lifts ${lifting(upperB)} sets, Upper Power ${lifting(upperA)}`);

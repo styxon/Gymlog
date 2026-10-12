@@ -45,7 +45,9 @@ module.exports = [
       assert.equal(fit.signals.averageSessionMinutes <= 55, true);
       assert.equal(fit.signals.loadedExerciseCount >= 8, true);
       assert.equal(fit.signals.hasResistanceWork, true);
-      assert.equal(fit.signals.hasRunWork, false);
+      // FIT runs since 2026-10-12: its second day closes on run blocks, so a
+      // general-fitness week is not lifting alone.
+      assert.equal(fit.signals.hasRunWork, true);
     },
   },
   {

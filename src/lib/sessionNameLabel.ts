@@ -22,6 +22,10 @@ const FOCUS_FI: Record<string, string> = {
   // returned UNCHANGED never sees those.
   'core & mobility for runners': 'Keskivartalo ja liikkuvuus juoksijalle',
   'lower volume + engine': 'Alavartalon volyymi + kestävyys',
+  // FIT Lite's days (2026-10-12).
+  'upper body + run': 'Ylävartalo + juoksu',
+  'lower body + bike': 'Alavartalo + pyöräily',
+  'full body + intervals': 'Koko keho + intervallit',
   'full body & balance': 'Koko keho ja tasapaino',
   'full body & conditioning': 'Koko keho ja kunto',
   'glutes & hamstrings': 'Pakarat ja takareidet',
