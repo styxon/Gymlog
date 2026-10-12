@@ -867,30 +867,35 @@ export const Vinha_WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     defaultScheduleMode: 'rolling_sequence',
     progressionRules: Vinha_PROGRESSION_RULES,
     sessions: [
+      // An easy ride closes every day (owner, 2026-10-12): the programme is
+      // offered for general fitness, and a general-fitness week spends 30 to
+      // 50 % of its time on conditioning (generalFitnessConditioningShare).
+      // Ten minutes alone made 23 %, so the arm superset, the calf raise, the
+      // hip abduction and the marching went, the main lifts moved to twelve
+      // reps, and the week sits at a third conditioning on the same 40-minute
+      // card.
       { id: "lower_body_supported", name: "Lower Body (Supported)", orderIndex: 1, exercises: [
-        { id: "lower_body_supported_leg_press", exerciseName: "Leg Press", slotId: "primary_gainer_hinge_glute_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 120, substitutionGroup: "squat_pattern" },
+        { id: "lower_body_supported_leg_press", exerciseName: "Leg Press", slotId: "primary_gainer_hinge_glute_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 120, substitutionGroup: "squat_pattern" },
         { id: "lower_body_supported_seated_leg_curl", exerciseName: "Seated Leg Curl", slotId: "secondary_gainer_arms_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "accessory_hamstrings" },
-        { id: "lower_body_supported_leg_extension", exerciseName: "Leg Extension", slotId: "secondary_gainer_squat_leg_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "squat_pattern" },
-        { id: "lower_body_supported_glute_bridge", exerciseName: "Glute Bridge", slotId: "accessory_gainer_hinge_glute_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "bodyweight_hinge" },
-        { id: "lower_body_supported_seated_calf_raise", exerciseName: "Seated Calf Raise", slotId: "accessory_gainer_calves_5", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "calves", supersetGroup: "ss_lower_body_supported_lower_body_supported_seated_calf_raise" },
-        { id: "lower_body_supported_standing_hip_abduction", exerciseName: "Standing Hip Abduction", slotId: "accessory_gainer_hinge_glute_6", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "glute_isolation", supersetGroup: "ss_lower_body_supported_lower_body_supported_seated_calf_raise" },
+        { id: "lower_body_supported_leg_extension", exerciseName: "Leg Extension", slotId: "secondary_gainer_squat_leg_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "squat_pattern" },
+        { id: "lower_body_supported_glute_bridge", exerciseName: "Glute Bridge", slotId: "accessory_gainer_hinge_glute_4", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "bodyweight_hinge" },
+        { id: "lower_body_supported_stationary_bike_easy_pace", exerciseName: "Stationary Bike (Easy Pace)", slotId: "conditioning_1", role: "accessory", progressionPriority: "low", trackingMode: "duration_minutes", sets: 1, repsMin: 10, repsMax: 10, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: "steady_cardio" },
       ] },
       { id: "upper_body_supported", name: "Upper Body (Supported)", orderIndex: 2, exercises: [
-        { id: "upper_body_supported_machine_chest_press", exerciseName: "Machine Chest Press", slotId: "primary_gainer_arms_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "horizontal_press" },
-        { id: "upper_body_supported_lat_pulldown", exerciseName: "Lat Pulldown", slotId: "secondary_gainer_arms_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "vertical_pull" },
-        { id: "upper_body_supported_seated_machine_row", exerciseName: "Seated Machine Row", slotId: "secondary_gainer_pull_back_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "cable_machine_row" },
-        { id: "upper_body_supported_machine_shoulder_press", exerciseName: "Machine Shoulder Press", slotId: "accessory_gainer_shoulders_4", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "vertical_press" },
-        { id: "upper_body_supported_cable_bicep_curl", exerciseName: "Cable Bicep Curl", slotId: "accessory_gainer_arms_5", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "barbell_curl", supersetGroup: "ss_upper_body_supported_upper_body_supported_cable_bicep_curl" },
-        { id: "upper_body_supported_cable_triceps_pushdown", exerciseName: "Cable Triceps Pushdown", slotId: "accessory_gainer_arms_6", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "triceps_cable", supersetGroup: "ss_upper_body_supported_upper_body_supported_cable_bicep_curl" },
+        { id: "upper_body_supported_machine_chest_press", exerciseName: "Machine Chest Press", slotId: "primary_gainer_arms_1", role: "primary", progressionPriority: "high", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "horizontal_press" },
+        { id: "upper_body_supported_lat_pulldown", exerciseName: "Lat Pulldown", slotId: "secondary_gainer_arms_2", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "vertical_pull" },
+        { id: "upper_body_supported_seated_machine_row", exerciseName: "Seated Machine Row", slotId: "secondary_gainer_pull_back_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "cable_machine_row" },
+        { id: "upper_body_supported_machine_shoulder_press", exerciseName: "Machine Shoulder Press", slotId: "accessory_gainer_shoulders_4", role: "accessory", progressionPriority: "low", trackingMode: "reps_first", sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 105, substitutionGroup: "vertical_press" },
+        { id: "upper_body_supported_stationary_bike_easy_pace", exerciseName: "Stationary Bike (Easy Pace)", slotId: "conditioning_1", role: "accessory", progressionPriority: "low", trackingMode: "duration_minutes", sets: 1, repsMin: 10, repsMax: 10, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: "steady_cardio" },
       ] },
       { id: "full_body_balance", name: "Full Body & Balance", orderIndex: 3, exercises: [
         { id: "full_body_balance_sit_to_stand_chair_squat", exerciseName: "Sit-to-Stand (Chair Squat)", slotId: "primary_gainer_hinge_glute_1", role: "primary", progressionPriority: "high", trackingMode: "bodyweight", sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "bodyweight_squat_pattern" },
         { id: "full_body_balance_wall_push_up", exerciseName: "Wall Push-Up", slotId: "secondary_gainer_arms_2", role: "secondary", progressionPriority: "medium", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "bodyweight_press" },
         { id: "full_body_balance_standing_band_row", exerciseName: "Standing Band Row", slotId: "secondary_gainer_pull_back_3", role: "secondary", progressionPriority: "medium", trackingMode: "load_and_reps", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 90, substitutionGroup: "cable_machine_row" },
-        { id: "full_body_balance_single_leg_balance_hold", exerciseName: "Single-Leg Balance Hold", slotId: "accessory_gainer_core_4", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 3, repsMin: 20, repsMax: 40, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "balance_stability" },
-        { id: "full_body_balance_heel_to_toe_walk", exerciseName: "Heel-to-Toe Walk", slotId: "accessory_gainer_bodyweight_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "balance_stability" },
-        { id: "full_body_balance_standing_marching", exerciseName: "Standing Marching", slotId: "accessory_gainer_core_6", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 3, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "balance_stability" },
-        { id: "full_body_balance_seated_spinal_twist", exerciseName: "Seated Spinal Twist", slotId: "accessory_gainer_conditioning_7", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 2, repsMin: 30, repsMax: 45, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "spine_mobility" },
+        { id: "full_body_balance_single_leg_balance_hold", exerciseName: "Single-Leg Balance Hold", slotId: "accessory_gainer_core_4", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "balance_stability" },
+        { id: "full_body_balance_heel_to_toe_walk", exerciseName: "Heel-to-Toe Walk", slotId: "accessory_gainer_bodyweight_5", role: "accessory", progressionPriority: "low", trackingMode: "bodyweight", sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 75, substitutionGroup: "balance_stability" },
+        { id: "full_body_balance_seated_spinal_twist", exerciseName: "Seated Spinal Twist", slotId: "accessory_gainer_conditioning_7", role: "accessory", progressionPriority: "low", trackingMode: "hold", sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: "spine_mobility" },
+        { id: "full_body_balance_stationary_bike_easy_pace", exerciseName: "Stationary Bike (Easy Pace)", slotId: "conditioning_1", role: "accessory", progressionPriority: "low", trackingMode: "duration_minutes", sets: 1, repsMin: 10, repsMax: 10, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: "steady_cardio" },
       ] },
     ],
   },
@@ -1884,7 +1889,9 @@ export const Vinha_PROGRAM_RECOMMENDATIONS: VinhaRecommendationConfig[] = [
     secondaryOutcomeTags: ['muscle', 'strength'],
     focusAreaTags: ['chest', 'back', 'shoulders', 'arms', 'legs', 'glutes'],
     lowFriction: false,
-    jointFriendly: false,
+    // Joint-friendly since 2026-10-12 (owner): dumbbells at moderate reps,
+    // no jumping and no barbell.
+    jointFriendly: true,
   },
   {
     // Six home days with dumbbells: the four-day upper/lower stopped at four. (coverage sweep, 2026-10-04)

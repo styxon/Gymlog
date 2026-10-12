@@ -316,7 +316,12 @@ module.exports = [
       // Hips went from 91 removals to 90 on 2026-10-12: Bodyweight
       // Upper/Lower's Day 4 gave its Frog Pump (a hip-avoid row) to a block of
       // High Knees, which the hips filter does not touch.
-      const expected = { hips: { removed: 90, thin: 2 }, lower_back: { removed: 122, thin: 3 } };
+      //
+      // Hips went back to 91 later the same day, through content and not a
+      // pattern: WALK's Kneeling Hip Flexor and Standing Hip Abduction are
+      // hip-avoid rows (+2), and Joint-Friendly Strength gave its Standing
+      // Hip Abduction to a bike finisher (-1). No day went thin.
+      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 122, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

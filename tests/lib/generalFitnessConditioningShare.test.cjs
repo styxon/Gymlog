@@ -78,12 +78,16 @@ function offeredForGeneralFitness() {
   const { resolveFirstRunRecommendationWithTailoring } = lib('firstRunSetup');
   const { buildRecommendationOptionIds } = lib('recommendationPresentation');
   const offered = new Set();
-  for (const card of CARDS) {
+  // Over the age bands too (2026-10-12): the age rule offers WALK, HOME Easy
+  // and Joint-Friendly Strength over 41, and the machine weeks at 16-18, for
+  // general fitness among other goals. 19-25 stands for the middle bands,
+  // whose offers the age does not change (ageBandOffers).
+  for (const ageRange of ['19_25', '18', '41_plus']) for (const card of CARDS) {
     for (const level of ['beginner', 'advanced', 'pro']) {
       for (const daysPerWeek of [2, 3, 4, 5, 6]) {
         for (const gender of ['unspecified', 'male', 'female']) {
           const selection = {
-            gender, ageRange: '19_25', goal: 'general_fitness', goals: ['general_fitness'], level, daysPerWeek,
+            gender, ageRange, goal: 'general_fitness', goals: ['general_fitness'], level, daysPerWeek,
             equipment: card.equipment, trainingEnvironment: card.trainingEnvironment, equipmentItems: card.equipmentItems,
             secondaryOutcomes: [], focusAreas: [], cautionFlags: [], guidanceMode: 'guided_editable',
             scheduleMode: 'app_managed', automatedProgression: true, weeklyMinutes: null, availableDays: [],

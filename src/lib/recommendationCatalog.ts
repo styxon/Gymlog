@@ -1,6 +1,6 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { Vinha_PROGRAM_RECOMMENDATIONS } from '../features/workout/gainerProgramCatalog';
-import type { SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome } from '../types/models';
+import type { SetupAgeRange, SetupEquipment, SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome } from '../types/models';
 import type { RecommendationProgramDefinition, TemplateFamilyId } from '../types/recommendation';
 import { readyTemplateCardMinutes } from './programmeMinutes';
 
@@ -142,7 +142,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['balanced', 'express'],
+    styleTags: ['balanced', 'express', 'machine_guided'],
     secondaryOutcomeTags: ['consistency'],
     // Arms went on 2026-10-12, when the week became lighter lifting and close
     // to half conditioning: it no longer trains them. Conditioning came in.
@@ -168,7 +168,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'moderate',
-    styleTags: ['pump', 'balanced'],
+    styleTags: ['pump', 'balanced', 'machine_guided'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['glutes', 'legs', 'chest', 'back'],
     jointFriendly: true,
@@ -242,7 +242,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     styleTags: ['conditioning', 'balanced'],
     secondaryOutcomeTags: ['conditioning', 'mobility'],
     focusAreaTags: ['conditioning'],
-    jointFriendly: true,
+    // Not joint-friendly since 2026-10-12 (owner): running is about 72 % of
+    // the week's time. A reader whose knees or ankles are flagged still gets
+    // its runs as walks or rides (cautionExerciseFilter, RUN_STAND_INS).
   }),
   defineProgram('tpl_shred_v1', {
     familyId: 'athletic_recomp',
@@ -263,7 +265,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['pump', 'express'],
+    styleTags: ['pump', 'express', 'machine_guided'],
     secondaryOutcomeTags: ['muscle', 'consistency'],
     focusAreaTags: ['chest', 'back', 'legs'],
     lowFriction: true,
@@ -463,11 +465,14 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   defineProgram('tpl_gainer_joint_friendly_v1', {
     familyId: 'joint_friendly',
     supportedGoals: ['general', 'general_fitness'],
-    backupGoals: ['muscle', 'run_mobility'],
+    // Strength as a backup since 2026-10-12 (owner): supported machine lifts
+    // are strength work, and without it a beginner over 41 who wants strength
+    // had no lower-impact card that listed the goal.
+    backupGoals: ['muscle', 'run_mobility', 'strength'],
     supportedLevels: ['beginner'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['balanced', 'recovery'],
+    styleTags: ['balanced', 'recovery', 'machine_guided'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
     focusAreaTags: ['legs', 'back'],
     lowFriction: true,
@@ -475,6 +480,50 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
 
   ...Vinha_PROGRAM_RECOMMENDATIONS.map((program) => defineProgram(program.programId, program)),
+
+  // ── The age gaps (owner, 2026-10-12) ────────────────────────────────────
+  // Last on purpose: a waterfall tie keeps the programme defined first, so
+  // these never take a pick the rest of the catalog already rated equal for
+  // a reader the age rule is not about. WALK and HOME Easy are offered only
+  // to a reader over 41, STRONG Guided only at 16-18 and over 41
+  // (ageGateAllows).
+  defineProgram('tpl_3_day_walk_mobility_v1', {
+    familyId: 'low_impact',
+    supportedGoals: ['general_fitness', 'general'],
+    backupGoals: ['lean_athletic', 'run_mobility'],
+    supportedLevels: ['beginner', 'advanced', 'pro'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['balanced', 'conditioning'],
+    secondaryOutcomeTags: ['conditioning', 'mobility', 'consistency'],
+    focusAreaTags: ['conditioning', 'mobility'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_guided_strength_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle', 'general'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+  }),
+  defineProgram('tpl_3_day_home_easy_strength_v1', {
+    familyId: 'low_impact',
+    supportedGoals: ['muscle', 'general_fitness'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['balanced'],
+    secondaryOutcomeTags: ['consistency', 'strength'],
+    focusAreaTags: ['legs', 'chest', 'back'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
 ];
 
 export function getRecommendationProgramDefinition(programId: string) {
@@ -502,4 +551,81 @@ export function readerAskedForRecovery(
   input: { goal: SetupGoal; secondaryOutcomes: readonly SetupSecondaryOutcome[]; focusAreas: readonly SetupFocusArea[] },
 ) {
   return input.goal === 'run_mobility' || input.secondaryOutcomes.includes('mobility') || input.focusAreas.includes('mobility');
+}
+
+export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
+export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
+export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
+
+/** The answers the age rule reads. */
+interface AgeRuleReader {
+  ageRange: SetupAgeRange | null;
+  equipment: SetupEquipment;
+  level: SetupLevel;
+  goal: SetupGoal;
+  secondaryOutcomes: readonly SetupSecondaryOutcome[];
+  focusAreas: readonly SetupFocusArea[];
+}
+
+/**
+ * Whether a programme suits the reader's age band (owner, 2026-10-12): over
+ * 41, a joint-friendly or lower-impact week; 16-18 with the gym card, a week
+ * lifted mostly on guided machines. Every other band, and a reader who left
+ * the age out, has no age-fitting programme: the rule only ever adds a card,
+ * it never marks one down for being young or old.
+ */
+export function programFitsReaderAge(
+  definition: Pick<RecommendationProgramDefinition, 'familyId' | 'jointFriendly' | 'styleTags'>,
+  input: Pick<AgeRuleReader, 'ageRange' | 'equipment'>,
+): boolean {
+  if (input.ageRange === '41_plus') {
+    return definition.jointFriendly || definition.familyId === 'low_impact';
+  }
+  if (input.ageRange === '18' && input.equipment === 'gym') {
+    return definition.styleTags.includes('machine_guided');
+  }
+  return false;
+}
+
+/**
+ * Whether the second card must be an age-fitting one when neither card is:
+ * every reader over 41, and a 16-18-year-old with the gym card at the
+ * beginner or advanced level. At pro the stated level decides (owner,
+ * 2026-10-12): the machine weeks are beginner and intermediate content.
+ */
+export function ageRuleGuaranteesCard(input: Pick<AgeRuleReader, 'ageRange' | 'equipment' | 'level'>): boolean {
+  if (input.ageRange === '41_plus') {
+    return true;
+  }
+  return input.ageRange === '18' && input.equipment === 'gym' && input.level !== 'pro';
+}
+
+/**
+ * Whether the setup may offer this programme to the reader at all.
+ *
+ * The lower-impact weeks (WALK, HOME Easy) go to a reader over 41, the way a
+ * week of stretching goes only to a reader who asked for one
+ * (readerAskedForRecovery). The owner's rule also let a reader who asked for
+ * mobility or recovery have them at any age; that moved the two cards of
+ * 5,229 of 79,380 answers at 19-40 (run and mobility at home: RUN + Fat Burn
+ * HIIT became RUN + WALK), against the same day's acceptance that those
+ * bands do not move. The acceptance won; widening this is one line.
+ *
+ * STRONG Guided goes to the two bands the age rule is about. It is a sound
+ * week for anyone and the Programs tab lists it for everyone; offered to the
+ * other bands it only took the second card from the strength or muscle week
+ * their answers had chosen (owner's acceptance, 2026-10-12: the offers of
+ * 19-40 do not move).
+ */
+export function ageGateAllows(
+  definition: Pick<RecommendationProgramDefinition, 'programId' | 'familyId'>,
+  input: AgeRuleReader,
+): boolean {
+  if (definition.familyId === 'low_impact') {
+    return input.ageRange === '41_plus';
+  }
+  if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID) {
+    return input.ageRange === '41_plus' || input.ageRange === '18';
+  }
+  return true;
 }

@@ -313,13 +313,43 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_joint_friendly_v1: {
     summary:
-      'Kolme päivää viikossa laitteilla, taljoilla ja kuminauhalla: tuettu alavartalo, tuettu ylävartalo sekä koko kehon ja tasapainon päivä. Toistoja on pääosin 12–20, ja liikkeet tehdään hallitusti.',
+      'Kolme päivää viikossa laitteilla, taljoilla ja kuminauhalla: tuettu alavartalo, tuettu ylävartalo sekä koko kehon ja tasapainon päivä, ja jokainen päivä päättyy kymmeneen kevyeen minuuttiin kuntopyörällä. Toistoja on 12–15, ja liikkeet tehdään hallitusti.',
     audience:
       'Aloittelijalle, tauolta palaavalle tai kenelle tahansa, jonka nivelet eivät kestä raskasta vapaata painoa mutta joka haluaa lisää voimaa.',
     equipmentProfile:
-      'Salin laitteet ja taljat, kuminauha ja tuoli.',
+      'Salin laitteet ja taljat, kuntopyörä, kuminauha ja tuoli.',
     whyItWorks:
       'Laite tukee liikeradan, joten kuorma osuu lihakseen eikä niveleen, ja korkeat toistot rakentavat voimaa kevyillä painoilla.',
+  },
+  tpl_3_day_walk_mobility_v1: {
+    summary:
+      'Kolme kävelyyn perustuvaa päivää viikossa: kahtena päivänä reippaita kävelyblokkeja ja yhtenä ylämäkeen, sitten muutama kevyt voimaliike ja venyttelyt. Vajaa puolet viikosta on kävelyä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kevyemmän viikon: kävelyä, liikkuvuutta ja kevyttä voimaa ilman välineitä.',
+    equipmentProfile:
+      'Ei välineitä: tuoli tuolilta nousuihin, seinä punnerruksiin sekä tasainen reitti ja mäki (tai juoksumatto) kävelyihin.',
+    whyItWorks:
+      'Jokainen treeni alkaa kävelyllä, sitten tulee kaksi tai kolme kevyttä voimaliikettä, joista yksi joka päivä ylävartalolle, ja lopuksi venyttelyt. Kävelyblokit pitenevät minuutilla, kun ne tuntuvat tasaisilta.',
+  },
+  tpl_3_day_guided_strength_v1: {
+    summary:
+      'Kolme koko kehon salipäivää voimaa laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja kuuden toiston sarjoina, ympärillä maljakyykky, pystypunnerrus ja reiden koukistukset.',
+    audience:
+      'Aloittelijalle ja tauolta palaavalle, joka haluaa harjoitella voimaa ohjatuilla laitteilla ennen vapaita tankoliikkeitä.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, ylätalja, alatalja sekä reiden koukistus- ja ojennuslaite, ja yksi käsipaino maljakyykkyyn.',
+    whyItWorks:
+      'Ohjatut laitteet määräävät liikeradan, joten jokainen sarja menee ponnisteluun eikä tasapainoon. Ankkuriliikkeet pysyvät kuudessa toistossa, ja paino nousee askeleen, kun jokainen sarja yltää kuuteen.',
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    summary:
+      'Kolme kevyttä kehonpainopäivää kotona: tuolilta nousut, kalteva- ja seinäpunnerrukset, soutu pöydän alla, lantionnostot ja tasapaino, ja jokainen päivä päättyy kahteen kuuden minuutin kävelyyn.',
+    audience:
+      'Kenelle tahansa, joka haluaa aloittaa voimaharjoittelun kotona rauhalliseen tahtiin, kävely osana jokaista treeniä.',
+    equipmentProfile:
+      'Ei välineitä: tukeva tuoli, seinä, tukeva pöytä soutuun ja paikka kävellä.',
+    whyItWorks:
+      'Liikkeet vaikeutuvat pienin askelin (matalampi tuoli, matalampi alusta punnerrukseen), ja kävelyt varaavat jokaisesta päivästä osan kevyelle kestävyydelle.',
   },
   tpl_gainer_prenatal_fitness_v1: {
     summary:

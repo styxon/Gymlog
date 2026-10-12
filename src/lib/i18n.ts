@@ -556,6 +556,7 @@ const EN = {
   'catalog.goal.fit': 'All-round fit',
   'catalog.goal.shred': 'Lose fat',
   'catalog.goal.run': 'Run + mobility',
+  'catalog.goal.walk': 'Walk + mobility',
   'catalog.goal.focus': 'Muscle focus',
   'catalog.empty.title': 'No programs match',
   'catalog.empty.body': 'Try loosening the filters.',
@@ -682,6 +683,9 @@ const EN = {
   'prog.sub.tpl_gainer_prenatal_fitness_v1': 'Strength, mobility and body control, kept safe for pregnancy.',
   'prog.sub.tpl_gainer_postpartum_recovery_v1': 'Core function first, full-body strength back after it.',
   'prog.sub.tpl_gainer_runners_strength_v1': 'Lower-body power, stability and core — for the kilometres.',
+  'prog.sub.tpl_3_day_walk_mobility_v1': 'A lower-impact week: walking, mobility and light strength.',
+  'prog.sub.tpl_3_day_guided_strength_v1': 'Strength on machines and cables: guided machines set the movement path.',
+  'prog.sub.tpl_3_day_home_easy_strength_v1': 'Gentle bodyweight strength at home, each day closed with two short walks.',
   'prog.sub.fallback': '{days} training days built around {goal} work.',
 
   // Custom programs: the title and blurb are inferred from the user's own name.
@@ -897,6 +901,12 @@ const EN = {
   'wf.general.alt': 'Want fat loss to lead? Add conditioning finishers to the mix.',
   'wf.fallback.primary': 'A safe, balanced starting point.',
   'wf.fallback.alt': 'The lowest-friction alternative if the week gets busy.',
+  // The age rule (owner, 2026-10-12). Never names the age: the reason is the
+  // training, which suits anyone who picks it.
+  'wf.age.walkPrimary': 'A lower-impact week: walking, mobility and light strength.',
+  'wf.age.walkAlt': 'Want more lifting in the week? This one has more of it.',
+  'wf.age.gentleAlt': 'A gentler week for the same goal.',
+  'wf.age.machineAlt': 'Guided machines set the movement path.',
   'focus.quality.strength': 'Strength',
   'focus.quality.muscle': 'Muscle',
   'focus.quality.conditioning': 'Conditioning',
@@ -3141,7 +3151,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 71 ready programmes with level, goal and free text all
+  // The catalog: 74 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4079,6 +4089,7 @@ const FI: Record<I18nKey, string> = {
   'catalog.goal.fit': 'Yleiskunto',
   'catalog.goal.shred': 'Rasvanpoltto',
   'catalog.goal.run': 'Juoksu ja liikkuvuus',
+  'catalog.goal.walk': 'Kävely ja liikkuvuus',
   'catalog.goal.focus': 'Lihasryhmän painotus',
   'catalog.empty.title': 'Ei osumia',
   'catalog.empty.body': 'Kokeile poistaa joitakin suodattimia.',
@@ -4202,6 +4213,9 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_gainer_prenatal_fitness_v1': 'Voimaa, liikkuvuutta ja kehonhallintaa raskausajalle turvallisesti.',
   'prog.sub.tpl_gainer_postpartum_recovery_v1': 'Ensin keskivartalon toiminta, sitten voima takaisin.',
   'prog.sub.tpl_gainer_runners_strength_v1': 'Alavartalon tehoa, tasapainoa ja keskivartaloa — kilometrejä varten.',
+  'prog.sub.tpl_3_day_walk_mobility_v1': 'Kevyempi viikko: kävelyä, liikkuvuutta ja kevyttä voimaa.',
+  'prog.sub.tpl_3_day_guided_strength_v1': 'Voimaa laitteilla ja taljoilla: ohjatut laitteet määräävät liikeradan.',
+  'prog.sub.tpl_3_day_home_easy_strength_v1': 'Kevyttä kehonpainovoimaa kotona, ja jokainen päivä päättyy kahteen lyhyeen kävelyyn.',
   'prog.sub.fallback': '{days} treenipäivää {goal}-työn ympärille rakennettuna.',
 
   'prog.custom.fallbackName': 'Pohja',
@@ -4410,6 +4424,10 @@ const FI: Record<I18nKey, string> = {
   'wf.general.alt': 'Onko rasvanpoltto tärkein? Ota kunto-osuudet mukaan.',
   'wf.fallback.primary': 'Turvallinen ja tasapainoinen lähtökohta.',
   'wf.fallback.alt': 'Kevyin vaihtoehto, jos viikko ruuhkautuu.',
+  'wf.age.walkPrimary': 'Kevyempi viikko: kävelyä, liikkuvuutta ja kevyttä voimaa.',
+  'wf.age.walkAlt': 'Haluatko viikkoon enemmän nostoja? Tässä niitä on enemmän.',
+  'wf.age.gentleAlt': 'Kevyempi viikko samaan tavoitteeseen.',
+  'wf.age.machineAlt': 'Ohjatut laitteet määräävät liikeradan.',
   'focus.quality.strength': 'Voima',
   'focus.quality.muscle': 'Lihaskasvu',
   'focus.quality.conditioning': 'Kunto',

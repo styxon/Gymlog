@@ -38,7 +38,8 @@ const DAYS = [2, 3, 4, 5, 6];
 function selection(overrides) {
   return {
     gender: 'male',
-    ageRange: '25_34',
+    // A real band (it said '25_34', which no setup writes; 2026-10-12).
+    ageRange: '26_30',
     goal: 'muscle',
     goals: ['muscle'],
     level: 'beginner',
@@ -175,6 +176,47 @@ module.exports = [
       }
       const unreachable = elite.filter((id) => !reachable.has(id));
       assert.deepEqual(unreachable, [], `registered but still never recommended: ${unreachable.join(', ')}`);
+    },
+  },
+  {
+    name: 'the age-gap programmes are reachable through the two age bands they were written for',
+    run() {
+      // WALK, HOME Easy and STRONG Guided are offered only through the age
+      // rule (ageGateAllows), so a sweep at 26-30 can never reach them and
+      // proves nothing. Over 41 and at 16-18 every one must come up.
+      const added = ['tpl_3_day_walk_mobility_v1', 'tpl_3_day_home_easy_strength_v1', 'tpl_3_day_guided_strength_v1'];
+      const reachable = new Set();
+      for (const ageRange of ['41_plus', '18']) {
+        for (const goal of GOALS) {
+          for (const daysPerWeek of DAYS) {
+            for (const level of ['beginner', 'advanced']) {
+              for (const equipment of ['gym', 'minimal', 'home']) {
+                for (const id of offered({
+                  ageRange,
+                  goal,
+                  goals: [goal],
+                  daysPerWeek,
+                  level,
+                  equipment,
+                  trainingEnvironment: equipment === 'gym' ? 'full_gym' : 'minimal_equipment',
+                })) {
+                  if (added.includes(id)) reachable.add(id);
+                }
+              }
+            }
+          }
+        }
+      }
+      assert.deepEqual(added.filter((id) => !reachable.has(id)), [], 'registered but never offered at the bands they serve');
+      // And nowhere else: at 26-30 none of them is offered, whatever the answer.
+      for (const goal of GOALS) {
+        for (const daysPerWeek of DAYS) {
+          for (const equipment of ['gym', 'minimal', 'home']) {
+            const ids = offered({ goal, goals: [goal], daysPerWeek, equipment, trainingEnvironment: equipment === 'gym' ? 'full_gym' : 'minimal_equipment' });
+            assert.deepEqual(ids.filter((id) => added.includes(id)), [], `${goal} ${daysPerWeek}d ${equipment} at 26-30`);
+          }
+        }
+      }
     },
   },
 ];

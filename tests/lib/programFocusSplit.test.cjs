@@ -91,6 +91,28 @@ module.exports = [
     },
   },
   {
+    name: 'programFocusSplit: walk blocks are conditioning, and no other walk is',
+    run() {
+      // The two walk blocks read as six-rep strength work: no conditioning
+      // term matched them, and a knee or ankle flag already swaps run blocks
+      // for them (age-band analysis, 2026-10-12). A bare 'walk' would take
+      // the lunge, the balance walk and the farmer's walk with it.
+      const quality = (exerciseName, trackingMode = 'duration_minutes', repsMax = 5) =>
+        buildProgramFocusSplit([{ exercises: [{ exerciseName, trackingMode, sets: 3, repsMax, restSecondsMin: 60 }] }])
+          .map((segment) => segment.quality)
+          .join();
+      assert.equal(quality('Brisk Walk Blocks'), 'Conditioning');
+      assert.equal(quality('Incline Walk Blocks'), 'Conditioning');
+      assert.equal(quality('Walking Lunge', 'load_and_reps', 10), 'Muscle');
+      assert.equal(quality('Bodyweight Walking Lunge', 'bodyweight', 10), 'Muscle');
+      assert.equal(quality('Heel-to-Toe Walk', 'bodyweight', 15), 'Muscle');
+      assert.equal(quality('Banded Lateral Walk', 'reps_first', 15), 'Muscle');
+      assert.equal(quality('Handstand Wall Walk', 'reps_first', 5), 'Strength');
+      // The farmer's walk is conditioning by its own term, as before.
+      assert.equal(quality("Farmer's Walk", 'load_and_reps', 30), 'Conditioning');
+    },
+  },
+  {
     name: 'programFocusSplit: a block of minutes weighs its minutes, an interval its seconds, a lift its reps and rest',
     run() {
       const lift = { exerciseName: 'Bench Press', trackingMode: 'load_and_reps', sets: 3, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180 };

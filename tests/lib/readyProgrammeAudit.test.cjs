@@ -181,14 +181,13 @@ module.exports = [
       assert.deepEqual(photolessGenerated, []);
       // Every extra the library carries is one a programme prescribes, except
       // the ones that exist for swaps and fallbacks (Landmine Press is the
-      // careful-shoulders swap for an overhead press; the walk and bike blocks
-      // stand in for a run block when the knees or ankles are avoided).
+      // careful-shoulders swap for an overhead press; the bike blocks stand in
+      // for a run block when the ankles are avoided). The walk blocks left
+      // this list on 2026-10-12, when WALK and HOME Easy prescribed them.
       const reachedIds = new Set(reached.map((item) => item.id));
       const unprescribedExtras = LIBRARY.filter((item) => item.id.startsWith('extra_') && !reachedIds.has(item.id)).map((item) => item.name).sort();
       assert.deepEqual(unprescribedExtras, [
         'Band Curl',
-        'Brisk Walk Blocks',
-        'Incline Walk Blocks',
         'Landmine Press',
         'Machine Hip Thrust',
         'Stationary Bike Blocks',
@@ -313,7 +312,7 @@ module.exports = [
         calves: ['calves'],
         legs: ['squat_pattern', 'single_leg', 'bodyweight_squat_pattern', 'hinge_pattern', 'deadlift_pattern', 'accessory_hamstrings', 'hip_thrust_bridge', 'bodyweight_hinge'],
         mobility: ['mobility_flow', 'yoga_flow', 'spine_mobility', 'hip_mobility', 'shoulder_mobility'],
-        conditioning: ['cardio_intervals', 'steady_cardio', 'conditioning_circuit', 'running_blocks', 'jump_plyo', 'explosive_power', 'agility_drills'],
+        conditioning: ['cardio_intervals', 'steady_cardio', 'conditioning_circuit', 'running_blocks', 'walking_blocks', 'jump_plyo', 'explosive_power', 'agility_drills'],
       };
       // A promised focus area gets at least six working sets a week (user,
       // 2026-10-06). One exercise of it is not a focus: POWERBUILD promised

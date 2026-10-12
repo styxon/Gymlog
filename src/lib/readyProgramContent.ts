@@ -330,13 +330,45 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_joint_friendly_v1: {
     summary:
-      'Three days a week on machines, cables and a band: supported lower body, supported upper body, and a full-body and balance day. Reps mostly run 12–20, and every movement is controlled.',
+      'Three days a week on machines, cables and a band: supported lower body, supported upper body, and a full-body and balance day, each closed with ten easy minutes on an exercise bike. Reps run 12–15, and every movement is controlled.',
     audience:
       'Beginners, people returning from a break, or anyone whose joints do not tolerate heavy free weights but who still wants to get stronger.',
     equipmentProfile:
-      'Gym machines and cables, a resistance band and a chair.',
+      'Gym machines and cables, an exercise bike, a resistance band and a chair.',
     whyItWorks:
       'The machine guides the path, so the load lands on the muscle rather than the joint, and the high reps build strength with light weights.',
+  },
+  // The age-gap programmes (2026-10-12). Written for the training, never for
+  // an age: the reader may be any age who picks them from the Programs tab.
+  tpl_3_day_walk_mobility_v1: {
+    summary:
+      'Three days a week built on walking: brisk walk blocks on two days and uphill blocks on one, then a few light strength moves and stretches. A little under half of the week is walking.',
+    audience:
+      'Anyone who wants a lower-impact week: walking, mobility and light strength, with no equipment.',
+    equipmentProfile:
+      'No equipment: a chair for the sit-to-stands, a wall for the push-ups, and a flat route and a hill (or a treadmill) for the walks.',
+    whyItWorks:
+      'Every session opens with the walk, then two or three light strength moves with an upper-body one each day, then stretches. The walk blocks grow by a minute once they feel steady.',
+  },
+  tpl_3_day_guided_strength_v1: {
+    summary:
+      'Three full-body gym days of strength on machines and cables: leg press, chest press, pulldown and cable row in sets of six, with a goblet squat, a shoulder press and leg curls around them.',
+    audience:
+      'Beginners and returning lifters who want to train for strength on guided machines before the free-weight barbell lifts.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a pulldown, a cable row, leg curl and leg extension machines, and one dumbbell for the goblet squat.',
+    whyItWorks:
+      'Guided machines set the movement path, so each set goes into effort rather than balance. The anchors stay at six reps, and the weight goes up a step once every set reaches six.',
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    summary:
+      'Three gentle bodyweight days at home: sit-to-stands, incline and wall push-ups, table rows, bridges and balance work, and each day closes with two six-minute walks.',
+    audience:
+      'Anyone who wants to start strength training at home at an easy pace, with walking built into every session.',
+    equipmentProfile:
+      'No equipment: a sturdy chair, a wall, a solid table to row under, and somewhere to walk.',
+    whyItWorks:
+      'The moves get harder in small steps (a lower chair, a lower surface for the push-up), and the walks keep part of every day for easy cardio.',
   },
   tpl_gainer_prenatal_fitness_v1: {
     summary:

@@ -1,4 +1,4 @@
-import { getRecommendationProgramDefinition } from './recommendationCatalog';
+import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
 import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
@@ -110,6 +110,15 @@ function buildFamilySessionComposition(familyId: TemplateFamilyId): Recommendati
         conditioningBlock: null,
         cooldownBlock: block('cooldown', 'Cooldown', 'Finish with a short mobility reset based on the hardest movement pattern of the day.'),
       };
+    case 'low_impact':
+      return {
+        prepBlock: block('prep', 'Prep', 'Start with a few minutes of easy walking and gentle range work.'),
+        mainBlock: block('main', 'Main work', 'Walk the blocks at a pace where you can still talk, then the light strength moves.'),
+        supportBlock: block('support', 'Support work', 'Keep the strength moves smooth and controlled; add reps before making a move harder.'),
+        focusBlock: null,
+        conditioningBlock: block('conditioning', 'Walking', 'The walk blocks are the week\'s conditioning; add a minute once they feel steady.'),
+        cooldownBlock: block('cooldown', 'Cooldown', 'Finish with the stretches and slow breathing.'),
+      };
     case 'joint_friendly':
       return {
         prepBlock: block('prep', 'Prep', 'Start with gentle range work and supported movement rehearsal before adding load.'),
@@ -196,6 +205,19 @@ function buildFamilyProgrammeProfile(programId: string, familyId: TemplateFamily
         easierWeek: {
           week: 4,
           reason: 'Reset fatigue and keep consistency high before the final repeat of the block.',
+        },
+      };
+    case 'low_impact':
+      return {
+        ...base,
+        progressionStyle: 'recovery_rebuild',
+        phaseLabels: STARTER_PHASE_LABELS,
+        volumeProgression: 'Add a minute to the walk blocks or a few reps in weeks 2-3, only once the previous week felt easy.',
+        intensityProgression: 'Walk a little faster or a little further uphill, and make a strength move harder in small steps.',
+        exerciseStability: 'Keep the same walks and moves for the whole block so the progress is easy to see.',
+        easierWeek: {
+          week: 4,
+          reason: 'Keep the same sessions at an easier pace before deciding whether to repeat or move on.',
         },
       };
     case 'joint_friendly':
@@ -581,6 +603,8 @@ const SUPPLEMENTAL_DAYS: Record<SupplementalDayKind, { name: string; minutes: nu
     note: 'Keep this easy so the main lifts recover.',
   },
   easyRun: { name: 'Easy Run Add-On', minutes: 30, note: 'Keep the pace conversational.' },
+  easyWalk: { name: 'Easy Walk Add-On', minutes: 25, note: 'Walk at a pace where you can still talk.' },
+  hillWalk: { name: 'Hill Walk Add-On', minutes: 25, note: 'Uphill at a steady pace, easy on the way down.' },
   longRun: {
     name: 'Long Run Add-On',
     minutes: 45,
@@ -610,6 +634,16 @@ const SUPPLEMENTAL_DAYS: Record<SupplementalDayKind, { name: string; minutes: nu
  * four a two-day programme stretched to six days needs, and none twice.
  */
 function supplementalDayKinds(selection: FirstRunSetupSelection, programId: string): SupplementalDayKind[] {
+  // WALK and HOME Easy fill a longer week with walks and mobility, whatever
+  // the goal: the strength and muscle orders put an accessory day or push-ups
+  // first, and the general one Mountain Climbers by the third extra day
+  // (owner, 2026-10-12).
+  if (programId === WALK_PROGRAM_ID) {
+    return ['easyWalk', 'recoveryMobility', 'hillWalk', 'recoveryStrength', 'easyConditioning'];
+  }
+  if (programId === HOME_EASY_PROGRAM_ID) {
+    return ['easyWalk', 'recoveryStrength', 'recoveryMobility', 'hillWalk', 'easyConditioning'];
+  }
   if (selection.goal === 'strength') {
     return ['accessoryStrength', 'recoveryStrength', 'recoveryMobility', 'easyConditioning', 'conditioningMobility'];
   }

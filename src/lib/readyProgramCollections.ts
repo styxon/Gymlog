@@ -39,6 +39,9 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       // That is the line this app holds wherever it touches health: a
       // description of the training passes, a claim about a complaint does not.
       'tpl_gainer_joint_friendly_v1',
+      'tpl_3_day_walk_mobility_v1',
+      'tpl_3_day_guided_strength_v1',
+      'tpl_3_day_home_easy_strength_v1',
     ],
   },
   {
@@ -54,6 +57,7 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_strong_elite_v1',
       'tpl_home_dumbbell_strength_v1',
       'tpl_home_dumbbell_strength_split_v1',
+      'tpl_3_day_guided_strength_v1',
     ],
   },
   {
@@ -101,6 +105,8 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
       'tpl_gainer_athlete_conditioning_v1',
       'tpl_gainer_runners_strength_v1',
       'tpl_gainer_mobility_flow_v1',
+      'tpl_3_day_walk_mobility_v1',
+      'tpl_3_day_home_easy_strength_v1',
     ],
   },
   {

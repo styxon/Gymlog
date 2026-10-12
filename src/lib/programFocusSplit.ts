@@ -123,9 +123,16 @@ export function getProgramFocusQualityLabel(
 
 const PROGRAM_FOCUS_ORDER: ProgramFocusQuality[] = ['Strength', 'Muscle', 'Conditioning', 'Mobility'];
 
-// Matched at the start of a word in the lowercased exercise name. 'walk' is
-// deliberately absent (Walking Lunge is strength work); farmer carries match
-// via 'farmer' and 'carry'.
+// Matched at the start of a word in the lowercased exercise name. A bare
+// 'walk' is deliberately absent (Walking Lunge is strength work, a Heel-to-Toe
+// Walk balance work); farmer carries match via 'farmer' and 'carry'.
+//
+// The walk blocks are named whole: "Brisk Walk Blocks" and "Incline Walk
+// Blocks" are minutes of walking, and with nothing here to match them they
+// read as six-rep strength work. That was live before any programme
+// prescribed them: a knee or ankle avoid flag swaps RUN's, FIT's and HOME
+// Starter's run blocks for walk blocks, and the bar moved the swapped minutes
+// from Conditioning to Strength (age-band analysis, 2026-10-12).
 //
 // At the start of a word, not anywhere: as a bare substring 'run' matched
 // inside "Crunch", and every programme with a cable or bicycle crunch showed a
@@ -170,6 +177,9 @@ const CONDITIONING_TERMS = [
   'stride',
   'skater',
   'shadow box',
+  'walk block',
+  'brisk walk',
+  'incline walk',
 ];
 
 const MOBILITY_TERMS = [

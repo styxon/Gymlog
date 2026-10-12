@@ -401,6 +401,18 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: "Runner's Strength",
     tagKeys: ['prog.tag.running', 'prog.tag.strength'],
   },
+  tpl_3_day_walk_mobility_v1: {
+    title: 'WALK',
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.mobility'],
+  },
+  tpl_3_day_guided_strength_v1: {
+    title: 'STRONG Guided',
+    tagKeys: ['prog.tag.strength', 'prog.tag.fullBody'],
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    title: 'HOME Easy',
+    tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
+  },
 };
 
 /** Day counts on the curated cards, e.g. "3 Days" / "3 pv". */

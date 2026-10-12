@@ -34,6 +34,10 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // Dumbbells only: four days at home (coverage sweep, 2026-10-04).
   'tpl_home_dumbbell_upper_lower_v1',
   'tpl_home_dumbbell_ppl_v1',
+  // WALK and HOME Easy (2026-10-12): a chair, a wall, a table and a route to
+  // walk. STRONG Guided, the third programme added that day, is a gym week.
+  'tpl_3_day_walk_mobility_v1',
+  'tpl_3_day_home_easy_strength_v1',
   'tpl_home_dumbbell_strength_v1',
   'tpl_home_dumbbell_strength_split_v1',
   // Dumbbells and a bench to press on: five days of strength, power and conditioning.

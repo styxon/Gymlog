@@ -243,6 +243,9 @@ export const EQUIPMENT_FALLBACKS: Array<[string, string[]]> = [
   ['seated cable row', ['Bent Over Two-Dumbbell Row', 'Inverted Row']],
   ['lat pulldown', ['Pullups', 'Inverted Row']],
   ['overhead press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
+  // STRONG Guided's second day presses only on the machine, and a reader
+  // with dumbbells lost the day's only press with no answer (2026-10-12).
+  ['machine shoulder press', ['Dumbbell Shoulder Press', 'Incline Push-Up']],
   ['dumbbell shoulder press', ['Incline Push-Up']],
   ['cable fly', ['Dumbbell Flyes', 'Push-Up Wide']],
   ['dumbbell fly', ['Push-Up Wide']],

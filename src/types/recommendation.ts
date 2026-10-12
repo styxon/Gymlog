@@ -10,13 +10,25 @@ export type TemplateFamilyId =
   | 'glute_priority'
   | 'athletic_recomp'
   | 'low_equipment'
-  | 'joint_friendly';
+  | 'joint_friendly'
+  // Walking, light strength and mobility (WALK, HOME Easy; 2026-10-12). Not
+  // the joint-friendly family: that family's lanes are the ones a mobility
+  // answer opens, and it counts a programme without 'balanced' as a week of
+  // stretching (isRecoveryOnlyProgram). These lift and walk, and reach a
+  // reader through the age rule instead.
+  | 'low_impact';
 
 export type RecommendationConfidence = 'high' | 'medium' | 'low';
 export type RecommendationWeekRole = 'baseline' | 'build' | 'review';
 export type RecommendationEquipmentTier = 'full_gym' | 'low_equipment';
 export type RecommendationRecoveryDemand = 'low' | 'moderate' | 'high';
-export type RecommendationStyleTag = 'heavy' | 'pump' | 'balanced' | 'express' | 'recovery' | 'conditioning';
+/**
+ * 'machine_guided': the week's lifting is mostly on machines and cables, which
+ * set the path of each lift (FIT Lite, HUGE Starter, HUGE Builder,
+ * Joint-Friendly Strength, STRONG Guided; owner, 2026-10-12). What the age
+ * rule offers a 16-18-year-old at the gym.
+ */
+export type RecommendationStyleTag = 'heavy' | 'pump' | 'balanced' | 'express' | 'recovery' | 'conditioning' | 'machine_guided';
 export type RecommendationTargetGender = 'male' | 'female' | 'unisex';
 export type RecommendationProgrammeDurationStatus = 'starter' | 'standard' | 'long_catalog' | 'advanced_reference';
 export type RecommendationSessionBlockType = 'prep' | 'main' | 'support' | 'focus' | 'conditioning' | 'cooldown';
@@ -206,7 +218,9 @@ export type RecommendationWaterfallRule =
   | 'muscle'
   | 'strength'
   | 'general'
-  | 'fallback';
+  | 'fallback'
+  // WALK first for a plain general-fitness beginner over 41 (2026-10-12).
+  | 'age_low_impact';
 
 export interface RecommendationWaterfallDecision {
   rule: RecommendationWaterfallRule;

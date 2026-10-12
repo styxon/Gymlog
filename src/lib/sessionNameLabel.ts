@@ -38,6 +38,16 @@ const FOCUS_FI: Record<string, string> = {
   'shoulders & back (width)': 'Olkapäät ja selkä (leveys)',
   'skills & core': 'Taidot ja keskivartalo',
   'upper body (supported)': 'Ylävartalo (tuettuna)',
+  // WALK, STRONG Guided and HOME Easy (2026-10-12).
+  'brisk walk & strength': 'Reipas kävely ja voima',
+  'incline walk & balance': 'Ylämäkikävely ja tasapaino',
+  'walk & mobility': 'Kävely ja liikkuvuus',
+  'leg press & chest press': 'Jalkaprässi ja rintaprässi',
+  'pulldown & goblet squat': 'Ylätalja ja maljakyykky',
+  'full body (machines)': 'Koko keho (laitteet)',
+  'lower & push': 'Alavartalo ja työntö',
+  'upper & balance': 'Ylävartalo ja tasapaino',
+  'full body & walk': 'Koko keho ja kävely',
 
   // ── Whole session names from the Vinha programs ──────────────────────
   // Written out rather than decomposed: "Pull A: Width Focus" and "Push:
@@ -142,6 +152,8 @@ const FOCUS_FI: Record<string, string> = {
   'long walk add-on': 'Lisäpäivä: pitkä kävely',
   'easy ride add-on': 'Lisäpäivä: kevyt pyöräily',
   'long ride add-on': 'Lisäpäivä: pitkä pyöräily',
+  // WALK's and HOME Easy's own optional days (2026-10-12).
+  'hill walk add-on': 'Lisäpäivä: mäkikävely',
   'bodyweight volume day': 'Kehonpainon volyymipäivä',
   'conditioning + mobility day': 'Kunto ja liikkuvuus',
   'recovery + mobility day': 'Palautuminen ja liikkuvuus',

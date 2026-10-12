@@ -490,6 +490,7 @@ const suites = [
   ...require('./lib/focusAreaPresentation.test.cjs'),
   ...require('./lib/programFocusSplit.test.cjs'),
   ...require('./lib/generalFitnessConditioningShare.test.cjs'),
+  ...require('./lib/ageBandOffers.test.cjs'),
   ...require('./lib/programDayComposer.test.cjs'),
   ...require('./lib/cautionExerciseFilter.test.cjs'),
   ...require('./lib/cautionNameMatching.test.cjs'),

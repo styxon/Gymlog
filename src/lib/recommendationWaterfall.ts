@@ -1,4 +1,11 @@
-import { isRecoveryOnlyProgram, readerAskedForRecovery, RECOMMENDATION_PROGRAMS } from './recommendationCatalog';
+import {
+  ageGateAllows,
+  isRecoveryOnlyProgram,
+  programFitsReaderAge,
+  readerAskedForRecovery,
+  RECOMMENDATION_PROGRAMS,
+  WALK_PROGRAM_ID,
+} from './recommendationCatalog';
 import { equipmentCandidatePool, programGearUse, programsIgnoringOwnedLoad } from './programEquipmentFit';
 import {
   focusProgrammeLosesItsPoint,
@@ -67,6 +74,16 @@ const IGNORES_OWNED_LOAD = 21;
  */
 const SHORT_WEEK_SPLIT = 40;
 
+/**
+ * What suiting the reader's age band is worth when the featured programme is
+ * picked (programFitsReaderAge; owner, 2026-10-12). Less than a day's
+ * difference (10), a backup goal (14), a wrong level (30) or a gender
+ * mismatch (30), and taken only against a pick the stated answers rate the
+ * same (statedAnswersKey): the age decides between programmes the answers
+ * rate equal, never against one of them.
+ */
+const AGE_TIE_BREAK = 6;
+
 
 /** Experience first: a beginner starts at the core tier (3 days) at most. */
 function effectiveDays(input: RecommendationInput) {
@@ -77,14 +94,16 @@ function supportsGoal(definition: RecommendationProgramDefinition, input: Recomm
   return definition.supportedGoals.includes(input.goal) || definition.backupGoals.includes(input.goal);
 }
 
-function pickClosestWithPenalty(
+export function pickClosestWithPenalty(
   pool: RecommendationProgramDefinition[],
   input: RecommendationInput,
   targetDays = effectiveDays(input),
+  featured = false,
 ): { definition: RecommendationProgramDefinition; penalty: number } | null {
   let best: RecommendationProgramDefinition | null = null;
   let bestPenalty = Number.POSITIVE_INFINITY;
   const ignoringLoad = programsIgnoringOwnedLoad(pool, input);
+  const scored: Array<{ definition: RecommendationProgramDefinition; penalty: number; stated: string }> = [];
 
   for (const definition of pool) {
     let penalty = Math.abs(definition.daysPerWeek - targetDays) * 10;
@@ -121,6 +140,9 @@ function pickClosestWithPenalty(
       && input.goal !== 'run_mobility'
       && definition.familyId !== 'full_body_minimal'
       && definition.familyId !== 'joint_friendly'
+      // WALK and HOME Easy are mat-and-pavement weeks; over 41 they are the
+      // answer the age rule looks for, gym card or not (owner, 2026-10-12).
+      && !(definition.familyId === 'low_impact' && input.ageRange === '41_plus')
     ) {
       // Gym users get gym content unless the goal is inherently low-equipment.
       // The minimal full-body starter is exempt: it doubles as the universal 2-day base.
@@ -157,13 +179,69 @@ function pickClosestWithPenalty(
       // 2026-10-08).
       penalty += SHORT_WEEK_SPLIT;
     }
+    if (featured) {
+      scored.push({ definition, penalty, stated: statedAnswersKey(definition, input, targetDays, ignoringLoad) });
+    }
     if (penalty < bestPenalty) {
       best = definition;
       bestPenalty = penalty;
     }
   }
 
+  if (best && featured && !programFitsReaderAge(best, input)) {
+    // The age tie-break: 6 off for a programme that suits the reader's age,
+    // and only against the pick it rates the same on every stated answer.
+    // Only a programme the reader's own chips can run: the gym lanes do not
+    // filter by gear, and FIT Lite (machines and cables) took FIT's place for
+    // a gym member over 41 without either, so the screen fell back to the
+    // score alone and lost its reasons (2026-10-12).
+    const runnable = new Set(equipmentCandidatePool(pool, input).map((definition) => definition.programId));
+    const bestStated = scored.find((entry) => entry.definition === best)?.stated;
+    const ageFitting = scored
+      .filter((entry) => entry.stated === bestStated
+        && entry.penalty - AGE_TIE_BREAK < bestPenalty
+        && runnable.has(entry.definition.programId)
+        && programFitsReaderAge(entry.definition, input))
+      .sort((left, right) => left.penalty - right.penalty)[0];
+    if (ageFitting) {
+      // Rated as the pick it displaced, so a lane that weighs its picks
+      // against each other (the general lane's family bias) is not moved by
+      // the age either.
+      return { definition: ageFitting.definition, penalty: bestPenalty };
+    }
+  }
+
   return best ? { definition: best, penalty: bestPenalty } : null;
+}
+
+/**
+ * What the stated answers say about a programme, minus the one-point level
+ * nudges: the day difference, level fit, gender fit, goal tier, the gym's
+ * low-equipment cost, gear use, owned load left unused, a split week, a
+ * stripped focus block and a lower-body-only week. Two programmes with the
+ * same key differ only in the nudges and the catalog order, which is all the
+ * age may decide (owner, 2026-10-12: the answers always outrank the age).
+ * Six off alone let a backup-goal week a day closer beat one written for the
+ * goal, 14 - 6 against 10.
+ */
+function statedAnswersKey(
+  definition: RecommendationProgramDefinition,
+  input: RecommendationInput,
+  targetDays: number,
+  ignoringLoad: Set<string>,
+): string {
+  return [
+    Math.abs(definition.daysPerWeek - targetDays),
+    definition.supportedLevels.includes(input.level),
+    definition.targetGender === 'unisex' ? 'unisex' : definition.targetGender === input.gender,
+    definition.supportedGoals.includes(input.goal) ? 2 : definition.backupGoals.includes(input.goal) ? 1 : 0,
+    definition.equipmentTier,
+    input.equipment === 'gym' ? '' : programGearUse(definition.programId, input.availableEquipment).toFixed(3),
+    ignoringLoad.has(definition.programId),
+    splitsReaderWeek(definition, input),
+    focusProgrammeLosesItsPoint(definition.programId, input),
+    lowerBodyOnlyAgainstFocus(definition.programId, input),
+  ].join('|');
 }
 
 function pickClosest(
@@ -172,6 +250,15 @@ function pickClosest(
   targetDays = effectiveDays(input),
 ): RecommendationProgramDefinition | null {
   return pickClosestWithPenalty(pool, input, targetDays)?.definition ?? null;
+}
+
+/** The featured programme of a lane: pickClosest with the age tie-break. */
+function pickFeatured(
+  pool: RecommendationProgramDefinition[],
+  input: RecommendationInput,
+  targetDays = effectiveDays(input),
+): RecommendationProgramDefinition | null {
+  return pickClosestWithPenalty(pool, input, targetDays, true)?.definition ?? null;
 }
 
 function byId(programId: string) {
@@ -251,17 +338,61 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   // A stretching-only week is an answer only for a reader who asked for one.
   // Step 9 let the mobility flow win "Lose weight" at five gym days on day
   // count alone, and step 1 gave it to a bands-only home reader for using the
-  // band (bug hunt, 2026-10-07).
-  const programs = readerAskedForRecovery(input)
-    ? RECOMMENDATION_PROGRAMS
-    : RECOMMENDATION_PROGRAMS.filter((definition) => !isRecoveryOnlyProgram(definition));
+  // band (bug hunt, 2026-10-07). The lower-impact weeks and STRONG Guided
+  // answer to the age band the same way (ageGateAllows).
+  const programs = RECOMMENDATION_PROGRAMS.filter(
+    (definition) => (readerAskedForRecovery(input) || !isRecoveryOnlyProgram(definition)) && ageGateAllows(definition, input),
+  );
+  const byAnswers = selectByAnswers(input, programs);
+  return walkFirst(byAnswers, programs, input) ?? byAnswers;
+}
 
+/**
+ * WALK leads for a beginner over 41 who wants general fitness and said
+ * nothing more (owner, 2026-10-12): the catalogue had no walking week, and
+ * this is the reader it was written for. The pick the answers made becomes
+ * the second card, so the lifting week is one tap away.
+ *
+ * Only on the plain answer. A secondary outcome or a focus area is something
+ * the reader asked for, and asked-for outranks the age (scorePreferenceFit):
+ * their lane decides, and the age rule's guarantee still puts a fitting week
+ * on the second card when neither card is one.
+ */
+function walkFirst(
+  byAnswers: RecommendationWaterfallDecision,
+  programs: RecommendationProgramDefinition[],
+  input: RecommendationInput,
+): RecommendationWaterfallDecision | null {
+  if (
+    input.ageRange !== '41_plus'
+    || input.level !== 'beginner'
+    || input.goal !== 'general_fitness'
+    || input.secondaryOutcomes.length > 0
+    || input.focusAreas.length > 0
+  ) {
+    return null;
+  }
+  const walk = equipmentCandidatePool(programs, input).find((definition) => definition.programId === WALK_PROGRAM_ID);
+  if (!walk) {
+    return null;
+  }
+  if (byAnswers.primaryProgramId === WALK_PROGRAM_ID) {
+    // The lane chose it already; the rule still owns it, so the tailoring
+    // swap does not trade it for HOME Easy (recommendPrograms).
+    const second = byAnswers.alternativeProgramId ? byId(byAnswers.alternativeProgramId) : null;
+    return decision('age_low_impact', walk, second, 'wf.age.walkPrimary', byAnswers.whyAlternative);
+  }
+  const answered = byId(byAnswers.primaryProgramId);
+  return answered ? decision('age_low_impact', walk, answered, 'wf.age.walkPrimary', 'wf.age.walkAlt') : null;
+}
+
+function selectByAnswers(input: RecommendationInput, programs: RecommendationProgramDefinition[]): RecommendationWaterfallDecision {
   // 1. Equipment overrides everything: a home or minimal reader gets what their
   // own chips can run — the low-equipment shelf, and a gym programme only when
   // their gear covers it (a home rack and barbell).
   if (input.equipment !== 'gym') {
     const pool = equipmentCandidatePool(programs, input);
-    const primary = pickClosest(pool, input);
+    const primary = pickFeatured(pool, input);
     if (primary) {
       const remaining = pool.filter((definition) => definition.programId !== primary.programId);
       const wantsConditioning = input.goal === 'run_mobility' || input.secondaryOutcomes.includes('conditioning');
@@ -286,7 +417,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   // 2. Endurance intent is explicit.
   if (input.goal === 'run_mobility') {
     const pool = programs.filter((definition) => supportsGoal(definition, input));
-    const primary = pickClosest(pool, input) ?? byId(RUN_PROGRAM_ID);
+    const primary = pickFeatured(pool, input) ?? byId(RUN_PROGRAM_ID);
     if (primary) {
       return decision(
         'run_mobility',
@@ -309,7 +440,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   // 3. Experience first: a beginner gets a beginner program regardless of ambition.
   if (input.level === 'beginner') {
     if (input.secondaryOutcomes.includes('mobility') && (input.goal === 'general' || input.goal === 'general_fitness')) {
-      const mobilityPrimary = pickClosest(
+      const mobilityPrimary = pickFeatured(
         programs.filter(
           (definition) => definition.familyId === 'joint_friendly'
             && definition.supportedLevels.includes('beginner')
@@ -331,8 +462,8 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     const beginnerPrograms = programs.filter((definition) => definition.supportedLevels.includes('beginner'));
     // Programs built for the goal beat backup-goal matches; fall back only when empty.
     const primary =
-      pickClosest(beginnerPrograms.filter((definition) => definition.supportedGoals.includes(input.goal)), input)
-      ?? pickClosest(beginnerPrograms.filter((definition) => supportsGoal(definition, input)), input);
+      pickFeatured(beginnerPrograms.filter((definition) => definition.supportedGoals.includes(input.goal)), input)
+      ?? pickFeatured(beginnerPrograms.filter((definition) => supportsGoal(definition, input)), input);
     if (primary) {
       // A fat-loss weight target makes SHRED the natural second card.
       let alternative = input.profile.weightDirection === 'loss' && primary.programId !== SHRED_PROGRAM_ID
@@ -377,7 +508,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     && (input.goal === 'muscle' || input.goal === 'general' || input.goal === 'general_fitness')
   ) {
     const pool = programs.filter((definition) => definition.targetGender === 'female');
-    const primary = pickClosest(pool, input);
+    const primary = pickFeatured(pool, input);
     if (primary) {
       const alternative = pickClosest(
         programs.filter(
@@ -401,7 +532,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     const pool = programs.filter(
       (definition) => supportsGoal(definition, input) && definition.styleTags.includes('conditioning'),
     );
-    const primary = pickClosest(pool, input) ?? byId(SHRED_PROGRAM_ID);
+    const primary = pickFeatured(pool, input) ?? byId(SHRED_PROGRAM_ID);
     if (primary) {
       return decision(
         'lean_athletic',
@@ -451,7 +582,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     const pool = programs.filter(
       (definition) => definition.familyId === 'mass_hypertrophy' && definition.supportedGoals.includes('muscle'),
     );
-    const primary = pickClosest(pool, input);
+    const primary = pickFeatured(pool, input);
     if (primary) {
       const alternative = pickClosest(
         programs.filter(
@@ -480,8 +611,8 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     );
     const wantsSize = input.secondaryOutcomes.includes('muscle');
     const primary =
-      pickClosest(pool.filter((definition) => definition.styleTags.includes('pump') === wantsSize), input)
-      ?? pickClosest(pool, input);
+      pickFeatured(pool.filter((definition) => definition.styleTags.includes('pump') === wantsSize), input)
+      ?? pickFeatured(pool, input);
     if (primary) {
       // Alternative honours the *requested* days: a 5-day strength user whose
       // primary got capped at 4 still sees a true 5-day option in the other lane.
@@ -507,7 +638,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
   // goal-supporting program win when it fits the requested days much better.
   if (input.goal === 'general' || input.goal === 'general_fitness') {
     if (input.secondaryOutcomes.includes('mobility')) {
-      const primary = pickClosest(
+      const primary = pickFeatured(
         programs.filter((definition) => definition.familyId === 'joint_friendly' && supportsGoal(definition, input)),
         input,
       );
@@ -528,7 +659,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
     let primary: RecommendationProgramDefinition | null = null;
     let bestBiasedPenalty = Number.POSITIVE_INFINITY;
     for (const bias of [0, 1, 3]) {
-      const picked = pickClosestWithPenalty(pool.filter((definition) => familyBias(definition) === bias), input);
+      const picked = pickClosestWithPenalty(pool.filter((definition) => familyBias(definition) === bias), input, effectiveDays(input), true);
       if (picked && picked.penalty + bias < bestBiasedPenalty) {
         primary = picked.definition;
         bestBiasedPenalty = picked.penalty + bias;
