@@ -18,6 +18,7 @@ const { buildPreviousTopSets } = require('../../.test-dist/lib/sessionMovement.j
 const { buildCoachModules } = require('../../.test-dist/lib/aiCoachModules.js');
 const { isSuggestionSilenced } = require('../../.test-dist/lib/coachSuggestions.js');
 const { decideRatingPrompt, RATING_MIN_SESSIONS } = require('../../.test-dist/lib/ratingPrompt.js');
+const { liftBestPerformedAt } = require('../../.test-dist/lib/liftBestGate.js');
 
 /**
  * The numbers the coach context, History and the post-session insight state
@@ -236,6 +237,29 @@ module.exports = [
         new Date('2026-07-22T12:00:00.000Z'),
       );
       assert.equal(record.value, 80, 'a 100 kg row with no reps is not a weight record');
+
+      // The lift's own page: its Personal best and the date the record lock
+      // reads follow Records (review R1). An older session with 100 x 0 beside
+      // 80 x 5, a newer one at 90 x 5: the best is 90, set in the newer one.
+      const older = log('s0', 'Bench Press', sets);
+      const newer = log('s1', 'Bench Press', [set(90, 5)]);
+      const db = {
+        exerciseTemplates: [],
+        workoutSessions: [session('s0', '2026-07-10T10:00:00.000Z'), session('s1', '2026-07-20T10:00:00.000Z')],
+        exerciseLogs: [older, newer],
+      };
+      assert.equal(getExerciseProgressForName(db, 'Bench Press').bestWeight, 90, 'page best');
+      assert.equal(
+        liftBestPerformedAt(
+          [
+            { ...older, performedAt: '2026-07-10T10:00:00.000Z' },
+            { ...newer, performedAt: '2026-07-20T10:00:00.000Z' },
+          ],
+          'weight',
+        ),
+        '2026-07-20T10:00:00.000Z',
+        'record-lock date',
+      );
     },
   },
   {

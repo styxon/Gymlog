@@ -11,6 +11,7 @@
 import { getComparableLogSets, getWorkedLogSets, logRecordedWork } from './exerciseLog';
 import { t } from './i18n';
 import { isDoseLog } from './holdExercises';
+import { heaviestOfSets } from './personalRecords';
 
 export interface ExerciseLogWithSession extends ExerciseLog {
   performedAt: string;
@@ -121,13 +122,19 @@ function attachSession(
   };
 }
 
+/**
+ * A session's top weight: the Records list's rule (heaviestOfSets), so a
+ * 100 kg set with no reps is no best here either — the page's Personal best
+ * read 100 while Records read 80 x 5 (dup sweep 13 review, R1). Null when the
+ * log has no comparable set; 0 when none was loaded and done.
+ */
 function getTopComparableWeight(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {
   const sets = getComparableLogSets(log);
   if (sets.length === 0) {
     return null;
   }
 
-  return sets.reduce((best, set) => Math.max(best, set.weight), 0);
+  return heaviestOfSets(sets)?.weight ?? 0;
 }
 
 function getComparableReps(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {

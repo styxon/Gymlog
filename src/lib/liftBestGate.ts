@@ -29,7 +29,8 @@ type BestLog = Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
 function figureOf(log: BestLog, kind: LiftBestKind): number {
   const sets = getComparableLogSets(log);
   if (kind === 'weight') {
-    return sets.reduce((best, set) => Math.max(best, set.weight), 0);
+    // The Records list's heaviest set: a weight with no reps is no best (R1).
+    return heaviestOfSets(sets.map((set) => ({ weight: set.weight, reps: set.reps ?? 0 })))?.weight ?? 0;
   }
   if (kind === 'minutes') {
     return sets.reduce((best, set) => Math.max(best, set.reps ?? 0), 0);
