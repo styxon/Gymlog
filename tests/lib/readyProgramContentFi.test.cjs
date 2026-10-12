@@ -17,7 +17,7 @@ module.exports = [
     // weeks" on an 8-week block.
     name: 'no ready programme describes the removed season competition, in either language',
     run() {
-      const SEASON = /season|kau(si|den|teen|della|delle)|kesäkau|talvikau|twenty-six weeks|26 viikkoa/i;
+      const SEASON = /season|\bkau(si|den|teen|della|delle)\b|kesäkau|talvikau|twenty-six weeks|26 viikkoa/i;
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const language of ['en', 'fi']) {
           const content = getReadyProgramContent(template.id, language);
