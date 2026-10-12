@@ -230,12 +230,139 @@ module.exports = [
       };
       for (const grant of [{ proTrialUntil: '2026-10-10T00:00:00.000Z' }, { promoProUntil: '2026-12-01T00:00:00.000Z' }]) {
         const both = prefs({ ...paidCancelled, ...grant });
-        assert.equal(resolveProEntitlement(both, now).source === 'purchase', false, 'the grant is still the stated reason');
         assert.equal(canResumePurchase(both, now), true);
       }
+      // Owner decision D6-5 (2026-10-12): with Play Billing live, an active
+      // store purchase wins over a running device trial as the stated reason,
+      // so the subscription page shows the plan rather than "trial ends ...".
+      // This test used to pin the trial as the reason. The purchase here runs
+      // to 2027-10-01, past the trial's 2026-10-10.
+      assert.equal(
+        resolveProEntitlement(prefs({ ...paidCancelled, proTrialUntil: '2026-10-10T00:00:00.000Z' }), now).source,
+        'purchase',
+      );
+      // A promo still names itself (no owner decision moved it; nothing has
+      // written a promo since 2026-09-15).
+      assert.equal(
+        resolveProEntitlement(prefs({ ...paidCancelled, promoProUntil: '2026-12-01T00:00:00.000Z' }), now).source,
+        'promo',
+      );
       // A lapsed purchase is still not resumable, grant or not.
       const lapsed = prefs({ ...paidCancelled, mockSubscriptionTerm: 'monthly', mockSubscriptionPurchasedAt: '2026-01-01T00:00:00.000Z', mockSubscriptionCancelledAt: '2026-01-02T00:00:00.000Z', proTrialUntil: '2026-10-10T00:00:00.000Z' });
       assert.equal(canResumePurchase(lapsed, now), false);
+    },
+  },
+  {
+    name: 'a store purchase that outlasts a running trial is the stated reason, and the page shows its plan (D6-5)',
+    run() {
+      const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
+      const now = new Date('2026-10-19T07:00:00.000Z');
+      const trial = { proTrialUntil: '2026-10-22T07:00:00.000Z' };
+      const yearly = { mockSubscriptionPurchasedAt: '2026-10-19T07:00:00.000Z', mockSubscriptionTerm: 'yearly' };
+
+      // Renewing yearly bought mid-trial: the purchase, with the plan and a next charge.
+      const paid = resolveProEntitlement(prefs({ ...trial, ...yearly }), now);
+      assert.deepEqual(paid, { unlocked: true, source: 'purchase', promoUntil: null, purchaseEndsAt: null });
+      const view = resolveSubscriptionView({
+        entitlement: paid,
+        mockTerm: 'yearly',
+        mockCancelled: false,
+        purchasedAt: yearly.mockSubscriptionPurchasedAt,
+        now,
+      });
+      assert.equal(view.grant, null);
+      assert.equal(view.term, 'yearly');
+      assert.notEqual(view.nextChargeAt, null);
+
+      // Lifetime outlasts anything.
+      assert.equal(
+        resolveProEntitlement(prefs({ ...trial, ...yearly, mockSubscriptionTerm: 'lifetime' }), now).source,
+        'purchase',
+      );
+
+      // A monthly cancelled so it ends 2026-10-20, before the trial's 22nd:
+      // the trial is what keeps Pro on, so it stays the reason.
+      const shortPaid = prefs({
+        ...trial,
+        mockSubscriptionPurchasedAt: '2026-09-20T07:00:00.000Z',
+        mockSubscriptionTerm: 'monthly',
+        mockSubscriptionCancelledAt: '2026-10-01T07:00:00.000Z',
+      });
+      assert.equal(resolveProEntitlement(shortPaid, now).source, 'trial');
+
+      // No purchase: the trial, as before.
+      assert.equal(resolveProEntitlement(prefs(trial), now).source, 'trial');
+    },
+  },
+  {
+    name: 'the trial-ending notice time is null when a purchase or a later promo keeps Pro on (D6-1)',
+    run() {
+      const { trialEndingAtMs } = require('../../.test-dist/lib/proEntitlement.js');
+      const { buildNotificationPlan } = require('../../.test-dist/lib/notificationPlan.js');
+      const trialEnd = '2026-10-22T07:00:00.000Z';
+      const base = prefs({ proTrialUntil: trialEnd });
+
+      // Trial alone: the end, as the notice was promised.
+      assert.equal(trialEndingAtMs(base), Date.parse(trialEnd));
+      // No trial or an unreadable one: nothing.
+      assert.equal(trialEndingAtMs(prefs({ proTrialUntil: null })), null);
+      assert.equal(trialEndingAtMs(prefs({ proTrialUntil: 'garbage' })), null);
+
+      // A renewing purchase made during the trial: Pro is not closing.
+      const paid = { ...base, mockSubscriptionPurchasedAt: '2026-10-19T07:00:00.000Z', mockSubscriptionTerm: 'yearly' };
+      assert.equal(trialEndingAtMs(paid), null);
+      // Cancelled, but paid to a date past the trial: still not closing.
+      assert.equal(trialEndingAtMs({ ...paid, mockSubscriptionCancelledAt: '2026-10-20T07:00:00.000Z' }), null);
+      // A monthly cancelled so it ends before the trial does: the trial's end is the end.
+      assert.equal(
+        trialEndingAtMs({
+          ...base,
+          mockSubscriptionPurchasedAt: '2026-09-20T07:00:00.000Z',
+          mockSubscriptionTerm: 'monthly',
+          mockSubscriptionCancelledAt: '2026-10-01T07:00:00.000Z',
+        }),
+        Date.parse(trialEnd),
+      );
+      // A promo running past the trial: not closing. One that ends first: closing.
+      assert.equal(trialEndingAtMs({ ...base, promoProUntil: '2027-01-01T00:00:00.000Z' }), null);
+      assert.equal(trialEndingAtMs({ ...base, promoProUntil: '2026-10-20T00:00:00.000Z' }), Date.parse(trialEnd));
+
+      // And the plan built from it carries no trial note for the payer.
+      const planFor = (p) =>
+        buildNotificationPlan({
+          nowMs: Date.parse('2026-10-19T07:00:00.000Z'),
+          prefs: {
+            pushEnabled: true,
+            level: 'normal',
+            personalRecords: false,
+            weeklySummary: false,
+            comebackNudge: false,
+            sessionReminders: false,
+            reminderTime: '18:00',
+            weighInReminder: false,
+            measurementReminderKind: null,
+            measurementReminderDay: 1,
+          },
+          language: 'en',
+          schedule: { kind: 'none' },
+          onTrainingBreak: true,
+          lastSessionAtMs: null,
+          lastWorkoutAtMs: null,
+          weekSessionCount: 0,
+          weekVolumeKg: 0,
+          latestPr: null,
+          proTrialEndsAtMs: trialEndingAtMs(p),
+        }).filter((note) => note.category === 'trial');
+      assert.equal(planFor(base).length, 1);
+      assert.equal(planFor(paid).length, 0);
+
+      // The hook reads the rule, not the raw field, and re-plans on the purchase fields.
+      const hook = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '..', '..', 'src', 'hooks', 'useScheduledNotifications.ts'),
+        'utf8',
+      );
+      assert.match(hook, /trialEndingAtMs\(/);
+      assert.match(hook, /\[proTrialUntil, promoProUntil, mockSubscriptionPurchasedAt, mockSubscriptionTerm, mockSubscriptionCancelledAt\]/);
     },
   },
   {
