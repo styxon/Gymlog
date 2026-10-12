@@ -509,7 +509,7 @@ module.exports = [
               };
               const readerWeek = resolveReaderComposedWeek(featuredProgramId, context);
               assert.ok(readerWeek, label);
-              const page = buildReadyProgramDetail(template, undefined, null, [], readerWeek, 'en', false, false, options);
+              const page = buildReadyProgramDetail(template, null, [], readerWeek, 'en', false, false, options);
               const card = programmeCardWeek(template, readerWeek, options);
               assert.equal(card.days, page.daysPerWeek, `${label} ${featuredProgramId}`);
               assert.ok(page.badges.includes(`${card.minutes} min`), `${label}: ${card.minutes} against ${page.badges}`);

@@ -13,6 +13,7 @@
  * already had two truths and three editors before this, and a third truth would
  * have been the end of it.
  */
+import { calendarDaysBetween } from './completedSessions';
 
 /** Day-of-week indexes, Monday first, matching the rest of the app. */
 export interface WeekdaySchedule {
@@ -71,14 +72,13 @@ export function nearestDayStart(instant: number): number {
 }
 
 /**
- * Whole days between two local midnights.
- *
- * Not `(a - b) / DAY_MS`: the day a clock changes is 23 or 25 hours long, and
- * across one of those the division lands on 0.96 of a day and truncates to the
- * wrong side. Rounding is exact for local midnights either side of a change.
+ * Whole days between two local midnights: the app's one day count
+ * (completedSessions.calendarDaysBetween), which rounds across the 23- and
+ * 25-hour days a clock change makes. This file kept its own copy of it
+ * (duplicate sweep 13, 2026-10-12).
  */
 function daysBetween(fromDayStart: number, toDayStart: number) {
-  return Math.round((toDayStart - fromDayStart) / DAY_MS);
+  return calendarDaysBetween(fromDayStart, toDayStart);
 }
 
 export function weekdaySchedule(weekdayIndexes: number[]): TrainingSchedule {

@@ -35,7 +35,7 @@ import {
 import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
 import { useAccountOutcome } from './src/app/useAccountOutcome';
-import { getReadyTemplatePresentation } from './src/lib/templatePresentation';
+import { runningProgrammeTitle as runningProgrammeTitleOf } from './src/lib/templatePresentation';
 import {
   addActiveProgram,
   evaluateProgramAdoption,
@@ -1173,28 +1173,19 @@ function VinhaApp() {
   }, [database.workoutPlans, preferences.activePlanId, preferences.activePlanIds]);
 
   /**
-   * What a RUNNING programme is called, wherever it is listed.
-   *
-   * Its presentation title, the name its own page wears, and a plan whose
-   * template is gone falls back to the plan's own name. A programme tagged
-   * for a season used to go by the season's name here instead, and that tag
-   * covers twenty-odd ordinary programmes: STRONG Elite was "Talvikunto" in
-   * the list and STRONG Elite once opened (user 2026-09-21, "poistetaan
-   * kaikki talvikunto kesäkunto").
-   *
-   * One function because the comment that used to sit inside Home's copy was
-   * right: computing this per screen is what put three different names on one
-   * programme. The Programs tab now lists the same programmes Home does, so
-   * it had to reach the same answer.
+   * What a RUNNING programme is called, wherever it is listed: the one rule in
+   * lib/templatePresentation (runningProgrammeTitleOf), which Home's hero and
+   * the coach read too. The Programs tab lists the same programmes Home does,
+   * so it has to reach the same answer.
    */
   const runningProgrammeTitle = useCallback(
-    (templateId: string | null, planName: string | null | undefined, days: number): string => {
-      const template = templateId ? getWorkoutTemplateById(templateId) : null;
-      if (template) {
-        return getReadyTemplatePresentation(template, preferences.appLanguage, days).title;
-      }
-      return formatWorkoutDisplayLabel(planName || '');
-    },
+    (templateId: string | null, planName: string | null | undefined, days: number): string =>
+      runningProgrammeTitleOf(
+        templateId ? getWorkoutTemplateById(templateId) : null,
+        planName,
+        preferences.appLanguage,
+        days,
+      ),
     [preferences.appLanguage],
   );
 
@@ -1591,7 +1582,6 @@ function VinhaApp() {
   const {
     customWorkoutRuntimeMap,
     customWorkouts,
-    programInsightsByTemplateId,
     selectedCustomProgram,
     recentExerciseBrowserItems,
     exercisePrLookup,
@@ -1603,7 +1593,6 @@ function VinhaApp() {
     exerciseLibrary,
     preferences,
     database,
-    unitPreference,
     workout,
   });
   const proEntitlement = resolveProEntitlement(preferences);
@@ -2118,6 +2107,7 @@ function VinhaApp() {
       unitPreference,
       coachProUnlocked,
       database,
+      completedSessionCount: completedWorkoutSessions.length,
       coachChatIntro,
       coachLastSession,
       homePinnedStatCardKeys,
@@ -2174,7 +2164,6 @@ function VinhaApp() {
       tailoringPreferences,
       activeProgramTemplateIds,
       homeActivePlanCard,
-      programInsightsByTemplateId,
       availableEquipmentForDrills,
       routineSecondsForExercises,
       resolveNextSessionIdForTemplate,

@@ -186,18 +186,18 @@ module.exports = [
       const { template, composedWeek } = pageFor(selection);
       assert.notEqual(composedWeek.days, template.daysPerWeek);
 
-      const own = buildReadyProgramDetail(template, undefined, null, [], composedWeek, 'en');
+      const own = buildReadyProgramDetail(template, null, [], composedWeek, 'en');
       assert.equal(own.description, '', 'the catalogue summary counts the catalogue days');
       assert.equal(own.daysPerWeek, composedWeek.days);
 
-      const catalogue = buildReadyProgramDetail(template, undefined, null, [], null, 'en');
+      const catalogue = buildReadyProgramDetail(template, null, [], null, 'en');
       assert.notEqual(catalogue.description, '', 'the catalogue programme keeps its own summary');
 
       // A composed week with the catalogue's own count keeps it too.
       const same = selectionFor({ goal: 'muscle', level: 'beginner', daysPerWeek: template.daysPerWeek });
       const sameWeek = composeProgramWeekForSelection(same, template.id);
       assert.equal(sameWeek.days, template.daysPerWeek);
-      assert.notEqual(buildReadyProgramDetail(template, undefined, null, [], sameWeek, 'en').description, '');
+      assert.notEqual(buildReadyProgramDetail(template, null, [], sameWeek, 'en').description, '');
     },
   },
   {

@@ -1,7 +1,5 @@
-import { AppDatabase, CardioSession, UnitPreference, WorkoutPlan, WorkoutPlanEntry } from '../types/models';
+import { AppDatabase, CardioSession, UnitPreference } from '../types/models';
 import {
-  getCalendarWeekStartBefore,
-  getCalendarWeekStartTimestamp,
   getCanonicalCardioSessions,
   getCanonicalCompletedSessions,
   getCurrentWeekStreak,
@@ -14,7 +12,7 @@ import {
 import { getCardioMinutes } from './cardio';
 import { getComparableLogSets } from './exerciseLog';
 import { convertWeightFromKg, formatLogSetSummary, formatVolume, removeTrailingZeros } from './format';
-import { getActivePlan, getBodyweightProgress, getMostRecentSessionSummary, getRecentLogsForExercise } from './progression';
+import { getBodyweightProgress, getMostRecentSessionSummary, getRecentLogsForExercise } from './progression';
 
 export interface HomeLastSessionDeltaSummary {
   sessionId: string;
@@ -56,130 +54,11 @@ export interface HomeStreakSummary {
 }
 
 export interface HomeSummary {
-  nextWorkout: ReturnType<typeof getNextWorkoutCandidate>;
   lastSession: ReturnType<typeof getMostRecentSessionSummary>;
   lastSessionDelta: HomeLastSessionDeltaSummary | null;
   bodyweight: ReturnType<typeof getBodyweightProgress>;
-  weeklySnapshot: {
-    workoutsCurrent: number;
-    workoutsPrevious: number;
-    durationCurrentMinutes: number;
-    durationPreviousMinutes: number;
-    volumeCurrentKg: number;
-    volumePreviousKg: number;
-  };
   sessionsThisWeek: number;
   streak: HomeStreakSummary;
-}
-
-function normalizeWeekday(label: string) {
-  const normalized = label.trim().toLowerCase();
-  const map: Record<string, number> = {
-    monday: 1,
-    maanantai: 1,
-    tuesday: 2,
-    tiistai: 2,
-    wednesday: 3,
-    keskiviikko: 3,
-    thursday: 4,
-    torstai: 4,
-    friday: 5,
-    perjantai: 5,
-    saturday: 6,
-    lauantai: 6,
-    sunday: 0,
-    sunnuntai: 0,
-  };
-
-  return map[normalized];
-}
-
-function getDayDistance(fromDay: number, toDay: number) {
-  return (toDay - fromDay + 7) % 7;
-}
-
-function sortPlanEntries(plan: WorkoutPlan) {
-  return [...plan.entries].sort((left, right) => left.orderIndex - right.orderIndex);
-}
-
-function planEntryMatchesSession(entry: WorkoutPlanEntry, session: AppDatabase['workoutSessions'][number]) {
-  if (entry.workoutTemplateId !== session.workoutTemplateId) {
-    return false;
-  }
-
-  return entry.workoutTemplateSessionId
-    ? entry.workoutTemplateSessionId === session.workoutTemplateSessionId
-    : true;
-}
-
-export function getWorkoutMap(database: AppDatabase) {
-  return Object.fromEntries(database.workoutTemplates.map((template) => [template.id, template] as const));
-}
-
-export function getNextWorkoutCandidate(database: AppDatabase) {
-  const workoutsById = getWorkoutMap(database);
-  const activePlan = getActivePlan(database);
-
-  if (activePlan && activePlan.entries.length) {
-    const entries = sortPlanEntries(activePlan);
-
-    if (activePlan.mode === 'rotation') {
-      const latestPlanSession = getCanonicalCompletedSessions(database)
-        .filter((session) => entries.some((entry) => planEntryMatchesSession(entry, session)))
-        .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime())[0];
-
-      const latestIndex = latestPlanSession
-        ? entries.findIndex((entry) => planEntryMatchesSession(entry, latestPlanSession))
-        : -1;
-      const entry = entries[(latestIndex + 1 + entries.length) % entries.length];
-      const workout = workoutsById[entry.workoutTemplateId];
-
-      if (workout) {
-        return {
-          workout,
-          plan: activePlan,
-          entry,
-          subtitle: `${activePlan.name} - Next in rotation`,
-        };
-      }
-    }
-
-    const today = new Date().getDay();
-    const datedEntries = entries
-      .map((entry) => ({ entry, day: normalizeWeekday(entry.label) }))
-      .filter((item): item is { entry: WorkoutPlanEntry; day: number } => typeof item.day === 'number')
-      .sort((left, right) => {
-        const distanceLeft = getDayDistance(today, left.day);
-        const distanceRight = getDayDistance(today, right.day);
-        return distanceLeft - distanceRight || left.entry.orderIndex - right.entry.orderIndex;
-      });
-
-    const weekdayEntry = datedEntries[0]?.entry ?? entries[0];
-    const workout = workoutsById[weekdayEntry.workoutTemplateId];
-    if (workout) {
-      return {
-        workout,
-        plan: activePlan,
-        entry: weekdayEntry,
-        subtitle: `${activePlan.name} - ${weekdayEntry.label}`,
-      };
-    }
-  }
-
-  const fallback = [...database.workoutTemplates].sort(
-    (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
-  )[0];
-
-  if (!fallback) {
-    return null;
-  }
-
-  return {
-    workout: fallback,
-    plan: null,
-    entry: null,
-    subtitle: 'Quick start',
-  };
 }
 
 function getLastSessionDelta(database: AppDatabase, unitPreference: UnitPreference): HomeLastSessionDeltaSummary | null {
@@ -360,36 +239,15 @@ export function addCardioMinutesByDay(
     .sort((left, right) => new Date(left.performedAt).getTime() - new Date(right.performedAt).getTime());
 }
 
-function getHomeWeeklySnapshot(database: AppDatabase, now = new Date()) {
-  const currentWeekStart = getCalendarWeekStartTimestamp(now);
-  const previousWeekStart = getCalendarWeekStartBefore(currentWeekStart);
-  const sessions = getCanonicalCompletedSessions(database);
-
-  const currentWeekSessions = sessions.filter(
-    (session) => getCalendarWeekStartTimestamp(session.performedAt) === currentWeekStart,
-  );
-  const previousWeekSessions = sessions.filter(
-    (session) => getCalendarWeekStartTimestamp(session.performedAt) === previousWeekStart,
-  );
-
-  return {
-    workoutsCurrent: currentWeekSessions.length,
-    workoutsPrevious: previousWeekSessions.length,
-    durationCurrentMinutes: currentWeekSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
-    durationPreviousMinutes: previousWeekSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
-    volumeCurrentKg: currentWeekSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0),
-    volumePreviousKg: previousWeekSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0),
-  };
-}
-
 /**
  * `now` is threaded rather than left to each helper's own `new Date()` so the
  * date-dependent figures can be asked for at a fixed date. Every date bug found
  * in here so far has been invisible to the tests for want of exactly that.
  *
- * `getNextWorkoutCandidate` is the exception and still reads the wall clock
- * internally to order weekday plan entries, so `nextWorkout` is not pinned by
- * this parameter.
+ * It held a rotation of its own (`nextWorkout`, which offered entry 2 for ever
+ * on a plan whose entries name no session) and a lifting-only week snapshot,
+ * and nothing read either; the rotation is lib/planRotation's alone
+ * (duplicate sweep 13, 2026-10-12).
  */
 export function getHomeSummary(
   database: AppDatabase,
@@ -399,11 +257,9 @@ export function getHomeSummary(
   const sessionsThisWeek = getSessionsThisWeek(database, now);
 
   return {
-    nextWorkout: getNextWorkoutCandidate(database),
     lastSession: getMostRecentSessionSummary(database),
     lastSessionDelta: getLastSessionDelta(database, unitPreference),
     bodyweight: getBodyweightProgress(database),
-    weeklySnapshot: getHomeWeeklySnapshot(database, now),
     sessionsThisWeek,
     streak: getHomeStreak(database, now),
   };

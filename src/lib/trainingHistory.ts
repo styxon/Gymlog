@@ -1,10 +1,15 @@
-import { getCalendarWeekStartAfter, getRollingWindowStart, localDateKey } from './completedSessions';
+import {
+  getCalendarWeekStartAfter,
+  getCalendarWeekStartTimestamp,
+  getRollingWindowStart,
+  localDateKey,
+} from './completedSessions';
 import { getComparableLogSets } from './exerciseLog';
 import { isHoldLogEntry } from './holdExercises';
 import { isMinutesLogEntry } from './minutesExercises';
 import { getTotalVolume } from './progression';
 import { ExerciseLog, SetupWeekday, WorkoutSession } from '../types/models';
-import { TrainingSchedule, trainsOn } from './trainingSchedule';
+import { cycleSessionsPerWeek, TrainingSchedule, trainsOn } from './trainingSchedule';
 
 /**
  * The numeric layer under everything the coach says.
@@ -272,11 +277,8 @@ export function previousComparableSession(session: WorkoutSession, sessions: Wor
 }
 
 function startOfWeek(time: number) {
-  const date = new Date(time);
-  date.setHours(0, 0, 0, 0);
-  // Monday-first, matching the week strip the rest of the app draws.
-  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-  return date.getTime();
+  // Monday-first: the app's one week start (duplicate sweep 13, 2026-10-12).
+  return getCalendarWeekStartTimestamp(new Date(time));
 }
 
 function isoDate(time: number) {
@@ -690,7 +692,9 @@ function describeSchedule(
       trainingDays: [],
       cycle: { onDays, offDays: length - onDays, length },
       nextTrainingDate: nextTrainingDate(schedule, now),
-      plannedPerWeek: Math.round((7 * onDays) / length * 10) / 10,
+      // The formula is trainingSchedule's, the one onboarding reads; rounded
+      // to one decimal here, for a sentence (duplicate sweep 13, 2026-10-12).
+      plannedPerWeek: onDays > 0 ? Math.round(cycleSessionsPerWeek(onDays, length - onDays) * 10) / 10 : 0,
       plannedSessions,
       completedSessions,
     };

@@ -135,7 +135,6 @@ export interface WorkoutTabDeps {
     weeklyMinutes: string;
     nextSession: { id: string };
   } | null;
-  programInsightsByTemplateId: WorkoutsProps['programInsightsByTemplateId'];
   availableEquipmentForDrills: ProgramDetailProps['availableEquipment'];
   /** Warm-up and cool-down seconds for a day's lifts — the ones Home counts. */
   routineSecondsForExercises: NonNullable<ProgramDetailProps['routineSeconds']>;
@@ -291,7 +290,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     onSwitchActiveProgram,
     onForgetHeldProgram,
     homeActivePlanCard,
-    programInsightsByTemplateId,
     availableEquipmentForDrills,
     routineSecondsForExercises,
     resolveNextSessionIdForTemplate,
@@ -514,7 +512,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     const program = readyTemplate
       ? buildReadyProgramDetail(
           readyTemplate,
-          programInsightsByTemplateId[route.workoutTemplateId],
           readyProgramFitExplanation,
           readyProgramTailoringBadges,
           readyComposedWeek,
@@ -526,7 +523,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
       : customTemplate
         ? buildCustomProgramDetail(
             customTemplate,
-            programInsightsByTemplateId[route.workoutTemplateId],
             preferences.appLanguage,
             programIsMine && programLeads,
             programIsMine && !programLeads,
@@ -854,7 +850,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     const program = readyTemplate
       ? buildReadyProgramDetail(
           readyTemplate,
-          programInsightsByTemplateId[route.workoutTemplateId],
           null,
           [],
           resolveComposedWeekForRoute(route.workoutTemplateId),
@@ -868,7 +863,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           },
         )
       : customTemplate
-        ? buildCustomProgramDetail(customTemplate, programInsightsByTemplateId[route.workoutTemplateId], preferences.appLanguage)
+        ? buildCustomProgramDetail(customTemplate, preferences.appLanguage)
         : null;
     const daySession = program?.sessions.find((session) => session.id === route.sessionId) ?? null;
     const dayIndex = daySession ? program!.sessions.findIndex((session) => session.id === route.sessionId) : -1;
@@ -1213,7 +1208,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
       <WorkoutsScreen
         language={preferences.appLanguage}
         customWorkouts={customWorkouts}
-        programInsightsByTemplateId={programInsightsByTemplateId}
         recommendedReadyProgramId={recommendedReadyProgramId}
         tailoringPreferences={tailoringPreferences}
         programAvailableEquipment={availableEquipmentForDrills}

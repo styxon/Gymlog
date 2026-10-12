@@ -80,8 +80,11 @@ module.exports = [
       );
       // A chat message reading "tpl_5_day_ppl_v1" would be worse than the
       // composed week it replaced.
-      assert.match(chat, /function catalogProgrammeTitle\(programId: string\): string \| null/);
-      assert.match(chat, /const title = match \? catalogProgrammeTitle\(match\.programId\) : null;/);
+      // Named as every other surface names a running programme (duplicate
+      // sweep 13, D5-8): lib/templatePresentation's runningProgrammeTitle.
+      assert.match(chat, /function catalogProgrammeTitle\(programId: string, language: AppLanguage\): string \| null/);
+      assert.match(chat, /return template \? runningProgrammeTitle\(template, null, language\) : null;/);
+      assert.match(chat, /const title = match \? catalogProgrammeTitle\(match\.programId, language\) : null;/);
       assert.match(chat, /if \(match && title\) \{/);
     },
   },

@@ -656,15 +656,3 @@ export function getMostRecentSessionSummary(database: AppDatabase): SessionSumma
   return getSessionSummary(database, latestSession.id);
 }
 
-export function getActivePlan(database: AppDatabase): WorkoutPlan | null {
-  const activePlanId = database.preferences.activePlanId;
-  if (activePlanId) {
-    const match = database.workoutPlans.find((plan) => plan.id === activePlanId);
-    if (match) {
-      return match;
-    }
-  }
-
-  return null;
-}
-

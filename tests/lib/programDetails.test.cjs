@@ -14,12 +14,7 @@ module.exports = [
     name: 'ready program detail exposes metadata and info sections',
     run() {
       const template = getWorkoutTemplateById('tpl_3_day_full_body_v1');
-      const detail = buildReadyProgramDetail(template, {
-        cardPrimary: 'Next: Full Body B',
-        cardSecondary: 'Top set: Bench Press 85 kg - 8,7,6',
-        highlights: [{ label: 'This week', value: '2 sessions' }],
-        sessionStatusById: { full_body_a: 'Last done Mar 24', full_body_b: 'Next up | Not logged yet' },
-      });
+      const detail = buildReadyProgramDetail(template);
 
       assert.equal(detail.title, 'FIT');
       assert.equal(detail.sessions.length, 3);
@@ -27,12 +22,15 @@ module.exports = [
       assert.equal(detail.description.includes('Three full-body sessions'), true);
       assert.equal(detail.infoSections.length, 3);
       assert.equal(detail.infoSections[0].kicker, 'Who it fits');
-      assert.equal(detail.highlights[0].label, 'This week');
       assert.equal(detail.sessions[0].name, 'Day 1: Full Body');
       assert.ok(detail.sessions[0].preview.includes('Back Squat'));
       assert.match(detail.sessions[0].guidance.firstAction, /Back Squat.*first work set/i);
       assert.match(detail.sessions[0].guidance.restGuidance, /sec/i);
-      assert.equal(detail.sessions[0].statusLine, 'Last done Mar 24');
+      // The insight highlights and per-day status lines are gone: no screen
+      // drew them, and they were built from a day re-derived from name text
+      // (duplicate sweep 13, D5-6, 2026-10-12).
+      assert.equal('highlights' in detail, false);
+      assert.equal('statusLine' in detail.sessions[0], false);
       assert.match(detail.progressionSummary, /week|easier week|deload|pivot/i);
     },
   },
@@ -42,7 +40,6 @@ module.exports = [
       const template = getWorkoutTemplateById('tpl_3_day_full_body_v1');
       const detail = buildReadyProgramDetail(
         template,
-        undefined,
         'Built around your general fitness goal with a 3-day rhythm.',
       );
 
@@ -96,7 +93,7 @@ module.exports = [
         ],
       };
 
-      const detail = buildReadyProgramDetail(template, undefined, null, [], composedWeek);
+      const detail = buildReadyProgramDetail(template, null, [], composedWeek);
 
       // The detail describes the plan the user runs: 2 composed days, not the
       // raw 3-day catalog template.
@@ -161,7 +158,6 @@ module.exports = [
       // described to them in English on the screen that exists to describe it.
       const fi = buildCustomProgramDetail(
         { id: 'tpl_custom', name: 'Rintavoima', sessions: [{ id: 's1', name: 'Day 1', orderIndex: 0, exercises: [{ id: 'e1', name: 'Bench', targetSets: 3, repMin: 5, repMax: 5, restSeconds: 120, trackedDefault: true }] }] },
-        undefined,
         'fi',
       );
       assert.ok(fi.badges.includes('Oma ohjelma'));
@@ -175,7 +171,6 @@ module.exports = [
       // instead, the same answer a ready programme gives.
       const running = buildCustomProgramDetail(
         { id: 'tpl_custom', name: 'Rintavoima', sessions: [{ id: 's1', name: 'Day 1', orderIndex: 0, exercises: [{ id: 'e1', name: 'Bench', targetSets: 3, repMin: 5, repMax: 5, restSeconds: 120, trackedDefault: true }] }] },
-        undefined,
         'fi',
         true,
       );
@@ -185,7 +180,6 @@ module.exports = [
       // adopt, and Home would draw a card with no session behind it.
       const empty = buildCustomProgramDetail(
         { id: 'tpl_empty', name: 'Tyhjä', sessions: [{ id: 's1', name: 'Day 1', orderIndex: 0, exercises: [] }] },
-        undefined,
         'fi',
       );
       assert.equal(empty.primaryActionLabel, 'Muokkaa pohjaa');
@@ -257,12 +251,12 @@ module.exports = [
     run() {
       const template = getWorkoutTemplateById('tpl_3_day_full_body_v1');
 
-      const browsing = buildReadyProgramDetail(template, undefined, null, [], null, 'fi');
+      const browsing = buildReadyProgramDetail(template, null, [], null, 'fi');
       assert.equal(browsing.primaryActionLabel, 'Ota ohjelma käyttöön');
 
       // Adoption returns early for a programme already held, so this label used
       // to name a decision the button could not make.
-      const mine = buildReadyProgramDetail(template, undefined, null, [], null, 'fi', true);
+      const mine = buildReadyProgramDetail(template, null, [], null, 'fi', true);
       assert.equal(mine.primaryActionLabel, 'Aloita seuraava treeni');
     },
   },

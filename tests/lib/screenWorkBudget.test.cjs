@@ -362,58 +362,13 @@ module.exports = [
     },
   },
   {
-    name: 'screen work: a logged set rebuilds neither the programme insights nor the coach summary when their inputs held',
+    name: 'screen work: a logged set does not rebuild the coach summary when its inputs held',
     run() {
-      let insightCalls = 0;
-      const runtime = createHookRuntime();
-      const { useCustomProgramViews } = requireWithStubs(path.join(DIST, 'app', 'useCustomProgramViews.js'), {
-        react: runtime.react,
-        '../lib/programInsights': {
-          buildProgramInsightMap(input) {
-            insightCalls += 1;
-            return { active: input.activeSession };
-          },
-        },
-      });
-      const database = { workoutSessions: [], exerciseLogs: [], exerciseTemplates: [], workoutTemplates: [], exerciseLibrary: [], preferences: {} };
-      const templates = [];
-      const workoutTemplates = [];
-      const exerciseLibrary = [];
-      const getWorkoutTemplateSessions = () => [];
-      const getWorkoutExercises = () => [];
-      const baseDeps = (activeSession) => ({
-        workoutTemplates,
-        getWorkoutTemplateSessions,
-        getWorkoutExercises,
-        exerciseLibrary,
-        preferences: { defaultRestSeconds: 90 },
-        database,
-        unitPreference: 'kg',
-        workout: { activeSession, templates, history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null } },
-      });
-      const session = (extra = {}) => ({
-        sessionId: 'a',
-        templateId: 'tpl_1',
-        templateName: 'Push Day',
-        status: 'active',
-        exercises: [],
-        ...extra,
-      });
-      const first = runtime.render(useCustomProgramViews, baseDeps(session()));
-      assert.equal(insightCalls, 1);
-      // A set is logged: the reducer hands over a new session object, same template and name.
-      const second = runtime.render(useCustomProgramViews, baseDeps(session({ updatedAt: 'later' })));
-      assert.equal(insightCalls, 1, 'the map was rebuilt for a session that is the same template under the same name');
-      assert.equal(second.programInsightsByTemplateId, first.programInsightsByTemplateId);
-      // A swap that renames the session, or another template: the map follows.
-      runtime.render(useCustomProgramViews, baseDeps(session({ templateName: 'Push Day (swapped)' })));
-      assert.equal(insightCalls, 2);
-      runtime.render(useCustomProgramViews, baseDeps(session({ templateId: 'tpl_2' })));
-      assert.equal(insightCalls, 3);
-      const idle = runtime.render(useCustomProgramViews, baseDeps(null));
-      assert.equal(insightCalls, 4);
-      assert.equal(idle.programInsightsByTemplateId.active, null);
-      runtime.unmount();
+      // The programme-insight map this test also pinned is gone: it was built
+      // for every programme on every database change and no screen drew it
+      // (duplicate sweep 13, D5-6, 2026-10-12). Its absence is the guard now.
+      assert.doesNotMatch(source('src/app/useCustomProgramViews.ts'), /programInsights|buildProgramInsightMap/);
+      assert.equal(fs.existsSync(path.join(ROOT, 'src', 'lib', 'programInsights.ts')), false);
 
       // The coach summary: a new object only when title, next exercise or meta change.
       const summaryRuntime = createHookRuntime();

@@ -1,10 +1,10 @@
 import { AppDatabase } from '../types/models';
 import {
   getActiveWeekRuns,
-  getCalendarWeekStartBefore,
   getCalendarWeekStartTimestamp,
   getCanonicalCardioSessions,
   getCanonicalCompletedSessions,
+  streakFromWeekStarts,
 } from './completedSessions';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -85,14 +85,8 @@ export function getLifetimeTrainingSummary(
   const currentWeekStart = getCalendarWeekStartTimestamp(now);
 
   // Walk back from this week (or last week, if this one has not started)
-  // through consecutive active weeks.
-  const activeSet = new Set(activeWeekStarts);
-  let cursor = activeSet.has(currentWeekStart) ? currentWeekStart : getCalendarWeekStartBefore(currentWeekStart);
-  let currentWeekStreak = 0;
-  while (activeSet.has(cursor)) {
-    currentWeekStreak += 1;
-    cursor = getCalendarWeekStartBefore(cursor);
-  }
+  // through consecutive active weeks: the one walk Home's streak takes.
+  const currentWeekStreak = streakFromWeekStarts(activeWeekStarts, now);
   // WEEK_MS survives here on purpose: a span of N weeks is N * 168 hours give or
   // take the one hour a clock change adds or removes, and Math.round absorbs
   // 1/168 of a week. It is a count of weeks elapsed, not a week start to look
@@ -123,6 +117,8 @@ export function getLifetimeTrainingSummary(
  * lifetime `sessionCount` stays lifting-only: it sits beside lifting volume and
  * active weeks and is labelled "Sessions".
  */
-export function getLifetimeWorkoutCount(database: AppDatabase): number {
+export function getLifetimeWorkoutCount(
+  database: Pick<AppDatabase, 'workoutSessions' | 'exerciseLogs' | 'cardioSessions'>,
+): number {
   return getCanonicalCompletedSessions(database).length + getCanonicalCardioSessions(database).length;
 }
