@@ -52,6 +52,27 @@ export function getCatalogBodyPart(name: string) {
 }
 
 /**
+ * Names the matcher in resolveCatalogBodyPart places on the wrong row for a
+ * body part, checked by hand (dup sweep 13, D4-1). Asked first there, so the
+ * completion bars, the Records tags, programme emphasis and the session hero
+ * all read the corrected part. The row is right for a demo and wrong for the
+ * muscle: "Side Plank" opens "Push Up to Side Plank" (chest), "Curtsy Lunge"
+ * opens "Crossover Reverse Lunge" (filed back), the competition and paused
+ * bench open "Bench Press - Powerlifting" (filed triceps), and "Inchworm to
+ * Push-Up" opens "Inchworm" (filed legs). A suite holds each one, and holds
+ * that none of them is a library row of its own, whose answer would differ.
+ *
+ * Lower-case keys, a literal: nothing is built when the module loads.
+ */
+const CHECKED_BODY_PARTS: Readonly<Record<string, string>> = {
+  'side plank': 'core',
+  'curtsy lunge': 'legs',
+  'competition bench press': 'chest',
+  'paused bench press': 'chest',
+  'inchworm to push-up': 'core',
+};
+
+/**
  * Body part for a name that may not be spelled the way the library spells it.
  *
  * The ready templates say "Bench Press" where the library says "Barbell Bench
@@ -61,6 +82,11 @@ export function getCatalogBodyPart(name: string) {
  * photo of one muscle group while emphasis treated it as another.
  */
 export function resolveCatalogBodyPart(name: string) {
+  const checked = CHECKED_BODY_PARTS[name.trim().toLowerCase()];
+  if (checked !== undefined) {
+    return checked;
+  }
+
   const exact = getCatalogBodyPart(name);
   if (exact !== null) {
     return exact;
@@ -68,6 +94,112 @@ export function resolveCatalogBodyPart(name: string) {
 
   const index = findGuidedLibraryIndex(name, libraryNames);
   return index === null ? null : GENERATED_EXERCISE_LIBRARY[index].bodyPart;
+}
+
+/**
+ * Muscle group from the name alone, for a name nothing above can place: the
+ * obvious patterns only, and "other" for anything ambiguous. Moved here from
+ * the completion screen, whose muscle bars asked it FIRST for every name that
+ * was not an exact library row — two thirds of the ready programmes — so a
+ * leg curl counted as glutes and a rear-delt fly as chest (/fly/) while every
+ * other surface read the library (dup sweep 13, D4-1).
+ */
+function inferBodyPartFromExerciseName(name: string): string {
+  const normalized = name.trim().toLowerCase();
+  if (/squat|leg press|leg extension|lunge|calf|quad/.test(normalized)) {
+    return 'legs';
+  }
+  if (/deadlift|hip thrust|glute|hamstring|leg curl/.test(normalized)) {
+    return 'glutes';
+  }
+  // Rows/pulls before chest so "Chest-Supported Row" lands on back.
+  if (/row|pulldown|pull-?up|chin-?up|lat |face pull/.test(normalized)) {
+    return 'back';
+  }
+  if (/bench|chest|fly|dip|push-?up|incline/.test(normalized)) {
+    return 'chest';
+  }
+  if (/overhead press|shoulder|lateral raise|arnold|delt/.test(normalized)) {
+    return 'shoulders';
+  }
+  if (/curl/.test(normalized)) {
+    return 'biceps';
+  }
+  if (/triceps|pushdown|skull|extension/.test(normalized)) {
+    return 'triceps';
+  }
+  if (/plank|crunch|sit-?up|ab |core|leg raise/.test(normalized)) {
+    return 'core';
+  }
+  return 'other';
+}
+
+/**
+ * The muscle group a lift name trains — one answer for the completion screen's
+ * bars and anything else that must always say something: the app's own row of
+ * that exact name, then the library (resolveCatalogBodyPart, checked list
+ * first), then the name's own words, then "other".
+ */
+export function bodyPartForExerciseName(name: string): string {
+  return (
+    extraByName.get(name.trim().toLowerCase())?.bodyPart ??
+    resolveCatalogBodyPart(name) ??
+    inferBodyPartFromExerciseName(name)
+  );
+}
+
+/** Each library array's exact-name body parts, built on first use. */
+const bodyPartsByLibrary = new WeakMap<
+  readonly { name: string; bodyPart: string }[],
+  { length: number; byExactName: Map<string, string> }
+>();
+
+/**
+ * The body-part tag for a logged name: the row of that exact name in the
+ * reader's library, else the library through the matcher (resolveCatalogBodyPart),
+ * else null — a tag, so no guess from the words. The Records rows read the
+ * exact name only, and "Back Squat" or "Bench Press", as every ready
+ * programme logs them, carried no tag (dup sweep 13, D4-3).
+ */
+export function libraryBodyPartOf(
+  name: string,
+  library: readonly { name: string; bodyPart: string }[],
+): string | null {
+  let entry = bodyPartsByLibrary.get(library);
+  if (!entry || entry.length !== library.length) {
+    entry = {
+      length: library.length,
+      byExactName: new Map(library.map((item) => [item.name.trim().toLowerCase(), item.bodyPart])),
+    };
+    bodyPartsByLibrary.set(library, entry);
+  }
+  return entry.byExactName.get(name.trim().toLowerCase()) ?? resolveCatalogBodyPart(name);
+}
+
+/**
+ * Each library array's names, so the matcher's per-array memo holds: it is
+ * keyed by the names array, and one built per call would never hit.
+ */
+const namesByLibrary = new WeakMap<readonly { name: string }[], string[]>();
+
+/**
+ * The row of `library` a name refers to: the exact name, else the guided
+ * player's alias matcher ("Back Squat" is "Barbell Full Squat"), else null.
+ * The one answer to "which library row is this", for lookups that start from
+ * a logged name (the Recent shelf; dup sweep 13, D4-3).
+ */
+export function resolveLibraryItem<T extends { name: string }>(name: string, library: readonly T[]): T | null {
+  const key = name.trim().toLowerCase();
+  if (!key) {
+    return null;
+  }
+  let names = namesByLibrary.get(library);
+  if (!names || names.length !== library.length) {
+    names = library.map((item) => item.name);
+    namesByLibrary.set(library, names);
+  }
+  const index = findGuidedLibraryIndex(name, names);
+  return index === null ? null : library[index] ?? null;
 }
 
 /**
@@ -97,6 +229,24 @@ export function isSameCatalogMovement(left: string, right: string): boolean {
     return true;
   }
   return exerciseNameLabel('en', left).trim().toLowerCase() === exerciseNameLabel('en', right).trim().toLowerCase();
+}
+
+/**
+ * Whether a day holding the names in `day` already holds `name` — the one
+ * check for every place that adds a lift and must not add it twice: the
+ * composer's top-up, refill and fold, and the caution filter's swaps, by the
+ * rule focus emphasis already used. They compared names exactly, so "Dumbbell
+ * Flyes" from a pool joined a day's "Dumbbell Fly" and "Seated Cable Rows" its
+ * "Seated Cable Row", while focus emphasis refused the same pairs (dup sweep
+ * 13, D4-4).
+ *
+ * Movement families (movementFamily.ts) are a separate, softer rule and stay
+ * with their callers: a second bridge beside a hip thrust is avoided while
+ * something else is safe, not refused outright, because a thin day or a heavy
+ * hinge left in place is the worse outcome there.
+ */
+export function holdsSameMovement(day: readonly string[], name: string): boolean {
+  return day.some((held) => isSameCatalogMovement(held, name));
 }
 
 /**

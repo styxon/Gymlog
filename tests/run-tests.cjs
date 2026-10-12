@@ -372,6 +372,7 @@ const suites = [
   ...require('./lib/routineBlockFit.test.cjs'),
   ...require('./lib/substitutionGroups.test.cjs'),
   ...require('./lib/workoutCompleteView.test.cjs'),
+  ...require('./lib/liftIdentityOneAnswer.test.cjs'),
   ...require('./lib/homeCalendar.test.cjs'),
   ...require('./lib/trainingSchedule.test.cjs'),
   ...require('./lib/planTrainingCycle.test.cjs'),

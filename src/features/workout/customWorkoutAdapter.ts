@@ -11,7 +11,7 @@ import {
 // Re-exported: the spelling lives with the types, so lib can share it.
 export { customSlotId };
 
-import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
+import { catalogSubstitutionGroupOf } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
 import { readsAsMinutesByName } from '../../lib/minutesExercises';
 import { normalizeStoredRestSeconds } from '../../lib/restPreference';
@@ -33,11 +33,7 @@ function normalizeName(value: string) {
  * group has no honest alternatives to offer.
  */
 function resolveSubstitutionGroup(exerciseName: string, fallbackId: string): string {
-  const normalized = normalizeName(exerciseName);
-  const group = WORKOUT_SUBSTITUTION_GROUPS.find((candidate) =>
-    candidate.allowedExerciseNames.some((allowed) => normalizeName(allowed) === normalized),
-  );
-  return group?.id ?? `custom_${fallbackId}`;
+  return catalogSubstitutionGroupOf(exerciseName) ?? `custom_${fallbackId}`;
 }
 
 function getTrackingMode(exercise: ExerciseTemplate, libraryItem?: ExerciseLibraryItem): WorkoutTrackingMode {

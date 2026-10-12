@@ -1,7 +1,7 @@
 ﻿import { filterBrowsableExercises } from './exerciseBrowseFilter';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { prescriptionUnitOf } from '../features/workout/workoutTypes';
-import { getCatalogTrackingMode } from './catalogExercisePools';
+import { getCatalogTrackingMode, resolveLibraryItem } from './catalogExercisePools';
 import { DEFAULT_HOLD_SECONDS } from './holdExercises';
 import { createId } from './ids';
 import { DEFAULT_MINUTES_PRESCRIPTION } from './minutesExercises';
@@ -188,6 +188,25 @@ export function getRecentExerciseLibraryItems({
   const templateById = new Map(exerciseTemplates.map((exercise) => [exercise.id, exercise] as const));
   const libraryById = new Map(exerciseLibrary.map((item) => [item.id, item] as const));
   const libraryByName = new Map(exerciseLibrary.map((item) => [normalizeName(item.name), item] as const));
+  /*
+   * A name the library spells another way — "Back Squat", "Bench Press",
+   * "Pull-Up", as every ready programme logs them — through the same matcher
+   * the guided player opens them with (dup sweep 13, D4-3). The exact lookup
+   * alone left every lift trained through a ready programme off the shelf.
+   *
+   * The row lends its picture, body part and gear; the NAME stays the logged
+   * one. Offered as "Barbell Full Squat", a tap would log the next session
+   * under another name than the squat's history is kept by.
+   */
+  const resolved = new Map<string, ExerciseLibraryItem | null>();
+  const resolvedByName = (loggedName: string): ExerciseLibraryItem | undefined => {
+    const key = normalizeName(loggedName);
+    if (!resolved.has(key)) {
+      const row = resolveLibraryItem(loggedName, exerciseLibrary);
+      resolved.set(key, row ? { ...row, name: loggedName.trim() } : null);
+    }
+    return resolved.get(key) ?? undefined;
+  };
 
   const ranked = exerciseLogs
     .map((log) => {
@@ -195,7 +214,8 @@ export function getRecentExerciseLibraryItems({
       const template = log.exerciseTemplateId ? templateById.get(log.exerciseTemplateId) : undefined;
       const libraryItem =
         (template?.libraryItemId ? libraryById.get(template.libraryItemId) : undefined) ??
-        libraryByName.get(normalizeName(log.exerciseNameSnapshot));
+        libraryByName.get(normalizeName(log.exerciseNameSnapshot)) ??
+        resolvedByName(log.exerciseNameSnapshot);
 
       if (!session || !libraryItem) {
         return null;
@@ -209,6 +229,8 @@ export function getRecentExerciseLibraryItems({
     .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry))
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime());
 
+  // One entry per library row, the most recent spelling: two logged names of
+  // one row would otherwise be two shelf items under one id.
   const seen = new Set<string>();
   const result: ExerciseLibraryItem[] = [];
 

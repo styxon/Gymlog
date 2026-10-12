@@ -330,11 +330,17 @@ export function useGoalFlow(deps: GoalFlowDeps) {
       // From the stored goals: the programme was written above, awaited, and
       // this render's snapshot predates it.
       await updatePreferences((current) => ({
-        strengthGoals: upsertStrengthGoal(current.strengthGoals, {
-          exerciseName: input.exerciseName,
-          targetKg: input.targetKg,
-          createdAt: new Date().toISOString(),
-        }),
+        // Replaces a target under any spelling of the lift: the same rule
+        // the flow used to tell the reader one is already set.
+        strengthGoals: upsertStrengthGoal(
+          current.strengthGoals,
+          {
+            exerciseName: input.exerciseName,
+            targetKg: input.targetKg,
+            createdAt: new Date().toISOString(),
+          },
+          sameLift,
+        ),
       }));
     } catch (error) {
       // A failed write stayed silent: no message, no navigation, and — when
