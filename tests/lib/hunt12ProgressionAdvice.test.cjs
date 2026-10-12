@@ -672,4 +672,40 @@ module.exports = [
       assert.ok(modulesFor(atCeiling, null).suggestion);
     },
   },
+  // ── Duplicate sweep 13, D1-4: "the same load" is the gate's dial step ──
+  {
+    name: 'dup13 D1-4: "get your reps back" survives a 1.25 kg nudge the gate reads as the same load',
+    run() {
+      const lookup = programme({ sets: 3, repsMin: 8, repsMax: 12 });
+      const adviceFor = (specs) => {
+        const { sessions, logs } = sessionsFor(specs);
+        return buildNextSessionAdvice({
+          liftName: 'Bench Press',
+          sessionId: sessions[sessions.length - 1].id,
+          sessions,
+          logs,
+          lookupTemplate: lookup,
+          level: 'intermediate',
+          automatedProgressionEnabled: true,
+        });
+      };
+      assert.deepEqual(adviceFor(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(61.25, 9, 9, 9))), { kind: 'rebuild_reps', kg: 61.25 });
+      assert.deepEqual(adviceFor(weekly(flat(61.25, 10, 10, 10), flat(61.25, 10, 10, 10), flat(60, 9, 9, 9))), { kind: 'rebuild_reps', kg: 60 });
+      assert.deepEqual(adviceFor(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(60, 9, 9, 9))), { kind: 'rebuild_reps', kg: 60 });
+      // A real change of load (a between-sessions step) is not the same weight.
+      assert.equal(adviceFor(weekly(flat(60, 10, 10, 10), flat(60, 10, 10, 10), flat(62.5, 9, 9, 9))).kind, 'none');
+    },
+  },
+  // ── Duplicate sweep 13, D1-9: one reading of "the programme's sets" ─────
+  {
+    name: 'dup13 D1-9: the advice reads the programme\'s sets and top load through the gate\'s own helpers',
+    run() {
+      const source = read('src', 'lib', 'nextSessionAdvice.ts');
+      assert.match(source, /programmedSets\(/);
+      assert.match(source, /entryLoadKg\(/);
+      // No private copy of the gate's sort-and-slice, and no exact-gram load compare.
+      assert.doesNotMatch(source, /setIndex - right\.setIndex\)\s*\.slice\(/);
+      assert.doesNotMatch(source, /SAME_LOAD_KG/);
+    },
+  },
 ];
