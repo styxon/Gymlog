@@ -265,6 +265,7 @@ const suites = [
   ...require('./lib/liftPraise.test.cjs'),
   ...require('./lib/guidedSetPlan.test.cjs'),
   ...require('./lib/guidedSetRow.test.cjs'),
+  ...require('./lib/hunt12ProgressionPlayer.test.cjs'),
   ...require('./lib/coachChatMemory.test.cjs'),
   ...require('./lib/coachCrisisTurn.test.cjs'),
   ...require('./lib/coachAdviceMemory.test.cjs'),
@@ -316,6 +317,7 @@ const suites = [
   ...require('./lib/programEquipment.test.cjs'),
   ...require('./lib/programEquipmentBucket.test.cjs'),
   ...require('./lib/progressionRuleLabel.test.cjs'),
+  ...require('./lib/hunt12ProgressionCatalog.test.cjs'),
   ...require('./lib/singleRepTarget.test.cjs'),
   ...require('./lib/onboardingRepTarget.test.cjs'),
   ...require('./lib/intervalScheme.test.cjs'),
@@ -491,6 +493,7 @@ const suites = [
   ...require('./lib/cautionExerciseFilter.test.cjs'),
   ...require('./lib/cautionNameMatching.test.cjs'),
   ...require('./lib/cautionHunt20261009.test.cjs'),
+  ...require('./lib/hunt12CautionNames.test.cjs'),
   ...require('./lib/sourceEncoding.test.cjs'),
   ...require('./lib/focusEmphasis.test.cjs'),
   ...require('./lib/composerDaysTruth.test.cjs'),
@@ -652,6 +655,12 @@ const suites = [
   ...require('./lib/settingsHunt11.test.cjs'),
   ...require('./lib/hunt11Progression.test.cjs'),
   ...require('./lib/hunt11Review.test.cjs'),
+  ...require('./lib/hunt12ProgressionGate.test.cjs'),
+  ...require('./lib/hunt12ProgressionAdvice.test.cjs'),
+  ...require('./lib/hunt12ProgressionState.test.cjs'),
+  ...require('./features/workout/hunt12ProgressionState.test.cjs'),
+  ...require('./features/workout/progressionInvariant.test.cjs'),
+  ...require('./lib/hunt12ProgressionRecovery.test.cjs'),
 ];
 
 (async () => {

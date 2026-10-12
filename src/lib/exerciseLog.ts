@@ -310,6 +310,15 @@ function repsUnitOf(log: { repsUnit?: unknown }): { repsUnit?: 'minutes' } {
   return log.repsUnit === 'minutes' ? { repsUnit: 'minutes' } : {};
 }
 
+/**
+ * The sets a lighter session asked for (ExerciseLog.plannedSets): a positive
+ * whole count, carried only when present, like repsUnit.
+ */
+function plannedSetsOf(log: { plannedSets?: unknown }): { plannedSets?: number } {
+  const value = log.plannedSets;
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? { plannedSets: value } : {};
+}
+
 /** Whether a log's reps are minutes (see ExerciseLog.repsUnit). */
 export function isMinutesLog(log: { repsUnit?: unknown } | null | undefined): boolean {
   return log?.repsUnit === 'minutes';
@@ -358,10 +367,13 @@ export function normalizeExerciseLog(log: Partial<ExerciseLog> | null | undefine
     notes: typeof log.notes === 'string' ? log.notes.trim() || null : null,
     swappedFrom,
     ...repsUnitOf(log),
+    ...plannedSetsOf(log),
   };
 }
 
-export function normalizeExerciseLogDraft(log: ExerciseLogDraft) {
+export function normalizeExerciseLogDraft(input: ExerciseLogDraft) {
+  // The count is re-read below, never passed through unchecked.
+  const { plannedSets: _plannedSets, ...log } = input;
   const skipped = log.skipped === true;
   const normalizedSets = normalizeExerciseSets(log.sets, log.weight, log.repsPerSet);
   const derived = deriveLegacyLogFieldsFromSets(normalizedSets);
@@ -389,5 +401,6 @@ export function normalizeExerciseLogDraft(log: ExerciseLogDraft) {
     notes: typeof log.notes === 'string' ? log.notes.trim() || null : null,
     swappedFrom,
     ...repsUnitOf(log),
+    ...plannedSetsOf(input),
   };
 }

@@ -151,6 +151,26 @@ export interface ProgrammedDose {
   repsMax: number;
 }
 
+/**
+ * What the start decided for one set of the programme's lift, kept at its
+ * first swap away: the opening weight, the gate's badges and rep targets.
+ * Picking the programme's lift back puts them back on the sets still ahead —
+ * re-resolved by name instead, an earned 62.5 came back as last time's 60
+ * badged as borrowed (hunt, 2026-10-11).
+ */
+export interface ProgrammedSetPlan {
+  setIndex: number;
+  draftLoadText: string;
+  plannedLoadKg?: number;
+  autoProgressedFromKg?: number;
+  heldForFatigue?: boolean;
+  heldForCautionArea?: SetupCautionArea;
+  prefilledFromPerformedAt?: string;
+  plannedTargetReps?: number;
+  autoProgressedFromReps?: number;
+  rampTargetReps?: number;
+}
+
 export interface WorkoutTemplateSession {
   id: string;
   name: string;
@@ -235,13 +255,23 @@ export interface WorkoutSetInstance {
    */
   addedMidSession?: boolean;
   /**
-   * The programme's own set count for this lift, on every set of a lightened
-   * session whose `sets` is one fewer (lib/recoverySheet lightenRuntimeTemplate).
-   * What programmeSetCount reads first, so the prefill, a swap and the "Last
-   * time" panel all tell last time's warm-ups from its work against the same
-   * number. Absent on every ordinary session and on any saved before it.
+   * The programme's own set count for this lift, on every set the start
+   * materialised — one more than `sets` on a lightened session (lib/recoverySheet
+   * lightenRuntimeTemplate). What programmeSetCount reads first, so the prefill,
+   * a swap and the "Last time" panel all tell last time's warm-ups from its work
+   * against the same number, whatever "Remove set" took off. Absent on a set
+   * added mid-session, an inserted lift, and sessions saved before 2026-10-11
+   * (before 2026-10-10 even on a lightened one).
    */
   programmeSets?: number;
+  /**
+   * How many sets this session asked for, on every set of a lightened session
+   * (one fewer than `programmeSets`). Stamped at the start rather than counted
+   * at Finish, so a set the reader took off with "Remove set" still reads as
+   * dropped. Filed on the history entry as `plannedSets`. Absent on every
+   * ordinary session.
+   */
+  plannedSets?: number;
   /**
    * An added set whose opening weight a swap re-resolved from the new lift's
    * own history: the number is the app's now (`borrowed` or `none` in
@@ -351,6 +381,13 @@ export interface WorkoutExerciseInstance {
    * builds — a swap back then takes the one swap rule.
    */
   programmedDose?: ProgrammedDose;
+  /**
+   * The start's plan for the sets that were still ahead at the first swap
+   * (ProgrammedSetPlan), restored when the programme's lift is picked back.
+   * Absent before any swap, after a swap made on Home, and on sessions from
+   * older builds — a swap back then re-plans the sets by name.
+   */
+  programmedSetPlans?: ProgrammedSetPlan[];
   notes?: string;
   isExpanded: boolean;
 }
@@ -458,6 +495,14 @@ export interface WorkoutSessionRuntime {
    */
   minutesClock?: SessionMinutesClock | null;
   activePlanMode: DefaultScheduleMode;
+  /**
+   * Whether automatic progression was on when the session started: what put
+   * the AUTO badges on its sets. The set screen's TODAY arrow reads it too,
+   * so the two come from one decision when Pro lapses or starts mid-session
+   * (hunt, 2026-10-11). Absent on sessions from older builds — the live
+   * entitlement then decides, as before.
+   */
+  progressionOn?: boolean;
   exercises: WorkoutExerciseInstance[];
   restTimer: WorkoutRestTimerState;
   ui: WorkoutUiState;
@@ -470,6 +515,7 @@ export interface WorkoutSlotHistorySet {
   reps: number;
   completedAt: string;
   effort?: WorkoutSetEffort | null;
+  addedMidSession?: boolean;
 }
 
 export interface WorkoutSlotHistoryEntry {
@@ -484,6 +530,22 @@ export interface WorkoutSlotHistoryEntry {
   skipped: boolean;
   swappedFrom?: string;
   /**
+   * The sets the app asked for, when it asked for fewer than the programme: a
+   * lighter session (lib/recoverySheet). The gate measures this entry against
+   * it, so one held session is enough and the next normal one progresses as
+   * if this had been a full one (owner, Q3 2026-10-11). Absent on every
+   * ordinary entry and on entries saved before 2026-10-11.
+   */
+  plannedSets?: number;
+  /**
+   * The mode and rep range the sets were asked for. A programme edit keeps
+   * the slot, so without it a 4-6 history opened a slot edited to 12-15 at
+   * 120 kg with a lowered target of 5; an entry whose dose differs from the
+   * slot's now is read as borrowed (lib/exerciseHistoryLookup entryMatchesDose).
+   * Absent on entries saved before 2026-10-11, which read as the slot's own.
+   */
+  dose?: ProgrammedDose;
+  /**
    * The reps every set was asked for, when the app lowered them below the
    * programme's floor after a short session (lib/progressionGate
    * resolveMissedRepsTarget). Kept so the next session can ask one more.
@@ -496,6 +558,7 @@ export interface WorkoutSlotHistoryEntry {
    * entries with none and on entries saved before 2026-10-05.
    */
   warmups?: { loadKg: number; reps: number }[];
+  startedAt?: string;
 }
 
 export interface WorkoutSessionSummary {

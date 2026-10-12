@@ -440,11 +440,13 @@ module.exports = [
       assert.match(playerSource, /const planSet = lift \? planSetOf\(lift\.sets\) : undefined;/);
       assert.match(playerSource, /return sets\.find\(\(set\) => set\.status === 'pending'\) \?\? sets\[sets\.length - 1\];/);
       assert.doesNotMatch(playerSource, /formatRepRangeLabel\(exercise\.sets\[0\]\)/);
-      assert.equal((playerSource.match(/formatRepRangeLabel\(planSetOf\(exercise\.sets\)\)/g) ?? []).length, 2);
-      assert.match(playerSource, /const firstSet = planSetOf\(instance\.sets\);/);
+      assert.equal((playerSource.match(/formatRepRangeLabel\(planSetOf\(exercise\.sets\), exercise\.trackingMode\)/g) ?? []).length, 2);
+      // The walk-up reads its set through lib/guidedPlayer resolveGuidedWalkPlan,
+      // which takes the next set still to do the same way (hunt 12).
+      assert.match(playerSource, /resolveGuidedWalkPlan\(\s*instance\.sets,/);
       // Through the shared formatter, so a hold's numbers keep their unit —
       // "45" beside "60 × 8" reads as forty-five reps.
-      assert.match(playerSource, /\? formatSetScheme\(\s*lift\.sets\.length,/);
+      assert.match(playerSource, /return formatSetScheme\(lift\.sets\.length,/);
       assert.match(
         playerSource,
         /\{memberPlan \? <Text style=\{styles\.runPlan\}>\{memberPlan\}<\/Text> : null\}/,
@@ -473,10 +475,11 @@ module.exports = [
      */
     name: 'guided walk-up: a lift that runs into the next one quotes no rest',
     run() {
-      assert.match(playerSource, /supersetNextBySlot\.get\(step\.slotId\)\s*\?\s*t\(language, 'guided\.walk\.planSuperset'/);
-      // Both dictionaries carry it, and neither version mentions a rest.
-      const lines = i18nSource.match(/'guided\.walk\.planSuperset': '[^']+'/g) ?? [];
-      assert.equal(lines.length, 2);
+      assert.match(playerSource, /planLine: supersetNext\s*\?\s*walkPlan\.kind === 'ramp'\s*\?\s*t\(language, 'guided\.walk\.planSupersetRamp'/);
+      // Both dictionaries carry it — plain, ramp and lowered (hunt 12) — and
+      // no version mentions a rest.
+      const lines = i18nSource.match(/'guided\.walk\.planSuperset(?:Ramp|Lowered)?': '[^']+'/g) ?? [];
+      assert.equal(lines.length, 6);
       for (const line of lines) {
         assert.doesNotMatch(line, /rest|lepo/i, line);
       }

@@ -406,4 +406,40 @@ module.exports = [
       assert.equal(addedToNothing.kind, 'skip');
     },
   },
+  {
+    // A14-8: the reps stepper refused every step when either end was outside
+    // 1-50, so a 30-60 s plank or a 60 m farmer's walk could not move at all,
+    // not even down toward the bound.
+    name: 'the reps stepper moves a row above 50 toward its bound, and a hold up to its own',
+    run() {
+      const plank = { targetSets: 3, repMin: 30, repMax: 60, restSeconds: 60 };
+      const seconds = { timed: true };
+      assert.equal(canStepProgramPrescription(plank, 'reps', -1, seconds), true);
+      assert.equal(canStepProgramPrescription(plank, 'reps', 1, seconds), true);
+      assert.deepEqual(stepProgramPrescription(plank, 'reps', 1, seconds), { ...plank, repMin: 31, repMax: 61 });
+
+      // A counted row above the bound: down moves toward it, up is refused.
+      const walk = { targetSets: 3, repMin: 60, repMax: 60, restSeconds: 90 };
+      assert.equal(canStepProgramPrescription(walk, 'reps', -1), true);
+      assert.deepEqual(stepProgramPrescription(walk, 'reps', -1), { ...walk, repMin: 59, repMax: 59 });
+      assert.equal(canStepProgramPrescription(walk, 'reps', 1), false);
+
+      // Unchanged: a counted row at the ceiling, at the floor, and in the middle.
+      const atCeiling = { targetSets: 3, repMin: 1, repMax: PROGRAM_REPS_RANGE.max, restSeconds: 60 };
+      assert.equal(canStepProgramPrescription(atCeiling, 'reps', 1), false);
+      const atFloor = { targetSets: 3, repMin: 1, repMax: 3, restSeconds: 60 };
+      assert.equal(canStepProgramPrescription(atFloor, 'reps', -1), false);
+      const middle = { targetSets: 3, repMin: 8, repMax: 12, restSeconds: 60 };
+      assert.deepEqual(stepProgramPrescription(middle, 'reps', 1), { ...middle, repMin: 9, repMax: 13 });
+      assert.deepEqual(stepProgramPrescription(middle, 'reps', -1), { ...middle, repMin: 7, repMax: 11 });
+
+      // A hold and a minutes row have their own ceilings, still finite.
+      const longHold = { targetSets: 1, repMin: 600, repMax: 600, restSeconds: 60 };
+      assert.equal(canStepProgramPrescription(longHold, 'reps', 1, seconds), false);
+      assert.equal(canStepProgramPrescription(longHold, 'reps', -1, seconds), true);
+      const ride = { targetSets: 1, repMin: 60, repMax: 60, restSeconds: null };
+      assert.equal(canStepProgramPrescription(ride, 'reps', 1, { minutes: true }), true);
+      assert.equal(canStepProgramPrescription({ ...ride, repMin: 300, repMax: 300 }, 'reps', 1, { minutes: true }), false);
+    },
+  },
 ];

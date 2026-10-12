@@ -20,7 +20,8 @@
  * `entryMatchesRepWindow`.
  */
 
-import { WorkoutSlotHistoryEntry, WorkoutSlotHistorySet } from '../features/workout/workoutTypes';
+import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
+import type { ProgrammedDose, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet } from '../features/workout/workoutTypes';
 
 function normalizeExerciseName(name: string): string {
   return name.trim().toLowerCase();
@@ -48,6 +49,38 @@ function rankTime(iso: string, nowMs: number | undefined): number {
 
 function heaviestLoadKg(entry: WorkoutSlotHistoryEntry): number {
   return entry.sets.reduce((max, set) => Math.max(max, set.loadKg), 0);
+}
+
+/**
+ * Whether an entry may answer for a lift that is loaded (requireLoaded): a
+ * real session at some weight. One whose every set is 0 kg is the absence of
+ * a weight — from the slot's own history as much as from a borrow: it opened
+ * a loaded lift at 0 kg with "Last time" listing 0/0/0, where the same data
+ * borrowed opened 60 (hunt, 2026-10-11). A set-less entry has no weight to be
+ * missing and is left to the readers that skip it.
+ */
+export function answersLoadedLift(entry: WorkoutSlotHistoryEntry, requireLoaded: boolean | undefined): boolean {
+  return !requireLoaded || entry.sets.length === 0 || heaviestLoadKg(entry) > 0;
+}
+
+/**
+ * A slot's own entries as a loaded lift reads them: the ones at some weight
+ * (answersLoadedLift), or every one when none of them is usable. A loaded row
+ * whose every session is 0 kg was done that way — a lunge at bodyweight, an
+ * interval logged without a load — and that is its last time; passing over
+ * all of it opened the lift blank with an empty Last time (review of A5-5,
+ * 2026-10-11). Only beside a real weight is a 0 kg session no weight.
+ */
+export function preferLoadedEntries(
+  entries: WorkoutSlotHistoryEntry[],
+  requireLoaded: boolean | undefined,
+  nowMs?: number,
+): WorkoutSlotHistoryEntry[] {
+  if (!requireLoaded) {
+    return entries;
+  }
+  const loaded = entries.filter((entry) => answersLoadedLift(entry, true));
+  return selectLatestUsableEntry(loaded, nowMs) ? loaded : entries;
 }
 
 export interface NamedHistoryOptions {
@@ -198,6 +231,62 @@ export function entryMatchesRepWindow(
 }
 
 /**
+ * Whether a slot's own entry was run under the dose the slot asks for now.
+ *
+ * A programme edit keeps the slot's id, so the slot's own history ran under
+ * whatever range it had then: 4-6 history opened a slot edited to 12-15 at
+ * 120 kg with a lowered target of 5, and 12-rep history earned AUTO in a 4-6
+ * slot (hunt, 2026-10-11). An entry whose recorded dose differs — another
+ * mode, or a range end more than REP_WINDOW_TOLERANCE away — is not this
+ * slot's history any more: it may still be borrowed by name, never gated.
+ * Read by the dose recorded at filing, not by the reps performed: a short
+ * session in an unchanged programme is exactly what the missed-reps target
+ * reads. An entry with no dose (saved before it was recorded), or no dose to
+ * compare with, matches.
+ */
+export function entryMatchesDose(
+  entry: WorkoutSlotHistoryEntry,
+  dose: ProgrammedDose | null | undefined,
+): boolean {
+  const recorded = entry.dose;
+  if (!recorded || !dose) {
+    return true;
+  }
+  return (
+    readStoredTrackingMode(recorded.trackingMode) === readStoredTrackingMode(dose.trackingMode) &&
+    Math.abs(recorded.repsMin - dose.repsMin) <= REP_WINDOW_TOLERANCE &&
+    Math.abs(recorded.repsMax - dose.repsMax) <= REP_WINDOW_TOLERANCE
+  );
+}
+
+/**
+ * The same test for a "Last time" query that names no dose: as much of it as
+ * the query's own fields say — loaded or not, and the rep window of a loaded
+ * lift — so the panel agrees with the prefill without being told the mode.
+ */
+function queryMatchesDose(entry: WorkoutSlotHistoryEntry, query: LastTimeQuery): boolean {
+  if (query.dose) {
+    return entryMatchesDose(entry, query.dose);
+  }
+  const recorded = entry.dose;
+  if (!recorded) {
+    return true;
+  }
+  const mode = readStoredTrackingMode(recorded.trackingMode);
+  const unloaded = mode !== null && isUnloadedTrackingMode(mode);
+  if (typeof query.requireLoaded === 'boolean' && query.requireLoaded === unloaded) {
+    return false;
+  }
+  const window = query.repWindow;
+  return (
+    !window ||
+    unloaded ||
+    (Math.abs(recorded.repsMin - window.min) <= REP_WINDOW_TOLERANCE &&
+      Math.abs(recorded.repsMax - window.max) <= REP_WINDOW_TOLERANCE)
+  );
+}
+
+/**
  * A session that actually happened: not skipped, and with sets in it.
  *
  * Exported for the sheet's History tab, which lists a slot's entries: a
@@ -213,29 +302,50 @@ export function isUsableEntry(entry: WorkoutSlotHistoryEntry | null | undefined)
 export const SLOT_HISTORY_LIMIT = 10;
 
 /**
- * A slot's entries, newest first, cut to the cap — without cutting away any
- * lift's last real session.
+ * A slot's entries, newest first by date, cut to the cap — without cutting
+ * away any lift's last real session.
  *
- * The cap counted positions, and a skipped day takes a position like a real
- * one. A lift skipped ten times in a row on its day lost the session it was
- * last done in, and opened blank with no "Last time" although the database
- * still held it (hunt, 2026-10-09). So each lift's newest usable entry stays
- * past the cap until a newer one replaces it: the list holds at most one
- * extra entry per lift the slot has held.
+ * The cap counted positions, and a skipped day took a position like a real
+ * one: a lift skipped ten times in a row on its day lost the session it was
+ * last done in, and an intermediate lifter's confirming session went with
+ * ten warm-up-only days (hunt, 2026-10-09 and 2026-10-11). So only real
+ * sessions count toward the cap; of the set-less entries (a skip, warm-ups
+ * only) each lift keeps its newest, whose warm-ups are offered next time.
+ * And each lift's newest real entry stays past the cap until a newer one
+ * replaces it, for a slot that has held more than one lift.
+ *
+ * Sorted first, stably: the finish puts its entries in front whatever their
+ * date, and a finish stamped by a clock running behind kept itself and cut a
+ * newer real session (hunt, 2026-10-11). Every reader ranks by date anyway.
  */
 export function capSlotEntries(
   entries: readonly WorkoutSlotHistoryEntry[],
   limit: number = SLOT_HISTORY_LIMIT,
 ): WorkoutSlotHistoryEntry[] {
-  const kept = entries.slice(0, limit);
-  const answered = new Set(
-    kept.filter(isUsableEntry).map((entry) => normalizeExerciseName(entry.exerciseName ?? '')),
-  );
-  entries.slice(limit).forEach((entry) => {
+  const ordered = entries
+    .map((entry, index) => ({ entry, index, time: parseTime(entry.performedAt) }))
+    .sort((left, right) => right.time - left.time || left.index - right.index)
+    .map(({ entry }) => entry);
+  const kept: WorkoutSlotHistoryEntry[] = [];
+  const answered = new Set<string>();
+  const setLess = new Set<string>();
+  let counted = 0;
+  ordered.forEach((entry) => {
     const name = normalizeExerciseName(entry.exerciseName ?? '');
-    if (isUsableEntry(entry) && !answered.has(name)) {
-      kept.push(entry);
+    if (!isUsableEntry(entry)) {
+      if (!setLess.has(name)) {
+        setLess.add(name);
+        kept.push(entry);
+      }
+      return;
+    }
+    if (counted < limit) {
+      counted += 1;
       answered.add(name);
+      kept.push(entry);
+    } else if (!answered.has(name)) {
+      answered.add(name);
+      kept.push(entry);
     }
   });
   return kept;
@@ -307,6 +417,12 @@ export interface LastTimeQuery {
   repWindow?: RepWindow | null;
   /** The present: an entry dated after it is not the newest (rankTime). */
   nowMs?: number;
+  /**
+   * The mode and range the slot asks for now: the slot's own entries filed
+   * under another are borrowed, not its own (entryMatchesDose). Absent, the
+   * query's requireLoaded and repWindow stand in for it.
+   */
+  dose?: ProgrammedDose | null;
 }
 
 export interface ResolvedLastTime {
@@ -335,21 +451,26 @@ export function resolveLastTimeEntry(query: LastTimeQuery): ResolvedLastTime | n
   // The scoped key is this day's own history, and it is never gated: whatever
   // reps were done here last time, they were done HERE.
   // …as long as it was THIS lift. See entriesForLift.
+  // …and run under the dose the slot asks for now (entryMatchesDose).
+  // …at some weight, for a loaded lift, unless it never had one
+  // (preferLoadedEntries).
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => queryMatchesDose(entry, query);
   const scoped = selectLatestUsableEntry(
-    entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName),
+    preferLoadedEntries(
+      entriesForLift(query.slotHistory?.[query.slotId], query.exerciseName).filter(matchesDose),
+      query.requireLoaded,
+      query.nowMs,
+    ),
     query.nowMs,
   );
   if (scoped) {
     return { entry: scoped, borrowed: false };
   }
 
-  const legacy = selectLegacySlotEntry(
-    query.slotHistory,
-    query.templateSlotId,
-    query.repWindow,
-    query.exerciseName,
-    query.nowMs,
-  );
+  const legacyAt = (accept: (entry: WorkoutSlotHistoryEntry) => boolean) =>
+    selectLegacySlotEntry(query.slotHistory, query.templateSlotId, query.repWindow, query.exerciseName, query.nowMs, accept);
+  const legacy =
+    legacyAt((entry) => matchesDose(entry) && answersLoadedLift(entry, query.requireLoaded)) ?? legacyAt(matchesDose);
   if (legacy) {
     return { entry: legacy, borrowed: false };
   }
@@ -378,11 +499,14 @@ export function selectLegacySlotEntry(
   repWindow: RepWindow | null | undefined,
   exerciseName?: string | null,
   nowMs?: number,
+  /** The slot's dose test (entryMatchesDose); absent, every entry. */
+  matchesDose?: (entry: WorkoutSlotHistoryEntry) => boolean,
 ): WorkoutSlotHistoryEntry | null {
   if (!templateSlotId) {
     return null;
   }
-  const latest = selectLatestUsableEntry(entriesForLift(slotHistory?.[templateSlotId], exerciseName), nowMs);
+  const entries = entriesForLift(slotHistory?.[templateSlotId], exerciseName);
+  const latest = selectLatestUsableEntry(matchesDose ? entries.filter(matchesDose) : entries, nowMs);
   if (!latest || !entryMatchesRepWindow(latest, repWindow)) {
     return null;
   }

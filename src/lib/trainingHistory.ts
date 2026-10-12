@@ -79,6 +79,28 @@ export interface LiftHistory {
    * is not a new one, and neither is an extra set at the same reps.
    */
   stalledSessions: number;
+  /**
+   * The latest session against the programme row it was logged under, when a
+   * caller has read it (lib/proInsights withProgrammeReads). Absent or null:
+   * not read, or no row to read it against.
+   */
+  programme?: LiftProgrammeRead | null;
+}
+
+/** A lift's latest session, read against its programme row (lib/nextSessionAdvice readLiftProgramme). */
+export interface LiftProgrammeRead {
+  /**
+   * Every set the row asks for reached its top reps: the gate's own test of a
+   * session that earns a raise. A lift on schedule is not stalled, whatever
+   * its count of sessions without a rep best.
+   */
+  onSchedule: boolean;
+  /** The row's rep ceiling: no next step asks for more. */
+  repsMax: number;
+  /** The heaviest load of the row's own sets: what the gate raises from. */
+  workingKg: number;
+  /** The reps of the row's own sets, in set order. */
+  workingReps: number[];
 }
 
 /**

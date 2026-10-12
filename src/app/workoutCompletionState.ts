@@ -246,6 +246,7 @@ export function buildExerciseLogsForCompletedSession(sessionId: string, drafts: 
     notes: draft.notes,
     swappedFrom: draft.swappedFrom,
     ...(draft.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
+    ...(typeof draft.plannedSets === 'number' ? { plannedSets: draft.plannedSets } : {}),
   }));
 }
 

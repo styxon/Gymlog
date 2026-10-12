@@ -333,7 +333,8 @@ module.exports = [
         app,
         /const adviceTemplateLookup = useMemo\(\s*\(\) =>\s*createAdviceTemplateLookup\(\{[^]*?\}\),\s*\[workoutTemplates, getWorkoutTemplateSessions, exerciseLibrary, preferences\.defaultRestSeconds\],\s*\);/,
       );
-      assert.equal(app.match(/\badviceTemplateLookup,/g)?.length, 2);
+      // Handed to the analysis, the Pro insights and (hunt 12) the coach context.
+      assert.equal(app.match(/\badviceTemplateLookup,/g)?.length, 3);
       assert.match(insights, /buildNextSessionAdvice\(/);
       assert.match(insights, /buildCompletionConclusion\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
       assert.match(insights, /buildNextSessionMoment\(proCompletionLift, preferences\.appLanguage, preferences\.setupLevel, advice\)/);
@@ -576,7 +577,12 @@ module.exports = [
       const clean = entry(at, [8, 8, 8], 60);
       const short = entry(at, [5, 5, 5], 60);
       const args = { repsMin: 8, repsMax: 8, targetSets: 3, level: 'beginner' };
-      assert.equal(evaluateProgression({ ...args, history: [short, clean] }).holdReason, 'rep_ceiling_not_reached');
+      // Two entries at one time are one date, so one session (owner Q7,
+      // 2026-10-11); a clean session days before keeps the baseline met, and
+      // the first stored still stands for the day.
+      const earlier = entry(new Date(2026, 9, 2, 18).toISOString(), [8, 8, 8], 60);
+      assert.equal(evaluateProgression({ ...args, history: [short, clean, earlier] }).holdReason, 'rep_ceiling_not_reached');
+      assert.equal(evaluateProgression({ ...args, history: [clean, short, earlier] }).recommendation, 'increase');
     },
   },
 
@@ -650,9 +656,10 @@ module.exports = [
         toWorkingHistoryEntry(found, programmeSetCount(lightSets)).sets.map((set) => set.loadKg),
         [60, 80, 100, 100],
       );
-      // An ordinary session, and one saved before the field existed, count as before.
+      // An ordinary session carries the programme's count too (hunt 12, A4-3: "Remove set"
+      // must not change it); one saved before the field existed counts as before.
       const ordinarySets = start(template).activeSession.exercises[0].sets;
-      assert.equal(ordinarySets.some((set) => 'programmeSets' in set), false);
+      assert.equal(ordinarySets.every((set) => set.programmeSets === 4), true);
       assert.equal(programmeSetCount(ordinarySets), 4);
       assert.equal(programmeSetCount(lightSets.map(({ programmeSets, ...rest }) => rest)), 3);
       assert.equal(programmeSetCount([{ programmeSets: 'x' }, { addedMidSession: true }]), 1);

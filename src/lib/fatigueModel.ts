@@ -65,12 +65,17 @@ function resolveSignal(acwr: number): FatigueSignal {
 
 export function buildFatigueModel(input: FatigueModelInput, referenceDate?: Date): FatigueResult {
   const now = referenceDate ?? new Date();
-  // Calendar stepping for both edges. The ratio itself is robust to an hour —
-  // both windows drift together — but a session logged near either boundary is
-  // counted into the acute load or the chronic one against what the window
-  // claims, and the acute window is only seven days wide to begin with.
-  const cutoff7d = new Date(getRollingWindowStart(now, 7));
-  const cutoff28d = new Date(getRollingWindowStart(now, 28));
+  // Whole local days: the week is today and the six days before it, the four
+  // weeks today and the 27 before, each opening at local midnight — the same
+  // seven days the recovery sheet draws as its week and sessionCount7d counts.
+  // The windows used to keep now's time of day, so a session dropped out of
+  // the acute load at the clock time it was logged: the sheet (memoised when
+  // the app opened) and the start (read at the start) disagreed the same day,
+  // and the acute load counted a session from an eighth date that the strip
+  // and the count left out (bug hunt 12, 2026-10-11). Built by calendar date,
+  // never by stepping DAY_MS, so a 23- or 25-hour day still opens at midnight.
+  const cutoff7d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+  const cutoff28d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 27);
 
   const logsBySession: Record<string, ExerciseLog[]> = {};
   for (const log of input.exerciseLogs) {
@@ -108,7 +113,10 @@ export function buildFatigueModel(input: FatigueModelInput, referenceDate?: Date
   const chronicWeeks = Math.min(4, Math.max(1, coveredDays / 7));
   const chronicLoadKg = total28dLoadKg / chronicWeeks;
 
-  const acwr = chronicLoadKg > 0 ? acuteLoadKg / chronicLoadKg : 0;
+  // Rounded once, and the rounded ratio is the one the zone, the score and
+  // the label all read: 1.3004 was printed "1.30" and classed above the
+  // optimal zone's 1.3 edge, amber and holding a raise (bug hunt 12).
+  const acwr = chronicLoadKg > 0 ? Math.round((acuteLoadKg / chronicLoadKg) * 100) / 100 : 0;
 
   const times = sessions28d
     .map((session) => new Date(session.performedAt).getTime())
@@ -135,18 +143,14 @@ export function buildFatigueModel(input: FatigueModelInput, referenceDate?: Date
   return {
     acuteLoadKg: Math.round(acuteLoadKg),
     chronicLoadKg: Math.round(chronicLoadKg),
-    acwr: Math.round(acwr * 100) / 100,
+    acwr,
     recoveryScore: computeRecoveryScore(acwr),
     signal: resolveSignal(acwr),
-    // Counted over the seven calendar days, today and the six before it — the
-    // days the recovery sheet draws as its week. The load stays on the
-    // rolling window above; a count off that window reached into an eighth
-    // date, and the row read "2 sessions" over a week strip with one lit day
-    // (audit 9, 2026-09-26).
-    sessionCount7d: sessions28d.filter((s) => {
-      const d = new Date(s.performedAt);
-      return d >= new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-    }).length,
+    // The sessions in the acute load: the seven calendar days the recovery
+    // sheet draws as its week. A count off a rolling window reached into an
+    // eighth date, and the row read "2 sessions" over a week strip with one
+    // lit day (audit 9, 2026-09-26).
+    sessionCount7d: sessions7d.length,
     sessionCount28d: sessions28d.length,
     confident,
   };

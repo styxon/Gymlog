@@ -371,6 +371,18 @@ function normalizeStringRecord(input: unknown): Record<string, string> {
   return out;
 }
 
+/** Past these a stored programme row is not one the editors could have written. */
+const MAX_STORED_SETS = 20;
+const MAX_STORED_REPS = 1000;
+
+/** A stored count as a whole number from 1 to `max`; anything that is not a finite number is `fallback`. */
+function wholeCount(value: unknown, fallback: number, max: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    return fallback;
+  }
+  return Math.min(max, Math.max(1, Math.round(value)));
+}
+
 export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined): AppDatabase {
   // Defaults for missing fields only. The empty database is the right source:
   // the demo seed's fabricated plan id would otherwise become the fallback for
@@ -400,10 +412,16 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         // the same rule on load (holds excepted — their numbers are seconds),
         // as does an interval's rest. The writer in AppProvider applies the
         // same function, so this only ever changes rows saved before it did.
+        // Whole counts of one or more, within what a dial can set: a stored
+        // 2.5 sets kept the gate holding forever on "two logged, fewer than
+        // 2.5" (hunt, 2026-10-11). The app writes only whole numbers; this is
+        // for a hand-edited or foreign backup.
+        const storedRepMax = wholeCount(exercise?.repMax, 8, MAX_STORED_REPS);
+        const storedRepMin = Math.min(wholeCount(exercise?.repMin, 6, MAX_STORED_REPS), storedRepMax);
         const prescription = savedPrescription({
           name,
-          repMin: typeof exercise?.repMin === 'number' ? exercise.repMin : 6,
-          repMax: typeof exercise?.repMax === 'number' ? exercise.repMax : 8,
+          repMin: storedRepMin,
+          repMax: storedRepMax,
           restSeconds: typeof exercise?.restSeconds === 'number' ? exercise.restSeconds : null,
           trackingMode: readStoredTrackingMode(exercise?.trackingMode),
         });
@@ -413,7 +431,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           workoutTemplateSessionId:
             typeof exercise?.workoutTemplateSessionId === 'string' ? exercise.workoutTemplateSessionId : '',
           name,
-          targetSets: typeof exercise?.targetSets === 'number' ? exercise.targetSets : 3,
+          targetSets: wholeCount(exercise?.targetSets, 3, MAX_STORED_SETS),
           repMin: prescription.repMin,
           repMax: prescription.repMax,
           restSeconds: prescription.restSeconds,

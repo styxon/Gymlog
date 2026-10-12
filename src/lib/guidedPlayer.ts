@@ -16,7 +16,7 @@ import { parseNumberInput, removeTrailingZeros } from './format';
 import type { SessionRoutineBlock } from './homeSessionHero';
 import { t } from './i18n';
 import { IntervalRecoveryKind, IntervalScheme, parseIntervalScheme } from './intervalScheme';
-import { liftOfSet } from './liftSegments';
+import { liftBeforeSwap, liftOfSet } from './liftSegments';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetRoundOrder } from './supersetGrouping';
 import type {
   GuidedResumeAnchor,
@@ -706,21 +706,69 @@ export interface GuidedSetPlanChip {
   status: 'done' | 'current' | 'upcoming' | 'skipped';
 }
 
+/** One set as the target resolvers read it. */
+export type GuidedTargetSet = Parameters<typeof resolveGuidedSetTarget>[0][number];
+
+/**
+ * The lift the slot holds now, so a set's carry is read off the lift it was
+ * logged as (`liftBeforeSwap`), not off where it sits against the swap line.
+ */
+export type GuidedCurrentLift = Parameters<typeof liftBeforeSwap>[0];
+
+/**
+ * What each set's dial will open on when the sets before it go as planned:
+ * every set still to do is resolved as if the ones before it had been logged
+ * at their own targets — which is how the dial reaches it. Resolving each set
+ * against only what is logged so far let a set with no prefill of its own (one
+ * last time never reached, one past last time's ramp) read the programme's top
+ * reps, while the dial would carry the set before (hunt 12, P0-1 / A11-2).
+ */
+export function resolveGuidedSetTargetsAsPlanned(
+  sets: GuidedTargetSet[],
+  trackingMode: string,
+  swappedAfterSetIndex?: number | null,
+  lift?: GuidedCurrentLift | null,
+): Map<number, GuidedSetTarget | null> {
+  const targets = new Map<number, GuidedSetTarget | null>();
+  const working = [...sets].sort((left, right) => left.setIndex - right.setIndex).map((set) => ({ ...set }));
+  for (let position = 0; position < working.length; position += 1) {
+    const set = working[position];
+    if (set.status !== 'pending') {
+      continue;
+    }
+    const target = resolveGuidedSetTarget(working, set.setIndex, trackingMode, swappedAfterSetIndex, lift);
+    targets.set(set.setIndex, target);
+    if (target) {
+      working[position] = {
+        ...set,
+        status: 'completed',
+        actualReps: target.reps,
+        actualLoadKg: target.loadKg ?? undefined,
+        ...(lift ? { loggedAs: { exerciseName: lift.exerciseName, trackingMode: lift.trackingMode } } : {}),
+      };
+    }
+  }
+  return targets;
+}
+
 /**
  * Today's sets, set by set, for the row under last time's on the set card.
  *
  * "Saadaanko näkyviin koko sarja mitä pitäisi tehdä eli esim tee 10 10 10 10
  * 9" (#bugs 2026-10-08): the card showed last time's sets and only the one set
- * being done today. A set still to do reads what its dial will open on — the
- * same target the dial uses, so a set logged over its target moves the ones
- * after it, as the dial does; a logged set reads what was done.
+ * being done today. A set still to do reads what its dial will open on when
+ * the sets before it go as planned (resolveGuidedSetTargetsAsPlanned), so a
+ * set logged over its target moves the ones after it, as the dial does; a
+ * logged set reads what was done.
  */
 export function resolveGuidedSetPlan(
-  sets: Parameters<typeof resolveGuidedSetTarget>[0],
+  sets: GuidedTargetSet[],
   currentSetIndex: number,
   trackingMode: string,
   swappedAfterSetIndex?: number | null,
+  lift?: GuidedCurrentLift | null,
 ): GuidedSetPlanChip[] {
+  const asPlanned = resolveGuidedSetTargetsAsPlanned(sets, trackingMode, swappedAfterSetIndex, lift);
   return [...sets]
     .sort((left, right) => left.setIndex - right.setIndex)
     .map((set): GuidedSetPlanChip => {
@@ -731,10 +779,116 @@ export function resolveGuidedSetPlan(
         return { reps: null, status: 'skipped' };
       }
       return {
-        reps: resolveGuidedSetTarget(sets, set.setIndex, trackingMode, swappedAfterSetIndex)?.reps ?? null,
+        reps: asPlanned.get(set.setIndex)?.reps ?? null,
         status: set.setIndex === currentSetIndex ? 'current' : 'upcoming',
       };
     });
+}
+
+/** A target lowered below the programme's floor after a short session. */
+export function isLoweredGuidedTarget(set: { plannedRepsMin: number; plannedTargetReps?: number }): boolean {
+  return typeof set.plannedTargetReps === 'number' && set.plannedTargetReps < set.plannedRepsMin;
+}
+
+/**
+ * The reps a plan label names for a set: the programme's range, or the set's
+ * own target where it falls outside it — lowered after a short session, or a
+ * bodyweight lift raised past the top (hunt 12, A2-5). A target inside the
+ * range agrees with the range, so the range stays: mark the exception.
+ *
+ * A hold opens on its carried seconds clamped into the range (see
+ * resolveGuidedSetTarget), so its label names that same clamped number and
+ * never seconds the dial cannot open on.
+ */
+export function planRepsBounds(
+  set: {
+    plannedRepsMin: number;
+    plannedRepsMax: number;
+    plannedTargetReps?: number;
+  },
+  trackingMode?: string,
+): { min: number; max: number } {
+  const target = set.plannedTargetReps;
+  if (trackingMode === 'hold') {
+    if (typeof target !== 'number' || !Number.isFinite(target)) {
+      return { min: set.plannedRepsMin, max: set.plannedRepsMax };
+    }
+    const seconds = Math.min(set.plannedRepsMax, Math.max(set.plannedRepsMin, target));
+    return { min: seconds, max: seconds };
+  }
+  if (typeof target === 'number' && (target < set.plannedRepsMin || target > set.plannedRepsMax)) {
+    return { min: target, max: target };
+  }
+  return { min: set.plannedRepsMin, max: set.plannedRepsMax };
+}
+
+/** The programme's own reps for a set, "8–12" or "8". */
+export function formatGuidedProgrammeReps(set: { plannedRepsMin: number; plannedRepsMax: number }): string {
+  return set.plannedRepsMin === set.plannedRepsMax
+    ? `${set.plannedRepsMax}`
+    : `${set.plannedRepsMin}–${set.plannedRepsMax}`;
+}
+
+/** "8–12", "8", or the set's target where it falls outside the range (planRepsBounds). */
+export function formatGuidedRepsLabel(
+  set: {
+    plannedRepsMin: number;
+    plannedRepsMax: number;
+    plannedTargetReps?: number;
+  },
+  trackingMode?: string,
+): string {
+  const { min, max } = planRepsBounds(set, trackingMode);
+  return formatGuidedProgrammeReps({ plannedRepsMin: min, plannedRepsMax: max });
+}
+
+export type GuidedWalkPlan =
+  /** Set by set: "10/8/6", what each dial opens on when the sets go as planned. */
+  | { kind: 'ramp'; reps: number[] }
+  /** One number, lowered after a short session, with the programme's own beside it. */
+  | { kind: 'lowered'; reps: number[]; programme: string }
+  /** One number for every set. */
+  | { kind: 'plain'; reps: number[] };
+
+/**
+ * The reps part of the walk-up card's plan line. Worked out once, here, so the
+ * line for a lift that runs into the next one (a superset) says the same as
+ * the plain one: it used to print "{sets} × {set 1 reps}" for a ramp and drop
+ * a lowered target's programme note (hunt 12, A11-3).
+ */
+export function resolveGuidedWalkPlan(
+  sets: GuidedTargetSet[],
+  trackingMode: string,
+  swappedAfterSetIndex?: number | null,
+  lift?: GuidedCurrentLift | null,
+): GuidedWalkPlan | null {
+  const ordered = [...sets].sort((left, right) => left.setIndex - right.setIndex);
+  const first = ordered[0];
+  const target = first
+    ? resolveGuidedSetTarget(ordered, first.setIndex, trackingMode, swappedAfterSetIndex, lift)
+    : null;
+  if (!first || !target) {
+    return null;
+  }
+  if (ordered.some((set) => set.rampTargetReps !== undefined)) {
+    // A ramp's plan is set by set — "10/8/6", the heaviest one more than last
+    // time — not one number for every set (2026-10-01). The chips' numbers: a
+    // set past the ramp carries the one before, as the dial does.
+    const chips = resolveGuidedSetPlan(ordered, first.setIndex, trackingMode, swappedAfterSetIndex, lift);
+    const reps: number[] = [];
+    chips.forEach((chip, index) => {
+      const set = ordered[index];
+      reps.push(chip.reps ?? set.rampTargetReps ?? (index > 0 ? reps[index - 1] : undefined) ?? set.plannedRepsMax);
+    });
+    return { kind: 'ramp', reps };
+  }
+  // The set the line describes: the next one still to do (a swap rewrites
+  // only the sets ahead).
+  const planSet = ordered.find((set) => set.status === 'pending') ?? ordered[ordered.length - 1];
+  if (isLoweredGuidedTarget(planSet) && target.reps === planSet.plannedTargetReps) {
+    return { kind: 'lowered', reps: [target.reps], programme: formatGuidedProgrammeReps(planSet) };
+  }
+  return { kind: 'plain', reps: [target.reps] };
 }
 
 /**
@@ -761,15 +915,23 @@ export function resolveGuidedSetTarget(
     rampTargetReps?: number;
     actualLoadKg?: number;
     actualReps?: number;
+    loggedAs?: WorkoutLiftIdentity;
   }>,
   setIndex: number,
   trackingMode: string,
   /**
    * Sets at or below this index were logged as a different lift (the exercise
    * was swapped mid-way). Carry-forward stops here — see
-   * `WorkoutExerciseInstance.swappedAfterSetIndex`.
+   * `WorkoutExerciseInstance.swappedAfterSetIndex`. Read only without `lift`.
    */
   swappedAfterSetIndex?: number | null,
+  /**
+   * The lift the slot holds now. Given, a set carries when it was logged as
+   * this lift (`liftBeforeSwap`, the test "repeat last set" uses): a set taken
+   * back below the swap line and logged again as the new lift carries to the
+   * next one, and a set logged as the old lift never does (hunt 12, A6-2).
+   */
+  lift?: GuidedCurrentLift | null,
 ): GuidedSetTarget | null {
   const set = sets.find((item) => item.setIndex === setIndex);
   if (!set) {
@@ -777,10 +939,13 @@ export function resolveGuidedSetTarget(
   }
 
   const carryForwardFloor = typeof swappedAfterSetIndex === 'number' ? swappedAfterSetIndex : -1;
+  const ofCurrentLift = (item: (typeof sets)[number]): boolean =>
+    lift
+      ? liftBeforeSwap(lift, item as { setIndex: number; status: WorkoutSetStatus; loggedAs?: WorkoutLiftIdentity }) ===
+        null
+      : item.setIndex > carryForwardFloor;
   const previous = [...sets]
-    .filter(
-      (item) => item.setIndex < setIndex && item.setIndex > carryForwardFloor && item.status === 'completed',
-    )
+    .filter((item) => item.setIndex < setIndex && item.status === 'completed' && ofCurrentLift(item))
     .sort((left, right) => right.setIndex - left.setIndex)[0];
 
   // A hold logs no weight either — its "reps" are seconds. Nor does a bout of
@@ -790,7 +955,14 @@ export function resolveGuidedSetTarget(
     // fallback, and the previous completed set still wins — mid-session the
     // day's own numbers are the better prescription.
     const suggestedReps = trackingMode === 'bodyweight' ? set.plannedTargetReps : undefined;
-    const reps = previous?.actualReps ?? suggestedReps ?? set.plannedRepsMax;
+    // A hold repeats the seconds its set carries from last time, inside the
+    // row's range — not always the top of it (owner, 2026-10-11, hunt 12
+    // A2-7). Never a climb: a hold does not progress, and claims nothing.
+    const heldSeconds =
+      trackingMode === 'hold' && typeof set.plannedTargetReps === 'number' && Number.isFinite(set.plannedTargetReps)
+        ? Math.min(set.plannedRepsMax, Math.max(set.plannedRepsMin, set.plannedTargetReps))
+        : undefined;
+    const reps = previous?.actualReps ?? suggestedReps ?? heldSeconds ?? set.plannedRepsMax;
     // Same rule as the load badges below: the claim follows the number. Once
     // the shown reps are not the ones the gate picked, it has nothing to
     // point at.

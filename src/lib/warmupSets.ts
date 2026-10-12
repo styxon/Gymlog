@@ -24,6 +24,19 @@ export const WARMUP_SHARE_TENTHS = 7;
 
 const SAME_LOAD_KG = 0.001;
 
+/**
+ * One weight dial step: loads this close are the same load to the gate (owner,
+ * 2026-10-11, Q6). A 61.25 nudge between two 60 kg sessions is the same work,
+ * and reset an intermediate's confirmation when compared to the gram. Every
+ * between-sessions step is 2.5 kg, so a real change of load is never this close.
+ */
+export const SAME_LOAD_TOLERANCE_KG = 1.25;
+
+/** Whether `lighter` is within one dial step of `heavier` (float slack included). */
+export function isWithinOneDialStep(heavier: number, lighter: number): boolean {
+  return Math.abs(heavier - lighter) <= SAME_LOAD_TOLERANCE_KG + SAME_LOAD_KG;
+}
+
 function byOrder(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[] {
   return [...sets].sort((left, right) => left.setIndex - right.setIndex);
 }
@@ -43,26 +56,55 @@ function byOrder(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[
  *
  * Nothing inferred: the entry comes back as it was, set numbers untouched, so
  * every session without a warm-up reads exactly as it did before.
+ *
+ * A set the reader added mid-session (filed with `addedMidSession`) is not one
+ * of the programme's: it neither makes the session run over nor is the load
+ * the others are measured against. 3 × 60 with a 90 added read the 60s as
+ * warm-ups and opened set 1 at 90 (hunt, 2026-10-11). So the inference reads
+ * the programme's sets alone, and the added ones follow them as work. The
+ * cost, as with an exact count: a warm-up logged as set 1 and made up with an
+ * added set stays work — "+ Warm-up set" is the way to log one.
  */
 export function toWorkingHistoryEntry(
   entry: WorkoutSlotHistoryEntry,
   targetSets: number,
 ): WorkoutSlotHistoryEntry {
-  const cap = Math.max(0, entry.sets.length - Math.max(0, Math.floor(targetSets)));
-  if (cap === 0) {
+  const added = byOrder(entry.sets.filter((set) => set.addedMidSession === true));
+  if (added.length === 0) {
+    return inferWarmups(entry, entry.sets, targetSets) ?? entry;
+  }
+  const programme = byOrder(entry.sets.filter((set) => set.addedMidSession !== true));
+  const working = inferWarmups(entry, programme, targetSets)?.sets ?? programme;
+  const ordered = [...working, ...added];
+  const stored = byOrder(entry.sets);
+  const unchanged = ordered.length === stored.length && ordered.every((set, ordinal) => set === stored[ordinal]);
+  if (unchanged) {
     return entry;
   }
-  const ordered = byOrder(entry.sets);
+  return { ...entry, sets: ordered.map((set, ordinal) => ({ ...set, setIndex: ordinal })) };
+}
+
+/** The 70 % rule over `sets`; null when nothing in them reads as a warm-up. */
+function inferWarmups(
+  entry: WorkoutSlotHistoryEntry,
+  sets: readonly WorkoutSlotHistorySet[],
+  targetSets: number,
+): WorkoutSlotHistoryEntry | null {
+  const cap = Math.max(0, sets.length - Math.max(0, Math.floor(targetSets)));
+  if (cap === 0) {
+    return null;
+  }
+  const ordered = byOrder(sets);
   const heaviest = ordered.reduce((max, set) => Math.max(max, set.loadKg), 0);
   if (!(heaviest > 0)) {
-    return entry;
+    return null;
   }
   const firstHeavy = ordered.findIndex((set) => Math.abs(set.loadKg - heaviest) < SAME_LOAD_KG);
   const candidates = ordered
     .slice(0, firstHeavy)
     .filter((set) => set.loadKg > 0 && set.loadKg * 10 < heaviest * WARMUP_SHARE_TENTHS - 1e-9);
   if (candidates.length === 0) {
-    return entry;
+    return null;
   }
   const warmups = new Set(candidates);
   const working = ordered
@@ -91,6 +133,22 @@ export function programmeSetCount(sets: readonly { addedMidSession?: boolean; pr
 }
 
 /**
+ * The sets a lighter session asked for, when that is fewer than the programme
+ * asks (Q3, 2026-10-11): read off the stamp the start put on the sets, not off
+ * how many were logged, so a set the reader took off as well still counts as
+ * dropped. The slot history files it on the entry and the save on each log;
+ * one reading, so the gate and the next-session advice cannot drift apart.
+ */
+export function lighterSessionPlannedSets(
+  sets: readonly { addedMidSession?: boolean; programmeSets?: number; plannedSets?: number }[],
+): { plannedSets?: number } {
+  const stamped = sets.find(
+    (set) => typeof set.plannedSets === 'number' && Number.isInteger(set.plannedSets) && set.plannedSets > 0,
+  )?.plannedSets;
+  return typeof stamped === 'number' && stamped < programmeSetCount(sets) ? { plannedSets: stamped } : {};
+}
+
+/**
  * The sets that decide whether a session earned more load: every set up to and
  * including the last one at the session's heaviest load. The lighter sets after
  * it — a drop or a back-off, 80/75/70 — are exempt, or a descending pattern
@@ -98,6 +156,11 @@ export function programmeSetCount(sets: readonly { addedMidSession?: boolean; pr
  * 70×12 on top does not earn a jump on the strength of the top set (spec
  * review, 2026-10-05). Straight sets and an ascending pyramid: every set, as
  * before.
+ *
+ * "At the heaviest" is within one dial step of it (SAME_LOAD_TOLERANCE_KG):
+ * 61.25 × 10 then 60 × 7, 60 × 6 read the 60s as a back-off and raised sets
+ * that missed the ceiling by four reps (hunt, 2026-10-11). A real drop is at
+ * least a between-sessions step under the top, and stays exempt.
  */
 export function gatingSets(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotHistorySet[] {
   const ordered = byOrder(sets);
@@ -106,7 +169,7 @@ export function gatingSets(sets: readonly WorkoutSlotHistorySet[]): WorkoutSlotH
   }
   const heaviest = ordered.reduce((max, set) => Math.max(max, set.loadKg), Number.NEGATIVE_INFINITY);
   let lastHeavy = ordered.length - 1;
-  while (lastHeavy > 0 && Math.abs(ordered[lastHeavy].loadKg - heaviest) >= SAME_LOAD_KG) {
+  while (lastHeavy > 0 && !isWithinOneDialStep(heaviest, ordered[lastHeavy].loadKg)) {
     lastHeavy -= 1;
   }
   return ordered.slice(0, lastHeavy + 1);

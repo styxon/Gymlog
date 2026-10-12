@@ -513,6 +513,8 @@ function rowOfItsOwn(storedLog: ExerciseLog): ExerciseLogDraft {
     // Its sets' unit with it: without it a stored "30 min" came back as 30
     // reps for any lift the minutes list does not name (review, 2026-10-07).
     ...(storedLog.repsUnit === 'minutes' ? { repsUnit: 'minutes' as const } : {}),
+    // And a lighter session's count, so a resave still reads as one.
+    ...(typeof storedLog.plannedSets === 'number' ? { plannedSets: storedLog.plannedSets } : {}),
   };
 }
 

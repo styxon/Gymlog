@@ -10,7 +10,7 @@
  *
  * Pure: the screen measures, this decides.
  */
-import { resolveGuidedSetTarget } from './guidedPlayer';
+import { type GuidedCurrentLift, type GuidedTargetSet, resolveGuidedSetTargetsAsPlanned } from './guidedPlayer';
 
 /** Chips per line on the card. */
 export const GUIDED_CARD_CHIP_CAP = 5;
@@ -79,19 +79,47 @@ export function guidedLoadTrend(input: {
 }
 
 /**
+ * Last time's weight for the arrow: the heaviest of last time's sets that
+ * today's sets stand in for — by position, a set skipped today left out —
+ * so the arrow compares like with like. The heaviest of every set last time
+ * put a set the lifter added on the day (or the top of a pyramid a lighter
+ * session drops) against today's programme sets, and the arrow read red
+ * beside "AUTO +2.5 kg" (hunt 12, A11-1). Null when nothing pairs.
+ */
+export function guidedLastLoadKg(
+  lastSets: ReadonlyArray<{ loadKg: number }> | null | undefined,
+  todaySets: ReadonlyArray<{ status: string }>,
+): number | null {
+  if (!lastSets) {
+    return null;
+  }
+  let heaviest = 0;
+  todaySets.forEach((set, position) => {
+    const last = lastSets[position];
+    if (set.status === 'skipped' || !last || !Number.isFinite(last.loadKg)) {
+      return;
+    }
+    heaviest = Math.max(heaviest, last.loadKg);
+  });
+  return heaviest > 0 ? heaviest : null;
+}
+
+/**
  * Today's weight, as last time's heading reads it: the heaviest of the day's
  * sets. Logged sets by what was lifted, the one being done by its dial (so the
  * number follows the reader's thumb), the rest by what their dial will open
  * on. Null for a lift that carries no weight, or when nothing has one.
  */
 export function guidedTodayLoadKg(input: {
-  sets: Parameters<typeof resolveGuidedSetTarget>[0];
+  sets: GuidedTargetSet[];
   currentSetIndex: number;
   currentKg: number | null;
   trackingMode: string;
   swappedAfterSetIndex?: number | null;
+  lift?: GuidedCurrentLift | null;
 }): number | null {
-  const { sets, currentSetIndex, currentKg, trackingMode, swappedAfterSetIndex } = input;
+  const { sets, currentSetIndex, currentKg, trackingMode, swappedAfterSetIndex, lift } = input;
+  const asPlanned = resolveGuidedSetTargetsAsPlanned(sets, trackingMode, swappedAfterSetIndex, lift);
   let heaviest = 0;
   for (const set of sets) {
     if (set.status === 'skipped') {
@@ -102,7 +130,7 @@ export function guidedTodayLoadKg(input: {
         ? set.actualLoadKg ?? null
         : set.setIndex === currentSetIndex && currentKg !== null
           ? currentKg
-          : resolveGuidedSetTarget(sets, set.setIndex, trackingMode, swappedAfterSetIndex)?.loadKg ?? null;
+          : asPlanned.get(set.setIndex)?.loadKg ?? null;
     if (typeof kg === 'number' && Number.isFinite(kg) && kg > heaviest) {
       heaviest = kg;
     }

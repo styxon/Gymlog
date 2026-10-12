@@ -161,8 +161,9 @@ module.exports = [
       }
 
       const entries = history.slotHistory[inclineSlot];
-      assert.equal(entries.filter((item) => item.skipped).length, SLOT_HISTORY_LIMIT, 'every skip is on record');
-      assert.equal(entries.length, SLOT_HISTORY_LIMIT + 1, 'and the real session past the cap');
+      // A skip does not count toward the cap, and only the newest is kept (hunt 12, A7-3).
+      assert.equal(entries.filter((item) => item.skipped).length, 1, 'the newest skip is on record');
+      assert.equal(entries.length, 2, 'and the real session');
       const next = start(history);
       assert.deepEqual(next.activeSession.exercises[2].sets.map((set) => set.draftLoadText), ['30', '30']);
     },
@@ -175,8 +176,8 @@ module.exports = [
         entry(`2026-07-${String(index + 10).padStart(2, '0')}T10:00:00.000Z`, 60, { skipped: true, sets: [] }),
       ).reverse();
       const capped = capSlotEntries([...skips, real]);
-      assert.equal(capped.length, SLOT_HISTORY_LIMIT + 1);
-      assert.equal(capped[capped.length - 1], real);
+      // Set-less entries do not count toward the cap; the newest one stays (hunt 12, A7-3).
+      assert.deepEqual(capped, [skips[0], real]);
 
       // With real sessions inside the cap, it is a plain cap.
       const reals = Array.from({ length: 12 }, (_, index) => entry(`2026-08-${String(index + 10).padStart(2, '0')}T10:00:00.000Z`, 60 + index)).reverse();

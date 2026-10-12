@@ -1460,6 +1460,9 @@ const EN = {
   // rest: what follows this lift is the next one, and the rest comes after
   // the round.
   'guided.walk.planSuperset': '{sets} × {reps} · straight into {name}',
+  // The same for a ramp ("10/8/6") and for a lowered target.
+  'guided.walk.planSupersetRamp': '{reps} reps · straight into {name}',
+  'guided.walk.planSupersetLowered': '{sets} × {reps} · programme {programme} · straight into {name}',
   'guided.walk.startFirst': 'Start set 1',
   'guided.walk.swap': 'Swap exercise',
   'guided.walk.add': 'Add exercise',
@@ -4942,6 +4945,8 @@ const FI: Record<I18nKey, string> = {
   'guided.walk.planRamp': '{reps} toistoa · lepo {rest} s',
   'guided.walk.planLowered': '{sets} × {reps} · ohjelmassa {programme} · lepo {rest} s',
   'guided.walk.planSuperset': '{sets} × {reps} · suoraan: {name}',
+  'guided.walk.planSupersetRamp': '{reps} toistoa · suoraan: {name}',
+  'guided.walk.planSupersetLowered': '{sets} × {reps} · ohjelmassa {programme} · suoraan: {name}',
   'guided.walk.startFirst': 'Aloita sarja 1',
   'guided.walk.swap': 'Vaihda liike',
   'guided.walk.add': 'Lisää liike',

@@ -46,6 +46,7 @@ import { buildAiCoachContextText } from './aiCoachSystemContext';
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import { detectPlateaus } from './progressionAnalyzer';
 import { sessionBestPoints } from './trainingHistory';
+import { readLiftProgramme, type AdviceTemplateLookup } from './nextSessionAdvice';
 import { buildFatigueModel } from './fatigueModel';
 import { getComparableLogSets } from './exerciseLog';
 import { isMinutesExerciseName, isMinutesLogEntry } from './minutesExercises';
@@ -222,7 +223,38 @@ export interface BuildAiTrainingContextInput {
    * limitations; until 2026-09-30 it only did behind a flag nothing set.
    */
   cautionFlags?: readonly SetupCautionFlag[];
+  /**
+   * Finds the programme a session was started from (app/adviceTemplateLookup),
+   * so a lift whose latest session reached the programme's top reps on every
+   * set is told to the coach as on schedule rather than stalled — the rule
+   * the plateau card follows. Left out, the count alone, as before.
+   */
+  adviceTemplateLookup?: AdviceTemplateLookup | null;
   now?: Date;
+}
+
+/**
+ * Whether a lift's latest session reached its programme row's top reps on
+ * every set (readLiftProgramme), asked once per lift and session.
+ */
+function onScheduleReader(
+  sessions: WorkoutSession[],
+  logs: ExerciseLog[],
+  lookupTemplate: AdviceTemplateLookup | null,
+): (liftName: string, sessionId: string | null | undefined) => boolean {
+  const asked = new Map<string, boolean>();
+  return (liftName, sessionId) => {
+    if (!lookupTemplate || !sessionId) {
+      return false;
+    }
+    const key = `${normalizedName(liftName)}\u0000${sessionId}`;
+    let answer = asked.get(key);
+    if (answer === undefined) {
+      answer = readLiftProgramme({ liftName, sessionId, sessions, logs, lookupTemplate })?.onSchedule === true;
+      asked.set(key, answer);
+    }
+    return answer;
+  };
 }
 
 /**
@@ -424,6 +456,7 @@ function buildHistoryBlock(
   windowDays: number,
   schedule: TrainingSchedule | null = null,
   now: Date = new Date(),
+  onSchedule: (liftName: string, sessionId: string | null | undefined) => boolean = () => false,
 ): AICoachHistory {
   const history = buildTrainingHistory({
     sessions: workoutSessions,
@@ -467,6 +500,8 @@ function buildHistoryBlock(
         spanDays: Math.max(0, Math.round((latest.time - first.time) / 86400000)),
         stalledSessions: lift.stalledSessions,
         weightSeriesKg: points.map((point) => point.topSetWeightKg),
+        // Only a run long enough for the line to call it one ("no rep gain").
+        ...(lift.stalledSessions >= 2 && onSchedule(lift.name, lift.latest.sessionId) ? { onSchedule: true as const } : {}),
       };
     }),
     liftsNotShown: [
@@ -545,22 +580,26 @@ export function buildAiCoachCardio(
 }
 
 /**
- * A lift's next-session targets as the context carries them: one load (the
- * first set's — the screen opens there) and every set's reps. Null when the
- * app has nothing to open on.
+ * A lift's next-session targets as the context carries them: the first set's
+ * load (the screen opens there), every set's reps, and every set's own load
+ * when they differ. Null when the app has nothing to open on.
  */
 function nextFor(
   lift: { sets: { loadKg: number | null; reps: number }[] } | undefined,
-): { loadKg: number | null; reps: number[] } | null {
+): { loadKg: number | null; reps: number[]; loads?: number[] } | null {
   if (!lift || lift.sets.length === 0) {
     return null;
   }
-  const reps = lift.sets.map((set) => set.reps).filter((count) => Number.isFinite(count) && count > 0);
+  const sets = lift.sets.filter((set) => Number.isFinite(set.reps) && set.reps > 0);
+  const reps = sets.map((set) => set.reps);
   if (reps.length === 0) {
     return null;
   }
   const loadKg = lift.sets[0].loadKg;
-  return { loadKg: typeof loadKg === 'number' && Number.isFinite(loadKg) && loadKg > 0 ? loadKg : null, reps };
+  const positive = (value: number | null): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0;
+  const loads = sets.map((set) => set.loadKg);
+  const perSet = loads.every(positive) && loads.some((load) => load !== loads[0]) ? { loads: loads as number[] } : {};
+  return { loadKg: positive(loadKg) ? loadKg : null, reps, ...perSet };
 }
 
 /**
@@ -719,8 +758,10 @@ export function buildAiTrainingContext({
   homeState = null,
   nextSessionTargets = [],
   cautionFlags = [],
+  adviceTemplateLookup = null,
   now = new Date(),
 }: BuildAiTrainingContextInput): AICoachTrainingContext {
+  const onSchedule = onScheduleReader(workoutSessions, exerciseLogs, adviceTemplateLookup);
   const body = buildAiCoachBodyState(bodyweightEntries, measurementEntries, now);
   const recentCompletedSessions = [...workoutSessions]
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime())
@@ -760,8 +801,16 @@ export function buildAiTrainingContext({
 
   // A lift the plan holds on purpose for a flagged area is not stuck, and the
   // coach must not be told it is (2026-10-02).
+  // Nor is a lift whose latest session reached the programme's top reps on
+  // every set: the gate raises it on its own schedule (hunt, 2026-10-11).
+  const latestSessionOf = new Map(trackedProgress.map((summary) => [summary.key, summary.latestLog?.sessionId ?? null]));
   const plateaus = detectPlateaus(trackedProgress)
-    .filter((p) => p.isPlateau && cautionAreaLoadedBy(p.name, [...cautionFlags]) === null)
+    .filter(
+      (p) =>
+        p.isPlateau &&
+        cautionAreaLoadedBy(p.name, [...cautionFlags]) === null &&
+        !onSchedule(p.name, latestSessionOf.get(p.exerciseKey)),
+    )
     .map((p) => ({
       exerciseKey: p.exerciseKey,
       name: p.name,
@@ -808,7 +857,7 @@ export function buildAiTrainingContext({
     programme,
     plateaus,
     fatigue,
-    history: buildHistoryBlock(workoutSessions, exerciseLogs, trainingDays, historyWindowDays, schedule, now),
+    history: buildHistoryBlock(workoutSessions, exerciseLogs, trainingDays, historyWindowDays, schedule, now, onSchedule),
     lastSession: buildAiCoachLastSession(workoutSessions, exerciseLogs, now, nextSessionTargets),
     cardio: buildAiCoachCardio(cardioSessions, historyWindowDays, now),
     ...(plannerSetup !== undefined ? { plannerSetup } : {}),
@@ -1018,6 +1067,8 @@ function normalizeHistoryLiftRow(lift: AICoachHistoryLift): AICoachHistoryLift {
     spanDays: num(lift.spanDays, 0),
     stalledSessions: num(lift.stalledSessions, 0),
     weightSeriesKg: lift.weightSeriesKg.slice(-MAX_LIFT_SERIES_POINTS),
+    // Optional, and only ever true: an older app sends none.
+    ...(lift.onSchedule === true ? { onSchedule: true as const } : {}),
   };
 }
 
@@ -1245,17 +1296,29 @@ function normalizeLastSession(input: unknown): AICoachLastSession | null {
             : undefined;
       const streak = exercise?.sessionsAtThisWeight;
       const rawNext = exercise?.next;
-      const nextReps = Array.isArray(rawNext?.reps)
-        ? rawNext.reps
-            .slice(0, MAX_LAST_SESSION_SETS)
-            .filter((count): count is number => typeof count === 'number' && Number.isInteger(count) && count > 0 && count <= 500)
-        : [];
+      const rawReps: unknown[] = Array.isArray(rawNext?.reps) ? rawNext.reps.slice(0, MAX_LAST_SESSION_SETS) : [];
+      const nextReps = rawReps.filter(
+        (count): count is number => typeof count === 'number' && Number.isInteger(count) && count > 0 && count <= 500,
+      );
       const nextLoad = rawNext?.loadKg;
+      const isLoad = (value: unknown): value is number =>
+        typeof value === 'number' && Number.isFinite(value) && value > 0 && value <= 1000;
+      // One load per set, read only when the reps came through whole: a
+      // dropped rep count leaves no way to tell which load was whose.
+      const rawLoads: unknown = rawNext?.loads;
+      const nextLoads =
+        Array.isArray(rawLoads) &&
+        nextReps.length === rawReps.length &&
+        rawLoads.length === nextReps.length &&
+        rawLoads.every(isLoad)
+          ? (rawLoads as number[])
+          : null;
       const next =
         nextReps.length > 0
           ? {
-              loadKg: typeof nextLoad === 'number' && Number.isFinite(nextLoad) && nextLoad > 0 && nextLoad <= 1000 ? nextLoad : null,
+              loadKg: isLoad(nextLoad) ? nextLoad : null,
               reps: nextReps,
+              ...(nextLoads ? { loads: nextLoads } : {}),
             }
           : null;
       return {

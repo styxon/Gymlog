@@ -670,7 +670,8 @@ export function ProgramDayScreen({
     if (!tuneDraft || !tuneRow || !onPrescribe) {
       return;
     }
-    const next = stepProgramPrescription(tuneDraft, field, direction);
+    // A hold's seconds and a ride's minutes have their own ceilings.
+    const next = stepProgramPrescription(tuneDraft, field, direction, tuneRow);
     if (next === tuneDraft) {
       return;
     }
@@ -1473,7 +1474,7 @@ export function ProgramDayScreen({
                     glyph="minus"
                     styles={styles}
                     theme={theme}
-                    disabled={!canStepProgramPrescription(tuneDraft, 'reps', -1)}
+                    disabled={!canStepProgramPrescription(tuneDraft, 'reps', -1, tuneRow ?? {})}
                     onPress={() => stepTune('reps', -1)}
                   />
                   {/* A range stays a range: "6–8" steps to "7–9" rather than
@@ -1488,7 +1489,7 @@ export function ProgramDayScreen({
                     glyph="plus"
                     styles={styles}
                     theme={theme}
-                    disabled={!canStepProgramPrescription(tuneDraft, 'reps', 1)}
+                    disabled={!canStepProgramPrescription(tuneDraft, 'reps', 1, tuneRow ?? {})}
                     onPress={() => stepTune('reps', 1)}
                   />
                 </View>

@@ -12,6 +12,7 @@ import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import { CARDIO_ACTIVITIES } from './cardio';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { localizeSessionName } from './sessionNameLabel';
+import { toWorkingHistoryEntry } from './warmupSets';
 
 /**
  * A session's date as the reader lived it.
@@ -360,8 +361,12 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
     // 2026-10-01), not from when the weight last changed. Under two it says
     // nothing either way — one session at a weight, or a new best — so the
     // line claims no trend in reps at all.
-    const flat =
-      lift.stalledSessions >= 2
+    // At the programme's top reps on every set, reps cannot rise: the run is
+    // the app's schedule for adding weight, not a stall (hunt, 2026-10-11).
+    const onSchedule = lift.onSchedule === true;
+    const flat = onSchedule
+      ? `at the programme's top reps at ${trim(lift.latestWeightKg)} kg for ${lift.stalledSessions} sessions — the app adds weight on its own schedule, so this is not a stall`
+      : lift.stalledSessions >= 2
         ? `no rep gain at ${trim(lift.latestWeightKg)} kg for ${lift.stalledSessions} sessions`
         : `held at ${trim(lift.latestWeightKg)} kg`;
     const moved = `${lift.changeKg > 0 ? '+' : ''}${trim(lift.changeKg)} kg over ${lift.spanDays} day${lift.spanDays === 1 ? '' : 's'}`;
@@ -377,7 +382,7 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
         : `${moved}, ${heldText}`
       : lift.changeKg === 0
         ? flat
-        : lift.stalledSessions >= 3
+        : lift.stalledSessions >= 3 && !onSchedule
           ? `${moved}, but ${flat}`
           : moved;
     const best =
@@ -641,38 +646,85 @@ export function buildAiCoachSystemContext(context: AICoachTrainingContext, langu
  */
 export function nextTimeDirection(
   sets: readonly { weightKg: number; reps: number }[],
-  next: { loadKg: number | null; reps: readonly number[] },
+  next: { loadKg: number | null; reps: readonly number[]; loads?: readonly number[] },
   recoveryHold: boolean,
 ): string | null {
   if (sets.length === 0 || next.reps.length === 0) {
     return null;
   }
-  const top = Math.max(...sets.map((entry) => entry.weightKg));
-  if (next.loadKg !== null && next.loadKg > top) {
-    return top > 0 ? `up from ${trim(top)} kg: moving on` : 'adds load: moving on';
+  // Like with like. `next.loadKg` is the first set's load, and `next.reps`
+  // has one entry per programme set, so it is set against this session's
+  // programme sets: warm-ups logged as sets taken out the way the gate takes
+  // them out, and a set added past the programme's left off the end. Against
+  // the heaviest set, a ramp of 40/50/60 raised to 42,5/52,5/62,5 read
+  // "lighter than this session's 60 kg", and so did 3 × 60 raised to 62,5
+  // after an added 80 (hunt, 2026-10-11).
+  const working = toWorkingHistoryEntry(
+    {
+      slotId: '',
+      templateId: '',
+      templateName: '',
+      exerciseName: '',
+      substitutionGroup: '',
+      performedAt: '',
+      sessionId: '',
+      skipped: false,
+      sets: sets.map((entry, index) => ({ setIndex: index, loadKg: entry.weightKg, reps: entry.reps, completedAt: '' })),
+    },
+    next.reps.length,
+  ).sets.slice(0, next.reps.length);
+  // Every set's own load, when the app sent them: each set against its own.
+  if (next.loads && next.loads.length === next.reps.length) {
+    const pairs = Math.min(working.length, next.loads.length);
+    let heavier = 0;
+    let lighter = 0;
+    for (let index = 0; index < pairs; index += 1) {
+      if (next.loads[index] > working[index].loadKg) heavier += 1;
+      if (next.loads[index] < working[index].loadKg) lighter += 1;
+    }
+    const these = working
+      .slice(0, pairs)
+      .map((entry) => trim(entry.loadKg))
+      .filter((load, index, all) => index === 0 || load !== all[index - 1])
+      .join('/');
+    if (heavier > 0 && lighter > 0) {
+      return null;
+    }
+    if (heavier > 0) {
+      return `up from ${these} kg: moving on`;
+    }
+    if (lighter > 0) {
+      return `lighter than this session's ${these} kg`;
+    }
+  } else {
+    // One load, the first set's: against the first set.
+    const first = working[0].loadKg;
+    if (next.loadKg !== null && next.loadKg > first) {
+      return first > 0 ? `up from ${trim(first)} kg: moving on` : 'adds load: moving on';
+    }
+    if (next.loadKg !== null && next.loadKg < first) {
+      return `lighter than this session's ${trim(first)} kg`;
+    }
   }
-  if (next.loadKg !== null && next.loadKg < top) {
-    return `lighter than this session's ${trim(top)} kg`;
-  }
-  // Same weight: the reps say the rest. Compared set by set, over the sets
-  // both have, at this session's top weight.
-  const atTop = sets.filter((entry) => entry.weightKg === top).map((entry) => entry.reps);
-  const count = Math.min(atTop.length, next.reps.length);
+  // Same weight: the reps say the rest. Compared set by set, over the
+  // programme sets both have.
+  const done = working.map((entry) => entry.reps);
+  const count = Math.min(done.length, next.reps.length);
   let up = 0;
   let down = 0;
   for (let index = 0; index < count; index += 1) {
-    if (next.reps[index] > atTop[index]) up += 1;
-    if (next.reps[index] < atTop[index]) down += 1;
+    if (next.reps[index] > done[index]) up += 1;
+    if (next.reps[index] < done[index]) down += 1;
   }
   if (down > 0) {
     return null;
   }
   // Every set asked for more is a step. Only the short sets asked for again
   // (6, 6, 4 → 6, 6, 6) is the same target repeated, not a step up.
-  if (up === count && atTop.length >= next.reps.length) {
+  if (up === count && done.length >= next.reps.length) {
     return 'more reps at the same weight: moving on';
   }
-  if (up > 0 || atTop.length < next.reps.length) {
+  if (up > 0 || done.length < next.reps.length) {
     return 'the same weight again, to make up the reps or sets that fell short: a repeat, not a step up';
   }
   // A hold with nothing short. The gate's first rule stops every load while a
@@ -776,12 +828,21 @@ function renderLastSession(
       }
       // The app's own next prescription, which the answer's example quotes.
       if (exercise.next) {
+        const { loads } = exercise.next;
         const reps = exercise.next.reps.join(', ');
         const direction = nextTimeDirection(exercise.sets, exercise.next, recoveryHold);
+        // Each set at its own load when they differ: one load over a ramp
+        // read as every set at the first one's.
+        const perSet =
+          loads && loads.length === exercise.next.reps.length
+            ? exercise.next.reps.map((count, index) => `${trim(loads[index])} kg x ${count}`).join(', ')
+            : null;
         parts.push(
-          (exercise.next.loadKg !== null
-            ? `next time (the app's own prescription): ${trim(exercise.next.loadKg)} kg x ${reps}`
-            : `next time (the app's own prescription): ${reps} reps`) + (direction ? ` — ${direction}` : ''),
+          (perSet !== null
+            ? `next time (the app's own prescription): ${perSet}`
+            : exercise.next.loadKg !== null
+              ? `next time (the app's own prescription): ${trim(exercise.next.loadKg)} kg x ${reps}`
+              : `next time (the app's own prescription): ${reps} reps`) + (direction ? ` — ${direction}` : ''),
         );
       }
       return `- ${liftName(exercise.name)} — ${parts.join(' | ')}`;

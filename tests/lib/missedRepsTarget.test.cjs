@@ -150,15 +150,23 @@ module.exports = [
       const path = require('node:path');
       const player = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8');
       // One number for one set across the player (review, 2026-09-28).
-      assert.match(player, /if \(isLoweredTarget\(set\)\) \{\s*return `\$\{set\.plannedTargetReps\}`;/);
-      assert.match(player, /isLoweredTarget\(planSet\) \? planSet\.plannedTargetReps! : planSet\.plannedRepsMin/);
-      assert.match(player, /programme: formatProgrammeReps\(firstSet!\)/);
+      // Since hunt 12 the decision is lib/guidedPlayer's (planRepsBounds,
+      // resolveGuidedWalkPlan), tested there; the screen reads it.
+      assert.match(player, /return formatGuidedRepsLabel\(set, trackingMode\);/);
+      assert.match(player, /const bounds = planRepsBounds\(planSet, lift\.trackingMode\);/);
+      assert.match(player, /programme: walkPlan\.programme,/);
+      const guided = require('../../.test-dist/lib/guidedPlayer.js');
+      assert.equal(guided.formatGuidedRepsLabel({ plannedRepsMin: 8, plannedRepsMax: 12, plannedTargetReps: 6 }), '6');
+      const lowered = [0, 1].map((setIndex) => ({ setIndex, status: 'pending', plannedLoadKg: 60, plannedRepsMin: 8, plannedRepsMax: 12, plannedTargetReps: 6, draftLoadText: '60', draftRepsText: '' }));
+      assert.deepEqual(guided.resolveGuidedWalkPlan(lowered, 'load_and_reps'), { kind: 'lowered', reps: [6], programme: '8–12' });
     },
   },
   {
-    name: 'bodyweight, holds, a skipped lift, Pro off and a malformed stored target are left alone',
+    name: 'minutes, holds, a skipped lift, Pro off and a malformed stored target are left alone',
     run() {
-      assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'bodyweight' }), null);
+      // Bodyweight gets the lowered target since 2026-10-11 (owner, A3-7):
+      // tests/lib/hunt12ProgressionGate.test.cjs.
+      assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'duration_minutes' }), null);
       assert.equal(rule([entry([7, 6, 4, 4])], { trackingMode: 'hold' }), null);
       assert.equal(rule([entry([7, 6, 4, 4], { skipped: true })]), null);
       assert.equal(rule([entry([7, 6, 4, 4])], { automatedProgressionEnabled: false }), null);

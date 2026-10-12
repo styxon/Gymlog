@@ -243,10 +243,15 @@ function runSequence(seed, steps) {
               set.prefilledFromPerformedAt === undefined,
               `I3: own-slot replay for set ${set.setIndex} incorrectly badged borrowed (${set.prefilledFromPerformedAt})`,
             );
-          } else {
+          } else if (typeof ownLatest.plannedSets !== 'number') {
+            // A set last time did not reach opens on the set before it, as the
+            // dial carries it in play (hunt 12, 2026-10-11). A lighter session's
+            // left-out set reads an earlier session instead, not replayed here.
+            const ordered = [...ownLatest.sets].sort((left, right) => left.setIndex - right.setIndex);
+            const before = ordered.filter((item) => item.setIndex < set.setIndex).pop() ?? ordered[ordered.length - 1];
             invariant(
-              set.plannedLoadKg === undefined && set.draftLoadText === '',
-              `I3: latest entry lacks set ${set.setIndex} but draft is not blank (plannedLoadKg=${set.plannedLoadKg}, draftLoadText="${set.draftLoadText}")`,
+              set.plannedLoadKg === before.loadKg && set.prefilledFromPerformedAt === undefined,
+              `I3: latest entry lacks set ${set.setIndex}; it should open on the set before it (${before.loadKg}), not ${set.plannedLoadKg} (borrowed ${set.prefilledFromPerformedAt})`,
             );
           }
         });

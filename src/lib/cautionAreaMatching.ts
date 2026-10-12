@@ -18,7 +18,8 @@ import { SetupCautionArea, SetupCautionFlag } from '../types/models';
  * the patterns are tried, and VETO phrases take a whole area out ("head on
  * bench" is not a hinge). A few words a reader's own Finnish names compound on
  * (Penkkidippi, Hauiscurl) also match at the end of a longer word, which is
- * what the old substring rule caught.
+ * what the old substring rule caught. And a pattern of several words matches
+ * the one word they make run together ("push-up" in "Pushups").
  */
 
 // Broad per-area stress patterns. `avoid` removes every match.
@@ -43,6 +44,40 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'handstand',
     'dip',
     'dippi',
+    // The same presses and raises under the library's own names: Standing
+    // Military Press, a jerk or a snatch, Pike Push-Up and Cable Front Raise
+    // all got AUTO +2.5 kg under a careful shoulder (progression hunt,
+    // 2026-10-11, A13-1). Named one by one rather than as "front * raise",
+    // which would take Front Leg Raises too.
+    'military',
+    'press behind neck',
+    'bradford',
+    'cuban press',
+    'seesaw press',
+    'see-saw press',
+    'clean and press',
+    'jerk',
+    'snatch',
+    'pike push-up',
+    'front raise',
+    'front cable raise',
+    'front dumbbell raise',
+    'front incline dumbbell raise',
+    'front plate raise',
+    'front two-dumbbell raise',
+    'front barbell raise',
+    'front delt raise',
+    'deltoid raise',
+    'landmine press',
+    'standing dumbbell press',
+    'alternating dumbbell press',
+    'palms-in dumbbell press',
+    'one-arm dumbbell press',
+    'kettlebell press',
+    'reverse fly',
+    'reverse flye',
+    'reverse machine fly',
+    'reverse pec deck',
   ],
   lower_back: [
     'deadlift',
@@ -134,6 +169,8 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
     'wrist',
     'dip',
     'dippi',
+    // The library's name for the front squat breaks the pair apart.
+    'front barbell squat',
     // Weight carried on the palms in wrist extension: a wrists "avoid" week
     // kept Tuck Planche Hold, L-Sit Hold and the plank variants done on the
     // hands while every push-up was gone (hunt, 2026-10-09). A plain Plank and
@@ -206,15 +243,52 @@ const AREA_AVOID_PATTERNS: Record<SetupCautionArea, string[]> = {
   ],
 };
 
+/**
+ * Lifts that load the area enough to HOLD their weight, but that an `avoid`
+ * does not take out of the week (owner, 2026-10-11, progression hunt A13-3).
+ *
+ * The owner widened hips and the lower back for the hold: a careful hip keeps
+ * the load on bridges, glute kickbacks, every lunge and the hip-hinge
+ * deadlifts, and a careful lower back on rack pulls and the unsupported T-bar
+ * row. Removing them all under `avoid` would have emptied the glute and
+ * lower-body days, so the exercise filter reads AREA_AVOID_PATTERNS alone and
+ * these only reach `cautionAreaLoadedBy`. Squats are not here, split squats
+ * and the plie included: the owner counts those as squats. "Kickback" alone is
+ * also the triceps kickback, so the glute ones are named.
+ */
+const AREA_HOLD_ONLY_PATTERNS: Partial<Record<SetupCautionArea, string[]>> = {
+  hips: [
+    'glute bridge',
+    'butt lift',
+    'glute kickback',
+    'cable kickback',
+    'lunge',
+    'deadlift',
+    'romanian',
+    'rdl',
+    'stiff-legged',
+    'stiff legs',
+  ],
+  // A chest-supported or lying T-bar row is vetoed or excluded below.
+  lower_back: ['rack pull', 't-bar row'],
+};
+
 // Phrases that contain a pattern word but do not load the area. Their words are
 // masked out of the name before the patterns above are tried, so the rest of
 // the name still counts ("Leg Curl and Triceps Pushdown" is still a triceps
 // lift). Add one only for a name that is a real false positive.
 const AREA_EXCLUDE_PATTERNS: Record<SetupCautionArea, string[]> = {
-  shoulders: [],
+  // The snatch's pulls end at the hips or the shoulders' shrug, not overhead.
+  shoulders: ['snatch pull', 'snatch deadlift', 'snatch shrug'],
   // A grip, rows done upright or supported on a bench, and the reverse
   // hyperextension (hips swung over a bench, a back-friendly lift) are not a hinge.
-  lower_back: ['clean grip', 'upright barbell row', 'lying cambered barbell row', 'reverse hyperextension'],
+  lower_back: [
+    'clean grip',
+    'upright barbell row',
+    'lying cambered barbell row',
+    'lying t-bar row',
+    'reverse hyperextension',
+  ],
   // The leg press of a calf press is done with straight legs.
   knees: ['calf press on the leg press'],
   // "curl" is also the hamstring curl and the prone back raise, and the
@@ -256,6 +330,10 @@ const AREA_VETO_PHRASES: Partial<Record<SetupCautionArea, string[]>> = {
   // sprint / 15s rest)" is what the ankle swap hands a runner, and is the
   // knee-friendly conditioning, not a run.
   knees: ['bike'],
+  // Nor an ankle one: a bike sprint has no landing (progression hunt,
+  // 2026-10-11), and the alias table files both bike prescriptions under the
+  // plain Bike HIIT row, which never matched.
+  ankles: ['bike'],
 };
 
 const phraseCache = new Map<string, string[]>();
@@ -316,10 +394,42 @@ export function findPhrase(nameWords: Array<string | null>, phrase: string[]): n
   return -1;
 }
 
+/**
+ * A pattern of several words also matches ONE name word spelled as those words
+ * run together: "push-up" is in "Pushups", "skull crusher" in "EZ-Bar
+ * Skullcrusher" -- the library's spellings of lifts the catalog hyphenates
+ * (progression hunt, 2026-10-11). Joined per call; nothing is built at load.
+ */
+function hasPhrase(nameWords: Array<string | null>, pattern: string): boolean {
+  const phrase = phraseWords(pattern);
+  if (findPhrase(nameWords, phrase) !== -1) {
+    return true;
+  }
+  if (phrase.length < 2) {
+    return false;
+  }
+  const joined = phrase.join('');
+  return nameWords.some((word) => wordMatches(word, joined));
+}
+
+/**
+ * Whether a lift loads the area as far as the exercise FILTER is concerned:
+ * an `avoid` removes it, a `careful` swaps it. The progression hold reads the
+ * wider `exerciseLoadsCautionArea`.
+ */
 export function exerciseHitsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
+  return matchesArea(exerciseName, area, false);
+}
+
+/** The filter's lifts plus the ones that are held but stay in the week. */
+export function exerciseLoadsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
+  return matchesArea(exerciseName, area, true);
+}
+
+function matchesArea(exerciseName: string, area: SetupCautionArea, withHoldOnly: boolean): boolean {
   const nameWords: Array<string | null> = words(exerciseName);
   for (const veto of AREA_VETO_PHRASES[area] ?? []) {
-    if (findPhrase(nameWords, phraseWords(veto)) !== -1) {
+    if (hasPhrase(nameWords, veto)) {
       return false;
     }
   }
@@ -331,7 +441,10 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
       }
     }
   }
-  return AREA_AVOID_PATTERNS[area].some((pattern) => findPhrase(nameWords, phraseWords(pattern)) !== -1);
+  const matches = (pattern: string) => hasPhrase(nameWords, pattern);
+  return (
+    AREA_AVOID_PATTERNS[area].some(matches) || (withHoldOnly && (AREA_HOLD_ONLY_PATTERNS[area] ?? []).some(matches))
+  );
 }
 
 /**
@@ -342,14 +455,15 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
  * but a lift the reader added by hand can, and it is held the same way. The
  * same name patterns as the filter decide "loads this area", so a swap the
  * filter picked because it spares the area (Leg Press -> Hip Thrust for knees)
- * progresses normally, and one that still loads it (Box Squat) is held.
+ * progresses normally, and one that still loads it (Box Squat) is held -- plus
+ * the hold-only lifts an `avoid` leaves in the week (AREA_HOLD_ONLY_PATTERNS).
  */
 export function cautionAreaLoadedBy(
   exerciseName: string,
   flags: SetupCautionFlag[] | null | undefined,
 ): SetupCautionArea | null {
   for (const flag of flags ?? []) {
-    if (flag.level !== 'info' && exerciseHitsCautionArea(exerciseName, flag.area)) {
+    if (flag.level !== 'info' && exerciseLoadsCautionArea(exerciseName, flag.area)) {
       return flag.area;
     }
   }

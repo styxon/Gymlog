@@ -71,8 +71,11 @@ import {
   getGuidedStepLabel,
   isGuidedExerciseOut,
   resolveGuidedOpening,
+  formatGuidedRepsLabel,
+  planRepsBounds,
   resolveGuidedSetPlan,
   resolveGuidedSetTarget,
+  resolveGuidedWalkPlan,
   restRoundCorrections,
   loggedSetsOf,
   guidedRestSeconds,
@@ -131,6 +134,7 @@ import {
   GUIDED_CARD_CHIP_CAP,
   GUIDED_SET_BOX_CAP,
   guidedBoxesThatFit,
+  guidedLastLoadKg,
   guidedLoadTrend,
   guidedTodayLoadKg,
   guidedWindow,
@@ -184,6 +188,7 @@ import {
   getHistoryEntriesForExercise,
   repsCeilingFor,
   resolveInstanceBorrowRepWindow,
+  resolveInstanceDose,
 } from '../features/workout/workoutState';
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet, setsOfCurrentLift } from '../lib/liftSegments';
@@ -1715,6 +1720,7 @@ function GuidedPlayer({
         setIndex,
         exercise.trackingMode,
         exercise.swappedAfterSetIndex,
+        exercise,
       );
     },
     [exerciseBySlot],
@@ -2431,16 +2437,14 @@ function GuidedPlayer({
     // Read off the next set still to do (planSetOf): a swap rewrites only
     // the sets ahead.
     const planSet = lift ? planSetOf(lift.sets) : undefined;
-    return lift && planSet
-      ? formatSetScheme(
-          lift.sets.length,
-          // The lowered target, when there is one — the plan says what the
-          // dial will open on.
-          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMin,
-          isLoweredTarget(planSet) ? planSet.plannedTargetReps! : planSet.plannedRepsMax,
-          lift.trackingMode,
-        )
-      : '';
+    if (!lift || !planSet) {
+      return '';
+    }
+    // The target where it falls outside the programme's range (lowered, or a
+    // bodyweight lift raised past the top) — the plan says what the dial
+    // will open on.
+    const bounds = planRepsBounds(planSet, lift.trackingMode);
+    return formatSetScheme(lift.sets.length, bounds.min, bounds.max, lift.trackingMode);
   };
 
   /**
@@ -2630,6 +2634,9 @@ function GuidedPlayer({
         repWindow: instance ? resolveInstanceBorrowRepWindow(instance) : null,
         // As the prefill reads it: a session dated ahead of now is not the newest.
         nowMs: Date.now(),
+        // And under the dose it reads: a hold's seconds filed in this slot are
+        // not "last time" above a dial opened on bodyweight reps (P7).
+        dose: instance ? resolveInstanceDose(instance) : null,
       });
       const found = resolved?.entry ?? null;
       if (!found) {
@@ -3156,7 +3163,7 @@ function GuidedPlayer({
           exerciseName: exercise.exerciseName,
           bodyPart: libraryFor(exercise.exerciseName)?.bodyPart ?? null,
           setCount: exercise.sets.length,
-          repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
+          repsLabel: formatRepRangeLabel(planSetOf(exercise.sets), exercise.trackingMode),
           timed: isTimedTrackingMode(exercise.trackingMode),
           minutes: isMinutesTrackingMode(exercise.trackingMode),
           loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
@@ -3311,10 +3318,18 @@ function GuidedPlayer({
     }
     // The lift being walked TO, asked for by its own slot.
     const last = resolveSlotHistory(step.slotId, step.exerciseName);
-    // The reps were lowered after a short session: the card says so, with the
-    // programme's own number beside it (2026-09-09 rule, lib/progressionGate).
-    const firstSet = planSetOf(instance.sets);
-    const loweredTarget = firstSet !== undefined && isLoweredTarget(firstSet) && target.reps === firstSet.plannedTargetReps;
+    // The reps part of the plan line, worked out once for the plain and the
+    // superset line (lib/guidedPlayer resolveGuidedWalkPlan): a ramp set by
+    // set, a target lowered after a short session with the programme's own
+    // number beside it (2026-09-09 rule, lib/progressionGate), else one number.
+    const walkPlan = resolveGuidedWalkPlan(
+      instance.sets,
+      instance.trackingMode,
+      instance.swappedAfterSetIndex,
+      instance,
+    ) ?? { kind: 'plain' as const, reps: [target.reps] };
+    const supersetNext = supersetNextBySlot.get(step.slotId);
+    const rest = guidedRestSeconds(instance.restSecondsMin);
     // Today's plan across every set of this lift, not only set 1 — a ramp's
     // card used to say "NYT 55 kg" while the plan actually asked for
     // 55-60-60-60 (sumo, #bugs 2026-09-29). A single set 1 stays as it read.
@@ -3332,39 +3347,37 @@ function GuidedPlayer({
       // names what does follow. Quoting the lift's own rest here would be the
       // same promise the day view stopped making — and worse on this screen,
       // which is the last thing read before walking to the rack.
-      planLine: supersetNextBySlot.get(step.slotId)
-        ? t(language, 'guided.walk.planSuperset', {
-            sets: instance.sets.length,
-            reps: target.reps,
-            name: exerciseNameLabel(language, supersetNextBySlot.get(step.slotId) ?? ''),
-          })
-        : instance.sets.some((set) => set.rampTargetReps !== undefined)
-          ? // A ramp's plan is set by set — "10/8/6", the heaviest one more
-            // than last time — not one number for every set (2026-10-01).
-            t(language, 'guided.walk.planRamp', {
-              // What the dial will open each set at when the sets go as
-              // planned: its own ramp target, and a set past the ramp carries
-              // the one before, as the dial does — not the ceiling.
-              reps: instance.sets
-                .reduce<number[]>((shown, set, index) => {
-                  const own = set.rampTargetReps ?? (index > 0 ? shown[index - 1] : undefined);
-                  shown.push(own ?? resolveTarget(step.slotId, index)?.reps ?? set.plannedRepsMax);
-                  return shown;
-                }, [])
-                .join('/'),
-              rest: guidedRestSeconds(instance.restSecondsMin),
+      planLine: supersetNext
+        ? walkPlan.kind === 'ramp'
+          ? t(language, 'guided.walk.planSupersetRamp', {
+              reps: walkPlan.reps.join('/'),
+              name: exerciseNameLabel(language, supersetNext),
             })
-        : loweredTarget
+          : walkPlan.kind === 'lowered'
+            ? t(language, 'guided.walk.planSupersetLowered', {
+                sets: instance.sets.length,
+                reps: walkPlan.reps[0],
+                programme: walkPlan.programme,
+                name: exerciseNameLabel(language, supersetNext),
+              })
+            : t(language, 'guided.walk.planSuperset', {
+                sets: instance.sets.length,
+                reps: walkPlan.reps[0],
+                name: exerciseNameLabel(language, supersetNext),
+              })
+        : walkPlan.kind === 'ramp'
+          ? t(language, 'guided.walk.planRamp', { reps: walkPlan.reps.join('/'), rest })
+        : walkPlan.kind === 'lowered'
           ? t(language, 'guided.walk.planLowered', {
               sets: instance.sets.length,
-              reps: target.reps,
+              reps: walkPlan.reps[0],
               // The programme's own reps — a range reads as one ("8–12").
-              programme: formatProgrammeReps(firstSet!),
-              rest: guidedRestSeconds(instance.restSecondsMin),
+              programme: walkPlan.programme,
+              rest,
             })
           : t(language, 'guided.walk.plan', {
             sets: instance.sets.length,
-            reps: target.reps,
+            reps: walkPlan.reps[0],
             /*
              * The LOWER bound — that is what the timer runs.
              *
@@ -3377,7 +3390,7 @@ function GuidedPlayer({
              * And the ring's own floor: a stretch prescribed 0 s still runs the
              * shortest ring, so the card says that, not "0 s".
              */
-            rest: guidedRestSeconds(instance.restSecondsMin),
+            rest,
           }),
       // Last time's own span, the same way the set card's chips show it —
       // one weight when every set matched, the range when they did not.
@@ -3408,6 +3421,9 @@ function GuidedPlayer({
       done.sets,
       resolveSlotHistory(before.slotId, done.exerciseName)?.sets ?? null,
       done.trackingMode,
+      // Last time's sets up to the programme's count: a set last time added
+      // does not hold back praise for every programme set raised and met.
+      programmeSetCount(done.sets),
     );
     if (!praise) {
       return null;
@@ -3590,7 +3606,7 @@ function GuidedPlayer({
                               {
                                 exerciseName: exercise.exerciseName,
                                 setCount: exercise.sets.length,
-                                repsLabel: formatRepRangeLabel(planSetOf(exercise.sets)),
+                                repsLabel: formatRepRangeLabel(planSetOf(exercise.sets), exercise.trackingMode),
                                 timed: isTimedTrackingMode(exercise.trackingMode),
                                 minutes: isMinutesTrackingMode(exercise.trackingMode),
                                 loadKg: resolveTarget(exercise.slotId, 0)?.loadKg ?? null,
@@ -5234,30 +5250,21 @@ function formatDrillLength(seconds: number): string {
 
 /**
  * "3–5" from the planned rep range, collapsing equal bounds to "5" — or the
- * lowered target when a short session brought one (lib/progressionGate
- * resolveMissedRepsTarget): the overview says what the dial will open on.
+ * set's target where it falls outside the range: lowered after a short
+ * session, or a bodyweight lift raised past the top (lib/guidedPlayer
+ * planRepsBounds; a hold's carried seconds clamped as its dial clamps them).
+ * The overview says what the dial will open on.
  */
 function formatRepRangeLabel(
   set: { plannedRepsMin: number; plannedRepsMax: number; plannedTargetReps?: number } | undefined,
+  trackingMode: string,
 ): string {
   if (!set) {
     return '';
   }
-  if (isLoweredTarget(set)) {
-    return `${set.plannedTargetReps}`;
-  }
-  return formatProgrammeReps(set);
+  return formatGuidedRepsLabel(set, trackingMode);
 }
 
-/** The programme's own reps for a set, "8–12" or "8". */
-function formatProgrammeReps(set: { plannedRepsMin: number; plannedRepsMax: number }): string {
-  if (set.plannedRepsMin === set.plannedRepsMax) {
-    return `${set.plannedRepsMax}`;
-  }
-  return `${set.plannedRepsMin}–${set.plannedRepsMax}`;
-}
-
-/** A target lowered below the programme's floor after a short session. */
 /**
  * The set a plan line describes: the next one still to do. A swap rewrites
  * only the sets ahead, so a set logged before it keeps the old lift's
@@ -5265,10 +5272,6 @@ function formatProgrammeReps(set: { plannedRepsMin: number; plannedRepsMax: numb
  */
 function planSetOf<T extends { status: string }>(sets: T[]): T | undefined {
   return sets.find((set) => set.status === 'pending') ?? sets[sets.length - 1];
-}
-
-function isLoweredTarget(set: { plannedRepsMin: number; plannedTargetReps?: number }): boolean {
-  return typeof set.plannedTargetReps === 'number' && set.plannedTargetReps < set.plannedRepsMin;
 }
 
 /**
@@ -5612,7 +5615,7 @@ function SetStepView({
   const liftSets = exercise ? setsOfCurrentLift(exercise) : [];
   const todayPlan =
     exercise && !minutesMode
-      ? resolveGuidedSetPlan(liftSets, step.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex)
+      ? resolveGuidedSetPlan(liftSets, step.setIndex, exercise.trackingMode, exercise.swappedAfterSetIndex, exercise)
       : [];
   const plannedMinutes = target?.reps ?? 0;
   const keptWatch = () =>
@@ -5800,10 +5803,13 @@ function SetStepView({
           currentKg: !inWarmup && Number.isFinite(kg) && kg > 0 ? kg : null,
           trackingMode: exercise.trackingMode,
           swappedAfterSetIndex: exercise.swappedAfterSetIndex,
+          lift: exercise,
         })
       : null;
+  // Against the same sets last time — not a set added on the day, nor the top
+  // of a pyramid a lighter session drops (lib/guidedSetRow guidedLastLoadKg).
   const todayTrend = guidedLoadTrend({
-    lastKg: heaviestOf(panels?.history) > 0 ? heaviestOf(panels?.history) : null,
+    lastKg: guidedLastLoadKg(panels?.history?.sets, liftSets),
     todayKg,
     progressionOn,
   });

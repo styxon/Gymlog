@@ -1,10 +1,14 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
+import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { ExerciseLog, SetupLevel, WorkoutSession } from '../types/models';
 import { SLOT_HISTORY_LIMIT } from './exerciseHistoryLookup';
 import { getWorkedLogSets } from './exerciseLog';
-import { evaluateProgression } from './progressionGate';
-import { normalizedName, sessionTime } from './trainingHistory';
+import { isFixedDoseExercise } from './intervalScheme';
+import { evaluateProgression, isProgressionReadySession, type ProgressionFatigueSignal } from './progressionGate';
+import { LiftProgrammeRead, normalizedName, sessionTime } from './trainingHistory';
 import { toWorkingHistoryEntry } from './warmupSets';
+
+export type { LiftProgrammeRead };
 
 /**
  * What to say about a lift's weight after a session, from the progression
@@ -39,6 +43,8 @@ export interface AdviceTemplateExercise {
   repsMin: number;
   repsMax: number;
   trackingMode?: string;
+  /** What the row can be swapped for; 'cardio_intervals' marks a fixed dose (isFixedDoseExercise). */
+  substitutionGroup?: string;
 }
 
 export interface AdviceTemplate {
@@ -57,6 +63,12 @@ export interface NextSessionAdviceInput {
   logs: readonly ExerciseLog[];
   lookupTemplate: AdviceTemplateLookup | null | undefined;
   level: SetupLevel | null | undefined;
+  /**
+   * The recovery signal the next start will hand the gate, when the session
+   * advised on is the newest one. Left out, recovery reads as clear: right for
+   * an older session, whose next start has already happened.
+   */
+  fatigueSignal?: ProgressionFatigueSignal;
 }
 
 const SAME_LOAD_KG = 0.001;
@@ -84,6 +96,11 @@ function entryOf(
       reps: set.reps,
       completedAt: set.completedAt ?? session.performedAt,
       effort: null,
+      // A set the reader added mid-session, as the slot history files it
+      // (addedMidSession): the warm-up rule reads the programme's sets alone
+      // and the added ones follow as work, so the advice reads the session the
+      // way the next start does.
+      ...(set.planned?.basis === 'added' ? { addedMidSession: true } : {}),
     }));
   if (sets.length === 0) {
     return null;
@@ -101,6 +118,9 @@ function entryOf(
       sessionId: session.id,
       sets,
       skipped: false,
+      // A lighter session's count (Q3): the gate measures the entry against
+      // it, so the advice agrees with the next start's raise.
+      ...(typeof log.plannedSets === 'number' ? { plannedSets: log.plannedSets } : {}),
     },
     exercise.sets,
   );
@@ -120,8 +140,44 @@ function topLoad(entry: WorkoutSlotHistoryEntry, targetSets: number) {
     .reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
 
-export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessionAdvice {
-  const { liftName, sessionId, sessions, logs, lookupTemplate, level } = input;
+/**
+ * The heaviest load among the sets a lighter session left out (it carries
+ * plannedSets), each from the newest earlier session that did it; 0 when it
+ * left none out.
+ */
+function leftOutTopKg(history: readonly WorkoutSlotHistoryEntry[], targetSets: number): number {
+  const [latest, ...earlier] = history;
+  if (!latest || typeof latest.plannedSets !== 'number') {
+    return 0;
+  }
+  let top = 0;
+  for (let setIndex = 0; setIndex < targetSets; setIndex += 1) {
+    if (latest.sets.some((set) => set.setIndex === setIndex)) {
+      continue;
+    }
+    const own = earlier.map((entry) => entry.sets.find((set) => set.setIndex === setIndex)).find((set) => set !== undefined);
+    top = Math.max(top, own?.loadKg ?? 0);
+  }
+  return top;
+}
+
+/** The programme row a lift was logged under, and its history as the gate reads it. */
+interface ProgrammeHistory {
+  exercise: AdviceTemplateExercise;
+  /** Newest first, up to the session asked about. */
+  history: WorkoutSlotHistoryEntry[];
+  asOfMs: number;
+}
+
+type ProgrammeHistoryInput = Pick<NextSessionAdviceInput, 'liftName' | 'sessionId' | 'sessions' | 'logs' | 'lookupTemplate'>;
+
+/**
+ * The history the gate reads for this lift at this session: the lift's
+ * sessions of this programme day, filed under its row. NO_NEXT_SESSION_ADVICE
+ * when there is no row to read it against.
+ */
+function readProgrammeHistory(input: ProgrammeHistoryInput): ProgrammeHistory | NextSessionAdvice {
+  const { liftName, sessionId, sessions, logs, lookupTemplate } = input;
   const session = sessions.find((entry) => entry.id === sessionId);
   if (!session || !lookupTemplate || !session.workoutTemplateSessionId) {
     return NO_NEXT_SESSION_ADVICE;
@@ -185,19 +241,40 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
       Number(right.valid) - Number(left.valid) || (left.valid ? right.time - left.time : 0) || left.index - right.index,
   );
   const history = ranked.slice(0, SLOT_HISTORY_LIMIT).map(({ entry }) => entry);
+  return { exercise, history, asOfMs };
+}
+
+export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessionAdvice {
+  const read = readProgrammeHistory(input);
+  if ('kind' in read) {
+    return read;
+  }
+  const { exercise, history, asOfMs } = read;
+  // A fixed dose (an interval's seconds, a sprint's metres) is repeated, never
+  // raised: the logger opens it as it was, and so does the advice.
+  if (isFixedDoseExercise(exercise)) {
+    return NO_NEXT_SESSION_ADVICE;
+  }
 
   const decision = evaluateProgression({
     history,
     repsMin: exercise.repsMin,
     repsMax: exercise.repsMax,
     targetSets: exercise.sets,
-    level,
+    level: input.level,
+    // The start holds a raise while recovery is elevated or high
+    // (programmeStarts passes the same signal): not a raise to promise.
+    fatigueSignal: input.fatigueSignal,
     trackingMode: exercise.trackingMode,
     nowMs: asOfMs,
   });
 
   if (decision.recommendation === 'increase') {
-    return { kind: 'raise', fromKg: decision.fromLoadKg, toKg: decision.loadKg };
+    // The top set the next start opens: a set a lighter session left out
+    // climbs from its own load in the newest earlier session that did it
+    // (workoutState missingSetFallback), a pyramid's top among them.
+    const fromKg = Math.max(decision.fromLoadKg, leftOutTopKg(history, exercise.sets));
+    return { kind: 'raise', fromKg, toKg: fromKg + decision.incrementKg };
   }
   if (decision.recommendation === 'hold' && decision.holdReason === 'rep_ceiling_not_reached') {
     // "Get the reps back" is only true of reps that fell: fewer than last time
@@ -214,4 +291,60 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
     }
   }
   return NO_NEXT_SESSION_ADVICE;
+}
+
+/**
+ * Whether a session is the newest one logged: the only session whose next
+ * start is still to come, so the only one the recovery signal of now is
+ * about. Ties keep the first in the list.
+ */
+export function isNewestSession(sessions: readonly WorkoutSession[], sessionId: string | null | undefined): boolean {
+  let newest: WorkoutSession | null = null;
+  for (const session of sessions) {
+    if (!newest || sessionTime(session) > sessionTime(newest)) {
+      newest = session;
+    }
+  }
+  return newest !== null && newest.id === sessionId;
+}
+
+/**
+ * Where a lift stands against its programme row at a session: whether that
+ * session reached the row's top reps on every set the row asks for — the
+ * gate's own test of a session that earns a raise (isProgressionReadySession)
+ * — and the load and reps of the row's working sets in it.
+ *
+ * A lifter on schedule is not stuck. At the ceiling, reps cannot rise (load
+ * and reps lifts never step reps), so a run of sessions with no rep best is
+ * what doing exactly what the gate asks looks like, and the gate raises on
+ * the third of them at a first weight. The stall surfaces called that session
+ * a plateau and asked for a ninth rep on an eight-rep programme (hunt,
+ * 2026-10-11).
+ *
+ * Null when the row cannot be found (a freestyle workout, a deleted
+ * programme) or the row is not loaded: there the question has no answer.
+ */
+export function readLiftProgramme(input: ProgrammeHistoryInput): LiftProgrammeRead | null {
+  const read = readProgrammeHistory(input);
+  if ('kind' in read) {
+    return null;
+  }
+  const { exercise, history } = read;
+  const mode = readStoredTrackingMode(exercise.trackingMode);
+  if (mode !== null && isUnloadedTrackingMode(mode)) {
+    return null;
+  }
+  const latest = history[0];
+  if (!latest || latest.sessionId !== input.sessionId || !(exercise.sets > 0) || !(exercise.repsMax > 0)) {
+    return null;
+  }
+  // The row's own sets, in order: an added set past them is extra work, as
+  // the gate reads it (programmedSets).
+  const working = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, exercise.sets);
+  return {
+    onSchedule: isProgressionReadySession(latest, exercise.repsMax, exercise.sets),
+    repsMax: exercise.repsMax,
+    workingKg: topLoad(latest, exercise.sets),
+    workingReps: working.map((set) => set.reps),
+  };
 }

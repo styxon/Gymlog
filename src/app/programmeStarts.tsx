@@ -12,7 +12,7 @@ import { resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { resolveProEntitlement, resolveProgressionOptions } from '../lib/proEntitlement';
 import { buildReadySessionRuntimeTemplate } from '../lib/programDetails';
 import { alignHistoryToCopiedDays, programmeHistoryIds } from '../lib/programLineage';
-import { isLightenPending, resolveProgrammeStart } from '../lib/recoverySheet';
+import { isLightenDue, resolveProgrammeStart } from '../lib/recoverySheet';
 import { resumeProgramme, runningSetWithout, type AdoptReadyOptions } from '../lib/runningProgrammes';
 import {
   type AdaptedSessionRef,
@@ -238,14 +238,16 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
    * coach quotes is what the start will open on.
    */
   function programmeStart(runtimeTemplate: Parameters<typeof workout.startCustomWorkout>[0], now: Date = new Date()) {
-    const lighten = isLightenPending(preferences.lightNextSession, now);
+    // Pro at this start, like the gate below: a request made during a trial
+    // that has since ended does not shorten a Free session (bug hunt 12).
+    const lighten = isLightenDue(preferences, now);
     // Recovery as of this start. The memo behind the recovery sheet is only as
     // fresh as the last save, and a heavy week had not yet rolled out of it.
     const start = resolveProgrammeStart(runtimeTemplate, lighten, database, now);
     return {
       template: start.template,
       options: {
-        ...resolveProgressionOptions(preferences),
+        ...resolveProgressionOptions(preferences, now),
         fatigueSignal: start.fatigueSignal,
       },
     };

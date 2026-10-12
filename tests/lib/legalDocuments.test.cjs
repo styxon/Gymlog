@@ -549,6 +549,10 @@ module.exports = [
         // Computed from the logged workouts already sent: the set screen's next
         // targets for the last session's lifts (2026-09-27).
         nextSessionTargets: 'workouts',
+        // Not sent: read on the phone against the reader's programme, it adds
+        // one mark per lift ("on schedule", 2026-10-11) to the trajectory the
+        // workouts already carry.
+        adviceTemplateLookup: 'programme',
       };
       const PHRASES = {
         workouts: { en: /recent workouts/, fi: /viimeaikaiset treenisi/ },

@@ -38,7 +38,7 @@ export interface ExerciseProgressSummary {
   /**
    * The one number this lift is judged on, per session.
    *
-   * Kilos for a loaded lift; total reps for a lift that is never loaded,
+   * Kilos for a loaded lift; reps per set for a lift that is never loaded,
    * because that one does not progress in kilos and reading its weight gives
    * 0 every time. `bestValueBefore` excludes the latest session on purpose —
    * see getExerciseProgressSignal.
@@ -122,6 +122,17 @@ function getTopComparableWeight(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' |
 
 function getComparableReps(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {
   return getComparableLogSets(log).map((set) => set.reps);
+}
+
+/**
+ * An unloaded lift's number for a session: reps per set, the unit the gate
+ * steps a bodyweight lift in (+1 a set). In total reps the app's own lighter
+ * session — 12/12 after 12/12/12, one set fewer on a recovery day — read
+ * "Below last" (hunt, 2026-10-11). Null when no set had reps.
+ */
+function repsPerSetValue(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>): number | null {
+  const reps = getComparableReps(log).filter((count) => count > 0);
+  return reps.length > 0 ? getTotalReps(reps) / reps.length : null;
 }
 
 export function getTotalReps(repsPerSet: number[]) {
@@ -236,8 +247,7 @@ function finalizeExerciseSummary(
     if (!byReps) {
       return getTopComparableWeight(log);
     }
-    const reps = getTotalReps(getComparableReps(log));
-    return reps > 0 ? reps : null;
+    return repsPerSetValue(log);
   };
 
   return {
@@ -528,9 +538,7 @@ function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgr
   const bestValueBefore = everything.logs
     .filter((log) => log.id !== latestId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime))
     .reduce<number | null>((best, log) => {
-      const value = byReps
-        ? getTotalReps(getComparableReps(log)) || null
-        : getTopComparableWeight(log);
+      const value = byReps ? repsPerSetValue(log) : getTopComparableWeight(log);
       if (value === null) {
         return best;
       }

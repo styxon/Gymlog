@@ -10,7 +10,8 @@
  * would be a label on the normal case, and the reader stops reading it. A step
  * up is a heavier planned weight than last time's heaviest, or, at no lighter
  * a weight, a rep target above last time's on some set and below it on none —
- * over at least as many sets as last time.
+ * over at least as many sets as last time, or as the programme asks when last
+ * time logged more than that.
  * Every set must be logged at its target — the reps, and the planned weight
  * where there is one. Holds and bouts of minutes are left out: their numbers
  * are seconds, and the rule is about reps.
@@ -47,12 +48,28 @@ function targetRepsOf(set: PraiseSet): number {
 
 export function resolveLiftPraise(
   sets: readonly PraiseSet[],
-  last: readonly PraiseLastSet[] | null | undefined,
+  lastSession: readonly PraiseLastSet[] | null | undefined,
   trackingMode: string,
+  /**
+   * The programme's set count for today. Where last time logged more sets
+   * than the programme asks, today's sets are compared with last time's up to
+   * that count — the sets they stand for, as the gate read that session when
+   * it raised the load (owner, 2026-10-11, hunt 12 A11-4). Without it, or
+   * when today did fewer than the programme asks, last time is read whole.
+   */
+  programmeSets?: number,
 ): LiftPraise | null {
   if (trackingMode === 'hold' || trackingMode === 'duration_minutes') {
     return null;
   }
+  const last =
+    lastSession &&
+    typeof programmeSets === 'number' &&
+    programmeSets > 0 &&
+    lastSession.length > programmeSets &&
+    sets.length >= programmeSets
+      ? lastSession.slice(0, Math.max(programmeSets, sets.length))
+      : lastSession;
   // A first time has nothing to beat, and fewer sets than last time is not
   // more than last time, however the sets compare one by one.
   if (!last || last.length === 0 || sets.length < last.length) {

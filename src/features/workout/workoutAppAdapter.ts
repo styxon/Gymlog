@@ -9,6 +9,7 @@ import {
 import { sessionLastActiveMs, workoutSecondsUntil } from '../../lib/sessionClock';
 import { LiftSegment, splitExerciseByLift } from '../../lib/liftSegments';
 import { buildLoggedSetPlan } from '../../lib/loggedSetPlan';
+import { lighterSessionPlannedSets } from '../../lib/warmupSets';
 
 export type LegacyWorkoutDataMismatch =
   | 'template_exercise_id_not_mapped';
@@ -292,6 +293,8 @@ function adaptExerciseToLogDrafts(exercise: WorkoutExerciseInstance): ExerciseLo
         // The unit is the lift's own, set by set: a slot swapped from a bike
         // to a lift mid-way saves two logs, and only the bike's is minutes.
         ...(isMinutesTrackingMode(lift.segment.trackingMode) ? { repsUnit: 'minutes' as const } : {}),
+        // A lighter session's count, so the advice reads it as the gate does.
+        ...lighterSessionPlannedSets(exercise.sets),
       }) satisfies ExerciseLogDraft,
   );
 }

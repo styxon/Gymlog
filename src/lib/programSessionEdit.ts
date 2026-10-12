@@ -22,6 +22,7 @@ import {
   supersetGroupIndexes,
   supersetSetTargets,
 } from './supersetGrouping';
+import { MINUTES_DIAL } from './weightDial';
 
 /** Only the fields an edit reads. The stored row carries more. */
 export interface ProgramSessionExerciseSnapshot {
@@ -88,6 +89,24 @@ export interface ProgramPrescription {
 export const PROGRAM_SETS_RANGE = { min: 1, max: 12 } as const;
 export const PROGRAM_REPS_RANGE = { min: 1, max: 50 } as const;
 /**
+ * The same bound for a row whose numbers are seconds (a hold) or minutes:
+ * "50" was a reps ceiling, and a 30–60 s plank sat above it with both buttons
+ * dead (progression hunt, 2026-10-11, A14-8). Ten minutes is the importer's
+ * hold ceiling; the minutes match the player's minutes dial.
+ */
+export const PROGRAM_HOLD_SECONDS_RANGE = { min: 1, max: 600 } as const;
+export const PROGRAM_MINUTES_RANGE = { min: 1, max: MINUTES_DIAL.max } as const;
+
+/** What the reps row counts, as the day screen's rows already know it. */
+export interface ProgramPrescriptionUnit {
+  timed?: boolean;
+  minutes?: boolean;
+}
+
+function repsRangeFor(unit: ProgramPrescriptionUnit): { min: number; max: number } {
+  return unit.minutes ? PROGRAM_MINUTES_RANGE : unit.timed ? PROGRAM_HOLD_SECONDS_RANGE : PROGRAM_REPS_RANGE;
+}
+/**
  * Steps of 15 s rather than the design's 30, because the catalogue's own
  * rests are not multiples of 30 — 45 and 75 are everywhere — and a stepper
  * whose first press snaps a stored value to a grid has edited more than the
@@ -104,11 +123,16 @@ export const PROGRAM_REST_RANGE = { min: 15, max: 480, step: 15 } as const;
  * "7–9", and the step is refused outright when either end would leave the
  * bounds, so the span can never be silently squeezed flat by a stepper that
  * clamped one end and not the other.
+ *
+ * Only a step that takes an end further OUT of the bounds is refused: a
+ * catalog row already past them (a 60 m farmer's walk) can still step back
+ * toward them.
  */
 export function stepProgramPrescription(
   current: ProgramPrescription,
   field: 'sets' | 'reps' | 'rest',
   direction: 1 | -1,
+  unit: ProgramPrescriptionUnit = {},
 ): ProgramPrescription {
   if (field === 'sets') {
     const targetSets = current.targetSets + direction;
@@ -131,9 +155,10 @@ export function stepProgramPrescription(
     return { ...current, restSeconds };
   }
 
+  const range = repsRangeFor(unit);
   const repMin = current.repMin + direction;
   const repMax = current.repMax + direction;
-  if (repMin < PROGRAM_REPS_RANGE.min || repMax > PROGRAM_REPS_RANGE.max) {
+  if ((direction < 0 && repMin < range.min) || (direction > 0 && repMax > range.max)) {
     return current;
   }
   return { ...current, repMin, repMax };
@@ -144,8 +169,9 @@ export function canStepProgramPrescription(
   current: ProgramPrescription,
   field: 'sets' | 'reps' | 'rest',
   direction: 1 | -1,
+  unit: ProgramPrescriptionUnit = {},
 ): boolean {
-  const next = stepProgramPrescription(current, field, direction);
+  const next = stepProgramPrescription(current, field, direction, unit);
   return next !== current;
 }
 

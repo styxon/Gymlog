@@ -41,11 +41,11 @@ const FI: Record<string, string> = {
     'Päivän ensimmäinen liike on se, jossa eteneminen mitataan. Lisää painoa vasta kun kaikki työsarjat osuvat toistohaarukan yläpäähän.',
   'Use double progression on anchor lifts. Add load after the top of the rep range is repeatable with clean form.':
     'Käytä ankkuriliikkeissä tuplaprogressiota. Lisää painoa kun toistohaarukan yläpää toistuu puhtaalla tekniikalla.',
-  'Use double progression on anchor lifts. When the last hard set reaches repsMax with clean form, increase load next time by the smallest practical increment.':
-    'Käytä ankkuriliikkeissä tuplaprogressiota. Kun viimeinen raskas sarja yltää toistohaarukan yläpäähän puhtaana, nosta painoa ensi kerralla pienimmällä järkevällä askeleella.',
+  'Use double progression on anchor lifts. When every set reaches the target reps with clean form, increase load next time by the smallest practical increment.':
+    'Käytä ankkuriliikkeissä tuplaprogressiota. Kun jokainen sarja yltää toistotavoitteeseen puhtaana, nosta painoa ensi kerralla pienimmällä järkevällä askeleella.',
   'Use double progression on the first two lifts each day and add load after the top of the rep range repeats with good form.':
     'Käytä tuplaprogressiota päivän kahdessa ensimmäisessä liikkeessä ja lisää painoa kun toistohaarukan yläpää toistuu hyvällä tekniikalla.',
-  'Add reps before load. When repsMax is repeatable, use a small load increase; otherwise repeat the same load.':
+  'Add reps before load. When the top of the range is repeatable, use a small load increase; otherwise repeat the same load.':
     'Lisää toistoja ennen painoa. Kun toistohaarukan yläpää toistuu, nosta painoa vähän; muuten toista sama paino.',
   'Add reps inside the range before adding load. When the top of the range is clean on every set, add the smallest increment you have.':
     'Lisää toistoja toistohaarukan sisällä ennen kuin lisäät painoa. Kun toistohaarukan yläpää menee puhtaasti joka sarjassa, lisää pienin korotus mikä sinulla on.',
@@ -53,8 +53,8 @@ const FI: Record<string, string> = {
     'Pidä paino samana kunnes koko toistohaarukka toistuu. Kesätreenin pitäisi loppua niin että jotain jää jäljelle.',
   'Run blocks progress by adding one block, never by running the same block harder. Add the block only when the last one felt easy.':
     'Juoksuosuus etenee lisäämällä yksi osuus, ei juoksemalla samaa osuutta kovempaa. Lisää osuus vasta kun edellinen tuntui helpolta.',
-  'Same rule, slower. Twenty-six weeks is long enough that holding a load for three sessions costs you nothing.':
-    'Sama sääntö, hitaammin. 26 viikkoa on niin pitkä aika, ettei painon pitäminen samana kolme treeniä maksa mitään.',
+  'Same rule as the anchors.':
+    'Sama sääntö kuin ankkureissa.',
   'Add reps before load. The conditioning finisher is not progressed by load at all - keep the effort steady and let the leg work be the hard part.':
     'Toistot ennen painoa. Kunto-osuutta ei progressoida kuormalla lainkaan – pidä teho samana ja anna jalkatreenin olla se raskas osa.',
   'Treat the run work as clean interval blocks and add total blocks only after pacing feels stable.':
@@ -67,24 +67,24 @@ const FI: Record<string, string> = {
   // ── Secondary ───────────────────────────────────────────────────────
   'Keep secondary lifts one step easier than the main lift so the week stays repeatable.':
     'Pidä tukiliikkeet askeleen ankkuriliikettä kevyempinä, jotta viikko pysyy toistettavana.',
-  'Keep secondary lifts one step lighter than the main lift and progress more slowly than the anchors.':
-    'Pidä tukiliikkeet askeleen ankkuriliikettä kevyempinä ja etene niissä sitä hitaammin.',
-  'Let the secondary compounds climb more slowly so session quality stays consistent across the week.':
-    'Anna tukevien moninivelliikkeiden nousta hitaammin, jotta treenien laatu pysyy tasaisena läpi viikon.',
+  'Keep secondary lifts one step lighter than the main lift; they progress by the same rule.':
+    'Pidä tukiliikkeet askeleen ankkuriliikettä kevyempinä; ne etenevät samalla säännöllä.',
+  'Secondary compounds climb by the same rule as the anchors.':
+    'Tukevat moninivelliikkeet nousevat samalla säännöllä kuin ankkurit.',
   'Progress secondary lifts by adding reps first, then load once the range is stable across working sets.':
     'Etene tukiliikkeissä lisäämällä ensin toistoja, sitten painoa kun toistohaarukka on vakaa kaikissa työsarjoissa.',
-  'Secondary compounds add pressure without matching anchor fatigue — climb them slower than the anchors.':
-    'Tukevat moninivelliikkeet lisäävät painetta ilman ankkurin väsytystä — nosta niitä ankkureita hitaammin.',
-  'Secondary compounds add volume, so let them rise more slowly than the anchor of the day.':
-    'Tukevat moninivelliikkeet tuovat volyymia, joten anna niiden nousta päivän ankkuria hitaammin.',
-  'Secondary compounds drive total weekly volume. Keep them technical and let load rise more slowly than the anchor.':
-    'Tukevat moninivelliikkeet vastaavat viikon kokonaisvolyymista. Pidä ne teknisinä ja anna painon nousta ankkuria hitaammin.',
+  'Secondary compounds add pressure without matching anchor fatigue; they climb by the same rule.':
+    'Tukevat moninivelliikkeet lisäävät painetta ilman ankkurin väsytystä; ne nousevat samalla säännöllä.',
+  'Secondary compounds add volume and rise by the same rule as the anchor of the day.':
+    'Tukevat moninivelliikkeet tuovat volyymia ja nousevat samalla säännöllä kuin päivän ankkuri.',
+  'Secondary compounds drive total weekly volume. Keep them technical; load rises by the same rule as the anchor.':
+    'Tukevat moninivelliikkeet vastaavat viikon kokonaisvolyymista. Pidä ne teknisinä; paino nousee samalla säännöllä kuin ankkurissa.',
   'Secondary lifts add most of the weekly volume, so keep them technical and avoid forcing progress too aggressively.':
     'Tukiliikkeet tuovat suurimman osan viikon volyymista, joten pidä ne teknisinä äläkä pakota etenemistä.',
   'Secondary lifts complete the range before adding load; fatigue from finishers never excuses sloppy reps.':
     'Tukiliikkeissä täytetään toistohaarukka ennen painon lisäystä; kunto-osuuksien väsymys ei koskaan oikeuta epäpuhtaita toistoja.',
-  'Secondary work climbs slower — the goal is a repeatable hard week, not a maximal one.':
-    'Tukityö nousee hitaammin — tavoite on toistettava kova viikko, ei maksimaalinen.',
+  'Secondary work follows the same rule — the goal is a repeatable hard week, not a maximal one.':
+    'Tukityö etenee samalla säännöllä — tavoite on toistettava kova viikko, ei maksimaalinen.',
   'Use secondary compounds to add quality volume without matching the fatigue of the main lift.':
     'Käytä tukevia moninivelliikkeitä laadukkaan volyymin lisäämiseen ilman ankkuriliikkeen väsytystä.',
   'Use secondary exercises to add volume to the target muscle without matching the fatigue of the primary lift.':
@@ -135,27 +135,27 @@ const FI: Record<string, string> = {
     'Käytä liikkuvuusharjoitteita niin että treenistä lähtee notkeampana, ei väsyneempänä.',
 
   // ── Failure handling ────────────────────────────────────────────────
-  'If repsMin is missed, keep the same load and build the reps back up before adding weight.':
+  'If the minimum reps are missed, keep the same load and build the reps back up before adding weight.':
     'Jos alaraja jää vajaaksi, pidä sama paino ja nosta toistot takaisin ennen kuin lisäät painoa.',
-  'If the primary misses repsMin, repeat the same load and build the reps back up with clean technique before adding weight.':
+  'If the primary misses the minimum reps, repeat the same load and build the reps back up with clean technique before adding weight.':
     'Jos ankkuriliikkeessä jää alaraja vajaaksi, toista sama paino ja nosta toistot takaisin puhtaalla tekniikalla ennen kuin lisäät painoa.',
-  'If repsMin is missed on the anchor, repeat the load and rebuild the reps cleanly before attempting new weight.':
+  'If the minimum reps are missed on the anchor, repeat the load and rebuild the reps cleanly before attempting new weight.':
     'Jos ankkurissa jää alaraja vajaaksi, toista sama paino ja rakenna toistot puhtaasti takaisin ennen uutta painoa.',
-  'Missed repsMin repeats the load until the reps are back.':
+  'Missing the minimum reps repeats the load until the reps are back.':
     'Vajaaksi jäänyt alaraja toistetaan samalla painolla, kunnes toistot ovat palanneet.',
   'Missed reps on the first hard set means hold the same load and rebuild the reps cleanly before adding weight.':
     'Vajaat toistot ensimmäisessä raskaassa sarjassa tarkoittavat, että paino pysyy samana ja toistot rakennetaan puhtaasti takaisin ennen painon lisäystä.',
-  'Miss repsMin on the anchor lift and you repeat the load until the reps are back.':
+  'Miss the minimum reps on the anchor lift and you repeat the load until the reps are back.':
     'Jos ankkuriliikkeen alaraja jää vajaaksi, toistat saman painon, kunnes toistot ovat palanneet.',
-  'If the first work set misses repsMin, repeat the load and rebuild with clean reps before adding weight.':
+  'If the first work set misses the minimum reps, repeat the load and rebuild with clean reps before adding weight.':
     'Jos ensimmäisessä työsarjassa jää alaraja vajaaksi, toista sama paino ja rakenna toistot puhtaasti takaisin ennen painon lisäystä.',
-  'If the first hard set misses repsMin, repeat the same load and build the reps back up.':
+  'If the first hard set misses the minimum reps, repeat the same load and build the reps back up.':
     'Jos ensimmäisessä raskaassa sarjassa jää alaraja vajaaksi, toista sama paino ja nosta toistot takaisin.',
-  'If repsMin is missed, repeat the same session next time until the reps are back.':
+  'If the minimum reps are missed, repeat the same session next time until the reps are back.':
     'Jos alaraja jää vajaaksi, toista sama treeni, kunnes toistot ovat palanneet.',
-  'If a main lift misses repsMin, repeat it next time and rebuild the reps at the same load.':
+  'If a main lift misses the minimum reps, repeat it next time and rebuild the reps at the same load.':
     'Jos ankkuriliikkeessä jää alaraja vajaaksi, toista se ensi kerralla ja rakenna toistot takaisin samalla painolla.',
-  'If a main lift misses repsMin, hold the same load and build the reps back up.':
+  'If a main lift misses the minimum reps, hold the same load and build the reps back up.':
     'Jos ankkuriliikkeessä jää alaraja vajaaksi, pidä sama paino ja nosta toistot takaisin.',
   'A missed range repeats the load until the reps are back.':
     'Vajaaksi jäänyt toistohaarukka toistetaan samalla painolla, kunnes toistot ovat palanneet.',

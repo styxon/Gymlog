@@ -1,9 +1,9 @@
 import type { WorkoutSlotHistoryEntry } from '../features/workout/workoutTypes';
 import { isUnloadedTrackingMode, readStoredTrackingMode } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupLevel } from '../types/models';
-import { getRollingWindowStart } from './completedSessions';
+import { getRollingWindowStart, localDateKey } from './completedSessions';
 import { buildFatigueModel, type FatigueModelInput } from './fatigueModel';
-import { gatingSets } from './warmupSets';
+import { gatingSets, isWithinOneDialStep } from './warmupSets';
 
 /**
  * Double progression, as specified (ADR-004 + progression-gating-rules.md).
@@ -67,9 +67,7 @@ export type ProgressionFatigueSignal = 'normal' | 'elevated' | 'high';
 export type ProgressionHoldReason =
   | 'fatigue_high'
   | 'fatigue_elevated'
-  | 'set_skipped'
   | 'insufficient_sets'
-  | 'low_completion_rate'
   | 'rep_ceiling_not_reached'
   | 'gap_return'
   | 'awaiting_confirmation';
@@ -153,7 +151,6 @@ export interface ProgressionGateInput {
  * a missed week, 14 days, as the break it is.
  */
 const BREAK_DAYS = 10;
-const MIN_COMPLETION_RATE = 0.8;
 
 /**
  * The sets the programme asked for: the first `targetSets`, in set order.
@@ -165,6 +162,20 @@ const MIN_COMPLETION_RATE = 0.8;
  */
 function programmedSets(entry: WorkoutSlotHistoryEntry, targetSets: number) {
   return [...entry.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, Math.max(0, targetSets));
+}
+
+/**
+ * The sets this entry had to log: the programme's count, or fewer when the
+ * app itself asked for fewer — a lighter session files `plannedSets`. One held
+ * session is enough: the next normal one progresses as if the lighter one had
+ * been a full one at its sets (owner, Q3 2026-10-11). Read defensively, like
+ * givenTarget: slot history is stored as written.
+ */
+function setsNeeded(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
+  const planned = (entry as { plannedSets?: unknown }).plannedSets;
+  return typeof planned === 'number' && Number.isInteger(planned) && planned > 0 && planned < targetSets
+    ? planned
+    : targetSets;
 }
 
 /** The heaviest load the programmed sets used, which is what we progress from. */
@@ -189,7 +200,7 @@ export function isProgressionReadySession(
   if (entry.skipped || entry.sets.length === 0) {
     return false;
   }
-  if (entry.sets.length < targetSets) {
+  if (entry.sets.length < setsNeeded(entry, targetSets)) {
     return false;
   }
   return gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax);
@@ -219,14 +230,15 @@ function isAtLeastDaysBefore(earlierIso: string, laterIso: string, days: number)
 function clearsCeilingBy(entry: WorkoutSlotHistoryEntry, repsMax: number, targetSets: number, margin: number): boolean {
   return (
     !entry.skipped &&
-    entry.sets.length >= targetSets &&
+    entry.sets.length >= setsNeeded(entry, targetSets) &&
     entry.sets.length > 0 &&
     gatingSets(programmedSets(entry, targetSets)).every((set) => set.reps >= repsMax + margin)
   );
 }
 
 /**
- * The sessions the gate reads: entries with a logged set, newest first.
+ * The sessions the gate reads: entries with a logged set, newest first, one
+ * per local calendar date.
  *
  * An entry with no sets is a day this lift did not happen — skipped, left
  * pending when the workout ended, or junk dropped on load — and a finished
@@ -256,9 +268,29 @@ function sessionsOf(history: readonly WorkoutSlotHistoryEntry[], nowMs?: number)
     }
     return hasNow && time > (nowMs as number) ? { tier: 1, time: 0 } : { tier: 2, time };
   };
+  // One local calendar date is one session (owner, 2026-10-11, Q7): a morning
+  // and an evening of the same day met a beginner's two-session baseline in an
+  // afternoon. The day's newest stands for it — the session the prefill and
+  // "Last time" read — and the earlier ones of that date drop out. The device's
+  // own date, never a UTC slice or a division by DAY_MS: 00:30 in Helsinki is
+  // the previous day in UTC, and 25.10.2026 has 25 hours. A session is dated
+  // by its finish, so one that ran past midnight belongs to the day it ended.
+  // Only dated, past entries collapse; the rest say nothing about the day.
+  const seenDates = new Set<string>();
   return logged
     .map((entry, index) => ({ entry, index, ...rank(entry) }))
     .sort((left, right) => right.tier - left.tier || right.time - left.time || left.index - right.index)
+    .filter(({ tier, time }) => {
+      if (tier !== 2) {
+        return true;
+      }
+      const date = localDateKey(time);
+      if (seenDates.has(date)) {
+        return false;
+      }
+      seenDates.add(date);
+      return true;
+    })
     .map(({ entry }) => entry);
 }
 
@@ -276,6 +308,30 @@ function isBreakSince(latest: WorkoutSlotHistoryEntry, nowMs: number | undefined
     return false;
   }
   return isAtLeastDaysBefore(latest.performedAt, new Date(nowMs).toISOString(), BREAK_DAYS);
+}
+
+/**
+ * When a session started, which is where the gap before it ends.
+ *
+ * The start reads the gap from the last finish to the moment it is started
+ * (isBreakSince), and the filed session was read to its finish: started 9 d
+ * 23 h 45 min after the last one, it opened raised and then, filed, counted as
+ * the return from a break and held the session after (hunt, 2026-10-11). The
+ * filed start; before it was filed, the first set's time; else the finish.
+ * A time after the finish is not a start.
+ */
+function sessionStartIso(entry: WorkoutSlotHistoryEntry): string {
+  const finishedMs = Date.parse(entry.performedAt);
+  const startedMs = typeof entry.startedAt === 'string' ? Date.parse(entry.startedAt) : Number.NaN;
+  const before = (ms: number) => Number.isFinite(ms) && (!Number.isFinite(finishedMs) || ms <= finishedMs);
+  if (before(startedMs)) {
+    return entry.startedAt as string;
+  }
+  const firstSet = entry.sets
+    .map((set) => ({ iso: set.completedAt, ms: typeof set.completedAt === 'string' ? Date.parse(set.completedAt) : Number.NaN }))
+    .filter((set) => before(set.ms))
+    .sort((left, right) => left.ms - right.ms)[0];
+  return firstSet ? firstSet.iso : entry.performedAt;
 }
 
 /** No load to gate: bodyweight, a hold, a bout of minutes (workoutTypes). */
@@ -345,21 +401,18 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     return { recommendation: 'hold', holdReason: 'fatigue_elevated', loadKg: currentLoadKg };
   }
 
-  if (latest.skipped) {
-    return { recommendation: 'hold', holdReason: 'set_skipped', loadKg: currentLoadKg };
-  }
-  if (latest.sets.length < targetSets) {
+  // No hold for a skip: a skipped lift is filed with no sets, which
+  // sessionsOf looks past (owner, Q8 2026-10-11). A skipped entry with sets is
+  // no shape the app writes; it is not a ready session, and holds below.
+  if (latest.sets.length < setsNeeded(latest, targetSets)) {
     return { recommendation: 'hold', holdReason: 'insufficient_sets', loadKg: currentLoadKg };
-  }
-  if (latest.sets.length / targetSets < MIN_COMPLETION_RATE) {
-    return { recommendation: 'hold', holdReason: 'low_completion_rate', loadKg: currentLoadKg };
   }
 
   // A session that follows a long break is not the moment to add load, and
   // neither is the first one back from it.
   const previous = history[1];
   if (
-    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    (previous && isAtLeastDaysBefore(previous.performedAt, sessionStartIso(latest), BREAK_DAYS)) ||
     isBreakSince(latest, input.nowMs)
   ) {
     return { recommendation: 'hold', holdReason: 'gap_return', loadKg: currentLoadKg };
@@ -377,7 +430,13 @@ export function evaluateProgression(input: ProgressionGateInput): ProgressionDec
     }
     // Only sessions at the same load count toward confirmation; a lighter
     // session that happened to hit the ceiling proves nothing about this load.
-    if (Math.abs(entryLoadKg(entry, targetSets) - currentLoadKg) > 0.001) {
+    // The same load is within one dial step of the newest session's (owner,
+    // 2026-10-11, Q6), always compared with the newest, never chained.
+    // Over the set positions both logged: a lighter session (plannedSets)
+    // drops the last set, a pyramid's top, so its 50/55 is the same work as
+    // the full session's 50/55/60, not a lighter load (owner, Q3).
+    const positions = Math.min(programmedSets(entry, targetSets).length, programmedSets(latest, targetSets).length);
+    if (!isWithinOneDialStep(entryLoadKg(entry, positions), entryLoadKg(latest, positions))) {
       break;
     }
     consecutive += 1;
@@ -475,7 +534,10 @@ export function resolveProgressedLoadKg(
     // as every set did before.
     const own = input.fallbackLoadKg;
     if (own > 0) {
-      const isHeaviest = Math.abs(own - decision.fromLoadKg) < 0.001;
+      // "Heaviest" as the gate read it: within one dial step of the top
+      // (lib/warmupSets gatingSets), so the drop exemption covers the sets
+      // the gate exempted and no others.
+      const isHeaviest = own >= decision.fromLoadKg || isWithinOneDialStep(decision.fromLoadKg, own);
       if (!isHeaviest && typeof input.fallbackReps === 'number' && input.fallbackReps < input.repsMin) {
         return { loadKg: own, progressed: false, fromLoadKg: null, heldForFatigue: false, heldForCautionArea: null };
       }
@@ -582,13 +644,13 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
   if (fatigueSignal === 'high' || fatigueSignal === 'elevated') {
     return 'hold';
   }
-  if (latest.skipped || latest.sets.length < targetSets) {
+  if (latest.sets.length < setsNeeded(latest, targetSets)) {
     return 'hold';
   }
 
   const previous = history[1];
   if (
-    (previous && isAtLeastDaysBefore(previous.performedAt, latest.performedAt, BREAK_DAYS)) ||
+    (previous && isAtLeastDaysBefore(previous.performedAt, sessionStartIso(latest), BREAK_DAYS)) ||
     isBreakSince(latest, input.nowMs)
   ) {
     return 'hold';
@@ -613,13 +675,33 @@ function evaluateRepsProgression(input: ProgressedRepsInput): RepsRecommendation
 }
 
 /**
+ * The reps the newest session the gate reads proved on every programmed set,
+ * never below the template's target; the template with no session to read.
+ */
+function provenFloorReps(input: ProgressedRepsInput): number {
+  const newest = sessionsOf(input.history, input.nowMs)[0];
+  // A session short of the programme's sets proved no floor: 1 × 20 and quit
+  // asked for 3 × 20 next time (review, 2026-10-11). A lighter session that
+  // logged every set it asked for (plannedSets) did prove it (owner, Q3).
+  const floor =
+    newest && newest.sets.length >= setsNeeded(newest, input.targetSets)
+      ? entryMinReps(newest, input.targetSets)
+      : Number.NaN;
+  return Number.isFinite(floor) ? Math.max(input.templateTargetReps, floor) : input.templateTargetReps;
+}
+
+/**
  * What the reps dial should open at, for exercises that progress by reps.
  *
  * The load resolver's counterpart for bodyweight work, where ADR-004 keeps the
  * load gate silent: an earned session moves the target one rep past the floor
- * the user proved, and every other outcome opens at the template target — which
- * is exactly what the dial did unconditionally before this existed. Holds are
- * excluded: their "reps" are seconds, and a seconds dose is not dialled by one.
+ * the user proved, and every other outcome repeats that floor — never below
+ * the template's target. Holds are excluded: their "reps" are seconds, and a
+ * seconds dose is not dialled by one.
+ *
+ * A hold used to open on the template: 13/13/13 earned, then held for recovery
+ * or a flagged area, asked for 12 under a badge that said the dose was held
+ * (hunt, 2026-10-11). A hold repeats, as the load gate's does.
  */
 export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRepsResolution {
   const base: ProgressedRepsResolution = {
@@ -636,9 +718,10 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
 
   // A flagged area holds reps the way it holds load: the dose on that area
   // does not climb on its own, and the hold is named only when it was earned.
+  const floorReps = provenFloorReps(input);
   if (input.cautionArea) {
     const earned = evaluateRepsProgression({ ...input, fatigueSignal: 'normal' }) === 'increase';
-    return { ...base, heldForCautionArea: earned ? input.cautionArea : null };
+    return { ...base, targetReps: floorReps, heldForCautionArea: earned ? input.cautionArea : null };
   }
 
   const recommendation = evaluateRepsProgression(input);
@@ -646,10 +729,7 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
     // The floor can sit above the template target when the user has been
     // overshooting it; raising from the proven floor is what keeps +1 honest.
     // The session the gate just read: the newest that logged sets.
-    const fromReps = Math.max(
-      input.templateTargetReps,
-      entryMinReps(sessionsOf(input.history, input.nowMs)[0], input.targetSets),
-    );
+    const fromReps = floorReps;
     return {
       targetReps: fromReps + REP_INCREMENT,
       progressed: true,
@@ -666,7 +746,7 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
     && (input.fatigueSignal === 'high' || input.fatigueSignal === 'elevated')
     && evaluateRepsProgression({ ...input, fatigueSignal: 'normal' }) === 'increase';
 
-  return { ...base, heldForFatigue };
+  return { ...base, targetReps: floorReps, heldForFatigue };
 }
 
 export interface MissedRepsInput {
@@ -732,8 +812,11 @@ function givenTarget(entry: WorkoutSlotHistoryEntry, repsMin: number): number | 
  *
  * The target the app gave is read back from the history entry, because "one
  * more than last time's target" cannot be worked out from the reps alone.
- * Bodyweight work progresses by reps already, and a hold is seconds: both are
- * left alone. Pro, like the rest of automated progression (user, 2026-09-28).
+ * A hold is seconds and a bout is minutes: both are left alone. Bodyweight
+ * work gets the target too (owner, 2026-10-11): 6/5/4 pull-ups on 8-12 asked
+ * for 12, the same impossible ask the rule was written for. Its reps still
+ * only rise through the reps gate; this asks for no more than the programme
+ * did. Pro, like the rest of automated progression (user, 2026-09-28).
  *
  * On a lift that loads a flagged area the climb is withheld, as the ramp
  * rule's +1 is: the target repeats what the sets last did rather than asking
@@ -748,7 +831,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   if (!input.automatedProgressionEnabled || !(repsMin > 0) || !(targetSets > 0)) {
     return null;
   }
-  if (isUnloadedMode(trackingMode)) {
+  if (isUnloadedMode(trackingMode) && readStoredTrackingMode(trackingMode) !== 'bodyweight') {
     return null;
   }
   // The newest entry that logged something — the same reading the set
@@ -794,7 +877,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   // 10/10/10/10 on a target of 6 does not come back as 8.
   // "Every set" means every set the programme asks for, and fewer than that
   // did not meet it.
-  if (given !== null && reps.length >= targetSets && reps.every((count) => count >= given)) {
+  if (given !== null && reps.length >= setsNeeded(latest, targetSets) && reps.every((count) => count >= given)) {
     const mayClimb = !input.cautionArea;
     const climbed = given + (reps.every((count) => count > given) ? 2 : 1);
     const next = Math.max(mayClimb ? climbed : given, averageTarget);
@@ -811,6 +894,11 @@ export interface RampSetTargetInput {
   setIndex: number;
   /** The programme's rep ceiling: the top set's +1 stops there. */
   repsMax: number;
+  /**
+   * The programme's rep floor, which a lowered target is read against. Absent,
+   * any target filed on the entry counts: one is filed only below the floor.
+   */
+  repsMin?: number;
   trackingMode?: string;
   automatedProgressionEnabled: boolean;
   /** As for the missed-reps target: a session older than 90 days says nothing about today. */
@@ -851,6 +939,15 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
       return null;
     }
   }
+  // A session given a lowered target was prescribed flat: one weight, a
+  // target under the floor. A set the reader moved off that weight is their
+  // adjustment, not a ramp, and the missed-reps rule — the one that reads the
+  // target given — answers: 60/60/62.5 at a given 6 opened 6/6/7 rather than
+  // 7/7/7 (hunt, 2026-10-11).
+  const floorForGiven = typeof input.repsMin === 'number' && input.repsMin > 0 ? input.repsMin : Number.POSITIVE_INFINITY;
+  if (givenTarget(entry, floorForGiven) !== null) {
+    return null;
+  }
   const done = entry.sets.filter((set) => set.reps > 0 && Number.isFinite(set.loadKg) && set.loadKg > 0);
   if (done.length < 2) {
     return null;
@@ -871,7 +968,10 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   const mayAdd =
     !input.cautionArea && input.fatigueSignal !== 'high' && input.fatigueSignal !== 'elevated';
   if (!mayAdd || own.reps >= repsMax) {
-    return own.reps;
+    // Never past the ceiling: 14/14/14 on 8-12 asked for 14 again at the
+    // raised load, where the same reps on straight sets open on 12 (hunt,
+    // 2026-10-11).
+    return repsMax > 0 ? Math.min(own.reps, repsMax) : own.reps;
   }
   const atTop = (set: { loadKg: number }) => Math.abs(set.loadKg - top) < 0.001;
   if (atTop(own)) {

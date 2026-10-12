@@ -16,6 +16,7 @@ import {
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
   ProgrammedDose,
+  ProgrammedSetPlan,
   readStoredTrackingMode,
   WorkoutHistoryStore,
   WorkoutPersistenceBundle,
@@ -139,10 +140,90 @@ function normalizeProgrammedDose(input: unknown): ProgrammedDose | undefined {
   return { trackingMode, repsMin, repsMax };
 }
 
+/**
+ * The start's plan for a swapped-away lift's sets (added 2026-10-11): kept
+ * only as a list of plans whose every field has the shape the app writes and
+ * a load somebody could lift. Anything else drops the whole list — the swap
+ * back then re-plans by name, as it did before the list existed.
+ */
+function normalizeProgrammedSetPlans(input: unknown): ProgrammedSetPlan[] | undefined {
+  if (!Array.isArray(input) || input.length === 0) {
+    return undefined;
+  }
+  const optionalNumber = (value: unknown) => value === undefined || (typeof value === 'number' && Number.isFinite(value));
+  const optionalLoad = (value: unknown) => value === undefined || isLiftableWeight(value);
+  const valid = input.every(
+    (plan) =>
+      isObject(plan) &&
+      typeof plan.setIndex === 'number' &&
+      Number.isInteger(plan.setIndex) &&
+      typeof plan.draftLoadText === 'string' &&
+      optionalLoad(plan.plannedLoadKg) &&
+      optionalLoad(plan.autoProgressedFromKg) &&
+      (plan.heldForFatigue === undefined || typeof plan.heldForFatigue === 'boolean') &&
+      (plan.heldForCautionArea === undefined || typeof plan.heldForCautionArea === 'string') &&
+      (plan.prefilledFromPerformedAt === undefined || typeof plan.prefilledFromPerformedAt === 'string') &&
+      optionalNumber(plan.plannedTargetReps) &&
+      optionalNumber(plan.autoProgressedFromReps) &&
+      optionalNumber(plan.rampTargetReps),
+  );
+  return valid ? (input as ProgrammedSetPlan[]) : undefined;
+}
+
 /** Sets a key to a value, or takes the key away when the value is undefined. */
 function withOptional<T extends Record<string, unknown>>(target: T, key: string, value: unknown): T {
   const { [key]: _dropped, ...rest } = target;
   return (value === undefined ? rest : { ...rest, [key]: value }) as T;
+}
+
+/** Past this, a stored rep target is no target anyone was given (the reps dial stops far below it). */
+const MAX_TARGET_REPS = 1000;
+
+/** A whole count of one or more, or undefined: what a stored count of sets has to be. */
+function positiveCount(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
+}
+
+/**
+ * One stored "last time" entry, every field its readers rely on checked. The
+ * optional fields added after the first release are kept only in the shape
+ * the app writes them, and an entry from before any of them loads unchanged.
+ */
+function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[] }) {
+  const sets = entry.sets
+    .filter(isHistorySet)
+    // A set added mid-session is marked `true`; anything else there is no mark.
+    .map((set) => withOptional(set as Record<string, unknown>, 'addedMidSession', (set as Record<string, unknown>).addedMidSession === true ? true : undefined));
+  // An id the lookups compare as text; a number is read as one, anything else as none.
+  const text = (value: unknown) =>
+    typeof value === 'string' ? value : typeof value === 'number' && Number.isFinite(value) ? String(value) : '';
+  let normalized: Record<string, unknown> = {
+    ...entry,
+    sets,
+    slotId: text(entry.slotId),
+    sessionId: text(entry.sessionId),
+    // Only `true` is a skip: "yes" held the newest real session as skipped (hunt, 2026-10-11).
+    skipped: entry.skipped === true,
+  };
+  // A lowered target the gate can read: a whole number of reps, at most what a dial can ask.
+  normalized = withOptional(
+    normalized,
+    'targetReps',
+    positiveCount(entry.targetReps) !== undefined && (entry.targetReps as number) <= MAX_TARGET_REPS ? entry.targetReps : undefined,
+  );
+  normalized = withOptional(normalized, 'swappedFrom', typeof entry.swappedFrom === 'string' ? entry.swappedFrom : undefined);
+  normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
+  // The sets a lighter session asked for (Q3, 2026-10-11).
+  normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
+  // The dose the sets were asked for (2026-10-11): a known mode and a range.
+  normalized = withOptional(normalized, 'dose', normalizeProgrammedDose(entry.dose));
+  // When the session started (2026-10-11): a date, or nothing.
+  normalized = withOptional(
+    normalized,
+    'startedAt',
+    typeof entry.startedAt === 'string' && Number.isFinite(Date.parse(entry.startedAt)) ? entry.startedAt : undefined,
+  );
+  return normalized;
 }
 
 function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'] {
@@ -159,9 +240,7 @@ function normalizeSlotHistory(input: unknown): WorkoutHistoryStore['slotHistory'
       // And every set in it: a list holding `null`, or a set without its
       // numbers, reached `set.loadKg` in the "last time" lookup and took
       // down every lift of that name (recheck of #221, 2026-09-28).
-      .map((entry) =>
-        withOptional({ ...entry, sets: entry.sets.filter(isHistorySet) }, 'warmups', normalizeWarmups(entry.warmups, false)),
-      ) as unknown as WorkoutHistoryStore['slotHistory'][string];
+      .map((entry) => normalizeHistoryEntry(entry)) as unknown as WorkoutHistoryStore['slotHistory'][string];
   }
   return slots;
 }
@@ -225,7 +304,8 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
   const exercises = input.exercises
     .filter((exercise): exercise is Record<string, unknown> => isObject(exercise) && Array.isArray(exercise.sets))
     .map((exercise) => withOptional(exercise, 'warmups', normalizeWarmups(exercise.warmups, true)))
-    .map((exercise) => withOptional(exercise, 'programmedDose', normalizeProgrammedDose(exercise.programmedDose)));
+    .map((exercise) => withOptional(exercise, 'programmedDose', normalizeProgrammedDose(exercise.programmedDose)))
+    .map((exercise) => withOptional(exercise, 'programmedSetPlans', normalizeProgrammedSetPlans(exercise.programmedSetPlans)));
   if (exercises.length === 0) {
     return null;
   }
@@ -234,7 +314,7 @@ function repairSessionShape(input: Record<string, unknown>): WorkoutSessionRunti
     ? input.takenBackAt.filter((moment): moment is string => typeof moment === 'string')
     : undefined;
   return {
-    ...input,
+    ...withOptional(input, 'progressionOn', typeof input.progressionOn === 'boolean' ? input.progressionOn : undefined),
     takenBackAt,
     // Absent rather than null when there is none, so a session stored before
     // the clock existed comes back exactly as it was written.

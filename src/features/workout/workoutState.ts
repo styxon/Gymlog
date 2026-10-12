@@ -10,14 +10,14 @@ import {
 import { CardioActivityType, SetupCautionArea } from '../../types/models';
 import { cautionAreaLoadedBy } from '../../lib/cautionExerciseFilter';
 import { isMinutesTrackingMode, isTimedTrackingMode, isUnloadedTrackingMode } from './workoutTypes';
-import { parseIntervalScheme } from '../../lib/intervalScheme';
+import { isFixedDoseExercise, parseIntervalScheme } from '../../lib/intervalScheme';
 import { pauseStopwatch, type SessionMinutesClock } from '../../lib/minutesExercises';
 import { HOLD_DIAL, MINUTES_DIAL, REPS_DIAL, WARMUP_REPS_DIAL } from '../../lib/weightDial';
 import { isLiftableWeight } from '../../lib/weightLimits';
 import { isGuidedExerciseOut, resolveGuidedSetTarget } from '../../lib/guidedPlayer';
 import { buildSupersetPlayOrder, supersetGroupIndexes } from '../../lib/supersetGrouping';
 import { elapsedSecondsOf, restSecondsLeft, restTimerHasEnded, settleSessionClock, workoutSecondsUntil } from '../../lib/sessionClock';
-import { GuidedResumeAnchor, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
+import { GuidedResumeAnchor, ProgrammedDose, ProgrammedSetPlan, WorkoutTrackingMode, WorkoutTemplateExercise, WorkoutExerciseInsertInput, WorkoutExerciseInstance, WorkoutHistoryStore, WorkoutLiftIdentity, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRestTimerState, WorkoutRuntimeTemplate, WorkoutSessionMaterializeOptions, WorkoutSessionRuntime, WorkoutSessionSummary, WorkoutSetDraftInput, WorkoutSetEffort, WorkoutSetInstance, WorkoutSlotHistoryEntry, WorkoutSlotHistorySet, WorkoutStatus, WorkoutUiState, WorkoutExerciseStatus } from './workoutTypes';
 import { getWorkoutTemplateById } from './workoutCatalog';
 import {
   resolveMissedRepsTarget,
@@ -25,7 +25,7 @@ import {
   resolveProgressedReps,
   resolveRampSetTarget,
 } from '../../lib/progressionGate';
-import { programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
+import { lighterSessionPlannedSets, programmeSetCount, toWorkingHistoryEntry } from '../../lib/warmupSets';
 import { prescriptionAfterSwap } from '../../lib/catalogExercisePools';
 import { doseAfterSwap, isSameLiftName } from '../../lib/swapDose';
 import {
@@ -35,8 +35,11 @@ import {
   splitExerciseByLift,
 } from '../../lib/liftSegments';
 import {
+  answersLoadedLift,
   capSlotEntries,
+  preferLoadedEntries,
   entriesForLift,
+  entryMatchesDose,
   findHistoricalSetForIndex,
   findLatestEntryForExerciseName,
   RepWindow,
@@ -277,18 +280,37 @@ function getHistoryEntries(
   legacyRepWindow: RepWindow | null | undefined,
   exerciseName: string,
   nowMs?: number,
+  /**
+   * The dose the slot asks for now: an entry filed under another is read as
+   * borrowed — left to the name lookup, which may prefill from it and never
+   * gates on it (exerciseHistoryLookup entryMatchesDose). Absent: every entry.
+   */
+  dose?: ProgrammedDose | null,
 ) {
+  // An all-zero session is no weight for a loaded lift beside a real one; a
+  // loaded row only ever done at 0 kg keeps it (preferLoadedEntries).
+  const requireLoaded = dose ? !isUnloadedTrackingMode(dose.trackingMode) : false;
+  const matchesDose = (entry: WorkoutSlotHistoryEntry) => entryMatchesDose(entry, dose);
   // Only the entries that were this lift: a swap writes under the same slot id
   // (see entriesForLift).
-  const scopedEntries = entriesForLift(history.slotHistory[slotId], exerciseName);
+  const scopedEntries = preferLoadedEntries(
+    entriesForLift(history.slotHistory[slotId], exerciseName).filter(matchesDose),
+    requireLoaded,
+    nowMs,
+  );
   // Something real under the scoped key: that is the answer. A key holding
   // only skipped days is not — it says the lift did not happen here.
   if (selectLatestUsableEntry(scopedEntries, nowMs) || !templateSlotId) {
     return scopedEntries;
   }
 
-  const legacy = selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs);
-  return legacy ? entriesForLift(history.slotHistory[templateSlotId], exerciseName) : scopedEntries;
+  const loadedLegacy = (entry: WorkoutSlotHistoryEntry) => matchesDose(entry) && answersLoadedLift(entry, requireLoaded);
+  const legacy =
+    selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, loadedLegacy) ??
+    selectLegacySlotEntry(history.slotHistory, templateSlotId, legacyRepWindow, exerciseName, nowMs, matchesDose);
+  return legacy
+    ? preferLoadedEntries(entriesForLift(history.slotHistory[templateSlotId], exerciseName).filter(matchesDose), requireLoaded, nowMs)
+    : scopedEntries;
 }
 
 export function getHistoryEntriesForExercise(
@@ -382,6 +404,22 @@ export function resolveBorrowRepWindow(exercise: {
  * the first set speaks for the exercise — they are materialized from one
  * template row.
  */
+/**
+ * The mode and rep range a live exercise asks for now, as the start read its
+ * slot's history (getHistoryEntries' dose): the "Last time" panel asks with
+ * it, so an entry filed under another dose (a hold's seconds above a
+ * bodyweight slot's reps) is not listed above a dial that did not read it.
+ */
+export function resolveInstanceDose(
+  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'sets'>,
+): ProgrammedDose | null {
+  const first = exercise.sets[0];
+  if (!first || !Number.isFinite(first.plannedRepsMin) || !Number.isFinite(first.plannedRepsMax)) {
+    return null;
+  }
+  return { trackingMode: exercise.trackingMode, repsMin: first.plannedRepsMin, repsMax: first.plannedRepsMax };
+}
+
 export function resolveInstanceBorrowRepWindow(
   exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'sets'>,
 ): RepWindow | null {
@@ -444,7 +482,12 @@ function replanSetForCurrentLift(
 ) {
   // By its place within the new lift, which is how that lift's history
   // numbers it — not by its place in the slot (review of #170).
-  const historical = findHistoricalSetForIndex(entry, setIndexWithinLift(exercise, set));
+  // A lift with no load takes no number from the history found for it: the
+  // dial shows bodyweight work no weight, and a borrowed stamp saved the set
+  // as 'borrowed' for a number never on screen (hunt 12, P0-2).
+  const historical = isUnloadedTrackingMode(exercise.trackingMode)
+    ? null
+    : findHistoricalSetForIndex(entry, setIndexWithinLift(exercise, set));
   set.draftLoadText = historical ? formatWeightInputValue(historical.loadKg, unitPreference) : '';
   set.plannedLoadKg = historical?.loadKg;
   set.autoProgressedFromKg = undefined;
@@ -471,6 +514,35 @@ function replanSetForCurrentLift(
   }
 }
 
+/** The start's decision for a set, as a swap away keeps it (ProgrammedSetPlan). */
+function programmedSetPlanOf(set: WorkoutSetInstance): ProgrammedSetPlan {
+  return {
+    setIndex: set.setIndex,
+    draftLoadText: set.draftLoadText,
+    ...(set.plannedLoadKg !== undefined ? { plannedLoadKg: set.plannedLoadKg } : {}),
+    ...(set.autoProgressedFromKg !== undefined ? { autoProgressedFromKg: set.autoProgressedFromKg } : {}),
+    ...(set.heldForFatigue ? { heldForFatigue: true } : {}),
+    ...(set.heldForCautionArea ? { heldForCautionArea: set.heldForCautionArea } : {}),
+    ...(set.prefilledFromPerformedAt !== undefined ? { prefilledFromPerformedAt: set.prefilledFromPerformedAt } : {}),
+    ...(set.plannedTargetReps !== undefined ? { plannedTargetReps: set.plannedTargetReps } : {}),
+    ...(set.autoProgressedFromReps !== undefined ? { autoProgressedFromReps: set.autoProgressedFromReps } : {}),
+    ...(set.rampTargetReps !== undefined ? { rampTargetReps: set.rampTargetReps } : {}),
+  };
+}
+
+/** Puts a set back on the start's decision for it — every field, absent ones cleared. */
+function restoreProgrammedSetPlan(set: WorkoutSetInstance, plan: ProgrammedSetPlan) {
+  set.draftLoadText = plan.draftLoadText;
+  set.plannedLoadKg = plan.plannedLoadKg;
+  set.autoProgressedFromKg = plan.autoProgressedFromKg;
+  set.heldForFatigue = plan.heldForFatigue;
+  set.heldForCautionArea = plan.heldForCautionArea;
+  set.prefilledFromPerformedAt = plan.prefilledFromPerformedAt;
+  set.plannedTargetReps = plan.plannedTargetReps;
+  set.autoProgressedFromReps = plan.autoProgressedFromReps;
+  set.rampTargetReps = plan.rampTargetReps;
+}
+
 function resolveNamedHistoryDraft(
   history: WorkoutHistoryStore,
   setIndex: number,
@@ -492,6 +564,9 @@ function resolveNamedHistoryDraft(
     rampTargetReps: undefined,
   };
 
+  // A fixed dose (an interval's seconds, a sprint's metres) is repeated, never
+  // stepped: no rep target off a borrowed session either (isFixedDoseExercise).
+  const progressionOn = (options.automatedProgressionEnabled ?? false) && !isFixedDoseExercise(exercise);
   const found = findLatestEntryForExerciseName(history.slotHistory, exercise.exerciseName, {
     // 0 kg is a real answer for bodyweight work and a missing one for a loaded
     // lift — the guided player used to hide the weight field, so zeroes exist.
@@ -518,8 +593,9 @@ function resolveNamedHistoryDraft(
     entry,
     setIndex,
     repsMax: exercise.repsMax,
+    repsMin: exercise.repsMin,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     nowMs: options.nowMs ?? Date.now(),
     cautionArea: cautionAreaLoadedBy(exercise.exerciseName, options.cautionFlags),
     fatigueSignal: options.fatigueSignal,
@@ -532,10 +608,18 @@ function resolveNamedHistoryDraft(
     repsMin: exercise.repsMin,
     targetSets: exercise.sets,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     nowMs: options.nowMs ?? Date.now(),
     cautionArea: cautionAreaLoadedBy(exercise.exerciseName, options.cautionFlags),
   });
+
+  // A lift with no load borrows no number the screen shows: the dial opens
+  // bodyweight work on reps alone, and a stamp saying a weight was borrowed
+  // saved the set as 'borrowed' when nothing borrowed was on screen (hunt 12,
+  // P0-2). A loaded history is no load for it either.
+  if (isUnloadedTrackingMode(exercise.trackingMode)) {
+    return { ...blank, plannedTargetReps: missedReps?.targetReps, rampTargetReps: rampTarget ?? undefined };
+  }
 
   return {
     draftLoadText: formatWeightInputValue(matched.loadKg, unitPreference),
@@ -554,6 +638,65 @@ function resolveNamedHistoryDraft(
   };
 }
 
+/**
+ * A set last time has no set for: what it opens on, from the slot's own
+ * history.
+ *
+ * A lighter session left the set out (it files `plannedSets`): the set's own
+ * load from the newest earlier session that did it, so it climbs or holds
+ * with the rest. It opened blank, and on a pyramid the dial then carried set
+ * 2's load onto the top set — 55 where its own was 60 (hunt, 2026-10-11).
+ * Any other set last time did not reach — the session ended short, a set was
+ * added to the programme, the loader dropped an impossible one — opens on the
+ * set before it, as the dial carries it in play: blank, the prefill and the
+ * walk-up line said nothing where the dial said that load (same hunt).
+ */
+function missingSetFallback(
+  entries: readonly WorkoutSlotHistoryEntry[],
+  latest: WorkoutSlotHistoryEntry | null,
+  setIndex: number,
+  nowMs: number,
+): { set: WorkoutSlotHistorySet; entry: WorkoutSlotHistoryEntry } | null {
+  if (!latest || latest.sets.length === 0) {
+    return null;
+  }
+  if (typeof latest.plannedSets === 'number') {
+    const earlier = selectLatestUsableEntry(
+      entries.filter((entry) => entry !== latest && entry.sets.some((set) => set.setIndex === setIndex)),
+      nowMs,
+    );
+    const own = earlier?.sets.find((set) => set.setIndex === setIndex);
+    if (earlier && own) {
+      return { set: own, entry: earlier };
+    }
+  }
+  const ordered = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex);
+  const before = ordered.filter((set) => set.setIndex < setIndex).pop() ?? ordered[ordered.length - 1];
+  return before ? { set: before, entry: latest } : null;
+}
+
+/**
+ * The seconds a hold opens on: what this set held last time, inside the
+ * programme's range (owner, A2-7 2026-10-11). It always opened at the top of
+ * the range — a 30-60 s plank held 40 s twice asked for 60 every time. A hold
+ * never progresses (truth rule 2): this repeats, it does not add, so there is
+ * no AUTO arrow and Free keeps the programme's number. Undefined when it is
+ * the top of the range, the template's own target.
+ */
+function heldSecondsTarget(
+  exercise: WorkoutTemplateExercise,
+  heldSeconds: number,
+  automatedProgressionEnabled: boolean,
+): number | undefined {
+  if (!automatedProgressionEnabled || exercise.trackingMode !== 'hold' || !(heldSeconds > 0)) {
+    return undefined;
+  }
+  const low = Math.min(exercise.repsMin, exercise.repsMax);
+  const high = Math.max(exercise.repsMin, exercise.repsMax);
+  const target = Math.round(Math.min(high, Math.max(low, heldSeconds)));
+  return Number.isFinite(target) && target > 0 && target !== exercise.repsMax ? target : undefined;
+}
+
 function resolveHistoricalSetDraft(
   history: WorkoutHistoryStore,
   slotId: string,
@@ -566,18 +709,26 @@ function resolveHistoricalSetDraft(
   // Working sets only, numbered as done (lib/warmupSets): a warm-up logged as
   // an ordinary set neither seeds set 1 nor climbs with the work.
   const nowMs = options.nowMs ?? Date.now();
-  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs)
+  // A fixed dose — an interval's seconds, a sprint's metres — repeats what was
+  // done: every resolver below reads it as progression off, so no AUTO, no
+  // +1 "rep" that is a metre, no lowered or ramp target (hunt, 2026-10-11).
+  const progressionOn = (options.automatedProgressionEnabled ?? false) && !isFixedDoseExercise(exercise);
+  const dose = { trackingMode: exercise.trackingMode, repsMin: exercise.repsMin, repsMax: exercise.repsMax };
+  const entries = getHistoryEntries(history, slotId, templateSlotId, resolveBorrowRepWindow(exercise), exercise.exerciseName, nowMs, dose)
     .map((entry) => toWorkingHistoryEntry(entry, exercise.programmeSets ?? exercise.sets));
   // The newest session that actually logged something, through the same
   // selector the "Last time" panel uses — reading `entries[0]` here and
   // sorting there is how the two came to disagree.
   const latest = selectLatestUsableEntry(entries, nowMs);
-  const matched = findHistoricalSetForIndex(latest, setIndex);
+  const own = findHistoricalSetForIndex(latest, setIndex);
+  // A set last time had no set for reads the set it opens on — its reps
+  // target too, so the chips say what the dial will (missingSetFallback).
+  const source = own ? { set: own, entry: latest } : missingSetFallback(entries, latest, setIndex, nowMs);
+  const matched = source?.set ?? null;
 
   if (!matched) {
-    // This slot has been trained before, this set index just was not reached
-    // (a template that added a set). Unchanged: the slot is the better source
-    // and it has nothing for this index.
+    // This slot has been trained before and has nothing to say for this set.
+    // Unchanged: the slot is the better source.
     if (latest) {
       return {
         draftLoadText: '',
@@ -609,7 +760,7 @@ function resolveHistoricalSetDraft(
     targetSets: exercise.sets,
     level: options.setupLevel,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     // Recovery, read once at session start. The gate has had these holds
     // since it was written; until now nothing passed a signal in, so they
     // never fired on a single set.
@@ -631,7 +782,7 @@ function resolveHistoricalSetDraft(
     targetSets: exercise.sets,
     level: options.setupLevel,
     trackingMode: exercise.trackingMode,
-    automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+    automatedProgressionEnabled: progressionOn,
     fatigueSignal: options.fatigueSignal,
     cautionArea,
     nowMs: options.nowMs ?? Date.now(),
@@ -645,11 +796,12 @@ function resolveHistoricalSetDraft(
   const rampTarget = repsResolution.progressed
     ? null
     : resolveRampSetTarget({
-        entry: latest,
-        setIndex,
+        entry: source?.entry ?? latest,
+        setIndex: own ? setIndex : matched.setIndex,
         repsMax: exercise.repsMax,
+        repsMin: exercise.repsMin,
         trackingMode: exercise.trackingMode,
-        automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+        automatedProgressionEnabled: progressionOn,
         nowMs: options.nowMs ?? Date.now(),
         cautionArea,
         fatigueSignal: options.fatigueSignal,
@@ -661,7 +813,7 @@ function resolveHistoricalSetDraft(
         repsMin: exercise.repsMin,
         targetSets: exercise.sets,
         trackingMode: exercise.trackingMode,
-        automatedProgressionEnabled: options.automatedProgressionEnabled ?? false,
+        automatedProgressionEnabled: progressionOn,
         nowMs: options.nowMs ?? Date.now(),
         cautionArea,
       });
@@ -678,11 +830,18 @@ function resolveHistoricalSetDraft(
     heldForCautionArea: (heldForCautionArea ?? repsResolution.heldForCautionArea) ?? undefined,
     // This slot's own history — the ordinary case, nothing to explain.
     prefilledFromPerformedAt: undefined,
+    // A raise, a lowered target when the newest session fell short, or the
+    // floor a held bodyweight lift proved (above the template, so never read
+    // as lowered): whichever differs from the template. The last two cannot
+    // both — one is under the programme's reps, the other over its target.
+    // Without the AUTO arrow, which only a raise sets (autoProgressedFromReps).
     plannedTargetReps: repsResolution.progressed
       ? repsResolution.targetReps
       : missedReps
         ? missedReps.targetReps
-        : undefined,
+        : repsResolution.targetReps !== exercise.repsMax
+          ? repsResolution.targetReps
+          : heldSecondsTarget(exercise, matched.reps, progressionOn),
     autoProgressedFromReps: repsResolution.fromReps ?? undefined,
     rampTargetReps: rampTarget ?? undefined,
   };
@@ -728,7 +887,16 @@ function materializeExercise(
       rampTargetReps: resolved.rampTargetReps,
       status: 'pending',
       edited: false,
-      ...(typeof exercise.programmeSets === 'number' ? { programmeSets: exercise.programmeSets } : {}),
+      // The programme's count on every set, not only a lighter session's: a
+      // set taken off with "Remove set" otherwise lowered it, and "Last time"
+      // and a swap read last time's first set as a warm-up the opened sets
+      // did not have (hunt, 2026-10-11).
+      programmeSets: exercise.programmeSets ?? exercise.sets,
+      // A lighter session: the count it asked for, filed as the entry's
+      // plannedSets (see lighterSessionPlannedSets).
+      ...(typeof exercise.programmeSets === 'number' && exercise.sets < exercise.programmeSets
+        ? { plannedSets: exercise.sets }
+        : {}),
     };
   });
 
@@ -820,6 +988,7 @@ function materializeWorkoutSessionFromTemplate(
     pausedMs: 0,
     pausedAt: null,
     activePlanMode: template.defaultScheduleMode,
+    progressionOn: options.automatedProgressionEnabled ?? false,
     exercises,
     restTimer: createInitialTimer(),
     ui: {
@@ -1152,7 +1321,7 @@ function resolveDraftReps(set: WorkoutSetInstance) {
  * was kept (break round 2026-09-28).
  */
 export function canCompleteSet(
-  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'exerciseName'>,
+  exercise: Pick<WorkoutExerciseInstance, 'trackingMode' | 'exerciseName'> & { substitutionGroup?: string | null },
   set: WorkoutSetInstance,
   unitPreference: 'kg' | 'lb',
 ): boolean {
@@ -1164,7 +1333,9 @@ export function canCompleteSet(
   // An interval work bout is logged by the player with no load: a treadmill
   // speed is not a weight. Its catalog rows are `reps_first`, so the load
   // rule refused every bout — eight sprints ran, and none of them was kept.
-  const unloaded = isUnloadedTrackingMode(exercise.trackingMode) || parseIntervalScheme(exercise.exerciseName) !== null;
+  // Nor is a rowing machine's 500 m interval, whose group says what its name
+  // does not (isFixedDoseExercise): it demanded a load (hunt, 2026-10-11).
+  const unloaded = isUnloadedTrackingMode(exercise.trackingMode) || isFixedDoseExercise(exercise);
   if (!unloaded && (loadKg === null || loadKg === undefined)) {
     return false;
   }
@@ -2100,6 +2271,11 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
           repsMin: exercise.sets[0]?.plannedRepsMin ?? 0,
           repsMax: exercise.sets[0]?.plannedRepsMax ?? 0,
         };
+        // And what the start decided for the sets still ahead, which the
+        // re-plan below drops: picked back, the programme's lift gets it back.
+        exercise.programmedSetPlans = exercise.sets
+          .filter((set) => set.status === 'pending')
+          .map(programmedSetPlanOf);
       }
       exercise.sourceExerciseName = exercise.sourceExerciseName ?? exercise.exerciseName;
       exercise.exerciseName = action.payload.exerciseName;
@@ -2168,8 +2344,20 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
         }
         exercise.warmups = undefined;
       }
+      // The programme's own lift picked back: the start's plan for each set
+      // still ahead, as the gate decided it — not a re-plan by name, which
+      // dropped an earned raise and badged the slot's own weight borrowed.
+      const restoring = isSameLiftName(action.payload.exerciseName, exercise.sourceExerciseName)
+        ? exercise.programmedSetPlans
+        : undefined;
       exercise.sets.forEach((set) => {
-        if (set.status === 'pending') {
+        if (set.status !== 'pending') {
+          return;
+        }
+        const plan = restoring?.find((item) => item.setIndex === set.setIndex);
+        if (plan) {
+          restoreProgrammedSetPlan(set, plan);
+        } else {
           replanSetForCurrentLift(exercise, set, swappedInEntry, action.payload.unitPreference);
         }
       });
@@ -2452,7 +2640,7 @@ function cloneSession(session: WorkoutSessionRuntime) {
 /**
  * The reps a lift's sets were asked for when the app lowered them below the
  * programme's floor, read off the first set logged as that lift. Nothing for
- * an ordinary session or a bodyweight lift.
+ * an ordinary session.
  *
  * Read off the sets, not off whether the lift was swapped in: a lift swapped
  * on Home is materialized from its own history and can be given a lowered
@@ -2468,6 +2656,21 @@ function loweredTargetOf(segment: { sets: WorkoutSetInstance[] }) {
     return {};
   }
   return { targetReps: target };
+}
+
+/**
+ * The mode and rep range a lift's sets were asked for, filed with its entry so
+ * a later programme edit can tell its history from the slot's new dose
+ * (exerciseHistoryLookup entryMatchesDose). Off a set logged as that lift —
+ * the sets still ahead of a swap are converted to the next lift's dose — else
+ * its first set.
+ */
+function doseOf(segment: { trackingMode: WorkoutTrackingMode; sets: WorkoutSetInstance[] }): { dose?: ProgrammedDose } {
+  const asked = segment.sets.find((set) => set.status === 'completed') ?? segment.sets[0];
+  if (!asked || !Number.isFinite(asked.plannedRepsMin) || !Number.isFinite(asked.plannedRepsMax)) {
+    return {};
+  }
+  return { dose: { trackingMode: segment.trackingMode, repsMin: asked.plannedRepsMin, repsMax: asked.plannedRepsMax } };
 }
 
 /**
@@ -2582,21 +2785,35 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
       exerciseName: segment.exerciseName,
       substitutionGroup: exercise.substitutionGroup,
       performedAt,
+      // When the session started: the gap before it ends there, as the start
+      // read it (lib/progressionGate), not at its finish (hunt, 2026-10-11).
+      startedAt: session.startedAt,
       sessionId: session.sessionId,
+      // Numbered as done, 0, 1, 2 … in set order: a set taken back and not
+      // redone left a gap (0 and 2), and the next session read the last set
+      // for both set 2 and set 3 (hunt, 2026-10-11).
       sets: segment.sets
         .filter((set) => set.status === 'completed' && typeof set.actualLoadKg === 'number' && typeof set.actualReps === 'number')
-        .map((set) => ({
-          setIndex: set.setIndex,
+        .sort((left, right) => left.setIndex - right.setIndex)
+        .map((set, ordinal) => ({
+          setIndex: ordinal,
           loadKg: set.actualLoadKg ?? 0,
           reps: set.actualReps ?? 0,
           completedAt: set.completedAt ?? performedAt,
           effort: set.effort ?? null,
+          // A set the reader added is past the programme's count: next time it
+          // neither makes the programme's sets read as warm-ups nor stands in
+          // for one of them (lib/warmupSets toWorkingHistoryEntry). Only when
+          // set, so every other filed set keeps the shape it always had.
+          ...(set.addedMidSession === true ? { addedMidSession: true } : {}),
         })),
       skipped: segment.current && exercise.status === 'skipped',
       swappedFrom: segment.swappedFrom ?? undefined,
       // The lowered target this session asked for, if it asked for one, so
       // the next can ask one more (lib/progressionGate resolveMissedRepsTarget).
       ...loweredTargetOf(segment),
+      ...lighterSessionPlannedSets(exercise.sets),
+      ...doseOf(segment),
       // Warm-ups come before the first working set, so they belong to the lift
       // the slot started as: the first segment.
       ...(segmentIndex === 0 && warmups.length > 0 ? { warmups } : {}),
@@ -2605,8 +2822,10 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
     // has nothing to file. Filed, it wrote an entry with no sets every time,
     // and ten finishes with an accessory left untouched pushed its last real
     // session out of the cap — it opened blank, with no "Last time" (hunt,
-    // 2026-10-09). A skip is a decision the progression gate reads, and a
-    // warm-up was done, so those stay.
+    // 2026-10-09). A skipped lift is filed with no sets for the history's
+    // sake (History, the cap, "Last time" see the decision); the progression
+    // gate looks past it to the session before (owner, Q8 2026-10-11). A
+    // warm-up was done, so it stays too.
     const entries = filed.filter((entry) => entry.sets.length > 0 || entry.skipped || entry.warmups !== undefined);
     if (entries.length === 0) {
       return;
