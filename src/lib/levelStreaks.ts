@@ -20,9 +20,9 @@ import type { MotionBar } from '../components/vinhaMotion';
  * tempo.
  *
  * Coordinates are inside the 280 × 140 logo box, not the screen canvas, so `y`
- * is used raw here rather than through `scaleY`. Delays stay negative for the
- * same reason as `DRIFT`: every bar is already mid-flight on the first paint,
- * so switching level never shows an empty box filling in.
+ * is used raw here rather than through `scaleY`. Delays stay negative so every
+ * bar is already mid-flight on the first paint, and switching level never
+ * shows an empty box filling in.
  */
 export const LEVEL_STREAKS: MotionBar[][] = [
   [

@@ -913,7 +913,7 @@ const LEVEL_FIELD_WIDTH = 280;
  *
  * Bounded to its parent (`overflow: hidden` on the wrap) so bars appear from
  * the left edge of the box rather than the screen. Reduced motion drops the
- * layer, like `AmbientDrift`: a row of parked bars is stranger than none.
+ * layer: a row of parked bars is stranger than none.
  */
 function LevelStreaks({ levelIndex }: { levelIndex: number }) {
   const { C, styles } = useOnboardingPalette();
