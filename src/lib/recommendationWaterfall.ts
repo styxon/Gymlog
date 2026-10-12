@@ -140,7 +140,7 @@ export function pickClosestWithPenalty(
       && input.goal !== 'run_mobility'
       && definition.familyId !== 'full_body_minimal'
       && definition.familyId !== 'joint_friendly'
-      // WALK and HOME Easy are mat-and-pavement weeks; over 41 they are the
+      // VITAL Walk and VITAL Home are mat-and-pavement weeks; over 41 they are the
       // answer the age rule looks for, gym card or not (owner, 2026-10-12).
       && !(definition.familyId === 'low_impact' && input.ageRange === '41_plus')
     ) {
@@ -355,7 +355,7 @@ export function selectWaterfallDecision(input: RecommendationInput): Recommendat
 }
 
 /**
- * WALK leads for a beginner over 41 who wants general fitness and said
+ * VITAL Walk leads for a beginner over 41 who wants general fitness and said
  * nothing more (owner, 2026-10-12): the catalogue had no walking week, and
  * this is the reader it was written for. The pick the answers made becomes
  * the second card, so the lifting week is one tap away.
@@ -385,7 +385,7 @@ function walkFirst(
   }
   if (byAnswers.primaryProgramId === WALK_PROGRAM_ID) {
     // The lane chose it already; the rule still owns it, so the tailoring
-    // swap does not trade it for HOME Easy (recommendPrograms).
+    // swap does not trade it for VITAL Home (recommendPrograms).
     const second = byAnswers.alternativeProgramId ? byId(byAnswers.alternativeProgramId) : null;
     return decision('age_low_impact', walk, second, 'wf.age.walkPrimary', byAnswers.whyAlternative);
   }

@@ -518,7 +518,7 @@ function ageFittingSecondCard(
   // A week written for the goal before one that lists it as a backup, as
   // everywhere the goal outranks the age. By penalty alone the owned-load
   // rule handed a general-fitness reader over 41 with dumbbells Home Dumbbell
-  // Upper/Lower, a muscle week without a minute of cardio, over WALK.
+  // Upper/Lower, a muscle week without a minute of cardio, over VITAL Walk.
   const keeping = pool.filter((definition) => !ageCardTakesAwayAnAnswer(definition, featured, alternatives[0], input));
   const bestTier = Math.max(0, ...keeping.map((definition) => goalTier(definition, input)));
   const best = pickClosestWithPenalty(keeping.filter((definition) => goalTier(definition, input) === bestTier), input)?.definition ?? null;
@@ -532,10 +532,10 @@ function ageFittingSecondCard(
  * is not. The age adds a card beside the answers, never instead of them
  * (statedAnswersKey: the answers outrank the age). Without this a reader over
  * 41 with a pull-up bar who wants lean and athletic, featured a muscle week,
- * lost Fat Burn HIIT to WALK, which lists the goal only as a backup: both
+ * lost Fat Burn HIIT to VITAL Walk, which lists the goal only as a backup: both
  * cards missed the goal (recommendation matrix: 28 of 5,760 answers).
  *
- * The same test for the reader's gear (a card that uses it, replaced by WALK,
+ * The same test for the reader's gear (a card that uses it, replaced by VITAL Walk,
  * which uses none) would also have held, but it took the fitting card from
  * 72 of the 5,040 answers over 41 the owner's acceptance covers (RUN and
  * Runner's Strength for running with dumbbells), so the gear stays the
@@ -635,8 +635,8 @@ export function recommendPrograms(
   const waterfallDecision = selectWaterfallDecision(input);
   let waterfallPrimary = scoreRankedCandidates.find((candidate) => candidate.programId === waterfallDecision.primaryProgramId) ?? null;
   const waterfallPick = waterfallPrimary;
-  // Not over the age rule's WALK: that pick is the programme itself, and the
-  // tailoring order handed its family's other week (HOME Easy) the card.
+  // Not over the age rule's VITAL Walk: that pick is the programme itself, and the
+  // tailoring order handed its family's other week (VITAL Home) the card.
   if (waterfallPrimary && waterfallDecision.rule !== 'age_low_impact' && hasMeaningfulTailoringPreferences(tailoringPreferences)) {
     // Tailoring may swap between variants of the same family + weekly rhythm
     // (e.g. the two 4-day STRONG Pro templates), but never change the cell itself.

@@ -38,7 +38,7 @@ const FOCUS_FI: Record<string, string> = {
   'shoulders & back (width)': 'Olkapäät ja selkä (leveys)',
   'skills & core': 'Taidot ja keskivartalo',
   'upper body (supported)': 'Ylävartalo (tuettuna)',
-  // WALK, STRONG Guided and HOME Easy (2026-10-12).
+  // VITAL Walk, STRONG Guided and VITAL Home (2026-10-12).
   'brisk walk & strength': 'Reipas kävely ja voima',
   'incline walk & balance': 'Ylämäkikävely ja tasapaino',
   'walk & mobility': 'Kävely ja liikkuvuus',
@@ -48,13 +48,13 @@ const FOCUS_FI: Record<string, string> = {
   'lower & push': 'Alavartalo ja työntö',
   'upper & balance': 'Ylävartalo ja tasapaino',
   'full body & walk': 'Koko keho ja kävely',
-  // SHRED Guided and SHRED Home Easy (2026-10-12).
+  // SHRED Guided and VITAL Burn (2026-10-12).
   'circuit & bike intervals': 'Piiri ja pyöräintervallit',
   'circuit & rower intervals': 'Piiri ja soutuintervallit',
   'circuit & cross-trainer': 'Piiri ja crosstrainer',
   'circuit & brisk walk': 'Piiri ja reipas kävely',
   'circuit & hill walk': 'Piiri ja mäkikävely',
-  // STRONG Home (2026-10-12). "Press" alone is the overhead press, and this day's is on the floor.
+  // VITAL Strength (2026-10-12). "Press" alone is the overhead press, and this day's is on the floor.
   'squat & press': 'Kyykky ja työntö',
   'hinge & pull': 'Saranaliike ja veto',
 
@@ -161,7 +161,7 @@ const FOCUS_FI: Record<string, string> = {
   'long walk add-on': 'Lisäpäivä: pitkä kävely',
   'easy ride add-on': 'Lisäpäivä: kevyt pyöräily',
   'long ride add-on': 'Lisäpäivä: pitkä pyöräily',
-  // WALK's and HOME Easy's own optional days (2026-10-12).
+  // VITAL Walk's and VITAL Home's own optional days (2026-10-12).
   'hill walk add-on': 'Lisäpäivä: mäkikävely',
   'bodyweight volume day': 'Kehonpainon volyymipäivä',
   'conditioning + mobility day': 'Kunto ja liikkuvuus',

@@ -484,7 +484,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   // ── The age gaps (owner, 2026-10-12) ────────────────────────────────────
   // Last on purpose: a waterfall tie keeps the programme defined first, so
   // these never take a pick the rest of the catalog already rated equal for
-  // a reader the age rule is not about. WALK and HOME Easy are offered only
+  // a reader the age rule is not about. VITAL Walk and VITAL Home are offered only
   // to a reader over 41, STRONG Guided only at 16-18 and over 41
   // (ageGateAllows).
   defineProgram('tpl_3_day_walk_mobility_v1', {
@@ -518,7 +518,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     familyId: 'low_impact',
     // Muscle a backup since 2026-10-12 (owner): close to half of the week is
     // walking, and listed as written for muscle it led the cards of a reader
-    // over 41 who asked for muscle at home. HUGE Home is that week now.
+    // over 41 who asked for muscle at home. VITAL Muscle is that week now.
     supportedGoals: ['general_fitness'],
     backupGoals: ['muscle', 'strength'],
     supportedLevels: ['beginner', 'advanced'],
@@ -530,11 +530,11 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     lowFriction: true,
     jointFriendly: true,
   }),
-  // STRONG Home and HUGE Bodyweight (owner, 2026-10-12): the two gear lanes the
+  // VITAL Strength and VITAL Body (owner, 2026-10-12): the two gear lanes the
   // age rule still had no week for over 41, from an audit of 26,460 answers.
-  // Both go to a reader over 41 only (ageGateAllows). STRONG Home is STRONG
+  // Both go to a reader over 41 only (ageGateAllows). VITAL Strength is STRONG
   // Guided's week for a pair of dumbbells: sets of six on the anchor lifts, no
-  // barbell, no jumps. HUGE Bodyweight is HUGE Home's week with nothing to
+  // barbell, no jumps. VITAL Body is VITAL Muscle's week with nothing to
   // hold. Neither lists general fitness: no minute of either is cardio.
   defineProgram('tpl_3_day_strong_home_v1', {
     familyId: 'strength_base',
@@ -564,12 +564,12 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   // the conditioning written as intervals and walking blocks, no jump in either
   // and no barbell. SHRED Guided goes to the two bands the age rule is about,
   // as STRONG Guided does (the gym's machines, cables and bike, rower or
-  // cross-trainer; it fills the 16-18 gym's lean gap too); SHRED Home Easy over
+  // cross-trainer; it fills the 16-18 gym's lean gap too); VITAL Burn over
   // 41 only (a mat, a table and pavement). The athletic_recomp family, as
   // SHRED and Fat Burn HIIT: this is the week a lean answer opens, so it needs
   // the conditioning tag the lean lane filters on, not the low_impact family
   // that only the age rule reaches. Lean and athletic is the goal they are
-  // written for; general fitness is left to WALK and HOME Easy.
+  // written for; general fitness is left to VITAL Walk and VITAL Home.
   defineProgram('tpl_3_day_shred_guided_v1', {
     familyId: 'athletic_recomp',
     supportedGoals: ['lean_athletic'],
@@ -595,7 +595,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     lowFriction: true,
     jointFriendly: true,
   }),
-  // STRONG Bodyweight (owner, 2026-10-12): strength with no equipment, the last
+  // VITAL Base (owner, 2026-10-12): strength with no equipment, the last
   // gap in the audit of 26,460 answers over 41 (1,260 answers, no card fitting).
   // Over 41 only (ageGateAllows). Sets of six on hard versions of bodyweight
   // lifts (rear-foot-elevated split squat, one-leg hinge, feet-up push-up,
@@ -616,7 +616,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
   // to 15 reps, at the gym on machines and cables, at home on dumbbells alone.
   // HUGE Guided goes to the two bands the age rule is about, as STRONG Guided
-  // does; HUGE Home over 41 only (ageGateAllows). Strength as a backup (ten
+  // does; VITAL Muscle over 41 only (ageGateAllows). Strength as a backup (ten
   // to fifteen reps build some); not general fitness: a week without cardio
   // is outside the 30-50 % the owner set for that goal.
   defineProgram('tpl_3_day_huge_guided_v1', {
@@ -706,14 +706,14 @@ export function readerOwnsLoad(input: Pick<AgeRuleReader, 'equipment' | 'availab
 }
 
 /**
- * A walking week (WALK, HOME Easy: 42-45 % of the time walking) is never the
+ * A walking week (VITAL Walk, VITAL Home: 42-45 % of the time walking) is never the
  * answer to a lifting goal for a reader who can lift (owner, 2026-10-12).
- * HOME Easy as muscle's own week led the cards of a reader over 41 with
+ * VITAL Home as muscle's own week led the cards of a reader over 41 with
  * dumbbells, and a walking week was the age rule's second card for one who
  * asked for strength. Without a weight it may still be the second card,
  * which over 41 must be a lower-impact one (ageRuleGuaranteesCard); beside
  * HOME Starter it is the only one that lists the goal. Never the featured
- * one: HOME Easy lists muscle and strength only as backups, so the answers
+ * one: VITAL Home lists muscle and strength only as backups, so the answers
  * never lead with it.
  */
 function walkingWeekAnswersLiftingGoal(input: Pick<AgeRuleReader, 'goal' | 'equipment' | 'availableEquipment'>): boolean {
@@ -756,12 +756,12 @@ export function ageRuleGuaranteesCard(input: Pick<AgeRuleReader, 'ageRange' | 'e
 /**
  * Whether the setup may offer this programme to the reader at all.
  *
- * The lower-impact weeks (WALK, HOME Easy) go to a reader over 41, the way a
+ * The lower-impact weeks (VITAL Walk, VITAL Home) go to a reader over 41, the way a
  * week of stretching goes only to a reader who asked for one
  * (readerAskedForRecovery). The owner's rule also let a reader who asked for
  * mobility or recovery have them at any age; that moved the two cards of
  * 5,229 of 79,380 answers at 19-40 (run and mobility at home: RUN + Fat Burn
- * HIIT became RUN + WALK), against the same day's acceptance that those
+ * HIIT became RUN + VITAL Walk), against the same day's acceptance that those
  * bands do not move. The acceptance won; widening this is one line.
  *
  * STRONG Guided goes to the two bands the age rule is about. It is a sound
@@ -770,7 +770,7 @@ export function ageRuleGuaranteesCard(input: Pick<AgeRuleReader, 'ageRange' | 'e
  * their answers had chosen (owner's acceptance, 2026-10-12: the offers of
  * 19-40 do not move). HUGE Guided, its muscle counterpart, the same.
  *
- * HUGE Home goes to a reader over 41 only. At 16-18 the age rule asks for
+ * VITAL Muscle goes to a reader over 41 only. At 16-18 the age rule asks for
  * machines, which a dumbbell week at home has none of.
  *
  * Over 41, the walking weeks also stay away from a lifting goal when the

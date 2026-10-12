@@ -2,19 +2,19 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 /**
- * STRONG Bodyweight, the strength answer over 41 with no equipment at all
+ * VITAL Base, the strength answer over 41 with no equipment at all
  * (owner, 2026-10-12).
  *
- * The audit of 26,460 answers over 41 left one gap after STRONG Home and HUGE
+ * The audit of 26,460 answers over 41 left one gap after VITAL Strength and HUGE
  * Bodyweight: strength with nothing to hold, 1,260 answers with no card
- * fitting. STRONG Bodyweight is that week: three full-body days of 40 minutes,
+ * fitting. VITAL Base is that week: three full-body days of 40 minutes,
  * sets of six on hard versions of bodyweight lifts (rear foot raised, one leg,
  * feet up, a table row), support lifts at eight, no jumps, no weights, legs on
  * every day, and at least as much pulling as pressing.
  *
  * Checked here: the week is what the owner asked for (gear, rep numbers, no
  * jumps, legs every day, pull against push, the card's minutes, the bar it
- * reads as, and that it is not a copy of HUGE Bodyweight); the age rule puts
+ * reads as, and that it is not a copy of VITAL Body); the age rule puts
  * it on a card for a reader over 41 with no equipment; no reader under 41 is
  * ever offered it; and the copy is in both languages.
  */
@@ -90,7 +90,7 @@ const JUMPING = /jump|hop\b|bound|burpee|skater|plyo/i;
 
 module.exports = [
   {
-    name: 'STRONG Bodyweight: three full-body days of 40 minutes, no equipment, no jumps, legs every day, pulling as much as pressing',
+    name: 'VITAL Base: three full-body days of 40 minutes, no equipment, no jumps, legs every day, pulling as much as pressing',
     run() {
       const template = getWorkoutTemplateById(STRONG_BODYWEIGHT);
       assert.ok(template);
@@ -131,7 +131,7 @@ module.exports = [
     },
   },
   {
-    name: 'STRONG Bodyweight: anchors at six reps on hard versions, the rest at six to eight, and the bar reads mostly Strength',
+    name: 'VITAL Base: anchors at six reps on hard versions, the rest at six to eight, and the bar reads mostly Strength',
     run() {
       const template = getWorkoutTemplateById(STRONG_BODYWEIGHT);
       for (const exercise of exercisesOf(STRONG_BODYWEIGHT)) {
@@ -157,7 +157,7 @@ module.exports = [
     },
   },
   {
-    name: 'STRONG Bodyweight is its own week, not HUGE Bodyweight with the numbers turned down',
+    name: 'VITAL Base is its own week, not VITAL Body with the numbers turned down',
     run() {
       const strong = getWorkoutTemplateById(STRONG_BODYWEIGHT);
       const huge = getWorkoutTemplateById(HUGE_BODYWEIGHT);
@@ -171,14 +171,14 @@ module.exports = [
       const hugeNames = new Set(names(HUGE_BODYWEIGHT));
       const shared = names(STRONG_BODYWEIGHT).filter((name) => hugeNames.has(name));
       const own = [...new Set(names(STRONG_BODYWEIGHT))].filter((name) => !hugeNames.has(name));
-      // The harder versions are the week's own: not one of them is in HUGE Bodyweight.
+      // The harder versions are the week's own: not one of them is in VITAL Body.
       assert.deepEqual(own.sort(), ['Bulgarian Split Squat', 'Decline Push-Up', 'Pike Push-Up'], `shares ${[...new Set(shared)].join(', ')}`);
       assert.ok(!names(STRONG_BODYWEIGHT).includes('Incline Push-Up'));
       assert.ok(!names(STRONG_BODYWEIGHT).includes('Bodyweight Squat'));
     },
   },
   {
-    name: 'age band: over 41, strength with no equipment has STRONG Bodyweight on a card at every day count, beginner and advanced',
+    name: 'age band: over 41, strength with no equipment has VITAL Base on a card at every day count, beginner and advanced',
     run() {
       for (const gender of GENDERS) for (const card of ['homeNone', 'bodyweight']) {
         for (const days of DAYS) for (const level of ['beginner', 'advanced']) {
@@ -198,7 +198,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: STRONG Bodyweight is only ever a strength answer, and only for a reader with no weights to hold',
+    name: 'age band: VITAL Base is only ever a strength answer, and only for a reader with no weights to hold',
     run() {
       for (const card of Object.keys(CARDS)) for (const goal of GOALS) for (const level of ['beginner', 'advanced', 'pro']) for (const days of DAYS) {
         const ids = offered({ card, goal, level, days });
@@ -208,7 +208,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: nobody under 41 is offered STRONG Bodyweight, at any age but over 41, for any answer',
+    name: 'age band: nobody under 41 is offered VITAL Base, at any age but over 41, for any answer',
     run() {
       let cells = 0;
       for (const ageRange of ['unspecified', '18', '19_25', '26_30', '31_40']) {
@@ -234,7 +234,7 @@ module.exports = [
     },
   },
   {
-    name: 'STRONG Bodyweight: named, tagged, collected and written up in English and Finnish',
+    name: 'VITAL Base: named, tagged, collected and written up in English and Finnish',
     run() {
       const template = getWorkoutTemplateById(STRONG_BODYWEIGHT);
       const presentation = getReadyTemplatePresentation(template, 'en');

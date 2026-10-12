@@ -318,26 +318,26 @@ module.exports = [
       // High Knees, which the hips filter does not touch.
       //
       // Hips went back to 91 later the same day, through content and not a
-      // pattern: WALK's Kneeling Hip Flexor and Standing Hip Abduction are
+      // pattern: VITAL Walk's Kneeling Hip Flexor and Standing Hip Abduction are
       // hip-avoid rows (+2), and Joint-Friendly Strength gave its Standing
       // Hip Abduction to a bike finisher (-1). No day went thin.
       //
       // Lower back went to 127 the same day, content again: HUGE Guided and
-      // HUGE Home hinge with a stiff-legged dumbbell deadlift (three rows), a
+      // VITAL Muscle hinge with a stiff-legged dumbbell deadlift (three rows), a
       // cable pull-through and a bent-over row, all lower-back-avoid rows. Each
       // of their days keeps five lifts; no day went thin.
       //
       // Hips went to 92 and lower back to 131 the same day, content again:
-      // HUGE Bodyweight's Hip Thrust (Bodyweight) is a hip-avoid row (+1 hips),
-      // and its Single-Leg RDL (+1) and STRONG Home's two stiff-legged
+      // VITAL Body's Hip Thrust (Bodyweight) is a hip-avoid row (+1 hips),
+      // and its Single-Leg RDL (+1) and VITAL Strength's two stiff-legged
       // dumbbell deadlifts and bent-over row (+3) are lower-back-avoid rows.
-      // STRONG Home's hinge day keeps three lifts, not fewer; no day went thin.
+      // VITAL Strength's hinge day keeps three lifts, not fewer; no day went thin.
       //
       // And to 133 the same day: SHRED Guided pulls through a cable on two of
       // its days, a lower-back-avoid row each. Its days keep four lifts or
       // more; none went thin.
       //
-      // Hips went to 94 and lower back to 134 with STRONG Bodyweight, content
+      // Hips went to 94 and lower back to 134 with VITAL Base, content
       // again: its Single Leg Glute Bridge on two days is a hip-avoid row (+2),
       // and its Single-Leg RDL (+1) is a lower-back-avoid row. Every day keeps
       // at least four lifts; no day went thin.

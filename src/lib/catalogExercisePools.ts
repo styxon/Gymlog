@@ -731,7 +731,7 @@ export const SUPPLEMENTAL_DAY_POOL = {
     bodyweight: ['Trail Running/Walking', 'All Fours Quad Stretch'],
     loaded: ['Trail Running/Walking', 'All Fours Quad Stretch'],
   },
-  // WALK's and HOME Easy's optional days walk, as RUN's run (2026-10-12).
+  // VITAL Walk's and VITAL Home's optional days walk, as RUN's run (2026-10-12).
   easyWalk: {
     bodyweight: ['Brisk Walk Blocks', 'Ankle Circles'],
     loaded: ['Brisk Walk Blocks', 'Ankle Circles'],

@@ -11,7 +11,7 @@ export type TemplateFamilyId =
   | 'athletic_recomp'
   | 'low_equipment'
   | 'joint_friendly'
-  // Walking, light strength and mobility (WALK, HOME Easy; 2026-10-12). Not
+  // Walking, light strength and mobility (VITAL Walk, VITAL Home; 2026-10-12). Not
   // the joint-friendly family: that family's lanes are the ones a mobility
   // answer opens, and it counts a programme without 'balanced' as a week of
   // stretching (isRecoveryOnlyProgram). These lift and walk, and reach a
@@ -219,7 +219,7 @@ export type RecommendationWaterfallRule =
   | 'strength'
   | 'general'
   | 'fallback'
-  // WALK first for a plain general-fitness beginner over 41 (2026-10-12).
+  // VITAL Walk first for a plain general-fitness beginner over 41 (2026-10-12).
   | 'age_low_impact';
 
 export interface RecommendationWaterfallDecision {

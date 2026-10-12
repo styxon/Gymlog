@@ -335,7 +335,7 @@ module.exports = [
       // And by five more, every preset, the same day: SHRED Guided, a gym week,
       // has two cable pull-throughs, a seated machine row, a rowing-machine
       // interval block and a cross-trainer block that a dumbbell reader does
-      // not have. SHRED Home Easy removes nothing.
+      // not have. VITAL Burn removes nothing.
       const BASELINE = {
         db: { gear: ['Dumbbells'], removed: 113, pressless: 26 },
         bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 86, pressless: 26 },

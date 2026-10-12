@@ -23,7 +23,7 @@ import { I18nKey } from './i18n';
  * precomputed here and painted with an SVG LinearGradient.
  */
 
-export type ProgramFamily = 'HOME' | 'STRONG' | 'HUGE' | 'RESET' | 'FIT' | 'SHRED' | 'RUN' | 'FOCUS' | 'WALK';
+export type ProgramFamily = 'HOME' | 'STRONG' | 'HUGE' | 'RESET' | 'FIT' | 'SHRED' | 'RUN' | 'FOCUS' | 'VITAL';
 
 export interface ProgramFamilyIdentity {
   family: ProgramFamily;
@@ -113,12 +113,12 @@ const IDENTITIES: Record<ProgramFamily, Omit<ProgramFamilyIdentity, 'family'>> =
   },
   // hue 90 — new family (2026-10-12), every stop computed as the three above:
   // ochre, apart from HOME's and SHRED's oranges and RUN's green.
-  WALK: {
+  VITAL: {
     cover: ['#C39900', '#814C00'],
     tile: ['#C4A032', '#986900'],
     hero: ['#A47E00', '#542F00'],
     motif: 'M8 3a2 3 0 100 6 2 3 0 000-6z M7 11h2 M16 12a2 3 0 100 6 2 3 0 000-6z M15 20h2',
-    goalKey: 'catalog.goal.walk',
+    goalKey: 'catalog.goal.vital',
   },
 };
 

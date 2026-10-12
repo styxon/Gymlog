@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 /**
- * SHRED Guided and SHRED Home Easy, and the lean-and-athletic answer over 41
+ * SHRED Guided and VITAL Burn, and the lean-and-athletic answer over 41
  * and at 16-18 (owner, 2026-10-12).
  *
  * Over 41 the lean answer was SHRED (a barbell squat, burpees and treadmill
@@ -52,7 +52,7 @@ const CARDS = {
 const GYM_CARDS = ['gym', 'gymNoBarbell'];
 // The home cards without a dumbbell. A reader with dumbbells is handed the
 // week that uses them (Fat Burn HIIT, Home Dumbbell Upper/Lower) before the age
-// is asked: SHRED Home Easy uses no weight (see the last test).
+// is asked: VITAL Burn uses no weight (see the last test).
 const HOME_CARDS = ['homeNone', 'bodyweight', 'bands', 'kettlebells', 'pullUpBar', 'bandsAndBar', 'homeBarbell'];
 const GOALS = ['strength', 'muscle', 'lean_athletic', 'general_fitness', 'general', 'run_mobility'];
 const DAYS = [2, 3, 4, 5, 6];
@@ -89,7 +89,7 @@ const JUMPING = /jump|\bhop|bound|burpee|climber|plyo|pogo|skater|high knee|jack
 
 module.exports = [
   {
-    name: 'SHRED Guided and SHRED Home Easy: three 40-minute full-body days, no jump, no barbell, conditioning written as intervals or blocks',
+    name: 'SHRED Guided and VITAL Burn: three 40-minute full-body days, no jump, no barbell, conditioning written as intervals or blocks',
     run() {
       for (const id of [GUIDED, HOME]) {
         const template = getWorkoutTemplateById(id);
@@ -126,11 +126,11 @@ module.exports = [
       const guided = conditioningPct(GUIDED);
       const home = conditioningPct(HOME);
       assert.ok(guided >= 25 && guided <= 35, `SHRED Guided: ${guided} % conditioning`);
-      assert.ok(home >= 30 && home <= 40, `SHRED Home Easy: ${home} % conditioning`);
+      assert.ok(home >= 30 && home <= 40, `VITAL Burn: ${home} % conditioning`);
     },
   },
   {
-    name: 'SHRED Guided is lifted on machines and cables with a bike, a rower and a cross-trainer; SHRED Home Easy needs no equipment',
+    name: 'SHRED Guided is lifted on machines and cables with a bike, a rower and a cross-trainer; VITAL Burn needs no equipment',
     run() {
       const guidedNames = getWorkoutTemplateById(GUIDED).sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
       assert.ok(guidedNames.includes('Bike HIIT (45s sprint / 15s rest)'));
@@ -148,14 +148,14 @@ module.exports = [
       }
 
       const homeNames = getWorkoutTemplateById(HOME).sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
-      assert.deepEqual(resolveProgramEquipment(homeNames), [], 'SHRED Home Easy asks for nothing the reader has to own');
+      assert.deepEqual(resolveProgramEquipment(homeNames), [], 'VITAL Burn asks for nothing the reader has to own');
       assert.ok(homeNames.includes('Brisk Walk Blocks') && homeNames.includes('Incline Walk Blocks'));
       assert.equal(definition(HOME).equipmentTier, 'low_equipment');
       assert.equal(definition(GUIDED).equipmentTier, 'full_gym');
     },
   },
   {
-    name: 'SHRED Guided and SHRED Home Easy: the lean family, joint-friendly, beginner and advanced; Guided machine-guided',
+    name: 'SHRED Guided and VITAL Burn: the lean family, joint-friendly, beginner and advanced; Guided machine-guided',
     run() {
       for (const id of [GUIDED, HOME]) {
         const program = definition(id);
@@ -171,7 +171,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: over 41, a lean answer at the gym is offered SHRED Guided, and at home with no dumbbell SHRED Home Easy',
+    name: 'age band: over 41, a lean answer at the gym is offered SHRED Guided, and at home with no dumbbell VITAL Burn',
     run() {
       const misses = [];
       let cells = 0;
@@ -197,7 +197,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: at 16-18 a lean answer at the gym is offered SHRED Guided, never SHRED Home Easy',
+    name: 'age band: at 16-18 a lean answer at the gym is offered SHRED Guided, never VITAL Burn',
     run() {
       const misses = [];
       for (const level of ['beginner', 'advanced']) for (const days of DAYS) for (const gender of ['unspecified', 'male', 'female']) {
@@ -213,7 +213,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: 19-40 never see SHRED Guided or SHRED Home Easy, and neither is offered for any other goal',
+    name: 'age band: 19-40 never see SHRED Guided or VITAL Burn, and neither is offered for any other goal',
     run() {
       let cells = 0;
       for (const ageRange of ['19_25', '26_30', '31_40']) for (const card of Object.keys(CARDS)) for (const level of ['beginner', 'advanced', 'pro']) {
@@ -234,10 +234,10 @@ module.exports = [
     },
   },
   {
-    name: 'age band: a reader over 41 with dumbbells is still handed the week that uses them first (SHRED Home Easy uses no weight)',
+    name: 'age band: a reader over 41 with dumbbells is still handed the week that uses them first (VITAL Burn uses no weight)',
     run() {
       // The limit the owner should know: the recommender weighs a reader's own
-      // gear before their age. SHRED Home Easy has no dumbbell in it, so a
+      // gear before their age. VITAL Burn has no dumbbell in it, so a
       // dumbbell owner over 41 keeps Fat Burn HIIT and Home Dumbbell
       // Upper/Lower. Pinned so that a change here is a decision.
       for (const card of ['dumbbells', 'dumbbellsBench']) for (const level of ['beginner', 'advanced']) for (const days of DAYS) {

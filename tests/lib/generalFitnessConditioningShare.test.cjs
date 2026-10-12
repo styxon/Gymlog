@@ -78,7 +78,7 @@ function offeredForGeneralFitness() {
   const { resolveFirstRunRecommendationWithTailoring } = lib('firstRunSetup');
   const { buildRecommendationOptionIds } = lib('recommendationPresentation');
   const offered = new Set();
-  // Over the age bands too (2026-10-12): the age rule offers WALK, HOME Easy
+  // Over the age bands too (2026-10-12): the age rule offers VITAL Walk, VITAL Home
   // and Joint-Friendly Strength over 41, and the machine weeks at 16-18, for
   // general fitness among other goals. 19-25 stands for the middle bands,
   // whose offers the age does not change (ageBandOffers).

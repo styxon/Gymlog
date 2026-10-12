@@ -181,7 +181,7 @@ module.exports = [
   {
     name: 'the age-gap programmes are reachable through the two age bands they were written for',
     run() {
-      // WALK, HOME Easy, STRONG Guided, HUGE Guided and HUGE Home are offered
+      // VITAL Walk, VITAL Home, STRONG Guided, HUGE Guided and VITAL Muscle are offered
       // only through the age rule (ageGateAllows), so a sweep at 26-30 can
       // never reach them and proves nothing. Over 41 and at 16-18 every one
       // must come up.

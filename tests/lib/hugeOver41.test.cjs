@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 /**
- * HUGE Guided and HUGE Home, and the muscle answer over 41 (owner,
+ * HUGE Guided and VITAL Muscle, and the muscle answer over 41 (owner,
  * 2026-10-12).
  *
  * Over 41 the muscle answer was HUGE Builder cut from four days to three (the
- * legs once a week, a barbell squat and bench in it), and at home HOME Easy,
+ * legs once a week, a barbell squat and bench in it), and at home VITAL Home,
  * close to half of it walking, as the featured card. The owner asked for a
  * muscle week written for that reader: these two, one for the gym and one for
  * a pair of dumbbells at home.
@@ -96,7 +96,7 @@ const PULL_GROUPS = ['horizontal_pull', 'vertical_pull', 'cable_machine_row', 'b
 
 module.exports = [
   {
-    name: 'HUGE Guided and HUGE Home: three joint-friendly full-body muscle days at 10-15 reps, pulling as much as pressing',
+    name: 'HUGE Guided and VITAL Muscle: three joint-friendly full-body muscle days at 10-15 reps, pulling as much as pressing',
     run() {
       for (const id of [GUIDED, HOME]) {
         const template = getWorkoutTemplateById(id);
@@ -126,7 +126,7 @@ module.exports = [
         assert.equal(program.jointFriendly, true, id);
         assert.deepEqual(program.supportedLevels, ['beginner', 'advanced'], id);
       }
-      // HUGE Home runs on the "Dumbbells" chip alone, HUGE Guided is lifted
+      // VITAL Muscle runs on the "Dumbbells" chip alone, HUGE Guided is lifted
       // mostly on machines and cables.
       const homeNames = getWorkoutTemplateById(HOME).sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
       assert.deepEqual(resolveProgramEquipment(homeNames).filter((item) => item !== 'Dumbbells'), []);
@@ -137,7 +137,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: over 41, the muscle answer leads with HUGE Guided at the gym and HUGE Home with dumbbells where they fit the week',
+    name: 'age band: over 41, the muscle answer leads with HUGE Guided at the gym and VITAL Muscle with dumbbells where they fit the week',
     run() {
       for (const gender of ['unspecified', 'male', 'female']) {
         // A beginner's week starts at three days (effectiveDays), so every
@@ -182,7 +182,7 @@ module.exports = [
       assert.ok(cells > 1000, `only ${cells} answers walked`);
       assert.deepEqual(misses.slice(0, 10), [], `${misses.length} of ${cells} lifting answers over 41 were handed a walking week`);
       // General fitness and lean and athletic still may: with dumbbells and
-      // no answer beyond the goal, a beginner over 41 is led by WALK.
+      // no answer beyond the goal, a beginner over 41 is led by VITAL Walk.
       assert.equal(offered({ card: 'dumbbells', goal: 'general_fitness', level: 'beginner', days: 3 })[0], 'tpl_3_day_walk_mobility_v1');
     },
   },

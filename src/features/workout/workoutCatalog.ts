@@ -35,7 +35,7 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: 'mobility_flow', allowedExerciseNames: ["World's Greatest Stretch", 'Kneeling Hip Flexor', 'Seated Floor Hamstring Stretch', 'Standing Hip Circles', 'IT Band and Glute Stretch', 'Dynamic Back Stretch', 'Intermediate Hip Flexor and Quad Stretch', 'Lying Quad Stretch', 'Legs Up the Wall', 'Ankle Mobility Drill', 'Inchworm to Push-Up'] },
   { id: 'yoga_flow', allowedExerciseNames: ['Cat Stretch', "Child's Pose", "World's Greatest Stretch", 'Standing Hip Circles', 'Standing Hamstring and Calf Stretch'] },
   { id: 'running_blocks', allowedExerciseNames: ['Easy Run Blocks', 'Tempo Run Blocks', 'Stride Finishers'] },
-  // WALK's and HOME Easy's walking (2026-10-12): the flat walk and the hill
+  // VITAL Walk's and VITAL Home's walking (2026-10-12): the flat walk and the hill
   // swap for each other, and neither for a run.
   { id: 'walking_blocks', allowedExerciseNames: ['Brisk Walk Blocks', 'Incline Walk Blocks'] },
   { id: 'bodyweight_squat_pattern', allowedExerciseNames: ['Bodyweight Squat', 'Bodyweight Walking Lunge', 'Reverse Lunge', 'Bodyweight Reverse Lunge', 'Sit-to-Stand (Chair Squat)', 'Cossack Squat', 'Shrimp Squat', 'Sissy Squat', 'Pistol Squat (each leg)'] },
@@ -1639,7 +1639,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- WALK, STRONG Guided and HOME Easy (owner, 2026-10-12) --------------
+  // --- VITAL Walk, STRONG Guided and VITAL Home (owner, 2026-10-12) --------------
   //
   // The age band changed nothing in what the pick screen offered, and two
   // answers had no fitting card to offer: a reader over 41 who wants general
@@ -1650,7 +1650,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   // an age, because the training suits anyone who picks it.
   {
     id: 'tpl_3_day_walk_mobility_v1',
-    name: 'WALK',
+    name: 'VITAL Walk',
     goalType: 'general',
     level: 'beginner',
     splitType: 'hybrid',
@@ -1742,7 +1742,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   },
   {
     id: 'tpl_3_day_home_easy_strength_v1',
-    name: 'HOME Easy',
+    name: 'VITAL Home',
     goalType: 'general',
     level: 'beginner',
     splitType: 'full_body',
@@ -1785,7 +1785,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- STRONG Home and HUGE Bodyweight (owner, 2026-10-12) ------------------
+  // --- VITAL Strength and VITAL Body (owner, 2026-10-12) ------------------
   //
   // The two weeks a reader over 41 still lacked, from an audit of 26,460
   // answers: strength with a pair of dumbbells and nothing else, and muscle
@@ -1794,12 +1794,12 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   // every day, and as much pulling as pressing. The copy names the training,
   // never an age.
   //
-  // STRONG Home lifts at six reps where a lift is an anchor (the bar reads
+  // VITAL Strength lifts at six reps where a lift is an anchor (the bar reads
   // Strength at six or fewer) and at eight for the support work, so it is not
-  // HUGE Home with a lower rep number: fewer lifts, four sets, long rests.
+  // VITAL Muscle with a lower rep number: fewer lifts, four sets, long rests.
   {
     id: 'tpl_3_day_strong_home_v1',
-    name: 'STRONG Home',
+    name: 'VITAL Strength',
     goalType: 'strength',
     level: 'beginner',
     splitType: 'full_body',
@@ -1841,7 +1841,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   },
   {
     id: 'tpl_3_day_huge_bodyweight_v1',
-    name: 'HUGE Bodyweight',
+    name: 'VITAL Body',
     goalType: 'hypertrophy',
     level: 'beginner',
     splitType: 'full_body',
@@ -1885,7 +1885,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- SHRED Guided and SHRED Home Easy (owner, 2026-10-12) ---------------
+  // --- SHRED Guided and VITAL Burn (owner, 2026-10-12) ---------------
   //
   // The fat-burn week for the reader the age rule looks after. Until these,
   // the lean-and-athletic answer over 41 was SHRED (a barbell squat, burpees
@@ -1950,7 +1950,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   },
   {
     id: 'tpl_3_day_shred_home_easy_v1',
-    name: 'SHRED Home Easy',
+    name: 'VITAL Burn',
     goalType: 'general',
     level: 'beginner',
     splitType: 'full_body',
@@ -1994,7 +1994,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- STRONG Bodyweight (owner, 2026-10-12) --------------------------------
+  // --- VITAL Base (owner, 2026-10-12) --------------------------------
   //
   // The last gap in the audit of 26,460 answers over 41: strength with no
   // equipment at all (1,260 answers, no card fitting). Three full-body days of
@@ -2004,11 +2004,11 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   // Without a load to add, a six is made heavy by the version of the lift: a
   // rear foot on a chair, one leg for the hinge and the bridge, feet up for the
   // push-up. Anchors are six reps, support lifts eight, so the week is not
-  // HUGE Bodyweight with its numbers turned down: fewer lifts, four sets, long
+  // VITAL Body with its numbers turned down: fewer lifts, four sets, long
   // rests, and a harder version each time the sets are met.
   {
     id: 'tpl_3_day_strong_bodyweight_v1',
-    name: 'STRONG Bodyweight',
+    name: 'VITAL Base',
     goalType: 'strength',
     level: 'beginner',
     splitType: 'full_body',
@@ -2049,11 +2049,11 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- HUGE Guided and HUGE Home (owner, 2026-10-12) ----------------------
+  // --- HUGE Guided and VITAL Muscle (owner, 2026-10-12) ----------------------
   //
   // A muscle week for the reader the age rule looks after over 41. Until these,
   // that reader's muscle answer was HUGE Builder cut from four days to three,
-  // a barbell squat and bench in it, or at home HOME Easy, close to half of it
+  // a barbell squat and bench in it, or at home VITAL Home, close to half of it
   // walking. Two programmes because the gear splits the readers: a gym member
   // has the machines and cables that set the path of a lift, a home reader
   // with dumbbells has none of them, and the recommender never offers either
@@ -2113,7 +2113,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
   },
   {
     id: 'tpl_3_day_huge_home_v1',
-    name: 'HUGE Home',
+    name: 'VITAL Muscle',
     goalType: 'hypertrophy',
     level: 'beginner',
     splitType: 'full_body',

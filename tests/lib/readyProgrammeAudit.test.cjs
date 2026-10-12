@@ -183,7 +183,7 @@ module.exports = [
       // the ones that exist for swaps and fallbacks (Landmine Press is the
       // careful-shoulders swap for an overhead press; the bike blocks stand in
       // for a run block when the ankles are avoided). The walk blocks left
-      // this list on 2026-10-12, when WALK and HOME Easy prescribed them.
+      // this list on 2026-10-12, when VITAL Walk and VITAL Home prescribed them.
       const reachedIds = new Set(reached.map((item) => item.id));
       const unprescribedExtras = LIBRARY.filter((item) => item.id.startsWith('extra_') && !reachedIds.has(item.id)).map((item) => item.name).sort();
       assert.deepEqual(unprescribedExtras, [

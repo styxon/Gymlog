@@ -635,7 +635,7 @@ const SUPPLEMENTAL_DAYS: Record<SupplementalDayKind, { name: string; minutes: nu
  * four a two-day programme stretched to six days needs, and none twice.
  */
 function supplementalDayKinds(selection: FirstRunSetupSelection, programId: string): SupplementalDayKind[] {
-  // WALK and HOME Easy fill a longer week with walks and mobility, whatever
+  // VITAL Walk and VITAL Home fill a longer week with walks and mobility, whatever
   // the goal: the strength and muscle orders put an accessory day or push-ups
   // first, and the general one Mountain Climbers by the third extra day
   // (owner, 2026-10-12).
@@ -645,16 +645,16 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   if (programId === HOME_EASY_PROGRAM_ID) {
     return ['easyWalk', 'recoveryStrength', 'recoveryMobility', 'hillWalk', 'easyConditioning'];
   }
-  // STRONG Home fills a longer week with more heavy accessory work first, as
-  // STRONG's general strength order does; HUGE Bodyweight with more bodyweight
-  // volume, as HUGE Home. Neither starts on a conditioning day.
+  // VITAL Strength fills a longer week with more heavy accessory work first, as
+  // STRONG's general strength order does; VITAL Body with more bodyweight
+  // volume, as VITAL Muscle. Neither starts on a conditioning day.
   if (programId === STRONG_HOME_PROGRAM_ID || programId === STRONG_BODYWEIGHT_PROGRAM_ID) {
     return ['accessoryStrength', 'recoveryStrength', 'recoveryMobility', 'easyConditioning', 'conditioningMobility'];
   }
   if (programId === HUGE_BODYWEIGHT_PROGRAM_ID) {
     return ['bodyweightVolume', 'recoveryMobility', 'accessoryStrength', 'easyConditioning', 'conditioningMobility'];
   }
-  // SHRED Guided and SHRED Home Easy fill a longer week without a jump in it:
+  // SHRED Guided and VITAL Burn fill a longer week without a jump in it:
   // the general orders' Mountain Climbers (the bodyweight conditioning day)
   // would be the one in a week written for none. Guided starts with an easy
   // ride, Home Easy with walks (owner, 2026-10-12).
@@ -664,7 +664,7 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   if (programId === SHRED_HOME_EASY_PROGRAM_ID) {
     return ['easyWalk', 'hillWalk', 'recoveryMobility', 'bodyweightVolume', 'easyConditioning'];
   }
-  // HUGE Guided and HUGE Home fill a longer week with more muscle work first
+  // HUGE Guided and VITAL Muscle fill a longer week with more muscle work first
   // and one easy mobility day: a beginner who asks for five or six days gets
   // the three-day week, and the general muscle orders made a third of the
   // added days conditioning (recommendation matrix, 2026-10-12: a fifth of

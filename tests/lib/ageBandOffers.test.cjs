@@ -163,7 +163,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: WALK leads for a plain general-fitness beginner over 41, with the answers\' own pick second',
+    name: 'age band: VITAL Walk leads for a plain general-fitness beginner over 41, with the answers\' own pick second',
     run() {
       for (const card of Object.keys(CARDS)) for (const days of DAYS) for (const gender of GENDERS) {
         const answers = { ageRange: '41_plus', card, goal: 'general_fitness', level: 'beginner', days, gender };
@@ -177,7 +177,7 @@ module.exports = [
       // Asked-for outranks the age: with a secondary outcome the lane decides.
       const asked = offered({ ageRange: '41_plus', card: 'gym', goal: 'general_fitness', level: 'beginner', days: 3, gender: 'unspecified', secondaryOutcomes: ['muscle'] });
       assert.notEqual(asked.ids[0], WALK);
-      // And at advanced the answers' pick leads; WALK is not forced.
+      // And at advanced the answers' pick leads; VITAL Walk is not forced.
       const advanced = offered({ ageRange: '41_plus', card: 'gym', goal: 'general_fitness', level: 'advanced', days: 3, gender: 'unspecified' });
       assert.notEqual(advanced.waterfall.rule, 'age_low_impact');
     },
@@ -195,7 +195,7 @@ module.exports = [
       assert.equal(adult.ids[0], 'tpl_3_day_strength_base_v1');
       assert.ok(!adult.ids.includes('tpl_3_day_guided_strength_v1'));
       // The goal outranks the age: over 41 at home with no gear, lean and
-      // athletic, three days, the week written for the goal leads and WALK,
+      // athletic, three days, the week written for the goal leads and VITAL Walk,
       // which lists it as a backup, is the second card.
       const lean = offered({ ageRange: '41_plus', card: 'homeNone', goal: 'lean_athletic', level: 'beginner', days: 3, gender: 'unspecified' });
       assert.ok(definition(lean.ids[0]).supportedGoals.includes('lean_athletic'), `${lean.ids[0]} leads`);

@@ -1050,8 +1050,8 @@ module.exports = [
       withClock(() => {
         const firstLoaded = () => session().exercises.find((e) => isLoaded(e)) ?? null;
         // The fixture needs a day with a loaded lift to put the warm-up on.
-        // The minutes pool grows with the catalogue: on 2026-10-12 WALK and
-        // HOME Easy joined it with no loaded lift, seed 4242 landed on one,
+        // The minutes pool grows with the catalogue: on 2026-10-12 VITAL Walk and
+        // VITAL Home joined it with no loaded lift, seed 4242 landed on one,
         // and the W2 check "passed" a state it never saw. The first seed from
         // 4242 whose day has a loaded lift, rather than a pinned one.
         let seed = 4242;

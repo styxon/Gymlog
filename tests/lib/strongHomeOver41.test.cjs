@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 
 /**
- * STRONG Home and HUGE Bodyweight, the strength and muscle answers over 41
+ * VITAL Strength and VITAL Body, the strength and muscle answers over 41
  * that had no week for the gear they own (owner, 2026-10-12).
  *
  * An audit of 26,460 answers over 41 found two lanes with no week written for
  * them: strength with a pair of dumbbells and nothing else, and muscle with no
- * equipment at all. STRONG Home is STRONG Guided's week for the dumbbells (sets
- * of six on the anchor lifts, eight on the rest), HUGE Bodyweight is HUGE
+ * equipment at all. VITAL Strength is STRONG Guided's week for the dumbbells (sets
+ * of six on the anchor lifts, eight on the rest), VITAL Body is HUGE
  * Home's week with nothing to hold.
  *
  * Checked here: the weeks are what the owner asked for (rep numbers, no jumps,
@@ -89,7 +89,7 @@ const JUMPING = /jump|hop\b|bound|burpee|skater|plyo/i;
 
 module.exports = [
   {
-    name: 'STRONG Home and HUGE Bodyweight: three joint-friendly full-body days, one rep number a row, no jumps, legs every day, pulling as much as pressing',
+    name: 'VITAL Strength and VITAL Body: three joint-friendly full-body days, one rep number a row, no jumps, legs every day, pulling as much as pressing',
     run() {
       for (const id of NEW_IDS) {
         const template = getWorkoutTemplateById(id);
@@ -124,7 +124,7 @@ module.exports = [
     },
   },
   {
-    name: 'STRONG Home: strength at home on one pair of dumbbells, anchors at six reps, the rest at six to eight, and the bar reads Strength',
+    name: 'VITAL Strength: strength at home on one pair of dumbbells, anchors at six reps, the rest at six to eight, and the bar reads Strength',
     run() {
       const template = getWorkoutTemplateById(STRONG_HOME);
       // The "Dumbbells" chip alone runs all of it: no bench, no bar, no machine.
@@ -149,7 +149,7 @@ module.exports = [
     },
   },
   {
-    name: 'HUGE Bodyweight: muscle with no equipment, every lift at 10-15 reps, and the bar reads Muscle',
+    name: 'VITAL Body: muscle with no equipment, every lift at 10-15 reps, and the bar reads Muscle',
     run() {
       const template = getWorkoutTemplateById(HUGE_BODYWEIGHT);
       // Nothing on the equipment card: not a dumbbell, a bar or a band.
@@ -187,7 +187,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: over 41, a strength answer with dumbbells leads with STRONG Home at the days it fits, and has it on a card at every day count',
+    name: 'age band: over 41, a strength answer with dumbbells leads with VITAL Strength at the days it fits, and has it on a card at every day count',
     run() {
       for (const gender of GENDERS) for (const card of ['dumbbells', 'dumbbellsBench']) {
         for (const days of DAYS) {
@@ -209,7 +209,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: over 41, a muscle answer with no equipment has HUGE Bodyweight on a card, and with dumbbells HUGE Home still leads',
+    name: 'age band: over 41, a muscle answer with no equipment has VITAL Body on a card, and with dumbbells VITAL Muscle still leads',
     run() {
       for (const gender of GENDERS) for (const card of ['homeNone', 'bodyweight']) {
         for (const days of DAYS) for (const level of ['beginner', 'advanced']) {
@@ -220,7 +220,7 @@ module.exports = [
       }
       // A pull-up bar is not equipment for this week; the same answer.
       for (const days of DAYS) assert.ok(offered({ card: 'pullUpBar', goal: 'muscle', level: 'beginner', days }).includes(HUGE_BODYWEIGHT), `pull-up bar ${days}d`);
-      // Dumbbells have HUGE Home (hugeOver41), and a gym its machines; neither
+      // Dumbbells have VITAL Muscle (hugeOver41), and a gym its machines; neither
       // is handed the bodyweight week first.
       for (const days of DAYS) {
         assert.equal(offered({ card: 'dumbbells', goal: 'muscle', level: 'beginner', days })[0], 'tpl_3_day_huge_home_v1');
@@ -231,7 +231,7 @@ module.exports = [
   {
     name: 'age band: the strength week is not offered to a reader whose goal or gear it was not written for',
     run() {
-      // STRONG Home needs a dumbbell; HUGE Bodyweight is a muscle week. Neither
+      // VITAL Strength needs a dumbbell; VITAL Body is a muscle week. Neither
       // is a card for a goal they do not list unless the age card brings it,
       // and neither is ever featured for another goal.
       for (const card of Object.keys(CARDS)) for (const goal of GOALS) for (const level of ['beginner', 'advanced', 'pro']) for (const days of DAYS) {
@@ -243,7 +243,7 @@ module.exports = [
     },
   },
   {
-    name: 'age band: nobody under 41 is offered STRONG Home or HUGE Bodyweight, at any age but over 41, for any answer',
+    name: 'age band: nobody under 41 is offered VITAL Strength or VITAL Body, at any age but over 41, for any answer',
     run() {
       let cells = 0;
       for (const ageRange of ['unspecified', '18', '19_25', '26_30', '31_40']) {
@@ -271,7 +271,7 @@ module.exports = [
     },
   },
   {
-    name: 'STRONG Home and HUGE Bodyweight: named, tagged, collected and written up in English and Finnish',
+    name: 'VITAL Strength and VITAL Body: named, tagged, collected and written up in English and Finnish',
     run() {
       for (const id of NEW_IDS) {
         const template = getWorkoutTemplateById(id);
