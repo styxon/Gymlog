@@ -196,11 +196,19 @@ interface KitRowProps {
    * Finnish name is read whole (#bugs 2026-09-27); other rows keep one.
    */
   titleLines?: number;
+  /**
+   * The meta line's face. 'mono' is the kit's own (JetBrains Mono, a spec
+   * line like "4 × 5 · barbell"); 'app' is the app's text face, for a meta
+   * line that is a sentence-like count ("5 liikettä · 16 sarjaa") and sits
+   * among rows elsewhere in the app that are not mono.
+   */
+  metaFont?: 'mono' | 'app';
 }
 
 export function KitRow({
   title,
   meta = null,
+  metaFont = 'mono',
   state = 'idle',
   tag = null,
   onPress,
@@ -226,16 +234,24 @@ export function KitRow({
       ]}
     >
       <View style={styles.rowBody}>
-        <Text style={styles.rowName} numberOfLines={titleLines}>
-          {title}
-        </Text>
-        {meta ? <Text style={styles.rowMeta}>{meta}</Text> : null}
-      </View>
-      {tag ? (
-        <View style={styles.tag}>
-          <Text style={styles.tagText}>{tag.toUpperCase()}</Text>
+        {/* The tag sits on the name's line, not beside the whole body: as a
+            sibling of the body it took its width from the meta line below the
+            name, and "5 liikettä · 16 sarjaa" wrapped to two lines under a
+            TÄNÄÄN chip. */}
+        <View style={styles.rowTitleLine}>
+          <Text style={[styles.rowName, styles.rowNameFill]} numberOfLines={titleLines}>
+            {title}
+          </Text>
+          {tag ? (
+            <View style={styles.tag}>
+              <Text style={styles.tagText}>{tag.toUpperCase()}</Text>
+            </View>
+          ) : null}
         </View>
-      ) : null}
+        {meta ? (
+          <Text style={metaFont === 'app' ? styles.rowMetaApp : styles.rowMeta}>{meta}</Text>
+        ) : null}
+      </View>
       {onPen ? (
         <Pressable
           accessibilityRole="button"
@@ -528,10 +544,20 @@ const makeStyles = (theme: Theme) =>
     },
     rowBody: { flex: 1, minWidth: 0 },
     rowName: { fontSize: 15, fontWeight: '700', color: theme.ink, letterSpacing: -0.15 },
+    rowTitleLine: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    rowNameFill: { flexShrink: 1 },
     rowMeta: {
       fontFamily: MONO,
       fontSize: 11.5,
       fontWeight: '500',
+      color: theme.muted,
+      marginTop: 4,
+    },
+    // No fontFamily: the app's default face (globalFont), like the meta lines
+    // on the programme rows.
+    rowMetaApp: {
+      fontSize: 12.5,
+      fontWeight: '600',
       color: theme.muted,
       marginTop: 4,
     },
