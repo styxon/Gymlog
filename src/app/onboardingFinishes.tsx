@@ -8,7 +8,7 @@ import {
 } from '../lib/activeProgramSet';
 import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/aiCoachClient';
 import { joinedRunningSet } from '../lib/analyticsMoments';
-import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
+import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { FirstRunSetupSelection, isSetupDaysPerWeek } from '../lib/firstRunSetup';
 import { leadPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { t } from '../lib/i18n';
@@ -123,7 +123,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
         const plan = buildProgramWorkoutPlan({
           planId: buildReadyProgramPlanId(programId),
           workoutTemplateId: programId,
-          programName: formatWorkoutDisplayLabel(template.name),
+          programName: getReadyTemplatePresentation(template, preferences.appLanguage).title,
           sessionIds: template.sessions.map((session) => session.id),
           dayLabels,
           now: new Date().toISOString(),
@@ -381,6 +381,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
           sessionIds,
           preferences.appLanguage,
           leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId),
+          recommendedProgramId,
         ),
       activate: (planId, current) => {
         const next = activateOnboardingPlan(current, planId, resolveActiveProgramCap(resolveProEntitlement(current).unlocked));
@@ -474,6 +475,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
           sessionIds,
           preferences.appLanguage,
           leadPlanTrainingCycle(database.workoutPlans, preferences.activePlanId),
+          recommendedProgramId,
         ),
       activate: (planId, current) => {
         const next = activateOnboardingPlan(current, planId, resolveActiveProgramCap(resolveProEntitlement(current).unlocked));

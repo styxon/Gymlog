@@ -2532,7 +2532,9 @@ const EN = {
   'pro.page.proOn': 'Pro is on',
   // Asked once on the way in, right after "Let's begin". It used to be offered
   // on the way out of the Pro unlock screen, back when dark was a perk.
-  'trackChange.title': 'Add these to your home screen?',
+  'trackChange.title': 'Track your measurements?',
+  'trackChange.example': 'Example',
+  'trackChange.exampleNote': 'The card goes on your Home tab. Log a measurement and it shows the change.',
   'trackChange.no': 'No thanks',
   'trackChange.foot': 'You can change this any time in Settings.',
   'themeChoice.title': 'Light or dark?',
@@ -5871,7 +5873,9 @@ const FI: Record<I18nKey, string> = {
   'pro.page.privacy': 'Tietosuoja',
 
   'pro.page.proOn': 'Pro on käytössä',
-  'trackChange.title': 'Lisätäänkö nämä kotinäytöllesi?',
+  'trackChange.title': 'Seurataanko mittoja?',
+  'trackChange.example': 'Esimerkki',
+  'trackChange.exampleNote': 'Kortti tulee Koti-välilehdelle. Kirjaat mitan, se näyttää muutoksen.',
   'trackChange.no': 'Ei kiitos',
   'trackChange.foot': 'Voit muuttaa tämän milloin vain asetuksista.',
   'themeChoice.title': 'Vaalea vai tumma?',

@@ -1,9 +1,11 @@
-import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { useMemo } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
 import { t } from '../lib/i18n';
+import { buildTrackChangeExampleCard } from '../lib/trackChangeExample';
+import { StatCardPreview } from './HomeStatCardsSection';
 import { Theme, useThemedStyles } from '../theming';
 import { AppLanguage, MeasurementKind } from '../types/models';
 
@@ -39,10 +41,15 @@ interface TrackChangeDialogProps {
   offered: MeasurementKind[];
   onChange: (next: MeasurementKind[]) => void;
   onDone: () => void;
+  /** Safe-area insets, read on the SCREEN — a Modal measures them as zero. */
+  topInset?: number;
+  bottomInset?: number;
+  /** Window height, so the dialog scrolls on a short phone. */
+  maxHeight?: number;
 }
 
 /**
- * "Add these to your home screen?"
+ * "Track your measurements?"
  *
  * Four tiles in the shape ThemeChoiceDialog taught the reader on the way in:
  * a miniature, a label, a radio, one Done button and a line under it. The
@@ -61,9 +68,15 @@ export function TrackChangeDialog({
   offered,
   onChange,
   onDone,
+  topInset = 0,
+  bottomInset = 0,
+  maxHeight,
 }: TrackChangeDialogProps) {
   const styles = useThemedStyles(makeStyles);
   const sites = (offered.length > 0 ? offered : ALL_SITES).slice(0, SITE_TILES);
+
+  // Built on first show, never stored.
+  const example = useMemo(() => (visible ? buildTrackChangeExampleCard(language) : null), [visible, language]);
 
   const toggle = (kind: MeasurementKind) => {
     onChange(selected.includes(kind) ? selected.filter((entry) => entry !== kind) : [...selected, kind]);
@@ -71,9 +84,23 @@ export function TrackChangeDialog({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onDone}>
-      <View style={styles.overlay}>
-        <View style={styles.dialog}>
+      <View style={[styles.overlay, { paddingTop: topInset + 16, paddingBottom: bottomInset + 16 }]}>
+        <ScrollView
+          style={[styles.dialogScroll, maxHeight ? { maxHeight: maxHeight - topInset - bottomInset - 32 } : null]}
+          contentContainerStyle={styles.dialog}
+          showsVerticalScrollIndicator={false}
+        >
           <Text style={styles.title}>{t(language, 'trackChange.title')}</Text>
+
+          {/* The real Home card with example numbers: one caption says so,
+              one line says where it lands and what it does. */}
+          {example ? (
+            <View style={styles.example}>
+              <Text style={styles.exampleCaption}>{t(language, 'trackChange.example')}</Text>
+              <StatCardPreview card={example} language={language} />
+              <Text style={styles.exampleNote}>{t(language, 'trackChange.exampleNote')}</Text>
+            </View>
+          ) : null}
 
           <View style={styles.grid}>
             {/* Declining is a tile like the others, not a link under them: it
@@ -104,7 +131,7 @@ export function TrackChangeDialog({
             <Text style={styles.ctaText}>{t(language, 'themeChoice.done')}</Text>
           </Pressable>
           <Text style={styles.foot}>{t(language, 'trackChange.foot')}</Text>
-        </View>
+        </ScrollView>
       </View>
     </Modal>
   );
@@ -172,11 +199,31 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 24,
       backgroundColor: 'rgba(6,4,14,0.62)',
     },
-    dialog: {
+    dialogScroll: {
+      flexGrow: 0,
       backgroundColor: theme.surface,
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 24,
+    },
+    example: {
+      marginTop: 14,
+      gap: 8,
+    },
+    exampleCaption: {
+      color: theme.faint,
+      fontSize: 11,
+      fontWeight: '800',
+      letterSpacing: 1,
+      textTransform: 'uppercase',
+    },
+    exampleNote: {
+      color: theme.muted,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: '600',
+    },
+    dialog: {
       paddingVertical: 22,
       paddingHorizontal: 20,
     },
