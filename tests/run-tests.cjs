@@ -584,6 +584,7 @@ const suites = [
   ...require('./lib/emptyWorkoutSession.test.cjs'),
   ...require('./lib/exerciseSelectionOrder.test.cjs'),
   ...require('./lib/restPreference.test.cjs'),
+  ...require('./lib/storedQuantities.test.cjs'),
   ...require('./lib/sessionNameLabel.test.cjs'),
   ...require('./lib/readyProgramContentFi.test.cjs'),
   ...require('./lib/exerciseNameLabel.test.cjs'),

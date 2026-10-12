@@ -9,6 +9,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isDeleteRequestId } from '../../lib/accountBackup';
+import { isIsoDateString } from '../../lib/isoDate';
 
 const STORAGE_KEY = '@vinha/account/v1';
 
@@ -106,13 +107,9 @@ export function normalizeStoredAccount(parsed: Partial<StoredAccount> | null | u
     // Absent on every account stored before versions were kept: unknown,
     // which reads the copy once rather than trusting a version never seen.
     cloudVersion: typeof parsed.cloudVersion === 'string' && parsed.cloudVersion ? parsed.cloudVersion : null,
-    ...(typeof parsed.deleteAccountPendingAt === 'string' && Number.isFinite(Date.parse(parsed.deleteAccountPendingAt))
-      ? { deleteAccountPendingAt: parsed.deleteAccountPendingAt }
-      : {}),
+    ...(isIsoDateString(parsed.deleteAccountPendingAt) ? { deleteAccountPendingAt: parsed.deleteAccountPendingAt } : {}),
     ...(isDeleteRequestId(parsed.deleteRequestId) ? { deleteRequestId: parsed.deleteRequestId } : {}),
-    ...(typeof parsed.cloudCopyDeletedAt === 'string' && Number.isFinite(Date.parse(parsed.cloudCopyDeletedAt))
-      ? { cloudCopyDeletedAt: parsed.cloudCopyDeletedAt }
-      : {}),
+    ...(isIsoDateString(parsed.cloudCopyDeletedAt) ? { cloudCopyDeletedAt: parsed.cloudCopyDeletedAt } : {}),
     ...(Array.isArray(parsed.uploadInFlightFingerprints) &&
     parsed.uploadInFlightFingerprints.some((entry) => typeof entry === 'string' && entry)
       ? {

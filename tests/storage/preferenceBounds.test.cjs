@@ -32,7 +32,8 @@ module.exports = [
       );
       assert.ok(branch.length > 0, 'defaultRestSeconds branch not found');
 
-      assert.match(source, /import \{ normalizeDefaultRestSeconds \} from '\.\.\/lib\/restPreference';/);
+      // The exercise rows' own rest rule rides in the same import (D6-4).
+      assert.match(source, /import \{ normalizeDefaultRestSeconds(, normalizeStoredRestSeconds)? \} from '\.\.\/lib\/restPreference';/);
       assert.match(branch, /normalizeDefaultRestSeconds\(/);
       assert.match(branch, /input\?\.preferences\?\.defaultRestSeconds/);
       // The fallback is still the way out, so an unusable value loses to the

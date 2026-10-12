@@ -40,3 +40,24 @@ export function normalizeDefaultRestSeconds(value: unknown, fallback: number): n
 
   return Math.min(rounded, MAX_DEFAULT_REST_SECONDS);
 }
+
+/**
+ * A stored exercise's own rest, made usable: null when it is not a number,
+ * else rounded, at least 0 and at most MAX_DEFAULT_REST_SECONDS.
+ *
+ * The one rule the template loader, the template writer (singleRepTarget
+ * savedRestSeconds) and the workout adapter read (duplicate sweep 13, D6-4).
+ * The loader kept any number — a damaged row loaded a -30 s rest, which only
+ * the adapter's own guard hid, or a 27-hour one nothing hid.
+ *
+ * It differs from the default rest above on purpose, in one place: 0 is a
+ * real rest here (a stretch is written with none) while a default rest of 0
+ * is unusable. A negative number is unset (null), as the writer always read
+ * it; past the ceiling is capped, as the default is.
+ */
+export function normalizeStoredRestSeconds(value: unknown): number | null {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    return null;
+  }
+  return Math.min(Math.round(value), MAX_DEFAULT_REST_SECONDS);
+}

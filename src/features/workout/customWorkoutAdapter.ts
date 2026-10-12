@@ -14,6 +14,7 @@ export { customSlotId };
 import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
 import { readsAsMinutesByName } from '../../lib/minutesExercises';
+import { normalizeStoredRestSeconds } from '../../lib/restPreference';
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -136,9 +137,10 @@ function adaptExercise(
     sets: Math.max(1, exercise.targetSets),
     repsMin: Math.max(1, exercise.repMin),
     repsMax: Math.max(Math.max(1, exercise.repMin), exercise.repMax),
-    // 0 is a rest of none (stretches), not "unset"; only null falls to the default.
-    restSecondsMin: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
-    restSecondsMax: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
+    // 0 is a rest of none (stretches), not "unset"; only an unset rest falls
+    // to the default. The loader's own rule, not a second copy of it (D6-4).
+    restSecondsMin: normalizeStoredRestSeconds(exercise.restSeconds) ?? defaultRestSeconds,
+    restSecondsMax: normalizeStoredRestSeconds(exercise.restSeconds) ?? defaultRestSeconds,
     substitutionGroup: resolveSubstitutionGroup(exercise.name, exercise.id),
     supersetGroup: exercise.supersetGroup ?? null,
   };

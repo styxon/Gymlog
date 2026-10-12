@@ -4,7 +4,8 @@ import { normalizeFreestyleDraftSnapshot } from '../../lib/emptyWorkoutSession';
 import { normalizeActiveCardioSession } from '../../lib/cardio';
 import { normalizeSessionMinutesClock } from '../../lib/minutesExercises';
 import { scrubImpossibleSessionLoads } from '../../lib/impossibleLoads';
-import { isLiftableWeight } from '../../lib/weightLimits';
+import { isIsoDateString } from '../../lib/isoDate';
+import { isLiftableWeight, isLoggableReps, MAX_STORED_REPS, positiveWholeCount } from '../../lib/weightLimits';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from '../../storage/largeItem';
 import { removeCorruptCopies, setAsideCorruptCopy } from '../../storage/corruptCopies';
 import { removeWorkoutAsideCopies } from '../../storage/workoutAside';
@@ -68,8 +69,9 @@ function isHistorySet(value: unknown): boolean {
     typeof value.setIndex === 'number' &&
     Number.isFinite(value.setIndex) &&
     isLiftableWeight(value.loadKg) &&
-    typeof value.reps === 'number' &&
-    Number.isFinite(value.reps)
+    // The logged set's own rule (D6-2): a negative or stuck-button count is
+    // no "last time" to open the next session on.
+    isLoggableReps(value.reps)
   );
 }
 
@@ -86,8 +88,7 @@ function isHistoryEntry(value: unknown): value is Record<string, unknown> & { se
     isObject(value) &&
     Array.isArray(value.sets) &&
     (value.exerciseName === undefined || typeof value.exerciseName === 'string') &&
-    typeof value.performedAt === 'string' &&
-    Number.isFinite(Date.parse(value.performedAt))
+    isIsoDateString(value.performedAt)
   );
 }
 
@@ -150,7 +151,8 @@ function normalizeProgrammedSetPlans(input: unknown): ProgrammedSetPlan[] | unde
   if (!Array.isArray(input) || input.length === 0) {
     return undefined;
   }
-  const optionalNumber = (value: unknown) => value === undefined || (typeof value === 'number' && Number.isFinite(value));
+  // Reps under the one stored ceiling, as the logged plan reads them (D6-3).
+  const optionalReps = (value: unknown) => value === undefined || isLoggableReps(value);
   const optionalLoad = (value: unknown) => value === undefined || isLiftableWeight(value);
   const valid = input.every(
     (plan) =>
@@ -163,9 +165,9 @@ function normalizeProgrammedSetPlans(input: unknown): ProgrammedSetPlan[] | unde
       (plan.heldForFatigue === undefined || typeof plan.heldForFatigue === 'boolean') &&
       (plan.heldForCautionArea === undefined || typeof plan.heldForCautionArea === 'string') &&
       (plan.prefilledFromPerformedAt === undefined || typeof plan.prefilledFromPerformedAt === 'string') &&
-      optionalNumber(plan.plannedTargetReps) &&
-      optionalNumber(plan.autoProgressedFromReps) &&
-      optionalNumber(plan.rampTargetReps),
+      optionalReps(plan.plannedTargetReps) &&
+      optionalReps(plan.autoProgressedFromReps) &&
+      optionalReps(plan.rampTargetReps),
   );
   return valid ? (input as ProgrammedSetPlan[]) : undefined;
 }
@@ -176,13 +178,6 @@ function withOptional<T extends Record<string, unknown>>(target: T, key: string,
   return (value === undefined ? rest : { ...rest, [key]: value }) as T;
 }
 
-/** Past this, a stored rep target is no target anyone was given (the reps dial stops far below it). */
-const MAX_TARGET_REPS = 1000;
-
-/** A whole count of one or more, or undefined: what a stored count of sets has to be. */
-function positiveCount(value: unknown): number | undefined {
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? value : undefined;
-}
 
 /**
  * One stored "last time" entry, every field its readers rely on checked. The
@@ -206,23 +201,16 @@ function normalizeHistoryEntry(entry: Record<string, unknown> & { sets: unknown[
     skipped: entry.skipped === true,
   };
   // A lowered target the gate can read: a whole number of reps, at most what a dial can ask.
-  normalized = withOptional(
-    normalized,
-    'targetReps',
-    positiveCount(entry.targetReps) !== undefined && (entry.targetReps as number) <= MAX_TARGET_REPS ? entry.targetReps : undefined,
-  );
+  normalized = withOptional(normalized, 'targetReps', positiveWholeCount(entry.targetReps, MAX_STORED_REPS));
   normalized = withOptional(normalized, 'swappedFrom', typeof entry.swappedFrom === 'string' ? entry.swappedFrom : undefined);
   normalized = withOptional(normalized, 'warmups', normalizeWarmups(entry.warmups, false));
-  // The sets a lighter session asked for (Q3, 2026-10-11).
-  normalized = withOptional(normalized, 'plannedSets', positiveCount(entry.plannedSets));
+  // The sets a lighter session asked for (Q3, 2026-10-11): the saved log's
+  // own rule (exerciseLog.plannedSetsOf), a whole count up to a programme's.
+  normalized = withOptional(normalized, 'plannedSets', positiveWholeCount(entry.plannedSets));
   // The dose the sets were asked for (2026-10-11): a known mode and a range.
   normalized = withOptional(normalized, 'dose', normalizeProgrammedDose(entry.dose));
   // When the session started (2026-10-11): a date, or nothing.
-  normalized = withOptional(
-    normalized,
-    'startedAt',
-    typeof entry.startedAt === 'string' && Number.isFinite(Date.parse(entry.startedAt)) ? entry.startedAt : undefined,
-  );
+  normalized = withOptional(normalized, 'startedAt', isIsoDateString(entry.startedAt) ? entry.startedAt : undefined);
   return normalized;
 }
 

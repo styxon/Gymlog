@@ -163,4 +163,121 @@ module.exports = [
       ]);
     },
   },
+  {
+    // Duplicate sweep 13, D6-7: a saved workout dated "garbage" loaded, and
+    // every screen that formats a session date threw on it.
+    name: 'loader: a session whose date does not read is dropped with its logs, unless its start time reads',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const logFor = (sessionId) => ({
+        id: `l-${sessionId}`,
+        sessionId,
+        exerciseNameSnapshot: 'Bench Press',
+        orderIndex: 0,
+        sets: [{ orderIndex: 0, weight: 100, reps: 5, kind: 'working', outcome: 'completed', status: 'completed' }],
+      });
+      const out = normalizeDatabase({
+        workoutSessions: [
+          { id: 's1', performedAt: 'garbage', startedAt: 'nope', durationMinutes: -40 },
+          { id: 's2', performedAt: '2026-10-01T10:00:00.000Z', startedAt: 'nope', durationMinutes: -40 },
+          { id: 's3', performedAt: 'garbage', startedAt: '2026-10-02T09:00:00.000Z' },
+          { id: 's4' },
+        ],
+        exerciseLogs: [logFor('s1'), logFor('s2'), logFor('s3')],
+      });
+      assert.deepEqual(out.workoutSessions.map((session) => session.id), ['s2', 's3', 's4']);
+      assert.deepEqual(out.exerciseLogs.map((entry) => entry.sessionId), ['s2', 's3']);
+      const byId = Object.fromEntries(out.workoutSessions.map((session) => [session.id, session]));
+      assert.equal(byId.s2.startedAt, undefined);
+      assert.equal(byId.s2.durationMinutes, undefined);
+      assert.equal(byId.s3.performedAt, '2026-10-02T09:00:00.000Z');
+      // No date at all keeps the oldest fallback: a readable one.
+      assert.ok(Number.isFinite(Date.parse(byId.s4.performedAt)));
+    },
+  },
+  {
+    // D6-2: a -10 rep set summed into a session volume of -750 kg.
+    name: 'loader: a set with impossible reps is dropped, and the session total is the sets that remain',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const out = normalizeDatabase({
+        workoutSessions: [{ id: 's1', performedAt: '2026-10-01T10:00:00.000Z' }],
+        exerciseLogs: [
+          {
+            id: 'l1',
+            sessionId: 's1',
+            exerciseNameSnapshot: 'Bench Press',
+            orderIndex: 0,
+            sets: [
+              { orderIndex: 0, weight: 100, reps: -10, kind: 'working', outcome: 'completed', status: 'completed' },
+              { orderIndex: 1, weight: 100, reps: 5, kind: 'working', outcome: 'completed', status: 'completed' },
+            ],
+          },
+        ],
+      });
+      assert.equal(out.workoutSessions[0].totalVolumeKg, 500);
+    },
+  },
+  {
+    // D6-6 and D6-7: weigh-ins and setup weights read by one window, dates by one rule.
+    name: 'loader: body weights outside a person\'s range and weigh-ins without a date do not load',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const out = normalizeDatabase({
+        preferences: { setupCurrentWeightKg: -80, bodyweightGoalKg: 5000, setupWeeklyMinutes: -80 },
+        bodyweightEntries: [
+          { id: 'b1', recordedAt: '2026-10-01T07:00:00.000Z', weight: 5000 },
+          { id: 'b2', recordedAt: '2026-10-01T07:00:00.000Z', weight: 260 },
+          { id: 'b3', recordedAt: 'garbage', weight: 80 },
+          { id: 'b4', recordedAt: '2026-10-01T07:00:00.000Z', weight: 28 },
+        ],
+        measurementEntries: [
+          { id: 'm1', kind: 'waist', unit: 'cm', value: 80, recordedAt: 'garbage' },
+          { id: 'm2', kind: 'waist', unit: 'cm', value: 80, recordedAt: '2026-10-01T07:00:00.000Z' },
+        ],
+      });
+      assert.equal(out.preferences.setupCurrentWeightKg, null);
+      assert.equal(out.preferences.bodyweightGoalKg, null);
+      assert.equal(out.preferences.setupWeeklyMinutes, null);
+      assert.deepEqual(out.bodyweightEntries.map((entry) => entry.id), ['b2', 'b4']);
+      assert.deepEqual(out.measurementEntries.map((entry) => entry.id), ['m2']);
+
+      const kept = normalizeDatabase({ preferences: { setupCurrentWeightKg: 82.5, bodyweightGoalKg: 78, setupWeeklyMinutes: 0 } });
+      assert.equal(kept.preferences.setupCurrentWeightKg, 82.5);
+      assert.equal(kept.preferences.bodyweightGoalKg, 78);
+      assert.equal(kept.preferences.setupWeeklyMinutes, 0);
+    },
+  },
+  {
+    // D6-7: a grant date that does not read falls back; it never granted anything.
+    name: 'loader: an unreadable promo or trial date loads as none',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const out = normalizeDatabase({ preferences: { promoProUntil: 'garbage', proTrialUntil: 'garbage', firstLaunchAt: 'garbage' } });
+      assert.equal(out.preferences.promoProUntil, null);
+      assert.equal(out.preferences.proTrialUntil, null);
+      const kept = normalizeDatabase({ preferences: { proTrialUntil: '2026-10-22T07:00:00.000Z' } });
+      assert.equal(kept.preferences.proTrialUntil, '2026-10-22T07:00:00.000Z');
+    },
+  },
+  {
+    // D6-4: the template row's rest by the writer's rule.
+    name: 'loader: a programme row\'s rest is none when negative, capped when day-long, and 0 stays 0',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const row = (restSeconds) => ({
+        id: `e${restSeconds}`,
+        workoutTemplateId: 't1',
+        workoutTemplateSessionId: 's1',
+        name: 'Bench Press',
+        targetSets: 3,
+        repMin: 8,
+        repMax: 8,
+        restSeconds,
+        orderIndex: 0,
+      });
+      const out = normalizeDatabase({ exerciseTemplates: [row(-30), row(99999), row(0), row(90)] });
+      assert.deepEqual(out.exerciseTemplates.map((exercise) => exercise.restSeconds), [null, 600, 0, 90]);
+    },
+  },
 ];
