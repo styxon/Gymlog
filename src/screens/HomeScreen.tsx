@@ -1688,7 +1688,7 @@ export function HomeScreen({
             (user report 2026-08-25). */}
 
         {/* No promo carousel here any more (user 2026-08-23): Home is for
-            running today's session, and the season/programme offers live on
+            running today's session, and the programme offers live on
             their own screens. */}
 
         {/* The active program.

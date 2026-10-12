@@ -4,7 +4,6 @@ import type { LightNextSession } from '../lib/recoverySheet';
 import { CancelSurveyAnswer } from '../lib/cancelSurvey';
 import { CoachSuggestionState } from '../lib/coachSuggestions';
 import { OwnBlockStats } from '../lib/ownBlockHistory';
-import { SeasonEnrolment } from '../lib/seasonEnrolment';
 import { StrengthGoal } from '../lib/strengthGoals';
 import { SubscriptionTermKey } from '../lib/subscriptionView';
 export type UnitPreference = 'kg' | 'lb';
@@ -850,14 +849,6 @@ export interface AppPreferences {
    * a number.
    */
   strengthGoals: StrengthGoal[];
-  /**
-   * Seasons the reader has signed up for, one row per season and year.
-   *
-   * Kept instead of reading "is the season programme my active plan?", which
-   * could not tell a pre-registration from a programme swap and un-joined you
-   * the moment you trained something else. See lib/seasonEnrolment.
-   */
-  seasonEnrolments: SeasonEnrolment[];
   dismissedTipIds: string[];
   /**
    * Plans whose completion card the reader has answered. Keyed by plan id, not

@@ -34,7 +34,7 @@ module.exports = [
     },
   },
   {
-    name: 'one programme still leaves room for the season',
+    name: 'one programme still leaves room for a second',
     run() {
       const assert = require('node:assert/strict');
       const decision = evaluateProgramAdoption({

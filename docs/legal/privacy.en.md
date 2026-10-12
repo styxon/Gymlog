@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Updated 9 October 2026*
+*Updated 12 October 2026*
 
 What Vinha stores, what leaves your phone, and what you can do about it.
 
@@ -28,7 +28,7 @@ Everything below is either entered by you or worked out by the app from what you
 - Your training log: workouts and cardio sessions with their exercises, sets, reps, weights, notes, dates, durations and how the session felt.
 - Body data you add yourself: weight entries and tape measurements.
 - Your programmes: the ones you build, import from a CSV file or a photo, and the exercise names you teach the app.
-- Goals you set with the coach, and the milestones and seasons the app counts from your log.
+- Goals you set with the coach, and the milestones the app counts from your log.
 - What the coach has advised you in the last three weeks: the one-sentence summary of each answer and the date it was given, at most ten of them. It is kept so the coach does not repeat advice you have already had, it is deleted as it ages past three weeks, and it stays on this phone — the cloud backup below does not carry it.
 - Preferences: language, units, theme, notification and sound settings, default rest time, training breaks.
 - Pro status: whether Pro is on, when it was bought or cancelled, and the dates until which a promo code or a free trial keeps it on.

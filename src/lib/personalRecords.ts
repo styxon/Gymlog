@@ -7,7 +7,7 @@ import type { ExerciseLog } from '../types/models';
 /**
  * Your bests, and when you set them.
  *
- * The app has counted records for a season badge and flashed one on the
+ * The app once counted records for a season badge and flashes one on the
  * post-workout screen, but there has never been a place to see them. That is
  * the first thing anyone asks a training log for, and every number is already
  * in it — this reads them out rather than deriving anything new.

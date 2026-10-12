@@ -1031,7 +1031,6 @@ function genState(seed, knobs, tag = `g${seed.toString(36)}`) {
     prefs.dismissedTipIds = p.chance(0.4) ? ['tip_1', 'tip_2'] : [];
     prefs.strengthGoals = p.chance(0.4) ? [{ exerciseName: 'Deadlift', targetKg: 180, createdAt: iso(baseMs) }] : [];
     prefs.coachGoals = p.chance(0.3) ? [{ id: `${tag}_goal`, text: weirdPick(p, 'Smaller waist'), kind: 'waist', targetValue: 80, unit: 'cm', startValue: 90, createdAt: iso(baseMs) }] : [];
-    prefs.seasonEnrolments = p.chance(0.2) ? [{ season: 'winter', year: 2026, joinedAt: iso(baseMs) }] : [];
     prefs.ratingPrompt = p.chance(0.3) ? { lastAskedAt: iso(baseMs), askCount: 2, rated: false } : prefs.ratingPrompt;
     prefs.notificationPrefs = { ...prefs.notificationPrefs, pushEnabled: p.chance(0.5), level: p.pick(['quiet', 'normal', 'motivating']), reminderTime: p.pick(['06:45', '18:30']) };
     prefs.trainingBreak = p.chance(0.15) ? { reason: p.pick(['injury', 'holiday', 'other']), note: weirdPick(p, 'knee'), startedAt: iso(baseMs) } : null;

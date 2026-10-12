@@ -83,7 +83,7 @@ function publisher(language: AppLanguage): string {
  * show it. A real date, never ahead of the calendar (tests/lib/legalDocuments
  * holds it there).
  */
-export const LEGAL_LAST_UPDATED = '2026-10-09';
+export const LEGAL_LAST_UPDATED = '2026-10-12';
 
 /**
  * What an acceptance is stored against: a string that only ever grows, so a
@@ -101,7 +101,7 @@ export const LEGAL_LAST_UPDATED = '2026-10-09';
  * current value with a suffix ('2026-10-06.1', '.2', …), which still compares
  * as later.
  */
-export const LEGAL_VERSION = '2026-10-09';
+export const LEGAL_VERSION = '2026-10-12';
 
 export type LegalDocumentId = 'privacy' | 'terms';
 
@@ -160,7 +160,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
       'Your training log: workouts and cardio sessions with their exercises, sets, reps, weights, notes, dates, durations and how the session felt.',
       'Body data you add yourself: weight entries and tape measurements.',
       'Your programmes: the ones you build, import from a CSV file or a photo, and the exercise names you teach the app.',
-      'Goals you set with the coach, and the milestones and seasons the app counts from your log.',
+      'Goals you set with the coach, and the milestones the app counts from your log.',
       'What the coach has advised you in the last three weeks: the one-sentence summary of each answer and the date it was given, at most ten of them. It is kept so the coach does not repeat advice you have already had, it is deleted as it ages past three weeks, and it stays on this phone — the cloud backup below does not carry it.',
       'Preferences: language, units, theme, notification and sound settings, default rest time, training breaks.',
       'Pro status: whether Pro is on, when it was bought or cancelled, and the dates until which a promo code or a free trial keeps it on.',
@@ -430,7 +430,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
       'Treenilokisi: treenit ja cardio-suoritukset liikkeineen, sarjoineen, toistoineen, painoineen, muistiinpanoineen, päivämäärineen ja kestoineen sekä se, miltä treeni tuntui.',
       'Kehon tiedot, jotka itse lisäät: painomerkinnät ja mittanauhalla otetut mitat.',
       'Ohjelmasi: ne, jotka rakennat, tuot CSV-tiedostosta tai valokuvasta, sekä liikenimet, jotka opetat sovellukselle.',
-      'Valmentajan kanssa asettamasi tavoitteet sekä virstanpylväät ja kaudet, jotka sovellus laskee lokistasi.',
+      'Valmentajan kanssa asettamasi tavoitteet sekä virstanpylväät, jotka sovellus laskee lokistasi.',
       'Mitä valmentaja on neuvonut sinulle viimeisten kolmen viikon aikana: kunkin vastauksen yhden lauseen tiivistelmä ja päivä, jona se annettiin, enintään kymmenen kappaletta. Se säilytetään, jottei valmentaja toista jo antamaansa neuvoa, se poistuu kolmea viikkoa vanhetessaan, ja se pysyy tässä puhelimessa — alla kuvattu pilvivarmuuskopio ei kanna sitä mukanaan.',
       'Asetukset: kieli, yksiköt, teema, ilmoitus- ja ääniasetukset, oletuslepoaika, treenitauot.',
       'Pro-tila: onko Pro päällä, milloin se ostettiin tai peruttiin, ja päivät, joihin asti kampanjakoodi tai ilmainen kokeilu pitää sen päällä.',

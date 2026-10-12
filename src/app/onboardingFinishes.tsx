@@ -100,7 +100,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
       // who picked a programme here landed on a Home that showed no programme
       // at all and a Profile that said "no programme selected". The pick was
       // stored, and invisible. Every other way into a ready programme —
-      // joining a season, stepping up after a completion — goes through
+      // adopting one from its page, stepping up after a completion — goes through
       // handleAdoptReadyProgram and builds this plan record; onboarding was the
       // one door that skipped it.
       const template = getWorkoutTemplateById(programId);
@@ -135,7 +135,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
         adoptedPlanId = plan.id;
       }
       // The same rule as the guided finishes: onboarding's earlier plan is
-      // replaced, and a season or a programme adopted by hand keeps running.
+      // replaced, and a programme adopted by hand keeps running.
       // No template, no plan — and nothing that was running is stopped. Held
       // in a name because the adoption below is read off it.
       const activation = adoptedPlanId

@@ -124,7 +124,6 @@ const ROUTE_SCREENS: Record<AppRoute['screen'], true> = {
   program: true,
   programDay: true,
   programs_home: true,
-  season: true,
   session: true,
   settings: true,
   setup: true,

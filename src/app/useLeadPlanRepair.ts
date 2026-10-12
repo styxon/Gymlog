@@ -30,8 +30,7 @@ export function useLeadPlanRepair(deps: LeadPlanRepairDeps) {
    * Home must never say "find a programme" while one is running.
    *
    * Removing the lead already promotes the next in line, but that is one path
-   * of several that can empty `activePlanId` — a season leaving, a plan record
-   * being rewritten, a stored value from an older build. Rather than chase each
+   * of several that can empty `activePlanId` — a plan record being rewritten, a stored value from an older build. Rather than chase each
    * one, the invariant is repaired wherever it broke: a held programme with no
    * lead becomes the lead.
    *

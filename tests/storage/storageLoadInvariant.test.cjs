@@ -153,8 +153,9 @@ function compareCollection(name, rawList, loadedList, onlyIds) {
  */
 // Fields a later release took out on purpose: the old theme switch, the premium
 // unlock, the tracked-lift list, the free-coach quota, the mock-subscription
-// cancel flag, the own-warmup switch and the per-lift bar choice.
-const RETIRED_PREFERENCES = new Set(['theme', 'adaptiveCoachPremiumUnlocked', 'trackedExerciseLibraryItemIds', 'aiCoachFreeQuota', 'mockSubscriptionCancelled', 'alwaysOwnWarmup', 'barChoiceByExercise']);
+// cancel flag, the own-warmup switch, the per-lift bar choice and the season
+// sign-ups (the season feature, removed 2026-10-12).
+const RETIRED_PREFERENCES = new Set(['theme', 'adaptiveCoachPremiumUnlocked', 'trackedExerciseLibraryItemIds', 'aiCoachFreeQuota', 'mockSubscriptionCancelled', 'alwaysOwnWarmup', 'barChoiceByExercise', 'seasonEnrolments']);
 
 /** Every key of `raw` is in `loaded` with the same value; `loaded` may carry more. */
 function holds(raw, loaded) {

@@ -3,7 +3,6 @@ const assert = require('node:assert/strict');
 const {
   alignHistoryToCopiedDays,
   programmeHistoryIds,
-  programmeLineageIds,
   programmeOriginId,
 } = require('../../.test-dist/lib/programLineage.js');
 
@@ -30,20 +29,6 @@ module.exports = [
       assert.equal(programmeOriginId('tpl_full_body', TEMPLATES), 'tpl_full_body');
       assert.equal(programmeOriginId('own', TEMPLATES), 'own');
       assert.equal(programmeOriginId('unknown', TEMPLATES), 'unknown');
-    },
-  },
-  {
-    name: 'lineage: a copy, the programme it came from, and the other copies of it are one programme',
-    run() {
-      assert.deepEqual(programmeLineageIds('copy_1', TEMPLATES), ['copy_1', 'tpl_full_body', 'copy_2']);
-      // Asked of the catalog programme itself — which is what the season does.
-      assert.deepEqual(programmeLineageIds('tpl_full_body', TEMPLATES), ['tpl_full_body', 'copy_1', 'copy_2']);
-      // A programme of the reader's own is only itself.
-      assert.deepEqual(programmeLineageIds('own', TEMPLATES), ['own']);
-      // And an id nothing knows about is still an answer, not a crash.
-      assert.deepEqual(programmeLineageIds('tpl_unknown', TEMPLATES), ['tpl_unknown']);
-      // Copies of a different programme stay out of it.
-      assert.ok(!programmeLineageIds('copy_1', TEMPLATES).includes('copy_other'));
     },
   },
   {
@@ -197,8 +182,6 @@ module.exports = [
       assert.deepEqual(programmeHistoryIds('tpl_unknown', TEMPLATES), ['tpl_unknown']);
       // A record that somehow points at itself is still one id, not two.
       assert.deepEqual(programmeHistoryIds('loop', [{ id: 'loop', sourceTemplateId: 'loop' }]), ['loop']);
-      // The season still asks for the whole family.
-      assert.ok(programmeLineageIds('tpl_full_body', TEMPLATES).includes('copy_2'));
 
       // And a programme another plan is running keeps its own work: a reader
       // who took the original up again after copying it has two plans, and

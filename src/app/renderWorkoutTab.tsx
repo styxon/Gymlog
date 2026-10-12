@@ -10,23 +10,19 @@ import { restAlertsAnswered } from '../lib/restAlertAnswer';
 import { openRestAlertSettings } from '../utils/sessionNotifications';
 import { recordOwnBlock } from '../lib/ownBlockHistory';
 import { formatShortDate } from '../lib/format';
-import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { t } from '../lib/i18n';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { placesToFree } from '../lib/activeProgramSet';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
 import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
-import { findHeldReadyProgrammeCopyId, isReadyProgrammeRunning } from '../lib/programmeCopyLink';
+import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
   buildReadyProgramDetail,
   resolveReaderComposedWeek,
 } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
-import { buildProgramFingerprint } from '../lib/programFingerprint';
-import { programmeLineageIds } from '../lib/programLineage';
-import { getSeasonProgramId, ProgramSeason } from '../lib/programSeasons';
 import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planForTemplate, planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
@@ -45,8 +41,6 @@ import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
 import { AdaptedSessionRef, SessionAdaptation, withSessionSwap } from '../lib/sessionAdaptation';
 import { isReaderNamedSession } from '../lib/sessionNameLabel';
-import { nextSeasonWindow, resolveSeasonWindow } from '../lib/season';
-import { computeSeasonProgress, countSeasonRecords, resolveSeasonBadges } from '../lib/seasonScoring';
 import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
 import { typedSessionNames } from '../lib/templateBuilderSteps';
@@ -65,7 +59,6 @@ import { ProgramPrescription } from '../lib/programSessionEdit';
 import { ProgramDetailScreen } from '../screens/ProgramDetailScreen';
 import { CatalogScreen, CatalogScreenItem } from '../screens/CatalogScreen';
 import { ProgramsHomeScreen } from '../screens/ProgramsHomeScreen';
-import { SeasonScreen } from '../screens/SeasonScreen';
 import { GoalFlowProposal, StrengthGoalFlowScreen } from '../screens/StrengthGoalFlowScreen';
 import { WorkoutsScreen } from '../screens/WorkoutsScreen';
 import { AppDatabase, AppPreferences, TrainingCycle, UnitPreference, WorkoutTemplateDraft } from '../types/models';
@@ -245,9 +238,6 @@ export interface WorkoutTabDeps {
   setProgramLimitVisible: (visible: boolean) => void;
   /** Brings the running plan's week back into step with the template's days. */
   syncPlanToTemplate: (workoutTemplateId: string) => Promise<void>;
-  trackedProgress: Array<{ logs: Array<{ weight: number; repsPerSet: number[]; performedAt: string }> }>;
-  workoutSessions: Parameters<typeof computeSeasonProgress>[0];
-  handleEnrolSeason: (season: ProgramSeason, year: number) => Promise<unknown>;
   programsCatalogItems: ProgramsHomeProps['catalogItems'];
   /** Whether AI-assisted composition opens the chat or the paywall. */
   proUnlocked: boolean;
@@ -348,9 +338,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     programSlots,
     setProgramLimitVisible,
     syncPlanToTemplate,
-    trackedProgress,
-    workoutSessions,
-    handleEnrolSeason,
     programsCatalogItems,
     catalogScreenItems,
     proUnlocked,
@@ -1306,115 +1293,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // free tier routes to the paywall and full on Pro says so, both from
         // inside handleAdoptReadyProgram.
         onCreate={(input) => void handleAcceptTargetProposal(input)}
-      />
-    );
-  }
-
-  if (route.screen === 'season') {
-    /**
-     * The season screen.
-     *
-     * Every number on it is the reader's own: points from their logged
-     * sessions against a stated rule, the weekly requirement from their own
-     * program's days, records from their own bests. The one section that
-     * needs other people — the series — says so instead of inventing names.
-     */
-    const seasonInView = route.season;
-    // The window of the season being looked at. Resolving from today meant an
-    // upcoming season's points were counted against the CURRENT season's
-    // dates — a screen full of numbers belonging to a different season.
-    const currentWindow = resolveSeasonWindow();
-    const seasonWindow = currentWindow.season === seasonInView ? currentWindow : nextSeasonWindow();
-    // THE season program: one per season, the same one for everyone, and it
-    // does not change mid-season. Ten of them meant ten different point
-    // ceilings and a ranking sorted by how many days a program prescribes.
-    const seasonProgramId = getSeasonProgramId(seasonInView);
-    const seasonProgramTemplate = workout.templates.find((template) => template.id === seasonProgramId);
-    const seasonRecords = countSeasonRecords(
-      trackedProgress.map((summary) => ({
-        logs: summary.logs.map((log) => ({
-          weight: log.weight,
-          // The best single set, so a rep record on an unloaded lift counts.
-          reps: log.repsPerSet.length > 0 ? Math.max(...log.repsPerSet) : 0,
-          performedAt: log.performedAt,
-        })),
-      })),
-      seasonWindow,
-    );
-    const seasonProgress = computeSeasonProgress(workoutSessions, seasonWindow, {
-      // The target is the SEASON program's week, not whatever the reader
-      // happens to be running. Measuring a three-day season against someone's
-      // own six-day split would call four workouts a missed week.
-      weeklyTarget: seasonProgramTemplate?.daysPerWeek ?? null,
-      records: seasonRecords,
-      // The season programme and the reader's own copy of it. Changing one
-      // lift in it makes a copy under a new id, and that used to end their
-      // season without saying so.
-      programIds: programmeLineageIds(seasonProgramId, database.workoutTemplates),
-    });
-    const seasonBadges = resolveSeasonBadges(seasonProgress, {
-      // The current window is by definition the one containing today, so it
-      // is never over. The finished badge belongs to a past season.
-      seasonEnded: false,
-      personalRecords: seasonRecords,
-    });
-    return (
-      <SeasonScreen
-        season={seasonInView}
-        language={preferences.appLanguage}
-        progress={seasonProgress}
-        badges={seasonBadges}
-        seasonProgram={{
-          id: seasonProgramId,
-          name: seasonProgramTemplate
-            ? formatWorkoutDisplayLabel(seasonProgramTemplate.name)
-            : seasonProgramId,
-          blurb: getReadyProgramContent(seasonProgramId, preferences.appLanguage)?.summary ?? '',
-          days: seasonProgramTemplate?.daysPerWeek ?? 0,
-          fingerprint: seasonProgramTemplate ? buildProgramFingerprint(seasonProgramTemplate) : [],
-        }}
-        // "Start season" used to open the season programme's page and stop
-        // there, so the button's own sentence was never true and the season
-        // could not be joined at all. It joins now, and joining ADDS: the
-        // reader's own programme stays exactly where it was.
-        /*
-         * Running, or not — read off the plans, the programme or the reader's
-         * own copy of it. The sign-up outlives a stop (handleStopProgram leaves
-         * it), so reading it here kept "you are running this" and a Start
-         * button over a programme that was switched off. Not running, the
-         * button is the join, which resumes the held programme.
-         */
-        running={isReadyProgrammeRunning(seasonProgramId, activeProgramTemplateIds, database.workoutTemplates)}
-        onJoinSeason={() => {
-          // Two things, and they are genuinely two: the row that says you are
-          // in the season, and the programme swap that makes it trainable.
-          //
-          // Both about the season being LOOKED AT. This re-resolved from today
-          // for the enrolment while adopting the viewed season's programme, so
-          // opening the winter card in September and pressing "Aloita kausi"
-          // filed the reader into summer and handed them the winter programme
-          // (audit 3, 2026-09-19). `seasonWindow` above already resolves this
-          // correctly, and every other number on the screen reads it.
-          //
-          // The programme FIRST, and the row only if it landed, as the goal
-          // flow does. The row was written first, so a join the cap refused
-          // left the screen saying "running" over a programme that was not
-          // (hunt 10, #11).
-          void handleAdoptReadyProgram(seasonProgramId)
-            .then((joined) => (joined ? handleEnrolSeason(seasonInView, seasonWindow.year) : undefined))
-            .catch((error) => {
-              reportPlanSaveFailed('Failed to join the season', error, preferences.appLanguage, showToast);
-            });
-        }}
-        onBack={() => navigateBack({ tab: 'workout', screen: 'programs_home' })}
-        onOpenProgram={handleOpenProgramDetail}
-        onStartToday={() => {
-          if (homeActivePlanCard?.programId === seasonProgramId && homeActivePlanCard.nextSession?.id) {
-            handleStartReadyProgramSession(seasonProgramId, homeActivePlanCard.nextSession.id);
-            return;
-          }
-          handleOpenProgramDetail(seasonProgramId);
-        }}
       />
     );
   }

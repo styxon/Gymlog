@@ -14,7 +14,6 @@ import {
   undoImplausibleMinutesMode,
 } from '../lib/minutesModeMigration';
 import { HOLD_SECONDS_MIGRATION_ID, moveOldStretchesToHoldSeconds } from '../lib/holdSecondsMigration';
-import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
 import { isMeasurementKind, measurementUnitForKind } from '../lib/measurementKinds';
@@ -1407,7 +1406,6 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       // Hand-typed numbers in stored JSON: normalised rather than trusted,
       // so a corrupt entry cannot make a progress bar draw past its box.
       strengthGoals: normalizeStrengthGoals(input?.preferences?.strengthGoals),
-      seasonEnrolments: normalizeSeasonEnrolments(input?.preferences?.seasonEnrolments),
       dismissedTipIds:
         Array.isArray(input?.preferences?.dismissedTipIds)
           ? input.preferences.dismissedTipIds.filter((value: unknown): value is string => typeof value === 'string')

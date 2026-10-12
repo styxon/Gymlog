@@ -161,8 +161,9 @@ export const READY_PROGRAM_COLLECTIONS: ReadyProgramCollection[] = [
  * including eleven of the sixteen the welcome screen was curated to show.
  */
 export const UNLISTED_READY_PROGRAMS: readonly string[] = [
-  // Seasons are joined from SeasonScreen, not picked as a plan. A dated
-  // competition in the "pick a programme" list would be a different promise.
+  // Built for the summer/winter season competition, which was removed
+  // 2026-10-12. The programmes stay in the catalogue and on the Programs tab;
+  // putting them in a browse collection is a separate decision.
   'tpl_season_summer_v1',
   'tpl_season_winter_v1',
   // Decided 2026-08-29: these stay out of onboarding for good. They remain on

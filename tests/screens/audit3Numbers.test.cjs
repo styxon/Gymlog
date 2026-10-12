@@ -6,7 +6,6 @@ const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.
 const { getCurrentWeekStreak, getMonthlyActivityCalendar, subtractCalendarMonths } = require('../../.test-dist/lib/completedSessions.js');
 const { isRecordLocked } = require('../../.test-dist/lib/historyWindow.js');
 const { measurementUnitForKind } = require('../../.test-dist/lib/measurementKinds.js');
-const { resolveSeasonWindow, seasonLastDay } = require('../../.test-dist/lib/season.js');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
@@ -179,43 +178,6 @@ module.exports = [
       for (const key of ['exDetail.bestReps', 'exDetail.repsUnit', 'exDetail.bestSession', 'exDetail.repsPerSession']) {
         bothLanguages(key);
       }
-    },
-  },
-  {
-    name: 'seasons: joining signs you into the season you are looking at, and the sign-up is read',
-    run() {
-      const tab = strip(read('src', 'app', 'renderWorkoutTab.tsx'));
-      // It re-resolved from today for the enrolment while adopting the VIEWED
-      // season's programme.
-      // Written once the programme is running (hunt 10, #11).
-      assert.match(tab, /handleEnrolSeason\(seasonInView, seasonWindow\.year\)/);
-      assert.doesNotMatch(tab, /const window = resolveSeasonWindow\(\);\s*handleEnrolSeason/);
-      // The pill and the CTA say what the plans say: the sign-up outlives a
-      // stop, so reading it showed "running" over a switched-off programme
-      // (hunt 11).
-      assert.doesNotMatch(tab, /isEnrolled\(/);
-      assert.match(tab, /running={isReadyProgrammeRunning\(seasonProgramId, activeProgramTemplateIds, database\.workoutTemplates\)}/);
-    },
-  },
-  {
-    name: 'seasons: the end date steps by calendar date, so it survives the clock change',
-    run() {
-      // Under Helsinki's clocks whatever the machine's zone: in UTC there is no
-      // change to straddle, and the guard below failed (#bugs 2026-10-01).
-      withHelsinkiClocks(() => {
-        // Winter 2029 ends 1 April 2030; a fixed day of milliseconds back from
-        // local midnight lands at 23:00 on 30 March.
-        const window = resolveSeasonWindow(new Date(2029, 10, 15));
-        const raw = new Date(window.end.getTime() - 86_400_000);
-        const calendar = seasonLastDay(window);
-        assert.notEqual(raw.getDate(), calendar.getDate(), 'this season must straddle the change');
-        // And the calendar step lands on the season's last day, 31 March.
-        assert.deepEqual([calendar.getFullYear(), calendar.getMonth(), calendar.getDate()], [2030, 2, 31]);
-      });
-
-      const screen = strip(read('src', 'screens', 'SeasonScreen.tsx'));
-      assert.match(screen, /end: formatDay\(seasonLastDay\(window\), language\),/);
-      assert.doesNotMatch(screen, /86_400_000/);
     },
   },
 ];
