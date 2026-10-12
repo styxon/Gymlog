@@ -120,12 +120,13 @@ module.exports = [
           );
         }
       }
+      // Clock times are written out, HH:mm in both languages (owner,
+      // 2026-10-12; dup sweep 13, D3-2) — no formatter at all.
       for (const language of ['fi', 'en']) {
         for (const stamp of stamps) {
-          assert.equal(
-            format.formatTime(stamp, language),
-            new Intl.DateTimeFormat(language === 'fi' ? 'fi-FI' : undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)),
-          );
+          const at = new Date(stamp);
+          const pad = (value) => String(value).padStart(2, '0');
+          assert.equal(format.formatTime(stamp, language), `${pad(at.getHours())}:${pad(at.getMinutes())}`);
         }
       }
 
@@ -145,15 +146,18 @@ module.exports = [
   {
     name: 'screen work: the shared formatter follows the device time zone when it changes',
     run() {
+      const SESSION_DATE = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
       const saved = process.env.TZ;
       const stamp = '2026-06-01T12:00:00.000Z';
       try {
         process.env.TZ = 'Europe/Helsinki';
-        const helsinki = format.formatTime(stamp, 'fi');
-        assert.equal(helsinki, new Intl.DateTimeFormat('fi-FI', { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)));
+        // formatSessionDate carries a time and goes through the cached
+        // formatter (formatTime no longer does).
+        const helsinki = format.formatSessionDate(stamp, 'fi');
+        assert.equal(helsinki, new Intl.DateTimeFormat('fi-FI', SESSION_DATE).format(new Date(stamp)));
         process.env.TZ = 'America/Los_Angeles';
-        const losAngeles = format.formatTime(stamp, 'fi');
-        assert.equal(losAngeles, new Intl.DateTimeFormat('fi-FI', { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)));
+        const losAngeles = format.formatSessionDate(stamp, 'fi');
+        assert.equal(losAngeles, new Intl.DateTimeFormat('fi-FI', SESSION_DATE).format(new Date(stamp)));
         assert.notEqual(losAngeles, helsinki, 'a cached formatter would still read Helsinki');
       } finally {
         if (saved === undefined) {

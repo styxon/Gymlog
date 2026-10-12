@@ -22,7 +22,7 @@
  * wins: a record beats a comeback nudge beats a reminder beats a summary.
  */
 import { getCalendarWeekStartTimestamp } from './completedSessions';
-import { formatCompactVolume, formatVolume } from './format';
+import { formatCompactVolume, formatWeight } from './format';
 import { t } from './i18n';
 import { AppLanguage, NotificationLevel, NotificationPrefs, SetupWeekday } from '../types/models';
 import { exerciseNameLabel } from './exerciseNameLabel';
@@ -432,8 +432,8 @@ function buildRecordNote(input: NotificationPlanInput): PlannedNotification | nu
     title: t(language, 'notif.msg.recordTitle'),
     body: t(language, 'notif.msg.recordBody', {
       exercise: exerciseNameLabel(language, latestPr.exerciseName),
-      // A lift is never tonnes — formatVolume keeps "92.5 kg" as written.
-      weight: formatVolume(latestPr.weightKg),
+      // A lift is never tonnes — formatWeight keeps "92.5 kg" as written (formatVolume rounds totals).
+      weight: formatWeight(latestPr.weightKg),
       reps: latestPr.reps,
     }),
     fireAtMs,

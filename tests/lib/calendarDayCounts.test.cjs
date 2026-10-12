@@ -122,7 +122,9 @@ module.exports = [
     run() {
       const detail = strip(read('src', 'screens', 'ExerciseDetailScreen.tsx'));
       const lastDone = detail.slice(detail.indexOf('function formatLastDone'), detail.indexOf('function formatLastDone') + 400);
-      assert.match(lastDone, /calendarDaysBetween\(iso, Date\.now\(\)\)/);
+      // The app's one relative-day wording, which counts calendar days
+      // (format.formatRelativeDay; dup sweep 13, D2-3).
+      assert.match(lastDone, /formatRelativeDay\(iso, Date\.now\(\), language\)/);
       assert.doesNotMatch(lastDone, /86400000|86_400_000/);
 
       // The shell: App.tsx and the src/app modules its blocks moved into.
@@ -181,7 +183,14 @@ module.exports = [
     run() {
       const screen = fs
         .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'ProgressScreen.tsx'), 'utf8');
-      assert.match(screen, /case '1m':\s*return subtractCalendarMonths\(now, 1\);/);
+      // The chips' start lives in historyWindow, shared by every chart under
+      // them (dup sweep 13, D2-6).
+      assert.match(screen, /trendRangeStart\(range, new Date\(\)\)/);
+      const windowSource = fs.readFileSync(
+        path.join(__dirname, '..', '..', 'src', 'lib', 'historyWindow.ts'),
+        'utf8',
+      );
+      assert.match(windowSource, /case '1m':\s*return subtractCalendarMonths\(now, 1\);/);
       // The measure ranges are windows of calendar days (measureRangeDays), not a start date of their own.
       assert.doesNotMatch(screen, /function getMeasurementRangeStart/);
       assert.doesNotMatch(screen, /start\.setMonth\(start\.getMonth\(\) - \d\)/);

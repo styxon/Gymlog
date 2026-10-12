@@ -312,6 +312,7 @@ const suites = [
   ...require('./lib/uncalledExports.test.cjs'),
   ...require('./lib/cutCorner.test.cjs'),
   ...require('./lib/formatPercent.test.cjs'),
+  ...require('./lib/oneFormatterPerQuantity.test.cjs'),
   ...require('./lib/appWrittenNamesTranslated.test.cjs'),
   ...require('./lib/numericDates.test.cjs'),
   ...require('./lib/programEquipment.test.cjs'),

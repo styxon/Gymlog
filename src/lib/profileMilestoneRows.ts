@@ -1,4 +1,6 @@
-import { applyDecimalSeparator, formatDate } from './format';
+// Thousands are grouped as everywhere else (format.groupThousands): a no-break
+// space in Finnish, a comma in English. The card had a thin space of its own.
+import { formatDate, formatDecimalTenths, groupThousands } from './format';
 import { I18nKey, t } from './i18n';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import { MilestoneLedger, ReachedMilestone } from './milestoneFacts';
@@ -50,13 +52,7 @@ export function formatMilestoneCount(value: number): string {
 
 /** "3.5" / "3,5" — hours and kilometres, to a tenth, in the app's decimal mark. */
 export function formatMilestoneDecimal(value: number): string {
-  const tenths = Math.round(Math.max(0, value) * 10) / 10;
-  return applyDecimalSeparator(Number.isInteger(tenths) ? String(tenths) : tenths.toFixed(1));
-}
-
-/** Thousands grouped with a thin space, as the card has always printed them. */
-function groupThousands(whole: number): string {
-  return String(whole).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  return formatDecimalTenths(Math.max(0, value));
 }
 
 /**

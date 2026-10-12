@@ -215,7 +215,8 @@ module.exports = [
     run() {
       const settings = read('src', 'screens', 'SettingsScreen.tsx');
       assert.doesNotMatch(settings, /toLocaleDateString/);
-      assert.match(settings, /return `\$\{formatDateNumeric\(date, language\)\} \$\{hh\}:\$\{mm\}`;/);
+      // The time through the app's one clock formatter (dup sweep 13, D3-2).
+      assert.match(settings, /return `\$\{formatDateNumeric\(date, language\)\} \$\{formatClockTime\(date\)\}`;/);
       assert.match(settings, /backupTimeLabel\(account\.lastBackupAt, language\)/);
     },
   },

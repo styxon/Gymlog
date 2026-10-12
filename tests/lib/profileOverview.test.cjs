@@ -44,7 +44,9 @@ module.exports = [
       assert.equal(formatRecordWhenLabel('2026-07-21T07:00:00', now), 'Today');
       assert.equal(formatRecordWhenLabel('2026-07-20T23:50:00', now), 'Yesterday');
       assert.equal(formatRecordWhenLabel('2026-07-18T10:00:00', now), '3 days ago');
-      assert.equal(formatRecordWhenLabel('2026-07-01T10:00:00', now), '1 Jul');
+      // The date as formatShortDate writes it, as the Home cards and the
+      // exercise page do (dup sweep 13, D2-3): "Jul 1", not a third form.
+      assert.equal(formatRecordWhenLabel('2026-07-01T10:00:00', now), 'Jul 1');
       assert.equal(formatRecordWhenLabel('not-a-date', now), '');
     },
   },

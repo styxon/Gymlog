@@ -48,10 +48,9 @@ import {
   parseNumberInput,
   removeTrailingZeros,
 } from '../lib/format';
-import { localDateKey, subtractCalendarMonths } from '../lib/completedSessions';
+import { getCanonicalCardioSessions, localDateKey } from '../lib/completedSessions';
 import { getSummaryChartPoints, getTrackedSummaryValues } from '../lib/progressChartPoints';
-import { addCardioMinutesByDay } from '../lib/dashboard';
-import { getCombinedActivityMinutes } from '../lib/cardio';
+import { addCardioMinutesByDay, sumMonthTrainingTotals } from '../lib/dashboard';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { I18nKey, t } from '../lib/i18n';
 import { ProMomentContent, WeeklyReadRow } from '../lib/proInsights';
@@ -71,6 +70,8 @@ import {
   isTrendRangeLocked,
   resolveMeasureRange,
   resolveTrendRange,
+  trendRangeDays,
+  trendRangeStart,
 } from '../lib/historyWindow';
 import { getProgressActivityDayStatus } from '../lib/progressActivity';
 import type { TrainingSchedule } from '../lib/trainingSchedule';
@@ -94,7 +95,7 @@ import {
 } from '../types/models';
 
 // One empty list for every render, so the default does not move the memo.
-const EMPTY_CARDIO: Array<Pick<CardioSession, 'performedAt' | 'durationSec'>> = [];
+const EMPTY_CARDIO: Array<Pick<CardioSession, 'id' | 'performedAt' | 'durationSec'>> = [];
 
 type ProgressSection = 'overview' | 'records' | 'tracked' | 'measures';
 type OverviewMetric = 'volume' | 'duration' | 'bodyweight';
@@ -140,7 +141,7 @@ interface ProgressScreenProps {
    */
   workoutSessions: WorkoutSession[];
   /** Runs and rides: their minutes belong in the duration chart. */
-  cardioSessions?: Array<Pick<CardioSession, 'performedAt' | 'durationSec'>>;
+  cardioSessions?: Array<Pick<CardioSession, 'id' | 'performedAt' | 'durationSec'>>;
   /**
    * The plan's rhythm — cycle or weekdays — the same schedule Home and the
    * widget mark their calendars from, so all three agree on which day trains.
@@ -369,28 +370,7 @@ function getSessionVolumeKg(session: WorkoutSession) {
 }
 
 function getOverviewRangeStart(range: OverviewRange) {
-  const now = new Date();
-  const start = new Date(now);
-
-  switch (range) {
-    case '7d':
-      // Six days back plus today — the same seven the weight card draws.
-      start.setDate(start.getDate() - 6);
-      start.setHours(0, 0, 0, 0);
-      return start;
-    // Through subtractCalendarMonths, not setMonth: on the 31st the raw call
-    // asks for a day the target month does not have and JavaScript answers
-    // with one in the month after it, so "last month" began three days ago.
-    case '1m':
-      return subtractCalendarMonths(now, 1);
-    case '3m':
-      return subtractCalendarMonths(now, 3);
-    case '6m':
-      return subtractCalendarMonths(now, 6);
-    case 'all':
-    default:
-      return null;
-  }
+  return trendRangeStart(range, new Date());
 }
 
 function getOverviewBucketKey(dateString: string, range: OverviewRange) {
@@ -561,7 +541,8 @@ function compareProgressSummaries(left: ExerciseProgressSummary, right: Exercise
   return rightDate - leftDate;
 }
 
-function fmtDelta(value: number) {
+/** Body measures: a tenth is their precision. A lift's change keeps its hundredths. */
+function fmtMeasureDelta(value: number) {
   return removeTrailingZeros(Number(value.toFixed(1)));
 }
 
@@ -662,7 +643,7 @@ function DeltaPill({ delta, unit, lowerIsBetter = false }: { delta: number; unit
       <ArrowGlyph up={up} color={color} />
       <Text style={[styles.deltaPillText, { color }]}>
         {up ? '+' : ''}
-        {fmtDelta(delta)}
+        {fmtMeasureDelta(delta)}
         {unit ? ` ${unit}` : ''}
       </Text>
     </View>
@@ -925,42 +906,24 @@ export function ProgressScreen({
 
   const monthStats = useMemo(() => {
     const currentMonthDay = activityCalendar.weeks.flat().find((day) => day.inCurrentMonth);
-    const monthStart = currentMonthDay ? new Date(currentMonthDay.dayStart) : new Date();
-    const monthEnd = new Date(monthStart);
-    monthEnd.setMonth(monthEnd.getMonth() + 1);
-
-    const inMonth = (performedAt: string) => {
-      const at = new Date(performedAt);
-      return at >= monthStart && at < monthEnd;
-    };
-    const currentMonthSessions = workoutSessions.filter((session) => inMonth(session.performedAt));
+    const monthOf = currentMonthDay ? new Date(currentMonthDay.dayStart) : new Date();
     /*
-     * The runs count too, because the calendar right beside these figures
-     * marks the days they were run on.
-     *
-     * This read `workoutSessions` alone, so a month of running showed a grid
-     * full of marked days over "0 treeniä tässä kuussa" — while the duration
-     * chart on the same tab already counted the same runs' minutes. The
-     * widget's own month totals fixed exactly this and say so: "Workouts 0 ·
-     * Duration 3 h is a contradiction" (audit 3, 2026-09-19).
-     *
-     * Volume stays strength-only: a run has no tonnage, and adding zero to it
-     * would not be counting it, only diluting the average it is not part of.
+     * The widget's month totals, from the same function: this card kept its
+     * own copy of the sum, and each copy carried its own fix for the same
+     * runs-count-too bug (audit 3, 2026-09-19). `workoutSessions` is already
+     * canonical (renderProgressTab); the runs go through the same de-duplication
+     * the widget's do.
      */
-    const currentMonthCardio = cardioSessions.filter((session) => inMonth(session.performedAt));
-
-    const volumeKg = currentMonthSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0);
-    const totalDuration = getCombinedActivityMinutes(
-      currentMonthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
-      currentMonthCardio,
+    const totals = sumMonthTrainingTotals(
+      workoutSessions,
+      getCanonicalCardioSessions({ cardioSessions }),
+      monthOf,
     );
-    const counted = currentMonthSessions.length + currentMonthCardio.length;
-    const averageDuration = counted ? Math.round(totalDuration / counted) : 0;
 
     return {
-      sessions: counted,
-      volumeKg,
-      averageDuration,
+      sessions: totals.workouts,
+      volumeKg: totals.volumeKg,
+      averageDuration: totals.averageDurationMinutes,
     };
   }, [activityCalendar.weeks, cardioSessions, workoutSessions]);
 
@@ -972,14 +935,15 @@ export function ProgressScreen({
    */
   const overviewWeightWindow = useMemo(() => {
     const nowMs = Date.now();
-    // This card's chips are its own (7D · 1M · 3M · 6M · All), so the ceilings
-    // live here — but the rule that turns a ceiling into a width is the shared
-    // one. It used to be inlined, and the copy was a `Math.min(730, ...)` that
-    // only ever ran for "All": every other chip took its number raw, which is
-    // why THIS card was the one photographed drawing an axis into November.
-    const ceilingByRange: Record<string, number> = { '7d': 7, '1m': 31, '3m': 91, '6m': 183 };
+    // The chip's reach is the one every chart under these chips uses
+    // (trendRangeDays: calendar months back, not 31 / 91 / 183 days, which
+    // started this axis two days after the volume axis on 3M). The rule that
+    // turns it into a width is the shared one. It used to be inlined, and the
+    // copy was a `Math.min(730, ...)` that only ever ran for "All": every
+    // other chip took its number raw, which is why THIS card was the one
+    // photographed drawing an axis into November.
     const first = earliestEntryMs(bodyweightProgress.entries.map((entry) => entry.recordedAt));
-    const days = capRangeDays(ceilingByRange[resolvedOverviewRange] ?? ALL_RANGE_CEILING_DAYS, first, nowMs);
+    const days = capRangeDays(trendRangeDays(resolvedOverviewRange, new Date(nowMs)) ?? ALL_RANGE_CEILING_DAYS, first, nowMs);
     // The window follows the data, as the weight card's does: the range chip
     // caps the width and the history sets it, so a short history is a short
     // axis rather than eleven empty weeks before the first entry (user
@@ -1025,7 +989,7 @@ export function ProgressScreen({
         formatValueLabel: (value: number, unitLabel: string) => formatOverviewBodyweightTick(value, unitLabel),
         tooltipFormatter: (point: { label: string; value: number }) => ({
           title: formatDate(point.label, language),
-          value: `${formatTime(point.label)} · ${formatWeight(
+          value: `${formatTime(point.label, language)} · ${formatWeight(
             unitPreference === 'lb' ? convertWeightToKg(point.value, 'lb') : point.value,
             unitPreference,
           )}`,
@@ -1783,7 +1747,7 @@ export function ProgressScreen({
                       {delta !== null ? (
                         <Text style={styles.trackedDelta}>
                           {delta >= 0 ? '+' : ''}
-                          {fmtDelta(delta)} {unitPreference} · {removeTrailingZeros(start ?? 0)} →{' '}
+                          {removeTrailingZeros(delta)} {unitPreference} · {removeTrailingZeros(start ?? 0)} →{' '}
                           {removeTrailingZeros(latest ?? 0)} {unitPreference}
                         </Text>
                       ) : (

@@ -28,7 +28,7 @@ import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { exercisePickerLabel, exercisePickerRowMeta } from '../lib/exercisePicker';
-import { parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClockTime, parseNumberInput, removeTrailingZeros } from '../lib/format';
 import {
   FreestyleExerciseDraft,
   FreestyleFinishSummary,
@@ -61,7 +61,7 @@ import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMom
 import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { RestAlertsSheet } from '../components/RestAlertsSheet';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { describeRest, extendRest } from '../lib/restSchedule';
+import { describeRest, extendRest, formatClock } from '../lib/restSchedule';
 import { useKeyboardReveal } from '../hooks/useKeyboardReveal';
 import { haptics } from '../utils/haptics';
 import { useKeepScreenAwake } from '../utils/keepAwake';
@@ -157,12 +157,6 @@ function buildExerciseState(
     metaLabel: buildMetaLabel(item, language),
     isBarbell: item.equipment === 'barbell',
   };
-}
-
-/** Session clock in the design's m:ss form (minutes unbounded). */
-function formatSessionClock(totalSeconds: number) {
-  const safe = Math.max(0, totalSeconds);
-  return `${Math.floor(safe / 60)}:${`${safe % 60}`.padStart(2, '0')}`;
 }
 
 function formatVolumeLabel(volumeKg: number) {
@@ -568,8 +562,7 @@ export function EmptyWorkoutScreen({
     if (!hasExercises || startedAtMs === null) {
       return null;
     }
-    const started = new Date(startedAtMs);
-    const time = `${String(started.getHours()).padStart(2, '0')}:${String(started.getMinutes()).padStart(2, '0')}`;
+    const time = formatClockTime(new Date(startedAtMs));
     const current = exercises.find((entry) => entry.sets.some((item) => !item.done)) ?? exercises[exercises.length - 1];
     return {
       title: t(language, 'rest.notify.sessionTitle', {
@@ -1095,7 +1088,7 @@ export function EmptyWorkoutScreen({
         </View>
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t(language, 'emptyWorkout.title')}</Text>
-          <Text style={styles.headerClock}>{formatSessionClock(elapsedSeconds)}</Text>
+          <Text style={styles.headerClock}>{formatClock(elapsedSeconds)}</Text>
         </View>
         <View style={[styles.headerSide, styles.headerSideEnd]}>
           <Pressable

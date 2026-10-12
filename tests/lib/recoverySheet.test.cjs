@@ -204,12 +204,16 @@ module.exports = [
       try {
         assert.equal(sheet({}, { acwr: 1.05 }).acwrLabel, '1,05');
         assert.equal(sheet({}, { acwr: 1.3 }).acwrLabel, '1,30');
+        assert.equal(formatLoadKg(18400), '18\u00a0400 kg');
+        assert.equal(formatLoadKg(1234567), '1\u00a0234\u00a0567 kg');
       } finally {
         setNumberLanguage('en');
       }
-      assert.equal(formatLoadKg(18400), '18 400 kg');
+      // English groups with a comma, as every other kg total (dup sweep 13, D3-7):
+      // this card printed the Finnish space in both languages.
+      assert.equal(formatLoadKg(18400), '18,400 kg');
       assert.equal(formatLoadKg(950), '950 kg');
-      assert.equal(formatLoadKg(1234567), '1 234 567 kg');
+      assert.equal(formatLoadKg(1234567), '1,234,567 kg');
       assert.equal(sheet({}, { acwr: 1.25 }).markerPercent, 50);
       assert.equal(sheet({}, { acwr: 0.1 }).markerPercent, 2);
       assert.equal(sheet({}, { acwr: 3.4 }).markerPercent, 98);

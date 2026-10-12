@@ -4,7 +4,7 @@ import { I18nKey, t } from './i18n';
 import { getTopComparableSet } from './profileOverview';
 import { ExerciseProgressSummary } from './progression';
 import { AppLanguage, BodyweightEntry, MeasurementEntry, MeasurementKind } from '../types/models';
-import { removeTrailingZeros } from './format';
+import { formatRelativeDay, removeTrailingZeros } from './format';
 
 /**
  * "Your cards" — user-pinned stat cards at the bottom of Home.
@@ -321,33 +321,21 @@ export function formatHomeStatValue(value: number | null): string {
     return '—';
   }
   // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
-  return removeTrailingZeros(Math.round(value * 100) / 100);
+  return removeTrailingZeros(value);
 }
 
 /**
- * "2 days ago" — how old the number on the card is. Beyond two weeks the
- * phrase stops being shorter than the truth, so the date itself takes over.
+ * "2 days ago" — how old the number on the card is; from a week on, the date
+ * ("Aug 16" / "16.8."). The app's one relative-day wording (formatRelativeDay):
+ * this card said "Last week" for a date thirteen days back, and printed the
+ * Finnish "16.8." to an English reader.
  */
 export function formatHomeStatRecency(
   recordedAt: number,
   language: AppLanguage = 'en',
   now: Date = new Date(),
 ): string {
-  const days = calendarDaysBetween(recordedAt, now);
-  if (days <= 0) {
-    return t(language, 'cards.when.today');
-  }
-  if (days === 1) {
-    return t(language, 'cards.when.yesterday');
-  }
-  if (days < 7) {
-    return t(language, 'cards.when.daysAgo', { days });
-  }
-  if (days < 14) {
-    return t(language, 'cards.when.lastWeek');
-  }
-  const date = new Date(recordedAt);
-  return t(language, 'cards.when.onDate', { day: date.getDate(), month: date.getMonth() + 1 });
+  return formatRelativeDay(recordedAt, now, language);
 }
 
 /** "−0.4 / wk" — the sign always shown, so the direction needs no chart. */

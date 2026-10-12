@@ -865,9 +865,9 @@ function VinhaApp() {
     return {
       title: workout.activeSession.templateName,
       nextExercise: activeExercise?.exerciseName ?? null,
-      meta: `${pluralize(remainingSets, 'set')} left | Started ${formatTime(workout.activeSession.startedAt)}`,
+      meta: `${pluralize(remainingSets, 'set')} left | Started ${formatTime(workout.activeSession.startedAt, preferences.appLanguage)}`,
     };
-  }), [workout.activeSession]);
+  }), [workout.activeSession, preferences.appLanguage]);
   // The same three fields as a value that holds still: see useStableActiveWorkoutSummary.
   const homeActiveWorkoutSummary = useStableActiveWorkoutSummary(homeActiveWorkoutParts);
   /**
