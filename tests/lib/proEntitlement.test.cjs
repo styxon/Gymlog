@@ -362,7 +362,12 @@ module.exports = [
         'utf8',
       );
       assert.match(hook, /trialEndingAtMs\(/);
-      assert.match(hook, /\[proTrialUntil, promoProUntil, mockSubscriptionPurchasedAt, mockSubscriptionTerm, mockSubscriptionCancelledAt\]/);
+      assert.match(hook, /trialEndingAtMs\(database\.preferences\)/);
+      const memo = hook.slice(hook.indexOf('trialEndingAtMs(database.preferences)'));
+      const deps = memo.slice(0, memo.indexOf(');'));
+      for (const field of ['proTrialUntil', 'promoProUntil', 'mockSubscriptionPurchasedAt', 'mockSubscriptionTerm', 'mockSubscriptionCancelledAt']) {
+        assert.match(deps, new RegExp(`database\\.preferences\\.${field},`), `${field} is not a dep of the trial notice`);
+      }
     },
   },
   {

@@ -141,23 +141,17 @@ export function useScheduledNotifications(
   // says the Pro features close, and for those readers they do not. Every field
   // the rule reads is a dep, so a store record landing mid-trial re-plans and
   // retires a notice already scheduled.
-  const {
-    proTrialUntil,
-    promoProUntil,
-    mockSubscriptionPurchasedAt,
-    mockSubscriptionTerm,
-    mockSubscriptionCancelledAt,
-  } = database.preferences;
   const trialEndsAtMs = useMemo(
-    () =>
-      trialEndingAtMs({
-        proTrialUntil,
-        promoProUntil,
-        mockSubscriptionPurchasedAt,
-        mockSubscriptionTerm,
-        mockSubscriptionCancelledAt,
-      }),
-    [proTrialUntil, promoProUntil, mockSubscriptionPurchasedAt, mockSubscriptionTerm, mockSubscriptionCancelledAt],
+    () => trialEndingAtMs(database.preferences),
+    // Primitive deps only, for the reason given on the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      database.preferences.proTrialUntil,
+      database.preferences.promoProUntil,
+      database.preferences.mockSubscriptionPurchasedAt,
+      database.preferences.mockSubscriptionTerm,
+      database.preferences.mockSubscriptionCancelledAt,
+    ],
   );
 
   useEffect(() => {
