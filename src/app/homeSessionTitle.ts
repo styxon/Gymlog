@@ -34,10 +34,19 @@ const FOCUS_BY_PATTERN = {
  * (inferPatternFromExerciseName), so the two cannot call one lift two things.
  * The title's own regex filed a step-up, a swing and a pull-through as Full
  * Body and a rear-delt fly as Push (dup sweep 13, D4-5).
+ *
+ * Conditioning names the machine and the dose, not only "HIIT": the hero
+ * reads a sprint or high knees as lower-body work, which is right for its
+ * muscle split and wrong for a day title — a day opening on "Sprint 40m" or
+ * "Air Bike (30s sprint)" read "Lower Focus", and "Rowing Machine (500m
+ * intervals)" "Full Body Focus" (review R2).
  */
+const CONDITIONING_NAME =
+  /(run|mobility|stretch|yoga|conditioning|hiit|sprint|interval|\bbike\b|rowing machine|\browers?\b|high knees)/;
+
 function getExerciseFocusName(name: string) {
   const normalized = name.toLowerCase();
-  if (/(run|mobility|stretch|yoga|conditioning|hiit)/.test(normalized)) {
+  if (CONDITIONING_NAME.test(normalized)) {
     return 'Conditioning Focus';
   }
   if (/(deadlift|\brdl\b|hip thrust|glute|leg curl|hamstring|pull-through|swing|good morning)/.test(normalized)) {

@@ -348,6 +348,20 @@ module.exports = [
       assert.equal(formatHomeSessionTitle('Day 1', [{ name: 'Kettlebell Swing' }]), 'Posterior Focus');
       assert.equal(formatHomeSessionTitle('Day 1', [{ name: 'Cable Pull-Through' }]), 'Posterior Focus');
       assert.equal(formatHomeSessionTitle('Day 1', [{ name: 'Rowing Machine HIIT' }]), 'Conditioning Focus');
+      // Conditioning is asked before the hero's lower reading (review R2):
+      // these read "Lower Focus" and "Full Body Focus".
+      for (const name of [
+        'Sprint Interval (200m)',
+        'Sprint 40m',
+        'Air Bike (30s sprint)',
+        'High Knees',
+        'Rowing Machine (500m intervals)',
+      ]) {
+        assert.equal(formatHomeSessionTitle('Day 1', [{ name }]), 'Conditioning Focus', name);
+      }
+      // A rowing exercise is still a pull.
+      assert.equal(formatHomeSessionTitle('Day 2', [{ name: 'Barbell Row' }]), 'Pull Focus');
+      assert.equal(formatHomeSessionTitle('Day 2', [{ name: 'Seated Cable Row' }]), 'Pull Focus');
       // Unchanged where the two already agreed.
       assert.equal(formatHomeSessionTitle('Day 2', [{ name: 'Back Squat' }]), 'Lower Focus');
       assert.equal(formatHomeSessionTitle('Day 2', [{ name: 'Bench Press' }]), 'Push Focus');
