@@ -24,6 +24,7 @@ import {
 } from '../lib/programDetails';
 import { resolveProgramEquipment } from '../lib/programEquipment';
 import { livePlanEntries } from '../lib/planResolvableEntries';
+import { programmeStartSessionId } from '../lib/programSessionList';
 import { planForTemplate, planTrainingCycle } from '../lib/planTrainingCycle';
 import { templateSessionsReader } from './planTemplateSessions';
 import { planWeekdayIndexes } from '../lib/programTrainingDays';
@@ -127,12 +128,12 @@ export interface WorkoutTabDeps {
     sessionsPerWeek: string;
     weeklyMinutes: string;
     nextSession: { id: string };
+    sessions: ReadonlyArray<{ id: string; exercises: ReadonlyArray<unknown> }>;
   } | null;
   programInsightsByTemplateId: WorkoutsProps['programInsightsByTemplateId'];
   availableEquipmentForDrills: ProgramDetailProps['availableEquipment'];
   /** Warm-up and cool-down seconds for a day's lifts — the ones Home counts. */
   routineSecondsForExercises: NonNullable<ProgramDetailProps['routineSeconds']>;
-  resolveNextSessionIdForTemplate: (workoutTemplateId: string) => string | null;
   handleStartReadyProgramSession: (workoutTemplateId: string, sessionId: string, trimSets?: boolean) => void;
   /** Resolves to whether the programme is running afterwards; the cap can refuse. */
   handleAdoptReadyProgram: (workoutTemplateId: string, options?: { lead?: boolean }) => Promise<boolean>;
@@ -284,7 +285,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
     programInsightsByTemplateId,
     availableEquipmentForDrills,
     routineSecondsForExercises,
-    resolveNextSessionIdForTemplate,
     handleStartReadyProgramSession,
     handleAdoptReadyProgram,
     handleStartCustomProgram,
@@ -629,9 +629,20 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           if (readyProgramIsMine) {
             // Already the reader's. Adoption returns early for a programme it
             // already holds, so this button used to read like a decision and do
-            // nothing but navigate Home. It now starts the session the rotation
-            // actually offers next — the label says so.
-            const nextSessionId = resolveNextSessionIdForTemplate(route.workoutTemplateId);
+            // nothing but navigate Home. It now starts the session Home offers
+            // — the rotation's next day, or the day picked for today — as a
+            // custom programme's Start does (programmeStartSessionId). It ran
+            // the rotation's day over a standing pick (duplicate sweep 13, D5-2).
+            const nextSessionId = homeActivePlanCard
+              ? programmeStartSessionId(
+                  homeActivePlanCard.sessions.map((session) => ({
+                    id: session.id,
+                    exerciseCount: session.exercises.length,
+                  })),
+                  route.workoutTemplateId,
+                  homeActivePlanCard,
+                )
+              : null;
             if (nextSessionId) {
               handleStartReadyProgramSession(route.workoutTemplateId, nextSessionId);
               return;

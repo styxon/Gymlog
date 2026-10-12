@@ -722,4 +722,25 @@ module.exports = [
       assert.deepEqual(free.map((set) => set.plannedTargetReps), [undefined, undefined, undefined]);
     },
   },
+  // ── Duplicate sweep 13, D1-4: a dial-step nudge is not a ramp ──────────
+  {
+    name: 'dup13 D1-4: 61.25/60/60 opens like 60/60/60, not as a ramp',
+    run() {
+      const target = (loads, setIndex, reps = [10, 10, 10]) =>
+        resolveRampSetTarget({
+          entry: entry(ago(0), reps, loads),
+          setIndex,
+          repsMax: 12,
+          trackingMode: 'load_and_reps',
+          automatedProgressionEnabled: true,
+          nowMs: NOW_UTC,
+        });
+      assert.deepEqual([0, 1, 2].map((index) => target([61.25, 60, 60], index)), [null, null, null]);
+      assert.deepEqual([0, 1, 2].map((index) => target([60, 60, 60], index)), [null, null, null]);
+      // A real ramp still reads as one; a set within a dial step of its top
+      // is at the top, as the load gate reads it (gatingSets).
+      assert.deepEqual([0, 1, 2].map((index) => target([40, 50, 60], index, [10, 8, 5])), [10, 8, 6]);
+      assert.deepEqual([0, 1, 2].map((index) => target([57.5, 58.75, 60], index, [8, 8, 8])), [8, 9, 9]);
+    },
+  },
 ];

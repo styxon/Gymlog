@@ -421,7 +421,9 @@ module.exports = [
     name: 'guided contents: one tap from the rest, and it says what is still to do',
     run() {
       assert.match(playerSource, /style=\{styles\.restRunStrip\}\s*onPress=\{\(\) => setRunSheetOpen\(true\)\}/);
-      assert.match(playerSource, /'guided\.runSheet\.progress', \{ done: completedSetCount, count: totalSets \}/);
+      // One count with the lock-screen card (lib/guidedPlayer liveSetProgress,
+      // duplicate sweep 13 D1-8).
+      assert.match(playerSource, /'guided\.runSheet\.progress', \{ done: setProgress\.done, count: totalSets \}/);
       // The line under each name is the PLAN, not the log. It carried logged
       // weights from 2026-09-09 until 2026-09-11, when the reader asked for
       // "pelkät tulevat sarjat ja toistot": a sheet opened mid-session is

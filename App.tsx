@@ -935,7 +935,6 @@ function VinhaApp() {
     handleStartReadyProgramSession,
     templatesRunByOtherPlans,
     completedSessionsForTemplate,
-    resolveNextSessionIdForTemplate,
     resumeHeldProgramme,
   } = createProgrammeStarts({
     database,
@@ -2169,7 +2168,6 @@ function VinhaApp() {
       programInsightsByTemplateId,
       availableEquipmentForDrills,
       routineSecondsForExercises,
-      resolveNextSessionIdForTemplate,
       handleStartReadyProgramSession,
       handleAdoptReadyProgram,
       handleStartCustomProgram,

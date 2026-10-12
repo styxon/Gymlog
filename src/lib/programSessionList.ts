@@ -86,6 +86,18 @@ export function nextStartableSessionIndex(exerciseCounts: ReadonlyArray<number>,
 }
 
 /**
+ * The day after the one in hand, as the session's "next up" names it: the
+ * next day the rotation can start, skipping empty days as Home's hero, the
+ * week strip and the widget do (nextStartableSessionIndex). It named the
+ * empty day after the one just trained, and Home then offered a different
+ * one (duplicate sweep 13, D5-1). Null when no other day has lifts in it.
+ */
+export function guidedNextUpIndex(exerciseCounts: ReadonlyArray<number>, activeIndex: number): number | null {
+  const next = nextStartableSessionIndex(exerciseCounts, activeIndex + 1);
+  return next === null || next === activeIndex ? null : next;
+}
+
+/**
  * The day a programme's own "start" button runs.
  *
  * A programme Home is leading with starts what Home offers (`leadingNextId`):
