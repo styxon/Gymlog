@@ -1,4 +1,4 @@
-import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, HUGE_GUIDED_PROGRAM_ID, HUGE_HOME_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
+import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, HUGE_BODYWEIGHT_PROGRAM_ID, HUGE_GUIDED_PROGRAM_ID, HUGE_HOME_PROGRAM_ID, STRONG_HOME_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
 import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
@@ -643,6 +643,15 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   }
   if (programId === HOME_EASY_PROGRAM_ID) {
     return ['easyWalk', 'recoveryStrength', 'recoveryMobility', 'hillWalk', 'easyConditioning'];
+  }
+  // STRONG Home fills a longer week with more heavy accessory work first, as
+  // STRONG's general strength order does; HUGE Bodyweight with more bodyweight
+  // volume, as HUGE Home. Neither starts on a conditioning day.
+  if (programId === STRONG_HOME_PROGRAM_ID) {
+    return ['accessoryStrength', 'recoveryStrength', 'recoveryMobility', 'easyConditioning', 'conditioningMobility'];
+  }
+  if (programId === HUGE_BODYWEIGHT_PROGRAM_ID) {
+    return ['bodyweightVolume', 'recoveryMobility', 'accessoryStrength', 'easyConditioning', 'conditioningMobility'];
   }
   // HUGE Guided and HUGE Home fill a longer week with more muscle work first
   // and one easy mobility day: a beginner who asks for five or six days gets

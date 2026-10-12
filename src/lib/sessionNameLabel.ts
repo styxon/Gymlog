@@ -48,6 +48,9 @@ const FOCUS_FI: Record<string, string> = {
   'lower & push': 'Alavartalo ja työntö',
   'upper & balance': 'Ylävartalo ja tasapaino',
   'full body & walk': 'Koko keho ja kävely',
+  // STRONG Home (2026-10-12). "Press" alone is the overhead press, and this day's is on the floor.
+  'squat & press': 'Kyykky ja työntö',
+  'hinge & pull': 'Saranaliike ja veto',
 
   // ── Whole session names from the Vinha programs ──────────────────────
   // Written out rather than decomposed: "Pull A: Width Focus" and "Push:

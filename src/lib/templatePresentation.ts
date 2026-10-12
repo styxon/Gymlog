@@ -413,6 +413,14 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'HOME Easy',
     tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
   },
+  tpl_3_day_strong_home_v1: {
+    title: 'STRONG Home',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    title: 'HUGE Bodyweight',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.mass'],
+  },
   tpl_3_day_huge_guided_v1: {
     title: 'HUGE Guided',
     tagKeys: ['prog.tag.mass', 'prog.tag.fullBody'],

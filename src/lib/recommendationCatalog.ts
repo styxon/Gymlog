@@ -510,6 +510,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     styleTags: ['heavy', 'balanced', 'machine_guided'],
     secondaryOutcomeTags: ['strength', 'consistency'],
     focusAreaTags: ['legs', 'back', 'chest'],
+    // Since 2026-10-12 (owner): the six-rep sets are on guided machines and
+    // cables, no barbell.
+    jointFriendly: true,
   }),
   defineProgram('tpl_3_day_home_easy_strength_v1', {
     familyId: 'low_impact',
@@ -525,6 +528,36 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     secondaryOutcomeTags: ['consistency', 'strength'],
     focusAreaTags: ['legs', 'chest', 'back'],
     lowFriction: true,
+    jointFriendly: true,
+  }),
+  // STRONG Home and HUGE Bodyweight (owner, 2026-10-12): the two gear lanes the
+  // age rule still had no week for over 41, from an audit of 26,460 answers.
+  // Both go to a reader over 41 only (ageGateAllows). STRONG Home is STRONG
+  // Guided's week for a pair of dumbbells: sets of six on the anchor lifts, no
+  // barbell, no jumps. HUGE Bodyweight is HUGE Home's week with nothing to
+  // hold. Neither lists general fitness: no minute of either is cardio.
+  defineProgram('tpl_3_day_strong_home_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_huge_bodyweight_v1', {
+    familyId: 'low_equipment',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back'],
     jointFriendly: true,
   }),
   // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
@@ -589,6 +622,8 @@ export function readerAskedForRecovery(
 export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
 export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
 export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
+export const STRONG_HOME_PROGRAM_ID = 'tpl_3_day_strong_home_v1';
+export const HUGE_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_huge_bodyweight_v1';
 export const HUGE_GUIDED_PROGRAM_ID = 'tpl_3_day_huge_guided_v1';
 export const HUGE_HOME_PROGRAM_ID = 'tpl_3_day_huge_home_v1';
 
@@ -695,7 +730,11 @@ export function ageGateAllows(
   if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID || definition.programId === HUGE_GUIDED_PROGRAM_ID) {
     return input.ageRange === '41_plus' || input.ageRange === '18';
   }
-  if (definition.programId === HUGE_HOME_PROGRAM_ID) {
+  if (
+    definition.programId === HUGE_HOME_PROGRAM_ID
+    || definition.programId === STRONG_HOME_PROGRAM_ID
+    || definition.programId === HUGE_BODYWEIGHT_PROGRAM_ID
+  ) {
     return input.ageRange === '41_plus';
   }
   return true;

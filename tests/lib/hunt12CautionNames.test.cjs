@@ -326,7 +326,13 @@ module.exports = [
       // HUGE Home hinge with a stiff-legged dumbbell deadlift (three rows), a
       // cable pull-through and a bent-over row, all lower-back-avoid rows. Each
       // of their days keeps five lifts; no day went thin.
-      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 127, thin: 3 } };
+      //
+      // Hips went to 92 and lower back to 131 the same day, content again:
+      // HUGE Bodyweight's Hip Thrust (Bodyweight) is a hip-avoid row (+1 hips),
+      // and its Single-Leg RDL (+1) and STRONG Home's two stiff-legged
+      // dumbbell deadlifts and bent-over row (+3) are lower-back-avoid rows.
+      // STRONG Home's hinge day keeps three lifts, not fewer; no day went thin.
+      const expected = { hips: { removed: 92, thin: 2 }, lower_back: { removed: 131, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;
