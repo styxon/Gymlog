@@ -512,9 +512,9 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
 
   tpl_season_summer_v1: {
     summary:
-      'Kesäkauden ohjelma: kolme päivää, joissa jokaisessa on lyhyt voimaosuus ja juoksuosuus peräkkäin. Tankoa ei tarvita missään kohtaa.',
+      'Kolme päivää, joissa jokaisessa on lyhyt voimaosuus ja juoksuosuus peräkkäin. Tankoa ei tarvita missään kohtaa.',
     audience:
-      'Kesäkauteen osallistuville - ja kenelle tahansa, jonka salilla käyminen muuttuu epäsäännölliseksi huhtikuun ja syyskuun välillä.',
+      'Niille, jotka haluavat voimaa ja juoksua samaan viikkoon, ja kenelle tahansa, jonka salilla käyminen on epäsäännöllistä.',
     equipmentProfile:
       'Käsipainopari tai kahvakuula, jokin tanko tai pöytä jonka alla soutaa, ja paikka juosta. Ei tankoa, ei laitteita.',
     whyItWorks:
@@ -523,13 +523,13 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
 
   tpl_season_winter_v1: {
     summary:
-      'Talvikauden ohjelma: neljä päivää, ylä- ja alavartalo kahdesti, jokaisessa treenissä yksi raskas ankkuriliike ja jalkapäivien lopussa lyhyt kunto-osuus.',
+      'Neljä päivää, ylä- ja alavartalo kahdesti, jokaisessa treenissä yksi raskas ankkuriliike ja jalkapäivien lopussa lyhyt kunto-osuus.',
     audience:
-      'Talvikauteen osallistuville, jotka osaavat perusliikkeet jo ja haluavat että pimeä puolivuotinen jättää jotain käteen.',
+      'Niille, jotka osaavat perusliikkeet jo ja haluavat tasaista voimatyötä niin, ettei kunto pääse hiipumaan.',
     equipmentProfile:
       'Vaatii täyden salin. Tanko, käsipainot, ylätalja ja reisikoukistuslaite sekä pyörä tai juoksumatto kunto-osuuksiin.',
     whyItWorks:
-      '26 viikkoa on tarpeeksi pitkä aika tehdä yksi raskas ankkuriliike joka treenissä ilman että sitä tarvitsee pakottaa, ja kaksi lyhyttä kunto-osuutta pitää kesällä rakennetun kunnon tallella maaliskuuhun asti.',
+      'Yksi raskas ankkuriliike treeniä kohden riittää viemään voimaa eteenpäin ilman että sitä tarvitsee pakottaa, ja kaksi lyhyttä kunto-osuutta pitää kunnon tallella, vaikka painot kasvavat.',
   },
 
   tpl_4_day_ppl_plus_v1: {

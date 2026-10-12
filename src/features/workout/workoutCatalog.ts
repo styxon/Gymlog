@@ -640,26 +640,15 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- The two season programmes ------------------------------------------
+  // --- Summer Conditioning and Winter Build ------------------------------
   //
-  // A season is a 26-week window with ONE programme in it, and until now that
-  // programme was borrowed: summer pointed at RUN, winter at POWERBUILD. Both
-  // are fine programmes and neither was built for a season - RUN never lifts
-  // anything, POWERBUILD never gets you outside, and both sit in the catalog
-  // as ordinary choices a reader could also just pick without joining
-  // anything.
-  //
-  // These two are the season's own, and they answer the thing the calendar
-  // actually changes. Summer: it is light out and the gym is the least
-  // interesting room you could be in, so every session pairs a lift block with
-  // a run block and needs no barbell. Winter: it is dark at four, you are
-  // indoors anyway, so four days with a heavy anchor each - and a short
-  // conditioning finisher on the leg days, because the engine you built in
-  // summer is the thing winter quietly takes back.
-  //
-  // Nothing else in the catalog runs and lifts in the same session, and
-  // nothing else finishes a heavy leg day on a bike. That is deliberate: the
-  // season programme has to be worth joining a season for.
+  // Built for the season competition, which is gone (owner, 2026-10-12); the
+  // ids keep their old prefix because plans and logs store them. Summer
+  // Conditioning pairs a lift block with a run block in every session and
+  // needs no barbell. Winter Build is four days with a heavy anchor each and
+  // a short conditioning finisher on the leg days. Nothing else in the
+  // catalogue runs and lifts in the same session, or finishes a heavy leg day
+  // on a bike.
   {
     id: 'tpl_season_summer_v1',
     name: 'Summer Conditioning',

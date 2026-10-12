@@ -5,10 +5,32 @@ const {
 } = require('../../.test-dist/lib/readyProgramContentFi');
 const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent');
 const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation');
 
 const FIELDS = ['summary', 'audience', 'equipmentProfile', 'whyItWorks'];
 
 module.exports = [
+  {
+    // Dup sweep 13 review R2: the season competition is gone (owner,
+    // 2026-10-12), but its two programmes still told the reader about it —
+    // "Kesäkauteen osallistuville", a "Season" / "Kausi" tag, and "Twenty-six
+    // weeks" on an 8-week block.
+    name: 'no ready programme describes the removed season competition, in either language',
+    run() {
+      const SEASON = /season|kau(si|den|teen|della|delle)|kesäkau|talvikau|twenty-six weeks|26 viikkoa/i;
+      for (const template of WORKOUT_TEMPLATES_V1) {
+        for (const language of ['en', 'fi']) {
+          const content = getReadyProgramContent(template.id, language);
+          for (const field of FIELDS) {
+            assert.doesNotMatch(content[field], SEASON, `${template.id}.${field} (${language})`);
+          }
+          for (const tag of getReadyTemplatePresentation(template, language).tags) {
+            assert.doesNotMatch(tag, SEASON, `${template.id} tag (${language})`);
+          }
+        }
+      }
+    },
+  },
   {
     name: 'every Finnish program entry mirrors an English one, field for field',
     run() {

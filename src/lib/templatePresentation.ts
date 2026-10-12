@@ -175,11 +175,11 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
   },
   tpl_season_summer_v1: {
     title: 'Summer Conditioning',
-    tagKeys: ['prog.tag.season', 'prog.tag.running'],
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.running'],
   },
   tpl_season_winter_v1: {
     title: 'Winter Build',
-    tagKeys: ['prog.tag.season', 'prog.tag.strength'],
+    tagKeys: ['prog.tag.upperLower', 'prog.tag.strength'],
   },
   tpl_4_day_ppl_plus_v1: {
     title: 'HUGE Pro+',
