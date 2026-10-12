@@ -190,7 +190,7 @@ module.exports = [
 
       // The status-bar tone follows the theme now, because the band is what
       // sits under the clock — not whichever programme was tapped last.
-      assert.match(pickSource, /onTopToneChange\?\.\(themeName === 'dark' \? 'dark' : 'light'\)/);
+      assert.match(pickSource, /onTopToneChange\?\.\(themeName === 'dark' \? 'light' : 'dark'\)/);
     },
   },
   {

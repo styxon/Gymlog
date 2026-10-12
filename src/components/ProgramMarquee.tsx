@@ -37,6 +37,12 @@ export function marqueeHeight(rowCount: number): number {
   return rows * TILE_HEIGHT + (rows - 1) * GAP + TILT_ALLOWANCE;
 }
 
+/** The rows alone, with no tilt allowance: the band runs level (ANGLE_DEG is 0). */
+export function marqueeRowsHeight(rowCount: number): number {
+  const rows = Math.max(1, rowCount);
+  return rows * TILE_HEIGHT + (rows - 1) * GAP;
+}
+
 interface ProgramMarqueeProps {
   rows: WelcomeMarqueeTile[][];
   /** Set once the reader's reduce-motion preference is known. */

@@ -100,10 +100,11 @@ export interface ProgramPickScreenProps {
    */
   weekNote?: string;
   /**
-   * Which way the top of the screen is painted, so the shell can pick
-   * status-bar icons that are visible against it.
+   * The status-bar ICON style the shell should use here: 'light' icons for a
+   * dark title band, 'dark' icons for a pale one. null hands the shell its own
+   * default back when the screen goes away.
    */
-  onTopToneChange?: (tone: 'light' | 'dark') => void;
+  onTopToneChange?: (iconStyle: 'light' | 'dark' | null) => void;
   busy?: boolean;
 }
 
@@ -243,8 +244,12 @@ export function ProgramPickScreen({
   // half was selected; it is the title band now, so it follows the theme and
   // stops flipping every time the reader taps the other programme.
   const themeName = useThemeName();
+  // Icons are the OPPOSITE of the band: this reported the band's own tone, so
+  // the dark theme got dark icons on a dark header and the clock vanished
+  // (user, 2026-10-12). Cleared on the way out so the previous style returns.
   React.useEffect(() => {
-    onTopToneChange?.(themeName === 'dark' ? 'dark' : 'light');
+    onTopToneChange?.(themeName === 'dark' ? 'light' : 'dark');
+    return () => onTopToneChange?.(null);
   }, [onTopToneChange, themeName]);
 
   const onLayout = (event: LayoutChangeEvent) => setHeight(event.nativeEvent.layout.height);

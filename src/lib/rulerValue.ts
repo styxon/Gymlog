@@ -40,3 +40,24 @@ export function stepRulerValue(value: number, direction: -1 | 1, bounds: RulerBo
   const index = Math.min(rulerStepCount(bounds), Math.max(0, rulerIndexOf(value, bounds) + direction));
   return rulerValueAt(index, bounds);
 }
+
+/**
+ * What a reader typed into a ruler's number, as a value on that ruler.
+ *
+ * Finnish keyboards put a comma on the decimal pad, so both separators are
+ * read; anything else that is not a number returns null and the caller keeps
+ * the old value. The result is held to the scale and to its marks, so typing
+ * 71.26 on a 0.1 ruler lands on 71.3 and typing 500 lands on the maximum.
+ */
+export function parseTypedRulerValue(text: string, bounds: RulerBounds): number | null {
+  const cleaned = text.trim().replace(/\s+/g, '').replace(',', '.');
+  if (!/^(\d+\.?\d*|\.\d+)$/.test(cleaned)) {
+    return null;
+  }
+  const parsed = Number(cleaned);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+  const index = Math.min(rulerStepCount(bounds), Math.max(0, rulerIndexOf(parsed, bounds)));
+  return rulerValueAt(index, bounds);
+}

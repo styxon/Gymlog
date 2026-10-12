@@ -698,7 +698,7 @@ module.exports = [
       );
       assert.match(onboardingSource, /locationProgressBarWrap:\s*\{[\s\S]*?height: 40/);
       // And the 58px offsets that cleared the in-pane bar are gone with it.
-      assert.match(onboardingSource, /focusAreaTopPane:\s*\{[\s\S]*?paddingTop: 36/);
+      assert.match(onboardingSource, /focusAreaTopPane:\s*\{[\s\S]*?paddingTop: 30/);
       assert.doesNotMatch(onboardingSource, /paddingTop: 58/);
       assert.match(onboardingSource, /stage === 'planning'/);
       assert.match(onboardingSource, /scrollEnabled=\{!scrollLockedStage\}/);

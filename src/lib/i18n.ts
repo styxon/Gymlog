@@ -199,11 +199,11 @@ const EN = {
   'startPath.build.body': 'Six steps, then a programme that fits your week.',
   'startPath.build.a11y': 'Build my plan, recommended: six steps, then a programme that fits your week',
   'startPath.ready.title': 'Pick a ready program',
-  'startPath.ready.body': 'Browse the catalogue and pick one yourself.',
+  'startPath.ready.body': 'Browse the ready programs and pick one that suits you.',
   'startPath.ready.a11y': 'Pick a ready program yourself from the catalog',
   'startPath.or': 'OR',
   'startPath.empty.title': 'Start with nothing',
-  'startPath.empty.body': 'Straight in, no programme on Home. Pick one from Programs, or build your own, whenever you want.',
+  'startPath.empty.body': 'Find programs later in the Programs tab, or build your own from scratch.',
   'startPath.empty.a11y': 'Start with nothing: go straight in with no programme on Home',
 
   // ── About you (profile basics, first onboarding step) ──────────────────
@@ -215,6 +215,9 @@ const EN = {
   'aboutYou.gender.male': 'Male',
   'aboutYou.gender.female': 'Female',
   'aboutYou.footNote': 'You can update these later in your profile.',
+  'aboutYou.weight.skip': 'Skip',
+  'aboutYou.weight.skipA11y': 'Skip weight, add it later',
+  'ruler.typeValue.hint': 'Double tap to type the number',
 
   // ── Progress ───────────────────────────────────────────────────────────
   // ── Records, calendar, set log ────────────────────────────────────────
@@ -805,7 +808,7 @@ const EN = {
   'onb.location.home_gym.label': 'Home equipment',
   'onb.location.home_gym.subtitle': 'Train at home with the gear you have.',
   'onb.location.bodyweight_only.label': 'Bodyweight only',
-  'onb.location.bodyweight_only.subtitle': 'No equipment needed. Train anywhere.',
+  'onb.location.bodyweight_only.subtitle': 'No equipment. Train at home, outdoors or anywhere.',
   'onb.location.bodyweight_only.badge': 'BEGINNER FRIENDLY',
 
   'onb.equip.Barbells': 'Barbells',
@@ -2582,7 +2585,7 @@ const EN = {
   'myData.perWeek': '{count}× per week',
   'myData.unit.years': 'years',
   'myData.unit.cm': 'cm',
-  'myData.age.under19': '16-18',
+  'myData.age.under19': '16–18',
   'myData.age.19to25': '19–25',
   'myData.age.26to30': '26–30',
   'myData.age.31to40': '31–40',
@@ -3735,11 +3738,11 @@ const FI: Record<I18nKey, string> = {
   'startPath.build.body': 'Kuusi askelta, ja saat ohjelman joka sopii viikkoosi.',
   'startPath.build.a11y': 'Rakenna ohjelmani, suositus: vastaa muutamaan nopeaan kysymykseen ja saat ohjelman',
   'startPath.ready.title': 'Valitse valmis ohjelma',
-  'startPath.ready.body': 'Selaa valmiit ohjelmat ja valitse itse.',
+  'startPath.ready.body': 'Selaa valmiita ohjelmia ja valitse itsellesi sopiva.',
   'startPath.ready.a11y': 'Valitse itse valmis ohjelma katalogista',
   'startPath.or': 'TAI',
   'startPath.empty.title': 'Aloita tyhjältä',
-  'startPath.empty.body': 'Suoraan sisään, ei ohjelmaa alkunäytöllä. Voit valita sellaisen Ohjelmat-välilehdeltä tai tehdä oman milloin haluat.',
+  'startPath.empty.body': 'Voit hakea ohjelmia myöhemmin Ohjelmat-välilehdeltä tai tehdä oman ohjelman tyhjältä pohjalta.',
   'startPath.empty.a11y': 'Aloita tyhjältä: siirry suoraan sisään ilman ohjelmaa',
 
   'aboutYou.title': 'Aloitetaan sinusta',
@@ -3750,6 +3753,9 @@ const FI: Record<I18nKey, string> = {
   'aboutYou.gender.male': 'Mies',
   'aboutYou.gender.female': 'Nainen',
   'aboutYou.footNote': 'Voit päivittää nämä myöhemmin profiilissasi.',
+  'aboutYou.weight.skip': 'Ohita',
+  'aboutYou.weight.skipA11y': 'Ohita paino, lisää se myöhemmin',
+  'ruler.typeValue.hint': 'Kaksoisnapauta kirjoittaaksesi luvun',
 
   'pr.records': 'ENNÄTYKSET',
   'pr.allRecords': 'Kaikki {count}',
@@ -4317,7 +4323,7 @@ const FI: Record<I18nKey, string> = {
   'onb.location.home_gym.label': 'Kotivälineet',
   'onb.location.home_gym.subtitle': 'Treenaa kotona niillä välineillä, joita sinulla on.',
   'onb.location.bodyweight_only.label': 'Vain kehonpaino',
-  'onb.location.bodyweight_only.subtitle': 'Ei välineitä. Treenaa missä vain.',
+  'onb.location.bodyweight_only.subtitle': 'Ei välineitä. Treenaa kotona, ulkona tai missä vain.',
   'onb.location.bodyweight_only.badge': 'ALOITTELIJAYSTÄVÄLLINEN',
 
   'onb.equip.Barbells': 'Levytangot',
@@ -5919,7 +5925,7 @@ const FI: Record<I18nKey, string> = {
   'myData.perWeek': '{count}× viikossa',
   'myData.unit.years': 'vuotta',
   'myData.unit.cm': 'cm',
-  'myData.age.under19': '16-18',
+  'myData.age.under19': '16–18',
   'myData.age.19to25': '19–25',
   'myData.age.26to30': '26–30',
   'myData.age.31to40': '31–40',

@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RulerPicker } from './RulerPicker';
+import { TypedRulerValue } from './TypedRulerValue';
 
 import { formatShortDate, removeTrailingZeros } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
@@ -121,12 +122,36 @@ function SheetActions({
   );
 }
 
-function BigValue({ value, suffix, decimals }: { value: number; suffix: string; decimals: number }) {
+function BigValue({
+  language,
+  value,
+  suffix,
+  decimals,
+  bounds,
+  label,
+  onCommit,
+}: {
+  language: AppLanguage;
+  value: number;
+  suffix: string;
+  decimals: number;
+  bounds: { min: number; max: number; step: number };
+  label: string;
+  onCommit: (value: number) => void;
+}) {
   const styles = useThemedStyles(makeStyles);
 
   return (
     <View style={styles.bigRow}>
-      <Text style={styles.bigValue}>{removeTrailingZeros(Number(value.toFixed(decimals)))}</Text>
+      <TypedRulerValue
+        language={language}
+        value={value}
+        bounds={bounds}
+        decimals={decimals}
+        onCommit={onCommit}
+        textStyle={styles.bigValue}
+        label={label}
+      />
       <Text style={styles.bigSuffix}>{suffix}</Text>
     </View>
   );
@@ -174,7 +199,7 @@ export function WeightLogSheet({
         </View>
       </View>
 
-      <BigValue value={weight} suffix="kg" decimals={1} />
+      <BigValue language={language} value={weight} suffix="kg" decimals={1} bounds={{ min: WEIGHT_MIN, max: WEIGHT_MAX, step: WEIGHT_STEP }} label={t(language, 'weightLog.title')} onCommit={setWeight} />
       <RulerPicker
         min={WEIGHT_MIN}
         max={WEIGHT_MAX}
@@ -269,7 +294,7 @@ export function MeasureLogSheet({
       </View>
       {hint ? <Text style={styles.hint}>{hint}</Text> : null}
 
-      <BigValue value={value} suffix={unit} decimals={1} />
+      <BigValue language={language} value={value} suffix={unit} decimals={1} bounds={bounds} label={title} onCommit={setValue} />
       <RulerPicker
         min={bounds.min}
         max={bounds.max}
@@ -322,7 +347,7 @@ export function BmiEditSheet({
       <Text style={styles.title}>{t(language, 'bmi.title')}</Text>
 
       <Text style={styles.fieldLabel}>{t(language, 'weightCard.title')}</Text>
-      <BigValue value={weight} suffix="kg" decimals={1} />
+      <BigValue language={language} value={weight} suffix="kg" decimals={1} bounds={{ min: WEIGHT_MIN, max: WEIGHT_MAX, step: WEIGHT_STEP }} label={t(language, 'weightLog.title')} onCommit={setWeight} />
       <RulerPicker
         min={WEIGHT_MIN}
         max={WEIGHT_MAX}
@@ -335,7 +360,7 @@ export function BmiEditSheet({
       />
 
       <Text style={styles.fieldLabel}>{t(language, 'bmi.height')}</Text>
-      <BigValue value={height} suffix="cm" decimals={0} />
+      <BigValue language={language} value={height} suffix="cm" decimals={0} bounds={{ min: HEIGHT_MIN, max: HEIGHT_MAX, step: 1 }} label={t(language, 'bmi.height')} onCommit={setHeight} />
       <RulerPicker
         min={HEIGHT_MIN}
         max={HEIGHT_MAX}
