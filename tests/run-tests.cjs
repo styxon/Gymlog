@@ -590,6 +590,7 @@ const suites = [
   ...require('./lib/restPreference.test.cjs'),
   ...require('./lib/storedQuantities.test.cjs'),
   ...require('./lib/sessionNameLabel.test.cjs'),
+  ...require('./lib/planSessionTitles.test.cjs'),
   ...require('./lib/readyProgramContentFi.test.cjs'),
   ...require('./lib/exerciseNameLabel.test.cjs'),
   ...require('./storage/firstLaunchIsEmpty.test.cjs'),

@@ -283,6 +283,7 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
           ? (sessionId, name) => void handleRenameProgramSession(homeActivePlanCard.programId, sessionId, name)
           : undefined
       }
+      readerSessionNames={preferences.readerSessionNames}
       onStartActivePlanSession={(sessionId) => {
         if (!homeActivePlanCard) {
           return;

@@ -258,6 +258,11 @@ interface ProgramDayScreenProps {
   showRoles?: boolean;
   /** The reader typed this day's name with the pen: shown exactly as typed. */
   readerNamed?: boolean;
+  /**
+   * This day's title as the programme page lists it (see planSessionTitles),
+   * including the "A"/"B" that tells two same-named days apart.
+   */
+  dayTitle?: string;
   onBack: () => void;
 }
 
@@ -286,6 +291,7 @@ export function ProgramDayScreen({
   onRenameSession,
   showRoles = true,
   readerNamed = false,
+  dayTitle: dayTitleFromList,
   onBack,
 }: ProgramDayScreenProps) {
   const theme = useTheme();
@@ -567,7 +573,10 @@ export function ProgramDayScreen({
     return ['primary', 'secondary', 'accessory'].filter((role) => seen.has(role));
   }, [session.exercises, showRoles]);
 
-  const dayTitle = formatPlanSessionTitle(session, dayNumber - 1, programTitle, language, readerNamed);
+  // The list's title when the caller has the whole list (two days that read the
+  // same are told apart there); this day alone otherwise.
+  const dayTitle =
+    dayTitleFromList ?? formatPlanSessionTitle(session, dayNumber - 1, programTitle, language, readerNamed);
   const commitRename = () => {
     if (nameDraft === null) {
       return;

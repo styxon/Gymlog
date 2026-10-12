@@ -55,7 +55,13 @@ import { formatSetScheme } from '../lib/format';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { ExercisePickerSheet } from '../components/AddExerciseSheet';
 import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
-import { localizeSessionFocus, localizeSessionName, localizeWorkoutFocus } from '../lib/sessionNameLabel';
+import {
+  isReaderNamedSession,
+  localizeSessionFocus,
+  localizeSessionName,
+  localizeWorkoutFocus,
+  planSessionTitles as planSessionTitlesFor,
+} from '../lib/sessionNameLabel';
 import { weekdayCodeForDate, weekdayLabel } from '../lib/planWeekdays';
 import { I18nKey, t } from '../lib/i18n';
 import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
@@ -292,6 +298,8 @@ interface HomeScreenProps {
    * silently did nothing would be worse than no pencil.
    */
   onRenameSession?: (sessionId: string, name: string) => void;
+  /** Days the reader named with the pen — shown as typed (isReaderNamedSession). */
+  readerSessionNames?: Record<string, string>;
   onStartActivePlanSession?: (sessionId: string) => void;
   /**
    * True while a workout is in progress. The hero button already resumes it
@@ -473,6 +481,7 @@ export function HomeScreen({
   onCompletionBrowse,
   onPickTodaySession,
   onRenameSession,
+  readerSessionNames,
   onStartActivePlanSession,
   hasActiveSession = false,
   onCreateWorkoutFromExercises,
@@ -632,6 +641,26 @@ export function HomeScreen({
   // Every session the programme holds, for the today-picker. One session
   // is not a choice, so the title only becomes a button past that.
   const planSessions = activePlan?.sessions ?? [];
+  // The names the today-sheet prints, one per session in list order: no "Päivä
+  // 1:" (the row's place says which day it is — formatPlanSessionTitle), and
+  // two days that read the same told apart as "A" and "B". A name the reader
+  // typed with the pen is shown as typed. Display only; nothing stored changes.
+  const planSessionTitles = useMemo(
+    () =>
+      planSessionTitlesFor(
+        planSessions.map((session) => {
+          const readerNamed = isReaderNamedSession(readerSessionNames, {
+            id: session.id,
+            name: session.name ?? session.title,
+          });
+          return { name: readerNamed ? session.name ?? session.title : session.title, readerNamed };
+        }),
+        activePlan?.title ?? '',
+        language,
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activePlan?.sessions, activePlan?.title, language, readerSessionNames],
+  );
   /**
    * This calendar week, Monday first, and the session each day holds — asked
    * from the schedule, the same source the calendar lights its dots from
@@ -2144,10 +2173,7 @@ export function HomeScreen({
           <KitBar
             visible={todayPickDraft !== null}
             from={t(language, 'kit.today')}
-            to={localizeSessionName(
-              planSessions.find((session) => session.id === todayPickDraft)?.title ?? '',
-              language,
-            )}
+            to={planSessionTitles[planSessions.findIndex((session) => session.id === todayPickDraft)] ?? ''}
             buttons={[
               {
                 label: t(language, 'kit.doToday'),
@@ -2171,7 +2197,7 @@ export function HomeScreen({
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          {planSessions.map((session) => {
+          {planSessions.map((session, sessionIndex) => {
             const isToday = session.id === nextPlanSession?.id;
             const renaming = renamingSessionId === session.id;
 
@@ -2217,7 +2243,8 @@ export function HomeScreen({
             return (
               <KitRow
                 key={session.id}
-                title={localizeSessionName(session.title, language)}
+                title={planSessionTitles[sessionIndex] ?? localizeSessionName(session.title, language)}
+                metaFont="app"
                 meta={t(language, 'home.today.meta', {
                   // Same singular-aware pieces as the workout row above; a
                   // one-exercise or one-set day read "1 exercises" (bug hunt,
