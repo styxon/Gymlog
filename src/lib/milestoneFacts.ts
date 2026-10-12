@@ -7,8 +7,7 @@ import {
 import { collapseToLatestPerDay } from './bodyweightCard';
 import { getSessionDurationMinutes } from './dashboard';
 import { getWorkedLogSets } from './exerciseLog';
-import { isHoldLogEntry } from './holdExercises';
-import { isMinutesLogEntry } from './minutesExercises';
+import { isDoseLog } from './holdExercises';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import {
   MILESTONE_FAMILIES,
@@ -138,7 +137,7 @@ export function getMilestoneFacts(
       sets += comparable.length;
       // A log of minutes counts its sets, not its minutes as repetitions; a
       // hold likewise, its seconds are not repetitions.
-      reps += isMinutesLogEntry(log) || isHoldLogEntry(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
+      reps += isDoseLog(log) ? 0 : comparable.reduce((sum, set) => sum + set.reps, 0);
       seenExercises.add(log.exerciseNameSnapshot.trim().toLowerCase());
     }
     timelines.reps.push({ at, total: reps });

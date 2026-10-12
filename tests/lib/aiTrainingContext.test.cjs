@@ -389,19 +389,30 @@ module.exports = [
           bestReps: 24,
         };
       };
+      const trackedProgress = [summary('back squat', 'Back Squat', 100), summary('bench press', 'Bench Press', 80)];
+      // The plateau list reads the same stall count as the history beside it,
+      // so the sessions and logs behind the summaries are passed too.
+      const exerciseLogs = trackedProgress.flatMap((entry) => entry.logs);
+      const workoutSessions = [...new Map(exerciseLogs.map((entry) => [entry.sessionId, entry])).values()].map((entry) => ({
+        id: entry.sessionId,
+        workoutTemplateId: 'tpl',
+        workoutNameSnapshot: 'Day',
+        performedAt: entry.performedAt,
+      }));
       const build = (cautionFlags) =>
         buildAiTrainingContext({
           unitPreference: 'kg',
           activeWorkoutSummary: null,
           homeSummary: { streak: { sessionsThisWeek: 1, sessionsLast30Days: 3, activity: { days: [] } } },
-          workoutSessions: [],
-          exerciseLogs: [],
-          trackedProgress: [summary('back squat', 'Back Squat', 100), summary('bench press', 'Bench Press', 80)],
+          workoutSessions,
+          exerciseLogs,
+          trackedProgress,
           readyProgramCount: 3,
           recommendedProgramId: null,
           recommendedProgramTitle: null,
           customProgramTitle: null,
           cautionFlags,
+          now: new Date(Date.UTC(2026, 8, 30, 12)),
         });
       assert.deepEqual(build([]).plateaus.map((p) => p.name).sort(), ['Back Squat', 'Bench Press']);
       assert.deepEqual(

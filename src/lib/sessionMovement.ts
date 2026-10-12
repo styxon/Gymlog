@@ -10,9 +10,11 @@
  * ever. "+2,5 kg" is a fact about this week; the all-time best is what the PR
  * pill is for, and the two answer different questions.
  */
+import { getWorkedLogSets } from './exerciseLog';
 import { formatWeight, removeTrailingZeros } from './format';
 import { t } from './i18n';
-import { AppLanguage, UnitPreference } from '../types/models';
+import { heaviestOfSets } from './personalRecords';
+import { AppLanguage, ExerciseLogSet, UnitPreference } from '../types/models';
 
 export interface MovementLogLike {
   sessionId: string;
@@ -41,19 +43,20 @@ function normalizeName(name: string): string {
  * is no session of the lift, and the one before it is compared instead.
  *
  * A log with rows is read by its rows only: the flat `weight` is the legacy
- * pair, for a log saved before rows existed.
+ * pair, for a log saved before rows existed. The done sets are the ones every
+ * count reads (getWorkedLogSets), and the top of them is the records rule
+ * (heaviestOfSets) — a row with no reps is no top set.
  */
 function topOf(log: MovementLogLike): number {
-  if (log.skipped) {
-    return 0;
-  }
-  const sets = log.sets ?? [];
-  if (sets.length > 0) {
-    return sets
-      .filter((set) => set.status !== 'pending' && set.status !== 'skipped' && set.kind !== 'warmup')
-      .reduce((max, set) => Math.max(max, Number.isFinite(set.weight) ? set.weight : 0), 0);
-  }
-  return Number.isFinite(log.weight) ? log.weight : 0;
+  const top = heaviestOfSets(
+    getWorkedLogSets({
+      sets: log.sets as ExerciseLogSet[] | undefined,
+      weight: log.weight,
+      repsPerSet: log.repsPerSet ?? [],
+      skipped: Boolean(log.skipped),
+    }),
+  );
+  return top ? top.weight : 0;
 }
 
 /**

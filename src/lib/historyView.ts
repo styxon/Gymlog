@@ -1,5 +1,6 @@
 import { ExerciseLog, SessionFeel, WorkoutSession } from '../types/models';
 import { getComparableLogSets } from './exerciseLog';
+import { heaviestOfSets } from './personalRecords';
 import { getSessionTotals } from './sessionTotals';
 
 export type HistoryFilter = 'all' | 'needs_review' | 'tracked';
@@ -62,23 +63,18 @@ export function buildHistorySessionViewModel(
           )
         : null;
 
-  const topLog = logs.reduce<ExerciseLog | null>((best, log) => {
-    const logTopWeight = getComparableLogSets(log).reduce((top, set) => Math.max(top, set.weight), 0);
-    if (log.skipped || logTopWeight <= 0) {
-      return best;
+  // Each log's top set by the records rule (heaviestOfSets), read once: a
+  // 100 kg row with no reps is no top weight here either, as on Records and
+  // the lift curve (duplicate sweep, 2026-10-12).
+  let topLog: ExerciseLog | null = null;
+  let topLiftWeightKg: number | null = null;
+  for (const log of logs) {
+    const top = log.skipped ? null : heaviestOfSets(getComparableLogSets(log));
+    if (top && (topLiftWeightKg === null || top.weight > topLiftWeightKg)) {
+      topLog = log;
+      topLiftWeightKg = top.weight;
     }
-
-    if (!best) {
-      return log;
-    }
-
-    const bestTopWeight = getComparableLogSets(best).reduce((top, set) => Math.max(top, set.weight), 0);
-    return logTopWeight > bestTopWeight ? log : best;
-  }, null);
-
-  const topLiftWeightKg = topLog
-    ? getComparableLogSets(topLog).reduce((top, set) => Math.max(top, set.weight), 0)
-    : null;
+  }
   const totals = getSessionTotals(logs);
 
   return {

@@ -90,16 +90,17 @@ export function buildSessionMovement({
 
   const rows: Array<{ id: string; row: MovementRow }> = exercises
     .map((exercise): { id: string; row: MovementRow } | null => {
-      const best = exercise.sets.reduce<{ kg: number; reps: number } | null>((top, set) => {
-        if (set.status !== 'completed' || typeof set.weightKg !== 'number' || typeof set.reps !== 'number') {
-          return top;
-        }
-        if (!top || set.weightKg > top.kg || (set.weightKg === top.kg && set.reps > top.reps)) {
-          return { kg: set.weightKg, reps: set.reps };
-        }
-        return top;
-      }, null);
-      if (!best || best.kg <= 0) {
+      // The records rule (heaviestOfSets), as the PR cards below read it.
+      const top = heaviestOfSets(
+        exercise.sets
+          .filter(
+            (set): set is typeof set & { weightKg: number; reps: number } =>
+              set.status === 'completed' && typeof set.weightKg === 'number' && typeof set.reps === 'number',
+          )
+          .map((set) => ({ weight: set.weightKg, reps: set.reps })),
+      );
+      const best = top ? { kg: top.weight, reps: top.reps } : null;
+      if (!best) {
         return null;
       }
       return {

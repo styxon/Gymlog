@@ -1,4 +1,4 @@
-import { getRollingWindowStart } from './completedSessions';
+import { calendarDaysBetween, getRollingWindowStart } from './completedSessions';
 import { I18nKey, t } from './i18n';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { localizeSessionName } from './sessionNameLabel';
@@ -133,8 +133,9 @@ function buildFocus(
         name: lift.name,
         delta,
         latest: latestPoint.topSetWeightKg,
-        // Two sessions on the same day still span a day's worth of training.
-        days: Math.max(1, Math.round((latestPoint.time - firstPoint.time) / 86400000)),
+        // Calendar days, as the history beside it counts them. Two sessions on
+        // the same day still span a day's worth of training.
+        days: Math.max(1, calendarDaysBetween(firstPoint.time, latestPoint.time)),
       };
     }
   }

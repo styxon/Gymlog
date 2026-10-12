@@ -10,7 +10,7 @@
 } from '../types/models';
 import { getComparableLogSets, getWorkedLogSets, logRecordedWork } from './exerciseLog';
 import { t } from './i18n';
-import { isMinutesLogEntry } from './minutesExercises';
+import { isDoseLog } from './holdExercises';
 
 export interface ExerciseLogWithSession extends ExerciseLog {
   performedAt: string;
@@ -84,15 +84,25 @@ function isSameName(loggedName: string, liftName: string) {
   return normalizeExerciseKey(loggedName) === normalizeExerciseKey(liftName);
 }
 
+/**
+ * The lift a saved log belongs under: the name it was logged as.
+ *
+ * It was the programme row's CURRENT name, while the PR lookup on the finish
+ * screen, the coach's context, the next-session advice and the slot history all
+ * read the snapshot. A row renamed under its old id ("Back Squat" to "Barbell
+ * Squat") then listed its squats under the new name on Records and Progress,
+ * and the finish screen, looking for the new name, found no best and called a
+ * 140 kg squat a record again. The snapshot is what was done that day; the
+ * owner chose it as the one name (2026-10-12). The row's name stands in only
+ * for a log saved with no name of its own.
+ */
 function resolveCanonicalExerciseName(log: ExerciseLog, exercisesById: Record<string, ExerciseTemplate>) {
-  if (log.exerciseTemplateId) {
-    const template = exercisesById[log.exerciseTemplateId];
-    if (template?.name) {
-      return template.name.trim();
-    }
+  const snapshot = typeof log.exerciseNameSnapshot === 'string' ? log.exerciseNameSnapshot.trim() : '';
+  if (snapshot) {
+    return snapshot;
   }
-
-  return log.exerciseNameSnapshot.trim();
+  const template = log.exerciseTemplateId ? exercisesById[log.exerciseTemplateId] : undefined;
+  return template?.name ? template.name.trim() : '';
 }
 
 function attachSession(
@@ -146,15 +156,18 @@ export function getCompletedSetCount(logs: readonly Pick<ExerciseLog, 'weight' |
 /**
  * Kilograms moved: weight × reps. A log of minutes has none — twenty minutes
  * is not twenty reps of anything, and whatever stands in its weight column
- * (nothing, from the player) is not a load that was lifted twenty times.
+ * (nothing, from the player) is not a load that was lifted twenty times. Nor
+ * does a hold: sixty seconds with a 10 kg plate is not 600 kg moved, and it
+ * was, in the session total and the weekly load, while Records already left
+ * holds out (isDoseLog; duplicate sweep, 2026-10-12).
  */
 export function getTotalVolume(
   log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
     Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
 ) {
   // The unit or, for a log saved before the unit existed, the name: the same
-  // reading Records and the rep totals make (isMinutesLogEntry).
-  if (isMinutesLogEntry(log)) {
+  // reading Records and the rep totals make.
+  if (isDoseLog(log)) {
     return 0;
   }
   return getWorkedLogSets(log).reduce((sum, set) => sum + set.weight * set.reps, 0);
