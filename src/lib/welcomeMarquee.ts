@@ -2,11 +2,11 @@
  * The tiles that drift across the welcome screen.
  *
  * The middle of that screen has been empty since 2026-08-19, when a bisect
- * left `AmbientDrift` switched off behind a comment and the commit shipped
- * that way. Filling it with decoration would be the same emptiness in a
- * costume; filling it with the catalog says "there are this many programmes
- * in here" before the reader has read a single word — the way a marketplace
- * app opens on its own inventory.
+ * left the ambient drift layer switched off behind a comment and the commit
+ * shipped that way (the layer was deleted 2026-10-12). Filling it with
+ * decoration would be the same emptiness in a costume; filling it with the
+ * catalog says "there are this many programmes in here" before the reader has
+ * read a single word — the way a marketplace app opens on its own inventory.
  *
  * So these are REAL programmes, named as the catalog names them. Nothing is
  * invented for the picture: an empty catalog draws an empty row, because a

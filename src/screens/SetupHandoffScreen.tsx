@@ -639,17 +639,6 @@ const makeStyles = (theme: Theme) =>
       fontWeight: '900',
       letterSpacing: -0.3,
     },
-    skip: {
-      alignSelf: 'center',
-      marginTop: spacing.xs,
-      paddingVertical: spacing.sm,
-      paddingHorizontal: spacing.lg,
-    },
-    skipText: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.muted,
-    },
     pressed: {
       opacity: 0.85,
     },

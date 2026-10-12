@@ -92,24 +92,6 @@ export const STREAKS: MotionBar[] = [
   { y: 668, width: 74, height: 3, ms: 980, delay: 500, accent: false, opacity: 0.09 },
 ];
 
-/**
- * Welcome's ambient field. Durations are mutually non-harmonic
- * (3.4 / 3.9 / 4.2 / 4.4 / 4.8 / 5.6 / 6.0 / 6.4 / 7.2) so the layer takes
- * minutes to repeat a pattern, and the delays are negative so it is already
- * mid-flight on the first paint — no empty first cycle, no visible seam.
- */
-export const DRIFT: MotionBar[] = [
-  { y: 78, width: 96, height: 5, ms: 4200, delay: -400, accent: true, opacity: 0.16 },
-  { y: 132, width: 54, height: 4, ms: 6400, delay: -2100, accent: false, opacity: 0.08 },
-  { y: 196, width: 140, height: 7, ms: 3400, delay: -1200, accent: true, opacity: 0.13 },
-  { y: 268, width: 72, height: 4, ms: 5600, delay: -3400, accent: false, opacity: 0.07 },
-  { y: 330, width: 112, height: 6, ms: 3900, delay: -900, accent: true, opacity: 0.1 },
-  { y: 402, width: 44, height: 3, ms: 7200, delay: -4600, accent: false, opacity: 0.07 },
-  { y: 486, width: 126, height: 5, ms: 4800, delay: -2700, accent: true, opacity: 0.12 },
-  { y: 604, width: 88, height: 4, ms: 6000, delay: -1700, accent: true, opacity: 0.09 },
-  { y: 722, width: 108, height: 5, ms: 4400, delay: -3900, accent: true, opacity: 0.11 },
-];
-
 /** Splash timings, in ms from mount. */
 export const T = {
   markDelay: 900,

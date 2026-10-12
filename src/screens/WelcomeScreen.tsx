@@ -150,7 +150,7 @@ export function WelcomeScreen({ language, onChangeLanguage, onContinue }: Welcom
   return (
     <View style={styles.screen}>
       {/* What is actually in here, drifting past — the catalog rather than a
-          decoration. AmbientDrift used to hold this space and was switched off
+          decoration. An ambient drift layer held this space and was switched off
           by a bisect on 2026-08-19 that shipped; the middle has been empty
           since. Tiles say "28 programmes" before a word is read. */}
       {reduceMotion === null ? null : (
