@@ -252,6 +252,19 @@ module.exports = [
       assert.doesNotMatch(strip(read('src', 'lib', 'aiCoachModules.ts')), /roundVolume/);
       // A single lift is a weight, not a total: it keeps its hundredths.
       assert.match(strip(read('src', 'lib', 'notificationPlan.ts')), /weight: formatWeight\(latestPr\.weightKg\)/);
+
+      // The free workout's live total is History's number while it runs
+      // (review R2): it printed "18400 kg" / "306,25 kg" against History's
+      // "18 400 kg" / "306 kg".
+      const { t } = require(`${DIST}/lib/i18n.js`);
+      const live = strip(read('src', 'screens', 'EmptyWorkoutScreen.tsx'));
+      assert.match(live, /'emptyWorkout\.stat\.volume', \{ volume: formatVolume\(volumeKg\) \}/);
+      assert.doesNotMatch(live, /removeTrailingZeros\(volumeKg\)/);
+      assert.equal(t('en', 'emptyWorkout.stat.volume', { volume: format.formatVolume(18400) }), '18,400 kg volume');
+      inFinnish(() => {
+        assert.equal(t('fi', 'emptyWorkout.stat.volume', { volume: format.formatVolume(306.25) }), '306 kg volyymia');
+        assert.equal(t('fi', 'emptyWorkout.stat.volume', { volume: format.formatVolume(18400) }), '18 400 kg volyymia');
+      });
     },
   },
   {

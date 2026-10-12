@@ -28,7 +28,7 @@ import { formatLiftDisplayLabel } from '../lib/displayLabel';
 import { setFieldAccessibilityLabel } from '../lib/accessibilityLabels';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { exercisePickerLabel, exercisePickerRowMeta } from '../lib/exercisePicker';
-import { formatClockTime, parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClockTime, formatVolume, parseNumberInput } from '../lib/format';
 import {
   FreestyleExerciseDraft,
   FreestyleFinishSummary,
@@ -157,10 +157,6 @@ function buildExerciseState(
     metaLabel: buildMetaLabel(item, language),
     isBarbell: item.equipment === 'barbell',
   };
-}
-
-function formatVolumeLabel(volumeKg: number) {
-  return removeTrailingZeros(volumeKg);
 }
 
 // ── small shared pieces ──────────────────────────────────────────────────
@@ -1114,7 +1110,7 @@ export function EmptyWorkoutScreen({
         </Text>
         <View style={styles.statDot} />
         <Text style={[styles.statText, !hasExercises && styles.statTextFaint]}>
-          {t(language, 'emptyWorkout.stat.volume', { volume: formatVolumeLabel(volumeKg) })}
+          {t(language, 'emptyWorkout.stat.volume', { volume: formatVolume(volumeKg) })}
         </Text>
         <Text style={styles.statTag}>{t(language, 'emptyWorkout.stat.tag')}</Text>
       </View>
