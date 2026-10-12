@@ -42,7 +42,9 @@ module.exports = [
     name: 'appWrittenNames: Home titles a "Day 2" session by its lift, in Finnish',
     run() {
       const source = read('src', 'app', 'homeSessionTitle.ts');
-      const focusNames = [...source.matchAll(/return '([A-Za-z ]+ Focus)'/g)].map((match) => match[1]);
+      // Every quoted title, returned directly or from the pattern table the
+      // session hero's reading maps onto (dup sweep 13, D4-5).
+      const focusNames = [...new Set([...source.matchAll(/'([A-Za-z ]+ Focus)'/g)].map((match) => match[1]))];
       assert.equal(focusNames.length, 6, `expected six focus titles, found ${focusNames.join(', ')}`);
       for (const name of focusNames) {
         assert.doesNotMatch(localizeSessionFocus(name, 'fi'), ENGLISH, `"${name}"`);

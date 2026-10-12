@@ -1,5 +1,5 @@
 import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
-import { getWorkoutTemplateById, WORKOUT_SUBSTITUTION_GROUPS } from '../features/workout/workoutCatalog';
+import { catalogSubstitutionGroupOf, getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { buildRecommendationPlanReadyPayload } from './recommendationProgramme';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS } from './readyProgramDuration';
 import {
@@ -11,7 +11,13 @@ import {
 import { isExerciseAllowedWithEquipment, resolveAvailableEquipment } from './equipmentExerciseFilter';
 import { applyReaderFiltersToDay, countDayLifts, isDayLift, MIN_DAY_LIFTS } from './readerDayFilters';
 import { buildFocusEmphasisAdditions, FocusEmphasisAddition } from './focusEmphasis';
-import { composedSlotDose, FOCUS_ACCESSORY_POOL, getCatalogTrackingMode, SUPPLEMENTAL_DAY_POOL } from './catalogExercisePools';
+import {
+  composedSlotDose,
+  FOCUS_ACCESSORY_POOL,
+  getCatalogTrackingMode,
+  holdsSameMovement,
+  SUPPLEMENTAL_DAY_POOL,
+} from './catalogExercisePools';
 import { classifySessionFocus, SessionFocusKind } from './homeSessionHero';
 import { movementFamilyOf } from './movementFamily';
 import { estimateProgrammeSessionMinutes } from './programmeMinutes';
@@ -127,11 +133,7 @@ export function buildComposedFallbackExercise(
  * silently borrowing someone else's.
  */
 function resolveSubstitutionGroup(name: string, role: string, exerciseIndex: number): string {
-  const normalized = name.trim().toLowerCase();
-  const group = WORKOUT_SUBSTITUTION_GROUPS.find((candidate) =>
-    candidate.allowedExerciseNames.some((allowed) => allowed.trim().toLowerCase() === normalized),
-  );
-  return group?.id ?? `onboarding_${role}_${exerciseIndex + 1}`;
+  return catalogSubstitutionGroupOf(name) ?? `onboarding_${role}_${exerciseIndex + 1}`;
 }
 
 const REFILL_EXERCISE_COUNT = 3;
@@ -173,12 +175,11 @@ function refillEmptiedSession(
   selection: FirstRunSetupSelection,
 ): ComposedProgramSession {
   const pools = Object.values(SUPPLEMENTAL_DAY_POOL);
-  const onTheDay = new Set<string>();
-  const focusNames = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection);
+  const focusNames = movementPoolNames(originalNames, session.id, [], availableEquipment, cautionFlags, selection);
   const supplemental = safeCandidates(
     [...pools.flatMap((pool) => pool.bodyweight), ...pools.flatMap((pool) => pool.loaded)],
     session.id,
-    new Set(focusNames.map((name) => name.trim().toLowerCase())),
+    focusNames,
     availableEquipment,
     cautionFlags,
     selection,
@@ -200,7 +201,7 @@ function refillEmptiedSession(
 function movementPoolNames(
   originalNames: readonly string[],
   sessionId: string,
-  onTheDay: ReadonlySet<string>,
+  onTheDay: readonly string[],
   availableEquipment: string[] | null,
   cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
   selection: FirstRunSetupSelection,
@@ -210,18 +211,15 @@ function movementPoolNames(
     return safeCandidates([...pool.bodyweight, ...pool.loaded], sessionId, onTheDay, availableEquipment, cautionFlags, selection);
   });
   const names: string[] = [];
-  const seen = new Set<string>();
   for (let round = 0; perArea.some((list) => round < list.length); round += 1) {
     for (const list of perArea) {
       if (round >= list.length) {
         continue;
       }
       const name = list[round];
-      const key = name.trim().toLowerCase();
-      if (seen.has(key)) {
+      if (holdsSameMovement(names, name)) {
         continue;
       }
-      seen.add(key);
       names.push(name);
     }
   }
@@ -264,23 +262,22 @@ function pickDistinctMovements(names: readonly string[], count: number, onTheDay
 function safeCandidates(
   names: readonly string[],
   sessionId: string,
-  onTheDay: ReadonlySet<string>,
+  onTheDay: readonly string[],
   availableEquipment: string[] | null,
   cautionFlags: NonNullable<FirstRunSetupSelection['cautionFlags']>,
   selection: FirstRunSetupSelection,
 ): string[] {
   const candidates = [...new Set(names)].map((name, index) => buildComposedFallbackExercise(name, sessionId, index));
   const { adjusted } = applyReaderFiltersToDay(candidates, availableEquipment, cautionFlags, selection.focusAreas);
-  const seen = new Set(onTheDay);
+  const held = [...onTheDay];
   return adjusted.exercises
     .filter((exercise) => isExerciseAllowedWithEquipment(exercise.exerciseName, availableEquipment))
     .map((exercise) => exercise.exerciseName)
     .filter((name) => {
-      const key = name.trim().toLowerCase();
-      if (seen.has(key)) {
+      if (holdsSameMovement(held, name)) {
         return false;
       }
-      seen.add(key);
+      held.push(name);
       return true;
     });
 }
@@ -304,7 +301,7 @@ function topUpThinSession(
   if (missing <= 0) {
     return session;
   }
-  const onTheDay = new Set(session.exercises.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
+  const onTheDay = session.exercises.map((exercise) => exercise.exerciseName);
   const candidates = movementPoolNames(originalNames, session.id, onTheDay, availableEquipment, cautionFlags, selection)
     .filter((name) => isDayLift({ exerciseName: name, trackingMode: getFallbackTrackingMode(name) }));
   const fillers = pickDistinctMovements(
@@ -364,10 +361,10 @@ function withoutRepeats(
   day: readonly WorkoutTemplateExercise[],
   incoming: readonly WorkoutTemplateExercise[],
 ): WorkoutTemplateExercise[] {
-  const names = new Set(day.map((exercise) => exercise.exerciseName.trim().toLowerCase()));
+  const names = day.map((exercise) => exercise.exerciseName);
   const slots = new Set(day.map((exercise) => exercise.slotId));
   return incoming
-    .filter((exercise) => !names.has(exercise.exerciseName.trim().toLowerCase()))
+    .filter((exercise) => !holdsSameMovement(names, exercise.exerciseName))
     .map((exercise) => {
       // Numbered until free: two days folded into one may share a slot id,
       // and one suffix for both made them one slot to the player.

@@ -39,7 +39,7 @@ import {
 } from '../lib/exerciseCollections';
 import { toggleTechniqueStatement } from '../lib/exerciseLearning';
 import type { ExerciseProgressSummary } from '../lib/progression';
-import { catalogLevelForSetup } from '../lib/goalProgramme';
+import { catalogLevelForSetup, isSameLift } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
@@ -1465,11 +1465,15 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         goals={programsGoals}
         goalProgrammes={goalProgrammeSuggestions}
         onOpenGoalPicker={() => navigate({ tab: 'workout', screen: 'goalFlow' })}
-        onRemoveGoal={(exerciseName) =>
+        onRemoveGoal={(exerciseName) => {
+          // Every spelling of the lift, by the rule the goal flow sets it by.
+          const libraryNames = exerciseLibrary.map((item) => item.name);
           void updatePreferences((current) => ({
-            strengthGoals: removeStrengthGoal(current.strengthGoals, exerciseName),
-          }))
-        }
+            strengthGoals: removeStrengthGoal(current.strengthGoals, exerciseName, (left, right) =>
+              isSameLift(left, right, libraryNames),
+            ),
+          }));
+        }}
         customPrograms={programsCustomItems}
         ownProgramsLine={(() => {
           const key = programSlotsLineKey(programSlots);

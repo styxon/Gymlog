@@ -1,4 +1,5 @@
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
+import { inferPatternFromExerciseName } from '../lib/homeSessionHero';
 import { t } from '../lib/i18n';
 import { AppLanguage } from '../types/models';
 
@@ -20,24 +21,30 @@ export function formatGoalLabel(goalType: string, language: AppLanguage = 'en') 
   return t(language, 'programs.cat.balanced');
 }
 
+const FOCUS_BY_PATTERN = {
+  lower: 'Lower Focus',
+  push: 'Push Focus',
+  pull: 'Pull Focus',
+} as const;
+
+/**
+ * The title an auto-named day takes from its opening lift. Conditioning and
+ * the posterior chain are this title's own words and are asked first; the
+ * rest is the session hero's push/pull/lower reading of the name
+ * (inferPatternFromExerciseName), so the two cannot call one lift two things.
+ * The title's own regex filed a step-up, a swing and a pull-through as Full
+ * Body and a rear-delt fly as Push (dup sweep 13, D4-5).
+ */
 function getExerciseFocusName(name: string) {
   const normalized = name.toLowerCase();
-  if (/(squat|lunge|leg press|leg extension|quad)/.test(normalized)) {
-    return 'Lower Focus';
-  }
-  if (/(deadlift|hip thrust|glute|leg curl|hamstring)/.test(normalized)) {
-    return 'Posterior Focus';
-  }
-  if (/(bench|press|push-up|fly|dip)/.test(normalized)) {
-    return 'Push Focus';
-  }
-  if (/(row|pull-up|pulldown|face pull)/.test(normalized)) {
-    return 'Pull Focus';
-  }
   if (/(run|mobility|stretch|yoga|conditioning|hiit)/.test(normalized)) {
     return 'Conditioning Focus';
   }
-  return 'Full Body Focus';
+  if (/(deadlift|\brdl\b|hip thrust|glute|leg curl|hamstring|pull-through|swing|good morning)/.test(normalized)) {
+    return 'Posterior Focus';
+  }
+  const pattern = inferPatternFromExerciseName(name);
+  return pattern ? FOCUS_BY_PATTERN[pattern] : 'Full Body Focus';
 }
 
 export function formatHomeSessionTitle(name: string, exercises: Array<{ name?: string; exerciseName?: string }>) {

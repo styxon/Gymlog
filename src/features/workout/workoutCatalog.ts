@@ -1652,6 +1652,26 @@ export function getWorkoutTemplateById(templateId: string) {
   return WORKOUT_TEMPLATES_V1.find((template) => template.id === templateId) ?? null;
 }
 
+/**
+ * The catalog swap group a name belongs to, or null when no group lists it:
+ * trimmed and lower-cased on both sides, the first group that lists it wins.
+ *
+ * One answer for every writer that keys a slot to a group — the custom-plan
+ * adapter and the onboarding composer each searched this table themselves and
+ * differed only in the id they make up for a name no group holds. They still
+ * make up their own; which group a name IS lives here (dup sweep 13, D4-8).
+ */
+export function catalogSubstitutionGroupOf(exerciseName: string): string | null {
+  const normalized = exerciseName.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  const group = WORKOUT_SUBSTITUTION_GROUPS.find((candidate) =>
+    candidate.allowedExerciseNames.some((allowed) => allowed.trim().toLowerCase() === normalized),
+  );
+  return group?.id ?? null;
+}
+
 export function getWorkoutTemplateSessions(templateId: string) {
   const template = getWorkoutTemplateById(templateId);
   return template ? [...template.sessions].sort((left, right) => left.orderIndex - right.orderIndex) : [];

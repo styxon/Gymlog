@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { libraryBodyPartOf } from '../lib/catalogExercisePools';
 import { LifetimeTrainingSummary } from '../lib/lifetimeSummary';
 import { buildMilestoneLedger, getMilestoneFacts } from '../lib/milestoneFacts';
 import { firstRecordDates, RecordSource, recordEntriesOfLogs, resolveRecords } from '../lib/personalRecords';
@@ -48,13 +49,12 @@ export function useRecordsAndMilestones(deps: RecordsAndMilestonesDeps) {
    * time the legacy shape came up.
    */
   const toSetLogSource = useMemo(() => {
-    const bodyPartByName = new Map(
-      exerciseBrowserItems.map((item) => [item.name.trim().toLowerCase(), item.bodyPart]),
-    );
+    // The library row of that name, else the library through the matcher:
+    // "Back Squat" as the ready programmes log it is Legs, not untagged.
     return (summary: ExerciseProgressSummary): RecordSource => ({
       key: summary.key,
       name: summary.name,
-      bodyPart: bodyPartByName.get(summary.name.trim().toLowerCase()) ?? null,
+      bodyPart: libraryBodyPartOf(summary.name, exerciseBrowserItems),
       // One entry per session; minutes never hold a record (recordSetsOfLog).
       entries: recordEntriesOfLogs(summary.allLogs),
     });

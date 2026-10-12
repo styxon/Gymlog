@@ -8,6 +8,7 @@ import { isMinutesTrackingMode, isTimedTrackingMode, WorkoutTrackingMode } from 
 import { AppLanguage } from '../types/models';
 import { t } from './i18n';
 import { formatWeight, removeTrailingZeros } from './format';
+import { bodyPartForExerciseName } from './catalogExercisePools';
 
 export interface CompletedSetLike {
   status: 'completed' | 'skipped' | string;
@@ -89,43 +90,13 @@ export function getTopSetLabel(
 }
 
 /**
- * Infers a muscle group from the exercise name when the library has no exact
- * match. Mirrors the tone of the equipment inference: obvious patterns only,
- * anything ambiguous falls back to "Other".
- */
-export function inferBodyPartFromExerciseName(name: string): string {
-  const normalized = name.trim().toLowerCase();
-  if (/squat|leg press|leg extension|lunge|calf|quad/.test(normalized)) {
-    return 'legs';
-  }
-  if (/deadlift|hip thrust|glute|hamstring|leg curl/.test(normalized)) {
-    return 'glutes';
-  }
-  // Rows/pulls before chest so "Chest-Supported Row" lands on back.
-  if (/row|pulldown|pull-?up|chin-?up|lat |face pull/.test(normalized)) {
-    return 'back';
-  }
-  if (/bench|chest|fly|dip|push-?up|incline/.test(normalized)) {
-    return 'chest';
-  }
-  if (/overhead press|shoulder|lateral raise|arnold|delt/.test(normalized)) {
-    return 'shoulders';
-  }
-  if (/curl/.test(normalized)) {
-    return 'biceps';
-  }
-  if (/triceps|pushdown|skull|extension/.test(normalized)) {
-    return 'triceps';
-  }
-  if (/plank|crunch|sit-?up|ab |core|leg raise/.test(normalized)) {
-    return 'core';
-  }
-  return 'other';
-}
-
-/**
  * Aggregates completed sets/volume per muscle group. Library exact-name match
- * wins; otherwise the name is pattern-inferred. Sorted by set count descending,
+ * wins; otherwise bodyPartForExerciseName answers — the library through the
+ * guided player's matcher, then the name's own words. The words used to come
+ * first for every name that was not a library row, which is two thirds of the
+ * ready programmes: a leg curl went under Glutes, a rear-delt fly under Chest,
+ * and a step-up or a hanging knee raise under Other (dup sweep 13, D4-1).
+ * Sorted by set count descending,
  * capped to the top four groups. The share is taken over every group, so a
  * session with a long tail doesn't inflate the four that made the cut.
  */
@@ -144,7 +115,7 @@ export function buildMuscleFocus(
 
     const bodyPart =
       bodyPartByName.get(exercise.exerciseName.trim().toLowerCase()) ??
-      inferBodyPartFromExerciseName(exercise.exerciseName);
+      bodyPartForExerciseName(exercise.exerciseName);
     const label = BODY_PART_LABELS[bodyPart] ?? 'Other';
     const entry = groups.get(label) ?? { sets: 0, volumeKg: 0 };
     entry.sets += completed.length;

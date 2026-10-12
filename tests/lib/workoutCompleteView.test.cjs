@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 
 const {
   getTopSetLabel,
-  inferBodyPartFromExerciseName,
   buildMuscleFocus,
   getVolumeDeltaVsPrevious,
 } = require('../../.test-dist/lib/workoutCompleteView.js');
+const { bodyPartForExerciseName } = require('../../.test-dist/lib/catalogExercisePools.js');
 
 const done = (weightKg, reps) => ({ status: 'completed', weightKg, reps });
 
@@ -25,17 +25,21 @@ module.exports = [
     },
   },
   {
-    name: 'body-part inference covers the common lift names and stays honest otherwise',
+    name: 'body part by name covers the common lift names and stays honest otherwise',
     run() {
-      assert.equal(inferBodyPartFromExerciseName('Back Squat'), 'legs');
-      assert.equal(inferBodyPartFromExerciseName('Romanian Deadlift'), 'glutes');
-      assert.equal(inferBodyPartFromExerciseName('Bench Press'), 'chest');
-      assert.equal(inferBodyPartFromExerciseName('Chest-Supported Row'), 'back');
-      assert.equal(inferBodyPartFromExerciseName('Overhead Press'), 'shoulders');
-      assert.equal(inferBodyPartFromExerciseName('Hammer Curl'), 'biceps');
-      assert.equal(inferBodyPartFromExerciseName('Rope Pushdown'), 'triceps');
-      assert.equal(inferBodyPartFromExerciseName('Plank'), 'core');
-      assert.equal(inferBodyPartFromExerciseName('Mystery Move'), 'other');
+      assert.equal(bodyPartForExerciseName('Back Squat'), 'legs');
+      // The library files the RDL under legs (exact row); the name's words
+      // said glutes and used to win for every name that was not a row.
+      assert.equal(bodyPartForExerciseName('Romanian Deadlift'), 'legs');
+      assert.equal(bodyPartForExerciseName('Bench Press'), 'chest');
+      assert.equal(bodyPartForExerciseName('Chest-Supported Row'), 'back');
+      assert.equal(bodyPartForExerciseName('Overhead Press'), 'shoulders');
+      assert.equal(bodyPartForExerciseName('Hammer Curl'), 'biceps');
+      assert.equal(bodyPartForExerciseName('Rope Pushdown'), 'triceps');
+      assert.equal(bodyPartForExerciseName('Plank'), 'core');
+      // Names nothing in the library places fall to the words, then "other".
+      assert.equal(bodyPartForExerciseName('Single-Leg Calf Raise Hold Variant'), 'legs');
+      assert.equal(bodyPartForExerciseName('Mystery Move'), 'other');
     },
   },
   {
