@@ -41,6 +41,17 @@ const FI: Record<string, string> = {
     'Kävele blokit vauhdilla, jolla pystyt vielä puhumaan lyhyin lausein, ja lisää minuutti, kun molemmat tuntuvat tasaisilta.',
   'If the reps are missed, repeat the same version next time and build them back up.':
     'Jos toistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
+  // ── STRONG Home and HUGE Bodyweight (2026-10-12) ────────────────────
+  'Each anchor lift is a dumbbell lift for six reps. When every set reaches six smooth, controlled reps, use the next heavier dumbbells; with one pair, take three seconds to lower each rep and pause a second at the bottom first.':
+    'Jokainen ankkuriliike tehdään käsipainoilla kuuden toiston sarjoina. Kun jokainen sarja yltää kuuteen sujuvaan, hallittuun toistoon, ota ensi kerralla seuraavaksi raskaammat käsipainot; yhdellä parilla käytä ensin kolme sekuntia jokaiseen laskuvaiheeseen ja pysähdy sekunniksi alas.',
+  'Add reps to every set first, lowering each rep under control. When every set reaches the reps written, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.':
+    'Lisää ensin toistoja jokaiseen sarjaan ja laske jokainen toisto hallitusti. Kun jokainen sarja yltää merkittyihin toistoihin, tee liikkeestä vaikeampi: matalampi alusta punnerrukseen, pidempi pysäys soudun yläasennossa.',
+  'Finish the reps written on every set before changing the movement, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin vaihdat liikettä, ja laske jokainen toisto hallitusti.',
+  'Add reps before changing the movement, and keep the last rep as controlled as the first.':
+    'Lisää toistoja ennen kuin vaihdat liikettä, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
+  'If the minimum reps are missed, repeat the same version next time and build the reps back up.':
+    'Jos vähimmäistoistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
   // ── HUGE Guided and HUGE Home (2026-10-12) ──────────────────────────
   'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, add the smallest step the stack or the dumbbells allow next time.':
     'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, lisää ensi kerralla pienin askel, jonka painopakka tai käsipainot sallivat.',

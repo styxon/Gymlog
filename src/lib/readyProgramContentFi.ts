@@ -351,6 +351,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Liikkeet vaikeutuvat pienin askelin (matalampi tuoli, matalampi alusta punnerrukseen), ja kävelyt varaavat jokaisesta päivästä osan kevyelle kestävyydelle.',
   },
+  tpl_3_day_strong_home_v1: {
+    summary:
+      'Kolme koko kehon päivää kotona käsipainoparilla: maljakyykkyä, lattiapunnerrusta, soutua, suorin jaloin maastavetoa ja pystypunnerrusta, ankkuriliikkeissä kuuden toiston sarjoja. Jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa vahvistua kotona käsipainoilla kolmena päivänä viikossa, ilman penkkiä, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Käsipainopari, joka on riittävän painava kuuden toiston sarjoihin, ja vähän lattiatilaa. Penkkiä ei tarvita: punnerrus tehdään selinmakuulla lattialla.',
+    whyItWorks:
+      'Raskaita kuuden toiston sarjoja pitkillä tauoilla ja helposti toistettavilla liikkeillä: kyykky, saranaliike, työntö ja veto joka viikko, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Lopeta sarja toisto ennen uupumusta; kun jokainen sarja yltää kuuteen toistoon, ota raskaammat käsipainot, tai yhdellä parilla hidasta ensin jokainen laskuvaihe kolmeen sekuntiin.',
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    summary:
+      'Kolme koko kehon päivää ilman välineitä: punnerruksia, soutua pöydän alla, kyykkyjä, takaaskelkyykkyjä, lantionnostoja ja yhden jalan liikkeitä. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kasvattaa lihasta ilman välineitä kolmena päivänä viikossa, kotona tai muualla, ilman tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Ei ostettavia välineitä: lattia, tukeva pöytä, jonka alla soudetaan, sekä sohva, tuoli tai tason reuna vinopunnerrukseen ja lantionnostoon.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Lisää ensin toistoja jokaiseen sarjaan ja laske jokainen toisto hallitusti; kun jokainen sarja yltää toistoihinsa, tee liikkeestä vaikeampi: matalampi alusta punnerrukseen, pidempi pysäys soudun yläasennossa.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Kolme koko kehon salipäivää lihaskasvuun, pääosin laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja, ympärillä maljakyykky, vinopenkkipunnerrus käsipainoilla ja rintatuettu soutu. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',

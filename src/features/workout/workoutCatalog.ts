@@ -1785,6 +1785,106 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
+  // --- STRONG Home and HUGE Bodyweight (owner, 2026-10-12) ------------------
+  //
+  // The two weeks a reader over 41 still lacked, from an audit of 26,460
+  // answers: strength with a pair of dumbbells and nothing else, and muscle
+  // with no equipment at all. Both are three full-body days of 40 minutes
+  // (card = estimate), one rep number per row, no jumps, no barbell, legs on
+  // every day, and as much pulling as pressing. The copy names the training,
+  // never an age.
+  //
+  // STRONG Home lifts at six reps where a lift is an anchor (the bar reads
+  // Strength at six or fewer) and at eight for the support work, so it is not
+  // HUGE Home with a lower rep number: fewer lifts, four sets, long rests.
+  {
+    id: 'tpl_3_day_strong_home_v1',
+    name: 'STRONG Home',
+    goalType: 'strength',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Each anchor lift is a dumbbell lift for six reps. When every set reaches six smooth, controlled reps, use the next heavier dumbbells; with one pair, take three seconds to lower each rep and pause a second at the bottom first.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Add reps before load, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the six reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // A pair of dumbbells and the floor: no bench, no bar, no machine, so the
+    // card's "Dumbbells" chip alone runs all of it.
+    sessions: [
+      session({ id: 'strong_home_day1', name: 'Day 1: Squat & Press', orderIndex: 1, exercises: [
+        ex({ id: 'strong_home_day1_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day1_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'primary_dumbbell_floor_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'strong_home_day1_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'secondary_single_arm_dumbbell_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day1_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_reverse_lunge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_home_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_home_day2', name: 'Day 2: Hinge & Pull', orderIndex: 2, exercises: [
+        ex({ id: 'strong_home_day2_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'primary_stiff_legged_dumbbell_deadlift', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_home_day2_bent_over_two_dumbbell_row', exerciseName: 'Bent Over Two-Dumbbell Row', slotId: 'primary_bent_over_two_dumbbell_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day2_dumbbell_shoulder_press', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_dumbbell_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'strong_home_day2_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'secondary_goblet_squat', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_home_day3', name: 'Day 3: Full Body', orderIndex: 3, exercises: [
+        ex({ id: 'strong_home_day3_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day3_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'primary_dumbbell_floor_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'strong_home_day3_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'primary_single_arm_dumbbell_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day3_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'secondary_stiff_legged_dumbbell_deadlift', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_home_day3_hammer_curl', exerciseName: 'Hammer Curl', slotId: 'accessory_hammer_curl', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_huge_bodyweight_v1',
+    name: 'HUGE Bodyweight',
+    goalType: 'hypertrophy',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Add reps to every set first, lowering each rep under control. When every set reaches the reps written, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.',
+      secondary: 'Finish the reps written on every set before changing the movement, lowering each rep under control.',
+      accessory: 'Add reps before changing the movement, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the minimum reps are missed, repeat the same version next time and build the reps back up.',
+    },
+    // The floor, a sturdy table to row under and a wall or a step to push
+    // against: no chip on the equipment card is needed.
+    sessions: [
+      session({ id: 'huge_bodyweight_day1', name: 'Day 1: Full Body (Push)', orderIndex: 1, exercises: [
+        ex({ id: 'huge_bodyweight_day1_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_bodyweight_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day1_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_incline_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day1_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'huge_bodyweight_day1_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+        ex({ id: 'huge_bodyweight_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'huge_bodyweight_day2', name: 'Day 2: Full Body (Pull)', orderIndex: 2, exercises: [
+        ex({ id: 'huge_bodyweight_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day2_bodyweight_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'primary_bodyweight_reverse_lunge', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day2_push_up_or_knee_push_up', exerciseName: 'Push-Up (or Knee Push-Up)', slotId: 'secondary_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day2_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'huge_bodyweight_day2_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+        ex({ id: 'huge_bodyweight_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'huge_bodyweight_day3', name: 'Day 3: Full Body (Legs)', orderIndex: 3, exercises: [
+        ex({ id: 'huge_bodyweight_day3_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_bodyweight_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day3_single_leg_rdl', exerciseName: 'Single-Leg RDL', slotId: 'primary_single_leg_rdl', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_bodyweight_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day3_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'secondary_incline_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day3_hip_thrust_bodyweight', exerciseName: 'Hip Thrust (Bodyweight)', slotId: 'secondary_hip_thrust_bodyweight', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'hip_thrust_bridge' }),
+        ex({ id: 'huge_bodyweight_day3_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+      ] }),
+    ],
+  },
+
   // --- HUGE Guided and HUGE Home (owner, 2026-10-12) ----------------------
   //
   // A muscle week for the reader the age rule looks after over 41. Until these,

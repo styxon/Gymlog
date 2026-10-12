@@ -370,6 +370,26 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'The moves get harder in small steps (a lower chair, a lower surface for the push-up), and the walks keep part of every day for easy cardio.',
   },
+  tpl_3_day_strong_home_v1: {
+    summary:
+      'Three full-body days at home with a pair of dumbbells: goblet squats, floor presses, rows, stiff-legged deadlifts and shoulder presses, with sets of six on the anchor lifts. The legs are trained every day.',
+    audience:
+      'Anyone who wants to get stronger at home with dumbbells three days a week, without a bench, a bar or jumping.',
+    equipmentProfile:
+      'A pair of dumbbells heavy enough for sets of six, and some floor space. No bench: the press is done lying on the floor.',
+    whyItWorks:
+      'Heavy sets of six with long rests on lifts that are simple to repeat: a squat, a hinge, a press and a row every week, with as many sets of pulling as of pressing. Stop a rep short of failure; once every set reaches six reps, move up a dumbbell size, or with one pair slow each lowering to three seconds first.',
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    summary:
+      'Three full-body days with no equipment: push-ups, table rows, squats, reverse lunges, glute bridges and single-leg work. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Anyone who wants to build muscle with no equipment three days a week, at home or away, without a bar or jumping.',
+    equipmentProfile:
+      'No equipment to buy: the floor, a sturdy table to row under, and a sofa, chair or counter for the incline push-up and the hip thrust.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. Add reps to every set first and lower each rep under control; once every set reaches its reps, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Three full-body gym days for muscle, mostly on machines and cables: leg press, chest press, pulldown and cable row, with a goblet squat, an incline dumbbell press and a chest-supported row around them. Every lift runs 10–15 reps, and the legs are trained every day.',
