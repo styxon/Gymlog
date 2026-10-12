@@ -49,10 +49,14 @@ export function normalizeStrengthGoals(value: unknown): StrengthGoal[] {
     const candidate = entry as Partial<StrengthGoal>;
     const name = typeof candidate.exerciseName === 'string' ? candidate.exerciseName.trim() : '';
     const target = typeof candidate.targetKg === 'number' ? candidate.targetKg : NaN;
-    if (!name || !isValidTarget(target) || seen.has(name)) {
+    // One target per spelling, whatever its case: progression keys goal rows
+    // by the lower-cased name, so "Bench Press" and "bench press" kept here as
+    // two goals were one row there (dup sweep 13, D4-2). The first one stays.
+    const key = name.toLowerCase();
+    if (!name || !isValidTarget(target) || seen.has(key)) {
       continue;
     }
-    seen.add(name);
+    seen.add(key);
     goals.push({
       exerciseName: name,
       targetKg: target,
@@ -93,17 +97,38 @@ export function resolveGoalProgress(
   });
 }
 
+/** Whether two goal names are one lift. The default compares the names exactly. */
+export type GoalLiftMatcher = (left: string, right: string) => boolean;
+
+const sameName: GoalLiftMatcher = (left, right) => left === right;
+
+/**
+ * Sets a target, replacing every target `matches` calls the same lift.
+ *
+ * @param matches passed in, as resolveGoalProgress takes it, so this module
+ *   stays below the programme layer. The goal flow passes `isSameTargetLift`
+ *   — the rule it uses to tell the reader a target is already set and saving
+ *   replaces it; narrower than `isSameLift`, which folds in a lift's family. Comparing names here instead kept a target stored under an
+ *   older spelling ("Back Squat", the presets' name until 2026-09-02) beside
+ *   the new "Barbell Squat" one: two squat rows, one stuck at the old number
+ *   (dup sweep 13, D4-2).
+ */
 export function upsertStrengthGoal(
   goals: readonly StrengthGoal[],
   next: StrengthGoal,
+  matches: GoalLiftMatcher = sameName,
 ): StrengthGoal[] {
-  const withoutDuplicate = goals.filter((goal) => goal.exerciseName !== next.exerciseName);
+  const withoutDuplicate = goals.filter(
+    (goal) => goal.exerciseName !== next.exerciseName && !matches(goal.exerciseName, next.exerciseName),
+  );
   return [...withoutDuplicate, next];
 }
 
+/** Removes the target, and every other `matches` calls the same lift. */
 export function removeStrengthGoal(
   goals: readonly StrengthGoal[],
   exerciseName: string,
+  matches: GoalLiftMatcher = sameName,
 ): StrengthGoal[] {
-  return goals.filter((goal) => goal.exerciseName !== exerciseName);
+  return goals.filter((goal) => goal.exerciseName !== exerciseName && !matches(goal.exerciseName, exerciseName));
 }

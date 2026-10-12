@@ -1,26 +1,28 @@
 import { useCallback, useMemo } from 'react';
 
 import { adaptLegacyWorkoutTemplateToRuntimeTemplate } from '../features/workout/customWorkoutAdapter';
-import type { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import type { WorkoutFeatureState } from '../features/workout/workoutState';
 import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { getRecentExerciseLibraryItems } from '../lib/exerciseSuggestions';
 import { selectHomeCustomProgram } from '../lib/homeProgramSelection';
-import { buildProgramInsightMap } from '../lib/programInsights';
 import { buildExercisePrLookup, buildExercisePrLookupBefore } from '../lib/workoutCompletionSummary';
 import type {
   AppDatabase,
   AppPreferences,
   ExerciseTemplate,
-  UnitPreference,
   WorkoutTemplateSessionWithExercises,
 } from '../types/models';
 
 /**
  * The reader's own programmes as the shell reads them — each adapted to the
- * runtime template the player runs, listed newest first, with the insight
- * cards for every programme, ready or custom, and the one Home offers — and
- * the exercise log's recent-lift list and PR lookup.
+ * runtime template the player runs, listed newest first, and the one Home
+ * offers — and the exercise log's recent-lift list and PR lookup.
+ *
+ * It also built an insight card for every programme, ready or custom (70+),
+ * on every database change: a day re-derived from the session's name text and
+ * a count by template id without the programme's lineage, unlike the rotation.
+ * No screen rendered any of it, so it was deleted (duplicate sweep 13,
+ * 2026-10-12).
  *
  * Moved verbatim from VinhaApp in App.tsx in the phase-B split (2026-09-30).
  * A hook, not a helper: these are memos, and VinhaApp calls this exactly
@@ -44,15 +46,13 @@ export interface CustomProgramViewsDeps {
   exerciseLibrary: AppDatabase['exerciseLibrary'];
   /** The reader's preferences: the default rest the adapter fills in. */
   preferences: AppPreferences;
-  /** The whole database, for the programme insights, the recent lifts and the PR lookup. */
+  /** The whole database, for the recent lifts and the PR lookup. */
   database: AppDatabase;
-  /** The reader's kg/lb setting, for the programme insights. */
-  unitPreference: UnitPreference;
   /**
    * The workout context, passed whole so the deps entries keep reading
-   * workout.activeSession, workout.templates and workout.history.*.
+   * workout.activeSession and workout.history.*.
    */
-  workout: Pick<WorkoutFeatureState, 'activeSession' | 'history'> & { templates: typeof WORKOUT_TEMPLATES_V1 };
+  workout: Pick<WorkoutFeatureState, 'activeSession' | 'history'>;
 }
 
 export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
@@ -63,7 +63,6 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
     exerciseLibrary,
     preferences,
     database,
-    unitPreference,
     workout,
   } = deps;
 
@@ -99,38 +98,6 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
           origin: template.origin,
         })),
     [getWorkoutExercises, getWorkoutTemplateSessions, workoutTemplates],
-  );
-  // The two fields the insight map reads of the running session. The session
-  // object itself is replaced on every set logged, rest ended and swap, and
-  // keying the map on it rebuilt all 71 programmes' insights each time with
-  // the same answer.
-  const liveTemplateId = workout.activeSession?.templateId ?? null;
-  const liveTemplateName = workout.activeSession?.templateName ?? null;
-  const programInsightsByTemplateId = useMemo(
-    () =>
-      buildProgramInsightMap({
-        database,
-        programs: [
-          ...workout.templates.map((template) => ({
-            id: template.id,
-            name: template.name,
-            sessions: template.sessions,
-            weeklyTarget: template.daysPerWeek,
-          })),
-          ...Object.values(customWorkoutRuntimeMap).map((template) => ({
-            id: template.id,
-            name: template.name,
-            sessions: template.sessions,
-            weeklyTarget: template.sessions.length,
-          })),
-        ],
-        unitPreference,
-        activeSession:
-          liveTemplateId !== null
-            ? { templateId: liveTemplateId, templateName: liveTemplateName ?? '' }
-            : null,
-      }),
-    [database, customWorkoutRuntimeMap, unitPreference, liveTemplateId, liveTemplateName, workout.templates],
   );
   const recentCompletedCustomTemplateId = useMemo(
     () =>
@@ -188,7 +155,6 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
   return {
     customWorkoutRuntimeMap,
     customWorkouts,
-    programInsightsByTemplateId,
     selectedCustomProgram,
     recentExerciseBrowserItems,
     exercisePrLookup,

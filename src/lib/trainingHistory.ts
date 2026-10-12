@@ -1,10 +1,17 @@
-import { getCalendarWeekStartAfter, getRollingWindowStart, localDateKey } from './completedSessions';
+import {
+  calendarDaysBetween,
+  getCalendarWeekStartAfter,
+  getCalendarWeekStartTimestamp,
+  getRollingWindowStart,
+  localDateKey,
+} from './completedSessions';
 import { getComparableLogSets } from './exerciseLog';
-import { isHoldLogEntry } from './holdExercises';
-import { isMinutesLogEntry } from './minutesExercises';
+import { isDoseLog } from './holdExercises';
+import { heaviestOfSets } from './personalRecords';
 import { getTotalVolume } from './progression';
+import { getSessionTotals } from './sessionTotals';
 import { ExerciseLog, SetupWeekday, WorkoutSession } from '../types/models';
-import { TrainingSchedule, trainsOn } from './trainingSchedule';
+import { cycleSessionsPerWeek, TrainingSchedule, trainsOn } from './trainingSchedule';
 
 /**
  * The numeric layer under everything the coach says.
@@ -22,8 +29,6 @@ import { TrainingSchedule, trainsOn } from './trainingSchedule';
  * Names stay as stored — English exercise and session snapshots are
  * identifiers here, not labels.
  */
-
-const DAY_MS = 86400000;
 
 /** Eight weeks: the span a reader should be able to reconstruct from this. */
 export const DEFAULT_HISTORY_WINDOW_DAYS = 56;
@@ -215,23 +220,20 @@ export function sessionTime(session: Pick<WorkoutSession, 'performedAt'>) {
  * It paired the log's heaviest weight with the most reps of ANY set: a ramp
  * of 100 × 3 and a back-off of 70 × 12 came out as "100 kg × 12", which went
  * into the plateau card and the coach's context as a set nobody did. The
- * heaviest set now keeps its own reps; at equal weight, the one with more.
+ * heaviest set now keeps its own reps; at equal weight, the one with more —
+ * the records rule (personalRecords.heaviestOfSets), so the lift curve, the
+ * plateau card and the Records tab name the same set.
+ *
+ * A dose is no top set: a plank held 60 s with a plate is not "10 kg × 60"
+ * (isDoseLog; duplicate sweep, 2026-10-12).
  */
 export function topSetOf(log: ExerciseLog): { weight: number; reps: number } | null {
-  if (log.skipped) {
+  if (log.skipped || isDoseLog(log)) {
     return null;
   }
 
-  let top: { weight: number; reps: number } | null = null;
-  for (const set of getComparableLogSets(log)) {
-    if (!(set.weight > 0) || !(set.reps > 0)) {
-      continue;
-    }
-    if (!top || set.weight > top.weight || (set.weight === top.weight && set.reps > top.reps)) {
-      top = { weight: set.weight, reps: set.reps };
-    }
-  }
-  return top;
+  const top = heaviestOfSets(getComparableLogSets(log));
+  return top ? { weight: top.weight, reps: top.reps } : null;
 }
 
 export function completedReps(log: ExerciseLog) {
@@ -272,11 +274,8 @@ export function previousComparableSession(session: WorkoutSession, sessions: Wor
 }
 
 function startOfWeek(time: number) {
-  const date = new Date(time);
-  date.setHours(0, 0, 0, 0);
-  // Monday-first, matching the week strip the rest of the app draws.
-  date.setDate(date.getDate() - ((date.getDay() + 6) % 7));
-  return date.getTime();
+  // Monday-first: the app's one week start (duplicate sweep 13, 2026-10-12).
+  return getCalendarWeekStartTimestamp(new Date(time));
 }
 
 function isoDate(time: number) {
@@ -288,8 +287,12 @@ function summarizeSession(
   logsBySession: Map<string, ExerciseLog[]>,
   logs: ExerciseLog[],
 ): SessionSummary {
-  const own = (logsBySession.get(session.id) ?? []).filter((log) => !log.skipped);
-  const setCount = own.reduce((sum, log) => sum + completedReps(log).length, 0);
+  // The counts History, Progress and the save read (sessionTotals): a lift
+  // swapped and never started, or given only a note, is not an exercise done.
+  // This counted every log not skipped, and the coach heard "3 sets across 3
+  // exercises" for a workout History shows as 4 sets and 1 exercise
+  // (duplicate sweep, 2026-10-12).
+  const totals = getSessionTotals(logsBySession.get(session.id) ?? []);
 
   return {
     sessionId: session.id,
@@ -301,8 +304,8 @@ function summarizeSession(
         ? session.durationMinutes
         : null,
     volumeKg: sessionVolumeKg(session, logs),
-    setCount,
-    exerciseCount: own.length,
+    setCount: totals.setsCompleted,
+    exerciseCount: totals.exercisesCompleted,
   };
 }
 
@@ -402,7 +405,7 @@ export function stalledRunPoints(lift: Pick<LiftHistory, 'points' | 'stalledSess
  * the gaps in a series are real gaps rather than zeros.
  */
 export function buildLiftHistories(
-  sessions: WorkoutSession[],
+  sessions: ReadonlyArray<Pick<WorkoutSession, 'id' | 'performedAt'>>,
   logs: ExerciseLog[],
 ): LiftHistory[] {
   const timeById = new Map(sessions.map((session) => [session.id, sessionTime(session)] as const));
@@ -466,7 +469,9 @@ export function buildLiftHistories(
       latest,
       bestWeightKg: points.reduce((max, point) => Math.max(max, point.topSetWeightKg), 0),
       weightChangeKg: Math.round((latest.topSetWeightKg - first.topSetWeightKg) * 100) / 100,
-      spanDays: Math.max(0, Math.round((latest.time - first.time) / DAY_MS)),
+      // Calendar days, as every other day count the reader sees: Monday 08:00
+      // to Tuesday 20:00 is one day, not "2" (duplicate sweep, 2026-10-12).
+      spanDays: Math.max(0, calendarDaysBetween(first.time, latest.time)),
       stalledSessions,
     });
   }
@@ -506,7 +511,7 @@ export function buildRepsLiftHistories(
     // Minutes are not a rep trajectory: a bike ridden 15 then 20 minutes is
     // not "+5 reps" to the coach (2026-10-06). Nor is a plank held 45 then 60
     // seconds "+15 reps".
-    if (isMinutesLogEntry(log) || isHoldLogEntry(log)) {
+    if (isDoseLog(log)) {
       continue;
     }
     const sets = getComparableLogSets(log).filter((set) => set.reps > 0);
@@ -545,7 +550,7 @@ export function buildRepsLiftHistories(
       points,
       first,
       latest,
-      spanDays: Math.max(0, Math.round((latest.time - first.time) / DAY_MS)),
+      spanDays: Math.max(0, calendarDaysBetween(first.time, latest.time)),
       unchangedSessions,
     });
   }
@@ -690,7 +695,9 @@ function describeSchedule(
       trainingDays: [],
       cycle: { onDays, offDays: length - onDays, length },
       nextTrainingDate: nextTrainingDate(schedule, now),
-      plannedPerWeek: Math.round((7 * onDays) / length * 10) / 10,
+      // The formula is trainingSchedule's, the one onboarding reads; rounded
+      // to one decimal here, for a sentence (duplicate sweep 13, 2026-10-12).
+      plannedPerWeek: onDays > 0 ? Math.round(cycleSessionsPerWeek(onDays, length - onDays) * 10) / 10 : 0,
       plannedSessions,
       completedSessions,
     };

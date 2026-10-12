@@ -27,6 +27,10 @@ interface ProfileScreenProps {
   preferences: AppPreferences;
   lifetime: LifetimeTrainingSummary;
   trackedProgress: ExerciseProgressSummary[];
+  /**
+   * Unread here. A body-part map was built from it and never read (dup sweep
+   * 13, D4-3); the Records rows tag lifts through libraryBodyPartOf.
+   */
   exerciseLibrary: ExerciseLibraryItem[];
   unitPreference: UnitPreference;
   onOpenSettings: () => void;
@@ -153,7 +157,6 @@ export function ProfileScreen({
   preferences,
   lifetime,
   trackedProgress,
-  exerciseLibrary,
   unitPreference,
   onOpenSettings,
   onOpenRecords,
@@ -168,14 +171,6 @@ export function ProfileScreen({
   const settingsStyles = useThemedStyles(makeSettingsStyles);
   const identityName = preferences.profileName?.trim() ? preferences.profileName.trim() : null;
   const language = preferences.appLanguage;
-
-  const bodyPartByName = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const item of exerciseLibrary) {
-      map.set(item.name.trim().toLowerCase(), item.bodyPart);
-    }
-    return map;
-  }, [exerciseLibrary]);
 
   // The same number the Records tab shows, passed in rather than counted
   // again here. Two definitions of "a record" put "0 ennätystä" on this screen

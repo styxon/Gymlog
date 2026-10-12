@@ -6,6 +6,7 @@ import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
 import { Seg } from '../components/Seg';
 import { CARD_SHADOW, SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
+import { formatClockTime } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
 import { MEASUREMENT_REMINDER_KINDS } from '../lib/measurementReminder';
 import { NotificationAccessState } from '../lib/notificationAccessState';
@@ -70,10 +71,15 @@ interface NotificationsScreenProps {
   onOpenTrainingPlan?: () => void;
 }
 
+/** A time of day on the app's clock face, "07:30" — what formatClockTime writes. */
+function clockLabel(hours: number, minutes: number) {
+  return formatClockTime(new Date(2000, 0, 1, hours, minutes));
+}
+
 /** 05:00–22:00 in half hours — the window a reminder is worth sending in. */
 const REMINDER_TIMES = Array.from({ length: 35 }, (_, index) => {
   const minutes = 5 * 60 + index * 30;
-  return `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${minutes % 60 === 0 ? '00' : '30'}`;
+  return clockLabel(Math.floor(minutes / 60), minutes % 60);
 });
 
 const LEVELS: Array<{ key: NotificationLevel; titleKey: I18nKey; subKey: I18nKey }> = [
@@ -99,7 +105,7 @@ const WEEKDAY_NAME_KEYS: Record<SetupWeekday, I18nKey> = {
   sat: 'widget.weekday.5',
   sun: 'widget.weekday.6',
 };
-const MEASURE_TIME = `${String(WEIGH_IN_HOUR).padStart(2, '0')}:${String(WEIGH_IN_MINUTE).padStart(2, '0')}`;
+const MEASURE_TIME = clockLabel(WEIGH_IN_HOUR, WEIGH_IN_MINUTE);
 
 /**
  * Notification settings (spec screen 4, restructured 2026-09-03 and again

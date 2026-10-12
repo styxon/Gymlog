@@ -108,24 +108,22 @@ module.exports = [
             format.formatShortDate(stamp, language),
             new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(at),
           );
+          // The day through Intl, the clock HH:mm by hand (D3-2).
+          const day = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(at);
+          const clock = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
           assert.equal(
             format.formatSessionDate(stamp, language),
-            new Intl.DateTimeFormat(locale, {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            }).format(at),
+            language === 'fi' ? `${day} klo ${clock}` : `${day}, ${clock}`,
           );
         }
       }
+      // Clock times are written out, HH:mm in both languages (owner,
+      // 2026-10-12; dup sweep 13, D3-2) — no formatter at all.
       for (const language of ['fi', 'en']) {
         for (const stamp of stamps) {
-          assert.equal(
-            format.formatTime(stamp, language),
-            new Intl.DateTimeFormat(language === 'fi' ? 'fi-FI' : undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)),
-          );
+          const at = new Date(stamp);
+          const pad = (value) => String(value).padStart(2, '0');
+          assert.equal(format.formatTime(stamp, language), `${pad(at.getHours())}:${pad(at.getMinutes())}`);
         }
       }
 
@@ -145,16 +143,22 @@ module.exports = [
   {
     name: 'screen work: the shared formatter follows the device time zone when it changes',
     run() {
+      const SESSION_DAY = { weekday: 'short', day: 'numeric', month: 'short' };
       const saved = process.env.TZ;
-      const stamp = '2026-06-01T12:00:00.000Z';
+      // 06:00 on 1 June in Helsinki, 20:00 on 31 May in Los Angeles: the day
+      // part (the cached formatter) differs, not only the clock.
+      const stamp = '2026-06-01T03:00:00.000Z';
+      const dayOf = (text) => text.split(' klo ')[0];
       try {
         process.env.TZ = 'Europe/Helsinki';
-        const helsinki = format.formatTime(stamp, 'fi');
-        assert.equal(helsinki, new Intl.DateTimeFormat('fi-FI', { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)));
+        // formatSessionDate carries a time and goes through the cached
+        // formatter (formatTime no longer does).
+        const helsinki = format.formatSessionDate(stamp, 'fi');
+        assert.equal(dayOf(helsinki), new Intl.DateTimeFormat('fi-FI', SESSION_DAY).format(new Date(stamp)));
         process.env.TZ = 'America/Los_Angeles';
-        const losAngeles = format.formatTime(stamp, 'fi');
-        assert.equal(losAngeles, new Intl.DateTimeFormat('fi-FI', { hour: '2-digit', minute: '2-digit' }).format(new Date(stamp)));
-        assert.notEqual(losAngeles, helsinki, 'a cached formatter would still read Helsinki');
+        const losAngeles = format.formatSessionDate(stamp, 'fi');
+        assert.equal(dayOf(losAngeles), new Intl.DateTimeFormat('fi-FI', SESSION_DAY).format(new Date(stamp)));
+        assert.notEqual(dayOf(losAngeles), dayOf(helsinki), 'a cached formatter would still read Helsinki');
       } finally {
         if (saved === undefined) {
           delete process.env.TZ;
@@ -362,58 +366,13 @@ module.exports = [
     },
   },
   {
-    name: 'screen work: a logged set rebuilds neither the programme insights nor the coach summary when their inputs held',
+    name: 'screen work: a logged set does not rebuild the coach summary when its inputs held',
     run() {
-      let insightCalls = 0;
-      const runtime = createHookRuntime();
-      const { useCustomProgramViews } = requireWithStubs(path.join(DIST, 'app', 'useCustomProgramViews.js'), {
-        react: runtime.react,
-        '../lib/programInsights': {
-          buildProgramInsightMap(input) {
-            insightCalls += 1;
-            return { active: input.activeSession };
-          },
-        },
-      });
-      const database = { workoutSessions: [], exerciseLogs: [], exerciseTemplates: [], workoutTemplates: [], exerciseLibrary: [], preferences: {} };
-      const templates = [];
-      const workoutTemplates = [];
-      const exerciseLibrary = [];
-      const getWorkoutTemplateSessions = () => [];
-      const getWorkoutExercises = () => [];
-      const baseDeps = (activeSession) => ({
-        workoutTemplates,
-        getWorkoutTemplateSessions,
-        getWorkoutExercises,
-        exerciseLibrary,
-        preferences: { defaultRestSeconds: 90 },
-        database,
-        unitPreference: 'kg',
-        workout: { activeSession, templates, history: { sessions: [], slotHistory: {}, lastSelectedTemplateId: null } },
-      });
-      const session = (extra = {}) => ({
-        sessionId: 'a',
-        templateId: 'tpl_1',
-        templateName: 'Push Day',
-        status: 'active',
-        exercises: [],
-        ...extra,
-      });
-      const first = runtime.render(useCustomProgramViews, baseDeps(session()));
-      assert.equal(insightCalls, 1);
-      // A set is logged: the reducer hands over a new session object, same template and name.
-      const second = runtime.render(useCustomProgramViews, baseDeps(session({ updatedAt: 'later' })));
-      assert.equal(insightCalls, 1, 'the map was rebuilt for a session that is the same template under the same name');
-      assert.equal(second.programInsightsByTemplateId, first.programInsightsByTemplateId);
-      // A swap that renames the session, or another template: the map follows.
-      runtime.render(useCustomProgramViews, baseDeps(session({ templateName: 'Push Day (swapped)' })));
-      assert.equal(insightCalls, 2);
-      runtime.render(useCustomProgramViews, baseDeps(session({ templateId: 'tpl_2' })));
-      assert.equal(insightCalls, 3);
-      const idle = runtime.render(useCustomProgramViews, baseDeps(null));
-      assert.equal(insightCalls, 4);
-      assert.equal(idle.programInsightsByTemplateId.active, null);
-      runtime.unmount();
+      // The programme-insight map this test also pinned is gone: it was built
+      // for every programme on every database change and no screen drew it
+      // (duplicate sweep 13, D5-6, 2026-10-12). Its absence is the guard now.
+      assert.doesNotMatch(source('src/app/useCustomProgramViews.ts'), /programInsights|buildProgramInsightMap/);
+      assert.equal(fs.existsSync(path.join(ROOT, 'src', 'lib', 'programInsights.ts')), false);
 
       // The coach summary: a new object only when title, next exercise or meta change.
       const summaryRuntime = createHookRuntime();

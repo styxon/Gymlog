@@ -6,8 +6,7 @@
  * new template id. Everything that counts a programme's work counts it by
  * template id, so the moment the copy exists the programme reads as brand
  * new: the Home hero drops from week 3 to week 1, the block's session total
- * starts from nothing, and work logged for a season stops scoring because the
- * season asks for ITS programme's id (2026-09-15 audit).
+ * starts from nothing (2026-09-15 audit).
  *
  * Nothing about the reader's training changed. `sourceTemplateId` already
  * records which catalog programme a copy came from, so the ids that mean "this
@@ -33,40 +32,6 @@ export interface ProgrammeLineageTemplate {
 export function programmeOriginId(templateId: string, templates: readonly ProgrammeLineageTemplate[]): string {
   const own = templates.find((template) => template.id === templateId) ?? null;
   return own?.sourceTemplateId ?? templateId;
-}
-
-/**
- * Every template id that counts as the same programme as `templateId`: the
- * template itself, the catalog programme it was copied from, and every copy
- * made from that same original — a reader who edited, reset and edited again
- * has two copies of one programme.
- *
- * This is the whole family, and it is what a SEASON asks for: the season's
- * programme scores, and so does the reader's own copy of it. A counter that
- * measures one plan's block wants `programmeHistoryIds` instead — see there.
- *
- * The ids come back in a stable order: the given one first, then the source,
- * then the siblings in the order they are stored.
- */
-export function programmeLineageIds(
-  templateId: string,
-  templates: readonly ProgrammeLineageTemplate[],
-): string[] {
-  const origin = programmeOriginId(templateId, templates);
-  const ids = [templateId];
-  const add = (id: string | null | undefined) => {
-    if (id && !ids.includes(id)) {
-      ids.push(id);
-    }
-  };
-
-  add(origin);
-  for (const template of templates) {
-    if (template.sourceTemplateId === origin) {
-      add(template.id);
-    }
-  }
-  return ids;
 }
 
 /** A logged session, as lineage reads it. */

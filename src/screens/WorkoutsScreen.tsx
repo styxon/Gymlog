@@ -27,7 +27,6 @@ import {
   ReadyLevelFilter,
   ReadyTimeFilter,
 } from '../lib/workoutDiscovery';
-import { ProgramInsightSummary } from '../lib/programInsights';
 import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import type { AppLanguage, SetupCautionFlag } from '../types/models';
@@ -43,7 +42,6 @@ interface CustomWorkoutListItem {
 
 interface WorkoutsScreenProps {
   customWorkouts: CustomWorkoutListItem[];
-  programInsightsByTemplateId: Record<string, ProgramInsightSummary>;
   onOpenWorkout: (workoutTemplateId: string) => void;
   onOpenReadyProgram: (workoutTemplateId: string) => void;
   onStartReadyProgram: (workoutTemplateId: string) => void;
@@ -269,7 +267,6 @@ function buildCustomTodayFlowItems(workout: CustomWorkoutListItem): TodayFlowIte
 
 export function WorkoutsScreen({
   customWorkouts,
-  programInsightsByTemplateId,
   onOpenWorkout,
   onOpenReadyProgram,
   onStartReadyProgram,

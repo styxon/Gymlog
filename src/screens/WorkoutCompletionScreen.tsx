@@ -8,7 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const HERO_GRADIENT_WIDTH = Dimensions.get('window').width;
 const HERO_GRADIENT_HEIGHT = 360;
 
-import { formatTime, formatWeight, getDateTimeFormat, removeTrailingZeros } from '../lib/format';
+import { formatPercent, formatShortDate, formatTime, formatWeight, removeTrailingZeros } from '../lib/format';
 import { bodyPartLabel, t } from '../lib/i18n';
 import { Movement, WhatMovedRow } from '../lib/sessionMovement';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
@@ -257,11 +257,8 @@ function formatWhenLabel(performedAt: string, language: AppLanguage) {
     performed.getFullYear() === now.getFullYear() &&
     performed.getMonth() === now.getMonth() &&
     performed.getDate() === now.getDate();
-  const day = sameDay
-    ? t(language, 'common.today')
-    : language === 'fi'
-      ? `${performed.getDate()}.${performed.getMonth() + 1}.`
-      : getDateTimeFormat('en-US', { day: 'numeric', month: 'short' }).format(performed);
+  // The date as every other screen writes it: "25.8." / "Aug 25".
+  const day = sameDay ? t(language, 'common.today') : formatShortDate(performedAt, language);
   return `${day} · ${formatTime(performedAt, language)}`;
 }
 
@@ -648,7 +645,7 @@ export function WorkoutCompletionScreen({
                       </View>
                       <View style={styles.muscleMetaRow}>
                         <Text style={[styles.musclePercent, { color: muscleColor(muscle.name) }]}>
-                          {muscle.sharePercent} %
+                          {formatPercent(muscle.sharePercent, language)}
                         </Text>
                         <Text style={styles.muscleMeta}>
                           {t(language, muscle.sets === 1 ? 'complete.exerciseSetsOne' : 'complete.exerciseSetsMany', { count: muscle.sets })}

@@ -1334,4 +1334,42 @@ module.exports = [
       assert.deepEqual(recordWalkAddedSlot({}, 'row', 'x').row, { names: [], slotIds: ['x'] });
     },
   },
+  // ── Duplicate sweep 13 ───────────────────────────────────────────────────
+  {
+    name: 'dup13 D1-8: one set count for the live session — skipped lifts and skipped sets are out',
+    run() {
+      const { liveSetProgress } = require('../../.test-dist/lib/guidedPlayer.js');
+      const sets = (...statuses) => statuses.map((status) => ({ status }));
+      const exercises = [
+        { status: 'completed', sets: sets('completed', 'completed', 'completed') },
+        { status: 'skipped', sets: sets('skipped', 'skipped', 'skipped') },
+        { status: 'completed', sets: sets('completed', 'skipped', 'skipped') },
+        { status: 'pending', sets: [] },
+      ];
+      assert.deepEqual(liveSetProgress(exercises), { done: 4, total: 4 });
+      assert.deepEqual(
+        liveSetProgress([{ status: 'in_progress', sets: sets('completed', 'pending', 'pending') }]),
+        { done: 1, total: 3 },
+      );
+      // The lock-screen card and the run sheet both read it.
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const screen = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8');
+      assert.match(screen, /const \{ done, total \} = liveSetProgress\(session\.exercises\)/);
+      assert.match(screen, /guided\.runSheet\.progress', \{ done: setProgress\.done, count: totalSets \}/);
+      assert.match(screen, /const totalSets = setProgress\.total;/);
+    },
+  },
+  {
+    name: 'dup13 D3-3: the player titles a session the way Home and the day rows do, Finnish-saved names included',
+    run() {
+      assert.equal(getGuidedSessionTitle('Oma ohjelma - Päivä 1: Rinta', 'fi'), 'Rinta');
+      assert.equal(getGuidedSessionTitle('Päivä 2: Selkä', 'en'), 'Selkä');
+      assert.equal(getGuidedSessionTitle('Day 3:', 'fi'), 'Päivä 3');
+      assert.equal(getGuidedSessionTitle('Day 3:', 'en'), 'Day 3');
+      assert.equal(getGuidedSessionTitle('STRONG Elite - Day 1: Upper (Heavy)', 'fi'), 'Ylävartalo (raskas)');
+      assert.equal(getGuidedSessionTitle('STRONG Elite - Day 1: Upper (Heavy)', 'en'), 'Upper (Heavy)');
+      assert.equal(getGuidedSessionTitle('', 'fi'), getGuidedSessionTitle('   ', 'fi'));
+    },
+  },
 ];

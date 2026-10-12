@@ -6,6 +6,7 @@ const {
   VOLUME_RUNGS_LB,
 } = require('../../.test-dist/lib/profileMilestones.js');
 const { formatMilestoneVolume, milestoneCardRows } = require('../../.test-dist/lib/profileMilestoneRows.js');
+const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
 
 const lifetime = (overrides = {}) => ({
   sessionCount: 4,
@@ -81,8 +82,16 @@ module.exports = [
       // 1 000 kg ≈ 2 204.6 lb: below the 2 500 rung, 296 lb to go.
       assert.equal(volume.target, VOLUME_RUNGS_LB[0]);
       assert.equal(volume.remaining, 296);
-      assert.equal(formatMilestoneVolume(volume.target, 'lb'), '2 500 lb');
-      assert.equal(formatMilestoneVolume(1000, 'kg'), '1 000 kg');
+      // Thousands grouped as everywhere in the app: a comma in English, a
+      // no-break space in Finnish (dup sweep 13, D3-7; it was a thin space).
+      assert.equal(formatMilestoneVolume(volume.target, 'lb'), '2,500 lb');
+      assert.equal(formatMilestoneVolume(1000, 'kg'), '1,000 kg');
+      setNumberLanguage('fi');
+      try {
+        assert.equal(formatMilestoneVolume(1000, 'kg'), '1\u00a0000 kg');
+      } finally {
+        setNumberLanguage('en');
+      }
     },
   },
   {
@@ -110,16 +119,23 @@ module.exports = [
     name: 'profileMilestones: the rows say distances, in both languages, with a bar that is never invisible',
     run() {
       const en = cardRows({ lifetime: lifetime(), recordCount: 8, unitPreference: 'kg', language: 'en' });
-      assert.equal(en[0].title, '1 000 kg lifted');
+      assert.equal(en[0].title, '1,000 kg lifted');
       assert.equal(en[0].remainder, '6 kg to go');
-      assert.equal(en[0].meta, '994 kg of 1 000 kg');
+      assert.equal(en[0].meta, '994 kg of 1,000 kg');
       assert.equal(en[0].fillPercent, 99);
       const sessions = en.find((row) => row.key === 'sessions-5');
       assert.equal(sessions.meta, '4 of 5 · you started 2 weeks ago');
       assert.equal(sessions.remainder, '1 to go');
 
-      const fi = cardRows({ lifetime: lifetime(), recordCount: 8, unitPreference: 'kg', language: 'fi' });
-      assert.equal(fi[0].title, '1 000 kg nostettu');
+      // The app sets its number language with its language; so does this.
+      setNumberLanguage('fi');
+      let fi;
+      try {
+        fi = cardRows({ lifetime: lifetime(), recordCount: 8, unitPreference: 'kg', language: 'fi' });
+      } finally {
+        setNumberLanguage('en');
+      }
+      assert.equal(fi[0].title, '1\u00a0000 kg nostettu');
       assert.equal(fi[0].remainder, '6 kg jäljellä');
 
       // A tiny fraction still draws a visible sliver.

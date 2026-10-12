@@ -178,8 +178,13 @@ const PATTERN_BY_BODY_PART: Record<string, 'push' | 'pull' | 'lower'> = {
  * conditioning appear on every kind of day, so a guess there would only blur
  * the majority. Same approach, and same reason, as
  * `inferEquipmentFromExerciseName` above.
+ *
+ * Exported as the one push/pull/lower reading of a name: the auto-named day
+ * title (app/homeSessionTitle) reads it too, rather than a regex of its own
+ * that titled a day opening on a step-up "Full Body" and on a rear-delt fly
+ * "Push" (dup sweep 13, D4-5).
  */
-function inferPatternFromExerciseName(name: string): 'push' | 'pull' | 'lower' | null {
+export function inferPatternFromExerciseName(name: string): 'push' | 'pull' | 'lower' | null {
   const normalized = name.trim().toLowerCase();
   // Same abstention the library category gives, for names it cannot place:
   // "Lying Quad Stretch" and "Standing Forward Fold" are not quad and hinge

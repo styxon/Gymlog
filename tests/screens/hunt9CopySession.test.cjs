@@ -80,7 +80,6 @@ module.exports = [
       const pins = [
         ['src/screens/HistoryScreen.tsx', /group\.items\.length === 1 \? 'history\.browse\.metaOne' : 'history\.browse\.meta'/],
         ['src/screens/ExerciseDetailScreen.tsx', /history\?\.bestReps === 1 \? 'exDetail\.bestRepsOne' : 'exDetail\.bestReps'/],
-        ['src/screens/SeasonScreen.tsx', /weeksLeft === 1 \? 'season\.weeksLeftOne' : 'season\.weeksLeft'/],
         ['src/app/renderAppShell.tsx', /'hevy\.doneWithDuplicatesOne'[\s\S]*'hevy\.doneOne'/],
         ['src/app/useSessionNotifications.ts', /completedSetCount === 1 \? 'rest\.notify\.idleBodyOne' : 'rest\.notify\.idleBody'/],
         ['src/screens/EmptyWorkoutScreen.tsx', /totalSetCount === 1 \? 'rest\.notify\.sessionBodyOne' : 'rest\.notify\.sessionBody'/],

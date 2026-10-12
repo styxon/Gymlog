@@ -4,8 +4,9 @@
  * Home offered `entries[0]` — always. Finish day 1 and Home offered day 1
  * again; the hero, the warm-up, the start button and the trimmed start all
  * described the wrong workout, and logging it wrote the wrong session against
- * the plan. `getNextWorkoutCandidate` in lib/dashboard has held this rule
- * since the rotation existed, and nothing ever called it.
+ * the plan. lib/dashboard kept a second copy of the rotation that nothing
+ * called and that had drifted (it offered entry 2 for ever on a plan whose
+ * entries name no session); it was deleted (duplicate sweep 13, 2026-10-12).
  *
  * Pure and shared so the two cannot disagree again.
  */

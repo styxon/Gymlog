@@ -5,8 +5,8 @@ const path = require('node:path');
 const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
 const { getCurrentWeekStreak, getMonthlyActivityCalendar, subtractCalendarMonths } = require('../../.test-dist/lib/completedSessions.js');
 const { isRecordLocked } = require('../../.test-dist/lib/historyWindow.js');
+const { sumMonthTrainingTotals } = require('../../.test-dist/lib/dashboard.js');
 const { measurementUnitForKind } = require('../../.test-dist/lib/measurementKinds.js');
-const { resolveSeasonWindow, seasonLastDay } = require('../../.test-dist/lib/season.js');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
@@ -65,12 +65,16 @@ module.exports = [
 
       const screen = strip(read('src', 'screens', 'ProgressScreen.tsx'));
       assert.match(screen, /weeklyTrainingStreak\(workoutSessions, cardioSessions\)/);
-      // The month card counts both, in the count and in the average duration.
-      assert.match(screen, /const currentMonthCardio = cardioSessions\.filter\(\(session\) => inMonth\(session\.performedAt\)\);/);
-      assert.match(screen, /const counted = currentMonthSessions\.length \+ currentMonthCardio\.length;/);
-      assert.match(screen, /sessions: counted,/);
+      // The month card counts both, in the count and in the average duration —
+      // through the widget's own month sum now, not a copy of it (dup sweep
+      // 13, D2-10).
+      assert.match(screen, /const totals = sumMonthTrainingTotals\(\s*workoutSessions,\s*getCanonicalCardioSessions\(\{ cardioSessions \}\),/);
+      assert.match(screen, /sessions: totals\.workouts,/);
+      assert.match(screen, /averageDuration: totals\.averageDurationMinutes,/);
+      const totals = sumMonthTrainingTotals([], cardioOnly.cardioSessions, now);
+      assert.equal(totals.workouts, marked, 'the counter counts the runs the calendar marks');
       // Volume stays strength-only: a run has no tonnage to add.
-      assert.match(screen, /const volumeKg = currentMonthSessions\.reduce\(/);
+      assert.equal(totals.volumeKg, 0);
     },
   },
   {
@@ -179,43 +183,6 @@ module.exports = [
       for (const key of ['exDetail.bestReps', 'exDetail.repsUnit', 'exDetail.bestSession', 'exDetail.repsPerSession']) {
         bothLanguages(key);
       }
-    },
-  },
-  {
-    name: 'seasons: joining signs you into the season you are looking at, and the sign-up is read',
-    run() {
-      const tab = strip(read('src', 'app', 'renderWorkoutTab.tsx'));
-      // It re-resolved from today for the enrolment while adopting the VIEWED
-      // season's programme.
-      // Written once the programme is running (hunt 10, #11).
-      assert.match(tab, /handleEnrolSeason\(seasonInView, seasonWindow\.year\)/);
-      assert.doesNotMatch(tab, /const window = resolveSeasonWindow\(\);\s*handleEnrolSeason/);
-      // The pill and the CTA say what the plans say: the sign-up outlives a
-      // stop, so reading it showed "running" over a switched-off programme
-      // (hunt 11).
-      assert.doesNotMatch(tab, /isEnrolled\(/);
-      assert.match(tab, /running={isReadyProgrammeRunning\(seasonProgramId, activeProgramTemplateIds, database\.workoutTemplates\)}/);
-    },
-  },
-  {
-    name: 'seasons: the end date steps by calendar date, so it survives the clock change',
-    run() {
-      // Under Helsinki's clocks whatever the machine's zone: in UTC there is no
-      // change to straddle, and the guard below failed (#bugs 2026-10-01).
-      withHelsinkiClocks(() => {
-        // Winter 2029 ends 1 April 2030; a fixed day of milliseconds back from
-        // local midnight lands at 23:00 on 30 March.
-        const window = resolveSeasonWindow(new Date(2029, 10, 15));
-        const raw = new Date(window.end.getTime() - 86_400_000);
-        const calendar = seasonLastDay(window);
-        assert.notEqual(raw.getDate(), calendar.getDate(), 'this season must straddle the change');
-        // And the calendar step lands on the season's last day, 31 March.
-        assert.deepEqual([calendar.getFullYear(), calendar.getMonth(), calendar.getDate()], [2030, 2, 31]);
-      });
-
-      const screen = strip(read('src', 'screens', 'SeasonScreen.tsx'));
-      assert.match(screen, /end: formatDay\(seasonLastDay\(window\), language\),/);
-      assert.doesNotMatch(screen, /86_400_000/);
     },
   },
 ];

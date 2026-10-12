@@ -14,7 +14,6 @@ import {
   undoImplausibleMinutesMode,
 } from '../lib/minutesModeMigration';
 import { HOLD_SECONDS_MIGRATION_ID, moveOldStretchesToHoldSeconds } from '../lib/holdSecondsMigration';
-import { normalizeSeasonEnrolments } from '../lib/seasonEnrolment';
 import { normalizeStrengthGoals } from '../lib/strengthGoals';
 import { normalizeCancelSurveyAnswer } from '../lib/cancelSurvey';
 import { isMeasurementKind, measurementUnitForKind } from '../lib/measurementKinds';
@@ -24,7 +23,9 @@ import { normalizeFirstRunToursSeen } from '../lib/firstRunTour';
 import { normalizeLegalAcceptance } from '../lib/legalAcceptance';
 import { normalizeLightNextSession, normalizeRestDayStarts } from '../lib/recoverySheet';
 import type { NotificationPrefs } from '../types/models';
-import { normalizeDefaultRestSeconds } from '../lib/restPreference';
+import { normalizeDefaultRestSeconds, normalizeStoredRestSeconds } from '../lib/restPreference';
+import { isIsoDateString } from '../lib/isoDate';
+import { isPlausibleBodyweightKg, MAX_STORED_REPS, MAX_STORED_SETS } from '../lib/weightLimits';
 import { normalizePurchaseRecord } from '../lib/purchaseRecord';
 import { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } from '../lib/proEntitlement';
 import { normalizePendingAiLogDeletions, withPendingAiLogDeletion } from '../lib/aiLogDeletion';
@@ -371,9 +372,9 @@ function normalizeStringRecord(input: unknown): Record<string, string> {
   return out;
 }
 
-/** Past these a stored programme row is not one the editors could have written. */
-const MAX_STORED_SETS = 20;
-const MAX_STORED_REPS = 1000;
+// Past MAX_STORED_SETS / MAX_STORED_REPS (lib/weightLimits, shared with every
+// other loader of a stored count) a programme row is not one the editors
+// could have written. Reps reach 1800 because a hold's are seconds.
 
 /** A stored count as a whole number from 1 to `max`; anything that is not a finite number is `fallback`. */
 function wholeCount(value: unknown, fallback: number, max: number): number {
@@ -422,7 +423,9 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           name,
           repMin: storedRepMin,
           repMax: storedRepMax,
-          restSeconds: typeof exercise?.restSeconds === 'number' ? exercise.restSeconds : null,
+          // The writer's rule (savedRestSeconds): 0 is none, negative is
+          // unset, past an hour is capped (D6-4).
+          restSeconds: normalizeStoredRestSeconds(exercise?.restSeconds),
           trackingMode: readStoredTrackingMode(exercise?.trackingMode),
         });
         return {
@@ -499,8 +502,8 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             ? template.exerciseIds.filter((value: unknown): value is string => typeof value === 'string')
             : templateExercises.map((exercise) => exercise.id),
           sessions,
-          createdAt: typeof template?.createdAt === 'string' ? template.createdAt : new Date().toISOString(),
-          updatedAt: typeof template?.updatedAt === 'string' ? template.updatedAt : new Date().toISOString(),
+          createdAt: isIsoDateString(template?.createdAt) ? template.createdAt : new Date().toISOString(),
+          updatedAt: isIsoDateString(template?.updatedAt) ? template.updatedAt : new Date().toISOString(),
           // Anything stored before this field existed was written by the
           // editor or by freestyle logging, and there is no way to tell which
           // after the fact. 'authored' is the safe default: it counts, which
@@ -584,11 +587,44 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     };
   });
 
+  /*
+   * A saved workout's date (duplicate sweep 13, D6-7). A date that is there
+   * but unreadable used to load as stored, and the history list, the recent
+   * sessions card and the coach threw a RangeError formatting it on every
+   * open. Its start time stands in when that one reads; with neither, the
+   * session goes, and its logs with it below, since there is no day to put it
+   * on. A session with no date at all keeps the oldest fallback, dated now.
+   */
+  const storedSessionDate = (session: any): string | null => {
+    if (isIsoDateString(session?.performedAt)) {
+      return session.performedAt;
+    }
+    if (isIsoDateString(session?.startedAt)) {
+      return session.startedAt;
+    }
+    return typeof session?.performedAt === 'string' ? null : new Date().toISOString();
+  };
+  // By id, and only an id no dated row also carries: a duplicate row with a
+  // bad date must not take its readable twin's logs with it.
+  const sessionRows: any[] = Array.isArray(input?.workoutSessions)
+    ? input.workoutSessions.filter((session: any) => session !== null && typeof session === 'object')
+    : [];
+  const datedSessionIds = new Set(
+    sessionRows.filter((session) => storedSessionDate(session) !== null).map((session) => String(session.id ?? '')),
+  );
+  const undatedSessionIds = new Set(
+    sessionRows
+      .filter((session) => storedSessionDate(session) === null)
+      .map((session) => String(session.id ?? ''))
+      .filter((id: string) => id.length > 0 && !datedSessionIds.has(id)),
+  );
+
   // Before the sessions: each session's totals are read off these.
   const normalizedExerciseLogs = Array.isArray(input?.exerciseLogs)
     ? input.exerciseLogs
         .map((log) => normalizeExerciseLog(log))
         .filter((log): log is NonNullable<typeof log> => Boolean(log))
+        .filter((log) => !undatedSessionIds.has(log.sessionId))
     : [];
 
   return {
@@ -644,6 +680,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       Array.isArray(input?.workoutSessions)
       ? input.workoutSessions
           .filter((session: any) => session !== null && typeof session === 'object' && String(session.id ?? '').length > 0)
+          .filter((session: any) => storedSessionDate(session) !== null)
           .map((session: any) => ({
           id: String(session?.id ?? ''),
           workoutTemplateId: String(session?.workoutTemplateId ?? ''),
@@ -663,10 +700,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             session?.feel === 'easy' || session?.feel === 'right' || session?.feel === 'hard' || session?.feel === 'too_hard'
               ? session.feel
               : null,
-          performedAt: typeof session?.performedAt === 'string' ? session.performedAt : new Date().toISOString(),
-          startedAt: typeof session?.startedAt === 'string' ? session.startedAt : undefined,
+          performedAt: storedSessionDate(session) as string,
+          startedAt: isIsoDateString(session?.startedAt) ? session.startedAt : undefined,
           durationMinutes:
-            typeof session?.durationMinutes === 'number' && Number.isFinite(session.durationMinutes)
+            typeof session?.durationMinutes === 'number' && Number.isFinite(session.durationMinutes) && session.durationMinutes >= 0
               ? session.durationMinutes
               : undefined,
           exercisesSkipped:
@@ -734,16 +771,13 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
     // Passed through untouched until 2026-09-21, so one null weigh-in crashed
     // every launch: the provider sorts this list on `recordedAt` while it
     // renders, and nothing above it catches. A weigh-in is its three fields
-    // or nothing, the way a measurement is below, and a weight the writer
-    // refuses (zero or less) is not one.
+    // or nothing, the way a measurement is below. Its date has to read (the
+    // Progress tab prints it), and its weight has to be one a person could
+    // weigh — a window wider than any screen that writes one (D6-6, D6-7).
     bodyweightEntries: Array.isArray(input?.bodyweightEntries)
       ? input.bodyweightEntries.filter(
           (entry: unknown) =>
-            hasStoredId(entry) &&
-            typeof entry.recordedAt === 'string' &&
-            typeof entry.weight === 'number' &&
-            Number.isFinite(entry.weight) &&
-            entry.weight > 0,
+            hasStoredId(entry) && isIsoDateString(entry.recordedAt) && isPlausibleBodyweightKg(entry.weight),
         )
       : [],
     // Every field is required for an entry to be usable, and a half-written
@@ -778,7 +812,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
             const kind = isMeasurementKind(entry?.kind) ? entry.kind : null;
             const unit = entry?.unit === 'cm' || entry?.unit === 'in' || entry?.unit === '%' ? entry.unit : null;
             const value = typeof entry?.value === 'number' && Number.isFinite(entry.value) ? entry.value : null;
-            const recordedAt = typeof entry?.recordedAt === 'string' ? entry.recordedAt : null;
+            const recordedAt = isIsoDateString(entry?.recordedAt) ? entry.recordedAt : null;
             const id = typeof entry?.id === 'string' && entry.id.trim().length ? entry.id : null;
 
             if (!kind || !unit || value === null || !recordedAt || !id) {
@@ -913,14 +947,14 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       aiLogPhotoConsent: input?.preferences?.aiLogPhotoConsent === true,
       // Absent on every install from before the retry existed: nothing owed.
       pendingAiLogDeletions: normalizePendingAiLogDeletions(input?.preferences?.pendingAiLogDeletions),
-      promoProUntil:
-        typeof input?.preferences?.promoProUntil === 'string'
-          ? input.preferences.promoProUntil
-          : fallback.preferences.promoProUntil,
-      proTrialUntil:
-        typeof input?.preferences?.proTrialUntil === 'string'
-          ? input.preferences.proTrialUntil
-          : fallback.preferences.proTrialUntil,
+      // An unreadable date grants nothing either way; it falls back rather
+      // than reaching a screen that prints it (D6-7).
+      promoProUntil: isIsoDateString(input?.preferences?.promoProUntil)
+        ? input.preferences.promoProUntil
+        : fallback.preferences.promoProUntil,
+      proTrialUntil: isIsoDateString(input?.preferences?.proTrialUntil)
+        ? input.preferences.proTrialUntil
+        : fallback.preferences.proTrialUntil,
       // Absent on every install from before the trial was once-only: those
       // may have used it, and there is no way to tell, so they get the one.
       proTrialStartedAt:
@@ -954,11 +988,9 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
               used: Math.max(0, Math.round(input.preferences.aiCoachProQuota.used)),
             }
           : fallback.preferences.aiCoachProQuota,
-      firstLaunchAt:
-        typeof input?.preferences?.firstLaunchAt === 'string' &&
-        !Number.isNaN(Date.parse(input.preferences.firstLaunchAt))
-          ? input.preferences.firstLaunchAt
-          : fallback.preferences.firstLaunchAt,
+      firstLaunchAt: isIsoDateString(input?.preferences?.firstLaunchAt)
+        ? input.preferences.firstLaunchAt
+        : fallback.preferences.firstLaunchAt,
       coachDemoMomentsUsed: Array.isArray(input?.preferences?.coachDemoMomentsUsed)
         ? input.preferences.coachDemoMomentsUsed.filter(
             (key: unknown): key is string => typeof key === 'string' && key.length > 0,
@@ -1072,13 +1104,17 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           : input?.preferences?.profileName === null
             ? null
             : fallback.preferences.profileName,
-      setupCurrentWeightKg:
-        typeof input?.preferences?.setupCurrentWeightKg === 'number' || input?.preferences?.setupCurrentWeightKg === null
-          ? input.preferences.setupCurrentWeightKg
+      // A body weight a person could weigh, or none: a -80 or 5000 kg setup
+      // weight reached the BMI and the coach's context as stored (D6-6).
+      setupCurrentWeightKg: isPlausibleBodyweightKg(input?.preferences?.setupCurrentWeightKg)
+        ? input.preferences.setupCurrentWeightKg
+        : typeof input?.preferences?.setupCurrentWeightKg === 'number' || input?.preferences?.setupCurrentWeightKg === null
+          ? null
           : fallback.preferences.setupCurrentWeightKg,
-      bodyweightGoalKg:
-        typeof input?.preferences?.bodyweightGoalKg === 'number' || input?.preferences?.bodyweightGoalKg === null
-          ? input.preferences.bodyweightGoalKg
+      bodyweightGoalKg: isPlausibleBodyweightKg(input?.preferences?.bodyweightGoalKg)
+        ? input.preferences.bodyweightGoalKg
+        : typeof input?.preferences?.bodyweightGoalKg === 'number' || input?.preferences?.bodyweightGoalKg === null
+          ? null
           : fallback.preferences.bodyweightGoalKg,
       onboardingCompleted:
         typeof input?.preferences?.onboardingCompleted === 'boolean'
@@ -1248,10 +1284,15 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         input?.preferences?.setupScheduleMode === 'self_managed'
           ? input.preferences.setupScheduleMode
           : fallback.preferences.setupScheduleMode,
+      // A time budget is zero or more minutes; a negative or NaN one is none.
       setupWeeklyMinutes:
-        typeof input?.preferences?.setupWeeklyMinutes === 'number' || input?.preferences?.setupWeeklyMinutes === null
+        typeof input?.preferences?.setupWeeklyMinutes === 'number' &&
+        Number.isFinite(input.preferences.setupWeeklyMinutes) &&
+        input.preferences.setupWeeklyMinutes >= 0
           ? input.preferences.setupWeeklyMinutes
-          : fallback.preferences.setupWeeklyMinutes,
+          : typeof input?.preferences?.setupWeeklyMinutes === 'number' || input?.preferences?.setupWeeklyMinutes === null
+            ? null
+            : fallback.preferences.setupWeeklyMinutes,
       setupAvailableDays:
         Array.isArray(input?.preferences?.setupAvailableDays)
           ? input.preferences.setupAvailableDays.filter(
@@ -1407,7 +1448,6 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       // Hand-typed numbers in stored JSON: normalised rather than trusted,
       // so a corrupt entry cannot make a progress bar draw past its box.
       strengthGoals: normalizeStrengthGoals(input?.preferences?.strengthGoals),
-      seasonEnrolments: normalizeSeasonEnrolments(input?.preferences?.seasonEnrolments),
       dismissedTipIds:
         Array.isArray(input?.preferences?.dismissedTipIds)
           ? input.preferences.dismissedTipIds.filter((value: unknown): value is string => typeof value === 'string')

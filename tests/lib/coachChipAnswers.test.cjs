@@ -142,7 +142,8 @@ module.exports = [
       }
       // The screen takes them from the stage, not from a fixed list.
       const shell = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderHomeScreens.tsx'), 'utf8');
-      assert.match(shell, /quickAskKeys=\{coachQuickAskKeys\(database\.workoutSessions\.length, aiCoachTrainingContext\.sessionsLast30Days\)\}/);
+      // Counted as Profile counts, not stored rows (duplicate sweep 13, D5-4).
+      assert.match(shell, /quickAskKeys=\{coachQuickAskKeys\(completedSessionCount, aiCoachTrainingContext\.sessionsLast30Days\)\}/);
     },
   },
   {

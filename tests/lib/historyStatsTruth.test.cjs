@@ -324,15 +324,16 @@ module.exports = [
       // The call sites are components; the rounding in front of removeTrailingZeros is what decided
       // the digits, so it is read from the source.
       const TENTHS = /Math\.round\([^)]*\* 10\) \/ 10|\.toFixed\(1\)/;
-      for (const [file, fn] of [
-        [['src', 'screens', 'RecordsScreen.tsx'], 'function decimal('],
-        [['src', 'components', 'SetLogSheet.tsx'], 'function decimal('],
+      // Their own `decimal()` copies are gone (dup sweep 13, D3-9): the weights
+      // go straight through removeTrailingZeros, which keeps hundredths.
+      for (const file of [
+        ['src', 'screens', 'RecordsScreen.tsx'],
+        ['src', 'components', 'SetLogSheet.tsx'],
       ]) {
         const source = read(...file);
-        const body = source.slice(source.indexOf(fn), source.indexOf('\n}\n', source.indexOf(fn)));
-        assert.ok(body.length > 0, `${file.join('/')}: ${fn} not found`);
-        assert.doesNotMatch(body, TENTHS, `${file.join('/')} rounds a weight to a tenth`);
-        assert.match(body, /Math\.round\(value \* 100\) \/ 100/);
+        assert.doesNotMatch(source, /function decimal\(/, `${file.join('/')} grew its own rounding again`);
+        assert.match(source, /removeTrailingZeros\(record\.companion\)/);
+        assert.doesNotMatch(source, /removeTrailingZeros\(Math\.round\([^)]*\* 10\) \/ 10\)/, `${file.join('/')} rounds a weight to a tenth`);
       }
       const completion = read('src', 'screens', 'WorkoutCompletionScreen.tsx');
       const prNote = completion.slice(completion.indexOf('function formatPrNote('), completion.indexOf('export function WorkoutCompletionScreen'));

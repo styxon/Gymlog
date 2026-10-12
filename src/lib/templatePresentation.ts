@@ -175,11 +175,11 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
   },
   tpl_season_summer_v1: {
     title: 'Summer Conditioning',
-    tagKeys: ['prog.tag.season', 'prog.tag.running'],
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.running'],
   },
   tpl_season_winter_v1: {
     title: 'Winter Build',
-    tagKeys: ['prog.tag.season', 'prog.tag.strength'],
+    tagKeys: ['prog.tag.upperLower', 'prog.tag.strength'],
   },
   tpl_4_day_ppl_plus_v1: {
     title: 'HUGE Pro+',
@@ -495,4 +495,32 @@ export function getReadyTemplatePresentation(
       t(language, daysTagKey(days), { count: days }),
     ]),
   };
+}
+
+/**
+ * What a RUNNING ready programme is called, wherever it is named: Home's hero,
+ * the Programs list, the other-programmes rows and the coach.
+ *
+ * Its presentation title, the name its own page wears; a plan whose template
+ * is gone falls back to the plan's own name. A programme tagged for a season
+ * used to go by the season's name, and that tag covers twenty-odd ordinary
+ * programmes: STRONG Elite was "Talvikunto" in the list and STRONG Elite once
+ * opened (user 2026-09-21, "poistetaan kaikki talvikunto kesäkunto").
+ *
+ * It lived in App.tsx while Home's hero kept the stored plan name first "because
+ * the plan may carry a season's name" — the very name the decision above
+ * retired — and the coach read the raw template name; an install that adopted
+ * a season-named plan, or any catalogue rename, put two names on one programme
+ * (duplicate sweep 13, 2026-10-12). One function, every surface.
+ */
+export function runningProgrammeTitle(
+  template: WorkoutTemplateV1 | null | undefined,
+  planName: string | null | undefined,
+  language: AppLanguage = 'en',
+  days?: number,
+): string {
+  if (template) {
+    return getReadyTemplatePresentation(template, language, days).title;
+  }
+  return formatWorkoutDisplayLabel(planName || '');
 }

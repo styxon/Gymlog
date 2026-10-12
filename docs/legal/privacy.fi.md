@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-*Päivitetty 9.10.2026*
+*Päivitetty 12.10.2026*
 
 Mitä Vinha tallentaa, mikä lähtee puhelimestasi ja mitä voit sille tehdä.
 
@@ -28,7 +28,7 @@ Kaikki alla oleva on joko sinun syöttämääsi tai sovelluksen laskemaa siitä,
 - Treenilokisi: treenit ja cardio-suoritukset liikkeineen, sarjoineen, toistoineen, painoineen, muistiinpanoineen, päivämäärineen ja kestoineen sekä se, miltä treeni tuntui.
 - Kehon tiedot, jotka itse lisäät: painomerkinnät ja mittanauhalla otetut mitat.
 - Ohjelmasi: ne, jotka rakennat, tuot CSV-tiedostosta tai valokuvasta, sekä liikenimet, jotka opetat sovellukselle.
-- Valmentajan kanssa asettamasi tavoitteet sekä virstanpylväät ja kaudet, jotka sovellus laskee lokistasi.
+- Valmentajan kanssa asettamasi tavoitteet sekä virstanpylväät, jotka sovellus laskee lokistasi.
 - Mitä valmentaja on neuvonut sinulle viimeisten kolmen viikon aikana: kunkin vastauksen yhden lauseen tiivistelmä ja päivä, jona se annettiin, enintään kymmenen kappaletta. Se säilytetään, jottei valmentaja toista jo antamaansa neuvoa, se poistuu kolmea viikkoa vanhetessaan, ja se pysyy tässä puhelimessa — alla kuvattu pilvivarmuuskopio ei kanna sitä mukanaan.
 - Asetukset: kieli, yksiköt, teema, ilmoitus- ja ääniasetukset, oletuslepoaika, treenitauot.
 - Pro-tila: onko Pro päällä, milloin se ostettiin tai peruttiin, ja päivät, joihin asti kampanjakoodi tai ilmainen kokeilu pitää sen päällä.

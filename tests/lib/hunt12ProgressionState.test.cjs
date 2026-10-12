@@ -137,7 +137,9 @@ module.exports = [
       assert.equal(load({ targetSets: Number.NaN })[0], 3);
       assert.equal(load({ targetSets: 1e6 })[0] <= 20, true);
       const reps = load({ repMin: -4, repMax: 1e9 });
-      assert.ok(reps[1] >= 1 && reps[2] <= 1000 && reps[1] <= reps[2], JSON.stringify(reps));
+      // The one stored reps ceiling (weightLimits.MAX_STORED_REPS, the hold
+      // dial's 1800 s since duplicate sweep 13, D6-3).
+      assert.ok(reps[1] >= 1 && reps[2] <= 1800 && reps[1] <= reps[2], JSON.stringify(reps));
       // A row the app wrote loads as stored.
       assert.deepEqual(load({ targetSets: 4, repMin: 10, repMax: 10 }), [4, 10, 10]);
     },

@@ -22,6 +22,20 @@ export interface HomePlanProgress {
   sessionsTotal: number;
 }
 
+/**
+ * Where the reader is in the programme's block: "week N of M", the hero's
+ * progress and "X of Y sessions".
+ *
+ * A block week is SESSION-COUNTED: one week is one pass through the
+ * programme's days (`sessionsPerWeek` logged sessions), not a calendar week.
+ * The block tracks the programme, not the calendar, so a missed week does not
+ * advance it and a reader on an on/off cycle (2 on, 1 off: about 4.7 sessions
+ * a calendar week) moves to week 2 after three sessions, about four days in.
+ * Kept on purpose (owner decision 2026-10-12, duplicate sweep 13 D5-9). The
+ * calendar answer — planned sessions per calendar week — is
+ * trainingSchedule.cycleSessionsPerWeek, which the coach is told; the two
+ * numbers answer different questions and are not meant to agree.
+ */
 export function buildHomePlanProgress({
   completedSessions,
   sessionsPerWeek,

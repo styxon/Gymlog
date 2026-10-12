@@ -272,10 +272,15 @@ module.exports = [
       assert.equal(formatHomeStatRecency(at(2026, 7, 29, 23), 'en', now), 'Yesterday');
       assert.equal(formatHomeStatRecency(at(2026, 7, 28), 'en', now), '2 days ago');
       assert.equal(formatHomeStatRecency(at(2026, 7, 24), 'en', now), '6 days ago');
-      assert.equal(formatHomeStatRecency(at(2026, 7, 23), 'en', now), 'Last week');
-      assert.equal(formatHomeStatRecency(at(2026, 7, 17), 'en', now), 'Last week');
-      // 14 days and beyond: the date itself.
-      assert.equal(formatHomeStatRecency(at(2026, 7, 16), 'en', now), '16.8.');
+      // From the seventh day on, the date itself — never "Last week", which
+      // is false for most of days 7–13 (owner, 2026-10-12; dup sweep 13, D2-3).
+      assert.equal(formatHomeStatRecency(at(2026, 7, 23), 'en', now), 'Aug 23');
+      assert.equal(formatHomeStatRecency(at(2026, 7, 17), 'en', now), 'Aug 17');
+      // And the date in the reader's language: an English card read the
+      // Finnish "16.8." (D3-5).
+      assert.equal(formatHomeStatRecency(at(2026, 7, 16), 'en', now), 'Aug 16');
+      assert.equal(formatHomeStatRecency(at(2026, 7, 16), 'fi', now), '16.8.');
+      assert.equal(formatHomeStatRecency(at(2026, 7, 23), 'fi', now), '23.8.');
 
       assert.equal(formatHomeStatRecency(at(2026, 7, 28), 'fi', now), '2 pv sitten');
     },

@@ -45,6 +45,8 @@ const LEGAL_TEXT_VERSIONS = [
   { version: '2026-10-06', fingerprint: '4e2656f3346bf4e6' },
   // RevenueCat named as the processor of Pro purchases (#344 wired it).
   { version: '2026-10-09', fingerprint: '14611161a2a511e7' },
+  // Seasons removed from the list of what the app counts from the log.
+  { version: '2026-10-12', fingerprint: '48cc4bb2e765a1da' },
 ];
 
 const IDS = ['privacy', 'terms'];

@@ -106,7 +106,7 @@ module.exports = [
       // Built from the programme's week, not from a card field that could
       // drift. Two rows build one: the catalog items every sheet and the
       // catalog screen read, and the "for you" cards. It was three until the
-      // season rows were parked with their section. Counted across the shell —
+      // season rows went with their section. Counted across the shell —
       // App.tsx and the src/app modules — since the rows left App.tsx for
       // useProgramsCatalog (phase-C split, 2026-10-01). The week is the one
       // the page shows, the reader's composed one for their own programme

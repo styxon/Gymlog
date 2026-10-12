@@ -49,15 +49,6 @@ export type AppRoute =
     }
   | {
       /**
-       * A season as a screen, not a filter: dates, week N of 26, the reader's
-       * own points and the programs that belong to it.
-       */
-      tab: 'workout';
-      screen: 'season';
-      season: 'winter' | 'summer';
-    }
-  | {
-      /**
        * Setting a target, in three steps: which lift, how much heavier, and
        * the week that would be built for it.
        *

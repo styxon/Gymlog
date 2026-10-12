@@ -68,13 +68,54 @@ export function resolveProEntitlement(
   // The trial, which unlocks exactly like a promo and expires on its own. Kept
   // as its own field so a warning about a trial ending is never sent to
   // somebody who redeemed a code.
+  //
+  // A store purchase that keeps Pro on at least as long as the trial is the
+  // stated reason instead (owner decision D6-5, 2026-10-12: with Play Billing
+  // live the store is the authority). It reaches a running device trial when
+  // the store's record lands by sync — bought on another phone, or a payer who
+  // reinstalled — and the subscription page read "trial ends ..." for up to
+  // fourteen days in place of the plan and the next charge. A purchase that
+  // ends before the trial does not outlast it, so the trial stays the reason.
   const trialUntil = preferences.proTrialUntil;
   const trialTime = trialUntil ? new Date(trialUntil).getTime() : Number.NaN;
   if (Number.isFinite(trialTime) && trialTime > now.getTime()) {
+    if (purchaseKeepsProAt(preferences, trialTime)) {
+      return resolvePurchaseEntitlement(preferences, now);
+    }
     return { unlocked: true, source: 'trial', promoUntil: trialUntil, purchaseEndsAt: null };
   }
 
   return resolvePurchaseEntitlement(preferences, now);
+}
+
+/** Whether the recorded purchase still has Pro on at that instant. */
+function purchaseKeepsProAt(preferences: ProPreferences, atMs: number): boolean {
+  return resolvePurchaseEntitlement(preferences, new Date(atMs)).unlocked;
+}
+
+/**
+ * When the trial ends AND takes Pro with it, in ms; null otherwise.
+ *
+ * The "Pro features close in 2 days" notice reads this. It used to read
+ * `proTrialUntil` alone, so a reader whose store purchase landed during the
+ * trial — or whose promo ran past it — was told on day twelve that Pro was
+ * closing when nothing was (duplicate sweep 13, D6-1). The question is "is
+ * Pro still on at the instant the trial ends", asked of the same rules
+ * `resolveProEntitlement` uses, so it needs no clock: a trial already over is
+ * dropped by the notification plan, which only schedules a future notice.
+ */
+export function trialEndingAtMs(preferences: ProPreferences): number | null {
+  const trialUntil = preferences.proTrialUntil;
+  const trialTime = trialUntil ? new Date(trialUntil).getTime() : Number.NaN;
+  if (!Number.isFinite(trialTime)) {
+    return null;
+  }
+  const promoUntil = preferences.promoProUntil;
+  const promoTime = promoUntil ? new Date(promoUntil).getTime() : Number.NaN;
+  if (Number.isFinite(promoTime) && promoTime > trialTime) {
+    return null;
+  }
+  return purchaseKeepsProAt(preferences, trialTime) ? null : trialTime;
 }
 
 /**

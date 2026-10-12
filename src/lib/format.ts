@@ -97,25 +97,89 @@ export function formatShortDate(dateString: string, language?: AppLanguage) {
   }).format(new Date(dateString));
 }
 
-export function formatSessionDate(dateString: string, language?: AppLanguage) {
-  return getDateTimeFormat(localeFor(language), {
+/**
+ * A session's day and clock: "ma 12.10. klo 18:06" / "Mon, Oct 12, 18:06".
+ * The day is Intl's; the clock is formatClockTime's HH:mm (owner, 2026-10-12,
+ * D3-2). Intl wrote "klo 18.06" and "06:06 PM" here while the Progress
+ * tooltip beside the same weigh-in read "18:06" (dup sweep 13 review, R2).
+ */
+export function formatSessionDate(dateString: string, language: AppLanguage) {
+  const date = new Date(dateString);
+  const day = getDateTimeFormat(localeFor(language), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateString));
+  }).format(date);
+  return language === 'fi' ? `${day} klo ${formatClockTime(date)}` : `${day}, ${formatClockTime(date)}`;
 }
 
 /**
- * `undefined` means the DEVICE locale, which on an en-US phone gives "6:06 PM"
- * even when the app is in Finnish. Finland writes 18:06.
+ * A clock time, "18:06": 24 hours, two digits each side, a colon — in BOTH
+ * languages (owner, 2026-10-12).
+ *
+ * Written out rather than through Intl so a test can pin it. Intl answered
+ * "18.06" for Finnish (CLDR's H.mm) and "06:06 PM" for English on an en-US
+ * phone, while the rest bar, the lock-screen card, the backup row and the
+ * reminder picker each wrote "18:06" by hand — one rest read "Ends 18:06"
+ * under a header that said "Tänään · 18.06".
  */
-export function formatTime(dateString: string, language: AppLanguage = 'en') {
-  return getDateTimeFormat(language === 'fi' ? 'fi-FI' : undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateString));
+export function formatClockTime(date: Date) {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
+/**
+ * `formatClockTime` for a stored instant. `language` is required although
+ * both languages write the same: while it was optional it fell to the device
+ * locale, and two callers forgot it — a Finnish reader on an English phone
+ * got "6:06 PM" on the Progress tooltip and the active-workout card.
+ */
+export function formatTime(dateString: string, _language: AppLanguage) {
+  return formatClockTime(new Date(dateString));
+}
+
+/**
+ * "Today" / "Yesterday" / "3 days ago", then the date itself: "Aug 16" /
+ * "16.8.". Calendar days, so a session at 23:50 last night is "Yesterday"
+ * at 08:00, not "0 days ago".
+ *
+ * From the seventh day on it is the date, never "Last week" (owner,
+ * 2026-10-12): from a Monday, thirteen days back is the Tuesday of the week
+ * before last. Profile records, the Home stat cards and the exercise page
+ * each kept their own copy of this ladder, and a lift trained ten days ago
+ * read "Last week" on two of them and "2 Oct" on the third.
+ */
+export function formatRelativeDay(
+  at: Date | string | number,
+  now: Date | number,
+  language: AppLanguage,
+): string {
+  const date = new Date(at);
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const days = calendarDaysApart(date, new Date(now));
+  if (days <= 0) {
+    return t(language, 'common.today');
+  }
+  if (days === 1) {
+    return t(language, 'common.yesterday');
+  }
+  if (days < 7) {
+    return t(language, 'common.daysAgo', { count: days });
+  }
+  return formatShortDate(date.toISOString(), language);
+}
+
+/**
+ * Whole calendar days from `from` to `to` in local time — the answer
+ * completedSessions.calendarDaysBetween gives (a test holds the two equal
+ * across both clock changes). Not imported from there: completedSessions
+ * reaches back into this module through progression and the weight dial.
+ */
+function calendarDaysApart(from: Date, to: Date) {
+  const start = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const end = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.round((end - start) / 86_400_000);
 }
 
 export function convertWeightFromKg(value: number, _unitPreference?: UnitPreference) {
@@ -142,12 +206,18 @@ export function formatWeightInputValue(value: number | null | undefined, _unitPr
   return removeTrailingZeros(value);
 }
 
+/**
+ * A volume total: whole kilograms, thousands grouped — "18 400 kg" /
+ * "18,400 kg". A session's History card printed "306,25 kg" and its analysis
+ * "306 kg"; totals are whole kilograms on both (owner, 2026-10-12). One
+ * lift's weight is `formatWeight`, never this: it keeps its hundredths.
+ */
 export function formatVolume(value: number, _unitPreference: UnitPreference = 'kg') {
   if (!value) {
     return '0 kg';
   }
 
-  return `${removeTrailingZeros(value)} kg`;
+  return `${groupThousands(value)} kg`;
 }
 
 /** Compact lifetime/monthly volume: "412 kg", "4.5 t". */
@@ -352,4 +422,34 @@ export function pluralize(count: number, singular: string, plural = `${singular}
  */
 export function formatPercent(value: number, language: AppLanguage = 'en') {
   return language === 'fi' ? `${value} %` : `${value}%`;
+}
+
+/**
+ * A whole number with its thousands grouped the way the reader's language
+ * groups them: "18 400" in Finnish — a no-break space, so a narrow row cannot
+ * wrap inside the number — and "18,400" in English (owner, 2026-10-12).
+ * Rounded to whole first: a total in kilograms is not read to the gram.
+ *
+ * The language is the one the decimal mark follows (`setNumberLanguage`), so
+ * the two marks can never both come out as commas. One tonnage read
+ * "18400 kg", "18 400 kg" (with two different spaces) and "18,400" across
+ * five screens before this.
+ */
+export function groupThousands(value: number) {
+  const whole = Math.round(value);
+  const digits = String(Math.abs(whole)).replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    decimalSeparator === '.' ? ',' : ' ',
+  );
+  return whole < 0 ? `-${digits}` : digits;
+}
+
+/**
+ * One decimal in the app's mark, a trailing zero dropped: "4,7", "3". For
+ * figures that need no weight-dial hundredths — hours, kilometres, sessions
+ * a week. Rounds half away from zero.
+ */
+export function formatDecimalTenths(value: number) {
+  const tenths = Math.sign(value) * (Math.round(Math.abs(value) * 10) / 10);
+  return applyDecimalSeparator(Number.isInteger(tenths) ? String(tenths) : tenths.toFixed(1));
 }

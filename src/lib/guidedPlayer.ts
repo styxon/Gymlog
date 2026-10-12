@@ -17,6 +17,7 @@ import type { SessionRoutineBlock } from './homeSessionHero';
 import { t } from './i18n';
 import { IntervalRecoveryKind, IntervalScheme, parseIntervalScheme } from './intervalScheme';
 import { liftBeforeSwap, liftOfSet } from './liftSegments';
+import { localizeSessionFocus } from './sessionNameLabel';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetRoundOrder } from './supersetGrouping';
 import type {
   GuidedResumeAnchor,
@@ -243,6 +244,36 @@ export function isGuidedExerciseOut(exercise: {
   const nothingPending = exercise.sets.every((set) => set.status !== 'pending');
   const somethingSkipped = exercise.sets.some((set) => set.status === 'skipped');
   return exercise.sets.length > 0 && nothingPending && somethingSkipped;
+}
+
+/**
+ * Where the live session stands, sets done of sets in it: one count for the
+ * lock-screen card, the entry subtitle and the run sheet. A lift out of the
+ * plan by its status (skipped) and every set marked skipped are not in it,
+ * so a session whose remaining sets are all done reads n of n. The lock
+ * screen counted skipped sets and never got there; the run sheet counted a
+ * finished-early lift's skipped sets (duplicate sweep 13, D1-8).
+ */
+export function liveSetProgress(
+  exercises: ReadonlyArray<{ status: string; sets: ReadonlyArray<{ status: string }> }>,
+): { done: number; total: number } {
+  let done = 0;
+  let total = 0;
+  for (const exercise of exercises) {
+    if (exercise.sets.length === 0 || exercise.status === 'skipped') {
+      continue;
+    }
+    for (const set of exercise.sets) {
+      if (set.status === 'skipped') {
+        continue;
+      }
+      total += 1;
+      if (set.status === 'completed') {
+        done += 1;
+      }
+    }
+  }
+  return { done, total };
 }
 
 function formatBlockLength(totalSeconds: number): string {
@@ -1356,19 +1387,19 @@ export function getGuidedBackTargetIndex(steps: GuidedStep[], index: number): nu
  */
 
 /**
- * "STRONG Elite - Day 1: Upper (Heavy)" → "Upper (Heavy)". Runtime session
- * templates are named `<plan> - <day>`; entry wants just the day focus.
+ * "STRONG Elite - Day 1: Upper (Heavy)" → "Upper (Heavy)", localized.
+ * Runtime session templates are named `<plan> - <day>`; entry wants just the
+ * day focus, read the way Home and the day rows read it
+ * (sessionNameLabel.localizeSessionFocus): a duplicated or composed custom
+ * programme saves "Päivä 1: Rinta", which kept its ordinal here alone, and a
+ * bare "Day 3:" stayed English with its colon in a Finnish player (duplicate
+ * sweep 13, D3-3).
  */
 export function getGuidedSessionTitle(templateName: string, language: AppLanguage = 'en'): string {
   const raw = templateName.trim();
   const separatorIndex = raw.lastIndexOf(' - ');
   const dayPart = separatorIndex >= 0 ? raw.slice(separatorIndex + 3).trim() : raw;
-  const [head, ...rest] = dayPart.split(':');
-  const afterColon = rest.join(':').trim();
-  if (/^day\s*\d+$/i.test(head.trim()) && afterColon) {
-    return afterColon;
-  }
-  return dayPart || t(language, 'guided.sessionFallback');
+  return dayPart ? localizeSessionFocus(dayPart, language) : t(language, 'guided.sessionFallback');
 }
 
 /** mm:ss over 60s, plain seconds under it — matches the mock's gpFmt. */

@@ -1,6 +1,6 @@
 import { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import { SetupCautionArea, SetupCautionFlag, SetupFocusArea } from '../types/models';
-import { trackingModeAfterSwap } from './catalogExercisePools';
+import { holdsSameMovement, trackingModeAfterSwap } from './catalogExercisePools';
 import { exerciseHitsCautionArea, findPhrase, normalize, phraseWords, words } from './cautionAreaMatching';
 import { isExerciseAllowedWithEquipment } from './equipmentExerciseFilter';
 import { isHoldExerciseName } from './holdExercises';
@@ -349,6 +349,13 @@ export function applyCautionFlagsToExercises(
    * sessions, 22 composed weeks): a duplicate bridge is a smaller fault than
    * a heavy hinge left in place. So a replacement outside the family wins when
    * there is one, and otherwise the swap goes ahead beside the native lift.
+   *
+   * The same movement under another spelling (holdsSameMovement, the
+   * composer's check) takes the same two strengths: "Leg Extensions" beside a
+   * day's own "Leg Extension" is avoided while another replacement is safe,
+   * and one this pass swapped in is never added twice (dup sweep 13, D4-4).
+   * The lift being swapped is not its own neighbour: its bodyweight variant
+   * is what a careful swap is for.
    */
   const nativeFamilies = new Set<string>();
   for (const exercise of exercises) {
@@ -358,17 +365,24 @@ export function applyCautionFlagsToExercises(
     }
   }
   const swappedInFamilies = new Set<string>();
+  const swappedInNames: string[] = [];
   const onTheDay = (name: string) => {
     const key = normalize(name);
-    return taken.has(key) || (pending.get(key) ?? 0) > 0;
+    return taken.has(key) || (pending.get(key) ?? 0) > 0 || holdsSameMovement(swappedInNames, name);
   };
   const familyAddedBySwap = (name: string) => {
     const family = movementFamilyOf(name);
     return family !== null && swappedInFamilies.has(family);
   };
-  const familyNative = (name: string) => {
+  const familyNative = (name: string, self: WorkoutTemplateExercise) => {
     const family = movementFamilyOf(name);
-    return family !== null && nativeFamilies.has(family);
+    if (family !== null && nativeFamilies.has(family)) {
+      return true;
+    }
+    return holdsSameMovement(
+      exercises.filter((exercise) => exercise !== self).map((exercise) => exercise.exerciseName),
+      name,
+    );
   };
 
   const adjustOne = (exercise: WorkoutTemplateExercise): WorkoutTemplateExercise | null => {
@@ -408,8 +422,8 @@ export function applyCautionFlagsToExercises(
       // the knee, which is worse than a repeated bridge.
       const stillHits = (candidate: string) => exerciseHitsCautionArea(candidate, flag.area);
       const replacement =
-        usable[0] !== undefined && familyNative(usable[0])
-          ? usable.find((candidate) => !familyNative(candidate) && !stillHits(candidate)) ?? usable[0]
+        usable[0] !== undefined && familyNative(usable[0], exercise)
+          ? usable.find((candidate) => !familyNative(candidate, exercise) && !stillHits(candidate)) ?? usable[0]
           : usable[0] ?? null;
 
       // Never swap into something another flag bans outright. And never
@@ -456,6 +470,7 @@ export function applyCautionFlagsToExercises(
     if (result) {
       taken.add(normalize(result.exerciseName));
       if (result.exerciseName !== exercise.exerciseName) {
+        swappedInNames.push(result.exerciseName);
         const resultFamily = movementFamilyOf(result.exerciseName);
         if (resultFamily) {
           swappedInFamilies.add(resultFamily);

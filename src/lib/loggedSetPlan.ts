@@ -1,4 +1,5 @@
 import { ExerciseLogSetPlan, ExerciseLogSetPlanBasis, SetupCautionArea } from '../types/models';
+import { isLiftableWeight, isPlannedReps } from './weightLimits';
 
 /**
  * What the app opened a set at, kept next to what was actually done.
@@ -56,12 +57,17 @@ const AREAS: readonly SetupCautionArea[] = [
   'ankles',
 ];
 
-/** The dial's own ceilings: nothing the app could have planned lies past them. */
-const MAX_PLAN_LOAD_KG = 1000;
-const MAX_PLAN_REPS = 1000;
+/**
+ * The dial's own ceilings: nothing the app could have planned lies past them.
+ * The shared rules, not copies — this said "the dial's" over 1000 kg while the
+ * dial and every other loader stopped at 600 (duplicate sweep 13, D6-3).
+ */
+function load(value: unknown): number | null {
+  return isLiftableWeight(value) ? value : null;
+}
 
-function finite(value: unknown, max: number): number | null {
-  return typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= max ? value : null;
+function reps(value: unknown): number | null {
+  return isPlannedReps(value) ? value : null;
 }
 
 /**
@@ -88,14 +94,14 @@ function basisOf(set: PlannedSetSource): ExerciseLogSetPlanBasis {
 export function buildLoggedSetPlan(set: PlannedSetSource): ExerciseLogSetPlan {
   const basis = basisOf(set);
   return {
-    loadKg: finite(set.plannedLoadKg, MAX_PLAN_LOAD_KG),
-    repsMin: finite(set.plannedRepsMin, MAX_PLAN_REPS) ?? 0,
-    repsMax: finite(set.plannedRepsMax, MAX_PLAN_REPS) ?? 0,
+    loadKg: load(set.plannedLoadKg),
+    repsMin: reps(set.plannedRepsMin) ?? 0,
+    repsMax: reps(set.plannedRepsMax) ?? 0,
     // The set's own ramp target when it had one: that is what the dial asked.
-    targetReps: finite(set.rampTargetReps ?? set.plannedTargetReps, MAX_PLAN_REPS),
+    targetReps: reps(set.rampTargetReps ?? set.plannedTargetReps),
     basis,
-    fromKg: basis === 'progressed' ? finite(set.autoProgressedFromKg, MAX_PLAN_LOAD_KG) : null,
-    fromReps: basis === 'progressed' ? finite(set.autoProgressedFromReps, MAX_PLAN_REPS) : null,
+    fromKg: basis === 'progressed' ? load(set.autoProgressedFromKg) : null,
+    fromReps: basis === 'progressed' ? reps(set.autoProgressedFromReps) : null,
     cautionArea: basis === 'held_caution' ? set.heldForCautionArea ?? null : null,
   };
 }
@@ -110,15 +116,15 @@ export function normalizeLoggedSetPlan(value: unknown): ExerciseLogSetPlan | nul
   const row = value as Record<string, unknown>;
   const basis = row.basis as ExerciseLogSetPlanBasis;
   if (!BASES.includes(basis)) return null;
-  const repsMin = finite(row.repsMin, MAX_PLAN_REPS);
-  const repsMax = finite(row.repsMax, MAX_PLAN_REPS);
+  const repsMin = reps(row.repsMin);
+  const repsMax = reps(row.repsMax);
   if (repsMin === null || repsMax === null) return null;
-  const nullable = (key: string, max: number): number | null | undefined =>
-    row[key] === null || row[key] === undefined ? null : finite(row[key], max) ?? undefined;
-  const loadKg = nullable('loadKg', MAX_PLAN_LOAD_KG);
-  const targetReps = nullable('targetReps', MAX_PLAN_REPS);
-  const fromKg = nullable('fromKg', MAX_PLAN_LOAD_KG);
-  const fromReps = nullable('fromReps', MAX_PLAN_REPS);
+  const nullable = (key: string, read: (value: unknown) => number | null): number | null | undefined =>
+    row[key] === null || row[key] === undefined ? null : read(row[key]) ?? undefined;
+  const loadKg = nullable('loadKg', load);
+  const targetReps = nullable('targetReps', reps);
+  const fromKg = nullable('fromKg', load);
+  const fromReps = nullable('fromReps', reps);
   if (loadKg === undefined || targetReps === undefined || fromKg === undefined || fromReps === undefined) {
     return null;
   }

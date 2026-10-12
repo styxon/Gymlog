@@ -640,26 +640,15 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     ],
   },
 
-  // --- The two season programmes ------------------------------------------
+  // --- Summer Conditioning and Winter Build ------------------------------
   //
-  // A season is a 26-week window with ONE programme in it, and until now that
-  // programme was borrowed: summer pointed at RUN, winter at POWERBUILD. Both
-  // are fine programmes and neither was built for a season - RUN never lifts
-  // anything, POWERBUILD never gets you outside, and both sit in the catalog
-  // as ordinary choices a reader could also just pick without joining
-  // anything.
-  //
-  // These two are the season's own, and they answer the thing the calendar
-  // actually changes. Summer: it is light out and the gym is the least
-  // interesting room you could be in, so every session pairs a lift block with
-  // a run block and needs no barbell. Winter: it is dark at four, you are
-  // indoors anyway, so four days with a heavy anchor each - and a short
-  // conditioning finisher on the leg days, because the engine you built in
-  // summer is the thing winter quietly takes back.
-  //
-  // Nothing else in the catalog runs and lifts in the same session, and
-  // nothing else finishes a heavy leg day on a bike. That is deliberate: the
-  // season programme has to be worth joining a season for.
+  // Built for the season competition, which is gone (owner, 2026-10-12); the
+  // ids keep their old prefix because plans and logs store them. Summer
+  // Conditioning pairs a lift block with a run block in every session and
+  // needs no barbell. Winter Build is four days with a heavy anchor each and
+  // a short conditioning finisher on the leg days. Nothing else in the
+  // catalogue runs and lifts in the same session, or finishes a heavy leg day
+  // on a bike.
   {
     id: 'tpl_season_summer_v1',
     name: 'Summer Conditioning',
@@ -1650,6 +1639,26 @@ export const CORE_WORKOUT_TEMPLATE_ID = 'tpl_4_day_upper_lower_v1';
 
 export function getWorkoutTemplateById(templateId: string) {
   return WORKOUT_TEMPLATES_V1.find((template) => template.id === templateId) ?? null;
+}
+
+/**
+ * The catalog swap group a name belongs to, or null when no group lists it:
+ * trimmed and lower-cased on both sides, the first group that lists it wins.
+ *
+ * One answer for every writer that keys a slot to a group — the custom-plan
+ * adapter and the onboarding composer each searched this table themselves and
+ * differed only in the id they make up for a name no group holds. They still
+ * make up their own; which group a name IS lives here (dup sweep 13, D4-8).
+ */
+export function catalogSubstitutionGroupOf(exerciseName: string): string | null {
+  const normalized = exerciseName.trim().toLowerCase();
+  if (!normalized) {
+    return null;
+  }
+  const group = WORKOUT_SUBSTITUTION_GROUPS.find((candidate) =>
+    candidate.allowedExerciseNames.some((allowed) => allowed.trim().toLowerCase() === normalized),
+  );
+  return group?.id ?? null;
 }
 
 export function getWorkoutTemplateSessions(templateId: string) {

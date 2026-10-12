@@ -2,6 +2,7 @@ import { startTransition } from 'react';
 import type { Dispatch, SetStateAction } from 'react';
 import { Platform } from 'react-native';
 
+import { getLifetimeWorkoutCount } from '../lib/lifetimeSummary';
 import { decideRatingPrompt, recordRatingAsked } from '../lib/ratingPrompt';
 import { storePlatformOf, usesSystemReviewPrompt } from '../lib/storeLinks';
 import { requestSystemReview } from '../utils/systemReview';
@@ -96,11 +97,15 @@ export function createFinishExits(deps: FinishExitsDeps) {
    * The ask is recorded when the sheet is SHOWN, not when it is answered. A
    * reader who closes it has still been asked, and counting only the answers
    * would let the app ask forever.
+   *
+   * Counted as Profile counts: a workout saved twice, or a row with no set
+   * done, is not a workout the reader has logged (duplicate sweep 13,
+   * 2026-10-12).
    */
   function maybeAskForRating() {
     const decision = decideRatingPrompt({
       state: preferences.ratingPrompt,
-      sessionsLogged: database.workoutSessions.length + database.cardioSessions.length,
+      sessionsLogged: getLifetimeWorkoutCount(database),
       atPeakMoment: true,
       nowMs: Date.now(),
     });

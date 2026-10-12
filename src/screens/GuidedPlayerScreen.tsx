@@ -65,6 +65,7 @@ import {
   getGuidedNextName,
   getGuidedNextPreview,
   getGuidedSessionTitle,
+  liveSetProgress,
   getGuidedSkipTargetIndex,
   rollPastLoggedWork,
   getGuidedStepAnchor,
@@ -150,9 +151,9 @@ import { SupersetBorder } from '../components/SupersetBorder';
 import { getDrillLibraryName } from '../lib/drillMedia';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { libraryLabel } from '../lib/libraryLabel';
-import { localizeWorkoutFocus } from '../lib/sessionNameLabel';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup } from '../lib/homeSessionHero';
-import { formatSetScheme, formatWeight, parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClockTime, formatSetScheme, formatWeight, parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClock } from '../lib/restSchedule';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetGroupIndexes, supersetPositions } from '../lib/supersetGrouping';
 import { I18nKey, t } from '../lib/i18n';
@@ -1651,7 +1652,8 @@ function GuidedPlayer({
 
   // The catalog names sessions in English; the focus half of the name reads in
   // the user's language, the plan brand in front of it does not.
-  const sessionTitle = localizeWorkoutFocus(getGuidedSessionTitle(session?.templateName ?? '', language), language);
+  // getGuidedSessionTitle localizes (sessionNameLabel.localizeSessionFocus).
+  const sessionTitle = getGuidedSessionTitle(session?.templateName ?? '', language);
 
   // From the exercises, not from `sessionTitle` — that string is localized one
   // line above, and feeding it to the classifier is exactly how every Finnish
@@ -1833,13 +1835,10 @@ function GuidedPlayer({
     if (!session) {
       return null;
     }
-    const started = new Date(session.startedAt);
-    const time = `${String(started.getHours()).padStart(2, '0')}:${String(started.getMinutes()).padStart(2, '0')}`;
-    const total = session.exercises.reduce((sum, ex) => sum + ex.sets.length, 0);
-    const done = session.exercises.reduce(
-      (sum, ex) => sum + ex.sets.filter((set) => set.status === 'completed').length,
-      0,
-    );
+    const time = formatClockTime(new Date(session.startedAt));
+    // The run sheet's count (liveSetProgress): skipped lifts and sets are out,
+    // so the card reaches n of n when everything left is done.
+    const { done, total } = liveSetProgress(session.exercises);
     const current = session.exercises.find((ex) => ex.sets.some((set) => set.status !== 'completed' && set.status !== 'skipped'));
     return {
       title: t(language, 'rest.notify.sessionTitle', {
@@ -3043,7 +3042,10 @@ function GuidedPlayer({
     () => exercises.filter((exercise) => exercise.status !== 'skipped' && exercise.sets.length > 0),
     [exercises],
   );
-  const totalSets = activeExercises.reduce((sum, exercise) => sum + exercise.sets.length, 0);
+  // One count with the lock-screen card (liveSetProgress): a finished-early
+  // lift's skipped sets are not still to do.
+  const setProgress = useMemo(() => liveSetProgress(exercises), [exercises]);
+  const totalSets = setProgress.total;
   // Badges for the entry screen's list, over the lifts it actually shows. A
   // lift that is OUT of the plan — skipped, or finished early with the rest of
   // its sets skipped — is unpaired first, on exactly the predicate the step
@@ -4432,7 +4434,7 @@ function GuidedPlayer({
                 >
                   <Text style={styles.restRunStripText}>{t(language, 'guided.runSheet.title')}</Text>
                   <Text style={styles.restRunStripMeta}>
-                    {t(language, 'guided.runSheet.progress', { done: completedSetCount, count: totalSets })}
+                    {t(language, 'guided.runSheet.progress', { done: setProgress.done, count: totalSets })}
                   </Text>
                   <GPIcon name="chevR" size={16} color={theme.faint} />
                 </Pressable>
@@ -5276,17 +5278,10 @@ function planSetOf<T extends { status: string }>(sets: T[]): T | undefined {
 
 /**
  * Session clock for the set screen's top-right readout: m:ss, growing to
- * h:mm:ss so a session left running overnight stays readable.
+ * h:mm:ss so a session left running overnight stays readable. The rest bar's
+ * clock, so the free workout's header reads the same past the hour.
  */
-function formatSessionClock(totalSeconds: number): string {
-  const safe = Math.max(0, Math.floor(totalSeconds));
-  const seconds = String(safe % 60).padStart(2, '0');
-  const minutes = Math.floor(safe / 60);
-  if (minutes < 60) {
-    return `${minutes}:${seconds}`;
-  }
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}:${seconds}`;
-}
+const formatSessionClock = formatClock;
 
 /* ── strength set step v4 (owns the reps/kg steppers) ── */
 /**

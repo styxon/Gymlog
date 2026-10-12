@@ -1,6 +1,7 @@
 import type { WorkoutTrackingMode } from '../features/workout/workoutTypes';
 import { isHoldExerciseName } from './holdExercises';
 import { intervalOffSeconds } from './intervalScheme';
+import { normalizeStoredRestSeconds } from './restPreference';
 
 /**
  * One rep number per exercise, for SAVED programs too.
@@ -35,10 +36,11 @@ export function collapseRepRange(exercise: {
  * The rest a saved row keeps. 0 is a rest of none — a stretch is written that
  * way — and used to be dropped as "unset", which gave the stretch the
  * reader's default between sets (card 30 min, Home 35). Only a missing or
- * negative number is unset.
+ * negative number is unset. The loader reads by the same rule
+ * (restPreference.normalizeStoredRestSeconds), so what is saved is what loads.
  */
-export function savedRestSeconds(restSeconds: number | null | undefined): number | null {
-  return typeof restSeconds === 'number' && Number.isFinite(restSeconds) && restSeconds >= 0 ? restSeconds : null;
+export function savedRestSeconds(restSeconds: unknown): number | null {
+  return normalizeStoredRestSeconds(restSeconds);
 }
 
 /**

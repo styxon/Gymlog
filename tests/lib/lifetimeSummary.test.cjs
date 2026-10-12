@@ -148,4 +148,47 @@ module.exports = [
       assert.equal(getLifetimeWorkoutCount(buildDatabase([])), 0);
     },
   },
+  {
+    // Duplicate sweep 13 (D5-4, 2026-10-12). The rating prompt, the sign-in
+    // prompt, the coach demo moment and the coach chat's session count and
+    // quick-ask tier counted raw rows (`workoutSessions.length`), while Profile
+    // and every activity figure count the canonical list: one row per workout
+    // however often it was saved, and a set done in it. A restore or merge
+    // that held a duplicate and an empty row asked for a rating at 4 where
+    // Profile said 2.
+    name: 'the logged-workout gates count what Profile counts, not stored rows',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const real = [createSession('a', '2026-10-01T10:00:00.000Z', 1000), createSession('b', '2026-10-03T10:00:00.000Z', 1000)];
+      const duplicate = { ...real[1], id: 'b_again' };
+      const empty = createSession('nothing_done', '2026-10-05T10:00:00.000Z', 0);
+      const database = {
+        workoutSessions: [...real, duplicate, empty],
+        exerciseLogs: [
+          createLog('a'),
+          createLog('b'),
+          createLog('b_again'),
+          { ...createLog('nothing_done'), skipped: true },
+        ],
+        cardioSessions: [],
+      };
+      assert.equal(database.workoutSessions.length, 4);
+      assert.equal(getLifetimeWorkoutCount(database), 2);
+
+      const ROOT = path.join(__dirname, '..', '..');
+      const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const file of [
+        'src/app/finishExits.ts',
+        'src/app/useSetupHandoffOverlays.tsx',
+        'src/app/useCoachDemoMoment.ts',
+        'src/app/renderHomeScreens.tsx',
+      ]) {
+        const source = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+        assert.doesNotMatch(source, /workoutSessions\.length|cardioSessions\.length/, `${file} counts stored rows`);
+      }
+      assert.match(strip(fs.readFileSync(path.join(ROOT, 'src/app/finishExits.ts'), 'utf8')), /sessionsLogged: getLifetimeWorkoutCount\(database\)/);
+      assert.match(strip(fs.readFileSync(path.join(ROOT, 'src/app/useCoachDemoMoment.ts'), 'utf8')), /sessionCount: getCanonicalCompletedSessions\(database\)\.length/);
+    },
+  },
 ];

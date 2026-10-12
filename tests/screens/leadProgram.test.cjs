@@ -31,7 +31,7 @@ module.exports = [
       assert.match(promote, /async function promoteHeldProgramToLead\(workoutTemplateId: string(, replacingPlanId\?: string)?\)/);
       assert.match(appSource, /if \(options\?\.lead\) \{\s*\r?\n\s*await promoteHeldProgramToLead/);
       // Matched on the template, because the same programme can be held under a
-      // plan id minted by onboarding, by adoption, or by a season.
+      // plan id minted by onboarding or by adoption.
       assert.match(promote, /entry\.entries\[0\]\?\.workoutTemplateId === workoutTemplateId/);
     },
   },

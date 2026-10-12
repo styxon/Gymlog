@@ -178,7 +178,6 @@ module.exports = [
       const cases = [
         ['history.browse.metaOne', { sessions: 1 }, '1 session', '1 treeni'],
         ['exDetail.bestRepsOne', { count: 1 }, '1 rep', '1 toisto'],
-        ['season.weeksLeftOne', { count: 1 }, '1 WEEK LEFT', '1 VIIKKO JÄLJELLÄ'],
         ['hevy.doneOne', { imported: 1 }, '1 workout imported', '1 treeni tuotu'],
         ['hevy.doneWithDuplicatesOne', { duplicates: 3 }, '1 workout imported · 3 already existed', '1 treeni tuotu · 3 oli jo ennestään'],
         ['rest.notify.idleBodyOne', { session: 'Push' }, 'Still training, or done for today? Push · 1 set logged', 'Treenaatko vielä, vai riittikö tältä päivältä? Push · 1 sarja kirjattu'],

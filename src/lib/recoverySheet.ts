@@ -1,6 +1,6 @@
 import type { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
 import type { FatigueResult } from './fatigueModel';
-import { applyDecimalSeparator } from './format';
+import { applyDecimalSeparator, groupThousands } from './format';
 import { t } from './i18n';
 import { isProUnlocked } from './proEntitlement';
 import { progressionFatigueSignalAt, type ProgressionFatigueSignal } from './progressionGate';
@@ -107,10 +107,9 @@ export function dayStartPlus(date: Date, offset: number): number {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset).getTime();
 }
 
-/** Whole kilograms with a thin space between thousands: "18 400 kg". */
+/** Whole kilograms, thousands grouped as everywhere else: "18 400 kg" / "18,400 kg". */
 export function formatLoadKg(kg: number): string {
-  const whole = String(Math.max(0, Math.round(kg)));
-  return `${whole.replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} kg`;
+  return `${groupThousands(Math.max(0, kg))} kg`;
 }
 
 export function recoveryTone(fatigue: Pick<FatigueResult, 'signal'>): RecoveryTone {

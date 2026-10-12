@@ -2,11 +2,12 @@
  * How many programmes a reader may run at once.
  *
  * The app used to hold exactly one: `preferences.activePlanId` was a single id,
- * and the only writers were the two onboarding finishes. That made joining a
- * season destructive — the season programme could only arrive by evicting
- * whatever the reader had built their week around.
+ * and the only writers were the two onboarding finishes. That made taking on a
+ * second programme destructive — it could only arrive by evicting whatever the
+ * reader had built their week around.
  *
- * A season is a separate commitment, not a replacement for one, so programmes
+ * A second programme is a separate commitment, not a replacement for one, so
+ * programmes
  * became a set. The cap is what keeps that set from turning Home into a list
  * nobody reads, and it is the first real programme cap in the app: the pricing
  * decision existed on paper but nothing in the code had ever enforced it.
@@ -169,7 +170,7 @@ export function reconcileRunningSet<T extends { activePlanId: string | null; act
  *
  * A plan onboarding wrote before is replaced, not kept beside the new one:
  * running the questionnaire again is answering it again. Anything the reader
- * adopted themselves — a ready programme, a season — stays.
+ * adopted themselves — a ready programme — stays.
  *
  * Unless there is no room. Setup can be run again from Profile at any time,
  * and a free reader already running two programmes they adopted by hand would

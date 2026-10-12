@@ -160,7 +160,7 @@ const BREAK_DAYS = 10;
  * missed-reps rule already reads only these (review of #202; bug hunt,
  * 2026-10-09).
  */
-function programmedSets(entry: WorkoutSlotHistoryEntry, targetSets: number) {
+export function programmedSets(entry: WorkoutSlotHistoryEntry, targetSets: number) {
   return [...entry.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, Math.max(0, targetSets));
 }
 
@@ -179,7 +179,7 @@ function setsNeeded(entry: WorkoutSlotHistoryEntry, targetSets: number): number 
 }
 
 /** The heaviest load the programmed sets used, which is what we progress from. */
-function entryLoadKg(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
+export function entryLoadKg(entry: WorkoutSlotHistoryEntry, targetSets: number): number {
   return programmedSets(entry, targetSets).reduce((max, set) => Math.max(max, set.loadKg), 0);
 }
 
@@ -954,7 +954,10 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
   }
   const top = Math.max(...done.map((set) => set.loadKg));
   const bottom = Math.min(...done.map((set) => set.loadKg));
-  if (top - bottom < 0.001) {
+  // One weight throughout is within one dial step (owner, 2026-10-11, Q6):
+  // 61.25/60/60 is the straight session the gate reads it as, not a ramp
+  // that opened on 11/10/10 (duplicate sweep 13, D1-4).
+  if (isWithinOneDialStep(top, bottom)) {
     return null;
   }
   // The set that sat in this position last time — the same lookup the weight
@@ -973,7 +976,8 @@ export function resolveRampSetTarget(input: RampSetTargetInput): number | null {
     // 2026-10-11).
     return repsMax > 0 ? Math.min(own.reps, repsMax) : own.reps;
   }
-  const atTop = (set: { loadKg: number }) => Math.abs(set.loadKg - top) < 0.001;
+  // "At the top" is the reading gatingSets gives the heaviest: within one dial step.
+  const atTop = (set: { loadKg: number }) => isWithinOneDialStep(top, set.loadKg);
   if (atTop(own)) {
     return own.reps + REP_INCREMENT;
   }

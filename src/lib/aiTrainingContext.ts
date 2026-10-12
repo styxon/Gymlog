@@ -44,11 +44,12 @@ import {
 import { DEFAULT_BUDGET_LIMITS } from './aiCoachBudget';
 import { buildAiCoachContextText } from './aiCoachSystemContext';
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
-import { detectPlateaus } from './progressionAnalyzer';
-import { sessionBestPoints } from './trainingHistory';
+import { PLATEAU_STALL_SESSIONS } from './proInsights';
+import { sessionBestPoints, type TrainingHistory } from './trainingHistory';
 import { readLiftProgramme, type AdviceTemplateLookup } from './nextSessionAdvice';
 import { buildFatigueModel } from './fatigueModel';
 import { getComparableLogSets } from './exerciseLog';
+import { isDoseLog } from './holdExercises';
 import { isMinutesExerciseName, isMinutesLogEntry } from './minutesExercises';
 import {
   buildTrainingHistory,
@@ -446,6 +447,7 @@ export function resolveHistoryConfidence(sessionCount: number, spanDays: number)
   return sessionCount >= 12 && spanDays >= 42 ? 'high' : 'medium';
 }
 
+/** Calendar days from the first session to the last, as every day count the reader sees. */
 function historySpanDays(sessions: { performedAt: string }[]): number {
   if (sessions.length < 2) {
     return 0;
@@ -454,27 +456,13 @@ function historySpanDays(sessions: { performedAt: string }[]): number {
   if (times.length < 2) {
     return 0;
   }
-  return Math.round((Math.max(...times) - Math.min(...times)) / (24 * 60 * 60 * 1000));
+  return Math.max(0, calendarDaysBetween(Math.min(...times), Math.max(...times)));
 }
 
 function buildHistoryBlock(
-  workoutSessions: WorkoutSession[],
-  exerciseLogs: ExerciseLog[],
-  trainingDays: SetupWeekday[],
-  windowDays: number,
-  schedule: TrainingSchedule | null = null,
-  now: Date = new Date(),
+  history: TrainingHistory,
   onSchedule: (liftName: string, sessionId: string | null | undefined) => boolean = () => false,
 ): AICoachHistory {
-  const history = buildTrainingHistory({
-    sessions: workoutSessions,
-    logs: exerciseLogs,
-    trainingDays,
-    schedule,
-    windowDays,
-    now: now.getTime(),
-  });
-
   const sessions = history.sessions.slice(-MAX_HISTORY_SESSIONS).map((entry) => ({
     sessionId: entry.sessionId,
     name: entry.name,
@@ -505,7 +493,7 @@ function buildHistoryBlock(
         latestReps: latest.topSetReps,
         bestWeightKg: lift.bestWeightKg,
         changeKg: Math.round((latest.topSetWeightKg - first.topSetWeightKg) * 100) / 100,
-        spanDays: Math.max(0, Math.round((latest.time - first.time) / 86400000)),
+        spanDays: Math.max(0, calendarDaysBetween(first.time, latest.time)),
         stalledSessions: lift.stalledSessions,
         weightSeriesKg: points.map((point) => point.topSetWeightKg),
         // Only a run long enough for the line to call it one ("no rep gain").
@@ -790,8 +778,9 @@ export function buildAiTrainingContext({
   // A bout of minutes is not a lift with a weight and reps to report: its
   // "latest 0 kg x 20" read as twenty reps of nothing. It reaches the coach
   // in minutes, through the last session.
+  // Nor is a hold's seconds (isDoseLog), which read as "0 kg x 60" the same way.
   const liftProgress = trackedProgress.filter(
-    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isMinutesLogEntry(log)),
+    (summary) => !isMinutesExerciseName(summary.name) && !(summary.allLogs ?? []).some((log) => isDoseLog(log)),
   );
   const trackedLifts = liftProgress.slice(0, 3).map((summary) => ({
     key: summary.key,
@@ -808,24 +797,46 @@ export function buildAiTrainingContext({
     performedAt: summary.latestLog?.performedAt ?? null,
   }));
 
+  const history = buildTrainingHistory({
+    sessions: workoutSessions,
+    logs: exerciseLogs,
+    trainingDays,
+    schedule,
+    windowDays: historyWindowDays,
+    now: now.getTime(),
+  });
+
+  // The stall count the same payload's history.lifts carries, and the plateau
+  // card on Home reads (trainingHistory stalledSessions). A second counter here
+  // had its own rule: a lift whose weakest set climbed 8/8/6 -> 8/8/7 -> 8/8/8
+  // was "3 sessions without improvement" beside a history saying it moved, and
+  // a lift logged twice a workout counted double (duplicate sweep, 2026-10-12).
+  // The tracked lifts only, in their order, as before.
   // A lift the plan holds on purpose for a flagged area is not stuck, and the
   // coach must not be told it is (2026-10-02).
   // Nor is a lift whose latest session reached the programme's top reps on
   // every set: the gate raises it on its own schedule (hunt, 2026-10-11).
-  const latestSessionOf = new Map(trackedProgress.map((summary) => [summary.key, summary.latestLog?.sessionId ?? null]));
-  const plateaus = detectPlateaus(trackedProgress)
-    .filter(
-      (p) =>
-        p.isPlateau &&
-        cautionAreaLoadedBy(p.name, [...cautionFlags]) === null &&
-        !onSchedule(p.name, latestSessionOf.get(p.exerciseKey)),
-    )
-    .map((p) => ({
-      exerciseKey: p.exerciseKey,
-      name: p.name,
-      stagnantSessions: p.stagnantSessions,
-      topWeightKg: p.topWeightHistory[0] ?? null,
-    }));
+  const historyLiftByKey = new Map(history.lifts.map((lift) => [lift.key, lift] as const));
+  const plateaus = trackedProgress.flatMap((summary) => {
+    const lift = historyLiftByKey.get(normalizedName(summary.key));
+    if (
+      !lift ||
+      lift.stalledSessions < PLATEAU_STALL_SESSIONS ||
+      !(lift.latest.topSetWeightKg > 0) ||
+      cautionAreaLoadedBy(lift.name, [...cautionFlags]) !== null ||
+      onSchedule(lift.name, lift.latest.sessionId)
+    ) {
+      return [];
+    }
+    return [
+      {
+        exerciseKey: summary.key,
+        name: lift.name,
+        stagnantSessions: lift.stalledSessions,
+        topWeightKg: lift.latest.topSetWeightKg,
+      },
+    ];
+  });
 
   // The same reference date every other block in this payload is built from.
   // Left to its own clock it reports a different week than the history beside it.
@@ -866,7 +877,7 @@ export function buildAiTrainingContext({
     programme,
     plateaus,
     fatigue,
-    history: buildHistoryBlock(workoutSessions, exerciseLogs, trainingDays, historyWindowDays, schedule, now, onSchedule),
+    history: buildHistoryBlock(history, onSchedule),
     lastSession: buildAiCoachLastSession(workoutSessions, exerciseLogs, now, nextSessionTargets),
     cardio: buildAiCoachCardio(cardioSessions, historyWindowDays, now),
     ...(plannerSetup !== undefined ? { plannerSetup } : {}),

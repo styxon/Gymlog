@@ -280,7 +280,8 @@ module.exports = [
       const en = buildCoachModules({ ...input, language: 'en' });
       const fi = buildCoachModules({ ...input, language: 'fi' });
 
-      assert.match(fi.analysis.bullets[0].body.text, /\+8%/);
+      // formatPercent's Finnish spacing, as the session analysis writes it (dup sweep 13, D3-6).
+      assert.match(fi.analysis.bullets[0].body.text, /\+8\u00a0%/);
       assert.notEqual(fi.analysis.bullets[0].body.text, en.analysis.bullets[0].body.text);
       assert.match(fi.analysis.caption, /Koko keho/);
     },

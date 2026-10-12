@@ -1,3 +1,4 @@
+import { calendarDaysBetween } from './completedSessions';
 import { FatigueSignal } from './fatigueModel';
 import { I18nKey } from './i18n';
 import { exerciseNameLabel } from './exerciseNameLabel';
@@ -95,12 +96,12 @@ export interface CoachDemoMomentInput {
  */
 export function daysSince(fromIso: string, now: Date): number {
   const from = new Date(fromIso);
+  // An install date that does not parse is day 0, not NaN: no moment is due.
   if (Number.isNaN(from.getTime())) {
     return 0;
   }
-  const fromMidnight = new Date(from.getFullYear(), from.getMonth(), from.getDate());
-  const nowMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  return Math.round((nowMidnight.getTime() - fromMidnight.getTime()) / 86_400_000);
+  // The app's one day count (duplicate sweep 13, 2026-10-12).
+  return calendarDaysBetween(from, now);
 }
 
 /** The stalled lift worth asking about, or null when nothing has stalled. */

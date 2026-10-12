@@ -9,6 +9,7 @@ import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
 import { t, type I18nKey } from '../lib/i18n';
 import { isNewestSession, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import { progressionFatigueSignalAt } from '../lib/progressionGate';
+import { guidedNextUpIndex } from '../lib/programSessionList';
 import { buildSessionAnalysis } from '../lib/sessionAnalysis';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
 import type { ExportablePlan } from '../screens/ExportPlanScreen';
@@ -254,7 +255,16 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
     if (index < 0) {
       return null;
     }
-    const next = card.sessions[(index + 1) % card.sessions.length];
+    // The next day that can be started, as Home will offer it: an empty day
+    // is passed over (programSessionList.guidedNextUpIndex).
+    const nextIndex = guidedNextUpIndex(
+      card.sessions.map((session) => session.exercises.length),
+      index,
+    );
+    if (nextIndex === null) {
+      return null;
+    }
+    const next = card.sessions[nextIndex];
     // dayLabel is a stored English code (MON/TUE/…) matched against saved
     // plans, so it has to be translated before it reaches a screen — it was
     // printing "WED" over a Finnish summary.

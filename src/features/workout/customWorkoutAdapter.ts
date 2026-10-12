@@ -11,9 +11,10 @@ import {
 // Re-exported: the spelling lives with the types, so lib can share it.
 export { customSlotId };
 
-import { WORKOUT_SUBSTITUTION_GROUPS } from './workoutCatalog';
+import { catalogSubstitutionGroupOf } from './workoutCatalog';
 import { isHoldExerciseName } from '../../lib/holdExercises';
 import { readsAsMinutesByName } from '../../lib/minutesExercises';
+import { normalizeStoredRestSeconds } from '../../lib/restPreference';
 
 function normalizeName(value: string) {
   return value.trim().toLowerCase();
@@ -32,11 +33,7 @@ function normalizeName(value: string) {
  * group has no honest alternatives to offer.
  */
 function resolveSubstitutionGroup(exerciseName: string, fallbackId: string): string {
-  const normalized = normalizeName(exerciseName);
-  const group = WORKOUT_SUBSTITUTION_GROUPS.find((candidate) =>
-    candidate.allowedExerciseNames.some((allowed) => normalizeName(allowed) === normalized),
-  );
-  return group?.id ?? `custom_${fallbackId}`;
+  return catalogSubstitutionGroupOf(exerciseName) ?? `custom_${fallbackId}`;
 }
 
 function getTrackingMode(exercise: ExerciseTemplate, libraryItem?: ExerciseLibraryItem): WorkoutTrackingMode {
@@ -136,9 +133,10 @@ function adaptExercise(
     sets: Math.max(1, exercise.targetSets),
     repsMin: Math.max(1, exercise.repMin),
     repsMax: Math.max(Math.max(1, exercise.repMin), exercise.repMax),
-    // 0 is a rest of none (stretches), not "unset"; only null falls to the default.
-    restSecondsMin: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
-    restSecondsMax: typeof exercise.restSeconds === 'number' && exercise.restSeconds >= 0 ? exercise.restSeconds : defaultRestSeconds,
+    // 0 is a rest of none (stretches), not "unset"; only an unset rest falls
+    // to the default. The loader's own rule, not a second copy of it (D6-4).
+    restSecondsMin: normalizeStoredRestSeconds(exercise.restSeconds) ?? defaultRestSeconds,
+    restSecondsMax: normalizeStoredRestSeconds(exercise.restSeconds) ?? defaultRestSeconds,
     substitutionGroup: resolveSubstitutionGroup(exercise.name, exercise.id),
     supersetGroup: exercise.supersetGroup ?? null,
   };

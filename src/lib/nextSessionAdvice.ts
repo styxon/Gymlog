@@ -4,9 +4,15 @@ import { ExerciseLog, SetupLevel, WorkoutSession } from '../types/models';
 import { SLOT_HISTORY_LIMIT } from './exerciseHistoryLookup';
 import { getWorkedLogSets } from './exerciseLog';
 import { isFixedDoseExercise } from './intervalScheme';
-import { evaluateProgression, isProgressionReadySession, type ProgressionFatigueSignal } from './progressionGate';
+import {
+  entryLoadKg,
+  evaluateProgression,
+  isProgressionReadySession,
+  programmedSets,
+  type ProgressionFatigueSignal,
+} from './progressionGate';
 import { LiftProgrammeRead, normalizedName, sessionTime } from './trainingHistory';
-import { toWorkingHistoryEntry } from './warmupSets';
+import { isWithinOneDialStep, toWorkingHistoryEntry } from './warmupSets';
 
 export type { LiftProgrammeRead };
 
@@ -78,8 +84,6 @@ export interface NextSessionAdviceInput {
   automatedProgressionEnabled: boolean;
 }
 
-const SAME_LOAD_KG = 0.001;
-
 /** The programme slot a log was filed under, or null on a log with none. */
 function slotOf(log: ExerciseLog): string | null {
   return typeof log.templateSlotId === 'string' && log.templateSlotId.length > 0 ? log.templateSlotId : null;
@@ -134,17 +138,7 @@ function entryOf(
 }
 
 function totalReps(entry: WorkoutSlotHistoryEntry, targetSets: number) {
-  return [...entry.sets]
-    .sort((left, right) => left.setIndex - right.setIndex)
-    .slice(0, Math.max(0, targetSets))
-    .reduce((sum, set) => sum + set.reps, 0);
-}
-
-function topLoad(entry: WorkoutSlotHistoryEntry, targetSets: number) {
-  return [...entry.sets]
-    .sort((left, right) => left.setIndex - right.setIndex)
-    .slice(0, Math.max(0, targetSets))
-    .reduce((max, set) => Math.max(max, set.loadKg), 0);
+  return programmedSets(entry, targetSets).reduce((sum, set) => sum + set.reps, 0);
 }
 
 /**
@@ -289,12 +283,16 @@ export function buildNextSessionAdvice(input: NextSessionAdviceInput): NextSessi
   if (decision.recommendation === 'hold' && decision.holdReason === 'rep_ceiling_not_reached') {
     // "Get the reps back" is only true of reps that fell: fewer than last time
     // at the same weight. Reps still climbing toward the top of the range, or
-    // the same as last time, are not a reason to say so.
+    // the same as last time, are not a reason to say so. "The same weight" is
+    // the gate's: within one dial step (owner, 2026-10-11, Q6), so a 1.25 kg
+    // nudge the gate holds through keeps the advice too (duplicate sweep 13).
     const [latest, previous] = history;
+    const latestKg = latest ? entryLoadKg(latest, exercise.sets) : 0;
+    const previousKg = previous ? entryLoadKg(previous, exercise.sets) : 0;
     const fell =
       latest &&
       previous &&
-      Math.abs(topLoad(latest, exercise.sets) - topLoad(previous, exercise.sets)) < SAME_LOAD_KG &&
+      isWithinOneDialStep(Math.max(latestKg, previousKg), Math.min(latestKg, previousKg)) &&
       totalReps(latest, exercise.sets) < totalReps(previous, exercise.sets);
     if (fell) {
       return { kind: 'rebuild_reps', kg: decision.loadKg };
@@ -357,12 +355,12 @@ export function readLiftProgramme(
   }
   // The row's own sets, in order: an added set past them is extra work, as
   // the gate reads it (programmedSets).
-  const working = [...latest.sets].sort((left, right) => left.setIndex - right.setIndex).slice(0, exercise.sets);
+  const working = programmedSets(latest, exercise.sets);
   return {
     onSchedule:
       input.automatedProgressionEnabled !== false && isProgressionReadySession(latest, exercise.repsMax, exercise.sets),
     repsMax: exercise.repsMax,
-    workingKg: topLoad(latest, exercise.sets),
+    workingKg: entryLoadKg(latest, exercise.sets),
     workingReps: working.map((set) => set.reps),
   };
 }

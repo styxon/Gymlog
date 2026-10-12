@@ -202,7 +202,8 @@ module.exports = [
     name: 'dead plan entry: every reader of the plan for scheduling goes through livePlanEntries',
     run() {
       const src = (...p) => fs.readFileSync(path.join(__dirname, '..', '..', 'src', ...p), 'utf8').replace(/\r\n/g, '\n');
-      assert.match(src('app', 'useHomeTrainingSchedule.ts'), /planWeekdayIndexes\(\s*livePlanEntries\(activePlan\?\.entries \?\? \[\], templateSessionsReader\(database\)\),\s*\)/);
+      // Home asks the reminders' rule with the live entries (duplicate sweep 13, D5-3).
+      assert.match(src('app', 'useHomeTrainingSchedule.ts'), /planEntries: livePlanEntries\(activePlan\?\.entries \?\? \[\], templateSessionsReader\(database\)\),/);
       assert.match(src('hooks', 'useScheduledNotifications.ts'), /planEntries: livePlanEntries\(/);
       assert.match(src('app', 'renderProfileTab.tsx'), /planEntries: livePlanEntries\(/);
     },

@@ -1,14 +1,19 @@
 import { ExerciseLog, ExerciseLogDraft, ExerciseLogSet } from '../types/models';
-import { isLiftableWeight } from './weightLimits';
+import { isLiftableWeight, isRecordedReps, positiveWholeCount } from './weightLimits';
 import { normalizeLoggedSetPlan } from './loggedSetPlan';
 
 function normalizeNumber(value: number | null | undefined, fallback = 0) {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
+/**
+ * The legacy reps list: the set list's rule (isRecordedReps), and more than
+ * zero, because a legacy entry is a set already done — it has no "not yet
+ * filled in" state to keep.
+ */
 function normalizeRepsPerSet(repsPerSet: number[] | null | undefined) {
   return Array.isArray(repsPerSet)
-    ? repsPerSet.filter((value): value is number => typeof value === 'number' && Number.isFinite(value) && value > 0)
+    ? repsPerSet.filter((value): value is number => isRecordedReps(value) && value > 0)
     : [];
 }
 
@@ -113,6 +118,11 @@ export function normalizeExerciseSets(
            * nothing was lifted, which is the state it deserves.
            */
           .filter((set) => isLiftableWeight(set.weight))
+          // The same for reps: a negative count is not a set, and it summed
+          // into a negative session volume (D6-2). No ceiling: the Hevy
+          // import writes counts past any dial (a 2000-rep jump rope), and
+          // dropping one here lost it for good on the next save.
+          .filter((set) => isRecordedReps(set.reps))
           .filter(
             (set) =>
               set.status !== 'completed' ||
@@ -312,11 +322,12 @@ function repsUnitOf(log: { repsUnit?: unknown }): { repsUnit?: 'minutes' } {
 
 /**
  * The sets a lighter session asked for (ExerciseLog.plannedSets): a positive
- * whole count, carried only when present, like repsUnit.
+ * whole count no larger than a programme can ask for, carried only when
+ * present, like repsUnit. The "last time" history reads it by the same rule.
  */
 function plannedSetsOf(log: { plannedSets?: unknown }): { plannedSets?: number } {
-  const value = log.plannedSets;
-  return typeof value === 'number' && Number.isInteger(value) && value > 0 ? { plannedSets: value } : {};
+  const value = positiveWholeCount(log.plannedSets);
+  return value === undefined ? {} : { plannedSets: value };
 }
 
 /** Whether a log's reps are minutes (see ExerciseLog.repsUnit). */

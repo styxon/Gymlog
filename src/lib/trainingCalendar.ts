@@ -1,5 +1,5 @@
 import type { WorkoutSession } from '../types/models';
-import { getCalendarWeekStartBefore } from './completedSessions';
+import { getCalendarWeekStartTimestamp, streakFromWeekStarts } from './completedSessions';
 
 /**
  * The weekly training streak.
@@ -9,21 +9,15 @@ import { getCalendarWeekStartBefore } from './completedSessions';
  * and the streak is the one thing the activity section still asks for.
  */
 
-function dayStartOf(iso: string): number | null {
-  const stamp = Date.parse(iso);
-  if (!Number.isFinite(stamp)) {
-    return null;
-  }
-  const date = new Date(stamp);
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
-
 /**
  * Consecutive weeks with at least one session, counting back from this one.
  *
  * The CURRENT week never breaks the streak when it is empty — it is not over
  * yet, and a counter that resets every Monday morning is a counter nobody
- * trusts. It only counts once it has a session in it.
+ * trusts. It only counts once it has a session in it. The walk is
+ * completedSessions' streakFromWeekStarts, the one Home's streak and Profile's
+ * lifetime summary take, so the three cannot drift apart again (duplicate
+ * sweep 13, 2026-10-12).
  */
 export function weeklyTrainingStreak(
   sessions: readonly WorkoutSession[],
@@ -33,13 +27,8 @@ export function weeklyTrainingStreak(
    * Left out, the streak under the Progress calendar read 0 for a reader whose
    * calendar above it marked three days that week — the calendar counts every
    * activity, Home's own streak counts every activity, and this one counted
-   * lifted sessions alone (audit 3, 2026-09-19).
-   *
-   * What is NOT copied from Home's streak is its treatment of an unfinished
-   * week: this one does not let an empty current week break a run, which is
-   * deliberate and explained above. Two different policies for two different
-   * places would be a drift; one policy over two different activity sets was
-   * the bug.
+   * lifted sessions alone (audit 3, 2026-09-19). One policy over two different
+   * activity sets was the bug.
    */
   cardioSessions: ReadonlyArray<{ performedAt: string }> = [],
   now: Date = new Date(),
@@ -49,33 +38,10 @@ export function weeklyTrainingStreak(
     ...sessions.map((session) => session.performedAt),
     ...cardioSessions.map((session) => session.performedAt),
   ]) {
-    const day = dayStartOf(performedAt);
-    if (day !== null) {
-      trainedWeeks.add(mondayOf(new Date(day)));
+    // A date that does not parse has no week.
+    if (Number.isFinite(Date.parse(performedAt))) {
+      trainedWeeks.add(getCalendarWeekStartTimestamp(performedAt));
     }
   }
-  if (trainedWeeks.size === 0) {
-    return 0;
-  }
-
-  const thisMonday = mondayOf(now);
-  // Calendar stepping, not 7 * DAY. The week a clock changes is 167 or 169
-  // hours long, so a fixed step lands at 23:00 or 01:00 and matches no entry in
-  // trainedWeeks, which holds local Monday midnights. Twelve unbroken weeks
-  // then render as one on the Monday after the clocks move.
-  let cursor = trainedWeeks.has(thisMonday) ? thisMonday : getCalendarWeekStartBefore(thisMonday);
-  let streak = 0;
-  while (trainedWeeks.has(cursor)) {
-    streak += 1;
-    cursor = getCalendarWeekStartBefore(cursor);
-  }
-  return streak;
-}
-
-function mondayOf(date: Date): number {
-  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  // getDay() is Sunday-first; the app's weeks start on Monday everywhere else.
-  const offset = start.getDay() === 0 ? 6 : start.getDay() - 1;
-  start.setDate(start.getDate() - offset);
-  return start.getTime();
+  return streakFromWeekStarts(trainedWeeks, now);
 }

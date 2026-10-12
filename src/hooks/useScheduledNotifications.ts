@@ -23,6 +23,7 @@ import { templateSessionsReader } from '../app/planTemplateSessions';
 import { livePlanEntries } from '../lib/planResolvableEntries';
 import { planTrainingCycle } from '../lib/planTrainingCycle';
 import { buildNotificationPlan } from '../lib/notificationPlan';
+import { trialEndingAtMs } from '../lib/proEntitlement';
 import { resolveReminderSchedule } from '../lib/reminderSchedule';
 import { findLatestSessionPr } from '../lib/workoutCompletionSummary';
 import { AppDatabase } from '../types/models';
@@ -136,14 +137,22 @@ export function useScheduledNotifications(
     ? `${signals.latestPr.exerciseName}|${signals.latestPr.weightKg}|${signals.latestPr.reps}|${signals.latestPr.achievedAtMs}`
     : '';
 
-  const trialEndsAtMs = useMemo(() => {
-    const until = database.preferences.proTrialUntil;
-    if (!until) {
-      return null;
-    }
-    const parsed = new Date(until).getTime();
-    return Number.isFinite(parsed) ? parsed : null;
-  }, [database.preferences.proTrialUntil]);
+  // Null when a purchase or a promo keeps Pro on past the trial — the notice
+  // says the Pro features close, and for those readers they do not. Every field
+  // the rule reads is a dep, so a store record landing mid-trial re-plans and
+  // retires a notice already scheduled.
+  const trialEndsAtMs = useMemo(
+    () => trialEndingAtMs(database.preferences),
+    // Primitive deps only, for the reason given on the effect below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      database.preferences.proTrialUntil,
+      database.preferences.promoProUntil,
+      database.preferences.mockSubscriptionPurchasedAt,
+      database.preferences.mockSubscriptionTerm,
+      database.preferences.mockSubscriptionCancelledAt,
+    ],
+  );
 
   useEffect(() => {
     if (!hydrated) {

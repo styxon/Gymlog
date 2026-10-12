@@ -26,7 +26,7 @@ import {
   SetupLevel,
   WorkoutSession,
 } from '../types/models';
-import { formatPercent, getDateTimeFormat, removeTrailingZeros } from './format';
+import { formatDurationMinutes, formatPercent, formatVolume, getDateTimeFormat, removeTrailingZeros } from './format';
 
 /**
  * The written-out post-workout analysis behind the coach sheet's
@@ -132,6 +132,18 @@ export function describeVolumeChange(
   return { kind: percent > 0 ? 'up' : 'down', text: `${percent > 0 ? '+' : ''}${formatPercent(percent, language)}` };
 }
 
+/**
+ * A session's volume against the one it is compared with, in whole percent;
+ * null when there is nothing to compare against. The analysis screen and the
+ * coach sheet each wrote this ratio — the coach then printed it "+20%" in
+ * Finnish and "0%" for no change, both of which describeVolumeChange rules out.
+ */
+export function volumeChangePercent(current: number | null, previous: number | null): number | null {
+  return current !== null && previous !== null && previous > 0
+    ? Math.round(((current - previous) / previous) * 100)
+    : null;
+}
+
 export interface SessionAnalysisInput {
   sessionId: string;
   sessions: WorkoutSession[];
@@ -235,7 +247,7 @@ export function buildSessionAnalysis({
   const metaParts: string[] = [];
 
   if (typeof session.durationMinutes === 'number' && session.durationMinutes > 0) {
-    metaParts.push(`${session.durationMinutes} min`);
+    metaParts.push(formatDurationMinutes(Math.round(session.durationMinutes)));
   }
   if (setCount > 0) {
     metaParts.push(
@@ -245,7 +257,7 @@ export function buildSessionAnalysis({
     );
   }
   if (volume !== null) {
-    metaParts.push(`${Math.round(volume)} kg`);
+    metaParts.push(formatVolume(volume));
   }
 
   // Effort only appears when the user actually recorded it.
@@ -276,12 +288,8 @@ export function buildSessionAnalysis({
 
   const previous = comparable.filter((entry) => entry.id !== session.id).slice(-1)[0] ?? null;
   const previousVolume = previous ? sessionVolumeKg(previous, logs) : null;
-  const volumeChangePercent =
-    volume !== null && previousVolume !== null && previousVolume > 0
-      ? Math.round(((volume - previousVolume) / previousVolume) * 100)
-      : null;
-
-  const volumeChange = describeVolumeChange(volumeChangePercent, language);
+  const changePercent = volumeChangePercent(volume, previousVolume);
+  const volumeChange = describeVolumeChange(changePercent, language);
 
   // ── key numbers ─────────────────────────────────────────────────────────
   const keyNumbers: AnalysisMetric[] = [];
@@ -289,7 +297,7 @@ export function buildSessionAnalysis({
   if (volume !== null) {
     keyNumbers.push({
       labelKey: 'analysis.key.volume',
-      value: `${Math.round(volume)} kg`,
+      value: formatVolume(volume),
       sub: volumeChange ? volumeChange.text : null,
       grow: 1,
     });
@@ -537,7 +545,7 @@ export function buildSessionAnalysis({
     } else {
       verdictTagKey = 'analysis.verdict.steady';
     }
-    const volumeText = `${Math.round(volume)} kg`;
+    const volumeText = formatVolume(volume);
     verdict =
       volumeChange.kind === 'flat'
         ? {
@@ -552,8 +560,8 @@ export function buildSessionAnalysis({
           };
   } else if (volume !== null) {
     verdict = {
-      text: t(language, 'analysis.verdictFirst', { volume: `${Math.round(volume)} kg` }),
-      highlights: [`${Math.round(volume)} kg`],
+      text: t(language, 'analysis.verdictFirst', { volume: formatVolume(volume) }),
+      highlights: [formatVolume(volume)],
     };
   }
 
@@ -566,7 +574,7 @@ export function buildSessionAnalysis({
     verdict,
     keyNumbers,
     volumeBars,
-    volumeChangePercent,
+    volumeChangePercent: changePercent,
     exercises,
     observations,
     nextActions,

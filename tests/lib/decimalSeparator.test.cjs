@@ -28,7 +28,8 @@ module.exports = [
       setNumberLanguage('fi');
       assert.equal(removeTrailingZeros(92.5), '92,5');
       assert.equal(formatWeight(92.5), '92,5 kg');
-      assert.equal(formatVolume(1730.5), '1730,5 kg');
+      // A total is whole kilograms, thousands grouped (dup sweep 13, D3-7).
+      assert.equal(formatVolume(1730.5), '1\u00a0731 kg');
 
       setNumberLanguage('en');
       assert.equal(removeTrailingZeros(92.5), '92.5');

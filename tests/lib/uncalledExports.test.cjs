@@ -40,15 +40,10 @@ const ALLOWED = {
   isCatalogExercise: 'Pool membership, pinned so the catalog and the filters cannot diverge.',
   GUIDED_LIBRARY_ALIASES: 'The alias table, exposed so a test can prove every target is a real library entry — a misspelled target resolves to nothing and says so nowhere.',
   getPlanWeekPhase: 'Plan phase wording, written ahead of the surface that will show it.',
-  getProgramSeason: 'Season lookup by program, kept beside the seasons it answers for.',
-  isSeasonActive: 'Season window predicate, kept beside resolveSeasonWindow.',
   emptyRatingPromptState: 'Rating prompt state machine, waiting for its post-workout wiring; the demo shelf that exercised it was removed 2026-08-22.',
   decideRatingPrompt: 'See emptyRatingPromptState.',
   recordRatingAsked: 'See emptyRatingPromptState.',
   recordRatingCompleted: 'See emptyRatingPromptState.',
-  orderSeasons:
-    'Parked with the season section on the Programs tab (2026-08-31). SeasonScreen and the season route still work and build their own numbers; this ordered the two cards the tab used to draw. Delete it only when seasons are decided against, not while they are parked.',
-  isJoinWindowOpen: 'See orderSeasons — it decided whether the coming season\'s card was worth drawing.',
   UNLISTED_READY_PROGRAMS:
     'A declaration, not a call: the programmes deliberately kept out of the browse collections, read only by the guard that fails when a template is in neither. Wiring it to a screen would give it behaviour it must not have — it exists so that "not browsable" is always a decision someone wrote down.',
 };

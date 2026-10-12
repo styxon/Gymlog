@@ -12,7 +12,7 @@ import { libraryLabel } from '../lib/libraryLabel';
 import { PersonalRecord } from '../lib/personalRecords';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
 import type { AppLanguage } from '../types/models';
-import { formatDateNumeric, removeTrailingZeros } from '../lib/format';
+import { formatDateNumeric, groupThousands, removeTrailingZeros } from '../lib/format';
 
 /**
  * One lift's set log, on a sheet over the exercise it belongs to.
@@ -49,17 +49,6 @@ interface SetLogSheetProps {
    * näppäinten väliin", #bugs 2026-09-20); the screen reads it and passes it.
    */
   bottomInset?: number;
-}
-
-function decimal(value: number, language: AppLanguage) {
-  // The separator is format.ts's business now — it reads the app language
-  // once instead of every caller deciding again.
-  // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
-  return removeTrailingZeros(Math.round(value * 100) / 100);
-}
-
-function thousands(value: number, language: AppLanguage) {
-  return Math.round(value).toLocaleString(language === 'fi' ? 'fi-FI' : 'en-GB');
 }
 
 function formatDay(iso: string, language: AppLanguage) {
@@ -134,7 +123,7 @@ function SessionRow({
             plank or a set of pull-ups is a number about nothing. */}
         {session.volumeKg > 0 ? (
           <Text style={styles.sessionVolume}>
-            {thousands(session.volumeKg, language)} kg
+            {groupThousands(session.volumeKg)} kg
           </Text>
         ) : null}
       </View>
@@ -230,18 +219,18 @@ export function SetLogSheet({
 
   const bests: Array<{ labelKey: I18nKey; value: string; meta: string; tone: BestTone } | null> = [
     best(log.bestWeight, 'setlog.best.weight', 'weight', (record) => ({
-      value: `${decimal(record.value, language)} kg`,
+      value: `${removeTrailingZeros(record.value)} kg`,
       meta: `× ${record.companion ?? 0} · ${formatDay(record.performedAt, language)}`,
     })),
     best(log.bestReps, 'setlog.best.reps', 'reps', (record) => ({
       value:
         record.companion === null
           ? `${record.value}`
-          : `${record.value} × ${decimal(record.companion, language)}`,
+          : `${record.value} × ${removeTrailingZeros(record.companion)}`,
       meta: formatDay(record.performedAt, language),
     })),
     best(log.bestVolume, 'setlog.best.volume', 'volume', (record) => ({
-      value: `${thousands(record.value, language)} kg`,
+      value: `${groupThousands(record.value)} kg`,
       meta: formatDay(record.performedAt, language),
     })),
   ];

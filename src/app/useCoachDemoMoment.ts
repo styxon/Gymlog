@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import { resolveDueCoachDemoMoment } from '../lib/coachDemoMoments';
+import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import type { buildFatigueModel } from '../lib/fatigueModel';
 import { t } from '../lib/i18n';
 import type { LiftHistory } from '../lib/trainingHistory';
@@ -22,7 +23,7 @@ export interface CoachDemoMomentDeps {
   preferences: AppPreferences;
   /** Whether Pro is unlocked; Pro readers get no demo moment. */
   coachProUnlocked: boolean;
-  /** The whole database: the session count is read. */
+  /** The whole database: the session count is read (sessions and their logs). */
   database: AppDatabase;
   /** useProInsights' lift histories, for the moment's answer. */
   proLiftHistories: LiftHistory[];
@@ -39,7 +40,9 @@ export function useCoachDemoMoment(deps: CoachDemoMomentDeps) {
    * Free readers get three real coach answers per install, at day 7, 30 and
    * 90 — offered after a completed session so the log behind the answer is
    * fresh. Null for Pro, and null until the day and the session count both
-   * come good. See lib/coachDemoMoments.
+   * come good. See lib/coachDemoMoments. The sessions are counted as
+   * Profile counts them: a workout saved twice, or a row with no set done,
+   * does not bring the demo forward (duplicate sweep 13, 2026-10-12).
    */
   const coachDemoMoment = useMemo(
     () =>
@@ -47,15 +50,18 @@ export function useCoachDemoMoment(deps: CoachDemoMomentDeps) {
         firstLaunchAt: preferences.firstLaunchAt,
         usedMoments: preferences.coachDemoMomentsUsed,
         proUnlocked: coachProUnlocked,
-        sessionCount: database.workoutSessions.length,
+        sessionCount: getCanonicalCompletedSessions(database).length,
         lifts: proLiftHistories,
         fatigueSignal: proFatigue?.confident ? proFatigue.signal : null,
         cautionFlags: preferences.setupCautionFlags,
         language: preferences.appLanguage,
       }),
+    // Keyed on the two lists the count reads, not the whole database.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       coachProUnlocked,
-      database.workoutSessions.length,
+      database.workoutSessions,
+      database.exerciseLogs,
       preferences.appLanguage,
       preferences.coachDemoMomentsUsed,
       preferences.firstLaunchAt,

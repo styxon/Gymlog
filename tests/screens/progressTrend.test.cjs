@@ -345,9 +345,13 @@ module.exports = [
       // (user 2026-09-07).
       assert.match(
         overviewBranch,
-        /capRangeDays\(ceilingByRange\[resolvedOverviewRange\] \?\? ALL_RANGE_CEILING_DAYS, first, nowMs\)/,
+        /capRangeDays\(trendRangeDays\(resolvedOverviewRange, new Date\(nowMs\)\) \?\? ALL_RANGE_CEILING_DAYS, first, nowMs\)/,
         'the trend card went back to taking its range in days raw',
       );
+      // And its reach is the chips' shared one, not a day count of its own:
+      // 31 / 91 / 183 started the weight axis days after the volume axis
+      // under the same chip (dup sweep 13, D2-6).
+      assert.doesNotMatch(overviewBranch, /ceilingByRange/);
       // The expression, not the prose: the comment above the fix names the
       // inlined form it replaced, and a looser pattern matched that instead.
       assert.doesNotMatch(
@@ -454,7 +458,7 @@ module.exports = [
       );
       assert.match(
         read('src', 'lib', 'format.ts'),
-        /export function formatSessionDate[\s\S]{0,320}minute: '2-digit'/,
+        /export function formatSessionDate[\s\S]{0,600}formatClockTime\(date\)/,
         'formatSessionDate stopped carrying a time',
       );
     },

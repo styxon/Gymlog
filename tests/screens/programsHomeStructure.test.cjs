@@ -651,9 +651,14 @@ module.exports = [
       assert.match(app, /const runningProgrammeTitle = useCallback\(/);
       // Counted across the shell, App.tsx and src/app, since Programs' list
       // left App.tsx for its own module (phase-C split, 2026-10-01).
+      // The rule itself lives in lib/templatePresentation since duplicate
+      // sweep 13 (D5-8, 2026-10-12): App.tsx's callback delegates to it, and
+      // Home's hero and the coach call it too. Four callers: the other-
+      // programmes rows, the Programs list, the hero and the coach context.
+      assert.match(app, /runningProgrammeTitleOf\(/);
       assert.equal(
         (readAppWiring().match(/runningProgrammeTitle\(/g) ?? []).length,
-        2,
+        4,
         'the running-programme title rule was copied instead of shared',
       );
 

@@ -8,7 +8,6 @@ import { RunningCapRefusal, runningCapRefusal, runningCapRefusalMessage } from '
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { t } from '../lib/i18n';
-import { resolveNextPlanEntryIndex } from '../lib/planRotation';
 import { resolveProEntitlement, resolveProgressionOptions } from '../lib/proEntitlement';
 import { buildReadySessionRuntimeTemplate } from '../lib/programDetails';
 import { alignHistoryToCopiedDays, programmeHistoryIds } from '../lib/programLineage';
@@ -337,18 +336,6 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     });
   }
 
-  function resolveNextSessionIdForTemplate(workoutTemplateId: string): string | null {
-    const plan = database.workoutPlans.find(
-      (item) => item.entries[0]?.workoutTemplateId === workoutTemplateId,
-    );
-    if (!plan || plan.entries.length === 0) {
-      return null;
-    }
-    const ordered = [...plan.entries].sort((left, right) => left.orderIndex - right.orderIndex);
-    const index = resolveNextPlanEntryIndex(ordered, completedSessionsForTemplate(workoutTemplateId));
-    return ordered[index]?.workoutTemplateSessionId ?? ordered[0]?.workoutTemplateSessionId ?? null;
-  }
-
   /**
    * Put a programme the reader already holds back into the running set.
    *
@@ -403,8 +390,8 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     await updatePreferences({
       activePlanIds: resumed.activePlanIds,
       // resumeProgramme names the resumed plan as activePlanId whichever way,
-      // so the lead is kept here: joining a season must not quietly demote the
-      // programme at the top of Home.
+      // so the lead is kept here: taking on another programme must not quietly
+      // demote the programme at the top of Home.
       activePlanId: options?.lead ? resumed.planId : running.activePlanId ?? resumed.planId,
     });
     // Counted here, after the write, for every door that resumes through
@@ -427,7 +414,6 @@ export function createProgrammeStarts(deps: ProgrammeStartsDeps) {
     handleStartReadyProgramSession,
     templatesRunByOtherPlans,
     completedSessionsForTemplate,
-    resolveNextSessionIdForTemplate,
     resumeHeldProgramme,
   };
 }

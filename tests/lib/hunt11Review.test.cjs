@@ -284,7 +284,8 @@ module.exports = [
         delete require.cache[helperPath];
         delete require.cache[hapticsPath];
       }
-      // No site writes the three lines out itself any more, and each of the fifteen that did calls the helper.
+      // No site writes the three lines out itself any more, and each of the fifteen that did calls the helper
+      // (fourteen since the season join went with the season feature, 2026-10-12).
       const sites = [
         'App.tsx',
         'src/app/programmeDayEdits.tsx',
@@ -299,7 +300,7 @@ module.exports = [
         assert.doesNotMatch(source, /console\.error\('[^']+', error\);\s*void haptics\.error\(\);\s*showToast\(t\(preferences\.appLanguage, 'toast\.planSaveFailed'\)\)/, file);
         calling += source.match(/reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/g)?.length ?? 0;
       }
-      assert.equal(calling, 15);
+      assert.equal(calling, 14);
     },
   },
 ];

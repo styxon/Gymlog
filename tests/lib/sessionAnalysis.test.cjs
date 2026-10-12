@@ -68,7 +68,8 @@ module.exports = [
       const meta = result.metaParts.join(' · ');
       assert.match(meta, /42 min/);
       assert.match(meta, /3 sets/);
-      assert.match(meta, /1080 kg/);
+      // Grouped as every kg total (dup sweep 13, D3-7).
+      assert.match(meta, /1,080 kg/);
     },
   },
   {
