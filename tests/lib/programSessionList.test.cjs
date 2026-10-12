@@ -189,4 +189,34 @@ module.exports = [
       }
     },
   },
+  // ── Duplicate sweep 13 ───────────────────────────────────────────────────
+  {
+    name: 'dup13 D5-1: "next up" after a workout skips empty days, as Home does',
+    run() {
+      const { guidedNextUpIndex } = require('../../.test-dist/lib/programSessionList.js');
+      assert.equal(guidedNextUpIndex([2, 0, 2], 0), 2);
+      assert.equal(guidedNextUpIndex([2, 0, 0], 0), null);
+      assert.equal(guidedNextUpIndex([2, 2, 2], 2), 0);
+      assert.equal(guidedNextUpIndex([2, 2, 0], 1), 0);
+      // The readout names that day, not the one after by position.
+      const readouts = read('src', 'app', 'usePlanReadouts.tsx');
+      const block = between(readouts, 'const guidedNextUp = useMemo', 'return {');
+      assert.match(block, /guidedNextUpIndex\(/);
+      assert.doesNotMatch(block, /\(index \+ 1\) % card\.sessions\.length/);
+    },
+  },
+  {
+    name: 'dup13 D5-2: a leading ready programme\'s Start runs the day Home offers, a pick included',
+    run() {
+      const { programmeStartSessionId } = require('../../.test-dist/lib/programSessionList.js');
+      const sessions = ['A', 'B', 'C'].map((id) => ({ id, exerciseCount: 2 }));
+      assert.equal(programmeStartSessionId(sessions, 'p', { programId: 'p', nextSession: { id: 'C' } }), 'C');
+      const tab = read('src', 'app', 'renderWorkoutTab.tsx');
+      const branch = between(tab, 'if (readyProgramIsMine) {', 'if (route.programType === \'ready\') {');
+      assert.match(branch, /programmeStartSessionId\(/);
+      for (const file of [['App.tsx'], ['src', 'app', 'renderWorkoutTab.tsx'], ['src', 'app', 'programmeStarts.tsx']]) {
+        assert.doesNotMatch(read(...file), /resolveNextSessionIdForTemplate/, file.join('/'));
+      }
+    },
+  },
 ];
