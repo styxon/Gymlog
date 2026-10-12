@@ -36,7 +36,7 @@ import {
 } from '../lib/exerciseCollections';
 import { toggleTechniqueStatement } from '../lib/exerciseLearning';
 import type { ExerciseProgressSummary } from '../lib/progression';
-import { catalogLevelForSetup, isSameLift } from '../lib/goalProgramme';
+import { catalogLevelForSetup, isSameLift, isSameTargetLift } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
@@ -1353,7 +1353,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
           const libraryNames = exerciseLibrary.map((item) => item.name);
           void updatePreferences((current) => ({
             strengthGoals: removeStrengthGoal(current.strengthGoals, exerciseName, (left, right) =>
-              isSameLift(left, right, libraryNames),
+              isSameTargetLift(left, right, libraryNames),
             ),
           }));
         }}

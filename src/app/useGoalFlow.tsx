@@ -10,6 +10,7 @@ import {
   GoalProgrammeSuggestionView,
   isSameLift,
   isSameLiftAsLibraryRow,
+  isSameTargetLift,
   rankProgrammesForLift,
 } from '../lib/goalProgramme';
 import { RecordSource } from '../lib/personalRecords';
@@ -113,6 +114,15 @@ export function useGoalFlow(deps: GoalFlowDeps) {
    * Narrower than a target on purpose — see isSameLiftAsLibraryRow: the sumo
    * deadlift's page is not the deadlift target.
    */
+  /**
+   * "Is this stored target that one?" — for replacing and for saying one is
+   * already set. Narrower than `sameLift`: another spelling of the lift, never
+   * another lift of its family (isSameTargetLift).
+   */
+  const sameTarget = useCallback<SameLiftMatcher>(
+    (left, right) => isSameTargetLift(left, right, libraryNames),
+    [libraryNames],
+  );
   const sameLibraryRow = useCallback<SameLiftMatcher>(
     (loggedName, rowName) => isSameLiftAsLibraryRow(loggedName, rowName, libraryNames),
     [libraryNames],
@@ -140,9 +150,8 @@ export function useGoalFlow(deps: GoalFlowDeps) {
       // The target already set for this lift, so the flow can say so instead
       // of replacing it in silence.
       const targetKg =
-        preferences.strengthGoals.find((goal) =>
-          isSameLift(goal.exerciseName, preset.exerciseName, libraryNames),
-        )?.targetKg ?? null;
+        preferences.strengthGoals.find((goal) => sameTarget(goal.exerciseName, preset.exerciseName))?.targetKg ??
+        null;
       // Every spelling of the lift, not the first one found. Trap bar at 150
       // over six sessions and sumo at 170 over two made the flow's best 150,
       // while the Programs goal row took the max — so a "+20" target of 170
@@ -171,7 +180,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
         daysSinceLogged: Math.max(0, calendarDaysBetween(lastLoggedAt, now)),
       };
     });
-  }, [libraryNames, preferences.strengthGoals, proLiftHistories, todayStartMs]);
+  }, [libraryNames, preferences.strengthGoals, proLiftHistories, sameTarget, todayStartMs]);
 
   /**
    * The Progress tab's target rows: each target lift under every name it was
@@ -330,8 +339,9 @@ export function useGoalFlow(deps: GoalFlowDeps) {
       // From the stored goals: the programme was written above, awaited, and
       // this render's snapshot predates it.
       await updatePreferences((current) => ({
-        // Replaces a target under any spelling of the lift: the same rule
-        // the flow used to tell the reader one is already set.
+        // Replaces a target under any spelling of the lift (not another lift
+        // of its family): the rule the flow tells the reader one is already
+        // set by.
         strengthGoals: upsertStrengthGoal(
           current.strengthGoals,
           {
@@ -339,7 +349,7 @@ export function useGoalFlow(deps: GoalFlowDeps) {
             targetKg: input.targetKg,
             createdAt: new Date().toISOString(),
           },
-          sameLift,
+          sameTarget,
         ),
       }));
     } catch (error) {

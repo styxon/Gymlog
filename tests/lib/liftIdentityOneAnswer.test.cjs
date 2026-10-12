@@ -11,7 +11,7 @@ const {
 const { buildMuscleFocus } = require(dist + 'lib/workoutCompleteView.js');
 const { getRecentExerciseLibraryItems } = require(dist + 'lib/exerciseSuggestions.js');
 const { normalizeStrengthGoals, removeStrengthGoal, upsertStrengthGoal } = require(dist + 'lib/strengthGoals.js');
-const { isSameLift } = require(dist + 'lib/goalProgramme.js');
+const { isSameLift, isSameTargetLift } = require(dist + 'lib/goalProgramme.js');
 const { foldThinSessions } = require(dist + 'lib/programDayComposer.js');
 const { applyCautionFlagsToExercises } = require(dist + 'lib/cautionExerciseFilter.js');
 const { formatHomeSessionTitle } = require(dist + 'app/homeSessionTitle.js');
@@ -187,7 +187,8 @@ module.exports = [
   {
     name: 'D4-2: a target saved over one stored under an older spelling replaces it, and removing removes every spelling',
     run() {
-      const sameLift = (left, right) => isSameLift(left, right, LIBRARY_NAMES);
+      // The matcher the goal flow and the Programs tab's remove pass (review R2).
+      const sameLift = (left, right) => isSameTargetLift(left, right, LIBRARY_NAMES);
       const stored = normalizeStrengthGoals([
         { exerciseName: 'back squat', targetKg: 140, createdAt: '2026-08-01T00:00:00.000Z' },
         { exerciseName: 'Conventional Deadlift', targetKg: 180, createdAt: '2026-08-01T00:00:00.000Z' },
@@ -215,6 +216,64 @@ module.exports = [
       // Without a matcher the names are compared exactly, as before.
       assert.equal(upsertStrengthGoal(stored, { exerciseName: 'Barbell Squat', targetKg: 1, createdAt: 'x' }).length, 3);
       assert.equal(removeStrengthGoal(stored, 'back squat').length, 1);
+    },
+  },
+  {
+    // Review R2 of dup sweep 13: isSameLift folds a name into the library row
+    // its substring search finds — "Calf Raise" into "Seated Calf Raise" (the
+    // generated library), "Standing Calf Raise" into "Bodyweight Calf Raise"
+    // (the app's) — so saving one target deleted the other. A target merges
+    // only another spelling of its lift.
+    name: 'D4-2: a target replaces another spelling of its lift, never another lift of its family',
+    run() {
+      const sameTarget = (left, right) => isSameTargetLift(left, right, LIBRARY_NAMES);
+      const goals = [
+        { exerciseName: 'Standing Calf Raise', targetKg: 80, createdAt: 'x' },
+        { exerciseName: 'Barbell Squat', targetKg: 150, createdAt: 'x' },
+      ];
+      const saved = upsertStrengthGoal(goals, { exerciseName: 'Bodyweight Calf Raise', targetKg: 20, createdAt: 'y' }, sameTarget);
+      assert.deepEqual(saved.map((goal) => goal.exerciseName), ['Standing Calf Raise', 'Barbell Squat', 'Bodyweight Calf Raise']);
+      assert.deepEqual(
+        removeStrengthGoal(saved, 'Bodyweight Calf Raise', sameTarget).map((goal) => goal.exerciseName),
+        ['Standing Calf Raise', 'Barbell Squat'],
+      );
+      const generatedNames = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
+      assert.ok(isSameLift('Calf Raise', 'Seated Calf Raise', generatedNames), 'the log matcher still folds it');
+      assert.ok(!isSameTargetLift('Calf Raise', 'Seated Calf Raise', generatedNames), "the reviewer's pair");
+
+      // Same lift, another spelling: merges.
+      for (const [left, right] of [
+        ['back squat', 'Barbell Squat'],
+        ['Conventional Deadlift', 'Barbell Deadlift'],
+        ['Bench Press', 'Barbell Bench Press - Medium Grip'],
+        ['Barbell Row', 'Bent Over Barbell Row'],
+        ['Front Squat', 'Front Barbell Squat'],
+        ['Squat (Barbell)', 'Barbell Squat'],
+      ]) {
+        assert.ok(sameTarget(left, right), `${left} | ${right} should be one target`);
+      }
+      // A variant of the family: apart, though the log matcher folds the first.
+      for (const [left, right] of [
+        ['Standing Calf Raise', 'Bodyweight Calf Raise'],
+        ['Sissy Squat', 'Weighted Sissy Squat'],
+        ['Romanian Deadlift', 'Barbell Deadlift'],
+        ['Barbell Incline Bench Press - Medium Grip', 'Barbell Bench Press - Medium Grip'],
+        ['Front Barbell Squat', 'Barbell Squat'],
+        ['Hack Squat', 'Barbell Squat'],
+        ['Upright Barbell Row', 'Bent Over Barbell Row'],
+      ]) {
+        assert.ok(!sameTarget(left, right), `${left} | ${right} should be two targets`);
+      }
+
+      // Both writers pass the target matcher.
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
+      assert.match(read('src', 'app', 'useGoalFlow.tsx'), /upsertStrengthGoal\([\s\S]{0,300}sameTarget,\s*\)/);
+      assert.match(
+        read('src', 'app', 'renderWorkoutTab.tsx'),
+        /removeStrengthGoal\(current\.strengthGoals, exerciseName, \(left, right\) =>\s*isSameTargetLift\(/,
+      );
     },
   },
   {

@@ -254,6 +254,47 @@ export function isSameLift(rawLeft: string, rawRight: string, libraryNames?: rea
   return leftIndex !== null && leftIndex === rightIndex;
 }
 
+/**
+ * Whether two stored strength TARGETS are one target: the same lift under
+ * another spelling, never another lift of its family.
+ *
+ * Saving a target replaces every target this accepts, and removing one
+ * removes them all, so it is narrower than `isSameLift` (which reads a LOG for
+ * a target and folds in whatever the library's substring search finds). That
+ * search filed "Calf Raise" on "Seated Calf Raise", so saving a seated-calf
+ * target deleted a standing one (dup sweep 13 review, R2). Same lift here is:
+ * the same name in any case, the same same-lift group ("back squat" and
+ * "Barbell Squat", sumo and the deadlift by decision — D4-2), or both names
+ * filed on one library row by name or alias ("Bench Press" and "Barbell
+ * Bench Press - Medium Grip"). No substring.
+ */
+export function isSameTargetLift(rawLeft: string, rawRight: string, libraryNames?: readonly string[]): boolean {
+  const left = liftSpelling(rawLeft);
+  const right = liftSpelling(rawRight);
+  const a = normalize(left);
+  const b = normalize(right);
+  if (!a || !b) {
+    return false;
+  }
+  if (a === b) {
+    return true;
+  }
+  const withLibrary = Boolean(libraryNames && libraryNames.length > 0);
+  if (isSameLiftByGroup(groupSpelling(left, withLibrary), groupSpelling(right, withLibrary))) {
+    return true;
+  }
+  const leftGroup = liftGroupOfName(left, withLibrary);
+  const rightGroup = liftGroupOfName(right, withLibrary);
+  if (leftGroup !== null && rightGroup !== null && leftGroup !== rightGroup) {
+    return false;
+  }
+  if (!libraryNames || !withLibrary) {
+    return false;
+  }
+  const leftIndex = resolveFiledLibraryIndex(left, libraryNames);
+  return leftIndex !== null && leftIndex === resolveFiledLibraryIndex(right, libraryNames);
+}
+
 /** How many rows of this library a group names by their exact library name. */
 function libraryRowsNamedByGroup(group: number, libraryNames: readonly string[]): number {
   const entry = resolverEntry(libraryNames);
