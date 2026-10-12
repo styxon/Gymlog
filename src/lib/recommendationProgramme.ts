@@ -1,5 +1,6 @@
 import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, HUGE_GUIDED_PROGRAM_ID, HUGE_HOME_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
 import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
+import { SHRED_GUIDED_PROGRAM_ID, SHRED_HOME_EASY_PROGRAM_ID } from './recommendationCatalog';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
 import { formatLiftDisplayLabel } from './displayLabel';
@@ -643,6 +644,16 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   }
   if (programId === HOME_EASY_PROGRAM_ID) {
     return ['easyWalk', 'recoveryStrength', 'recoveryMobility', 'hillWalk', 'easyConditioning'];
+  }
+  // SHRED Guided and SHRED Home Easy fill a longer week without a jump in it:
+  // the general orders' Mountain Climbers (the bodyweight conditioning day)
+  // would be the one in a week written for none. Guided starts with an easy
+  // ride, Home Easy with walks (owner, 2026-10-12).
+  if (programId === SHRED_GUIDED_PROGRAM_ID) {
+    return ['easyConditioning', 'accessoryStrength', 'recoveryMobility', 'bodyweightVolume', 'conditioningMobility'];
+  }
+  if (programId === SHRED_HOME_EASY_PROGRAM_ID) {
+    return ['easyWalk', 'hillWalk', 'recoveryMobility', 'bodyweightVolume', 'easyConditioning'];
   }
   // HUGE Guided and HUGE Home fill a longer week with more muscle work first
   // and one easy mobility day: a beginner who asks for five or six days gets

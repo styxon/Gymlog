@@ -326,7 +326,11 @@ module.exports = [
       // HUGE Home hinge with a stiff-legged dumbbell deadlift (three rows), a
       // cable pull-through and a bent-over row, all lower-back-avoid rows. Each
       // of their days keeps five lifts; no day went thin.
-      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 127, thin: 3 } };
+      //
+      // And to 129 the same day: SHRED Guided pulls through a cable on two of
+      // its days, a lower-back-avoid row each. Its days keep four lifts or
+      // more; none went thin.
+      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 129, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

@@ -49,6 +49,16 @@ const FI: Record<string, string> = {
   'Finish the reps written on every set before adding load, lowering each rep under control.':
     'Tee jokaisen sarjan merkityt toistot ennen kuin lisäät painoa, ja laske jokainen toisto hallitusti.',
 
+  // ── SHRED Guided and SHRED Home Easy (2026-10-12) ───────────────────
+  'Go round the machines in order with short rests. When every set reaches the reps written with control, add the smallest step the stack allows next time.':
+    'Kierrä laitteet järjestyksessä lyhyin lepoin. Kun jokainen sarja yltää merkittyihin toistoihin hallitusti, lisää ensi kerralla pienin askel, jonka painopakka sallii.',
+  'Keep every hard interval at the same effort, and add a round or a minute before you go harder.':
+    'Pidä jokainen kova intervalli samalla teholla ja lisää kierros tai minuutti ennen kuin lisäät vauhtia.',
+  'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower incline for the push-up, a deeper squat.':
+    'Lisää ensin toistoja. Kun jokainen sarja yltää merkittyihin toistoihin hallitusti, tee liikkeestä hieman vaikeampi: matalampi alusta punnerrukseen, syvempi kyykky.',
+  'Walk each block briskly: breathing deep and quick, short sentences still possible. Add a minute to a block once every block feels steady.':
+    'Kävele jokainen blokki reippaasti: hengitys on syvää ja nopeaa, mutta lyhyet lauseet onnistuvat. Lisää blokkiin minuutti, kun kaikki blokit tuntuvat tasaisilta.',
+
   // ── Anchor / primary ────────────────────────────────────────────────
   'Anchor lifts keep double progression so strength holds while conditioning volume climbs.':
     'Ankkuriliikkeissä pidetään tuplaprogressio, jotta voima säilyy kuntovolyymin noustessa.',

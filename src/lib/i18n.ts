@@ -686,6 +686,8 @@ const EN = {
   'prog.sub.tpl_3_day_walk_mobility_v1': 'A lower-impact week: walking, mobility and light strength.',
   'prog.sub.tpl_3_day_guided_strength_v1': 'Strength on machines and cables: guided machines set the movement path.',
   'prog.sub.tpl_3_day_home_easy_strength_v1': 'Gentle bodyweight strength at home, each day closed with two short walks.',
+  'prog.sub.tpl_3_day_shred_guided_v1': 'Fat burn on machines and cables: a lift circuit, then bike, rower or cross-trainer intervals.',
+  'prog.sub.tpl_3_day_shred_home_easy_v1': 'Fat burn at home without jumping: bodyweight circuits, then brisk or uphill walking blocks.',
   'prog.sub.tpl_3_day_huge_guided_v1': 'Muscle on machines and cables: three full-body days at 10–15 reps.',
   'prog.sub.tpl_3_day_huge_home_v1': 'Muscle at home with a pair of dumbbells: three full-body days at 10–15 reps.',
   'prog.sub.fallback': '{days} training days built around {goal} work.',
@@ -3153,7 +3155,7 @@ const EN = {
   'programs.sort.days': 'Days',
   'programs.sort.length': 'Length',
   'programs.sheet.fitsYourWeek': 'FITS YOUR {days} DAYS A WEEK',
-  // The catalog: 76 ready programmes with level, goal and free text all
+  // The catalog: 78 ready programmes with level, goal and free text all
   // narrowing the same list. The goal discs are a taxonomy, not a filter.
   'programCatalog.title': 'All ready programs',
   'programCatalog.searchPlaceholder': 'Search {count} programs',
@@ -4218,6 +4220,8 @@ const FI: Record<I18nKey, string> = {
   'prog.sub.tpl_3_day_walk_mobility_v1': 'Kevyempi viikko: kävelyä, liikkuvuutta ja kevyttä voimaa.',
   'prog.sub.tpl_3_day_guided_strength_v1': 'Voimaa laitteilla ja taljoilla: ohjatut laitteet määräävät liikeradan.',
   'prog.sub.tpl_3_day_home_easy_strength_v1': 'Kevyttä kehonpainovoimaa kotona, ja jokainen päivä päättyy kahteen lyhyeen kävelyyn.',
+  'prog.sub.tpl_3_day_shred_guided_v1': 'Rasvanpolttoa laitteilla: nostopiiri ja sen jälkeen pyörä-, soutu- tai crosstrainer-intervallit.',
+  'prog.sub.tpl_3_day_shred_home_easy_v1': 'Rasvanpolttoa kotona ilman hyppyjä: kehonpainopiiri ja reippaita kävelyblokkeja.',
   'prog.sub.tpl_3_day_huge_guided_v1': 'Lihasta laitteilla ja taljoilla: kolme koko kehon päivää, 10–15 toistoa.',
   'prog.sub.tpl_3_day_huge_home_v1': 'Lihasta kotona käsipainoparilla: kolme koko kehon päivää, 10–15 toistoa.',
   'prog.sub.fallback': '{days} treenipäivää {goal}-työn ympärille rakennettuna.',

@@ -370,6 +370,26 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'The moves get harder in small steps (a lower chair, a lower surface for the push-up), and the walks keep part of every day for easy cardio.',
   },
+  tpl_3_day_shred_guided_v1: {
+    summary:
+      'Three full-body gym days with the lifting done as a circuit on machines and cables, then conditioning as intervals: bike on day 1, rower on day 2, cross-trainer on day 3. About a third of the week is conditioning, and there is no jumping and no barbell.',
+    audience:
+      'Anyone who wants a fat-burn week at the gym that stays off the joints: beginners and returning lifters who prefer guided machines to barbells, burpees and sprints, three days a week.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a shoulder press, a pulldown and a cable station, leg curl and leg extension machines, and a bike, a rowing machine and a cross-trainer.',
+    whyItWorks:
+      'The lifts run one after another with 30 seconds of rest, so the heart rate stays up between sets, and the machines set the path of each lift. The intervals alternate between hard and easy and add a round or a minute before they ask for more effort.',
+  },
+  tpl_3_day_shred_home_easy_v1: {
+    summary:
+      'Three bodyweight days at home with the exercises run as a short-rest circuit, then two walking blocks of four minutes with a minute of easy walking between them: brisk on days 1 and 3, uphill on day 2. About a third of the week is walking, and there is no jumping.',
+    audience:
+      'Anyone who wants a fat-burn week at home without jumping: squats, push-ups, rows and bridges, with walking as the conditioning.',
+    equipmentProfile:
+      'No equipment: a wall or a sturdy table for the push-ups, a table to row under, and somewhere to walk, with a hill or a slope for day 2.',
+    whyItWorks:
+      'The circuit keeps the rest short so it works as cardio too, and the walking blocks give a hard-and-easy rhythm without the impact of running. The moves get harder in small steps: a lower incline for the push-up, a deeper squat.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Three full-body gym days for muscle, mostly on machines and cables: leg press, chest press, pulldown and cable row, with a goblet squat, an incline dumbbell press and a chest-supported row around them. Every lift runs 10–15 reps, and the legs are trained every day.',

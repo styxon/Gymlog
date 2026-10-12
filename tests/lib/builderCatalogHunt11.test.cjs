@@ -331,12 +331,17 @@ module.exports = [
       // pull), again content: HUGE Guided, a gym week, has a cable pull-through
       // and a face pull on its second day. The bench and the rack presets rise
       // by the same two; bands stay inside the old line.
+      //
+      // And by five more, every preset, the same day: SHRED Guided, a gym week,
+      // has two cable pull-throughs, a seated machine row, a rowing-machine
+      // interval block and a cross-trainer block that a dumbbell reader does
+      // not have. SHRED Home Easy removes nothing.
       const BASELINE = {
-        db: { gear: ['Dumbbells'], removed: 108, pressless: 26 },
-        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 81, pressless: 26 },
-        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 79, pressless: 26 },
-        bench: { gear: ['Dumbbells', 'Bench'], removed: 105, pressless: 26 },
-        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 90, pressless: 26 },
+        db: { gear: ['Dumbbells'], removed: 113, pressless: 26 },
+        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 86, pressless: 26 },
+        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 84, pressless: 26 },
+        bench: { gear: ['Dumbbells', 'Bench'], removed: 110, pressless: 26 },
+        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 95, pressless: 26 },
       };
       const count = (gear) => {
         let removed = 0;

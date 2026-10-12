@@ -351,6 +351,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Liikkeet vaikeutuvat pienin askelin (matalampi tuoli, matalampi alusta punnerrukseen), ja kävelyt varaavat jokaisesta päivästä osan kevyelle kestävyydelle.',
   },
+  tpl_3_day_shred_guided_v1: {
+    summary:
+      'Kolme koko kehon salipäivää, joissa nostot tehdään piirinä laitteilla ja taljoilla ja kunto-osuus intervalleina: pyörä ensimmäisenä päivänä, soutulaite toisena ja crosstrainer kolmantena. Noin kolmasosa viikosta on kuntoharjoittelua, eikä viikossa ole hyppyjä eikä tankoa.',
+    audience:
+      'Kenelle tahansa, joka haluaa salilla rasvanpolttoviikon, joka säästää niveliä: aloittelijalle ja tauolta palaavalle, joka haluaa ohjatut laitteet tankojen, burpeiden ja pikajuoksujen sijaan, kolmena päivänä viikossa.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, pystypunnerruslaite, ylätalja ja taljateline, reiden koukistus- ja ojennuslaite sekä pyörä, soutulaite ja crosstrainer.',
+    whyItWorks:
+      'Nostot tehdään peräkkäin 30 sekunnin lepoilla, joten syke pysyy ylhäällä sarjojen välissä, ja laite määrää jokaisen liikkeen radan. Intervallit vaihtelevat kovan ja kevyen välillä, ja niihin lisätään kierros tai minuutti ennen kuin vauhtia kasvatetaan.',
+  },
+  tpl_3_day_shred_home_easy_v1: {
+    summary:
+      'Kolme kehonpainopäivää kotona, joissa liikkeet tehdään piirinä lyhyin lepoin, ja niiden perään kaksi neljän minuutin kävelyblokkia, joiden välissä kävellään minuutti rauhallisesti: reippaasti ensimmäisenä ja kolmantena päivänä, ylämäkeen toisena. Noin kolmasosa viikosta on kävelyä, eikä viikossa ole hyppyjä.',
+    audience:
+      'Kenelle tahansa, joka haluaa rasvanpolttoviikon kotona ilman hyppyjä: kyykkyjä, punnerruksia, soutuja ja lantionnostoja sekä kävelyä kunto-osuutena.',
+    equipmentProfile:
+      'Ei välineitä: seinä tai tukeva pöytä punnerruksiin, pöytä jonka alla soutaa, ja paikka kävellä; toista päivää varten mäki tai kaltevuus.',
+    whyItWorks:
+      'Piiri pitää levon lyhyenä, joten se toimii myös kuntona, ja kävelyblokit antavat kovan ja kevyen rytmin ilman juoksun iskuja. Liikkeet vaikeutuvat pienin askelin: matalampi alusta punnerrukseen, syvempi kyykky.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Kolme koko kehon salipäivää lihaskasvuun, pääosin laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja, ympärillä maljakyykky, vinopenkkipunnerrus käsipainoilla ja rintatuettu soutu. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
