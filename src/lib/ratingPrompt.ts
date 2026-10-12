@@ -1,3 +1,5 @@
+import { getRollingWindowStart } from './completedSessions';
+
 /**
  * When — and whether — the app is allowed to ask for a store rating.
  *
@@ -30,8 +32,6 @@ export const RATING_MIN_SESSIONS = 4;
  * training stops being asked entirely.
  */
 export const RATING_COOLDOWN_DAYS = 7;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
  * The state itself is declared with the other persisted shapes; the rules that
@@ -91,7 +91,9 @@ export function decideRatingPrompt({
     if (Number.isNaN(lastMs)) {
       return { ask: false, reason: 'cooling_down' };
     }
-    if (nowMs - lastMs < RATING_COOLDOWN_DAYS * DAY_MS) {
+    // Calendar days (getRollingWindowStart), not 168 fixed hours: a week
+    // across a clock change is 167 or 169 (duplicate sweep, 2026-10-12).
+    if (lastMs > getRollingWindowStart(nowMs, RATING_COOLDOWN_DAYS)) {
       return { ask: false, reason: 'cooling_down' };
     }
   }

@@ -1,5 +1,6 @@
 import { GENERATED_EXERCISE_LIBRARY } from '../data/generatedExerciseLibrary';
 import { DEMO_ONLY_ALIASES, findFiledLibraryIndex } from './guidedPlayer';
+import { isMinutesLogEntry } from './minutesExercises';
 
 /**
  * Which exercises are a timed position rather than repetitions.
@@ -183,6 +184,23 @@ export function isHoldExerciseName(name: string): boolean {
  */
 export function isHoldLogEntry(log: { exerciseNameSnapshot?: unknown } | null | undefined): boolean {
   return typeof log?.exerciseNameSnapshot === 'string' && isHoldExerciseName(log.exerciseNameSnapshot);
+}
+
+/**
+ * Whether a stored log is a dose rather than repetitions of a load: minutes of
+ * a bout, or seconds of a hold. Neither is a top set, a kilo of volume or a
+ * rep count. The one test, because the copies split: volume left out minutes
+ * only, so a plank of 2 × 60 s with a 10 kg plate was 1 200 kg of session
+ * volume and reached the coach as "10 kg × 60 reps", while Records already
+ * ignored both (duplicate sweep, 2026-10-12).
+ */
+export function isDoseLog(
+  log:
+    | { repsUnit?: unknown; exerciseNameSnapshot?: unknown; sets?: unknown; repsPerSet?: unknown }
+    | null
+    | undefined,
+): boolean {
+  return isMinutesLogEntry(log) || isHoldLogEntry(log);
 }
 
 /**

@@ -1,6 +1,9 @@
 import { calendarDaysBetween, getRollingWindowStart } from './completedSessions';
 import { logRecordsSwap } from './exerciseLog';
 import { formatWeight } from './format';
+import { WeightedSet, beatsBest, heaviestOfSets, recordSetsOfLog } from './personalRecords';
+import { PLATEAU_STALL_SESSIONS } from './proInsights';
+import { buildLiftHistories } from './trainingHistory';
 import { ExerciseLog, PostSessionInsightType, UnitPreference, WorkoutSession } from '../types/models';
 
 export type InsightType = PostSessionInsightType;
@@ -35,67 +38,52 @@ interface Candidate extends PostSessionInsight {
 }
 
 const CONFIDENCE_THRESHOLD = 0.75;
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 function getExerciseKey(log: ExerciseLog) {
   return log.exerciseTemplateId || log.templateExerciseId || null;
 }
 
-function getCompletedWorkingSets(log: ExerciseLog) {
+/** Whether a log is this slot's lift, done: not skipped, and not a swap read under the slot's key. */
+function isOwnLiftLog(log: ExerciseLog) {
   // A swapped-in lift is keyed by the slot's template exercise below, which
   // is the programmed lift's key: a leg press would be read as that squat's
   // session. The player's swap was already kept out by its status; a swap
   // made on Home before the start finishes as `completed`, and says it was a
   // swap only here.
-  if (log.skipped || log.status === 'skipped' || log.status === 'swapped' || logRecordsSwap(log)) {
-    return [];
-  }
-
-  const sets = Array.isArray(log.sets) ? log.sets : [];
-  if (sets.length > 0) {
-    return sets.filter(
-      (set) =>
-        set.kind === 'working' &&
-        set.outcome !== 'failed' &&
-        set.outcome !== 'skipped' &&
-        set.status !== 'skipped' &&
-        set.weight > 0 &&
-        set.reps > 0,
-    );
-  }
-
-  return (log.repsPerSet ?? [])
-    .filter((reps) => reps > 0 && log.weight > 0)
-    .map((reps, orderIndex) => ({
-      orderIndex,
-      weight: log.weight,
-      reps,
-      kind: 'working' as const,
-      outcome: 'completed' as const,
-    }));
+  return !(log.skipped || log.status === 'skipped' || log.status === 'swapped' || logRecordsSwap(log));
 }
 
-function getTrackedTopSets(logs: ExerciseLog[]): TopSet[] {
+/**
+ * The sets that stand for the lift, as the records read them
+ * (personalRecords.recordSetsOfLog): done ones only, warm-ups out, no minutes
+ * or holds. This read the set rows itself and took a pending row — a
+ * prefilled target never ticked — as work done.
+ */
+function getCompletedWorkingSets(log: ExerciseLog): WeightedSet[] {
+  if (!isOwnLiftLog(log)) {
+    return [];
+  }
+  return recordSetsOfLog(log).filter((set) => set.weight > 0 && set.reps > 0);
+}
+
+/**
+ * Each log's top set by the records rule (heaviestOfSets): heaviest, then more
+ * reps. It scored weight × reps, so 80 × 12 after 100 × 5 was "a new high" the
+ * Records tab and the PR cards on the same screen did not see (duplicate
+ * sweep, 2026-10-12).
+ */
+function getTopSets(logs: ExerciseLog[]): TopSet[] {
   return logs
-    .filter((log) => log.tracked)
     .map((log) => {
       const exerciseKey = getExerciseKey(log);
       if (!exerciseKey) {
         return null;
       }
 
-      const sets = getCompletedWorkingSets(log);
-      if (sets.length === 0) {
+      const best = heaviestOfSets(getCompletedWorkingSets(log));
+      if (!best) {
         return null;
       }
-
-      const best = sets.reduce((currentBest, set) => {
-        const setScore = set.weight * set.reps;
-        const bestScore = currentBest.weight * currentBest.reps;
-        if (setScore > bestScore) return set;
-        if (setScore === bestScore && set.weight > currentBest.weight) return set;
-        return currentBest;
-      }, sets[0]);
 
       return {
         exerciseKey,
@@ -106,6 +94,10 @@ function getTrackedTopSets(logs: ExerciseLog[]): TopSet[] {
       };
     })
     .filter((set): set is TopSet => Boolean(set));
+}
+
+function getTrackedTopSets(logs: ExerciseLog[]): TopSet[] {
+  return getTopSets(logs.filter((log) => log.tracked));
 }
 
 function getSessionCompletionRate(logs: ExerciseLog[]) {
@@ -151,29 +143,35 @@ function getPriorSessionsBefore(input: PostSessionInsightInput) {
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime());
 }
 
-function buildLogsBySession(logs: ExerciseLog[]) {
-  const map = new Map<string, ExerciseLog[]>();
-  for (const log of logs) {
-    map.set(log.sessionId, [...(map.get(log.sessionId) ?? []), log]);
-  }
-  return map;
-}
-
+/**
+ * Today's best against the best before it, by the rule the Records tab and the
+ * finish screen's PR cards use (heaviestOfSets + beatsBest): heavier, or the
+ * same weight for more reps. Every earlier log of the lift counts, tracked or
+ * not, as it does on Records.
+ */
 function evaluatePersonalRecord(input: PostSessionInsightInput): Candidate | null {
   const currentTopSets = getTrackedTopSets(input.sessionExerciseLogs);
-  const priorTopSets = getTrackedTopSets(input.allPriorExerciseLogs);
+  const priorTopSets = getTopSets(input.allPriorExerciseLogs);
+  const seen = new Set<string>();
 
-  for (const current of currentTopSets) {
-    const prior = priorTopSets.filter((set) => set.exerciseKey === current.exerciseKey);
-    if (prior.length < 2) {
+  for (const first of currentTopSets) {
+    if (seen.has(first.exerciseKey)) {
+      continue;
+    }
+    seen.add(first.exerciseKey);
+    // A lift logged twice today is one session: its best of the day.
+    const current = heaviestOfSets(currentTopSets.filter((set) => set.exerciseKey === first.exerciseKey));
+    const prior = priorTopSets.filter((set) => set.exerciseKey === first.exerciseKey);
+    if (!current || prior.length < 2) {
       continue;
     }
 
-    const currentScore = current.weight * current.reps;
-    const bestPriorScore = Math.max(...prior.map((set) => set.weight * set.reps));
-    const bestPriorSameWeightReps = Math.max(0, ...prior.filter((set) => set.weight === current.weight).map((set) => set.reps));
+    const priorBest = heaviestOfSets(prior);
+    if (!priorBest || !beatsBest(current, priorBest)) {
+      continue;
+    }
 
-    if (bestPriorSameWeightReps > 0 && current.reps > bestPriorSameWeightReps) {
+    if (current.weight === priorBest.weight) {
       return {
         type: 'personal_record',
         message: `New best on ${current.exerciseName}: ${formatWeight(current.weight, input.unitPreference)} for ${current.reps} reps.`,
@@ -183,45 +181,59 @@ function evaluatePersonalRecord(input: PostSessionInsightInput): Candidate | nul
       };
     }
 
-    if (currentScore > bestPriorScore) {
-      return {
-        type: 'personal_record',
-        message: `${current.exerciseName} hit a new high today: ${formatWeight(current.weight, input.unitPreference)} for ${current.reps} reps.`,
-        confidence: 1,
-        exerciseKey: current.exerciseKey,
-        priority: 1,
-      };
-    }
+    return {
+      type: 'personal_record',
+      message: `${current.exerciseName} hit a new high today: ${formatWeight(current.weight, input.unitPreference)} for ${current.reps} reps.`,
+      confidence: 1,
+      exerciseKey: current.exerciseKey,
+      priority: 1,
+    };
   }
 
   return null;
 }
 
+/**
+ * The stall count Home's plateau card and the coach read (trainingHistory
+ * stalledSessions): sessions at the latest top weight since the last one that
+ * gained a rep, on the top set or per set. This walked its own run of equal
+ * top weights with no rep check, and called a lift whose weakest set climbed
+ * 8/8/6 -> 8/8/7 -> 8/8/8 "at 60 kg for three sessions" (duplicate sweep,
+ * 2026-10-12).
+ */
 function evaluatePlateauDetected(input: PostSessionInsightInput, priorSessions: ReturnType<typeof getPriorSessionsBefore>): Candidate | null {
   const currentTopSets = getTrackedTopSets(input.sessionExerciseLogs);
-  const logsBySession = buildLogsBySession(input.allPriorExerciseLogs);
+  const sessions = [...priorSessions, input.completedSession];
+  const sessionIds = new Set(sessions.map((session) => session.id));
+  const candidateLogs = [...input.allPriorExerciseLogs, ...input.sessionExerciseLogs].filter(
+    (log) => sessionIds.has(log.sessionId) && isOwnLiftLog(log),
+  );
+  const seen = new Set<string>();
 
   for (const current of currentTopSets) {
-    const run: TopSet[] = [current];
-
-    for (const session of priorSessions) {
-      const topSet = getTrackedTopSets(logsBySession.get(session.id) ?? []).find((set) => set.exerciseKey === current.exerciseKey);
-      if (!topSet || topSet.weight !== current.weight) {
-        break;
-      }
-
-      run.push(topSet);
+    if (seen.has(current.exerciseKey)) {
+      continue;
+    }
+    seen.add(current.exerciseKey);
+    // One lift under one name: the logs of this slot's key, whatever each was
+    // called that day, so a renamed row is still one history.
+    const lift = buildLiftHistories(
+      sessions,
+      candidateLogs
+        .filter((log) => getExerciseKey(log) === current.exerciseKey)
+        .map((log) => ({ ...log, exerciseNameSnapshot: current.exerciseName })),
+    )[0];
+    if (!lift || lift.latest.sessionId !== input.completedSession.id || lift.stalledSessions < PLATEAU_STALL_SESSIONS) {
+      continue;
     }
 
-    if (run.length >= 3) {
-      return {
-        type: 'plateau_detected',
-        message: `${current.exerciseName} has been at ${formatWeight(current.weight, input.unitPreference)} for three sessions.`,
-        confidence: run.length === 3 ? 0.9 : 0.8,
-        exerciseKey: current.exerciseKey,
-        priority: 2,
-      };
-    }
+    return {
+      type: 'plateau_detected',
+      message: `${current.exerciseName} has been at ${formatWeight(lift.latest.topSetWeightKg, input.unitPreference)} for three sessions.`,
+      confidence: lift.stalledSessions === PLATEAU_STALL_SESSIONS ? 0.9 : 0.8,
+      exerciseKey: current.exerciseKey,
+      priority: 2,
+    };
   }
 
   return null;

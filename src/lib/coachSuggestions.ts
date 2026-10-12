@@ -1,3 +1,5 @@
+import { getRollingWindowStart } from './completedSessions';
+
 /**
  * When the coach may offer something, and when it must stop asking.
  *
@@ -42,14 +44,6 @@ export const SUGGESTION_COOLDOWN_DAYS = 30;
 /** Two refusals is an answer. There is no third offer. */
 const MAX_REJECTIONS = 2;
 
-function daysBetween(fromIso: string, now: Date): number {
-  const from = new Date(fromIso).getTime();
-  if (!Number.isFinite(from)) {
-    return Number.POSITIVE_INFINITY;
-  }
-  return (now.getTime() - from) / (24 * 60 * 60 * 1000);
-}
-
 export function isSuggestionSilenced(
   state: CoachSuggestionState | null | undefined,
   kind: CoachSuggestionKind,
@@ -66,7 +60,11 @@ export function isSuggestionSilenced(
     return true;
   }
   if (record.rejectedCount > 0 && record.lastRejectedAt) {
-    return daysBetween(record.lastRejectedAt, now) < SUGGESTION_COOLDOWN_DAYS;
+    // The month in calendar days (getRollingWindowStart), not 720 hours: across
+    // a clock change the fixed span ends an hour off the time of day it claims
+    // (duplicate sweep, 2026-10-12). A date that does not parse silences
+    // nothing, as before.
+    return new Date(record.lastRejectedAt).getTime() > getRollingWindowStart(now, SUGGESTION_COOLDOWN_DAYS);
   }
   return false;
 }

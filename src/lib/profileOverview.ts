@@ -1,5 +1,6 @@
 ﻿import { getComparableLogSets } from './exerciseLog';
 import { t } from './i18n';
+import { heaviestOfSets } from './personalRecords';
 import { ExerciseLogWithSession, ExerciseProgressSummary } from './progression';
 import { AppLanguage } from '../types/models';
 
@@ -14,22 +15,13 @@ import { AppLanguage } from '../types/models';
 
 const DAY_MS = 86_400_000;
 
+/**
+ * A log's top set by the records rule (heaviestOfSets): heaviest, then more
+ * reps, and only a set with weight and reps — so Home's stat card, the lift
+ * curve and Records name the same set. Null for a log with no loaded set.
+ */
 export function getTopComparableSet(log: Pick<ExerciseLogWithSession, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {
-  const sets = getComparableLogSets(log);
-  if (sets.length === 0) {
-    return null;
-  }
-
-  return sets.reduce((best, set) => {
-    if (set.weight > best.weight) {
-      return set;
-    }
-    // Same load, more reps is the better set.
-    if (set.weight === best.weight && set.reps > best.reps) {
-      return set;
-    }
-    return best;
-  });
+  return heaviestOfSets(getComparableLogSets(log));
 }
 
 function startOfDay(value: Date) {

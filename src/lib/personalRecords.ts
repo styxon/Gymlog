@@ -1,7 +1,7 @@
+import { getRollingWindowStart } from './completedSessions';
 import { groupByMonth } from './monthGroups';
 import { getComparableLogSets } from './exerciseLog';
-import { isHoldLogEntry } from './holdExercises';
-import { isMinutesLogEntry } from './minutesExercises';
+import { isDoseLog } from './holdExercises';
 import type { ExerciseLog } from '../types/models';
 
 /**
@@ -90,7 +90,7 @@ export function recordSetsOfLog(
   log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> &
     Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
 ): RecordSet[] {
-  if (isMinutesLogEntry(log) || isHoldLogEntry(log)) {
+  if (isDoseLog(log)) {
     return [];
   }
   return getComparableLogSets(log).map((set) => ({ weight: set.weight, reps: set.reps }));
@@ -147,12 +147,18 @@ export interface WeightedSet {
  * a "new record" on one screen and not the other (2026-09-26).
  *
  * Ignores anything with no weight: a bodyweight lift has no weight record,
- * here or anywhere else this is used.
+ * here or anywhere else this is used. Nor a set with no reps: 100 kg × 0 is a
+ * bar nobody lifted, and it was a "100 kg" weight record and History's top
+ * weight while the lift curve and the finish screen named the 80 × 5 beside
+ * it (duplicate sweep, 2026-10-12). This is the top set of a log everywhere —
+ * the lift curve, History, Home's stat card, the finish screen — so they name
+ * the same one. An unloaded lift's best is its reps, read separately
+ * (exerciseSheetHistory's BarMeasure, workoutCompleteView.getTopSetLabel).
  */
 export function heaviestOfSets<T extends WeightedSet>(sets: readonly T[]): T | null {
   let best: T | null = null;
   for (const set of sets) {
-    if (!(set.weight > 0)) {
+    if (!(set.weight > 0) || !(set.reps > 0)) {
       continue;
     }
     if (beatsBest(set, best)) {
@@ -277,7 +283,10 @@ export function resolveRecord(
     performedAt: best.performedAt,
     firstAt: candidates[0].performedAt,
     previous,
-    fresh: now.getTime() - best.stamp <= FRESH_RECORD_DAYS * 86_400_000,
+    // Calendar days, not 30 × 24 h: across a clock change the fixed span is an
+    // hour off the time of day the window claims, and the badge went an hour
+    // early or late (duplicate sweep, 2026-10-12).
+    fresh: best.stamp >= getRollingWindowStart(now, FRESH_RECORD_DAYS),
   };
 }
 

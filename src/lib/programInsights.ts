@@ -6,6 +6,7 @@ import {
 } from './completedSessions';
 import { getComparableLogSets } from './exerciseLog';
 import { formatLogSetSummary, formatShortDate, pluralize } from './format';
+import { heaviestOfSets } from './personalRecords';
 import { AppDatabase, ExerciseLog, UnitPreference, WorkoutSession } from '../types/models';
 
 export interface ProgramInsightHighlight {
@@ -77,27 +78,9 @@ function getNextSessionName(sessions: WorkoutTemplateSession[], sessionId: strin
   return ordered[(index + 1) % ordered.length]?.name ?? ordered[0].name;
 }
 
+/** The log's top set by the records rule (personalRecords.heaviestOfSets). */
 function getBestComparableSet(log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'>): ComparableSet | null {
-  const sets = getComparableLogSets(log);
-  if (!sets.length) {
-    return null;
-  }
-
-  return sets.reduce((best, current) => {
-    if (!best) {
-      return current;
-    }
-
-    if (current.weight > best.weight) {
-      return current;
-    }
-
-    if (Math.abs(current.weight - best.weight) < 0.0001 && current.reps > best.reps) {
-      return current;
-    }
-
-    return best;
-  }, null as ComparableSet | null);
+  return heaviestOfSets(getComparableLogSets(log));
 }
 
 function compareComparableSets(left: ComparableSet | null, right: ComparableSet | null) {
