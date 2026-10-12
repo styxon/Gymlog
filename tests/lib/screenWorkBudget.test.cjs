@@ -108,15 +108,12 @@ module.exports = [
             format.formatShortDate(stamp, language),
             new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(at),
           );
+          // The day through Intl, the clock HH:mm by hand (D3-2).
+          const day = new Intl.DateTimeFormat(locale, { weekday: 'short', day: 'numeric', month: 'short' }).format(at);
+          const clock = `${String(at.getHours()).padStart(2, '0')}:${String(at.getMinutes()).padStart(2, '0')}`;
           assert.equal(
             format.formatSessionDate(stamp, language),
-            new Intl.DateTimeFormat(locale, {
-              weekday: 'short',
-              day: 'numeric',
-              month: 'short',
-              hour: '2-digit',
-              minute: '2-digit',
-            }).format(at),
+            language === 'fi' ? `${day} klo ${clock}` : `${day}, ${clock}`,
           );
         }
       }
@@ -146,19 +143,22 @@ module.exports = [
   {
     name: 'screen work: the shared formatter follows the device time zone when it changes',
     run() {
-      const SESSION_DATE = { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' };
+      const SESSION_DAY = { weekday: 'short', day: 'numeric', month: 'short' };
       const saved = process.env.TZ;
-      const stamp = '2026-06-01T12:00:00.000Z';
+      // 06:00 on 1 June in Helsinki, 20:00 on 31 May in Los Angeles: the day
+      // part (the cached formatter) differs, not only the clock.
+      const stamp = '2026-06-01T03:00:00.000Z';
+      const dayOf = (text) => text.split(' klo ')[0];
       try {
         process.env.TZ = 'Europe/Helsinki';
         // formatSessionDate carries a time and goes through the cached
         // formatter (formatTime no longer does).
         const helsinki = format.formatSessionDate(stamp, 'fi');
-        assert.equal(helsinki, new Intl.DateTimeFormat('fi-FI', SESSION_DATE).format(new Date(stamp)));
+        assert.equal(dayOf(helsinki), new Intl.DateTimeFormat('fi-FI', SESSION_DAY).format(new Date(stamp)));
         process.env.TZ = 'America/Los_Angeles';
         const losAngeles = format.formatSessionDate(stamp, 'fi');
-        assert.equal(losAngeles, new Intl.DateTimeFormat('fi-FI', SESSION_DATE).format(new Date(stamp)));
-        assert.notEqual(losAngeles, helsinki, 'a cached formatter would still read Helsinki');
+        assert.equal(dayOf(losAngeles), new Intl.DateTimeFormat('fi-FI', SESSION_DAY).format(new Date(stamp)));
+        assert.notEqual(dayOf(losAngeles), dayOf(helsinki), 'a cached formatter would still read Helsinki');
       } finally {
         if (saved === undefined) {
           delete process.env.TZ;

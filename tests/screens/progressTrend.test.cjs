@@ -458,7 +458,7 @@ module.exports = [
       );
       assert.match(
         read('src', 'lib', 'format.ts'),
-        /export function formatSessionDate[\s\S]{0,320}minute: '2-digit'/,
+        /export function formatSessionDate[\s\S]{0,600}formatClockTime\(date\)/,
         'formatSessionDate stopped carrying a time',
       );
     },

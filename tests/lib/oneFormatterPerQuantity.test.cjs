@@ -98,6 +98,15 @@ module.exports = [
       assert.equal(format.formatTime(at.toISOString(), 'fi'), '18:06', 'Intl wrote the Finnish 18.06');
       assert.equal(format.formatTime(at.toISOString(), 'en'), '18:06', 'Intl wrote 06:06 PM on an en-US phone');
       assert.equal(formatEndsAt(at.getTime()), format.formatClockTime(at));
+      // The session stamp's clock too (History hero, weigh-in list; review R2):
+      // Intl wrote "klo 18.06" and "06:06 PM" beside a tooltip's "18:06".
+      const fiStamp = format.formatSessionDate(at.toISOString(), 'fi');
+      const enStamp = format.formatSessionDate(at.toISOString(), 'en');
+      assert.ok(fiStamp.endsWith(' klo 18:06'), fiStamp);
+      assert.ok(enStamp.endsWith(', 18:06'), enStamp);
+      for (const stamp of [fiStamp, enStamp]) {
+        assert.doesNotMatch(stamp, /18\.06|06:06|PM|AM/i, stamp);
+      }
 
       // Every formatTime call says whose clock it is: left out, it fell to the
       // device locale (Progress tooltip, the active-workout card).

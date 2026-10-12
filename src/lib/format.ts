@@ -97,14 +97,20 @@ export function formatShortDate(dateString: string, language?: AppLanguage) {
   }).format(new Date(dateString));
 }
 
+/**
+ * A session's day and clock: "ma 12.10. klo 18:06" / "Mon, Oct 12, 18:06".
+ * The day is Intl's; the clock is formatClockTime's HH:mm (owner, 2026-10-12,
+ * D3-2). Intl wrote "klo 18.06" and "06:06 PM" here while the Progress
+ * tooltip beside the same weigh-in read "18:06" (dup sweep 13 review, R2).
+ */
 export function formatSessionDate(dateString: string, language?: AppLanguage) {
-  return getDateTimeFormat(localeFor(language), {
+  const date = new Date(dateString);
+  const day = getDateTimeFormat(localeFor(language), {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(dateString));
+  }).format(date);
+  return language === 'fi' ? `${day} klo ${formatClockTime(date)}` : `${day}, ${formatClockTime(date)}`;
 }
 
 /**
