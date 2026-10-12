@@ -1,5 +1,5 @@
 import { ExerciseLogSetPlan, ExerciseLogSetPlanBasis, SetupCautionArea } from '../types/models';
-import { isLiftableWeight, isLoggableReps } from './weightLimits';
+import { isLiftableWeight, isPlannedReps } from './weightLimits';
 
 /**
  * What the app opened a set at, kept next to what was actually done.
@@ -67,7 +67,7 @@ function load(value: unknown): number | null {
 }
 
 function reps(value: unknown): number | null {
-  return isLoggableReps(value) ? value : null;
+  return isPlannedReps(value) ? value : null;
 }
 
 /**

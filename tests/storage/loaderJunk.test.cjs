@@ -196,6 +196,36 @@ module.exports = [
     },
   },
   {
+    // Review R1 of duplicate sweep 13: the Hevy import writes reps with no
+    // ceiling, and a loader that dropped a set past the dial's 1800 deleted a
+    // real jump-rope set for good on the next save.
+    name: 'loader: an imported 2000-rep set loads intact, in the sets and the legacy reps list',
+    run() {
+      const normalizeDatabase = loadNormalize();
+      const out = normalizeDatabase({
+        workoutSessions: [{ id: 'hevy_1', workoutTemplateId: 'hevy_import', workoutNameSnapshot: 'Cardio day', performedAt: '2024-06-10T09:00:00.000Z' }],
+        exerciseLogs: [
+          {
+            id: 'l1',
+            sessionId: 'hevy_1',
+            exerciseTemplateId: null,
+            exerciseNameSnapshot: 'Jump Rope',
+            weight: 0,
+            repsPerSet: [2000],
+            tracked: true,
+            orderIndex: 0,
+            skipped: false,
+            sets: [{ orderIndex: 0, weight: 0, reps: 2000, kind: 'working', outcome: 'completed', status: 'completed' }],
+          },
+        ],
+      });
+      const loaded = out.exerciseLogs.find((entry) => entry.id === 'l1');
+      assert.ok(loaded, 'the log is kept');
+      assert.deepEqual(loaded.sets.map((set) => set.reps), [2000]);
+      assert.deepEqual(loaded.repsPerSet, [2000]);
+    },
+  },
+  {
     // D6-2: a -10 rep set summed into a session volume of -750 kg.
     name: 'loader: a set with impossible reps is dropped, and the session total is the sets that remain',
     run() {

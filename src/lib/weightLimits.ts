@@ -39,23 +39,36 @@ export function isLiftableWeight(kg: unknown): kg is number {
  * A hold stores its seconds in the reps field, so this is the hold dial's
  * ceiling (`HOLD_DIAL.max` in weightDial — which cannot be imported here
  * without closing the cycle described above; a test pins the two equal). The
- * reps dial stops far below it at 300. Every loader of a stored rep count
- * reads this one number: the logged set, the "last time" history, the logged
- * plan and a programme row (duplicate sweep 13, D6-3). It was 1000 in three
- * places, none shared, while the dial wrote holds up to 1800 s.
+ * reps dial stops far below it at 300. Every loader of a stored rep TARGET
+ * reads this one number: the logged plan, a "last time" rep target and a
+ * programme row (duplicate sweep 13, D6-3). It was 1000 in three places, none
+ * shared, while the dial wrote holds up to 1800 s. A recorded set has no
+ * ceiling (isRecordedReps): an import writes counts no dial could.
  */
 export const MAX_STORED_REPS = 1800;
 
 /**
- * Could a set have been logged with this many reps (or seconds, or minutes)?
+ * Could a plan have asked for this many reps (or seconds)?
  *
- * Zero is a set the reader has not filled in yet, so the floor is zero, as
- * the weight's is. Not required whole: a minutes log may hold a fraction. A
- * negative count is no set — it turned into a negative session volume — and
- * one past the ceiling is a stuck button (D6-2).
+ * For targets only: a rep or hold target, a planned set. The dials that set
+ * them stop at MAX_STORED_REPS, so a target past it is a stuck button. Zero
+ * is the floor, as the weight's is. Not required whole.
  */
-export function isLoggableReps(reps: unknown): reps is number {
-  return typeof reps === 'number' && Number.isFinite(reps) && reps >= 0 && reps <= MAX_STORED_REPS;
+export function isPlannedReps(reps: unknown): reps is number {
+  return isRecordedReps(reps) && reps <= MAX_STORED_REPS;
+}
+
+/**
+ * Could a set have been recorded with this many reps (or seconds, minutes)?
+ *
+ * No ceiling. The player's dials stop at MAX_STORED_REPS, but the Hevy import
+ * writes whatever the export held (a 2000-rep jump-rope set), and a loader
+ * that dropped it lost a real set on the next save (dup sweep 13 review, R1).
+ * A negative or non-finite count is no set — it summed into a negative
+ * session volume (D6-2). Zero is a set not filled in yet, and is kept.
+ */
+export function isRecordedReps(reps: unknown): reps is number {
+  return typeof reps === 'number' && Number.isFinite(reps) && reps >= 0;
 }
 
 /** The most sets one exercise of a programme can ask for. */

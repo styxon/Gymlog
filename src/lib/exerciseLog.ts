@@ -1,5 +1,5 @@
 import { ExerciseLog, ExerciseLogDraft, ExerciseLogSet } from '../types/models';
-import { isLiftableWeight, isLoggableReps, positiveWholeCount } from './weightLimits';
+import { isLiftableWeight, isRecordedReps, positiveWholeCount } from './weightLimits';
 import { normalizeLoggedSetPlan } from './loggedSetPlan';
 
 function normalizeNumber(value: number | null | undefined, fallback = 0) {
@@ -7,13 +7,13 @@ function normalizeNumber(value: number | null | undefined, fallback = 0) {
 }
 
 /**
- * The legacy reps list: the set list's rule (isLoggableReps), and more than
+ * The legacy reps list: the set list's rule (isRecordedReps), and more than
  * zero, because a legacy entry is a set already done — it has no "not yet
  * filled in" state to keep.
  */
 function normalizeRepsPerSet(repsPerSet: number[] | null | undefined) {
   return Array.isArray(repsPerSet)
-    ? repsPerSet.filter((value): value is number => isLoggableReps(value) && value > 0)
+    ? repsPerSet.filter((value): value is number => isRecordedReps(value) && value > 0)
     : [];
 }
 
@@ -118,10 +118,11 @@ export function normalizeExerciseSets(
            * nothing was lifted, which is the state it deserves.
            */
           .filter((set) => isLiftableWeight(set.weight))
-          // The same for reps: a negative or stuck-button count is not a set,
-          // and it summed into a negative session volume (D6-2). Dropped for
-          // the reason the weight is: we cannot say what was really done.
-          .filter((set) => isLoggableReps(set.reps))
+          // The same for reps: a negative count is not a set, and it summed
+          // into a negative session volume (D6-2). No ceiling: the Hevy
+          // import writes counts past any dial (a 2000-rep jump rope), and
+          // dropping one here lost it for good on the next save.
+          .filter((set) => isRecordedReps(set.reps))
           .filter(
             (set) =>
               set.status !== 'completed' ||

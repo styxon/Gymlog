@@ -5,7 +5,7 @@ import { normalizeActiveCardioSession } from '../../lib/cardio';
 import { normalizeSessionMinutesClock } from '../../lib/minutesExercises';
 import { scrubImpossibleSessionLoads } from '../../lib/impossibleLoads';
 import { isIsoDateString } from '../../lib/isoDate';
-import { isLiftableWeight, isLoggableReps, MAX_STORED_REPS, positiveWholeCount } from '../../lib/weightLimits';
+import { isLiftableWeight, isPlannedReps, isRecordedReps, MAX_STORED_REPS, positiveWholeCount } from '../../lib/weightLimits';
 import { getLargeItem, MissingPartsError, removeLargeItem, setLargeItem } from '../../storage/largeItem';
 import { removeCorruptCopies, setAsideCorruptCopy } from '../../storage/corruptCopies';
 import { removeWorkoutAsideCopies } from '../../storage/workoutAside';
@@ -69,9 +69,10 @@ function isHistorySet(value: unknown): boolean {
     typeof value.setIndex === 'number' &&
     Number.isFinite(value.setIndex) &&
     isLiftableWeight(value.loadKg) &&
-    // The logged set's own rule (D6-2): a negative or stuck-button count is
-    // no "last time" to open the next session on.
-    isLoggableReps(value.reps)
+    // The logged set's own rule (D6-2): a negative count is no "last time"
+    // to open the next session on. No ceiling, as in the log: the Hevy
+    // import writes this history too, with counts past any dial.
+    isRecordedReps(value.reps)
   );
 }
 
@@ -152,7 +153,7 @@ function normalizeProgrammedSetPlans(input: unknown): ProgrammedSetPlan[] | unde
     return undefined;
   }
   // Reps under the one stored ceiling, as the logged plan reads them (D6-3).
-  const optionalReps = (value: unknown) => value === undefined || isLoggableReps(value);
+  const optionalReps = (value: unknown) => value === undefined || isPlannedReps(value);
   const optionalLoad = (value: unknown) => value === undefined || isLiftableWeight(value);
   const valid = input.every(
     (plan) =>

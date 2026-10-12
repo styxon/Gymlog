@@ -67,25 +67,32 @@ module.exports = [
     },
   },
   {
-    name: 'stored reps: a negative or stuck-button count is no set, in the log and in "last time" alike (D6-2)',
+    name: 'stored reps: a negative count is no set, in the log and in "last time" alike (D6-2)',
     run() {
       // The verifier's case: the -10 set summed into a negative volume.
       const loaded = normalizeExerciseLog(log({ sets: [set(100, -10), set(100, 5, { orderIndex: 1 })] }));
       assert.deepEqual(loaded.sets.map((s) => s.reps), [5]);
       assert.deepEqual(loaded.repsPerSet, [5]);
 
-      for (const reps of [-3, -0.5, 1801, 5000]) {
-        assert.equal(limits.isLoggableReps(reps), false, String(reps));
-        assert.deepEqual(normalizeExerciseLog(log({ sets: [set(100, reps)] })).sets, [], `log kept ${reps}`);
+      for (const reps of [-3, -0.5, Number.POSITIVE_INFINITY]) {
+        assert.equal(limits.isRecordedReps(reps), false, String(reps));
+        assert.equal(limits.isPlannedReps(reps), false, String(reps));
         assert.deepEqual(normalizeExerciseLog(log({ weight: 100, repsPerSet: [reps] })).sets, [], `legacy kept ${reps}`);
         const history = bundleWith({ sets: [{ setIndex: 0, loadKg: 100, reps }] });
         assert.deepEqual(history[0].sets, [], `history kept ${reps}`);
       }
-      // What the dials write loads in all three, holds included.
-      for (const reps of [1, 12, 300, 1800]) {
-        assert.equal(normalizeExerciseLog(log({ sets: [set(0, reps)] })).sets.length, 1, `log dropped ${reps}`);
-        assert.equal(normalizeExerciseLog(log({ weight: 0, repsPerSet: [reps] })).sets.length, 1, `legacy dropped ${reps}`);
-        assert.equal(bundleWith({ sets: [{ setIndex: 0, loadKg: 0, reps }] })[0].sets.length, 1, `history dropped ${reps}`);
+      for (const reps of [-3, -0.5]) {
+        assert.deepEqual(normalizeExerciseLog(log({ sets: [set(100, reps)] })).sets, [], `log kept ${reps}`);
+      }
+      // What the dials write, and what the Hevy import writes past them (a
+      // 2000-rep jump rope, review R1), loads in all three: a recorded set has
+      // no ceiling. Only a plan's target stops at the dial's.
+      for (const reps of [1, 12, 300, 1800, 1801, 2000, 5000]) {
+        assert.equal(limits.isRecordedReps(reps), true, String(reps));
+        assert.equal(limits.isPlannedReps(reps), reps <= limits.MAX_STORED_REPS, `plan ${reps}`);
+        assert.deepEqual(normalizeExerciseLog(log({ sets: [set(0, reps)] })).sets.map((s) => s.reps), [reps], `log dropped ${reps}`);
+        assert.deepEqual(normalizeExerciseLog(log({ weight: 0, repsPerSet: [reps] })).sets.map((s) => s.reps), [reps], `legacy dropped ${reps}`);
+        assert.deepEqual(bundleWith({ sets: [{ setIndex: 0, loadKg: 0, reps }] })[0].sets.map((s) => s.reps), [reps], `history dropped ${reps}`);
       }
       // A pending set with no reps yet is still a set.
       assert.equal(normalizeExerciseLog(log({ sets: [set(60, 0, { status: 'pending', outcome: null })] })).sets.length, 1);
