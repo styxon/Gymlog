@@ -1,11 +1,12 @@
+import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { ONBOARDING_PLAN_PREFIX } from '../lib/activeProgramSet';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import {
-  buildFirstRunCustomProgramName,
   DEFAULT_FIRST_RUN_SELECTION,
   DEFAULT_RHYTHM_BY_DAYS,
   FirstRunSetupSelection,
 } from '../lib/firstRunSetup';
+import { resolveOnboardingPlanName } from '../lib/onboardingPlanName';
 import { composeProgramWeekForSelection } from '../lib/programDayComposer';
 import { storedProfileName } from '../lib/profileName';
 import { resolveCycleAnchor } from '../lib/trainingSchedule';
@@ -241,7 +242,7 @@ export function buildSavedOnboardingPlan(
     exercises: session.exercises,
   }));
   const draft: WorkoutTemplateDraft = {
-    name: buildFirstRunCustomProgramName(selection, language),
+    name: resolveOnboardingPlanName(selection, getWorkoutTemplateById(recommendedProgramId), language),
     /*
      * Which catalog programme this is the reader's version of.
      *
@@ -298,6 +299,8 @@ export function buildSavedOnboardingWorkoutPlan(
   // shift which day of the rhythm today is for a reader who only re-ran the
   // questions.
   previousCycle: TrainingCycle | null = null,
+  // The catalogue programme the reader picked; its title names the plan.
+  recommendedProgramId?: string,
 ) {
   /**
    * The same weekdays adoption would give, placed the same way.
@@ -322,7 +325,11 @@ export function buildSavedOnboardingWorkoutPlan(
 
   return {
     id: planId,
-    name: buildFirstRunCustomProgramName(selection, language),
+    name: resolveOnboardingPlanName(
+      selection,
+      recommendedProgramId ? getWorkoutTemplateById(recommendedProgramId) : null,
+      language,
+    ),
     mode: 'rotation' as const,
     entries: Array.from({ length: Math.max(1, sessionIds.length) }, (_, index) => ({
       id: `${planId}_entry_${index + 1}`,

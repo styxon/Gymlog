@@ -350,7 +350,7 @@ module.exports = [
       // against the lead's.
       const finishes = strip(read('src/app/onboardingFinishes.tsx'));
       assert.equal(
-        (finishes.match(/preferences\.appLanguage,\s*leadPlanTrainingCycle\(database\.workoutPlans, preferences\.activePlanId\),\s*\)/g) ?? []).length,
+        (finishes.match(/preferences\.appLanguage,\s*leadPlanTrainingCycle\(database\.workoutPlans, preferences\.activePlanId\),\s*recommendedProgramId,\s*\)/g) ?? []).length,
         2,
         'both questionnaire finishes hand the lead rhythm to the plan builder',
       );

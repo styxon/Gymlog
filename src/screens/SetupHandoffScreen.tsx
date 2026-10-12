@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -100,6 +100,7 @@ export function SetupHandoffScreen({
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: windowHeight } = useWindowDimensions();
   const [addWidget, setAddWidget] = useState(true);
   const [trackedSites, setTrackedSites] = useState<MeasurementKind[]>([]);
   // Also off by default, and for a stronger reason: an account is a bigger
@@ -306,6 +307,9 @@ export function SetupHandoffScreen({
         offered={plan.trackedSiteOptions}
         onChange={setTrackedSites}
         onDone={() => advance()}
+        topInset={insets.top}
+        bottomInset={insets.bottom}
+        maxHeight={windowHeight}
       />
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>{t(language, titleKey)}</Text>

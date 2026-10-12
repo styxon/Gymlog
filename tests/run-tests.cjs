@@ -319,6 +319,7 @@ const suites = [
   ...require('./lib/hunt12ProgressionCatalog.test.cjs'),
   ...require('./lib/singleRepTarget.test.cjs'),
   ...require('./lib/onboardingRepTarget.test.cjs'),
+  ...require('./lib/onboardingPlanName.test.cjs'),
   ...require('./lib/intervalScheme.test.cjs'),
   ...require('./lib/todaySessionPick.test.cjs'),
   ...require('./lib/programBrowse.test.cjs'),
