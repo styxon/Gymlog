@@ -474,7 +474,8 @@ module.exports = [
       );
       assert.equal(row.fillPercent, 99, 'the bar claimed the rung was reached');
       assert.equal(row.remainder, '1 kg to go');
-      assert.equal(row.meta, '999 kg of 1 000 kg');
+      // English groups thousands with a comma (dup sweep 13, D3-7).
+      assert.equal(row.meta, '999 kg of 1,000 kg');
 
       // Same class, integers: 199 of 200 sessions.
       const sessions = cardRows({

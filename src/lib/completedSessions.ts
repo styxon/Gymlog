@@ -1,5 +1,5 @@
 import { isExerciseDone } from './sessionTotals';
-import { AppDatabase, WorkoutSession } from '../types/models';
+import { AppDatabase, CardioSession, WorkoutSession } from '../types/models';
 
 const FI_MONTHS = [
   'tammikuu',
@@ -117,7 +117,9 @@ export function getCanonicalCompletedSessions(database: Pick<AppDatabase, 'worko
  * NOT canonical workout sessions: plan progress and program insights stay
  * strength-only.
  */
-export function getCanonicalCardioSessions(database: Pick<AppDatabase, 'cardioSessions'>) {
+export function getCanonicalCardioSessions<T extends Pick<CardioSession, 'id' | 'performedAt'>>(database: {
+  cardioSessions?: readonly T[] | null;
+}): T[] {
   const seenIds = new Set<string>();
   return [...(database.cardioSessions ?? [])]
     .filter((session) => {

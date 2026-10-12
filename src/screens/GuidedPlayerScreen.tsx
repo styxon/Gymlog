@@ -152,7 +152,8 @@ import { getDrillLibraryName } from '../lib/drillMedia';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { libraryLabel } from '../lib/libraryLabel';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup } from '../lib/homeSessionHero';
-import { formatSetScheme, formatWeight, parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClockTime, formatSetScheme, formatWeight, parseNumberInput, removeTrailingZeros } from '../lib/format';
+import { formatClock } from '../lib/restSchedule';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetGroupIndexes, supersetPositions } from '../lib/supersetGrouping';
 import { I18nKey, t } from '../lib/i18n';
@@ -1834,8 +1835,7 @@ function GuidedPlayer({
     if (!session) {
       return null;
     }
-    const started = new Date(session.startedAt);
-    const time = `${String(started.getHours()).padStart(2, '0')}:${String(started.getMinutes()).padStart(2, '0')}`;
+    const time = formatClockTime(new Date(session.startedAt));
     // The run sheet's count (liveSetProgress): skipped lifts and sets are out,
     // so the card reaches n of n when everything left is done.
     const { done, total } = liveSetProgress(session.exercises);
@@ -5278,17 +5278,10 @@ function planSetOf<T extends { status: string }>(sets: T[]): T | undefined {
 
 /**
  * Session clock for the set screen's top-right readout: m:ss, growing to
- * h:mm:ss so a session left running overnight stays readable.
+ * h:mm:ss so a session left running overnight stays readable. The rest bar's
+ * clock, so the free workout's header reads the same past the hour.
  */
-function formatSessionClock(totalSeconds: number): string {
-  const safe = Math.max(0, Math.floor(totalSeconds));
-  const seconds = String(safe % 60).padStart(2, '0');
-  const minutes = Math.floor(safe / 60);
-  if (minutes < 60) {
-    return `${minutes}:${seconds}`;
-  }
-  return `${Math.floor(minutes / 60)}:${String(minutes % 60).padStart(2, '0')}:${seconds}`;
-}
+const formatSessionClock = formatClock;
 
 /* ── strength set step v4 (owns the reps/kg steppers) ── */
 /**

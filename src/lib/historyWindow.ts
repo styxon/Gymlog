@@ -27,7 +27,7 @@
  * figure on it. The data is the user's either way.
  */
 
-import { subtractCalendarMonths } from './completedSessions';
+import { calendarDaysBetween, subtractCalendarMonths } from './completedSessions';
 
 export const FREE_TREND_MONTHS = 3;
 
@@ -75,6 +75,43 @@ export function resolveMeasureRange(
   proUnlocked: boolean,
 ): MeasureTrendRange {
   return isMeasureRangeLocked(range, proUnlocked) ? '3m' : range;
+}
+
+/**
+ * Where a trend chip's window opens: 7D at local midnight six days back (six
+ * plus today), the month chips a calendar month back through
+ * `subtractCalendarMonths` (the 31st clamps, it does not roll over). Null for
+ * All, which follows the history.
+ *
+ * Every chart under the chips reads it. The weight chart counted fixed days
+ * (31 / 91 / 183) while volume and duration went back calendar months, so on
+ * 12 October the 3M weight axis began on 14 July and the volume axis on
+ * 12 July — and a weigh-in from 13 July set the card's figure over an empty
+ * chart (dup sweep 13, 2026-10-12).
+ */
+export function trendRangeStart(range: TrendRange, now: Date): Date | null {
+  switch (range) {
+    case '7d':
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    case '1m':
+      return subtractCalendarMonths(now, 1);
+    case '3m':
+      return subtractCalendarMonths(now, 3);
+    case '6m':
+      return subtractCalendarMonths(now, 6);
+    case 'all':
+    default:
+      return null;
+  }
+}
+
+/**
+ * The same window as a count of calendar days, today included: 7 for 7D, 93
+ * for 3M on 12 October. Null for All.
+ */
+export function trendRangeDays(range: TrendRange, now: Date): number | null {
+  const start = trendRangeStart(range, now);
+  return start ? calendarDaysBetween(start, now) + 1 : null;
 }
 
 /**

@@ -15,7 +15,8 @@ import { AppLanguage, ExerciseLog, SetupCautionFlag, WorkoutSession } from '../t
 import { cautionAreaLoadedBy } from './cautionAreaMatching';
 import type { AdviceTemplateLookup } from './nextSessionAdvice';
 import { isLiftPlateaued, withProgrammeReads } from './proInsights';
-import { removeTrailingZeros } from './format';
+import { formatVolume, removeTrailingZeros } from './format';
+import { describeVolumeChange, volumeChangePercent } from './sessionAnalysis';
 import { WeightedSet, beatsBest } from './personalRecords';
 
 /**
@@ -98,13 +99,14 @@ function sortNewestFirst(sessions: WorkoutSession[]) {
   return [...sessions].sort((left, right) => sessionTime(right) - sessionTime(left));
 }
 
-function roundVolume(value: number) {
-  return Math.round(value);
-}
-
+/**
+ * A weight change, signed: "+1,25". Hundredths, as every weight the app
+ * prints — rounding to tenths read a 60 → 61.25 kg bench as "+1,3 kg", a
+ * step nobody dialled.
+ */
 function formatSigned(value: number) {
-  const rounded = removeTrailingZeros(Math.round(value * 10) / 10);
-  return value > 0 ? `+${rounded}` : rounded;
+  const text = removeTrailingZeros(value);
+  return value > 0 ? `+${text}` : text;
 }
 
 function buildFocus(
@@ -160,7 +162,7 @@ function buildFocus(
       highlights: [deltaText, periodText],
     },
     metrics: [
-      { value: `${removeTrailingZeros(Math.round(best.latest * 10) / 10)} kg`, label: liftName },
+      { value: `${removeTrailingZeros(best.latest)} kg`, label: liftName },
       { value: deltaText, label: periodText },
     ],
   };
@@ -186,17 +188,18 @@ function buildAnalysis(
   const priorVolume = previous ? sessionVolumeKg(previous, logs) : null;
 
   if (latestVolume !== null && priorVolume !== null && priorVolume > 0) {
-    const changePercent = Math.round(((latestVolume - priorVolume) / priorVolume) * 100);
-    const changeText = `${changePercent > 0 ? '+' : ''}${changePercent}%`;
-    bullets.push({
-      tone: changePercent > 0 ? 'up' : changePercent < 0 ? 'down' : 'flat',
-      body: {
-        text: t(language, 'coach.analysis.volume', { change: changeText }),
-        highlights: [changeText],
-      },
-    });
+    // The session analysis's percent and its wording: "+20 %" in Finnish, and
+    // no change is a word, never "0%" (describeVolumeChange's design rule).
+    const change = describeVolumeChange(volumeChangePercent(latestVolume, priorVolume), language);
+    if (change) {
+      const text =
+        change.kind === 'flat'
+          ? t(language, 'coach.analysis.volumeFlat')
+          : t(language, 'coach.analysis.volume', { change: change.text });
+      bullets.push({ tone: change.kind, body: { text, highlights: [change.text] } });
+    }
   } else if (latestVolume !== null) {
-    const volumeText = `${roundVolume(latestVolume)} kg`;
+    const volumeText = formatVolume(latestVolume);
     bullets.push({
       tone: 'flat',
       body: {
@@ -230,7 +233,7 @@ function buildAnalysis(
       }, null);
 
     const liftName = exerciseNameLabel(language, heaviest.log.exerciseNameSnapshot);
-    const setText = `${removeTrailingZeros(Math.round(heaviest.weight * 10) / 10)} kg × ${heaviest.reps}`;
+    const setText = `${removeTrailingZeros(heaviest.weight)} kg × ${heaviest.reps}`;
     // Beating the old best and equalling it are different results; calling a
     // new PR "matched" undersells what the user actually did.
     const beatBest = priorBest !== null && beatsBest(heaviest, priorBest);
@@ -286,7 +289,7 @@ function buildSuggestion(
     }
 
     const liftName = exerciseNameLabel(language, lift.name);
-    const weightText = `${removeTrailingZeros(Math.round(lift.latest.topSetWeightKg * 10) / 10)} kg`;
+    const weightText = `${removeTrailingZeros(lift.latest.topSetWeightKg)} kg`;
     // The real run of flat sessions, not a capped "three" — a lift stuck for
     // six sessions is a different conversation from one stuck for three.
     const countText = `${lift.stalledSessions}`;

@@ -9,7 +9,7 @@ import { ProPill } from '../components/ProLockMarks';
 import { CARD_SHADOW, SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { buildFeedbackMailto } from '../lib/feedbackLink';
-import { formatDateNumeric } from '../lib/format';
+import { formatClockTime, formatDateNumeric } from '../lib/format';
 import { LEGAL_ENTITY } from '../lib/legalDocuments';
 import { type CloudCopyState, resetDialogMessageKey } from '../lib/accountBackup';
 import { profileInitials } from '../lib/profileName';
@@ -192,9 +192,7 @@ function Seg<T extends string>({
  */
 function backupTimeLabel(iso: string, language: AppLanguage): string {
   const date = new Date(iso);
-  const hh = String(date.getHours()).padStart(2, '0');
-  const mm = String(date.getMinutes()).padStart(2, '0');
-  return `${formatDateNumeric(date, language)} ${hh}:${mm}`;
+  return `${formatDateNumeric(date, language)} ${formatClockTime(date)}`;
 }
 
 function Row({

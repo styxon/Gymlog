@@ -10,8 +10,7 @@ import { countRemainingStatements } from '../lib/exerciseLearning';
 import { getComparableLogSets } from '../lib/exerciseLog';
 import { isMinutesExerciseName, isMinutesLogEntry } from '../lib/minutesExercises';
 import { getExerciseTeaching, shouldShowTeachingCaution } from '../lib/exerciseTeaching';
-import { calendarDaysBetween } from '../lib/completedSessions';
-import { convertWeightFromKg, formatShortDate, removeTrailingZeros } from '../lib/format';
+import { convertWeightFromKg, formatRelativeDay, formatShortDate, removeTrailingZeros } from '../lib/format';
 import { t } from '../lib/i18n';
 import { isLiftBestLocked } from '../lib/liftBestGate';
 import { exerciseMechanic, exerciseTypeOf } from '../lib/exerciseClassification';
@@ -65,21 +64,9 @@ function toLabel(value: string | null | undefined, language: AppLanguage) {
 
 function formatLastDone(iso: string, language: AppLanguage) {
   // Calendar days, not 24-hour spans: done at 21:00 yesterday is "yesterday"
-  // at 09:00 today, not "today".
-  const days = calendarDaysBetween(iso, Date.now());
-  if (days <= 0) {
-    return t(language, 'common.today');
-  }
-  if (days === 1) {
-    return t(language, 'common.yesterday');
-  }
-  if (days < 7) {
-    return t(language, 'common.daysAgo', { count: days });
-  }
-  if (days < 14) {
-    return t(language, 'exDetail.lastWeek');
-  }
-  return formatShortDate(iso, language);
+  // at 09:00 today, not "today". The date from the seventh day on, as on
+  // Profile and the Home cards — one wording for all three.
+  return formatRelativeDay(iso, Date.now(), language);
 }
 
 function ChevronLeftIcon() {

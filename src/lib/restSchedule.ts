@@ -10,6 +10,8 @@
  * at again, however long it was away.
  */
 
+import { formatClockTime } from './format';
+
 /** The haptic-only warning before a rest ends. No sound — you may still be under the bar. */
 export const REST_WARNING_SECONDS = 10;
 /** One repeat after the end alert, then silence. The app never nags twice. */
@@ -74,7 +76,11 @@ export function extendRest(current: RestWindow, deltaSeconds: number, nowMs: num
   };
 }
 
-/** "m:ss" for a countdown or an overrun; hours appear only past sixty minutes. */
+/**
+ * "m:ss" for a countdown or an overrun; hours appear only past sixty minutes.
+ * Also the session clock on both workout screens — the free workout's header
+ * kept its own "75:30" past the hour while the guided one read "1:15:30".
+ */
 export function formatClock(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));
   const hours = Math.floor(s / 3600);
@@ -89,8 +95,7 @@ export function formatClock(totalSeconds: number): string {
  * the gym clock. A countdown alone cannot be trusted after any gap.
  */
 export function formatEndsAt(endsAtMs: number): string {
-  const d = new Date(endsAtMs);
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  return formatClockTime(new Date(endsAtMs));
 }
 
 /** When the warning and the repeat alert fire for a given rest end. */

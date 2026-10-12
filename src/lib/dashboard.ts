@@ -9,7 +9,7 @@ import {
   getSessionsThisWeek,
   localDateKey,
 } from './completedSessions';
-import { getCardioMinutes } from './cardio';
+import { getCardioMinutes, getCombinedActivityMinutes } from './cardio';
 import { getComparableLogSets } from './exerciseLog';
 import { convertWeightFromKg, formatLogSetSummary, formatVolume, removeTrailingZeros } from './format';
 import { getBodyweightProgress, getMostRecentSessionSummary, getRecentLogsForExercise } from './progression';
@@ -184,25 +184,51 @@ function getSessionVolumeKg(session: AppDatabase['workoutSessions'][number]) {
  * of the app prefers: a figure next to a grid is read as belonging to it.
  */
 export function getMonthTrainingTotals(database: AppDatabase, now = new Date()) {
+  return sumMonthTrainingTotals(
+    getCanonicalCompletedSessions(database),
+    getCanonicalCardioSessions(database),
+    now,
+  );
+}
+
+/**
+ * The same month's totals from lists the caller has already made canonical
+ * (getCanonicalCompletedSessions, getCanonicalCardioSessions). The Progress
+ * tab's month card holds those lists and not the database, and it kept its
+ * own copy of this sum — each copy carrying its own fix for the same
+ * cardio bug (audit 3, 2026-09-19). One sum now, for the widget and the card.
+ */
+export function sumMonthTrainingTotals(
+  sessions: AppDatabase['workoutSessions'],
+  cardioSessions: Array<Pick<CardioSession, 'performedAt' | 'durationSec'>>,
+  now: Date,
+) {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
   const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime();
   const inMonth = (performedAtIso: string) => {
     const performedAt = new Date(performedAtIso).getTime();
     return performedAt >= monthStart && performedAt < nextMonthStart;
   };
-  const sessions = getCanonicalCompletedSessions(database).filter((session) => inMonth(session.performedAt));
+  const monthSessions = sessions.filter((session) => inMonth(session.performedAt));
   // The calendar beside these figures marks cardio days, so the runs belong in
   // the figures too — a month of runs read "0 min" next to a grid full of
   // marked days. In the count as well as the minutes: the app calls a run a
   // cardio workout, and "Workouts 0 · Duration 3 h" is a contradiction.
-  const cardio = getCanonicalCardioSessions(database).filter((session) => inMonth(session.performedAt));
-  const cardioMinutes = getCardioMinutes(cardio);
+  // Volume stays strength-only: a run has no tonnage.
+  const cardio = cardioSessions.filter((session) => inMonth(session.performedAt));
+  const workouts = monthSessions.length + cardio.length;
+  // The runs' minutes rounded once over the total, not per run.
+  const durationMinutes = getCombinedActivityMinutes(
+    monthSessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0),
+    cardio,
+  );
 
   return {
-    workouts: sessions.length + cardio.length,
-    durationMinutes:
-      sessions.reduce((sum, session) => sum + getSessionDurationMinutes(session), 0) + cardioMinutes,
-    volumeKg: sessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0),
+    workouts,
+    durationMinutes,
+    volumeKg: monthSessions.reduce((sum, session) => sum + getSessionVolumeKg(session), 0),
+    /** Minutes per workout, runs included; 0 for an empty month. */
+    averageDurationMinutes: workouts ? Math.round(durationMinutes / workouts) : 0,
   };
 }
 

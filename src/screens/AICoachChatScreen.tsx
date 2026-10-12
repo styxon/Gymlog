@@ -25,7 +25,7 @@ import { classifyCoachScope } from '../lib/aiCoachScope';
 import { PRO_COACH_QUESTIONS_PER_MONTH, coachQuotaReset } from '../lib/aiCoachQuota';
 import { AI_COACH_MAX_PROMPT_CHARS } from '../lib/aiCoachBudget';
 import { fitAiCoachContextToCap } from '../lib/aiTrainingContext';
-import { formatShortDate } from '../lib/format';
+import { formatShortDate, removeTrailingZeros } from '../lib/format';
 import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoachContextReadout, buildCoachNoticed, buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachOpeningRows } from '../lib/coachChat';
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
 import { coachHistoryAfterAnswer } from '../lib/coachCrisisTurn';
@@ -641,8 +641,9 @@ export function AICoachChatScreen({
   );
   const formatReading = useCallback(
     (intent: MeasurementIntent | { kind: MeasurementIntent['kind']; value: number; unit: string }) =>
-      `${measurementLabel(intent)} ${String(intent.value).replace('.', language === 'fi' ? ',' : '.')} ${intent.unit}`,
-    [language, measurementLabel],
+      // The app's decimal mark, as every other number on screen.
+      `${measurementLabel(intent)} ${removeTrailingZeros(intent.value)} ${intent.unit}`,
+    [measurementLabel],
   );
 
   /**

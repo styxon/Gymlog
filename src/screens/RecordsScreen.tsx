@@ -11,7 +11,7 @@ import { CutSurface } from '../components/CutSurface';
 import { groupRecordsByMonth, PersonalRecord, RecordKind } from '../lib/personalRecords';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import type { AppLanguage } from '../types/models';
-import { formatDateNumeric, removeTrailingZeros } from '../lib/format';
+import { formatDateNumeric, groupThousands, removeTrailingZeros } from '../lib/format';
 
 /**
  * Your bests, in three kinds.
@@ -45,15 +45,6 @@ const MONTHS: Record<AppLanguage, string[]> = {
   fi: ['tammikuu', 'helmikuu', 'maaliskuu', 'huhtikuu', 'toukokuu', 'kesäkuu', 'heinäkuu', 'elokuu', 'syyskuu', 'lokakuu', 'marraskuu', 'joulukuu'],
 };
 
-function decimal(value: number, language: AppLanguage) {
-  // Hundredths, not tenths: the dial steps 1.25 kg and 61.25 is not "61,3".
-  return removeTrailingZeros(Math.round(value * 100) / 100);
-}
-
-function thousands(value: number, language: AppLanguage) {
-  return Math.round(value).toLocaleString(language === 'fi' ? 'fi-FI' : 'en-GB');
-}
-
 function formatDay(iso: string, language: AppLanguage) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
@@ -64,18 +55,18 @@ function formatDay(iso: string, language: AppLanguage) {
 
 function recordValue(record: PersonalRecord, language: AppLanguage) {
   if (record.kind === 'volume') {
-    return t(language, 'pr.value.volume', { volume: thousands(record.value, language) });
+    return t(language, 'pr.value.volume', { volume: groupThousands(record.value) });
   }
   if (record.kind === 'weight') {
     return t(language, 'pr.value.weight', {
-      weight: decimal(record.value, language),
+      weight: removeTrailingZeros(record.value),
       reps: record.companion ?? 0,
     });
   }
   // A bodyweight set has no load to name, and "0 kg" is not what happened.
   return record.companion === null
     ? t(language, 'pr.value.repsBodyweight', { reps: record.value })
-    : t(language, 'pr.value.reps', { reps: record.value, weight: decimal(record.companion, language) });
+    : t(language, 'pr.value.reps', { reps: record.value, weight: removeTrailingZeros(record.companion) });
 }
 
 function recordDelta(record: PersonalRecord, language: AppLanguage) {
@@ -87,7 +78,7 @@ function recordDelta(record: PersonalRecord, language: AppLanguage) {
     return t(language, 'pr.delta.reps', { delta });
   }
   return t(language, 'pr.delta.weight', {
-    delta: record.kind === 'volume' ? thousands(delta, language) : decimal(delta, language),
+    delta: record.kind === 'volume' ? groupThousands(delta) : removeTrailingZeros(delta),
   });
 }
 

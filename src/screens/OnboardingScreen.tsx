@@ -28,7 +28,7 @@ import { LEVEL_STREAKS } from '../lib/levelStreaks';
 import { OnboardingOptionIcon, OnboardingOptionIconName } from '../components/OnboardingOptionIcon';
 import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { applyDecimalSeparator, convertWeightToKg, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
+import { convertWeightToKg, formatDecimalTenths, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
 import { equipmentSetupForChips } from '../lib/equipmentCardSetup';
 import { equipmentItemLabel, I18nKey, t } from '../lib/i18n';
@@ -479,14 +479,11 @@ function CycleDial({
 /**
  * One decimal, with the language's own mark. "4.7" in Finnish reads as a bug.
  *
- * The rounding is this caller's — `removeTrailingZeros` keeps two decimals for
- * the weight dial's 1.25 kg step, and 4.67 sessions a week does not need that
- * precision — so only the separator comes from format.ts, which is the one
- * thing that knows which mark is in play.
+ * Tenths, not `removeTrailingZeros`' hundredths — those are for the weight
+ * dial's 1.25 kg step, and 4.67 sessions a week does not need that precision.
  */
 function formatSessionsPerWeek(value: number): string {
-  const rounded = Math.round(value * 10) / 10;
-  return applyDecimalSeparator(Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1));
+  return formatDecimalTenths(value);
 }
 
 const CYCLE_ON_LIMITS = { min: 1, max: 6 };
