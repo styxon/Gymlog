@@ -421,6 +421,10 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'HUGE Bodyweight',
     tagKeys: ['prog.tag.bodyweight', 'prog.tag.mass'],
   },
+  tpl_3_day_strong_bodyweight_v1: {
+    title: 'STRONG Bodyweight',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.strength'],
+  },
   tpl_3_day_huge_guided_v1: {
     title: 'HUGE Guided',
     tagKeys: ['prog.tag.mass', 'prog.tag.fullBody'],

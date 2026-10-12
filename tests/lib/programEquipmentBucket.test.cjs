@@ -44,6 +44,8 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // floor and a table), the same day.
   'tpl_3_day_strong_home_v1',
   'tpl_3_day_huge_bodyweight_v1',
+  // STRONG Bodyweight (2026-10-12): the floor, a chair and a table.
+  'tpl_3_day_strong_bodyweight_v1',
   'tpl_home_dumbbell_strength_v1',
   'tpl_home_dumbbell_strength_split_v1',
   // Dumbbells and a bench to press on: five days of strength, power and conditioning.

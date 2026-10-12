@@ -52,6 +52,15 @@ const FI: Record<string, string> = {
     'Lisää toistoja ennen kuin vaihdat liikettä, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
   'If the minimum reps are missed, repeat the same version next time and build the reps back up.':
     'Jos vähimmäistoistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
+  // ── STRONG Bodyweight (2026-10-12) ──────────────────────────────────
+  'Each anchor lift is a hard version of a bodyweight lift for six reps. When every set reaches six smooth, controlled reps, make it harder next time: a higher rear foot, feet raised for the push-up, a lower table for the row, or a one-second pause at the bottom of every rep.':
+    'Jokainen ankkuriliike on kehonpainoliikkeen vaativa versio kuuden toiston sarjoina. Kun jokainen sarja yltää kuuteen sujuvaan, hallittuun toistoon, tee liikkeestä ensi kerralla vaikeampi: korkeampi alusta takajalalle, jalat koholle punnerruksessa, matalampi pöytä soudussa tai sekunnin pysäys jokaisen toiston alaosassa.',
+  'Finish the reps written on every set before changing the version, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin vaihdat versiota, ja laske jokainen toisto hallitusti.',
+  'Add reps before changing the version, and keep the last rep as controlled as the first.':
+    'Lisää toistoja ennen kuin vaihdat versiota, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
+  'If the six reps are missed, keep the same version and build the reps back up before making it harder.':
+    'Jos kuusi toistoa jää saamatta, pysy samassa versiossa ja rakenna toistot takaisin ennen kuin teet siitä vaikeamman.',
   // ── HUGE Guided and HUGE Home (2026-10-12) ──────────────────────────
   'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, add the smallest step the stack or the dumbbells allow next time.':
     'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, lisää ensi kerralla pienin askel, jonka painopakka tai käsipainot sallivat.',

@@ -332,7 +332,12 @@ module.exports = [
       // and its Single-Leg RDL (+1) and STRONG Home's two stiff-legged
       // dumbbell deadlifts and bent-over row (+3) are lower-back-avoid rows.
       // STRONG Home's hinge day keeps three lifts, not fewer; no day went thin.
-      const expected = { hips: { removed: 92, thin: 2 }, lower_back: { removed: 131, thin: 3 } };
+      //
+      // Hips went to 94 and lower back to 132 with STRONG Bodyweight, content
+      // again: its Single Leg Glute Bridge on two days is a hip-avoid row (+2),
+      // and its Single-Leg RDL (+1) is a lower-back-avoid row. Every day keeps
+      // at least four lifts; no day went thin.
+      const expected = { hips: { removed: 94, thin: 2 }, lower_back: { removed: 132, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

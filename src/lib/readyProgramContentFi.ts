@@ -371,6 +371,16 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Lisää ensin toistoja jokaiseen sarjaan ja laske jokainen toisto hallitusti; kun jokainen sarja yltää toistoihinsa, tee liikkeestä vaikeampi: matalampi alusta punnerrukseen, pidempi pysäys soudun yläasennossa.',
   },
+  tpl_3_day_strong_bodyweight_v1: {
+    summary:
+      'Kolme koko kehon päivää ilman välineitä: askelkyykkyjä takajalka koholla, yhden jalan saranaliikkeitä ja lantionnostoja, punnerruksia jalat koholla ja soutua pöydän alla, ankkuriliikkeissä kuuden toiston sarjoja. Jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa vahvistua ilman välineitä kolmena päivänä viikossa, kotona tai muualla, ilman painoja, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Ei ostettavia välineitä: lattia, tukeva tuoli tai porras takajalalle ja jaloille sekä tukeva pöytä, jonka alla soudetaan.',
+    whyItWorks:
+      'Kun painoa ei voi lisätä, kuuden toiston sarjasta tehdään raskas liikkeen versiolla: yksi jalka kahden sijaan, jalat koholle punnerruksessa, matalampi pöytä soudussa. Tauot ovat pitkiä, vetäviä sarjoja on yhtä paljon kuin työntäviä, ja jokainen sarja päättyy toistoa ennen uupumusta. Kun jokainen sarja yltää kuuteen toistoon, tee liikkeestä vaikeampi: korkeampi alusta takajalalle, pidempi pysäys jokaisen toiston alaosassa.',
+  },
   tpl_3_day_huge_guided_v1: {
     summary:
       'Kolme koko kehon salipäivää lihaskasvuun, pääosin laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja, ympärillä maljakyykky, vinopenkkipunnerrus käsipainoilla ja rintatuettu soutu. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
