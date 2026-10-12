@@ -513,8 +513,11 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
   defineProgram('tpl_3_day_home_easy_strength_v1', {
     familyId: 'low_impact',
-    supportedGoals: ['muscle', 'general_fitness'],
-    backupGoals: ['strength'],
+    // Muscle a backup since 2026-10-12 (owner): close to half of the week is
+    // walking, and listed as written for muscle it led the cards of a reader
+    // over 41 who asked for muscle at home. HUGE Home is that week now.
+    supportedGoals: ['general_fitness'],
+    backupGoals: ['muscle', 'strength'],
     supportedLevels: ['beginner', 'advanced'],
     equipmentTier: 'low_equipment',
     recoveryDemand: 'low',
@@ -522,6 +525,36 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     secondaryOutcomeTags: ['consistency', 'strength'],
     focusAreaTags: ['legs', 'chest', 'back'],
     lowFriction: true,
+    jointFriendly: true,
+  }),
+  // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
+  // to 15 reps, at the gym on machines and cables, at home on dumbbells alone.
+  // HUGE Guided goes to the two bands the age rule is about, as STRONG Guided
+  // does; HUGE Home over 41 only (ageGateAllows). Strength as a backup (ten
+  // to fifteen reps build some); not general fitness: a week without cardio
+  // is outside the 30-50 % the owner set for that goal.
+  defineProgram('tpl_3_day_huge_guided_v1', {
+    familyId: 'mass_hypertrophy',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back', 'shoulders'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_huge_home_v1', {
+    familyId: 'low_equipment',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back', 'shoulders'],
     jointFriendly: true,
   }),
 ];
@@ -556,6 +589,8 @@ export function readerAskedForRecovery(
 export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
 export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
 export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
+export const HUGE_GUIDED_PROGRAM_ID = 'tpl_3_day_huge_guided_v1';
+export const HUGE_HOME_PROGRAM_ID = 'tpl_3_day_huge_home_v1';
 
 /** The answers the age rule reads. */
 interface AgeRuleReader {
@@ -565,6 +600,33 @@ interface AgeRuleReader {
   goal: SetupGoal;
   secondaryOutcomes: readonly SetupSecondaryOutcome[];
   focusAreas: readonly SetupFocusArea[];
+  availableEquipment?: readonly string[] | null;
+}
+
+/** The chips that put a weight in the reader's hands. */
+const LOAD_CHIPS = ['Dumbbells', 'Kettlebells', 'Barbells', 'Barbell & plates'];
+
+/**
+ * Whether the reader can lift a weight: the gym card, or a dumbbell,
+ * kettlebell or barbell among their own chips.
+ */
+export function readerOwnsLoad(input: Pick<AgeRuleReader, 'equipment' | 'availableEquipment'>): boolean {
+  return input.equipment === 'gym' || (input.availableEquipment ?? []).some((item) => LOAD_CHIPS.includes(item));
+}
+
+/**
+ * A walking week (WALK, HOME Easy: 42-45 % of the time walking) is never the
+ * answer to a lifting goal for a reader who can lift (owner, 2026-10-12).
+ * HOME Easy as muscle's own week led the cards of a reader over 41 with
+ * dumbbells, and a walking week was the age rule's second card for one who
+ * asked for strength. Without a weight it may still be the second card,
+ * which over 41 must be a lower-impact one (ageRuleGuaranteesCard); beside
+ * HOME Starter it is the only one that lists the goal. Never the featured
+ * one: HOME Easy lists muscle and strength only as backups, so the answers
+ * never lead with it.
+ */
+function walkingWeekAnswersLiftingGoal(input: Pick<AgeRuleReader, 'goal' | 'equipment' | 'availableEquipment'>): boolean {
+  return (input.goal === 'muscle' || input.goal === 'strength') && readerOwnsLoad(input);
 }
 
 /**
@@ -615,17 +677,26 @@ export function ageRuleGuaranteesCard(input: Pick<AgeRuleReader, 'ageRange' | 'e
  * week for anyone and the Programs tab lists it for everyone; offered to the
  * other bands it only took the second card from the strength or muscle week
  * their answers had chosen (owner's acceptance, 2026-10-12: the offers of
- * 19-40 do not move).
+ * 19-40 do not move). HUGE Guided, its muscle counterpart, the same.
+ *
+ * HUGE Home goes to a reader over 41 only. At 16-18 the age rule asks for
+ * machines, which a dumbbell week at home has none of.
+ *
+ * Over 41, the walking weeks also stay away from a lifting goal when the
+ * reader can lift (walkingWeekAnswersLiftingGoal).
  */
 export function ageGateAllows(
   definition: Pick<RecommendationProgramDefinition, 'programId' | 'familyId'>,
   input: AgeRuleReader,
 ): boolean {
   if (definition.familyId === 'low_impact') {
-    return input.ageRange === '41_plus';
+    return input.ageRange === '41_plus' && !walkingWeekAnswersLiftingGoal(input);
   }
-  if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID) {
+  if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID || definition.programId === HUGE_GUIDED_PROGRAM_ID) {
     return input.ageRange === '41_plus' || input.ageRange === '18';
+  }
+  if (definition.programId === HUGE_HOME_PROGRAM_ID) {
+    return input.ageRange === '41_plus';
   }
   return true;
 }

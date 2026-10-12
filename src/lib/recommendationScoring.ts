@@ -519,9 +519,41 @@ function ageFittingSecondCard(
   // everywhere the goal outranks the age. By penalty alone the owned-load
   // rule handed a general-fitness reader over 41 with dumbbells Home Dumbbell
   // Upper/Lower, a muscle week without a minute of cardio, over WALK.
-  const bestTier = Math.max(0, ...pool.map((definition) => goalTier(definition, input)));
-  const best = pickClosestWithPenalty(pool.filter((definition) => goalTier(definition, input) === bestTier), input)?.definition ?? null;
+  const keeping = pool.filter((definition) => !ageCardTakesAwayAnAnswer(definition, featured, alternatives[0], input));
+  const bestTier = Math.max(0, ...keeping.map((definition) => goalTier(definition, input)));
+  const best = pickClosestWithPenalty(keeping.filter((definition) => goalTier(definition, input) === bestTier), input)?.definition ?? null;
   return best ? candidates.find((candidate) => candidate.programId === best.programId) ?? null : null;
+}
+
+/**
+ * Whether the age card would take away the only card written for the
+ * reader's goal (2026-10-12): the featured week only lists the goal as a
+ * backup or not at all, the second card is written for it, and the age card
+ * is not. The age adds a card beside the answers, never instead of them
+ * (statedAnswersKey: the answers outrank the age). Without this a reader over
+ * 41 with a pull-up bar who wants lean and athletic, featured a muscle week,
+ * lost Fat Burn HIIT to WALK, which lists the goal only as a backup: both
+ * cards missed the goal (recommendation matrix: 28 of 5,760 answers).
+ *
+ * The same test for the reader's gear (a card that uses it, replaced by WALK,
+ * which uses none) would also have held, but it took the fitting card from
+ * 72 of the 5,040 answers over 41 the owner's acceptance covers (RUN and
+ * Runner's Strength for running with dumbbells), so the gear stays the
+ * featured card's business.
+ */
+function ageCardTakesAwayAnAnswer(
+  ageCard: RecommendationProgramDefinition,
+  featured: RecommendationCandidate,
+  replaced: RecommendationCandidate | undefined,
+  input: RecommendationInput,
+): boolean {
+  const featuredDefinition = getRecommendationProgramDefinition(featured.programId);
+  const replacedDefinition = replaced ? getRecommendationProgramDefinition(replaced.programId) : null;
+  if (!featuredDefinition || !replacedDefinition) {
+    return false;
+  }
+  const writtenForGoal = (definition: RecommendationProgramDefinition) => goalTier(definition, input) === 2;
+  return writtenForGoal(replacedDefinition) && !writtenForGoal(featuredDefinition) && !writtenForGoal(ageCard);
 }
 
 /**

@@ -181,10 +181,14 @@ module.exports = [
   {
     name: 'the age-gap programmes are reachable through the two age bands they were written for',
     run() {
-      // WALK, HOME Easy and STRONG Guided are offered only through the age
-      // rule (ageGateAllows), so a sweep at 26-30 can never reach them and
-      // proves nothing. Over 41 and at 16-18 every one must come up.
-      const added = ['tpl_3_day_walk_mobility_v1', 'tpl_3_day_home_easy_strength_v1', 'tpl_3_day_guided_strength_v1'];
+      // WALK, HOME Easy, STRONG Guided, HUGE Guided and HUGE Home are offered
+      // only through the age rule (ageGateAllows), so a sweep at 26-30 can
+      // never reach them and proves nothing. Over 41 and at 16-18 every one
+      // must come up.
+      const added = [
+        'tpl_3_day_walk_mobility_v1', 'tpl_3_day_home_easy_strength_v1', 'tpl_3_day_guided_strength_v1',
+        'tpl_3_day_huge_guided_v1', 'tpl_3_day_huge_home_v1',
+      ];
       const reachable = new Set();
       for (const ageRange of ['41_plus', '18']) {
         for (const goal of GOALS) {

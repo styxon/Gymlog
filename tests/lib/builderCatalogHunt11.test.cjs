@@ -326,12 +326,17 @@ module.exports = [
       // Removals rose by two on 2026-10-12, and not through a rule: FIT and
       // FIT Lite took a "Rowing Machine HIIT" block, and a rower is gear a
       // dumbbell reader does not have. No lift is removed that was kept.
+      //
+      // And by two more later the same day (one with bands, which make a face
+      // pull), again content: HUGE Guided, a gym week, has a cable pull-through
+      // and a face pull on its second day. The bench and the rack presets rise
+      // by the same two; bands stay inside the old line.
       const BASELINE = {
-        db: { gear: ['Dumbbells'], removed: 106, pressless: 26 },
+        db: { gear: ['Dumbbells'], removed: 108, pressless: 26 },
         bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 81, pressless: 26 },
-        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 77, pressless: 26 },
-        bench: { gear: ['Dumbbells', 'Bench'], removed: 104, pressless: 26 },
-        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 88, pressless: 26 },
+        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 79, pressless: 26 },
+        bench: { gear: ['Dumbbells', 'Bench'], removed: 105, pressless: 26 },
+        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 90, pressless: 26 },
       };
       const count = (gear) => {
         let removed = 0;

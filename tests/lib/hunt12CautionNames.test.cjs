@@ -321,7 +321,12 @@ module.exports = [
       // pattern: WALK's Kneeling Hip Flexor and Standing Hip Abduction are
       // hip-avoid rows (+2), and Joint-Friendly Strength gave its Standing
       // Hip Abduction to a bike finisher (-1). No day went thin.
-      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 122, thin: 3 } };
+      //
+      // Lower back went to 127 the same day, content again: HUGE Guided and
+      // HUGE Home hinge with a stiff-legged dumbbell deadlift (three rows), a
+      // cable pull-through and a bent-over row, all lower-back-avoid rows. Each
+      // of their days keeps five lifts; no day went thin.
+      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 127, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

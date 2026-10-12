@@ -370,6 +370,26 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'The moves get harder in small steps (a lower chair, a lower surface for the push-up), and the walks keep part of every day for easy cardio.',
   },
+  tpl_3_day_huge_guided_v1: {
+    summary:
+      'Three full-body gym days for muscle, mostly on machines and cables: leg press, chest press, pulldown and cable row, with a goblet squat, an incline dumbbell press and a chest-supported row around them. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Beginners and returning lifters who want to build muscle on guided machines rather than heavy barbell lifts, three days a week.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a shoulder press, a pulldown and a cable station, leg curl and leg extension machines, and a pair of dumbbells with an incline bench.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. The machine sets the path of each lift; lower every rep under control, stop a rep or two short of failure, and add the smallest step of weight once every set reaches its reps.',
+  },
+  tpl_3_day_huge_home_v1: {
+    summary:
+      'Three full-body days at home with a pair of dumbbells: goblet squats, floor presses, rows, stiff-legged deadlifts and reverse lunges, with shoulder and arm work after them. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Anyone who wants to build muscle at home with dumbbells three days a week, without a bench, a bar or jumping.',
+    equipmentProfile:
+      'A pair of dumbbells and some floor space. No bench: the presses are done lying on the floor.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. Lower every rep under control and stop a rep or two short of failure; once every set reaches its reps, move up a dumbbell size, or with one pair add reps first.',
+  },
   tpl_gainer_prenatal_fitness_v1: {
     summary:
       'Three light sessions a week for pregnancy: gentle strength, mobility and pelvic floor, and low-impact cardio and balance.',

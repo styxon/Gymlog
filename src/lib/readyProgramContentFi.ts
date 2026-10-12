@@ -351,6 +351,26 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
     whyItWorks:
       'Liikkeet vaikeutuvat pienin askelin (matalampi tuoli, matalampi alusta punnerrukseen), ja kävelyt varaavat jokaisesta päivästä osan kevyelle kestävyydelle.',
   },
+  tpl_3_day_huge_guided_v1: {
+    summary:
+      'Kolme koko kehon salipäivää lihaskasvuun, pääosin laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja, ympärillä maljakyykky, vinopenkkipunnerrus käsipainoilla ja rintatuettu soutu. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Aloittelijalle ja tauolta palaavalle, joka haluaa kasvattaa lihasta ohjatuilla laitteilla raskaiden tankoliikkeiden sijaan, kolmena päivänä viikossa.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, pystypunnerruslaite, ylätalja ja taljateline, reiden koukistus- ja ojennuslaite sekä käsipainopari ja vinopenkki.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Laite määrää jokaisen liikkeen radan; laske jokainen toisto hallitusti, lopeta sarja toisto tai kaksi ennen uupumusta ja lisää pienin painoaskel, kun jokainen sarja yltää toistoihinsa.',
+  },
+  tpl_3_day_huge_home_v1: {
+    summary:
+      'Kolme koko kehon päivää kotona käsipainoparilla: maljakyykkyä, lattiapunnerrusta, soutua, suorin jaloin maastavetoa ja takaaskelkyykkyä, ja niiden perään olkapäät ja kädet. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kasvattaa lihasta kotona käsipainoilla kolmena päivänä viikossa, ilman penkkiä, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Käsipainopari ja vähän lattiatilaa. Penkkiä ei tarvita: punnerrukset tehdään selinmakuulla lattialla.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta; kun jokainen sarja yltää toistoihinsa, ota raskaammat käsipainot, tai yhdellä parilla lisää ensin toistoja.',
+  },
   tpl_gainer_prenatal_fitness_v1: {
     summary:
       'Kolme kevyttä treeniä viikossa raskausajalle: hellävarainen voima, liikkuvuus ja lantionpohja sekä kevyt cardio ja tasapaino.',

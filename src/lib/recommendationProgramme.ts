@@ -1,4 +1,4 @@
-import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
+import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, HUGE_GUIDED_PROGRAM_ID, HUGE_HOME_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
 import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
@@ -643,6 +643,17 @@ function supplementalDayKinds(selection: FirstRunSetupSelection, programId: stri
   }
   if (programId === HOME_EASY_PROGRAM_ID) {
     return ['easyWalk', 'recoveryStrength', 'recoveryMobility', 'hillWalk', 'easyConditioning'];
+  }
+  // HUGE Guided and HUGE Home fill a longer week with more muscle work first
+  // and one easy mobility day: a beginner who asks for five or six days gets
+  // the three-day week, and the general muscle orders made a third of the
+  // added days conditioning (recommendation matrix, 2026-10-12: a fifth of
+  // the gym week at five days).
+  if (programId === HUGE_GUIDED_PROGRAM_ID) {
+    return ['accessoryStrength', 'recoveryMobility', 'bodyweightVolume', 'easyConditioning', 'conditioningMobility'];
+  }
+  if (programId === HUGE_HOME_PROGRAM_ID) {
+    return ['bodyweightVolume', 'recoveryMobility', 'accessoryStrength', 'easyConditioning', 'conditioningMobility'];
   }
   if (selection.goal === 'strength') {
     return ['accessoryStrength', 'recoveryStrength', 'recoveryMobility', 'easyConditioning', 'conditioningMobility'];

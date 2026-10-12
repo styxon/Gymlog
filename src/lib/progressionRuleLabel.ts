@@ -41,6 +41,13 @@ const FI: Record<string, string> = {
     'Kävele blokit vauhdilla, jolla pystyt vielä puhumaan lyhyin lausein, ja lisää minuutti, kun molemmat tuntuvat tasaisilta.',
   'If the reps are missed, repeat the same version next time and build them back up.':
     'Jos toistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
+  // ── HUGE Guided and HUGE Home (2026-10-12) ──────────────────────────
+  'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, add the smallest step the stack or the dumbbells allow next time.':
+    'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, lisää ensi kerralla pienin askel, jonka painopakka tai käsipainot sallivat.',
+  'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, use heavier dumbbells next time; with one pair, add two reps to every set first.':
+    'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, ota ensi kerralla raskaammat käsipainot; jos sinulla on vain yksi pari, lisää ensin kaksi toistoa jokaiseen sarjaan.',
+  'Finish the reps written on every set before adding load, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin lisäät painoa, ja laske jokainen toisto hallitusti.',
 
   // ── Anchor / primary ────────────────────────────────────────────────
   'Anchor lifts keep double progression so strength holds while conditioning volume climbs.':

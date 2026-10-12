@@ -241,6 +241,13 @@ function statedAnswersKey(
     splitsReaderWeek(definition, input),
     focusProgrammeLosesItsPoint(definition.programId, input),
     lowerBodyOnlyAgainstFocus(definition.programId, input),
+    // Lean and athletic asks for conditioning, which the gym lane reads as the
+    // 'conditioning' style and the home lane did not read at all: once Home
+    // Dumbbell Upper/Lower became joint-friendly, the tie-break handed a
+    // reader over 41 with dumbbells it over Fat Burn HIIT, a lean week
+    // without a minute of conditioning (recommendation matrix, 2026-10-12:
+    // 175 of 5,760 answers).
+    input.goal === 'lean_athletic' ? definition.styleTags.includes('conditioning') : '',
   ].join('|');
 }
 

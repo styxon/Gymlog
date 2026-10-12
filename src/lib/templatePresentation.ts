@@ -413,6 +413,14 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
     title: 'HOME Easy',
     tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
   },
+  tpl_3_day_huge_guided_v1: {
+    title: 'HUGE Guided',
+    tagKeys: ['prog.tag.mass', 'prog.tag.fullBody'],
+  },
+  tpl_3_day_huge_home_v1: {
+    title: 'HUGE Home',
+    tagKeys: ['prog.tag.home', 'prog.tag.mass'],
+  },
 };
 
 /** Day counts on the curated cards, e.g. "3 Days" / "3 pv". */
