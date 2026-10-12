@@ -244,16 +244,24 @@ module.exports = [
         buildRecommendationInput(selection({ gender: 'male', goal: 'lean_athletic', level: 'advanced', daysPerWeek: 2 })),
       );
       assert.equal(lean.alternativeProgramId, 'tpl_3_day_full_body_v1');
-      assert.equal(lean.whyAlternative, 'wf.lean_athletic.altStrength');
+      // FIT holds conditioning since 2026-10-12 (about a third of its week),
+      // so the line over it names conditioning; it disclaimed it before.
+      assert.equal(programHoldsConditioning('tpl_3_day_full_body_v1'), true);
+      assert.equal(lean.whyAlternative, 'wf.lean_athletic.alt');
       // The scoring asks again after a swap, with whichever form the waterfall
-      // chose: each form turns into the one the new programme needs.
+      // chose: each form turns into the one the new programme needs. The week
+      // without conditioning is STRONG's; it was FIT's until FIT took a third
+      // of its week in cardio (2026-10-12), and FIT now reads as SHRED does.
+      assert.equal(programHoldsConditioning('tpl_3_day_strength_base_v1'), false);
       for (const key of ['wf.general.primary', 'wf.general.primaryStrength']) {
         assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.general.primary', key);
-        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.general.primaryStrength', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.general.primary', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_strength_base_v1'), 'wf.general.primaryStrength', key);
       }
       for (const key of ['wf.lean_athletic.alt', 'wf.lean_athletic.altStrength']) {
         assert.equal(reasonOverProgramme(key, 'tpl_shred_v1'), 'wf.lean_athletic.alt', key);
-        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.lean_athletic.altStrength', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_full_body_v1'), 'wf.lean_athletic.alt', key);
+        assert.equal(reasonOverProgramme(key, 'tpl_3_day_strength_base_v1'), 'wf.lean_athletic.altStrength', key);
       }
       // Other lines, and a programme the catalog does not know, pass through.
       assert.equal(reasonOverProgramme('wf.muscle.primary', 'tpl_3_day_full_body_v1'), 'wf.muscle.primary');

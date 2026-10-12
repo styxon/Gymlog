@@ -15,8 +15,8 @@ import { buildProgramFocusSplit, liftingFocusPct } from './programFocusSplit';
  * - `classifySessionFocus` reads each session's exercise names and answers
  *   push / pull / lower / upper / general. Push and pull are both upper body
  *   here: the reader is picking a program, not a day.
- * - `buildProgramFocusSplit` weighs every exercise by set count into Strength /
- *   Conditioning / Mobility, which is what separates RESET from a lifting
+ * - `buildProgramFocusSplit` weighs every exercise by its estimated time into
+ *   Strength / Muscle / Conditioning / Mobility, which is what separates RESET from a lifting
  *   program even though both are "general" sessions to the first classifier.
  *
  * Neither reads titles, so this survives translation and a user's own naming —

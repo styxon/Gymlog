@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 
 const {
   buildProgramFocusSplit,
+  estimateFocusExerciseSeconds,
   PROGRAM_FOCUS_COLORS,
 } = require('../../.test-dist/lib/programFocusSplit');
 
@@ -29,7 +30,7 @@ function session(name, exercises) {
 
 module.exports = [
   {
-    name: 'programFocusSplit: percentages come from set-weighted composition and sum to 100',
+    name: 'programFocusSplit: percentages come from time-weighted composition and sum to 100',
     run() {
       const split = buildProgramFocusSplit([
         session('Day 1', [
@@ -46,7 +47,8 @@ module.exports = [
         ['Muscle', 'Conditioning', 'Mobility'],
       );
       assert.equal(split.reduce((sum, segment) => sum + segment.pct, 0), 100);
-      // 6 / 4 / 2 of 12 sets = 50 / 33.3 / 16.7
+      // Every row here has the same reps and rest, so time is in proportion to
+      // sets: 6 / 4 / 2 of 12 = 50 / 33.3 / 16.7
       assert.equal(split[0].pct, 50);
       assert.equal(split[1].pct, 33);
       assert.equal(split[2].pct, 17);
@@ -80,8 +82,42 @@ module.exports = [
         split.map((segment) => segment.quality),
         ['Muscle', 'Conditioning'],
       );
-      assert.equal(split[0].pct, 50);
-      assert.equal(split[1].pct, 50);
+      // By time (2026-10-12), not by sets: the carry's 12 is seconds, not
+      // reps (prescriptionUnitFromName). Lunge 5 x (12 x 3.5 + 20 + 60) = 610,
+      // carry 3 x (12 + 60) = 216, jump 2 x 122 = 244: 610 / 1070 = 57 %.
+      // Weighed by set count this was 5 / 10 = 50 / 50.
+      assert.equal(split[0].pct, 57);
+      assert.equal(split[1].pct, 43);
+    },
+  },
+  {
+    name: 'programFocusSplit: a block of minutes weighs its minutes, an interval its seconds, a lift its reps and rest',
+    run() {
+      const lift = { exerciseName: 'Bench Press', trackingMode: 'load_and_reps', sets: 3, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180 };
+      const steady = { exerciseName: 'Stationary Bike (Easy Pace)', trackingMode: 'duration_minutes', sets: 1, repsMax: 20, restSecondsMin: 0, restSecondsMax: 0 };
+      const intervals = { exerciseName: 'Treadmill HIIT (30s on / 30s off)', trackingMode: 'reps_first', sets: 8, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30 };
+      // 3 sets of bench: 3 x (10 x 3.5 + 20 + 120 low-end rest) = 525 s.
+      assert.equal(estimateFocusExerciseSeconds(lift), 525);
+      // 20 minutes on a bike is 1200 s, not one set.
+      assert.equal(estimateFocusExerciseSeconds(steady), 1200);
+      // 8 rounds of 30 s on and 30 s off is 480 s, not 8 x 30 reps.
+      assert.equal(estimateFocusExerciseSeconds(intervals), 480);
+
+      // One set of a 20-minute ride beside nine sets of lifting: by set count
+      // that was 10 %; by time it is 1200 / (1200 + 3 x 525) = 43 %.
+      const split = buildProgramFocusSplit([{ exercises: [lift, lift, lift, steady] }]);
+      assert.deepEqual(split, [
+        { quality: 'Muscle', pct: 57 },
+        { quality: 'Conditioning', pct: 43 },
+      ]);
+      // A run of minutes written without a rest has none; a lift without one
+      // still rests, and nothing comes out as NaN.
+      const noRest = buildProgramFocusSplit([{ exercises: [
+        { exerciseName: 'Easy Run Blocks', trackingMode: 'duration_minutes', sets: 2, repsMax: 5 },
+        { exerciseName: 'Goblet Squat', sets: 2 },
+      ] }]);
+      assert.equal(noRest.reduce((sum, segment) => sum + segment.pct, 0), 100);
+      assert.ok(noRest.every((segment) => Number.isFinite(segment.pct)));
     },
   },
   {

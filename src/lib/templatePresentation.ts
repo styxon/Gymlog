@@ -143,7 +143,7 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
   },
   tpl_3_day_upper_lower_lite_v1: {
     title: 'FIT Lite',
-    tagKeys: ['prog.tag.upperLower', 'prog.tag.balanced'],
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.balanced'],
   },
   tpl_3_day_push_pull_legs_v1: {
     title: 'HUGE',

@@ -388,10 +388,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks: 'Every session pairs one honest strength slot with a conditioning finisher, so the deficit comes from work you can actually progress, not from junk volume.',
   },
   tpl_3_day_full_body_v1: {
-    summary: 'Three full-body sessions built to keep strength practice frequent while overall weekly fatigue stays manageable.',
-    audience: 'Best for newer lifters or anyone who wants simple weekly structure with repeated practice on the main lifts.',
-    equipmentProfile: 'Full gym recommended: barbell, bench, cable, leg press, and a basic pull station.',
-    whyItWorks: 'The template repeats squat, press, pull, and hinge patterns across the week, so progression stays obvious without requiring a complicated split.',
+    summary: 'Three full-body sessions: the main lifts first, then a bike ride, run blocks or rowing intervals. About a third of the week is conditioning.',
+    audience: 'Best for newer lifters or anyone who wants simple weekly structure with repeated practice on the main lifts and some cardio in every session.',
+    equipmentProfile: 'Full gym recommended: barbell, bench, cable, leg press, a basic pull station, and a bike, treadmill or rower.',
+    whyItWorks: 'The template repeats squat, press, pull, and hinge patterns across the week, so progression stays obvious, and each day closes with a cardio block of its own.',
   },
   tpl_4_day_upper_lower_v1: {
     summary: 'A balanced upper/lower split with enough weekly volume for hypertrophy while anchor lifts still get clear progression targets.',
@@ -406,10 +406,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks: 'The week opens with heavier compound structure, then adds separate push and pull days so extra volume can land where it actually matters without bloating every session.',
   },
   tpl_2_day_minimal_full_body_v1: {
-    summary: 'A low-friction two-day bodyweight plan for weeks when you want full-body coverage without needing a gym.',
+    summary: 'A low-friction two-day bodyweight plan for weeks when you want full-body coverage without needing a gym, with easy run blocks to close each day.',
     audience: 'Best for beginners, busy weeks, home workouts, or anyone coming back into training who still wants structure and progression.',
-    equipmentProfile: 'Home and bodyweight friendly. Floor space and a sturdy row setup are enough for the core plan.',
-    whyItWorks: 'The template keeps squat, push, pull, hinge, and core patterns in the week while using bodyweight progression instead of gym-only equipment.',
+    equipmentProfile: 'Home and bodyweight friendly. Floor space, a sturdy row setup and somewhere to run are enough for the core plan.',
+    whyItWorks: 'The template keeps squat, push, pull, hinge, and core patterns in the week while using bodyweight progression instead of gym-only equipment, and the run blocks add conditioning that needs no gear.',
   },
   tpl_3_day_strength_base_v1: {
     summary: 'A simple strength-first week with three heavy exposures so squat, press, and hinge patterns all progress on repeatable rails.',
@@ -431,10 +431,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
 
   tpl_3_day_upper_lower_lite_v1: {
-    summary: 'A softer three-day upper/lower split that keeps the week balanced without demanding long or overly dense sessions.',
-    audience: 'Best for beginners who want something more varied than full body but are not ready for a classic four-day split.',
-    equipmentProfile: 'Standard full gym works best, but the session length and exercise count stay modest across the week.',
-    whyItWorks: 'The split gives upper body two exposures and lower body one bigger day, which keeps skill practice and recovery both easy to manage.',
+    summary: 'The lighter general-fitness week: three shorter sessions of eight lifting sets each, then run blocks, a bike ride or rowing intervals. Close to half the week is conditioning.',
+    audience: 'Best for beginners who want cardio and lifting in equal measure, with less lifting than FIT.',
+    equipmentProfile: 'Standard full gym works best: a bike, a treadmill or a place to run, and a rower, plus the usual press, row and leg stations.',
+    whyItWorks: 'An upper day, a lower day and a full-body day put the legs in the week twice, and each lifting block stays short enough that the cardio after it gets real time.',
   },
 
   tpl_3_day_push_pull_legs_v1: {

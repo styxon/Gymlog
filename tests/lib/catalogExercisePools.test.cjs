@@ -194,7 +194,18 @@ module.exports = [
       // all. RUN uses all three, and the summer season programme uses them
       // too, because putting a run block in every session is the whole point
       // of it. Pinned so the number cannot grow quietly.
+      //
+      // It grew loudly on 2026-10-12: the general-fitness weeks (FIT, FIT
+      // Lite, FIT Elite, HOME Starter) were all lifting, and their running is
+      // the same "Easy Run Blocks" row RUN uses — steps in the extra library,
+      // minutes on the set screen, a walk or a ride for a reader who avoids
+      // their knees — rather than a new name.
       assert.deepEqual(offenders.sort(), [
+        'FIT / Day 2: Full Body: Easy Run Blocks',
+        'FIT Elite / Day 3: Upper Volume: Easy Run Blocks',
+        'FIT Lite / Day 1: Upper Body + Run: Easy Run Blocks',
+        'HOME Starter / Day 1: Full Body: Easy Run Blocks',
+        'HOME Starter / Day 2: Full Body: Easy Run Blocks',
         'RUN / Day 1: Easy Run: Easy Run Blocks',
         'RUN / Day 2: Tempo Run: Stride Finishers',
         'RUN / Day 2: Tempo Run: Tempo Run Blocks',

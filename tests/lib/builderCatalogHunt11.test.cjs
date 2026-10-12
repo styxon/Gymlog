@@ -322,12 +322,16 @@ module.exports = [
       const others = ['Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar', 'Barbell & plates', 'Squat rack', 'Machines'];
       // Counted once at 212dd1ae, before the bench rules: removals and days
       // left with no press, for the dumbbell presets. Neither may rise.
+      //
+      // Removals rose by two on 2026-10-12, and not through a rule: FIT and
+      // FIT Lite took a "Rowing Machine HIIT" block, and a rower is gear a
+      // dumbbell reader does not have. No lift is removed that was kept.
       const BASELINE = {
-        db: { gear: ['Dumbbells'], removed: 104, pressless: 26 },
-        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 79, pressless: 26 },
-        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 75, pressless: 26 },
-        bench: { gear: ['Dumbbells', 'Bench'], removed: 102, pressless: 26 },
-        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 86, pressless: 26 },
+        db: { gear: ['Dumbbells'], removed: 106, pressless: 26 },
+        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 81, pressless: 26 },
+        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 77, pressless: 26 },
+        bench: { gear: ['Dumbbells', 'Bench'], removed: 104, pressless: 26 },
+        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 88, pressless: 26 },
       };
       const count = (gear) => {
         let removed = 0;
