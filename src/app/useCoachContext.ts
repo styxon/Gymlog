@@ -25,6 +25,7 @@ import { buildCustomSessionRuntimeTemplate, buildReadySessionRuntimeTemplate } f
 import type { getTrackedExerciseProgress } from '../lib/progression';
 import type { toProgressionFatigueSignal } from '../lib/progressionGate';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
+import { runningProgrammeTitle } from '../lib/templatePresentation';
 import { trainsOn } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences, UnitPreference } from '../types/models';
 
@@ -181,7 +182,7 @@ export function useCoachContext(deps: CoachContextDeps) {
         readyProgramCount: workout.templates.length,
         recommendedProgramId: preferences.recommendedProgramId,
         recommendedProgramTitle: preferences.recommendedProgramId
-          ? formatWorkoutDisplayLabel(getWorkoutTemplateById(preferences.recommendedProgramId)?.name)
+          ? runningProgrammeTitle(getWorkoutTemplateById(preferences.recommendedProgramId), null, preferences.appLanguage)
           : null,
         customProgramTitle: selectedCustomProgram.workoutId
           ? formatWorkoutDisplayLabel(selectedCustomProgram.title)

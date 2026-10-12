@@ -1,4 +1,5 @@
 import { AppLanguage, BodyweightEntry } from '../types/models';
+import { calendarDaysBetween } from './completedSessions';
 import { formatDayMonthNumeric } from './format';
 import { I18nKey } from './i18n';
 
@@ -355,8 +356,6 @@ export function buildWeightWindow(
  */
 export const MIN_RANGE_DAYS = 14;
 
-const DAY_MS = 86_400_000;
-
 /**
  * How many calendar days a range chip asks for.
  *
@@ -388,11 +387,8 @@ const DAY_MS = 86_400_000;
  * or removes, and rounding lands on the calendar count.
  */
 function calendarDaysInclusive(fromMs: number, toMs: number): number {
-  const from = new Date(fromMs);
-  const to = new Date(toMs);
-  const fromMidnight = new Date(from.getFullYear(), from.getMonth(), from.getDate()).getTime();
-  const toMidnight = new Date(to.getFullYear(), to.getMonth(), to.getDate()).getTime();
-  return Math.round((toMidnight - fromMidnight) / DAY_MS) + 1;
+  // The app's one day count, plus the end day (duplicate sweep 13, 2026-10-12).
+  return calendarDaysBetween(fromMs, toMs) + 1;
 }
 
 export function capRangeDays(

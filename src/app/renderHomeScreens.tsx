@@ -83,7 +83,14 @@ export interface HomeScreensDeps {
   deleteCardioSession: (sessionId: string) => Promise<unknown>;
   unitPreference: HistoryScreenProps['unitPreference'];
   coachProUnlocked: boolean;
-  database: Pick<AppDatabase, 'workoutSessions' | 'bodyweightEntries' | 'measurementEntries'>;
+  database: Pick<AppDatabase, 'bodyweightEntries' | 'measurementEntries'>;
+  /**
+   * Workouts logged, counted as Profile counts them (the canonical list:
+   * one row per workout, a set done in it). The raw row count put a workout
+   * saved twice, or a row with nothing done, into the chat's session count
+   * and its quick-ask tier (duplicate sweep 13, 2026-10-12).
+   */
+  completedSessionCount: number;
   coachChatIntro: ChatScreenProps['intro'];
   coachLastSession: ChatScreenProps['lastSession'];
   homePinnedStatCardKeys: string[];
@@ -129,6 +136,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
     unitPreference,
     coachProUnlocked,
     database,
+    completedSessionCount,
     coachChatIntro,
     coachLastSession,
     homePinnedStatCardKeys,
@@ -384,8 +392,8 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
         preferences={preferences}
         trainingContext={aiCoachTrainingContext}
         intro={coachChatIntro}
-        sessionCount={database.workoutSessions.length}
-        quickAskKeys={coachQuickAskKeys(database.workoutSessions.length, aiCoachTrainingContext.sessionsLast30Days)}
+        sessionCount={completedSessionCount}
+        quickAskKeys={coachQuickAskKeys(completedSessionCount, aiCoachTrainingContext.sessionsLast30Days)}
         lastSession={coachLastSession}
         onOpenAnalysis={(sessionId) => navigate({ tab: 'home', screen: 'analysis', sessionId })}
         onOpenPremium={() => navigate({ tab: 'profile', screen: 'premium' })}

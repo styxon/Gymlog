@@ -117,7 +117,7 @@ export function getCanonicalCompletedSessions(database: Pick<AppDatabase, 'worko
  * NOT canonical workout sessions: plan progress and program insights stay
  * strength-only.
  */
-export function getCanonicalCardioSessions(database: AppDatabase) {
+export function getCanonicalCardioSessions(database: Pick<AppDatabase, 'cardioSessions'>) {
   const seenIds = new Set<string>();
   return [...(database.cardioSessions ?? [])]
     .filter((session) => {
@@ -420,24 +420,37 @@ export function getMonthlyActivityCalendar(database: AppDatabase, now = new Date
   };
 }
 
-export function getCurrentWeekStreak(database: AppDatabase, now = new Date()) {
+/**
+ * Consecutive active weeks ending now, from the active weeks' local Monday
+ * starts (`getCalendarWeekStartTimestamp`).
+ *
+ * An empty current week does not break the run: it is not over yet, and a
+ * counter that reads 0 every Monday morning until the first session is a
+ * counter nobody trusts. So the walk starts at this week when it has
+ * activity, else at last week, and steps back by calendar week (a week with a
+ * clock change is 167 or 169 hours long, so a fixed step lands off Monday
+ * midnight and matches nothing).
+ *
+ * The one walk. Home's streak, Profile's lifetime summary and the Progress
+ * calendar each carried a copy, and three audits had to make them match by
+ * hand — once because Home started from this week and the other two did not
+ * (audit round 4, 2026-09-20; duplicate sweep 13, 2026-10-12).
+ */
+export function streakFromWeekStarts(weekStarts: Iterable<number>, now: Date = new Date()): number {
+  const activeWeeks = new Set(weekStarts);
   const currentWeekStart = getCalendarWeekStartTimestamp(now);
-  const activeWeeks = new Set(
-    getAllActivityTimestamps(database).map((performedAt) => getCalendarWeekStartTimestamp(performedAt)),
-  );
-
-  let streak = 0;
-  // An empty current week does not break the run: it is not over yet, and
-  // a counter that reads 0 every Monday morning until the first session is
-  // a counter nobody trusts. The lifetime summary and the Progress
-  // calendar already walk from last week in that case; Home did not, so
-  // the three showed three numbers (audit round 4, 2026-09-20).
   let cursor = activeWeeks.has(currentWeekStart) ? currentWeekStart : getCalendarWeekStartBefore(currentWeekStart);
-
+  let streak = 0;
   while (activeWeeks.has(cursor)) {
     streak += 1;
     cursor = getCalendarWeekStartBefore(cursor);
   }
-
   return streak;
+}
+
+export function getCurrentWeekStreak(database: AppDatabase, now = new Date()) {
+  return streakFromWeekStarts(
+    getAllActivityTimestamps(database).map((performedAt) => getCalendarWeekStartTimestamp(performedAt)),
+    now,
+  );
 }

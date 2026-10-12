@@ -1,14 +1,14 @@
 import { useMemo } from 'react';
 
+import { getCalendarWeekStartAfter, getCalendarWeekStartTimestamp } from '../lib/completedSessions';
 import { leadPlanTrainingCycle } from '../lib/planTrainingCycle';
 import { programmeHistoryIds } from '../lib/programLineage';
 import { livePlanEntries } from '../lib/planResolvableEntries';
-import { planWeekdayIndexes, resolveDerivedTrainingDays } from '../lib/programTrainingDays';
+import { resolveReminderSchedule } from '../lib/reminderSchedule';
 import { cycleSchedule, weekdaySchedule, withRestDays } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { useHomeActivePlan } from './useHomeActivePlan';
 import { templateSessionsReader } from './planTemplateSessions';
-import { getEndOfWeek, getStartOfWeek } from './workoutCompletionState';
 
 /**
  * The reader's training rhythm, which every calendar in the app draws: the
@@ -56,32 +56,28 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
 
   // Week-strip training dots from the days the user actually picked
   // (Monday-first indexes). Empty = unknown → no dots, no invented rhythm.
+  //
+  // Availability is not a plan, and a plan that names its own weekdays is the
+  // answer — the rule the reminders follow, asked of the one function that
+  // holds it. Home carried its own copy of that chain, and where the hero card
+  // was missing (every day of the programme still empty) it thinned to every
+  // open day while the reminders thinned to the plan's entries: five dots,
+  // three reminders (duplicate sweep 13, 2026-10-12). The cycle is applied
+  // below, as before, so this asks for the weekday rhythm only.
   const homeTrainingDayIndexes = useMemo(() => {
-    const order: Record<string, number> = { mon: 0, tue: 1, wed: 2, thu: 3, fri: 4, sat: 5, sun: 6 };
-    const open = preferences.setupAvailableDays
-      .map((day) => order[day])
-      .filter((index) => index !== undefined);
-    // Availability is not a plan. This marked every day the reader said they
-    // COULD train, so a one-session-a-week programme lit three dots and the
-    // strip claimed three workouts where the plan prescribes one.
-    // A plan that names its own weekdays is the answer; deriving over the top
-    // of it would silently undo a rhythm the reader set by hand.
     const activePlan = database.workoutPlans.find((plan) => plan.id === preferences.activePlanId) ?? null;
-    const named = planWeekdayIndexes(
-      livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
-    );
-    if (named.length > 0) {
-      return named;
-    }
-    const sessionsPerWeek = homeActivePlanCard
-      ? Number.parseInt(homeActivePlanCard.sessionsPerWeek, 10) || open.length
-      : open.length;
-    return resolveDerivedTrainingDays(open, sessionsPerWeek);
+    const schedule = resolveReminderSchedule({
+      trainingCycle: null,
+      planEntries: livePlanEntries(activePlan?.entries ?? [], templateSessionsReader(database)),
+      availableDays: preferences.setupAvailableDays,
+    });
+    return schedule.kind === 'weekdays' ? schedule.weekdayIndexes : [];
+    // Keyed on what the plan lookup and the template reader read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     database.workoutPlans,
     database.workoutTemplates,
     database.exerciseTemplates,
-    homeActivePlanCard,
     preferences.activePlanId,
     preferences.setupAvailableDays,
   ]);
@@ -120,9 +116,8 @@ export function useHomeTrainingSchedule(deps: HomeTrainingScheduleDeps) {
     ]);
     // The week is read from the day key too: an app open over Sunday night
     // kept last week's dots until it was closed.
-    const now = new Date(todayStartMs);
-    const weekStart = getStartOfWeek(now).getTime();
-    const weekEnd = getEndOfWeek(now).getTime();
+    const weekStart = getCalendarWeekStartTimestamp(new Date(todayStartMs));
+    const weekEnd = getCalendarWeekStartAfter(weekStart);
     const ids = new Set<string>();
     for (const session of completedSessionsForTemplate(programId)) {
       if (!session.workoutTemplateId || !lineage.has(session.workoutTemplateId)) {

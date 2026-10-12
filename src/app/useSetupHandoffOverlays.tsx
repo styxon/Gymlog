@@ -19,6 +19,7 @@ import {
   WorkoutTourStep,
 } from '../lib/firstRunTour';
 import { resolveHomePrompt } from '../lib/homePrompts';
+import { getLifetimeWorkoutCount } from '../lib/lifetimeSummary';
 import { acceptLegal, legalAcceptanceDue } from '../lib/legalAcceptance';
 import { formatLegalDate, LEGAL_VERSION, type LegalDocumentId } from '../lib/legalDocuments';
 import { resolveProEntitlement } from '../lib/proEntitlement';
@@ -60,7 +61,7 @@ export interface SetupHandoffOverlaysDeps {
   homePinnedStatCardKeys: string[];
   homeSuggestedStatCardKeys: string[];
   accountBackup: { available: boolean; state: { status: string } };
-  database: Pick<AppDatabase, 'workoutSessions' | 'cardioSessions' | 'workoutTemplates'>;
+  database: Pick<AppDatabase, 'workoutSessions' | 'exerciseLogs' | 'cardioSessions' | 'workoutTemplates'>;
   /** Only whether the running plan has any sessions is read. */
   homeActivePlanCard: { sessions: readonly unknown[] } | null;
   workout: { activeSession: { status: string } | null };
@@ -222,10 +223,18 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
   const homeTourActive = tourActive && tourSurface === 'home';
   // The queue decides with the tour in it, so it is computed here, after
   // the tour, rather than up with the suggester.
+  // Counted as Profile counts: a workout saved twice, or a row with no set
+  // done, is not one more workout logged (duplicate sweep 13, 2026-10-12).
+  const loggedSessionCount = useMemo(
+    () => getLifetimeWorkoutCount(database),
+    // Keyed on the three lists the count reads, not the whole database.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [database.workoutSessions, database.exerciseLogs, database.cardioSessions],
+  );
   const homePrompt = resolveHomePrompt({
     signInAvailable: accountBackup.available && accountBackup.state.status === 'signed_out',
     signInDismissed: preferences.accountBackupPromptDismissed,
-    loggedSessionCount: database.workoutSessions.length + database.cardioSessions.length,
+    loggedSessionCount,
     suggestionKey: homeSuggestedStatCardKeys[0] ?? null,
     tourActive: homeTourActive,
   });

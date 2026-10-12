@@ -11,7 +11,6 @@ import { t } from './i18n';
 import { ComposedProgramWeek, composeProgramWeekForSelection } from './programDayComposer';
 import { findReadyProgrammeCopyId, ProgrammeCopyTemplate } from './programmeCopyLink';
 import type { FirstRunSetupSelection } from './firstRunSetup';
-import { ProgramInsightSummary } from './programInsights';
 import { getRecommendationProgrammeSummary } from './recommendationProgramme';
 import { getReadyProgramContent, ReadyProgramContentSection } from './readyProgramContent';
 import { buildSessionGuidance, SessionGuidance } from './sessionGuidance';
@@ -22,12 +21,6 @@ import { doseAfterSwap } from './swapDose';
 import { buildProgramFingerprint } from './programFingerprint';
 
 export type ProgramDetailSource = 'ready' | 'custom';
-
-export interface ProgramDetailHighlightItem {
-  label: string;
-  value: string;
-  detail?: string | null;
-}
 
 export interface ProgramDetailExerciseItem {
   id: string;
@@ -69,7 +62,6 @@ export interface ProgramDetailSessionItem {
   totalSets: number;
   preview: string;
   guidance: SessionGuidance | null;
-  statusLine: string | null;
   exercises: ProgramDetailExerciseItem[];
 }
 
@@ -81,7 +73,6 @@ export interface ProgramDetailViewModel {
   description: string;
   badges: string[];
   tailoringBadges: string[];
-  highlights: ProgramDetailHighlightItem[];
   infoSections: ReadyProgramContentSection[];
   progressionSummary: string | null;
   primaryActionLabel: string;
@@ -185,7 +176,6 @@ function buildSessionPreview(exercises: Array<{ exerciseName: string }>) {
 
 function buildSessionItems(
   sessions: WorkoutTemplateSession[],
-  sessionStatusById: Record<string, string> = {},
   template?: WorkoutTemplateV1,
   sessionMinutes = 0,
 ): ProgramDetailSessionItem[] {
@@ -198,7 +188,6 @@ function buildSessionItems(
       exerciseCount: session.exercises.length,
       preview: buildSessionPreview(session.exercises),
       guidance: template ? buildSessionGuidance(template, session, sessionMinutes) : null,
-      statusLine: sessionStatusById[session.id] ?? null,
       totalSets: session.exercises.reduce((sum, exercise) => sum + exercise.sets, 0),
       exercises: session.exercises.map((exercise) => ({
         id: exercise.id,
@@ -346,7 +335,6 @@ export function resolveReaderComposedWeek(
 
 export function buildReadyProgramDetail(
   template: WorkoutTemplateV1,
-  insights?: ProgramInsightSummary,
   fitExplanation?: string | null,
   tailoringBadges: string[] = [],
   /**
@@ -418,7 +406,6 @@ export function buildReadyProgramDetail(
       `${sessionMinutes} min`,
     ],
     tailoringBadges,
-    highlights: insights?.highlights ?? [],
     infoSections: content
       ? [
           ...(fitExplanation ? [{ kicker: 'Why it fits', body: fitExplanation }] : []),
@@ -442,7 +429,7 @@ export function buildReadyProgramDetail(
     ),
     // Home's words, in the reader's language — it was an English literal.
     sessionActionLabel: t(language, 'home.startWorkout'),
-    sessions: buildSessionItems(detailSessions, insights?.sessionStatusById, template, sessionMinutes),
+    sessions: buildSessionItems(detailSessions, template, sessionMinutes),
     daysPerWeek,
   };
 }
@@ -462,7 +449,6 @@ export function buildReadyProgramDetail(
  */
 export function buildCustomProgramDetail(
   template: WorkoutRuntimeTemplate,
-  insights?: ProgramInsightSummary,
   language: AppLanguage = 'en',
   isActivePlan = false,
   /** Held, but some other programme is the one Home leads with. */
@@ -494,7 +480,6 @@ export function buildCustomProgramDetail(
     // has no level, so it stays a count and simply does not match.
     badges: [t(language, 'prog.custom.badge'), counts],
     tailoringBadges: [],
-    highlights: insights?.highlights ?? [],
     infoSections: [],
     progressionSummary: null,
     primaryActionLabel: t(
@@ -506,7 +491,7 @@ export function buildCustomProgramDetail(
           : 'detail.adopt',
     ),
     sessionActionLabel: t(language, hasExercises ? 'prog.custom.detail.startSession' : 'prog.custom.detail.openSession'),
-    sessions: buildSessionItems(template.sessions, insights?.sessionStatusById),
+    sessions: buildSessionItems(template.sessions),
     // A custom programme names no day count of its own: one session per
     // training day is the only shape the editor can build.
     daysPerWeek: sessionCount,

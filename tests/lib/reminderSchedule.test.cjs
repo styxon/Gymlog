@@ -127,8 +127,38 @@ module.exports = [
       assert.deepEqual(resolveDerivedTrainingDays([0, 1, 2, 3, 4, 5, 6], 2), [0, 4]);
       // A plan saved from now on stores the better-spread days instead.
       assert.deepEqual(resolveProgramTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 4]);
-      const home = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useHomeTrainingSchedule.ts'), 'utf8');
-      assert.match(home, /return resolveDerivedTrainingDays\(open, sessionsPerWeek\);/);
+      // Home's strip derives through the reminders' rule (duplicate sweep 13),
+      // which thins with the placement that predates the change.
+      const rule = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'reminderSchedule.ts'), 'utf8');
+      assert.match(rule, /return weekdaySchedule\(resolveDerivedTrainingDays\(open, sessionsPerWeek\)\);/);
+    },
+  },
+  {
+    // Duplicate sweep 13 (D5-3, 2026-10-12). Home's week strip carried its own
+    // copy of the named-else-derived chain, thinning to the hero card's
+    // session count — and to EVERY open day when there was no card (a
+    // programme whose days are all still empty, or whose template is gone),
+    // while the reminders thinned to the plan's entries. Three unlabelled
+    // entries over five free days: five dots, three reminders. Home now asks
+    // resolveReminderSchedule, which this file documents as the one rule.
+    name: 'reminder schedule: Home’s training dots are the reminders’ days, card or no card',
+    run() {
+      const MON_FRI = ['mon', 'tue', 'wed', 'thu', 'fri'];
+      const schedule = resolveReminderSchedule({
+        trainingCycle: null,
+        planEntries: [{ label: null }, { label: 'Day 2' }, { label: '' }],
+        availableDays: MON_FRI,
+      });
+      assert.equal(schedule.kind, 'weekdays');
+      assert.deepEqual(schedule.weekdayIndexes, [0, 2, 3]);
+
+      const home = read('src', 'app', 'useHomeTrainingSchedule.ts');
+      assert.doesNotMatch(home, /resolveDerivedTrainingDays|planWeekdayIndexes/, 'Home keeps a second copy of the chain');
+      assert.doesNotMatch(home, /homeActivePlanCard\.sessionsPerWeek/, 'the strip thins to the hero card, not the plan');
+      assert.match(
+        home,
+        /const homeTrainingDayIndexes = useMemo\(\(\) => \{[\s\S]*?resolveReminderSchedule\(\{\s*trainingCycle: null,\s*planEntries: livePlanEntries\(activePlan\?\.entries \?\? \[\], templateSessionsReader\(database\)\),\s*availableDays: preferences\.setupAvailableDays,\s*\}\)/,
+      );
     },
   },
 ];

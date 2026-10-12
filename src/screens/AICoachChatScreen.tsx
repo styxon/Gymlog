@@ -63,7 +63,7 @@ import {
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getFocusAreaLabel } from '../lib/focusAreaPresentation';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
+import { runningProgrammeTitle } from '../lib/templatePresentation';
 import { PW } from '../lightTheme';
 import { Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { layout, radii, spacing } from '../theme';
@@ -314,9 +314,9 @@ const TOP_LIGHT = 460;
  * Null rather than the raw id: a chat message reading "tpl_5_day_ppl_v1" is
  * worse than the composed week it replaced.
  */
-function catalogProgrammeTitle(programId: string): string | null {
-  const name = getWorkoutTemplateById(programId)?.name;
-  return name ? formatWorkoutDisplayLabel(name) : null;
+function catalogProgrammeTitle(programId: string, language: AppLanguage): string | null {
+  const template = getWorkoutTemplateById(programId);
+  return template ? runningProgrammeTitle(template, null, language) : null;
 }
 
 /** The word on each offer's accept button, keyed by what the offer does. */
@@ -726,7 +726,7 @@ export function AICoachChatScreen({
         const signals = parseProgrammeBrief(offer.brief);
         if (shouldOfferCatalogInstead(signals)) {
           const match = matchProgrammeToBrief(signals, preferences);
-          const title = match ? catalogProgrammeTitle(match.programId) : null;
+          const title = match ? catalogProgrammeTitle(match.programId, language) : null;
           if (match && title) {
             // Straight to the programme: a coach line explaining the composer's
             // limit, and a card with a button to look, were two steps between

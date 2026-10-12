@@ -250,19 +250,3 @@ export function buildExerciseLogsForCompletedSession(sessionId: string, drafts: 
     ...(typeof draft.plannedSets === 'number' ? { plannedSets: draft.plannedSets } : {}),
   }));
 }
-
-export function getStartOfWeek(date: Date) {
-  const next = new Date(date);
-  const day = next.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
-  next.setHours(0, 0, 0, 0);
-  next.setDate(next.getDate() + diff);
-  return next;
-}
-
-export function getEndOfWeek(date: Date) {
-  const start = getStartOfWeek(date);
-  const end = new Date(start);
-  end.setDate(end.getDate() + 7);
-  return end;
-}

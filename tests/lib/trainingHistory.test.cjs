@@ -592,4 +592,27 @@ module.exports = [
       assert.equal(reps[0].points.length, 1);
     },
   },
+  {
+    // Duplicate sweep 13 (D5-9, owner decision 2026-10-12). Home's block week
+    // stays session-counted (one pass through the programme's days), and the
+    // calendar answer the coach gets — planned sessions per calendar week on a
+    // cycle — has one formula: trainingSchedule.cycleSessionsPerWeek, which
+    // onboarding reads too. describeSchedule carried its own copy. The 4.7 of
+    // a 2-on-1-off cycle is pinned above; this pins where it comes from.
+    name: 'the coach\u2019s planned-per-week for a cycle is trainingSchedule\u2019s formula, and the block week says it is session-counted',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const ROOT = path.join(__dirname, '..', '..');
+      const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      const history = strip(fs.readFileSync(path.join(ROOT, 'src/lib/trainingHistory.ts'), 'utf8'));
+      assert.match(history, /plannedPerWeek: [^\n]*cycleSessionsPerWeek\(onDays, length - onDays\)/);
+      assert.doesNotMatch(history, /7 \* onDays/);
+      const { cycleSessionsPerWeek } = require('../../.test-dist/lib/trainingSchedule.js');
+      assert.equal(Math.round(cycleSessionsPerWeek(2, 1) * 10) / 10, 4.7);
+      // The decision is written where the block week is computed.
+      const progress = fs.readFileSync(path.join(ROOT, 'src/lib/homePlanProgress.ts'), 'utf8');
+      assert.match(progress, /A block week is SESSION-COUNTED/);
+    },
+  },
 ];

@@ -22,7 +22,7 @@ import { hasOnlyEmptyDays, nextStartableSessionIndex } from '../lib/programSessi
 import { getProgrammeBlockWeeks } from '../lib/readyProgramDuration';
 import type { AdaptedSessionRef, SessionAdaptation } from '../lib/sessionAdaptation';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
-import { getReadyTemplatePresentation } from '../lib/templatePresentation';
+import { getReadyTemplatePresentation, runningProgrammeTitle } from '../lib/templatePresentation';
 import { offerablePick, resolveTodaySessionPick } from '../lib/todaySessionPick';
 import { forecastFromPick } from '../lib/trainingSchedule';
 import type { AppDatabase, AppPreferences, WorkoutTemplateSessionWithExercises } from '../types/models';
@@ -382,14 +382,15 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           // (user 2026-09-09, "ei vaihtunut kodissa nimi"). Reading the
           // template first heals that, and makes the whole class impossible.
           //
-          // A READY programme keeps the plan's name first: there the plan may
-          // carry a season's name, which is not the template's at all.
-          title: formatWorkoutDisplayLabel(
+          // A READY programme is named as the Programs list and the coach name
+          // it: its presentation title (lib/templatePresentation). It kept the
+          // stored plan name first for a season's name, which the season
+          // decision of 2026-09-21 took off every surface but this one
+          // (duplicate sweep 13, 2026-10-12).
+          title:
             activePlanProgramType === 'custom'
-              ? activeTemplate.name || activeWorkoutPlan.name
-              : activeWorkoutPlan.name || activeTemplate.name,
-            'Workout plan',
-          ),
+              ? formatWorkoutDisplayLabel(activeTemplate.name || activeWorkoutPlan.name, 'Workout plan')
+              : runningProgrammeTitle(readyPlanTemplate, activeWorkoutPlan.name, preferences.appLanguage),
           subtitle: `${rotationEntries.length} workouts in rotation.`,
           weekLabel: planProgress.weekLabel,
           progressPercent: planProgress.progressPercent,

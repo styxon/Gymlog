@@ -105,4 +105,121 @@ module.exports = [
       assert.deepEqual(sessions.map((session) => session.id).sort(), ['bad', 'ok']);
     },
   },
+  {
+    // Duplicate sweep 13 (D2-8 / D5-7, 2026-10-12). The streak walk — start at
+    // this week if it has activity, else last week, step back by calendar week
+    // — lived three times: Home (getCurrentWeekStreak), Profile
+    // (lifetimeSummary) and Progress (trainingCalendar.weeklyTrainingStreak).
+    // Three audits had made them match by hand. One walk now.
+    name: 'one streak walk: fourteen weeks across the autumn clock change, from an empty current week',
+    run() {
+      const { streakFromWeekStarts, getCurrentWeekStreak } = require('../../.test-dist/lib/completedSessions.js');
+      const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+      const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
+      withHelsinkiClocks(() => {
+        // Fourteen consecutive Mondays ending 2 November 2026; 25 October is a
+        // 25-hour Sunday inside the run.
+        const lastMonday = new Date(2026, 10, 2).getTime();
+        const starts = [];
+        for (let back = 13; back >= 0; back -= 1) {
+          starts.push(getCalendarWeekStartBefore(lastMonday, back));
+        }
+        const mondayAfter = new Date(getCalendarWeekStartAfter(lastMonday) + 9 * 60 * 60 * 1000);
+        assert.equal(streakFromWeekStarts(starts, mondayAfter), 14, 'an empty current week breaks nothing');
+        assert.equal(streakFromWeekStarts(new Set(starts), new Date(2026, 10, 4, 12)), 14);
+        assert.equal(streakFromWeekStarts([], mondayAfter), 0);
+
+        // The three surfaces, over one database: a session a week on Tuesdays,
+        // a run in one of those weeks, and a date that does not parse.
+        const sessions = starts.map((start, index) => ({
+          id: `s${index}`,
+          workoutTemplateId: 'tpl',
+          workoutTemplateSessionId: null,
+          workoutNameSnapshot: 'Day',
+          performedAt: new Date(getCalendarWeekStartAfter(start, 0) + 34 * 60 * 60 * 1000).toISOString(),
+          totalVolumeKg: 100,
+        }));
+        const exerciseLogs = sessions.map((session) => ({
+          id: `log_${session.id}`,
+          sessionId: session.id,
+          exerciseTemplateId: null,
+          exerciseNameSnapshot: 'Squat',
+          weight: 100,
+          repsPerSet: [5],
+          sets: [{ orderIndex: 0, weight: 100, reps: 5, kind: 'working', outcome: 'completed' }],
+          tracked: true,
+          orderIndex: 0,
+          skipped: false,
+        }));
+        const cardioSessions = [
+          { id: 'run', performedAt: new Date(2026, 9, 27, 18).toISOString() },
+          { id: 'garbled', performedAt: 'not a date' },
+        ];
+        const database = { workoutSessions: sessions, exerciseLogs, cardioSessions };
+        const home = getCurrentWeekStreak(database, mondayAfter);
+        assert.equal(home, 14);
+        assert.equal(getLifetimeTrainingSummary(database, mondayAfter).currentWeekStreak, home);
+        assert.equal(weeklyTrainingStreak(sessions, cardioSessions, mondayAfter), home);
+      });
+
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const ROOT = path.join(__dirname, '..', '..');
+      const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const file of ['src/lib/lifetimeSummary.ts', 'src/lib/trainingCalendar.ts']) {
+        const source = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+        assert.doesNotMatch(source, /while \(/, `${file} walks its own streak`);
+        assert.match(source, /streakFromWeekStarts\(/);
+      }
+    },
+  },
+  {
+    // Duplicate sweep 13 (D2-7, 2026-10-12): the Monday-first week start was
+    // copied into trainingCalendar (mondayOf), trainingHistory (startOfWeek)
+    // and workoutCompletionState (getStartOfWeek / getEndOfWeek, Home's
+    // done-this-week chips). Each now asks getCalendarWeekStartTimestamp.
+    name: 'one Monday: no week-start arithmetic outside completedSessions',
+    run() {
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const ROOT = path.join(__dirname, '..', '..');
+      const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      const weekStartArithmetic = /getDay\(\)\s*(===|[+-])|\(\s*\w+\.getDay\(\)\s*\+\s*6\s*\)\s*%\s*7/;
+      for (const file of ['src/lib/trainingCalendar.ts', 'src/lib/trainingHistory.ts', 'src/app/useHomeTrainingSchedule.ts']) {
+        const source = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+        assert.doesNotMatch(source, weekStartArithmetic, `${file} computes its own Monday`);
+      }
+      const home = strip(fs.readFileSync(path.join(ROOT, 'src/app/useHomeTrainingSchedule.ts'), 'utf8'));
+      assert.match(home, /const weekStart = getCalendarWeekStartTimestamp\(new Date\(todayStartMs\)\);/);
+      assert.doesNotMatch(
+        strip(fs.readFileSync(path.join(ROOT, 'src/app/workoutCompletionState.ts'), 'utf8')),
+        /getStartOfWeek|getEndOfWeek/,
+      );
+    },
+  },
+  {
+    // Duplicate sweep 13 (D2-9, 2026-10-12): three private copies of "whole
+    // days between two local midnights" now delegate to calendarDaysBetween.
+    // coachDemoMoments keeps its own guard: an install date that does not
+    // parse is day 0 (no moment due), where calendarDaysBetween gives NaN.
+    name: 'one day count: the schedule, the body-weight axis and the coach demo ask calendarDaysBetween',
+    run() {
+      const { daysSince } = require('../../.test-dist/lib/coachDemoMoments.js');
+      const now = new Date(2026, 10, 1, 12);
+      assert.equal(daysSince('not-a-date', now), 0);
+      withHelsinkiClocks(() => {
+        assert.equal(daysSince(new Date(2026, 9, 24, 23, 30).toISOString(), new Date(2026, 9, 26, 0, 30)), 2);
+      });
+
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const ROOT = path.join(__dirname, '..', '..');
+      const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      for (const file of ['src/lib/trainingSchedule.ts', 'src/lib/bodyweightCard.ts', 'src/lib/coachDemoMoments.ts']) {
+        const source = strip(fs.readFileSync(path.join(ROOT, file), 'utf8'));
+        assert.doesNotMatch(source, /\/\s*(DAY_MS|86_?400_?000)\b/, `${file} divides by a fixed day`);
+        assert.match(source, /calendarDaysBetween\(/);
+      }
+    },
+  },
 ];

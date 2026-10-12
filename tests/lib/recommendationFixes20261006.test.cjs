@@ -451,7 +451,7 @@ module.exports = [
         for (const options of optionsFor) {
           const minutes = readyProgramSessionMinutes(template, null, options);
           assert.equal(minutes, readyTemplateCardMinutes(template, options), template.id);
-          const badge = buildReadyProgramDetail(template, undefined, null, [], null, 'en', false, false, options).badges[3];
+          const badge = buildReadyProgramDetail(template, null, [], null, 'en', false, false, options).badges[3];
           if (badge !== `${minutes} min`) {
             disagreements.push(`${template.id}: badge ${badge}, minutes ${minutes}`);
           }

@@ -44,7 +44,7 @@ module.exports = [
 
           // The programme page: badge, and every session's guidance line.
           surfaces.pageHelper = readyProgramSessionMinutes(template, null, options);
-          const detail = buildReadyProgramDetail(template, undefined, null, [], null, 'en', false, false, options);
+          const detail = buildReadyProgramDetail(template, null, [], null, 'en', false, false, options);
           surfaces.pageBadge = detail.badges[3];
           for (const session of detail.sessions) {
             surfaces[`guidance:${session.id}`] = session.guidance?.estimatedDuration;
@@ -113,7 +113,7 @@ module.exports = [
       const template = WORKOUT_TEMPLATES_V1[0];
       const composedWeek = { days: template.daysPerWeek, sessionMinutes: 25, sessions: template.sessions };
       assert.equal(readyProgramSessionMinutes(template, composedWeek, {}), 25);
-      const detail = buildReadyProgramDetail(template, undefined, null, [], composedWeek, 'en');
+      const detail = buildReadyProgramDetail(template, null, [], composedWeek, 'en');
       assert.equal(detail.badges[3], '25 min');
       for (const session of detail.sessions) {
         assert.equal(session.guidance.estimatedDuration, '25 min', session.id);

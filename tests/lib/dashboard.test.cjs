@@ -4,16 +4,16 @@ const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
 const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
 const {
+  getCalendarWeekStartBefore,
+  getCalendarWeekStartTimestamp,
   getCurrentWeekStreak,
   getMonthlyActivityCalendar,
   getRecentActivityStrip,
   getSessionsLast30Days,
   getSessionsThisWeek,
 } = require('../../.test-dist/lib/completedSessions.js');
-const {
-  getHomeSummary,
-  getNextWorkoutCandidate,
-} = require('../../.test-dist/lib/dashboard.js');
+const dashboard = require('../../.test-dist/lib/dashboard.js');
+const { getHomeSummary } = dashboard;
 
 function createSession(id, performedAt, workoutTemplateId = 'workout_upper', workoutNameSnapshot = 'Upper') {
   return { id, workoutTemplateId, workoutNameSnapshot, performedAt };
@@ -100,10 +100,13 @@ module.exports = [
           createCompletedLog('session_current_week'),
         ];
 
-        const summary = getHomeSummary(database, 'kg', new Date(2026, 3, 1, 12, 0, 0));
-
-        assert.equal(summary.weeklySnapshot.workoutsCurrent, 1);
-        assert.equal(summary.weeklySnapshot.workoutsPrevious, 1);
+        // The summary's own week snapshot went with the dead rotation
+        // (duplicate sweep 13, 2026-10-12); the step it relied on is asked
+        // directly, the way every surviving "last week" is computed.
+        const currentWeekStart = getCalendarWeekStartTimestamp(new Date(2026, 3, 1, 12, 0, 0));
+        const weekOf = (session) => getCalendarWeekStartTimestamp(session.performedAt);
+        assert.equal(weekOf(database.workoutSessions[1]), currentWeekStart);
+        assert.equal(weekOf(database.workoutSessions[0]), getCalendarWeekStartBefore(currentWeekStart));
       });
     },
   },
@@ -321,53 +324,18 @@ module.exports = [
     },
   },
   {
-    name: 'active plan rotation advances by workout template session id',
+    // Duplicate sweep 13 (D5-5, 2026-10-12): dashboard kept its own rotation
+    // (getNextWorkoutCandidate) and a lifting-only week snapshot, built on
+    // every Home summary and read by nothing. The rotation had drifted from
+    // lib/planRotation — on a plan whose entries name no session it offered
+    // entry 2 for ever — so the next person to wire it would have wired the
+    // bug. The rotation is planRotation's alone (tests/lib/planRotation*).
+    name: 'the Home summary carries no rotation and no week snapshot of its own',
     run() {
-      const database = createEmptyDatabase();
-      database.workoutTemplates = [
-        {
-          id: 'custom_full_body',
-          name: 'Full Body',
-          description: '',
-          mode: 'custom',
-          exerciseIds: [],
-          sessions: [
-            { id: 'day_a', name: 'Full Body A', orderIndex: 0, exerciseIds: [] },
-            { id: 'day_b', name: 'Full Body B', orderIndex: 1, exerciseIds: [] },
-          ],
-          createdAt: '2026-05-25T00:00:00.000Z',
-          updatedAt: '2026-05-25T00:00:00.000Z',
-        },
-      ];
-      database.workoutPlans = [
-        {
-          id: 'plan_full_body',
-          name: 'Full Body Plan',
-          mode: 'rotation',
-          isActive: true,
-          createdAt: '2026-05-25T00:00:00.000Z',
-          updatedAt: '2026-05-25T00:00:00.000Z',
-          entries: [
-            { id: 'entry_a', workoutTemplateId: 'custom_full_body', workoutTemplateSessionId: 'day_a', label: 'Mon', orderIndex: 0 },
-            { id: 'entry_b', workoutTemplateId: 'custom_full_body', workoutTemplateSessionId: 'day_b', label: 'Thu', orderIndex: 1 },
-          ],
-        },
-      ];
-      database.preferences.activePlanId = 'plan_full_body';
-      database.workoutSessions = [
-        {
-          id: 'completed_a',
-          workoutTemplateId: 'custom_full_body',
-          workoutTemplateSessionId: 'day_a',
-          workoutNameSnapshot: 'Full Body A',
-          performedAt: '2026-05-25T12:00:00.000Z',
-        },
-      ];
-      database.exerciseLogs = [createCompletedLog('completed_a')];
-
-      const candidate = getNextWorkoutCandidate(database);
-      assert.equal(candidate?.entry?.id, 'entry_b');
-      assert.equal(candidate?.entry?.workoutTemplateSessionId, 'day_b');
+      assert.equal(dashboard.getNextWorkoutCandidate, undefined);
+      const summary = getHomeSummary(createEmptyDatabase(), 'kg', new Date(2026, 9, 12, 12, 0, 0));
+      assert.equal('nextWorkout' in summary, false);
+      assert.equal('weeklySnapshot' in summary, false);
     },
   },
 ];
