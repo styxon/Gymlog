@@ -240,3 +240,17 @@ export function markCoachDemoMomentUsed(used: readonly string[], key: string): s
   // dropping a real one silently gives away an answer twice.
   return used.includes(key) ? [...used] : [...used, key];
 }
+
+/**
+ * Which of the three free answers a spent moment was: 1, 2 or 3, in the
+ * order the moments come. Null for a key that is not one of them.
+ *
+ * The card under a demo answer counts from this ("1/3"), and the count comes
+ * from the moment, not from how many are stored as spent: the moments are
+ * ordered and never skipped (resolveDueCoachDemoMoment), so the key alone
+ * says how many came before it.
+ */
+export function coachDemoMomentOrdinal(key: string | null | undefined): number | null {
+  const index = COACH_DEMO_MOMENTS.findIndex((spec) => spec.key === key);
+  return index === -1 ? null : index + 1;
+}

@@ -2261,6 +2261,9 @@ const EN = {
   'coachChat.placeholder': 'Ask anything about your training…',
   'coachChat.placeholderSpent': 'Your questions come back next month',
   'coachChat.placeholderFree': 'The coach answers on Pro',
+  'coachChat.demoPro.title': 'Free answer {ordinal}/{total}',
+  'coachChat.demoPro.body': 'With Pro you ask the coach yourself, about any of your training, {count} times a month.',
+  'coachChat.demoPro.cta': 'See Pro',
   'coachChat.thinking': 'Reading your log…',
 
   // ── Store rating ask (RateAppSheet — built, deliberately not wired) ────
@@ -5661,6 +5664,9 @@ const FI: Record<I18nKey, string> = {
   'coachChat.placeholder': 'Kysy mitä vain treenistäsi…',
   'coachChat.placeholderSpent': 'Kysymyksesi palautuvat ensi kuussa',
   'coachChat.placeholderFree': 'Valmentaja vastaa Prossa',
+  'coachChat.demoPro.title': 'Ilmainen vastaus {ordinal}/{total}',
+  'coachChat.demoPro.body': 'Prossa kysyt valmentajalta itse, mistä tahansa treenistäsi, {count} kertaa kuussa.',
+  'coachChat.demoPro.cta': 'Katso Pro',
   'coachChat.thinking': 'Luen lokiasi…',
 
   'rating.title': 'Toimiiko Vinha sinulle?',
