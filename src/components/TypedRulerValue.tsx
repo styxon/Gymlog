@@ -3,7 +3,7 @@ import { Pressable, StyleProp, Text, TextInput, TextStyle } from 'react-native';
 
 import { parseTypedRulerValue, RulerBounds } from '../lib/rulerValue';
 import { removeTrailingZeros } from '../lib/format';
-import { I18nKey, t } from '../lib/i18n';
+import { t } from '../lib/i18n';
 import { AppLanguage } from '../types/models';
 
 interface TypedRulerValueProps {
@@ -56,8 +56,9 @@ export function TypedRulerValue({
         keyboardType="decimal-pad"
         value={draft}
         onChangeText={setDraft}
+        // Done blurs a single-line input, so the blur is the one commit: a
+        // second on submit wrote the same value twice.
         onBlur={commit}
-        onSubmitEditing={commit}
         returnKeyType="done"
         maxLength={6}
         accessibilityLabel={label}
@@ -70,7 +71,7 @@ export function TypedRulerValue({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${label}: ${shown}`}
-      accessibilityHint={t(language, 'ruler.typeValue.hint' as I18nKey)}
+      accessibilityHint={t(language, 'ruler.typeValue.hint')}
       hitSlop={8}
       onPress={() => {
         setDraft(value === null ? '' : removeTrailingZeros(Number(value.toFixed(decimals))));

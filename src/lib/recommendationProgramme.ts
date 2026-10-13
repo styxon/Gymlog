@@ -1,6 +1,16 @@
-import { getRecommendationProgramDefinition, HOME_EASY_PROGRAM_ID, HUGE_BODYWEIGHT_PROGRAM_ID, HUGE_GUIDED_PROGRAM_ID, HUGE_HOME_PROGRAM_ID, STRONG_BODYWEIGHT_PROGRAM_ID, STRONG_HOME_PROGRAM_ID, WALK_PROGRAM_ID } from './recommendationCatalog';
+import {
+  getRecommendationProgramDefinition,
+  HOME_EASY_PROGRAM_ID,
+  HUGE_BODYWEIGHT_PROGRAM_ID,
+  HUGE_GUIDED_PROGRAM_ID,
+  HUGE_HOME_PROGRAM_ID,
+  SHRED_GUIDED_PROGRAM_ID,
+  SHRED_HOME_EASY_PROGRAM_ID,
+  STRONG_BODYWEIGHT_PROGRAM_ID,
+  STRONG_HOME_PROGRAM_ID,
+  WALK_PROGRAM_ID,
+} from './recommendationCatalog';
 import { estimateProgrammeSessionMinutesList } from './programmeMinutes';
-import { SHRED_GUIDED_PROGRAM_ID, SHRED_HOME_EASY_PROGRAM_ID } from './recommendationCatalog';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { READY_PROGRAM_MIN_BLOCK_WEEKS, getReadyProgramBlockWeeks } from './readyProgramDuration';
 import { formatLiftDisplayLabel } from './displayLabel';
