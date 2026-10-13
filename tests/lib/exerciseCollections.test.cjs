@@ -292,4 +292,23 @@ module.exports = [
       );
     },
   },
+  {
+    name: 'the course line names lifts a beginner knows, by the names the library prints',
+    run() {
+      const assert = require('node:assert/strict');
+      const { getExerciseCollection } = require('../../.test-dist/lib/exerciseCollections.js');
+      const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+      // "Sarana" and "tuenta" told a beginner nothing (owner, 2026-10-13).
+      for (const language of ['fi', 'en']) {
+        const course = getExerciseCollection('six_lifts', language);
+        assert.doesNotMatch(course.blurb, /sarana|tuenta|hinge|brace/i);
+        // Each lift it names is a lift in the course, spelled as its page spells it.
+        for (const libraryName of ['Barbell Squat', 'Barbell Deadlift', 'Standing Military Press']) {
+          assert.ok(course.entries.some((entry) => entry.exerciseName === libraryName));
+          const label = exerciseNameLabel(language, libraryName).toLowerCase();
+          assert.ok(course.blurb.toLowerCase().includes(label), `${language}: "${course.blurb}" should name ${label}`);
+        }
+      }
+    },
+  },
 ];

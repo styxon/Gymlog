@@ -42,7 +42,10 @@ export interface ExerciseCollection {
 const SIX_LIFTS_EN: ExerciseCollection = {
   id: 'six_lifts',
   title: 'The six lifts',
-  blurb: 'Squat, hinge, press, pull, carry, brace',
+  // The lifts by the names the library prints, not the patterns: "hinge"
+  // and "brace" are coach's words a beginner cannot picture (owner,
+  // 2026-10-13). The patterns stay on the course's own rows.
+  blurb: 'Barbell squat, deadlift, overhead press and more',
   intro:
     'Six patterns, in the order they are easiest to learn. Every programme in the catalog is built out of these — learn them once and the rest of the library stops being a list of strangers.',
   cover: ['#7699FB', '#2D48C0'],
@@ -62,7 +65,7 @@ const SIX_LIFTS_EN: ExerciseCollection = {
 const SIX_LIFTS_FI: ExerciseCollection = {
   ...SIX_LIFTS_EN,
   title: 'Kuusi liikettä',
-  blurb: 'Kyykky, sarana, punnerrus, veto, kanto, tuenta',
+  blurb: 'Takakyykky, maastaveto, pystypunnerrus ja muut',
   intro:
     'Kuusi liikemallia siinä järjestyksessä kuin ne on helpointa oppia. Jokainen katalogin ohjelma on rakennettu näistä — opettele ne kerran, eikä loppu kirjastosta ole enää pelkkä lista tuntemattomia.',
   entries: [
