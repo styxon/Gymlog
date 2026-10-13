@@ -35,6 +35,9 @@ export const WORKOUT_SUBSTITUTION_GROUPS: WorkoutSubstitutionGroup[] = [
   { id: 'mobility_flow', allowedExerciseNames: ["World's Greatest Stretch", 'Kneeling Hip Flexor', 'Seated Floor Hamstring Stretch', 'Standing Hip Circles', 'IT Band and Glute Stretch', 'Dynamic Back Stretch', 'Intermediate Hip Flexor and Quad Stretch', 'Lying Quad Stretch', 'Legs Up the Wall', 'Ankle Mobility Drill', 'Inchworm to Push-Up'] },
   { id: 'yoga_flow', allowedExerciseNames: ['Cat Stretch', "Child's Pose", "World's Greatest Stretch", 'Standing Hip Circles', 'Standing Hamstring and Calf Stretch'] },
   { id: 'running_blocks', allowedExerciseNames: ['Easy Run Blocks', 'Tempo Run Blocks', 'Stride Finishers'] },
+  // VITAL Walk's and VITAL Home's walking (2026-10-12): the flat walk and the hill
+  // swap for each other, and neither for a run.
+  { id: 'walking_blocks', allowedExerciseNames: ['Brisk Walk Blocks', 'Incline Walk Blocks'] },
   { id: 'bodyweight_squat_pattern', allowedExerciseNames: ['Bodyweight Squat', 'Bodyweight Walking Lunge', 'Reverse Lunge', 'Bodyweight Reverse Lunge', 'Sit-to-Stand (Chair Squat)', 'Cossack Squat', 'Shrimp Squat', 'Sissy Squat', 'Pistol Squat (each leg)'] },
   { id: 'bodyweight_press', allowedExerciseNames: ['Incline Push-Up', 'Push-Up Wide', 'Decline Push-Up', 'Push-Up', 'Wall Push-Up', 'Push-Up (or Knee Push-Up)', 'Push-Up (20s on / 10s off)', 'Diamond Push-Up', 'Pike Push-Up', 'Pike Push-Up (Elevated)'] },
   { id: 'bodyweight_pull', allowedExerciseNames: ['Inverted Row', 'Pull-Up', 'Inverted Row (Table)', 'Rows (Bar or Rings)'] },
@@ -80,21 +83,21 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'full_body_a_bench_press', exerciseName: 'Bench Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
         ex({ id: 'full_body_a_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'full_body_a_romanian_deadlift', exerciseName: 'Romanian Deadlift', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
-        ex({ id: 'full_body_a_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_core' }),
+        ex({ id: 'full_body_a_stationary_bike', exerciseName: 'Stationary Bike (Easy Pace)', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 1, repsMin: 18, repsMax: 18, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: 'steady_cardio' }),
       ] }),
       session({ id: 'full_body_b', name: 'Day 2: Full Body', orderIndex: 2, exercises: [
         ex({ id: 'full_body_b_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
         ex({ id: 'full_body_b_overhead_press', exerciseName: 'Overhead Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'vertical_press' }),
         ex({ id: 'full_body_b_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'vertical_pull' }),
         ex({ id: 'full_body_b_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
-        ex({ id: 'full_body_b_triceps_pushdown', exerciseName: 'Triceps Pushdown', slotId: 'accessory_arms_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+        ex({ id: 'full_body_b_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
       ] }),
       session({ id: 'full_body_c', name: 'Day 3: Full Body', orderIndex: 3, exercises: [
         ex({ id: 'full_body_c_hip_thrust', exerciseName: 'Hip Thrust', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'hinge_pattern' }),
         ex({ id: 'full_body_c_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
         ex({ id: 'full_body_c_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'full_body_c_leg_curl', exerciseName: 'Leg Curl', slotId: 'secondary_hamstrings_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'accessory_hamstrings' }),
-        ex({ id: 'full_body_c_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_core' }),
+        ex({ id: 'full_body_c_rowing_machine_hiit', exerciseName: 'Rowing Machine HIIT', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 9, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
       ] }),
     ],
   },
@@ -211,7 +214,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     level: 'beginner',
     splitType: 'full_body',
     daysPerWeek: 2,
-    estimatedSessionDuration: 45,
+    estimatedSessionDuration: 50,
     progressionModel: 'double_progression',
     defaultScheduleMode: 'rolling_sequence',
     progressionRules: {
@@ -226,6 +229,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'minimal_full_body_a_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_press' }),
         ex({ id: 'minimal_full_body_a_inverted_row', exerciseName: 'Inverted Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_pull' }),
         ex({ id: 'minimal_full_body_a_plank', exerciseName: 'Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 4, repsMin: 20, repsMax: 40, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'minimal_full_body_a_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
       ] }),
       session({ id: 'minimal_full_body_b', name: 'Day 2: Full Body', orderIndex: 2, exercises: [
         ex({ id: 'minimal_full_body_b_bodyweight_walking_lunge', exerciseName: 'Bodyweight Walking Lunge', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_squat_pattern' }),
@@ -233,6 +237,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'minimal_full_body_b_inverted_row', exerciseName: 'Inverted Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_pull' }),
         ex({ id: 'minimal_full_body_b_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 75, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
         ex({ id: 'minimal_full_body_b_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'minimal_full_body_b_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
       ] }),
     ],
   },
@@ -357,9 +362,9 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     name: 'FIT Lite',
     goalType: 'general',
     level: 'beginner',
-    splitType: 'upper_lower',
+    splitType: 'hybrid',
     daysPerWeek: 3,
-    estimatedSessionDuration: 50,
+    estimatedSessionDuration: 45,
     progressionModel: 'double_progression',
     defaultScheduleMode: 'rolling_sequence',
     progressionRules: {
@@ -369,31 +374,29 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
       failureHandling: 'If a main lift misses the minimum reps, hold the same load and build the reps back up.',
     },
     sessions: [
-      session({ id: 'upper_lower_lite_upper_a', name: 'Day 1: Upper Body', orderIndex: 1, exercises: [
-        ex({ id: 'upper_lower_lite_upper_a_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'horizontal_press' }),
-        ex({ id: 'upper_lower_lite_upper_a_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'horizontal_pull' }),
-        ex({ id: 'upper_lower_lite_upper_a_overhead_press', exerciseName: 'Overhead Press', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_press' }),
+      // The lighter of the two general-fitness weeks (owner, 2026-10-12): it
+      // was an Upper/Lower/Upper week of 14 lifting sets a day with no
+      // conditioning at all, heavier than FIT and legs once a week. Now each
+      // day is eight lifting sets and a cardio block about as long, legs on
+      // two days, and close to half the week's time is conditioning.
+      session({ id: 'upper_lower_lite_upper_a', name: 'Day 1: Upper Body + Run', orderIndex: 1, exercises: [
+        ex({ id: 'upper_lower_lite_upper_a_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'upper_lower_lite_upper_a_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'upper_lower_lite_upper_a_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'secondary_pull_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_pull' }),
-        ex({ id: 'upper_lower_lite_upper_a_lateral_raise', exerciseName: 'Lateral Raise', slotId: 'accessory_delts_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
-        // Arms are a promised focus: two sets here make it six a week (user,
-        // 2026-10-06). The card keeps its 40 minutes.
-        ex({ id: 'upper_lower_lite_upper_a_hammer_curl', exerciseName: 'Hammer Curl', slotId: 'accessory_arms_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+        ex({ id: 'upper_lower_lite_upper_a_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
       ] }),
-      session({ id: 'upper_lower_lite_lower', name: 'Day 2: Lower Body', orderIndex: 2, exercises: [
-        ex({ id: 'upper_lower_lite_lower_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'squat_pattern' }),
-        ex({ id: 'upper_lower_lite_lower_romanian_deadlift', exerciseName: 'Romanian Deadlift', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'hinge_pattern' }),
-        ex({ id: 'upper_lower_lite_lower_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
+      session({ id: 'upper_lower_lite_lower', name: 'Day 2: Lower Body + Bike', orderIndex: 2, exercises: [
+        ex({ id: 'upper_lower_lite_lower_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'upper_lower_lite_lower_romanian_deadlift', exerciseName: 'Romanian Deadlift', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
         ex({ id: 'upper_lower_lite_lower_leg_curl', exerciseName: 'Leg Curl', slotId: 'accessory_hamstrings_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_hamstrings' }),
-        ex({ id: 'upper_lower_lite_lower_calf_raise', exerciseName: 'Calf Raise', slotId: 'calves_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves', supersetGroup: 'ss_upper_lower_lite_lower_upper_lower_lite_lower_calf_raise' }),
-        ex({ id: 'upper_lower_lite_lower_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_core', supersetGroup: 'ss_upper_lower_lite_lower_upper_lower_lite_lower_calf_raise' }),
+        ex({ id: 'upper_lower_lite_lower_stationary_bike', exerciseName: 'Stationary Bike (Easy Pace)', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 1, repsMin: 15, repsMax: 15, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: 'steady_cardio' }),
       ] }),
-      session({ id: 'upper_lower_lite_upper_b', name: 'Day 3: Upper Body', orderIndex: 3, exercises: [
-        ex({ id: 'upper_lower_lite_upper_b_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'horizontal_press' }),
-        ex({ id: 'upper_lower_lite_upper_b_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'horizontal_pull' }),
-        ex({ id: 'upper_lower_lite_upper_b_dumbbell_shoulder_press', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_press' }),
-        ex({ id: 'upper_lower_lite_upper_b_rear_delt_fly', exerciseName: 'Rear Delt Fly', slotId: 'accessory_delts_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
-        ex({ id: 'upper_lower_lite_upper_b_triceps_pushdown', exerciseName: 'Triceps Pushdown', slotId: 'accessory_arms_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
-        ex({ id: 'upper_lower_lite_upper_b_dumbbell_curl', exerciseName: 'Dumbbell Curl', slotId: 'accessory_arms_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      session({ id: 'upper_lower_lite_upper_b', name: 'Day 3: Full Body + Intervals', orderIndex: 3, exercises: [
+        ex({ id: 'upper_lower_lite_upper_b_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
+        ex({ id: 'upper_lower_lite_upper_b_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'upper_lower_lite_upper_b_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'upper_lower_lite_upper_b_rowing_machine_hiit', exerciseName: 'Rowing Machine HIIT', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
+        ex({ id: 'upper_lower_lite_upper_b_stationary_bike', exerciseName: 'Stationary Bike (Easy Pace)', slotId: 'conditioning_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 1, repsMin: 8, repsMax: 8, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: 'steady_cardio' }),
       ] }),
     ],
   },
@@ -1545,7 +1548,7 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
     level: 'advanced',
     splitType: 'upper_lower',
     daysPerWeek: 4,
-    estimatedSessionDuration: 55,
+    estimatedSessionDuration: 50,
     progressionModel: 'double_progression',
     defaultScheduleMode: 'rolling_sequence',
     progressionRules: {
@@ -1560,12 +1563,14 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'fit_elite_upper_a_barbell_row', exerciseName: 'Barbell Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'fit_elite_upper_a_dumbbell_shoulder_press', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_vpress_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_press' }),
         ex({ id: 'fit_elite_upper_a_kettlebell_swing', exerciseName: 'Kettlebell Swing', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'load_and_reps', sets: 3, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'explosive_power' }),
+        ex({ id: 'fit_elite_upper_a_treadmill_hiit', exerciseName: 'Treadmill HIIT (30s on / 30s off)', slotId: 'finisher_conditioning_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
       ] }),
       session({ id: 'fit_elite_lower_a', name: 'Day 2: Lower Power', orderIndex: 2, exercises: [
         ex({ id: 'fit_elite_lower_a_back_squat', exerciseName: 'Back Squat', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 8, repsMax: 8, restSecondsMin: 150, restSecondsMax: 210, substitutionGroup: 'squat_pattern' }),
         ex({ id: 'fit_elite_lower_a_romanian_deadlift', exerciseName: 'Romanian Deadlift', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 120, restSecondsMax: 150, substitutionGroup: 'hinge_pattern' }),
         ex({ id: 'fit_elite_lower_a_walking_lunge', exerciseName: 'Walking Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'single_leg' }),
         ex({ id: 'fit_elite_lower_a_plank', exerciseName: 'Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 3, repsMin: 30, repsMax: 60, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'fit_elite_lower_a_bike_hiit', exerciseName: 'Bike HIIT (45s sprint / 15s rest)', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 45, repsMax: 45, restSecondsMin: 15, restSecondsMax: 15, substitutionGroup: 'cardio_intervals' }),
       ] }),
       session({ id: 'fit_elite_upper_b', name: 'Day 3: Upper Volume', orderIndex: 3, exercises: [
         ex({ id: 'fit_elite_upper_b_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 150, substitutionGroup: 'horizontal_press' }),
@@ -1573,12 +1578,14 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'fit_elite_upper_b_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'secondary_pull_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
         ex({ id: 'fit_elite_upper_b_lateral_raise', exerciseName: 'Lateral Raise', slotId: 'accessory_delts_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
         ex({ id: 'fit_elite_upper_b_burpee', exerciseName: 'Burpee', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 4, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'conditioning_circuit' }),
+        ex({ id: 'fit_elite_upper_b_easy_run_blocks', exerciseName: 'Easy Run Blocks', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'running_blocks' }),
       ] }),
       session({ id: 'fit_elite_lower_b', name: 'Day 4: Lower Volume + Engine', orderIndex: 4, exercises: [
         ex({ id: 'fit_elite_lower_b_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
         ex({ id: 'fit_elite_lower_b_hip_thrust', exerciseName: 'Hip Thrust', slotId: 'primary_hinge_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
         ex({ id: 'fit_elite_lower_b_seated_leg_curl', exerciseName: 'Seated Leg Curl', slotId: 'accessory_hamstrings_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_hamstrings' }),
         ex({ id: 'fit_elite_lower_b_treadmill_hiit', exerciseName: 'Treadmill HIIT (30s on / 30s off)', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
+        ex({ id: 'fit_elite_lower_b_stationary_bike', exerciseName: 'Stationary Bike (Easy Pace)', slotId: 'conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 1, repsMin: 10, repsMax: 10, restSecondsMin: 0, restSecondsMax: 0, substitutionGroup: 'steady_cardio' }),
       ] }),
     ],
   },
@@ -1628,6 +1635,524 @@ export const WORKOUT_TEMPLATES_V1: WorkoutTemplateV1[] = [
         ex({ id: 'shred_elite_day5_goblet_hold_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'single_leg' }),
         ex({ id: 'shred_elite_day5_treadmill_hiit', exerciseName: 'Treadmill HIIT (30s on / 30s off)', slotId: 'finisher_conditioning_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 10, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
         ex({ id: 'shred_elite_day5_recovery_stretch_flow', exerciseName: 'Intermediate Hip Flexor and Quad Stretch', slotId: 'cooldown_mobility_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 1, repsMin: 30, repsMax: 45, restSecondsMin: 0, restSecondsMax: 30, substitutionGroup: 'mobility_flow' }),
+      ] }),
+    ],
+  },
+
+  // --- VITAL Walk, STRONG Guided and VITAL Home (owner, 2026-10-12) --------------
+  //
+  // The age band changed nothing in what the pick screen offered, and two
+  // answers had no fitting card to offer: a reader over 41 who wants general
+  // fitness (the catalogue had no walking week at all), and a 16-18-year-old
+  // at the gym, for whom guided machines are the gentler way in. These three
+  // fill those gaps. The recommender reaches them through the age rule
+  // (recommendationWaterfall, recommendationScoring); the copy never names
+  // an age, because the training suits anyone who picks it.
+  {
+    id: 'tpl_3_day_walk_mobility_v1',
+    name: 'VITAL Walk',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'hybrid',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Walk the blocks at a pace where you can still talk in short sentences. Add a minute to each block once every block feels steady.',
+      secondary: 'Add reps before anything else; the movements stay the same for the whole block.',
+      accessory: 'Hold the stretches and balance work for the time written and breathe slowly through them.',
+      failureHandling: 'If a session felt hard the next day, repeat the same blocks and reps next time.',
+    },
+    // Three full-body days: walking first, then light strength with an
+    // upper-body set on every day, then mobility. About 44 % of the week's
+    // time is walking (buildProgramFocusSplit), inside the general-fitness
+    // band of 30-50 % with room for the swaps a reader's flags make.
+    sessions: [
+      session({ id: 'walk_day1', name: 'Day 1: Brisk Walk & Strength', orderIndex: 1, exercises: [
+        ex({ id: 'walk_day1_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 3, repsMin: 4, repsMax: 4, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'walking_blocks' }),
+        ex({ id: 'walk_day1_sit_to_stand', exerciseName: 'Sit-to-Stand (Chair Squat)', slotId: 'strength_squat_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'walk_day1_wall_push_up', exerciseName: 'Wall Push-Up', slotId: 'strength_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'walk_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'strength_hinge_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'walk_day1_hamstring_calf_stretch', exerciseName: 'Standing Hamstring and Calf Stretch', slotId: 'mobility_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'yoga_flow' }),
+        ex({ id: 'walk_day1_kneeling_hip_flexor', exerciseName: 'Kneeling Hip Flexor', slotId: 'mobility_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'mobility_flow' }),
+      ] }),
+      session({ id: 'walk_day2', name: 'Day 2: Incline Walk & Balance', orderIndex: 2, exercises: [
+        ex({ id: 'walk_day2_incline_walk_blocks', exerciseName: 'Incline Walk Blocks', slotId: 'walk_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 3, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'walking_blocks' }),
+        ex({ id: 'walk_day2_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'strength_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'walk_day2_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'strength_hinge_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'walk_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'walk_day2_single_leg_balance', exerciseName: 'Single-Leg Balance Hold', slotId: 'balance_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'balance_stability' }),
+        ex({ id: 'walk_day2_standing_marching', exerciseName: 'Standing Marching', slotId: 'balance_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'balance_stability' }),
+        ex({ id: 'walk_day2_childs_pose', exerciseName: "Child's Pose", slotId: 'mobility_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'yoga_flow' }),
+      ] }),
+      session({ id: 'walk_day3', name: 'Day 3: Walk & Mobility', orderIndex: 3, exercises: [
+        ex({ id: 'walk_day3_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'primary', progressionPriority: 'medium', trackingMode: 'duration_minutes', sets: 2, repsMin: 5, repsMax: 5, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'walking_blocks' }),
+        ex({ id: 'walk_day3_sit_to_stand', exerciseName: 'Sit-to-Stand (Chair Squat)', slotId: 'strength_squat_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'walk_day3_wall_push_up', exerciseName: 'Wall Push-Up', slotId: 'strength_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'walk_day3_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'strength_hinge_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'walk_day3_standing_hip_abduction', exerciseName: 'Standing Hip Abduction', slotId: 'strength_hip_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'glute_isolation' }),
+        ex({ id: 'walk_day3_seated_spinal_twist', exerciseName: 'Seated Spinal Twist', slotId: 'mobility_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'spine_mobility' }),
+        ex({ id: 'walk_day3_worlds_greatest_stretch', exerciseName: "World's Greatest Stretch", slotId: 'mobility_2', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 30, repsMax: 30, restSecondsMin: 20, restSecondsMax: 30, substitutionGroup: 'mobility_flow' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_guided_strength_v1',
+    name: 'STRONG Guided',
+    goalType: 'strength',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Each anchor is a machine or cable lift for six reps. When every set reaches six smooth, controlled reps, add the smallest step the stack allows next time.',
+      secondary: 'Finish the reps written on every set before adding load.',
+      accessory: 'Add reps before load, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the six reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // Strength on machines and cables: the machine sets the path of each
+    // lift, so the first weeks go into effort rather than balance. Five
+    // anchors at six reps, a goblet squat as the one free-weight lift.
+    sessions: [
+      session({ id: 'guided_strength_day1', name: 'Day 1: Leg Press & Chest Press', orderIndex: 1, exercises: [
+        ex({ id: 'guided_strength_day1_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'guided_strength_day1_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'guided_strength_day1_seated_machine_row', exerciseName: 'Seated Machine Row', slotId: 'secondary_pull_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'cable_machine_row' }),
+        ex({ id: 'guided_strength_day1_leg_curl', exerciseName: 'Leg Curl', slotId: 'accessory_hamstrings_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'accessory_hamstrings' }),
+        ex({ id: 'guided_strength_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'guided_strength_day2', name: 'Day 2: Pulldown & Goblet Squat', orderIndex: 2, exercises: [
+        ex({ id: 'guided_strength_day2_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'vertical_pull' }),
+        ex({ id: 'guided_strength_day2_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'secondary_squat_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'guided_strength_day2_machine_shoulder_press', exerciseName: 'Machine Shoulder Press', slotId: 'secondary_vpress_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'guided_strength_day2_leg_extension', exerciseName: 'Leg Extension', slotId: 'accessory_quads_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'guided_strength_day2_face_pull', exerciseName: 'Face Pull', slotId: 'accessory_delts_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
+      ] }),
+      session({ id: 'guided_strength_day3', name: 'Day 3: Full Body (Machines)', orderIndex: 3, exercises: [
+        ex({ id: 'guided_strength_day3_leg_press', exerciseName: 'Leg Press', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'guided_strength_day3_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 120, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'guided_strength_day3_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'guided_strength_day3_seated_leg_curl', exerciseName: 'Seated Leg Curl', slotId: 'accessory_hamstrings_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'accessory_hamstrings' }),
+        ex({ id: 'guided_strength_day3_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_core' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_home_easy_strength_v1',
+    name: 'VITAL Home',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 45,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower chair, a lower surface for the push-up.',
+      secondary: 'Finish the reps written on every set before changing the movement.',
+      accessory: 'Walk the blocks at a pace where you can still talk in short sentences, and add a minute once both feel steady.',
+      failureHandling: 'If the reps are missed, repeat the same version next time and build them back up.',
+    },
+    // Gentle bodyweight strength, and every day closes on two six-minute
+    // walks: about 42 % of the week's time (buildProgramFocusSplit), inside
+    // the general-fitness band, which the programme is offered for.
+    sessions: [
+      session({ id: 'home_easy_day1', name: 'Day 1: Lower & Push', orderIndex: 1, exercises: [
+        ex({ id: 'home_easy_day1_sit_to_stand', exerciseName: 'Sit-to-Stand (Chair Squat)', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'home_easy_day1_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'home_easy_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'home_easy_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'home_easy_day1_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 6, repsMax: 6, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'home_easy_day2', name: 'Day 2: Upper & Balance', orderIndex: 2, exercises: [
+        ex({ id: 'home_easy_day2_wall_push_up', exerciseName: 'Wall Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'home_easy_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'home_easy_day2_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'secondary_single_leg_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'home_easy_day2_single_leg_balance', exerciseName: 'Single-Leg Balance Hold', slotId: 'balance_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'balance_stability' }),
+        ex({ id: 'home_easy_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'home_easy_day2_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 6, repsMax: 6, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'home_easy_day3', name: 'Day 3: Full Body & Walk', orderIndex: 3, exercises: [
+        ex({ id: 'home_easy_day3_sit_to_stand', exerciseName: 'Sit-to-Stand (Chair Squat)', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'home_easy_day3_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'home_easy_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_pull_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'home_easy_day3_side_plank', exerciseName: 'Side Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'plank_variations' }),
+        ex({ id: 'home_easy_day3_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 6, repsMax: 6, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'walking_blocks' }),
+      ] }),
+    ],
+  },
+
+  // --- VITAL Strength and VITAL Body (owner, 2026-10-12) ------------------
+  //
+  // The two weeks a reader over 41 still lacked, from an audit of 26,460
+  // answers: strength with a pair of dumbbells and nothing else, and muscle
+  // with no equipment at all. Both are three full-body days of 40 minutes
+  // (card = estimate), one rep number per row, no jumps, no barbell, legs on
+  // every day, and as much pulling as pressing. The copy names the training,
+  // never an age.
+  //
+  // VITAL Strength lifts at six reps where a lift is an anchor (the bar reads
+  // Strength at six or fewer) and at eight for the support work, so it is not
+  // VITAL Muscle with a lower rep number: fewer lifts, four sets, long rests.
+  {
+    id: 'tpl_3_day_strong_home_v1',
+    name: 'VITAL Strength',
+    goalType: 'strength',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Each anchor lift is a dumbbell lift for six reps. When every set reaches six smooth, controlled reps, use the next heavier dumbbells; with one pair, take three seconds to lower each rep and pause a second at the bottom first.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Add reps before load, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the six reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // A pair of dumbbells and the floor: no bench, no bar, no machine, so the
+    // card's "Dumbbells" chip alone runs all of it.
+    sessions: [
+      session({ id: 'strong_home_day1', name: 'Day 1: Squat & Press', orderIndex: 1, exercises: [
+        ex({ id: 'strong_home_day1_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day1_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'primary_dumbbell_floor_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'strong_home_day1_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'secondary_single_arm_dumbbell_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day1_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'secondary_reverse_lunge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_home_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_home_day2', name: 'Day 2: Hinge & Pull', orderIndex: 2, exercises: [
+        ex({ id: 'strong_home_day2_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'primary_stiff_legged_dumbbell_deadlift', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_home_day2_bent_over_two_dumbbell_row', exerciseName: 'Bent Over Two-Dumbbell Row', slotId: 'primary_bent_over_two_dumbbell_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day2_dumbbell_shoulder_press', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_dumbbell_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'strong_home_day2_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'secondary_goblet_squat', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_home_day3', name: 'Day 3: Full Body', orderIndex: 3, exercises: [
+        ex({ id: 'strong_home_day3_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'strong_home_day3_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'primary_dumbbell_floor_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'strong_home_day3_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'primary_single_arm_dumbbell_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'strong_home_day3_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'secondary_stiff_legged_dumbbell_deadlift', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_home_day3_hammer_curl', exerciseName: 'Hammer Curl', slotId: 'accessory_hammer_curl', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_huge_bodyweight_v1',
+    name: 'VITAL Body',
+    goalType: 'hypertrophy',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Add reps to every set first, lowering each rep under control. When every set reaches the reps written, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.',
+      secondary: 'Finish the reps written on every set before changing the movement, lowering each rep under control.',
+      accessory: 'Add reps before changing the movement, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the minimum reps are missed, repeat the same version next time and build the reps back up.',
+    },
+    // The floor, a sturdy table to row under and a wall or a step to push
+    // against: no chip on the equipment card is needed.
+    sessions: [
+      session({ id: 'huge_bodyweight_day1', name: 'Day 1: Full Body (Push)', orderIndex: 1, exercises: [
+        ex({ id: 'huge_bodyweight_day1_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_bodyweight_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day1_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_incline_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day1_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'huge_bodyweight_day1_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+        ex({ id: 'huge_bodyweight_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'huge_bodyweight_day2', name: 'Day 2: Full Body (Pull)', orderIndex: 2, exercises: [
+        ex({ id: 'huge_bodyweight_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day2_bodyweight_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'primary_bodyweight_reverse_lunge', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day2_push_up_or_knee_push_up', exerciseName: 'Push-Up (or Knee Push-Up)', slotId: 'secondary_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day2_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'huge_bodyweight_day2_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+        ex({ id: 'huge_bodyweight_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'huge_bodyweight_day3', name: 'Day 3: Full Body (Legs)', orderIndex: 3, exercises: [
+        ex({ id: 'huge_bodyweight_day3_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_bodyweight_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'huge_bodyweight_day3_single_leg_rdl', exerciseName: 'Single-Leg RDL', slotId: 'primary_single_leg_rdl', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_bodyweight_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'huge_bodyweight_day3_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'secondary_incline_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'huge_bodyweight_day3_hip_thrust_bodyweight', exerciseName: 'Hip Thrust (Bodyweight)', slotId: 'secondary_hip_thrust_bodyweight', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'hip_thrust_bridge' }),
+        ex({ id: 'huge_bodyweight_day3_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+      ] }),
+    ],
+  },
+
+  // --- SHRED Guided and VITAL Burn (owner, 2026-10-12) ---------------
+  //
+  // The fat-burn week for the reader the age rule looks after. Until these,
+  // the lean-and-athletic answer over 41 was SHRED (a barbell squat, burpees
+  // and treadmill sprints) or Fat Burn HIIT (jump squats, burpees, box jumps),
+  // and a 16-18-year-old at the gym had no lean week lifted on machines at
+  // all. Two programmes because the gear splits the readers: the gym has the
+  // machines, cables and cardio equipment, a home reader has a mat and
+  // pavement.
+  //
+  // Both: three full-body days of 40 minutes (card = estimate), no jump of any
+  // kind, no barbell, the lifts done one after another with 30 seconds' rest (a
+  // circuit; not supersets, which the catalog keeps for light accessory work)
+  // at 10 to 15 reps with one rep number, and the conditioning written as
+  // intervals or blocks rather than as a finisher: 29 % (Guided) and 34 %
+  // (Home Easy) of each week's time (buildProgramFocusSplit).
+  // The copy names the training, never an age.
+  {
+    id: 'tpl_3_day_shred_guided_v1',
+    name: 'SHRED Guided',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Go round the machines in order with short rests. When every set reaches the reps written with control, add the smallest step the stack allows next time.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Keep every hard interval at the same effort, and add a round or a minute before you go harder.',
+      failureHandling: 'If the minimum reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // Machines and cables in order, then one of three machines for the
+    // conditioning: the bike (45 s hard, 15 s easy), the rower (30 s and
+    // 30 s) and the cross-trainer (three hard two-minute rounds with a minute
+    // easy between). Legs on every day; as many sets of pulling as of
+    // pressing (nine a week each).
+    sessions: [
+      session({ id: 'shred_guided_day1', name: 'Day 1: Circuit & Bike Intervals', orderIndex: 1, exercises: [
+        ex({ id: 'shred_guided_day1_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day1_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_machine_chest_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'shred_guided_day1_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'secondary_seated_cable_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'shred_guided_day1_cable_pull_through', exerciseName: 'Cable Pull-Through', slotId: 'secondary_cable_pull_through', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'shred_guided_day1_bike_hiit', exerciseName: 'Bike HIIT (45s sprint / 15s rest)', slotId: 'conditioning_bike', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 45, repsMax: 45, restSecondsMin: 15, restSecondsMax: 15, substitutionGroup: 'cardio_intervals' }),
+      ] }),
+      session({ id: 'shred_guided_day2', name: 'Day 2: Circuit & Rower Intervals', orderIndex: 2, exercises: [
+        ex({ id: 'shred_guided_day2_leg_extension', exerciseName: 'Leg Extension', slotId: 'primary_leg_extension', role: 'primary', progressionPriority: 'high', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day2_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'primary_lat_pulldown', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'vertical_pull' }),
+        ex({ id: 'shred_guided_day2_machine_shoulder_press', exerciseName: 'Machine Shoulder Press', slotId: 'secondary_machine_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'shred_guided_day2_seated_leg_curl', exerciseName: 'Seated Leg Curl', slotId: 'secondary_seated_leg_curl', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'accessory_hamstrings' }),
+        ex({ id: 'shred_guided_day2_rowing_machine_hiit', exerciseName: 'Rowing Machine HIIT', slotId: 'conditioning_rower', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 8, repsMin: 30, repsMax: 30, restSecondsMin: 30, restSecondsMax: 30, substitutionGroup: 'cardio_intervals' }),
+      ] }),
+      session({ id: 'shred_guided_day3', name: 'Day 3: Circuit & Cross-Trainer', orderIndex: 3, exercises: [
+        ex({ id: 'shred_guided_day3_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'shred_guided_day3_seated_machine_row', exerciseName: 'Seated Machine Row', slotId: 'primary_seated_machine_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'cable_machine_row' }),
+        ex({ id: 'shred_guided_day3_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'secondary_machine_chest_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'shred_guided_day3_cable_pull_through', exerciseName: 'Cable Pull-Through', slotId: 'secondary_cable_pull_through', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'shred_guided_day3_cable_crunch', exerciseName: 'Cable Crunch', slotId: 'accessory_cable_crunch', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'accessory_core' }),
+        ex({ id: 'shred_guided_day3_elliptical_trainer', exerciseName: 'Elliptical Trainer', slotId: 'conditioning_cross_trainer', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 3, repsMin: 2, repsMax: 2, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'steady_cardio' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_shred_home_easy_v1',
+    name: 'VITAL Burn',
+    goalType: 'general',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower incline for the push-up, a deeper squat.',
+      secondary: 'Finish the reps written on every set before changing the movement.',
+      accessory: 'Walk each block briskly: breathing deep and quick, short sentences still possible. Add a minute to a block once every block feels steady.',
+      failureHandling: 'If the reps are missed, repeat the same version next time and build them back up.',
+    },
+    // The floor and a table: no weights, no jumps. Bodyweight moves one after
+    // another with short rests, and every day closes on two brisk (or uphill)
+    // walking blocks of four minutes with a minute of easy walking between them.
+    sessions: [
+      session({ id: 'shred_home_easy_day1', name: 'Day 1: Circuit & Brisk Walk', orderIndex: 1, exercises: [
+        ex({ id: 'shred_home_easy_day1_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day1_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'primary_press_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day1_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'shred_home_easy_day1_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'shred_home_easy_day2', name: 'Day 2: Circuit & Hill Walk', orderIndex: 2, exercises: [
+        ex({ id: 'shred_home_easy_day2_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'primary_single_leg_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'shred_home_easy_day2_push_up', exerciseName: 'Push-Up', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day2_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day2_side_plank', exerciseName: 'Side Plank', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'hold', sets: 2, repsMin: 20, repsMax: 20, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'plank_variations' }),
+        ex({ id: 'shred_home_easy_day2_incline_walk_blocks', exerciseName: 'Incline Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+      session({ id: 'shred_home_easy_day3', name: 'Day 3: Circuit & Brisk Walk', orderIndex: 3, exercises: [
+        ex({ id: 'shred_home_easy_day3_bodyweight_squat', exerciseName: 'Bodyweight Squat', slotId: 'primary_squat_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'shred_home_easy_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_pull_1', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'shred_home_easy_day3_incline_push_up', exerciseName: 'Incline Push-Up', slotId: 'secondary_press_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'shred_home_easy_day3_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_core_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 10, repsMax: 10, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+        ex({ id: 'shred_home_easy_day3_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_hinge_1', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'shred_home_easy_day3_brisk_walk_blocks', exerciseName: 'Brisk Walk Blocks', slotId: 'walk_1', role: 'accessory', progressionPriority: 'low', trackingMode: 'duration_minutes', sets: 2, repsMin: 4, repsMax: 4, restSecondsMin: 60, restSecondsMax: 60, substitutionGroup: 'walking_blocks' }),
+      ] }),
+    ],
+  },
+
+  // --- VITAL Base (owner, 2026-10-12) --------------------------------
+  //
+  // The last gap in the audit of 26,460 answers over 41: strength with no
+  // equipment at all (1,260 answers, no card fitting). Three full-body days of
+  // 40 minutes (card = estimate), one rep number per row, no jumps, no weights,
+  // legs on every day, and as much pulling as pressing.
+  //
+  // Without a load to add, a six is made heavy by the version of the lift: a
+  // rear foot on a chair, one leg for the hinge and the bridge, feet up for the
+  // push-up. Anchors are six reps, support lifts eight, so the week is not
+  // VITAL Body with its numbers turned down: fewer lifts, four sets, long
+  // rests, and a harder version each time the sets are met.
+  {
+    id: 'tpl_3_day_strong_bodyweight_v1',
+    name: 'VITAL Base',
+    goalType: 'strength',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Each anchor lift is a hard version of a bodyweight lift for six reps. When every set reaches six smooth, controlled reps, make it harder next time: a higher rear foot, feet raised for the push-up, a lower table for the row, or a one-second pause at the bottom of every rep.',
+      secondary: 'Finish the reps written on every set before changing the version, lowering each rep under control.',
+      accessory: 'Add reps before changing the version, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the six reps are missed, keep the same version and build the reps back up before making it harder.',
+    },
+    // The floor, a chair or a step for the rear foot and for the feet, and a
+    // sturdy table to row under: no chip on the equipment card is needed.
+    sessions: [
+      session({ id: 'strong_bodyweight_day1', name: 'Day 1: Legs & Push', orderIndex: 1, exercises: [
+        ex({ id: 'strong_bodyweight_day1_bulgarian_split_squat', exerciseName: 'Bulgarian Split Squat', slotId: 'primary_bulgarian_split_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_bodyweight_day1_decline_push_up', exerciseName: 'Decline Push-Up', slotId: 'primary_decline_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day1_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'secondary_inverted_row_table', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day1_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'strong_bodyweight_day1_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_bodyweight_day2', name: 'Day 2: Hinge & Pull', orderIndex: 2, exercises: [
+        ex({ id: 'strong_bodyweight_day2_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day2_single_leg_rdl', exerciseName: 'Single-Leg RDL', slotId: 'primary_single_leg_rdl', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'strong_bodyweight_day2_pike_push_up', exerciseName: 'Pike Push-Up', slotId: 'secondary_pike_push_up', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day2_bodyweight_reverse_lunge', exerciseName: 'Bodyweight Reverse Lunge', slotId: 'secondary_bodyweight_reverse_lunge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_squat_pattern' }),
+        ex({ id: 'strong_bodyweight_day2_bird_dog', exerciseName: 'Bird Dog', slotId: 'accessory_bird_dog', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+      session({ id: 'strong_bodyweight_day3', name: 'Day 3: Full Body', orderIndex: 3, exercises: [
+        ex({ id: 'strong_bodyweight_day3_bulgarian_split_squat', exerciseName: 'Bulgarian Split Squat', slotId: 'primary_bulgarian_split_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'single_leg' }),
+        ex({ id: 'strong_bodyweight_day3_push_up_or_knee_push_up', exerciseName: 'Push-Up (or Knee Push-Up)', slotId: 'primary_push_up', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 3, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_press' }),
+        ex({ id: 'strong_bodyweight_day3_inverted_row_table', exerciseName: 'Inverted Row (Table)', slotId: 'primary_inverted_row_table', role: 'primary', progressionPriority: 'high', trackingMode: 'bodyweight', sets: 4, repsMin: 6, repsMax: 6, restSecondsMin: 105, restSecondsMax: 180, substitutionGroup: 'bodyweight_pull' }),
+        ex({ id: 'strong_bodyweight_day3_single_leg_glute_bridge', exerciseName: 'Single Leg Glute Bridge', slotId: 'secondary_single_leg_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 8, repsMax: 8, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'strong_bodyweight_day3_dead_bug', exerciseName: 'Dead Bug', slotId: 'accessory_dead_bug', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 8, repsMax: 8, restSecondsMin: 30, restSecondsMax: 60, substitutionGroup: 'bodyweight_core' }),
+      ] }),
+    ],
+  },
+
+  // --- HUGE Guided and VITAL Muscle (owner, 2026-10-12) ----------------------
+  //
+  // A muscle week for the reader the age rule looks after over 41. Until these,
+  // that reader's muscle answer was HUGE Builder cut from four days to three,
+  // a barbell squat and bench in it, or at home VITAL Home, close to half of it
+  // walking. Two programmes because the gear splits the readers: a gym member
+  // has the machines and cables that set the path of a lift, a home reader
+  // with dumbbells has none of them, and the recommender never offers either
+  // shelf's programme to the other (equipmentCandidatePool).
+  //
+  // Both: three full-body days of 40 minutes, every lift at 10 to 15 reps (no
+  // set of five or fewer, no jumps, no barbell), legs on every day, and as
+  // many sets of pulling as of pressing: nine of each a week, plus two for
+  // the rear shoulders, and nine to eleven for the thighs and the hips each.
+  // The copy names the training, never an age.
+  {
+    id: 'tpl_3_day_huge_guided_v1',
+    name: 'HUGE Guided',
+    goalType: 'hypertrophy',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, add the smallest step the stack or the dumbbells allow next time.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Add reps before load, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the minimum reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // Machines and cables for most of the lifting (leg press, chest press,
+    // pulldown, cable row, pull-through, leg curl and extension), with
+    // dumbbells for the goblet squat, the incline press, the chest-supported
+    // row and the stiff-legged deadlift.
+    sessions: [
+      session({ id: 'huge_guided_day1', name: 'Day 1: Full Body (Push)', orderIndex: 1, exercises: [
+        ex({ id: 'huge_guided_day1_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_guided_day1_machine_chest_press', exerciseName: 'Machine Chest Press', slotId: 'primary_machine_chest_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'huge_guided_day1_lat_pulldown', exerciseName: 'Lat Pulldown', slotId: 'secondary_lat_pulldown', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'vertical_pull' }),
+        ex({ id: 'huge_guided_day1_seated_leg_curl', exerciseName: 'Seated Leg Curl', slotId: 'secondary_seated_leg_curl', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'accessory_hamstrings' }),
+        ex({ id: 'huge_guided_day1_lateral_raise', exerciseName: 'Lateral Raise', slotId: 'accessory_lateral_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
+        ex({ id: 'huge_guided_day1_triceps_pushdown', exerciseName: 'Triceps Pushdown', slotId: 'accessory_triceps_pushdown', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      ] }),
+      session({ id: 'huge_guided_day2', name: 'Day 2: Full Body (Pull)', orderIndex: 2, exercises: [
+        ex({ id: 'huge_guided_day2_seated_cable_row', exerciseName: 'Seated Cable Row', slotId: 'primary_seated_cable_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'huge_guided_day2_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_guided_day2_incline_dumbbell_press', exerciseName: 'Incline Dumbbell Press', slotId: 'secondary_incline_dumbbell_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'huge_guided_day2_cable_pull_through', exerciseName: 'Cable Pull-Through', slotId: 'secondary_cable_pull_through', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_guided_day2_face_pull', exerciseName: 'Face Pull', slotId: 'accessory_face_pull', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
+        ex({ id: 'huge_guided_day2_dumbbell_curl', exerciseName: 'Dumbbell Curl', slotId: 'accessory_dumbbell_curl', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      ] }),
+      session({ id: 'huge_guided_day3', name: 'Day 3: Full Body (Legs)', orderIndex: 3, exercises: [
+        ex({ id: 'huge_guided_day3_leg_press', exerciseName: 'Leg Press', slotId: 'primary_leg_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_guided_day3_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'primary_stiff_legged_dumbbell_deadlift', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_guided_day3_chest_supported_row', exerciseName: 'Chest-Supported Row', slotId: 'secondary_chest_supported_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'huge_guided_day3_machine_shoulder_press', exerciseName: 'Machine Shoulder Press', slotId: 'secondary_machine_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'reps_first', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'huge_guided_day3_leg_extension', exerciseName: 'Leg Extension', slotId: 'accessory_leg_extension', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_guided_day3_calf_raise', exerciseName: 'Calf Raise', slotId: 'accessory_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+      ] }),
+    ],
+  },
+  {
+    id: 'tpl_3_day_huge_home_v1',
+    name: 'VITAL Muscle',
+    goalType: 'hypertrophy',
+    level: 'beginner',
+    splitType: 'full_body',
+    daysPerWeek: 3,
+    estimatedSessionDuration: 40,
+    progressionModel: 'double_progression',
+    defaultScheduleMode: 'rolling_sequence',
+    progressionRules: {
+      primary: 'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, use heavier dumbbells next time; with one pair, add two reps to every set first.',
+      secondary: 'Finish the reps written on every set before adding load, lowering each rep under control.',
+      accessory: 'Add reps before load, and keep the last rep as controlled as the first.',
+      failureHandling: 'If the minimum reps are missed, keep the same load and build the reps back up before adding weight.',
+    },
+    // A pair of dumbbells and the floor: no bench, no bar, no machine, so the
+    // card's "Dumbbells" chip alone runs all of it.
+    sessions: [
+      session({ id: 'huge_home_day1', name: 'Day 1: Full Body (Push)', orderIndex: 1, exercises: [
+        ex({ id: 'huge_home_day1_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_home_day1_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'primary_dumbbell_floor_press', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'huge_home_day1_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'secondary_single_arm_dumbbell_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'huge_home_day1_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'secondary_stiff_legged_dumbbell_deadlift', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_home_day1_lateral_raise', exerciseName: 'Lateral Raise', slotId: 'accessory_lateral_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
+        ex({ id: 'huge_home_day1_triceps_kickback', exerciseName: 'Triceps Kickback', slotId: 'accessory_triceps_kickback', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'triceps_cable' }),
+      ] }),
+      session({ id: 'huge_home_day2', name: 'Day 2: Full Body (Pull)', orderIndex: 2, exercises: [
+        ex({ id: 'huge_home_day2_bent_over_two_dumbbell_row', exerciseName: 'Bent Over Two-Dumbbell Row', slotId: 'primary_bent_over_two_dumbbell_row', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'huge_home_day2_reverse_lunge', exerciseName: 'Reverse Lunge', slotId: 'primary_reverse_lunge', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'single_leg' }),
+        ex({ id: 'huge_home_day2_dumbbell_shoulder_press', exerciseName: 'Dumbbell Shoulder Press', slotId: 'secondary_dumbbell_shoulder_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'vertical_press' }),
+        ex({ id: 'huge_home_day2_glute_bridge', exerciseName: 'Glute Bridge', slotId: 'secondary_glute_bridge', role: 'secondary', progressionPriority: 'medium', trackingMode: 'bodyweight', sets: 3, repsMin: 15, repsMax: 15, restSecondsMin: 60, restSecondsMax: 90, substitutionGroup: 'bodyweight_hinge' }),
+        ex({ id: 'huge_home_day2_dumbbell_rear_delt_fly', exerciseName: 'Dumbbell Rear Delt Fly', slotId: 'accessory_dumbbell_rear_delt_fly', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_delts' }),
+        ex({ id: 'huge_home_day2_hammer_curl', exerciseName: 'Hammer Curl', slotId: 'accessory_hammer_curl', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
+      ] }),
+      session({ id: 'huge_home_day3', name: 'Day 3: Full Body (Legs)', orderIndex: 3, exercises: [
+        ex({ id: 'huge_home_day3_goblet_squat', exerciseName: 'Goblet Squat', slotId: 'primary_goblet_squat', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'squat_pattern' }),
+        ex({ id: 'huge_home_day3_stiff_legged_dumbbell_deadlift', exerciseName: 'Stiff-Legged Dumbbell Deadlift', slotId: 'primary_stiff_legged_dumbbell_deadlift', role: 'primary', progressionPriority: 'high', trackingMode: 'load_and_reps', sets: 3, repsMin: 10, repsMax: 10, restSecondsMin: 90, restSecondsMax: 120, substitutionGroup: 'hinge_pattern' }),
+        ex({ id: 'huge_home_day3_dumbbell_floor_press', exerciseName: 'Dumbbell Floor Press', slotId: 'secondary_dumbbell_floor_press', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'horizontal_press' }),
+        ex({ id: 'huge_home_day3_single_arm_dumbbell_row', exerciseName: 'Single-Arm Dumbbell Row', slotId: 'secondary_single_arm_dumbbell_row', role: 'secondary', progressionPriority: 'medium', trackingMode: 'load_and_reps', sets: 3, repsMin: 12, repsMax: 12, restSecondsMin: 75, restSecondsMax: 105, substitutionGroup: 'horizontal_pull' }),
+        ex({ id: 'huge_home_day3_single_leg_calf_raise', exerciseName: 'Single-Leg Calf Raise', slotId: 'accessory_single_leg_calf_raise', role: 'accessory', progressionPriority: 'low', trackingMode: 'bodyweight', sets: 2, repsMin: 15, repsMax: 15, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'calves' }),
+        ex({ id: 'huge_home_day3_dumbbell_curl', exerciseName: 'Dumbbell Curl', slotId: 'accessory_dumbbell_curl', role: 'accessory', progressionPriority: 'low', trackingMode: 'reps_first', sets: 2, repsMin: 12, repsMax: 12, restSecondsMin: 45, restSecondsMax: 75, substitutionGroup: 'accessory_arms' }),
       ] }),
     ],
   },

@@ -27,7 +27,8 @@ module.exports = [
       const source = read('src', 'lib', 'recommendationProgramme.ts');
       const builder = source.slice(source.indexOf('const SUPPLEMENTAL_DAYS'), source.indexOf('function buildPlanReadyWeeklySchedule('));
       const names = [...builder.matchAll(/'([A-Z][A-Za-z +-]*(?:Day|Add-On))'/g)].map((match) => match[1]);
-      assert.equal(names.length, 8, `expected the eight supplemental day names, found ${names.join(', ')}`);
+      // Ten since 2026-10-12: VITAL Walk's and VITAL Home's walking days.
+      assert.equal(names.length, 10, `expected the ten supplemental day names, found ${names.join(', ')}`);
       for (const name of names) {
         const fi = localizeSessionName(name, 'fi');
         assert.doesNotMatch(fi, ENGLISH, `"${name}" reads "${fi}" in Finnish`);

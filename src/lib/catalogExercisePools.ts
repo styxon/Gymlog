@@ -731,6 +731,15 @@ export const SUPPLEMENTAL_DAY_POOL = {
     bodyweight: ['Trail Running/Walking', 'All Fours Quad Stretch'],
     loaded: ['Trail Running/Walking', 'All Fours Quad Stretch'],
   },
+  // VITAL Walk's and VITAL Home's optional days walk, as RUN's run (2026-10-12).
+  easyWalk: {
+    bodyweight: ['Brisk Walk Blocks', 'Ankle Circles'],
+    loaded: ['Brisk Walk Blocks', 'Ankle Circles'],
+  },
+  hillWalk: {
+    bodyweight: ['Incline Walk Blocks', 'Standing Hamstring and Calf Stretch'],
+    loaded: ['Incline Walk Blocks', 'Standing Hamstring and Calf Stretch'],
+  },
   bodyweightVolume: {
     bodyweight: ['Push-Up Wide', 'Bodyweight Walking Lunge', 'Plank'],
     loaded: ['Push-Up Wide', 'Bodyweight Walking Lunge', 'Plank'],

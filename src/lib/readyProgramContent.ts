@@ -140,13 +140,13 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_at_home_beginner_v1: {
     summary:
-      'Three bodyweight sessions a week at home: upper body, lower body and a full-body circuit. Push-ups, squats, lunges and planks, with a table for rows and a chair for dips.',
+      'Three bodyweight sessions a week at home: upper body with run blocks, lower body with jumping jacks, and a full-body circuit. Push-ups, squats, lunges and planks, with a table for rows and a chair for dips. About a third of the week is conditioning.',
     audience:
       'Beginners who want to start strength training at home with no equipment, three sessions a week.',
     equipmentProfile:
-      'No equipment: everything is bodyweight. A sturdy table for rows and a chair for dips are all it takes.',
+      'No equipment: everything is bodyweight. A sturdy table for rows, a chair for dips and somewhere to run are all it takes.',
     whyItWorks:
-      'Squat, push, pull and plank come back every week and progress comes from reps, so strength and fitness build without a kilo of iron.',
+      'Squat, push, pull and plank come back every week and progress comes from reps, while run blocks, jumping jacks, burpees and mountain climbers give the week conditioning that needs no gear.',
   },
   tpl_home_dumbbell_upper_lower_v1: {
     summary:
@@ -190,13 +190,13 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
-      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work.',
+      'Four bodyweight days a week: two upper-body days and two lower-body days. Push-ups, rows under a table, split squats and single-leg work, with run blocks, jumping jacks, burpees and high knees closing the days. About a third of the week is conditioning.',
     audience:
       'Anyone training at home without equipment who is past the beginner stage and wants four sessions a week.',
     equipmentProfile:
-      'No equipment. A sturdy table for rows and a chair for dips and split squats.',
+      'No equipment. A sturdy table for rows, a chair for split squats and somewhere to run.',
     whyItWorks:
-      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first.',
+      'Harder variations stand in for added weight: one leg instead of two, feet raised, slower reps. Progress comes from reps first, and each day ends with a conditioning block that needs no gear.',
   },
   tpl_home_bodyweight_full_body_v1: {
     summary:
@@ -330,13 +330,115 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_joint_friendly_v1: {
     summary:
-      'Three days a week on machines, cables and a band: supported lower body, supported upper body, and a full-body and balance day. Reps mostly run 12–20, and every movement is controlled.',
+      'Three days a week on machines, cables and a band: supported lower body, supported upper body, and a full-body and balance day, each closed with ten easy minutes on an exercise bike. Reps run 12–15, and every movement is controlled.',
     audience:
       'Beginners, people returning from a break, or anyone whose joints do not tolerate heavy free weights but who still wants to get stronger.',
     equipmentProfile:
-      'Gym machines and cables, a resistance band and a chair.',
+      'Gym machines and cables, an exercise bike, a resistance band and a chair.',
     whyItWorks:
       'The machine guides the path, so the load lands on the muscle rather than the joint, and the high reps build strength with light weights.',
+  },
+  // The age-gap programmes (2026-10-12). Written for the training, never for
+  // an age: the reader may be any age who picks them from the Programs tab.
+  tpl_3_day_walk_mobility_v1: {
+    summary:
+      'Three days a week built on walking: brisk walk blocks on two days and uphill blocks on one, then a few light strength moves and stretches. A little under half of the week is walking.',
+    audience:
+      'Anyone who wants a lower-impact week: walking, mobility and light strength, with no equipment.',
+    equipmentProfile:
+      'No equipment: a chair for the sit-to-stands, a wall for the push-ups, and a flat route and a hill (or a treadmill) for the walks.',
+    whyItWorks:
+      'Every session opens with the walk, then two or three light strength moves with an upper-body one each day, then stretches. The walk blocks grow by a minute once they feel steady.',
+  },
+  tpl_3_day_guided_strength_v1: {
+    summary:
+      'Three full-body gym days of strength on machines and cables: leg press, chest press, pulldown and cable row in sets of six, with a goblet squat, a shoulder press and leg curls around them.',
+    audience:
+      'Beginners and returning lifters who want to train for strength on guided machines before the free-weight barbell lifts.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a pulldown, a cable row, leg curl and leg extension machines, and one dumbbell for the goblet squat.',
+    whyItWorks:
+      'Guided machines set the movement path, so each set goes into effort rather than balance. The anchors stay at six reps, and the weight goes up a step once every set reaches six.',
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    summary:
+      'Three gentle bodyweight days at home: sit-to-stands, incline and wall push-ups, table rows, bridges and balance work, and each day closes with two six-minute walks.',
+    audience:
+      'Anyone who wants to start strength training at home at an easy pace, with walking built into every session.',
+    equipmentProfile:
+      'No equipment: a sturdy chair, a wall, a solid table to row under, and somewhere to walk.',
+    whyItWorks:
+      'The moves get harder in small steps (a lower chair, a lower surface for the push-up), and the walks keep part of every day for easy cardio.',
+  },
+  tpl_3_day_strong_home_v1: {
+    summary:
+      'Three full-body days at home with a pair of dumbbells: goblet squats, floor presses, rows, stiff-legged deadlifts and shoulder presses, with sets of six on the anchor lifts. The legs are trained every day.',
+    audience:
+      'Anyone who wants to get stronger at home with dumbbells three days a week, without a bench, a bar or jumping.',
+    equipmentProfile:
+      'A pair of dumbbells heavy enough for sets of six, and some floor space. No bench: the press is done lying on the floor.',
+    whyItWorks:
+      'Heavy sets of six with long rests on lifts that are simple to repeat: a squat, a hinge, a press and a row every week, with as many sets of pulling as of pressing. Stop a rep short of failure; once every set reaches six reps, move up a dumbbell size, or with one pair slow each lowering to three seconds first.',
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    summary:
+      'Three full-body days with no equipment: push-ups, table rows, squats, reverse lunges, glute bridges and single-leg work. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Anyone who wants to build muscle with no equipment three days a week, at home or away, without a bar or jumping.',
+    equipmentProfile:
+      'No equipment to buy: the floor, a sturdy table to row under, and a sofa, chair or counter for the incline push-up and the hip thrust.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. Add reps to every set first and lower each rep under control; once every set reaches its reps, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.',
+  },
+  tpl_3_day_shred_guided_v1: {
+    summary:
+      'Three full-body gym days with the lifting done as a circuit on machines and cables, then conditioning as intervals: bike on day 1, rower on day 2, cross-trainer on day 3. About a third of the week is conditioning, and there is no jumping and no barbell.',
+    audience:
+      'Anyone who wants a fat-burn week at the gym that stays off the joints: beginners and returning lifters who prefer guided machines to barbells, burpees and sprints, three days a week.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a shoulder press, a pulldown and a cable station, leg curl and leg extension machines, and a bike, a rowing machine and a cross-trainer.',
+    whyItWorks:
+      'The lifts run one after another with 30 seconds of rest, so the heart rate stays up between sets, and the machines set the path of each lift. The intervals alternate between hard and easy and add a round or a minute before they ask for more effort.',
+  },
+  tpl_3_day_shred_home_easy_v1: {
+    summary:
+      'Three bodyweight days at home with the exercises run as a short-rest circuit, then two walking blocks of four minutes with a minute of easy walking between them: brisk on days 1 and 3, uphill on day 2. About a third of the week is walking, and there is no jumping.',
+    audience:
+      'Anyone who wants a fat-burn week at home without jumping: squats, push-ups, rows and bridges, with walking as the conditioning.',
+    equipmentProfile:
+      'No equipment: a wall or a sturdy table for the push-ups, a table to row under, and somewhere to walk, with a hill or a slope for day 2.',
+    whyItWorks:
+      'The circuit keeps the rest short so it works as cardio too, and the walking blocks give a hard-and-easy rhythm without the impact of running. The moves get harder in small steps: a lower incline for the push-up, a deeper squat.',
+  },
+  tpl_3_day_strong_bodyweight_v1: {
+    summary:
+      'Three full-body days with no equipment: split squats with the back foot raised, one-leg hinges and bridges, push-ups with the feet up, and rows under a table, with sets of six on the anchor lifts. The legs are trained every day.',
+    audience:
+      'Anyone who wants to get stronger with no equipment three days a week, at home or away, without weights, a bar or jumping.',
+    equipmentProfile:
+      'No equipment to buy: the floor, a sturdy chair or step for the back foot and for the feet, and a sturdy table to row under.',
+    whyItWorks:
+      'With no weight to add, a set of six is made heavy by the version of the lift: one leg instead of two, the feet raised for the push-up, a lower table for the row. The rests are long, there are as many sets of pulling as of pressing, and each set stops a rep short of failure. Once every set reaches six reps, make the lift harder: a higher rear foot, a longer pause at the bottom of each rep.',
+  },
+  tpl_3_day_huge_guided_v1: {
+    summary:
+      'Three full-body gym days for muscle, mostly on machines and cables: leg press, chest press, pulldown and cable row, with a goblet squat, an incline dumbbell press and a chest-supported row around them. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Beginners and returning lifters who want to build muscle on guided machines rather than heavy barbell lifts, three days a week.',
+    equipmentProfile:
+      'A gym with a leg press, a chest press, a shoulder press, a pulldown and a cable station, leg curl and leg extension machines, and a pair of dumbbells with an incline bench.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. The machine sets the path of each lift; lower every rep under control, stop a rep or two short of failure, and add the smallest step of weight once every set reaches its reps.',
+  },
+  tpl_3_day_huge_home_v1: {
+    summary:
+      'Three full-body days at home with a pair of dumbbells: goblet squats, floor presses, rows, stiff-legged deadlifts and reverse lunges, with shoulder and arm work after them. Every lift runs 10–15 reps, and the legs are trained every day.',
+    audience:
+      'Anyone who wants to build muscle at home with dumbbells three days a week, without a bench, a bar or jumping.',
+    equipmentProfile:
+      'A pair of dumbbells and some floor space. No bench: the presses are done lying on the floor.',
+    whyItWorks:
+      'Every muscle group is trained on two or three days a week, with as many sets of pulling as of pressing. Lower every rep under control and stop a rep or two short of failure; once every set reaches its reps, move up a dumbbell size, or with one pair add reps first.',
   },
   tpl_gainer_prenatal_fitness_v1: {
     summary:
@@ -388,10 +490,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks: 'Every session pairs one honest strength slot with a conditioning finisher, so the deficit comes from work you can actually progress, not from junk volume.',
   },
   tpl_3_day_full_body_v1: {
-    summary: 'Three full-body sessions built to keep strength practice frequent while overall weekly fatigue stays manageable.',
-    audience: 'Best for newer lifters or anyone who wants simple weekly structure with repeated practice on the main lifts.',
-    equipmentProfile: 'Full gym recommended: barbell, bench, cable, leg press, and a basic pull station.',
-    whyItWorks: 'The template repeats squat, press, pull, and hinge patterns across the week, so progression stays obvious without requiring a complicated split.',
+    summary: 'Three full-body sessions: the main lifts first, then a bike ride, run blocks or rowing intervals. About a third of the week is conditioning.',
+    audience: 'Best for newer lifters or anyone who wants simple weekly structure with repeated practice on the main lifts and some cardio in every session.',
+    equipmentProfile: 'Full gym recommended: barbell, bench, cable, leg press, a basic pull station, and a bike, treadmill or rower.',
+    whyItWorks: 'The template repeats squat, press, pull, and hinge patterns across the week, so progression stays obvious, and each day closes with a cardio block of its own.',
   },
   tpl_4_day_upper_lower_v1: {
     summary: 'A balanced upper/lower split with enough weekly volume for hypertrophy while anchor lifts still get clear progression targets.',
@@ -406,10 +508,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
     whyItWorks: 'The week opens with heavier compound structure, then adds separate push and pull days so extra volume can land where it actually matters without bloating every session.',
   },
   tpl_2_day_minimal_full_body_v1: {
-    summary: 'A low-friction two-day bodyweight plan for weeks when you want full-body coverage without needing a gym.',
+    summary: 'A low-friction two-day bodyweight plan for weeks when you want full-body coverage without needing a gym, with easy run blocks to close each day.',
     audience: 'Best for beginners, busy weeks, home workouts, or anyone coming back into training who still wants structure and progression.',
-    equipmentProfile: 'Home and bodyweight friendly. Floor space and a sturdy row setup are enough for the core plan.',
-    whyItWorks: 'The template keeps squat, push, pull, hinge, and core patterns in the week while using bodyweight progression instead of gym-only equipment.',
+    equipmentProfile: 'Home and bodyweight friendly. Floor space, a sturdy row setup and somewhere to run are enough for the core plan.',
+    whyItWorks: 'The template keeps squat, push, pull, hinge, and core patterns in the week while using bodyweight progression instead of gym-only equipment, and the run blocks add conditioning that needs no gear.',
   },
   tpl_3_day_strength_base_v1: {
     summary: 'A simple strength-first week with three heavy exposures so squat, press, and hinge patterns all progress on repeatable rails.',
@@ -431,10 +533,10 @@ const READY_PROGRAM_CONTENT: Record<string, ReadyProgramContent> = {
   },
 
   tpl_3_day_upper_lower_lite_v1: {
-    summary: 'A softer three-day upper/lower split that keeps the week balanced without demanding long or overly dense sessions.',
-    audience: 'Best for beginners who want something more varied than full body but are not ready for a classic four-day split.',
-    equipmentProfile: 'Standard full gym works best, but the session length and exercise count stay modest across the week.',
-    whyItWorks: 'The split gives upper body two exposures and lower body one bigger day, which keeps skill practice and recovery both easy to manage.',
+    summary: 'The lighter general-fitness week: three shorter sessions of eight lifting sets each, then run blocks, a bike ride or rowing intervals. Close to half the week is conditioning.',
+    audience: 'Best for beginners who want cardio and lifting in equal measure, with less lifting than FIT.',
+    equipmentProfile: 'Standard full gym works best: a bike, a treadmill or a place to run, and a rower, plus the usual press, row and leg stations.',
+    whyItWorks: 'An upper day, a lower day and a full-body day put the legs in the week twice, and each lifting block stays short enough that the cardio after it gets real time.',
   },
 
   tpl_3_day_push_pull_legs_v1: {

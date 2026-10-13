@@ -34,6 +34,19 @@ const LOW_EQUIPMENT_PROGRAMS = [
   // Dumbbells only: four days at home (coverage sweep, 2026-10-04).
   'tpl_home_dumbbell_upper_lower_v1',
   'tpl_home_dumbbell_ppl_v1',
+  // VITAL Walk and VITAL Home (2026-10-12): a chair, a wall, a table and a route to
+  // walk. STRONG Guided, the third programme added that day, is a gym week.
+  'tpl_3_day_walk_mobility_v1',
+  'tpl_3_day_home_easy_strength_v1',
+  'tpl_3_day_shred_home_easy_v1',
+  // VITAL Muscle (2026-10-12): a pair of dumbbells and the floor.
+  'tpl_3_day_huge_home_v1',
+  // VITAL Strength (a pair of dumbbells) and VITAL Body (nothing but the
+  // floor and a table), the same day.
+  'tpl_3_day_strong_home_v1',
+  'tpl_3_day_huge_bodyweight_v1',
+  // VITAL Base (2026-10-12): the floor, a chair and a table.
+  'tpl_3_day_strong_bodyweight_v1',
   'tpl_home_dumbbell_strength_v1',
   'tpl_home_dumbbell_strength_split_v1',
   // Dumbbells and a bench to press on: five days of strength, power and conditioning.

@@ -41,7 +41,8 @@ import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
 import { AdaptedSessionRef, SessionAdaptation, withSessionSwap } from '../lib/sessionAdaptation';
-import { isReaderNamedSession } from '../lib/sessionNameLabel';
+import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
+import { isReaderNamedSession, planSessionTitles } from '../lib/sessionNameLabel';
 import { removeStrengthGoal } from '../lib/strengthGoals';
 import { buildTailoringBadgeLabels } from '../lib/tailoringFit';
 import { typedSessionNames } from '../lib/templateBuilderSteps';
@@ -946,6 +947,18 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
         // are derived, and would tag every row the same.
         showRoles={route.programType === 'ready'}
         readerNamed={isReaderNamedSession(preferences.readerSessionNames, daySession)}
+        // The title the programme page's row gave this day, "A"/"B" and all:
+        // the page you land on must not call it something else.
+        dayTitle={
+          planSessionTitles(
+            program.sessions.map((session) => ({
+              name: session.name,
+              readerNamed: isReaderNamedSession(preferences.readerSessionNames, session),
+            })),
+            formatWorkoutDisplayLabel(program.title, t(preferences.appLanguage, 'common.customWorkout')),
+            preferences.appLanguage,
+          )[dayIndex]
+        }
         // Custom only, like the programme's own name.
         onRenameSession={
           route.programType === 'custom'

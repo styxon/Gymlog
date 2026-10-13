@@ -116,10 +116,11 @@ module.exports = [
       assert.ok(exerciseNames.includes('Inverted Row'));
       // What matters is that nothing asks for a weight. A plank is now 'hold'
       // rather than 'bodyweight' — still unloaded, and still logged without a
-      // kilogram field.
+      // kilogram field. The run blocks that close each day since 2026-10-12
+      // are minutes ('duration_minutes'), unloaded too.
       assert.equal(
         minimal.sessions.every((session) =>
-          session.exercises.every((exercise) => ['bodyweight', 'hold'].includes(exercise.trackingMode)),
+          session.exercises.every((exercise) => ['bodyweight', 'hold', 'duration_minutes'].includes(exercise.trackingMode)),
         ),
         true,
       );

@@ -1,6 +1,6 @@
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { Vinha_PROGRAM_RECOMMENDATIONS } from '../features/workout/gainerProgramCatalog';
-import type { SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome } from '../types/models';
+import type { SetupAgeRange, SetupEquipment, SetupFocusArea, SetupGoal, SetupLevel, SetupSecondaryOutcome } from '../types/models';
 import type { RecommendationProgramDefinition, TemplateFamilyId } from '../types/recommendation';
 import { readyTemplateCardMinutes } from './programmeMinutes';
 
@@ -62,7 +62,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'low_equipment',
     recoveryDemand: 'low',
-    styleTags: ['express', 'balanced'],
+    // Not 'express' since 2026-10-12: each day closes on twelve minutes of
+    // run blocks, and the session is about fifty minutes.
+    styleTags: ['balanced'],
     secondaryOutcomeTags: ['consistency'],
     focusAreaTags: ['core', 'legs'],
     lowFriction: true,
@@ -125,7 +127,10 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'moderate',
-    styleTags: ['balanced', 'express'],
+    // Not 'express' since 2026-10-12: a conditioning block follows the lifts
+    // every day (about a third of the week), and the session is about fifty
+    // minutes. FIT Lite is the shorter one.
+    styleTags: ['balanced'],
     secondaryOutcomeTags: ['consistency'],
     focusAreaTags: ['legs', 'chest', 'back'],
     lowFriction: true,
@@ -137,9 +142,11 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['balanced', 'express'],
+    styleTags: ['balanced', 'express', 'machine_guided'],
     secondaryOutcomeTags: ['consistency'],
-    focusAreaTags: ['arms', 'back', 'chest'],
+    // Arms went on 2026-10-12, when the week became lighter lifting and close
+    // to half conditioning: it no longer trains them. Conditioning came in.
+    focusAreaTags: ['conditioning', 'back', 'chest', 'legs'],
     lowFriction: true,
     jointFriendly: true,
   }),
@@ -161,7 +168,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner', 'advanced', 'pro'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'moderate',
-    styleTags: ['pump', 'balanced'],
+    styleTags: ['pump', 'balanced', 'machine_guided'],
     secondaryOutcomeTags: ['muscle'],
     focusAreaTags: ['glutes', 'legs', 'chest', 'back'],
     jointFriendly: true,
@@ -235,7 +242,9 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     styleTags: ['conditioning', 'balanced'],
     secondaryOutcomeTags: ['conditioning', 'mobility'],
     focusAreaTags: ['conditioning'],
-    jointFriendly: true,
+    // Not joint-friendly since 2026-10-12 (owner): running is about 72 % of
+    // the week's time. A reader whose knees or ankles are flagged still gets
+    // its runs as walks or rides (cautionExerciseFilter, RUN_STAND_INS).
   }),
   defineProgram('tpl_shred_v1', {
     familyId: 'athletic_recomp',
@@ -256,7 +265,7 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
     supportedLevels: ['beginner'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['pump', 'express'],
+    styleTags: ['pump', 'express', 'machine_guided'],
     secondaryOutcomeTags: ['muscle', 'consistency'],
     focusAreaTags: ['chest', 'back', 'legs'],
     lowFriction: true,
@@ -456,11 +465,14 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   defineProgram('tpl_gainer_joint_friendly_v1', {
     familyId: 'joint_friendly',
     supportedGoals: ['general', 'general_fitness'],
-    backupGoals: ['muscle', 'run_mobility'],
+    // Strength as a backup since 2026-10-12 (owner): supported machine lifts
+    // are strength work, and without it a beginner over 41 who wants strength
+    // had no lower-impact card that listed the goal.
+    backupGoals: ['muscle', 'run_mobility', 'strength'],
     supportedLevels: ['beginner'],
     equipmentTier: 'full_gym',
     recoveryDemand: 'low',
-    styleTags: ['balanced', 'recovery'],
+    styleTags: ['balanced', 'recovery', 'machine_guided'],
     secondaryOutcomeTags: ['mobility', 'consistency'],
     focusAreaTags: ['legs', 'back'],
     lowFriction: true,
@@ -468,6 +480,169 @@ export const RECOMMENDATION_PROGRAMS: RecommendationProgramDefinition[] = [
   }),
 
   ...Vinha_PROGRAM_RECOMMENDATIONS.map((program) => defineProgram(program.programId, program)),
+
+  // ── The age gaps (owner, 2026-10-12) ────────────────────────────────────
+  // Last on purpose: a waterfall tie keeps the programme defined first, so
+  // these never take a pick the rest of the catalog already rated equal for
+  // a reader the age rule is not about. VITAL Walk and VITAL Home are offered only
+  // to a reader over 41, STRONG Guided only at 16-18 and over 41
+  // (ageGateAllows).
+  defineProgram('tpl_3_day_walk_mobility_v1', {
+    familyId: 'low_impact',
+    supportedGoals: ['general_fitness', 'general'],
+    backupGoals: ['lean_athletic', 'run_mobility'],
+    supportedLevels: ['beginner', 'advanced', 'pro'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['balanced', 'conditioning'],
+    secondaryOutcomeTags: ['conditioning', 'mobility', 'consistency'],
+    focusAreaTags: ['conditioning', 'mobility'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_guided_strength_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle', 'general'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+    // Since 2026-10-12 (owner): the six-rep sets are on guided machines and
+    // cables, no barbell.
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_home_easy_strength_v1', {
+    familyId: 'low_impact',
+    // Muscle a backup since 2026-10-12 (owner): close to half of the week is
+    // walking, and listed as written for muscle it led the cards of a reader
+    // over 41 who asked for muscle at home. VITAL Muscle is that week now.
+    supportedGoals: ['general_fitness'],
+    backupGoals: ['muscle', 'strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['balanced'],
+    secondaryOutcomeTags: ['consistency', 'strength'],
+    focusAreaTags: ['legs', 'chest', 'back'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
+  // VITAL Strength and VITAL Body (owner, 2026-10-12): the two gear lanes the
+  // age rule still had no week for over 41, from an audit of 26,460 answers.
+  // Both go to a reader over 41 only (ageGateAllows). VITAL Strength is STRONG
+  // Guided's week for a pair of dumbbells: sets of six on the anchor lifts, no
+  // barbell, no jumps. VITAL Body is VITAL Muscle's week with nothing to
+  // hold. Neither lists general fitness: no minute of either is cardio.
+  defineProgram('tpl_3_day_strong_home_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_huge_bodyweight_v1', {
+    familyId: 'low_equipment',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back'],
+    jointFriendly: true,
+  }),
+  // The fat-burn weeks over 41 (owner, 2026-10-12): three full-body days with
+  // the conditioning written as intervals and walking blocks, no jump in either
+  // and no barbell. SHRED Guided goes to the two bands the age rule is about,
+  // as STRONG Guided does (the gym's machines, cables and bike, rower or
+  // cross-trainer; it fills the 16-18 gym's lean gap too); VITAL Burn over
+  // 41 only (a mat, a table and pavement). The athletic_recomp family, as
+  // SHRED and Fat Burn HIIT: this is the week a lean answer opens, so it needs
+  // the conditioning tag the lean lane filters on, not the low_impact family
+  // that only the age rule reaches. Lean and athletic is the goal they are
+  // written for; general fitness is left to VITAL Walk and VITAL Home.
+  defineProgram('tpl_3_day_shred_guided_v1', {
+    familyId: 'athletic_recomp',
+    supportedGoals: ['lean_athletic'],
+    backupGoals: [],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['conditioning', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['conditioning', 'consistency'],
+    focusAreaTags: ['conditioning', 'legs', 'chest', 'back'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_shred_home_easy_v1', {
+    familyId: 'athletic_recomp',
+    supportedGoals: ['lean_athletic'],
+    backupGoals: [],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'low',
+    styleTags: ['conditioning', 'balanced'],
+    secondaryOutcomeTags: ['conditioning', 'consistency'],
+    focusAreaTags: ['conditioning', 'legs', 'chest', 'back'],
+    lowFriction: true,
+    jointFriendly: true,
+  }),
+  // VITAL Base (owner, 2026-10-12): strength with no equipment, the last
+  // gap in the audit of 26,460 answers over 41 (1,260 answers, no card fitting).
+  // Over 41 only (ageGateAllows). Sets of six on hard versions of bodyweight
+  // lifts (rear-foot-elevated split squat, one-leg hinge, feet-up push-up,
+  // table row), no jumps, no weights. Muscle as the backup; not general
+  // fitness: no minute of it is cardio.
+  defineProgram('tpl_3_day_strong_bodyweight_v1', {
+    familyId: 'strength_base',
+    supportedGoals: ['strength'],
+    backupGoals: ['muscle'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['heavy', 'balanced'],
+    secondaryOutcomeTags: ['strength', 'consistency'],
+    focusAreaTags: ['legs', 'back', 'chest'],
+    jointFriendly: true,
+  }),
+  // The muscle weeks over 41 (owner, 2026-10-12): three full-body days at 10
+  // to 15 reps, at the gym on machines and cables, at home on dumbbells alone.
+  // HUGE Guided goes to the two bands the age rule is about, as STRONG Guided
+  // does; VITAL Muscle over 41 only (ageGateAllows). Strength as a backup (ten
+  // to fifteen reps build some); not general fitness: a week without cardio
+  // is outside the 30-50 % the owner set for that goal.
+  defineProgram('tpl_3_day_huge_guided_v1', {
+    familyId: 'mass_hypertrophy',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'full_gym',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced', 'machine_guided'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back', 'shoulders'],
+    jointFriendly: true,
+  }),
+  defineProgram('tpl_3_day_huge_home_v1', {
+    familyId: 'low_equipment',
+    supportedGoals: ['muscle'],
+    backupGoals: ['strength'],
+    supportedLevels: ['beginner', 'advanced'],
+    equipmentTier: 'low_equipment',
+    recoveryDemand: 'moderate',
+    styleTags: ['pump', 'balanced'],
+    secondaryOutcomeTags: ['muscle', 'consistency'],
+    focusAreaTags: ['legs', 'chest', 'back', 'shoulders'],
+    jointFriendly: true,
+  }),
 ];
 
 export function getRecommendationProgramDefinition(programId: string) {
@@ -495,4 +670,137 @@ export function readerAskedForRecovery(
   input: { goal: SetupGoal; secondaryOutcomes: readonly SetupSecondaryOutcome[]; focusAreas: readonly SetupFocusArea[] },
 ) {
   return input.goal === 'run_mobility' || input.secondaryOutcomes.includes('mobility') || input.focusAreas.includes('mobility');
+}
+
+export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
+export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
+export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
+export const SHRED_GUIDED_PROGRAM_ID = 'tpl_3_day_shred_guided_v1';
+export const SHRED_HOME_EASY_PROGRAM_ID = 'tpl_3_day_shred_home_easy_v1';
+export const STRONG_HOME_PROGRAM_ID = 'tpl_3_day_strong_home_v1';
+export const HUGE_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_huge_bodyweight_v1';
+export const STRONG_BODYWEIGHT_PROGRAM_ID = 'tpl_3_day_strong_bodyweight_v1';
+export const HUGE_GUIDED_PROGRAM_ID = 'tpl_3_day_huge_guided_v1';
+export const HUGE_HOME_PROGRAM_ID = 'tpl_3_day_huge_home_v1';
+
+/** The answers the age rule reads. */
+interface AgeRuleReader {
+  ageRange: SetupAgeRange | null;
+  equipment: SetupEquipment;
+  level: SetupLevel;
+  goal: SetupGoal;
+  secondaryOutcomes: readonly SetupSecondaryOutcome[];
+  focusAreas: readonly SetupFocusArea[];
+  availableEquipment?: readonly string[] | null;
+}
+
+/** The chips that put a weight in the reader's hands. */
+const LOAD_CHIPS = ['Dumbbells', 'Kettlebells', 'Barbells', 'Barbell & plates'];
+
+/**
+ * Whether the reader can lift a weight: the gym card, or a dumbbell,
+ * kettlebell or barbell among their own chips.
+ */
+export function readerOwnsLoad(input: Pick<AgeRuleReader, 'equipment' | 'availableEquipment'>): boolean {
+  return input.equipment === 'gym' || (input.availableEquipment ?? []).some((item) => LOAD_CHIPS.includes(item));
+}
+
+/**
+ * A walking week (VITAL Walk, VITAL Home: 42-45 % of the time walking) is never the
+ * answer to a lifting goal for a reader who can lift (owner, 2026-10-12).
+ * VITAL Home as muscle's own week led the cards of a reader over 41 with
+ * dumbbells, and a walking week was the age rule's second card for one who
+ * asked for strength. Without a weight it may still be the second card,
+ * which over 41 must be a lower-impact one (ageRuleGuaranteesCard); beside
+ * HOME Starter it is the only one that lists the goal. Never the featured
+ * one: VITAL Home lists muscle and strength only as backups, so the answers
+ * never lead with it.
+ */
+function walkingWeekAnswersLiftingGoal(input: Pick<AgeRuleReader, 'goal' | 'equipment' | 'availableEquipment'>): boolean {
+  return (input.goal === 'muscle' || input.goal === 'strength') && readerOwnsLoad(input);
+}
+
+/**
+ * Whether a programme suits the reader's age band (owner, 2026-10-12): over
+ * 41, a joint-friendly or lower-impact week; 16-18 with the gym card, a week
+ * lifted mostly on guided machines. Every other band, and a reader who left
+ * the age out, has no age-fitting programme: the rule only ever adds a card,
+ * it never marks one down for being young or old.
+ */
+export function programFitsReaderAge(
+  definition: Pick<RecommendationProgramDefinition, 'familyId' | 'jointFriendly' | 'styleTags'>,
+  input: Pick<AgeRuleReader, 'ageRange' | 'equipment'>,
+): boolean {
+  if (input.ageRange === '41_plus') {
+    return definition.jointFriendly || definition.familyId === 'low_impact';
+  }
+  if (input.ageRange === '18' && input.equipment === 'gym') {
+    return definition.styleTags.includes('machine_guided');
+  }
+  return false;
+}
+
+/**
+ * Whether the second card must be an age-fitting one when neither card is:
+ * every reader over 41, and a 16-18-year-old with the gym card at the
+ * beginner or advanced level. At pro the stated level decides (owner,
+ * 2026-10-12): the machine weeks are beginner and intermediate content.
+ */
+export function ageRuleGuaranteesCard(input: Pick<AgeRuleReader, 'ageRange' | 'equipment' | 'level'>): boolean {
+  if (input.ageRange === '41_plus') {
+    return true;
+  }
+  return input.ageRange === '18' && input.equipment === 'gym' && input.level !== 'pro';
+}
+
+/**
+ * Whether the setup may offer this programme to the reader at all.
+ *
+ * The lower-impact weeks (VITAL Walk, VITAL Home) go to a reader over 41, the way a
+ * week of stretching goes only to a reader who asked for one
+ * (readerAskedForRecovery). The owner's rule also let a reader who asked for
+ * mobility or recovery have them at any age; that moved the two cards of
+ * 5,229 of 79,380 answers at 19-40 (run and mobility at home: RUN + Fat Burn
+ * HIIT became RUN + VITAL Walk), against the same day's acceptance that those
+ * bands do not move. The acceptance won; widening this is one line.
+ *
+ * STRONG Guided goes to the two bands the age rule is about. It is a sound
+ * week for anyone and the Programs tab lists it for everyone; offered to the
+ * other bands it only took the second card from the strength or muscle week
+ * their answers had chosen (owner's acceptance, 2026-10-12: the offers of
+ * 19-40 do not move). HUGE Guided, its muscle counterpart, the same.
+ *
+ * VITAL Muscle goes to a reader over 41 only. At 16-18 the age rule asks for
+ * machines, which a dumbbell week at home has none of.
+ *
+ * Over 41, the walking weeks also stay away from a lifting goal when the
+ * reader can lift (walkingWeekAnswersLiftingGoal).
+ */
+export function ageGateAllows(
+  definition: Pick<RecommendationProgramDefinition, 'programId' | 'familyId'>,
+  input: AgeRuleReader,
+): boolean {
+  if (definition.familyId === 'low_impact') {
+    return input.ageRange === '41_plus' && !walkingWeekAnswersLiftingGoal(input);
+  }
+  // SHRED Guided as STRONG Guided: the two bands the age rule is about. SHRED
+  // Home Easy over 41 only; at 16-18 the age rule asks for machines.
+  if (definition.programId === SHRED_GUIDED_PROGRAM_ID) {
+    return input.ageRange === '41_plus' || input.ageRange === '18';
+  }
+  if (definition.programId === SHRED_HOME_EASY_PROGRAM_ID) {
+    return input.ageRange === '41_plus';
+  }
+  if (definition.programId === GUIDED_STRENGTH_PROGRAM_ID || definition.programId === HUGE_GUIDED_PROGRAM_ID) {
+    return input.ageRange === '41_plus' || input.ageRange === '18';
+  }
+  if (
+    definition.programId === HUGE_HOME_PROGRAM_ID
+    || definition.programId === STRONG_HOME_PROGRAM_ID
+    || definition.programId === HUGE_BODYWEIGHT_PROGRAM_ID
+    || definition.programId === STRONG_BODYWEIGHT_PROGRAM_ID
+  ) {
+    return input.ageRange === '41_plus';
+  }
+  return true;
 }

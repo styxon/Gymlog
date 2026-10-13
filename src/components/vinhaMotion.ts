@@ -16,7 +16,7 @@ export const CANVAS_HEIGHT = 812;
 
 /** Vertical centre of the lockup, on the reference canvas. */
 export const MARK_CENTER_SPLASH = 247;
-export const MARK_CENTER_WELCOME = 201;
+export const MARK_CENTER_WELCOME = 118;
 
 /**
  * Wordmark base size.

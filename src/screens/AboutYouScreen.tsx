@@ -6,7 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
 import { useHardwareBack } from '../hooks/useHardwareBack';
 import { RulerPicker } from '../components/RulerPicker';
-import { removeTrailingZeros } from '../lib/format';
+import { TypedRulerValue } from '../components/TypedRulerValue';
+import { canContinueAboutYou } from '../lib/aboutYouRules';
 import { I18nKey, t } from '../lib/i18n';
 import { darkTheme, Theme, useThemedStyles } from '../theming';
 import { HG_DARK } from '../darkTheme';
@@ -77,7 +78,8 @@ export type AboutYouGender = 'male' | 'female' | null;
 export interface AboutYouValues {
   gender: AboutYouGender;
   ageRange: SetupAgeRange;
-  weightKg: number;
+  /** Null when the reader skipped it: nothing downstream stores a default. */
+  weightKg: number | null;
 }
 
 interface AboutYouScreenProps {
@@ -147,13 +149,26 @@ export function AboutYouScreen({
    */
   const [rulerKg, setRulerKg] = useState(() => clamp(initialValues?.weightKg ?? 75, WEIGHT_LIMITS));
 
-  const answered = gender !== null && ageRange !== null && weightKg !== null;
+  /**
+   * Weight is optional (user, 2026-10-12). Skipping is an answer of its own:
+   * the dash stays, `weightKg` goes on as null, and touching the ruler or
+   * typing a number again takes the skip back.
+   */
+  const [weightSkipped, setWeightSkipped] = useState(false);
+
+  const answered = canContinueAboutYou({ gender, ageRange });
 
   function handleContinue() {
-    if (!answered) {
+    if (!answered || gender === null || ageRange === null) {
       return;
     }
-    onContinue({ gender, ageRange, weightKg });
+    onContinue({ gender, ageRange, weightKg: weightSkipped ? null : weightKg });
+  }
+
+  function setWeight(next: number) {
+    setRulerKg(next);
+    setWeightKg(next);
+    setWeightSkipped(false);
   }
 
   return (
@@ -241,9 +256,15 @@ export function AboutYouScreen({
               colour: white marks on brand violet separate by opacity. */}
           <View style={styles.weightPanel}>
             <View style={styles.weightValueRow}>
-              <Text style={[styles.weightValue, weightKg === null && styles.weightValueEmpty, { fontFamily }]}>
-                {weightKg === null ? '—' : removeTrailingZeros(weightKg)}
-              </Text>
+              <TypedRulerValue
+                language={language}
+                value={weightSkipped ? null : weightKg}
+                bounds={{ min: WEIGHT_LIMITS.min, max: WEIGHT_LIMITS.max, step: 0.1 }}
+                decimals={1}
+                onCommit={setWeight}
+                label={t(language, 'weightLog.title')}
+                textStyle={[styles.weightValue, (weightKg === null || weightSkipped) && styles.weightValueEmpty, { fontFamily }]}
+              />
               <Text style={[styles.weightUnit, { fontFamily }]}>kg</Text>
             </View>
             <RulerPicker
@@ -255,11 +276,20 @@ export function AboutYouScreen({
               tone="inverse"
               accessibilityLabel={t(language, 'weightLog.title')}
               unit="kg"
-              onChange={(next) => {
-                setRulerKg(next);
-                setWeightKg(next);
-              }}
+              onChange={setWeight}
             />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t(language, 'aboutYou.weight.skipA11y')}
+              accessibilityState={{ selected: weightSkipped }}
+              hitSlop={8}
+              onPress={() => setWeightSkipped(true)}
+              style={({ pressed }) => [styles.skipButton, pressed && styles.genderTilePressed]}
+            >
+              <Text style={[styles.skipText, weightSkipped && styles.skipTextActive, { fontFamily }]}>
+                {t(language, 'aboutYou.weight.skip')}
+              </Text>
+            </Pressable>
           </View>
         </View>
 
@@ -432,6 +462,21 @@ const makeStyles = (theme: Theme) => {
   /** The dash before the first drag, dimmer than an answered number. */
   weightValueEmpty: {
     color: 'rgba(255,255,255,0.55)',
+  },
+  skipButton: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+    marginTop: 2,
+  },
+  skipText: {
+    color: 'rgba(255,255,255,0.85)',
+    fontSize: 14.5,
+    fontWeight: '800',
+    textDecorationLine: 'underline',
+  },
+  skipTextActive: {
+    color: '#FFFFFF',
   },
   genderRow: {
     flexDirection: 'row',

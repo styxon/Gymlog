@@ -35,6 +35,7 @@ import {
   isReaderNamedSession,
   localizeSessionName,
   localizeWorkoutFocus,
+  planSessionTitles,
 } from '../lib/sessionNameLabel';
 import { layout, radii, spacing } from '../theme';
 import type { AppLanguage } from '../types/models';
@@ -472,7 +473,22 @@ export function ProgramDetailScreen({
   );
   const displayTitle = formatWorkoutDisplayLabel(program.title, t(language, 'common.customWorkout'));
   // A day's row name: the shared rule, or the reader's own words if they typed them.
+  // Two days that read the same ("Koko keho" twice) are told apart here, in
+  // list order, so the rows and the day pages agree (planSessionTitles).
+  const dayTitles = useMemo(
+    () =>
+      planSessionTitles(
+        program.sessions.map((session) => ({
+          name: session.name,
+          readerNamed: isReaderNamedSession(readerSessionNames, session),
+        })),
+        displayTitle,
+        language,
+      ),
+    [displayTitle, language, program.sessions, readerSessionNames],
+  );
   const dayTitleOf = (session: { id: string; name: string }, index: number) =>
+    dayTitles[index] ??
     formatPlanSessionTitle(session, index, displayTitle, language, isReaderNamedSession(readerSessionNames, session));
   // The name being typed, or null when the title is just a title. Seeded from
   // what is on screen rather than the raw stored string, so a reader editing

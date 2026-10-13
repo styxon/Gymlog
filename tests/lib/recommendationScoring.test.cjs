@@ -297,6 +297,25 @@ module.exports = [
       // scores the same at every age.
       const plain = 'tpl_3_day_strength_base_v1';
       assert.equal(scoreOf('41_plus', plain), scoreOf('26_30', plain));
+
+      // The other end, 16-18 (owner, 2026-10-12): the weeks lifted mostly on
+      // guided machines get the same small nudge up, and again in one
+      // direction only.
+      const machine = 'tpl_huge_starter_v1';
+      const teen = scoreOf('18', machine);
+      assert.ok(teen !== null, 'the machine-guided starter should be a candidate');
+      assert.equal(teen, scoreOf('26_30', machine) + 3, 'the 16-18 band should lift a machine-guided programme by 3');
+      assert.equal(scoreOf('19_25', machine), scoreOf('26_30', machine));
+      assert.equal(scoreOf(undefined, machine), scoreOf('26_30', machine));
+      // Nothing pushed down at 16-18 either: the free-weight week and a
+      // joint-friendly week without machines score as they do at 26-30.
+      assert.equal(scoreOf('18', plain), scoreOf('26_30', plain));
+      const homeStarter = 'tpl_2_day_minimal_full_body_v1';
+      assert.equal(scoreOf('18', homeStarter), scoreOf('26_30', homeStarter));
+      // And the two bands do not borrow each other's nudge: the 41+ one is
+      // for joint-friendly weeks, the 16-18 one for machine-guided weeks.
+      assert.equal(scoreOf('18', joint), scoreOf('26_30', joint) + 3, 'Joint-Friendly Strength is machine-guided too');
+      assert.equal(scoreOf('41_plus', homeStarter), scoreOf('26_30', homeStarter) + 3);
     },
   },
 ];

@@ -308,7 +308,40 @@ module.exports = [
       // sets over the whole library and catalog are identical to it). The two
       // thin hip days were thin before: Heavy Glutes Strength and the Hip
       // Opening Flow.
-      const expected = { hips: { removed: 91, thin: 2 }, lower_back: { removed: 122, thin: 4 } };
+      //
+      // Lower back went from four thin days to three on 2026-10-12 with the
+      // same 122 removals: FIT Elite's Upper Power took treadmill intervals,
+      // so when its barbell row and swings go it keeps three rows, not two.
+      //
+      // Hips went from 91 removals to 90 on 2026-10-12: Bodyweight
+      // Upper/Lower's Day 4 gave its Frog Pump (a hip-avoid row) to a block of
+      // High Knees, which the hips filter does not touch.
+      //
+      // Hips went back to 91 later the same day, through content and not a
+      // pattern: VITAL Walk's Kneeling Hip Flexor and Standing Hip Abduction are
+      // hip-avoid rows (+2), and Joint-Friendly Strength gave its Standing
+      // Hip Abduction to a bike finisher (-1). No day went thin.
+      //
+      // Lower back went to 127 the same day, content again: HUGE Guided and
+      // VITAL Muscle hinge with a stiff-legged dumbbell deadlift (three rows), a
+      // cable pull-through and a bent-over row, all lower-back-avoid rows. Each
+      // of their days keeps five lifts; no day went thin.
+      //
+      // Hips went to 92 and lower back to 131 the same day, content again:
+      // VITAL Body's Hip Thrust (Bodyweight) is a hip-avoid row (+1 hips),
+      // and its Single-Leg RDL (+1) and VITAL Strength's two stiff-legged
+      // dumbbell deadlifts and bent-over row (+3) are lower-back-avoid rows.
+      // VITAL Strength's hinge day keeps three lifts, not fewer; no day went thin.
+      //
+      // And to 133 the same day: SHRED Guided pulls through a cable on two of
+      // its days, a lower-back-avoid row each. Its days keep four lifts or
+      // more; none went thin.
+      //
+      // Hips went to 94 and lower back to 134 with VITAL Base, content
+      // again: its Single Leg Glute Bridge on two days is a hip-avoid row (+2),
+      // and its Single-Leg RDL (+1) is a lower-back-avoid row. Every day keeps
+      // at least four lifts; no day went thin.
+      const expected = { hips: { removed: 94, thin: 2 }, lower_back: { removed: 134, thin: 3 } };
       for (const area of Object.keys(expected)) {
         let removed = 0;
         let thin = 0;

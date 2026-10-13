@@ -151,6 +151,8 @@ const FAT_LOSS_IDS = new Set([
   'tpl_shred_elite_v1',
   'tpl_gainer_lean_shred_v1',
   'tpl_gainer_fat_burn_hiit_v1',
+  'tpl_3_day_shred_guided_v1',
+  'tpl_3_day_shred_home_easy_v1',
 ]);
 
 /**

@@ -146,7 +146,9 @@ module.exports = [
         'Overhead Press',
         'Lat Pulldown',
         'Reverse Lunge',
-        'Triceps Pushdown',
+        // FIT's day B closes on run blocks since 2026-10-12 (was a triceps
+        // pushdown); the case is about the shared slot ids, not this row.
+        'Easy Run Blocks',
       ]);
       // A still gets what was chosen for it.
       const dayAToday = started('full_body_a', heldAdaptationFor(held, dayA, today));

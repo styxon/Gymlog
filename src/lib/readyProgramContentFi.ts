@@ -123,13 +123,13 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_at_home_beginner_v1: {
     summary:
-      'Kolme kehonpainotreeniä viikossa kotona: ylävartalo, alavartalo ja koko kehon kierto. Punnerruksia, kyykkyjä, askelkyykkyjä ja lankkuja, pöytä soutuun ja tuoli dippeihin.',
+      'Kolme kehonpainotreeniä viikossa kotona: ylävartalo juoksuosioilla, alavartalo hyppytähdillä ja koko kehon kierto. Punnerruksia, kyykkyjä, askelkyykkyjä ja lankkuja, pöytä soutuun ja tuoli dippeihin. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
       'Aloittelijalle, joka haluaa aloittaa voimatreenin kotona ilman välineitä kolmella treenillä viikossa.',
     equipmentProfile:
-      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin riittävät.',
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli dippeihin ja paikka juosta riittävät.',
     whyItWorks:
-      'Kyykky, punnerrus, veto ja lankku toistuvat joka viikko, ja eteneminen tulee toistoista, joten voima ja kunto kasvavat ilman kilon painoja.',
+      'Kyykky, punnerrus, veto ja lankku toistuvat joka viikko, ja eteneminen tulee toistoista, kun taas juoksuosiot, hyppytähdet, burpeet ja vuorikiipeilijät tuovat viikkoon kuntoharjoittelua ilman välineitä.',
   },
   tpl_home_dumbbell_upper_lower_v1: {
     summary:
@@ -173,13 +173,13 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_home_bodyweight_upper_lower_v1: {
     summary:
-      'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä.',
+      'Neljä kehonpainotreeniä viikossa: kaksi ylävartalopäivää ja kaksi alavartalopäivää. Punnerruksia, soutua pöydän alla, bulgarialaisia askelkyykkyjä ja yhden jalan liikkeitä, ja päivät päättyvät juoksuosioihin, hyppytähtiin, burpeeihin tai polvennostoihin. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
       'Kotona ilman välineitä treenaavalle, joka on aloittelijavaiheen ohi ja haluaa neljä treeniä viikossa.',
     equipmentProfile:
-      'Ei välineitä. Tukeva pöytä soutuun ja tuoli dippeihin ja askelkyykkyihin.',
+      'Ei välineitä. Tukeva pöytä soutuun, tuoli askelkyykkyihin ja paikka juosta.',
     whyItWorks:
-      'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista.',
+      'Lisäpainon korvaavat vaikeammat versiot: yksi jalka kahden sijaan, jalat korotettuina, hitaammat toistot. Eteneminen tulee ensin toistoista, ja jokainen päivä päättyy kuntoharjoitusosioon, joka ei tarvitse välineitä.',
   },
   tpl_home_bodyweight_full_body_v1: {
     summary:
@@ -313,13 +313,113 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_gainer_joint_friendly_v1: {
     summary:
-      'Kolme päivää viikossa laitteilla, taljoilla ja kuminauhalla: tuettu alavartalo, tuettu ylävartalo sekä koko kehon ja tasapainon päivä. Toistoja on pääosin 12–20, ja liikkeet tehdään hallitusti.',
+      'Kolme päivää viikossa laitteilla, taljoilla ja kuminauhalla: tuettu alavartalo, tuettu ylävartalo sekä koko kehon ja tasapainon päivä, ja jokainen päivä päättyy kymmeneen kevyeen minuuttiin kuntopyörällä. Toistoja on 12–15, ja liikkeet tehdään hallitusti.',
     audience:
       'Aloittelijalle, tauolta palaavalle tai kenelle tahansa, jonka nivelet eivät kestä raskasta vapaata painoa mutta joka haluaa lisää voimaa.',
     equipmentProfile:
-      'Salin laitteet ja taljat, kuminauha ja tuoli.',
+      'Salin laitteet ja taljat, kuntopyörä, kuminauha ja tuoli.',
     whyItWorks:
       'Laite tukee liikeradan, joten kuorma osuu lihakseen eikä niveleen, ja korkeat toistot rakentavat voimaa kevyillä painoilla.',
+  },
+  tpl_3_day_walk_mobility_v1: {
+    summary:
+      'Kolme kävelyyn perustuvaa päivää viikossa: kahtena päivänä reippaita kävelyblokkeja ja yhtenä ylämäkeen, sitten muutama kevyt voimaliike ja venyttelyt. Vajaa puolet viikosta on kävelyä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kevyemmän viikon: kävelyä, liikkuvuutta ja kevyttä voimaa ilman välineitä.',
+    equipmentProfile:
+      'Ei välineitä: tuoli tuolilta nousuihin, seinä punnerruksiin sekä tasainen reitti ja mäki (tai juoksumatto) kävelyihin.',
+    whyItWorks:
+      'Jokainen treeni alkaa kävelyllä, sitten tulee kaksi tai kolme kevyttä voimaliikettä, joista yksi joka päivä ylävartalolle, ja lopuksi venyttelyt. Kävelyblokit pitenevät minuutilla, kun ne tuntuvat tasaisilta.',
+  },
+  tpl_3_day_guided_strength_v1: {
+    summary:
+      'Kolme koko kehon salipäivää voimaa laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja kuuden toiston sarjoina, ympärillä maljakyykky, pystypunnerrus ja reiden koukistukset.',
+    audience:
+      'Aloittelijalle ja tauolta palaavalle, joka haluaa harjoitella voimaa ohjatuilla laitteilla ennen vapaita tankoliikkeitä.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, ylätalja, alatalja sekä reiden koukistus- ja ojennuslaite, ja yksi käsipaino maljakyykkyyn.',
+    whyItWorks:
+      'Ohjatut laitteet määräävät liikeradan, joten jokainen sarja menee ponnisteluun eikä tasapainoon. Ankkuriliikkeet pysyvät kuudessa toistossa, ja paino nousee askeleen, kun jokainen sarja yltää kuuteen.',
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    summary:
+      'Kolme kevyttä kehonpainopäivää kotona: tuolilta nousut, kalteva- ja seinäpunnerrukset, soutu pöydän alla, lantionnostot ja tasapaino, ja jokainen päivä päättyy kahteen kuuden minuutin kävelyyn.',
+    audience:
+      'Kenelle tahansa, joka haluaa aloittaa voimaharjoittelun kotona rauhalliseen tahtiin, kävely osana jokaista treeniä.',
+    equipmentProfile:
+      'Ei välineitä: tukeva tuoli, seinä, tukeva pöytä soutuun ja paikka kävellä.',
+    whyItWorks:
+      'Liikkeet vaikeutuvat pienin askelin (matalampi tuoli, matalampi alusta punnerrukseen), ja kävelyt varaavat jokaisesta päivästä osan kevyelle kestävyydelle.',
+  },
+  tpl_3_day_strong_home_v1: {
+    summary:
+      'Kolme koko kehon päivää kotona käsipainoparilla: maljakyykkyä, lattiapunnerrusta, soutua, suorin jaloin maastavetoa ja pystypunnerrusta, ankkuriliikkeissä kuuden toiston sarjoja. Jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa vahvistua kotona käsipainoilla kolmena päivänä viikossa, ilman penkkiä, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Käsipainopari, joka on riittävän painava kuuden toiston sarjoihin, ja vähän lattiatilaa. Penkkiä ei tarvita: punnerrus tehdään selinmakuulla lattialla.',
+    whyItWorks:
+      'Raskaita kuuden toiston sarjoja pitkillä tauoilla ja helposti toistettavilla liikkeillä: kyykky, saranaliike, työntö ja veto joka viikko, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Lopeta sarja toisto ennen uupumusta; kun jokainen sarja yltää kuuteen toistoon, ota raskaammat käsipainot, tai yhdellä parilla hidasta ensin jokainen laskuvaihe kolmeen sekuntiin.',
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    summary:
+      'Kolme koko kehon päivää ilman välineitä: punnerruksia, soutua pöydän alla, kyykkyjä, takaaskelkyykkyjä, lantionnostoja ja yhden jalan liikkeitä. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kasvattaa lihasta ilman välineitä kolmena päivänä viikossa, kotona tai muualla, ilman tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Ei ostettavia välineitä: lattia, tukeva pöytä, jonka alla soudetaan, sekä sohva, tuoli tai tason reuna vinopunnerrukseen ja lantionnostoon.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Lisää ensin toistoja jokaiseen sarjaan ja laske jokainen toisto hallitusti; kun jokainen sarja yltää toistoihinsa, tee liikkeestä vaikeampi: matalampi alusta punnerrukseen, pidempi pysäys soudun yläasennossa.',
+  },
+  tpl_3_day_shred_guided_v1: {
+    summary:
+      'Kolme koko kehon salipäivää, joissa nostot tehdään piirinä laitteilla ja taljoilla ja kunto-osuus intervalleina: pyörä ensimmäisenä päivänä, soutulaite toisena ja crosstrainer kolmantena. Noin kolmasosa viikosta on kuntoharjoittelua, eikä viikossa ole hyppyjä eikä tankoa.',
+    audience:
+      'Kenelle tahansa, joka haluaa salilla rasvanpolttoviikon, joka säästää niveliä: aloittelijalle ja tauolta palaavalle, joka haluaa ohjatut laitteet tankojen, burpeiden ja pikajuoksujen sijaan, kolmena päivänä viikossa.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, pystypunnerruslaite, ylätalja ja taljateline, reiden koukistus- ja ojennuslaite sekä pyörä, soutulaite ja crosstrainer.',
+    whyItWorks:
+      'Nostot tehdään peräkkäin 30 sekunnin lepoilla, joten syke pysyy ylhäällä sarjojen välissä, ja laite määrää jokaisen liikkeen radan. Intervallit vaihtelevat kovan ja kevyen välillä, ja niihin lisätään kierros tai minuutti ennen kuin vauhtia kasvatetaan.',
+  },
+  tpl_3_day_shred_home_easy_v1: {
+    summary:
+      'Kolme kehonpainopäivää kotona, joissa liikkeet tehdään piirinä lyhyin lepoin, ja niiden perään kaksi neljän minuutin kävelyblokkia, joiden välissä kävellään minuutti rauhallisesti: reippaasti ensimmäisenä ja kolmantena päivänä, ylämäkeen toisena. Noin kolmasosa viikosta on kävelyä, eikä viikossa ole hyppyjä.',
+    audience:
+      'Kenelle tahansa, joka haluaa rasvanpolttoviikon kotona ilman hyppyjä: kyykkyjä, punnerruksia, soutuja ja lantionnostoja sekä kävelyä kunto-osuutena.',
+    equipmentProfile:
+      'Ei välineitä: seinä tai tukeva pöytä punnerruksiin, pöytä jonka alla soutaa, ja paikka kävellä; toista päivää varten mäki tai kaltevuus.',
+    whyItWorks:
+      'Piiri pitää levon lyhyenä, joten se toimii myös kuntona, ja kävelyblokit antavat kovan ja kevyen rytmin ilman juoksun iskuja. Liikkeet vaikeutuvat pienin askelin: matalampi alusta punnerrukseen, syvempi kyykky.',
+  },
+  tpl_3_day_strong_bodyweight_v1: {
+    summary:
+      'Kolme koko kehon päivää ilman välineitä: askelkyykkyjä takajalka koholla, yhden jalan saranaliikkeitä ja lantionnostoja, punnerruksia jalat koholla ja soutua pöydän alla, ankkuriliikkeissä kuuden toiston sarjoja. Jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa vahvistua ilman välineitä kolmena päivänä viikossa, kotona tai muualla, ilman painoja, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Ei ostettavia välineitä: lattia, tukeva tuoli tai porras takajalalle ja jaloille sekä tukeva pöytä, jonka alla soudetaan.',
+    whyItWorks:
+      'Kun painoa ei voi lisätä, kuuden toiston sarjasta tehdään raskas liikkeen versiolla: yksi jalka kahden sijaan, jalat koholle punnerruksessa, matalampi pöytä soudussa. Tauot ovat pitkiä, vetäviä sarjoja on yhtä paljon kuin työntäviä, ja jokainen sarja päättyy toistoa ennen uupumusta. Kun jokainen sarja yltää kuuteen toistoon, tee liikkeestä vaikeampi: korkeampi alusta takajalalle, pidempi pysäys jokaisen toiston alaosassa.',
+  },
+  tpl_3_day_huge_guided_v1: {
+    summary:
+      'Kolme koko kehon salipäivää lihaskasvuun, pääosin laitteilla ja taljoilla: jalkaprässi, rintaprässi, ylätalja ja alatalja, ympärillä maljakyykky, vinopenkkipunnerrus käsipainoilla ja rintatuettu soutu. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Aloittelijalle ja tauolta palaavalle, joka haluaa kasvattaa lihasta ohjatuilla laitteilla raskaiden tankoliikkeiden sijaan, kolmena päivänä viikossa.',
+    equipmentProfile:
+      'Sali, jossa on jalkaprässi, rintaprässi, pystypunnerruslaite, ylätalja ja taljateline, reiden koukistus- ja ojennuslaite sekä käsipainopari ja vinopenkki.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Laite määrää jokaisen liikkeen radan; laske jokainen toisto hallitusti, lopeta sarja toisto tai kaksi ennen uupumusta ja lisää pienin painoaskel, kun jokainen sarja yltää toistoihinsa.',
+  },
+  tpl_3_day_huge_home_v1: {
+    summary:
+      'Kolme koko kehon päivää kotona käsipainoparilla: maljakyykkyä, lattiapunnerrusta, soutua, suorin jaloin maastavetoa ja takaaskelkyykkyä, ja niiden perään olkapäät ja kädet. Jokaisessa liikkeessä on 10–15 toistoa, ja jalkoja treenataan joka päivä.',
+    audience:
+      'Kenelle tahansa, joka haluaa kasvattaa lihasta kotona käsipainoilla kolmena päivänä viikossa, ilman penkkiä, tankoa tai hyppyjä.',
+    equipmentProfile:
+      'Käsipainopari ja vähän lattiatilaa. Penkkiä ei tarvita: punnerrukset tehdään selinmakuulla lattialla.',
+    whyItWorks:
+      'Jokaista lihasryhmää treenataan kahtena tai kolmena päivänä viikossa, ja vetäviä sarjoja on yhtä paljon kuin työntäviä. Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta; kun jokainen sarja yltää toistoihinsa, ota raskaammat käsipainot, tai yhdellä parilla lisää ensin toistoja.',
   },
   tpl_gainer_prenatal_fitness_v1: {
     summary:
@@ -381,12 +481,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_3_day_full_body_v1: {
     summary:
-      'Kolme koko kehon treeniä, jotka pitävät voimaharjoittelun tiheänä samalla kun viikon kokonaisrasitus pysyy hallittavana.',
+      'Kolme koko kehon treeniä: ensin perusliikkeet, sitten pyöräily, juoksupätkät tai soutuintervallit. Noin kolmannes viikosta on kuntoharjoittelua.',
     audience:
-      'Aloitteleville treenaajille tai kenelle tahansa, joka haluaa yksinkertaisen viikkorakenteen ja toistuvaa harjoittelua perusliikkeillä.',
-    equipmentProfile: 'Suositellaan täyttä salia: tanko, penkki, talja, jalkaprässi ja perusvetopaikka.',
+      'Aloitteleville treenaajille tai kenelle tahansa, joka haluaa yksinkertaisen viikkorakenteen, toistuvaa harjoittelua perusliikkeillä ja vähän kestävyyttä joka treeniin.',
+    equipmentProfile: 'Suositellaan täyttä salia: tanko, penkki, talja, jalkaprässi, perusvetopaikka sekä kuntopyörä, juoksumatto tai soutulaite.',
     whyItWorks:
-      'Pohja toistaa kyykky-, punnerrus-, veto- ja saranaliikkeet viikon aikana, joten eteneminen pysyy ilmiselvänä ilman monimutkaista jakoa.',
+      'Pohja toistaa kyykky-, punnerrus-, veto- ja saranaliikkeet viikon aikana, joten eteneminen pysyy ilmiselvänä, ja jokainen päivä päättyy omaan kunto-osuuteensa.',
   },
   tpl_4_day_upper_lower_v1: {
     summary:
@@ -408,12 +508,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
   },
   tpl_2_day_minimal_full_body_v1: {
     summary:
-      'Kevyt kahden päivän kehonpaino-ohjelma viikoille, joina haluat treenata koko kehon ilman salia.',
+      'Kevyt kahden päivän kehonpaino-ohjelma viikoille, joina haluat treenata koko kehon ilman salia. Jokainen päivä päättyy kevyisiin juoksupätkiin.',
     audience:
       'Aloittelijoille, kiireisiin viikkoihin, kotitreeneihin tai kenelle tahansa treeniin palaavalle, joka haluaa silti rakenteen ja etenemisen.',
-    equipmentProfile: 'Koti- ja kehonpainoystävällinen. Lattiatila ja tukeva soutupaikka riittävät ohjelman ytimeen.',
+    equipmentProfile: 'Koti- ja kehonpainoystävällinen. Lattiatila, tukeva soutupaikka ja paikka juosta riittävät ohjelman ytimeen.',
     whyItWorks:
-      'Pohja pitää kyykky-, työntö-, veto-, sarana- ja keskivartaloliikkeet viikossa ja käyttää kehonpainon etenemistä salivälineiden sijaan.',
+      'Pohja pitää kyykky-, työntö-, veto-, sarana- ja keskivartaloliikkeet viikossa ja käyttää kehonpainon etenemistä salivälineiden sijaan, ja juoksupätkät tuovat kuntoharjoittelun ilman välineitä.',
   },
   tpl_3_day_strength_base_v1: {
     summary:
@@ -445,12 +545,12 @@ export const READY_PROGRAM_CONTENT_FI: Record<string, ReadyProgramContent> = {
 
   tpl_3_day_upper_lower_lite_v1: {
     summary:
-      'Kevyempi kolmen päivän ylä/ala-jako, joka pitää viikon tasapainossa vaatimatta pitkiä tai liian tiiviitä treenejä.',
+      'Kevyempi yleiskuntoviikko: kolme lyhyempää treeniä, joissa kussakin kahdeksan voimasarjaa ja sen jälkeen juoksupätkät, pyöräily tai soutuintervallit. Lähes puolet viikosta on kuntoharjoittelua.',
     audience:
-      'Aloittelijoille, jotka haluavat koko kehon treeniä vaihtelevampaa mutta eivät ole vielä valmiita klassiseen nelipäiväiseen jakoon.',
-    equipmentProfile: 'Tavallinen täysi sali toimii parhaiten, mutta treenin pituus ja liikemäärä pysyvät maltillisina.',
+      'Aloittelijoille, jotka haluavat kestävyyttä ja voimaa yhtä paljon ja vähemmän nostoja kuin FIT-ohjelmassa.',
+    equipmentProfile: 'Tavallinen täysi sali toimii parhaiten: kuntopyörä, juoksumatto tai paikka juosta ja soutulaite sekä tavalliset punnerrus-, soutu- ja jalkalaitteet.',
     whyItWorks:
-      'Jako antaa ylävartalolle kaksi treeniä ja alavartalolle yhden isomman päivän, joten sekä tekniikkaharjoittelu että palautuminen pysyvät helposti hallinnassa.',
+      'Ylävartalopäivä, alavartalopäivä ja koko kehon päivä tuovat jalat viikkoon kahdesti, ja jokainen voimaosio pysyy niin lyhyenä, että sen jälkeiselle kestävyysosuudelle jää oikeasti aikaa.',
   },
 
   tpl_3_day_push_pull_legs_v1: {

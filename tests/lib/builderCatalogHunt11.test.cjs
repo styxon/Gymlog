@@ -322,12 +322,26 @@ module.exports = [
       const others = ['Bench', 'Resistance bands', 'Kettlebells', 'Pull-up bar', 'Barbell & plates', 'Squat rack', 'Machines'];
       // Counted once at 212dd1ae, before the bench rules: removals and days
       // left with no press, for the dumbbell presets. Neither may rise.
+      //
+      // Removals rose by two on 2026-10-12, and not through a rule: FIT and
+      // FIT Lite took a "Rowing Machine HIIT" block, and a rower is gear a
+      // dumbbell reader does not have. No lift is removed that was kept.
+      //
+      // And by two more later the same day (one with bands, which make a face
+      // pull), again content: HUGE Guided, a gym week, has a cable pull-through
+      // and a face pull on its second day. The bench and the rack presets rise
+      // by the same two; bands stay inside the old line.
+      //
+      // And by five more, every preset, the same day: SHRED Guided, a gym week,
+      // has two cable pull-throughs, a seated machine row, a rowing-machine
+      // interval block and a cross-trainer block that a dumbbell reader does
+      // not have. VITAL Burn removes nothing.
       const BASELINE = {
-        db: { gear: ['Dumbbells'], removed: 104, pressless: 26 },
-        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 79, pressless: 26 },
-        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 75, pressless: 26 },
-        bench: { gear: ['Dumbbells', 'Bench'], removed: 102, pressless: 26 },
-        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 86, pressless: 26 },
+        db: { gear: ['Dumbbells'], removed: 113, pressless: 26 },
+        bands: { gear: ['Dumbbells', 'Resistance bands'], removed: 86, pressless: 26 },
+        bar: { gear: ['Dumbbells', 'Pull-up bar'], removed: 84, pressless: 26 },
+        bench: { gear: ['Dumbbells', 'Bench'], removed: 110, pressless: 26 },
+        rack: { gear: ['Dumbbells', 'Barbell & plates', 'Squat rack'], removed: 95, pressless: 26 },
       };
       const count = (gear) => {
         let removed = 0;

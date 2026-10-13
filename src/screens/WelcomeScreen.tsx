@@ -3,7 +3,7 @@ import { AccessibilityInfo, Animated, Pressable, StyleSheet, Text, View, useWind
 import { useFonts } from 'expo-font';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { marqueeHeight, ProgramMarquee } from '../components/ProgramMarquee';
+import { marqueeRowsHeight, ProgramMarquee } from '../components/ProgramMarquee';
 import { VinhaWordmark } from '../components/VinhaWordmark';
 import { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import { getFitnessPhotoVariant } from '../assets/fitnessPhotos';
@@ -17,19 +17,8 @@ import { Theme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 import { queryReduceMotion } from '../utils/reduceMotion';
 
-/**
- * Measured on device, and applied as a shift rather than folded into the
- * centring maths.
- *
- * The tilted band does not stay inside its clip rectangle — the raised
- * right-hand end draws above it — so moving the rectangle moves the tiles by
- * some other amount, and adding to the maths that decides the rectangle went
- * nowhere twice. A translate moves pixels, which is the thing being centred.
- */
-const MARQUEE_NUDGE_Y = 39;
-
-/** Named because the height calculation needs the same number. */
-const MARQUEE_ROWS = 2;
+/** Two rows when the gap fits them, one on a phone too short for that. */
+const MARQUEE_MAX_ROWS = 2;
 
 /** Measurements the band is centred against — the same numbers the styles use. */
 const START_BUTTON_HEIGHT = 54;
@@ -64,6 +53,28 @@ export function WelcomeScreen({ language, onChangeLanguage, onContinue }: Welcom
   const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
 
   /**
+   * The band sits in the middle of what is left, not at a fixed offset.
+   *
+   * "Yhtä paljon ylhäällä ja alhaalla" (user 2026-08-27): measure the gap
+   * between the bottom of the wordmark and the top of the start button, and
+   * centre the tiles in it. The box is exactly as tall as its rows (the band is
+   * level, so there is no tilt to allow for) so centring the box centres the
+   * tiles, and a phone whose gap cannot hold two rows gets one rather than a
+   * second row under the button (user 2026-10-12: titles hidden by the button).
+   */
+  const marqueeBand = useMemo(() => {
+    const markBottom = markSlotTop(windowHeight, MARK_CENTER_WELCOME) + MARK_SIZE;
+    // What the actions block occupies: button, the tagline and its gap, and the
+    // padding that clears the system bar.
+    const actionsHeight =
+      START_BUTTON_HEIGHT + TAGLINE_GAP + TAGLINE_HEIGHT + LANG_ROW_HEIGHT + insets.bottom + 22;
+    const gap = Math.max(0, windowHeight - actionsHeight - markBottom);
+    const rows = gap >= marqueeRowsHeight(MARQUEE_MAX_ROWS) ? MARQUEE_MAX_ROWS : 1;
+    const height = Math.min(marqueeRowsHeight(rows), gap);
+    return { top: markBottom + (gap - height) / 2, height, rows };
+  }, [insets.bottom, windowHeight]);
+
+  /**
    * The catalog, as the catalog names it.
    *
    * getReadyTemplatePresentation rather than template.name: the curated title
@@ -90,30 +101,10 @@ export function WelcomeScreen({ language, onChangeLanguage, onContinue }: Welcom
         // One. Three filled the band and read as a wall; two still did, just a
         // shorter one (user 2026-08-27, "vähän liikaa"). A single strip of real
         // programmes says the same thing without competing with the button.
-        MARQUEE_ROWS,
+        marqueeBand.rows,
       ),
-    [language],
+    [language, marqueeBand.rows],
   );
-
-  /**
-   * The band sits in the middle of what is left, not at a fixed offset.
-   *
-   * "Yhtä paljon ylhäällä ja alhaalla" (user 2026-08-27): measure the gap
-   * between the bottom of the wordmark and the top of the start button, and
-   * centre the tiles in it. A hard-coded top drifts on every screen height —
-   * and the two things it has to sit between are both measured, so it can be
-   * measured too.
-   */
-  const marqueeBand = useMemo(() => {
-    const markBottom = markSlotTop(windowHeight, MARK_CENTER_WELCOME) + MARK_SIZE;
-    // What the actions block occupies: button, the tagline and its gap, and the
-    // padding that clears the system bar.
-    const actionsHeight =
-      START_BUTTON_HEIGHT + TAGLINE_GAP + TAGLINE_HEIGHT + LANG_ROW_HEIGHT + insets.bottom + 22;
-    const gap = Math.max(0, windowHeight - actionsHeight - markBottom);
-    const height = Math.min(marqueeHeight(MARQUEE_ROWS), gap);
-    return { top: markBottom + (gap - height) / 2, height };
-  }, [insets.bottom, windowHeight]);
 
   useEffect(() => {
     let cancelled = false;
@@ -157,7 +148,7 @@ export function WelcomeScreen({ language, onChangeLanguage, onContinue }: Welcom
         <View
           style={[
             styles.marquee,
-            { top: marqueeBand.top, height: marqueeBand.height, transform: [{ translateY: MARQUEE_NUDGE_Y }] },
+            { top: marqueeBand.top, height: marqueeBand.height },
           ]}
         >
           <ProgramMarquee

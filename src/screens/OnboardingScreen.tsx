@@ -427,7 +427,9 @@ const TRAINING_DAY_COUNT_OPTIONS: SetupDaysPerWeek[] = [2, 3, 4, 5, 6];
  * the back chevron's row (10 above, 40 tall) minus the pane's own top padding
  * doing the rest. Measured from the same edge the chevron is placed from.
  */
-const LOCATION_PANE_TOP_GAP = 48;
+// 48 left ~50 dp of empty band between the progress bar and the step label on
+// a 1080x2340 phone; every question step shares this, so the fit is fixed here.
+const LOCATION_PANE_TOP_GAP = 32;
 
 /**
  * What the two dials may reach.
@@ -3485,8 +3487,11 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     // 206 with the copy pushed 58 down, when the progress bar lived inside
     // this pane. The bar moved up to the chevron row; the freed band goes to
     // the option list below, which is the part that clipped on short phones.
-    height: 168,
-    paddingTop: 36,
+    // 168 / paddingTop 36 left ~50 dp of dead space under the title and pushed
+    // the last option card off a 2340 px screen (user, 2026-10-12). The pane is
+    // now about its content: label + one-line title + a small breath.
+    height: 128,
+    paddingTop: 30,
     paddingBottom: 12,
   },
   locationTopSlope: {
@@ -4445,9 +4450,9 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
   // The 58px copy offset died with the in-pane progress bar (it existed so
   // "VAIHE 6/6" would not sit on the bar's last segment).
   focusAreaTopPane: {
-    height: 178,
+    height: 148,
     justifyContent: 'flex-start',
-    paddingTop: 36,
+    paddingTop: 30,
     paddingBottom: 8,
   },
   focusAreaTopCopy: {

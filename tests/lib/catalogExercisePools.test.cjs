@@ -194,13 +194,42 @@ module.exports = [
       // all. RUN uses all three, and the summer season programme uses them
       // too, because putting a run block in every session is the whole point
       // of it. Pinned so the number cannot grow quietly.
+      //
+      // It grew loudly on 2026-10-12: the general-fitness weeks (FIT, FIT
+      // Lite, FIT Elite, HOME Starter) were all lifting, and their running is
+      // the same "Easy Run Blocks" row RUN uses — steps in the extra library,
+      // minutes on the set screen, a walk or a ride for a reader who avoids
+      // their knees — rather than a new name. The two no-equipment weeks the
+      // goal offers most (At Home - No Equipment, Bodyweight Upper/Lower) took
+      // the same row the same day, because a run needs no machine.
+      //
+      // VITAL Home and VITAL Walk prescribe the walk blocks the same way (owner,
+      // 2026-10-12): the extra library's steps, minutes on the set screen,
+      // and the same rows a flagged knee already turned the runs into. SHRED
+      // Home Easy closes each day on three of them.
       assert.deepEqual(offenders.sort(), [
+        'At Home - No Equipment / Upper Body Bodyweight: Easy Run Blocks',
+        'Bodyweight Upper/Lower / Day 1: Upper Body: Easy Run Blocks',
+        'FIT / Day 2: Full Body: Easy Run Blocks',
+        'FIT Elite / Day 3: Upper Volume: Easy Run Blocks',
+        'FIT Lite / Day 1: Upper Body + Run: Easy Run Blocks',
+        'HOME Starter / Day 1: Full Body: Easy Run Blocks',
+        'HOME Starter / Day 2: Full Body: Easy Run Blocks',
         'RUN / Day 1: Easy Run: Easy Run Blocks',
         'RUN / Day 2: Tempo Run: Stride Finishers',
         'RUN / Day 2: Tempo Run: Tempo Run Blocks',
         'Summer Conditioning / Day 1: Push and Easy Run: Easy Run Blocks',
         'Summer Conditioning / Day 2: Strength and Tempo Run: Tempo Run Blocks',
         'Summer Conditioning / Day 3: Legs and Strides: Stride Finishers',
+        'VITAL Burn / Day 1: Circuit & Brisk Walk: Brisk Walk Blocks',
+        'VITAL Burn / Day 2: Circuit & Hill Walk: Incline Walk Blocks',
+        'VITAL Burn / Day 3: Circuit & Brisk Walk: Brisk Walk Blocks',
+        'VITAL Home / Day 1: Lower & Push: Brisk Walk Blocks',
+        'VITAL Home / Day 2: Upper & Balance: Brisk Walk Blocks',
+        'VITAL Home / Day 3: Full Body & Walk: Brisk Walk Blocks',
+        'VITAL Walk / Day 1: Brisk Walk & Strength: Brisk Walk Blocks',
+        'VITAL Walk / Day 2: Incline Walk & Balance: Incline Walk Blocks',
+        'VITAL Walk / Day 3: Walk & Mobility: Brisk Walk Blocks',
       ]);
     },
   },

@@ -50,8 +50,10 @@ const AREA_BY_BODY_PART: Record<string, EmphasisArea> = {
  * mobility programme as leg training. Everything else keeps the old order.
  */
 const NAME_HINTS: Array<[RegExp, EmphasisArea]> = [
+  // The walk blocks by name, never a bare "walk": a walking lunge is legs, a
+  // heel-to-toe walk balance (VITAL Walk and VITAL Home, 2026-10-12).
   [
-    /hiit|interval|sprint|\brun\b|running|\bjog|treadmill|stair|rowing machine|\bbike\b|cycling|elliptical|burpee|mountain climber|high knees|jumping jack|jump rope|skater|battle rope|prowler|sled|shuttle|agility|cone drill|ladder drill|stride|pogo|box jump|broad jump|juoksu|tempojuoksu|intervalli|hyppynaru|kestävyys/i,
+    /hiit|interval|sprint|\brun\b|running|\bjog|treadmill|stair|rowing machine|\bbike\b|cycling|elliptical|burpee|mountain climber|high knees|jumping jack|jump rope|skater|battle rope|prowler|sled|shuttle|agility|cone drill|ladder drill|stride|walk blocks?|brisk walk|incline walk|kävelyblok|pogo|box jump|broad jump|juoksu|tempojuoksu|intervalli|hyppynaru|kestävyys/i,
     'conditioning',
   ],
   [

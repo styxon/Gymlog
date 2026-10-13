@@ -16,6 +16,69 @@ import type { AppLanguage } from '../types/models';
  */
 
 const FI: Record<string, string> = {
+  // ── VITAL Walk, STRONG Guided and VITAL Home (2026-10-12) ──────────────────
+  'Walk the blocks at a pace where you can still talk in short sentences. Add a minute to each block once every block feels steady.':
+    'Kävele blokit vauhdilla, jolla pystyt vielä puhumaan lyhyin lausein. Lisää jokaiseen blokkiin minuutti, kun kaikki blokit tuntuvat tasaisilta.',
+  'Add reps before anything else; the movements stay the same for the whole block.':
+    'Lisää ensin toistoja; liikkeet pysyvät samoina koko jakson.',
+  'Hold the stretches and balance work for the time written and breathe slowly through them.':
+    'Pidä venytykset ja tasapainoharjoitukset merkityn ajan ja hengitä niiden aikana rauhallisesti.',
+  'If a session felt hard the next day, repeat the same blocks and reps next time.':
+    'Jos treeni tuntui seuraavana päivänä raskaalta, toista samat blokit ja toistot ensi kerralla.',
+  'Each anchor is a machine or cable lift for six reps. When every set reaches six smooth, controlled reps, add the smallest step the stack allows next time.':
+    'Jokainen ankkuriliike tehdään laitteella tai taljassa kuuden toiston sarjoina. Kun jokainen sarja yltää kuuteen sujuvaan, hallittuun toistoon, lisää ensi kerralla pienin askel, jonka painopakka sallii.',
+  'Finish the reps written on every set before adding load.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin lisäät painoa.',
+  'Add reps before load, and keep the last rep as controlled as the first.':
+    'Lisää toistoja ennen painoa, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
+  'If the six reps are missed, keep the same load and build the reps back up before adding weight.':
+    'Jos kuusi toistoa jää saamatta, pidä sama paino ja rakenna toistot takaisin ennen painon lisäystä.',
+  'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower chair, a lower surface for the push-up.':
+    'Lisää ensin toistoja. Kun jokainen sarja yltää merkittyihin toistoihin hallitusti, tee liikkeestä hieman vaikeampi: matalampi tuoli, matalampi alusta punnerrukseen.',
+  'Finish the reps written on every set before changing the movement.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin vaihdat liikettä.',
+  'Walk the blocks at a pace where you can still talk in short sentences, and add a minute once both feel steady.':
+    'Kävele blokit vauhdilla, jolla pystyt vielä puhumaan lyhyin lausein, ja lisää minuutti, kun molemmat tuntuvat tasaisilta.',
+  'If the reps are missed, repeat the same version next time and build them back up.':
+    'Jos toistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
+  // ── VITAL Strength and VITAL Body (2026-10-12) ────────────────────
+  'Each anchor lift is a dumbbell lift for six reps. When every set reaches six smooth, controlled reps, use the next heavier dumbbells; with one pair, take three seconds to lower each rep and pause a second at the bottom first.':
+    'Jokainen ankkuriliike tehdään käsipainoilla kuuden toiston sarjoina. Kun jokainen sarja yltää kuuteen sujuvaan, hallittuun toistoon, ota ensi kerralla seuraavaksi raskaammat käsipainot; yhdellä parilla käytä ensin kolme sekuntia jokaiseen laskuvaiheeseen ja pysähdy sekunniksi alas.',
+  'Add reps to every set first, lowering each rep under control. When every set reaches the reps written, make the movement harder: a lower surface for the push-up, a longer pause at the top of the row.':
+    'Lisää ensin toistoja jokaiseen sarjaan ja laske jokainen toisto hallitusti. Kun jokainen sarja yltää merkittyihin toistoihin, tee liikkeestä vaikeampi: matalampi alusta punnerrukseen, pidempi pysäys soudun yläasennossa.',
+  'Finish the reps written on every set before changing the movement, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin vaihdat liikettä, ja laske jokainen toisto hallitusti.',
+  'Add reps before changing the movement, and keep the last rep as controlled as the first.':
+    'Lisää toistoja ennen kuin vaihdat liikettä, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
+  'If the minimum reps are missed, repeat the same version next time and build the reps back up.':
+    'Jos vähimmäistoistot jäävät saamatta, toista sama versio ensi kerralla ja rakenna toistot takaisin.',
+  // ── VITAL Base (2026-10-12) ──────────────────────────────────
+  'Each anchor lift is a hard version of a bodyweight lift for six reps. When every set reaches six smooth, controlled reps, make it harder next time: a higher rear foot, feet raised for the push-up, a lower table for the row, or a one-second pause at the bottom of every rep.':
+    'Jokainen ankkuriliike on kehonpainoliikkeen vaativa versio kuuden toiston sarjoina. Kun jokainen sarja yltää kuuteen sujuvaan, hallittuun toistoon, tee liikkeestä ensi kerralla vaikeampi: korkeampi alusta takajalalle, jalat koholle punnerruksessa, matalampi pöytä soudussa tai sekunnin pysäys jokaisen toiston alaosassa.',
+  'Finish the reps written on every set before changing the version, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin vaihdat versiota, ja laske jokainen toisto hallitusti.',
+  'Add reps before changing the version, and keep the last rep as controlled as the first.':
+    'Lisää toistoja ennen kuin vaihdat versiota, ja tee viimeinen toisto yhtä hallitusti kuin ensimmäinen.',
+  'If the six reps are missed, keep the same version and build the reps back up before making it harder.':
+    'Jos kuusi toistoa jää saamatta, pysy samassa versiossa ja rakenna toistot takaisin ennen kuin teet siitä vaikeamman.',
+  // ── HUGE Guided and VITAL Muscle (2026-10-12) ──────────────────────────
+  'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, add the smallest step the stack or the dumbbells allow next time.':
+    'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, lisää ensi kerralla pienin askel, jonka painopakka tai käsipainot sallivat.',
+  'Lower each rep under control and stop a rep or two short of failure. When every set reaches the reps written, use heavier dumbbells next time; with one pair, add two reps to every set first.':
+    'Laske jokainen toisto hallitusti ja lopeta sarja toisto tai kaksi ennen uupumusta. Kun jokainen sarja yltää merkittyihin toistoihin, ota ensi kerralla raskaammat käsipainot; jos sinulla on vain yksi pari, lisää ensin kaksi toistoa jokaiseen sarjaan.',
+  'Finish the reps written on every set before adding load, lowering each rep under control.':
+    'Tee jokaisen sarjan merkityt toistot ennen kuin lisäät painoa, ja laske jokainen toisto hallitusti.',
+
+  // ── SHRED Guided and VITAL Burn (2026-10-12) ───────────────────
+  'Go round the machines in order with short rests. When every set reaches the reps written with control, add the smallest step the stack allows next time.':
+    'Kierrä laitteet järjestyksessä lyhyin lepoin. Kun jokainen sarja yltää merkittyihin toistoihin hallitusti, lisää ensi kerralla pienin askel, jonka painopakka sallii.',
+  'Keep every hard interval at the same effort, and add a round or a minute before you go harder.':
+    'Pidä jokainen kova intervalli samalla teholla ja lisää kierros tai minuutti ennen kuin lisäät vauhtia.',
+  'Add reps before anything else. When every set reaches the reps written with control, make the movement a little harder: a lower incline for the push-up, a deeper squat.':
+    'Lisää ensin toistoja. Kun jokainen sarja yltää merkittyihin toistoihin hallitusti, tee liikkeestä hieman vaikeampi: matalampi alusta punnerrukseen, syvempi kyykky.',
+  'Walk each block briskly: breathing deep and quick, short sentences still possible. Add a minute to a block once every block feels steady.':
+    'Kävele jokainen blokki reippaasti: hengitys on syvää ja nopeaa, mutta lyhyet lauseet onnistuvat. Lisää blokkiin minuutti, kun kaikki blokit tuntuvat tasaisilta.',
+
   // ── Anchor / primary ────────────────────────────────────────────────
   'Anchor lifts keep double progression so strength holds while conditioning volume climbs.':
     'Ankkuriliikkeissä pidetään tuplaprogressio, jotta voima säilyy kuntovolyymin noustessa.',

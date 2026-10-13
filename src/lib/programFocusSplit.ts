@@ -1,15 +1,86 @@
 /**
- * Honest "where your week goes" split for a program: the share of programmed
- * training time (weighted by set count) spent on each quality. This is a
- * factual composition of the plan's exercises — never a promised outcome.
+ * Honest "where your week goes" split for a program: the share of the week's
+ * estimated TRAINING TIME spent on each quality. This is a factual composition
+ * of the plan's exercises — never a promised outcome.
+ *
+ * What is measured, per exercise: sets × (one set's work + its rest).
+ *
+ *   work  minutes rows (trackingMode 'duration_minutes'): the minutes written
+ *         holds (trackingMode 'hold') and intervals the name times
+ *         ("Treadmill HIIT (30s on / 30s off)"): the seconds written
+ *         distances the name gives ("Sprint 40m"): metres at a sprint's pace
+ *         everything else: reps × SECONDS_PER_REP + SET_SETUP_SECONDS, the
+ *         per-set cost the session estimate uses (sessionDuration)
+ *   rest  the low end of the prescribed rest (restSecondsMin), the end a ready
+ *         programme is timed on (programmeMinutes)
+ *
+ * It weighed by set count until 2026-10-12. A set of bench press and a
+ * 20-minute treadmill block both counted one, so a week with an hour of steady
+ * cardio still read as almost all lifting, and FIT and FIT Lite showed
+ * "Muscle 100 %" for a general-fitness answer (owner, on the device).
  */
 
 import { I18nKey, t } from './i18n';
+import { prescriptionUnitFromName, SECONDS_PER_METRE, SECONDS_PER_REP, SET_SETUP_SECONDS } from './sessionDuration';
 import type { AppLanguage } from '../types/models';
 
 /** Structural subset so both catalog sessions and composed weeks fit. */
 export interface ProgramFocusSessionInput {
-  exercises: Array<{ exerciseName: string; sets: number; repsMax?: number; trackingMode?: string }>;
+  exercises: Array<{
+    exerciseName: string;
+    sets: number;
+    repsMax?: number;
+    trackingMode?: string;
+    restSecondsMin?: number;
+    restSecondsMax?: number;
+  }>;
+}
+
+type ProgramFocusExerciseInput = ProgramFocusSessionInput['exercises'][number];
+
+/** Reps assumed when a row writes none — the session estimate's own default. */
+const DEFAULT_REPS = 8;
+/** Rest assumed for a lifting row that writes none. */
+const DEFAULT_LIFT_REST_SECONDS = 60;
+
+function finitePositive(value: number | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+/** One set's work, in seconds. */
+function workSecondsPerSet(exercise: ProgramFocusExerciseInput): number {
+  const reps = finitePositive(exercise.repsMax) ?? DEFAULT_REPS;
+  if (exercise.trackingMode === 'duration_minutes') {
+    return reps * 60;
+  }
+  const unit = prescriptionUnitFromName(exercise.exerciseName);
+  if (exercise.trackingMode === 'hold' || unit === 'seconds') {
+    return reps;
+  }
+  if (unit === 'metres') {
+    return reps * SECONDS_PER_METRE;
+  }
+  return reps * SECONDS_PER_REP + SET_SETUP_SECONDS;
+}
+
+/** The rest after one set, in seconds. */
+function restSecondsPerSet(exercise: ProgramFocusExerciseInput): number {
+  const low = exercise.restSecondsMin;
+  if (typeof low === 'number' && Number.isFinite(low) && low >= 0) {
+    return low;
+  }
+  const high = exercise.restSecondsMax;
+  if (typeof high === 'number' && Number.isFinite(high) && high >= 0) {
+    return high;
+  }
+  // A steady bout written without a rest has none; a lift still does.
+  return exercise.trackingMode === 'duration_minutes' ? 0 : DEFAULT_LIFT_REST_SECONDS;
+}
+
+/** The time one exercise takes across its sets, in seconds. */
+export function estimateFocusExerciseSeconds(exercise: ProgramFocusExerciseInput): number {
+  const sets = Math.max(1, Number.isFinite(exercise.sets) ? exercise.sets : 1);
+  return sets * (workSecondsPerSet(exercise) + restSecondsPerSet(exercise));
 }
 
 /**
@@ -52,9 +123,16 @@ export function getProgramFocusQualityLabel(
 
 const PROGRAM_FOCUS_ORDER: ProgramFocusQuality[] = ['Strength', 'Muscle', 'Conditioning', 'Mobility'];
 
-// Matched at the start of a word in the lowercased exercise name. 'walk' is
-// deliberately absent (Walking Lunge is strength work); farmer carries match
-// via 'farmer' and 'carry'.
+// Matched at the start of a word in the lowercased exercise name. A bare
+// 'walk' is deliberately absent (Walking Lunge is strength work, a Heel-to-Toe
+// Walk balance work); farmer carries match via 'farmer' and 'carry'.
+//
+// The walk blocks are named whole: "Brisk Walk Blocks" and "Incline Walk
+// Blocks" are minutes of walking, and with nothing here to match them they
+// read as six-rep strength work. That was live before any programme
+// prescribed them: a knee or ankle avoid flag swaps RUN's, FIT's and HOME
+// Starter's run blocks for walk blocks, and the bar moved the swapped minutes
+// from Conditioning to Strength (age-band analysis, 2026-10-12).
 //
 // At the start of a word, not anywhere: as a bare substring 'run' matched
 // inside "Crunch", and every programme with a cable or bicycle crunch showed a
@@ -99,6 +177,9 @@ const CONDITIONING_TERMS = [
   'stride',
   'skater',
   'shadow box',
+  'walk block',
+  'brisk walk',
+  'incline walk',
 ];
 
 const MOBILITY_TERMS = [
@@ -178,7 +259,7 @@ export function buildProgramFocusSplit(sessions: ProgramFocusSessionInput[]): Pr
   for (const session of sessions) {
     for (const exercise of session.exercises) {
       const quality = classifyExercise(exercise);
-      weights[quality] += Math.max(1, exercise.sets);
+      weights[quality] += estimateFocusExerciseSeconds(exercise);
     }
   }
 

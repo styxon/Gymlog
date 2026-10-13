@@ -22,6 +22,10 @@ const FOCUS_FI: Record<string, string> = {
   // returned UNCHANGED never sees those.
   'core & mobility for runners': 'Keskivartalo ja liikkuvuus juoksijalle',
   'lower volume + engine': 'Alavartalon volyymi + kestävyys',
+  // FIT Lite's days (2026-10-12).
+  'upper body + run': 'Ylävartalo + juoksu',
+  'lower body + bike': 'Alavartalo + pyöräily',
+  'full body + intervals': 'Koko keho + intervallit',
   'full body & balance': 'Koko keho ja tasapaino',
   'full body & conditioning': 'Koko keho ja kunto',
   'glutes & hamstrings': 'Pakarat ja takareidet',
@@ -34,6 +38,25 @@ const FOCUS_FI: Record<string, string> = {
   'shoulders & back (width)': 'Olkapäät ja selkä (leveys)',
   'skills & core': 'Taidot ja keskivartalo',
   'upper body (supported)': 'Ylävartalo (tuettuna)',
+  // VITAL Walk, STRONG Guided and VITAL Home (2026-10-12).
+  'brisk walk & strength': 'Reipas kävely ja voima',
+  'incline walk & balance': 'Ylämäkikävely ja tasapaino',
+  'walk & mobility': 'Kävely ja liikkuvuus',
+  'leg press & chest press': 'Jalkaprässi ja rintaprässi',
+  'pulldown & goblet squat': 'Ylätalja ja maljakyykky',
+  'full body (machines)': 'Koko keho (laitteet)',
+  'lower & push': 'Alavartalo ja työntö',
+  'upper & balance': 'Ylävartalo ja tasapaino',
+  'full body & walk': 'Koko keho ja kävely',
+  // SHRED Guided and VITAL Burn (2026-10-12).
+  'circuit & bike intervals': 'Piiri ja pyöräintervallit',
+  'circuit & rower intervals': 'Piiri ja soutuintervallit',
+  'circuit & cross-trainer': 'Piiri ja crosstrainer',
+  'circuit & brisk walk': 'Piiri ja reipas kävely',
+  'circuit & hill walk': 'Piiri ja mäkikävely',
+  // VITAL Strength (2026-10-12). "Press" alone is the overhead press, and this day's is on the floor.
+  'squat & press': 'Kyykky ja työntö',
+  'hinge & pull': 'Saranaliike ja veto',
 
   // ── Whole session names from the Vinha programs ──────────────────────
   // Written out rather than decomposed: "Pull A: Width Focus" and "Push:
@@ -138,6 +161,8 @@ const FOCUS_FI: Record<string, string> = {
   'long walk add-on': 'Lisäpäivä: pitkä kävely',
   'easy ride add-on': 'Lisäpäivä: kevyt pyöräily',
   'long ride add-on': 'Lisäpäivä: pitkä pyöräily',
+  // VITAL Walk's and VITAL Home's own optional days (2026-10-12).
+  'hill walk add-on': 'Lisäpäivä: mäkikävely',
   'bodyweight volume day': 'Kehonpainon volyymipäivä',
   'conditioning + mobility day': 'Kunto ja liikkuvuus',
   'recovery + mobility day': 'Palautuminen ja liikkuvuus',
@@ -455,6 +480,84 @@ export function formatPlanSessionTitle(
   }
 
   return localizeSessionName(sessionName, language);
+}
+
+/** Collision key: the name as a reader sees it, spacing and case aside. */
+function collisionKey(title: string): string {
+  return title.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/** 0 → "A", 25 → "Z", 26 → "AA": a suffix for as many days as a list can hold. */
+function collisionLetter(index: number): string {
+  let letter = '';
+  let rest = index;
+  do {
+    letter = String.fromCharCode(65 + (rest % 26)) + letter;
+    rest = Math.floor(rest / 26) - 1;
+  } while (rest >= 0);
+  return letter;
+}
+
+/**
+ * Titles that read the same in one list, told apart: two days both called
+ * "Koko keho" become "Koko keho A" and "Koko keho B", in list order. A title
+ * nobody else shares stays bare, and nothing stored is renamed — this is for
+ * what is printed (owner, 2026-10-12: the Today sheet listed "Koko keho" twice
+ * and the reader could not tell which row was which).
+ *
+ * A name the reader typed is theirs: it is never suffixed because the app's
+ * own wording happens to match it, only when it matches another name the
+ * reader typed. A letter already taken by another title in the list is
+ * skipped, so "Koko keho A" typed by hand does not meet a generated twin.
+ */
+export function disambiguateSessionTitles(
+  titles: readonly string[],
+  readerNamed: readonly boolean[] = [],
+): string[] {
+  const groupOf = (title: string, index: number) =>
+    `${readerNamed[index] ? 'reader' : 'app'}|${collisionKey(title)}`;
+  const counts = new Map<string, number>();
+  titles.forEach((title, index) => {
+    const key = groupOf(title, index);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  });
+  const taken = new Set(titles.map(collisionKey));
+  const used = new Map<string, number>();
+  return titles.map((title, index) => {
+    const key = groupOf(title, index);
+    if ((counts.get(key) ?? 0) < 2) {
+      return title;
+    }
+    let next = used.get(key) ?? 0;
+    let candidate = `${title} ${collisionLetter(next)}`;
+    while (taken.has(collisionKey(candidate))) {
+      next += 1;
+      candidate = `${title} ${collisionLetter(next)}`;
+    }
+    used.set(key, next + 1);
+    taken.add(collisionKey(candidate));
+    return candidate;
+  });
+}
+
+/**
+ * Every day of one programme as a list prints it: formatPlanSessionTitle for
+ * each (so the number a stored "Day 2:" carried stays off), then the repeats
+ * told apart by disambiguateSessionTitles. `name` is the string to read the
+ * title from — the stored name, or for Home the card's presentation title —
+ * and `readerNamed` is isReaderNamedSession for that day.
+ */
+export function planSessionTitles(
+  sessions: ReadonlyArray<{ name: string; readerNamed: boolean }>,
+  programTitle: string,
+  language: AppLanguage,
+): string[] {
+  return disambiguateSessionTitles(
+    sessions.map((session, index) =>
+      formatPlanSessionTitle({ name: session.name }, index, programTitle, language, session.readerNamed),
+    ),
+    sessions.map((session) => session.readerNamed),
+  );
 }
 
 /** Whitespace-insensitive, so a name the store trimmed still matches. */

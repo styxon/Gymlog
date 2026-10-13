@@ -1048,14 +1048,25 @@ module.exports = [
     name: 'workout lifecycle 2: each check rejects a broken state (the checks are not vacuous)',
     run() {
       withClock(() => {
-        const start = { t: 'start', kind: 'minutes', r: 4242, dt: 1000 };
+        const firstLoaded = () => session().exercises.find((e) => isLoaded(e)) ?? null;
+        // The fixture needs a day with a loaded lift to put the warm-up on.
+        // The minutes pool grows with the catalogue: on 2026-10-12 VITAL Walk and
+        // VITAL Home joined it with no loaded lift, seed 4242 landed on one,
+        // and the W2 check "passed" a state it never saw. The first seed from
+        // 4242 whose day has a loaded lift, rather than a pinned one.
+        let seed = 4242;
+        for (;; seed += 1) {
+          world = freshWorld();
+          apply({ t: 'start', kind: 'minutes', r: seed, dt: 1000 }, { lastTemplate: null });
+          if (firstLoaded()) break;
+        }
+        const start = { t: 'start', kind: 'minutes', r: seed, dt: 1000 };
         const base = () => {
           world = freshWorld();
           const ctx = { lastTemplate: null };
           apply(start, ctx);
           return ctx;
         };
-        const firstLoaded = () => session().exercises.find((e) => isLoaded(e)) ?? null;
         const expectFail = (tag, mutate) => {
           base();
           // log one set and one warm-up so there is something to lose

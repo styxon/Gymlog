@@ -143,7 +143,7 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
   },
   tpl_3_day_upper_lower_lite_v1: {
     title: 'FIT Lite',
-    tagKeys: ['prog.tag.upperLower', 'prog.tag.balanced'],
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.balanced'],
   },
   tpl_3_day_push_pull_legs_v1: {
     title: 'HUGE',
@@ -400,6 +400,46 @@ const READY_TEMPLATE_PRESENTATION: Record<string, { title: string; tagKeys: I18n
   tpl_gainer_runners_strength_v1: {
     title: "Runner's Strength",
     tagKeys: ['prog.tag.running', 'prog.tag.strength'],
+  },
+  tpl_3_day_walk_mobility_v1: {
+    title: 'VITAL Walk',
+    tagKeys: ['prog.tag.conditioning', 'prog.tag.mobility'],
+  },
+  tpl_3_day_guided_strength_v1: {
+    title: 'STRONG Guided',
+    tagKeys: ['prog.tag.strength', 'prog.tag.fullBody'],
+  },
+  tpl_3_day_home_easy_strength_v1: {
+    title: 'VITAL Home',
+    tagKeys: ['prog.tag.home', 'prog.tag.bodyweight'],
+  },
+  tpl_3_day_strong_home_v1: {
+    title: 'VITAL Strength',
+    tagKeys: ['prog.tag.home', 'prog.tag.strength'],
+  },
+  tpl_3_day_huge_bodyweight_v1: {
+    title: 'VITAL Body',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.mass'],
+  },
+  tpl_3_day_shred_guided_v1: {
+    title: 'SHRED Guided',
+    tagKeys: ['prog.tag.fatLoss', 'prog.tag.conditioning'],
+  },
+  tpl_3_day_shred_home_easy_v1: {
+    title: 'VITAL Burn',
+    tagKeys: ['prog.tag.home', 'prog.tag.fatLoss'],
+  },
+  tpl_3_day_strong_bodyweight_v1: {
+    title: 'VITAL Base',
+    tagKeys: ['prog.tag.bodyweight', 'prog.tag.strength'],
+  },
+  tpl_3_day_huge_guided_v1: {
+    title: 'HUGE Guided',
+    tagKeys: ['prog.tag.mass', 'prog.tag.fullBody'],
+  },
+  tpl_3_day_huge_home_v1: {
+    title: 'VITAL Muscle',
+    tagKeys: ['prog.tag.home', 'prog.tag.mass'],
   },
 };
 

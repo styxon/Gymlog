@@ -152,6 +152,64 @@ function Sparkline({ series }: { series: number[] }) {
   );
 }
 
+/**
+ * What a stat card shows inside its frame: label, value, sparkline, recency
+ * and trend. One component for Home and for the first-run preview, so the
+ * preview cannot drift from the card it promises.
+ */
+export function StatCardFace({ card, language = 'en' }: { card: HomeStatCard; language?: AppLanguage }) {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <>
+        <Text numberOfLines={1} style={styles.cardLabel}>
+          {card.label}
+        </Text>
+        {card.value !== null ? (
+          // The current value alone (user 2026-08-25): the "previous"
+          // line under it restated what the sparkline already draws,
+          // and the card is for the number that is true today.
+          <View style={styles.valueRow}>
+            <Text style={styles.valueText}>{formatHomeStatValue(card.value)}</Text>
+            <Text style={styles.unitText}>
+              {card.unit}
+              {card.reps !== null ? ` · ×${card.reps}` : ''}
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.valueRow}>
+            <Text style={styles.noDataText}>{t(language, 'cards.noData')}</Text>
+          </View>
+        )}
+        <Sparkline series={card.series} />
+        {/* One honest line of context (design frame 12): when the
+            number was true, and where it is heading per week. The
+            trend only appears once the window spans a real week —
+            see weeklyTrendOf. */}
+        {card.recordedAt !== null ? (
+          <Text numberOfLines={1} style={styles.cardWhen}>
+            {formatHomeStatRecency(card.recordedAt, language)}
+            {card.weeklyTrend !== null ? ' · ' : ''}
+            {card.weeklyTrend !== null ? (
+              <Text style={styles.cardTrend}>{formatHomeStatTrend(card.weeklyTrend, language)}</Text>
+            ) : null}
+          </Text>
+        ) : null}
+    </>
+  );
+}
+
+/** The frame Home draws around a card, for a card that is only shown. */
+export function StatCardPreview({ card, language = 'en' }: { card: HomeStatCard; language?: AppLanguage }) {
+  const styles = useThemedStyles(makeStyles);
+
+  return (
+    <View style={[styles.card, { flex: 0 }]} pointerEvents="none">
+      <StatCardFace card={card} language={language} />
+    </View>
+  );
+}
+
 /** Only measurements are ever suggested, so this covers every case. */
 const SUGGEST_TITLE_KEYS: Record<string, I18nKey> = {
   bodyweight: 'cards.suggest.bodyweight',
@@ -382,39 +440,7 @@ export function HomeStatCardsSection({
               onPress={editing ? undefined : () => onOpenCard(card.key)}
               style={({ pressed }) => [styles.card, pressed && !editing && { opacity: 0.8 }]}
             >
-              <Text numberOfLines={1} style={styles.cardLabel}>
-                {card.label}
-              </Text>
-              {card.value !== null ? (
-                // The current value alone (user 2026-08-25): the "previous"
-                // line under it restated what the sparkline already draws,
-                // and the card is for the number that is true today.
-                <View style={styles.valueRow}>
-                  <Text style={styles.valueText}>{formatHomeStatValue(card.value)}</Text>
-                  <Text style={styles.unitText}>
-                    {card.unit}
-                    {card.reps !== null ? ` · ×${card.reps}` : ''}
-                  </Text>
-                </View>
-              ) : (
-                <View style={styles.valueRow}>
-                  <Text style={styles.noDataText}>{t(language, 'cards.noData')}</Text>
-                </View>
-              )}
-              <Sparkline series={card.series} />
-              {/* One honest line of context (design frame 12): when the
-                  number was true, and where it is heading per week. The
-                  trend only appears once the window spans a real week —
-                  see weeklyTrendOf. */}
-              {card.recordedAt !== null ? (
-                <Text numberOfLines={1} style={styles.cardWhen}>
-                  {formatHomeStatRecency(card.recordedAt, language)}
-                  {card.weeklyTrend !== null ? ' · ' : ''}
-                  {card.weeklyTrend !== null ? (
-                    <Text style={styles.cardTrend}>{formatHomeStatTrend(card.weeklyTrend, language)}</Text>
-                  ) : null}
-                </Text>
-              ) : null}
+              <StatCardFace card={card} language={language} />
             </Pressable>
             {editing ? (
               <Pressable

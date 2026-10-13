@@ -1,11 +1,14 @@
 import { rankProgramIdsByTailoring, TailoringPreferencesInput } from './tailoringFit';
 import {
   RECOMMENDATION_PROGRAMS,
+  ageGateAllows,
+  ageRuleGuaranteesCard,
   getRecommendationProgramDefinition,
   isRecoveryOnlyProgram,
+  programFitsReaderAge,
   readerAskedForRecovery,
 } from './recommendationCatalog';
-import { reasonOverProgramme, selectWaterfallDecision } from './recommendationWaterfall';
+import { pickClosestWithPenalty, reasonOverProgramme, selectWaterfallDecision } from './recommendationWaterfall';
 import { focusProgrammeLosesItsPoint, lowerBodyOnlyAgainstFocus, programRunStandInKind, programRunWork, splitsReaderWeek } from './recommendationWeekFit';
 import { buildRecommendationTrainingBlock } from './recommendationProgramme';
 import { evaluateWorkoutContentFit } from './workoutContentFit';
@@ -158,6 +161,13 @@ function scorePreferenceFit(definition: RecommendationProgramDefinition, input: 
    * the inference and the request agree.
    */
   if (input.ageRange === '41_plus' && definition.jointFriendly) {
+    score += 3;
+  }
+
+  // The same small nudge at the other end (owner, 2026-10-12): a 16-18-year-
+  // old gets the weeks lifted on guided machines nudged up. Nothing is pushed
+  // down for anyone, in either band.
+  if (input.ageRange === '18' && definition.styleTags.includes('machine_guided')) {
     score += 3;
   }
 
@@ -461,6 +471,92 @@ function selectAlternativeCandidates(candidates: RecommendationCandidate[], inpu
 }
 
 /**
+ * The age rule's second card (owner, 2026-10-12), or null when it has nothing
+ * to add.
+ *
+ * Over 41 (any card), and at 16-18 with the gym card below pro
+ * (ageRuleGuaranteesCard): when neither the featured programme nor the second
+ * card suits the reader's age (programFitsReaderAge), the second card becomes
+ * the closest programme that does. Closest by the waterfall's own measure, so
+ * the stated answers still choose among the fitting ones; and only one that
+ * fits the gear (the candidates are the equipment pool), lists the goal as
+ * written-for or backup, matches the level and the gender, does not cut the
+ * reader's short week in half, and is not a week of stretching for a reader
+ * who did not ask for one. The featured card is never replaced here.
+ */
+function ageFittingSecondCard(
+  candidates: RecommendationCandidate[],
+  featured: RecommendationCandidate,
+  alternatives: RecommendationCandidate[],
+  input: RecommendationInput,
+): RecommendationCandidate | null {
+  if (!ageRuleGuaranteesCard(input)) {
+    return null;
+  }
+  const fitsAge = (candidate: RecommendationCandidate | undefined) => {
+    const definition = candidate ? getRecommendationProgramDefinition(candidate.programId) : null;
+    return definition ? programFitsReaderAge(definition, input) : false;
+  };
+  if (fitsAge(featured) || fitsAge(alternatives[0])) {
+    return null;
+  }
+  const askedForRecovery = readerAskedForRecovery(input);
+  const offered = new Set(candidates.map((candidate) => candidate.programId));
+  // In catalog order, as the waterfall's pools are: a tie keeps the programme
+  // defined first, and the lower-impact weeks are defined last.
+  const pool = RECOMMENDATION_PROGRAMS
+    .filter((definition) => (
+      offered.has(definition.programId)
+      && definition.programId !== featured.programId
+      && programFitsReaderAge(definition, input)
+      && goalTier(definition, input) > 0
+      && definition.supportedLevels.includes(input.level)
+      && genderAllows(definition, input)
+      && !splitsReaderWeek(definition, input)
+      && (askedForRecovery || !isRecoveryOnlyProgram(definition))
+    ));
+  // A week written for the goal before one that lists it as a backup, as
+  // everywhere the goal outranks the age. By penalty alone the owned-load
+  // rule handed a general-fitness reader over 41 with dumbbells Home Dumbbell
+  // Upper/Lower, a muscle week without a minute of cardio, over VITAL Walk.
+  const keeping = pool.filter((definition) => !ageCardTakesAwayAnAnswer(definition, featured, alternatives[0], input));
+  const bestTier = Math.max(0, ...keeping.map((definition) => goalTier(definition, input)));
+  const best = pickClosestWithPenalty(keeping.filter((definition) => goalTier(definition, input) === bestTier), input)?.definition ?? null;
+  return best ? candidates.find((candidate) => candidate.programId === best.programId) ?? null : null;
+}
+
+/**
+ * Whether the age card would take away the only card written for the
+ * reader's goal (2026-10-12): the featured week only lists the goal as a
+ * backup or not at all, the second card is written for it, and the age card
+ * is not. The age adds a card beside the answers, never instead of them
+ * (statedAnswersKey: the answers outrank the age). Without this a reader over
+ * 41 with a pull-up bar who wants lean and athletic, featured a muscle week,
+ * lost Fat Burn HIIT to VITAL Walk, which lists the goal only as a backup: both
+ * cards missed the goal (recommendation matrix: 28 of 5,760 answers).
+ *
+ * The same test for the reader's gear (a card that uses it, replaced by VITAL Walk,
+ * which uses none) would also have held, but it took the fitting card from
+ * 72 of the 5,040 answers over 41 the owner's acceptance covers (RUN and
+ * Runner's Strength for running with dumbbells), so the gear stays the
+ * featured card's business.
+ */
+function ageCardTakesAwayAnAnswer(
+  ageCard: RecommendationProgramDefinition,
+  featured: RecommendationCandidate,
+  replaced: RecommendationCandidate | undefined,
+  input: RecommendationInput,
+): boolean {
+  const featuredDefinition = getRecommendationProgramDefinition(featured.programId);
+  const replacedDefinition = replaced ? getRecommendationProgramDefinition(replaced.programId) : null;
+  if (!featuredDefinition || !replacedDefinition) {
+    return false;
+  }
+  const writtenForGoal = (definition: RecommendationProgramDefinition) => goalTier(definition, input) === 2;
+  return writtenForGoal(replacedDefinition) && !writtenForGoal(featuredDefinition) && !writtenForGoal(ageCard);
+}
+
+/**
  * A programme written for one gender is shown only to that gender (user,
  * 2026-10-05): a reader who left it unsaid sees neither. The score only took
  * 4 points off a mismatch, so with some gym chips unticked a female programme
@@ -509,7 +605,9 @@ export function recommendPrograms(
   input: RecommendationInput,
   tailoringPreferences?: TailoringPreferencesInput | null,
 ): RecommendationResult {
-  const equipmentFiltered = applyEquipmentFilter(input);
+  // The age gate first, as in the waterfall: a programme the setup does not
+  // offer this reader is not a candidate for any card (ageGateAllows).
+  const equipmentFiltered = applyEquipmentFilter(input).filter((definition) => ageGateAllows(definition, input));
   const genderFiltered = equipmentFiltered.filter((definition) => genderAllows(definition, input));
   const filteredPrograms = genderFiltered.length > 0 ? genderFiltered : equipmentFiltered;
   const ignoringLoad = programsIgnoringOwnedLoad(filteredPrograms, input);
@@ -537,7 +635,9 @@ export function recommendPrograms(
   const waterfallDecision = selectWaterfallDecision(input);
   let waterfallPrimary = scoreRankedCandidates.find((candidate) => candidate.programId === waterfallDecision.primaryProgramId) ?? null;
   const waterfallPick = waterfallPrimary;
-  if (waterfallPrimary && hasMeaningfulTailoringPreferences(tailoringPreferences)) {
+  // Not over the age rule's VITAL Walk: that pick is the programme itself, and the
+  // tailoring order handed its family's other week (VITAL Home) the card.
+  if (waterfallPrimary && waterfallDecision.rule !== 'age_low_impact' && hasMeaningfulTailoringPreferences(tailoringPreferences)) {
     // Tailoring may swap between variants of the same family + weekly rhythm
     // (e.g. the two 4-day STRONG Pro templates), but never change the cell itself.
     const primaryDefinition = getRecommendationProgramDefinition(waterfallPrimary.programId);
@@ -668,9 +768,18 @@ export function recommendPrograms(
     : scoreRankedCandidates;
 
   const featuredCandidate = rankedCandidates[0] ?? null;
-  const alternativeCandidates = waterfallPrimary && waterfallAlternative
+  const answeredAlternatives = waterfallPrimary && waterfallAlternative
     ? [waterfallAlternative, ...selectAlternativeCandidates(rankedCandidates, input).filter((candidate) => candidate !== waterfallAlternative)].slice(0, 2)
     : selectAlternativeCandidates(rankedCandidates, input);
+  const ageCard = featuredCandidate ? ageFittingSecondCard(rankedCandidates, featuredCandidate, answeredAlternatives, input) : null;
+  const alternativeCandidates = ageCard
+    ? [ageCard, ...answeredAlternatives.filter((candidate) => candidate !== ageCard)].slice(0, 2)
+    : answeredAlternatives;
+  if (ageCard && appliedWaterfall) {
+    // The Programs tab reads the second card from the decision.
+    appliedWaterfall.alternativeProgramId = ageCard.programId;
+    appliedWaterfall.whyAlternative = input.ageRange === '41_plus' ? 'wf.age.gentleAlt' : 'wf.age.machineAlt';
+  }
   const alternativeProgramIds = alternativeCandidates.map((candidate) => candidate.programId);
 
   if (!featuredCandidate) {
