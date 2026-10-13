@@ -379,7 +379,7 @@ export function PremiumScreen({
       <View style={styles.foot}>
         {proUnlocked ? (
           <View style={styles.activeCard}>
-            <Text style={styles.activeText}>{t(language, 'pro.page.proOn')}</Text>
+            <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.activeText}>{t(language, 'pro.page.proOn')}</Text>
             {/* One door while Pro is on, and it goes to management. The old
                 second branch here turned Pro OFF from the paywall — free, from
                 inside the app, as often as you liked. A page that sells a
@@ -389,7 +389,7 @@ export function PremiumScreen({
               onPress={onManageSubscription}
               style={({ pressed }) => [styles.cta, pressed && styles.pressed]}
             >
-              <Text style={styles.ctaText}>{t(language, 'subs.manageMembership')}</Text>
+              <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.ctaText}>{t(language, 'subs.manageMembership')}</Text>
             </Pressable>
           </View>
         ) : (
@@ -408,21 +408,22 @@ export function PremiumScreen({
                     <View style={styles.planTop}>
                       <Text
                         numberOfLines={1}
+                        maxFontSizeMultiplier={FOOT_FONT_CAP}
                         style={[styles.planName, on && styles.planNameOn]}
                       >
                         {t(language, entry.nameKey)}
                       </Text>
                       {entry.badgeKey ? (
                         <View style={[styles.planBadge, { backgroundColor: skin.accent }]}>
-                          <Text style={styles.planBadgeText}>{t(language, entry.badgeKey)}</Text>
+                          <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.planBadgeText}>{t(language, entry.badgeKey)}</Text>
                         </View>
                       ) : null}
                     </View>
                     <View style={styles.priceRow}>
-                      <Text style={[styles.price, on && styles.priceOn]}>
+                      <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={[styles.price, on && styles.priceOn]}>
                         {t(language, entry.priceKey)}
                       </Text>
-                      <Text style={styles.priceUnit}>{t(language, entry.unitKey)}</Text>
+                      <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.priceUnit}>{t(language, entry.unitKey)}</Text>
                     </View>
                     {/* Always drawn, blank when the plan has no second
                         line. Free is the only tier whose plan carries none, so
@@ -433,7 +434,7 @@ export function PremiumScreen({
                         cap cut the price terms off mid-word, and the row
                         stretches every tile to the tallest (accessibility
                         audit, 2026-09-21). */}
-                    <Text style={styles.priceSub}>
+                    <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.priceSub}>
                       {entry.subKey ? t(language, entry.subKey) : ' '}
                     </Text>
                   </Pressable>
@@ -450,7 +451,7 @@ export function PremiumScreen({
                   the copy said "7 päivän" while PRO_TRIAL_DAYS said 14, and
                   a promise in a translation file drifts from the code that
                   keeps it. */}
-              <Text style={styles.ctaText}>{t(language, ctaKey, { days: PRO_TRIAL_DAYS })}</Text>
+              <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.ctaText}>{t(language, ctaKey, { days: PRO_TRIAL_DAYS })}</Text>
             </Pressable>
 
             {/* And the same for the fine print, which is what actually
@@ -460,21 +461,21 @@ export function PremiumScreen({
                 taken. Free has no recurring terms to state, so its "Continue
                 for free" landed lower than "Get Pro" and "Get Lifetime"
                 (user 2026-09-01). */}
-            <Text style={styles.fine}>{fineKey ? t(language, fineKey) : ' '}</Text>
+            <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.fine}>{fineKey ? t(language, fineKey) : ' '}</Text>
           </View>
         )}
 
         <View style={styles.legalRow}>
           <Pressable accessibilityRole="link" onPress={() => onOpenLegal('terms')} hitSlop={8}>
-            <Text style={styles.legalLink}>{t(language, 'pro.page.terms')}</Text>
+            <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.legalLink}>{t(language, 'pro.page.terms')}</Text>
           </Pressable>
-          <Text style={styles.legalDot}>·</Text>
+          <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.legalDot}>·</Text>
           <Pressable accessibilityRole="link" onPress={() => onOpenLegal('privacy')} hitSlop={8}>
-            <Text style={styles.legalLink}>{t(language, 'pro.page.privacy')}</Text>
+            <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.legalLink}>{t(language, 'pro.page.privacy')}</Text>
           </Pressable>
-          <Text style={styles.legalDot}>·</Text>
+          <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.legalDot}>·</Text>
           <Pressable accessibilityRole="link" onPress={onManageSubscription} hitSlop={8}>
-            <Text style={styles.legalLink}>{t(language, 'pro.page.restore')}</Text>
+            <Text maxFontSizeMultiplier={FOOT_FONT_CAP} style={styles.legalLink}>{t(language, 'pro.page.restore')}</Text>
           </Pressable>
         </View>
       </View>
@@ -483,6 +484,17 @@ export function PremiumScreen({
 }
 
 const RADIUS = 26;
+
+/**
+ * The foot under the card does not scroll: the plan tiles, the button, the
+ * terms and the legal row are always on screen, which is what a paywall owes
+ * the reader — Restore purchase above all. At a 1.5 system font on a 720x1280
+ * phone they no longer fit: "Yearly" cut to "Ye..", the yearly price ran past
+ * its tile, and the legal row fell off the bottom (small-screen sweep,
+ * 2026-10-13). Its text grows to 1.3x and no further, the cap the player's
+ * clock already uses; the card above, which scrolls, still grows freely.
+ */
+const FOOT_FONT_CAP = 1.3;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000000' },
@@ -600,12 +612,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  planTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  // Wraps: the badge drops under the name before the name is cut ("Ye..").
+  planTop: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 7, rowGap: 4 },
   planName: { fontSize: 13.5, fontWeight: '700', color: PRO_SURFACE.inkGhost, flexShrink: 1 },
   planNameOn: { color: PRO_SURFACE.ink },
   planBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
   planBadgeText: { fontSize: 10.5, fontWeight: '800', color: PRO_SURFACE.badgeInk },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 5, marginTop: 6 },
+  // Wraps: "/ year" goes under the price rather than past the tile's edge.
+  priceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 5, marginTop: 6 },
   price: { fontSize: 25, fontWeight: '800', letterSpacing: -1, color: 'rgba(255,255,255,0.55)' },
   priceOn: { color: PRO_SURFACE.ink },
   priceUnit: { fontSize: 13.5, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },

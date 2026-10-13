@@ -278,7 +278,9 @@ module.exports = [
         // The full name for a screen reader may sit before the close (2026-09-27).
         /<Text\s*style=\{styles\.positionName\}\s*numberOfLines=\{1\}\s*adjustsFontSizeToFit\s*minimumFontScale=\{0\.5\}\s*(?:accessibilityLabel=\{[^}]*\}\s*)?>/,
       );
-      assert.match(walk, /height=\{210\}/);
+      // 210 on a tall phone, less on a short one so the stat cards clear the
+      // buttons (guidedWalkMediaHeight, small-screen sweep 2026-10-13).
+      assert.match(walk, /height=\{guidedWalkMediaHeight\(playerWindowHeight, playerFontScale\)\}/);
     },
   },
   {
