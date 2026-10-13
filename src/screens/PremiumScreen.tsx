@@ -294,18 +294,6 @@ export function PremiumScreen({
     <View style={styles.root}>
       <HeroSky tier={tab} width={width} />
 
-      {/* The whole page scrolls, but only when it has to. On a phone with
-          room the content grows to the screen and nothing moves; on a short
-          one at a large font the card keeps a readable height and the foot —
-          Restore purchase included — is a scroll away instead of under the
-          screen's edge (small-screen sweep, 2026-10-13). */}
-      <ScrollView
-        style={styles.page}
-        contentContainerStyle={styles.pageContent}
-        showsVerticalScrollIndicator={false}
-        bounces={false}
-        nestedScrollEnabled
-      >
 
       <View style={styles.topRow}>
         <Pressable
@@ -369,7 +357,6 @@ export function PremiumScreen({
           <ScrollView
             style={styles.cardScroll}
             contentContainerStyle={styles.cardContent}
-            nestedScrollEnabled
             showsVerticalScrollIndicator={false}
           >
             {tier.rows.map((row) => (
@@ -502,7 +489,6 @@ export function PremiumScreen({
           </Pressable>
         </View>
       </View>
-      </ScrollView>
     </View>
   );
 }
@@ -523,8 +509,6 @@ const FIXED_FONT_CAP = 1.3;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000000' },
-  page: { flex: 1 },
-  pageContent: { flexGrow: 1 },
   pressed: { opacity: 0.85 },
 
   topRow: { paddingHorizontal: 18, paddingTop: 10, alignItems: 'flex-end' },
@@ -594,8 +578,7 @@ const styles = StyleSheet.create({
   segmentText: { fontSize: 14.5, fontWeight: '700', color: 'rgba(255,255,255,0.62)', textAlign: 'center' },
   segmentTextOn: { color: 'rgba(255,255,255,0.88)' },
 
-  // A floor, so a short page scrolls rather than squeezing the card to a line.
-  cardWrap: { flex: 1, minHeight: 190, paddingHorizontal: 16, paddingTop: 14 },
+  cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 14 },
   card: {
     flex: 1,
     borderRadius: RADIUS,
