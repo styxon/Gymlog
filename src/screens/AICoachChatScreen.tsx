@@ -29,6 +29,7 @@ import { formatShortDate, removeTrailingZeros } from '../lib/format';
 import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoachContextReadout, buildCoachNoticed, buildCoachOpeningLine, buildCoachOpeningOffer, buildCoachOpeningRows } from '../lib/coachChat';
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
 import { coachHistoryAfterAnswer } from '../lib/coachCrisisTurn';
+import { COACH_DEMO_MOMENTS, coachDemoMomentOrdinal } from '../lib/coachDemoMoments';
 import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -297,6 +298,12 @@ export interface ChatMessage {
    * vain ottaa lähimpää ohjelmaa mikä vastaa käyttäjän puheita?").
    */
   catalog?: { programId: string; title: string; daysPerWeek: number };
+  /**
+   * Under a free reader's demo answer: which of the three it was, and the
+   * one tap to Pro. The three answers exist to sell Pro (owner, 2026-10-13),
+   * and before this the only door after one was the locked composer.
+   */
+  demoPro?: { ordinal: number };
   /**
    * A crisis message and its answer. Drawn even under the online notice,
    * where the rest of the thread is not: the crisis answer is local and is
@@ -1129,6 +1136,9 @@ export function AICoachChatScreen({
         // model, and spending one of three on the deterministic text a free
         // reader already has would make the offer a bluff at the one moment
         // it is being tested.
+        // Read before the spend clears it: the card under the answer counts it.
+        const spentDemoOrdinal =
+          force && result.source !== 'preview' ? coachDemoMomentOrdinal(demoMomentKeyRef.current) : null;
         if (force && result.source !== 'preview' && demoMomentKeyRef.current) {
           onDemoQuestionAnswered?.(demoMomentKeyRef.current);
           demoMomentKeyRef.current = null;
@@ -1273,6 +1283,10 @@ export function AICoachChatScreen({
             ...(fellBackToPreview ? { evidence: t(language, 'coachChat.offlineAnswer') } : {}),
           },
           ...(suggestedOffer ? [suggestedOffer] : []),
+          // Last, after any offer the answer carried: the answer is read first.
+          ...(spentDemoOrdinal !== null
+            ? [{ id: `demoPro:${token}`, fromCoach: true, text: '', demoPro: { ordinal: spentDemoOrdinal } }]
+            : []),
         ]);
       } catch {
         if (token !== askToken.current) {
@@ -1660,6 +1674,33 @@ export function AICoachChatScreen({
                   <Text style={styles.thinkingText}>{t(language, 'coachChat.compose.building')}</Text>
                 </View>
               </View>
+            ) : message.demoPro ? (
+              // Not for a reader who has Pro by now (bought from this card):
+              // the card sells what they already have.
+              proUnlocked ? null : (
+                <View key={message.id} style={styles.bubbleRow}>
+                  <View style={[styles.coachBubble, styles.offerBubble]}>
+                    <Text style={styles.demoProTitle}>
+                      {t(language, 'coachChat.demoPro.title', {
+                        ordinal: message.demoPro.ordinal,
+                        total: COACH_DEMO_MOMENTS.length,
+                      })}
+                    </Text>
+                    <Text style={styles.coachText}>
+                      {t(language, 'coachChat.demoPro.body', { count: PRO_COACH_QUESTIONS_PER_MONTH })}
+                    </Text>
+                    <View style={styles.offerActions}>
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={onOpenPremium}
+                        style={({ pressed }) => [styles.offerCta, pressed && styles.pressed]}
+                      >
+                        <Text style={styles.offerCtaText}>{t(language, 'coachChat.demoPro.cta')}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                </View>
+              )
             ) : message.catalog ? (
               <View key={message.id} style={styles.bubbleRow}>
                 <View style={[styles.coachBubble, styles.offerBubble]}>
@@ -2417,6 +2458,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 17,
     fontWeight: '600',
     marginTop: 6,
+  },
+  // The count on the demo answer's Pro card: a label, quieter than the line.
+  demoProTitle: {
+    color: theme.muted,
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
   offerNote: {
     color: theme.faint,

@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const {
   COACH_DEMO_MOMENTS,
+  coachDemoMomentOrdinal,
   daysSince,
   markCoachDemoMomentUsed,
   pickDemoQuestion,
@@ -294,6 +295,20 @@ module.exports = [
       // An unreadable stamp counts as zero rather than as NaN, which would
       // compare false against every threshold and silently disable the feature.
       assert.equal(daysSince('not a date', new Date(2026, 7, 20)), 0);
+    },
+  },
+  {
+    name: 'coach demo moments: the card under an answer counts it by the moment, 1 to 3',
+    run() {
+      assert.equal(coachDemoMomentOrdinal('week1'), 1);
+      assert.equal(coachDemoMomentOrdinal('month1'), 2);
+      assert.equal(coachDemoMomentOrdinal('month3'), 3);
+      // The count matches the list, so a fourth moment cannot make "3/3" lie.
+      assert.equal(coachDemoMomentOrdinal(COACH_DEMO_MOMENTS[COACH_DEMO_MOMENTS.length - 1].key), COACH_DEMO_MOMENTS.length);
+      // A key from a route is a string until checked: anything else is no card.
+      assert.equal(coachDemoMomentOrdinal('month2'), null);
+      assert.equal(coachDemoMomentOrdinal(null), null);
+      assert.equal(coachDemoMomentOrdinal(undefined), null);
     },
   },
 ];
