@@ -32,10 +32,11 @@ export function guidedDrillMediaHeight(windowHeight: number, fontScale = 1): num
  * font the picture pushed the stat cards under that row, where their tops
  * showed at the scroll edge as if the buttons sat on them (small-screen sweep,
  * 2026-10-13). They were reachable by scrolling, but a walk-up is read in one
- * glance or not at all.
+ * glance or not at all. The floor is 90: at 110 a 640 dp phone at a 1.3 font
+ * still left the cards 13 dp under the row (emulator check, 2026-10-13).
  */
 export const WALK_MEDIA_MAX_DP = 210;
-export const WALK_MEDIA_MIN_DP = 110;
+export const WALK_MEDIA_MIN_DP = 90;
 const WALK_RESERVED_DP = 500;
 const WALK_RESERVED_PER_FONT_SCALE_DP = 160;
 
