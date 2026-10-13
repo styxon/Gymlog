@@ -225,7 +225,11 @@ export function resolveProgressionOptions(
 export const PRO_TRIAL_DAYS = 14;
 
 /**
- * ON since 2026-09-09, at the user's decision, and at fourteen days.
+ * OFF since 2026-10-13 (owner): the trial moves to a Play free-trial offer,
+ * decided once the products are in the store. Until then nobody is offered
+ * days; a trial already running keeps its end date and lapses on its own.
+ *
+ * ON from 2026-09-09 until then, at the user's decision, and at fourteen days.
  *
  * It was off while the free tier was walked end to end: a trial makes every
  * new account a Pro account, and nobody could see the locks. That walk is
@@ -241,7 +245,7 @@ export const PRO_TRIAL_DAYS = 14;
  * tier for two weeks. That is the point of a trial, and it is also why this
  * was off.
  */
-export const PRO_TRIAL_ENABLED = true;
+export const PRO_TRIAL_ENABLED = false;
 
 /**
  * Whether this install may still start the trial.

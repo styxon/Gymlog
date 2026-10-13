@@ -4,6 +4,7 @@ const path = require('node:path');
 
 const {
   DEVICE_ONLY_PREFERENCE_FIELDS,
+  PRO_TRIAL_ENABLED,
   canStartProTrial,
   keepDeviceEntitlement,
   resolveProEntitlement,
@@ -106,7 +107,9 @@ module.exports = [
   {
     name: 'pro trial: it starts once per install, and the loader keeps the mark',
     run() {
-      assert.equal(canStartProTrial(preferences({})), true);
+      // The switch decides first: off since 2026-10-13 (owner), so no install
+      // may start one. The once-per-install mark still holds under it.
+      assert.equal(canStartProTrial(preferences({})), PRO_TRIAL_ENABLED);
       assert.equal(canStartProTrial(preferences({ proTrialStartedAt: '2026-09-01T00:00:00.000Z' })), false);
 
       const profile = read('src', 'app', 'renderProfileTab.tsx');

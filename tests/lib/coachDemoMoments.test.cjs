@@ -49,12 +49,12 @@ function input(over = {}) {
 
 module.exports = [
   {
-    name: 'demo moments: three per install, at a week, a month and three months',
+    name: 'demo moments: three per install, at a week, three weeks and three months',
     run() {
       assert.equal(COACH_DEMO_MOMENTS.length, 3);
       assert.deepEqual(
         COACH_DEMO_MOMENTS.map((moment) => moment.afterDays),
-        [7, 30, 90],
+        [7, 21, 90],
       );
       // Each one needs more log behind it than the last, because each asks a
       // harder question. A moment that fires on an empty log gives the coach's
@@ -121,7 +121,9 @@ module.exports = [
         fatigueSignal: null,
       });
       assert.equal(stalled.questionKey, 'coach.demo.month1.stalled');
-      assert.equal(stalled.vars.lift, 'Back Squat');
+      // Lower case inside the sentence, capitalised for a line it opens.
+      assert.equal(stalled.vars.lift, 'back squat');
+      assert.equal(stalled.vars.Lift, 'Back Squat');
 
       // A squat the plan holds on purpose (knees flagged) is not a stall to ask about.
       const heldSquat = pickDemoQuestion('month1', {
@@ -159,6 +161,15 @@ module.exports = [
       assert.equal(
         pickDemoQuestion('month3', { lifts: [lift()], fatigueSignal: 'optimal' }).questionKey,
         'coach.demo.month3.next',
+      );
+      // And a stall, when the load reads fine: the stall with what next.
+      const stalledAtThree = pickDemoQuestion('month3', { lifts: [lift({ stalledSessions: 4 })], fatigueSignal: 'optimal' });
+      assert.equal(stalledAtThree.questionKey, 'coach.demo.month3.stalled');
+      assert.equal(stalledAtThree.vars.lift, 'back squat');
+      // Tiredness outranks it: "train more differently" is the wrong answer to overload.
+      assert.equal(
+        pickDemoQuestion('month3', { lifts: [lift({ stalledSessions: 4 })], fatigueSignal: 'high' }).questionKey,
+        'coach.demo.month3.load',
       );
 
       // And an empty log still has something to ask at week one, which is what
