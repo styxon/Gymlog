@@ -294,6 +294,19 @@ export function PremiumScreen({
     <View style={styles.root}>
       <HeroSky tier={tab} width={width} />
 
+      {/* The whole page scrolls, but only when it has to. On a phone with
+          room the content grows to the screen and nothing moves; on a short
+          one at a large font the card keeps a readable height and the foot —
+          Restore purchase included — is a scroll away instead of under the
+          screen's edge (small-screen sweep, 2026-10-13). */}
+      <ScrollView
+        style={styles.page}
+        contentContainerStyle={styles.pageContent}
+        showsVerticalScrollIndicator={false}
+        bounces={false}
+        nestedScrollEnabled
+      >
+
       <View style={styles.topRow}>
         <Pressable
           accessibilityRole="button"
@@ -356,6 +369,7 @@ export function PremiumScreen({
           <ScrollView
             style={styles.cardScroll}
             contentContainerStyle={styles.cardContent}
+            nestedScrollEnabled
             showsVerticalScrollIndicator={false}
           >
             {tier.rows.map((row) => (
@@ -408,6 +422,8 @@ export function PremiumScreen({
                     <View style={styles.planTop}>
                       <Text
                         numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.7}
                         maxFontSizeMultiplier={FIXED_FONT_CAP}
                         style={[styles.planName, on && styles.planNameOn]}
                       >
@@ -419,12 +435,19 @@ export function PremiumScreen({
                         </View>
                       ) : null}
                     </View>
-                    <View style={styles.priceRow}>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={[styles.price, on && styles.priceOn]}>
-                        {t(language, entry.priceKey)}
-                      </Text>
-                      <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.priceUnit}>{t(language, entry.unitKey)}</Text>
-                    </View>
+                    {/* One line that shrinks to fit: wrapped, "/ year" took a
+                        line of its own and the taller tile pushed the legal row
+                        off the screen (emulator check, 2026-10-13). */}
+                    <Text
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.6}
+                      maxFontSizeMultiplier={FIXED_FONT_CAP}
+                      style={styles.priceRow}
+                    >
+                      <Text style={[styles.price, on && styles.priceOn]}>{t(language, entry.priceKey)}</Text>
+                      <Text style={styles.priceUnit}>{` ${t(language, entry.unitKey)}`}</Text>
+                    </Text>
                     {/* Always drawn, blank when the plan has no second
                         line. Free is the only tier whose plan carries none, so
                         its price tile was a line shorter than Pro's and
@@ -479,6 +502,7 @@ export function PremiumScreen({
           </Pressable>
         </View>
       </View>
+      </ScrollView>
     </View>
   );
 }
@@ -499,6 +523,8 @@ const FIXED_FONT_CAP = 1.3;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#000000' },
+  page: { flex: 1 },
+  pageContent: { flexGrow: 1 },
   pressed: { opacity: 0.85 },
 
   topRow: { paddingHorizontal: 18, paddingTop: 10, alignItems: 'flex-end' },
@@ -568,7 +594,8 @@ const styles = StyleSheet.create({
   segmentText: { fontSize: 14.5, fontWeight: '700', color: 'rgba(255,255,255,0.62)', textAlign: 'center' },
   segmentTextOn: { color: 'rgba(255,255,255,0.88)' },
 
-  cardWrap: { flex: 1, paddingHorizontal: 16, paddingTop: 14 },
+  // A floor, so a short page scrolls rather than squeezing the card to a line.
+  cardWrap: { flex: 1, minHeight: 190, paddingHorizontal: 16, paddingTop: 14 },
   card: {
     flex: 1,
     borderRadius: RADIUS,
@@ -613,14 +640,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'transparent',
   },
-  // Wraps: the badge drops under the name before the name is cut ("Ye..").
-  planTop: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', columnGap: 7, rowGap: 4 },
+  planTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   planName: { fontSize: 13.5, fontWeight: '700', color: PRO_SURFACE.inkGhost, flexShrink: 1 },
   planNameOn: { color: PRO_SURFACE.ink },
   planBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
   planBadgeText: { fontSize: 10.5, fontWeight: '800', color: PRO_SURFACE.badgeInk },
-  // Wraps: "/ year" goes under the price rather than past the tile's edge.
-  priceRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 5, marginTop: 6 },
+  priceRow: { marginTop: 6 },
   price: { fontSize: 25, fontWeight: '800', letterSpacing: -1, color: 'rgba(255,255,255,0.55)' },
   priceOn: { color: PRO_SURFACE.ink },
   priceUnit: { fontSize: 13.5, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
