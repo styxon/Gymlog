@@ -87,6 +87,7 @@ import {
   withGuidedRestDeadline,
   withGuidedRestPaused,
 } from '../lib/guidedPlayer';
+import { guidedDrillMediaHeight, guidedWalkMediaHeight } from '../lib/guidedMediaHeight';
 import {
   buildOverviewColumns,
   buildProgressionPill,
@@ -1616,6 +1617,8 @@ function GuidedPlayer({
 }: GuidedPlayerScreenProps) {
   // Read here, on the screen: inside the sheet's Modal it is always 0.
   const screenInsets = useSafeAreaInsets();
+  // The drill picture yields to the countdown on a short phone (guidedMediaHeight).
+  const { height: playerWindowHeight, fontScale: playerFontScale } = useWindowDimensions();
   /** The rest screen's controls, for the workout tour. */
   const restControlsRef = useTourTarget(tourTargets, 'workout.rest');
   const theme = useTheme();
@@ -3963,7 +3966,13 @@ function GuidedPlayer({
           {step.type === 'drill' && (
             <StepIn stepKey={`drill-${stepIndex}`}>
               <View style={{ flex: 1, minHeight: 0 }}>
-                <MediaZone name={step.drillName} library={exerciseLibrary} height={270} mode="drill" language={language} />
+                <MediaZone
+                  name={step.drillName}
+                  library={exerciseLibrary}
+                  height={guidedDrillMediaHeight(playerWindowHeight, playerFontScale)}
+                  mode="drill"
+                  language={language}
+                />
                 <View style={{ height: 20 }} />
                 <NameBlock
                   name={step.drillName}
@@ -3972,7 +3981,10 @@ function GuidedPlayer({
                   onHow={() => setHowtoOpen(true)}
                 />
                 <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+                  {/* Already the largest text on the screen: a larger system
+                      font grows the name and labels, not this. */}
                   <Text
+                    maxFontSizeMultiplier={1}
                     style={[
                       styles.drillCountdown,
                       { color: secondsLeft <= 3.05 ? theme.green : theme.ink },
@@ -4070,7 +4082,7 @@ function GuidedPlayer({
                   <MediaZone
                     name={step.exerciseName}
                     library={exerciseLibrary}
-                    height={210}
+                    height={guidedWalkMediaHeight(playerWindowHeight, playerFontScale)}
                     mode="set"
                     showActions={false}
                     fit="cover"

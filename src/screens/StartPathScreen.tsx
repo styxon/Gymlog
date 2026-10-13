@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useFonts } from 'expo-font';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -195,6 +195,14 @@ export function StartPathScreen({
     // Top padding = inset + the back chevron (10 + 40) + a gap, so the title
     // starts under the button instead of behind it.
     <View style={[styles.screen, { paddingTop: insets.top + 10 + 40 + 22, paddingBottom: insets.bottom + 14 }]}>
+      {/* Scrolls: on a 720x1280 phone the third card sat under Continue with
+          no way to reach it (small-screen sweep, 2026-10-13). Edge to edge,
+          padded inside, so the chosen card's shadow is not cut at the sides. */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollBody}
+        showsVerticalScrollIndicator={false}
+      >
       <Text style={[styles.heading, { fontFamily }]}>{t(language, 'startPath.heading')}</Text>
       {/* "You can change your mind later" is gone (user, 2026-08-19): it
           hedged a choice that the app already lets you revisit. */}
@@ -250,6 +258,7 @@ export function StartPathScreen({
           />
         ) : null}
       </View>
+      </ScrollView>
 
       <View style={styles.footer}>
         <Pressable
@@ -325,10 +334,17 @@ const makeStyles = (theme: Theme) => {
     fontWeight: '700',
     marginTop: 6,
   },
+  scroll: {
+    flex: 1,
+    marginHorizontal: -24,
+  },
+  scrollBody: {
+    paddingHorizontal: 24,
+    paddingBottom: 20,
+  },
   cardStack: {
     marginTop: 28,
     gap: 14,
-    flex: 1,
   },
   card: {
     flexDirection: 'row',
