@@ -1,0 +1,19 @@
+Copyright (c) 2026 Santeri Ylönen, trading as Styxon Studio (business ID
+3321575-3, Finland). All rights reserved.
+
+This repository is public so that its source can be read. Reading it grants
+no licence. No part of it — the code, the ready-made programmes, the coach's
+instructions, the texts, the design or the images made for it — may be
+copied, modified, distributed, published or used to build another app or
+service without written permission from the copyright holder.
+
+Parts that came from others keep their own licences:
+
+- Exercise data and pictures from yuhonas/free-exercise-db (The Unlicense)
+- Photographs from Pexels (Pexels License), listed in
+  assets/fitness/programmes/README.md
+- The Manrope, Inter and JetBrains Mono typefaces (SIL Open Font License 1.1)
+- npm dependencies, each under the licence in its own package
+- Anything else credited to someone else, under that author's terms
+
+Contact: support@vinha.app
