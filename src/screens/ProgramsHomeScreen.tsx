@@ -974,6 +974,21 @@ export function ProgramsHomeScreen({
             );
           })}
         </ScrollableOrGrid>
+        {/* Every programme in one list, with a search by name (owner,
+            2026-10-13). The tiles overlap — a programme sits under several — so
+            browsing them never says "that was all", and a name seen in the store
+            or from a friend had no box to type it into on this tab. The
+            catalogue screen already does both; this is its door. */}
+        {onBrowseCatalog && catalogCount > 0 ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={onBrowseCatalog}
+            hitSlop={8}
+            style={({ pressed }) => [styles.allProgramsLink, pressed && { opacity: 0.7 }]}
+          >
+            <Text style={styles.sectionLink}>{t(language, 'programs.allPrograms', { count: catalogCount })}</Text>
+          </Pressable>
+        ) : null}
 
         {/* "For you" follows the browse tiles. It used to lead them, below the
             reader's targets and courses; the user put finding a programme
@@ -1858,6 +1873,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 26,
     marginBottom: 11,
     paddingHorizontal: 2,
+  },
+  allProgramsLink: {
+    alignSelf: 'flex-start',
+    marginTop: 4,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
   },
   sectionLink: {
     color: theme.highlight,
