@@ -208,56 +208,40 @@ module.exports = [
     },
   },
   {
-    name: 'release: the free trial is back on before the app ships',
+    name: 'release: the trial switch and every promise of a trial agree',
     run() {
-      // The trial was switched off on purpose (2026-08-06) so the free tier
-      // could be walked end to end — with it on, every new account is a Pro
-      // account for the length of PRO_TRIAL_DAYS (a week then, fourteen days
-      // since 2026-09-09) and nobody ever sees a lock.
-      //
-      // Shipping it that way would mean selling something no new user has
-      // felt. Like the guard above, this one stays green on the demo and turns
-      // red at exactly the release step: flip extra.demoBuild to false and
-      // this names the switch that was left off.
-      const entitlement = read('src/lib/proEntitlement.ts');
-      const trialEnabled = /export const PRO_TRIAL_ENABLED = true;/.test(entitlement);
-      const demoBuild = readJson('app.json')?.expo?.extra?.demoBuild === true;
-
-      assert.ok(
-        trialEnabled || demoBuild,
-        'PRO_TRIAL_ENABLED is false and app.json no longer declares extra.demoBuild. ' +
-          'The trial was switched off to inspect the free tier; turn it back on before release.',
+      // The in-app trial was on from 2026-09-09 and this test demanded it
+      // stay on for release. The owner switched it off on 2026-10-13: the
+      // trial moves to a Play free-trial offer, decided once the products are
+      // in the store (project-store-billing). Either way round, the button and
+      // the line under it must read the same switch the trial start does, so
+      // the Pro page never promises days it will not grant, nor hides days it
+      // would.
+      const premium = read('src/screens/PremiumScreen.tsx');
+      assert.match(
+        premium,
+        /const trialOffered = PRO_TRIAL_ENABLED && trialAvailable;/,
+        'The Pro page no longer derives its trial offer from the switch.',
       );
-
-      // And while it is off, NOTHING may still promise it. Covering only the
-      // onboarding paywall was the gap that let the Pro page keep advertising
-      // "Start 7-day free trial" for a whole session after the switch flipped —
-      // and the Pro page is where all twelve entry points lead. (The
-      // onboarding paywall itself was deleted 2026-08-25 after going
-      // unreachable, so the Pro page is the only CTA left to check.)
-      if (!trialEnabled) {
-        // v6 chooses the CTA through resolveTierCtaKey. Both halves are
-        // checked, because either one alone can be true while the button still
-        // lies: the screen must hand it the REAL flag, and the resolver must
-        // be the only path to the trial wording.
-        assert.match(
-          read('src/screens/PremiumScreen.tsx'),
-          /resolveTierCtaKey\(tier, PRO_TRIAL_ENABLED\)/,
-          'The Pro page CTA no longer reads the trial flag, so it can promise a week it will not grant.',
-        );
-        assert.match(
-          read('src/lib/proTiers.ts'),
-          /trialEnabled && tier\.trialCtaKey \? tier\.trialCtaKey : tier\.ctaKey/,
-          'resolveTierCtaKey stopped gating the trial wording on the flag.',
-        );
-        // And the same for the line under the button, which is where the
-        // "then 79,90 €" promise actually lives.
-        assert.match(
-          read('src/screens/PremiumScreen.tsx'),
-          /resolveTierFineKey\(tier, activePlan\.id, PRO_TRIAL_ENABLED\)/,
-          'The fine print no longer reads the trial flag.',
-        );
-      }
+      assert.match(
+        premium,
+        /resolveTierCtaKey\(tier, trialOffered\)/,
+        'The Pro page CTA no longer reads the trial offer, so it can promise days it will not grant.',
+      );
+      assert.match(
+        premium,
+        /resolveTierFineKey\(tier, activePlan\.id, trialOffered\)/,
+        'The fine print no longer reads the trial offer.',
+      );
+      assert.match(
+        read('src/lib/proTiers.ts'),
+        /trialEnabled && tier\.trialCtaKey \? tier\.trialCtaKey : tier\.ctaKey/,
+        'resolveTierCtaKey stopped gating the trial wording on the flag.',
+      );
+      // And the start itself: the CTA mints days only through the switch.
+      const entitlement = read('src/lib/proEntitlement.ts');
+      assert.match(entitlement, /return PRO_TRIAL_ENABLED && preferences\.proTrialStartedAt === null;/);
+      assert.match(entitlement, /if \(!PRO_TRIAL_ENABLED\) \{\s*return null;/);
     },
   },
   {

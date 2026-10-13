@@ -1,6 +1,7 @@
 import { calendarDaysBetween } from './completedSessions';
 import { FatigueSignal } from './fatigueModel';
 import { I18nKey } from './i18n';
+import { nameVars } from './coachChat';
 import { exerciseNameLabel } from './exerciseNameLabel';
 import { isLiftPlateaued, recentLifts } from './proInsights';
 import { LiftHistory, sessionBestPoints } from './trainingHistory';
@@ -49,14 +50,20 @@ interface MomentSpec {
 }
 
 /**
- * Day 7, day 30, day 90. The spacing is not arbitrary: each one lands with
+ * Day 7, day 21, day 90. The second moment was day 30 until 2026-10-13: the
+ * three answers exist to sell Pro, and a reader who stops before a month saw
+ * only one of them (owner). Day 21 at six sessions is two a week for three
+ * weeks, enough log for a stall to show. The key stays 'month1': it is stored
+ * as spent on installs, and renaming it would offer the moment again.
+ *
+ * The spacing is not arbitrary: each one lands with
  * more history than the last, so the answers get better as the reader gets
  * more invested — and the third one arrives around when a training block ends,
  * which is the moment "what next" is a real question rather than a prompt.
  */
 export const COACH_DEMO_MOMENTS: MomentSpec[] = [
   { key: 'week1', afterDays: 7, minSessions: 2 },
-  { key: 'month1', afterDays: 30, minSessions: 8 },
+  { key: 'month1', afterDays: 21, minSessions: 6 },
   { key: 'month3', afterDays: 90, minSessions: 20 },
 ];
 
@@ -156,17 +163,28 @@ export function pickDemoQuestion(
     if (stalled) {
       // The strongest one available: this is the exact conclusion the reader
       // has been seeing blurred on Home and Progress for a month.
-      return { key, questionKey: 'coach.demo.month1.stalled', vars: { lift: exerciseNameLabel(language, stalled.name) } };
+      return { key, questionKey: 'coach.demo.month1.stalled', vars: nameVars('lift', exerciseNameLabel(language, stalled.name)) };
     }
     const declining = decliningLift(input.lifts);
     if (declining) {
-      return { key, questionKey: 'coach.demo.month1.declining', vars: { lift: exerciseNameLabel(language, declining.name) } };
+      return { key, questionKey: 'coach.demo.month1.declining', vars: nameVars('lift', exerciseNameLabel(language, declining.name)) };
     }
     return { key, questionKey: 'coach.demo.month1.pace' };
   }
 
   if (input.fatigueSignal === 'high' || input.fatigueSignal === 'elevated') {
     return { key, questionKey: 'coach.demo.month3.load' };
+  }
+  // A lift that has stopped is the question Home and Progress have shown a
+  // free reader blurred for weeks; at three months it comes with what next
+  // (owner, 2026-10-13: build more on the stall).
+  const stalledAtThree = stalledLift(input.lifts, input.cautionFlags);
+  if (stalledAtThree) {
+    return {
+      key,
+      questionKey: 'coach.demo.month3.stalled',
+      vars: nameVars('lift', exerciseNameLabel(input.language, stalledAtThree.name)),
+    };
   }
   // Around three months a block is ending, so "what next" is a real question.
   // It also lands on the programme builder, which is Pro — the offer appears,

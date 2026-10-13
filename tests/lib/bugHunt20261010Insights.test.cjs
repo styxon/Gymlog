@@ -55,7 +55,7 @@ module.exports = [
     run() {
       const old = liftOf('Leg Press', 10, '2026-01-12T10:00:00.000Z');
       const recent = liftOf('Bench Press', 4, '2026-10-08T10:00:00.000Z');
-      assert.equal(due([old, recent], 'en').vars.lift, 'Bench Press');
+      assert.equal(due([old, recent], 'en').vars.Lift, 'Bench Press');
       // Nothing trained lately and stalled: the generic question, not the old lift.
       assert.equal(due([old], 'en').questionKey, 'coach.demo.month1.pace');
     },
@@ -64,8 +64,10 @@ module.exports = [
     name: 'coach demo moment: the lift is named in the reader\'s language',
     run() {
       const recent = liftOf('Leg Press', 4, '2026-10-08T10:00:00.000Z');
-      assert.equal(due([recent], 'fi').vars.lift, 'Jalkaprässi');
-      assert.equal(due([recent], 'en').vars.lift, 'Leg Press');
+      assert.equal(due([recent], 'fi').vars.Lift, 'Jalkaprässi');
+      // Inside the question it is lower case (owner, 2026-10-13).
+      assert.equal(due([recent], 'fi').vars.lift, 'jalkaprässi');
+      assert.equal(due([recent], 'en').vars.Lift, 'Leg Press');
       assert.match(read('src', 'app', 'useCoachDemoMoment.ts'), /language: preferences\.appLanguage/);
     },
   },
