@@ -14,6 +14,8 @@ interface ConfirmDialogProps {
   language: AppLanguage;
   cancelLabel?: string;
   destructive?: boolean;
+  /** Long-press copies the message: for one that holds an address to type elsewhere. */
+  selectableMessage?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
 }
@@ -26,6 +28,7 @@ export function ConfirmDialog({
   language,
   cancelLabel,
   destructive,
+  selectableMessage = false,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps) {
@@ -38,7 +41,9 @@ export function ConfirmDialog({
       <View style={styles.overlay}>
         <View style={styles.dialog}>
           <Text style={styles.title}>{title}</Text>
-          <Text style={styles.message}>{message}</Text>
+          <Text style={styles.message} selectable={selectableMessage}>
+            {message}
+          </Text>
           <View style={styles.actions}>
             <Pressable accessibilityRole="button" onPress={onCancel} style={styles.secondaryButton}>
               <Text style={styles.secondaryText}>{cancelLabel ?? t(language, 'common.cancel')}</Text>
