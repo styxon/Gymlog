@@ -2273,6 +2273,10 @@ const EN = {
   'settings.rate': 'Rate Vinha',
   'settings.feedback': 'Send feedback',
   'settings.feedback.sub': 'A bug, an idea, or something that annoys you.',
+  'settings.feedback.noMail.title': 'No email app found',
+  'settings.feedback.noMail.message': 'Send your feedback to {email}. Press and hold the address to copy it.',
+  'settings.feedback.noMail.share': 'Share address',
+  'settings.feedback.noMail.close': 'Close',
 
   // ── Paywall moments (the finding is free, the conclusion is Pro) ──────
   'pro.locked.cta': 'See the recommendation',
@@ -5667,6 +5671,10 @@ const FI: Record<I18nKey, string> = {
   'settings.rate': 'Arvioi Vinha',
   'settings.feedback': 'Lähetä palautetta',
   'settings.feedback.sub': 'Bugi, idea tai jokin mikä ärsyttää.',
+  'settings.feedback.noMail.title': 'Sähköpostisovellusta ei löytynyt',
+  'settings.feedback.noMail.message': 'Lähetä palautteesi osoitteeseen {email}. Pidä osoitetta painettuna, niin voit kopioida sen.',
+  'settings.feedback.noMail.share': 'Jaa osoite',
+  'settings.feedback.noMail.close': 'Sulje',
 
   'pro.locked.cta': 'Katso suositus',
   'pro.plateau.eyebrow': 'TASANNE HAVAITTU',

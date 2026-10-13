@@ -1,5 +1,5 @@
 ﻿import React, { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { AppleSignInButton } from '../components/AppleSignInButton';
@@ -305,6 +305,10 @@ export function SettingsScreen({
   const [resetVisible, setResetVisible] = useState(false);
   const [resetCloudCopy, setResetCloudCopy] = useState<CloudCopyState>('current');
   const [restoreAsideVisible, setRestoreAsideVisible] = useState(false);
+  // A phone with no mail app rejects the mailto, and the row did nothing at
+  // all: the reader with a bug to report got no address and no reason. The
+  // dialog gives the address, copyable, and a share sheet that can copy it.
+  const [feedbackAddressVisible, setFeedbackAddressVisible] = useState(false);
   const language = preferences.appLanguage;
   // A redeemed promo is Pro too, so the badge cannot read the preview switch.
   const proUnlocked = resolveProEntitlement(preferences).unlocked;
@@ -635,7 +639,9 @@ export function SettingsScreen({
               title={t(language, 'settings.feedback')}
               sub={t(language, 'settings.feedback.sub')}
               chevron
-              onPress={() => void Linking.openURL(buildFeedbackMailto(language, appInfo.version))}
+              onPress={() => {
+                Linking.openURL(buildFeedbackMailto(language, appInfo.version)).catch(() => setFeedbackAddressVisible(true));
+              }}
             />
             <Row
               icon="shield"
@@ -802,6 +808,20 @@ export function SettingsScreen({
         onConfirm={() => {
           setResetVisible(false);
           void onResetAllData();
+        }}
+      />
+      <ConfirmDialog
+        language={language}
+        visible={feedbackAddressVisible}
+        title={t(language, 'settings.feedback.noMail.title')}
+        message={t(language, 'settings.feedback.noMail.message', { email: LEGAL_ENTITY.supportEmail })}
+        selectableMessage
+        confirmLabel={t(language, 'settings.feedback.noMail.share')}
+        cancelLabel={t(language, 'settings.feedback.noMail.close')}
+        onCancel={() => setFeedbackAddressVisible(false)}
+        onConfirm={() => {
+          setFeedbackAddressVisible(false);
+          void Share.share({ message: LEGAL_ENTITY.supportEmail }).catch(() => undefined);
         }}
       />
       <ConfirmDialog
