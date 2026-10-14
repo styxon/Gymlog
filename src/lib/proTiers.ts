@@ -1,5 +1,3 @@
-import { FREE_ACTIVE_PROGRAM_CAP, PRO_ACTIVE_PROGRAM_CAP } from './activeProgramSet';
-import { PRO_COACH_QUESTIONS_PER_MONTH } from './aiCoachQuota';
 import { FREE_TREND_MONTHS } from './historyWindow';
 import { I18nKey } from './i18n';
 import { FREE_CUSTOM_PROGRAM_LIMIT } from './programSlots';
@@ -99,20 +97,21 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
     badgeKey: null,
     headKey: 'pro.v6.free.head',
     rows: [
+      // Titles only: the Free tab is a list a reader scans in two seconds.
       {
         key: 'logging',
         icon: 'lines',
         titleKey: 'pro.v6.free.logging.t',
-        bodyKey: 'pro.v6.free.logging.b',
         // Nothing gates the log. The proof is the module that would have to
         // start reading entitlement for that to stop being true.
         proof: 'isTrendRangeLocked',
       },
       {
+        // The title says a literal "50+"; READY_PROGRAM_COUNT >= 50 is pinned
+        // by tests/lib/proTiers.
         key: 'ready',
         icon: 'grid',
         titleKey: 'pro.v6.free.ready.t',
-        vars: { count: READY_PROGRAM_COUNT },
         proof: 'WORKOUT_TEMPLATES_V1',
       },
       {
@@ -130,32 +129,31 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         proof: 'FREE_TREND_MONTHS',
       },
       {
-        // Free asks nothing of its own accord. What it gets is three real
-        // answers at moments the app picks, which is what this row promises
-        // and what coachDemoMoments delivers — the count is in the sentence
-        // because three moments is the whole design, not a tunable number.
+        // Three real answers at moments the app picks, which is what
+        // coachDemoMoments delivers.
         key: 'coach',
         icon: 'spark',
         titleKey: 'pro.v6.free.coach.t',
-        bodyKey: 'pro.v6.free.coach.b',
         proof: 'resolveDueCoachDemoMoment',
       },
       {
-        // The qualifier is not decoration. "Works with no connection" on its
-        // own is an overclaim — the coach needs one — and the app states the
-        // exception everywhere else it makes this promise.
         key: 'offline',
         icon: 'moon',
         titleKey: 'pro.v6.free.offline.t',
-        bodyKey: 'pro.v6.free.offline.b',
         proof: 'resolveLiveAiCoachUrl',
       },
       {
         key: 'yours',
         icon: 'lock',
         titleKey: 'pro.v6.free.yours.t',
-        bodyKey: 'pro.v6.free.yours.b',
         proof: 'WORKOUT_LOG_CSV_HEADER',
+      },
+      {
+        key: 'noads',
+        icon: 'check',
+        titleKey: 'pro.v6.free.noads.t',
+        // No ad SDK exists; the ungated log is the nearest thing to prove.
+        proof: 'isTrendRangeLocked',
       },
     ],
     plans: [
@@ -180,7 +178,6 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         icon: 'spark',
         titleKey: 'pro.v6.pro.coach.t',
         bodyKey: 'pro.v6.pro.coach.b',
-        vars: { count: PRO_COACH_QUESTIONS_PER_MONTH },
         proof: 'resolveCoachQuota',
       },
       {
@@ -194,32 +191,26 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         key: 'programs',
         icon: 'grid',
         titleKey: 'pro.v6.pro.programs.t',
-        bodyKey: 'pro.v6.pro.programs.b',
-        vars: { active: FREE_ACTIVE_PROGRAM_CAP, proActive: PRO_ACTIVE_PROGRAM_CAP },
         proof: 'resolveProgramSlots',
       },
       {
         key: 'history',
         icon: 'clock',
         titleKey: 'pro.v6.pro.history.t',
-        bodyKey: 'pro.v6.pro.history.b',
         proof: 'isRecordLocked',
-      },
-      {
-        // Replaces the design's "Tumma teema ja widgetit", which was free.
-        key: 'setlog',
-        icon: 'rows',
-        titleKey: 'pro.v6.pro.setlog.t',
-        bodyKey: 'pro.v6.pro.setlog.b',
-        proof: 'isSetLogLocked',
       },
       {
         // Replaces the design's "Varmuuskopio", which is not gated at all.
         key: 'analysis',
         icon: 'quill',
         titleKey: 'pro.v6.pro.analysis.t',
-        bodyKey: 'pro.v6.pro.analysis.b',
         proof: 'buildSessionAnalysis',
+      },
+      {
+        key: 'allfree',
+        icon: 'check',
+        titleKey: 'pro.v6.pro.allfree.t',
+        proof: 'resolveProEntitlement',
       },
     ],
     // One price set for the whole app: these are the same keys the v4 page
@@ -261,23 +252,9 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         proof: 'resolveProEntitlement',
       },
       {
-        // The cap stated on the tier it matters most to, before the sale
-        // rather than after it. A lifetime buyer who discovers a monthly limit
-        // later is the one customer this pricing cannot afford to surprise —
-        // narrowing "lifetime" after the fact burns exactly the people who
-        // paid most. Framed as what it is: the coach, every month, forever.
-        key: 'coach',
-        icon: 'spark',
-        titleKey: 'pro.v6.life.coach.t',
-        bodyKey: 'pro.v6.life.coach.b',
-        vars: { count: PRO_COACH_QUESTIONS_PER_MONTH },
-        proof: 'PRO_COACH_QUESTIONS_PER_MONTH',
-      },
-      {
         key: 'norenew',
         icon: 'infin',
         titleKey: 'pro.v6.life.norenew.t',
-        bodyKey: 'pro.v6.life.norenew.b',
         proof: 'resolveNextRenewal',
       },
       {
@@ -287,21 +264,9 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         proof: 'resolveProEntitlement',
       },
       {
-        // The question a one-off purchase actually raises: what happens when I
-        // change phones. The restore link is already in this page's own footer,
-        // so this row describes a control the reader can see rather than
-        // promising a new one.
-        key: 'transfer',
-        icon: 'cloud',
-        titleKey: 'pro.v6.life.transfer.t',
-        bodyKey: 'pro.v6.life.transfer.b',
-        proof: 'onManageSubscription',
-      },
-      {
         key: 'support',
         icon: 'heart',
         titleKey: 'pro.v6.life.support.t',
-        bodyKey: 'pro.v6.life.support.b',
         proof: 'SUBSCRIPTION_TERM_ORDER',
       },
     ],

@@ -115,11 +115,16 @@ module.exports = [
 
       const ready = PRO_TIERS.free.rows.find((row) => row.key === 'ready');
       assert.ok(ready, 'the free tab must name the ready catalogue');
-      assert.equal(
-        ready.vars.count,
-        WORKOUT_TEMPLATES_V1.length,
-        'the free tab names a programme count the catalogue no longer has',
+      // The title says a literal "50+" (no count variable), so the catalogue
+      // must never shrink below the number the page promises.
+      assert.ok(
+        READY_PROGRAM_COUNT >= 50,
+        `the free tab says "50+ programs" but the catalogue has ${READY_PROGRAM_COUNT}`,
       );
+      for (const line of keyLines(ready.titleKey)) {
+        assert.match(line, /50\+/, 'the ready row states 50+ in both languages');
+        assert.doesNotMatch(line, /\{count\}/);
+      }
     },
   },
   {

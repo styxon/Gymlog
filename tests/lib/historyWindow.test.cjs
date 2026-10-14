@@ -110,27 +110,12 @@ module.exports = [
       const windowCopy = i18n.split('\n').filter((line) => line.includes("'pro.v6.free.history.t':"));
       assert.equal(windowCopy.length, 2, 'both languages');
 
-      // The "kept forever" promise used to be a standing line under the CTA on
-      // every tab. It was cut on 2026-08-29 with the rest of the footer prose,
-      // and the rule moved rather than went: the claim now lives on the Free
-      // tab's own row, which is where a reader worried about losing their log
-      // would actually look, and it is the tab a lapsing subscriber lands on.
-      const forever = i18n.split('\n').filter((line) => line.includes("'pro.v6.free.yours.b':"));
-      assert.equal(forever.length, 2, 'the "kept forever" line must exist in both languages');
-      for (const line of forever) {
-        assert.match(line, /forever|ikuisesti/, 'the free tier must still promise the log is kept');
-      }
+      // The Free tab is titles only now (2026-10-14): the long "kept forever,
+      // exportable as CSV" body is gone on purpose. The row that remains says
+      // where the log lives, in both languages.
+      const stored = i18n.split('\n').filter((line) => line.includes("'pro.v6.free.yours.t':"));
+      assert.equal(stored.length, 2, 'the "stored on your phone" row must exist in both languages');
       assert.match(premium, /rows\.map|row\.bodyKey/, 'the Pro page must render the tier rows');
-
-      // Export is what makes "your log is yours" checkable rather than a
-      // promise. v4 stated it in an FAQ answer; v6 has no FAQ, so it moved to
-      // the Free tab's own row — which is read by more people than an answer
-      // three taps down ever was.
-      const exportCopy = i18n.split('\n').filter((line) => line.includes("'pro.v6.free.yours.b':"));
-      assert.equal(exportCopy.length, 2, 'both languages');
-      for (const line of exportCopy) {
-        assert.match(line, /CSV/, 'the export promise is what makes "yours" checkable');
-      }
 
       // History, exercise detail and the session analysis read the log, not a
       // trend window — none of them may start asking about entitlement.
@@ -139,16 +124,11 @@ module.exports = [
         assert.doesNotMatch(source, /historyWindow|isTrendRangeLocked/, `${file} reads the log`);
       }
 
-      // And the free-tier promise stops implying the charts go back forever
-      // while staying exact about what does. The v2 free-tier paragraph that
-      // used to carry this went on 2026-09-08 with the rest of the dead v2
-      // copy — it rendered nowhere — so the line that makes the promise now,
-      // the Free tab's "yours" row, is the one held to it.
-      for (const line of forever) {
+      // The Free rows are titles only; none may imply the charts go back
+      // forever.
+      for (const line of stored) {
         assert.doesNotMatch(line, /full history, forever|koko historiasi, ikuisesti/);
       }
-      assert.match(forever[0], /Exportable as CSV, forever/);
-      assert.match(forever[1], /Vietävissä CSV:nä, ikuisesti/);
     },
   },
 ];

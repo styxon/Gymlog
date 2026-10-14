@@ -167,16 +167,16 @@ module.exports = [
       const pro = tiersSource.match(/  pro: \{[\s\S]*?\n  \},/);
       assert.ok(pro, 'the Pro tier should be declared');
 
-      // Six rows, and a seventh is a decision rather than a tidy-up. Fewer
-      // than that and the tab is thinner than the Free tab beside it, which on
-      // a page where the two are one tap apart is its own argument.
+      // Five reasons plus the closing "+ everything in the free version" line.
+      // A seventh is a decision rather than a tidy-up. (The set-level log row
+      // left the page on 2026-10-14; the feature itself is still Pro.)
       assert.equal(
         (pro[0].match(/titleKey: 'pro\.v6\.pro\./g) ?? []).length,
         6,
         'the Pro pitch is six rows — changing that is a product decision',
       );
 
-      for (const key of ['coach', 'progression', 'programs', 'history', 'setlog', 'analysis']) {
+      for (const key of ['coach', 'progression', 'programs', 'history', 'analysis', 'allfree']) {
         assert.match(pro[0], new RegExp(`titleKey: 'pro\\.v6\\.pro\\.${key}\\.t'`));
       }
 
@@ -185,7 +185,6 @@ module.exports = [
       for (const [key, constant] of [
         ['pro.v6.free.own', 'FREE_CUSTOM_PROGRAM_LIMIT'],
         ['pro.v6.free.history', 'FREE_TREND_MONTHS'],
-        ['pro.v6.pro.coach', 'PRO_COACH_QUESTIONS_PER_MONTH'],
       ]) {
         assert.match(
           tiersSource,
@@ -204,28 +203,24 @@ module.exports = [
       // next to "free shows 3 months". The log is never capped in either
       // tier — only the charts and records are — so the body has to say which,
       // and the trust block has to state the log outright.
-      const historyBody = i18nSource
+      // The Pro history row (title only since 2026-10-14) must say records and
+      // stats, not "your log" — the log is never capped, only these are.
+      const historyTitle = i18nSource
         .split('\n')
-        .filter((line) => line.includes("'pro.v6.pro.history.b':"));
-      assert.equal(historyBody.length, 2, 'both languages');
-      for (const line of historyBody) {
+        .filter((line) => line.includes("'pro.v6.pro.history.t':"));
+      assert.equal(historyTitle.length, 2, 'both languages');
+      for (const line of historyTitle) {
         assert.match(
           line,
-          /[Cc]harts and records|[Kk]uvaajat ja ennätykset/,
-          'the history row must say charts and records, not "your history" — the log is never capped',
+          /[Rr]ecords and stats|[Ee]nnätykset ja tilastot/,
+          'the history row must say records and stats, not "your history" — the log is never capped',
         );
       }
-      // And the log promise itself is still stated on the page. It was a
-      // standing line under the CTA until 2026-08-29, when the footer prose was
-      // cut back to the legal links; it now lives on the Free tab's own row,
-      // which is the tab a lapsing subscriber lands on.
-      const yours = i18nSource
+      // The Free tab still states that the log is uncapped.
+      const logging = i18nSource
         .split('\n')
-        .filter((line) => line.includes("'pro.v6.free.yours.b':"));
-      assert.equal(yours.length, 2, 'both languages');
-      for (const line of yours) {
-        assert.match(line, /forever|ikuisesti/, 'the log promise must survive the trim');
-      }
+        .filter((line) => line.includes("'pro.v6.free.logging.t':"));
+      assert.equal(logging.length, 2, 'both languages');
       assert.doesNotMatch(premiumSource, /8 weeks|8 viikkoa/);
 
       // Claims from the mocks that describe things this app does not do.
