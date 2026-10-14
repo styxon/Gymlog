@@ -92,7 +92,7 @@ module.exports = [
       // number says which count it is; a floor of anything else fails until
       // it is added here.
       const counts = [
-        [/^(valmi|ohjelm|ready|program)/i, WORKOUT_TEMPLATES_V1.length],
+        [/^(valmi|ohjelm|saliohjelm|ready|program)/i, WORKOUT_TEMPLATES_V1.length],
         [/^(liik|exercis)/i, createSeedExerciseLibrary().length],
       ];
       const realCount = (noun, said) => {

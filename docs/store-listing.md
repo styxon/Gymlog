@@ -56,7 +56,7 @@ Chosen by the owner on 2026-10-09. The others considered:
 
 <!-- field:fi.short -->
 ```text
-Treenipäiväkirja ja 50+ valmista saliohjelmaa. Ohjatut sarjat ja lepoajastin.
+Treenipäiväkirja ja 50+ saliohjelmaa. Toimii ilman verkkoa ja ilman tiliä.
 ```
 
 ### Full description (max 4000)
