@@ -62,6 +62,18 @@ export interface ProTierPlan {
   subKey?: I18nKey;
   badgeKey?: I18nKey;
   /**
+   * Price and its second line only, centred: no plan name and no unit.
+   * Lifetime said "Kertamaksu" three times within a few centimetres — name,
+   * unit and the line under the CTA (user, 2026-10-14). The line under the
+   * CTA keeps it.
+   */
+  bare?: boolean;
+  /**
+   * No price tile at all: the plan is the only one and costs nothing, so the
+   * benefit list takes its room (user, 2026-10-14).
+   */
+  noTile?: boolean;
+  /**
    * The line under the CTA. It belongs to the PLAN, not the tier: a monthly
    * buyer reading a yearly renewal price is the exact mistake this shape
    * prevents, and the terms genuinely differ per plan.
@@ -160,6 +172,7 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
       {
         id: 'free',
         nameKey: 'pro.v6.plan.always',
+        noTile: true,
         priceKey: 'pro.v6.price.free',
         unitKey: 'pro.v6.unit.forever',
         badgeKey: 'pro.v6.badge.free',
@@ -273,6 +286,7 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
     plans: [
       {
         id: 'lifetime',
+        bare: true,
         nameKey: 'pro.v6.plan.once',
         priceKey: 'pro.page.perLifetime',
         unitKey: 'pro.v3.unit.lifetime',
