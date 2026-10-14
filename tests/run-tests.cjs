@@ -617,6 +617,7 @@ const suites = [
   ...require('./storage/longHistoryLoads.test.cjs'),
   ...require('./storage/resetKeepsInstall.test.cjs'),
   ...require('./lib/storageSize.test.cjs'),
+  ...require('./lib/releaseSigning.test.cjs'),
   ...require('./lib/allowBackup.test.cjs'),
   ...require('./lib/dataExtractionRules.test.cjs'),
   ...require('./lib/androidPermissions.test.cjs'),
