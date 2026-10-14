@@ -102,6 +102,7 @@ const DEVICE_ONLY = [
   'firstLaunchAt',
   'pendingAiLogDeletions',
   'seenServerNoticeIds',
+  'reviewProAccount',
 ];
 const PRIVACY = ['usageStatisticsEnabled', 'aiLogId', 'aiLogChatConsent', 'aiLogComposerConsent', 'aiLogPhotoConsent'];
 const DEVICE_KEPT = new Set([...DEVICE_ONLY, 'aiLogId', 'aiLogChatConsent', 'aiLogComposerConsent', 'aiLogPhotoConsent']);

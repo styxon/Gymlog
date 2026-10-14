@@ -180,7 +180,7 @@ export interface SubscriptionView {
    * trial are the lapses the app can prove. Null for a purchase and for never
    * subscribed.
    */
-  grant: 'promo' | 'trial' | null;
+  grant: 'promo' | 'trial' | 'review' | null;
 }
 
 /**
@@ -236,6 +236,9 @@ export function resolveSubscriptionView(input: {
     // "Yearly · active", a next payment of 79,90 €, a Visa and a "member
     // since" — a subscription nobody had started, on the one screen they
     // would open to check.
+    //
+    // The review account is a grant of the same kind, without even a date:
+    // it lasts while that account is signed in. No plan, no price, no end.
     if (entitlement.source === 'promo' || entitlement.source === 'trial') {
       return {
         state: 'active',
@@ -245,6 +248,9 @@ export function resolveSubscriptionView(input: {
         nextChargeAt: null,
         grant: entitlement.source,
       };
+    }
+    if (entitlement.source === 'review') {
+      return { state: 'active', term: null, cancelled: false, endsAt: null, nextChargeAt: null, grant: 'review' };
     }
 
     // The end of the CURRENT period, rolled forward through renewals. One

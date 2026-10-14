@@ -91,6 +91,8 @@ export interface AccountBackupState {
   /** 'unavailable' — this build has no sign-in configured; show nothing. */
   status: 'unavailable' | 'loading' | 'signed_out' | 'signed_in';
   email: string | null;
+  /** The account id as stored (Google's `sub`; `apple:<sub>` for Apple); null when signed out. */
+  sub: string | null;
   name: string | null;
   lastBackupAt: string | null;
   /** Whose sign-in this is, for wording that only fits one (null when signed out). */
@@ -1622,17 +1624,18 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
 
   const state = useMemo<AccountBackupState>(() => {
     if (!available) {
-      return { status: 'unavailable', email: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
+      return { status: 'unavailable', email: null, sub: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
     }
     if (!loaded) {
-      return { status: 'loading', email: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
+      return { status: 'loading', email: null, sub: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
     }
     if (!account) {
-      return { status: 'signed_out', email: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
+      return { status: 'signed_out', email: null, sub: null, name: null, lastBackupAt: null, provider: null, backupPaused: null };
     }
     return {
       status: 'signed_in',
       email: account.email,
+      sub: account.sub,
       name: account.name,
       lastBackupAt: account.lastBackupAt,
       provider: account.sub.startsWith(APPLE_ACCOUNT_PREFIX) ? 'apple' : 'google',

@@ -619,6 +619,14 @@ export interface AppPreferences {
    */
   mockSubscriptionPurchasedAt: string | null;
   /**
+   * True while the signed-in Google account is Play's review account
+   * (lib/reviewAccount): Pro is on for it, with source 'review'. Written only
+   * by app/useReviewProAccount from the signed-in account, cleared when that
+   * account signs out or is deleted. Device-only: a backup neither carries nor
+   * restores it (DEVICE_ONLY_PREFERENCE_FIELDS).
+   */
+  reviewProAccount: boolean;
+  /**
    * Why the reader ended their membership, kept on the device. Null when the
    * survey was never answered or was skipped — a skip is not an empty answer.
    */

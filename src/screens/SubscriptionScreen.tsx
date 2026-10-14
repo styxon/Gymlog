@@ -188,6 +188,9 @@ export function SubscriptionScreen({
     if (model.grant === 'trial') {
       return t(language, 'subs.status.trial', { date: date(model.endsAt) });
     }
+    if (model.grant === 'review') {
+      return t(language, 'subs.status.review');
+    }
     if (model.cancelled) {
       return t(language, 'subs.status.cancelled', { date: date(model.endsAt) });
     }
@@ -269,6 +272,11 @@ export function SubscriptionScreen({
         ]
       : [];
 
+    // The review account has no end and no charge to state; the status line
+    // and the note below say it.
+    if (model.grant === 'review') {
+      return [];
+    }
     if (model.grant) {
       return [proEnds, nothingScheduled];
     }
@@ -433,7 +441,9 @@ export function SubscriptionScreen({
                 <Text style={styles.noteBody}>
                   {model.grant === 'trial'
                     ? t(language, 'subs.trialNote', { date: date(model.endsAt) })
-                    : t(language, 'subs.promoNote')}
+                    : model.grant === 'review'
+                      ? t(language, 'subs.reviewNote')
+                      : t(language, 'subs.promoNote')}
                 </Text>
               </CutSurface>
             ) : lifetime ? null : model.cancelled ? (
@@ -485,7 +495,7 @@ export function SubscriptionScreen({
                 <View style={[styles.statusDot, { backgroundColor: statusAccent }]} />
               </View>
 
-              <View style={styles.divider} />
+              {model.grant === 'review' ? null : <View style={styles.divider} />}
 
               {model.state !== 'active' ? (
                 <Text style={styles.freeNote}>
@@ -532,35 +542,41 @@ export function SubscriptionScreen({
                       answer someone opening this row came for. The subtitle
                       changes with it, because a promo has no payment method,
                       no billing period and no receipts to name. */}
-                  <Row
-                    icon="settings"
-                    title={t(language, 'subs.row.manageMembership')}
-                    sub={t(
-                      language,
-                      model.grant === 'promo'
-                        ? 'subs.row.manageMembershipSubPromo'
-                        : model.grant === 'trial'
-                          ? 'subs.row.manageMembershipSubTrial'
-                          : 'subs.row.manageMembershipSub',
-                    )}
-                    onPress={() => setView('membership')}
-                    divider
-                  />
+                  {/* The review account has no membership to manage and no Play
+                      subscription to open: only what Pro includes. */}
+                  {model.grant === 'review' ? null : (
+                    <Row
+                      icon="settings"
+                      title={t(language, 'subs.row.manageMembership')}
+                      sub={t(
+                        language,
+                        model.grant === 'promo'
+                          ? 'subs.row.manageMembershipSubPromo'
+                          : model.grant === 'trial'
+                            ? 'subs.row.manageMembershipSubTrial'
+                            : 'subs.row.manageMembershipSub',
+                      )}
+                      onPress={() => setView('membership')}
+                      divider
+                    />
+                  )}
                   <Row
                     icon="list"
                     title={t(language, 'subs.row.whatsIn')}
                     sub={t(language, 'subs.row.whatsInSub')}
                     onPress={() => setSheet('includes')}
-                    divider
+                    divider={model.grant !== 'review'}
                   />
-                  <Row
-                    icon="external"
-                    title={t(language, storeTextKey('subs.row.play', STORE))}
-                    sub={t(language, storeTextKey('subs.row.playSub', STORE))}
-                    onPress={() =>
-                      void Linking.openURL(manageSubscriptionsUrl(STORE))
-                    }
-                  />
+                  {model.grant === 'review' ? null : (
+                    <Row
+                      icon="external"
+                      title={t(language, storeTextKey('subs.row.play', STORE))}
+                      sub={t(language, storeTextKey('subs.row.playSub', STORE))}
+                      onPress={() =>
+                        void Linking.openURL(manageSubscriptionsUrl(STORE))
+                      }
+                    />
+                  )}
                 </CutSurface>
               </>
             ) : (
@@ -606,6 +622,7 @@ export function SubscriptionScreen({
               </>
             )}
 
+            {model.state === 'active' && model.grant === 'review' ? null : (
             <Text style={styles.footer}>
               {t(
                 language,
@@ -618,6 +635,7 @@ export function SubscriptionScreen({
                     : storeTextKey('subs.foot.play', STORE),
               )}
             </Text>
+            )}
           </>
         )}
       </ScrollView>
