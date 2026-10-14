@@ -151,6 +151,7 @@ export function useScheduledNotifications(
       database.preferences.mockSubscriptionPurchasedAt,
       database.preferences.mockSubscriptionTerm,
       database.preferences.mockSubscriptionCancelledAt,
+      database.preferences.reviewProAccount,
     ],
   );
 

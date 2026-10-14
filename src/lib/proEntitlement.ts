@@ -4,8 +4,15 @@ import { AppPreferences } from '../types/models';
 
 /**
  * One place decides whether the user has Pro, and it grants it from exactly
- * three things: the trial, a recorded purchase, and a promo grant that is
- * still running.
+ * four things: the trial, a recorded purchase, a promo grant that is still
+ * running, and the review account.
+ *
+ * The review account is the one grant that is not a date: Play's reviewers
+ * sign in with a dedicated Google account (lib/reviewAccount), and while it is
+ * signed in `reviewProAccount` is true and Pro is on. The flag is set from the
+ * signed-in account and cleared with it (app/useReviewProAccount), never from
+ * anything the reader can press, and it is device-only: a backup restore
+ * hands it to nobody. A real purchase still reads as a purchase.
  *
  * The promo grant can no longer be made from inside the app. The codes were a
  * list in the bundle (user 2026-09-15: "promokoodit nyt pois"): anyone who
@@ -33,7 +40,7 @@ import { AppPreferences } from '../types/models';
 export interface ProEntitlement {
   unlocked: boolean;
   /** Why it is unlocked, so a screen can be truthful about it. */
-  source: 'promo' | 'trial' | 'purchase' | null;
+  source: 'promo' | 'trial' | 'purchase' | 'review' | null;
   /** ISO date the promo runs out; null when Pro is not promo-based. */
   promoUntil: string | null;
   /**
@@ -51,14 +58,26 @@ type ProPreferences = Pick<
   | 'mockSubscriptionPurchasedAt'
   | 'mockSubscriptionTerm'
   | 'mockSubscriptionCancelledAt'
->;
+> &
+  // Optional so a caller holding only the older fields still type-checks;
+  // absent reads as no, which is the safe direction.
+  Partial<Pick<AppPreferences, 'reviewProAccount'>>;
 
 const NOT_UNLOCKED: ProEntitlement = { unlocked: false, source: null, promoUntil: null, purchaseEndsAt: null };
+const REVIEW_ENTITLEMENT: ProEntitlement = { unlocked: true, source: 'review', promoUntil: null, purchaseEndsAt: null };
 
 export function resolveProEntitlement(
   preferences: ProPreferences,
   now: Date = new Date(),
 ): ProEntitlement {
+  // The review account. Under a real purchase, which keeps its own name so
+  // the subscription page shows the plan the payer bought; over a promo or
+  // the trial, which would otherwise run out under a reviewer mid-review.
+  if (preferences.reviewProAccount === true) {
+    const purchase = resolvePurchaseEntitlement(preferences, now);
+    return purchase.unlocked ? purchase : REVIEW_ENTITLEMENT;
+  }
+
   const promoUntil = preferences.promoProUntil;
   const promoTime = promoUntil ? new Date(promoUntil).getTime() : Number.NaN;
   if (Number.isFinite(promoTime) && promoTime > now.getTime()) {
@@ -105,6 +124,10 @@ function purchaseKeepsProAt(preferences: ProPreferences, atMs: number): boolean 
  * dropped by the notification plan, which only schedules a future notice.
  */
 export function trialEndingAtMs(preferences: ProPreferences): number | null {
+  // The review account's Pro does not end with the trial.
+  if (preferences.reviewProAccount === true) {
+    return null;
+  }
   const trialUntil = preferences.proTrialUntil;
   const trialTime = trialUntil ? new Date(trialUntil).getTime() : Number.NaN;
   if (!Number.isFinite(trialTime)) {
@@ -277,6 +300,10 @@ export function canStartProTrial(preferences: Pick<AppPreferences, 'proTrialStar
  *
  * And `seenServerNoticeIds`, the server notices this phone's reader has
  * closed: a restore or a reset that blanked it showed a closed notice again.
+ *
+ * And `reviewProAccount`: it follows the account signed in on THIS phone
+ * (app/useReviewProAccount). A backup made on the review phone and restored on
+ * another would otherwise hand Pro to somebody who is not that account.
  */
 export const DEVICE_ONLY_PREFERENCE_FIELDS = [
   'promoProUntil',
@@ -290,6 +317,7 @@ export const DEVICE_ONLY_PREFERENCE_FIELDS = [
   'firstLaunchAt',
   'pendingAiLogDeletions',
   'seenServerNoticeIds',
+  'reviewProAccount',
 ] as const;
 
 export function keepDeviceEntitlement<

@@ -199,6 +199,7 @@ const suites = [
   ...require('./lib/postSessionInsight.test.cjs'),
   ...require('./lib/proEntitlement.test.cjs'),
   ...require('./lib/proEntitlementRestore.test.cjs'),
+  ...require('./lib/reviewAccount.test.cjs'),
   ...require('./lib/storePurchase.test.cjs'),
   ...require('./lib/proLock.test.cjs'),
   ...require('./lib/proTiers.test.cjs'),

@@ -64,6 +64,7 @@ const DEFAULT_PREFERENCES = {
   mockSubscriptionTerm: 'yearly' as import('../lib/subscriptionView').SubscriptionTermKey,
   mockSubscriptionCancelledAt: null as string | null,
   mockSubscriptionPurchasedAt: null as string | null,
+  reviewProAccount: false,
   cancelSurveyAnswer: null as import('../lib/cancelSurvey').CancelSurveyAnswer | null,
   featureVotedIds: [] as string[],
   aiCoachProQuota: null as { monthStart: string; used: number } | null,

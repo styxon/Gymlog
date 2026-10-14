@@ -33,6 +33,7 @@ import {
   WorkoutTourStep,
 } from './src/lib/firstRunTour';
 import { useAccountBackup } from './src/features/account/useAccountBackup';
+import { useReviewProAccount } from './src/app/useReviewProAccount';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
 import { useAccountOutcome } from './src/app/useAccountOutcome';
 import { runningProgrammeTitle as runningProgrammeTitleOf } from './src/lib/templatePresentation';
@@ -402,6 +403,15 @@ function VinhaApp() {
   // The store's word on Pro, in a release build: one read after load, then
   // whatever it pushes (renewal, a cancel made in Play, a refund).
   useStoreBillingSync({ hydrated, preferences, updatePreferences });
+
+  // Play's review account gets Pro while it is signed in: the flag follows the
+  // signed-in account (sign-in, sign-out, Delete account, a stale flag at start).
+  useReviewProAccount({
+    hydrated,
+    account: accountBackup.state,
+    stored: preferences.reviewProAccount,
+    updatePreferences,
+  });
 
   // Mirrors the notification preferences onto the OS clock: reminders, the
   // comeback nudge, the Sunday summary and the morning-after record note.

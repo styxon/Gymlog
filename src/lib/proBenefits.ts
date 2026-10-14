@@ -156,7 +156,7 @@ export const PRO_UNLOCK_LIMIT_VARS: Record<string, Record<string, string | numbe
   'unlock.programs.b': { active: FREE_ACTIVE_PROGRAM_CAP, proActive: PRO_ACTIVE_PROGRAM_CAP },
 };
 
-export type MembershipSource = 'promo' | 'trial' | 'purchase' | 'none';
+export type MembershipSource = 'promo' | 'trial' | 'purchase' | 'review' | 'none';
 
 export interface MembershipEndPlan {
   /** True when the user can end Pro from inside the app, right now. */
@@ -188,5 +188,6 @@ export function resolveMembershipEndPlan(
   if (source === 'purchase') {
     return { canEndNow: true, lapsesOn: periodEndsAt };
   }
+  // The review account has nothing to end: it goes when the account signs out.
   return { canEndNow: false, lapsesOn: null };
 }

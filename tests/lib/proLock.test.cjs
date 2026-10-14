@@ -34,7 +34,7 @@ function sourceFiles() {
  */
 module.exports = [
   {
-    name: 'proLock: the entitlement grants from exactly three things, and names them',
+    name: 'proLock: the entitlement grants from exactly four things, and names them',
     run() {
       const entitlement = read('src', 'lib', 'proEntitlement.ts');
       // The fields it is allowed to read at all. `proTrialUntil` joined them
@@ -51,13 +51,35 @@ module.exports = [
       ]) {
         assert.match(entitlement, new RegExp(`\| ${field}`), `${field} is not in the pick`);
       }
-      // Three sources, no fourth. The trial is its own source rather than a
+      // Four sources, no fifth. The trial is its own source rather than a
       // promo wearing a different label: only one of them may trigger "your
       // trial ends soon".
-      assert.match(entitlement, /source: 'promo' \| 'trial' \| 'purchase' \| null;/);
+      //
+      // The fourth, 'review', is Play's review account (2026-10-14): the
+      // reviewers cannot buy, so one dedicated Google account gets Pro while
+      // it is signed in. It is safe because the identity is proven by Google's
+      // own sign-in and only SHA-256 hashes of it ship (lib/reviewAccount) -
+      // nothing in the bundle is a secret to extract and no screen can switch
+      // it on. It is allowed exactly this way and no other: the flag is
+      // written by one hook, from the signed-in account (checked below).
+      assert.match(entitlement, /source: 'promo' \| 'trial' \| 'purchase' \| 'review' \| null;/);
       assert.match(entitlement, /source: 'promo'/);
       assert.match(entitlement, /source: 'trial'/);
       assert.match(entitlement, /source: 'purchase' as const/);
+      assert.match(entitlement, /source: 'review'/);
+      assert.match(entitlement, /preferences\.reviewProAccount === true/);
+      const writers = sourceFiles()
+        .filter(({ text }) => /\breviewProAccount:[ \t]*(?![ \t]|false\b|boolean\b)/.test(text))
+        .map(({ rel }) => rel)
+        .sort();
+      assert.deepEqual(
+        writers,
+        ['src/app/useReviewProAccount.ts', 'src/storage/database.ts'],
+        'reviewProAccount may be written only by the account-following hook (and normalised on load)',
+      );
+      const hook = read('src', 'app', 'useReviewProAccount.ts');
+      assert.match(hook, /reviewAccountFlag\(/);
+      assert.match(hook, /reviewProAccount: wanted/);
     },
   },
   {
