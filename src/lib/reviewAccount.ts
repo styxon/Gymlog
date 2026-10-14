@@ -33,7 +33,7 @@
  * be added here as a second line once the account's sub is known.
  */
 export const REVIEW_ACCOUNT_HASHES: readonly string[] = [
-  '33cbf8dc2cb8b5766a73c94a0d707e974647ec6d73c5f17188f4302eedb2f059',
+  'f9cd180f98b67714b418a34f025d3230ea147599196df288dfe36c6ec361b020',
 ];
 
 const K = [

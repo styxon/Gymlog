@@ -697,7 +697,7 @@ module.exports = [
       assert.match(premium, /\{entry\.subKey \? t\(language, entry\.subKey\) : ' '\}/);
       assert.match(premium, /\{fineKey \? t\(language, fineKey\) : ' '\}/);
       assert.doesNotMatch(premium, /\{fineKey \? <Text/);
-      assert.match(premium, /priceSub: \{ fontSize: 13, lineHeight: 17/);
+      assert.match(premium, /priceSub: \{ fontSize: 12.5, lineHeight: 16/);
     },
   },
 ];
