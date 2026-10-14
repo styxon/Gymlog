@@ -83,7 +83,8 @@
       "./plugins/withHomeWidget.js",
       "./plugins/withBuildArchitectures.js",
       "./plugins/withStorageSize.js",
-      "./plugins/withDataExtractionRules.js"
+      "./plugins/withDataExtractionRules.js",
+      "./plugins/withReleaseSigning.js"
     ]
   }
 }
