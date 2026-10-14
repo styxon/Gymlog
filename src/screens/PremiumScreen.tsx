@@ -290,6 +290,7 @@ export function PremiumScreen({
     })();
   };
 
+  const roomy = tier.rows.length <= 4;
   return (
     <View style={styles.root}>
       <HeroSky tier={tab} width={width} />
@@ -356,7 +357,7 @@ export function PremiumScreen({
           <View style={[styles.cardHair, { backgroundColor: skin.accent }]} />
           <ScrollView
             style={styles.cardScroll}
-            contentContainerStyle={styles.cardContent}
+            contentContainerStyle={[styles.cardContent, roomy && styles.cardContentRoomy]}
             showsVerticalScrollIndicator={false}
           >
             {tier.rows.map((row) => (
@@ -365,7 +366,7 @@ export function PremiumScreen({
                   <RowGlyph name={row.icon} />
                 </View>
                 <View style={styles.rowBody}>
-                  <Text style={styles.rowTitle}>{t(language, row.titleKey, row.vars)}</Text>
+                  <Text style={[styles.rowTitle, roomy && styles.rowTitleRoomy]}>{t(language, row.titleKey, row.vars)}</Text>
                   {row.bodyKey ? (
                     <Text style={styles.rowSub}>{t(language, row.bodyKey, row.vars)}</Text>
                   ) : null}
@@ -395,6 +396,7 @@ export function PremiumScreen({
           </View>
         ) : (
           <View>
+            {tier.plans.every((entry) => entry.noTile) ? null : (
             <View style={styles.planRow}>
               {tier.plans.map((entry) => {
                 const on = tier.plans.length === 1 || entry.id === activePlan.id;
@@ -404,8 +406,9 @@ export function PremiumScreen({
                     accessibilityRole="button"
                     accessibilityState={{ selected: on }}
                     onPress={() => setPlan(entry.id)}
-                    style={[styles.planTile, on && { backgroundColor: PRO_SURFACE.tileOn, borderColor: skin.ring }]}
+                    style={[styles.planTile, entry.bare && styles.planTileBare, on && { backgroundColor: PRO_SURFACE.tileOn, borderColor: skin.ring }]}
                   >
+                    {entry.bare ? null : (
                     <View style={styles.planTop}>
                       <Text
                         numberOfLines={1}
@@ -422,6 +425,7 @@ export function PremiumScreen({
                         </View>
                       ) : null}
                     </View>
+                    )}
                     {/* One line that shrinks to fit: wrapped, "/ year" took a
                         line of its own and the taller tile pushed the legal row
                         off the screen (emulator check, 2026-10-13). */}
@@ -433,7 +437,7 @@ export function PremiumScreen({
                       style={styles.priceRow}
                     >
                       <Text style={[styles.price, on && styles.priceOn]}>{t(language, entry.priceKey)}</Text>
-                      <Text style={styles.priceUnit}>{` ${t(language, entry.unitKey)}`}</Text>
+                      {entry.bare ? null : <Text style={styles.priceUnit}>{` ${t(language, entry.unitKey)}`}</Text>}
                     </Text>
                     {/* Always drawn, blank when the plan has no second
                         line. Free is the only tier whose plan carries none, so
@@ -451,6 +455,7 @@ export function PremiumScreen({
                 );
               })}
             </View>
+            )}
 
             <Pressable
               accessibilityRole="button"
@@ -590,11 +595,11 @@ const styles = StyleSheet.create({
   cardHair: { height: 2, marginHorizontal: '22%', opacity: 0.85 },
   cardFade: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 44 },
   cardScroll: { flex: 1 },
-  cardContent: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 22, gap: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  cardContent: { paddingHorizontal: 14, paddingTop: 12, paddingBottom: 18, gap: 11 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 11 },
   rowIcon: {
-    width: 42,
-    height: 42,
+    width: 34,
+    height: 34,
     borderRadius: 999,
     backgroundColor: 'rgba(255,255,255,0.09)',
     borderWidth: 1,
@@ -603,38 +608,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rowBody: { flex: 1 },
-  rowTitle: { fontSize: 16.5, fontWeight: '700', color: PRO_SURFACE.ink, lineHeight: 21 },
-  rowSub: { fontSize: 14, fontWeight: '500', color: PRO_SURFACE.inkFaint, lineHeight: 19, marginTop: 3 },
+  // Lifetime's four lines left the lower third of the card empty; a short
+  // list gets larger type and air instead (user, 2026-10-14).
+  cardContentRoomy: { paddingTop: 12, gap: 14 },
+  rowTitleRoomy: { fontSize: 17, lineHeight: 22 },
+  rowTitle: { fontSize: 15, fontWeight: '700', color: PRO_SURFACE.ink, lineHeight: 19 },
+  rowSub: { fontSize: 13, fontWeight: '500', color: PRO_SURFACE.inkFaint, lineHeight: 17, marginTop: 1 },
 
-  foot: { paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 },
+  foot: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10 },
   planRow: {
     flexDirection: 'row',
     borderRadius: 22,
     backgroundColor: PRO_SURFACE.tile,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.07)',
-    padding: 6,
+    padding: 4,
   },
   planTile: {
     flex: 1,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 17,
     borderWidth: 1,
     borderColor: 'transparent',
   },
+  // No name row: the room it took goes above and below, so the tile keeps
+  // the height of the others and the button does not move between tabs.
+  planTileBare: { alignItems: 'center', paddingVertical: 17 },
   planTop: { flexDirection: 'row', alignItems: 'center', gap: 7 },
   planName: { fontSize: 13.5, fontWeight: '700', color: PRO_SURFACE.inkGhost, flexShrink: 1 },
   planNameOn: { color: PRO_SURFACE.ink },
   planBadge: { paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999 },
   planBadgeText: { fontSize: 10.5, fontWeight: '800', color: PRO_SURFACE.badgeInk },
-  priceRow: { marginTop: 6 },
-  price: { fontSize: 25, fontWeight: '800', letterSpacing: -1, color: 'rgba(255,255,255,0.55)' },
+  priceRow: { marginTop: 1 },
+  price: { fontSize: 22, fontWeight: '800', letterSpacing: -1, color: 'rgba(255,255,255,0.55)' },
   priceOn: { color: PRO_SURFACE.ink },
   priceUnit: { fontSize: 13.5, fontWeight: '600', color: 'rgba(255,255,255,0.5)' },
   // lineHeight is explicit so the blank stand-in reserves exactly what the
   // real line takes, on every device font scale.
-  priceSub: { fontSize: 13, lineHeight: 17, fontWeight: '600', color: PRO_SURFACE.inkFaint, marginTop: 2 },
+  priceSub: { fontSize: 12.5, lineHeight: 16, fontWeight: '600', color: PRO_SURFACE.inkFaint, marginTop: 0 },
 
   activeCard: { paddingBottom: 2 },
   activeText: {

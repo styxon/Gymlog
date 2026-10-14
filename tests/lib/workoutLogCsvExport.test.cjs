@@ -193,21 +193,12 @@ module.exports = [
       // this guard used to check were removed with that page on 2026-09-08 —
       // a claim pinned to copy nobody sees guards nothing.
       const i18n = read('src', 'lib', 'i18n.ts');
-      for (const key of ['pro.v6.free.offline.b', 'pro.v6.free.yours.b']) {
+      // 2026-10-14: the Free tab is titles only. The feed/CSV body and the
+      // offline exceptions body were dropped deliberately; the rows remain.
+      for (const key of ['pro.v6.free.offline.t', 'pro.v6.free.yours.t']) {
         const lines = i18n.split(String.fromCharCode(10)).filter((line) => line.includes(`'${key}':`));
         assert.equal(lines.length, 2, `${key} in both languages`);
       }
-      // No social graph and the export promise sit on the same row.
-      const yours = i18n.split(String.fromCharCode(10)).filter((l) => l.includes("'pro.v6.free.yours.b':"));
-      assert.match(yours[0], /No feed, no followers/);
-      assert.match(yours[0], /CSV/);
-      assert.match(yours[1], /Ei syötettä, ei seuraajia/);
-      // The offline claim names its exceptions rather than overclaiming: both
-      // server features, not only the coach (2026-09-28 — the backup needs a
-      // connection too, and the row said only the coach did).
-      const offline = i18n.split(String.fromCharCode(10)).filter((l) => l.includes("'pro.v6.free.offline.b':"));
-      assert.match(offline[0], /Backup and the AI coach need a connection/);
-      assert.match(offline[1], /Varmuuskopio ja AI-valmentaja tarvitsevat yhteyden/);
     },
   },
 ];
