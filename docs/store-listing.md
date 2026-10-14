@@ -141,7 +141,7 @@ Chosen by the owner on 2026-10-09. The others considered:
 
 <!-- field:en.short -->
 ```text
-Guided gym workouts with 50+ ready programs, a rest timer and every set logged.
+Workout log and 50+ gym programs. Works offline, no account needed.
 ```
 
 ### Full description (max 4000)
