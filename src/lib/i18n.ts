@@ -2535,6 +2535,16 @@ const EN = {
   // not carried over: a savings badge that outlives its arithmetic is a lie
   // the reader can do in their head.
   'pro.page.save': 'Save 33%',
+  // The store's prices in the sentences above (lib/storePrices). The keys
+  // above stay as what the page says before the store has answered.
+  'pro.store.perMonth': '{price} / month',
+  'pro.store.fineLive': 'Billed yearly, {perMonth}/mo. Cancel any time.',
+  'pro.store.save': 'Save {percent}%',
+  'pro.store.lifetimeYears': 'about {years} years of the subscription',
+  'pro.store.thenYearly': 'Then {price} / year ({perMonth}/mo). Cancel anytime.',
+  'pro.store.thenYearlyBare': 'Then {price} / year. Cancel anytime.',
+  'pro.store.thenMonthly': 'Then {price} / month. Cancel anytime.',
+  'pro.store.once': 'One payment of {price}. Yours from then on.',
   // Not "most popular": nothing has been sold yet, so that would be a claim
   // about other buyers who do not exist. This one is arithmetic — 179,00
   // against 79,90 a year pays for itself in a little over two years and costs
@@ -5897,6 +5907,14 @@ const FI: Record<I18nKey, string> = {
   'pro.page.monthly': 'Kuukausi',
   'pro.page.perLifetime': '179,00 €',
   'pro.page.save': 'Säästä 33 %',
+  'pro.store.perMonth': '{price} / kuukausi',
+  'pro.store.fineLive': 'Laskutetaan vuosittain, {perMonth}/kk. Voit perua milloin tahansa.',
+  'pro.store.save': 'Säästä {percent} %',
+  'pro.store.lifetimeYears': 'noin {years} vuoden tilaus',
+  'pro.store.thenYearly': 'Sitten {price} / vuosi ({perMonth}/kk). Peru milloin vain.',
+  'pro.store.thenYearlyBare': 'Sitten {price} / vuosi. Peru milloin vain.',
+  'pro.store.thenMonthly': 'Sitten {price} / kk. Peru milloin vain.',
+  'pro.store.once': 'Yksi maksu, {price}. Sen jälkeen se on sinun.',
   'pro.page.bestValue': 'Paras arvo',
   'pro.page.restore': 'Palauta osto',
   'pro.page.terms': 'Ehdot',

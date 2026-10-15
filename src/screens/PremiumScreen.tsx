@@ -3,7 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } fr
 import Svg, { Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { FREE_ACTIVE_PROGRAM_CAP } from '../lib/activeProgramSet';
+import { useStorePlanPrices } from '../features/billing/useStorePlanPrices';
 import { t } from '../lib/i18n';
+import { storePriceText } from '../lib/storePrices';
 import { PRO_TRIAL_DAYS, PRO_TRIAL_ENABLED } from '../lib/proEntitlement';
 import {
   PRO_TIER_ORDER,
@@ -247,6 +249,8 @@ export function PremiumScreen({
   const [plan, setPlan] = useState<ProPlanId>(() => defaultPlanForTier('pro'));
   const purchasing = useRef(false);
   const { width } = useWindowDimensions();
+  // What the store charges; the dictionary's prices until it answers.
+  const storePrices = useStorePlanPrices();
 
   const tier: ProTier = PRO_TIERS[tab];
   const skin = PRO_TIER[tab];
@@ -400,6 +404,8 @@ export function PremiumScreen({
             <View style={styles.planRow}>
               {tier.plans.map((entry) => {
                 const on = tier.plans.length === 1 || entry.id === activePlan.id;
+                // Null when the store's prices do not support the saving.
+                const badge = entry.badgeKey ? storePriceText(language, entry.badgeKey, storePrices) : null;
                 return (
                   <Pressable
                     key={entry.id}
@@ -419,9 +425,9 @@ export function PremiumScreen({
                       >
                         {t(language, entry.nameKey)}
                       </Text>
-                      {entry.badgeKey ? (
+                      {badge ? (
                         <View style={[styles.planBadge, { backgroundColor: skin.accent }]}>
-                          <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.planBadgeText}>{t(language, entry.badgeKey)}</Text>
+                          <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.planBadgeText}>{badge}</Text>
                         </View>
                       ) : null}
                     </View>
@@ -436,7 +442,7 @@ export function PremiumScreen({
                       maxFontSizeMultiplier={FIXED_FONT_CAP}
                       style={styles.priceRow}
                     >
-                      <Text style={[styles.price, on && styles.priceOn]}>{t(language, entry.priceKey)}</Text>
+                      <Text style={[styles.price, on && styles.priceOn]}>{storePriceText(language, entry.priceKey, storePrices)}</Text>
                       {entry.bare ? null : <Text style={styles.priceUnit}>{` ${t(language, entry.unitKey)}`}</Text>}
                     </Text>
                     {/* Always drawn, blank when the plan has no second
@@ -449,7 +455,7 @@ export function PremiumScreen({
                         stretches every tile to the tallest (accessibility
                         audit, 2026-09-21). */}
                     <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.priceSub}>
-                      {entry.subKey ? t(language, entry.subKey) : ' '}
+                      {(entry.subKey && storePriceText(language, entry.subKey, storePrices)) || ' '}
                     </Text>
                   </Pressable>
                 );
@@ -476,7 +482,7 @@ export function PremiumScreen({
                 taken. Free has no recurring terms to state, so its "Continue
                 for free" landed lower than "Get Pro" and "Get Lifetime"
                 (user 2026-09-01). */}
-            <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.fine}>{fineKey ? t(language, fineKey) : ' '}</Text>
+            <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.fine}>{(fineKey && storePriceText(language, fineKey, storePrices)) || ' '}</Text>
           </View>
         )}
 

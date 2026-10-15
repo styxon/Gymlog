@@ -8,7 +8,9 @@ import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
 import { CARD_SHADOW, SectionLabel } from '../components/SettingsUi';
 import { SubscriptionSheet } from '../components/SubscriptionSheet';
 import { formatDate } from '../lib/format';
+import { useStorePlanPrices } from '../features/billing/useStorePlanPrices';
 import { t } from '../lib/i18n';
+import { storePriceText } from '../lib/storePrices';
 import { manageSubscriptionsUrl, paymentMethodsUrl, storePlatformOf, storeTextKey } from '../lib/storeLinks';
 
 const STORE = storePlatformOf(Platform.OS);
@@ -125,6 +127,7 @@ export function SubscriptionScreen({
 }: SubscriptionScreenProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const storePrices = useStorePlanPrices();
   // Read here and handed to each sheet: inside their Modal it measures zero.
   const insets = useSafeAreaInsets();
   const [view, setView] = useState<'subs' | 'membership'>('subs');
@@ -303,8 +306,12 @@ export function SubscriptionScreen({
       ];
     }
     // A renewing store subscription: the date is counted from the store's
-    // own period start (lib/storePurchase), and the price is the plan's. No
-    // tap behind it — a plan change is made in the store.
+    // own period start (lib/storePurchase), and the price is what the store's
+    // current offering charges for the plan. CustomerInfo carries no price, so
+    // that is the nearest the app can say; it is wrong for a subscriber Play
+    // kept on a legacy price after a price change — change prices only for new
+    // buyers' offerings with that in mind. No tap behind it — a plan change is
+    // made in the store.
     if (!billing) {
       return [
         {
@@ -312,7 +319,7 @@ export function SubscriptionScreen({
           label: t(language, 'subs.meta.nextCharge'),
           value: t(language, 'subs.meta.nextChargeValue', {
             date: date(model.nextChargeAt),
-            price: t(language, term!.priceKey),
+            price: storePriceText(language, term!.priceKey, storePrices) ?? '',
           }),
         },
       ];

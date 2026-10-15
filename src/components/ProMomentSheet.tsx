@@ -3,6 +3,7 @@ import { Animated, Easing, LayoutChangeEvent, Modal, Pressable, StyleSheet, Text
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Stop } from 'react-native-svg';
 
 import { isStoreBillingConfigured } from '../features/billing/storeBilling';
+import { useStorePlanPrices } from '../features/billing/useStorePlanPrices';
 import { paymentsAreLive } from '../lib/billingCopy';
 import { isDemoBuild } from '../lib/demoMode';
 import { CutSurface } from './CutSurface';
@@ -11,6 +12,7 @@ import { CUT_BY_SIZE, cutCornerPath } from '../lib/cutCorner';
 import { ProMomentContent } from '../lib/proInsights';
 import { formatWeight } from '../lib/format';
 import { t } from '../lib/i18n';
+import { storePriceText } from '../lib/storePrices';
 import { PW } from '../lightTheme';
 import { Theme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
@@ -43,6 +45,7 @@ interface ProMomentSheetProps {
 
 export function ProMomentSheet({ visible, content, language, bottomInset, onClose, onSeePro }: ProMomentSheetProps) {
   const styles = useThemedStyles(makeStyles);
+  const storePrices = useStorePlanPrices();
   const [box, setBox] = useState({ width: 0, height: 0 });
   const onLayout = (event: LayoutChangeEvent) => {
     const { width, height } = event.nativeEvent.layout;
@@ -138,7 +141,11 @@ export function ProMomentSheet({ visible, content, language, bottomInset, onClos
               </CutSurface>
             </Pressable>
             <Text style={styles.fine}>
-              {t(language, paymentsAreLive(isDemoBuild(), isStoreBillingConfigured()) ? 'pro.sheet.fineLive' : 'pro.sheet.fine')}
+              {storePriceText(
+                language,
+                paymentsAreLive(isDemoBuild(), isStoreBillingConfigured()) ? 'pro.sheet.fineLive' : 'pro.sheet.fine',
+                storePrices,
+              )}
             </Text>
             <Pressable accessibilityRole="button" onPress={onClose} hitSlop={12} style={styles.notNowHit}>
               <Text style={styles.notNow}>{t(language, 'pro.sheet.notNow')}</Text>
