@@ -3,6 +3,7 @@ import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 
 import Svg, { Path } from 'react-native-svg';
 
 import { isStoreBillingConfigured } from '../features/billing/storeBilling';
+import { useStorePlanPrices } from '../features/billing/useStorePlanPrices';
 import { paymentsAreLive } from '../lib/billingCopy';
 import { isDemoBuild } from '../lib/demoMode';
 import { formatDate, formatTime } from '../lib/format';
@@ -11,6 +12,7 @@ import { CutSurface } from '../components/CutSurface';
 import { I18nKey, t } from '../lib/i18n';
 import { PRO_UNLOCK_CARDS, PRO_UNLOCK_LIMIT_VARS } from '../lib/proBenefits';
 import { PRO_TRIAL_DAYS } from '../lib/proEntitlement';
+import { storePriceText } from '../lib/storePrices';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -179,6 +181,10 @@ export function PremiumUnlockScreen({
   });
 
   const receipt = RECEIPT[plan] ?? RECEIPT.yearly;
+  // What the store charged, as the Pro page quoted it (#378); the dictionary
+  // price only until the store answers, and in a build without one.
+  const storePrices = useStorePlanPrices();
+  const receiptPrice = storePriceText(language, receipt.priceKey, storePrices) ?? t(language, receipt.priceKey);
   const rowVars = useMemo(
     () => (key: I18nKey) => PRO_UNLOCK_LIMIT_VARS[key as string],
     [],
@@ -307,7 +313,7 @@ export function PremiumUnlockScreen({
             <>
               <View style={styles.receiptHead}>
                 <Text style={styles.receiptName}>{t(language, receipt.nameKey)}</Text>
-                <Text style={styles.receiptPrice}>{t(language, receipt.priceKey)}</Text>
+                <Text style={styles.receiptPrice}>{receiptPrice}</Text>
               </View>
               {/*
                 The renewal line, counted rather than written. Lifetime says so
@@ -318,7 +324,7 @@ export function PremiumUnlockScreen({
                   ? t(language, 'unlock.receipt.noRenewal')
                   : t(language, 'unlock.receipt.renews', {
                       date: formatDate(renewsAt, language),
-                      price: t(language, receipt.priceKey),
+                      price: receiptPrice,
                     })}
               </Text>
               {paymentsAreLive(isDemoBuild(), isStoreBillingConfigured()) ? null : (
