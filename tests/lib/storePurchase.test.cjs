@@ -156,6 +156,41 @@ module.exports = [
     },
   },
   {
+    name: 'store purchase: a Play subscription reads its term from the base plan, not the bare product id',
+    run() {
+      // What RevenueCat reports on Android (seen on the phone 2026-10-15: a
+      // monthly purchase shown as yearly): the subscription id alone, and the
+      // base plan in its own field.
+      const now = new Date('2026-10-15T12:00:00.000Z');
+      const play = (plan) =>
+        purchaseRecordFromStore(
+          customer(entitlement({ productIdentifier: 'vinha_pro', productPlanIdentifier: plan })),
+          EMPTY,
+          now,
+        ).mockSubscriptionTerm;
+      assert.equal(play('monthly'), 'monthly');
+      assert.equal(play('yearly'), 'yearly');
+      const yearlyOnRecord = { ...EMPTY, mockSubscriptionTerm: 'yearly' };
+      assert.equal(
+        purchaseRecordFromStore(
+          customer(entitlement({ productIdentifier: 'vinha_pro', productPlanIdentifier: 'monthly' })),
+          yearlyOnRecord,
+          now,
+        ).mockSubscriptionTerm,
+        'monthly',
+      );
+      // Lifetime is a one-time product: no base plan.
+      assert.equal(
+        purchaseRecordFromStore(
+          customer(entitlement({ productIdentifier: 'vinha_pro_lifetime', productPlanIdentifier: null, willRenew: false })),
+          EMPTY,
+          now,
+        ).mockSubscriptionTerm,
+        'lifetime',
+      );
+    },
+  },
+  {
     name: 'store billing wiring: the SDK loads on first use, the sync skips the demo and the first frame',
     run() {
       const service = read('src', 'features', 'billing', 'storeBilling.ts');

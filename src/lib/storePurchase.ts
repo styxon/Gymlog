@@ -31,6 +31,12 @@ export interface StoreEntitlementSnapshot {
   /** ISO, null for a one-time purchase. */
   expirationDate: string | null;
   productIdentifier: string;
+  /**
+   * The Play base plan (`monthly`, `yearly`). Play reports the subscription id
+   * alone in `productIdentifier` (`vinha_pro`), so the term is only here; null
+   * on the App Store and for a one-time purchase.
+   */
+  productPlanIdentifier?: string | null;
   /** ISO. When the store saw the reader turn renewal off. */
   unsubscribeDetectedAt: string | null;
 }
@@ -54,8 +60,8 @@ export function storePackageForPlan(plan: SubscriptionTermKey): 'monthly' | 'ann
  * Which term a store product is.
  *
  * Read from the id, so the ids have to say it: `vinha_pro_lifetime`, and
- * subscriptions whose id or base plan names the period (Play reports
- * `vinha_pro:yearly`, App Store `vinha_pro_yearly`). Null for an id that names
+ * subscriptions whose id or base plan names the period (Play's id joined
+ * to its base plan, `vinha_pro:yearly`; App Store `vinha_pro_yearly`). Null for an id that names
  * none of them — the reader still has Pro, the screen just keeps the term it
  * had.
  */
@@ -105,7 +111,12 @@ export function purchaseRecordFromStore(
     };
   }
 
-  const term = termForStoreProduct(entitlement.productIdentifier) ?? current.mockSubscriptionTerm;
+  const term =
+    termForStoreProduct(
+      entitlement.productPlanIdentifier
+        ? `${entitlement.productIdentifier}:${entitlement.productPlanIdentifier}`
+        : entitlement.productIdentifier,
+    ) ?? current.mockSubscriptionTerm;
   // Lifetime has no renewal to turn off; the store reports willRenew false
   // for it all the same, and the entitlement ignores a stamp on it anyway.
   const cancelled = term !== 'lifetime' && !entitlement.willRenew;

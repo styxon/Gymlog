@@ -23,21 +23,18 @@ const IC: Record<string, { path: string; filled?: boolean }> = {
   'unlock.programs.t': { path: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z' },
 };
 
-const RECEIPT: Record<string, { nameKey: I18nKey; priceKey: I18nKey; unitKey: I18nKey }> = {
+const RECEIPT: Record<string, { nameKey: I18nKey; priceKey: I18nKey }> = {
   monthly: {
     nameKey: 'unlock.receipt.monthly',
     priceKey: 'paywall.plan.monthly.price',
-    unitKey: 'pro.v3.unit.month',
   },
   yearly: {
     nameKey: 'unlock.receipt.yearly',
     priceKey: 'paywall.plan.yearly.price',
-    unitKey: 'pro.v3.unit.year',
   },
   lifetime: {
     nameKey: 'unlock.receipt.lifetime',
     priceKey: 'pro.page.perLifetime',
-    unitKey: 'pro.v3.unit.lifetime',
   },
 };
 
@@ -312,7 +309,6 @@ export function PremiumUnlockScreen({
                 <Text style={styles.receiptName}>{t(language, receipt.nameKey)}</Text>
                 <Text style={styles.receiptPrice}>{t(language, receipt.priceKey)}</Text>
               </View>
-              <Text style={styles.receiptUnit}>{t(language, receipt.unitKey)}</Text>
               {/*
                 The renewal line, counted rather than written. Lifetime says so
                 instead: it is not a renewal far away, it is the absence of one.
@@ -532,12 +528,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
     letterSpacing: -0.3,
     color: theme.ink,
-  },
-  receiptUnit: {
-    fontSize: 11.5,
-    fontWeight: '700',
-    color: theme.muted,
-    marginTop: 2,
   },
   receiptRenews: {
     color: theme.ink,
