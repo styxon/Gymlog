@@ -121,6 +121,11 @@ module.exports = [
       }
       const subs = fs.readFileSync(path.join(ROOT, 'src/screens/SubscriptionScreen.tsx'), 'utf8');
       assert.match(subs, /storePriceText\(language, term!\.priceKey, storePrices\)/, 'the store renewal line must quote the store price');
+      // The receipt after a purchase names the price just charged: the store's.
+      const unlock = fs.readFileSync(path.join(ROOT, 'src/screens/PremiumUnlockScreen.tsx'), 'utf8');
+      assert.match(unlock, /useStorePlanPrices\(\)/, 'the unlock receipt must ask the store for its prices');
+      assert.match(unlock, /storePriceText\(language, receipt\.priceKey, storePrices\)/, 'the unlock receipt must quote the store price');
+      assert.doesNotMatch(unlock, /\{t\(language, receipt\.priceKey\)\}|price: t\(language, receipt\.priceKey\)/, 'the receipt still reads its price from the dictionary');
     },
   },
 ];
