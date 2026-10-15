@@ -2510,7 +2510,7 @@ const EN = {
   // Counted from the purchase instant plus the term, never written. The caveat
   // below it still says no money moves — the date is what it *would* be.
   'unlock.receipt.renews': 'Renews {date} at {price}',
-  'unlock.receipt.noRenewal': 'One payment — no renewal',
+  'unlock.receipt.noRenewal': 'Does not renew',
   // The trial's receipt: no price, no renewal, and the day it stops.
   'unlock.receipt.trial': '{days}-day free trial',
   'unlock.receipt.trialEnds': 'Ends {date} — nothing is charged',
@@ -5880,7 +5880,7 @@ const FI: Record<I18nKey, string> = {
   'unlock.receipt.lifetime': 'Elinikäinen',
   'unlock.receipt.manage': 'Hallinnoi tilausta · Asetukset',
   'unlock.receipt.renews': 'Uusiutuu {date} hintaan {price}',
-  'unlock.receipt.noRenewal': 'Kertamaksu — ei uusiutumista',
+  'unlock.receipt.noRenewal': 'Ei uusiudu',
   'unlock.receipt.trial': '{days} päivän ilmainen kokeilu',
   'unlock.receipt.trialEnds': 'Päättyy {date} — mitään ei veloiteta',
   'unlock.cta': 'Takaisin sovellukseen',
