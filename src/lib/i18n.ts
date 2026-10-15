@@ -2510,7 +2510,7 @@ const EN = {
   // Counted from the purchase instant plus the term, never written. The caveat
   // below it still says no money moves — the date is what it *would* be.
   'unlock.receipt.renews': 'Renews {date} at {price}',
-  'unlock.receipt.noRenewal': 'One payment — no renewal',
+  'unlock.receipt.noRenewal': 'Does not renew',
   // The trial's receipt: no price, no renewal, and the day it stops.
   'unlock.receipt.trial': '{days}-day free trial',
   'unlock.receipt.trialEnds': 'Ends {date} — nothing is charged',
@@ -2726,7 +2726,6 @@ const EN = {
   // End membership
   'subs.end.title': 'You keep all of it\nuntil then',
   'subs.end.paidUntil': 'Membership · paid until {date}',
-  'subs.end.ctaOn': 'End membership on {date}',
   'subs.end.lead': 'You will not be charged again. On {date} these {count} go back to where they were:',
   'subs.end.keeps': 'Your log, your programmes and your records stay. Nothing is deleted — only these go quiet.',
   'subs.end.cta': 'End membership',
@@ -5881,7 +5880,7 @@ const FI: Record<I18nKey, string> = {
   'unlock.receipt.lifetime': 'Elinikäinen',
   'unlock.receipt.manage': 'Hallinnoi tilausta · Asetukset',
   'unlock.receipt.renews': 'Uusiutuu {date} hintaan {price}',
-  'unlock.receipt.noRenewal': 'Kertamaksu — ei uusiutumista',
+  'unlock.receipt.noRenewal': 'Ei uusiudu',
   'unlock.receipt.trial': '{days} päivän ilmainen kokeilu',
   'unlock.receipt.trialEnds': 'Päättyy {date} — mitään ei veloiteta',
   'unlock.cta': 'Takaisin sovellukseen',
@@ -6078,7 +6077,6 @@ const FI: Record<I18nKey, string> = {
   // Lopeta jäsenyys
   'subs.end.title': 'Pidät kaiken\nsiihen asti',
   'subs.end.paidUntil': 'Jäsenyys · maksettu {date} asti',
-  'subs.end.ctaOn': 'Lopeta jäsenyys {date}',
   'subs.end.lead': 'Sinulta ei veloiteta enää mitään. {date} nämä {count} palaavat siihen, missä ne olivat:',
   'subs.end.keeps': 'Lokisi, ohjelmasi ja ennätyksesi säilyvät. Mitään ei poisteta — vain nämä hiljenevät.',
   'subs.end.cta': 'Lopeta jäsenyys',

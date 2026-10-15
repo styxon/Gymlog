@@ -55,13 +55,15 @@ module.exports = [
       assert.match(end, /haveChip: \{[^}]*backgroundColor: theme\.purpleLight/s);
       assert.match(end, /becomesChip: \{[^}]*backgroundColor: theme\.surfaceSoft/s);
       assert.doesNotMatch(end, /endButton: \{|lossNow: \{|lossWas: \{/);
-      // The safe choice is the filled button and sits first; ending is a text
-      // line beneath it that names the date.
+      // The safe choice is the filled button and sits first; ending is an
+      // outlined button beneath it, with no date in it (owner, 2026-10-15).
       const footer = end.slice(end.indexOf('styles.footer'), end.indexOf('function vars'));
       const keep = footer.indexOf('styles.keepButton');
       const endLink = footer.indexOf('styles.endLink');
       assert.ok(keep > 0 && endLink > keep, 'Keep first, the end line under it');
-      assert.match(footer, /'subs\.end\.ctaOn', \{ date: formatDate\(endsAt, language\) \}/);
+      assert.match(footer, /\{t\(language, 'subs\.end\.cta'\)\}/);
+      assert.doesNotMatch(footer, /subs\.end\.ctaOn/);
+      assert.match(end, /endLink: \{[^}]*borderColor: theme\.danger/s);
       assert.match(end, /endLinkText: \{[^}]*color: theme\.danger/s);
       assert.match(end, /keepButton: \{[^}]*backgroundColor: theme\.highlight/s);
       // No filled red anywhere, and no fixed red: the danger token is themed
@@ -78,7 +80,7 @@ module.exports = [
       // (review 2026-09-03).
       assert.match(tab, /periodEndsAt=\{\s*proEntitlement\.purchaseEndsAt \?\?\s*currentPeriodEndAt\(\s*preferences\.mockSubscriptionTerm,\s*preferences\.mockSubscriptionPurchasedAt \?\? MOCK_BILLING\.lastChargedAt,\s*\)\s*\}/);
       assert.ok(i18n.includes("'subs.end.keeps': 'Your log, your programmes and your records stay. Nothing is deleted — only these go quiet.'"));
-      for (const key of ['subs.end.paidUntil', 'subs.end.ctaOn', 'subs.end.title']) {
+      for (const key of ['subs.end.paidUntil', 'subs.end.cta', 'subs.end.title']) {
         assert.equal(i18n.split(`'${key}': '`).length - 1, 2, `${key} in EN and FI`);
       }
     },

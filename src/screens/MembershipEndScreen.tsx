@@ -177,10 +177,10 @@ export function MembershipEndScreen({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        {/* The safe choice is the only filled button. Ending is the small red
-            line beneath it, and it names the date so it cannot be mistaken for
-            "cancel this dialog" — the destructive choice never sits where the
-            thumb lands (design: GAINER Pro screens, 02). */}
+        {/* Two buttons: keeping is the filled one, ending the outlined red one
+            under it, so the destructive choice never sits where the thumb
+            lands and is still a button you can see is one (owner, 2026-10-15:
+            the red text line under one big bar did not read as a choice). */}
         <Pressable
           accessibilityRole="button"
           onPress={onKeep}
@@ -192,14 +192,9 @@ export function MembershipEndScreen({
           <Pressable
             accessibilityRole="button"
             onPress={onEndInStore ?? (() => setStep('splash'))}
-            hitSlop={8}
             style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
           >
-            <Text style={styles.endLinkText}>
-              {endsAt
-                ? t(language, 'subs.end.ctaOn', { date: formatDate(endsAt, language) })
-                : t(language, 'subs.end.cta')}
-            </Text>
+            <Text style={styles.endLinkText}>{t(language, 'subs.end.cta')}</Text>
           </Pressable>
         ) : (
           // No line, because there is no action. A greyed-out "Cancel" here
@@ -535,16 +530,19 @@ const makeStyles = (theme: Theme) =>
       textTransform: 'uppercase',
     },
     endLink: {
-      height: 44,
+      height: 54,
+      borderRadius: 16,
+      borderWidth: 1.5,
+      borderColor: theme.danger,
       alignItems: 'center',
       justifyContent: 'center',
     },
     endLinkText: {
-      // The theme's danger TEXT token, not a fixed red: this line is the only
-      // affordance for ending, and the old fixed fill-red as text on the dark
-      // surface falls under 4:1. theme.danger stays readable on both.
+      // The theme's danger TEXT token, not a fixed red: the old fixed fill-red
+      // as text on the dark surface falls under 4:1. theme.danger stays
+      // readable on both.
       color: theme.danger,
-      fontSize: 14.5,
+      fontSize: 16.5,
       fontWeight: '800',
     },
     keeps: {
