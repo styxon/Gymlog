@@ -2726,7 +2726,6 @@ const EN = {
   // End membership
   'subs.end.title': 'You keep all of it\nuntil then',
   'subs.end.paidUntil': 'Membership · paid until {date}',
-  'subs.end.ctaOn': 'End membership on {date}',
   'subs.end.lead': 'You will not be charged again. On {date} these {count} go back to where they were:',
   'subs.end.keeps': 'Your log, your programmes and your records stay. Nothing is deleted — only these go quiet.',
   'subs.end.cta': 'End membership',
@@ -6078,7 +6077,6 @@ const FI: Record<I18nKey, string> = {
   // Lopeta jäsenyys
   'subs.end.title': 'Pidät kaiken\nsiihen asti',
   'subs.end.paidUntil': 'Jäsenyys · maksettu {date} asti',
-  'subs.end.ctaOn': 'Lopeta jäsenyys {date}',
   'subs.end.lead': 'Sinulta ei veloiteta enää mitään. {date} nämä {count} palaavat siihen, missä ne olivat:',
   'subs.end.keeps': 'Lokisi, ohjelmasi ja ennätyksesi säilyvät. Mitään ei poisteta — vain nämä hiljenevät.',
   'subs.end.cta': 'Lopeta jäsenyys',
