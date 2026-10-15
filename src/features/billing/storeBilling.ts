@@ -13,8 +13,10 @@
 import { Platform } from 'react-native';
 import type { CustomerInfo, CustomerInfoUpdateListener, PurchasesPackage } from 'react-native-purchases';
 
+import type { StorePlanPrices } from '../../lib/storePrices';
 import { storePackageForPlan, type StoreCustomerSnapshot } from '../../lib/storePurchase';
 import type { SubscriptionTermKey } from '../../lib/subscriptionTerm';
+import { SUBSCRIPTION_TERM_ORDER } from '../../lib/subscriptionView';
 
 type PurchasesModule = typeof import('react-native-purchases');
 
@@ -121,6 +123,39 @@ export async function purchaseStorePlan(plan: SubscriptionTermKey): Promise<Stor
     }
     console.error('Store billing: the purchase failed', error);
     return { status: 'failed' };
+  }
+}
+
+/**
+ * What the current offering charges for each plan, or null when there is no
+ * store or it could not be asked. A plan whose package is missing is left out.
+ */
+export async function readStorePlanPrices(): Promise<StorePlanPrices | null> {
+  const store = loadStore();
+  if (!store) {
+    return null;
+  }
+  try {
+    const current = (await store.default.getOfferings()).current;
+    if (!current) {
+      return null;
+    }
+    const prices: StorePlanPrices = {};
+    for (const plan of SUBSCRIPTION_TERM_ORDER) {
+      const product = current[storePackageForPlan(plan)]?.product;
+      if (product) {
+        prices[plan] = {
+          price: product.price,
+          priceString: product.priceString,
+          currencyCode: product.currencyCode,
+          pricePerMonthString: product.pricePerMonthString ?? null,
+        };
+      }
+    }
+    return Object.keys(prices).length > 0 ? prices : null;
+  } catch (error) {
+    console.error('Store billing: reading the prices failed', error);
+    return null;
   }
 }
 

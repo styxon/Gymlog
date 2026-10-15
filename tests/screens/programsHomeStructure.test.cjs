@@ -694,8 +694,10 @@ module.exports = [
       // terms, and `foot` is bottom-anchored, so its CTA sat lower than the
       // other two.
       const premium = read('src', 'screens', 'PremiumScreen.tsx');
-      assert.match(premium, /\{entry\.subKey \? t\(language, entry\.subKey\) : ' '\}/);
-      assert.match(premium, /\{fineKey \? t\(language, fineKey\) : ' '\}/);
+      // The text goes through lib/storePrices, which can answer null; the
+      // blank still stands in for it.
+      assert.match(premium, /\{\(entry\.subKey && storePriceText\(language, entry\.subKey, storePrices\)\) \|\| ' '\}/);
+      assert.match(premium, /\{\(fineKey && storePriceText\(language, fineKey, storePrices\)\) \|\| ' '\}/);
       assert.doesNotMatch(premium, /\{fineKey \? <Text/);
       assert.match(premium, /priceSub: \{ fontSize: 12.5, lineHeight: 16/);
     },
