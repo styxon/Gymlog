@@ -236,14 +236,12 @@ module.exports = [
       assert.match(screen, /done: \{\s*\r?\n\s*minHeight: 62,\s*\r?\n\s*borderRadius: 18,/);
       assert.doesNotMatch(screen, /CutButton/, 'the A3 cut button is back on the last onboarding screen');
 
-      // Filled with the action accent, so the ink is the token written for it.
+      // Violet since 2026-10-16 (the orange of #382 taken back), white ink.
       //
       // Scoped to the button's own block. Unscoped, this matched the check
-      // circle's fill further down the same file — so it passed on the source
-      // it was written to guard, and would have kept passing if the button
-      // went back to violet (review, #78).
-      assert.match(screen, /done: \{[^}]*backgroundColor: theme\.accent,/);
-      assert.match(screen, /doneText: \{\s*\r?\n\s*color: theme\.onHighlight,/);
+      // circle's fill further down the same file (review, #78).
+      assert.match(screen, /done: \{[^}]*backgroundColor: theme\.purpleFill,/);
+      assert.match(screen, /doneText: \{\s*\r?\n\s*color: '#FFFFFF',/);
     },
   },
   {
@@ -322,7 +320,7 @@ module.exports = [
       // In order, each on its own condition.
       assert.deepEqual(
         planSetupHandoff({ ...base, pinnedCardKeys: [], canOfferAccountBackup: true, canOfferWidget: true }).pages,
-        ['signin', 'tracking', 'offers'],
+        ['signin', 'offers', 'tracking'],
       );
       assert.deepEqual(planSetupHandoff({ ...base, canOfferWidget: true }).pages, ['offers']);
       assert.deepEqual(planSetupHandoff({ ...base, canOfferAccountBackup: true }).pages, ['signin']);

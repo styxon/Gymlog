@@ -61,6 +61,12 @@ interface SetupHandoffScreenProps {
   onDone: (choices: SetupHandoffChoices) => void;
   onSkip: () => void;
   /**
+   * Opens the system's widget dialog and resolves once it has closed. Used
+   * when the tracking sheet follows the widget page, so the sheet comes up
+   * after the dialog rather than under it.
+   */
+  onPinWidget: () => Promise<boolean>;
+  /**
    * Opens one of the two documents without leaving onboarding. The legal screen
    * lives on the Profile tab, and navigating there mid-flow would end the flow;
    * the shell renders it over this screen instead and comes back here.
@@ -93,6 +99,7 @@ export function SetupHandoffScreen({
   focusLabel,
   onDone,
   onSkip,
+  onPinWidget,
   onOpenLegal,
   legalAlreadyAccepted,
   signInProviders,
@@ -165,7 +172,8 @@ export function SetupHandoffScreen({
   // silently skipped (double-tap audit, 2026-09-21).
   const finish = (widget = addWidget, signIn = signInForBackup) =>
     onDone({
-      addWidget: plan.offerWidget && widget,
+      // Not twice: a widget asked for on its own page was pinned there.
+      addWidget: plan.offerWidget && widget && !widgetRequested.current,
       trackedSites,
       signInForBackup: plan.offerAccountBackup && signIn,
       signInProvider: plan.offerAccountBackup && signIn ? signInProviderRef.current : null,
@@ -181,6 +189,36 @@ export function SetupHandoffScreen({
    * from most phones, the tracking dialog IS the last page, and its Done
    * button was dead: tapped, nothing, no way forward (user, 2026-09-10).
    */
+  /**
+   * The widget page's Done, and its back key with `widget` false.
+   *
+   * Last page: out, and setupHandoffDone opens the pin dialog after the write.
+   * Otherwise the tracking sheet follows, and it waits for the pin dialog to
+   * close — Done, the system's dialog, then the sheet, one at a time (user
+   * 2026-10-16). Before this the sheet came first and the widget dialog after.
+   */
+  const widgetRequested = useRef(false);
+  const [pinning, setPinning] = useState(false);
+  const leaveOffers = async (widget: boolean) => {
+    if (pinning) {
+      return;
+    }
+    if (pageIndex >= pages.length - 1) {
+      finish(widget);
+      return;
+    }
+    if (plan.offerWidget && widget) {
+      setPinning(true);
+      try {
+        await onPinWidget();
+      } finally {
+        setPinning(false);
+      }
+      widgetRequested.current = true;
+    }
+    setPageIndex((current) => current + 1);
+  };
+
   const advance = (signIn = signInForBackup) => {
     if (pageIndex >= pages.length - 1) {
       finish(addWidget, signIn);
@@ -204,8 +242,8 @@ export function SetupHandoffScreen({
     if (pages.length === 0) {
       return;
     }
-    if (page === 'offers' && pageIndex >= pages.length - 1) {
-      finish(false);
+    if (page === 'offers') {
+      void leaveOffers(false);
       return;
     }
     advance();
@@ -366,9 +404,9 @@ export function SetupHandoffScreen({
         )}
         <Pressable
           accessibilityRole="button"
-          accessibilityState={{ disabled: !legalReady }}
-          disabled={!legalReady}
-          onPress={() => finish()}
+          accessibilityState={{ disabled: !legalReady || pinning }}
+          disabled={!legalReady || pinning}
+          onPress={() => void leaveOffers(addWidget)}
           style={({ pressed }) => [
             styles.done,
             !legalAlreadyAccepted && styles.afterConsent,
@@ -443,7 +481,7 @@ function OfferRow({
         {icon === 'google' ? (
           <GoogleGlyph size={20} />
         ) : (
-          <VinhaIcon name={icon} size={20} color={theme.highlight} />
+          <VinhaIcon name={icon} size={20} color={theme.purpleBright} />
         )}
       </View>
       <View style={styles.rowText}>
@@ -451,7 +489,7 @@ function OfferRow({
         <Text style={styles.rowBody}>{body}</Text>
       </View>
       <View style={[styles.check, selected && styles.checkOn]}>
-        {selected ? <VinhaIcon name="check" size={14} color={theme.onHighlight} /> : null}
+        {selected ? <VinhaIcon name="check" size={14} color="#FFFFFF" /> : null}
       </View>
     </Pressable>
   );
@@ -508,7 +546,7 @@ const makeStyles = (theme: Theme) =>
       paddingVertical: 20,
     },
     rowSelected: {
-      borderColor: theme.accent,
+      borderColor: theme.purpleBright,
     },
     rowIcon: {
       width: 48,
@@ -544,8 +582,8 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
     },
     checkOn: {
-      borderColor: theme.accent,
-      backgroundColor: theme.accent,
+      borderColor: theme.purpleFill,
+      backgroundColor: theme.purpleFill,
     },
     footer: {
       paddingHorizontal: spacing.lg,
@@ -626,19 +664,20 @@ const makeStyles = (theme: Theme) =>
      * plain rounded rectangles at 56–62dp. It read as a different app arriving
      * for the final step (user 2026-09-08, "eri mallinen kuin muualla").
      *
-     * The colour is the action accent rather than the brand violet, because
-     * this screen already marks its chosen rows with it, and the screen the
-     * button leads to starts its workouts with it.
+     * Violet, as every footer before it in the flow: the orange of #382 was
+     * taken back (user 2026-10-16), and the chosen rows, the box and the
+     * links went with it so the last screen is one colour.
      */
     done: {
       minHeight: 62,
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.accent,
+      // purpleFill, not purpleBright: white on it reads 4.5:1+.
+      backgroundColor: theme.purpleFill,
     },
     doneText: {
-      color: theme.onHighlight,
+      color: '#FFFFFF',
       fontSize: 19,
       fontWeight: '900',
       letterSpacing: -0.3,

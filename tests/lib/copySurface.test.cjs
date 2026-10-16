@@ -176,7 +176,7 @@ module.exports = [
       const onboarding = fs.readFileSync(path.join(root, 'screens', 'OnboardingScreen.tsx'), 'utf8');
       assert.match(onboarding, /resolveMismatchNoteForWeek\(\s*selection,\s*recommendation,\s*composedActiveWeek\?\.days,/);
       assert.match(onboarding, /buildCautionAdaptationLine\(composedActiveWeek, language\)/);
-      assert.match(onboarding, /cautionAdaptationLine,\s*\]\.filter\(Boolean\)/);
+      assert.match(onboarding, /weekNote=\{\s*cautionAdaptationLine \|\| undefined\s*\}/);
     },
   },
   {

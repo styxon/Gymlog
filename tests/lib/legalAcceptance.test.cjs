@@ -200,8 +200,10 @@ module.exports = [
       assert.equal(handoff.split('<LegalConsentCheck').length - 1, 2, 'both pages that name the documents carry the box');
       // Sign-in and Done both wait. "Not now" on sign-in does not: the next
       // page, or the sheet over the app, asks.
-      // Three: Apple's sign-in button (iPhone), Google's, and Done.
-      assert.equal(handoff.split('disabled={!legalReady}').length - 1, 3);
+      // Apple's sign-in button (iPhone) and Google's; Done also waits while
+      // the widget's pin dialog is up.
+      assert.equal(handoff.split('disabled={!legalReady}').length - 1, 2);
+      assert.equal(handoff.split('disabled={!legalReady || pinning}').length - 1, 1);
       // Ready means ticked now, or accepted already — a reader running the
       // questions again from Profile is not asked twice for one version.
       assert.match(handoff, /const legalReady = legalAlreadyAccepted \|\| legalChecked;/);

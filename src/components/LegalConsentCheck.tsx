@@ -41,7 +41,7 @@ export function LegalConsentCheck({ language, checked, onToggle, onOpenLegal }: 
         style={({ pressed }) => [styles.row, pressed && styles.pressed]}
       >
         <View style={[styles.box, checked && styles.boxOn]}>
-          {checked ? <VinhaIcon name="check" size={15} color={theme.onHighlight} /> : null}
+          {checked ? <VinhaIcon name="check" size={15} color="#FFFFFF" /> : null}
         </View>
         <Text style={styles.label}>{label}</Text>
       </Pressable>
@@ -84,8 +84,8 @@ const makeStyles = (theme: Theme) =>
       justifyContent: 'center',
     },
     boxOn: {
-      borderColor: theme.accent,
-      backgroundColor: theme.accent,
+      borderColor: theme.purpleFill,
+      backgroundColor: theme.purpleFill,
     },
     label: {
       flex: 1,
@@ -103,7 +103,7 @@ const makeStyles = (theme: Theme) =>
       marginTop: 2,
     },
     link: {
-      color: theme.highlight,
+      color: theme.purpleBright,
       fontSize: 13,
       fontWeight: '800',
       // The tap target a 13pt label does not give on its own.

@@ -299,13 +299,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   startButton: {
     height: 54,
     borderRadius: 15,
-    // Orange, because orange is what can be pressed (vc5 pass, 2026-10-16).
-    backgroundColor: theme.orange,
+    // Violet, as the onboarding Continue (user 2026-10-16: #382's orange
+    // taken back). purpleFill, not purpleBright: white on it reads 4.5:1+.
+    backgroundColor: theme.purpleFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   startLabel: {
-    color: theme.onHighlight,
+    color: '#FFFFFF',
     fontSize: 15.5,
     fontWeight: '800',
     // Uppercased here rather than in the string, so the translation stays

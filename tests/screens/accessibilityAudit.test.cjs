@@ -58,8 +58,12 @@ module.exports = [
       // Every ruler says what it measures and in what.
       assert.match(ruler, /accessibilityLabel: string;/);
       assert.match(ruler, /unit: string;/);
+      // About you's weight is a wheel since 2026-10-16, adjustable the same way.
+      const wheel = read('src', 'components', 'WeightWheel.tsx');
+      assert.match(wheel, /accessibilityRole="adjustable"/);
+      assert.match(wheel, /accessibilityLabel=\{accessibilityLabel\}/);
+      assert.match(read('src', 'screens', 'AboutYouScreen.tsx'), /<WeightWheel\b[\s\S]*?accessibilityLabel=/);
       for (const file of [
-        ['src', 'screens', 'AboutYouScreen.tsx'],
         ['src', 'components', 'MeasureRulerSheet.tsx'],
       ]) {
         const source = read(...file);

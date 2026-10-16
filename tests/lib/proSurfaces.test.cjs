@@ -894,4 +894,20 @@ module.exports = [
       );
     },
   },
+  {
+    name: 'Pro page: the card foot fade shows only while the list overflows, never on a short list',
+    run() {
+      const { cardFadeVisible } = require('../../.test-dist/lib/proTiers');
+      // Lifetime: four rows fit, nothing below the edge -> no band across the card.
+      assert.equal(cardFadeVisible(400, 260, 0), false);
+      assert.equal(cardFadeVisible(0, 0, 0), false);
+      // Pro: overflowing list, at the top -> fade; scrolled to the end -> none.
+      assert.equal(cardFadeVisible(300, 520, 0), true);
+      assert.equal(cardFadeVisible(300, 520, 220), false);
+      // The screen must gate CardFade on it, not draw it unconditionally.
+      assert.match(premiumSource, /setFadeVisible\(cardFadeVisible\(next\.layout, next\.content, next\.offset\)\)/);
+      assert.match(premiumSource, /\{fadeVisible \? <CardFade width=\{width\} \/> : null\}/);
+      assert.doesNotMatch(premiumSource, /^\s*<CardFade width=\{width\} \/>\s*$/m);
+    },
+  },
 ];

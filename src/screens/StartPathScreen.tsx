@@ -120,7 +120,7 @@ function CheckCircle({ selected }: { selected: boolean }) {
   return (
     <View style={styles.checkCircle}>
       <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-        <Path d="M5 12l5 5L19 7" stroke={C.purple} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+        <Path d="M5 12l5 5L19 7" stroke="#FFFFFF" strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
       </Svg>
     </View>
   );
@@ -150,22 +150,22 @@ function PathCard({ icon, title, body, recommendedLabel, selected, fontFamily, a
       style={({ pressed }) => [styles.card, selected && styles.cardSelected, pressed && styles.cardPressed]}
     >
       <View style={[styles.cardIconTile, selected && styles.cardIconTileSelected]}>
-        <PathIcon name={icon} color={selected ? '#FFFFFF' : C.purple} />
+        <PathIcon name={icon} color={C.purple} />
       </View>
       <View style={styles.cardCopy}>
         <View style={styles.cardTitleRow}>
-          <Text style={[styles.cardTitle, selected && styles.cardTitleSelected, { fontFamily }]}>{title}</Text>
+          <Text style={[styles.cardTitle, { fontFamily }]}>{title}</Text>
           {recommendedLabel ? (
-            <View style={[styles.recommendedPill, selected && styles.recommendedPillSelected]}>
+            <View style={styles.recommendedPill}>
               <Text
-                style={[styles.recommendedPillText, selected && styles.recommendedPillTextSelected, { fontFamily }]}
+                style={[styles.recommendedPillText, { fontFamily }]}
               >
                 {recommendedLabel}
               </Text>
             </View>
           ) : null}
         </View>
-        <Text style={[styles.cardBody, selected && styles.cardBodySelected, { fontFamily }]}>{body}</Text>
+        <Text style={[styles.cardBody, { fontFamily }]}>{body}</Text>
       </View>
       <CheckCircle selected={selected} />
     </Pressable>
@@ -355,14 +355,12 @@ const makeStyles = (theme: Theme) => {
     padding: 20,
   },
   cardSelected: {
-    backgroundColor: C.purple,
+    // A soft violet tint and a violet border, not a solid violet card: solid
+    // stood too far from the dark cards beside it (user 2026-10-16). The
+    // copy keeps its own colours, so nothing on the card has to flip to white.
+    backgroundColor: C.purpleSoft,
     borderWidth: 2,
-    borderColor: C.purpleDark,
-    shadowColor: C.purple,
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 16 },
-    elevation: 8,
+    borderColor: C.purple,
   },
   cardPressed: {
     opacity: 0.9,
@@ -379,8 +377,8 @@ const makeStyles = (theme: Theme) => {
     justifyContent: 'center',
   },
   cardIconTileSelected: {
-    backgroundColor: 'rgba(255,255,255,0.16)',
-    borderColor: 'rgba(255,255,255,0.7)',
+    // The tile would vanish into the tinted card in its own purpleSoft.
+    backgroundColor: C.surface,
   },
   cardCopy: {
     flex: 1,
@@ -399,17 +397,11 @@ const makeStyles = (theme: Theme) => {
     lineHeight: 23,
     fontWeight: '800',
   },
-  cardTitleSelected: {
-    color: '#FFFFFF',
-  },
   cardBody: {
     color: C.soft,
     fontSize: 13,
     lineHeight: 18,
     fontWeight: '700',
-  },
-  cardBodySelected: {
-    color: 'rgba(255,255,255,0.95)',
   },
   recommendedPill: {
     borderRadius: 999,
@@ -419,25 +411,12 @@ const makeStyles = (theme: Theme) => {
     paddingVertical: 3,
     paddingHorizontal: 8,
   },
-  recommendedPillSelected: {
-    // White, not theme.surface. The chosen card is purple in both themes, so
-    // the pill on top of it does not belong to the page's surface colour —
-    // following it turned the badge into a black hole punched in the card as
-    // soon as the dark theme was picked (user 2026-08-27).
-    backgroundColor: '#FFFFFF',
-    borderColor: C.purpleDark,
-  },
   recommendedPillText: {
     color: C.purple,
     fontSize: 9.5,
     lineHeight: 12,
     fontWeight: '900',
     letterSpacing: 0.8,
-  },
-  recommendedPillTextSelected: {
-    // Fixed, like the white pill it sits on: C.purpleDark is a light violet in
-    // dark, 2.7:1 on white (#bugs 2026-10-01 audit).
-    color: '#5B21B6',
   },
   checkRing: {
     width: 26,
@@ -450,11 +429,7 @@ const makeStyles = (theme: Theme) => {
     width: 26,
     height: 26,
     borderRadius: 999,
-    // Same reason as recommendedPillSelected: this tick only ever sits on the
-    // chosen purple card, so it is white there whatever the page behind is.
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: C.purpleDark,
+    backgroundColor: C.purple,
     alignItems: 'center',
     justifyContent: 'center',
   },

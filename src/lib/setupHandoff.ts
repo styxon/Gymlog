@@ -117,7 +117,11 @@ export interface SetupHandoffPlan {
   /** False when there is nothing left to offer and the step must not appear. */
   shouldShow: boolean;
   /**
-   * The pages to show, in order: sign-in, the tracking dialog, the widget.
+   * The pages to show, in order: sign-in, the widget, the tracking dialog.
+   *
+   * The widget before the tracking dialog (user 2026-10-16): its Done opens
+   * the system's pin dialog, and the tracking sheet waits for that to close,
+   * so the two never share the screen.
    *
    * Each only when it has something on it. The tracking dialog was on every
    * hand-off whether or not `offerTrackedSites` said it had anything to ask,
@@ -180,8 +184,8 @@ export function planSetupHandoff(input: SetupHandoffInput): SetupHandoffPlan {
 
   const pages: SetupHandoffPage[] = [
     ...(offerAccountBackup ? (['signin'] as const) : []),
-    ...(offerTrackedSites ? (['tracking'] as const) : []),
     ...(input.canOfferWidget ? (['offers'] as const) : []),
+    ...(offerTrackedSites ? (['tracking'] as const) : []),
   ];
 
   return {

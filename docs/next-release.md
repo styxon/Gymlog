@@ -22,8 +22,18 @@ update to carry, not for each fix.
 
 ## Merged
 
-- #382 Onboarding: the Continue buttons are orange, and a disabled one
-  says on a line under it what it still waits for.
+- #382 Onboarding: a disabled Continue button says on a line under it what
+  it still waits for.
+- #TBD Onboarding: the Continue buttons are violet again, and the chosen
+  start-path card is a soft violet tint instead of solid violet.
+- #TBD Onboarding: Welcome's start button and the last setup screen (Done,
+  terms box, links, chosen rows) are violet; weight is picked on a two-column
+  wheel; the gender options are colour-coded; shorter level, rhythm and
+  avoid-step copy; "Recommended" no longer cut off.
+- #TBD After onboarding the widget's add dialog comes first and the
+  measurements question only after it closes, never both at once.
+- #TBD Widget: the duration figure shrinks to fit instead of being cut off;
+  the 4×2 widget has no description line in the picker.
 - #382 Start path: shorter, centred lines, and the recommended path is
   marked "Recommended".
 - #382 About you: gender, age and weight open as bottom sheets; gender

@@ -88,13 +88,11 @@ module.exports = [
       const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8');
       const expected = {
         en: {
-          'onb.days.cycleFrequencyOne': [{ len: 3, perWeek: '2.3' }, 'You train 1 day out of every 3, about 2.3 a week.'],
           'plan.dayCountOne': [{ days: 1, rest: 6 }, '1 training day · 6 rest'],
           'plan.exerciseCountOne': [{ count: 1 }, '1 exercise'],
           'home.section.setOne': [{ count: 1 }, '1 set'],
         },
         fi: {
-          'onb.days.cycleFrequencyOne': [{ len: 3, perWeek: '2,3' }, 'Treenaat yhtenä päivänä 3 päivän kierrossa, noin 2,3 kertaa viikossa.'],
           'plan.dayCountOne': [{ days: 1, rest: 6 }, '1 treenipäivä · 6 lepoa'],
           'plan.exerciseCountOne': [{ count: 1 }, '1 liike'],
           'home.section.setOne': [{ count: 1 }, '1 sarja'],
@@ -112,7 +110,6 @@ module.exports = [
           language === 'en' ? '1 exercise · 1 set' : '1 liike · 1 sarja',
         );
       }
-      assert.match(read('src/screens/OnboardingScreen.tsx'), /cycleOnDays === 1 \? 'onb\.days\.cycleFrequencyOne'/);
       assert.match(read('src/screens/TrainingPlanScreen.tsx'), /count === 1 \? 'plan\.dayCountOne'/);
       assert.match(read('src/screens/TrainingPlanScreen.tsx'), /planExerciseCount === 1 \? 'plan\.exerciseCountOne'/);
       assert.match(read('src/screens/HomeScreen.tsx'), /totalSets === 1 \? 'home\.section\.setOne'/);
