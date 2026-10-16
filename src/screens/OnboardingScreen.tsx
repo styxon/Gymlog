@@ -27,6 +27,8 @@ import { ProgramPickScreen } from './ProgramPickScreen';
 import { LEVEL_STREAKS } from '../lib/levelStreaks';
 import { OnboardingOptionIcon, OnboardingOptionIconName } from '../components/OnboardingOptionIcon';
 import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
+import { KitSheet } from '../components/sheetKit';
+import { canContinueLocation, firstMissingLocation } from '../lib/locationStepRules';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { convertWeightToKg, formatDecimalTenths, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
@@ -625,8 +627,6 @@ const LOCATION_SELECTION_OPTIONS: Array<{
   labelKey: I18nKey;
   subtitleKey: I18nKey;
   icon: OnboardingOptionIconName;
-  focusLabelKey?: I18nKey;
-  focusTone?: FocusBadgeTone;
 }> = [
   {
     id: 'full_gym',
@@ -635,8 +635,6 @@ const LOCATION_SELECTION_OPTIONS: Array<{
     labelKey: 'onb.location.full_gym.label',
     subtitleKey: 'onb.location.full_gym.subtitle',
     icon: 'barbell',
-    focusLabelKey: 'onb.location.full_gym.badge',
-    focusTone: 'neutral',
   },
   {
     id: 'home_gym',
@@ -653,8 +651,6 @@ const LOCATION_SELECTION_OPTIONS: Array<{
     labelKey: 'onb.location.bodyweight_only.label',
     subtitleKey: 'onb.location.bodyweight_only.subtitle',
     icon: 'bodyweight',
-    focusLabelKey: 'onb.location.bodyweight_only.badge',
-    focusTone: 'blue',
   },
 ];
 
@@ -1217,14 +1213,12 @@ export function OnboardingScreen({
       ? getDefaultLocationOptionId(setupSeed.equipment, setupSeed.trainingEnvironment)
       : null,
   );
-  // Whether the selected equipment card shows its chips. Tapping the header
-  // toggles it without un-selecting (user, 2026-08-19). Since 2026-08-23 a
-  // full gym keeps its chips closed — "everything" is a complete answer — and
-  // only the setups where the chips are the real question open on select.
-  const [equipmentCardOpen, setEquipmentCardOpen] = useState(
-    selectedLocationOptionId !== null && selectedLocationOptionId !== 'full_gym',
-  );
   const [equipmentItems, setEquipmentItems] = useState<string[]>(setupSeed.equipmentItems ?? []);
+  // Home equipment asks what is at home in a bottom sheet (vc5, 2026-10-16).
+  // The sheet edits a draft; only Done writes it, so closing the sheet leaves
+  // the step as it was — Home unselected if it was not chosen before.
+  const [homeSheetOpen, setHomeSheetOpen] = useState(false);
+  const [homeDraftItems, setHomeDraftItems] = useState<string[]>([]);
   const [levelTrackWidth, setLevelTrackWidth] = useState(0);
   const levelThumbAnim = useRef(
     new Animated.Value(Math.max(0, LEVEL_SLIDER_OPTIONS.findIndex((option) => option.level === setupSeed.level))),
@@ -1847,23 +1841,47 @@ export function OnboardingScreen({
 
   function selectEquipmentSetup(option: (typeof LOCATION_SELECTION_OPTIONS)[number]) {
     void haptics.select();
+    if (option.id === 'home_gym') {
+      // A reopen edits what is there; a first open asks, with nothing ticked.
+      setHomeDraftItems(selectedLocationOptionId === 'home_gym' ? equipmentItems : []);
+      setHomeSheetOpen(true);
+      return;
+    }
+    // Full gym and bodyweight are complete answers on the card itself.
     const defaults = EQUIPMENT_DEFAULT_ITEMS[option.id] ?? [];
     setSelectedLocationOptionId(option.id);
-    // Full gym stays closed on select (user 2026-08-23): its default is
-    // everything, so the chips are a correction, not a question. Home and
-    // bodyweight open, because "what do you actually have" is the question.
-    setEquipmentCardOpen(option.id !== 'full_gym');
     setEquipmentItems(defaults);
     applyEquipmentEnvironment(option, defaults);
   }
 
-  function toggleEquipmentItem(option: (typeof LOCATION_SELECTION_OPTIONS)[number], item: string) {
+  function toggleHomeDraftItem(item: string) {
     void haptics.select();
-    setEquipmentItems((current) => {
-      const next = current.includes(item) ? current.filter((value) => value !== item) : [...current, item];
-      applyEquipmentEnvironment(option, next);
-      return next;
-    });
+    setHomeDraftItems((current) =>
+      current.includes(item) ? current.filter((value) => value !== item) : [...current, item],
+    );
+  }
+
+  function commitHomeSheet() {
+    const option = LOCATION_SELECTION_OPTIONS.find((candidate) => candidate.id === 'home_gym');
+    if (!option || homeDraftItems.length === 0) {
+      return;
+    }
+    void haptics.select();
+    setSelectedLocationOptionId('home_gym');
+    setEquipmentItems(homeDraftItems);
+    applyEquipmentEnvironment(option, homeDraftItems);
+    setHomeSheetOpen(false);
+  }
+
+  function homeCardSubtitle(): string {
+    // The chosen items in the catalog's order; past what fits one line on a
+    // narrow phone the count says it instead.
+    const chips = EQUIPMENT_CHIP_CATALOG.home_gym ?? [];
+    const labels = chips.filter((item) => equipmentItems.includes(item)).map((item) => equipmentItemLabel(language, item));
+    const joined = labels.join(', ');
+    return labels.length > 0 && labels.length <= 3 && joined.length <= 32
+      ? joined
+      : t(language, 'onb.equip.selectedCount', { count: equipmentItems.length });
   }
 
   function renderLocation() {
@@ -1875,82 +1893,58 @@ export function OnboardingScreen({
       titleStyle: styles.locationEquipmentHeadline,
       children: (
         <View style={styles.locationCardList}>
-          {/* The cards keep their order. Selecting used to lift the chosen one
-              to the top as an expanded card and list the rest under "or
-              choose" — so the card you tapped jumped away from under your
-              thumb, and the only way to close it was to pick another. Now
-              each card expands where it is, and its header toggles it. */}
           {LOCATION_SELECTION_OPTIONS.map((option) => {
             const isSelected = option.id === selectedLocationOptionId;
-            if (!isSelected) {
-              return (
-                <LocationChoiceCard
-                  key={option.id}
-                  label={t(language, option.labelKey)}
-                  subtitle={t(language, option.subtitleKey)}
-                  icon={option.icon}
-                  focusLabel={option.focusLabelKey ? t(language, option.focusLabelKey) : undefined}
-                  focusTone={option.focusTone}
-                  active={false}
-                  onPress={() => selectEquipmentSetup(option)}
-                />
-              );
-            }
-            const chips = EQUIPMENT_CHIP_CATALOG[option.id] ?? [];
             return (
-              <View key={option.id} style={styles.equipmentExpandedCard}>
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: true, expanded: equipmentCardOpen }}
-                  onPress={() => {
-                    void haptics.select();
-                    setEquipmentCardOpen((open) => !open);
-                  }}
-                  style={styles.equipmentExpandedHeader}
-                >
-                  <OnboardingOptionIcon name={option.icon} />
-                  <View style={styles.equipmentExpandedCopy}>
-                    <Text style={styles.equipmentExpandedTitle}>{t(language, option.labelKey)}</Text>
-                    <Text style={styles.equipmentExpandedCount}>
-                      {chips.length > 0
-                        ? t(language, 'onb.equip.selectedCount', { count: equipmentItems.length })
-                        : t(language, option.subtitleKey)}
-                    </Text>
-                  </View>
-                  <View style={styles.equipmentExpandedCheck}>
-                    <VinhaIcon name="check" size={13} color="#FFFFFF" />
-                  </View>
-                </Pressable>
-                {equipmentCardOpen && chips.length > 0 ? (
-                  <>
-                    <Text style={styles.equipmentChipsPrompt}>{t(language, 'onb.equip.prompt')}</Text>
-                    <View style={styles.equipmentChipsWrap}>
-                      {chips.map((item) => {
-                        const active = equipmentItems.includes(item);
-                        // The English item is the stored id; only its label moves.
-                        const label = equipmentItemLabel(language, item);
-                        return (
-                          <Pressable
-                            key={item}
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: active }}
-                            accessibilityLabel={label}
-                            onPress={() => toggleEquipmentItem(option, item)}
-                            style={[styles.equipmentChip, active && styles.equipmentChipActive]}
-                          >
-                            {/* Colour alone marked the chosen chips; a check
-                                says it outright (user 2026-08-23). */}
-                            {active ? <VinhaIcon name="check" size={12} color={C.primary} /> : null}
-                            <Text style={[styles.equipmentChipText, active && styles.equipmentChipTextActive]}>{label}</Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </>
-                ) : null}
-              </View>
+              <LocationChoiceCard
+                key={option.id}
+                label={t(language, option.labelKey)}
+                subtitle={
+                  isSelected && option.id === 'home_gym' ? homeCardSubtitle() : t(language, option.subtitleKey)
+                }
+                icon={option.icon}
+                active={isSelected}
+                onPress={() => selectEquipmentSetup(option)}
+              />
             );
           })}
+          <KitSheet
+            visible={homeSheetOpen}
+            onClose={() => setHomeSheetOpen(false)}
+            title={t(language, 'onb.equip.sheetTitle')}
+            bottomInset={insets.bottom}
+            closeLabel={t(language, 'common.close')}
+          >
+            <View style={styles.equipmentChipsWrap}>
+              {(EQUIPMENT_CHIP_CATALOG.home_gym ?? []).map((item) => {
+                const active = homeDraftItems.includes(item);
+                // The English item is the stored id; only its label moves.
+                const label = equipmentItemLabel(language, item);
+                return (
+                  <Pressable
+                    key={item}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={label}
+                    onPress={() => toggleHomeDraftItem(item)}
+                    style={[styles.equipmentChip, active && styles.equipmentChipActive]}
+                  >
+                    {/* Colour alone marked the chosen chips; a check
+                        says it outright (user 2026-08-23). */}
+                    {active ? <VinhaIcon name="check" size={12} color={C.primary} /> : null}
+                    <Text style={[styles.equipmentChipText, active && styles.equipmentChipTextActive]}>{label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <PrimaryCTAButton
+              title={t(language, 'onb.equip.done')}
+              onPress={commitHomeSheet}
+              disabled={homeDraftItems.length === 0}
+              hint={homeDraftItems.length === 0 ? t(language, 'onb.equip.missing') : null}
+              style={styles.equipmentSheetDone}
+            />
+          </KitSheet>
         </View>
       ),
     });
@@ -3085,7 +3079,7 @@ export function OnboardingScreen({
 
   const canContinue =
     stage === 'location'
-      ? selectedLocationOptionId !== null
+      ? canContinueLocation({ selectedId: selectedLocationOptionId, itemCount: equipmentItems.length })
       : stage === 'goal'
       ? goals.length > 0
       : stage === 'level'
@@ -3098,6 +3092,17 @@ export function OnboardingScreen({
       : stage === 'planning'
       ? focusAreas.length > 0
       : true;
+  // The line under a disabled Continue names what it waits for (vc5 G1).
+  const locationMissing =
+    stage === 'location'
+      ? firstMissingLocation({ selectedId: selectedLocationOptionId, itemCount: equipmentItems.length })
+      : null;
+  const footerMissingHint =
+    locationMissing === 'location'
+      ? t(language, 'onb.location.missing')
+      : locationMissing === 'equip'
+      ? t(language, 'onb.equip.missing')
+      : null;
   const locationStageActive =
     stage === 'location' ||
     stage === 'goal' ||
@@ -3289,6 +3294,7 @@ export function OnboardingScreen({
                 setStageIndex((current) => Math.min(current + 1, STAGES.length - 1));
               }}
               disabled={!canContinue || busy}
+              hint={footerMissingHint}
               style={styles.onboardingPrimaryCTA}
             />
 
@@ -3555,55 +3561,14 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
   },
   locationCardList: {
     gap: 7,
+    // Title to first card a little more than card to card (vc5, 2026-10-16).
+    paddingTop: 6,
   },
   locationCardListCompact: {
     gap: 8,
   },
-  equipmentExpandedCard: {
-    backgroundColor: C.card,
-    borderWidth: 2,
-    borderColor: C.borderActive,
-    borderRadius: 18,
-    padding: 16,
-  },
-  equipmentExpandedHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  equipmentExpandedCopy: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  equipmentExpandedTitle: {
-    color: C.text,
-    fontSize: 17,
-    lineHeight: 21,
-    fontWeight: '800',
-  },
-  equipmentExpandedCount: {
-    color: C.primary,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '800',
-  },
-  equipmentExpandedCheck: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    backgroundColor: C.primaryFill,
-    borderWidth: 1.5,
-    borderColor: '#5B21B6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  equipmentChipsPrompt: {
-    color: C.textSoft,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '700',
-    marginTop: 12,
+  equipmentSheetDone: {
+    marginTop: spacing.lg,
   },
   equipmentChipsWrap: {
     flexDirection: 'row',

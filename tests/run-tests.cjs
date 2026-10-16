@@ -561,6 +561,7 @@ const suites = [
   ...require('./lib/programDetails.test.cjs'),
   ...require('./lib/programPickSeam.test.cjs'),
   ...require('./lib/aboutYouWeight.test.cjs'),
+  ...require('./lib/locationStepRules.test.cjs'),
   ...require('./lib/finnishHyphenation.test.cjs'),
   ...require('./lib/programmeRouteTruth.test.cjs'),
   ...require('./lib/customProgramDuplication.test.cjs'),

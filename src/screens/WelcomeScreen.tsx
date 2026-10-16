@@ -299,12 +299,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   startButton: {
     height: 54,
     borderRadius: 15,
-    backgroundColor: '#6D28D9',
+    // Orange, because orange is what can be pressed (vc5 pass, 2026-10-16).
+    backgroundColor: theme.orange,
     alignItems: 'center',
     justifyContent: 'center',
   },
   startLabel: {
-    color: '#FFFFFF',
+    color: theme.onHighlight,
     fontSize: 15.5,
     fontWeight: '800',
     // Uppercased here rather than in the string, so the translation stays

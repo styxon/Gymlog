@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
+import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { useHardwareBack } from '../hooks/useHardwareBack';
 import { t } from '../lib/i18n';
 import { darkTheme, Theme, useTheme, useThemedStyles } from '../theming';
@@ -261,9 +262,8 @@ export function StartPathScreen({
       </ScrollView>
 
       <View style={styles.footer}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.continue')}
+        <PrimaryCTAButton
+          title={t(language, 'common.continue')}
           onPress={() => {
             if (selected === 'build') {
               onGuidedOnboarding();
@@ -283,10 +283,8 @@ export function StartPathScreen({
             }
             onBrowsePrograms();
           }}
-          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-        >
-          <Text style={[styles.ctaLabel, { fontFamily }]}>{t(language, 'common.continue')}</Text>
-        </Pressable>
+          fontFamily={fontFamily}
+        />
       </View>
       <OnboardingBackButton language={language} onPress={onBack} />
     </View>
@@ -387,6 +385,7 @@ const makeStyles = (theme: Theme) => {
   cardCopy: {
     flex: 1,
     gap: 4,
+    justifyContent: 'center',
   },
   cardTitleRow: {
     flexDirection: 'row',
@@ -461,28 +460,6 @@ const makeStyles = (theme: Theme) => {
   },
   footer: {
     paddingTop: 8,
-  },
-  cta: {
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: C.purple,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: C.purple,
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 10,
-  },
-  ctaPressed: {
-    opacity: 0.92,
-    transform: [{ scale: 0.98 }],
-  },
-  ctaLabel: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '800',
-    letterSpacing: 0.17,
   },
   backLink: {
     alignSelf: 'center',
