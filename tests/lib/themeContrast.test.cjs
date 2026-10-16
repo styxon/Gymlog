@@ -295,13 +295,7 @@ module.exports = [
       // And the shared buttons the audit named, by name.
       assert.match(read('src', 'components', 'ConfirmDialog.tsx'), /primaryButton: \{[^}]*backgroundColor: theme\.purpleFill,/);
       assert.match(read('src', 'components', 'CutButton.tsx'), /variant === 'primary'\s*\?\s*theme\.purpleFill/);
-      // The onboarding Continue is pressable, so orange with the onHighlight
-      // label (vc5, 2026-10-16) — and that pair must read in both themes.
-      const cta = read('src', 'components', 'PrimaryCTAButton.tsx');
-      assert.match(cta, /button: \{[^}]*backgroundColor: theme\.orange,/);
-      assert.match(cta, /label: \{[^}]*color: theme\.onHighlight,/);
-      atLeast(contrastRatio(HG.onHighlight, HG.orange), WCAG_AA_TEXT, 'light onHighlight on orange');
-      atLeast(contrastRatio(HG_DARK.onHighlight, HG_DARK.orange), WCAG_AA_TEXT, 'dark onHighlight on orange');
+      assert.match(read('src', 'components', 'PrimaryCTAButton.tsx'), /button: \{[^}]*backgroundColor: theme\.purpleFill,/);
       const freestyle = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
       // Its add sheet is the shared AddExerciseSheet now (#bugs 2026-10-10),
       // whose chips and commit bar are checked with that component.

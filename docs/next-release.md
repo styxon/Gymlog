@@ -22,8 +22,10 @@ update to carry, not for each fix.
 
 ## Merged
 
-- #382 Onboarding: the Continue buttons are orange, and a disabled one
-  says on a line under it what it still waits for.
+- #382 Onboarding: a disabled Continue button says on a line under it what
+  it still waits for.
+- #TBD Onboarding: the Continue buttons are violet again, and the chosen
+  start-path card is a soft violet tint instead of solid violet.
 - #382 Start path: shorter, centred lines, and the recommended path is
   marked "Recommended".
 - #382 About you: gender, age and weight open as bottom sheets; gender
