@@ -10,6 +10,7 @@ import { PRO_TRIAL_DAYS, PRO_TRIAL_ENABLED } from '../lib/proEntitlement';
 import {
   PRO_TIER_ORDER,
   PRO_TIERS,
+  cardFadeVisible,
   ProPlanId,
   ProTier,
   ProTierKey,
@@ -248,6 +249,17 @@ export function PremiumScreen({
   const [tab, setTab] = useState<ProTierKey>('pro');
   const [plan, setPlan] = useState<ProPlanId>(() => defaultPlanForTier('pro'));
   const purchasing = useRef(false);
+  // Scroll metrics of the benefit list, so the foot fade shows only while
+  // there is more list below the card's edge.
+  // A ref for the numbers and state for the answer: a scroll re-renders the
+  // page only when the fade appears or goes, not on every frame.
+  const listMetrics = useRef({ layout: 0, content: 0, offset: 0 });
+  const [fadeVisible, setFadeVisible] = useState(false);
+  const updateListMetrics = (patch: Partial<typeof listMetrics.current>) => {
+    const next = { ...listMetrics.current, ...patch };
+    listMetrics.current = next;
+    setFadeVisible(cardFadeVisible(next.layout, next.content, next.offset));
+  };
   const { width } = useWindowDimensions();
   // What the store charges; the dictionary's prices until it answers.
   const storePrices = useStorePlanPrices();
@@ -363,6 +375,10 @@ export function PremiumScreen({
             style={styles.cardScroll}
             contentContainerStyle={[styles.cardContent, roomy && styles.cardContentRoomy]}
             showsVerticalScrollIndicator={false}
+            scrollEventThrottle={32}
+            onLayout={(e) => updateListMetrics({ layout: e.nativeEvent.layout.height })}
+            onContentSizeChange={(_w, h) => updateListMetrics({ content: h })}
+            onScroll={(e) => updateListMetrics({ offset: e.nativeEvent.contentOffset.y })}
           >
             {tier.rows.map((row) => (
               <View key={row.key} style={styles.row}>
@@ -378,7 +394,7 @@ export function PremiumScreen({
               </View>
             ))}
           </ScrollView>
-          <CardFade width={width} />
+          {fadeVisible ? <CardFade width={width} /> : null}
         </View>
       </View>
 

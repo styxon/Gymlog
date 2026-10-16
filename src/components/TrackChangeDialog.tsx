@@ -130,7 +130,6 @@ export function TrackChangeDialog({
           >
             <Text style={styles.ctaText}>{t(language, 'themeChoice.done')}</Text>
           </Pressable>
-          <Text style={styles.foot}>{t(language, 'trackChange.foot')}</Text>
         </ScrollView>
       </View>
     </Modal>
@@ -330,13 +329,5 @@ const makeStyles = (theme: Theme) =>
       color: '#FFFFFF',
       fontSize: 16,
       fontWeight: '800',
-    },
-    foot: {
-      marginTop: 10,
-      color: theme.faint,
-      fontSize: 12,
-      lineHeight: 16,
-      fontWeight: '600',
-      textAlign: 'center',
     },
   });

@@ -8,8 +8,7 @@ import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { KitSheet } from '../components/sheetKit';
 import { queryReduceMotion } from '../utils/reduceMotion';
 import { useHardwareBack } from '../hooks/useHardwareBack';
-import { RulerPicker } from '../components/RulerPicker';
-import { TypedRulerValue } from '../components/TypedRulerValue';
+import { WeightWheel } from '../components/WeightWheel';
 import { canContinueAboutYou, firstMissingAboutYou } from '../lib/aboutYouRules';
 import { I18nKey, t } from '../lib/i18n';
 import { darkTheme, Theme, useThemedStyles } from '../theming';
@@ -109,6 +108,9 @@ const AGE_RANGES: { id: SetupAgeRange; labelKey: I18nKey }[] = [
   { id: '31_40', labelKey: 'myData.age.31to40' },
   { id: '41_plus', labelKey: 'myData.age.41plus' },
 ];
+
+/** Colour code for the gender options: soft sky and rose, readable on both grounds. */
+const GENDER_ACCENT = { male: '#5B9DF5', female: '#E86FA6' } as const;
 
 const WEIGHT_LIMITS = { min: 35, max: 220 };
 
@@ -336,6 +338,7 @@ export function AboutYouScreen({
                 key={option}
                 label={t(language, option === 'male' ? 'aboutYou.gender.male' : 'aboutYou.gender.female')}
                 selected={gender === option}
+                accent={GENDER_ACCENT[option]}
                 fontFamily={fontFamily}
                 onPress={() => pickGender(option)}
               />
@@ -346,7 +349,7 @@ export function AboutYouScreen({
               accessibilityState={{ selected: gender === 'unspecified' }}
               accessibilityLabel={t(language, 'aboutYou.gender.skip')}
               onPress={() => pickGender('unspecified')}
-              style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.skipButton, styles.skipSpaced, pressed && styles.pressed]}
             >
               <Text style={[styles.skipText, { fontFamily }]}>{t(language, 'aboutYou.gender.skip')}</Text>
             </Pressable>
@@ -369,34 +372,14 @@ export function AboutYouScreen({
 
         {openSheet === 'weight' ? (
           <View style={styles.sheetList}>
-            {/* Number and dial on one violet panel. On a pale ground the grey
-                ticks were nearly invisible (user, 2026-09-09); white marks on
-                brand violet separate by opacity. */}
-            <View style={styles.weightPanel}>
-              <View style={styles.weightValueRow}>
-                <TypedRulerValue
-                  language={language}
-                  value={weightSkipped ? null : weightKg}
-                  bounds={{ min: WEIGHT_LIMITS.min, max: WEIGHT_LIMITS.max, step: 0.1 }}
-                  decimals={1}
-                  onCommit={setWeight}
-                  label={t(language, 'weightLog.title')}
-                  textStyle={[styles.weightValue, !weightChosen && styles.weightValueEmpty, { fontFamily }]}
-                />
-                <Text style={[styles.weightUnit, { fontFamily }]}>kg</Text>
-              </View>
-              <RulerPicker
-                min={WEIGHT_LIMITS.min}
-                max={WEIGHT_LIMITS.max}
-                step={0.1}
-                majorEvery={10}
-                value={rulerKg}
-                tone="inverse"
-                accessibilityLabel={t(language, 'weightLog.title')}
-                unit="kg"
-                onChange={setWeight}
-              />
-            </View>
+            <WeightWheel
+              value={rulerKg}
+              min={WEIGHT_LIMITS.min}
+              max={WEIGHT_LIMITS.max}
+              onChange={setWeight}
+              accessibilityLabel={t(language, 'weightLog.title')}
+              fontFamily={fontFamily}
+            />
             <PrimaryCTAButton title={t(language, 'aboutYou.weight.done')} onPress={commitWeight} />
             <Pressable
               accessibilityRole="button"
@@ -421,11 +404,14 @@ type AboutYouSheet = 'gender' | 'age' | 'weight';
 function SheetOption({
   label,
   selected,
+  accent,
   fontFamily,
   onPress,
 }: {
   label: string;
   selected: boolean;
+  /** A colour code for the option: a dot, and the border once selected. */
+  accent?: string;
   fontFamily: string | undefined;
   onPress: () => void;
 }) {
@@ -436,8 +422,14 @@ function SheetOption({
       accessibilityState={{ selected }}
       accessibilityLabel={label}
       onPress={onPress}
-      style={({ pressed }) => [styles.option, selected && styles.optionSelected, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.option,
+        selected && styles.optionSelected,
+        selected && accent ? { borderColor: accent } : null,
+        pressed && styles.pressed,
+      ]}
     >
+      {accent ? <View style={[styles.optionDot, { backgroundColor: accent }]} /> : null}
       <Text style={[styles.optionText, selected && styles.optionTextSelected, { fontFamily }]}>{label}</Text>
     </Pressable>
   );
@@ -520,7 +512,9 @@ const makeStyles = (theme: Theme) => {
     },
     option: {
       minHeight: 52,
-      justifyContent: 'center',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
       paddingHorizontal: 16,
       borderRadius: 14,
       borderWidth: 1,
@@ -530,6 +524,11 @@ const makeStyles = (theme: Theme) => {
     optionSelected: {
       backgroundColor: C.purpleLight,
       borderColor: C.purple,
+    },
+    optionDot: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
     },
     optionText: {
       color: C.ink,
@@ -552,41 +551,13 @@ const makeStyles = (theme: Theme) => {
       justifyContent: 'center',
       paddingHorizontal: 18,
     },
+    skipSpaced: {
+      marginTop: 14,
+    },
     skipText: {
       color: C.muted,
       fontSize: 15,
       fontWeight: '700',
-    },
-    weightPanel: {
-      backgroundColor: C.purple,
-      borderRadius: 20,
-      paddingTop: 14,
-      paddingBottom: 8,
-      marginBottom: 6,
-      overflow: 'hidden',
-    },
-    weightValueRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-      gap: 6,
-    },
-    weightValue: {
-      color: '#FFFFFF',
-      fontSize: 40,
-      lineHeight: 46,
-      fontWeight: '800',
-      letterSpacing: -1,
-    },
-    weightUnit: {
-      color: 'rgba(255,255,255,0.72)',
-      fontSize: 16,
-      fontWeight: '800',
-      paddingBottom: 7,
-    },
-    /** The dash before the first drag, dimmer than an answered number. */
-    weightValueEmpty: {
-      color: 'rgba(255,255,255,0.55)',
     },
     footNote: {
       color: C.faint,

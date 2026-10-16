@@ -309,7 +309,7 @@ module.exports = [
       const rowBody = onboardingSource.slice(rowStart, rowEnd);
 
       assert.match(avoidBody, /stepLabel: getQuestionnaireStepLabel\('avoid', language\)/);
-      assert.match(avoidBody, /titleLines: \[t\(language, 'onb\.stage\.avoid\.title1'\), t\(language, 'onb\.stage\.avoid\.title2'\)\]/);
+      assert.match(avoidBody, /titleLines: \[t\(language, 'onb\.stage\.avoid\.title1'\)\]/);
       assert.match(avoidBody, /AVOID_AREA_OPTIONS\.map/);
       assert.match(avoidBody, /t\(language, 'onb\.avoid\.addOther'\)/);
       // "Ei huomautettavaa" is gone. It cleared an already-empty list and
@@ -729,8 +729,8 @@ module.exports = [
       assert.match(onboardingSource, /function stepCycle\(deltaOn: number, deltaOff: number\)/);
       assert.doesNotMatch(onboardingSource, /stepCycle\(cycleOnDays/);
       assert.doesNotMatch(onboardingSource, /setCycle\(cycleOnDays/);
-      // And the sentence that was the point of the change.
-      for (const key of ['onb.days.cycleFrequency', 'onb.days.cycleOnLabel', 'onb.days.cycleOffLabel']) {
+      // Both dial labels exist in both languages.
+      for (const key of ['onb.days.cycleOnLabel', 'onb.days.cycleOffLabel']) {
         const occurrences = i18nSource.split(`'${key}':`).length - 1;
         assert.equal(occurrences, 2, `${key} is missing one of its two languages`);
       }

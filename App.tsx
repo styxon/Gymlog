@@ -2049,6 +2049,7 @@ function VinhaApp() {
       setHandoffLegalDocument,
       handoffLegalDocument,
       LEGAL_OVER_HANDOFF,
+      requestPinHomeWidget,
     });
   } else if (route.tab === 'profile' && route.screen === 'setup') {
     content = renderSetupEditor({

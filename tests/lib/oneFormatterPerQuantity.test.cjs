@@ -294,8 +294,6 @@ module.exports = [
       });
       assert.equal(format.formatDecimalTenths(4.666), '4.7');
 
-      const onboarding = strip(read('src', 'screens', 'OnboardingScreen.tsx'));
-      assert.match(onboarding, /return formatDecimalTenths\(value\);/);
       const chat = strip(read('src', 'screens', 'AICoachChatScreen.tsx'));
       assert.doesNotMatch(chat, /String\(intent\.value\)\.replace/, 'the chat swapped its own decimal mark');
       for (const file of [

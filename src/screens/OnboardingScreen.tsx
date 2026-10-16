@@ -29,7 +29,7 @@ import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { KitSheet } from '../components/sheetKit';
 import { canContinueLocation, firstMissingLocation } from '../lib/locationStepRules';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
-import { convertWeightToKg, formatDecimalTenths, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
+import { convertWeightToKg, formatPercent, formatWeightInputValue, parseNumberInput } from '../lib/format';
 import { OnboardingBackButton } from '../components/OnboardingBackButton';
 import { equipmentSetupForChips } from '../lib/equipmentCardSetup';
 import { equipmentItemLabel, I18nKey, t } from '../lib/i18n';
@@ -62,7 +62,7 @@ import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { requestAiCoachAdvice } from '../lib/aiCoachClient';
 import { AI_COACH_MAX_PROMPT_CHARS } from '../lib/aiCoachBudget';
 import { trackEvent } from '../features/analytics/analyticsClient';
-import { cycleSchedule, cycleSessionsPerWeek, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
+import { cycleSchedule, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
 import { colors, radii, spacing } from '../theme';
 import { haptics } from '../utils/haptics';
 import {
@@ -478,16 +478,6 @@ function CycleDial({
       </View>
     </View>
   );
-}
-
-/**
- * One decimal, with the language's own mark. "4.7" in Finnish reads as a bug.
- *
- * Tenths, not `removeTrailingZeros`' hundredths — those are for the weight
- * dial's 1.25 kg step, and 4.67 sessions a week does not need that precision.
- */
-function formatSessionsPerWeek(value: number): string {
-  return formatDecimalTenths(value);
 }
 
 const CYCLE_ON_LIMITS = { min: 1, max: 6 };
@@ -2146,9 +2136,9 @@ export function OnboardingScreen({
             })}
           </View>
           <Text style={styles.levelYearsUnit}>{t(language, 'onb.level.unit')}</Text>
-          <Text style={styles.levelSliderHint}>
-            {t(language, profileLevelSelected ? 'onb.level.hintChosen' : 'onb.level.hintPick')}
-          </Text>
+          {profileLevelSelected ? null : (
+            <Text style={styles.levelSliderHint}>{t(language, 'onb.level.hintPick')}</Text>
+          )}
         </View>
       ),
     });
@@ -2281,7 +2271,7 @@ export function OnboardingScreen({
       children: (
         <View style={styles.trainingProfileContent}>
           <View style={styles.daysChipRow}>
-            {TRAINING_DAY_COUNT_OPTIONS.map((option) => {
+            {TRAINING_DAY_COUNT_OPTIONS.map((option, index) => {
               // Before a choice, the recommendation is what the rest of the
               // screen is showing, so it is what reads as selected. With a
               // cycle chosen the count is derived, and a lit chip next to a
@@ -2309,9 +2299,26 @@ export function OnboardingScreen({
                     <Text style={[styles.daysChipText, active && styles.daysChipTextActive]}>{option}</Text>
                   </Pressable>
                   {recommended ? (
-                    <Text numberOfLines={1} style={styles.daysChipCaption}>
-                      {t(language, 'onb.days.recommended')}
-                    </Text>
+                    // A fifth of a 320dp row is narrower than "Recommended"
+                    // at a large font, and it was cut (user 2026-10-16). The
+                    // slot holds the line's height; the caption is wider than
+                    // its column and hangs inward from the row's ends, where
+                    // there is no neighbour to run into.
+                    <View style={styles.daysChipCaptionSlot}>
+                      <Text
+                        numberOfLines={1}
+                        style={[
+                          styles.daysChipCaption,
+                          index === 0
+                            ? styles.daysChipCaptionStart
+                            : index === TRAINING_DAY_COUNT_OPTIONS.length - 1
+                              ? styles.daysChipCaptionEnd
+                              : styles.daysChipCaptionCentre,
+                        ]}
+                      >
+                        {t(language, 'onb.days.recommended')}
+                      </Text>
+                    </View>
                   ) : null}
                 </View>
               );
@@ -2391,11 +2398,11 @@ export function OnboardingScreen({
             })}
           </View>
 
-          <Text style={styles.daysSummaryLine}>
-            {cycleActive && cyclePattern
-              ? t(language, 'onb.days.cycleSummary', { len: cyclePattern.length })
-              : t(language, 'onb.days.summary', { days: selectedDays.length, rest: restCount })}
-          </Text>
+          {cycleActive ? null : (
+            <Text style={styles.daysSummaryLine}>
+              {t(language, 'onb.days.summary', { days: selectedDays.length, rest: restCount })}
+            </Text>
+          )}
           {/* Only the weekday rhythm has a recommended count to miss. */}
           {!cycleActive && profileFrequencySelected && daysPerWeek !== recommendedDays ? (
             <Text style={styles.daysRecommendHint}>
@@ -2440,16 +2447,6 @@ export function OnboardingScreen({
                   styles={styles}
                 />
               </View>
-              {/* The arithmetic, said out loud. This is the sentence the four
-                  chips never had: a rhythm is only a promise about the week
-                  once someone divides it. */}
-              <Text style={styles.daysCycleFrequency}>
-                {t(language, cycleOnDays === 1 ? 'onb.days.cycleFrequencyOne' : 'onb.days.cycleFrequency', {
-                  on: cycleOnDays,
-                  len: cycleOnDays + cycleOffDays,
-                  perWeek: formatSessionsPerWeek(cycleSessionsPerWeek(cycleOnDays, cycleOffDays)),
-                })}
-              </Text>
             </>
           ) : null}
         </View>
@@ -2578,7 +2575,9 @@ export function OnboardingScreen({
 
     return renderOnboardingShell({
       stepLabel: getQuestionnaireStepLabel('avoid', language),
-      titleLines: [t(language, 'onb.stage.avoid.title1'), t(language, 'onb.stage.avoid.title2')],
+      // One line, as on the goal step: two filled the 128 dp pane and the
+      // options sat against the title (user 2026-10-16).
+      titleLines: [t(language, 'onb.stage.avoid.title1')],
       subtitle: t(language, 'onb.stage.avoid.sub'),
       topPaneStyle: styles.locationEquipmentTopPane,
       topCopyStyle: styles.locationEquipmentTopCopy,
@@ -2717,10 +2716,7 @@ export function OnboardingScreen({
               }))
         }
         weekNote={
-          [
-            cyclePattern ? t(language, 'onb.days.cycleSummary', { len: cyclePattern.length }) : null,
-            cautionAdaptationLine,
-          ].filter(Boolean).join(' ') || undefined
+          cautionAdaptationLine || undefined
         }
         weekLabel={t(language, cyclePattern ? 'onb.days.cycleWeek' : 'onb.planReady.yourWeek')}
         ctaLabel={t(language, 'onb.cta.startTraining')}
@@ -3613,11 +3609,31 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     borderColor: '#C9B6FF',
     backgroundColor: C.primarySoft,
   },
+  daysChipCaptionSlot: {
+    alignSelf: 'stretch',
+    height: 12,
+  },
   daysChipCaption: {
+    position: 'absolute',
+    top: 0,
+    width: 160,
     color: C.primary,
     fontSize: 9.5,
     lineHeight: 12,
     fontWeight: '800',
+  },
+  daysChipCaptionStart: {
+    left: 0,
+    textAlign: 'left',
+  },
+  daysChipCaptionEnd: {
+    right: 0,
+    textAlign: 'right',
+  },
+  daysChipCaptionCentre: {
+    left: '50%',
+    marginLeft: -80,
+    textAlign: 'center',
   },
   daysWeekLabel: {
     color: C.text,
@@ -3725,14 +3741,6 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     lineHeight: 28,
     fontWeight: '800',
   },
-  daysCycleFrequency: {
-    color: C.textSoft,
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-    marginTop: 10,
-  },
   daysRecommendHint: {
     color: C.primary,
     fontSize: 12,
@@ -3743,6 +3751,8 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
   },
   avoidList: {
     gap: 8,
+    // The same title-to-first-row breath as locationCardList.
+    paddingTop: 6,
   },
   avoidAdvisoryBox: {
     flexDirection: 'row',

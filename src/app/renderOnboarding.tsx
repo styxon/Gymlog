@@ -15,6 +15,7 @@ import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { OnboardingReadyCatalogScreen } from '../screens/OnboardingReadyCatalogScreen';
 import { OnboardingScreen } from '../screens/OnboardingScreen';
 import { SetupHandoffChoices, SetupHandoffScreen } from '../screens/SetupHandoffScreen';
+import { pinWidgetAndWaitForDialog } from './pinWidgetAndWait';
 import { StartPathScreen } from '../screens/StartPathScreen';
 import { WelcomeScreen } from '../screens/WelcomeScreen';
 import type { PreferencesPatch } from '../state/AppProvider';
@@ -223,6 +224,8 @@ export interface SetupHandoffDeps {
   setHandoffLegalDocument: React.Dispatch<React.SetStateAction<LegalDocumentId | null>>;
   handoffLegalDocument: LegalDocumentId | null;
   LEGAL_OVER_HANDOFF: React.ComponentProps<typeof View>['style'];
+  /** From ./modules/home-widget, passed in as setupHandoffDone takes it. */
+  requestPinHomeWidget: () => Promise<boolean>;
 }
 
 export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
@@ -233,6 +236,7 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
     setHandoffLegalDocument,
     handoffLegalDocument,
     LEGAL_OVER_HANDOFF,
+    requestPinHomeWidget,
   } = deps;
 
   let content: React.ReactNode = null;
@@ -258,6 +262,7 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
           legalAccepted: false,
         })
       }
+      onPinWidget={() => pinWidgetAndWaitForDialog(requestPinHomeWidget)}
       onOpenLegal={(document) => setHandoffLegalDocument(document)}
       legalAlreadyAccepted={
         legalAcceptanceDue(preferences.legalAcceptance, LEGAL_VERSION) === null

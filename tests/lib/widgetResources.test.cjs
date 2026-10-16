@@ -174,7 +174,13 @@ module.exports = [
         // The fix for "the picker only shows the logo".
         assert.match(info, /android:previewLayout="@layout\/[a-z0-9_]+"/);
         assert.ok(enStrings.has(provider.label), `${provider.label} is missing from strings.xml`);
-        assert.ok(enStrings.has(provider.description), `${provider.description} is missing from strings.xml`);
+        // The 4×2 has none since 2026-10-16: its line said nothing the preview does not.
+        if (provider.description) {
+          assert.ok(enStrings.has(provider.description), `${provider.description} is missing from strings.xml`);
+          assert.match(info, /android:description="@string\//);
+        } else {
+          assert.doesNotMatch(info, /android:description=/);
+        }
         assert.ok(kotlin.includes(`class ${provider.className}`), `${provider.className} has no Kotlin class`);
       }
 

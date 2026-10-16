@@ -162,7 +162,9 @@ const SIZES = {
   // the card's edge while three short figures kept a wide column to themselves.
   // The sides get their own, wider padding. 14sp is sized so the longest figure
   // the card prints ("12 h 30 min") still fits the narrower column on a 4×2 of
-  // ~270dp without its end-ellipsis.
+  // ~270dp without its end-ellipsis — at the default font. A larger font or a
+  // narrower launcher cell still cut it ("4 h 20 …", 2026-10-16), so the figure
+  // shrinks to fit (Android 8+) in a fixed-height row instead of ellipsizing.
   stats: {
     pad: 11,
     padHorizontal: 16,
@@ -178,6 +180,8 @@ const SIZES = {
     figureShare: 7,
     figureGap: 10,
     statValue: 14,
+    statValueMin: 9,
+    statValueHeight: 20,
     statLabel: 8.5,
     statGap: 7,
   },
@@ -207,8 +211,7 @@ function providerInfo({ layout, preview, description, minWidth, minHeight, cells
     android:initialLayout="@layout/${layout}"
     android:previewLayout="@layout/${preview}"
     android:previewImage="@mipmap/ic_launcher"
-    android:description="@string/${description}"
-    android:minWidth="${minWidth}dp"
+${description ? `    android:description="@string/${description}"\n` : ''}    android:minWidth="${minWidth}dp"
     android:minHeight="${minHeight}dp"
     android:targetCellWidth="${cells[0]}"
     android:targetCellHeight="${cells[1]}"
@@ -227,12 +230,10 @@ const PROVIDERS = [
     className: 'HomeWidgetProvider',
     infoFile: 'home_widget_info',
     label: 'widget_stats_name',
-    description: 'widget_stats_description',
     defaultLayout: 'home_widget_stats',
     info: {
       layout: 'home_widget_stats',
       preview: 'home_widget_stats_preview',
-      description: 'widget_stats_description',
       minWidth: 250,
       minHeight: 110,
       cells: [4, 2],
@@ -719,9 +720,12 @@ function statBlock(size, theme, index, { indent, preview = null }) {
   return `${indent}<TextView
 ${indent}    android:id="@+id/widget_stat_value_${index}"
 ${indent}    android:layout_width="match_parent"
-${indent}    android:layout_height="wrap_content"${index > 0 ? `\n${indent}    android:layout_marginTop="${size.statGap}dp"` : ''}
+${indent}    android:layout_height="${size.statValueHeight}dp"${index > 0 ? `\n${indent}    android:layout_marginTop="${size.statGap}dp"` : ''}
 ${indent}    android:maxLines="1"
-${indent}    android:ellipsize="end"
+${indent}    android:autoSizeTextType="uniform"
+${indent}    android:autoSizeMinTextSize="${size.statValueMin}sp"
+${indent}    android:autoSizeMaxTextSize="${size.statValue}sp"
+${indent}    android:autoSizeStepGranularity="0.5sp"
 ${indent}    android:textSize="${size.statValue}sp"
 ${indent}    android:textStyle="bold"
 ${indent}    android:textColor="${palette.ink}"
@@ -1015,7 +1019,6 @@ const STRINGS = {
     widget_calendar_name: 'Vinha · Month',
     widget_calendar_description: 'Your training month, one square.',
     widget_stats_name: 'Vinha · Month & figures',
-    widget_stats_description: 'The month, with what you have put into it.',
     // The ids keep the word 'streak': the receiver behind them is pinned to
     // home screens by class name, and what it counts changed, not what it is.
     widget_streak_name: 'Vinha · Workouts',
@@ -1044,7 +1047,6 @@ const STRINGS = {
     widget_calendar_name: 'Vinha · Kuukausi',
     widget_calendar_description: 'Treenikuukausi yhdessä ruudussa.',
     widget_stats_name: 'Vinha · Kuukausi ja luvut',
-    widget_stats_description: 'Kuukausi ja se, mitä olet siihen laittanut.',
     widget_streak_name: 'Vinha · Treenit',
     widget_streak_description: 'Kaikki kirjaamasi treenit.',
     widget_routine_name: 'Vinha · Tänään',

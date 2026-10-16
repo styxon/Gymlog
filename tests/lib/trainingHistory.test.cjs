@@ -596,8 +596,8 @@ module.exports = [
     // Duplicate sweep 13 (D5-9, owner decision 2026-10-12). Home's block week
     // stays session-counted (one pass through the programme's days), and the
     // calendar answer the coach gets — planned sessions per calendar week on a
-    // cycle — has one formula: trainingSchedule.cycleSessionsPerWeek, which
-    // onboarding reads too. describeSchedule carried its own copy. The 4.7 of
+    // cycle — has one formula: trainingSchedule.cycleSessionsPerWeek.
+    // describeSchedule carried its own copy. The 4.7 of
     // a 2-on-1-off cycle is pinned above; this pins where it comes from.
     name: 'the coach\u2019s planned-per-week for a cycle is trainingSchedule\u2019s formula, and the block week says it is session-counted',
     run() {

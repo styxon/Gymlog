@@ -335,3 +335,19 @@ export function defaultPlanForTier(key: ProTierKey): ProPlanId {
   const yearly = tier.plans.find((plan) => plan.id === 'yearly');
   return yearly ? yearly.id : tier.plans[0].id;
 }
+
+/**
+ * Whether the fade at the foot of the benefit card should be drawn.
+ *
+ * Only when the list overflows its card and there is more below the visible
+ * edge. Drawn unconditionally, a short list (Lifetime, four rows) got a dark
+ * band across the lower card with empty space under the last row — the fade is
+ * a scroll cue, not decoration. A tolerance of a few dp absorbs rounding.
+ */
+export function cardFadeVisible(layoutHeight: number, contentHeight: number, offsetY: number): boolean {
+  if (!(layoutHeight > 0) || !(contentHeight > 0)) {
+    return false;
+  }
+  const remaining = contentHeight - (offsetY + layoutHeight);
+  return remaining > 4;
+}

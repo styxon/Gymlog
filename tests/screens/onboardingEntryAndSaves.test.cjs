@@ -149,10 +149,17 @@ module.exports = [
       // widget row that is on by default.
       const handoff = strip(read('src', 'screens', 'SetupHandoffScreen.tsx'));
       const back = between(handoff, 'useHardwareBack(', '});');
-      assert.match(back, /if \(page === 'offers' && pageIndex >= pages\.length - 1\) \{\s*finish\(false\);/);
+      assert.match(back, /if \(page === 'offers'\) \{\s*void leaveOffers\(false\);/);
       assert.match(back, /advance\(\);/);
+      // Leaving the widget page: out with the answer on the last page, the
+      // pin dialog only for a yes, and the next page only once it has closed
+      // (user 2026-10-16: the tracking sheet waits for the widget dialog).
+      const leave = between(handoff, 'const leaveOffers = async (widget: boolean) => {', '\n  };');
+      assert.match(leave, /if \(pageIndex >= pages\.length - 1\) \{\s*finish\(widget\);\s*return;/);
+      assert.match(leave, /if \(plan\.offerWidget && widget\) \{[\s\S]*await onPinWidget\(\);[\s\S]*widgetRequested\.current = true;\s*\}\s*setPageIndex/);
+      assert.match(handoff, /onPress=\{\(\) => void leaveOffers\(addWidget\)\}/);
       assert.match(handoff, /const finish = \(widget = addWidget, signIn = signInForBackup\) =>/);
-      assert.match(handoff, /addWidget: plan\.offerWidget && widget,/);
+      assert.match(handoff, /addWidget: plan\.offerWidget && widget && !widgetRequested\.current,/);
       // A press handler passes its event: `onPress={finish}` would have read
       // it as the widget answer, and `onPress={advance}` as a yes to sign-in.
       assert.doesNotMatch(handoff, /onPress=\{finish\}/);
