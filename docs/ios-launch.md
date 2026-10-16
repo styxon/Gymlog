@@ -80,9 +80,12 @@ App Store build:
 - the **Paid Apps agreement** (Schedule 2) signed in App Store Connect →
   Business, with tax and bank details, and the Small Business Program applied
   for (15 % commission);
-- the subscription and lifetime products in App Store Connect, with the same
-  product ids as on Play, attached to RevenueCat's `pro` entitlement and
-  `default` offering;
+- the subscription and lifetime products in App Store Connect, attached to
+  RevenueCat's `pro` entitlement and `default` offering. Their ids must name
+  the period — `vinha_pro_monthly`, `vinha_pro_yearly`, `vinha_pro_lifetime`
+  — because the App Store has no base plans and `termForStoreProduct`
+  (`src/lib/storePurchase.ts`) reads the term from the id. Play's single
+  `vinha_pro` id would leave the bought plan unknown;
 - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the EAS env of the iOS profiles. Without
   it the Pro page has nothing to sell on iPhone.
 

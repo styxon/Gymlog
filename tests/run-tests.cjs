@@ -620,6 +620,7 @@ const suites = [
   ...require('./lib/storageSize.test.cjs'),
   ...require('./lib/releaseSigning.test.cjs'),
   ...require('./lib/allowBackup.test.cjs'),
+  ...require('./lib/iosPrivacyManifest.test.cjs'),
   ...require('./lib/dataExtractionRules.test.cjs'),
   ...require('./lib/androidPermissions.test.cjs'),
   ...require('./storage/preferenceBounds.test.cjs'),
