@@ -49,6 +49,18 @@ lists what iOS needs beyond it.
 2. **Google Cloud Console** → same project as the Android client → create an
    **iOS** OAuth client for bundle id `app.vinha`. Its id goes to
    `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (EAS env for the iOS profiles).
+   Done 2026-10-16: in the EAS env (production + preview) and the root
+   `.env.local`.
+   - `expo.slug` is `gymlog` because the EAS project (`@lantu66/gymlog`) is
+     named so; every `eas` command refuses to run while they differ. Nothing
+     in the app reads the slug.
+   - The EAS env holds only that variable so far. An iOS build reads its
+     `EXPO_PUBLIC_*` values from there, not from `.env.local`, so copy the
+     others over before the first build (each one switches its feature off
+     silently when missing): `EXPO_PUBLIC_AI_COACH_API_URL`,
+     `EXPO_PUBLIC_AI_COACH_APP_KEY`, `EXPO_PUBLIC_BACKUP_API_URL`,
+     `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_ANALYTICS_URL`, and
+     `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (below).
 3. **Sign in with Apple** is built (docs/account-backup.md). Enable the
    "Sign in with Apple" capability on the App ID if EAS has not already.
 4. Build: `npx eas build -p ios --profile production`, then
@@ -71,10 +83,35 @@ invite link, and reviews. On iPhone the rating moment calls Apple's own prompt
 (`expo-store-review`) with no sheet in front of it — App Review 5.6.1 forbids
 custom review prompts — and "Rate Vinha" opens the write-review page.
 
-## Not in iOS 1.0
+## Billing on iOS
 
-- **Real billing, on both platforms.** Pro is still the simulated purchase of
-  the demo build (`extra.demoBuild`); neither store charges yet.
+Android charges through Google Play via RevenueCat since versionCode 4. iOS
+uses the same code path (`react-native-purchases`) and needs, before the first
+App Store build:
+
+- the **Paid Apps agreement** (Schedule 2) signed in App Store Connect →
+  Business, with tax and bank details, and the Small Business Program applied
+  for (15 % commission);
+- the subscription and lifetime products in App Store Connect, attached to
+  RevenueCat's `pro` entitlement and `default` offering. Their ids must name
+  the period — `vinha_pro_monthly`, `vinha_pro_yearly`, `vinha_pro_lifetime`
+  — because the App Store has no base plans and `termForStoreProduct`
+  (`src/lib/storePurchase.ts`) reads the term from the id. Play's single
+  `vinha_pro` id would leave the bought plan unknown;
+- `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the EAS env of the iOS profiles. Without
+  it the Pro page has nothing to sell on iPhone.
+
+## Privacy manifest
+
+`app.json` → `ios.privacyManifests` declares the required-reason APIs the
+bundled libraries use (UserDefaults, file timestamps, boot time, disk space)
+and `NSPrivacyTracking: false`. The reasons are the union of the libraries' own
+`PrivacyInfo.xcprivacy` files (React Native, async-storage, expo-file-system,
+expo-constants, expo-notifications, expo-application); re-check it when a
+native dependency is added, since App Store Connect rejects an upload whose
+binary calls such an API without a reason.
+
+## Not in iOS 1.0
 
 - **Apple's token revocation on account deletion.** Settings → Delete account
   deletes the cloud copy, ends the server's own sessions and signs the phone out
