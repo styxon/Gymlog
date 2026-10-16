@@ -30,6 +30,9 @@ update to carry, not for each fix.
   can be skipped.
 - #382 Equipment step: Home opens a sheet of what you have at home and
   is chosen only with at least one item; the badges on the cards are gone.
+- #NNN Onboarding level step: the choices are years trained (0–1, 1–3,
+  3–5) instead of level names, and the moving bars around the logo are gone.
+- #NNN "Fitness" in the Vinha Fitness name is orange everywhere.
 
 ## Server
 

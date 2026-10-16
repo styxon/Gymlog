@@ -1,7 +1,6 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 
-const { LEVEL_STREAKS } = require('../../.test-dist/lib/levelStreaks.js');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
@@ -479,15 +478,16 @@ module.exports = [
       assert.match(levelBody, /titleLines: \[t\(language, 'onb\.stage\.level\.title1'\)\]/);
       assert.match(levelBody, /subtitle: t\(language, 'onb\.stage\.level\.sub'\)/);
       assert.match(i18nSource, /'onb\.stage\.level\.sub': 'How much training experience do you have\?'/);
-      // Slider with three stops, live descriptor lines, and the launch
-      // sequence's own bars sweeping the wordmark's box — denser and quicker
-      // the higher the level. They replaced flame emoji, which said
-      // "intensity" in a vocabulary the app does not otherwise speak.
+      // Slider with three stops and live descriptor lines. The stops read
+      // years trained (0–1, 1–3, 3–5) under one "years" line, not the level
+      // names, and the bars that swept the wordmark are gone (user 2026-10-16).
       assert.match(levelBody, /LEVEL_SLIDER_OPTIONS\.map/);
       assert.match(levelBody, /setLevel\(option\.level\)/);
       assert.match(levelBody, /levelThumbAnim/);
-      assert.match(levelBody, /levelFlamePop/);
-      assert.match(levelBody, /<LevelStreaks levelIndex=\{selectedLevelIndex\}/);
+      assert.doesNotMatch(onboardingSource, /levelFlamePop|LevelStreaks|LEVEL_STREAKS/);
+      assert.match(levelBody, /t\(language, option\.rangeKey\)/);
+      assert.doesNotMatch(levelBody, /t\(language, option\.labelKey\)/);
+      assert.doesNotMatch(levelBody, /selectedLevelOption\.labelKey/);
       assert.match(levelBody, /selectedLevelOption\.lineKeys\.map/);
       assert.doesNotMatch(levelBody, /GENDER_OPTIONS/);
       assert.doesNotMatch(levelBody, /TRAINING_FREQUENCY_OPTIONS/);
@@ -499,20 +499,10 @@ module.exports = [
       // No flame left anywhere: the glyph, its red and its layout table all
       // went with the field that used them.
       assert.doesNotMatch(onboardingSource, /Flame(Glyph|_RED|_LAYOUTS)|AnimatedFlame/);
-      assert.match(onboardingSource, /function LevelStreaks\(/);
-      // Three tiers, and each one denser than the last.
-      assert.equal(LEVEL_STREAKS.length, 3);
-      assert.ok(
-        LEVEL_STREAKS[0].length < LEVEL_STREAKS[1].length && LEVEL_STREAKS[1].length < LEVEL_STREAKS[2].length,
-        'each level should carry more bars than the one below it',
-      );
-      // …and quicker: the slowest bar of a tier still beats the tier below.
-      const slowest = LEVEL_STREAKS.map((tier) => Math.max(...tier.map((bar) => bar.ms)));
-      assert.ok(slowest[0] > slowest[1] && slowest[1] > slowest[2], `tempo should rise with level: ${slowest}`);
-      // Every bar starts mid-flight, so switching level never shows an empty
-      // box filling in.
-      assert.ok(LEVEL_STREAKS.every((tier) => tier.every((bar) => bar.delay < 0)));
-      assert.match(levelBody, /levelYearsRow/);
+      assert.match(levelBody, /'onb\.level\.unit'/);
+      assert.match(i18nSource, /'onb\.level\.beginner\.range': '0–1'/);
+      assert.match(i18nSource, /'onb\.level\.advanced\.range': '1–3'/);
+      assert.match(i18nSource, /'onb\.level\.pro\.range': '3–5'/);
       assert.match(i18nSource, /'onb\.level\.beginner\.years': '0–1 years'/);
 
       assert.match(daysBody, /stepLabel: getQuestionnaireStepLabel\('days', language\)/);

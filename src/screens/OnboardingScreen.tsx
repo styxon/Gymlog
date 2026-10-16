@@ -24,7 +24,6 @@ import { useHardwareBack } from '../hooks/useHardwareBack';
 import { VinhaIcon, VinhaIconName } from '../components/VinhaIcon';
 import { VinhaWordmark } from '../components/VinhaWordmark';
 import { ProgramPickScreen } from './ProgramPickScreen';
-import { LEVEL_STREAKS } from '../lib/levelStreaks';
 import { OnboardingOptionIcon, OnboardingOptionIconName } from '../components/OnboardingOptionIcon';
 import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { KitSheet } from '../components/sheetKit';
@@ -89,7 +88,6 @@ import {
 } from '../types/models';
 import { AICoachAdvice } from '../types/aiCoach';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { queryReduceMotion } from '../utils/reduceMotion';
 
 interface OnboardingScreenProps {
   initialUnitPreference: UnitPreference;
@@ -383,35 +381,37 @@ const GOAL_OPTIONS: Array<{
   },
 ];
 
-// Training-level slider (step 04): Beginner / Advanced / Pro.
+// Training-level slider (step 04). The segments name years trained, not the
+// level (user, 2026-10-16); the level names stay inside the app.
 const LEVEL_SLIDER_OPTIONS: Array<{
   level: SetupLevel;
   labelKey: I18nKey;
   yearsKey: I18nKey;
+  rangeKey: I18nKey;
   lineKeys: [I18nKey, I18nKey];
 }> = [
   {
     level: 'beginner',
     labelKey: 'onb.level.beginner.label',
     yearsKey: 'onb.level.beginner.years',
+    rangeKey: 'onb.level.beginner.range',
     lineKeys: ['onb.level.beginner.line1', 'onb.level.beginner.line2'],
   },
   {
     level: 'advanced',
     labelKey: 'onb.level.advanced.label',
     yearsKey: 'onb.level.advanced.years',
+    rangeKey: 'onb.level.advanced.range',
     lineKeys: ['onb.level.advanced.line1', 'onb.level.advanced.line2'],
   },
   {
     level: 'pro',
     labelKey: 'onb.level.pro.label',
     yearsKey: 'onb.level.pro.years',
+    rangeKey: 'onb.level.pro.range',
     lineKeys: ['onb.level.pro.line1', 'onb.level.pro.line2'],
   },
 ];
-
-// Flame positions inside the 280x140 logo wrap - count and size grow with the
-// level (few small sparks -> whole-logo blaze).
 
 // Training-days step (04b): number chips on top, a tappable week row below.
 const TRAINING_DAY_COUNT_OPTIONS: SetupDaysPerWeek[] = [2, 3, 4, 5, 6];
@@ -893,125 +893,6 @@ function getAgeRangeFromAge(age: number): SetupAgeRange {
 
 
 
-/** The level step's motion box — the wordmark's own frame. */
-const LEVEL_FIELD_WIDTH = 280;
-
-/**
- * The level step's motion field: the launch sequence's own bars, sweeping
- * across the wordmark's box.
- *
- * This replaced a ring of flame emoji, which said "intensity" in a vocabulary
- * the app does not otherwise speak. The bars are the brand's, and unlike a
- * flame they can carry a degree — `LEVEL_STREAKS` gets denser and quicker per
- * tier, so the level reads twice: in how many there are, and in how fast they
- * cross.
- *
- * Bounded to its parent (`overflow: hidden` on the wrap) so bars appear from
- * the left edge of the box rather than the screen. Reduced motion drops the
- * layer: a row of parked bars is stranger than none.
- */
-function LevelStreaks({ levelIndex }: { levelIndex: number }) {
-  const { C, styles } = useOnboardingPalette();
-  const [reduceMotion, setReduceMotion] = useState<boolean | null>(null);
-  const bars = LEVEL_STREAKS[levelIndex] ?? LEVEL_STREAKS[0];
-  // One value per bar in the WIDEST tier, so switching level never changes the
-  // hook count — the same reason the animated values live in a ref.
-  const values = useRef(LEVEL_STREAKS.map((tier) => tier.map(() => new Animated.Value(0)))).current;
-  const tierValues = values[levelIndex] ?? values[0];
-
-  const sweeps = useMemo(
-    () =>
-      tierValues.map((value) =>
-        value.interpolate({ inputRange: [0, 1], outputRange: [-140, LEVEL_FIELD_WIDTH + 40] }),
-      ),
-    [tierValues],
-  );
-  const fades = useMemo(
-    () =>
-      tierValues.map((value, index) =>
-        value.interpolate({
-          inputRange: [0, 0.14, 0.8, 1],
-          outputRange: [0, bars[index]?.opacity ?? 0.2, bars[index]?.opacity ?? 0.2, 0],
-        }),
-      ),
-    [tierValues, bars],
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-    queryReduceMotion().then((enabled) => {
-      if (!cancelled) {
-        setReduceMotion(enabled);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (reduceMotion !== false) {
-      return;
-    }
-    const loops: Animated.CompositeAnimation[] = [];
-    bars.forEach((bar, index) => {
-      const value = tierValues[index];
-      if (!value) {
-        return;
-      }
-      // A negative delay is a head start: seed the value part-way through the
-      // cycle so the field is already in flight on the first frame.
-      const headStart = Math.min(0.999, Math.abs(bar.delay) / bar.ms);
-      value.setValue(headStart);
-      const loop = Animated.loop(
-        Animated.timing(value, { toValue: 1, duration: bar.ms, easing: Easing.linear, useNativeDriver: true }),
-      );
-      Animated.timing(value, {
-        toValue: 1,
-        duration: bar.ms * (1 - headStart),
-        easing: Easing.linear,
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (finished) {
-          value.setValue(0);
-          loop.start();
-        }
-      });
-      loops.push(loop);
-    });
-
-    return () => {
-      loops.forEach((loop) => loop.stop());
-      tierValues.forEach((value) => value.stopAnimation());
-    };
-  }, [bars, reduceMotion, tierValues]);
-
-  if (reduceMotion !== false) {
-    return null;
-  }
-
-  return (
-    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {bars.map((bar, index) => (
-        <Animated.View
-          key={`${levelIndex}-${bar.y}`}
-          style={[
-            styles.levelStreak,
-            {
-              top: bar.y,
-              width: bar.width,
-              height: bar.height,
-              opacity: fades[index],
-              backgroundColor: bar.accent ? C.primary : C.text,
-              transform: [{ translateX: sweeps[index] }],
-            },
-          ]}
-        />
-      ))}
-    </View>
-  );
-}
-
 function StepDots({ index, light = false }: { index: number; light?: boolean }) {
   const { styles } = useOnboardingPalette();
   return (
@@ -1234,7 +1115,6 @@ export function OnboardingScreen({
       }),
     [levelThumbAnim, levelThumbSegmentWidth],
   );
-  const levelFlamePop = useRef(new Animated.Value(1)).current;
   const [secondaryOutcomes] = useState<SetupSecondaryOutcome[]>(
     setupSeed.secondaryOutcomes,
   );
@@ -2193,17 +2073,14 @@ export function OnboardingScreen({
       children: (
         <View style={styles.levelStageContent}>
           <View style={styles.levelLogoWrap}>
-            <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { transform: [{ scale: levelFlamePop }] }]}>
-              <LevelStreaks levelIndex={selectedLevelIndex} />
-            </Animated.View>
             {/* This was the GAINER wordmark, spelled out as G + AI + NER —
                 three Text nodes, so the string "GAINER" never appeared in the
                 source and every search for it during the rename came back
                 clean. It survived on step 3 of 6 of first-run onboarding. */}
             <View style={styles.levelLogoRow}>
-              {/* Onboarding is light-only and paints from its own constants,
-                  so the mark takes them rather than the theme's near-matches. */}
-              <VinhaWordmark size={44} fitness color={C.text} accentColor={C.primary} />
+              {/* Onboarding is light-only and paints from its own constants;
+                  "Fitness" keeps the mark's own orange, as everywhere. */}
+              <VinhaWordmark size={44} fitness color={C.text} />
             </View>
           </View>
 
@@ -2213,7 +2090,7 @@ export function OnboardingScreen({
               choice the block asks for one; after it, it explains. */}
           <View style={styles.levelCopyBlock}>
             <Text style={styles.levelTitle}>
-              {t(language, profileLevelSelected ? selectedLevelOption.labelKey : 'onb.level.pickTitle')}
+              {t(language, profileLevelSelected ? selectedLevelOption.yearsKey : 'onb.level.pickTitle')}
             </Text>
             {profileLevelSelected
               ? selectedLevelOption.lineKeys.map((lineKey) => (
@@ -2246,7 +2123,7 @@ export function OnboardingScreen({
                 <Pressable
                   key={option.level}
                   accessibilityRole="button"
-                  accessibilityLabel={t(language, 'onb.level.a11y', { label: t(language, option.labelKey) })}
+                  accessibilityLabel={t(language, 'onb.level.a11y', { label: t(language, option.yearsKey) })}
                   accessibilityState={{ selected: active }}
                   onPress={() => {
                     void haptics.select();
@@ -2258,33 +2135,17 @@ export function OnboardingScreen({
                       easing: Easing.out(Easing.cubic),
                       useNativeDriver: true,
                     }).start();
-                    levelFlamePop.setValue(0.4);
-                    Animated.spring(levelFlamePop, {
-                      toValue: 1,
-                      friction: 4,
-                      tension: 90,
-                      useNativeDriver: true,
-                    }).start();
                   }}
                   style={[styles.levelSliderSegment, !profileLevelSelected && styles.levelSliderSegmentIdle]}
                 >
                   <Text style={[styles.levelSliderLabel, active && styles.levelSliderLabelActive]}>
-                    {t(language, option.labelKey)}
+                    {t(language, option.rangeKey)}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <View style={styles.levelYearsRow}>
-            {LEVEL_SLIDER_OPTIONS.map((option, index) => {
-              const active = profileLevelSelected && index === selectedLevelIndex;
-              return (
-                <Text key={option.level} style={[styles.levelYearsText, active && styles.levelYearsTextActive]}>
-                  {t(language, option.yearsKey)}
-                </Text>
-              );
-            })}
-          </View>
+          <Text style={styles.levelYearsUnit}>{t(language, 'onb.level.unit')}</Text>
           <Text style={styles.levelSliderHint}>
             {t(language, profileLevelSelected ? 'onb.level.hintChosen' : 'onb.level.hintPick')}
           </Text>
@@ -3620,22 +3481,14 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     paddingTop: 8,
   },
   levelLogoWrap: {
-    width: LEVEL_FIELD_WIDTH,
+    width: 280,
     height: 140,
     alignItems: 'center',
     justifyContent: 'center',
-    // The bars sweep in from outside the box; without this they cross the
-    // whole screen instead of the mark.
-    overflow: 'hidden',
   },
   levelLogoRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-  },
-  levelStreak: {
-    position: 'absolute',
-    left: 0,
-    borderRadius: 999,
   },
   levelCopyBlock: {
     alignItems: 'center',
@@ -3712,23 +3565,13 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 12,
   },
-  levelYearsRow: {
-    flexDirection: 'row',
-    alignSelf: 'stretch',
-    paddingHorizontal: 4,
-    marginTop: 7,
-  },
-  levelYearsText: {
-    flex: 1,
+  levelYearsUnit: {
     color: C.textMuted,
-    fontSize: 11.5,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  levelYearsTextActive: {
-    color: C.primary,
-    fontWeight: '800',
+    marginTop: 7,
   },
   daysChipRow: {
     flexDirection: 'row',
