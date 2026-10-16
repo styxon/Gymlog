@@ -58,6 +58,15 @@ To run a single suite, require it directly:
 node -e "const s = require('./tests/lib/guidedPlayer.test.cjs'); s.forEach(t => t.run()); console.log('ok')"
 ```
 
+### Next release
+
+Store builds are batched: a fix merges to `main` and waits for the next larger
+update, not its own versionCode. So that nothing is forgotten when it ships,
+every PR that changes what a user sees or how the app behaves adds one line to
+[docs/next-release.md](docs/next-release.md) in the same PR — see that file
+for the format and what to do when the build ships. A user-visible PR without
+its line is worth flagging in review.
+
 ### Code review
 
 Run `/code-review` before opening a PR, in the same session that wrote the
