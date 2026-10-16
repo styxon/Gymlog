@@ -22,7 +22,14 @@ update to carry, not for each fix.
 
 ## Merged
 
-_Nothing yet._
+- (this PR) Onboarding: the Continue buttons are orange, and a disabled one
+  says on a line under it what it still waits for.
+- (this PR) Start path: shorter, centred lines, and the recommended path is
+  marked "Recommended".
+- (this PR) About you: gender, age and weight open as bottom sheets; gender
+  can be skipped.
+- (this PR) Equipment step: Home opens a sheet of what you have at home and
+  is chosen only with at least one item; the badges on the cards are gone.
 
 ## Server
 

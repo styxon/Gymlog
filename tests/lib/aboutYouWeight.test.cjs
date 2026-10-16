@@ -13,6 +13,13 @@ module.exports = [
       assert.equal(canContinueAboutYou({ gender: 'male', ageRange: '19_25' }), true);
       assert.equal(canContinueAboutYou({ gender: null, ageRange: '19_25' }), false);
       assert.equal(canContinueAboutYou({ gender: 'female', ageRange: null }), false);
+      // Skip in the gender sheet is an answer.
+      assert.equal(canContinueAboutYou({ gender: 'unspecified', ageRange: '41_plus' }), true);
+      const { firstMissingAboutYou } = require('../../.test-dist/lib/aboutYouRules.js');
+      assert.equal(firstMissingAboutYou({ gender: null, ageRange: null }), 'gender');
+      assert.equal(firstMissingAboutYou({ gender: 'unspecified', ageRange: null }), 'age');
+      assert.equal(firstMissingAboutYou({ gender: null, ageRange: '19_25' }), 'gender');
+      assert.equal(firstMissingAboutYou({ gender: 'male', ageRange: '19_25' }), null);
     },
   },
   {
@@ -51,10 +58,11 @@ module.exports = [
       const assert = require('node:assert/strict');
       const i18n = read('src', 'lib', 'i18n.ts');
       assert.equal((i18n.match(/'myData\.age\.under19': '16–18'/g) || []).length, 2);
-      assert.ok(i18n.includes("'startPath.ready.body': 'Selaa valmiita ohjelmia ja valitse itsellesi sopiva.'"));
-      assert.ok(i18n.includes("'startPath.ready.body': 'Browse the ready programs and pick one that suits you.'"));
-      assert.ok(i18n.includes("'startPath.empty.body': 'Find programs later in the Programs tab, or build your own from scratch.'"));
-      assert.ok(i18n.includes('Ei välineitä. Treenaa kotona, ulkona tai missä vain.'));
+      assert.ok(i18n.includes("'startPath.build.body': 'Vain 6 vaihetta'"));
+      assert.ok(i18n.includes("'startPath.ready.body': 'Yli 50 valmista ohjelmaa'"));
+      assert.ok(i18n.includes("'startPath.ready.body': '50+ programs to pick'"));
+      assert.ok(i18n.includes("'startPath.empty.body': 'Go straight to home screen'"));
+      assert.ok(i18n.includes("'onb.location.bodyweight_only.subtitle': 'Ei tarvita välineitä'"));
     },
   },
 ];

@@ -358,17 +358,21 @@ module.exports = [
 
       assert.match(locationBody, /titleLines: \[t\(language, 'onb\.stage\.location\.title1'\), t\(language, 'onb\.stage\.location\.title2'\)\]/);
       assert.doesNotMatch(locationBody, /Where do you train\?/);
-      // The cards keep their order and the selected one expands IN PLACE into
-      // toggle chips with a live count; its header toggles it open and closed.
-      // It used to jump to the top and list the rest under "or choose another",
-      // which moved the card away from under the thumb and left no way to close
-      // it except picking a different one (user, 2026-08-19).
+      // The cards keep their order. Full gym and bodyweight are answers on the
+      // card; Home opens a bottom sheet of chips that edits a draft and only
+      // Done writes it, so the step cannot hold Home with nothing ticked
+      // (vc5, 2026-10-16). The old in-place expansion is gone.
       assert.match(locationBody, /LOCATION_SELECTION_OPTIONS\.map\(\(option\) => \{/);
       assert.match(locationBody, /const isSelected = option\.id === selectedLocationOptionId/);
-      assert.match(locationBody, /EQUIPMENT_CHIP_CATALOG\[option\.id\]/);
-      assert.match(locationBody, /t\(language, 'onb\.equip\.selectedCount', \{ count: equipmentItems\.length \}\)/);
-      assert.match(locationBody, /setEquipmentCardOpen\(\(open\) => !open\)/);
-      assert.match(locationBody, /toggleEquipmentItem\(option, item\)/);
+      assert.match(locationBody, /<KitSheet[\s\S]*visible=\{homeSheetOpen\}/);
+      assert.match(locationBody, /EQUIPMENT_CHIP_CATALOG\.home_gym/);
+      assert.match(locationBody, /toggleHomeDraftItem\(item\)/);
+      assert.match(locationBody, /onPress=\{commitHomeSheet\}/);
+      assert.match(locationBody, /onb\.equip\.done/);
+      assert.match(locationBody, /disabled=\{homeDraftItems\.length === 0\}/);
+      assert.doesNotMatch(onboardingSource, /setEquipmentCardOpen|toggleEquipmentItem/);
+      assert.match(getFunctionBody('homeCardSubtitle'), /t\(language, 'onb\.equip\.selectedCount', \{ count: equipmentItems\.length \}\)/);
+      assert.match(getFunctionBody('commitHomeSheet'), /homeDraftItems\.length === 0/);
       assert.doesNotMatch(locationBody, /onb\.equip\.orChoose/);
       assert.match(onboardingSource, /const EQUIPMENT_CHIP_CATALOG/);
       assert.match(onboardingSource, /const EQUIPMENT_DEFAULT_ITEMS/);

@@ -13,7 +13,7 @@ const welcomeSource = fs.readFileSync(
 
 module.exports = [
   {
-    name: 'PrimaryCTAButton is the flat light-theme purple CTA from the redesign',
+    name: 'PrimaryCTAButton is the flat orange CTA, dimmed when disabled, with an optional hint',
     run() {
       assert.match(componentSource, /interface PrimaryCTAButtonProps/);
       assert.match(componentSource, /title: string/);
@@ -25,24 +25,31 @@ module.exports = [
       // colours are the palette's own now (theme migration 2026-08-01) rather
       // than local copies of it, so the CTA can follow a theme change.
       assert.match(componentSource, /useThemedStyles\(makeStyles\)/);
-      // purpleFill, the violet a white label sits on, since the accessibility
-      // audit of 2026-09-21: the white "Jatka" on the dark theme's
-      // purpleBright was 2.72:1. The shadow keeps purpleBright's glow.
-      assert.match(componentSource, /backgroundColor: theme\.purpleFill/);
-      assert.match(componentSource, /shadowColor: theme\.purpleBright/);
-      assert.match(componentSource, /backgroundColor: theme\.purpleLight/);
-      assert.match(componentSource, /color: theme\.faint/);
+      // Orange since the vc5 pass (2026-10-16): orange is what can be
+      // pressed, violet is what is selected. onHighlight is the label colour
+      // made for orange in both themes.
+      assert.match(componentSource, /backgroundColor: theme\.orange/);
+      assert.match(componentSource, /shadowColor: theme\.orange/);
+      assert.match(componentSource, /color: theme\.onHighlight/);
+      assert.doesNotMatch(componentSource, /theme\.purple/);
       assert.match(componentSource, /height: 56/);
       assert.match(componentSource, /borderRadius: 18/);
-      assert.match(componentSource, /shadowOpacity: 0\.32/);
+      assert.match(componentSource, /shadowOpacity: 0\.28/);
       assert.match(componentSource, /shadowRadius: 14/);
       assert.match(componentSource, /shadowOffset: \{ width: 0, height: 14 \}/);
       assert.match(componentSource, /fontSize: 17/);
       assert.match(componentSource, /fontWeight: '800'/);
 
-      // Disabled state swaps colors instead of fading opacity.
-      assert.match(componentSource, /buttonDisabled:\s*\{[\s\S]*backgroundColor: theme.purpleLight[\s\S]*shadowOpacity: 0[\s\S]*elevation: 0/);
-      assert.match(componentSource, /labelDisabled:\s*\{[\s\S]*color: theme\.faint/);
+      // Disabled is the same orange dimmed, never a grey swap.
+      assert.match(componentSource, /buttonDisabled:\s*\{\s*opacity: 0\.4,\s*shadowOpacity: 0,\s*elevation: 0/);
+
+      // A disabled button can say what it waits for, on a line under it.
+      assert.match(componentSource, /hint\?: string \| null/);
+      assert.match(componentSource, /const withHint = disabled && Boolean\(hint\);/);
+      assert.match(componentSource, /if \(!withHint\) \{\s*return button;/);
+      // With the hint, the caller's style moves to the wrapper, not the button.
+      assert.match(componentSource, /withHint \? null : style,/);
+      assert.match(componentSource, /<View style=\{\[styles\.withHint, style\]\}>/);
 
       // No gradient remnants and no forced uppercase.
       assert.doesNotMatch(componentSource, /LinearGradient|Svg|gradientStops|toUpperCase|textTransform/);
