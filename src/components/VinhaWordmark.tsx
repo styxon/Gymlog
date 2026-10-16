@@ -13,7 +13,7 @@ import { Theme, useThemedStyles } from '../theming';
  * place the reader already knows where they are.
  *
  * Full lockup (`fitness`, variant A): "Vinha Fitness" — Vinha in ink at 800,
- * Fitness in the brand purple at 700, one word-space apart, same size. The
+ * Fitness in orange at 700, one word-space apart, same size. The
  * official name, for the splash, the welcome screen, the store, anything that
  * introduces the app for the first time. Written as one mark so the weight
  * stays on "Vinha" and the two words cannot drift apart or be set in caps.
@@ -85,12 +85,11 @@ const makeStyles = (theme: Theme) =>
     accent: {
       color: theme.purple,
     },
-    // Brand: "Fitness" a step lighter than "Vinha" — 700 against 800 — and in
-    // the accent (user 2026-08-25: orange in dark; light keeps the violet the
-    // lockup has always worn), so the name reads as one and the weight stays
-    // on Vinha.
+    // Brand: "Fitness" a step lighter than "Vinha" — 700 against 800 — so the
+    // name reads as one and the weight stays on Vinha. Orange in both themes
+    // and on every screen (user 2026-10-16; light wore the violet before).
     fitness: {
       fontWeight: '700',
-      color: theme.highlight,
+      color: theme.orange,
     },
   });
