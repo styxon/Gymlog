@@ -71,10 +71,32 @@ invite link, and reviews. On iPhone the rating moment calls Apple's own prompt
 (`expo-store-review`) with no sheet in front of it — App Review 5.6.1 forbids
 custom review prompts — and "Rate Vinha" opens the write-review page.
 
-## Not in iOS 1.0
+## Billing on iOS
 
-- **Real billing, on both platforms.** Pro is still the simulated purchase of
-  the demo build (`extra.demoBuild`); neither store charges yet.
+Android charges through Google Play via RevenueCat since versionCode 4. iOS
+uses the same code path (`react-native-purchases`) and needs, before the first
+App Store build:
+
+- the **Paid Apps agreement** (Schedule 2) signed in App Store Connect →
+  Business, with tax and bank details, and the Small Business Program applied
+  for (15 % commission);
+- the subscription and lifetime products in App Store Connect, with the same
+  product ids as on Play, attached to RevenueCat's `pro` entitlement and
+  `default` offering;
+- `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the EAS env of the iOS profiles. Without
+  it the Pro page has nothing to sell on iPhone.
+
+## Privacy manifest
+
+`app.json` → `ios.privacyManifests` declares the required-reason APIs the
+bundled libraries use (UserDefaults, file timestamps, boot time, disk space)
+and `NSPrivacyTracking: false`. The reasons are the union of the libraries' own
+`PrivacyInfo.xcprivacy` files (React Native, async-storage, expo-file-system,
+expo-constants, expo-notifications, expo-application); re-check it when a
+native dependency is added, since App Store Connect rejects an upload whose
+binary calls such an API without a reason.
+
+## Not in iOS 1.0
 
 - **Apple's token revocation on account deletion.** Settings → Delete account
   deletes the cloud copy, ends the server's own sessions and signs the phone out
