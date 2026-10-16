@@ -49,6 +49,18 @@ lists what iOS needs beyond it.
 2. **Google Cloud Console** → same project as the Android client → create an
    **iOS** OAuth client for bundle id `app.vinha`. Its id goes to
    `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` (EAS env for the iOS profiles).
+   Done 2026-10-16: in the EAS env (production + preview) and the root
+   `.env.local`.
+   - `expo.slug` is `gymlog` because the EAS project (`@lantu66/gymlog`) is
+     named so; every `eas` command refuses to run while they differ. Nothing
+     in the app reads the slug.
+   - The EAS env holds only that variable so far. An iOS build reads its
+     `EXPO_PUBLIC_*` values from there, not from `.env.local`, so copy the
+     others over before the first build (each one switches its feature off
+     silently when missing): `EXPO_PUBLIC_AI_COACH_API_URL`,
+     `EXPO_PUBLIC_AI_COACH_APP_KEY`, `EXPO_PUBLIC_BACKUP_API_URL`,
+     `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, `EXPO_PUBLIC_ANALYTICS_URL`, and
+     `EXPO_PUBLIC_REVENUECAT_IOS_KEY` (below).
 3. **Sign in with Apple** is built (docs/account-backup.md). Enable the
    "Sign in with Apple" capability on the App ID if EAS has not already.
 4. Build: `npx eas build -p ios --profile production`, then
