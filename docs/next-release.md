@@ -75,6 +75,12 @@ update to carry, not for each fix.
 - #389 iPhone: "Skip this exercise" in the workout menu no longer freezes the
   app; the confirmation, the exercise swap, the workout contents and the end
   confirmation open once the menu has closed.
+- #390 iPhone: the end of setup no longer leaves a blank screen that takes
+  no touches: the theme question waits for the measurements question to
+  close, and the Pro page no longer opens under an invisible layer that
+  takes every touch. Home's "Keep your training safe" sign-in dialog opens a moment
+  after Home appears and never over another sheet, so it no longer freezes
+  Home after a finished workout.
 
 ## Server
 

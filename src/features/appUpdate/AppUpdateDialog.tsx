@@ -15,7 +15,16 @@ import { AppUpdateNotice, getAppUpdateNotice, subscribeAppUpdateNotice } from '.
  * the reader can say later and keep logging. A build that is still refused asks again
  * the next time it starts and reaches the server.
  */
-export function AppUpdateDialog({ language, held }: { language: AppLanguage; held: boolean }) {
+export function AppUpdateDialog({
+  language,
+  held,
+  onShownChange,
+}: {
+  language: AppLanguage;
+  held: boolean;
+  /** Whether the dialog is up: Home's sign-in dialog waits for it (HomeScreen). */
+  onShownChange?: (shown: boolean) => void;
+}) {
   const [notice, setNotice] = useState<AppUpdateNotice | null>(getAppUpdateNotice);
   const [dismissed, setDismissed] = useState(false);
 
@@ -23,6 +32,10 @@ export function AppUpdateDialog({ language, held }: { language: AppLanguage; hel
 
   const storeUrl = notice?.storeUrl ?? null;
   const close = () => setDismissed(true);
+  const shown = storeUrl !== null && !dismissed && !held;
+  useEffect(() => {
+    onShownChange?.(shown);
+  }, [shown, onShownChange]);
 
   // No store to name — an iOS build before APP_STORE_URL_IOS is set — leaves
   // nothing to press but OK, so it is said with the system's one-button alert.
@@ -35,7 +48,7 @@ export function AppUpdateDialog({ language, held }: { language: AppLanguage; hel
 
   return (
     <ConfirmDialog
-      visible={storeUrl !== null && !dismissed && !held}
+      visible={shown}
       title={t(language, 'appUpdate.title')}
       message={t(language, 'appUpdate.body')}
       confirmLabel={t(language, 'appUpdate.update')}

@@ -69,6 +69,8 @@ interface KitSheetProps {
   children: React.ReactNode;
   /** The commit bar, rendered over the sheet's reserved space. */
   bar?: React.ReactNode;
+  /** The Modal's onDismiss, for useModalHandoff (iOS only; see TrackChangeDialog). */
+  onDismissed?: () => void;
 }
 
 export function KitSheet({
@@ -83,6 +85,7 @@ export function KitSheet({
   reduceMotion = false,
   children,
   bar = null,
+  onDismissed,
 }: KitSheetProps) {
   const styles = useThemedStyles(makeStyles);
   return (
@@ -91,6 +94,7 @@ export function KitSheet({
       transparent
       animationType={reduceMotion ? 'none' : 'slide'}
       onRequestClose={onClose}
+      onDismiss={onDismissed}
     >
       <View style={styles.overlay}>
         {/* Out of the accessibility tree: the ✕ below is the same action with

@@ -46,6 +46,12 @@ interface TrackChangeDialogProps {
   bottomInset?: number;
   /** Window height, so the dialog scrolls on a short phone. */
   maxHeight?: number;
+  /**
+   * The Modal's onDismiss: iOS reports it once the dialog has finished
+   * animating away (never on Android). useModalHandoff opens the next modal
+   * from it, since iOS cannot present one while this one is still leaving.
+   */
+  onDismissed?: () => void;
 }
 
 /**
@@ -71,6 +77,7 @@ export function TrackChangeDialog({
   topInset = 0,
   bottomInset = 0,
   maxHeight,
+  onDismissed,
 }: TrackChangeDialogProps) {
   const styles = useThemedStyles(makeStyles);
   const sites = (offered.length > 0 ? offered : ALL_SITES).slice(0, SITE_TILES);
@@ -88,7 +95,7 @@ export function TrackChangeDialog({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDone}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDone} onDismiss={onDismissed}>
       <View style={[styles.overlay, { paddingTop: topInset + 16, paddingBottom: bottomInset + 16 }]}>
         <ScrollView
           style={[styles.dialogScroll, maxHeight ? { maxHeight: maxHeight - topInset - bottomInset - 32 } : null]}

@@ -398,6 +398,7 @@ const suites = [
   ...require('./features/workout/rampTargets.test.cjs'),
   ...require('./screens/liveWorkoutWiring.test.cjs'),
   ...require('./screens/iosModalHandoff.test.cjs'),
+  ...require('./screens/iosModalSequencing.test.cjs'),
   ...require('./screens/workoutSaveLock.test.cjs'),
   ...require('./lib/historyDelete.test.cjs'),
   ...require('./screens/guidedPlayerSwap.test.cjs'),

@@ -257,7 +257,9 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
           : null
       }
       signInProviders={availableSignInProviders()}
-      onDone={(choices) => void handleSetupHandoffDone(choices)}
+      // The promise itself, not voided: the screen keeps its last dialog
+      // down until the write has settled (SetupHandoffScreen leaveDialog).
+      onDone={handleSetupHandoffDone}
       onSkip={() =>
         void handleSetupHandoffDone({
           addWidget: false,

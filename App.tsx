@@ -548,6 +548,24 @@ function VinhaApp() {
     );
   }
 
+  /**
+   * navigate, without the transition: for a hop that has to land in the same
+   * render as a state write next to it.
+   *
+   * The hand-off's first half opens the Pro page and then records the Pro
+   * step. Through navigate the route waited in the transition lane while the
+   * Pro-step write rendered first, so for one commit the second half was due
+   * on the old route: its tracking dialog was presented and torn down again
+   * within the fade, which on iOS can leave an empty modal over the Pro page
+   * that takes every touch (iOS hunt, 2026-10-17).
+   */
+  function navigateNow(nextRoute: AppRoute) {
+    setNavigationState((current) => ({
+      route: nextRoute,
+      history: pushRoute(current.history, current.route, nextRoute),
+    }));
+  }
+
   function replaceRoute(nextRoute: AppRoute) {
     startTransition(() =>
       setNavigationState((current) => ({
@@ -778,6 +796,9 @@ function VinhaApp() {
     cap: 0,
     replacingStop: null,
   });
+  // Whether the update dialog is up. Home's sign-in dialog waits for it, with
+  // the walls above: iOS presents one modal at a time (iOS hunt 2026-10-17).
+  const [appUpdateShown, setAppUpdateShown] = useState(false);
   /**
    * The onboarding's last two steps are full-bleed: the program picker's
    * diagonal and the paywall's hero both run to the top edge. The shell
@@ -1841,7 +1862,7 @@ function VinhaApp() {
     preferences,
     requestPinHomeWidget,
     handleAccountSignIn,
-    navigate,
+    navigate: navigateNow,
   });
 
   const { widgetCompletedWorkoutDayStarts } = useHomeWidgetFeed({
@@ -2355,6 +2376,7 @@ function VinhaApp() {
       homeWidgetState,
       handleAddHomeWidget,
       homePrompt,
+      shellSheetOpen: programLimitVisible || runningCapSheet.visible || settingsImportVisible || ratingSheetVisible || appUpdateShown,
       handleAccountSignIn,
       homeTrainingSchedule,
       homeDoneThisWeekSessionIds,
@@ -2463,6 +2485,7 @@ function VinhaApp() {
     renderLegalConsent,
     tourElement,
     appUpdateHeld,
+    onAppUpdateShownChange: setAppUpdateShown,
     handleServerNoticeSeen,
     SettingsImportSheet,
     settingsImportVisible,
