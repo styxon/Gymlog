@@ -311,12 +311,13 @@ module.exports = [
       assert.ok(frozenCall, 'frozen comes from guidedClockHeld');
       assert.match(frozenCall[0], /\brunSheetOpen,/);
       assert.doesNotMatch(player, /runSheetHolds/);
-      // The clock honours `frozen` and nothing else: the step effect stops
-      // (and withdraws the OS alert) only on it, so with the sheet open the
-      // deadline stands, the 3-2-1 ticks and the end cue fire, and the OS
-      // alert stays scheduled.
-      assert.match(player, /if \(mode !== 'player' \|\| frozen\) \{\s*\/\/ Pausing freezes the leftover time/);
-      assert.match(player, /\}, \[mode, frozen, stepIndex, step\.type, cue, steps, syncRestNotification\]\);/);
+      // The clock honours `frozen` and a workout tour, nothing else: the step
+      // effect stops (and withdraws the OS alert) only on those, so with the
+      // sheet open the deadline stands, the 3-2-1 ticks and the end cue fire,
+      // and the OS alert stays scheduled.
+      assert.match(player, /const clockHeld = frozen \|\| tourRunning;/);
+      assert.match(player, /if \(mode !== 'player' \|\| clockHeld\) \{\s*\/\/ Pausing freezes the leftover time/);
+      assert.match(player, /\}, \[mode, clockHeld, stepIndex, step\.type, cue, steps, syncRestNotification\]\);/);
       // Opening and closing the sheet only flips its own flag.
       const opens = player.match(/setRunSheetOpen\((true|false)\)/g) ?? [];
       assert.ok(opens.length >= 4);

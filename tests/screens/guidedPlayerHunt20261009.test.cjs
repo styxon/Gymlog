@@ -86,7 +86,7 @@ module.exports = [
       assert.match(player, /guidedRestOpeningMs\(session\?\.ui\.guidedResumeAnchor/);
       const adjust = between(player, 'const adjustRemaining = (deltaMs', 'setRemainingMs(next);');
       assert.match(adjust, /persistRestDeadline\(endsAtRef\.current\)/);
-      const effect = between(player, 'if (mode !== \'player\' || frozen) {', 'const settle = () => {');
+      const effect = between(player, 'if (mode !== \'player\' || clockHeld) {', 'const settle = () => {');
       assert.match(effect, /persistRestDeadline\(null\)/);
       assert.match(effect, /persistRestDeadline\(endsAtRef\.current\)/);
     },

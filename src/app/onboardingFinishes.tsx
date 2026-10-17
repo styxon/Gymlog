@@ -57,8 +57,6 @@ export interface OnboardingFinishesDeps {
   aboutYouValues: AboutYouValues | null;
   busySavingReadyPick: boolean;
   setBusySavingReadyPick: (busy: boolean) => void;
-  /** Opens the theme question. */
-  setThemeChoiceVisible: (visible: boolean) => void;
   /** Opens the programme-limit sheet. */
   setProgramLimitVisible: (visible: boolean) => void;
   /** VinhaApp's hoisted navigateBack. */
@@ -80,7 +78,6 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
     aboutYouValues,
     busySavingReadyPick,
     setBusySavingReadyPick,
-    setThemeChoiceVisible,
     setProgramLimitVisible,
     navigateBack,
     resetToRoute,
@@ -295,11 +292,10 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
       entryFlowCompleted: true,
       selectedAccessTier: 'free',
     });
-    // "Let's begin" opens the theme question (user 2026-08-23). It sits here
-    // rather than anywhere later because the answer decides what the rest of
-    // onboarding looks like — asking afterwards would repaint a flow the
-    // reader has already been through.
-    setThemeChoiceVisible(true);
+    // "Let's begin" opened the theme question here from 2026-08-23. It moved
+    // to the hand-off's last page (user 2026-10-17): a violet dialog in front
+    // of the orange welcome, before a single question had been asked. The
+    // flow is dark until then.
   }
 
   async function handleBackToEntry() {

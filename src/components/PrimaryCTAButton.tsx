@@ -108,19 +108,18 @@ export function PrimaryCTAButton({
 }
 
 // Flat CTA from the redesign handoff (onb-shared CTA spec): 56px pill, 17/800
-// label. Violet: #382 made it orange, and the user took that back the same day
-// (2026-10-16). Disabled is the same violet dimmed, never grey.
+// label. Orange: orange is what can be pressed and violet is the brand around
+// it (user 2026-10-17 — #384 had taken it back to violet the day before).
+// Disabled is the same orange dimmed, never grey.
 const makeStyles = (theme: Theme) =>
   StyleSheet.create({
     button: {
       width: '100%',
       height: 56,
       borderRadius: 18,
-      // The white-label violet, not purpleBright: white on the dark theme's
-      // purpleBright is 2.7:1 (accessibility audit, 2026-09-21).
-      backgroundColor: theme.purpleFill,
-      shadowColor: theme.purpleBright,
-      shadowOpacity: 0.32,
+      backgroundColor: theme.orange,
+      shadowColor: theme.orange,
+      shadowOpacity: 0.28,
       shadowRadius: 14,
       shadowOffset: { width: 0, height: 14 },
       elevation: 10,
@@ -139,7 +138,8 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: 16,
     },
     label: {
-      color: '#FFFFFF',
+      // onHighlight is the label colour made for orange in both themes.
+      color: theme.onHighlight,
       fontSize: 17,
       lineHeight: 22,
       fontWeight: '800',

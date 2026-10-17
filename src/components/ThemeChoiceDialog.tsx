@@ -19,12 +19,11 @@ interface ThemeChoiceDialogProps {
 /**
  * "Light or dark?"
  *
- * Asked once on the way in, right after "Let's begin" — before the
- * questionnaire, so the reader answers the rest of onboarding in the palette
- * they chose. It used to be offered on the way out of the Pro unlock screen,
- * back when dark was a perk somebody had just paid for; the gate came off on
- * 2026-08-23 and the question moved to the only place it was ever really a
- * question.
+ * The hand-off's last page, after the Pro page, the widget and the tracking
+ * sheet (user 2026-10-17). It was asked right after "Let's begin" from
+ * 2026-08-23, which put this box in front of the orange welcome before a
+ * single question; the flow is dark until here now. Before that it was offered
+ * on the way out of the Pro unlock screen, back when dark was a perk.
  *
  * The choice applies on tap rather than on a confirm button, and the dialog is
  * themed, so tapping Dark repaints the dialog under the reader's finger. That
@@ -237,7 +236,8 @@ const makeStyles = (theme: Theme) =>
     cta: {
       height: 50,
       borderRadius: 15,
-      backgroundColor: theme.purple,
+      // Orange, as every Done in the flow; the tiles' choice stays violet.
+      backgroundColor: theme.orange,
       alignItems: 'center',
       justifyContent: 'center',
       marginTop: 18,

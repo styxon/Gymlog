@@ -1,6 +1,6 @@
 # Käyttöehdot
 
-*Päivitetty 12.10.2026*
+*Päivitetty 17.10.2026*
 
 Vinhan käytön säännöt: terveysvaroitus, miten Pro-laskutus toimii ja mitä lupaamme.
 
@@ -12,7 +12,7 @@ Asentamalla Vinhan tai käyttämällä sitä hyväksyt nämä ehdot. Jos et hyv�
 
 ## Kuka palvelun tarjoaa
 
-Vinhan tarjoaa Styxon Studio (toiminimi, haltija Santeri Ylönen, Y-tunnus 3321575-3, Suomi). Yhteystieto: privacy@vinha.app. Se, miten käsittelemme tietojasi, kuvataan tietosuojaselosteessa, joka on osa näitä ehtoja.
+Vinhan tarjoaa Styxon Studio (toiminimi, haltija Tatu Ylönen, Y-tunnus 3321575-3, Suomi). Yhteystieto: privacy@vinha.app. Se, miten käsittelemme tietojasi, kuvataan tietosuojaselosteessa, joka on osa näitä ehtoja.
 
 ## Ikäraja
 

@@ -1,6 +1,6 @@
 # Terms of service
 
-*Updated 12 October 2026*
+*Updated 17 October 2026*
 
 The rules for using Vinha: the health warning, how Pro billing works, and what we promise.
 
@@ -12,7 +12,7 @@ By installing or using Vinha you accept these terms. If you do not accept them, 
 
 ## Who provides the service
 
-Vinha is provided by Styxon Studio (sole trader Santeri Ylönen, business ID 3321575-3, Finland). Contact: privacy@vinha.app. How we handle your data is described in the privacy policy, which is part of these terms.
+Vinha is provided by Styxon Studio (sole trader Tatu Ylönen, business ID 3321575-3, Finland). Contact: privacy@vinha.app. How we handle your data is described in the privacy policy, which is part of these terms.
 
 ## Age
 

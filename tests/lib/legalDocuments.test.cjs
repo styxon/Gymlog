@@ -47,6 +47,8 @@ const LEGAL_TEXT_VERSIONS = [
   { version: '2026-10-09', fingerprint: '14611161a2a511e7' },
   // Seasons removed from the list of what the app counts from the log.
   { version: '2026-10-12', fingerprint: '48cc4bb2e765a1da' },
+  // The trade name's holder corrected: Tatu Ylönen, not Santeri.
+  { version: '2026-10-17', fingerprint: '98eb08696ba6d95a' },
 ];
 
 const IDS = ['privacy', 'terms'];

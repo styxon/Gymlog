@@ -25,7 +25,8 @@ const DEFAULT_PREFERENCES = {
   autoFocusNextInput: true,
   keepScreenAwakeDuringWorkout: true,
   soundCuesEnabled: true,
-  darkThemeEnabled: false,
+  // Dark from the first screen (user 2026-10-17); the hand-off's last page asks.
+  darkThemeEnabled: true,
   usageStatisticsEnabled: true,
   hapticsEnabled: true,
   ownBlockStats: {} as OwnBlockStats,
@@ -84,6 +85,7 @@ const DEFAULT_PREFERENCES = {
   primaryGoalId: null,
   coachSuggestionState: {},
   setupHandoffCompleted: false,
+  setupHandoffProSeen: false,
   firstRunToursSeen: [] as TourSurface[],
   firstRunToursReplayed: false,
   entryFlowCompleted: false,

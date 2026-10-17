@@ -191,7 +191,7 @@ module.exports = [
   {
     name: 'guided pause wiring: a frozen rest stores its leftover, not a plain anchor (#23)',
     run() {
-      const frozen = screen.slice(screen.indexOf("if (mode !== 'player' || frozen) {"), screen.indexOf('// Not `position` any more'));
+      const frozen = screen.slice(screen.indexOf("if (mode !== 'player' || clockHeld) {"), screen.indexOf('// Not `position` any more'));
       assert.ok(frozen.includes('persistRestLeft(remainingRef.current)'));
       assert.ok(frozen.includes("mode === 'player'"), 'the entry screen keeps writing the plain anchor');
     },

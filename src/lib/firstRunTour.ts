@@ -56,10 +56,21 @@ export type TourTargetId =
   | 'home.cards'
   | 'workout.name'
   | 'workout.history'
+  /**
+   * Not an element: what the history beat's second half tells the player, so
+   * it paints the current set green while the beat is up (#bugs 2026-10-17).
+   * Reported through `focus`; nothing registers it.
+   */
+  | 'workout.historyLogged'
   | 'workout.setRow'
   | 'workout.dials'
-  | 'workout.log'
-  | 'workout.rest'
+  | 'workout.pause'
+  | 'workout.menu'
+  | 'workout.logSet'
+  | 'workout.runStrip'
+  | 'workout.restAdjust'
+  | 'workout.restPause'
+  | 'workout.restSkip'
   | 'bar.pill'
   | 'bar.home'
   | 'bar.programs'
@@ -97,8 +108,34 @@ export interface TourSectionBeat {
    * measures edge to edge, and a ring drawn on that spills off the screen.
    */
   inset?: TourInset;
+  /**
+   * What the screen is told this beat is about, when that is not the anchor.
+   * Two beats can ring one block and ask the screen for different things: the
+   * history block once as it is, then with its current set painted logged.
+   * Defaults to `anchor ?? target`.
+   */
+  focus?: TourTargetId;
   /** The dictionary key for the callout's one sentence. */
   copyKey: I18nKey;
+  /**
+   * Drawn instead of the sentence: one line per button, each beside the
+   * button's own mark, for a row of buttons a sentence names badly (#bugs
+   * 2026-10-17, "tekstit kahdessa kentässä ja konkreettiset ikonit"). The
+   * sentence stays the callout's spoken label.
+   */
+  rows?: readonly TourCalloutRow[];
+}
+
+/** One line of a callout's button legend: the mark, its colour, what it does. */
+export interface TourCalloutRow {
+  icon: 'plus' | 'minus';
+  tone: 'green' | 'danger' | 'blue';
+  copyKey: I18nKey;
+}
+
+/** What a section beat tells the screen it is about (TourSectionBeat.focus). */
+export function beatFocus(beat: TourSectionBeat): TourTargetId {
+  return beat.focus ?? beat.anchor ?? beat.target;
 }
 
 export interface TourInset {
@@ -192,6 +229,18 @@ export function resolveTourBeats(
           inset: { top: 9 },
           copyKey: hasHistory ? 'tour.workout.history' : 'tour.workout.historyFirst',
         },
+        // The same block again, with the current set painted as logged: the
+        // reader sees the green instead of being told about it (#bugs
+        // 2026-10-17, "nykyinen sarja kehystettynä, painat seuraava ja
+        // kirjatut sarjat näkyvät vihreenä").
+        {
+          kind: 'section',
+          target: 'workout.history',
+          focus: 'workout.historyLogged',
+          place: 'below',
+          inset: { top: 9 },
+          copyKey: 'tour.workout.historyLogged',
+        },
         {
           kind: 'section',
           target: 'workout.setRow',
@@ -199,6 +248,7 @@ export function resolveTourBeats(
           // The row carries the page's 24 dp margin and 18 dp of air above.
           inset: { x: 24, top: 18 },
           copyKey: setRowCopyKey(canRemove, canWarmUp),
+          rows: setRowLegend(canRemove, canWarmUp),
         },
         {
           kind: 'section',
@@ -206,30 +256,26 @@ export function resolveTourBeats(
           place: 'above',
           copyKey: loaded ? 'tour.workout.dials' : 'tour.workout.dialsReps',
         },
-        {
-          kind: 'section',
-          target: 'workout.log',
-          place: 'above',
-          // 22 dp page margin; 4 above the buttons and 12 under them.
-          inset: { x: 22, top: 4, bottom: 12 },
-          copyKey: 'tour.workout.log',
-        },
+        // The bottom row, one button a beat (#bugs 2026-10-17): one sentence
+        // for all three said what Log set does and hid the other two.
+        { kind: 'section', target: 'workout.pause', place: 'above', copyKey: 'tour.workout.pause' },
+        { kind: 'section', target: 'workout.menu', place: 'above', copyKey: 'tour.workout.menu' },
+        { kind: 'section', target: 'workout.logSet', place: 'above', copyKey: 'tour.workout.log' },
       ];
     }
+    // Top to bottom, the way the screen reads (#bugs 2026-10-17): the
+    // contents strip, then −15s/+15s, Pause, Skip rest. The rest's clock
+    // stands still while the tour is up, so a short rest cannot run out under
+    // it. Every callout but the first goes above: below the buttons there is
+    // only the rail, and a callout pushed back up would sit on them.
     case 'workoutRest':
       return [
-        {
-          kind: 'section',
-          // The -15s / +15s / Pause row and Skip rest: what the sentence is about.
-          target: 'workout.rest',
-          // The callout goes above, over the empty part of the page: below it
-          // there is only the rail, and the callout would be pushed back onto
-          // the buttons.
-          place: 'above',
-          // The block carries the page's 24 dp margin and 10 dp under it.
-          inset: { x: 24, bottom: 10 },
-          copyKey: 'tour.workout.rest',
-        },
+        // The player opens the contents sheet and closes it again while this
+        // beat is up, so the reader sees what the strip does.
+        { kind: 'section', target: 'workout.runStrip', place: 'below', copyKey: 'tour.workout.restContents' },
+        { kind: 'section', target: 'workout.restAdjust', place: 'above', copyKey: 'tour.workout.rest' },
+        { kind: 'section', target: 'workout.restPause', place: 'above', copyKey: 'tour.workout.restPause' },
+        { kind: 'section', target: 'workout.restSkip', place: 'above', copyKey: 'tour.workout.restSkip' },
       ];
     case 'home': {
       const beats: TourBeat[] = [
@@ -275,6 +321,18 @@ export function setRowCopyKey(canRemove: boolean, canWarmUp: boolean): I18nKey {
     return canWarmUp ? 'tour.workout.sets' : 'tour.workout.setsNoWarmup';
   }
   return canWarmUp ? 'tour.workout.setsNoRemove' : 'tour.workout.setsAddOnly';
+}
+
+/**
+ * The set row's buttons as a legend, in the order the reader asked for them:
+ * the green + that is always there, then the red − and the blue + when drawn.
+ */
+export function setRowLegend(canRemove: boolean, canWarmUp: boolean): TourCalloutRow[] {
+  return [
+    { icon: 'plus', tone: 'green', copyKey: 'tour.workout.row.add' },
+    ...(canRemove ? [{ icon: 'minus', tone: 'danger', copyKey: 'tour.workout.row.remove' } as const] : []),
+    ...(canWarmUp ? [{ icon: 'plus', tone: 'blue', copyKey: 'tour.workout.row.warmup' } as const] : []),
+  ];
 }
 
 export const TOUR_BAR_STOP_COPY_KEY: Record<TourBarStop, I18nKey> = {

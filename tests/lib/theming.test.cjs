@@ -114,23 +114,23 @@ module.exports = [
     },
   },
   {
-    name: 'theming: the choice is asked once, right after "Let\'s begin"',
+    name: 'theming: the choice is the hand-off\'s last page, and a new install starts dark',
     run() {
-      const app = read('App.tsx');
-      // Opened by the entry-flow handler, so the answer is in before the
-      // questionnaire the reader then has to look at.
-      // Over the shell: the handler moves to src/app in phase C (2026-10-01).
+      // Not after "Let's begin" any more (user 2026-10-17): it put a violet
+      // dialog in front of the orange welcome. Nothing in the shell opens it.
+      assert.doesNotMatch(readAppWiring(), /setThemeChoiceVisible/);
+      // The hand-off draws it as its 'theme' page, and its Done moves on.
+      const handoff = read('src/screens/SetupHandoffScreen.tsx');
       assert.match(
-        readAppWiring(),
-        /async function handleContinueEntry\(\)[\s\S]{0,700}?setThemeChoiceVisible\(true\)/,
+        handoff,
+        /<ThemeChoiceDialog\s+visible=\{page === 'theme'\}[\s\S]{0,200}?onDone=\{\(\) => advance\(\)\}/,
       );
-      // And the dialog closes onto the flow rather than navigating: it used to
-      // reset to Home, which was right only when a purchase opened it.
-      // The dialog mounts in the shell's render tail, which moved to src/app.
-      assert.match(readAppWiring(), /onDone=\{\(\) => setThemeChoiceVisible\(false\)\}/);
-      // The unlock screen no longer chains into it — from App.tsx or from any
-      // src/app module the shell's wiring now lives in (phase B, 2026-09-30).
-      assert.doesNotMatch(readAppWiring(), /onDone=\{\(\) => setThemeChoiceVisible\(true\)\}/);
+      // Dark until the reader says otherwise; an old install keeps light.
+      assert.match(read('src/data/seed.ts'), /darkThemeEnabled: true,/);
+      assert.match(
+        read('src/storage/database.ts'),
+        /input\?\.preferences\?\.onboardingCompleted === true\s*\?\s*false\s*:\s*fallback\.preferences\.darkThemeEnabled/,
+      );
     },
   },
   {

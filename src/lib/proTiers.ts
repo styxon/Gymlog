@@ -282,6 +282,15 @@ export const PRO_TIERS: Record<ProTierKey, ProTier> = {
         titleKey: 'pro.v6.life.support.t',
         proof: 'SUBSCRIPTION_TERM_ORDER',
       },
+      // A fifth row for the space under the fourth (user 2026-10-17). The
+      // purchase belongs to the store account, so a new phone gets it back
+      // through "Restore purchase" on this same page.
+      {
+        key: 'restore',
+        icon: 'lock',
+        titleKey: 'pro.v6.life.restore.t',
+        proof: 'restoreStorePurchases',
+      },
     ],
     plans: [
       {

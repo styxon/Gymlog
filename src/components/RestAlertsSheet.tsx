@@ -38,9 +38,11 @@ export function RestAlertsSheet({ visible, language, bottomInset, onAllow, onLat
           <Text style={styles.title}>{t(language, 'rest.perm.title')}</Text>
           <Text style={styles.body}>{t(language, 'rest.perm.body')}</Text>
           <View style={styles.bullets}>
-            {(['rest.perm.b1', 'rest.perm.b2', 'rest.perm.b3'] as const).map((key, index) => (
+            {/* No "never marketing" line (#bugs 2026-10-17): it answered a
+                worry the two lines above had not raised. */}
+            {(['rest.perm.b1', 'rest.perm.b2'] as const).map((key) => (
               <View key={key} style={styles.bullet}>
-                <View style={[styles.dot, index === 2 && styles.dotCalm]} />
+                <View style={styles.dot} />
                 <Text style={styles.bulletText}>{t(language, key)}</Text>
               </View>
             ))}
@@ -78,17 +80,16 @@ const makeStyles = (theme: Theme) =>
     bullets: { gap: 11, marginTop: 18, marginBottom: 20 },
     bullet: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
     dot: { width: 7, height: 7, borderRadius: 999, backgroundColor: theme.purple, marginTop: 7 },
-    dotCalm: { backgroundColor: theme.green },
     bulletText: { flex: 1, fontSize: 14, fontWeight: '700', color: theme.ink, lineHeight: 20 },
     cta: {
       height: 52,
       borderRadius: 16,
-      // The white-label violet (accessibility audit, 2026-09-21).
-      backgroundColor: theme.purpleFill,
+      // Orange, as every primary button in the app (user 2026-10-17).
+      backgroundColor: theme.orange,
       alignItems: 'center',
       justifyContent: 'center',
     },
-    ctaText: { fontSize: 15.5, fontWeight: '800', color: '#FFFFFF' },
+    ctaText: { fontSize: 15.5, fontWeight: '800', color: theme.onHighlight },
     ghost: { height: 46, alignItems: 'center', justifyContent: 'center', marginTop: 4 },
     ghostText: { fontSize: 15, fontWeight: '800', color: theme.muted },
   });

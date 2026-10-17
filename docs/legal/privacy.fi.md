@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-*Päivitetty 12.10.2026*
+*Päivitetty 17.10.2026*
 
 Mitä Vinha tallentaa, mikä lähtee puhelimestasi ja mitä voit sille tehdä.
 
@@ -16,7 +16,7 @@ Ei mainoksia, ei seurantaa, ei tietojen myyntiä. Jos jokin tässä selosteessa 
 
 ## Kuka vastaa
 
-Styxon Studio (toiminimi, haltija Santeri Ylönen, Y-tunnus 3321575-3, Suomi) julkaisee Vinha Fitness -sovelluksen (”Vinha”) ja on rekisterinpitäjä eli se, joka vastaa tietojesi käsittelystä kaikessa, mitä tässä selosteessa kuvataan.
+Styxon Studio (toiminimi, haltija Tatu Ylönen, Y-tunnus 3321575-3, Suomi) julkaisee Vinha Fitness -sovelluksen (”Vinha”) ja on rekisterinpitäjä eli se, joka vastaa tietojesi käsittelystä kaikessa, mitä tässä selosteessa kuvataan.
 
 Kysymykset tästä selosteesta tai tiedoistasi: privacy@vinha.app.
 

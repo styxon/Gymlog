@@ -5,8 +5,10 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppleSignInButton } from '../components/AppleSignInButton';
+import { GoogleGlyph, GoogleSignInButton } from '../components/GoogleSignInButton';
 import { VinhaIcon } from '../components/VinhaIcon';
 import { LegalConsentCheck } from '../components/LegalConsentCheck';
+import { ThemeChoiceDialog } from '../components/ThemeChoiceDialog';
 import { TrackChangeDialog } from '../components/TrackChangeDialog';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { useHardwareBack } from '../hooks/useHardwareBack';
@@ -80,6 +82,9 @@ interface SetupHandoffScreenProps {
   legalAlreadyAccepted: boolean;
   /** The sign-ins this build offers (accountAuth): Apple on iPhone, Google where configured. */
   signInProviders: SignInProvider[];
+  /** The live theme, so the theme page shows what is actually on. */
+  darkEnabled: boolean;
+  onThemeChange: (dark: boolean) => void;
 }
 
 /**
@@ -103,6 +108,8 @@ export function SetupHandoffScreen({
   onOpenLegal,
   legalAlreadyAccepted,
   signInProviders,
+  darkEnabled,
+  onThemeChange,
 }: SetupHandoffScreenProps) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
@@ -305,25 +312,17 @@ export function SetupHandoffScreen({
             />
           ) : null}
           {signInProviders.includes('google') ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !legalReady }}
+            <GoogleSignInButton
+              label={t(language, 'handoff.signin.cta')}
+              height={54}
               disabled={!legalReady}
+              style={!legalAlreadyAccepted && styles.afterConsent}
               onPress={() => {
                 signInProviderRef.current = 'google';
                 setSignInForBackup(true);
                 advance(true);
               }}
-              style={({ pressed }) => [
-                styles.googleCta,
-                !legalAlreadyAccepted && styles.afterConsent,
-                !legalReady && styles.ctaWaiting,
-                pressed && styles.pressed,
-              ]}
-            >
-              <GoogleGlyph size={18} />
-              <Text style={styles.googleCtaText}>{t(language, 'handoff.signin.cta')}</Text>
-            </Pressable>
+            />
           ) : null}
           <Pressable accessibilityRole="button" onPress={() => advance()} style={({ pressed }) => pressed && styles.pressed}>
             <Text style={styles.pageSkip}>{t(language, 'handoff.signin.skip')}</Text>
@@ -335,9 +334,8 @@ export function SetupHandoffScreen({
 
   return (
     <View style={styles.screen}>
-      {/* Over the page rather than instead of it, which is how the reader met
-          this shape on the way in: the theme question is a dialog on top of
-          the screen behind it. */}
+      {/* Over the page rather than instead of it: the tracking and theme
+          questions are dialogs on top of the screen behind them. */}
       <TrackChangeDialog
         visible={page === 'tracking'}
         language={language}
@@ -349,6 +347,20 @@ export function SetupHandoffScreen({
         bottomInset={insets.bottom}
         maxHeight={windowHeight}
       />
+      {/* The last page (user 2026-10-17): after the Pro page, the widget and
+          the tracking sheet, rather than in front of the questions. */}
+      <ThemeChoiceDialog
+        visible={page === 'theme'}
+        language={language}
+        darkEnabled={darkEnabled}
+        onChange={onThemeChange}
+        onDone={() => advance()}
+      />
+      {/* The widget page's own body only when it is a page: on a phone that
+          cannot pin one (every iPhone) the sites and theme dialogs stood
+          over a widget heading, a terms box and a Done for nothing. */}
+      {plan.offerWidget ? (
+      <>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <Text style={styles.title}>{t(language, titleKey)}</Text>
 
@@ -417,6 +429,8 @@ export function SetupHandoffScreen({
           <Text style={styles.doneText}>{t(language, 'handoff.done')}</Text>
         </Pressable>
       </View>
+      </>
+      ) : null}
     </View>
   );
 }
@@ -427,29 +441,6 @@ function ShieldGlyph({ size = 20, color }: { size?: number; color: string }) {
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path d="M12 3l7 3v6c0 4-3 6.6-7 8-4-1.4-7-4-7-8V6z" stroke={color} strokeWidth={1.8} strokeLinejoin="round" />
       <Path d="M9 12l2 2 4-4" stroke={color} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
-function GoogleGlyph({ size = 20 }: { size?: number }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 48 48">
-      <Path
-        fill="#EA4335"
-        d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"
-      />
-      <Path
-        fill="#4285F4"
-        d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"
-      />
-      <Path
-        fill="#FBBC05"
-        d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"
-      />
-      <Path
-        fill="#34A853"
-        d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
-      />
     </Svg>
   );
 }
@@ -632,22 +623,6 @@ const makeStyles = (theme: Theme) =>
       textAlign: 'center',
       paddingVertical: spacing.sm,
     },
-    googleCta: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 10,
-      height: 54,
-      borderRadius: 16,
-      backgroundColor: theme.surface,
-      borderWidth: 1.5,
-      borderColor: theme.border,
-    },
-    googleCtaText: {
-      color: theme.ink,
-      fontSize: 16,
-      fontWeight: '800',
-    },
     /** Room between the terms box and the button under it. */
     afterConsent: {
       marginTop: spacing.sm,
@@ -664,20 +639,19 @@ const makeStyles = (theme: Theme) =>
      * plain rounded rectangles at 56–62dp. It read as a different app arriving
      * for the final step (user 2026-09-08, "eri mallinen kuin muualla").
      *
-     * Violet, as every footer before it in the flow: the orange of #382 was
-     * taken back (user 2026-10-16), and the chosen rows, the box and the
-     * links went with it so the last screen is one colour.
+     * Orange, as every footer before it in the flow (user 2026-10-17): orange
+     * is what can be pressed. The chosen rows, the box and the links stay
+     * violet, the brand colour beside it.
      */
     done: {
       minHeight: 62,
       borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
-      // purpleFill, not purpleBright: white on it reads 4.5:1+.
-      backgroundColor: theme.purpleFill,
+      backgroundColor: theme.orange,
     },
     doneText: {
-      color: '#FFFFFF',
+      color: theme.onHighlight,
       fontSize: 19,
       fontWeight: '900',
       letterSpacing: -0.3,

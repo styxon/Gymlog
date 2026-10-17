@@ -25,7 +25,7 @@ import { formatLegalDate, LEGAL_VERSION, type LegalDocumentId } from '../lib/leg
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import { rememberServerNotice } from '../lib/serverNotice';
 import { planSetupHandoff } from '../lib/setupHandoff';
-import { AppRoute } from '../navigation/routes';
+import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { AppDatabase, AppPreferences } from '../types/models';
 import { useAttemptOnce } from './useAttemptOnce';
@@ -142,6 +142,8 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
             // A reader who already bought Pro is not offered the page that
             // sells it.
             canOfferPro: !proUnlockedForHandoff,
+            proStepDone: preferences.setupHandoffProSeen,
+            canOfferTheme: true,
           })
         : null,
     [
@@ -150,6 +152,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
       homePinnedStatCardKeys,
       homeWidgetState,
       preferences.setupFocusAreas,
+      preferences.setupHandoffProSeen,
       proUnlockedForHandoff,
       setupHandoffReady,
     ],
@@ -164,6 +167,14 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
   const setupHandoffPlan = setupHandoffHeld ? heldSetupHandoffPlanRef.current : liveSetupHandoffPlan;
   const setupHandoffActive = setupHandoffPlan?.shouldShow ?? false;
   setupHandoffActiveRef.current = setupHandoffActive;
+  /*
+   * Owed, but stepped aside: the Pro page sits between the hand-off's two
+   * halves (user 2026-10-17), and so does anything it opens — the terms, the
+   * policy, the subscription. Any Profile screen but the tab's own list. The
+   * second half shows once the reader is back out of them.
+   */
+  const setupHandoffShown =
+    setupHandoffActive && !(route.tab === 'profile' && route.screen !== ROOT_ROUTES.profile.screen);
 
   /**
    * The terms, owed (#bugs 2026-09-22; decided 2026-09-26): never accepted, or
@@ -175,7 +186,10 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
    * reader who had accepted would see the sheet flash.
    */
   const legalConsentOwed =
-    appHydrated && brandSplashDone && !onboardingActive && !setupHandoffActive
+    // Shown, not owed: a reader who skipped the terms box on the sign-in page
+    // is asked over the Pro page, before anything can be bought, as they were
+    // when the Pro page came after the whole hand-off.
+    appHydrated && brandSplashDone && !onboardingActive && !setupHandoffShown
       ? legalAcceptanceDue(preferences.legalAcceptance, LEGAL_VERSION)
       : null;
   const legalConsentDue = legalConsentOwed ?? legalSheetHeld;
@@ -221,6 +235,8 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     // The rest tour waits for the set tour (lib/firstRunTour isTourReady).
     isTourReady(preferences.firstRunToursSeen, tourSurface);
   const homeTourActive = tourActive && tourSurface === 'home';
+  // The guided player holds its step clock while this is up.
+  const workoutTourRunning = tourActive && tourSurface !== null && tourSurface !== 'home';
   // The queue decides with the tour in it, so it is computed here, after
   // the tour, rather than up with the suggester.
   // Counted as Profile counts: a workout saved twice, or a row with no set
@@ -372,8 +388,10 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     setSetupHandoffHeld,
     setupHandoffPlan,
     setupHandoffActive,
+    setupHandoffShown,
     legalConsentDue,
     homeTourActive,
+    workoutTourRunning,
     workoutTourDue,
     homePrompt,
     tourElement,

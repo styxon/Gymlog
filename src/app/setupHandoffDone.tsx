@@ -18,8 +18,8 @@ import { AppPreferences } from '../types/models';
  * src/app reaches for ./modules directly.
  */
 export interface SetupHandoffDoneDeps {
-  /** Only whether the page offered the widget is read. */
-  setupHandoffPlan: { offerWidget: boolean } | null;
+  /** Whether the page offered the widget, and which half of the hand-off it was. */
+  setupHandoffPlan: { offerWidget: boolean; phase: 'beforePro' | 'afterPro' } | null;
   homePinnedStatCardKeys: string[];
   /** The hand-off's write guard and hold, from useSetupHandoffOverlays. */
   setupHandoffHeldRef: { current: boolean };
@@ -48,7 +48,10 @@ export function createSetupHandoffDone(deps: SetupHandoffDoneDeps) {
   } = deps;
 
   const handleSetupHandoffDone = async (choices: SetupHandoffChoices) => {
-    const patch: Partial<AppPreferences> = { setupHandoffCompleted: true };
+    // The first half ends at the Pro page, not at the app: the hand-off is
+    // finished by the second half's Done.
+    const beforePro = setupHandoffPlan?.phase === 'beforePro';
+    const patch: Partial<AppPreferences> = beforePro ? {} : { setupHandoffCompleted: true };
     // Asked here, so Home's one-time card must not ask again. Settings keeps its
     // permanent row either way.
     if (setupHandoffPlan?.offerWidget) {
@@ -102,6 +105,17 @@ export function createSetupHandoffDone(deps: SetupHandoffDoneDeps) {
     // takes the screen, so anything that had to happen first has happened.
     if (choices.showPro) {
       navigate({ tab: 'profile', screen: 'premium' });
+    }
+    // Then the second half is due, and the shell shows it once the reader is
+    // back from the Pro page. Written after the navigation, so the second
+    // half is never drawn under a sign-in sheet that is still open; refused,
+    // the first half simply comes back.
+    if (beforePro) {
+      try {
+        await updatePreferences({ setupHandoffProSeen: true });
+      } catch (error) {
+        console.error('Failed to record the hand-off Pro step', error);
+      }
     }
   };
 

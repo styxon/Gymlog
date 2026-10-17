@@ -108,16 +108,42 @@ export interface SetupHandoffInput {
    * after the rest of the hand-off lands, and declining costs nothing.
    */
   canOfferPro: boolean;
+  /**
+   * The Pro page has been shown on this run, or it was never going to be.
+   *
+   * The hand-off is two halves with the Pro page between them (user
+   * 2026-10-17): sign-in, then Pro, then the widget, the tracking sheet and the
+   * theme. Stored, so a reader who closes the app on the Pro page comes back
+   * to the second half rather than to the Pro page again.
+   */
+  proStepDone?: boolean;
+  /**
+   * Ask light or dark as the last page. It used to be a dialog right after
+   * "Let's begin" (2026-08-23), which put a violet box in front of an orange
+   * welcome and a question in front of the questions (user 2026-10-17).
+   */
+  canOfferTheme?: boolean;
 }
 
-/** One screen of the hand-off. Pro is not one: it opens after the last. */
-export type SetupHandoffPage = 'signin' | 'tracking' | 'offers';
+/** One screen of the hand-off. Pro is not one: it opens between the two halves. */
+export type SetupHandoffPage = 'signin' | 'tracking' | 'offers' | 'theme';
+
+/**
+ * Which half of the hand-off is showing.
+ *
+ * `beforePro`: sign-in, and its Done opens the Pro page. `afterPro`: what is
+ * left once the reader is back from it, or everything when there was no Pro
+ * page to show.
+ */
+export type SetupHandoffPhase = 'beforePro' | 'afterPro';
 
 export interface SetupHandoffPlan {
   /** False when there is nothing left to offer and the step must not appear. */
   shouldShow: boolean;
+  phase: SetupHandoffPhase;
   /**
-   * The pages to show, in order: sign-in, the widget, the tracking dialog.
+   * The pages of this phase, in order: sign-in before the Pro page; the
+   * widget, the tracking dialog and the theme after it.
    *
    * The widget before the tracking dialog (user 2026-10-16): its Done opens
    * the system's pin dialog, and the tracking sheet waits for that to close,
@@ -146,8 +172,13 @@ export interface SetupHandoffPlan {
   offerTrackedSites: boolean;
   /** Sign in with Google and keep the data past this phone. Free and Pro alike. */
   offerAccountBackup: boolean;
-  /** Open the Pro page once the hand-off is done. Never for a reader who has it. */
+  /**
+   * Open the Pro page when this phase is done. Only before it: the second
+   * half is what the reader comes back to. Never for a reader who has Pro.
+   */
   offerPro: boolean;
+  /** The theme page is in this phase. */
+  offerTheme: boolean;
   /**
    * The measured sites to offer on the tracking page, from the reader's own
    * focus answers. Empty when they named nothing measurable, and the dialog
@@ -180,23 +211,43 @@ export function planSetupHandoff(input: SetupHandoffInput): SetupHandoffPlan {
   // carry the field at all, and `undefined` leaking into shouldShow turned a
   // boolean contract into a three-valued one.
   const offerAccountBackup = input.canOfferAccountBackup === true;
-  const offerPro = input.canOfferPro === true;
+  const canOfferPro = input.canOfferPro === true;
+  const phase: SetupHandoffPhase = canOfferPro && input.proStepDone !== true ? 'beforePro' : 'afterPro';
+  const offerPro = phase === 'beforePro';
+  const offerTheme = phase === 'afterPro' && input.canOfferTheme === true;
+  // Sign-in belongs to the first half. With no first half — nothing to sell,
+  // and no Pro page shown on this run — it leads the second instead. Keyed on
+  // the stored step, not on canOfferPro: buying on the Pro page flips that,
+  // and the reader who skipped sign-in a minute ago was asked again.
+  const signInHere = offerAccountBackup && (phase === 'beforePro' || input.proStepDone !== true);
 
-  const pages: SetupHandoffPage[] = [
-    ...(offerAccountBackup ? (['signin'] as const) : []),
-    ...(input.canOfferWidget ? (['offers'] as const) : []),
-    ...(offerTrackedSites ? (['tracking'] as const) : []),
-  ];
+  const pages: SetupHandoffPage[] =
+    phase === 'beforePro'
+      ? [...(signInHere ? (['signin'] as const) : [])]
+      : [
+          ...(signInHere ? (['signin'] as const) : []),
+          ...(input.canOfferWidget ? (['offers'] as const) : []),
+          ...(offerTrackedSites ? (['tracking'] as const) : []),
+          ...(offerTheme ? (['theme'] as const) : []),
+        ];
 
   return {
     shouldShow:
-      input.canOfferWidget || tracking !== null || offerTrackedSites || offerAccountBackup || offerPro,
+      phase === 'beforePro' ||
+      input.canOfferWidget ||
+      tracking !== null ||
+      offerTrackedSites ||
+      signInHere ||
+      offerTheme,
+    phase,
     pages,
-    offerWidget: input.canOfferWidget,
+    // The widget is the second half's: the first is sign-in and nothing else.
+    offerWidget: phase === 'afterPro' && input.canOfferWidget,
     tracking,
     offerTrackedSites,
     offerAccountBackup,
     offerPro,
+    offerTheme,
     trackedSiteOptions,
   };
 }
