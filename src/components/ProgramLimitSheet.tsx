@@ -1,8 +1,9 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { CutButton } from './CutButton';
 import { CutSurface } from './CutSurface';
+import { InTreeLayer } from './InTreeLayer';
 import { t } from '../lib/i18n';
 import { programLimitSheetCopy } from '../lib/programCapNotice';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -24,6 +25,14 @@ import { AppLanguage } from '../types/models';
  * A3: the card is the cut surface and the CTA is the cut button, the same
  * shapes Home is built from, so the paywall moment reads as part of the app
  * and not as a dialog dropped on top of it.
+ *
+ * On iOS it is not a Modal (iOS hunt 2026-10-17). Most of its fifteen openers
+ * raise it in the same tick as the sheet they came from closes ("Build it
+ * yourself" at 3/3, switching the active programme, editing at the cap), and
+ * iOS refused that presentation: no wall, and an invisible layer over the app
+ * that took every touch until it was closed from the app switcher. It is drawn
+ * in the window instead (InTreeLayer, in AppShell's topLayer), so it is there
+ * as soon as the sheet has slid away. Android keeps the Modal and its back key.
  */
 export function ProgramLimitSheet({
   visible,
@@ -54,25 +63,32 @@ export function ProgramLimitSheet({
   const theme = useTheme();
   const copy = programLimitSheetCopy(kind, used, limit, replacingStop);
 
+  const wall = (
+    <Pressable style={styles.scrim} onPress={onClose}>
+      {/* Stops a tap inside the card from closing it. */}
+      <Pressable style={styles.cardWrap} onPress={() => {}}>
+        <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+          {/* The count sits in the title ("· 3/3"). It used to be a pill of
+              its own under the body, the same number said twice. */}
+          <Text style={styles.title}>{t(language, copy.titleKey, copy.vars)}</Text>
+          <Text style={styles.body}>{t(language, copy.bodyKey, copy.vars)}</Text>
+          <View style={styles.actions}>
+            <CutButton size="lg" label={t(language, 'programLimit.cta')} onPress={onSeePro} />
+            <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8} style={styles.later}>
+              <Text style={styles.laterText}>{t(language, 'programLimit.later')}</Text>
+            </Pressable>
+          </View>
+        </CutSurface>
+      </Pressable>
+    </Pressable>
+  );
+
+  if (Platform.OS === 'ios') {
+    return <InTreeLayer visible={visible}>{wall}</InTreeLayer>;
+  }
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.scrim} onPress={onClose}>
-        {/* Stops a tap inside the card from closing it. */}
-        <Pressable style={styles.cardWrap} onPress={() => {}}>
-          <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
-            {/* The count sits in the title ("· 3/3"). It used to be a pill of
-                its own under the body, the same number said twice. */}
-            <Text style={styles.title}>{t(language, copy.titleKey, copy.vars)}</Text>
-            <Text style={styles.body}>{t(language, copy.bodyKey, copy.vars)}</Text>
-            <View style={styles.actions}>
-              <CutButton size="lg" label={t(language, 'programLimit.cta')} onPress={onSeePro} />
-              <Pressable accessibilityRole="button" onPress={onClose} hitSlop={8} style={styles.later}>
-                <Text style={styles.laterText}>{t(language, 'programLimit.later')}</Text>
-              </Pressable>
-            </View>
-          </CutSurface>
-        </Pressable>
-      </Pressable>
+      {wall}
     </Modal>
   );
 }

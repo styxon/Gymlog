@@ -15,6 +15,17 @@ interface AppShellProps {
    * or the bar was going to get.
    */
   overlay?: React.ReactNode;
+  /**
+   * Over everything, the status bar and the home indicator included, outside
+   * the safe area and the keyboard lift: what would otherwise be a Modal. See
+   * InTreeLayer for why a wall is drawn here on iOS rather than presented.
+   */
+  topLayer?: React.ReactNode;
+  /**
+   * Something in `topLayer` is up: the rest of the shell is hidden from
+   * VoiceOver and TalkBack, as a Modal would hide it.
+   */
+  topLayerActive?: boolean;
   toastMessage?: string | null;
   safeAreaEdges?: Edge[];
   statusBarStyleOverride?: 'light' | 'dark';
@@ -27,6 +38,8 @@ export function AppShell({
   children,
   tabBar,
   overlay,
+  topLayer,
+  topLayerActive = false,
   toastMessage,
   safeAreaEdges = ['top', 'left', 'right', 'bottom'],
   statusBarStyleOverride,
@@ -51,7 +64,12 @@ export function AppShell({
         translucent={statusBarTranslucent}
         backgroundColor={statusBarBackgroundColor ?? shellBackground}
       />
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: shellBackground }]} edges={safeAreaEdges}>
+      <SafeAreaView
+        style={[styles.safeArea, { backgroundColor: shellBackground }]}
+        edges={safeAreaEdges}
+        accessibilityElementsHidden={topLayerActive}
+        importantForAccessibility={topLayerActive ? 'no-hide-descendants' : 'auto'}
+      >
         <KeyboardAvoidingView
           behavior={Platform.select({ ios: 'padding', android: undefined })}
           style={styles.keyboardArea}
@@ -70,6 +88,11 @@ export function AppShell({
           {overlay}
         </KeyboardAvoidingView>
       </SafeAreaView>
+      {topLayer ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          {topLayer}
+        </View>
+      ) : null}
     </SafeAreaProvider>
   );
 }

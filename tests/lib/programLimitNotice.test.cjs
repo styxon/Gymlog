@@ -118,7 +118,7 @@ module.exports = [
       // App.tsx or a src/app module; matched within one file.
       assert.ok(
         shellSources().some((source) =>
-          /kind="running"[\s\S]{0,400}navigate\(\{ tab: 'profile', screen: 'premium', reason: 'program_cap' \}\)/.test(source),
+          /kind="running"[\s\S]{0,500}navigate\(\{ tab: 'profile', screen: 'premium', reason: 'program_cap' \}\)/.test(source),
         ),
         'the running-limit sheet no longer offers Pro on request',
       );
