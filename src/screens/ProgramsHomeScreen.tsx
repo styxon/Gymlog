@@ -1036,7 +1036,7 @@ export function ProgramsHomeScreen({
                         at one weight, so nothing was the answer to "which of
                         these". */}
                     <View style={styles.recBody}>
-                      <Text style={styles.recName} numberOfLines={1}>
+                      <Text style={styles.recName} numberOfLines={2}>
                         {item.name}
                       </Text>
                       <Text style={styles.recGoal} numberOfLines={1}>
@@ -1739,8 +1739,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 4,
   },
+  // 88 wide: at 78 "General fitness" broke onto two lines on an iPhone
+  // (owner's #4, iOS hunt 2026-10-17). The label keeps room for two lines
+  // either way, so a row of tiles stays level.
   catTileWrap: {
-    width: 78,
+    width: 88,
     alignItems: 'center',
   },
   catTile: {
@@ -1772,6 +1775,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   catTileLabel: {
     marginTop: 7,
+    minHeight: 28,
     color: theme.muted,
     fontSize: 11.5,
     lineHeight: 14,
@@ -1793,12 +1797,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 11,
     paddingBottom: 12,
   },
+  // Two lines, held at two so the cards in the row stay one height: in
+  // capitals at 186 wide, "CALISTHENICS STRENGTH" ended at "STRE…" on an
+  // iPhone, whose heavy capitals run wider than Android's (owner's #4, iOS
+  // hunt 2026-10-17), and a fifth of the catalogue's names are as long.
   recName: {
     color: theme.purple,
     fontSize: 12.5,
     lineHeight: 16,
+    minHeight: 32,
     fontWeight: '800',
-    letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
   recGoal: {

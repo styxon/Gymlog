@@ -63,7 +63,6 @@ import {
   recordWalkAddedSlot,
   resolveWalkAddAnchor,
   type WalkAddedLifts,
-  getGuidedInitials,
   buildGuidedRunSheet,
   getGuidedNextName,
   getGuidedNextPreview,
@@ -156,6 +155,9 @@ import { CtaShimmer } from '../components/CtaShimmer';
 import { SupersetBorder } from '../components/SupersetBorder';
 import { getDrillLibraryName } from '../lib/drillMedia';
 import { exerciseListLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { exerciseInitials } from '../lib/exerciseInitials';
+import { DUOTONE_RAMPS, duotoneMatrix } from '../lib/duotone';
+import { asksBeforeZeroWeightLog } from '../lib/zeroWeightLog';
 import { libraryLabel } from '../lib/libraryLabel';
 import { classifySessionFocus, getDefaultCooldown, getDefaultWarmup } from '../lib/homeSessionHero';
 import { formatClockTime, formatSetScheme, formatWeight, parseNumberInput, removeTrailingZeros } from '../lib/format';
@@ -214,39 +216,6 @@ import {
 // its top-left (#bugs 2026-10-09). A remote uri had no size, so this never
 // showed before the pictures were bundled.
 const FILL_SIZE = { width: '100%', height: '100%' } as const;
-
-/**
- * Duotone ramps: where black lands, and where white lands. Light theme keeps
- * the photo airy so it sits on the lilac surface; dark theme keeps it deep so
- * it does not glare mid-set.
- */
-const DUOTONE = {
-  light: { shadow: [0.298, 0.227, 0.478], light: [1, 1, 1] },
-  dark: { shadow: [0.09, 0.063, 0.169], light: [0.851, 0.8, 0.961] },
-} as const;
-
-/** Rec.601 luma weights — the same ones feColorMatrix's own saturate uses. */
-const LUMA = [0.299, 0.587, 0.114] as const;
-
-/**
- * The whole duotone as one feColorMatrix.
- *
- * The textbook recipe is saturate-to-grey followed by an feComponentTransfer
- * table per channel, and on Android the transfer node is ignored — the photo
- * came out plain greyscale. A single matrix does both steps at once and is the
- * one filter primitive that definitely renders: each output channel is the
- * luma weights scaled by that channel's ramp span, with the shadow end as the
- * constant term. Verified on device; do not "simplify" it back into two nodes.
- */
-function duotoneMatrix(shadow: readonly number[], light: readonly number[]) {
-  const row = (index: number) => {
-    const span = light[index] - shadow[index];
-    return [LUMA[0] * span, LUMA[1] * span, LUMA[2] * span, 0, shadow[index]];
-  };
-  return [...row(0), ...row(1), ...row(2), 0, 0, 0, 1, 0]
-    .map((value) => value.toFixed(4))
-    .join(' ');
-}
 
 // Dark palette for rest / finish takeovers (guided-shared.jsx GPD).
 const GPD = {
@@ -651,7 +620,7 @@ function MediaZone({
   // dropped in the v4 pass (user: the label added nothing on any exercise).
   const overlays = null;
 
-  const initials = getGuidedInitials(name);
+  const initials = exerciseInitials(exerciseNameLabel(language, name));
   // The panel is the FLOOR, not the fallback. It used to render only after
   // onError, so a photo that was merely slow left a blank white card filling
   // half the screen with nothing in it — and onError never fires while a
@@ -676,7 +645,7 @@ function MediaZone({
   );
 
   if (imageSource && !imageFailed) {
-    const ramp = DUOTONE[themeName];
+    const ramp = DUOTONE_RAMPS[themeName];
     return (
       <View style={[styles.mediaZone, { height, backgroundColor: '#E9DCFA', borderColor: '#E6DAF8' }]}>
         {panel}
@@ -690,7 +659,11 @@ function MediaZone({
           <Svg width="100%" height="100%">
             <Defs>
               <Filter id="vinhaDuotone" x="0" y="0" width="100%" height="100%">
-                <FeColorMatrix type="matrix" values={duotoneMatrix(ramp.shadow, ramp.light)} />
+                {/* iOS filters in linear light (lib/duotone; owner's #11). */}
+                <FeColorMatrix
+                  type="matrix"
+                  values={duotoneMatrix(ramp.shadow, ramp.light, Platform.OS === 'ios' ? 'linear' : 'srgb')}
+                />
               </Filter>
             </Defs>
             <SvgImage
@@ -2754,7 +2727,7 @@ function GuidedPlayer({
       history: resolveSlotHistory(slotId, name),
       instructions: getExerciseInstructions(match?.name, match?.instructions, language),
       imageKey: match?.imageKey ?? null,
-      initials: exerciseNameLabel(language, name).slice(0, 2).toUpperCase(),
+      initials: exerciseInitials(exerciseNameLabel(language, name)),
     };
   }, [exerciseLibrary, language, resolveSlotHistory, step]);
 
@@ -5950,6 +5923,14 @@ function SetStepView({
     setReps(commitDialReps(text, base, MINUTES_DIAL));
   };
   const [kg, setKg] = useState(target?.loadKg ?? 0);
+  /**
+   * "No weight set" has been said for this set: the next Log set logs it
+   * without weight (lib/zeroWeightLog; owner's #9).
+   */
+  const [zeroWeightAsked, setZeroWeightAsked] = useState(false);
+  useEffect(() => {
+    setZeroWeightAsked(false);
+  }, [stepIndex]);
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
   /**
@@ -6691,6 +6672,13 @@ function SetStepView({
               </Text>
             </View>
           ) : null}
+          {/* Said once, after the first Log set with nothing on the bar and
+              nothing to go on; the next tap logs it (owner's #9). */}
+          {zeroWeightAsked && !bodyweight && !(kg > 0) ? (
+            <View style={styles.setWeightNote}>
+              <Text style={styles.setWeightNoteText}>{t(language, 'guided.zeroWeightAsk')}</Text>
+            </View>
+          ) : null}
 
           {/* Badges about the numbers sit under the row, not inside the cards,
               so a badge does not make one card taller than the other. */}
@@ -6808,6 +6796,20 @@ function SetStepView({
                 return;
               }
               setDial(null);
+              if (
+                asksBeforeZeroWeightLog({
+                  carriesWeight: !bodyweight,
+                  kg,
+                  plannedKg: target?.loadKg ?? null,
+                  asked: zeroWeightAsked,
+                })
+              ) {
+                setZeroWeightAsked(true);
+                // The note is for the eye; a screen reader is told (iOS
+                // reads no live region).
+                AccessibilityInfo.announceForAccessibility(t(language, 'guided.zeroWeightAsk'));
+                return;
+              }
               // The minutes on the dial — the clock's, the prescription's or
               // the reader's own — are what was done. The clock is read now:
               // the dial shows the last wake-up's minutes, which can be a
@@ -7545,6 +7547,19 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.surface,
   },
   setWeightErrorText: { fontSize: 12.5, fontWeight: '800', color: theme.danger },
+  // Not an error: a question the next tap answers.
+  setWeightNote: {
+    alignSelf: 'center',
+    marginTop: 8,
+    marginHorizontal: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surface,
+  },
+  setWeightNoteText: { fontSize: 12.5, lineHeight: 17, fontWeight: '700', color: theme.ink, textAlign: 'center' },
   // Open: the border says which card the buttons belong to.
   setDialCardOpen: { borderColor: theme.highlight, backgroundColor: theme.surface },
   setDialLabel: { fontSize: 11.5, fontWeight: '800', letterSpacing: 1.1, color: theme.muted },

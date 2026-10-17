@@ -30,7 +30,6 @@ const {
   formatGuidedCountdown,
   formatGuidedTarget,
   findGuidedLibraryIndex,
-  getGuidedInitials,
   isGuidedExerciseOut,
   getGuidedStepAnchor,
   findGuidedStepIndexByAnchor,
@@ -1148,8 +1147,7 @@ module.exports = [
       assert.equal(findGuidedLibraryIndex('Front Squat', names), 3);
       assert.equal(findGuidedLibraryIndex('Push-ups', names), 4);
       assert.equal(findGuidedLibraryIndex('Cable Woodchopper', names), null);
-      assert.equal(getGuidedInitials('Bench Press'), 'BP');
-      assert.equal(getGuidedInitials('Deep Squat Rotations'), 'DS');
+      // The initials moved to lib/exerciseInitials (tests/lib/exerciseInitials.test.cjs).
     },
   },
   {

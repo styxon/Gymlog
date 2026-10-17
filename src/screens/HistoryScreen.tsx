@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -25,6 +25,7 @@ import { clampHistoryScrollOffset, historyScrollMemoryMatches, HistoryScrollMemo
 import { SessionFeelSummary, sessionFeelColor, summariseSessionFeel } from '../lib/sessionFeel';
 import { groupByMonth } from '../lib/monthGroups';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { StatusCap } from '../components/StatusCap';
 import { I18nKey, t } from '../lib/i18n';
 import { localizeSessionName } from '../lib/sessionNameLabel';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -328,13 +329,26 @@ export function HistoryScreen({
   // still have one place to read it from.
   const searchQuery = '';
   // The list and the detail share one screen (below), so opening a session
-  // and coming back re-renders the SAME scroll view onto much shorter
-  // content and back — which snaps its native offset to 0 on the way in and
-  // leaves it there on the way out. Restored once per return, from the
+  // and coming back re-renders the list's scroll view — once the same native
+  // view onto much shorter content, since 2026-10-17 a fresh one (the detail
+  // scrolls an Animated.ScrollView for its status cap) — and either way it
+  // comes back at offset 0. Restored once per return, from the
   // caller's memory, clamped to whatever the list can show right now (a
   // session may have been deleted meanwhile). #bugs 2026-09-29.
   const listScrollRef = useRef<ScrollView>(null);
   const listRestoredRef = useRef(false);
+  /**
+   * The saved workout's scroll, for the cap over the clock (components/
+   * StatusCap). One per workout opened: the screen outlives the detail, and a
+   * value kept across visits came back holding the last workout's offset (a
+   * detached native value is copied back to JS), so the next workout's cap
+   * was solid over its hero before it had moved.
+   */
+  const detailScrollY = useMemo(() => new Animated.Value(0), [selectedSessionId]);
+  const onDetailScroll = useMemo(
+    () => Animated.event([{ nativeEvent: { contentOffset: { y: detailScrollY } } }], { useNativeDriver: true }),
+    [detailScrollY],
+  );
   const listViewportHeightRef = useRef(Dimensions.get('window').height);
   /**
    * Whether the rows are showing their bins.
@@ -377,8 +391,8 @@ export function HistoryScreen({
 
   /* ── session detail ─────────────────────────────────────────────────── */
   if (selectedSession) {
-    // Coming back re-enters the list branch below on the same scroll view;
-    // let it restore again instead of trusting a restore from a previous visit.
+    // Coming back mounts the list's scroll view below afresh; let it restore
+    // again instead of trusting a restore from a previous visit.
     listRestoredRef.current = false;
     const logs = [...getSessionLogs(selectedSession.id)].sort((left, right) => left.orderIndex - right.orderIndex);
     const view = buildHistorySessionViewModel(selectedSession, logs);
@@ -386,8 +400,10 @@ export function HistoryScreen({
 
     return (
       <View style={styles.screen}>
-        <ScrollView
+        <Animated.ScrollView
           showsVerticalScrollIndicator={false}
+          onScroll={onDetailScroll}
+          scrollEventThrottle={16}
           contentContainerStyle={[styles.detailContent, { paddingBottom: layout.bottomTabBarReserve }]}
         >
           <View style={[styles.hero, { paddingTop: insets.top + 14 }]}>
@@ -540,7 +556,12 @@ export function HistoryScreen({
               })}
             </View>
           </View>
-        </ScrollView>
+        </Animated.ScrollView>
+        {/* The hero's own top colour, under the light clock the shell asks
+            for: invisible at rest, a clean cap once the page moves. The
+            status bar's background colour was meant to do this and does
+            nothing on iOS (owner's #5, iOS hunt 2026-10-17). */}
+        <StatusCap scrollY={detailScrollY} topInset={insets.top} color={HERO_STOPS[0]} />
       </View>
     );
   }

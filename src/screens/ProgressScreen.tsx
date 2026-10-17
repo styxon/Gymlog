@@ -52,6 +52,7 @@ import { getCanonicalCardioSessions, localDateKey } from '../lib/completedSessio
 import { getSummaryChartPoints, getTrackedSummaryValues } from '../lib/progressChartPoints';
 import { addCardioMinutesByDay, sumMonthTrainingTotals } from '../lib/dashboard';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { trackedLiftAmount } from '../lib/trackedLiftAmount';
 import { I18nKey, t } from '../lib/i18n';
 import { ProMomentContent, WeeklyReadRow } from '../lib/proInsights';
 import { ProLockedCard } from '../components/ProLockedCard';
@@ -1726,8 +1727,7 @@ export function ProgressScreen({
                       <View style={styles.trackedMetaRow}>
                         <SignalBadge summary={summary} language={language} />
                         <Text numberOfLines={1} style={styles.trackedMeta}>
-                          {formatWeight(summary.latestWeight, unitPreference)}
-                          {summary.latestReps && summary.latestReps !== '-' ? ` × ${summary.latestReps.split(',')[0]}` : ''}
+                          {trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}
                           {summary.latestLog ? ` · ${formatShortDate(summary.latestLog.performedAt, language)}` : ''}
                         </Text>
                       </View>
