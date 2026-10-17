@@ -729,6 +729,11 @@ export interface AppPreferences {
    */
   setupHandoffCompleted: boolean;
   /**
+   * The hand-off's first half is done and the Pro page has been opened. The
+   * second half — widget, tracking, theme — comes after it (lib/setupHandoff).
+   */
+  setupHandoffProSeen: boolean;
+  /**
    * Which surfaces have run their first-run tour. Each gets exactly one first
    * time; Settings can hand them all back. See lib/firstRunTour.ts.
    */

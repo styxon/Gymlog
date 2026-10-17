@@ -1785,6 +1785,10 @@ export function OnboardingScreen({
             bottomInset={insets.bottom}
             closeLabel={t(language, 'common.close')}
           >
+            {/* Inset like the sheet's head: KitSheet leaves its body to the
+                caller, and the chips and Done ran edge to edge, the chips
+                hard against the left (user, #bugs 2026-10-17). */}
+            <View style={styles.equipmentSheetBody}>
             <View style={styles.equipmentChipsWrap}>
               {(EQUIPMENT_CHIP_CATALOG.home_gym ?? []).map((item) => {
                 const active = homeDraftItems.includes(item);
@@ -1814,6 +1818,7 @@ export function OnboardingScreen({
               hint={homeDraftItems.length === 0 ? t(language, 'onb.equip.missing') : null}
               style={styles.equipmentSheetDone}
             />
+            </View>
           </KitSheet>
         </View>
       ),
@@ -2078,17 +2083,32 @@ export function OnboardingScreen({
               description must not be either: naming "Aloittelija" in bold over
               an empty selector claims a level the user never picked. Before the
               choice the block asks for one; after it, it explains. */}
-          <View style={styles.levelCopyBlock}>
-            <Text style={styles.levelTitle}>
-              {t(language, profileLevelSelected ? selectedLevelOption.yearsKey : 'onb.level.pickTitle')}
-            </Text>
-            {profileLevelSelected
-              ? selectedLevelOption.lineKeys.map((lineKey) => (
-                  <Text key={lineKey} style={styles.levelLine}>
-                    {t(language, lineKey)}
-                  </Text>
-                ))
-              : null}
+          {/* Every variant laid out in the same cell, only the current one
+              visible, so the block is always as tall as the longest. With one
+              block the height followed the text, and picking "3–5" (one line
+              shorter) lifted the selector and Continue under the reader's
+              thumb (user, #bugs 2026-10-17). */}
+          <View style={styles.levelCopyStack}>
+            {[null, ...LEVEL_SLIDER_OPTIONS].map((option, index) => {
+              const shown = profileLevelSelected ? option === selectedLevelOption : option === null;
+              return (
+                <View
+                  key={option?.yearsKey ?? 'pick'}
+                  style={[styles.levelCopyBlock, index > 0 && styles.levelCopyLayered, !shown && styles.levelCopyHidden]}
+                  accessibilityElementsHidden={!shown}
+                  importantForAccessibility={shown ? 'auto' : 'no-hide-descendants'}
+                >
+                  <Text style={styles.levelTitle}>{t(language, option ? option.yearsKey : 'onb.level.pickTitle')}</Text>
+                  {option
+                    ? option.lineKeys.map((lineKey) => (
+                        <Text key={lineKey} style={styles.levelLine}>
+                          {t(language, lineKey)}
+                        </Text>
+                      ))
+                    : null}
+                </View>
+              );
+            })}
           </View>
 
           <View
@@ -3427,9 +3447,15 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
   equipmentSheetDone: {
     marginTop: spacing.lg,
   },
+  equipmentSheetBody: {
+    paddingHorizontal: 18,
+  },
   equipmentChipsWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    // Centred rows: a short last row sits under the middle of the ones above
+    // rather than hanging off the left edge.
+    justifyContent: 'center',
     gap: 8,
     marginTop: 10,
   },
@@ -3486,11 +3512,23 @@ const makeOnboardingStyles = (C: OnbPalette) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
   },
+  // A row of full-width cells, each after the first pulled back over the
+  // first: the row is as tall as its tallest cell.
+  levelCopyStack: {
+    flexDirection: 'row',
+    marginTop: 12,
+  },
   levelCopyBlock: {
+    width: '100%',
     alignItems: 'center',
     gap: 3,
-    marginTop: 12,
     paddingHorizontal: 12,
+  },
+  levelCopyLayered: {
+    marginLeft: '-100%',
+  },
+  levelCopyHidden: {
+    opacity: 0,
   },
   levelTitle: {
     color: C.text,

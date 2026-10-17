@@ -1,7 +1,7 @@
 import React from 'react';
 import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Pattern, Polygon, Rect, Stop } from 'react-native-svg';
+import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Polygon, Stop } from 'react-native-svg';
 
 import { HG } from '../lightTheme';
 import { HG_DARK } from '../darkTheme';
@@ -159,8 +159,12 @@ function Check({ selected }: { selected: boolean }) {
 }
 
 /**
- * The diagonal cover. Striped fill plus a scrim, both inside the polygon, so
- * the seam is one shape rather than a stack of clipped rectangles.
+ * The diagonal cover: a flat ground and a scrim over it, both inside the
+ * polygon, so the seam is one shape rather than a stack of clipped rectangles.
+ *
+ * It was striped until 2026-10-17. A 4-unit pattern in a viewBox stretched
+ * with preserveAspectRatio="none" came out as a jagged chevron weave on the
+ * iPhone, and it was the loudest thing on the page (user, #bugs).
  */
 function HalfCover({ points, light, id }: { points: string; light: boolean; id: string }) {
   // `light` means "this is the chosen, purple half" — not the theme. The
@@ -171,16 +175,12 @@ function HalfCover({ points, light, id }: { points: string; light: boolean; id: 
   return (
     <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" preserveAspectRatio="none">
       <Defs>
-        <Pattern id={`stripe-${id}`} width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(35)">
-          <Rect width="4" height="4" fill={light ? '#6D28D9' : C.quietStripe} />
-          <Rect width="2" height="4" fill={light ? '#7C3AED' : C.quietStripeAlt} />
-        </Pattern>
         <SvgLinearGradient id={`scrim-${id}`} x1="0" y1="0" x2="0.45" y2="1">
           <Stop offset="0" stopColor={light ? '#5B21B6' : C.quietScrim} stopOpacity={light ? 0.55 : 0.6} />
           <Stop offset="1" stopColor={light ? '#5B21B6' : C.quietScrim} stopOpacity={light ? 0.92 : 0.93} />
         </SvgLinearGradient>
       </Defs>
-      <Polygon points={points} fill={`url(#stripe-${id})`} />
+      <Polygon points={points} fill={light ? '#6D28D9' : C.quietStripe} />
       <Polygon points={points} fill={`url(#scrim-${id})`} />
     </Svg>
   );
@@ -441,7 +441,7 @@ export function ProgramPickScreen({
             height={18}
             viewBox="0 0 24 24"
             fill="none"
-            stroke={topSelected ? '#FFFFFF' : HG.purpleDark}
+            stroke={topSelected ? paletteFor(theme).onCta : HG.purpleDark}
             strokeWidth={2.6}
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -476,10 +476,12 @@ interface PickPalette {
   purple: string;
   purpleDark: string;
   purpleLight: string;
-  /** The quiet half's diagonal fill: two stripe tones and the scrim over them. */
+  /** The quiet half's diagonal fill: a flat ground and the scrim over it. */
   quietStripe: string;
-  quietStripeAlt: string;
   quietScrim: string;
+  /** The CTA on the chosen half: the theme's orange and the ink made for it. */
+  cta: string;
+  onCta: string;
 }
 
 const PICK_LIGHT: PickPalette = {
@@ -492,8 +494,9 @@ const PICK_LIGHT: PickPalette = {
   purpleDark: HG.purpleDark,
   purpleLight: HG.purpleLight,
   quietStripe: '#E9E1F8',
-  quietStripeAlt: '#DCD1F2',
   quietScrim: '#FFFFFF',
+  cta: HG.orange,
+  onCta: HG.onHighlight,
 };
 
 const PICK_DARK: PickPalette = {
@@ -506,8 +509,9 @@ const PICK_DARK: PickPalette = {
   purpleDark: HG_DARK.purpleBright,
   purpleLight: HG_DARK.purpleLight,
   quietStripe: HG_DARK.surfaceSoft,
-  quietStripeAlt: HG_DARK.surface,
   quietScrim: HG_DARK.bg,
+  cta: HG_DARK.orange,
+  onCta: HG_DARK.onHighlight,
 };
 
 const paletteFor = (theme: Theme): PickPalette => (theme === darkTheme ? PICK_DARK : PICK_LIGHT);
@@ -619,9 +623,11 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
     justifyContent: 'center',
     gap: 8,
   },
+  // Orange on the chosen violet half: orange is what can be pressed (user
+  // 2026-10-17). The same pair as the onboarding Continue.
   ctaOnPurple: {
-    backgroundColor: C.purple,
-    shadowColor: '#7C3AED',
+    backgroundColor: C.cta,
+    shadowColor: C.cta,
     shadowOffset: { width: 0, height: 14 },
     shadowOpacity: 0.34,
     shadowRadius: 28,
@@ -637,7 +643,7 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
   },
   ctaBusy: { opacity: 0.6 },
   ctaText: { fontSize: 16.5, fontWeight: '800' },
-  ctaTextOnPurple: { color: '#FFFFFF' },
+  ctaTextOnPurple: { color: C.onCta },
   // Fixed with the white CTA it sits on: C.purpleDark turns light violet in
   // dark, 2.7:1 on white (#bugs 2026-10-01 audit).
   ctaTextOnWhite: { color: HG.purpleDark },

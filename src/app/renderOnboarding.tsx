@@ -226,6 +226,8 @@ export interface SetupHandoffDeps {
   LEGAL_OVER_HANDOFF: React.ComponentProps<typeof View>['style'];
   /** From ./modules/home-widget, passed in as setupHandoffDone takes it. */
   requestPinHomeWidget: () => Promise<boolean>;
+  /** The theme page applies the answer on tap: the page repaints as the preview. */
+  onThemeChange: (dark: boolean) => void;
 }
 
 export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
@@ -237,12 +239,16 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
     handoffLegalDocument,
     LEGAL_OVER_HANDOFF,
     requestPinHomeWidget,
+    onThemeChange,
   } = deps;
 
   let content: React.ReactNode = null;
   content = (
     <>
     <SetupHandoffScreen
+      // A fresh screen for each half: the first half's page index and answers
+      // are spent once the Pro page has opened.
+      key={setupHandoffPlan.phase}
       language={preferences.appLanguage}
       plan={setupHandoffPlan}
       focusLabel={
@@ -264,6 +270,8 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
       }
       onPinWidget={() => pinWidgetAndWaitForDialog(requestPinHomeWidget)}
       onOpenLegal={(document) => setHandoffLegalDocument(document)}
+      darkEnabled={preferences.darkThemeEnabled}
+      onThemeChange={onThemeChange}
       legalAlreadyAccepted={
         legalAcceptanceDue(preferences.legalAcceptance, LEGAL_VERSION) === null
       }

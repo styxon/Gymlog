@@ -365,8 +365,6 @@ function VinhaApp() {
   // Settings' "Import plan (CSV)" opens the same sheet the Programs tab uses,
   // straight into its paste view. One importer, two doors.
   const [settingsImportVisible, setSettingsImportVisible] = useState(false);
-  /** The theme question, asked once right after "Let's begin". */
-  const [themeChoiceVisible, setThemeChoiceVisible] = useState(false);
   // null = still asking Android, or the device cannot pin widgets at all.
   const [homeWidgetState, setHomeWidgetState] = useState<{ supported: boolean; added: boolean } | null>(
     null,
@@ -1582,7 +1580,6 @@ function VinhaApp() {
     aboutYouValues,
     busySavingReadyPick,
     setBusySavingReadyPick,
-    setThemeChoiceVisible,
     setProgramLimitVisible,
     navigateBack,
     resetToRoute,
@@ -1751,6 +1748,7 @@ function VinhaApp() {
     setSetupHandoffHeld,
     setupHandoffPlan,
     setupHandoffActive,
+    setupHandoffShown,
     legalConsentDue,
     homeTourActive,
     workoutTourDue,
@@ -2039,7 +2037,12 @@ function VinhaApp() {
       handleOnboardingCompleteToTraining,
       setFullBleedReview,
     });
-  } else if (setupHandoffActive && setupHandoffPlan) {
+  } else if (
+    // Shown rather than owed: the Pro page, and what it opens, sit between
+    // the hand-off's two halves (user 2026-10-17). See useSetupHandoffOverlays.
+    setupHandoffShown &&
+    setupHandoffPlan
+  ) {
     // Between the last question and the app. The route behind this is already
     // the one onboarding chose, so finishing here just uncovers it.
     content = renderSetupHandoff({
@@ -2050,6 +2053,7 @@ function VinhaApp() {
       handoffLegalDocument,
       LEGAL_OVER_HANDOFF,
       requestPinHomeWidget,
+      onThemeChange: (dark) => void updatePreferences({ darkThemeEnabled: dark }),
     });
   } else if (route.tab === 'profile' && route.screen === 'setup') {
     content = renderSetupEditor({
@@ -2473,8 +2477,6 @@ function VinhaApp() {
     programSlots,
     runningCapSheet,
     setRunningCapSheet,
-    themeChoiceVisible,
-    setThemeChoiceVisible,
     ratingSheetVisible,
     setRatingSheetVisible,
     PLAY_LISTING_URL,

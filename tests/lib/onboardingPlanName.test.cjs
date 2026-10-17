@@ -62,4 +62,26 @@ module.exports = [
       assert.ok(card.weeklyTrend !== null && card.weeklyTrend > 0);
     },
   },
+  {
+    name: 'the track-change example follows the site picked first, for every site',
+    run() {
+      const { resolveTrackChangeExampleKind } = require('../../.test-dist/lib/trackChangeExample.js');
+      const now = new Date(2026, 9, 12, 10);
+      for (const kind of ['shoulders', 'chest', 'back', 'arms', 'waist', 'hips', 'thighs', 'calves', 'bodyfat']) {
+        const card = buildTrackChangeExampleCard('fi', now, kind);
+        assert.equal(card.key, kind);
+        assert.ok(card.series.length >= 3, kind);
+        assert.ok(card.weeklyTrend !== null && card.weeklyTrend !== 0, `${kind} shows a change`);
+      }
+      assert.equal(buildTrackChangeExampleCard('en', now, 'bodyfat').unit, '%');
+      // Waist and body fat go down; the others go up.
+      assert.ok(buildTrackChangeExampleCard('en', now, 'waist').weeklyTrend < 0);
+      assert.ok(buildTrackChangeExampleCard('en', now, 'arms').weeklyTrend > 0);
+
+      // The first pick, not the latest; nothing picked, the first tile.
+      assert.equal(resolveTrackChangeExampleKind(['waist', 'arms'], ['chest', 'waist', 'arms']), 'waist');
+      assert.equal(resolveTrackChangeExampleKind([], ['chest', 'waist']), 'chest');
+      assert.equal(resolveTrackChangeExampleKind([], []), 'shoulders');
+    },
+  },
 ];

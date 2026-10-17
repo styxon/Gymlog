@@ -3,6 +3,7 @@ import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'r
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { AppleSignInButton } from '../components/AppleSignInButton';
+import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
 import { ProPill } from '../components/ProLockMarks';
@@ -724,32 +725,31 @@ export function SettingsScreen({
             <View style={[styles.card, styles.cardFollow]}>
             {/* Sign in and the data survives a new phone. Hidden when the build
                 has no sign-in configured; free and Pro alike (2026-08-22). */}
-            {/* Apple's own button, as App Review wants it, above the Google row. */}
-            {account && !account.signedIn && account.providers.includes('apple') ? (
+            {/* Apple's own button, as App Review wants it, and Google's drawn to
+                match it under it (user, #bugs 2026-10-17): two buttons of one
+                shape, then the one line that says what either buys. */}
+            {account && !account.signedIn ? (
               <View style={styles.appleSignIn}>
-                <AppleSignInButton
-                  variant="whiteOutline"
-                  cornerRadius={12}
-                  height={46}
-                  disabled={account.busy}
-                  onPress={() => account.onSignIn('apple')}
-                />
-                {account.providers.includes('google') ? null : (
-                  <Text style={styles.appleSignInSub}>{t(language, 'account.signIn.sub')}</Text>
-                )}
+                {account.providers.includes('apple') ? (
+                  <AppleSignInButton
+                    variant="whiteOutline"
+                    cornerRadius={12}
+                    height={46}
+                    disabled={account.busy}
+                    onPress={() => account.onSignIn('apple')}
+                  />
+                ) : null}
+                {account.providers.includes('google') ? (
+                  <GoogleSignInButton
+                    label={t(language, 'account.signIn.google')}
+                    cornerRadius={12}
+                    height={46}
+                    disabled={account.busy}
+                    onPress={() => account.onSignIn('google')}
+                  />
+                ) : null}
+                <Text style={styles.appleSignInSub}>{t(language, 'account.signIn.sub')}</Text>
               </View>
-            ) : null}
-            {account && !account.signedIn && account.providers.includes('google') ? (
-              <Row
-                icon="shield"
-                positive
-                last
-                title={t(language, 'account.signIn')}
-                sub={t(language, 'account.signIn.sub')}
-                chevron
-                disabled={account.busy}
-                onPress={() => account.onSignIn('google')}
-              />
             ) : null}
             {account && account.signedIn ? (
               <Row

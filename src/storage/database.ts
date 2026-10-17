@@ -863,7 +863,11 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
       darkThemeEnabled:
         typeof input?.preferences?.darkThemeEnabled === 'boolean'
           ? input.preferences.darkThemeEnabled
-          : fallback.preferences.darkThemeEnabled,
+          : // A new install starts dark (2026-10-17); one stored before the
+            // field existed was light, and keeps that.
+            input?.preferences?.onboardingCompleted === true
+            ? false
+            : fallback.preferences.darkThemeEnabled,
       usageStatisticsEnabled:
         typeof input?.preferences?.usageStatisticsEnabled === 'boolean'
           ? input.preferences.usageStatisticsEnabled
@@ -1075,6 +1079,10 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
           : input?.preferences?.onboardingCompleted === true
             ? true
             : fallback.preferences.setupHandoffCompleted,
+      setupHandoffProSeen:
+        typeof input?.preferences?.setupHandoffProSeen === 'boolean'
+          ? input.preferences.setupHandoffProSeen
+          : fallback.preferences.setupHandoffProSeen,
       entryFlowCompleted:
         typeof input?.preferences?.entryFlowCompleted === 'boolean'
           ? input.preferences.entryFlowCompleted

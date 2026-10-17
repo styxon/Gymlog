@@ -488,7 +488,11 @@ module.exports = [
       assert.match(levelBody, /t\(language, option\.rangeKey\)/);
       assert.doesNotMatch(levelBody, /t\(language, option\.labelKey\)/);
       assert.doesNotMatch(levelBody, /selectedLevelOption\.labelKey/);
-      assert.match(levelBody, /selectedLevelOption\.lineKeys\.map/);
+      // Every variant in one cell, the current one shown, so the block keeps
+      // the longest one's height and nothing below it moves (user 2026-10-17).
+      assert.match(levelBody, /\[null, \.\.\.LEVEL_SLIDER_OPTIONS\]\.map/);
+      assert.match(levelBody, /option\.lineKeys\.map/);
+      assert.match(onboardingSource, /levelCopyLayered: \{\s*marginLeft: '-100%',/);
       assert.doesNotMatch(levelBody, /GENDER_OPTIONS/);
       assert.doesNotMatch(levelBody, /TRAINING_FREQUENCY_OPTIONS/);
       // SetupLevel and the UI share the same tier names: beginner/advanced/pro.

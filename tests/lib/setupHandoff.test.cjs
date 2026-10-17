@@ -236,12 +236,13 @@ module.exports = [
       assert.match(screen, /done: \{\s*\r?\n\s*minHeight: 62,\s*\r?\n\s*borderRadius: 18,/);
       assert.doesNotMatch(screen, /CutButton/, 'the A3 cut button is back on the last onboarding screen');
 
-      // Violet since 2026-10-16 (the orange of #382 taken back), white ink.
+      // Orange, as the onboarding Continue, with the ink made for orange
+      // (user 2026-10-17; violet for a day after #384).
       //
       // Scoped to the button's own block. Unscoped, this matched the check
       // circle's fill further down the same file (review, #78).
-      assert.match(screen, /done: \{[^}]*backgroundColor: theme\.purpleFill,/);
-      assert.match(screen, /doneText: \{\s*\r?\n\s*color: '#FFFFFF',/);
+      assert.match(screen, /done: \{[^}]*backgroundColor: theme\.orange,/);
+      assert.match(screen, /doneText: \{\s*\r?\n\s*color: theme\.onHighlight,/);
     },
   },
   {
@@ -281,11 +282,26 @@ module.exports = [
         canOfferAccountBackup: true,
         canOfferPro: true,
       });
-      assert.equal(everything.offerWidget, true);
+      // Before the Pro page only sign-in is asked; the widget waits for the
+      // second half (user 2026-10-17).
+      assert.equal(everything.phase, 'beforePro');
+      assert.equal(everything.offerWidget, false);
       assert.equal(everything.offerAccountBackup, true);
       assert.equal(everything.offerPro, true);
       assert.equal(everything.offerTrackedSites, true);
       assert.deepEqual(everything.trackedSiteOptions, ['chest']);
+
+      const after = planSetupHandoff({
+        canOfferWidget: true,
+        pinnedCardKeys: [],
+        focusAreas: ['chest'],
+        canOfferAccountBackup: true,
+        canOfferPro: true,
+        proStepDone: true,
+      });
+      assert.equal(after.phase, 'afterPro');
+      assert.equal(after.offerWidget, true);
+      assert.equal(after.offerPro, false, 'the Pro page is not opened twice');
     },
   },
   {
@@ -313,17 +329,33 @@ module.exports = [
       assert.equal(onlyPro.shouldShow, true);
       assert.equal(onlyPro.offerPro, true);
 
+      // The second half, once the Pro page has been shown.
+      const after = { ...base, proStepDone: true };
+      assert.deepEqual(planSetupHandoff(after).pages, []);
+      assert.equal(planSetupHandoff(after).shouldShow, false, 'nothing left after Pro: the step closes');
+
       // A site not on Home yet brings the dialog back, and so does naming
       // nothing measurable, when the dialog offers every site.
-      assert.deepEqual(planSetupHandoff({ ...base, pinnedCardKeys: ['bodyweight'] }).pages, ['tracking']);
-      assert.deepEqual(planSetupHandoff({ ...base, focusAreas: [] }).pages, ['tracking']);
-      // In order, each on its own condition.
+      assert.deepEqual(planSetupHandoff({ ...after, pinnedCardKeys: ['bodyweight'] }).pages, ['tracking']);
+      assert.deepEqual(planSetupHandoff({ ...after, focusAreas: [] }).pages, ['tracking']);
+      // In order, each on its own condition: sign-in before the Pro page, the
+      // widget, the sites and the theme after it (user 2026-10-17).
+      const full = { ...base, pinnedCardKeys: [], canOfferAccountBackup: true, canOfferWidget: true, canOfferTheme: true };
+      assert.deepEqual(planSetupHandoff(full).pages, ['signin']);
+      assert.deepEqual(planSetupHandoff({ ...full, proStepDone: true }).pages, ['offers', 'tracking', 'theme']);
+      // No Pro page to show (bought): no first half, and sign-in leads the second.
+      assert.deepEqual(planSetupHandoff({ ...full, canOfferPro: false }).pages, ['signin', 'offers', 'tracking', 'theme']);
+      // Bought on the Pro page: canOfferPro flips, and sign-in, already asked
+      // in the first half, is not asked again.
       assert.deepEqual(
-        planSetupHandoff({ ...base, pinnedCardKeys: [], canOfferAccountBackup: true, canOfferWidget: true }).pages,
-        ['signin', 'offers', 'tracking'],
+        planSetupHandoff({ ...full, canOfferPro: false, proStepDone: true }).pages,
+        ['offers', 'tracking', 'theme'],
       );
-      assert.deepEqual(planSetupHandoff({ ...base, canOfferWidget: true }).pages, ['offers']);
+      assert.deepEqual(planSetupHandoff({ ...after, canOfferWidget: true }).pages, ['offers']);
       assert.deepEqual(planSetupHandoff({ ...base, canOfferAccountBackup: true }).pages, ['signin']);
+      // The theme page alone is enough to show the second half.
+      assert.deepEqual(planSetupHandoff({ ...after, canOfferTheme: true }).pages, ['theme']);
+      assert.equal(planSetupHandoff({ ...after, canOfferTheme: true }).shouldShow, true);
 
       // The screen reads the plan's list, and with nothing on it goes to Pro
       // once rather than drawing a title over an empty page.
@@ -369,6 +401,50 @@ module.exports = [
       // Registered after the route handler, so it is the newest listener.
       assert.ok(route < own, 'the document listener has to be declared after the route one');
       assert.match(app, /handoffLegalOpenRef\.current = handoffLegalDocument !== null;/);
+    },
+  },
+  {
+    /**
+     * The Pro page between the two halves (user 2026-10-17): sign-in, Pro,
+     * then the widget, the sites and the theme. Three places have to agree:
+     * the shell lets the Pro page show while the hand-off is still owed, the
+     * first Done records the Pro step only after it has navigated, and a
+     * stored install from before the flag loads it as false, not undefined.
+     */
+    name: 'the hand-off steps aside for the Pro page and comes back after it',
+    run() {
+      // Shown, not owed: aside on any Profile screen but the list, so the
+      // Pro page's terms, policy and subscription links open, and the terms
+      // sheet can ask over the Pro page before anything is bought.
+      const app = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
+      assert.match(app, /\} else if \(\s*(\/\/[^\n]*\n\s*)*setupHandoffShown &&\s*setupHandoffPlan\s*\)/);
+
+      const done = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'setupHandoffDone.tsx'), 'utf8');
+      const navigateAt = done.indexOf("navigate({ tab: 'profile', screen: 'premium' })");
+      const proSeenAt = done.indexOf('setupHandoffProSeen: true');
+      assert.ok(navigateAt > 0 && proSeenAt > navigateAt, 'the Pro step is recorded after the Pro page opens');
+      // The first half does not finish the hand-off.
+      assert.match(done, /beforePro \? \{\} : \{ setupHandoffCompleted: true \}/);
+
+      const overlays = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useSetupHandoffOverlays.tsx'), 'utf8');
+      assert.match(overlays, /proStepDone: preferences\.setupHandoffProSeen,/);
+      assert.match(
+        overlays,
+        /setupHandoffShown =\s*setupHandoffActive && !\(route\.tab === 'profile' && route\.screen !== ROOT_ROUTES\.profile\.screen\)/,
+      );
+      assert.match(overlays, /!onboardingActive && !setupHandoffShown\s*\? legalAcceptanceDue/);
+      assert.match(overlays, /canOfferTheme: true,/);
+
+      const { normalizeDatabase } = require('../../.test-dist/storage/database.js');
+      const old = normalizeDatabase({ preferences: { onboardingCompleted: false } });
+      assert.equal(old.preferences.setupHandoffProSeen, false);
+      assert.equal(
+        normalizeDatabase({ preferences: { setupHandoffProSeen: true } }).preferences.setupHandoffProSeen,
+        true,
+      );
+      // An install from before the dark default keeps the light it had.
+      assert.equal(normalizeDatabase({ preferences: { onboardingCompleted: true } }).preferences.darkThemeEnabled, false);
+      assert.equal(normalizeDatabase({ preferences: {} }).preferences.darkThemeEnabled, true);
     },
   },
 ];

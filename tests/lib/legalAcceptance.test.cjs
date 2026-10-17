@@ -166,7 +166,9 @@ module.exports = [
       // that mounts the sheet is still App.tsx's own.
       const shell = readAppWiring().split('\r\n').join('\n');
       const owed = between(shell, 'const legalConsentOwed =', ';\n');
-      assert.match(owed, /appHydrated && brandSplashDone && !onboardingActive && !setupHandoffActive/);
+      // Shown, not owed (2026-10-17): over the Pro page between the hand-off's
+      // halves the sheet asks, before anything can be bought.
+      assert.match(owed, /appHydrated && brandSplashDone && !onboardingActive && !setupHandoffShown/);
       assert.match(owed, /legalAcceptanceDue\(preferences\.legalAcceptance, LEGAL_VERSION\)/);
       // Held on screen while the answer is written: updatePreferences shows
       // the change before the disk has it (CI review of #184).

@@ -4,7 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
 import { t } from '../lib/i18n';
-import { buildTrackChangeExampleCard } from '../lib/trackChangeExample';
+import { buildTrackChangeExampleCard, resolveTrackChangeExampleKind } from '../lib/trackChangeExample';
 import { StatCardPreview } from './HomeStatCardsSection';
 import { Theme, useThemedStyles } from '../theming';
 import { AppLanguage, MeasurementKind } from '../types/models';
@@ -75,8 +75,13 @@ export function TrackChangeDialog({
   const styles = useThemedStyles(makeStyles);
   const sites = (offered.length > 0 ? offered : ALL_SITES).slice(0, SITE_TILES);
 
-  // Built on first show, never stored.
-  const example = useMemo(() => (visible ? buildTrackChangeExampleCard(language) : null), [visible, language]);
+  // The card for the site picked first, or the first tile's. Built while
+  // shown, never stored.
+  const exampleKind = resolveTrackChangeExampleKind(selected, sites);
+  const example = useMemo(
+    () => (visible ? buildTrackChangeExampleCard(language, new Date(), exampleKind) : null),
+    [visible, language, exampleKind],
+  );
 
   const toggle = (kind: MeasurementKind) => {
     onChange(selected.includes(kind) ? selected.filter((entry) => entry !== kind) : [...selected, kind]);
@@ -322,11 +327,11 @@ const makeStyles = (theme: Theme) =>
       borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      // The white-label violet (accessibility audit, 2026-09-21).
-      backgroundColor: theme.purpleFill,
+      // Orange, as every Done in the flow; the tiles' choice stays violet.
+      backgroundColor: theme.orange,
     },
     ctaText: {
-      color: '#FFFFFF',
+      color: theme.onHighlight,
       fontSize: 16,
       fontWeight: '800',
     },

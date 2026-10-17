@@ -295,7 +295,9 @@ module.exports = [
       // And the shared buttons the audit named, by name.
       assert.match(read('src', 'components', 'ConfirmDialog.tsx'), /primaryButton: \{[^}]*backgroundColor: theme\.purpleFill,/);
       assert.match(read('src', 'components', 'CutButton.tsx'), /variant === 'primary'\s*\?\s*theme\.purpleFill/);
-      assert.match(read('src', 'components', 'PrimaryCTAButton.tsx'), /button: \{[^}]*backgroundColor: theme\.purpleFill,/);
+      // The onboarding CTA is orange with onHighlight on it (2026-10-17), so
+      // neither violet nor white is in its button.
+      assert.match(read('src', 'components', 'PrimaryCTAButton.tsx'), /button: \{[^}]*backgroundColor: theme\.orange,/);
       const freestyle = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
       // Its add sheet is the shared AddExerciseSheet now (#bugs 2026-10-10),
       // whose chips and commit bar are checked with that component.

@@ -6,7 +6,6 @@ import { BottomTabBar } from '../components/BottomTabBar';
 import type { NewProgramSheet } from '../components/NewProgramSheet';
 import { ProgramLimitSheet } from '../components/ProgramLimitSheet';
 import { RateAppSheet } from '../components/RateAppSheet';
-import { ThemeChoiceDialog } from '../components/ThemeChoiceDialog';
 import { AppUpdateDialog } from '../features/appUpdate/AppUpdateDialog';
 import { ServerNoticeDialog } from '../features/serverNotice/ServerNoticeDialog';
 import { hevyWorkoutsToLoggedSessions, HevyLoggedSession } from '../lib/hevyImport';
@@ -78,8 +77,6 @@ export interface AppShellDeps {
   programSlots: ProgramSlots;
   runningCapSheet: RunningCapSheet;
   setRunningCapSheet: React.Dispatch<React.SetStateAction<RunningCapSheet>>;
-  themeChoiceVisible: boolean;
-  setThemeChoiceVisible: React.Dispatch<React.SetStateAction<boolean>>;
   ratingSheetVisible: boolean;
   setRatingSheetVisible: React.Dispatch<React.SetStateAction<boolean>>;
   PLAY_LISTING_URL: string;
@@ -125,8 +122,6 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
     programSlots,
     runningCapSheet,
     setRunningCapSheet,
-    themeChoiceVisible,
-    setThemeChoiceVisible,
     ratingSheetVisible,
     setRatingSheetVisible,
     PLAY_LISTING_URL,
@@ -325,18 +320,6 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
           setRunningCapSheet((current) => ({ ...current, visible: false }));
           navigate({ tab: 'profile', screen: 'premium', reason: 'program_cap' });
         }}
-      />
-      <ThemeChoiceDialog
-        visible={themeChoiceVisible}
-        language={preferences.appLanguage}
-        darkEnabled={preferences.darkThemeEnabled}
-        // Written straight to preferences, so the dialog repaints itself along
-        // with everything behind it. That IS the preview.
-        onChange={(dark) => void updatePreferences({ darkThemeEnabled: dark })}
-        // Closes onto the path screen, which onboarding is already showing
-        // behind it. No navigation: the dialog interrupts the flow, it does
-        // not move it.
-        onDone={() => setThemeChoiceVisible(false)}
       />
       {/* Built months ago and left unwired — the strings even said so. The
           sheet takes the star it was given and ignores it on purpose: every
