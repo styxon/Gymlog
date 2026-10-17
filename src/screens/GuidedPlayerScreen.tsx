@@ -163,6 +163,7 @@ import { I18nKey, t } from '../lib/i18n';
 import { haptics } from '../utils/haptics';
 import { subscribeRestActions, useRestEndAlert } from '../hooks/useRestEndAlert';
 import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMoment';
+import { useModalHandoff } from '../hooks/useModalHandoff';
 import { RestAlertsSheet } from '../components/RestAlertsSheet';
 import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { sound, type CueSound } from '../utils/sound';
@@ -1400,8 +1401,18 @@ function GPSheet({
   onClose,
   bottomInset,
   scrollable = false,
+  visible = true,
+  onDismissed,
   children,
 }: {
+  /**
+   * For a sheet that hands off to another modal (hooks/useModalHandoff): kept
+   * mounted and switched off here, because iOS reports a Modal's dismissal
+   * only when `visible` turns false, never when it unmounts.
+   */
+  visible?: boolean;
+  /** iOS only: the sheet has finished leaving the screen. */
+  onDismissed?: () => void;
   /** Drawn in the grab zone beside the close button, so the title is a handle too. */
   title: string;
   /** For the close button's name. */
@@ -1474,9 +1485,21 @@ function GPSheet({
       onPanResponderTerminate: settle,
     });
   }, [dragY]);
+  // A kept-mounted sheet closed by a pull would open again still pulled down.
+  useEffect(() => {
+    if (visible) {
+      dragY.setValue(0);
+    }
+  }, [visible, dragY]);
 
   return (
-    <Modal transparent animationType="fade" onRequestClose={onClose}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+      onDismiss={onDismissed}
+    >
       <View
         style={styles.sheetScrim}
         onLayout={(event) => setAreaHeight(Math.round(event.nativeEvent.layout.height))}
@@ -1952,6 +1975,9 @@ function GuidedPlayer({
   /** The session as a list, opened from the rail. Read-only — it moves nothing. */
   const [runSheetOpen, setRunSheetOpen] = useState(false);
   const [confirmingSkipExercise, setConfirmingSkipExercise] = useState(false);
+  // The actions and exit sheets open other modals; on iOS those wait for the
+  // sheet to leave (hooks/useModalHandoff).
+  const { handOff, onSheetDismissed } = useModalHandoff();
   const [swapOpen, setSwapOpen] = useState(false);
   /**
    * The cooldown intro's third door: on to the work block for one more lift,
@@ -3037,11 +3063,14 @@ function GuidedPlayer({
    * a programme is removed, and that one looks like it belongs here.
    */
   const handleEndSession = () => {
-    setExitOpen(false);
     if (completedSetCount > 0) {
-      setConfirmingEnd(true);
+      handOff(
+        () => setExitOpen(false),
+        () => setConfirmingEnd(true),
+      );
       return;
     }
+    setExitOpen(false);
     onEndSession();
   };
 
@@ -4910,8 +4939,11 @@ function GuidedPlayer({
         />
       )}
 
-      {exitOpen && (
-        <GPSheet
+      {/* Kept mounted: its "End" hands off to the confirmation, and on iOS
+          that waits for this sheet's dismissal (hooks/useModalHandoff). */}
+      <GPSheet
+          visible={exitOpen}
+          onDismissed={onSheetDismissed}
           title={t(language, 'guided.exit.title')}
           language={language}
           onClose={() => setExitOpen(false)}
@@ -4949,7 +4981,6 @@ function GuidedPlayer({
               throws the sets away, is now said where it matters: in the
               confirmation, at the moment you press it (#bugs 2026-08-26). */}
         </GPSheet>
-      )}
 
       {/*
         The session, read out loud.
@@ -5090,8 +5121,11 @@ function GuidedPlayer({
         </GPSheet>
       )}
 
-      {pauseSheetOpen && (
-        <GPSheet
+      {/* Kept mounted: three of its rows open another modal, and on iOS that
+          waits for this sheet's dismissal (hooks/useModalHandoff). */}
+      <GPSheet
+          visible={pauseSheetOpen}
+          onDismissed={onSheetDismissed}
           title={t(language, 'guided.pauseSheet.title')}
           language={language}
           onClose={() => {
@@ -5110,9 +5144,11 @@ function GuidedPlayer({
             <GhostBtn
               label={t(language, 'guided.runSheet.title')}
               onPress={() => {
-                setPauseSheetOpen(false);
                 moveOnFromMenu();
-                setRunSheetOpen(true);
+                handOff(
+                  () => setPauseSheetOpen(false),
+                  () => setRunSheetOpen(true),
+                );
               }}
             />
             {/* "One back" and "skip this" are gone. Two skips a thumb's width
@@ -5152,25 +5188,33 @@ function GuidedPlayer({
                   <GhostBtn
                     icon="swap"
                     label={t(language, 'guided.action.swap')}
-                    onPress={() => {
-                      setPauseSheetOpen(false);
-                      setSwapOpen(true);
-                    }}
+                    onPress={() =>
+                      handOff(
+                        () => setPauseSheetOpen(false),
+                        () => setSwapOpen(true),
+                      )
+                    }
                   />
                 ) : null}
                 {/* Red, and it asks. This sat between two other outlined rows
-                    and threw away a whole exercise on one tap. */}
+                    and threw away a whole exercise on one tap. The question
+                    comes after the sheet has gone: asked over it, iOS froze
+                    the app (#bugs 2026-10-17). */}
                 <GhostBtn
                   icon="x"
                   danger
                   label={t(language, 'guided.action.skipExercise')}
-                  onPress={() => setConfirmingSkipExercise(true)}
+                  onPress={() =>
+                    handOff(
+                      () => setPauseSheetOpen(false),
+                      () => setConfirmingSkipExercise(true),
+                    )
+                  }
                 />
               </>
             ) : null}
           </View>
         </GPSheet>
-      )}
 
       {/* Swapping a lift.
 
@@ -5206,7 +5250,12 @@ function GuidedPlayer({
         message={t(language, 'guided.skipExercise.body')}
         confirmLabel={t(language, 'guided.skipExercise.confirm')}
         cancelLabel={t(language, 'guided.exit.keep')}
-        onCancel={() => setConfirmingSkipExercise(false)}
+        // The actions sheet has already gone (handOff above), so "keep it"
+        // is closing that menu: the pause it found comes back.
+        onCancel={() => {
+          setConfirmingSkipExercise(false);
+          closeActionsMenu();
+        }}
         onConfirm={() => {
           setConfirmingSkipExercise(false);
           handleSkipExercise();
