@@ -90,6 +90,18 @@ update to carry, not for each fix.
   a Done key, and a tap on the dimmed page with the keyboard up only puts the
   keyboard away. The rest-alert question no longer opens over another sheet,
   and a tap while it slides up no longer leaves it stuck on screen.
+- #393 iPhone, keyboard: the AI coach chat and the AI programme questions
+  keep the conversation and the field on screen while typing (the thread
+  used to shrink to nothing), and a drag on the thread puts the keyboard away.
+  The strength goal's weight field stays visible while typing. On the set
+  screen the Reps and Weight cards no longer pile over the lift's card and
+  "Log set"; the card above folds last time's numbers away and scrolls
+  instead. The exercise picker, the weight and measurement sheets and My
+  data's edit dialog rise above the keyboard; the picker no longer opens the
+  keyboard by itself, and a tap outside a sheet with the keyboard up only puts
+  the keyboard away. Number pads get a Done bar in the app's language. Both
+  phones: Save on the weight sheet while still typing first puts the keyboard
+  away and shows the typed number, so the old number is never saved.
 
 ## Server
 

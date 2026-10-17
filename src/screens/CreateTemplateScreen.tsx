@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Image, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { CutButton } from '../components/CutButton';
@@ -967,7 +967,10 @@ export function CreateTemplateScreen({
         title={t(language, 'editor.addExercises')}
         subtitle={t(language, 'tpl.pickForDay')}
         multiSelect
-        autoFocusSearch
+        // Not on iOS: the keyboard came up over half the list before the
+        // reader had seen it (iOS hunt 2026-10-17, P1-4). The list and its
+        // filters are the first view there; the search is a tap away.
+        autoFocusSearch={Platform.OS === 'android'}
         onClose={() => setActiveSessionKey(null)}
         onSelectItem={() => {}}
         onConfirmSelection={appendExercisesToSession}

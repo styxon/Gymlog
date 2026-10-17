@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Keyboard,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -16,6 +16,7 @@ import { CoachReadoutTicker } from '../components/CoachReadoutTicker';
 import { CoachReportSheet } from '../components/CoachReportSheet';
 import { ProgrammeProposalCard } from '../components/ProgrammeProposalCard';
 import { ProLockedCard } from '../components/ProLockedCard';
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 import { ProgrammeCompositionCrisis, isProgrammeCompositionCrisis, reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
 import { COACH_COPIES_KEPT } from '../lib/aiCoachLogId';
 import { CoachReportReason } from '../lib/coachAnswerReport';
@@ -34,6 +35,7 @@ import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
 import { I18nKey, t } from '../lib/i18n';
+import { keyboardOpenBottomPadding } from '../lib/keyboardLift';
 import { MeasurementIntent, isMeasurementIntentKind, parseMeasurementIntent } from '../lib/measurementIntent';
 import { GoalIntent, parseGoalIntent } from '../lib/goalIntent';
 // Deterministic: asking the coach to name a programme gets programmes that do
@@ -534,23 +536,15 @@ export function AICoachChatScreen({
    * the keyboard open that bar is gone, and the reserve became a band of dead
    * screen between the field and the keys (user, 2026-08-25) — on a phone,
    * the most expensive space there is.
+   *
+   * On Android the keyboard's measured height replaces the reserve:
+   * KeyboardAvoidingView's padding under-lifts on RN 0.83's edge-to-edge
+   * window, and the composer ended up under the keys (user, 2026-08-25, with a
+   * photo). On iOS the AppShell's KeyboardAvoidingView has already ended the
+   * screen at the keyboard, and the same height added again squeezed the
+   * thread to 0 pt (iOS hunt 2026-10-17, P0-4): only the gap is added there.
    */
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  useEffect(() => {
-    // Measured, not inferred. KeyboardAvoidingView's padding under-lifts on
-    // RN 0.83's edge-to-edge Android — the tab-bar reserve was silently
-    // covering the shortfall, and removing that reserve put the composer
-    // under the keys (user, 2026-08-25, with a photo). The event reports the
-    // keyboard's real height, so the padding cannot be wrong by construction.
-    const shown = Keyboard.addListener('keyboardDidShow', (event) =>
-      setKeyboardHeight(event.endCoordinates?.height ?? 0),
-    );
-    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
-    return () => {
-      shown.remove();
-      hidden.remove();
-    };
-  }, []);
+  const keyboard = useKeyboardOpen();
   const online = liveConfigured && !answeredOffline;
 
   const chips = useMemo(() => buildCoachContextChips(intro, language), [intro, language]);
@@ -1391,11 +1385,16 @@ export function AICoachChatScreen({
   // The last question's field sits at the foot of the thread, and the
   // keyboard shrinks the thread from below: follow it up so the field the
   // reader is typing in stays in view.
+  // Again once the keyboard has risen: iOS reports it as it starts, while
+  // the thread is still shrinking.
   useEffect(() => {
-    if (keyboardHeight > 0 && intakeOpen) {
-      scrollToEnd();
+    if (!keyboard.open || !intakeOpen) {
+      return undefined;
     }
-  }, [intakeOpen, keyboardHeight, scrollToEnd]);
+    scrollToEnd();
+    const settled = setTimeout(scrollToEnd, 350);
+    return () => clearTimeout(settled);
+  }, [intakeOpen, keyboard.open, scrollToEnd]);
   /**
    * One answer, by tap. The open question becomes a question asked and an
    * answer given — ordinary bubbles, so the thread reads back as the
@@ -1569,6 +1568,9 @@ export function AICoachChatScreen({
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.thread}
           keyboardShouldPersistTaps="handled"
+          // The multiline composer's return key is a new line and send does
+          // not blur it: a drag on the thread is the way to put the keys away.
+          keyboardDismissMode="on-drag"
         >
           {mustAcknowledgeOnline ? (
             <View style={styles.onlineCard}>
@@ -1956,8 +1958,8 @@ export function AICoachChatScreen({
           style={[
             styles.composerWrap,
             // The keyboard replaces the floating tab bar as the thing under
-            // the composer, so its measured height replaces the reserve.
-            keyboardHeight > 0 && { paddingBottom: keyboardHeight + spacing.sm },
+            // the composer, so the reserve goes (see useKeyboardOpen above).
+            keyboard.open && { paddingBottom: keyboardOpenBottomPadding(Platform.OS, keyboard.height, spacing.sm) },
           ]}
         >
           {/* Free: "The coach answers on Pro" plus a lock glyph was two ways

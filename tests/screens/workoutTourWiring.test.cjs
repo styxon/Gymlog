@@ -46,7 +46,9 @@ module.exports = [
         // collapsable={false}: a View with only layout props is flattened away
         // on Android and there is nothing left to measure. And each ref is on
         // the view the beat's copy describes.
-        assert.match(set, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}\\s+style=\\{styles\\.${style}\\}`), id);
+        // (Last time's rows fold away while a dial is typed in — iOS hunt
+        // 2026-10-17 — so theirs is the style first in a list.)
+        assert.match(set, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}\\s+style=\\{(?:styles\\.${style}\\}|\\[styles\\.${style},)`), id);
       }
       // The bottom row, one button a beat: Pause, the menu, and Log set (or
       // its warm-up twin, whichever is drawn).
