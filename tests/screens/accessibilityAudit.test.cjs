@@ -117,7 +117,7 @@ module.exports = [
       // Home's sign-in scrim is a third answer ("not now"), so it stays, named.
       assert.match(
         home,
-        /onPress=\{\(\) => setSignInPopupOpen\(false\)\}\s*accessibilityRole="button"\s*accessibilityLabel=\{t\(language, 'common\.close'\)\}/,
+        /onPress=\{\(\) => setSignInPopup\('closed'\)\}\s*accessibilityRole="button"\s*accessibilityLabel=\{t\(language, 'common\.close'\)\}/,
       );
       // Welcome's flags, in the reader's language, naming each language in itself.
       const welcome = read('src', 'screens', 'WelcomeScreen.tsx');

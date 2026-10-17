@@ -14,6 +14,8 @@ interface ThemeChoiceDialogProps {
   /** Applied immediately — the dialog repaints itself as the preview. */
   onChange: (dark: boolean) => void;
   onDone: () => void;
+  /** The Modal's onDismiss, for useModalHandoff (iOS only; see TrackChangeDialog). */
+  onDismissed?: () => void;
 }
 
 /**
@@ -39,11 +41,12 @@ export function ThemeChoiceDialog({
   darkEnabled,
   onChange,
   onDone,
+  onDismissed,
 }: ThemeChoiceDialogProps) {
   const styles = useThemedStyles(makeStyles);
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDone}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onDone} onDismiss={onDismissed}>
       <View style={styles.overlay}>
         <View style={styles.dialog}>
           {/* No explanatory line under the title (user 2026-08-24). It said

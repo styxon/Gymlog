@@ -119,11 +119,12 @@ module.exports = [
       // Not after "Let's begin" any more (user 2026-10-17): it put a violet
       // dialog in front of the orange welcome. Nothing in the shell opens it.
       assert.doesNotMatch(readAppWiring(), /setThemeChoiceVisible/);
-      // The hand-off draws it as its 'theme' page, and its Done moves on.
+      // The hand-off draws it as its 'theme' page, and its Done moves on once
+      // the dialog has gone (iosModalSequencing.test.cjs).
       const handoff = read('src/screens/SetupHandoffScreen.tsx');
       assert.match(
         handoff,
-        /<ThemeChoiceDialog\s+visible=\{page === 'theme'\}[\s\S]{0,200}?onDone=\{\(\) => advance\(\)\}/,
+        /<ThemeChoiceDialog\s+visible=\{page === 'theme' && !dialogLeaving\}[\s\S]{0,300}?onDone=\{leaveDialog\}/,
       );
       // Dark until the reader says otherwise; an old install keeps light.
       assert.match(read('src/data/seed.ts'), /darkThemeEnabled: true,/);

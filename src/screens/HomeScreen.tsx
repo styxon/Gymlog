@@ -5,6 +5,7 @@ import {
   Easing,
   Keyboard,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -94,6 +95,10 @@ const RISE_DIVIDER = 7;
 const RISE_EMPTY_ROW = 10;
 
 const RISE_EASING = Easing.bezier(0.22, 1, 0.36, 1);
+
+// How long Home stands still before the sign-in dialog opens on iOS: past a
+// sheet's slide-away (~0.4 s) and the first frames of Home itself.
+const SIGN_IN_POPUP_DELAY_IOS_MS = 900;
 
 /**
  * Warmup or recovery, as a row rather than a card.
@@ -423,6 +428,12 @@ interface HomeScreenProps {
     onSignIn: (provider: SignInProvider) => void;
     onDismiss: () => void;
   } | null;
+  /**
+   * A modal of the shell's is up over Home (the Pro walls, the import, the
+   * rating ask, the update dialog). The sign-in dialog waits for it as it
+   * waits for Home's own sheets.
+   */
+  shellSheetOpen?: boolean;
   widgetPrompt?: {
     onAdd: () => void;
     onDismiss: () => void;
@@ -510,6 +521,7 @@ export function HomeScreen({
   doneThisWeekSessionIds = [],
   language = 'en',
   accountBackupPrompt = null,
+  shellSheetOpen = false,
   widgetPrompt = null,
   tourTargets,
   tourFocus,
@@ -536,8 +548,15 @@ export function HomeScreen({
    * The sign-in dialog, open while the offer is due. Scrim and back close it
    * for THIS visit only — the queue brings it back next launch — and only
    * "No thanks" inside it answers for good.
+   *
+   * It starts 'waiting', never open: Home mounts in the same commit that takes
+   * the previous screen and its sheet away (the feel sheet after a workout,
+   * the leave confirmation), and iOS refuses to present a modal while another
+   * is still leaving. A refused one stays as an invisible full-screen layer
+   * that takes every touch, so Home looked frozen until a tab change (iOS
+   * hunt 2026-10-17). The effect below opens it once Home has stood still.
    */
-  const [signInPopupOpen, setSignInPopupOpen] = useState(true);
+  const [signInPopup, setSignInPopup] = useState<'waiting' | 'open' | 'closed'>('waiting');
   /**
    * The day picked but not yet committed. The sheet kit's contract: a tap
    * selects, the commit bar rises with the whole change on one line, and only
@@ -745,6 +764,25 @@ export function HomeScreen({
    */
   const [drillSwap, setDrillSwap] = useState<{ kind: RoutineBlockKind; index: number } | null>(null);
   const [drillPick, setDrillPick] = useState<string | null>(null);
+  /**
+   * Opens the sign-in dialog after Home has been still for a moment: longer
+   * than a sheet takes to slide away on iOS, so the screen that mounted Home
+   * has finished leaving. Not while one of Home's own sheets is up — two
+   * sibling modals cannot both be presented — and a sheet that closes starts
+   * the wait again, for the same reason.
+   */
+  const signInPromptDue = accountBackupPrompt !== null;
+  const [statSheetOpen, setStatSheetOpen] = useState(false);
+  const homeSheetOpen =
+    drillSwap !== null || todaySheetVisible || swapSlotId !== null || plateauSheetVisible || statSheetOpen;
+  const modalUp = homeSheetOpen || shellSheetOpen;
+  useEffect(() => {
+    if (!signInPromptDue || signInPopup !== 'waiting' || modalUp) {
+      return;
+    }
+    const timer = setTimeout(() => setSignInPopup('open'), Platform.OS === 'ios' ? SIGN_IN_POPUP_DELAY_IOS_MS : 0);
+    return () => clearTimeout(timer);
+  }, [signInPromptDue, signInPopup, modalUp]);
   const drillOptions = useMemo(() => {
     if (!drillSwap) {
       return [];
@@ -1985,6 +2023,7 @@ export function HomeScreen({
               onOpenCard={(key) => onOpenStatCard?.(key)}
               reduceMotion={reduceMotion === true}
               language={language}
+              onSheetVisibleChange={setStatSheetOpen}
             />
           </Animated.View>
         ) : null}
@@ -2002,10 +2041,10 @@ export function HomeScreen({
           back once answered — "No thanks" is a real no. One clear action:
           the Google button leads, the refusal stays a quiet link. */}
       <Modal
-        visible={accountBackupPrompt !== null && signInPopupOpen}
+        visible={signInPromptDue && signInPopup === 'open'}
         transparent
         animationType={reduceMotion ? 'none' : 'fade'}
-        onRequestClose={() => setSignInPopupOpen(false)}
+        onRequestClose={() => setSignInPopup('closed')}
       >
         <View style={styles.signInOverlay}>
           {/* The scrim is "not now", not "no": the offer returns next launch,
@@ -2015,7 +2054,7 @@ export function HomeScreen({
               (accessibility audit, 2026-09-21). */}
           <Pressable
             style={StyleSheet.absoluteFill}
-            onPress={() => setSignInPopupOpen(false)}
+            onPress={() => setSignInPopup('closed')}
             accessibilityRole="button"
             accessibilityLabel={t(language, 'common.close')}
           />
@@ -2047,7 +2086,7 @@ export function HomeScreen({
                 cornerRadius={26}
                 style={styles.signInApple}
                 onPress={() => {
-                  setSignInPopupOpen(false);
+                  setSignInPopup('closed');
                   accountBackupPrompt?.onSignIn('apple');
                 }}
               />
@@ -2056,7 +2095,7 @@ export function HomeScreen({
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {
-                  setSignInPopupOpen(false);
+                  setSignInPopup('closed');
                   accountBackupPrompt?.onSignIn('google');
                 }}
                 style={({ pressed }) => [styles.signInGoogle, pressed && styles.pressed]}
@@ -2071,7 +2110,7 @@ export function HomeScreen({
               accessibilityRole="button"
               hitSlop={8}
               onPress={() => {
-                setSignInPopupOpen(false);
+                setSignInPopup('closed');
                 accountBackupPrompt?.onDismiss();
               }}
               style={({ pressed }) => [styles.signInNo, pressed && styles.pressed]}

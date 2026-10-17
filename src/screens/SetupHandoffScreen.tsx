@@ -12,6 +12,7 @@ import { ThemeChoiceDialog } from '../components/ThemeChoiceDialog';
 import { TrackChangeDialog } from '../components/TrackChangeDialog';
 import type { SignInProvider } from '../features/account/accountAuth';
 import { useHardwareBack } from '../hooks/useHardwareBack';
+import { useModalHandoff } from '../hooks/useModalHandoff';
 import { t } from '../lib/i18n';
 import { type SetupHandoffPlan } from '../lib/setupHandoff';
 import { radii, spacing } from '../theme';
@@ -60,7 +61,8 @@ interface SetupHandoffScreenProps {
    * that is the thing to repeat back to them.
    */
   focusLabel: string | null;
-  onDone: (choices: SetupHandoffChoices) => void;
+  /** Settles once the answers are written, or refused (the page then stays). */
+  onDone: (choices: SetupHandoffChoices) => void | Promise<void>;
   onSkip: () => void;
   /**
    * Opens the system's widget dialog and resolves once it has closed. Used
@@ -235,6 +237,48 @@ export function SetupHandoffScreen({
   };
 
   /**
+   * Done on the tracking or the theme dialog: close it, and only then move on.
+   *
+   * Both are Modals beside each other, and moving to the next page in the same
+   * render closed one and opened the other at once. iOS presents every Modal
+   * from the root view controller and refuses a second while the first is
+   * still fading out; React Native records it as shown anyway, so on an iPhone
+   * the theme question never appeared and the page under it is empty there
+   * (no widget page): a new reader was left on a blank screen, every time and
+   * again after a restart (iOS hunt, 2026-10-17). The last page waits too, so
+   * the sign-in sheet or the Pro page that finish opens comes after the dialog
+   * has gone. Android moves on at once, as before.
+   *
+   * On the last page the dialog stays down while the answers are written: the
+   * shell holds this screen up for the write, and a dialog shown again there
+   * would be taken away by the unmount, mid-presentation. It comes back only
+   * if the write was refused and the page is still here to be answered again.
+   *
+   * Each dialog reports its dismissal only while its own page is up: one that
+   * was moved past on the hook's fallback timer and reports late must not
+   * run the next dialog's step while that one is still leaving.
+   */
+  const { handOff, onSheetDismissed } = useModalHandoff();
+  const [dialogLeaving, setDialogLeaving] = useState(false);
+  const leaveDialog = () => {
+    if (dialogLeaving) {
+      return;
+    }
+    const lastPage = pageIndex >= pages.length - 1;
+    handOff(
+      () => setDialogLeaving(true),
+      () => {
+        if (!lastPage) {
+          setDialogLeaving(false);
+          advance();
+          return;
+        }
+        void Promise.resolve(finish()).finally(() => setDialogLeaving(false));
+      },
+    );
+  };
+
+  /**
    * Android's back key: "not now" to the page in front of the reader.
    *
    * Nothing answered it on the sign-in and widget pages, so the key reached
@@ -337,12 +381,13 @@ export function SetupHandoffScreen({
       {/* Over the page rather than instead of it: the tracking and theme
           questions are dialogs on top of the screen behind them. */}
       <TrackChangeDialog
-        visible={page === 'tracking'}
+        visible={page === 'tracking' && !dialogLeaving}
         language={language}
         selected={trackedSites}
         offered={plan.trackedSiteOptions}
         onChange={setTrackedSites}
-        onDone={() => advance()}
+        onDone={leaveDialog}
+        onDismissed={page === 'tracking' ? onSheetDismissed : undefined}
         topInset={insets.top}
         bottomInset={insets.bottom}
         maxHeight={windowHeight}
@@ -350,11 +395,12 @@ export function SetupHandoffScreen({
       {/* The last page (user 2026-10-17): after the Pro page, the widget and
           the tracking sheet, rather than in front of the questions. */}
       <ThemeChoiceDialog
-        visible={page === 'theme'}
+        visible={page === 'theme' && !dialogLeaving}
         language={language}
         darkEnabled={darkEnabled}
         onChange={onThemeChange}
-        onDone={() => advance()}
+        onDone={leaveDialog}
+        onDismissed={page === 'theme' ? onSheetDismissed : undefined}
       />
       {/* The widget page's own body only when it is a page: on a phone that
           cannot pin one (every iPhone) the sites and theme dialogs stood
