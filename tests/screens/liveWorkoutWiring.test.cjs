@@ -52,7 +52,7 @@ module.exports = [
       assert.match(goTo, /\bunpause\(\);/, 'moving on resumes');
       assert.match(
         player,
-        /\{pauseSheetOpen && \(\s*<GPSheet\s*title=\{[^}]*\}\s*language=\{language\}\s*onClose=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*closeActionsMenu\(\);/,
+        /<GPSheet\s*visible=\{pauseSheetOpen\}\s*onDismissed=\{onSheetDismissed\}\s*title=\{[^}]*\}\s*language=\{language\}\s*onClose=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*closeActionsMenu\(\);/,
         'closing the actions sheet resumes, unless the menu opened over a pause the reader had chosen (closeActionsMenu)',
       );
       // Updated 2026-09-29 (#bugs, swap sheet v2): the close handler now also

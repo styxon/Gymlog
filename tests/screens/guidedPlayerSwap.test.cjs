@@ -405,9 +405,11 @@ module.exports = [
       // Out of the pause through `unpause`, which was `setPaused(false)`
       // here: that cleared the screen's pause and left the session clock
       // stopped behind it (live-session audit, 2026-09-20).
+      // Through handOff since 2026-10-17: on iOS the contents sheet waits for
+      // the actions sheet to leave (hooks/useModalHandoff).
       assert.match(
         playerSource,
-        /label=\{t\(language, 'guided\.runSheet\.title'\)\}\s*onPress=\{\(\) => \{\s*setPauseSheetOpen\(false\);\s*moveOnFromMenu\(\);\s*setRunSheetOpen\(true\);/,
+        /label=\{t\(language, 'guided\.runSheet\.title'\)\}\s*onPress=\{\(\) => \{\s*moveOnFromMenu\(\);\s*handOff\(\s*\(\) => setPauseSheetOpen\(false\),\s*\(\) => setRunSheetOpen\(true\),\s*\);/,
       );
     },
   },
@@ -726,7 +728,10 @@ module.exports = [
       assert.match(sheet, /transform: \[\{ translateY: dragY \}\]/);
       // Every sheet passes its title in, so every title is part of the strip.
       const openings = source.match(/<GPSheet\b/g) ?? [];
-      const titled = source.match(/<GPSheet\s+title=/g) ?? [];
+      // The kept-mounted sheets (hooks/useModalHandoff) name visible and
+      // onDismissed first.
+      const titled =
+        source.match(/<GPSheet\s+(?:visible=\{\w+\}\s+onDismissed=\{\w+\}\s+)?title=/g) ?? [];
       // Four since the swap sheet became the shared exercise sheet (#bugs 2026-10-06).
       assert.ok(openings.length >= 4, 'the player lost its sheets');
       assert.equal(titled.length, openings.length, 'a sheet draws its title outside the pull zone');

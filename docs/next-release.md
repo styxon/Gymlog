@@ -72,6 +72,10 @@ update to carry, not for each fix.
 - #385 Terms and privacy policy name the trade name's holder correctly
   (Tatu Ylönen); dated 17.10.2026, so every reader is asked to accept again.
 
+- #389 iPhone: "Skip this exercise" in the workout menu no longer freezes the
+  app; the confirmation, the exercise swap, the workout contents and the end
+  confirmation open once the menu has closed.
+
 ## Server
 
 _Nothing yet._
