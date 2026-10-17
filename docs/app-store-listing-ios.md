@@ -62,9 +62,12 @@ tracker,lifting,strength,weightlifting,program,routine,training,fitness,progress
 
 ### Description (4000)
 
+The opening differs from Play's (owner, 2026-10-17): no account and no ads
+are in the promotional text right above it.
+
 FI:
 ```text
-Vinha ohjaa salitreenin sarja sarjalta. Kun avaat sovelluksen, päivän treeni on valmiina: paino ja toistot viime kerran pohjalta, lepo alkaa itsestään ja jokainen sarja jää historiaan. Ei mainoksia, eikä tiliä tarvita.
+Valitse ohjelma, mene salille, kirjaa sarjat. Vinha muistaa jokaisen nostosi ja kertoo, milloin on aika lisätä painoa.
 
 VALMIIT OHJELMAT
 Yli 50 valmista ohjelmaa voimaan, lihaskasvuun ja yleiskuntoon, aloittelijasta edistyneeseen. 1–6 päivää viikossa, 30–80 minuuttia kerralla, jakso 8–12 viikkoa. Salille, kotiin käsipainoilla tai pelkällä kehonpainolla. Kerro kuudessa askeleessa viikkosi, välineesi ja tavoitteesi, niin Vinha ehdottaa ohjelmaa, joka sopii viikkoosi. Valmiit ohjelmat ovat kaikki ilmaisia.
@@ -118,7 +121,7 @@ Tuki: support@vinha.app
 
 EN:
 ```text
-Vinha guides your gym session set by set. Today's workout is ready when you open the app: weight and reps filled in from last time, rest starts on its own, and every set goes into your history. No ads, and no account needed.
+Pick a program, go to the gym, log your sets. Vinha remembers every lift and tells you when it's time to add weight.
 
 READY PROGRAMS
 More than 50 ready programs for strength, muscle and general fitness, beginner to advanced. 1–6 days a week, 30–80 minutes a session, blocks of 8–12 weeks. For the gym, home dumbbells or bodyweight only. Six steps about your week, equipment and goal, and Vinha suggests a program that fits your week. Every ready program is free.
