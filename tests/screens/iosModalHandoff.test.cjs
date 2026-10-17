@@ -26,7 +26,7 @@ module.exports = [
         'setRunSheetOpen(true)',
         'setSwapOpen(true)',
       ]) {
-        const escaped = open.replace(/[()]/g, '\\$&');
+        const escaped = open.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         const handed = new RegExp(`handOff\\(\\s*\\(\\) => set(?:PauseSheet|Exit)Open\\(false\\),\\s*\\(\\) => ${escaped},?\\s*\\)`);
         if (open === 'setRunSheetOpen(true)' || open === 'setSwapOpen(true)') {
           // These are also opened from the screen itself, with no sheet up.
