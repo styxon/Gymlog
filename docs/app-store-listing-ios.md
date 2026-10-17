@@ -26,14 +26,17 @@ name or subtitle, no promised results, counts as floors.
 
 ### Promotional text (170, can change without a review)
 
+What sets Vinha apart from the account-first trackers, chosen by the owner
+on 2026-10-17.
+
 FI:
 ```text
-Päivän treeni valmiina: paino ja toistot viime kerrasta, lepo alkaa itsestään. Yli 50 valmista saliohjelmaa, toimii ilman verkkoa.
+Treenipäiväkirja, joka toimii ilman tiliä, ilman verkkoa ja ilman mainoksia. Yli 50 valmista ohjelmaa ja yli 900 liikettä mukana.
 ```
 
 EN:
 ```text
-Today's workout, ready: weight and reps from last time, rest starts by itself. 50+ ready gym programs, and it works offline.
+A workout log with no account, no ads, and no connection needed. 50+ ready programs and 900+ exercises included.
 ```
 
 ### Keywords (100, commas, no spaces)
