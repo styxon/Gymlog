@@ -278,7 +278,9 @@ module.exports = [
       assert.doesNotMatch(playerSource, /roundCorrections|restingLogged/);
       assert.match(
         playerSource,
-        /setRunSheetOpen\(false\);\s*setRestEdit\(\{\s*slotId: correction\.lift\.slotId,\s*setIndex: correction\.setIndex,\s*justLoggedSetIndex: justLogged \? correction\.setIndex : -1,\s*\}\);/,
+        // Through handOff: on iOS the correction opens once the contents
+        // sheet has gone, not in the same tick (iOS hunt 2026-10-17).
+        /handOff\(\s*\(\) => setRunSheetOpen\(false\),\s*\(\) =>\s*setRestEdit\(\{\s*slotId: correction\.lift\.slotId,\s*setIndex: correction\.setIndex,\s*justLoggedSetIndex: justLogged \? correction\.setIndex : -1,\s*\}\),\s*\)/,
       );
       // "Just logged" only for the round the running rest belongs to.
       assert.match(
@@ -564,7 +566,7 @@ module.exports = [
       // other step the title names the set by number (#bugs 2026-09-30).
       assert.match(
         source,
-        /setRestEdit\(\{\s*slotId: correction\.lift\.slotId,\s*setIndex: correction\.setIndex,\s*justLoggedSetIndex: justLogged \? correction\.setIndex : -1,\s*\}\);/,
+        /setRestEdit\(\{\s*slotId: correction\.lift\.slotId,\s*setIndex: correction\.setIndex,\s*justLoggedSetIndex: justLogged \? correction\.setIndex : -1,\s*\}\)/,
       );
       // And the sheet says whose set it is: it opens from any lift now.
       assert.match(source, /liftName=\{exerciseNameLabel\(language, restEditLift\?\.exerciseName \?\? ''\)\}/);
@@ -595,7 +597,12 @@ module.exports = [
       );
       // A fresh key per selected set: the reps/weight drafts must reset to
       // the newly picked set's own numbers, not keep the previous typing.
-      assert.match(editor, /key=\{`rest-edit-\$\{restEdit\.slotId\}-\$\{restEdit\.setIndex\}`\}/);
+      // On the fields inside the Modal, not on the editor: a key on the
+      // editor closed its Modal and presented a new one in one tick, which
+      // iOS refuses (iOS hunt 2026-10-17, S4-2).
+      assert.doesNotMatch(editor, /\bkey=/);
+      assert.match(editor, /fieldsKey=\{`\$\{restEdit\.slotId\}-\$\{restEdit\.setIndex\}`\}/);
+      assert.match(source, /<LoggedSetEditorFields\s+key=\{fieldsKey\}/);
 
       // Inside the editor itself: the list renders only once there is a
       // choice (a lone row would only repeat the title), each row selects
