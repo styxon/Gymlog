@@ -112,15 +112,17 @@ module.exports = [
       // The hook: the server first, then sign-out, and the request names the account.
       const hook = read('src', 'features', 'account', 'useAccountBackup.ts');
       const body = hook.slice(hook.indexOf('const deleteAccount = useCallback('), hook.indexOf('// Auto-backup: when signed in'));
-      assert.ok(
-        body.indexOf("deleteBackup(token.idToken, { account: true, requestId })") > 0 &&
-          body.indexOf("deleteBackup(token.idToken, { account: true, requestId })") < body.indexOf('await signOut();'),
-        'the phone signs out before the server has deleted',
-      );
+      // The request also carries Apple's one-time code for an Apple account (iOS hunt 2026-10-17, D1-1).
+      const sent = body.search(/deleteBackup\(token\.idToken, \{\s*account: true,\s*requestId,/);
+      assert.ok(sent > 0 && sent < body.indexOf('await signOut();'), 'the phone signs out before the server has deleted');
+      // Apple's sheet comes before anything is written or sent, and backing out of it sends nothing.
+      const grant = body.indexOf('const grant = await getAccountDeletionGrant(current.sub);');
+      assert.ok(grant > 0 && grant < body.indexOf('await persistAccount(') && grant < sent, 'Apple is asked after the delete was marked as sent');
+      assert.match(body, /if \(grant\.status === 'cancelled'\) \{\s*return 'cancelled';\s*\}/);
       assert.match(body, /if \(answer\.ok\) \{\s*await signOut\(\);\s*return 'done';\s*\}/);
       // The pending record is written before the request goes out, never after.
       const marked = body.indexOf('deleteAccountPendingAt: new Date()');
-      assert.ok(marked > 0 && marked < body.indexOf('deleteBackup(token.idToken, { account: true, requestId })'), 'the pending record is not written before the request');
+      assert.ok(marked > 0 && marked < sent, 'the pending record is not written before the request');
       const client = read('src', 'features', 'account', 'backupApi.ts');
       assert.match(client, /options\.account \? \{ 'x-backup-action': 'delete-account' \} : \{\}/);
     },

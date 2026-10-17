@@ -159,4 +159,17 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'backup client: Apple\'s one-time code goes with Delete account only',
+    async run() {
+      await withApi({ status: 200, body: { ok: true } }, async (api, requests) => {
+        await api.deleteBackup('vs1.x.y', { account: true, requestId: 'a'.repeat(32), appleAuthorizationCode: 'code-1' });
+        await api.deleteBackup('vs1.x.y', { appleAuthorizationCode: 'code-1' });
+        await api.deleteBackup('vs1.x.y', { account: true });
+        const sent = requests.map((request) => request.init.headers['x-apple-authorization-code']);
+        assert.deepEqual(sent, ['code-1', undefined, undefined], 'the code went with something other than Delete account');
+        assert.equal(requests[0].init.headers['x-backup-action'], 'delete-account');
+      });
+    },
+  },
 ];

@@ -49,6 +49,8 @@ const LEGAL_TEXT_VERSIONS = [
   { version: '2026-10-12', fingerprint: '48cc4bb2e765a1da' },
   // The trade name's holder corrected: Tatu Ylönen, not Santeri.
   { version: '2026-10-17', fingerprint: '98eb08696ba6d95a' },
+  // Delete account ends the Sign in with Apple at Apple too (iOS hunt, D1-1).
+  { version: '2026-10-17.1', fingerprint: '25fa6b3aefb41c67' },
 ];
 
 const IDS = ['privacy', 'terms'];
@@ -795,8 +797,26 @@ module.exports = [
       assert.match(server, /await purgeOldRevocations\(\);\s*res\.status\(200\)\.json\(\{ ok: true, \.\.\.issueAppleSession\(apple\.sub/, 'sign-ins no longer sweep old markers');
       assert.match(server, /async function purgeOldRevocations/);
       // …and only on a sign-in: the deletion answers a phone that is waiting under a timeout, so it does not sweep (the policy says so).
-      const deleteBranch = server.slice(server.indexOf("if (req.method === 'DELETE')"), server.indexOf('res.status(405)'));
+      // The 405 that closes the DELETE branch, not the first one in the file:
+      // the Apple actions answer 405 above it, and this slice was empty.
+      const deleteStart = server.indexOf("if (req.method === 'DELETE')");
+      const deleteBranch = server.slice(deleteStart, server.indexOf('res.status(405)', deleteStart));
+      assert.ok(deleteStart > 0 && deleteBranch.length > 1000, `the DELETE branch read as ${deleteBranch.length} characters`);
       assert.doesNotMatch(deleteBranch, /purgeOldRevocations/, 'the deletion sweeps again — the policy says the clean-up runs on Apple sign-ins');
+      // The policy says deletion ends the Sign in with Apple at Apple, with a
+      // one-time code the server does not keep (iOS hunt 2026-10-17, D1-1):
+      // the delete branch revokes, once the account is gone, and stores nothing of it.
+      assert.match(deleteBranch, /const ended = await endAppleSignIn\(/);
+      assert.ok(
+        deleteBranch.indexOf('endAppleSignIn(') > deleteBranch.lastIndexOf('await del(pathname);'),
+        'Apple is asked before the account is gone',
+      );
+      assert.match(server, /const APPLE_REVOKE_URL = 'https:\/\/appleid\.apple\.com\/auth\/revoke';/);
+      const endApple = server.slice(server.indexOf('async function endAppleSignIn'), server.indexOf('function sameText'));
+      assert.match(endApple, /postToApple\(APPLE_REVOKE_URL,/);
+      assert.doesNotMatch(endApple, /\bput\(/, 'the grant is stored');
+      // "Apple asks you to confirm once": a confirmation with no scopes, sent with the delete only.
+      assert.match(read('src/features/account/appleAuth.ts'), /credential = await module\.signInAsync\(\{ requestedScopes: \[\] \}\);/);
       // The Finnish lifetime purchase is not a "tilaus": no rewrite of the store sentences may say the reader bought one.
       for (const platform of ['both', 'android', 'ios']) {
         const terms = renderLegalDocumentMarkdown(buildLegalDocument('terms', 'fi', platform));
@@ -817,7 +837,12 @@ module.exports = [
         assert.match(en, /does not delete them; they are kept for up to 24 months/);
         assert.doesNotMatch(en, /Afterwards our server holds nothing of yours except/, 'the usage events are not deleted with the account, so "nothing" is too broad');
         assert.match(en, /Settings → Reset all data deletes everything on this phone and signs you out\. It keeps the cloud backup, .* and it keeps your answer about usage statistics/);
-        assert.match(en, /does not take Vinha off the list of apps you use Sign in with Apple with/);
+        assert.match(
+          en,
+          /Deleting your account \(below\) also ends Vinha’s Sign in with Apple: Apple asks you to confirm once and gives your phone a one-time code, which our server passes to Apple to end the sign-in and does not keep\. That takes Vinha off the list of apps you use Sign in with Apple with/,
+        );
+        assert.match(en, /ends both the sign-in our own server gave it and Vinha’s Sign in with Apple at Apple \(above\)/);
+        assert.doesNotMatch(en, /does not take Vinha off the list/);
         assert.match(fi, /Asetukset → Poista tili tekee saman ja enemmän/);
         assert.match(fi, /yksi sekoitettu merkintä päivämäärineen/);
         assert.match(fi, /Siinä on myös satunnainen luku, jonka puhelimesi teki tätä pyyntöä varten ja jota käytetään vain kertomaan sille puhelimelle, että poisto onnistui/);
@@ -830,7 +855,12 @@ module.exports = [
         assert.match(fi, /tilin poistaminen ei poista niitä; ne säilyvät enintään 24 kuukautta/);
         assert.doesNotMatch(fi, /Sen jälkeen palvelimellamme ei ole sinusta mitään/, 'käyttötilastot eivät poistu tilin mukana, joten "ei mitään" on liian laaja');
         assert.match(fi, /Asetukset → Nollaa kaikki tiedot poistaa kaiken tästä puhelimesta ja kirjaa sinut ulos\. Se säilyttää pilvivarmuuskopion, .* ja säilyttää valintasi käyttötilastoista/);
-        assert.match(fi, /ei poista Vinhaa luettelosta sovelluksista, joissa käytät Apple-kirjautumista/);
+        assert.match(
+          fi,
+          /Tilin poistaminen \(alla\) päättää myös Vinhan Apple-kirjautumisen: Apple pyytää vahvistamaan kerran ja antaa puhelimellesi kertakäyttöisen koodin, jonka palvelimemme välittää Applelle kirjautumisen päättämiseksi eikä säilytä sitä\. Näin Vinha poistuu luettelosta sovelluksista, joissa käytät Apple-kirjautumista/,
+        );
+        assert.match(fi, /sekä oman palvelimemme sille antaman kirjautumisen että Vinhan Apple-kirjautumisen Applella \(yllä\)/);
+        assert.doesNotMatch(fi, /ei poista Vinhaa luettelosta/);
       }
       // The providers: no number in the sentence that drifted from the list (it said three beside five).
       for (const language of LANGUAGES) {

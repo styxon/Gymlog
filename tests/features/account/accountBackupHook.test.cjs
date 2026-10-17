@@ -94,6 +94,10 @@ async function withHook({ local, stored = null, cloud = null }, scenario) {
   const calls = { upload: 0, download: 0, delete: 0, deleteOptions: [], signedOut: 0, restoreDatabase: 0, restoreHistory: 0, restored: 0, expected: [] };
   const server = Object.assign(versionedStore(cloud), { uploadError: null, downloadError: null, deleteOk: true, deleteError: null, deleteLost: false, gates: {} });
   const google = {
+    // What Delete account's provider step gives (accountAuth.getAccountDeletionGrant).
+    deletionGrant: { status: 'none' },
+    grantAsks: [],
+    grantGate: null,
     silent: { status: 'ok', idToken: 'token' },
     signIn: { status: 'signed_in', account: { sub: 'sub-1', email: 'reader@example.com', name: 'Reader', idToken: 'token' } },
   };
@@ -168,6 +172,13 @@ async function withHook({ local, stored = null, cloud = null }, scenario) {
       isAccountSignInConfigured: () => true,
       signInWith: async () => google.signIn,
       getFreshIdToken: async () => google.silent,
+      getAccountDeletionGrant: async (sub) => {
+        google.grantAsks.push(sub);
+        if (google.grantGate) {
+          await google.grantGate.promise;
+        }
+        return google.deletionGrant;
+      },
       renewSessionIfDue: async () => undefined,
       signOutAccount: async () => {
         calls.signedOut += 1;
@@ -874,6 +885,44 @@ module.exports = [
       });
       await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
         assert.equal(env.api.state.provider, 'apple', 'the Apple-only confirmation would never show');
+      });
+      /**
+       * An Apple account ends at Apple too (iOS hunt 2026-10-17, D1-1): the
+       * one-time code Apple gives as the reader confirms goes with the delete.
+       */
+      await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
+        env.google.deletionGrant = { status: 'ok', appleAuthorizationCode: 'code-1' };
+        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.deepEqual(env.google.grantAsks, ['apple:001234.abc']);
+        assert.equal(env.calls.deleteOptions[0].appleAuthorizationCode, 'code-1');
+        assert.equal(env.calls.deleteOptions[0].account, true);
+      });
+      // Backing out of Apple's sheet backs out of the deletion: nothing sent, nothing written, still signed in.
+      await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
+        env.google.deletionGrant = { status: 'cancelled' };
+        assert.equal(await env.api.deleteAccount(), 'cancelled');
+        await env.settle();
+        assert.equal(env.calls.delete, 0, 'a cancelled Apple sheet still deleted');
+        assert.equal(env.store.account.deleteAccountPendingAt ?? null, null, 'a cancelled deletion was remembered as sent');
+        assert.equal(env.api.state.status, 'signed_in');
+        assert.equal(env.calls.signedOut, 0);
+        assert.equal(env.api.phase, 'idle');
+      });
+      // No sheet, or no answer from Apple: deleted without the code, as before.
+      await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
+        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.equal('appleAuthorizationCode' in env.calls.deleteOptions[0], false);
+      });
+      // Asked before the pending record is written: a reader can sit on Apple's sheet.
+      await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
+        env.google.grantGate = deferred();
+        const pending = env.api.deleteAccount();
+        await env.settle();
+        assert.equal(env.google.grantAsks.length, 1);
+        assert.equal(env.store.account.deleteAccountPendingAt ?? null, null, 'the delete was marked as sent while Apple\'s sheet was up');
+        assert.equal(env.calls.delete, 0);
+        env.google.grantGate.resolve();
+        assert.equal(await pending, 'done');
       });
       // Deleting only the copy still keeps the reader signed in, and does not ask for the account to go.
       await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {

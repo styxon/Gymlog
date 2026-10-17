@@ -1755,7 +1755,7 @@ const EN = {
   'account.deleteAccount.message':
     'This deletes your cloud backup from our server and signs you out on this phone. The training data on this phone stays — Reset all data clears that separately.',
   'account.deleteAccount.message.apple':
-    'This deletes your cloud backup from our server and signs you out on this phone. Your other phones signed in with Apple are signed out the next time they connect to our server. The training data on this phone stays — Reset all data clears that separately.',
+    'This deletes your cloud backup from our server and signs you out on this phone. Your other phones signed in with Apple are signed out the next time they connect to our server. Apple asks you to confirm once, and Vinha leaves your Sign in with Apple list. The training data on this phone stays — Reset all data clears that separately.',
   'account.deleteAccount.done.title': 'Account deleted',
   'account.deleteAccount.done.body': 'Your cloud backup is deleted and you are signed out. Your training data is still on this phone.',
   'account.deleteAccount.failed': 'Could not delete the account. Check your connection and try again.',
@@ -5207,7 +5207,7 @@ const FI: Record<I18nKey, string> = {
   'account.deleteAccount.message':
     'Tämä poistaa pilvivarmuuskopion palvelimeltamme ja kirjaa sinut ulos tästä puhelimesta. Treenitiedot tässä puhelimessa säilyvät — Nollaa kaikki tiedot tyhjentää ne erikseen.',
   'account.deleteAccount.message.apple':
-    'Tämä poistaa pilvivarmuuskopion palvelimeltamme ja kirjaa sinut ulos tästä puhelimesta. Muut puhelimesi, joihin olet kirjautunut Applella, kirjautuvat ulos, kun ne seuraavan kerran ottavat yhteyttä palvelimeemme. Treenitiedot tässä puhelimessa säilyvät — Nollaa kaikki tiedot tyhjentää ne erikseen.',
+    'Tämä poistaa pilvivarmuuskopion palvelimeltamme ja kirjaa sinut ulos tästä puhelimesta. Muut puhelimesi, joihin olet kirjautunut Applella, kirjautuvat ulos, kun ne seuraavan kerran ottavat yhteyttä palvelimeemme. Apple pyytää vahvistamaan kerran, ja Vinha poistuu Kirjaudu Applella -luettelostasi. Treenitiedot tässä puhelimessa säilyvät — Nollaa kaikki tiedot tyhjentää ne erikseen.',
   'account.deleteAccount.done.title': 'Tili poistettu',
   'account.deleteAccount.done.body': 'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Treenitietosi ovat edelleen tässä puhelimessa.',
   'account.deleteAccount.failed': 'Tiliä ei voitu poistaa. Tarkista yhteys ja yritä uudelleen.',
