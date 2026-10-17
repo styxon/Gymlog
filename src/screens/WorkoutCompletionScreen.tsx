@@ -1,7 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import { StatusCap } from '../components/StatusCap';
 
 // Gradient is drawn at a fixed size and clipped by the hero (overflow hidden),
 // which is more reliable than a percentage-height Svg against a dynamic parent.
@@ -458,10 +460,21 @@ export function WorkoutCompletionScreen({
 
   const rise = (index: number) => riseStyles[index];
   const gold = goldHeroFace(themeName === 'dark', pr !== null);
+  /** The page's scroll, for the cap over the clock (components/StatusCap). */
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const onScroll = useMemo(
+    () => Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true }),
+    [scrollY],
+  );
 
   return (
     <View style={styles.screenBackground}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 26 }]}>
+      <Animated.ScrollView
+        showsVerticalScrollIndicator={false}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 26 }]}
+      >
         {/* The hero runs under the status bar, so nothing dark caps the screen.
 
             Gold, and two strengths of it. Purple was the app's own colour on
@@ -803,7 +816,10 @@ export function WorkoutCompletionScreen({
             </Pressable>
           </Animated.View>
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
+      {/* Clear at rest, where the gold belongs under the clock; the page's
+          own background once it moves (owner's #5, iOS hunt 2026-10-17). */}
+      <StatusCap scrollY={scrollY} topInset={insets.top} color={theme.bg} />
 
       {/* One question on the way out (user 2026-08-23): how did it feel?
           Four colour-coded answers, and skipping costs one tap. The verdict

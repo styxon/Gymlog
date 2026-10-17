@@ -128,10 +128,11 @@ module.exports = [
       assert.match(homeScreenSource, /proPillActive:\s*\{[\s\S]{0,120}backgroundColor: theme\.surfaceSoft/);
       // The label is one word; what it means is in the accessibility label.
       assert.match(homeScreenSource, /proUnlocked \? 'home\.proPill\.manage' : 'home\.proPill\.get'/);
-      // The full lockup: the app is called Vinha Fitness, and Home is where
-      // the reader looks to see whose app this is. The speed rule under it is
-      // gone with the greeting (user 2026-08-25).
-      assert.match(homeScreenSource, /<VinhaWordmark size=\{30\} fitness \/>/);
+      // The in-app mark, "Vinha" (owner, iOS hunt 2026-10-17, #13); the
+      // full lockup stays on the splash and the welcome screen. The speed
+      // rule under it is gone with the greeting (user 2026-08-25).
+      assert.match(homeScreenSource, /<VinhaWordmark size=\{30\} \/>/);
+      assert.doesNotMatch(homeScreenSource, /<VinhaWordmark[^>]*\bfitness\b/);
       assert.doesNotMatch(homeScreenSource, /speedRule/);
       // Training dots wear the accent, rest stays green (user 2026-08-25) —
       // in both the week strip and the month grid, or the legend lies.

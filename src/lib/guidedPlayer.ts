@@ -1861,16 +1861,6 @@ function resolveGuidedLibraryIndex(normalized: string, lowerNames: readonly stri
   return stripped ? resolveExactOrAlias(stripped, lowerNames) : null;
 }
 
-/** Oversized 2-letter initials for the brand-panel media fallback. */
-export function getGuidedInitials(name: string): string {
-  return name
-    .split(/\s+/)
-    .filter((word) => /^[A-Za-z]/.test(word))
-    .slice(0, 2)
-    .map((word) => word[0].toUpperCase())
-    .join('');
-}
-
 /** One line of the run sheet: a warm-up drill, a lift, or a cool-down drill. */
 /**
  * One lift inside a run-sheet row. A superset row has several.

@@ -229,7 +229,11 @@ module.exports = [
       const sheet = read('src', 'components', 'AddExerciseSheet.tsx');
       assert.match(sheet, /const PILL_SLOP = \{ top: 3, bottom: 3 \} as const;/);
       assert.match(sheet, /hitSlop=\{PILL_SLOP\}\s*onPress=\{\(\) => onSelect\(option\)\}/);
-      assert.match(sheet, /filterRow: \{[^}]*paddingVertical: PILL_SLOP\.top,\s*marginVertical: -PILL_SLOP\.top,/);
+      // The pull-back on the scroll view, not on its content (owner's #12,
+      // iOS hunt 2026-10-17; tests/screens/scrollContentOffset.test.cjs).
+      assert.match(sheet, /filterScroll: \{\s*marginVertical: -PILL_SLOP\.top,\s*\}/);
+      assert.match(sheet, /filterRow: \{[^}]*paddingVertical: PILL_SLOP\.top,\s*\}/);
+      assert.match(sheet, /style=\{styles\.filterScroll\}\s*contentContainerStyle=\{styles\.filterRow\}/);
       assert.match(sheet, /filterPill: \{\s*minHeight: 38,/);
     },
   },

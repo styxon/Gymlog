@@ -1578,6 +1578,7 @@ const EN = {
   // was the only sign, and red is not read aloud (accessibility audit,
   // 2026-09-21).
   'guided.weightInvalid': 'Not a valid weight',
+  'guided.zeroWeightAsk': 'No weight set. Dial it in, or tap Log set again to log it without weight.',
   'guided.repsInvalid': 'Not a valid number',
   // The ✕ and the sound toggle in the player's top bar were bare icons.
   'guided.a11y.exit': 'Leave guided mode',
@@ -5054,6 +5055,7 @@ const FI: Record<I18nKey, string> = {
   'guided.a11y.weightDown': 'Vähennä painoa {kg} kg',
   'guided.a11y.weightUp': 'Lisää painoa {kg} kg',
   'guided.weightInvalid': 'Ei kelvollinen paino',
+  'guided.zeroWeightAsk': 'Painoa ei ole asetettu. Säädä se tai napauta Kirjaa sarja uudelleen, niin sarja kirjataan ilman painoa.',
   'guided.repsInvalid': 'Ei kelvollinen luku',
   'guided.a11y.exit': 'Poistu ohjatusta tilasta',
   'guided.a11y.soundCues': 'Äänimerkit',

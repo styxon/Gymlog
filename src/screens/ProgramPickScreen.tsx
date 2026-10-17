@@ -556,11 +556,14 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
   },
   stat: { flex: 1 },
   statValue: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.44, lineHeight: 24 },
-  statLabel: { fontSize: 10.5, fontWeight: '700', color: 'rgba(255,255,255,0.72)', marginTop: 2 },
+  // White at 0.80 at least on the purple, for every second line (owner's
+  // #3, iOS hunt 2026-10-17): at 0.60-0.72 the week's rest days, its note and
+  // the labels came to 3.8-5.0:1 under the dark scrim's top, and read faint.
+  statLabel: { fontSize: 10.5, fontWeight: '700', color: 'rgba(255,255,255,0.80)', marginTop: 2 },
 
   splitWrap: { marginTop: 14 },
   splitLabel: { fontSize: 9.5, fontWeight: '800', letterSpacing: 1.15, color: C.faint, marginBottom: 7 },
-  splitLabelLight: { color: 'rgba(255,255,255,0.7)' },
+  splitLabelLight: { color: 'rgba(255,255,255,0.80)' },
   splitTrack: { flexDirection: 'row', height: 7, gap: 2, borderRadius: 999, overflow: 'hidden' },
   splitLegend: { flexDirection: 'row', flexWrap: 'wrap', gap: 13, marginTop: 8 },
   splitLegendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
@@ -574,7 +577,7 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
   // a six-day programme has to fit the same box a three-day one leaves mostly
   // empty, so the row height is what six of them can afford.
   week: { marginTop: 16, paddingTop: 13, borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.24)' },
-  weekLabel: { fontSize: 9.5, fontWeight: '800', letterSpacing: 1.15, color: 'rgba(255,255,255,0.7)', marginBottom: 8 },
+  weekLabel: { fontSize: 9.5, fontWeight: '800', letterSpacing: 1.15, color: 'rgba(255,255,255,0.80)', marginBottom: 8 },
   weekStrip: { flexDirection: 'row', gap: 6 },
   // Every cell the same width, so the strip is the same height and shape for a
   // two-day programme and a six-day one.
@@ -585,10 +588,10 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
     paddingVertical: 9,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.20)',
+    borderColor: 'rgba(255,255,255,0.30)',
   },
   weekCellOn: { backgroundColor: 'rgba(255,255,255,0.16)', borderColor: 'rgba(255,255,255,0.40)' },
-  weekCellDay: { fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: 'rgba(255,255,255,0.60)' },
+  weekCellDay: { fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: 'rgba(255,255,255,0.80)' },
   weekCellDayOn: { color: '#FFFFFF' },
   // Filled for training, hollow for rest: the difference a reader can see at
   // arm's length, where a colour difference alone would not carry.
@@ -605,7 +608,7 @@ const makePickStyles = (C: PickPalette) => StyleSheet.create({
     fontSize: 11.5,
     lineHeight: 16,
     fontWeight: '700',
-    color: 'rgba(255,255,255,0.66)',
+    color: 'rgba(255,255,255,0.80)',
   },
 
   compactStats: { fontSize: 12.5, fontWeight: '700', color: C.muted, marginTop: 12 },

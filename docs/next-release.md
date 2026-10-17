@@ -112,6 +112,18 @@ update to carry, not for each fix.
   promises the end time on the lock screen. Both phones: opening the app
   during a rest no longer clears the "rest is over" alert before the workout
   has loaded.
+- #395 iPhone: the guided workout's exercise pictures are no longer washed
+  out, and the exercise picker's filter chips are no longer cut at the top or
+  out of line. Both phones: Home's logo reads "Vinha"; pages fade out under
+  the tab bar instead of ending in a hard line; the workout summary and a
+  saved workout put a band behind the clock once scrolled; Programs shows a
+  recommended programme's name on up to two lines and "General fitness" on
+  one; the programme choice keeps less empty purple under the chosen card on
+  a tall phone, and its small text is brighter; an exercise without a
+  picture shows the same two letters everywhere; logging a loaded set with
+  no weight set first says so, and the next tap logs it; Progress lists a
+  session without weight in reps (a hold in seconds, a bout in minutes)
+  instead of "0 kg".
 
 ## Server
 

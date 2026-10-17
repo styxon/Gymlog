@@ -1164,9 +1164,10 @@ export function HomeScreen({
         */}
         <Animated.View style={rise(RISE_HEADER)}>
           <View style={styles.headerRow}>
-            {/* The full lockup: the app is called Vinha Fitness, and Home is
-                where the reader looks to see whose app this is. */}
-            <VinhaWordmark size={30} fitness />
+            {/* The in-app mark, "Vinha" (owner, iOS hunt 2026-10-17, #13):
+                the full "Vinha Fitness" lockup introduces the app on the
+                splash and the welcome screen; Home is already inside it. */}
+            <VinhaWordmark size={30} />
             <View style={styles.headerSpacer} />
             <Pressable
               accessibilityRole="button"
