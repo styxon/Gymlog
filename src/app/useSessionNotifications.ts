@@ -3,6 +3,7 @@ import { AppState, Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 
 import { emitRestAction } from '../hooks/useRestEndAlert';
+import { shouldSweepSessionNotifications } from '../lib/sessionNotificationSweep';
 import { isRepeatedRestOverExtend } from '../lib/restActionBus';
 import { IDLE_NUDGE_MINUTES, idleNudgeAtMs } from '../lib/restSchedule';
 import { minutesBoutDueMs } from '../lib/minutesExercises';
@@ -179,12 +180,19 @@ export function useSessionNotifications(deps: SessionNotificationsDeps) {
     }
   }, [appHydrated, activeSessionId, activeSessionStatus]);
 
-  // Session ended or was discarded: nothing of ours stays in the shade.
+  // Session ended or was discarded: nothing of ours stays in the shade. Not
+  // before the store has loaded (lib/sessionNotificationSweep).
   useEffect(() => {
-    if (!activeSessionId || activeSessionStatus !== 'active') {
+    if (
+      shouldSweepSessionNotifications({
+        hydrated: workout.hydrated,
+        activeSessionId,
+        status: activeSessionStatus,
+      })
+    ) {
       void clearAllSessionNotifications();
     }
-  }, [activeSessionId, activeSessionStatus]);
+  }, [workout.hydrated, activeSessionId, activeSessionStatus]);
 
   // The session's buttons in the reader's language, from here as well as from
   // the workout screens: the idle nudge is armed here, and its buttons were

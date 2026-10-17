@@ -555,6 +555,7 @@ const suites = [
   ...require('./lib/aiLogDeletion.test.cjs'),
   ...require('./lib/restAlertAnswer.test.cjs'),
   ...require('./lib/keyboardLift.test.cjs'),
+  ...require('./lib/sessionNotificationSweep.test.cjs'),
   ...require('./lib/notificationAccessState.test.cjs'),
   ...require('./lib/reminderOptIn.test.cjs'),
   ...require('./lib/reminderSchedule.test.cjs'),

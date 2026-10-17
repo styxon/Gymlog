@@ -750,12 +750,12 @@ module.exports = [
     name: 'the policy tells an iPhone reader about the phone’s own backup, and the Android section stays Android’s',
     run() {
       // app.json's android.allowBackup=false and plugins/withDataExtractionRules.js
-      // keep Vinha out of Android's backup. Nothing does on iOS: AsyncStorage's
-      // files go into an iCloud or computer backup like any other app's, and
-      // the policy used to say nothing — a reader who thought "no backup"
-      // was wrong the other way. Excluding it natively would be the
-      // alternative (isExcludedFromBackup on the storage directory); until
-      // then the text says what is true.
+      // keep Vinha out of Android's backup. On iOS it goes in: the policy used
+      // to say nothing, and a reader who thought "no backup" was wrong the
+      // other way. AsyncStorage 2.x excludes its own directory unless
+      // Info.plist says RCTAsyncStorageExcludeFromBackup = false, so app.json
+      // says it — pinned in tests/lib/allowBackup.test.cjs (iOS hunt
+      // 2026-10-17, S6-1). Without the key this text would be untrue.
       const policy = (language, platform) => renderLegalDocumentMarkdown(buildLegalDocument('privacy', language, platform));
       for (const platform of ['ios', 'both']) {
         assert.match(policy('en', platform), /## iPhone backup/);

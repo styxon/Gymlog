@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 
 /**
  * Android's own backup of the app's data is off, and the setting is real.
+ * The iPhone's is on, the way the privacy policy says (last suite).
  *
  * `android:allowBackup` defaults to true, so the whole AsyncStorage — every
  * session, the account email, the coach's memory — went into the device's
@@ -40,6 +41,24 @@ module.exports = [
       assert.equal(AndroidConfig.AllowBackup.getAllowBackupFromManifest(written), false);
       // Everything else the template wrote is left alone.
       assert.equal(written.manifest.application[0].$['android:name'], '.MainApplication');
+    },
+  },
+  {
+    /**
+     * The iPhone the other way round: the privacy policy tells an iPhone
+     * reader that Vinha's data goes into the phone's own iCloud or computer
+     * backup, and AsyncStorage 2.x excluded its directory from that backup
+     * unless Info.plist says otherwise (RNCAsyncStorage.mm, the
+     * RCTAsyncStorageExcludeFromBackup key, YES when missing). A new iPhone
+     * restored from a backup came up empty while the policy said it would not
+     * (iOS hunt 2026-10-17, S6-1).
+     */
+    name: 'allowBackup: on iOS the iPhone backup keeps the data, as the policy says',
+    run() {
+      assert.equal(appConfig.expo.ios.infoPlist.RCTAsyncStorageExcludeFromBackup, false);
+      const { buildLegalDocument, renderLegalDocumentMarkdown } = require('../../.test-dist/lib/legalDocuments.js');
+      const policy = renderLegalDocumentMarkdown(buildLegalDocument('privacy', 'en', 'ios'));
+      assert.match(policy, /Vinha’s data goes into that backup/);
     },
   },
 ];
