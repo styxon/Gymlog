@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
@@ -410,8 +410,15 @@ export function MyDataScreen({
 
       {/* basics edit sheet */}
       <Modal visible={editing !== null} transparent animationType="fade" onRequestClose={() => setEditing(null)}>
-        <View style={styles.sheetScrim}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setEditing(null)} />
+        {/* Centred in what the keyboard leaves: iOS does not lift a Modal's
+            content, and on a small phone the keys reached the buttons. With
+            the keyboard up, a tap outside puts it away rather than dropping
+            what was typed (iOS hunt 2026-10-17). */}
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.sheetScrim}>
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => (Keyboard.isVisible() ? Keyboard.dismiss() : setEditing(null))}
+          />
           <View style={styles.sheet}>
             <Text style={styles.sheetTitle}>
               {editing === 'gender'
@@ -471,6 +478,8 @@ export function MyDataScreen({
                   value={draftValue}
                   onChangeText={setDraftValue}
                   keyboardType="numeric"
+                  returnKeyType="done"
+                  inputAccessoryViewButtonLabel={t(language, 'common.done')}
                   autoFocus
                   placeholder="0"
                   placeholderTextColor={theme.faint}
@@ -505,7 +514,7 @@ export function MyDataScreen({
               </Pressable>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleProp, Text, TextInput, TextStyle } from 'react-native';
 
 import { parseTypedRulerValue, RulerBounds } from '../lib/rulerValue';
@@ -14,6 +14,11 @@ interface TypedRulerValueProps {
   decimals: number;
   /** Called with a value already clamped to the scale and to its marks. */
   onCommit: (value: number) => void;
+  /**
+   * Told when typing starts and ends. The number is committed only when the
+   * field blurs, so a sheet that saves must not save in between.
+   */
+  onEditingChange?: (editing: boolean) => void;
   textStyle: StyleProp<TextStyle>;
   /** Names the field for a screen reader, e.g. "Paino". */
   label: string;
@@ -32,11 +37,20 @@ export function TypedRulerValue({
   bounds,
   decimals,
   onCommit,
+  onEditingChange,
   textStyle,
   label,
 }: TypedRulerValueProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
+
+  useEffect(() => {
+    if (!editing) {
+      return undefined;
+    }
+    onEditingChange?.(true);
+    return () => onEditingChange?.(false);
+  }, [editing, onEditingChange]);
 
   const shown = value === null ? '—' : removeTrailingZeros(Number(value.toFixed(decimals)));
 
@@ -60,6 +74,9 @@ export function TypedRulerValue({
         // second on submit wrote the same value twice.
         onBlur={commit}
         returnKeyType="done"
+        // The decimal pad has no return key; iOS draws a Done bar for it, in
+        // English unless it is told otherwise.
+        inputAccessoryViewButtonLabel={t(language, 'common.done')}
         maxLength={6}
         accessibilityLabel={label}
         style={[textStyle, { minWidth: 90, textAlign: 'center', padding: 0 }]}

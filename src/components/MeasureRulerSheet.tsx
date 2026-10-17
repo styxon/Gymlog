@@ -1,8 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { RulerPicker } from './RulerPicker';
 import { TypedRulerValue } from './TypedRulerValue';
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 
 import { formatShortDate, removeTrailingZeros } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
@@ -41,16 +42,44 @@ interface SheetShellProps {
   children: React.ReactNode;
 }
 
+/**
+ * Whether one of the sheet's numbers is being typed.
+ *
+ * A typed number is committed when its field blurs, so Save, or a tap on the
+ * backdrop, while it is still being typed would save the number from before
+ * it, or drop it. Those taps end the typing instead; the next one saves or
+ * closes. Asked of the field, not of the keyboard: Android's Modal does not
+ * report its keyboard to the app, and iOS reports it gone a quarter of a
+ * second after the keys start to leave.
+ */
+const SheetTyping = createContext<{ typing: boolean; onEditingChange: (editing: boolean) => void }>({
+  typing: false,
+  onEditingChange: () => {},
+});
+
 function SheetShell({ visible, language, bottomInset, onClose, children }: SheetShellProps) {
   const styles = useThemedStyles(makeStyles);
   // Without the inset the action row sits UNDER the system navigation bar and
   // Save is unreachable — the same failure the programme detail footer had.
   const slide = useRef(new Animated.Value(0)).current;
   const translateY = useRef(slide.interpolate({ inputRange: [0, 1], outputRange: [460, 0] })).current;
+  // Lifted onto the keyboard, the sheet no longer meets the home indicator.
+  const keyboard = useKeyboardOpen();
+  const onKeys = Platform.OS === 'ios' && keyboard.open;
+  // Counted, not flagged: on the BMI sheet a tap on the second number starts
+  // it before the first one's blur ends the first.
+  const [typingCount, setTypingCount] = useState(0);
+  const onEditingChange = useCallback(
+    (editing: boolean) => setTypingCount((count) => Math.max(0, count + (editing ? 1 : -1))),
+    [],
+  );
+  const typing = typingCount > 0;
+  const typingState = useMemo(() => ({ typing, onEditingChange }), [typing, onEditingChange]);
 
   useEffect(() => {
     if (!visible) {
       slide.setValue(0);
+      setTypingCount(0);
       return;
     }
     Animated.timing(slide, {
@@ -75,18 +104,25 @@ function SheetShell({ visible, language, bottomInset, onClose, children }: Sheet
 
         Side by side, a press on the sheet cannot reach the backdrop at all, so
         nothing needs to swallow anything.
+
+        iOS does not lift a Modal's content for the keyboard: typing the number
+        hid the whole sheet, the number included (iOS hunt 2026-10-17, S5b-4).
+        While a number is typed, a tap on the backdrop ends the typing rather
+        than dropping it (SheetTyping).
       */}
-      <View style={styles.scrim}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.scrim}>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(language, 'common.cancel')}
           style={StyleSheet.absoluteFill}
-          onPress={onClose}
+          onPress={() => (typing ? Keyboard.dismiss() : onClose())}
         />
         <Animated.View style={{ transform: [{ translateY }] }}>
-          <View style={[styles.sheet, { paddingBottom: bottomInset + 22 }]}>{children}</View>
+          <View style={[styles.sheet, { paddingBottom: (onKeys ? 0 : bottomInset) + 22 }]}>
+            <SheetTyping.Provider value={typingState}>{children}</SheetTyping.Provider>
+          </View>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -101,6 +137,7 @@ function SheetActions({
   onSave: () => void;
 }) {
   const styles = useThemedStyles(makeStyles);
+  const { typing } = useContext(SheetTyping);
 
   return (
     <View style={styles.actionRow}>
@@ -111,9 +148,11 @@ function SheetActions({
       >
         <Text style={styles.cancelText}>{t(language, 'common.cancel')}</Text>
       </Pressable>
+      {/* While a number is typed, Save ends the typing and shows the number
+          on the ruler; the next tap saves it (SheetTyping). */}
       <Pressable
         accessibilityRole="button"
-        onPress={onSave}
+        onPress={() => (typing ? Keyboard.dismiss() : onSave())}
         style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}
       >
         <Text style={styles.saveText}>{t(language, 'common.save')}</Text>
@@ -140,6 +179,7 @@ function BigValue({
   onCommit: (value: number) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
+  const { onEditingChange } = useContext(SheetTyping);
 
   return (
     <View style={styles.bigRow}>
@@ -149,6 +189,7 @@ function BigValue({
         bounds={bounds}
         decimals={decimals}
         onCommit={onCommit}
+        onEditingChange={onEditingChange}
         textStyle={styles.bigValue}
         label={label}
       />

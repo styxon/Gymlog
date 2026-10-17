@@ -40,8 +40,13 @@ module.exports = [
       // The composer is lifted by the keyboard's MEASURED height, never by
       // KeyboardAvoidingView's estimate: on edge-to-edge Android the estimate
       // under-lifts, and the field ended up under the keys (photo, 25.8.).
-      assert.match(screen, /setKeyboardHeight\(event\.endCoordinates\?\.height \?\? 0\)/);
-      assert.match(screen, /keyboardHeight > 0 && \{ paddingBottom: keyboardHeight \+ spacing\.sm \}/);
+      // On iOS the AppShell has already lifted the screen, and only the gap is
+      // added (iOS hunt 2026-10-17): keyboardOpenBottomPadding decides which.
+      assert.match(screen, /const keyboard = useKeyboardOpen\(\);/);
+      assert.match(
+        screen,
+        /keyboard\.open && \{ paddingBottom: keyboardOpenBottomPadding\(Platform\.OS, keyboard\.height, spacing\.sm\) \}/,
+      );
       // In code, not in the comment that explains why it left.
       assert.doesNotMatch(screen, /<KeyboardAvoidingView|KeyboardAvoidingView,/);
     },
