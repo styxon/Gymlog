@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { t } from '../lib/i18n';
@@ -25,14 +25,48 @@ interface RestAlertsSheetProps {
   onLater: () => void;
 }
 
+/** How long a press waits for the sheet's onShow before it counts anyway. */
+export const REST_ALERTS_SHOW_FALLBACK_MS = 900;
+
 export function RestAlertsSheet({ visible, language, bottomInset, onAllow, onLater }: RestAlertsSheetProps) {
   const styles = useThemedStyles(makeStyles);
+  // Presses count only once the sheet has arrived. It slides up by itself a
+  // moment after the tap that logged the set, so a second tap lands on it
+  // mid-slide easily, and closing it then is a dismissal iOS drops while the
+  // presentation runs: the sheet stayed on screen, closed as far as the app
+  // knew, taking every touch (iOS hunt 2026-10-17, X2-1). onShow says it has
+  // arrived; the timer covers an onShow that never comes.
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (!visible) {
+      setShown(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => setShown(true), REST_ALERTS_SHOW_FALLBACK_MS);
+    return () => clearTimeout(timer);
+  }, [visible]);
+  const allow = () => {
+    if (shown) {
+      onAllow();
+    }
+  };
+  const later = () => {
+    if (shown) {
+      onLater();
+    }
+  };
   // Without this the "Not now" link sits behind the system nav buttons and
   // cannot be pressed at all — the same bug the Pro sheet had.
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onLater}>
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={later}
+      onShow={() => setShown(true)}
+    >
       <View style={styles.veil}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onLater} accessibilityLabel={t(language, 'rest.perm.later')} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={later} accessibilityLabel={t(language, 'rest.perm.later')} />
         <View style={[styles.sheet, { paddingBottom: bottomInset + 24 }]}>
           <View style={styles.grip} />
           <Text style={styles.title}>{t(language, 'rest.perm.title')}</Text>
@@ -49,12 +83,12 @@ export function RestAlertsSheet({ visible, language, bottomInset, onAllow, onLat
           </View>
           <Pressable
             accessibilityRole="button"
-            onPress={onAllow}
+            onPress={allow}
             style={({ pressed }) => [styles.cta, pressed && { opacity: 0.9 }]}
           >
             <Text style={styles.ctaText}>{t(language, 'rest.perm.allow')}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" onPress={onLater} style={styles.ghost} hitSlop={8}>
+          <Pressable accessibilityRole="button" onPress={later} style={styles.ghost} hitSlop={8}>
             <Text style={styles.ghostText}>{t(language, 'rest.perm.later')}</Text>
           </Pressable>
         </View>

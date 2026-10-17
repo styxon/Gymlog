@@ -15,6 +15,8 @@ import {
   BackHandler,
   Easing,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
   PanResponder,
   Platform,
@@ -1395,6 +1397,16 @@ const WALK_RUN_CHROME = 28 + 8 + 14;
 /** The sheet's height cap (`sheetFrame`), as a share of the scrim. */
 const SHEET_CAP_FRACTION = 0.78;
 
+/**
+ * Children built only while they are drawn. A kept-mounted sheet's rows are
+ * otherwise computed on every render of the player, which renders every
+ * second for its clock, even while the sheet is closed and its Modal draws
+ * nothing.
+ */
+function Deferred({ render }: { render: () => React.ReactNode }) {
+  return <>{render()}</>;
+}
+
 function GPSheet({
   title,
   language,
@@ -2090,6 +2102,11 @@ function GuidedPlayer({
     restKey: step.type === 'rest' ? stepIndex : null,
     asked: restAlerts.asked,
     alertsWanted: restAlerts.alerts,
+    // The two sheets that do not hold the clock: a timed bout can run out
+    // into its recovery under either, and the ask, opened as one closes, was
+    // refused on iOS and held every clock after it (iOS hunt 2026-10-17,
+    // S4-4). It waits for a later rest instead.
+    blocked: runSheetOpen || setPanelsOpen,
     onAnswered: onRestAlertsAnswered,
     // The sheet freezes the step (below), but it closes BEFORE the system
     // dialog answers, so the step effect re-armed the rest while the answer
@@ -4857,10 +4874,11 @@ function GuidedPlayer({
           2026-09-30). The step holds still while it is open (`frozen`). */}
       {restEdit ? (
         <LoggedSetEditor
-          // A fresh set of draft fields for the set the reader just picked —
-          // switching rows must not keep the previous set's typed text
-          // sitting over the newly selected one's numbers.
-          key={`rest-edit-${restEdit.slotId}-${restEdit.setIndex}`}
+          // No key here: the editor is a Modal, and a new key on a row tap
+          // closed it and presented a new one in the same tick, which iOS
+          // refuses (iOS hunt 2026-10-17). The editor keys its own fields
+          // with this instead.
+          fieldsKey={`${restEdit.slotId}-${restEdit.setIndex}`}
           language={language}
           unitPreference={unitPreference}
           // The set is judged as the lift it was logged as — the reducer's
@@ -4990,15 +5008,21 @@ function GuidedPlayer({
         wanting to skip to it, and a list you can fall through with a thumb
         while your hands are chalked is how sets get skipped by accident.
       */}
-      {runSheetOpen && (
+      {/* Kept mounted: its pencils open the set correction, and on iOS that
+          waits for this sheet's dismissal (hooks/useModalHandoff). Unmounted,
+          it never reported one, and the correction opened in the same tick as
+          it closed: iOS refused it and the rest clock stood still (iOS hunt
+          2026-10-17). */}
         <GPSheet
+          visible={runSheetOpen}
+          onDismissed={onSheetDismissed}
           title={t(language, 'guided.runSheet.title')}
           language={language}
           onClose={() => setRunSheetOpen(false)}
           bottomInset={screenInsets.bottom}
           scrollable
         >
-          {buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
+          <Deferred render={() => buildGuidedRunSheet(stepPlan, stepIndex).map((item) => {
             const isSuperset = item.members.length > 1;
             return (
             <View
@@ -5086,14 +5110,17 @@ function GuidedPlayer({
                           accessibilityRole="button"
                           accessibilityLabel={`${t(language, 'guided.rest.edit')} · ${exerciseNameLabel(language, member.name)}`}
                           hitSlop={6}
-                          onPress={() => {
-                            setRunSheetOpen(false);
-                            setRestEdit({
-                              slotId: correction.lift.slotId,
-                              setIndex: correction.setIndex,
-                              justLoggedSetIndex: justLogged ? correction.setIndex : -1,
-                            });
-                          }}
+                          onPress={() =>
+                            handOff(
+                              () => setRunSheetOpen(false),
+                              () =>
+                                setRestEdit({
+                                  slotId: correction.lift.slotId,
+                                  setIndex: correction.setIndex,
+                                  justLoggedSetIndex: justLogged ? correction.setIndex : -1,
+                                }),
+                            )
+                          }
                           // The action colour, on the right where the thumb
                           // is: the one thing in the sheet that does
                           // something (device, 2026-09-16).
@@ -5117,9 +5144,8 @@ function GuidedPlayer({
               ) : null}
             </View>
             );
-          })}
+          })} />
         </GPSheet>
-      )}
 
       {/* Kept mounted: three of its rows open another modal, and on iOS that
           waits for this sheet's dismissal (hooks/useModalHandoff). */}
@@ -5424,6 +5450,7 @@ const formatSessionClock = formatClock;
  * would have picked.
  */
 function LoggedSetEditor({
+  fieldsKey,
   language,
   unitPreference,
   unloaded,
@@ -5440,6 +5467,8 @@ function LoggedSetEditor({
   onCancel,
   onSave,
 }: {
+  /** Which set the fields edit: a new one gets fresh drafts. */
+  fieldsKey: string;
   language: AppLanguage;
   unitPreference: UnitPreference;
   unloaded: boolean;
@@ -5477,31 +5506,26 @@ function LoggedSetEditor({
   onCancel: () => void;
   onSave: (reps: number, loadKg: number | null) => void;
 }) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
-  const [repsDraft, setRepsDraft] = useState(String(reps));
-  const [loadDraft, setLoadDraft] = useState(removeTrailingZeros(loadKg));
-
-  const typedReps = parseNumberInput(repsDraft);
-  const typedLoad = unloaded ? null : parseNumberInput(loadDraft);
-  const nextReps = Math.round(typedReps ?? reps);
-  const nextLoad = unloaded ? null : typedLoad ?? loadKg;
-  // The dials' own ceilings. Without them "825" for 82,5 saved, showed on the
-  // summary, and was then dropped from the log on the next load — and opened
-  // the next session at 825.
-  // And a field that holds no number — emptied, or "82,,5" — is not the old
-  // number: it saved the value from before the edit while the field showed
-  // something else (decimal audit, 2026-09-21).
-  const valid =
-    typedReps !== null &&
-    nextReps > 0 &&
-    nextReps <= repsCeiling &&
-    (unloaded || (typedLoad !== null && isLiftableWeight(nextLoad)));
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={styles.editVeil}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onCancel} accessible={false} />
+      {/* iOS does not lift a Modal's content for the keyboard, and the number
+          pad covered the fields and Save whole (iOS hunt 2026-10-17). Inside
+          the Modal this view starts at the top of the screen, so it needs no
+          offset. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.editVeil}
+      >
+        {/* A tap on the dimmed page with the keyboard up puts the keyboard
+            away; it used to be the only way out of the number pad, and it
+            threw the correction away. */}
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => (Keyboard.isVisible() ? Keyboard.dismiss() : onCancel())}
+          accessible={false}
+        />
         <View style={[styles.editSheet, { paddingBottom: bottomInset + 20 }]}>
           <View style={{ gap: 2 }}>
             <Text style={styles.editLiftName} numberOfLines={1}>
@@ -5549,66 +5573,134 @@ function LoggedSetEditor({
               })}
             </View>
           ) : null}
-          <View style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={styles.editField}>
-              <Text style={styles.editLabel}>{t(language, 'guided.reps')}</Text>
-              {/* Named with the set and the unit: the label above is a
-                  sibling Text, so the field alone was read as its number
-                  (accessibility audit, 2026-09-21). */}
-              <TextInput
-                value={repsDraft}
-                onChangeText={setRepsDraft}
-                accessibilityLabel={setFieldAccessibilityLabel(language, 'reps', setNumber)}
-                keyboardType="number-pad"
-                selectTextOnFocus
-                style={styles.editInput}
-              />
-            </View>
-            {unloaded ? null : (
-              <View style={styles.editField}>
-                <Text style={styles.editLabel}>{t(language, 'guided.weight')}</Text>
-                <TextInput
-                  value={loadDraft}
-                  onChangeText={setLoadDraft}
-                  accessibilityLabel={setFieldAccessibilityLabel(language, 'kg', setNumber)}
-                  keyboardType="decimal-pad"
-                  selectTextOnFocus
-                  style={styles.editInput}
-                />
-              </View>
-            )}
-          </View>
-          {/* Two buttons of one size. BigBtn is 60 tall and GhostBtn 48, which
-              is right where one leads and the other follows — here they are a
-              pair, and a pair that does not match reads as a mistake (user
-              2026-09-04). */}
-          <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onCancel}
-              style={[styles.editBtn, styles.editBtnGhost]}
-            >
-              <Text style={styles.editBtnGhostText}>{t(language, 'common.cancel')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: !valid }}
-              onPress={() => {
-                if (valid) {
-                  onSave(nextReps, nextLoad);
-                }
-              }}
-              style={[styles.editBtn, { backgroundColor: valid ? theme.accent : theme.faint }]}
-            >
-              <GPIcon name="check" size={17} color={theme.onHighlight} sw={2.6} />
-              <Text style={[styles.editBtnText, { color: theme.onHighlight }]}>
-                {t(language, 'guided.rest.editSave')}
-              </Text>
-            </Pressable>
-          </View>
+          {/* A fresh set of draft fields for the set the reader just picked:
+              switching rows must not keep the previous set's typed text
+              sitting over the newly selected one's numbers. Keyed here, inside
+              the Modal, so the Modal itself stays. */}
+          <LoggedSetEditorFields
+            key={fieldsKey}
+            language={language}
+            unloaded={unloaded}
+            setNumber={setNumber}
+            repsCeiling={repsCeiling}
+            reps={reps}
+            loadKg={loadKg}
+            onCancel={onCancel}
+            onSave={onSave}
+          />
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
+  );
+}
+
+/** The correction's two fields and its buttons, with their drafts. */
+function LoggedSetEditorFields({
+  language,
+  unloaded,
+  setNumber,
+  repsCeiling,
+  reps,
+  loadKg,
+  onCancel,
+  onSave,
+}: {
+  language: AppLanguage;
+  unloaded: boolean;
+  setNumber: number;
+  repsCeiling: number;
+  reps: number;
+  loadKg: number;
+  onCancel: () => void;
+  onSave: (reps: number, loadKg: number | null) => void;
+}) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const [repsDraft, setRepsDraft] = useState(String(reps));
+  const [loadDraft, setLoadDraft] = useState(removeTrailingZeros(loadKg));
+
+  const typedReps = parseNumberInput(repsDraft);
+  const typedLoad = unloaded ? null : parseNumberInput(loadDraft);
+  const nextReps = Math.round(typedReps ?? reps);
+  const nextLoad = unloaded ? null : typedLoad ?? loadKg;
+  // The dials' own ceilings. Without them "825" for 82,5 saved, showed on the
+  // summary, and was then dropped from the log on the next load — and opened
+  // the next session at 825.
+  // And a field that holds no number — emptied, or "82,,5" — is not the old
+  // number: it saved the value from before the edit while the field showed
+  // something else (decimal audit, 2026-09-21).
+  const valid =
+    typedReps !== null &&
+    nextReps > 0 &&
+    nextReps <= repsCeiling &&
+    (unloaded || (typedLoad !== null && isLiftableWeight(nextLoad)));
+
+  return (
+    <>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={styles.editField}>
+          <Text style={styles.editLabel}>{t(language, 'guided.reps')}</Text>
+          {/* Named with the set and the unit: the label above is a
+              sibling Text, so the field alone was read as its number
+              (accessibility audit, 2026-09-21). */}
+          <TextInput
+            value={repsDraft}
+            onChangeText={setRepsDraft}
+            accessibilityLabel={setFieldAccessibilityLabel(language, 'reps', setNumber)}
+            keyboardType="number-pad"
+            // The iPhone number pad has no return key: without these the
+            // only way off it was the dimmed page, which cancelled.
+            returnKeyType="done"
+            inputAccessoryViewButtonLabel={t(language, 'common.done')}
+            selectTextOnFocus
+            style={styles.editInput}
+          />
+        </View>
+        {unloaded ? null : (
+          <View style={styles.editField}>
+            <Text style={styles.editLabel}>{t(language, 'guided.weight')}</Text>
+            <TextInput
+              value={loadDraft}
+              onChangeText={setLoadDraft}
+              accessibilityLabel={setFieldAccessibilityLabel(language, 'kg', setNumber)}
+              keyboardType="decimal-pad"
+              returnKeyType="done"
+              inputAccessoryViewButtonLabel={t(language, 'common.done')}
+              selectTextOnFocus
+              style={styles.editInput}
+            />
+          </View>
+        )}
+      </View>
+      {/* Two buttons of one size. BigBtn is 60 tall and GhostBtn 48, which
+          is right where one leads and the other follows — here they are a
+          pair, and a pair that does not match reads as a mistake (user
+          2026-09-04). */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onCancel}
+          style={[styles.editBtn, styles.editBtnGhost]}
+        >
+          <Text style={styles.editBtnGhostText}>{t(language, 'common.cancel')}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !valid }}
+          onPress={() => {
+            if (valid) {
+              onSave(nextReps, nextLoad);
+            }
+          }}
+          style={[styles.editBtn, { backgroundColor: valid ? theme.accent : theme.faint }]}
+        >
+          <GPIcon name="check" size={17} color={theme.onHighlight} sw={2.6} />
+          <Text style={[styles.editBtnText, { color: theme.onHighlight }]}>
+            {t(language, 'guided.rest.editSave')}
+          </Text>
+        </Pressable>
+      </View>
+    </>
   );
 }
 

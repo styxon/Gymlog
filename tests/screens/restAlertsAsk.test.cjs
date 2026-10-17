@@ -153,6 +153,35 @@ module.exports = [
     },
   },
   {
+    /**
+     * iOS hunt 2026-10-17, S4-4: an interval bout ran out into its recovery
+     * under the guided player's contents sheet, and the ask opened over it.
+     * iOS refused it, and its open flag held every step clock after it. The
+     * ask waits for a rest that starts with nothing else up.
+     */
+    name: 'rest alerts: the ask waits for a rest that starts with no other sheet up',
+    async run() {
+      const runtime = createHookRuntime();
+      const env = loadMoment(runtime);
+      const covered = { restRunning: true, restKey: 'recovery-1', asked: false, alertsWanted: true, blocked: true, onAnswered: () => undefined };
+      runtime.render(env.hook, covered);
+      await flush();
+      runtime.render(env.hook, covered);
+      let moment = runtime.render(env.hook, covered);
+      assert.equal(moment.sheetOpen, false, 'the ask opened over another sheet');
+      assert.equal(moment.deniedBannerShown, false, 'a banner stood in for an ask nobody answered');
+      // The sheet closes during the same rest: still no ask, it is once per
+      // rest start, and opening now would collide with that sheet leaving.
+      moment = runtime.render(env.hook, { ...covered, blocked: false });
+      assert.equal(moment.sheetOpen, false);
+      // The next rest starts clear: now it asks.
+      runtime.render(env.hook, { ...covered, restKey: 'rest-2', blocked: false });
+      moment = runtime.render(env.hook, { ...covered, restKey: 'rest-2', blocked: false });
+      assert.equal(moment.sheetOpen, true, 'the ask never came');
+      runtime.unmount();
+    },
+  },
+  {
     name: 'rest alerts: both workout screens ask at the first rest through the one hook, and render the sheet',
     run() {
       for (const [name, src] of [['EmptyWorkoutScreen', empty], ['GuidedPlayerScreen', guided]]) {

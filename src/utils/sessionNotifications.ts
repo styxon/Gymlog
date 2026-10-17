@@ -32,6 +32,7 @@ import * as Notifications from 'expo-notifications';
 
 import { t } from '../lib/i18n';
 import { NotificationAccessState, resolveNotificationAccessState } from '../lib/notificationAccessState';
+import type { RestAlertPermissionAnswer } from '../lib/restAlertAnswer';
 import { restAlertTimes } from '../lib/restSchedule';
 import { createSerialTaskQueue } from '../lib/serialTaskQueue';
 import type { AppLanguage } from '../types/models';
@@ -83,7 +84,7 @@ export const REST_LADDER_IDS = {
 export const ONGOING_ID = 'vinha-session-ongoing';
 export const IDLE_ID = 'vinha-session-idle';
 
-export type RestAlertPermission = 'granted' | 'denied' | 'undetermined';
+export type RestAlertPermission = RestAlertPermissionAnswer;
 
 let permission: RestAlertPermission = 'undetermined';
 

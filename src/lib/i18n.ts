@@ -185,6 +185,7 @@ const EN = {
 
   // ── Common ─────────────────────────────────────────────────────────────
   'common.cancel': 'Cancel',
+  'common.done': 'Done',
   'plan.rename': 'Rename this programme',
   'common.today': 'Today',
   'common.yesterday': 'Yesterday',
@@ -3768,6 +3769,7 @@ const FI: Record<I18nKey, string> = {
 
   // ── Common ─────────────────────────────────────────────────────────────
   'common.cancel': 'Peruuta',
+  'common.done': 'Valmis',
   'plan.rename': 'Nimeä ohjelma uudelleen',
   'common.today': 'Tänään',
   'common.yesterday': 'Eilen',

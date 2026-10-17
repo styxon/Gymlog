@@ -345,7 +345,7 @@ module.exports = [
       assert.doesNotMatch(player, /runSheetListMaxHeight/);
       assert.match(
         player,
-        /<GPSheet\s*title=\{t\(language, 'guided\.runSheet\.title'\)\}[\s\S]*?bottomInset=\{screenInsets\.bottom\}\s*scrollable\s*>\s*\{buildGuidedRunSheet\(stepPlan, stepIndex\)/,
+        /<GPSheet\s*visible=\{runSheetOpen\}\s*onDismissed=\{onSheetDismissed\}\s*title=\{t\(language, 'guided\.runSheet\.title'\)\}[\s\S]*?bottomInset=\{screenInsets\.bottom\}\s*scrollable\s*>\s*<Deferred render=\{\(\) => buildGuidedRunSheet\(stepPlan, stepIndex\)/,
       );
       assert.match(player, /const bottomPadding = bottomInset \+ 30;/);
       assert.match(player, /const listMaxHeight = sheetScrollMaxHeight\(\{\s*areaHeight: areaHeight \?\? windowHeight,\s*capFraction: SHEET_CAP_FRACTION,\s*headHeight: headHeight \?\? 81,\s*bottomPadding,\s*\}\);/);

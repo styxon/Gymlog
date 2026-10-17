@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
+import { RestAlertAskOutcome, restAlertMoment } from '../lib/restAlertAnswer';
 import { canScheduleExactAlarms, openExactAlarmSettings } from '../utils/exactAlarm';
 import {
   RestAlertPermission,
@@ -38,6 +38,11 @@ export function useRestAlertPermissionMoment(input: {
    * silent rest with nothing said about it (#bugs, 2026-09-26).
    */
   alertsWanted: boolean;
+  /**
+   * Another sheet of the screen is up: the ask waits for a later rest rather
+   * than open over it (lib/restAlertAnswer `restAlertMoment`).
+   */
+  blocked?: boolean;
   /** The answer, for the app to record. */
   onAnswered?: (outcome: RestAlertAskOutcome) => void;
   /**
@@ -47,7 +52,7 @@ export function useRestAlertPermissionMoment(input: {
    */
   onGranted?: () => void;
 }) {
-  const { restRunning, restKey, asked, alertsWanted, onAnswered } = input;
+  const { restRunning, restKey, asked, alertsWanted, blocked = false, onAnswered } = input;
   // The latest handler, not the one from the render that opened the dialog:
   // it runs after an await, and again after a trip to system settings, and
   // by then the rest it should hand over may have moved (native audit,
@@ -98,9 +103,10 @@ export function useRestAlertPermissionMoment(input: {
     if (!resolved || !restRunning || restKey === null) {
       return;
     }
-    if (permission === 'undetermined' && !asked) {
+    const moment = restAlertMoment({ permission, asked, alertsWanted, channelMuted, blocked });
+    if (moment === 'ask') {
       setSheetOpen(true);
-    } else if (alertsWanted && (permission !== 'granted' || channelMuted)) {
+    } else if (moment === 'banner') {
       // Anything that is not a granted permission after the ask — "Not now",
       // or alerts switched off in system settings later — is a rest that will
       // not reach the reader. So is a permission that stayed granted while
