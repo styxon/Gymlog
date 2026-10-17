@@ -38,7 +38,6 @@ module.exports = [
         ['workout.history', 'historyRef', 'setExerciseRows'],
         ['workout.setRow', 'setRowRef', 'setMetaRow'],
         ['workout.dials', 'dialsRef', 'setDialRow'],
-        ['workout.log', 'logRef', 'setControls'],
       ];
       for (const [id, ref, style] of views) {
         // Made once per mount, not per render: an inline ref callback is a new
@@ -49,28 +48,54 @@ module.exports = [
         // the view the beat's copy describes.
         assert.match(set, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}\\s+style=\\{styles\\.${style}\\}`), id);
       }
+      // The bottom row, one button a beat: Pause, the menu, and Log set (or
+      // its warm-up twin, whichever is drawn).
+      for (const [id, ref, press] of [
+        ['workout.pause', 'pauseRef', 'onPress=\\{onPause\\}'],
+        ['workout.menu', 'menuRef', 'onPress=\\{openActions\\}'],
+      ]) {
+        assert.match(set, new RegExp(`const ${ref} = useTourTarget\\(tourTargets, '${id.replace('.', '\\.')}'\\);`), id);
+        assert.match(set, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}[\\s\\S]{0,260}?${press}`), id);
+      }
+      assert.match(set, /const logSetRef = useTourTarget\(tourTargets, 'workout\.logSet'\);/);
+      assert.equal((set.match(/ref=\{logSetRef\}\s+collapsable=\{false\}/g) || []).length, 2);
       assert.doesNotMatch(set, /tourTargets\?\.register\(/, 'no inline registering');
-      assert.equal((set.match(/useTourTarget\(/g) || []).length, 5);
+      assert.equal((set.match(/useTourTarget\(/g) || []).length, 7);
+      // The history beat's second half draws the current set as logged.
+      assert.match(set, /const showLoggedDemo = tourFocus === 'workout\.historyLogged';/);
+      assert.match(set, /showLoggedDemo && planned\.status === 'current' \? \{ \.\.\.planned, status: 'done' as const \} : planned/);
       // The hook memoises on the registry and the id.
       assert.match(reporter, /return useCallback\(\(node: unknown\) => tourTargets\?\.register\(id, node\), \[tourTargets, id\]\);/);
     },
   },
   {
-    name: 'workout tour: the rest beat rings the controls block - the -15s / +15s / Pause row and Skip rest',
+    name: 'workout tour: the rest beats ring the strip, the ±15 pair, Pause and Skip rest, each its own view',
     run() {
-      assert.match(player, /const restControlsRef = useTourTarget\(tourTargets, 'workout\.rest'\);/);
-      // The block's own view: the row of buttons and the skip button inside it,
-      // not the countdown ring above.
       const rest = between(player, "{step.type === 'rest' && (", '<ProgressRail');
-      assert.match(
-        rest,
-        /<View\s+ref=\{restControlsRef\}\s+collapsable=\{false\}\s+style=\{\{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 \}\}\s*>/,
-      );
-      const block = rest.slice(rest.indexOf('ref={restControlsRef}'));
-      assert.match(block, /label="−15s"/);
-      assert.match(block, /label="\+15s"/);
-      assert.match(block, /onPress=\{startRestNextSet\}/);
-      assert.doesNotMatch(block, /<RestRing/, 'the ring is outside the block');
+      for (const [ref, id] of [
+        ['restStripRef', 'workout.runStrip'],
+        ['restAdjustRef', 'workout.restAdjust'],
+        ['restPauseRef', 'workout.restPause'],
+        ['restSkipRef', 'workout.restSkip'],
+      ]) {
+        assert.match(player, new RegExp(`const ${ref} = useTourTarget\\(tourTargets, '${id.replace('.', '\\.')}'\\);`), id);
+        assert.match(rest, new RegExp(`ref=\\{${ref}\\}\\s+collapsable=\\{false\\}`), id);
+      }
+      const after = (ref) => rest.slice(rest.indexOf(`ref={${ref}}`));
+      assert.match(after('restStripRef'), /^[\s\S]{0,200}?onPress=\{\(\) => setRunSheetOpen\(true\)\}/);
+      // The pair holds both ±15 buttons and not Pause.
+      const pair = between(rest, 'ref={restAdjustRef}', 'ref={restPauseRef}');
+      assert.match(pair, /label="−15s"/);
+      assert.match(pair, /label="\+15s"/);
+      assert.match(after('restPauseRef'), /^[\s\S]{0,200}?icon=\{paused \? 'play' : 'pause'\}/);
+      assert.match(after('restSkipRef'), /^[\s\S]{0,300}?onPress=\{startRestNextSet\}/);
+      assert.doesNotMatch(between(rest, 'ref={restAdjustRef}', 'onPress={startRestNextSet}'), /<RestRing/);
+      // The strip beat shows the sheet opening and closing, and puts it away
+      // if the beat ends first.
+      const demo = between(player, "if (tourFocus !== 'workout.runStrip') {", '}, [tourFocus]);');
+      assert.match(demo, /setTimeout\(\(\) => setRunSheetOpen\(true\)/);
+      assert.match(demo, /setTimeout\(\(\) => setRunSheetOpen\(false\)/);
+      assert.match(demo, /clearTimeout\(open\);\s*clearTimeout\(close\);\s*setRunSheetOpen\(false\);/);
       // And the ring no longer carries a tour handle.
       const ring = between(player, 'function RestRing({', 'function TopBar({');
       assert.doesNotMatch(ring, /tourRef/);
@@ -95,7 +120,7 @@ module.exports = [
     },
   },
   {
-    name: 'workout tour: the rest clock is never touched by the tour',
+    name: 'workout tour: the step clock holds while a workout tour is up, and the report does not',
     run() {
       for (const [name, source] of [['layer', layer], ['reporter', reporter]]) {
         assert.doesNotMatch(source, /pauseWorkout|\bpause\(|adjustRemaining|endsAtRef|setRemainingMs/, name);
@@ -103,9 +128,17 @@ module.exports = [
       // The rest tour hangs off the same step the clock runs on: when the rest
       // ends the step changes, the report is withdrawn, and the layer closes.
       assert.match(reporter, /return \(\) => report\(null\);/);
-      // The player reports through a plain prop; it freezes nothing for the tour.
+      // The rest must not run out under the tour explaining it (#bugs
+      // 2026-10-17). The hold is the clock's, not `frozen`: `frozen`
+      // withdraws the tour's report, and holding that would close the tour.
       const frozen = between(player, 'const frozen = guidedClockHeld({', '});');
       assert.doesNotMatch(frozen, /tour/i);
+      assert.match(player, /const clockHeld = frozen \|\| tourRunning;/);
+      assert.match(player, /if \(mode !== 'player' \|\| clockHeld\) \{/);
+      assert.match(player, /\}, \[mode, clockHeld, stepIndex, step\.type, cue, steps, syncRestNotification\]\);/);
+      // Up only for a workout surface, and handed to the player.
+      assert.match(overlays, /const workoutTourRunning = tourActive && tourSurface !== null && tourSurface !== 'home';/);
+      assert.match(read('src/app/renderWorkoutTab.tsx'), /tourRunning=\{workoutTourRunning\}\s+tourFocus=\{tourFocus\}/);
     },
   },
   {

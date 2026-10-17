@@ -6,6 +6,7 @@ import { holdBackForTour } from '../features/tour/tourBack';
 import { measureNode, TourTargetRegistry } from '../features/tour/tourTargets';
 import { cutCornerPath } from '../lib/cutCorner';
 import {
+  beatFocus,
   calloutCoversTarget,
   CALLOUT_ENTER_MS,
   CALLOUT_LEAVE_MS,
@@ -33,6 +34,7 @@ import {
   TourSurface,
   TourTargetId,
   TourBeat,
+  TourCalloutRow,
   tourStartDelayMs,
 } from '../lib/firstRunTour';
 import { I18nKey, t } from '../lib/i18n';
@@ -327,7 +329,7 @@ export function FirstRunTour({
       return;
     }
     const beat = beats[index];
-    beatChangeRef.current?.(beat && beat.kind === 'section' ? beat.anchor ?? beat.target : null);
+    beatChangeRef.current?.(beat && beat.kind === 'section' ? beatFocus(beat) : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, index]);
   useEffect(() => () => beatChangeRef.current?.(null), []);
@@ -755,6 +757,14 @@ export function FirstRunTour({
                 </Text>
               ))}
             </View>
+          ) : !isBar && beat.rows ? (
+            // A legend, one line per button beside its own mark; the sentence
+            // is still what a screen reader hears.
+            <View style={styles.legend} accessible accessibilityLabel={body}>
+              {beat.rows.map((row) => (
+                <LegendRow key={row.copyKey} row={row} ink={co.ink} language={language} />
+              ))}
+            </View>
           ) : (
             <Text style={[styles.body, { color: co.ink }]}>{body}</Text>
           )}
@@ -781,6 +791,28 @@ export function FirstRunTour({
           ]}
         />
       </Animated.View>
+    </View>
+  );
+}
+
+/** The button's mark as the set row draws it: a bordered square, + or −, in its colour. */
+function LegendRow({ row, ink, language }: { row: TourCalloutRow; ink: string; language: AppLanguage }) {
+  const theme = useTheme();
+  const tone = row.tone === 'green' ? theme.green : row.tone === 'danger' ? theme.danger : theme.blue;
+  return (
+    <View style={styles.legendRow}>
+      <View style={[styles.legendMark, { borderColor: tone, backgroundColor: theme.surface }]}>
+        <Svg width={13} height={13} viewBox="0 0 24 24">
+          <Path
+            d={row.icon === 'plus' ? 'M12 5v14M5 12h14' : 'M5 12h14'}
+            stroke={tone}
+            strokeWidth={3.4}
+            strokeLinecap="round"
+            fill="none"
+          />
+        </Svg>
+      </View>
+      <Text style={[styles.legendText, { color: ink }]}>{t(language, row.copyKey)}</Text>
     </View>
   );
 }
@@ -827,6 +859,29 @@ const styles = StyleSheet.create({
   },
   stopList: {
     gap: 2,
+  },
+  legend: {
+    gap: 9,
+    marginTop: 8,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  legendMark: {
+    width: 26,
+    height: 26,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  legendText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '700',
+    lineHeight: 19,
   },
   footer: {
     flexDirection: 'row',

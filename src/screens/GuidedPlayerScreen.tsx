@@ -9,6 +9,7 @@
  */
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  AccessibilityInfo,
   Animated,
   AppState,
   BackHandler,
@@ -145,7 +146,8 @@ import type { PlateauDetection } from '../lib/proInsights';
 import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
 import { consumeBackForTour } from '../features/tour/tourBack';
 import type { TourTargetRegistry } from '../features/tour/tourTargets';
-import type { WorkoutTourStep } from '../lib/firstRunTour';
+import type { TourTargetId, WorkoutTourStep } from '../lib/firstRunTour';
+import { skipRestTap, SKIP_REST_CONFIRM_MS } from '../lib/skipRestConfirm';
 import { ExerciseSheet } from '../components/ExerciseSheet';
 import { CtaShimmer } from '../components/CtaShimmer';
 import { SupersetBorder } from '../components/SupersetBorder';
@@ -425,6 +427,14 @@ interface GuidedPlayerScreenProps {
   tourTargets?: TourTargetRegistry;
   /** Where the player reports its plain set / rest to the shell, for the workout tour. */
   onTourStep?: (step: WorkoutTourStep | null) => void;
+  /**
+   * A workout tour is up over the player. The step clock holds for it, so a
+   * rest cannot run out under the tour that is explaining it (#bugs
+   * 2026-10-17, "lepo ajastin ei voi kulua kun on opastus käynnissä").
+   */
+  tourRunning?: boolean;
+  /** What the tour's current beat is about (FirstRunTour onBeatChange). */
+  tourFocus?: TourTargetId | null;
 }
 
 /** The heaviest load in a session's sets, or 0 when there is none to show. */
@@ -1614,13 +1624,18 @@ function GuidedPlayer({
   autoResume = false,
   tourTargets,
   onTourStep,
+  tourRunning = false,
+  tourFocus = null,
 }: GuidedPlayerScreenProps) {
   // Read here, on the screen: inside the sheet's Modal it is always 0.
   const screenInsets = useSafeAreaInsets();
   // The drill picture yields to the countdown on a short phone (guidedMediaHeight).
   const { height: playerWindowHeight, fontScale: playerFontScale } = useWindowDimensions();
-  /** The rest screen's controls, for the workout tour. */
-  const restControlsRef = useTourTarget(tourTargets, 'workout.rest');
+  /** The rest screen's controls, for the workout tour, top to bottom. */
+  const restStripRef = useTourTarget(tourTargets, 'workout.runStrip');
+  const restAdjustRef = useTourTarget(tourTargets, 'workout.restAdjust');
+  const restPauseRef = useTourTarget(tourTargets, 'workout.restPause');
+  const restSkipRef = useTourTarget(tourTargets, 'workout.restSkip');
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   // The resolved theme, for the status bar: the player has its own dark
@@ -2095,6 +2110,10 @@ function GuidedPlayer({
     confirmingEnd,
     confirmingSkipExercise,
   });
+  // The step clock also holds while a workout tour is up. Kept out of
+  // `frozen`, which withdraws the tour's report: holding the report for the
+  // tour would close the tour.
+  const clockHeld = frozen || tourRunning;
   // Seconds since the reader said they would do it themselves. Derived from
   // the session clock's tick so it needs no timer of its own.
   const ownElapsedSeconds = ownBlock ? Math.max(0, Math.floor((clockNowMs - ownBlock.startedAt) / 1000)) : 0;
@@ -2280,7 +2299,7 @@ function GuidedPlayer({
   const expireRef = useRef<() => void>(() => advanceRef.current());
 
   useEffect(() => {
-    if (mode !== 'player' || frozen) {
+    if (mode !== 'player' || clockHeld) {
       // Pausing freezes the leftover time; the deadline is re-derived on resume.
       // The leftover goes into the anchor, so a screen torn down while paused
       // reopens with it and not with a full rest.
@@ -2383,7 +2402,7 @@ function GuidedPlayer({
       // Leaving the rest — by advancing, skipping or pausing — retires its alert.
       void syncRestNotification(null, null);
     };
-  }, [mode, frozen, stepIndex, step.type, cue, steps, syncRestNotification]);
+  }, [mode, clockHeld, stepIndex, step.type, cue, steps, syncRestNotification]);
 
   /**
    * Pause clears every notification of the session (the shade is swept while
@@ -3305,10 +3324,50 @@ function GuidedPlayer({
     setRestEdit(null);
   }, [stepIndex]);
 
-  /** Into the next set before the clock gets there. */
+  /**
+   * Into the next set before the clock gets there — on the second press
+   * (lib/skipRestConfirm). The first arms it and the label asks again.
+   */
+  const [skipArmedAt, setSkipArmedAt] = useState<number | null>(null);
+  useEffect(() => {
+    setSkipArmedAt(null);
+  }, [stepIndex]);
+  useEffect(() => {
+    if (skipArmedAt === null) {
+      return undefined;
+    }
+    const timer = setTimeout(() => setSkipArmedAt(null), SKIP_REST_CONFIRM_MS);
+    return () => clearTimeout(timer);
+  }, [skipArmedAt]);
   const startRestNextSet = () => {
+    const now = Date.now();
+    if (skipRestTap(skipArmedAt, now) === 'arm') {
+      void haptics.select();
+      setSkipArmedAt(now);
+      // The red and the new label are for the eye; a screen reader is told.
+      AccessibilityInfo.announceForAccessibility(t(language, 'guided.skipRest.confirm'));
+      return;
+    }
+    setSkipArmedAt(null);
     advance();
   };
+
+  /**
+   * The rest tour's first beat shows the contents sheet opening and closing,
+   * so the reader sees what the strip does instead of reading about it.
+   */
+  useEffect(() => {
+    if (tourFocus !== 'workout.runStrip') {
+      return undefined;
+    }
+    const open = setTimeout(() => setRunSheetOpen(true), 700);
+    const close = setTimeout(() => setRunSheetOpen(false), 2600);
+    return () => {
+      clearTimeout(open);
+      clearTimeout(close);
+      setRunSheetOpen(false);
+    };
+  }, [tourFocus]);
 
   /* ── walking to the next machine ───────────────────────────────────────── */
   /** Today's prescription for the lift being walked to, and last time's. */
@@ -4423,6 +4482,7 @@ function GuidedPlayer({
               tourTargets={tourTargets}
               // Held while a sheet is open or the workout is paused.
               tourReport={frozen ? undefined : onTourStep}
+              tourFocus={tourFocus}
             />
           )}
 
@@ -4440,6 +4500,8 @@ function GuidedPlayer({
                     day, Muokkaa with it: the sheet already said what was
                     logged, and the card said it again above it. */}
                 <Pressable
+                  ref={restStripRef}
+                  collapsable={false}
                   accessibilityRole="button"
                   style={styles.restRunStrip}
                   onPress={() => setRunSheetOpen(true)}
@@ -4512,11 +4574,7 @@ function GuidedPlayer({
                       2026-09-09, from the gym). What was logged, how long is
                       left, three controls, skip. */}
                 </View>
-                <View
-                  ref={restControlsRef}
-                  collapsable={false}
-                  style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}
-                >
+                <View style={{ paddingHorizontal: 24, paddingBottom: 10, gap: 12 }}>
                   {/* What comes back after the easy half — the same forward
                       look the work bout gives. */}
                   {step.recoveryKind ? (
@@ -4533,8 +4591,13 @@ function GuidedPlayer({
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     {/* No ±15 s on an interval: its two halves are the rhythm
                         the machine is set to, and stretching one desyncs the
-                        reader from the belt they are standing on. */}
+                        reader from the belt they are standing on.
+
+                        The pair is one view so the tour can ring it. Basis 10
+                        and twice the growth: each of the two comes out as wide
+                        as Pause, as when the three shared the row. */}
                     {step.recoveryKind ? null : (
+                    <View ref={restAdjustRef} collapsable={false} style={styles.restAdjustPair}>
                     <View style={{ flex: 1 }}>
                       <GhostBtn
                         label="−15s"
@@ -4548,8 +4611,6 @@ function GuidedPlayer({
                         }}
                       />
                     </View>
-                    )}
-                    {step.recoveryKind ? null : (
                     <View style={{ flex: 1 }}>
                       <GhostBtn
                         label="+15s"
@@ -4561,8 +4622,9 @@ function GuidedPlayer({
                         }}
                       />
                     </View>
+                    </View>
                     )}
-                    <View style={{ flex: 1 }}>
+                    <View ref={restPauseRef} collapsable={false} style={{ flex: 1 }}>
                       <GhostBtn
                         icon={paused ? 'play' : 'pause'}
                         tint={theme.amberInk}
@@ -4577,9 +4639,17 @@ function GuidedPlayer({
                       the walk is skipping half the exercise, not shortening a
                       wait (#bugs 2026-08-26). Pause stays on both. */}
                   {step.recoveryKind ? null : (
-                    <Pressable accessibilityRole="button" style={styles.skipRestBtn} onPress={startRestNextSet}>
-                      <GPIcon name="skip" size={18} color={theme.ink} />
-                      <Text style={{ fontSize: 15.5, fontWeight: '800', color: theme.ink }}>{t(language, 'guided.skipRest')}</Text>
+                    <Pressable
+                      ref={restSkipRef}
+                      collapsable={false}
+                      accessibilityRole="button"
+                      style={[styles.skipRestBtn, skipArmedAt !== null && styles.skipRestBtnArmed]}
+                      onPress={startRestNextSet}
+                    >
+                      <GPIcon name="skip" size={18} color={skipArmedAt !== null ? theme.danger : theme.ink} />
+                      <Text style={{ fontSize: 15.5, fontWeight: '800', color: skipArmedAt !== null ? theme.danger : theme.ink }}>
+                        {t(language, skipArmedAt !== null ? 'guided.skipRest.confirm' : 'guided.skipRest')}
+                      </Text>
                     </Pressable>
                   )}
                   {/* Paused on the easy half: the same single way out as the
@@ -5542,6 +5612,7 @@ function SetStepView({
   onMinutesClockChange,
   tourTargets,
   tourReport,
+  tourFocus = null,
 }: {
   stepIndex: number;
   step: Extract<GuidedStep, { type: 'set' }>;
@@ -5582,6 +5653,8 @@ function SetStepView({
   tourTargets?: TourTargetRegistry;
   /** Reports this set to the workout tour; undefined while the player is held. */
   tourReport?: (step: WorkoutTourStep | null) => void;
+  /** What the tour's current beat is about. */
+  tourFocus?: TourTargetId | null;
 }) {
   const theme = useTheme();
 
@@ -5591,7 +5664,11 @@ function SetStepView({
   const historyRef = useTourTarget(tourTargets, 'workout.history');
   const setRowRef = useTourTarget(tourTargets, 'workout.setRow');
   const dialsRef = useTourTarget(tourTargets, 'workout.dials');
-  const logRef = useTourTarget(tourTargets, 'workout.log');
+  const pauseRef = useTourTarget(tourTargets, 'workout.pause');
+  const menuRef = useTourTarget(tourTargets, 'workout.menu');
+  const logSetRef = useTourTarget(tourTargets, 'workout.logSet');
+  // The history beat's second half: the set being done is drawn as logged.
+  const showLoggedDemo = tourFocus === 'workout.historyLogged';
 
   const target = resolveTarget(step.slotId, step.setIndex);
   // A hold logs no weight either, so it takes the same wide layout — but its
@@ -6041,9 +6118,8 @@ function SetStepView({
               ) : (
                 <Text style={styles.setExerciseInitials}>{panels?.initials ?? ''}</Text>
               )}
-              <View style={styles.setExercisePlay}>
-                <GPIcon name="play" size={11} color={theme.onHighlight} sw={2.6} />
-              </View>
+              {/* No play badge (#bugs 2026-10-17): the picture is a still,
+                  and a play mark promised a video the sheet does not have. */}
             </View>
             <View style={{ flex: 1, minWidth: 0 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -6155,7 +6231,10 @@ function SetStepView({
                   contentContainerStyle={styles.setExerciseLastPills}
                   importantForAccessibility="no-hide-descendants"
                 >
-                  {todayPlan.slice(todayChipWindow.start, todayChipWindow.end).map((chip, offset) => (
+                  {todayPlan.slice(todayChipWindow.start, todayChipWindow.end).map((planned, offset) => {
+                    const chip =
+                      showLoggedDemo && planned.status === 'current' ? { ...planned, status: 'done' as const } : planned;
+                    return (
                     <View
                       key={todayChipWindow.start + offset}
                       style={[
@@ -6174,7 +6253,8 @@ function SetStepView({
                         {chip.reps ?? '–'}
                       </Text>
                     </View>
-                  ))}
+                    );
+                  })}
                 </ScrollView>
               </View>
             ) : null}
@@ -6500,12 +6580,10 @@ function SetStepView({
             The circles lost their captions with the row: two captions under
             two circles were a row of their own. Their names are still read
             out, and the reader drew the row this way knowing it. */}
-        <View
-          ref={logRef}
-          collapsable={false}
-          style={styles.setControls}
-        >
+        <View style={styles.setControls}>
           <Pressable
+            ref={pauseRef}
+            collapsable={false}
             accessibilityRole="button"
             accessibilityLabel={t(language, paused ? 'guided.resume' : 'guided.pause')}
             onPress={onPause}
@@ -6514,6 +6592,8 @@ function SetStepView({
             <GPIcon name={paused ? 'play' : 'pause'} size={22} color={theme.ink} sw={2.2} />
           </Pressable>
           <Pressable
+            ref={menuRef}
+            collapsable={false}
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.a11y.actions')}
             onPress={openActions}
@@ -6523,6 +6603,8 @@ function SetStepView({
           </Pressable>
           {inWarmup ? (
             <Pressable
+              ref={logSetRef}
+              collapsable={false}
               accessibilityRole="button"
               accessibilityLabel={t(language, 'guided.warmup.log')}
               accessibilityState={{ disabled: logBlocked || kg <= 0 }}
@@ -6545,6 +6627,8 @@ function SetStepView({
             </Pressable>
           ) : (
           <Pressable
+            ref={logSetRef}
+            collapsable={false}
             accessibilityRole="button"
             accessibilityLabel={t(language, 'guided.logSetIndex', { index: step.setIndex + 1 })}
             accessibilityState={{ disabled: logBlocked }}
@@ -7160,19 +7244,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: 'center',
   },
   setExerciseInitials: { fontSize: 20, fontWeight: '800', color: theme.faint },
-  setExercisePlay: {
-    position: 'absolute',
-    right: 5,
-    bottom: 5,
-    width: 20,
-    height: 20,
-    borderRadius: 999,
-    backgroundColor: theme.highlight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    // The triangle's own mass sits left of centre in a 24-box.
-    paddingLeft: 2,
-  },
   setExerciseName: { flexShrink: 1, fontSize: 18, fontWeight: '800', letterSpacing: -0.5, color: theme.ink },
   // Bigger, and one claim rather than a list of three tab names the reader
   // has to have opened the sheet once to understand (user 2026-09-04).
@@ -7677,6 +7748,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   // An outline, not a filled button: skipping a rest is a shortcut past a
   // wait, and the loudest thing on the screen should not be a shortcut.
+  restAdjustPair: { flexGrow: 2, flexShrink: 1, flexBasis: 10, flexDirection: 'row', gap: 10 },
+  skipRestBtnArmed: { borderColor: theme.danger },
   skipRestBtn: {
     height: 56,
     borderRadius: 17,

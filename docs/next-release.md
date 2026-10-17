@@ -58,6 +58,19 @@ update to carry, not for each fix.
 - #385 Pro page, Lifetime: a fifth line, "Comes with you to a new phone".
 - #385 Settings: "Continue with Google" is a white button matching "Continue
   with Apple".
+- #385 Workout tour, set screen: the history beat shows the current set
+  outlined, then painted green as a logged set; the set row's buttons get a
+  legend (green + adds a set, red − removes the last one); Pause, the menu
+  and Log set each get their own beat.
+- #385 Workout tour, rest screen: four beats top to bottom — the workout
+  contents (the sheet opens and closes by itself), −15s/+15s, Pause, Skip
+  rest — and the rest timer stands still while the tour is up.
+- #385 Skip rest takes two presses: the first turns it red and asks again.
+- #385 The exercise picture on the set screen has no play badge; the rest
+  alert permission sheet drops "Never a marketing push" and its button is
+  orange.
+- #385 Terms and privacy policy name the trade name's holder correctly
+  (Tatu Ylönen); dated 17.10.2026, so every reader is asked to accept again.
 
 ## Server
 

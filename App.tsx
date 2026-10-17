@@ -1751,6 +1751,7 @@ function VinhaApp() {
     setupHandoffShown,
     legalConsentDue,
     homeTourActive,
+    workoutTourRunning,
     workoutTourDue,
     homePrompt,
     tourElement,
@@ -2203,6 +2204,8 @@ function VinhaApp() {
       // Only while a workout tour is still owed: otherwise the player reports
       // nothing and the shell is not re-rendered for it.
       setWorkoutTourStep: workoutTourDue ? setWorkoutTourStep : undefined,
+      workoutTourRunning,
+      tourFocus,
       exerciseProgressFor,
       guidedEntryEyebrow,
       guidedWeekProgress,

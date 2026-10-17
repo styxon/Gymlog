@@ -235,6 +235,8 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     // The rest tour waits for the set tour (lib/firstRunTour isTourReady).
     isTourReady(preferences.firstRunToursSeen, tourSurface);
   const homeTourActive = tourActive && tourSurface === 'home';
+  // The guided player holds its step clock while this is up.
+  const workoutTourRunning = tourActive && tourSurface !== null && tourSurface !== 'home';
   // The queue decides with the tour in it, so it is computed here, after
   // the tour, rather than up with the suggester.
   // Counted as Profile counts: a workout saved twice, or a row with no set
@@ -389,6 +391,7 @@ export function useSetupHandoffOverlays(deps: SetupHandoffOverlaysDeps) {
     setupHandoffShown,
     legalConsentDue,
     homeTourActive,
+    workoutTourRunning,
     workoutTourDue,
     homePrompt,
     tourElement,

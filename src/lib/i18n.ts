@@ -1206,7 +1206,6 @@ const EN = {
   'rest.perm.body': 'Your rest is running. Put the phone in your pocket and Vinha will tell you when to lift.',
   'rest.perm.b1': 'Rings when rest ends, screen off or app closed',
   'rest.perm.b2': 'The end time on the lock screen, one tap back in',
-  'rest.perm.b3': 'Only during a workout. Never a marketing push.',
   'rest.perm.allow': 'Allow alerts',
   'rest.perm.later': 'Not now',
   // Denied: say plainly what breaks, with a route to fix it.
@@ -1440,6 +1439,7 @@ const EN = {
   'guided.interval.then': 'then {phase} {seconds} s',
   'guided.interval.thenWork': 'then the next round',
   'guided.skipRest': 'Skip rest',
+  'guided.skipRest.confirm': 'Press again to skip',
   'guided.resume': 'Resume',
   'guided.pause': 'Pause',
   // Skipping a warmup drill by drill is five taps to the bar (user,
@@ -1844,9 +1844,12 @@ const EN = {
   // The guided workout's tour: the first plain set, and the first rest after it.
   // Each says what is on the screen, never "tap": the page under a beat is shielded.
   'tour.workout.name': 'The exercise name opens its picture and step-by-step instructions.',
-  'tour.workout.history': 'Each number is one set. Logged sets turn green and the current one is outlined.',
-  'tour.workout.historyFirst':
-    'TODAY shows the reps planned for each set. Logged sets turn green and the current one is outlined.',
+  'tour.workout.history': 'Each number is one set. The set you are on now is outlined.',
+  'tour.workout.historyFirst': 'TODAY shows the reps planned for each set. The set you are on now is outlined.',
+  'tour.workout.historyLogged': 'A logged set turns green, the way this one has here.',
+  'tour.workout.row.add': 'Adds a set',
+  'tour.workout.row.remove': 'Removes the last set',
+  'tour.workout.row.warmup': 'Adds a warm-up before the first set',
   'tour.workout.sets':
     'Red − removes the last set, green + adds one, blue + adds a warm-up before the first set.',
   'tour.workout.setsNoWarmup': 'Red − removes the last set and green + adds one.',
@@ -1856,10 +1859,17 @@ const EN = {
     'Reps and weight start at the suggested values. − and + change them; holding a button changes the number faster.',
   'tour.workout.dialsReps':
     'Reps start at the suggested number. − and + change it; holding a button changes it faster.',
+  'tour.workout.pause': 'Pause stops the workout clock, and pressing it again carries on.',
+  'tour.workout.menu':
+    'The menu holds the workout contents, swapping or skipping this exercise, and ending the workout.',
   'tour.workout.log':
-    'Logging a set moves on to the rest, or to the next exercise after the last set. Pause stops the workout clock; the menu beside it swaps or skips this exercise.',
-  'tour.workout.rest':
-    '−15s and +15s shorten or extend the rest; Skip rest goes straight to the next set.',
+    'Log set records the numbers on the dials and moves on to the rest, or to the next exercise after the last set.',
+  'tour.workout.restContents':
+    'Workout contents opens the whole session: what is done, where you are and what is left.',
+  'tour.workout.rest': '−15s and +15s shorten or extend the rest by fifteen seconds.',
+  'tour.workout.restPause': 'Pause stops the rest timer and the workout clock, and pressing it again carries on.',
+  'tour.workout.restSkip':
+    'Skip rest goes straight to the next set. It asks for a second press, so a stray touch cannot end the rest.',
   'settings.replayTour': 'Replay the tour',
   'settings.widget': 'Home screen widget',
   'settings.widget.sub': 'Your training month, your streak and today, on the home screen.',
@@ -4734,7 +4744,6 @@ const FI: Record<I18nKey, string> = {
   'rest.perm.body': 'Lepo on käynnissä. Laita puhelin taskuun, niin Vinha kertoo milloin nostat.',
   'rest.perm.b1': 'Soi kun lepo päättyy — näyttö pimeänä tai appi kiinni',
   'rest.perm.b2': 'Päättymisaika lukitusnäytöllä, yhdellä napautuksella takaisin',
-  'rest.perm.b3': 'Vain treenin aikana. Ei koskaan markkinointia.',
   'rest.perm.allow': 'Salli hälytykset',
   'rest.perm.later': 'Ei nyt',
   'rest.denied.title': 'Hälytykset ovat pois päältä',
@@ -4937,6 +4946,7 @@ const FI: Record<I18nKey, string> = {
   'guided.interval.then': 'sitten {phase} {seconds} s',
   'guided.interval.thenWork': 'sitten seuraava kierros',
   'guided.skipRest': 'Ohita lepo',
+  'guided.skipRest.confirm': 'Ohita painamalla uudelleen',
   'guided.resume': 'Jatka',
   'guided.pause': 'Tauko',
   'guided.own.start.warmup': 'Aloita lämmittely',
@@ -5271,9 +5281,13 @@ const FI: Record<I18nKey, string> = {
   'tour.bar.progress': 'Seuraa edistymistäsi, ennätyksiäsi ja harjoitteluhistoriaasi.',
   'tour.bar.profile': 'Hallitse asetuksiasi, tietojasi ja muita sovelluksen toimintoja.',
   'tour.workout.name': 'Liikkeen nimestä avautuvat kuva ja vaiheittaiset ohjeet.',
-  'tour.workout.history': 'Yksi luku on yksi sarja. Kirjatut sarjat vihertyvät ja nykyinen on kehystetty.',
+  'tour.workout.history': 'Yksi luku on yksi sarja. Nykyinen sarja on kehystetty.',
   'tour.workout.historyFirst':
-    'TÄNÄÄN-rivillä ovat kunkin sarjan suunnitellut toistot. Kirjatut sarjat vihertyvät ja nykyinen on kehystetty.',
+    'TÄNÄÄN-rivillä ovat kunkin sarjan suunnitellut toistot. Nykyinen sarja on kehystetty.',
+  'tour.workout.historyLogged': 'Kirjattu sarja vihertyy, niin kuin tämä tässä.',
+  'tour.workout.row.add': 'Lisää sarjan',
+  'tour.workout.row.remove': 'Poistaa viimeisen sarjan',
+  'tour.workout.row.warmup': 'Lisää lämmittelysarjan ennen ensimmäistä sarjaa',
   'tour.workout.sets':
     'Punainen − poistaa viimeisen sarjan, vihreä + lisää sarjan ja sininen + lisää lämmittelysarjan ennen ensimmäistä.',
   'tour.workout.setsNoWarmup': 'Punainen − poistaa viimeisen sarjan ja vihreä + lisää sarjan.',
@@ -5284,10 +5298,17 @@ const FI: Record<I18nKey, string> = {
     'Toistot ja paino alkavat ehdotetuista arvoista. − ja + muuttavat niitä, ja painiketta pohjassa pitämällä luku vaihtuu nopeammin.',
   'tour.workout.dialsReps':
     'Toistot alkavat ehdotetusta määrästä. − ja + muuttavat sitä, ja painiketta pohjassa pitämällä luku vaihtuu nopeammin.',
+  'tour.workout.pause': 'Tauko pysäyttää treenin kellon, ja uudelleen painamalla treeni jatkuu.',
+  'tour.workout.menu':
+    'Valikosta löytyvät treenin sisältö, tämän liikkeen vaihto tai ohitus ja treenin lopetus.',
   'tour.workout.log':
-    'Sarjan kirjaaminen siirtää lepoon, tai viimeisen sarjan jälkeen seuraavaan liikkeeseen. Tauko pysäyttää treenin kellon; valikosta voi vaihtaa tai ohittaa liikkeen.',
-  'tour.workout.rest':
-    '−15s ja +15s lyhentävät tai pidentävät lepoa, ja Ohita lepo siirtää suoraan seuraavaan sarjaan.',
+    'Kirjaa sarja tallentaa valitsimien luvut ja siirtää lepoon, tai viimeisen sarjan jälkeen seuraavaan liikkeeseen.',
+  'tour.workout.restContents':
+    'Treenin sisältö avaa koko treenin: mitä on tehty, missä olet ja mitä on jäljellä.',
+  'tour.workout.rest': '−15s ja +15s lyhentävät tai pidentävät lepoa viidellätoista sekunnilla.',
+  'tour.workout.restPause': 'Tauko pysäyttää lepoajastimen ja treenin kellon, ja uudelleen painamalla jatkuu.',
+  'tour.workout.restSkip':
+    'Ohita lepo vie suoraan seuraavaan sarjaan. Se vaatii toisen painalluksen, jottei vahingossa osunut sormi lopeta lepoa.',
   'settings.replayTour': 'Näytä esittely uudestaan',
   'settings.widget': 'Kotinäytön widget',
   'settings.widget.sub': 'Treenikuukausi, putki ja tämä päivä kotinäytöllä.',

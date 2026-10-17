@@ -40,16 +40,27 @@ const targets = (beats) => beats.map((beat) => beat.target);
 
 module.exports = [
   {
-    name: 'workout tour: the set tour has five beats in the order the screen reads, the rest tour has one',
+    name: 'workout tour: the set tour has eight beats in the order the screen reads, the rest tour four',
     run() {
+      // The history block twice (as it is, then with its current set drawn
+      // logged), and the bottom row one button a beat (#bugs 2026-10-17).
       assert.deepEqual(targets(tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: SET_STEP })), [
         'workout.name',
         'workout.history',
+        'workout.history',
         'workout.setRow',
         'workout.dials',
-        'workout.log',
+        'workout.pause',
+        'workout.menu',
+        'workout.logSet',
       ]);
-      assert.deepEqual(targets(tour.resolveTourBeats('workoutRest', { hasProgram: false })), ['workout.rest']);
+      // Top to bottom: the contents strip, −15s/+15s, Pause, Skip rest.
+      assert.deepEqual(targets(tour.resolveTourBeats('workoutRest', { hasProgram: false })), [
+        'workout.runStrip',
+        'workout.restAdjust',
+        'workout.restPause',
+        'workout.restSkip',
+      ]);
       // And Home is untouched by the options the workout adds.
       assert.deepEqual(
         targets(tour.resolveTourBeats('home', { hasProgram: true, workout: SET_STEP }).filter((b) => b.kind === 'section')),
@@ -71,7 +82,10 @@ module.exports = [
     run() {
       const keysFor = (step) =>
         Object.fromEntries(
-          tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: step }).map((beat) => [beat.target, beat.copyKey]),
+          tour
+            .resolveTourBeats('workoutSet', { hasProgram: false, workout: step })
+            // The history block's second beat is the logged demo, keyed by its focus.
+            .map((beat) => [tour.beatFocus(beat), beat.copyKey]),
         );
       // The set row's buttons come and go: the red − when there is a set to take
       // back (not on a one-set lift, not when the last set is logged), the blue +
@@ -121,8 +135,11 @@ module.exports = [
       const byTarget = Object.fromEntries(beats.map((beat) => [beat.target, beat]));
       // The set row and the button row measure edge to edge; the ring must not.
       assert.deepEqual(byTarget['workout.setRow'].inset, { x: 24, top: 18 });
-      assert.deepEqual(byTarget['workout.log'].inset, { x: 22, top: 4, bottom: 12 });
       assert.deepEqual(byTarget['workout.history'].inset, { top: 9 });
+      // The bottom row's beats ring single buttons, which carry no margin.
+      for (const id of ['workout.pause', 'workout.menu', 'workout.logSet']) {
+        assert.equal(byTarget[id].inset, undefined, id);
+      }
       assert.equal(byTarget['workout.name'].inset, undefined);
       assert.equal(byTarget['workout.dials'].inset, undefined);
 
@@ -338,7 +355,11 @@ module.exports = [
       for (const beat of tour.resolveTourBeats('workoutRest', { hasProgram: false })) {
         keys.add(beat.copyKey);
       }
-      assert.equal(keys.size, 11, 'name, two histories, four set rows, two dials, the log button, the rest');
+      assert.equal(
+        keys.size,
+        17,
+        'name, three histories, four set rows, two dials, pause, menu, log, and the rest tour\'s four',
+      );
       for (const key of keys) {
         const { en, fi } = copyOf(key);
         for (const [language, text] of [['en', en], ['fi', fi]]) {
@@ -396,8 +417,12 @@ module.exports = [
       const dict = read('src/lib/i18n.ts');
       assert.match(dict, /'guided\.skipRest': 'Skip rest'/);
       assert.match(dict, /'guided\.skipRest': 'Ohita lepo'/);
-      assert.match(rest.en, /Skip rest/);
-      assert.match(rest.fi, /Ohita lepo/);
+      const skip = copyOf('tour.workout.restSkip');
+      assert.match(skip.en, /^Skip rest /);
+      assert.match(skip.fi, /^Ohita lepo /);
+      // It says the second press is asked for, which the button does ask.
+      assert.match(skip.en, /second press/);
+      assert.match(skip.fi, /toisen painalluksen/);
       // A rest only follows a set when another round follows (guidedPlayer
       // buildGuidedSteps), so "logging starts the rest" would be false after
       // the last set of a lift. The sentence says both.
@@ -408,8 +433,10 @@ module.exports = [
       const steps = read('src/lib/guidedPlayer.ts');
       assert.match(steps, /Rest when the round is over and another round follows/);
       // What Pause and the menu do, as the screen has them.
-      assert.match(log.en, /Pause stops the workout clock/);
-      assert.match(log.en, /menu beside it swaps or skips this exercise/);
+      assert.match(copyOf('tour.workout.pause').en, /^Pause stops the workout clock/);
+      assert.match(copyOf('tour.workout.menu').en, /workout contents, swapping or skipping this exercise, and ending the workout/);
+      assert.match(dict, /'guided\.runSheet\.title': 'Workout contents'/);
+      assert.match(dict, /'guided\.endConfirm\.title'/);
       assert.match(player, /GPIcon name=\{paused \? 'play' : 'pause'\}/);
       assert.match(dict, /'guided\.action\.swap': 'Swap this exercise'/);
       assert.match(dict, /'guided\.action\.skipExercise': 'Skip this exercise'/);
@@ -422,15 +449,68 @@ module.exports = [
     },
   },
   {
-    name: 'workout tour: the rest beat rings the controls block, with the callout above it',
+    name: 'workout tour: the rest beats go strip first, callout below it; the buttons with the callout above',
     run() {
-      const [beat, ...others] = tour.resolveTourBeats('workoutRest', { hasProgram: false });
-      assert.equal(others.length, 0);
-      assert.equal(beat.target, 'workout.rest');
-      // Above: below the block there is only the rail, and a callout pushed back
-      // up would sit on the very buttons its sentence is about.
-      assert.equal(beat.place, 'above');
-      assert.deepEqual(beat.inset, { x: 24, bottom: 10 });
+      const [strip, ...buttons] = tour.resolveTourBeats('workoutRest', { hasProgram: false });
+      assert.equal(strip.target, 'workout.runStrip');
+      assert.equal(strip.place, 'below');
+      assert.equal(strip.copyKey, 'tour.workout.restContents');
+      // Above: below the buttons there is only the rail, and a callout pushed
+      // back up would sit on the very buttons its sentence is about.
+      for (const beat of buttons) {
+        assert.equal(beat.place, 'above', beat.target);
+      }
+    },
+  },
+  {
+    name: 'workout tour: the history beat comes twice, the second asking the player to draw the set logged',
+    run() {
+      const beats = tour.resolveTourBeats('workoutSet', { hasProgram: false, workout: SET_STEP });
+      const history = beats.filter((beat) => beat.target === 'workout.history');
+      assert.equal(history.length, 2);
+      assert.equal(tour.beatFocus(history[0]), 'workout.history');
+      assert.equal(tour.beatFocus(history[1]), 'workout.historyLogged');
+      assert.equal(history[1].copyKey, 'tour.workout.historyLogged');
+      // The first half no longer claims the green; the second shows it.
+      assert.doesNotMatch(copyOf('tour.workout.history').en, /green/);
+      assert.match(copyOf('tour.workout.historyLogged').en, /green/);
+      assert.match(copyOf('tour.workout.historyLogged').fi, /vihertyy/);
+      // Every other beat tells the screen its own target.
+      for (const beat of beats.filter((candidate) => candidate !== history[1])) {
+        assert.equal(tour.beatFocus(beat), beat.target);
+      }
+    },
+  },
+  {
+    name: 'workout tour: the set row beat is a legend of the buttons it has, green + first',
+    run() {
+      const legendFor = (step) =>
+        tour
+          .resolveTourBeats('workoutSet', { hasProgram: false, workout: step })
+          .find((beat) => beat.target === 'workout.setRow')
+          .rows.map((row) => `${row.tone} ${row.icon}`);
+      assert.deepEqual(legendFor(SET_STEP), ['green plus', 'danger minus', 'blue plus']);
+      assert.deepEqual(legendFor({ ...SET_STEP, canRemove: false }), ['green plus', 'blue plus']);
+      assert.deepEqual(legendFor({ ...SET_STEP, canWarmUp: false }), ['green plus', 'danger minus']);
+      assert.deepEqual(legendFor({ ...SET_STEP, canRemove: false, canWarmUp: false }), ['green plus']);
+      for (const key of ['tour.workout.row.add', 'tour.workout.row.remove', 'tour.workout.row.warmup']) {
+        const { en, fi } = copyOf(key);
+        assert.notEqual(en, fi, key);
+      }
+      assert.match(copyOf('tour.workout.row.remove').fi, /^Poistaa viimeisen sarjan$/);
+      assert.match(copyOf('tour.workout.row.add').fi, /^Lisää sarjan$/);
+    },
+  },
+  {
+    name: 'skip rest: the first press arms, a second inside the window skips, a late one arms again',
+    run() {
+      const confirm = require('../../.test-dist/lib/skipRestConfirm');
+      assert.equal(confirm.skipRestTap(null, 1000), 'arm');
+      assert.equal(confirm.skipRestTap(1000, 1400), 'skip');
+      assert.equal(confirm.skipRestTap(1000, 1000 + confirm.SKIP_REST_CONFIRM_MS), 'skip');
+      assert.equal(confirm.skipRestTap(1000, 1001 + confirm.SKIP_REST_CONFIRM_MS), 'arm');
+      // A clock that went backwards is not a confirmation.
+      assert.equal(confirm.skipRestTap(5000, 4000), 'arm');
     },
   },
 ];

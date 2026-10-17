@@ -61,7 +61,7 @@ import type { StorePlatform } from './storeLinks';
 export const LEGAL_ENTITY = {
   name: 'Styxon Studio',
   /** The individual behind the trade name — the controller in law. */
-  holder: 'Santeri Ylönen',
+  holder: 'Tatu Ylönen',
   /** Y-tunnus. */
   businessId: '3321575-3',
   email: 'privacy@vinha.app',
@@ -83,7 +83,7 @@ function publisher(language: AppLanguage): string {
  * show it. A real date, never ahead of the calendar (tests/lib/legalDocuments
  * holds it there).
  */
-export const LEGAL_LAST_UPDATED = '2026-10-12';
+export const LEGAL_LAST_UPDATED = '2026-10-17';
 
 /**
  * What an acceptance is stored against: a string that only ever grows, so a
@@ -101,7 +101,7 @@ export const LEGAL_LAST_UPDATED = '2026-10-12';
  * current value with a suffix ('2026-10-06.1', '.2', …), which still compares
  * as later.
  */
-export const LEGAL_VERSION = '2026-10-12';
+export const LEGAL_VERSION = '2026-10-17';
 
 export type LegalDocumentId = 'privacy' | 'terms';
 

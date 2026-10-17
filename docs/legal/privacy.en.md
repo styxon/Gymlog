@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Updated 12 October 2026*
+*Updated 17 October 2026*
 
 What Vinha stores, what leaves your phone, and what you can do about it.
 
@@ -16,7 +16,7 @@ No ads, no trackers, no selling of data. If something in this policy is unclear,
 
 ## Who is responsible
 
-Styxon Studio (sole trader Santeri Ylönen, business ID 3321575-3, Finland) publishes Vinha Fitness (“Vinha”) and is the data controller — the one responsible for how your data is handled — for everything described in this policy.
+Styxon Studio (sole trader Tatu Ylönen, business ID 3321575-3, Finland) publishes Vinha Fitness (“Vinha”) and is the data controller — the one responsible for how your data is handled — for everything described in this policy.
 
 Questions about this policy or your data: privacy@vinha.app.
 
