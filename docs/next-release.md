@@ -25,7 +25,7 @@ update to carry, not for each fix.
 - #382 Onboarding: a disabled Continue button says on a line under it what
   it still waits for.
 - #384 Onboarding: the chosen start-path card is a soft violet tint instead
-  of solid violet. (Its violet buttons were made orange again by #NEW.)
+  of solid violet. (Its violet buttons were made orange again by #385.)
 - #384 Onboarding: the last setup screen's terms box, links and chosen rows
   are violet; weight is picked on a two-column wheel; the gender options are
   colour-coded; shorter level, rhythm and avoid-step copy; "Recommended" no
@@ -43,20 +43,20 @@ update to carry, not for each fix.
 - #383 Onboarding level step: the choices are years trained (0–1, 1–3,
   3–5) instead of level names, and the moving bars around the logo are gone.
 - #383 "Fitness" in the Vinha Fitness name is orange everywhere.
-- #NEW Onboarding: every button that moves you on is orange, violet stays
+- #385 Onboarding: every button that moves you on is orange, violet stays
   for choices and the brand.
-- #NEW The light/dark question is no longer asked right after "Let's
+- #385 The light/dark question is no longer asked right after "Let's
   begin": a new install starts dark, and the question is the last step of
   setup, after the Pro page, the widget and the measurements question.
-- #NEW The measurements question's example card shows the site you tap
+- #385 The measurements question's example card shows the site you tap
   first (waist, arms, …), with its own example numbers.
-- #NEW "Your programme is ready": a flat violet background instead of the
+- #385 "Your programme is ready": a flat violet background instead of the
   striped one, and an orange "Start training".
-- #NEW Level step: the description no longer changes height, so the
+- #385 Level step: the description no longer changes height, so the
   selector and Continue stay put; the home equipment sheet's choices are
   centred and inset.
-- #NEW Pro page, Lifetime: a fifth line, "Comes with you to a new phone".
-- #NEW Settings: "Continue with Google" is a white button matching "Continue
+- #385 Pro page, Lifetime: a fifth line, "Comes with you to a new phone".
+- #385 Settings: "Continue with Google" is a white button matching "Continue
   with Apple".
 
 ## Server
