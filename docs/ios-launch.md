@@ -106,6 +106,19 @@ App Store build:
 - `EXPO_PUBLIC_REVENUECAT_IOS_KEY` in the EAS env of the iOS profiles. Without
   it the Pro page has nothing to sell on iPhone.
 
+## Apple's token revocation on account deletion
+
+Settings → Delete account ends the sign-in at Apple too (2026-10-17), so Vinha
+leaves the reader's Apple ID → Sign in with Apple list, as Apple asks of apps
+that offer Sign in with Apple. The phone asks Apple for a fresh one-time code
+as the reader confirms (a code from the sign-in would be long dead, and none is
+stored), the server trades it and revokes the grant; details and the three env
+vars in docs/account-backup.md ("Ending the sign-in at Apple"). **Before the
+iOS build ships:** the Sign in with Apple key in Apple Developer and
+`APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` in Vercel (Production),
+deployed. Without them deletion still works and the log says `apple revoke
+skipped` — but the privacy text now says deletion takes Vinha off the list.
+
 ## Privacy manifest
 
 `app.json` → `ios.privacyManifests` declares the required-reason APIs the
@@ -118,24 +131,6 @@ binary calls such an API without a reason.
 
 ## Not in iOS 1.0
 
-- **Apple's token revocation on account deletion.** Settings → Delete account
-  deletes the cloud copy, ends the server's own sessions and signs the phone out
-  (`delete-account`, docs/account-backup.md), but it does not call Apple's
-  `POST https://appleid.apple.com/auth/revoke`, so Vinha stays in the reader's
-  Apple ID → Sign in with Apple list until they remove it themselves; the
-  privacy text says so. App Review 5.1.1(v) accepts in-app deletion; Apple also
-  asks apps that use Sign in with Apple to revoke the token on deletion. What
-  it needs, none of which the repo has: the Team ID, a Sign in with Apple Key ID
-  and its `.p8` private key (Apple Developer → Keys), used to sign an ES256
-  client-secret JWT (`iss` = Team ID, `sub` = `app.vinha`, `aud` =
-  `https://appleid.apple.com`, `kid` = Key ID, expiry ≤ 6 months); and the
-  user's Apple authorization code (or refresh token) from the sign-in — the app
-  does not keep either today: `signInWithApple` reads only the identity token.
-  So: request `AppleAuthentication.signInAsync`'s `authorizationCode`, send it
-  with the exchange, have `api/backup.ts` trade it at `/auth/token` for a
-  refresh token (stored next to the revocation marker), and call `/auth/revoke`
-  with the client secret on `delete-account`. Env: `APPLE_TEAM_ID`,
-  `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY`.
 - **Deleting an Apple account on the web.** The deletion page
   (`styxon.fi/vinha-fitness/legal/delete-account.*`, see "Web deletion for
   Apple accounts" below) deletes Google accounts only; an Apple account is
@@ -182,8 +177,8 @@ happen:
      page's origin **only when the action is `apple-session`**, so the page can
      never write a backup.
 5. **Token revocation together with it.** The web flow returns an
-   authorization code, the input the revocation work above ("Not in iOS 1.0")
-   needs. A code is bound to the client id that requested it, so the web code
+   authorization code, the input the token revocation ("Apple's token
+   revocation on account deletion", above) uses. A code is bound to the client id that requested it, so the web code
    is traded and revoked with a client secret whose `sub` is the Services ID,
    the app's with `app.vinha`. Build both at once: same key (`APPLE_KEY_ID`,
    `APPLE_PRIVATE_KEY`, `APPLE_TEAM_ID`), same `/auth/token` → `/auth/revoke`.

@@ -69,6 +69,7 @@ import {
 import type { SignInProvider } from './accountAuth';
 import {
   availableSignInProviders,
+  getAccountDeletionGrant,
   getFreshIdToken,
   isAccountSignInConfigured,
   renewSessionIfDue,
@@ -1453,6 +1454,16 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         reportOperationFailed('account_delete');
         return 'failed';
       }
+      // An Apple account ends at Apple too (api/backup.ts): Apple asks the
+      // reader to confirm once and gives the one-time code the server trades
+      // and revokes. Backing out of Apple's sheet backs out of the deletion,
+      // before anything is sent or written; no sheet or no answer from Apple
+      // deletes without the code, as before.
+      const grant = await getAccountDeletionGrant(current.sub);
+      ensureCurrent(generation);
+      if (grant.status === 'cancelled') {
+        return 'cancelled';
+      }
       // Written BEFORE sending, cleared by any answer that settles it: if the
       // answer is slow or lost, the retry meets a session the server has by
       // then ended, and this is how that retry knows its own try went through.
@@ -1469,7 +1480,11 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         deleteRequestId: requestId,
       });
       ensureCurrent(generation);
-      const answer = await deleteBackup(token.idToken, { account: true, requestId });
+      const answer = await deleteBackup(token.idToken, {
+        account: true,
+        requestId,
+        ...(grant.status === 'ok' ? { appleAuthorizationCode: grant.appleAuthorizationCode } : {}),
+      });
       ensureCurrent(generation);
       if (answer.ok) {
         // The server has deleted; now this phone forgets the account. Sign-out

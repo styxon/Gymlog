@@ -97,6 +97,7 @@ async function withHook({ local, stored = null, cloud = null, signedOut = [] }, 
     './accountAuth': {
       availableSignInProviders: () => ['google'],
       isAccountSignInConfigured: () => true,
+      getAccountDeletionGrant: async () => ({ status: 'none' }),
       async signInWith() {
         calls.signIn += 1;
         return google.signIn;

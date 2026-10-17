@@ -124,10 +124,18 @@ update to carry, not for each fix.
   no weight set first says so, and the next tap logs it; Progress lists a
   session without weight in reps (a hold in seconds, a bout in minutes)
   instead of "0 kg".
+- #396 iPhone: Delete account on an Apple account asks Apple to confirm once,
+  and Vinha leaves the Apple ID's Sign in with Apple list (needs the server
+  change below and its three env vars). The privacy policy says so (new
+  wording, asked again).
 
 ## Server
 
-_Nothing yet._
+- #396 `api/backup.ts`: Delete account on an Apple account trades the
+  phone's one-time Apple code and revokes the grant at Apple. Live once
+  `APPLE_TEAM_ID`, `APPLE_KEY_ID` and `APPLE_PRIVATE_KEY` are set in Vercel
+  (docs/account-backup.md); until then deletion works as before and the log
+  says `apple revoke skipped`.
 
 ## Known, not yet fixed
 

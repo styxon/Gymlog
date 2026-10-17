@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { generateKeyPairSync, sign } = require('node:crypto');
+const { generateKeyPairSync, sign, verify } = require('node:crypto');
 
 const { callHandler, loadApiModule, withEnv } = require('../helpers/apiModule.cjs');
 
@@ -173,7 +173,11 @@ function pathBlobStore() {
   return store;
 }
 
-async function withEndpoint(scenario) {
+/**
+ * `apple`: a fake of Apple's /auth/token and /auth/revoke, (url, init) =>
+ * response. `env`: the revocation key's variables, unset unless given.
+ */
+async function withEndpoint(scenario, { env = {}, apple = null } = {}) {
   const savedFetch = global.fetch;
   const quiet = console.error;
   const fetched = [];
@@ -188,8 +192,11 @@ async function withEndpoint(scenario) {
   let offsetMs = 0;
   Date.now = () => startMs + offsetMs;
   const clock = { advance: (ms) => (offsetMs += ms) };
-  global.fetch = async (url) => {
+  global.fetch = async (url, init) => {
     fetched.push(String(url));
+    if (apple && /^https:\/\/appleid\.apple\.com\/auth\/(token|revoke)$/.test(String(url))) {
+      return apple(String(url), init);
+    }
     if (String(url).startsWith('https://appleid.apple.com/auth/keys')) {
       return { ok: true, json: async () => ({ keys: [JWK] }) };
     }
@@ -202,7 +209,15 @@ async function withEndpoint(scenario) {
   console.error = () => undefined;
   try {
     await withEnv(
-      { GOOGLE_WEB_CLIENT_ID: GOOGLE_CLIENT_ID, BACKUP_PATH_SECRET: 'test-secret', APPLE_BUNDLE_ID: undefined },
+      {
+        GOOGLE_WEB_CLIENT_ID: GOOGLE_CLIENT_ID,
+        BACKUP_PATH_SECRET: 'test-secret',
+        APPLE_BUNDLE_ID: undefined,
+        APPLE_TEAM_ID: undefined,
+        APPLE_KEY_ID: undefined,
+        APPLE_PRIVATE_KEY: undefined,
+        ...env,
+      },
       async () => {
         const blob = pathBlobStore();
         const { default: handler } = loadApiModule('api/backup.ts', { '@vercel/blob': blob });
@@ -220,6 +235,53 @@ async function withEndpoint(scenario) {
 }
 
 const copy = (label) => JSON.stringify({ version: 1, exportedAt: label, database: {}, workoutHistory: {} });
+
+/**
+ * Ending the sign-in at Apple on Delete account (iOS hunt 2026-10-17, D1-1 /
+ * A6-5): a Sign in with Apple key made here, and a fake of Apple's token and
+ * revoke endpoints that records what it was sent.
+ */
+const SIWA = generateKeyPairSync('ec', { namedCurve: 'prime256v1' });
+const SIWA_PEM = SIWA.privateKey.export({ type: 'pkcs8', format: 'pem' });
+const APPLE_ENV = { APPLE_TEAM_ID: 'TEAM123456', APPLE_KEY_ID: 'KEY7654321', APPLE_PRIVATE_KEY: SIWA_PEM };
+const APPLE_CODE = 'c0de1234.one-time_authorization-code';
+const b64json = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+const unb64json = (segment) => JSON.parse(Buffer.from(segment, 'base64url').toString('utf8'));
+const deleteWithCode = (code = APPLE_CODE) => ({ 'x-backup-action': 'delete-account', 'x-apple-authorization-code': code });
+
+function fakeApple({ sub = 'apple-user-1', token = null, revoke = null } = {}) {
+  const fake = {
+    calls: [],
+    // Set by a scenario: what the store held when Apple was first asked.
+    look: null,
+    seen: [],
+    async handler(url, init) {
+      fake.calls.push({ url, method: init?.method, form: Object.fromEntries(new URLSearchParams(String(init?.body ?? ''))) });
+      if (fake.look) {
+        fake.seen.push(fake.look());
+      }
+      if (url.endsWith('/auth/token')) {
+        if (token) {
+          return token();
+        }
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            access_token: 'access-1',
+            refresh_token: 'refresh-1',
+            id_token: `${b64json({ alg: 'RS256', kid: 'k' })}.${b64json({ iss: 'https://appleid.apple.com', sub })}.sig`,
+          }),
+        };
+      }
+      if (revoke) {
+        return revoke();
+      }
+      return { ok: true, status: 200, json: async () => ({}) };
+    },
+  };
+  return fake;
+}
 
 const backupsIn = (blobs) => [...blobs.keys()].filter((key) => key.startsWith('backups/'));
 
@@ -1240,6 +1302,165 @@ module.exports = [
         assert.ok(tookMs < 5000, `the answer waited ${tookMs} ms`);
         assert.equal([...blobs.keys()].filter((key) => key.startsWith('backups/')).length, 1);
       });
+    },
+  },
+  {
+    name: 'apple revoke: Delete account ends the sign-in at Apple with the phone\'s one-time code, once everything of ours is gone',
+    async run() {
+      for (const pem of [SIWA_PEM, SIWA_PEM.replace(/\n/g, '\\n')]) {
+        const apple = fakeApple();
+        await withEndpoint(
+          async ({ call, exchange, blobs }) => {
+            const session = (await exchange(appleToken())).body.sessionToken;
+            await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
+            apple.look = () => ({
+              backups: backupsIn(blobs).length,
+              revoked: [...blobs.keys()].filter((key) => key.startsWith('revoked/')).length,
+            });
+            const deleted = await call('DELETE', session, deleteWithCode());
+            assert.equal(deleted.status, 200);
+            assert.deepEqual(deleted.body, { ok: true });
+            assert.deepEqual(
+              apple.calls.map((entry) => `${entry.method} ${entry.url}`),
+              ['POST https://appleid.apple.com/auth/token', 'POST https://appleid.apple.com/auth/revoke'],
+            );
+            // Asked only after the copy was gone and the sessions were ended.
+            assert.deepEqual(apple.seen[0], { backups: 0, revoked: 1 });
+            const [traded, revoked] = apple.calls;
+            assert.equal(traded.form.client_id, 'app.vinha');
+            assert.equal(traded.form.code, APPLE_CODE);
+            assert.equal(traded.form.grant_type, 'authorization_code');
+            assert.equal(revoked.form.client_id, 'app.vinha');
+            assert.equal(revoked.form.token, 'refresh-1', 'the grant itself was not revoked');
+            assert.equal(revoked.form.token_type_hint, 'refresh_token');
+            // The client secret: ES256, signed by the team's key, for this app, short-lived.
+            for (const secret of [traded.form.client_secret, revoked.form.client_secret]) {
+              const [header, payload, signature] = secret.split('.');
+              assert.deepEqual(unb64json(header), { alg: 'ES256', kid: 'KEY7654321' });
+              const claims = unb64json(payload);
+              assert.equal(claims.iss, 'TEAM123456');
+              assert.equal(claims.sub, 'app.vinha');
+              assert.equal(claims.aud, 'https://appleid.apple.com');
+              assert.ok(claims.exp > claims.iat && claims.exp - claims.iat <= 300, `a secret of ${claims.exp - claims.iat} s`);
+              assert.ok(claims.exp > Date.now() / 1000);
+              assert.ok(
+                verify('sha256', Buffer.from(`${header}.${payload}`), { key: SIWA.publicKey, dsaEncoding: 'ieee-p1363' }, Buffer.from(signature, 'base64url')),
+                'the client secret is not signed by the Sign in with Apple key',
+              );
+            }
+            // Nothing of Apple's is kept.
+            for (const [key, body] of blobs) {
+              assert.ok(!String(body).includes(APPLE_CODE) && !String(body).includes('refresh-1'), `${key} keeps Apple's grant`);
+            }
+            // The account is as gone as before.
+            assert.equal((await call('GET', session)).status, 401);
+          },
+          { env: { ...APPLE_ENV, APPLE_PRIVATE_KEY: pem }, apple: apple.handler },
+        );
+      }
+    },
+  },
+  {
+    name: 'apple revoke: the deletion never waits on Apple - no key, an unreadable key, a refused code, Apple down, another Apple ID',
+    async run() {
+      const refused = () => ({ ok: false, status: 400, json: async () => ({ error: 'invalid_grant' }) });
+      const cases = [
+        { label: 'no key', env: {}, apple: fakeApple(), asked: [], log: 'apple revoke skipped' },
+        { label: 'unreadable key', env: { ...APPLE_ENV, APPLE_PRIVATE_KEY: 'not a key' }, apple: fakeApple(), asked: [], log: 'APPLE_PRIVATE_KEY unreadable' },
+        { label: 'refused code', env: APPLE_ENV, apple: fakeApple({ token: refused }), asked: ['token'], log: 'code refused' },
+        {
+          label: 'Apple down',
+          env: APPLE_ENV,
+          apple: fakeApple({
+            token: () => {
+              throw new Error('The operation was aborted due to timeout');
+            },
+          }),
+          asked: ['token'],
+          log: 'apple revoke failed',
+        },
+        { label: 'revoke refused', env: APPLE_ENV, apple: fakeApple({ revoke: refused }), asked: ['token', 'revoke'], log: 'apple revoke: refused' },
+        { label: 'another Apple ID', env: APPLE_ENV, apple: fakeApple({ sub: 'someone-else' }), asked: ['token'], log: 'not this account' },
+      ];
+      for (const entry of cases) {
+        await withEndpoint(
+          async ({ call, exchange, blobs }) => {
+            const logged = [];
+            console.error = (...args) => logged.push(args.join(' '));
+            const session = (await exchange(appleToken())).body.sessionToken;
+            await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
+            const deleted = await call('DELETE', session, deleteWithCode());
+            assert.equal(deleted.status, 200, `${entry.label}: the deletion failed`);
+            assert.deepEqual(deleted.body, { ok: true }, entry.label);
+            assert.equal(backupsIn(blobs).length, 0, `${entry.label}: the copy stayed`);
+            assert.equal((await call('GET', session)).status, 401, `${entry.label}: the session lived on`);
+            assert.deepEqual(
+              entry.apple.calls.map((call) => call.url.split('/').pop()),
+              entry.asked,
+              `${entry.label}: Apple was asked the wrong things`,
+            );
+            assert.ok(logged.some((line) => line.includes(entry.log)), `${entry.label}: the log does not say why (${logged.join(' | ')})`);
+          },
+          { env: entry.env, apple: entry.apple.handler },
+        );
+      }
+    },
+  },
+  {
+    name: 'apple revoke: only an Apple account\'s Delete account with a well-formed code reaches Apple, and only after the store said yes',
+    async run() {
+      // Delete cloud backup keeps the reader signed in: Apple is not asked to end anything.
+      let apple = fakeApple();
+      await withEndpoint(
+        async ({ call, exchange }) => {
+          const session = (await exchange(appleToken())).body.sessionToken;
+          await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
+          assert.equal((await call('DELETE', session, { 'x-apple-authorization-code': APPLE_CODE })).status, 200);
+          assert.equal((await call('GET', session)).status, 404, 'Delete cloud backup ended the session');
+        },
+        { env: APPLE_ENV, apple: apple.handler },
+      );
+      assert.equal(apple.calls.length, 0, 'Delete cloud backup reached Apple');
+
+      // A Google account has no Apple sign-in to end.
+      apple = fakeApple();
+      await withEndpoint(
+        async ({ call }) => {
+          assert.equal((await call('DELETE', 'google-id-token', deleteWithCode())).status, 200);
+        },
+        { env: APPLE_ENV, apple: apple.handler },
+      );
+      assert.equal(apple.calls.length, 0, 'a Google deletion reached Apple');
+
+      // No code, or something that is not one: deleted, Apple not asked, and the log says so.
+      for (const headers of [{ 'x-backup-action': 'delete-account' }, deleteWithCode('not a code!'), deleteWithCode('short')]) {
+        apple = fakeApple();
+        await withEndpoint(
+          async ({ call, exchange, blobs }) => {
+            const logged = [];
+            console.error = (...args) => logged.push(args.join(' '));
+            const session = (await exchange(appleToken())).body.sessionToken;
+            await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
+            assert.equal((await call('DELETE', session, headers)).status, 200);
+            assert.equal(backupsIn(blobs).length, 0);
+            assert.ok(logged.some((line) => line.includes('no Apple authorization code')));
+          },
+          { env: APPLE_ENV, apple: apple.handler },
+        );
+        assert.equal(apple.calls.length, 0, `${JSON.stringify(headers)} reached Apple`);
+      }
+
+      // The sessions could not be ended: a 502 for the phone to try again, and Apple is not asked.
+      apple = fakeApple();
+      await withEndpoint(
+        async ({ call, exchange, store }) => {
+          const session = (await exchange(appleToken())).body.sessionToken;
+          store.failPuts = (pathname) => pathname.startsWith('revoked/');
+          assert.equal((await call('DELETE', session, deleteWithCode())).status, 502);
+        },
+        { env: APPLE_ENV, apple: apple.handler },
+      );
+      assert.equal(apple.calls.length, 0, 'Apple was asked before the account was gone');
     },
   },
 ];

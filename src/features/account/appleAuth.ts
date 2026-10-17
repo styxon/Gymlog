@@ -71,6 +71,8 @@ interface AppleAuthModule {
   signInAsync(options: { requestedScopes: number[] }): Promise<{
     user: string;
     identityToken: string | null;
+    /** One use, five minutes; only the account deletion sends it (appleDeletionCode). */
+    authorizationCode: string | null;
     email: string | null;
     fullName: { givenName: string | null; familyName: string | null } | null;
   }>;
@@ -335,6 +337,42 @@ export async function renewAppleSessionIfDue(expectedUser: string): Promise<void
   } catch {
     // Offline or busy: the next foreground tries again.
   }
+}
+
+/**
+ * Apple's one-time authorization code for deleting the account. The server
+ * trades it and revokes the grant, which ends Vinha's Sign in with Apple and
+ * takes it off the reader's list (api/backup.ts, delete-account). Asked as the
+ * reader confirms the deletion: a code lives five minutes, and one kept from
+ * the sign-in would be long dead.
+ *
+ * 'cancelled' when the reader backed out of Apple's sheet — the deletion stops
+ * there. 'none' when there is no code to send: no sheet on this phone, Apple
+ * not answering, or an Apple ID other than the account's (its grant is not
+ * this account's to end). The deletion goes ahead without it then.
+ */
+export async function appleDeletionCode(
+  expectedUser: string,
+): Promise<{ status: 'ok'; code: string } | { status: 'cancelled' } | { status: 'none' }> {
+  const module = loadModule();
+  if (!module) {
+    return { status: 'none' };
+  }
+  let credential;
+  try {
+    if (!(await module.isAvailableAsync())) {
+      return { status: 'none' };
+    }
+    // No scopes: this is a confirmation, not a sign-in, and asks for nothing.
+    credential = await module.signInAsync({ requestedScopes: [] });
+  } catch (error) {
+    const code = (error as { code?: unknown } | null)?.code;
+    return code === 'ERR_REQUEST_CANCELED' ? { status: 'cancelled' } : { status: 'none' };
+  }
+  if (credential.user !== expectedUser || !credential.authorizationCode) {
+    return { status: 'none' };
+  }
+  return { status: 'ok', code: credential.authorizationCode };
 }
 
 /** Apple has no app-side sign-out; forgetting the session is the whole of it. */
