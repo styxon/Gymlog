@@ -30,8 +30,12 @@ module.exports = [
       // The two old section labels and their hand-rolled arrays.
       assert.doesNotMatch(screen, /REST_TOGGLES|TRAINING_TOGGLES/);
       assert.doesNotMatch(screen, /'notif\.rest\.section'|'notif\.training'/);
-      assert.match(screen, /const workoutGroups = NOTIFICATION_GROUPS\.filter\(\(group\) => !group\.scheduled\);/);
-      assert.match(screen, /const scheduledGroups = NOTIFICATION_GROUPS\.filter\(\(group\) => group\.scheduled\);/);
+      // The platform's groups: iOS drops what it cannot send (iOS hunt
+      // 2026-10-17, S6-4; lib/notificationGroups notificationGroupsFor).
+      assert.match(screen, /const groups = notificationGroupsFor\(Platform\.OS\);/);
+      assert.match(screen, /const workoutGroups = groups\.filter\(\(group\) => !group\.scheduled\);/);
+      assert.match(screen, /const scheduledGroups = groups\.filter\(\(group\) => group\.scheduled\);/);
+      assert.doesNotMatch(screen, /NOTIFICATION_GROUPS/);
       assert.match(screen, /workoutGroups\.map\(renderGroup\)/);
       assert.match(screen, /scheduledGroups\.map\(renderGroup\)/);
       assert.match(screen, /<SectionLabel label=\{t\(language, 'notif\.section\.what'\)\} \/>/);

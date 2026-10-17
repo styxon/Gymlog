@@ -17,7 +17,8 @@
       "bundleIdentifier": "app.vinha",
       "buildNumber": "1",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "RCTAsyncStorageExcludeFromBackup": false
       },
       "usesAppleSignIn": true,
       "privacyManifests": {

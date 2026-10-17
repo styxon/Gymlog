@@ -1217,7 +1217,7 @@ export function EmptyWorkoutScreen({
                 accessibilityRole="button"
                 onPress={() => {
                   restAsk.dismissDeniedBanner();
-                  onOpenSystemSettings?.();
+                  void restAsk.turnOn(() => onOpenSystemSettings?.());
                 }}
                 hitSlop={8}
               >

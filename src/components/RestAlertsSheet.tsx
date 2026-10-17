@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { t } from '../lib/i18n';
 import { Theme, useThemedStyles } from '../theming';
@@ -74,7 +74,9 @@ export function RestAlertsSheet({ visible, language, bottomInset, onAllow, onLat
           <View style={styles.bullets}>
             {/* No "never marketing" line (#bugs 2026-10-17): it answered a
                 worry the two lines above had not raised. */}
-            {(['rest.perm.b1', 'rest.perm.b2'] as const).map((key) => (
+            {/* The end time on the lock screen is Android's ongoing card;
+                iOS has none (iOS hunt 2026-10-17, S6-4). */}
+            {(['rest.perm.b1', Platform.OS === 'ios' ? 'rest.perm.b2Ios' : 'rest.perm.b2'] as const).map((key) => (
               <View key={key} style={styles.bullet}>
                 <View style={styles.dot} />
                 <Text style={styles.bulletText}>{t(language, key)}</Text>

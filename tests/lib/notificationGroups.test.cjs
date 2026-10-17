@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 
 const {
   NOTIFICATION_GROUPS,
+  notificationGroupsFor,
   notificationGroupSummary,
   readNotificationGroup,
   rememberNotificationGroup,
@@ -39,6 +40,46 @@ const group = (key) => NOTIFICATION_GROUPS.find((item) => item.key === key);
 const everySwitch = () => NOTIFICATION_GROUPS.flatMap((item) => item.switches);
 
 module.exports = [
+  {
+    /**
+     * iOS hunt 2026-10-17, S6-4. iOS has no ongoing notification, so "Keep
+     * session on lock screen" was a switch that did nothing, on by default;
+     * and the 10-second warning is a silent notification there, not the
+     * haptic tick the line promised.
+     */
+    name: 'notificationGroups: iOS shows only what it can send, and says what the warning is there',
+    run() {
+      assert.equal(notificationGroupsFor('android'), NOTIFICATION_GROUPS);
+      const ios = notificationGroupsFor('ios');
+      assert.equal(notificationGroupsFor('ios'), ios, 'built once');
+      const workout = ios.find((item) => item.key === 'workout');
+      assert.deepEqual(
+        workout.switches.map((item) => item.key),
+        ['restAlerts', 'restWarning', 'idleNudge'],
+      );
+      assert.equal(workout.switches.find((item) => item.key === 'restWarning').subKey, 'notif.rest.warningSubIos');
+      assert.equal(t('en', 'notif.rest.warningSubIos'), 'A silent notification');
+      assert.doesNotMatch(t('fi', 'notif.rest.warningSubIos'), /värinä/i);
+      // The other groups are the same switches, and the shared list is untouched.
+      assert.deepEqual(
+        ios.filter((item) => item.key !== 'workout').map((item) => item.switches),
+        NOTIFICATION_GROUPS.filter((item) => item.key !== 'workout').map((item) => item.switches),
+      );
+      assert.deepEqual(
+        group('workout').switches.map((item) => item.key),
+        ['restAlerts', 'restWarning', 'sessionOngoing', 'idleNudge'],
+      );
+      assert.equal(group('workout').switches[1].subKey, 'notif.rest.warningSub');
+
+      // The group's summary and toggle read only what is shown, and a group
+      // turned off on iOS leaves the hidden switch as it was stored.
+      const stored = prefs({ restAlerts: false, restWarning: false, idleNudge: false, sessionOngoing: true });
+      assert.equal(readNotificationGroup(workout, stored).isOn, false);
+      const off = toggleNotificationGroup(workout, false, null);
+      assert.equal('sessionOngoing' in off, false);
+      assert.deepEqual(Object.keys(toggleNotificationGroup(workout, true, null)).sort(), ['idleNudge', 'restAlerts', 'restWarning']);
+    },
+  },
   {
     name: 'notificationGroups: the workout alerts are their own switch; the master governs what is scheduled',
     run() {

@@ -27,8 +27,9 @@ function momentCall(source, name) {
  * permission and its dialog, the exact-alarm grant and its settings page,
  * and AppState, whose events the test sends.
  */
-function loadMoment(runtime) {
+function loadMoment(runtime, platform = 'android') {
   const listeners = new Set();
+  let asks = 0;
   const os = { permission: 'undetermined', channelMuted: false, exact: false, opened: 0, dialog: null };
   const AppState = {
     currentState: 'active',
@@ -41,7 +42,7 @@ function loadMoment(runtime) {
     path.join(__dirname, '..', '..', '.test-dist', 'hooks', 'useRestAlertPermissionMoment.js'),
     {
       react: runtime.react,
-      'react-native': { AppState },
+      'react-native': { AppState, Platform: { OS: platform } },
       '../utils/exactAlarm': {
         canScheduleExactAlarms: async () => os.exact,
         openExactAlarmSettings: async () => {
@@ -51,7 +52,10 @@ function loadMoment(runtime) {
       '../utils/sessionNotifications': {
         getRestAlertPermission: async () => os.permission,
         isRestAlertChannelBlocked: async () => os.channelMuted,
-        requestRestAlertPermission: () => os.dialog.promise,
+        requestRestAlertPermission: () => {
+          asks += 1;
+          return os.dialog.promise;
+        },
       },
     },
   );
@@ -65,6 +69,7 @@ function loadMoment(runtime) {
     get listening() {
       return listeners.size;
     },
+    asks: () => asks,
   };
 }
 
@@ -324,6 +329,91 @@ module.exports = [
       assert.equal(b2.length, 2, 'EN and FI');
       for (const line of b2) {
         assert.doesNotMatch(line, /Countdown|without unlocking|Laskuri|ilman avaamista/i);
+      }
+      // iOS has no ongoing card, so no end time on the lock screen either
+      // (iOS hunt 2026-10-17, S6-4): the sheet says only the tap back in.
+      const b2Ios = [...i18n.matchAll(/'rest\.perm\.b2Ios': '([^']*)'/g)].map((m) => m[1]);
+      assert.equal(b2Ios.length, 2, 'EN and FI');
+      for (const line of b2Ios) {
+        assert.doesNotMatch(line, /lock screen|lukitusnäyt|end time|päättymisaika/i);
+      }
+      const sheet = strip(read('src', 'components', 'RestAlertsSheet.tsx'));
+      assert.match(sheet, /\['rest\.perm\.b1', Platform\.OS === 'ios' \? 'rest\.perm\.b2Ios' : 'rest\.perm\.b2'\]/);
+    },
+  },
+  {
+    /**
+     * iOS hunt 2026-10-17, S6-2: on iOS a permission the system has never
+     * asked for has no switch in Settings. "Not now" on the app's own ask
+     * leaves it there, and the banner's "Turn on" opened a Settings page with
+     * no Notifications row. It asks instead, the way Allow does. A refused
+     * permission, and every Android answer, still go to Settings.
+     */
+    name: 'rest alerts: the banner\'s "Turn on" asks on iOS when the system never has, and opens Settings otherwise',
+    async run() {
+      const props = (answers) => ({
+        restRunning: true,
+        restKey: 'turn-on',
+        asked: true,
+        alertsWanted: true,
+        onAnswered: (outcome) => answers.push(outcome),
+        onGranted: () => answers.push('armed'),
+      });
+      const mount = async (platform, permission) => {
+        const runtime = createHookRuntime();
+        const env = loadMoment(runtime, platform);
+        env.os.permission = permission;
+        const answers = [];
+        runtime.render(env.hook, props(answers));
+        await flush();
+        runtime.render(env.hook, props(answers));
+        const moment = runtime.render(env.hook, props(answers));
+        assert.equal(moment.deniedBannerShown, true, `${platform}/${permission}: no banner to press`);
+        return { runtime, env, answers, moment };
+      };
+
+      // iOS, never asked: the system dialog, and a grant arms the rest.
+      const ios = await mount('ios', 'undetermined');
+      let settings = 0;
+      ios.env.os.dialog = deferred();
+      const turning = ios.moment.turnOn(() => (settings += 1));
+      await flush();
+      assert.equal(ios.env.asks(), 1, 'iOS did not ask');
+      ios.env.os.permission = 'granted';
+      ios.env.os.dialog.resolve('granted');
+      await turning;
+      assert.equal(settings, 0, 'iOS opened a Settings page with no switch on it');
+      assert.deepEqual(ios.answers, ['granted', 'armed']);
+      ios.runtime.unmount();
+
+      // iOS, refused before: only Settings can turn it on.
+      const refused = await mount('ios', 'denied');
+      settings = 0;
+      await refused.moment.turnOn(() => (settings += 1));
+      assert.equal(settings, 1);
+      assert.equal(refused.env.asks(), 0);
+      refused.runtime.unmount();
+
+      // Android: its notification page always exists.
+      const android = await mount('android', 'undetermined');
+      settings = 0;
+      await android.moment.turnOn(() => (settings += 1));
+      assert.equal(settings, 1);
+      assert.equal(android.env.asks(), 0);
+      android.runtime.unmount();
+
+      // Both banners press it, after hiding themselves.
+      for (const [name, source] of [
+        ['GuidedPlayerScreen', guided],
+        ['EmptyWorkoutScreen', empty],
+      ]) {
+        const code = strip(source);
+        assert.match(
+          code,
+          /restAsk\.dismissDeniedBanner\(\);\s*void restAsk\.turnOn\(\(\) => onOpenSystemSettings\?\.\(\)\);/,
+          `${name}: the banner goes straight to Settings again`,
+        );
+        assert.doesNotMatch(code, /restAsk\.dismissDeniedBanner\(\);\s*onOpenSystemSettings\?\.\(\);/, name);
       }
     },
   },

@@ -102,6 +102,30 @@ const measurementSwitch: NotificationSwitch = {
   }),
 };
 
+let iosGroups: readonly NotificationGroup[] | null = null;
+
+/**
+ * The groups as a platform shows them.
+ *
+ * iOS has no ongoing notification (a Live Activity would be the carrier
+ * there), so its "Keep session on lock screen" switch did nothing, on by
+ * default; and its 10-second warning is a silent notification, not the
+ * haptic tick the Android line promises (iOS hunt 2026-10-17, S6-4). The
+ * stored preference is left alone: only what is shown changes.
+ */
+export function notificationGroupsFor(platform: string): readonly NotificationGroup[] {
+  if (platform !== 'ios') {
+    return NOTIFICATION_GROUPS;
+  }
+  iosGroups ??= NOTIFICATION_GROUPS.map((group) => ({
+    ...group,
+    switches: group.switches
+      .filter((item) => item.key !== 'sessionOngoing')
+      .map((item) => (item.key === 'restWarning' ? { ...item, subKey: 'notif.rest.warningSubIos' as const } : item)),
+  }));
+  return iosGroups;
+}
+
 export const NOTIFICATION_GROUPS: readonly NotificationGroup[] = [
   {
     key: 'workout',

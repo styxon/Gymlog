@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { RestAlertAskOutcome, restAlertMoment } from '../lib/restAlertAnswer';
 import { canScheduleExactAlarms, openExactAlarmSettings } from '../utils/exactAlarm';
@@ -171,11 +171,29 @@ export function useRestAlertPermissionMoment(input: {
     onAnswered?.('later');
   };
 
+  /**
+   * The banner's "Turn on". On iOS a permission the system has never asked
+   * for has no switch in Settings to turn: the app's Notifications row appears
+   * only after the first system dialog. "Not now", a tap on the ask's
+   * backdrop, or a backup that brought the "asked" flag onto a new phone all
+   * leave it there, and the button opened a Settings page with nothing on it
+   * (iOS hunt 2026-10-17, S6-2). So on iOS it asks, the way Allow does.
+   * Android's app notification page always exists.
+   */
+  const turnOn = async (openSettings: () => void) => {
+    if (Platform.OS === 'ios' && (await getRestAlertPermission()) === 'undetermined') {
+      await allow();
+      return;
+    }
+    openSettings();
+  };
+
   return {
     permission: permission ?? 'undetermined',
     sheetOpen,
     allow,
     later,
+    turnOn,
     deniedBannerShown: deniedBannerShown && (permission !== 'granted' || channelMuted === true),
     dismissDeniedBanner: () => setDeniedBannerShown(false),
   };

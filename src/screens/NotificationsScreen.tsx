@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { AppState, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
@@ -12,7 +12,7 @@ import { MEASUREMENT_REMINDER_KINDS } from '../lib/measurementReminder';
 import { NotificationAccessState } from '../lib/notificationAccessState';
 import {
   DEFAULT_MEASUREMENT_KIND,
-  NOTIFICATION_GROUPS,
+  notificationGroupsFor,
   NotificationGroup,
   NotificationGroupKey,
   NotificationGroupMemo,
@@ -570,8 +570,9 @@ export function NotificationsScreen({
     );
   };
 
-  const workoutGroups = NOTIFICATION_GROUPS.filter((group) => !group.scheduled);
-  const scheduledGroups = NOTIFICATION_GROUPS.filter((group) => group.scheduled);
+  const groups = notificationGroupsFor(Platform.OS);
+  const workoutGroups = groups.filter((group) => !group.scheduled);
+  const scheduledGroups = groups.filter((group) => group.scheduled);
 
   return (
     <View style={styles.screen}>
