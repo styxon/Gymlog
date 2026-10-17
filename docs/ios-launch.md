@@ -9,7 +9,12 @@ lists what iOS needs beyond it.
   `ITSAppUsesNonExemptEncryption: false` (skips the export-compliance question
   on every upload; the app only uses HTTPS).
 - `eas.json` → `preview` (internal / TestFlight-style device build) and
-  `production` profiles.
+  `production` profiles. `preview` reads the EAS `production` environment:
+  the `preview` environment holds only the Google iOS client id, and a build
+  without the other `EXPO_PUBLIC_*` values quietly has no backup, sign-in
+  prompt, coach or purchases (2026-10-17). Install one on a registered
+  iPhone (`npx eas device:create`, then Developer Mode on the phone) with
+  `npx eas build -p ios --profile preview`.
 - Sign in with Apple beside Google on iPhone, with the privacy policy
   updated (2026-10-01).
 - `app.config.js` → turns `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID` into the Google
