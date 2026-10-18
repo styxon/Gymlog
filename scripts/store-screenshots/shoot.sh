@@ -4,18 +4,19 @@
 #   scripts/store-screenshots/shoot.sh <Vinha.app> <out-dir>
 #
 # For each device: a new simulator, the status bar set to 9:41 and full
-# battery, the app installed, and the Maestro flow run once per language and
-# theme. Each run starts from clearState, so the seed writes the same reader
-# every time (src/screenshots/screenshotSeed.ts).
+# battery, and per language and theme a fresh install, a launch with
+# -vinhaLanguage/-vinhaTheme, and the Maestro flow. A fresh install is a first
+# launch, so the seed writes the same reader every time
+# (src/screenshots/screenshotSeed.ts).
 #
 # Writes <out-dir>/<device>/<language>-<theme>/NN-name.png at the simulator's
-# own resolution. Override the matrix with DEVICES ("Name|folder,..."),
-# LANGUAGES and THEMES. macOS only: xcrun, simctl and maestro on PATH.
+# own resolution, with Maestro's logs beside them (maestro-<attempt>/).
+# Override the matrix with DEVICES ("Name|folder,..."), LANGUAGES and THEMES. macOS only: xcrun, simctl and maestro on PATH.
 set -euo pipefail
 
 APP=${1:?usage: shoot.sh <Vinha.app> <out-dir>}
 OUT=${2:?usage: shoot.sh <Vinha.app> <out-dir>}
-FLOW="$(cd "$(dirname "$0")/../.." && pwd)/.maestro/store-screenshots/store.yaml"
+FLOWS="$(cd "$(dirname "$0")/../.." && pwd)/.maestro/store-screenshots"
 DEVICES=${DEVICES:-"iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3"}
 LANGUAGES=${LANGUAGES:-"fi en"}
 THEMES=${THEMES:-"dark light"}
@@ -39,7 +40,7 @@ status_bar() {
   xcrun simctl status_bar "$1" override \
     --time "9:41" --dataNetwork wifi --wifiMode active --wifiBars 3 \
     --cellularMode active --cellularBars 4 --operatorName "" \
-    --batteryState charged --batteryLevel 100
+    --batteryState discharging --batteryLevel 100
 }
 
 failures=0
@@ -59,19 +60,38 @@ for spec in "${SPECS[@]}"; do
     xcrun simctl shutdown "$udid"
     boot "$udid"
     status_bar "$udid"
-    xcrun simctl install "$udid" "$APP"
     for theme in $THEMES; do
       dir="$OUT/$folder/$language-$theme"
       mkdir -p "$dir"
       echo "-- $folder $language $theme"
-      if ! maestro --device "$udid" test \
-        -e LANGUAGE="$language" -e THEME="$theme" -e OUT="$dir" \
-        --test-output-dir "$OUT/maestro/$folder-$language-$theme" \
-        "$FLOW"; then
+      # A fresh install every run: the seed only writes on a first launch.
+      xcrun simctl uninstall "$udid" app.vinha 2>/dev/null || true
+      xcrun simctl install "$udid" "$APP"
+      cp "$FLOWS"/*.yaml "$dir/"
+      check=$([ "$language" = fi ] && echo Koti || echo Home)
+      sed -i '' "s/@LANGUAGE_CHECK@/$check/" "$dir/store.yaml"
+      ok=0
+      # Twice: the first Maestro run on a fresh boot builds its driver, and
+      # on the runner that has outlasted any timeout (2026-10-18).
+      for attempt in 1 2; do
+        xcrun simctl terminate "$udid" app.vinha 2>/dev/null || true
+        if [ "$attempt" = 2 ]; then
+          xcrun simctl uninstall "$udid" app.vinha 2>/dev/null || true
+          xcrun simctl install "$udid" "$APP"
+        fi
+        xcrun simctl launch "$udid" app.vinha -vinhaLanguage "$language" -vinhaTheme "$theme" >/dev/null
+        if (cd "$dir" && maestro --device "$udid" test --test-output-dir "$dir/maestro-$attempt" store.yaml); then
+          ok=1
+          break
+        fi
+        echo "attempt $attempt failed: $folder $language $theme"
+      done
+      if [ "$ok" = 0 ]; then
         echo "::error::Maestro failed: $folder $language $theme"
         xcrun simctl io "$udid" screenshot "$dir/failure.png" || true
         failures=$((failures + 1))
       fi
+      rm -f "$dir"/*.yaml
     done
     xcrun simctl shutdown "$udid"
   done

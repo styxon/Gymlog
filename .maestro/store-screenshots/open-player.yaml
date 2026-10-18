@@ -1,8 +1,8 @@
-# Home → the running workout. Home's hero, then the player's own entry
-# screen, may each say "Resume workout".
+# Home → the running workout. Home's hero says "Continue"; the player's own
+# entry screen may say it again.
 appId: app.vinha
 ---
-- tapOn: "Jatka treeniä|Resume workout"
+- tapOn: "Jatka kesken olevaa treeniä|Resume the workout in progress"
 - runFlow:
     when:
       visible: "Jatka treeniä|Resume workout"

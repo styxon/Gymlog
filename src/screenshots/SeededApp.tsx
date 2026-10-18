@@ -10,7 +10,7 @@
  * app's own savers before App mounts, so both providers load it the way they
  * load any reader's data. A launch that finds data opens it as it is.
  *
- * Language and theme come from the launch arguments the Maestro flow passes
+ * Language and theme come from the launch arguments shoot.sh passes
  * (`-vinhaLanguage fi -vinhaTheme light`): iOS files them in the arguments
  * domain of NSUserDefaults, which Settings reads. Absent, the phone's language
  * and the dark theme.

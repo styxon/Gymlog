@@ -27,9 +27,9 @@ The Android set is still made by hand with adb (memory: ref-website-screenshots)
      screens and a caption, an experiment for the "Header and Search
      Results" image (#to-do 12).
    - `raw-screenshots`: the simulator's own captures, before any caption.
-     When a run fails, this artifact also holds Maestro's logs, a
-     `failure.png` of the screen at the moment it failed, and its view
-     hierarchy (under `maestro/`).
+     It also holds Maestro's logs and view hierarchies (`maestro-<attempt>/`
+     beside each variant's shots), plus a `failure.png` when a variant failed
+     twice.
 
 Nothing is uploaded to App Store Connect. Choosing the images and uploading
 them is a manual step.
@@ -68,9 +68,13 @@ this workflow and in the simulator-only `screenshots` EAS profile.
 `tests/lib/screenshotSeedGate.test.cjs` fails if another profile,
 app.json, another workflow, or any app module reaches the flag or the seed.
 
-**Language and theme.** Maestro passes them as launch arguments
-(`vinhaLanguage`, `vinhaTheme`), and the seed reads them through
-`Settings`. `shoot.sh` also sets the simulator's own language and locale.
+**Language and theme.** `shoot.sh` launches each fresh install with
+`-vinhaLanguage fi -vinhaTheme dark` (via `simctl launch`), and the seed
+reads them through `Settings`. Maestro's own `launchApp` did not substitute
+`-e` values into its `arguments` on iOS, so the flow attaches to the
+running app instead. `shoot.sh` also sets the simulator's own language and
+locale. The flow checks the language by the Home tab's name, and
+`compose.py` checks the theme against each screen's background colour.
 The status bar is set to 9:41, full Wi-Fi and a charged battery.
 
 **Shots.** Each run captures these screens: 01 set screen, 02 rest with the
