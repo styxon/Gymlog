@@ -1,10 +1,27 @@
 # Home → the running workout. Home's hero says "Continue"; the player's own
 # entry screen may say it again.
+#
+# A tap while Home is still animating in lands on nothing (the first variant
+# on a fresh simulator, 2026-10-18), so wait, then try again until the set
+# screen shows.
 appId: app.vinha
 ---
-- tapOn: "Jatka kesken olevaa treeniä|Resume the workout in progress"
-- runFlow:
-    when:
-      visible: "Jatka treeniä|Resume workout"
+- waitForAnimationToEnd:
+    timeout: 8000
+- repeat:
+    times: 3
+    while:
+      notVisible: "Kirjaa sarja 2|Log set 2"
     commands:
-      - tapOn: "Jatka treeniä|Resume workout"
+      - runFlow:
+          when:
+            visible: "Jatka kesken olevaa treeniä|Resume the workout in progress"
+          commands:
+            - tapOn: "Jatka kesken olevaa treeniä|Resume the workout in progress"
+      - runFlow:
+          when:
+            visible: "Jatka treeniä|Resume workout"
+          commands:
+            - tapOn: "Jatka treeniä|Resume workout"
+      - waitForAnimationToEnd:
+          timeout: 8000
