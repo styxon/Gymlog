@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   FlatList,
-  Keyboard,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,9 +11,11 @@ import {
 } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { parseNumberInput, removeTrailingZeros } from '../lib/format';
 import { t } from '../lib/i18n';
+import { keyboardOpenBottomPadding } from '../lib/keyboardLift';
 import { isValidTarget } from '../lib/strengthGoals';
 import {
   estimateWeeksToTarget,
@@ -224,18 +226,13 @@ export function StrengthGoalFlowScreen({
    * (It was first found on step 1, which had a search over the whole library
    * before the list became the ten lifts people actually put a number on. The
    * field is gone; the keyboard is not.)
+   *
+   * That is Android. On iOS the AppShell's KeyboardAvoidingView has already
+   * ended the screen at the keyboard, and the height added again squeezed the
+   * list holding the number field to 0 pt (iOS hunt 2026-10-17, S5a-2): only
+   * the gap is added there.
    */
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-  useEffect(() => {
-    const shown = Keyboard.addListener('keyboardDidShow', (event) =>
-      setKeyboardHeight(event.endCoordinates?.height ?? 0),
-    );
-    const hidden = Keyboard.addListener('keyboardDidHide', () => setKeyboardHeight(0));
-    return () => {
-      shown.remove();
-      hidden.remove();
-    };
-  }, []);
+  const keyboard = useKeyboardOpen();
 
   /*
    * A short list, so no search: a field over a list you can see all of is one
@@ -387,6 +384,9 @@ export function StrengthGoalFlowScreen({
           style={styles.list}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
+          // The decimal pad has no return key: a drag, or a tap on the list,
+          // puts it away.
+          keyboardDismissMode="on-drag"
         >
           <View style={styles.numberCard}>
             {bestKg === null ? (
@@ -398,6 +398,10 @@ export function StrengthGoalFlowScreen({
                     value={typedKg}
                     onChangeText={setTypedKg}
                     keyboardType="numeric"
+                    // The decimal pad has no return key; "done" gets it iOS's
+                    // Done bar.
+                    returnKeyType="done"
+                    inputAccessoryViewButtonLabel={t(language, 'common.done')}
                     placeholder="0"
                     placeholderTextColor={theme.faint}
                     style={styles.numberInput}
@@ -467,7 +471,7 @@ export function StrengthGoalFlowScreen({
 
         </ScrollView>
         <View
-          style={[styles.footer, keyboardHeight > 0 && { paddingBottom: keyboardHeight + 12 }]}
+          style={[styles.footer, keyboard.open && { paddingBottom: keyboardOpenBottomPadding(Platform.OS, keyboard.height, 12) }]}
         >
           <Pressable
             accessibilityRole="button"

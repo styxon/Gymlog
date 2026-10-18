@@ -2,7 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   FlatList,
   Image,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -448,8 +451,18 @@ export function ExercisePickerSheet({
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.overlay}>
-        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} accessible={false} importantForAccessibility="no" />
+      {/* iOS does not lift a Modal's content for the keyboard: the search's
+          keyboard covered the lower half of the list and the "Add N" bar
+          (iOS hunt 2026-10-17, P1-4). The sheet's 92% is taken of what is left
+          above the keys. A tap above the sheet with the keyboard up puts the
+          keyboard away; closing would have dropped the picks. */}
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.overlay}>
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => (Keyboard.isVisible() ? Keyboard.dismiss() : onClose())}
+          accessible={false}
+          importantForAccessibility="no"
+        />
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.header}>
@@ -478,6 +491,9 @@ export function ExercisePickerSheet({
             maxToRenderPerBatch={16}
             windowSize={8}
             keyboardShouldPersistTaps="handled"
+            // A scroll through the cards is done searching: the keys go, and
+            // the rest of the list and the bar come back.
+            keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
             columnWrapperStyle={styles.gridRow}
             // Without a footer bar the list runs to the sheet's bottom edge, so
@@ -518,7 +534,7 @@ export function ExercisePickerSheet({
 
           {footer}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

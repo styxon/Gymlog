@@ -146,6 +146,7 @@ import {
 } from '../lib/guidedSetRow';
 import type { PlateauDetection } from '../lib/proInsights';
 import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
+import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 import { consumeBackForTour } from '../features/tour/tourBack';
 import type { TourTargetRegistry } from '../features/tour/tourTargets';
 import type { TourTargetId, WorkoutTourStep } from '../lib/firstRunTour';
@@ -1246,6 +1247,7 @@ function DialCard({
   onCommit,
   invalid = false,
   onDraftCleared,
+  doneLabel,
 }: {
   label: string;
   value: string;
@@ -1271,6 +1273,12 @@ function DialCard({
    * button stayed locked, red, over a field that read a good weight).
    */
   onDraftCleared?: () => void;
+  /**
+   * The bar iOS draws over its number pads, which have no return key; it is
+   * the one way to close the card from the keyboard, and says "Done" in
+   * English unless told otherwise.
+   */
+  doneLabel: string;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -1341,6 +1349,7 @@ function DialCard({
             autoFocus
             keyboardType={unit ? 'decimal-pad' : 'number-pad'}
             returnKeyType="done"
+            inputAccessoryViewButtonLabel={doneLabel}
             selectTextOnFocus
             accessibilityLabel={label}
             style={[styles.setDialNumber, faint && { color: theme.faint }, invalid && { color: theme.danger }]}
@@ -5507,6 +5516,9 @@ function LoggedSetEditor({
   onSave: (reps: number, loadKg: number | null) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
+  // Lifted onto the keyboard, the sheet no longer meets the home indicator.
+  const keyboard = useKeyboardOpen();
+  const onKeys = Platform.OS === 'ios' && keyboard.open;
 
   return (
     <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
@@ -5526,7 +5538,7 @@ function LoggedSetEditor({
           onPress={() => (Keyboard.isVisible() ? Keyboard.dismiss() : onCancel())}
           accessible={false}
         />
-        <View style={[styles.editSheet, { paddingBottom: bottomInset + 20 }]}>
+        <View style={[styles.editSheet, { paddingBottom: (onKeys ? 0 : bottomInset) + 20 }]}>
           <View style={{ gap: 2 }}>
             <Text style={styles.editLiftName} numberOfLines={1}>
               {liftName}
@@ -6219,6 +6231,19 @@ function SetStepView({
             </Text>
           </>
         ) : null}
+        {/* The lift's card and the set row scroll; the dials and the log row
+            under them do not. iOS shortens this screen by the keyboard's
+            height when a dial is typed in, and the dials' box used to shrink
+            with it while its cards could not: centred, they spilled over the
+            set row above and the log button below, and the dots and ± under
+            them took the taps (owner's #2, iOS hunt 2026-10-17). Now the card
+            gives the room instead, and scrolls when it has too little. Blank
+            taps in it still reach the "close the dial" target around it. */}
+        <ScrollView
+          style={styles.setTopScroll}
+          keyboardShouldPersistTaps="always"
+          showsVerticalScrollIndicator={false}
+        >
         {/* The lift, always on screen and always the way in.
             The panels used to hang off the header's right-hand button, which
             put the answer to "how much did I lift last time" behind a control
@@ -6285,10 +6310,12 @@ function SetStepView({
               ramp's "16,25×8" chips used to wrap, and so, on the phone's
               larger font, did five plain ones, which is what made the card
               tall. */}
+          {/* Not while a dial is typed in: the keyboard has taken the room,
+              and last time's numbers are not what is being typed. */}
           <View
             ref={historyRef}
             collapsable={false}
-            style={styles.setExerciseRows}
+            style={[styles.setExerciseRows, dial !== null && { display: 'none' }]}
           >
             {panels?.history ? (
               <View style={styles.setExerciseRow}>
@@ -6535,7 +6562,7 @@ function SetStepView({
             </Pressable>
           ) : null}
         </View>
-
+        </ScrollView>
 
         <View style={styles.setTargetArea}>
           {/* Two dials, side by side: what you did and what was on the bar.
@@ -6582,6 +6609,7 @@ function SetStepView({
               value={String(minutesMode ? shownMinutes : reps)}
               unit={minutesMode ? 'min' : null}
               open={dial === 'reps'}
+              doneLabel={t(language, 'common.done')}
               onToggle={() => setDial((current) => (current === 'reps' ? null : 'reps'))}
               onStep={(direction) =>
                 minutesMode
@@ -6624,6 +6652,7 @@ function SetStepView({
                 value={removeTrailingZeros(kg)}
                 unit="kg"
                 open={dial === 'weight'}
+                doneLabel={t(language, 'common.done')}
                 onToggle={() => setDial((current) => (current === 'weight' ? null : 'weight'))}
                 // 1.25 kg per step (user wish, #bugs 2026-08-26): the smallest
                 // real plate pair. Bounded at both ends now — a held button
@@ -7443,7 +7472,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '600',
     color: theme.muted,
   },
-  setTargetArea: { flex: 1, minHeight: 0, justifyContent: 'center', paddingHorizontal: 22, gap: 10 },
+  // Sized to the card and the set row, and the only thing that shrinks.
+  setTopScroll: { flexGrow: 0, flexShrink: 1 },
+  // Grows to centre the dials in the room left over, and never shrinks under
+  // them: `flex: 1, minHeight: 0` here let the box go smaller than its cards,
+  // and centring split the overflow over both neighbours (owner's #2).
+  setTargetArea: { flexGrow: 1, flexShrink: 0, justifyContent: 'center', paddingHorizontal: 22, gap: 10 },
   // Two dials of equal width. Each is a card, so the reps dial no longer
   // floats as a bare headline over a boxed weight — same shape, same weight.
   setDialRow: { flexDirection: 'row', gap: 10, alignItems: 'stretch' },

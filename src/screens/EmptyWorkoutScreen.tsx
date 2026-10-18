@@ -1005,6 +1005,10 @@ export function EmptyWorkoutScreen({
                           placeholderTextColor={AW3.ghost}
                           selectionColor={theme.purple}
                           keyboardType="decimal-pad"
+                          // iOS's number pads have no return key: "done" gets
+                          // them a Done bar, the way off the keys.
+                          returnKeyType="done"
+                          inputAccessoryViewButtonLabel={t(language, 'common.done')}
                           style={[styles.setInput, styles.setColField]}
                         />
                         <TextInput
@@ -1021,6 +1025,8 @@ export function EmptyWorkoutScreen({
                           placeholderTextColor={AW3.ghost}
                           selectionColor={theme.purple}
                           keyboardType="number-pad"
+                          returnKeyType="done"
+                          inputAccessoryViewButtonLabel={t(language, 'common.done')}
                           style={[styles.setInput, styles.setColField]}
                         />
                         <View style={[styles.setColCheck, styles.setCheckCell]}>
