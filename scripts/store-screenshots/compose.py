@@ -87,7 +87,7 @@ def caption(im, theme, text, accent, pro, box):
         cx = left + width / 2
         d.rounded_rectangle((cx - pw / 2, y, cx + pw / 2, y + 58 * s), 29 * s, fill=GOLD)
         d.text((cx, y + 29 * s), "PRO", font=pill_font, fill=GOLD_INK, anchor="mm")
-        y += 90 * s
+        y += round(90 * s)
     for line in wrap(d, text, font, width - 180 * s):
         # Word by word, so the chosen word can carry the accent.
         words = line.split()
@@ -103,6 +103,7 @@ def caption(im, theme, text, accent, pro, box):
 
 def phone(im, theme, shot, x, y, width, radius):
     t = THEMES[theme]
+    x, y = int(x), int(y)  # paste takes whole pixels; the caption's height may not be
     src = Image.open(shot).convert("RGB")
     h = round(src.height * width / src.width)
     src = src.resize((width, h), Image.LANCZOS)
