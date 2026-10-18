@@ -7,7 +7,7 @@ import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 
 import { formatShortDate, removeTrailingZeros } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
-import { Theme, useThemedStyles } from '../theming';
+import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 
 /**
@@ -131,10 +131,17 @@ function SheetActions({
   language,
   onCancel,
   onSave,
+  cancelLabel,
+  cancelAccessibilityLabel,
+  saveLabel,
 }: {
   language: AppLanguage;
   onCancel: () => void;
   onSave: () => void;
+  /** Defaults to Cancel / Save; onboarding says Skip / Done. */
+  cancelLabel?: string;
+  cancelAccessibilityLabel?: string;
+  saveLabel?: string;
 }) {
   const styles = useThemedStyles(makeStyles);
   const { typing } = useContext(SheetTyping);
@@ -143,10 +150,11 @@ function SheetActions({
     <View style={styles.actionRow}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel={cancelAccessibilityLabel}
         onPress={onCancel}
         style={({ pressed }) => [styles.cancelButton, pressed && styles.pressed]}
       >
-        <Text style={styles.cancelText}>{t(language, 'common.cancel')}</Text>
+        <Text style={styles.cancelText}>{cancelLabel ?? t(language, 'common.cancel')}</Text>
       </Pressable>
       {/* While a number is typed, Save ends the typing and shows the number
           on the ruler; the next tap saves it (SheetTyping). */}
@@ -155,7 +163,7 @@ function SheetActions({
         onPress={() => (typing ? Keyboard.dismiss() : onSave())}
         style={({ pressed }) => [styles.saveButton, pressed && styles.pressed]}
       >
-        <Text style={styles.saveText}>{t(language, 'common.save')}</Text>
+        <Text style={styles.saveText}>{saveLabel ?? t(language, 'common.save')}</Text>
       </Pressable>
     </View>
   );
@@ -179,6 +187,7 @@ function BigValue({
   onCommit: (value: number) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
   const { onEditingChange } = useContext(SheetTyping);
 
   return (
@@ -192,8 +201,9 @@ function BigValue({
         onEditingChange={onEditingChange}
         textStyle={styles.bigValue}
         label={label}
+        suffix={<Text style={styles.bigSuffix}>{suffix}</Text>}
+        penColor={theme.highlight}
       />
-      <Text style={styles.bigSuffix}>{suffix}</Text>
     </View>
   );
 }
@@ -203,14 +213,37 @@ interface WeightLogSheetProps {
   language: AppLanguage;
   /** Opens on the last logged weight — the common edit is a small one. */
   initialKg: number;
-  /** ISO date the entry will carry. Shown as a pill so it is never a surprise. */
-  dateIso: string;
+  /**
+   * ISO date the entry will carry. Shown as a pill so it is never a surprise.
+   * Null for a weight that is not an entry (onboarding's About you).
+   */
+  dateIso: string | null;
   /** Safe-area inset, read on the screen and passed through to SheetShell. */
   bottomInset: number;
   onCancel: () => void;
   onSave: (weightKg: number) => void;
+  /**
+   * The scale's ends; the log's own by default. About you keeps its 35–220.
+   */
+  limits?: { min: number; max: number };
+  /** The buttons' words, when Cancel / Save is not what they do (About you: Skip / Done). */
+  cancelLabel?: string;
+  /** What a screen reader hears for that button, when its word is too short. */
+  cancelAccessibilityLabel?: string;
+  saveLabel?: string;
+  /**
+   * A tap on the backdrop, or Android's back key; `onCancel` by default.
+   * About you's Cancel is Skip, an answer, and the backdrop must not give it.
+   */
+  onDismiss?: () => void;
 }
 
+/**
+ * Logging today's weight, and About you's weight in onboarding (#bugs
+ * 2026-10-18, iOS build 5): the two-column wheel there was "tosi vaikea", and
+ * the owner asked for this sheet instead — one big number, one ruler, a pen
+ * to type, two buttons. One instrument for one number, wherever it is asked.
+ */
 export function WeightLogSheet({
   visible,
   language,
@@ -219,7 +252,14 @@ export function WeightLogSheet({
   bottomInset,
   onCancel,
   onSave,
+  limits,
+  cancelLabel,
+  cancelAccessibilityLabel,
+  saveLabel,
+  onDismiss,
 }: WeightLogSheetProps) {
+  const min = limits?.min ?? WEIGHT_MIN;
+  const max = limits?.max ?? WEIGHT_MAX;
   const styles = useThemedStyles(makeStyles);
   const [weight, setWeight] = useState(initialKg);
 
@@ -232,18 +272,20 @@ export function WeightLogSheet({
   }, [visible, initialKg]);
 
   return (
-    <SheetShell visible={visible} language={language} bottomInset={bottomInset} onClose={onCancel}>
+    <SheetShell visible={visible} language={language} bottomInset={bottomInset} onClose={onDismiss ?? onCancel}>
       <View style={styles.titleRow}>
         <Text style={styles.title}>{t(language, 'weightLog.title')}</Text>
-        <View style={styles.datePill}>
-          <Text style={styles.datePillText}>{formatShortDate(dateIso, language)}</Text>
-        </View>
+        {dateIso ? (
+          <View style={styles.datePill}>
+            <Text style={styles.datePillText}>{formatShortDate(dateIso, language)}</Text>
+          </View>
+        ) : null}
       </View>
 
-      <BigValue language={language} value={weight} suffix="kg" decimals={1} bounds={{ min: WEIGHT_MIN, max: WEIGHT_MAX, step: WEIGHT_STEP }} label={t(language, 'weightLog.title')} onCommit={setWeight} />
+      <BigValue language={language} value={weight} suffix="kg" decimals={1} bounds={{ min, max, step: WEIGHT_STEP }} label={t(language, 'weightLog.title')} onCommit={setWeight} />
       <RulerPicker
-        min={WEIGHT_MIN}
-        max={WEIGHT_MAX}
+        min={min}
+        max={max}
         step={WEIGHT_STEP}
         majorEvery={10}
         value={weight}
@@ -252,7 +294,14 @@ export function WeightLogSheet({
         unit="kg"
       />
 
-      <SheetActions language={language} onCancel={onCancel} onSave={() => onSave(weight)} />
+      <SheetActions
+        language={language}
+        onCancel={onCancel}
+        onSave={() => onSave(weight)}
+        cancelLabel={cancelLabel}
+        cancelAccessibilityLabel={cancelAccessibilityLabel}
+        saveLabel={saveLabel}
+      />
     </SheetShell>
   );
 }

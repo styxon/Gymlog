@@ -5934,6 +5934,17 @@ function SetStepView({
   /** Which dial is open for editing; null = both locked. */
   const [dial, setDial] = useState<'reps' | 'weight' | null>(null);
   /**
+   * A dial is being typed with the on-screen keys up.
+   *
+   * The keys leave about sixty points above the dials on a 6.1" iPhone, and
+   * the lift's card, cut to that, read as the dials lying over it (#bugs
+   * 2026-10-18, iOS build 5; the owner's #2 of 2026-10-17 again). While the
+   * keys are up only the lift's name stays, on one line that gives way first.
+   * A hardware keyboard takes no room, and the card stays.
+   */
+  const keyboard = useKeyboardOpen();
+  const typingKeys = dial !== null && keyboard.open;
+  /**
    * The open field holds text that is not a weight — "825" for 82,5, or
    * "82,,5" — or a count the set cannot have: 0 reps, 350, a hold under five
    * seconds. The dial keeps its last good number meanwhile, so logging would
@@ -6178,7 +6189,7 @@ function SetStepView({
             the rest fails to appear. The lifts are named in the order they
             are performed, the one you are on is the dark one, and the rest at
             the end of the round is the third thing on the line. */}
-        {superset ? (
+        {superset && !typingKeys ? (
           <>
             {/* The label straddles the top line and carries the ground colour,
                 so the line stops at one edge of the word and starts at the
@@ -6220,8 +6231,20 @@ function SetStepView({
             them took the taps (owner's #2, iOS hunt 2026-10-17). Now the card
             gives the room instead, and scrolls when it has too little. Blank
             taps in it still reach the "close the dial" target around it. */}
+        {typingKeys ? (
+          <View style={styles.setTypingHead}>
+            <Text
+              style={styles.setTypingName}
+              numberOfLines={1}
+              accessibilityLabel={exerciseNameLabel(language, step.exerciseName)}
+            >
+              {exerciseListLabel(language, step.exerciseName)}
+            </Text>
+          </View>
+        ) : null}
+        {/* Hidden, not unmounted, while typing: the tour measures its parts. */}
         <ScrollView
-          style={styles.setTopScroll}
+          style={[styles.setTopScroll, typingKeys && styles.hidden]}
           keyboardShouldPersistTaps="always"
           showsVerticalScrollIndicator={false}
         >
@@ -7476,6 +7499,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   // Sized to the card and the set row, and the only thing that shrinks.
   setTopScroll: { flexGrow: 0, flexShrink: 1 },
+  // Shrinks, and clips, before anything under it moves.
+  setTypingHead: { flexShrink: 1, minHeight: 0, overflow: 'hidden', paddingHorizontal: 22, paddingTop: 6, paddingBottom: 12 },
+  hidden: { display: 'none' },
+  setTypingName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.5, color: theme.ink },
   // Grows to centre the dials in the room left over, and never shrinks under
   // them: `flex: 1, minHeight: 0` here let the box go smaller than its cards,
   // and centring split the overflow over both neighbours (owner's #2).

@@ -8,7 +8,8 @@ import { PrimaryCTAButton } from '../components/PrimaryCTAButton';
 import { KitSheet } from '../components/sheetKit';
 import { queryReduceMotion } from '../utils/reduceMotion';
 import { useHardwareBack } from '../hooks/useHardwareBack';
-import { WeightWheel } from '../components/WeightWheel';
+import { WeightLogSheet } from '../components/MeasureRulerSheet';
+import { useModalHandoff } from '../hooks/useModalHandoff';
 import { canContinueAboutYou, firstMissingAboutYou } from '../lib/aboutYouRules';
 import { I18nKey, t } from '../lib/i18n';
 import { darkTheme, Theme, useThemedStyles } from '../theming';
@@ -167,6 +168,12 @@ export function AboutYouScreen({
    * commits, and a pick moves on to the next row still empty.
    */
   const [openSheet, setOpenSheet] = useState<AboutYouSheet | null>(null);
+  /**
+   * Gender and age share one KitSheet; weight is the weight log's own sheet
+   * (#bugs 2026-10-18), a second Modal. On iOS it may only be presented once
+   * the first has gone, or nothing appears and touches stop (useModalHandoff).
+   */
+  const { handOff, onSheetDismissed } = useModalHandoff();
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
     let alive = true;
@@ -209,21 +216,28 @@ export function AboutYouScreen({
     return null;
   }
 
+  /** From the gender/age sheet to the next row; weight waits for it to go. */
+  function moveOn(next: AboutYouSheet | null) {
+    if (next === 'weight') {
+      handOff(() => setOpenSheet(null), () => setOpenSheet('weight'));
+      return;
+    }
+    setOpenSheet(next);
+  }
+
   function pickGender(next: Exclude<AboutYouGender, null>) {
     setGender(next);
-    setOpenSheet(nextEmptyAfter('gender', { gender: next, ageRange }));
+    moveOn(nextEmptyAfter('gender', { gender: next, ageRange }));
   }
 
   function pickAge(next: SetupAgeRange) {
     setAgeRange(next);
-    setOpenSheet(nextEmptyAfter('age', { gender, ageRange: next }));
+    moveOn(nextEmptyAfter('age', { gender, ageRange: next }));
   }
 
-  /** Done takes the ruler's number as the answer when none was given yet. */
-  function commitWeight() {
-    if (weightKg === null || weightSkipped) {
-      setWeight(rulerKg);
-    }
+  /** Done is the answer: the ruler's number, dragged, typed or left where it was. */
+  function commitWeight(next: number) {
+    setWeight(next);
     setOpenSheet(null);
   }
 
@@ -239,6 +253,8 @@ export function AboutYouScreen({
     label: string;
     value: string;
     chosen: boolean;
+    /** The sheet's colour code, carried to the row (#bugs 2026-10-18). */
+    accent?: string;
   }[] = [
     {
       key: 'gender',
@@ -252,6 +268,7 @@ export function AboutYouScreen({
             : t(language, 'aboutYou.value.choose'),
       // A skipped gender is answered, but it is not a value to colour.
       chosen: gender === 'male' || gender === 'female',
+      accent: gender === 'male' || gender === 'female' ? GENDER_ACCENT[gender] : undefined,
     },
     {
       key: 'age',
@@ -300,7 +317,12 @@ export function AboutYouScreen({
             >
               <Text style={[styles.rowLabel, { fontFamily }]}>{row.label}</Text>
               <Text
-                style={[styles.rowValue, row.chosen ? styles.rowValueChosen : styles.rowValueEmpty, { fontFamily }]}
+                style={[
+                  styles.rowValue,
+                  row.chosen ? styles.rowValueChosen : styles.rowValueEmpty,
+                  row.accent ? { color: row.accent } : null,
+                  { fontFamily },
+                ]}
                 numberOfLines={1}
               >
                 {row.value}
@@ -324,7 +346,8 @@ export function AboutYouScreen({
       <OnboardingBackButton language={language} onPress={onBack} />
 
       <KitSheet
-        visible={openSheet !== null}
+        visible={openSheet === 'gender' || openSheet === 'age'}
+        onDismissed={onSheetDismissed}
         onClose={() => setOpenSheet(null)}
         title={sheetTitle}
         bottomInset={insets.bottom}
@@ -343,7 +366,7 @@ export function AboutYouScreen({
                 onPress={() => pickGender(option)}
               />
             ))}
-            <View style={styles.divider} />
+            <View style={[styles.divider, styles.dividerLowered]} />
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ selected: gender === 'unspecified' }}
@@ -370,30 +393,22 @@ export function AboutYouScreen({
           </View>
         ) : null}
 
-        {openSheet === 'weight' ? (
-          <View style={styles.sheetList}>
-            <WeightWheel
-              value={rulerKg}
-              min={WEIGHT_LIMITS.min}
-              max={WEIGHT_LIMITS.max}
-              onChange={setWeight}
-              accessibilityLabel={t(language, 'weightLog.title')}
-              fontFamily={fontFamily}
-            />
-            <PrimaryCTAButton title={t(language, 'aboutYou.weight.done')} onPress={commitWeight} />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t(language, 'aboutYou.weight.skipA11y')}
-              accessibilityState={{ selected: weightSkipped }}
-              hitSlop={8}
-              onPress={skipWeight}
-              style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
-            >
-              <Text style={[styles.skipText, { fontFamily }]}>{t(language, 'aboutYou.weight.skip')}</Text>
-            </Pressable>
-          </View>
-        ) : null}
       </KitSheet>
+
+      <WeightLogSheet
+        visible={openSheet === 'weight'}
+        language={language}
+        initialKg={rulerKg}
+        dateIso={null}
+        bottomInset={insets.bottom}
+        limits={WEIGHT_LIMITS}
+        cancelLabel={t(language, 'aboutYou.weight.skip')}
+        cancelAccessibilityLabel={t(language, 'aboutYou.weight.skipA11y')}
+        saveLabel={t(language, 'aboutYou.weight.done')}
+        onCancel={skipWeight}
+        onSave={commitWeight}
+        onDismiss={() => setOpenSheet(null)}
+      />
     </View>
   );
 }
@@ -551,8 +566,12 @@ const makeStyles = (theme: Theme) => {
       justifyContent: 'center',
       paddingHorizontal: 18,
     },
+    // Skip and its rule sat close under the options (#bugs 2026-10-18).
+    dividerLowered: {
+      marginTop: 18,
+    },
     skipSpaced: {
-      marginTop: 14,
+      marginTop: 22,
     },
     skipText: {
       color: C.muted,

@@ -128,6 +128,15 @@ update to carry, not for each fix.
   and Vinha leaves the Apple ID's Sign in with Apple list (needs the server
   change below and its three env vars). The privacy policy says so (new
   wording, asked again).
+- #397 About you: weight is picked on the same sheet as Progress → Weight →
+  Log (big number, ruler, Skip / Done) instead of the two-column wheel, and a
+  pen beside the number on both sheets opens the keys to type it.
+- #397 Guided workout: while a weight or reps is typed, only the exercise's
+  name stays above the dials, so the keys no longer push the dials over the
+  exercise card.
+- #397 Home says "Vinha Fitness" again (Fitness in orange); About you's gender
+  row shows Male in blue and Female in pink, and the gender sheet's Skip sits
+  lower under its rule.
 
 ## Server
 

@@ -84,7 +84,7 @@ module.exports = [
       // reader was lifting it was the thing they asked to lose. The badge
       // stays on its own (device, 2026-09-16).
       assert.doesNotMatch(playerSource, /<SupersetBorder radius=\{22\} inset=\{8\} \/>/);
-      assert.match(playerSource, /\{superset \? \(\s*<>\s*\{\/\*[\s\S]*?\*\/\}\s*<View style=\{styles\.setSupersetPill\}>/);
+      assert.match(playerSource, /\{superset && !typingKeys \? \(\s*<>\s*\{\/\*[\s\S]*?\*\/\}\s*<View style=\{styles\.setSupersetPill\}>/);
       // One word, both dictionaries.
       assert.equal((i18nSource.match(/'guided\.superset\.pill': '[^']+'/g) ?? []).length, 2);
       assert.equal((i18nSource.match(/'guided\.superset\.thenRest': '[^']+'/g) ?? []).length, 2);
