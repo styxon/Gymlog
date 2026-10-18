@@ -32,7 +32,9 @@ module.exports = [
       const player = strip(read('src', 'screens', 'GuidedPlayerScreen.tsx'));
       assert.match(
         player,
-        /\{restAsk\.deniedBannerShown \? \(\s*<View style=\{styles\.restDeniedBanner\}>[\s\S]{0,900}?restAsk\.dismissDeniedBanner\(\);\s*onOpenSystemSettings\?\.\(\);/,
+        // Through the hook's turnOn, which asks first on an iPhone that never
+        // has (iOS hunt 2026-10-17, S6-2; tests/screens/restAlertsAsk.test.cjs).
+        /\{restAsk\.deniedBannerShown \? \(\s*<View style=\{styles\.restDeniedBanner\}>[\s\S]{0,900}?restAsk\.dismissDeniedBanner\(\);\s*void restAsk\.turnOn\(\(\) => onOpenSystemSettings\?\.\(\)\);/,
       );
       assert.match(player, /t\(language, 'rest\.denied\.title'\)/);
       // Theme tokens, readable in both themes — the freestyle banner too, whose

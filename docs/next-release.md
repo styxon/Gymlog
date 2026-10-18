@@ -102,6 +102,16 @@ update to carry, not for each fix.
   the keyboard away. Number pads get a Done bar in the app's language. Both
   phones: Save on the weight sheet while still typing first puts the keyboard
   away and shows the typed number, so the old number is never saved.
+- #394 iPhone: Vinha's data now goes into the phone's iCloud or computer
+  backup, as the privacy policy says, so a new iPhone set up from that backup
+  gets it back (it used to be left out). The rest banner's "Turn on" asks for
+  the permission when the phone has never asked, instead of opening a
+  Settings page with no switch on it. Notifications no longer shows "Keep
+  session on lock screen", which the iPhone cannot do, and the 10-second
+  warning says it is a silent notification; the rest-alert question no longer
+  promises the end time on the lock screen. Both phones: opening the app
+  during a rest no longer clears the "rest is over" alert before the workout
+  has loaded.
 
 ## Server
 

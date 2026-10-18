@@ -141,10 +141,14 @@ binary calls such an API without a reason.
   Apple accounts" below) deletes Google accounts only; an Apple account is
   deleted in the app. App Review asks only for in-app deletion (5.1.1(v)), so
   this does not block iOS 1.0, but the page says "for now".
-- Excluding the app's data from the iPhone's own backup (the policy now says it
-  is included, under Apple's terms). The alternative would be setting
-  `isExcludedFromBackup` on the AsyncStorage directory in a config plugin, as
-  `plugins/withDataExtractionRules.js` does for Android; it needs a device test.
+- Excluding the app's data from the iPhone's own backup. The policy says it is
+  included, under Apple's terms, and app.json makes that true with
+  `"RCTAsyncStorageExcludeFromBackup": false` under `ios.infoPlist`:
+  AsyncStorage excludes its directory unless Info.plist says otherwise (iOS
+  hunt 2026-10-17, S6-1; pinned in `tests/lib/allowBackup.test.cjs`).
+  Excluding it on purpose, as `plugins/withDataExtractionRules.js` does for
+  Android, would mean dropping that key and rewriting the iPhone section of
+  the policy.
 - iPad layout (`supportsTablet: false` until it has been designed and tested).
 - Home-screen widget (needs a WidgetKit extension in Swift).
 
