@@ -34,7 +34,7 @@ env:
 
 # The wrong language here means the launch arguments did not reach the seed.
 - assertVisible:
-    text: ${LANGUAGE == 'fi' ? 'Jatka treeniä|Kirjaa sarja 2|Koti|Kehitys' : 'Resume workout|Log set 2|Home|Progress'}
+    text: "${LANGUAGE == 'fi' ? 'Jatka treeniä|Kirjaa sarja 2|Koti|Kehitys' : 'Resume workout|Log set 2|Home|Progress'}"
 
 - runFlow:
     when:
