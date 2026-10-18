@@ -173,10 +173,10 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
             : undefined
       }
       statusBarBackgroundColor={
-        // The saved workout's hero scrolls, and under a transparent bar its
-        // date ended up printed across the phone's clock. Painted with the
-        // hero's own top colour it is invisible at rest and a clean cap once
-        // the screen moves.
+        // Android-only, and a no-op under edge-to-edge (SDK 55): no colour
+        // set here reaches the screen on either platform. The saved workout
+        // and the workout summary draw their own cap over the clock
+        // (components/StatusCap; owner's #5, iOS hunt 2026-10-17).
         historySessionActive
           ? '#8B5CF6'
           : premiumActive

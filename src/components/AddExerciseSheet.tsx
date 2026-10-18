@@ -21,6 +21,7 @@ import {
 } from '../lib/exerciseSuggestions';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseCardLabel, exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { exerciseInitials } from '../lib/exerciseInitials';
 import {
   BODY_PART_FILTERS,
   BodyPartFilter,
@@ -131,6 +132,7 @@ function FilterPillGroup<T extends string>({
         horizontal
         keyboardShouldPersistTaps="handled"
         showsHorizontalScrollIndicator={false}
+        style={styles.filterScroll}
         contentContainerStyle={styles.filterRow}
       >
         {options.map((option) => {
@@ -207,7 +209,7 @@ function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLa
           <Image source={previewImage} style={styles.gridCardImage} resizeMode="cover" />
         ) : (
           <View style={styles.gridCardImageFallback}>
-            <Text style={styles.gridCardImageFallbackText}>{name.charAt(0).toUpperCase()}</Text>
+            <Text style={styles.gridCardImageFallbackText}>{exerciseInitials(exerciseNameLabel(language, name))}</Text>
           </View>
         )}
 
@@ -1003,16 +1005,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
-  // Padded by the pills' slop and pulled back by the same, so a 38 dp pill
-  // reaches 44 to the thumb and Android does not clip the slop to the row
-  // (accessibility audit, 2026-09-21 pattern). The gap between wrapped
-  // rows (10) is wider than two slops, so they never overlap.
+  // The row is padded by the pills' slop, so a 38 dp pill reaches 44 to the
+  // thumb and the slop is not clipped to the row (accessibility audit,
+  // 2026-09-21 pattern), and the scroll view is pulled back by the same so
+  // the group keeps its height. The pull-back was on the content container:
+  // iOS counts a content container's own offset twice, so every chip's top
+  // was cut and the three rows slid up and down out of line (owner's #12,
+  // iOS hunt 2026-10-17). On the scroll view itself it is ordinary layout.
+  filterScroll: {
+    marginVertical: -PILL_SLOP.top,
+  },
   filterRow: {
     flexDirection: 'row',
     gap: spacing.sm,
     paddingRight: spacing.md,
     paddingVertical: PILL_SLOP.top,
-    marginVertical: -PILL_SLOP.top,
   },
   filterPill: {
     minHeight: 38,

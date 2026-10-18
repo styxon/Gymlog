@@ -10,7 +10,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import Svg, { Circle, Defs, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { TourTargetRegistry } from '../features/tour/tourTargets';
 import { TourBarStop } from '../lib/firstRunTour';
@@ -39,6 +39,8 @@ const HIGHLIGHT = 44;
 // Center "AI" button (design_handoff_ai_button): spec is 48px; sized down a touch.
 const AI_SIZE = 46;
 const AI_HALO = 58;
+/** The fade under the pill: the shell's own 8 below it, and 28 of the pill. */
+const EDGE_FADE = 36;
 
 interface BottomTabBarProps {
   activeTab: RootTabKey | null;
@@ -322,6 +324,24 @@ export function BottomTabBar({ activeTab, aiActive = false, onTabPress, onAiPres
         },
       ]}
     >
+      {/* Every screen above ends at the safe area's edge, 8 pt under the
+          pill, and what scrolled there was cut off along a hard line, with
+          the bare home-indicator band of the page below it (owner's #1, iOS
+          hunt 2026-10-17; plainest on an iPhone). The page fades into its
+          own background before that line instead: the shell paints the band
+          in theme.bg, and so does the fade's end. Under the pill, so the pill
+          covers its middle; touches go through to the page. */}
+      <View pointerEvents="none" style={styles.edgeFade}>
+        <Svg width="100%" height="100%" viewBox="0 0 1 1" preserveAspectRatio="none">
+          <Defs>
+            <LinearGradient id="vinhaTabEdgeFade" x1="0" y1="0" x2="0" y2="1">
+              <Stop offset="0" stopColor={theme.bg} stopOpacity={0} />
+              <Stop offset="1" stopColor={theme.bg} stopOpacity={1} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="1" height="1" fill="url(#vinhaTabEdgeFade)" />
+        </Svg>
+      </View>
       {/* A3: the bar wears the cut corner the rest of the app wears. Icons and
           colours are untouched — only the silhouette changes, from a plain
           30px pill to the same shape the CTAs and day rows use. The fill stays
@@ -398,6 +418,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     bottom: 0,
     paddingTop: 16,
     paddingHorizontal: 18,
+  },
+  // Absolute in the shell's padding box: the full width, from the bottom up.
+  edgeFade: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: EDGE_FADE,
   },
   pill: {
     // Fill and stroke are set in the component per theme.

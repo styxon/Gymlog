@@ -12,7 +12,8 @@
  * So the fractions are where the seam would like to be, and the measured
  * content decides where it can be. The collapsed programme's name is kept
  * first — it is two lines at most, and a programme you cannot read is a
- * programme you cannot choose — and the chosen card gets everything else.
+ * programme you cannot choose — and the chosen card gets what it needs, plus
+ * up to PICK_MAX_SLACK; the collapsed card gets the rest.
  */
 
 /** Where the seam sits with nothing measured: [left edge, right edge]. */
@@ -24,6 +25,14 @@ export const PICK_TOP_CLEARANCE = 0.03;
 export const PICK_BOTTOM_CLEARANCE = 0.04;
 /** The top half's own padding above its content, in points. */
 export const PICK_TOP_PADDING = 18;
+/**
+ * The most empty room the chosen card's box keeps under (or over) its
+ * content, in points. The rest goes to the collapsed card. Without it the
+ * chosen box grew with the phone and its content did not: on a tall iPhone a
+ * fifth of the screen was empty purple under the week strip (owner's #3, iOS
+ * hunt 2026-10-17).
+ */
+export const PICK_MAX_SLACK = 48;
 
 export interface PickSeamInput {
   /** The split area's height, in points. Zero before it is measured. */
@@ -68,6 +77,13 @@ export function resolvePickSeam(input: PickSeamInput): [number, number] {
     const up = collapsedContentHeight > 0 ? Math.max(0, high - bottomRoom) : 0;
     // The collapsed name first; the chosen card gets what is left.
     shift = up > 0 ? -up : Math.min(down, Math.max(0, bottomRoom - high));
+    // And no more than it can fill: the seam rises to the chosen card.
+    if (selectedContentHeight > 0 && collapsedContentHeight > 0) {
+      const slack = (low + shift - PICK_TOP_CLEARANCE) * height - (selectedContentHeight + PICK_TOP_PADDING);
+      if (slack > PICK_MAX_SLACK) {
+        shift -= (slack - PICK_MAX_SLACK) / height;
+      }
+    }
   } else {
     // The chosen bottom card wants the seam high enough.
     const bottomRoom = 1 - PICK_BOTTOM_CLEARANCE - (selectedContentHeight + ctaRoom) / height;
@@ -76,6 +92,13 @@ export function resolvePickSeam(input: PickSeamInput): [number, number] {
     const topNeeds = (collapsedContentHeight + PICK_TOP_PADDING) / height + PICK_TOP_CLEARANCE;
     const down = collapsedContentHeight > 0 ? Math.max(0, topNeeds - low) : 0;
     shift = down > 0 ? down : -Math.min(up, Math.max(0, low - topNeeds));
+    // The same bound from below: the seam drops to the chosen card.
+    if (selectedContentHeight > 0 && collapsedContentHeight > 0) {
+      const slack = height - ctaRoom - (high + shift + PICK_BOTTOM_CLEARANCE) * height - selectedContentHeight;
+      if (slack > PICK_MAX_SLACK) {
+        shift += (slack - PICK_MAX_SLACK) / height;
+      }
+    }
   }
 
   // Never off the screen, whatever was measured.
