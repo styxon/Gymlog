@@ -23,3 +23,35 @@ export function restAlertsAnswered(prefs: NotificationPrefs, outcome: RestAlertA
   const asked = { ...prefs, restAlertsAsked: true };
   return outcome === 'granted' ? { ...asked, restAlerts: true } : asked;
 }
+
+/** The OS answer about notifications, as utils/sessionNotifications reads it. */
+export type RestAlertPermissionAnswer = 'granted' | 'denied' | 'undetermined';
+
+/**
+ * What the start of a rest does about rest alerts: ask, wait to ask, say
+ * they are off, or nothing.
+ *
+ * `blocked`: another sheet is up as the rest starts — the guided player's
+ * contents sheet, which does not hold the clock, so an interval bout can run
+ * out into its recovery under it. On iOS the ask cannot be presented over
+ * it: UIKit refuses the second sheet, React Native records it as shown, and
+ * its open flag holds every step clock for the rest of the workout (iOS hunt
+ * 2026-10-17, S4-4). So it waits for a later rest. The banner does not stand
+ * in for it either: nothing has been refused yet.
+ */
+export function restAlertMoment(input: {
+  permission: RestAlertPermissionAnswer;
+  asked: boolean;
+  alertsWanted: boolean;
+  channelMuted: boolean;
+  blocked: boolean;
+}): 'ask' | 'wait' | 'banner' | 'none' {
+  const { permission, asked, alertsWanted, channelMuted, blocked } = input;
+  if (permission === 'undetermined' && !asked) {
+    return blocked ? 'wait' : 'ask';
+  }
+  if (alertsWanted && (permission !== 'granted' || channelMuted)) {
+    return 'banner';
+  }
+  return 'none';
+}

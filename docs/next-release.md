@@ -84,6 +84,12 @@ update to carry, not for each fix.
 - #391 iPhone: the free-tier programme walls ("3/3 programmes", "2 running")
   appear again and no longer freeze the app when they open as another sheet
   closes, for example "Build it yourself" at the limit.
+- #392 iPhone, guided workout: the pencil in the workout contents opens
+  "Correct set" again instead of stopping the rest clock; picking another set
+  row keeps the sheet open; the sheet rises above the number pad, which gets
+  a Done key, and a tap on the dimmed page with the keyboard up only puts the
+  keyboard away. The rest-alert question no longer opens over another sheet,
+  and a tap while it slides up no longer leaves it stuck on screen.
 
 ## Server
 

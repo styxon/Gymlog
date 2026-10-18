@@ -38,6 +38,14 @@ const SEQUENCING = {
   // Never presented on iOS: drawn in the window (InTreeLayer) instead, so
   // there is nothing for UIKit to refuse. The Modal is Android's.
   'in-tree-on-ios': 'drawn in the window on iOS; the Modal is Android\'s',
+  // Opened only by useModalHandoff's open step, once the sheet it is opened
+  // from has gone, and nothing opens as it closes. Pinned in
+  // tests/screens/iosModalHandoff.test.cjs.
+  'opened-after-handoff': 'opened only after the sheet before it has gone',
+  // Opened by its screen on its own, never while another sheet of the screen
+  // is up, and takes no press before it has arrived (onShow). Pinned in
+  // tests/screens/iosModalHandoff.test.cjs.
+  'opened-when-clear': 'opens only with no other sheet up, and waits for onShow',
   // Neither yet. Listed so that the count can only shrink: each of these is
   // safe only while nothing opens or closes in the same tick as it does.
   'not-yet': 'not sequenced yet',
@@ -58,7 +66,7 @@ const LEDGER = {
   'src/components/ProMomentSheet.tsx': [{ in: 'ProMomentSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/ProgramLimitSheet.tsx': [{ in: 'ProgramLimitSheet', closes: 'visible', sequencing: 'in-tree-on-ios' }],
   'src/components/RateAppSheet.tsx': [{ in: 'RateAppSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/RestAlertsSheet.tsx': [{ in: 'RestAlertsSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/RestAlertsSheet.tsx': [{ in: 'RestAlertsSheet', closes: 'visible', sequencing: 'opened-when-clear' }],
   'src/components/SetLogSheet.tsx': [{ in: 'SetLogSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/SubscriptionSheet.tsx': [{ in: 'SubscriptionSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/ThemeChoiceDialog.tsx': [{ in: 'ThemeChoiceDialog', closes: 'visible', sequencing: 'reports-dismiss' }],
@@ -67,7 +75,7 @@ const LEDGER = {
   'src/screens/CardioScreen.tsx': [{ in: 'CardioSheet', closes: 'unmount', sequencing: 'not-yet' }],
   'src/screens/GuidedPlayerScreen.tsx': [
     { in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' },
-    { in: 'LoggedSetEditor', closes: 'unmount', sequencing: 'not-yet' },
+    { in: 'LoggedSetEditor', closes: 'unmount', sequencing: 'opened-after-handoff' },
   ],
   'src/screens/HomeScreen.tsx': [{ in: 'HomeScreen', closes: 'visible', sequencing: 'deferred-open' }],
   'src/screens/MyDataScreen.tsx': [{ in: 'MyDataScreen', closes: 'visible', sequencing: 'not-yet' }],
@@ -76,7 +84,7 @@ const LEDGER = {
 };
 
 /** May only go down: a new site is sequenced from the start. */
-const NOT_YET_CEILING = 15;
+const NOT_YET_CEILING = 13;
 
 function listSourceFiles() {
   const files = {};
@@ -178,6 +186,12 @@ function checkModalLedger(files) {
         !/if \(Platform\.OS === 'ios'\) \{\s*return <InTreeLayer\b/.test(files[file])
       ) {
         problems.push(`${file} (${site.in}): listed as drawn in the window on iOS, but it does not return an InTreeLayer there.`);
+      }
+      if (entry.sequencing === 'opened-when-clear' && !/\sonShow=\{/.test(site.tag)) {
+        problems.push(`${file} (${site.in}): listed as waiting for its own arrival, but its Modal has no onShow.`);
+      }
+      if (entry.sequencing === 'opened-after-handoff' && site.closes === 'visible') {
+        problems.push(`${file} (${site.in}): listed as opened after a handoff by mounting, but it closes through visible now; list it as reporting its dismissal.`);
       }
     });
     if (listed.length > found.length) {
@@ -372,6 +386,10 @@ module.exports = [
       const wall = 'src/components/ProgramLimitSheet.tsx';
       const presented = { ...files, [wall]: files[wall].replace("Platform.OS === 'ios'", "Platform.OS === 'web'") };
       assert.match(checkModalLedger(presented).join('\n'), /ProgramLimitSheet\): listed as drawn in the window on iOS/);
+      // An ask that takes presses before it has arrived again.
+      const ask = 'src/components/RestAlertsSheet.tsx';
+      const ungated = { ...files, [ask]: files[ask].replace(/\s+onShow=\{\(\) => setShown\(true\)\}/, '') };
+      assert.match(checkModalLedger(ungated).join('\n'), /RestAlertsSheet\): listed as waiting for its own arrival/);
     },
   },
 ];
