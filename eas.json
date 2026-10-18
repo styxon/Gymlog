@@ -11,6 +11,18 @@
         "simulator": false
       }
     },
+    "screenshots": {
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_SCREENSHOT_SEED": "1"
+      },
+      "ios": {
+        "simulator": true
+      },
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {
       "ios": {
         "resourceClass": "m-medium"

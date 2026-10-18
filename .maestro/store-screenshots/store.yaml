@@ -1,0 +1,114 @@
+# The App Store screenshots, one language and one theme per run.
+#
+#   maestro --device <udid> test \
+#     -e LANGUAGE=fi -e THEME=dark -e OUT=raw/iphone-6.9/fi-dark \
+#     .maestro/store-screenshots/store.yaml
+#
+# Runs against the screenshots build only (EXPO_PUBLIC_SCREENSHOT_SEED=1,
+# docs/store-screenshots.md): clearState makes the next launch a first launch,
+# and the seed writes six weeks of training and today's workout under way
+# before the app mounts. Language and theme reach the seed as launch
+# arguments (src/screenshots/SeededApp.tsx).
+#
+# No testIDs in the app, so every step finds its control by the text or the
+# accessibility label it shows, in either language ("Finnish|English").
+appId: app.vinha
+name: Store screenshots ${LANGUAGE} ${THEME}
+env:
+  LANGUAGE: fi
+  THEME: dark
+  OUT: raw
+---
+- launchApp:
+    appId: app.vinha
+    clearState: true
+    stopApp: true
+    arguments:
+      vinhaLanguage: ${LANGUAGE}
+      vinhaTheme: ${THEME}
+
+# The seed is written before App mounts; then Home, or the player straight away.
+- extendedWaitUntil:
+    visible: "Jatka treeniä|Resume workout|Kirjaa sarja 2|Log set 2"
+    timeout: 60000
+
+# The wrong language here means the launch arguments did not reach the seed.
+- assertVisible:
+    text: ${LANGUAGE == 'fi' ? 'Jatka treeniä|Kirjaa sarja 2|Koti|Kehitys' : 'Resume workout|Log set 2|Home|Progress'}
+
+- runFlow:
+    when:
+      notVisible: "Kirjaa sarja 2|Log set 2"
+    file: open-player.yaml
+
+# 1. The set screen: the last set of the lift under way, last time beside it.
+- extendedWaitUntil:
+    visible: "Kirjaa sarja 2|Log set 2"
+    timeout: 20000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/01-set-logging
+
+# 2. Logged: the rest, and the next lift under it.
+- tapOn: "Kirjaa sarja 2|Log set 2"
+- extendedWaitUntil:
+    visible: "SEURAAVAKSI|NEXT UP|Ohita lepo|Skip rest"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/02-next-exercise
+
+# 3. Finish: X, then "I'm done". The summary reads the seeded start, so the
+#    duration is the session's, not this script's.
+- tapOn:
+    text: "Poistu ohjatusta tilasta|Leave guided mode"
+- tapOn: "Olen valmis|I'm done"
+- extendedWaitUntil:
+    visible: "Treeni valmis|Workout complete"
+    timeout: 30000
+- waitForAnimationToEnd:
+    timeout: 8000
+- takeScreenshot: ${OUT}/03-workout-complete
+- runFlow: leave-summary.yaml
+
+# 4. Progress: the summary with its trend.
+- tapOn: "Kehitys|Progress"
+- extendedWaitUntil:
+    visible: "Yhteenveto|Summary"
+    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/04-progress
+
+# 5. Records, this month.
+- tapOn: "Ennätykset|Records"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/05-records
+
+# 6. History.
+- tapOn: "Yhteenveto|Summary"
+- scrollUntilVisible:
+    element: "Historia|History"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "Historia|History"
+- extendedWaitUntil:
+    visible: "Historia|History"
+    timeout: 10000
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/06-history
+- tapOn: "Takaisin|Back"
+
+# 7. Home, today done.
+- tapOn: "Koti|Home"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/07-home
+
+# 8. The coach (preview answers: this build has no server).
+- tapOn: "Avaa Vinha-valmentaja|Open Vinha Coach"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: ${OUT}/08-coach

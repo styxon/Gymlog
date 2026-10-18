@@ -1,0 +1,17 @@
+# From the finished workout's summary back to the tabs. "Valmis/Finish" closes
+# it; a sheet that may follow (a record, a rating ask) is closed the same way.
+appId: app.vinha
+---
+- scrollUntilVisible:
+    element: "Valmis|Finish"
+    direction: DOWN
+    timeout: 15000
+- tapOn: "Valmis|Finish"
+- runFlow:
+    when:
+      visible: "Valmis|Finish|Ei nyt|Not now"
+    commands:
+      - tapOn: "Valmis|Finish|Ei nyt|Not now"
+- extendedWaitUntil:
+    visible: "Kehitys|Progress"
+    timeout: 15000

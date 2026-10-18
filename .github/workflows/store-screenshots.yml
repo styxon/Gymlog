@@ -1,0 +1,128 @@
+# App Store screenshots, taken on iPhone simulators (docs/store-screenshots.md).
+#
+# The owner has no Mac, and the repo is public, so GitHub's macOS runners are
+# free. This builds the app for the simulator here — no EAS, no token — with
+# EXPO_PUBLIC_SCREENSHOT_SEED=1, which makes the first launch write a seeded
+# reader (src/screenshots/). That flag exists only in this job and in eas.json's
+# simulator-only `screenshots` profile; tests/lib/screenshotSeedGate.test.cjs
+# keeps it out of every store build.
+#
+# Then Maestro walks the app once per device, language and theme, and
+# compose.py lays the store images out at App Store Connect's sizes. Nothing
+# is uploaded anywhere but this run's artifacts.
+#
+# Run it from the Actions tab (workflow_dispatch), or push a branch named
+# store-screenshots — the way to run it before this file is on main.
+name: Store screenshots
+
+on:
+  workflow_dispatch:
+    inputs:
+      languages:
+        description: 'Languages (space separated)'
+        default: 'fi en'
+      themes:
+        description: 'Themes (space separated)'
+        default: 'dark light'
+      devices:
+        description: 'Simulators, "Name|folder" comma separated'
+        default: 'iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3'
+  push:
+    branches: [store-screenshots]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: store-screenshots-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TZ: Europe/Helsinki
+
+jobs:
+  shoot:
+    runs-on: macos-15
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      # The newest Xcode on the image: the iPhone 17 simulators come with iOS 26.
+      - name: Select Xcode
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app | grep -v beta | sort -V | tail -1)
+          echo "Using $XCODE"
+          sudo xcode-select -s "$XCODE/Contents/Developer"
+          xcodebuild -version
+          xcrun simctl list devicetypes | grep -i "iPhone 17" || true
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The built app, keyed on everything that goes into it. A run that only
+      # changes the Maestro flow or the compositor skips the 30-minute build.
+      - name: Cache the simulator build
+        id: app-cache
+        uses: actions/cache@v4
+        with:
+          path: shots-app
+          key: shots-app-v1-${{ hashFiles('package-lock.json', 'app.json', 'app.config.js', 'eas.json', 'index.ts', 'App.tsx', 'babel.config.js', 'metro.config.js', 'src/**', 'assets/**', 'plugins/**', 'modules/**') }}
+
+      - name: Build for the simulator
+        if: steps.app-cache.outputs.cache-hit != 'true'
+        env:
+          CI: '1'
+          EXPO_PUBLIC_SCREENSHOT_SEED: '1'
+          NODE_ENV: production
+        run: |
+          npx expo prebuild --platform ios --no-install
+          (cd ios && pod install)
+          WORKSPACE=$(ls -d ios/*.xcworkspace | head -1)
+          SCHEME=$(basename "$WORKSPACE" .xcworkspace)
+          set -o pipefail
+          xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -configuration Release \
+            -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build | tail -n 200
+          mkdir -p shots-app
+          cp -R ios/build/Build/Products/Release-iphonesimulator/*.app shots-app/Vinha.app
+          ls shots-app/Vinha.app | head
+
+      - name: Install Maestro
+        run: |
+          curl -fsSL "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Shoot
+        env:
+          LANGUAGES: ${{ inputs.languages || 'fi en' }}
+          THEMES: ${{ inputs.themes || 'dark light' }}
+          DEVICES: ${{ inputs.devices || 'iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3' }}
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: '240000'
+          MAESTRO_CLI_NO_ANALYTICS: '1'
+        run: bash scripts/store-screenshots/shoot.sh shots-app/Vinha.app shots/raw
+
+      - name: Compose
+        if: always()
+        run: |
+          python3 -m pip install --quiet --break-system-packages Pillow
+          python3 scripts/store-screenshots/compose.py shots/raw shots/store
+
+      - name: Upload the store images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: store-screenshots
+          path: shots/store
+          if-no-files-found: warn
+
+      - name: Upload the raw shots and Maestro's logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: raw-screenshots
+          path: shots/raw
+          if-no-files-found: warn
