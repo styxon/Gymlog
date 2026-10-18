@@ -42,7 +42,7 @@ module.exports = [
     run() {
       const view = player.slice(player.indexOf('function SetStepView('), player.indexOf('function FinishView('));
       assert.ok(view.length > 0);
-      const open = view.indexOf('<ScrollView\n          style={styles.setTopScroll}');
+      const open = view.indexOf('<ScrollView\n          style={[styles.setTopScroll, typingKeys && styles.hidden]}');
       // Its own close, at its own depth: the chip rows inside it scroll too.
       const close = view.indexOf('\n        </ScrollView>\n', open);
       assert.ok(open > 0 && close > open, 'the scroll around the card and the set row');

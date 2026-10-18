@@ -227,6 +227,7 @@ const EN = {
   'aboutYou.weight.skip': 'Skip',
   'aboutYou.weight.skipA11y': 'Skip weight, add it later',
   'ruler.typeValue.hint': 'Double tap to type the number',
+  'ruler.typeValue.pen': 'Type the number',
 
   // ── Progress ───────────────────────────────────────────────────────────
   // ── Records, calendar, set log ────────────────────────────────────────
@@ -3812,6 +3813,7 @@ const FI: Record<I18nKey, string> = {
   'aboutYou.weight.skip': 'Ohita',
   'aboutYou.weight.skipA11y': 'Ohita paino, lisää se myöhemmin',
   'ruler.typeValue.hint': 'Kaksoisnapauta kirjoittaaksesi luvun',
+  'ruler.typeValue.pen': 'Kirjoita luku',
 
   'pr.records': 'ENNÄTYKSET',
   'pr.allRecords': 'Kaikki {count}',
