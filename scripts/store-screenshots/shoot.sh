@@ -81,6 +81,8 @@ for spec in "${SPECS[@]}"; do
         fi
         xcrun simctl launch "$udid" app.vinha -vinhaLanguage "$language" -vinhaTheme "$theme" >/dev/null
         if (cd "$dir" && maestro --device "$udid" test --test-output-dir "$dir/maestro-$attempt" store.yaml); then
+          # takeScreenshot writes under the test output, not beside the flow.
+          find "$dir/maestro-$attempt" -path '*/takeScreenshot/*.png' -exec cp {} "$dir/" \;
           ok=1
           break
         fi
@@ -88,6 +90,8 @@ for spec in "${SPECS[@]}"; do
       done
       if [ "$ok" = 0 ]; then
         echo "::error::Maestro failed: $folder $language $theme"
+        # What the attempts did get is still worth having (the second wins).
+        find "$dir/maestro-1" "$dir/maestro-2" -path '*/takeScreenshot/*.png' -exec cp {} "$dir/" \; 2>/dev/null || true
         xcrun simctl io "$udid" screenshot "$dir/failure.png" || true
         failures=$((failures + 1))
       fi

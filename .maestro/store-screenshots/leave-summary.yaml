@@ -1,5 +1,6 @@
-# From the finished workout's summary back to the tabs. "Valmis/Finish" closes
-# it; a sheet that may follow (a record, a rating ask) is closed the same way.
+# From the finished workout's summary back to the tabs. "Valmis/Finish" asks
+# how the workout felt first ("Just right" answered, as a reader would); a
+# sheet that may follow is closed the same way.
 appId: app.vinha
 ---
 - scrollUntilVisible:
@@ -7,6 +8,11 @@ appId: app.vinha
     direction: DOWN
     timeout: 15000
 - tapOn: "Valmis|Finish"
+- runFlow:
+    when:
+      visible: 'Miltä treeni tuntui\?|How did it feel\?'
+    commands:
+      - tapOn: "Sopiva|Just right"
 - runFlow:
     when:
       visible: "Valmis|Finish|Ei nyt|Not now"
