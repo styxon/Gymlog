@@ -11,6 +11,8 @@
  * trained those weeks would hold, not a hand-built copy of its shape.
  *
  * Pure: the clock and the language come in, nothing is read or written here.
+ * Not in src/lib/ although it is pure: it drives the workout reducer and the
+ * save in features/ and state/, which lib must not depend on.
  * Dates step by calendar day (Helsinki moves its clocks; a fixed DAY_MS would
  * drift off the training hours twice a year).
  *
@@ -53,6 +55,7 @@ const START_TIMES: Array<[number, number]> = [
   [11, 10],
   [18, 5],
 ];
+const WEEKDAYS: SetupWeekday[] = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 const FEELS: SessionFeel[] = ['right', 'right', 'hard', 'right', 'easy', 'right', 'right', 'hard'];
 
 /**
@@ -250,7 +253,9 @@ export function buildScreenshotSeed(input: { language: AppLanguage; dark: boolea
     workoutTemplateId: template.id,
     programName: getReadyTemplatePresentation(template, language).title,
     sessionIds: sessions.map((session) => session.id),
-    dayLabels: ['mon', 'wed', 'fri', 'sat'] as SetupWeekday[],
+    // The weekdays the history was trained on, in rotation order: the first
+    // session of each week fell on today's weekday, and today is day 1 again.
+    dayLabels: WEEK_OFFSETS.map((offset) => WEEKDAYS[localAt(now, offset, 12, 0).getDay()]),
     now: iso(programmeStart),
   });
 

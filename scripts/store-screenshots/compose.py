@@ -21,7 +21,7 @@ import json
 import os
 import sys
 
-from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageStat
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 FONT = os.path.join(ROOT, "assets", "fonts", "Manrope-ExtraBold.ttf")
@@ -75,7 +75,7 @@ def bare(word):
 def caption(im, theme, text, accent, pro, box):
     """Draws the caption centred in box = (left, top, width); returns its bottom."""
     left, top, width = box
-    s = im.width / 1080 if im.width < 2000 else im.height / 1920
+    s = im.width / 1080
     t = THEMES[theme]
     d = ImageDraw.Draw(im)
     size = round(86 * s)
@@ -169,11 +169,22 @@ def header_image(theme, shots, text, accent):
     return im
 
 
+def theme_of_shot(path):
+    """'dark' or 'light' by the screen's own ground: the mean of a thin strip
+    at the left edge, inside the page margin where no card reaches."""
+    with Image.open(path) as src:
+        g = src.convert("L")
+        strip = g.crop((0, g.height // 8, max(4, g.width // 60), g.height // 8 + g.height // 4))
+        mean = ImageStat.Stat(strip).mean[0]
+    return "dark" if mean < 110 else "light"
+
+
 def main(raw, out):
     with open(CAPTIONS, encoding="utf-8") as f:
         captions = json.load(f)
     written = 0
     missing = set()
+    mismatched = set()
     for size_name, (w, h, device) in TARGETS.items():
         device_dir = os.path.join(raw, device)
         if not os.path.isdir(device_dir):
@@ -189,6 +200,11 @@ def main(raw, out):
                 if not os.path.isfile(shot):
                     missing.add(os.path.relpath(shot, raw))
                     continue
+                # The theme reaches the app as a launch argument; one that was
+                # lost leaves every "light" run dark, filed under light.
+                seen = theme_of_shot(shot)
+                if seen != theme:
+                    mismatched.add(f"{os.path.relpath(shot, raw)} looks {seen}")
                 words = entry[language]
                 im = store_image((w, h), theme, shot, words["text"], words["accent"], entry.get("pro", False))
                 assert im.size == (w, h), im.size
@@ -208,8 +224,10 @@ def main(raw, out):
                     written += 1
     for path in sorted(missing):
         print(f"missing raw shot: {path}")
+    for line in sorted(mismatched):
+        print(f"wrong theme: {line}")
     print(f"wrote {written} images to {out}")
-    return 0 if written > 0 else 1
+    return 0 if written > 0 and not mismatched else 1
 
 
 if __name__ == "__main__":

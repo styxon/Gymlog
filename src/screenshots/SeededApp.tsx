@@ -16,7 +16,7 @@
  * and the dark theme.
  */
 import React, { useEffect, useState } from 'react';
-import { Settings } from 'react-native';
+import { Settings, Text, View } from 'react-native';
 
 import App from '../../App';
 import { saveWorkoutBundle } from '../features/workout/workoutPersistence';
@@ -56,11 +56,23 @@ async function seedOnFirstLaunch() {
 }
 
 export default function SeededApp() {
-  const [ready, setReady] = useState(false);
+  const [state, setState] = useState<{ ready: boolean; error: string | null }>({ ready: false, error: null });
   useEffect(() => {
     seedOnFirstLaunch()
-      .catch((error) => console.error('Screenshot seed failed', error))
-      .finally(() => setReady(true));
+      .then(() => setState({ ready: true, error: null }))
+      .catch((error: unknown) => setState({ ready: true, error: String(error) }));
   }, []);
-  return ready ? <App /> : null;
+  if (!state.ready) {
+    return null;
+  }
+  // Said on screen rather than opening onboarding: the flow then fails on
+  // this text, and the run's failure.png names the cause.
+  if (state.error) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', padding: 24, backgroundColor: '#fff' }}>
+        <Text>SCREENSHOT SEED FAILED: {state.error}</Text>
+      </View>
+    );
+  }
+  return <App />;
 }
