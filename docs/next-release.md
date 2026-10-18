@@ -81,6 +81,9 @@ update to carry, not for each fix.
   takes every touch. Home's "Keep your training safe" sign-in dialog opens a moment
   after Home appears and never over another sheet, so it no longer freezes
   Home after a finished workout.
+- #391 iPhone: the free-tier programme walls ("3/3 programmes", "2 running")
+  appear again and no longer freeze the app when they open as another sheet
+  closes, for example "Build it yourself" at the limit.
 
 ## Server
 

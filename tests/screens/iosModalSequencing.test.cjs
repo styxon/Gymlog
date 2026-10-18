@@ -35,6 +35,9 @@ const SEQUENCING = {
   // Opens only once its screen has stood still for longer than a sheet takes
   // to leave, and never in the screen's first render.
   'deferred-open': 'opens after a pause, never in the first render',
+  // Never presented on iOS: drawn in the window (InTreeLayer) instead, so
+  // there is nothing for UIKit to refuse. The Modal is Android's.
+  'in-tree-on-ios': 'drawn in the window on iOS; the Modal is Android\'s',
   // Neither yet. Listed so that the count can only shrink: each of these is
   // safe only while nothing opens or closes in the same tick as it does.
   'not-yet': 'not sequenced yet',
@@ -53,7 +56,7 @@ const LEDGER = {
   'src/components/MeasureRulerSheet.tsx': [{ in: 'SheetShell', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/NewProgramSheet.tsx': [{ in: 'NewProgramSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/ProMomentSheet.tsx': [{ in: 'ProMomentSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/ProgramLimitSheet.tsx': [{ in: 'ProgramLimitSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/ProgramLimitSheet.tsx': [{ in: 'ProgramLimitSheet', closes: 'visible', sequencing: 'in-tree-on-ios' }],
   'src/components/RateAppSheet.tsx': [{ in: 'RateAppSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/RestAlertsSheet.tsx': [{ in: 'RestAlertsSheet', closes: 'visible', sequencing: 'not-yet' }],
   'src/components/SetLogSheet.tsx': [{ in: 'SetLogSheet', closes: 'visible', sequencing: 'not-yet' }],
@@ -73,7 +76,7 @@ const LEDGER = {
 };
 
 /** May only go down: a new site is sequenced from the start. */
-const NOT_YET_CEILING = 16;
+const NOT_YET_CEILING = 15;
 
 function listSourceFiles() {
   const files = {};
@@ -169,6 +172,12 @@ function checkModalLedger(files) {
         if (site.onDismiss !== 'onDismissed') {
           problems.push(`${file} (${site.in}): listed as reporting its dismissal, but its Modal has no onDismiss={onDismissed}.`);
         }
+      }
+      if (
+        entry.sequencing === 'in-tree-on-ios' &&
+        !/if \(Platform\.OS === 'ios'\) \{\s*return <InTreeLayer\b/.test(files[file])
+      ) {
+        problems.push(`${file} (${site.in}): listed as drawn in the window on iOS, but it does not return an InTreeLayer there.`);
       }
     });
     if (listed.length > found.length) {
@@ -292,6 +301,53 @@ module.exports = [
     },
   },
   {
+    name: 'iOS modal sequencing: the Pro walls are drawn in the window on iOS, over the whole shell',
+    run() {
+      // The wall is one shape for both platforms; iOS draws it, Android presents it.
+      const sheet = read('src', 'components', 'ProgramLimitSheet.tsx');
+      assert.match(
+        sheet,
+        /if \(Platform\.OS === 'ios'\) \{\s*return <InTreeLayer visible=\{visible\}>\{wall\}<\/InTreeLayer>;\s*\}\s*return \(\s*<Modal visible=\{visible\} transparent animationType="fade" onRequestClose=\{onClose\}>\s*\{wall\}\s*<\/Modal>/,
+      );
+      // Both walls sit in the shell's top layer, and nowhere else.
+      const shell = read('src', 'app', 'renderAppShell.tsx');
+      const layer = shell.match(/topLayer=\{\s*<>([\s\S]*?)<\/>\s*\}/);
+      assert.ok(layer, 'the shell passes a topLayer');
+      assert.equal((layer[1].match(/<ProgramLimitSheet\b/g) || []).length, 2);
+      assert.equal((shell.match(/<ProgramLimitSheet\b/g) || []).length, 2);
+      // The top layer covers what a Modal would: outside the safe area and the
+      // keyboard lift, after everything else, and it takes no touch itself.
+      const appShell = read('src', 'components', 'AppShell.tsx');
+      assert.match(
+        appShell,
+        /<\/SafeAreaView>\s*\{topLayer \? \(\s*<View style=\{StyleSheet\.absoluteFill\} pointerEvents="box-none">\s*\{topLayer\}\s*<\/View>\s*\) : null\}\s*<\/SafeAreaProvider>/,
+      );
+      // A Modal hides the screen under it from VoiceOver; drawn in the window,
+      // the shell has to, while either wall is up on iOS (code review of PR B).
+      assert.match(
+        appShell,
+        /<SafeAreaView[^>]*accessibilityElementsHidden=\{topLayerActive\}\s*importantForAccessibility=\{topLayerActive \? 'no-hide-descendants' : 'auto'\}\s*>/,
+      );
+      assert.match(
+        shell,
+        /topLayerActive=\{Platform\.OS === 'ios' && \(programLimitVisible \|\| runningCapSheet\.visible\)\}/,
+      );
+      // The layer itself: modal to VoiceOver, takes the focus and the keyboard
+      // as a Modal would, no touches while it leaves, gone once it has faded.
+      const inTree = read('src', 'components', 'InTreeLayer.tsx');
+      assert.doesNotMatch(inTree, /\bModal\b.*from 'react-native'/);
+      assert.match(inTree, /accessibilityViewIsModal/);
+      assert.match(
+        inTree,
+        /if \(visible\) \{\s*setDrawn\(true\);[\s\S]*?Keyboard\.dismiss\(\);[\s\S]*?AccessibilityInfo\.sendAccessibilityEvent\(layerRef\.current, 'focus'\);/,
+      );
+      assert.match(inTree, /<Animated\.View\s*ref=\{layerRef\}/);
+      assert.match(inTree, /pointerEvents=\{visible \? 'auto' : 'none'\}/);
+      assert.match(inTree, /if \(!visible && !drawn\) \{\s*return null;\s*\}/);
+      assert.match(inTree, /if \(finished && !visible\) \{\s*setDrawn\(false\);/);
+    },
+  },
+  {
     name: 'iOS modal sequencing: the ledger check fails on a doctored tree',
     run() {
       const files = listSourceFiles();
@@ -312,6 +368,10 @@ module.exports = [
       const rate = 'src/components/RateAppSheet.tsx';
       const removed = { ...files, [rate]: files[rate].replace(/<Modal\b/g, '<View') };
       assert.match(checkModalLedger(removed).join('\n'), /RateAppSheet\.tsx: listed in the ledger but has no <Modal/);
+      // A wall that went back to presenting on iOS.
+      const wall = 'src/components/ProgramLimitSheet.tsx';
+      const presented = { ...files, [wall]: files[wall].replace("Platform.OS === 'ios'", "Platform.OS === 'web'") };
+      assert.match(checkModalLedger(presented).join('\n'), /ProgramLimitSheet\): listed as drawn in the window on iOS/);
     },
   },
 ];

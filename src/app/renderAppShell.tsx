@@ -1,5 +1,5 @@
 import React from 'react';
-import { Linking } from 'react-native';
+import { Linking, Platform } from 'react-native';
 
 import { AppShell } from '../components/AppShell';
 import { BottomTabBar } from '../components/BottomTabBar';
@@ -212,6 +212,40 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
       overlay={
         legalConsentDue ? renderLegalConsent(shellSafeAreaEdges.includes('bottom')) : tourElement
       }
+      // The two Pro walls, over everything. On iOS they are drawn here rather
+      // than presented: most of their openers raise them as another sheet
+      // closes, and iOS refused that presentation (ProgramLimitSheet).
+      // Only iOS draws them here; Android's Modal hides the shell itself.
+      topLayerActive={Platform.OS === 'ios' && (programLimitVisible || runningCapSheet.visible)}
+      topLayer={
+        <>
+          <ProgramLimitSheet
+            visible={programLimitVisible}
+            kind="own"
+            used={programSlots.used}
+            limit={programSlots.limit ?? programSlots.used}
+            language={preferences.appLanguage}
+            onClose={() => setProgramLimitVisible(false)}
+            onSeePro={() => {
+              setProgramLimitVisible(false);
+              navigate({ tab: 'profile', screen: 'premium' });
+            }}
+          />
+          <ProgramLimitSheet
+            visible={runningCapSheet.visible}
+            kind="running"
+            used={runningCapSheet.used}
+            limit={runningCapSheet.cap}
+            replacingStop={runningCapSheet.replacingStop}
+            language={preferences.appLanguage}
+            onClose={() => setRunningCapSheet((current) => ({ ...current, visible: false }))}
+            onSeePro={() => {
+              setRunningCapSheet((current) => ({ ...current, visible: false }));
+              navigate({ tab: 'profile', screen: 'premium', reason: 'program_cap' });
+            }}
+          />
+        </>
+      }
     >
       {content}
       <AppUpdateDialog
@@ -300,31 +334,6 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
               ? `${imported} · ${t(preferences.appLanguage, 'hevy.doneLeftOut', { skipped: String(result.skipped) })}`
               : imported,
           );
-        }}
-      />
-      <ProgramLimitSheet
-        visible={programLimitVisible}
-        kind="own"
-        used={programSlots.used}
-        limit={programSlots.limit ?? programSlots.used}
-        language={preferences.appLanguage}
-        onClose={() => setProgramLimitVisible(false)}
-        onSeePro={() => {
-          setProgramLimitVisible(false);
-          navigate({ tab: 'profile', screen: 'premium' });
-        }}
-      />
-      <ProgramLimitSheet
-        visible={runningCapSheet.visible}
-        kind="running"
-        used={runningCapSheet.used}
-        limit={runningCapSheet.cap}
-        replacingStop={runningCapSheet.replacingStop}
-        language={preferences.appLanguage}
-        onClose={() => setRunningCapSheet((current) => ({ ...current, visible: false }))}
-        onSeePro={() => {
-          setRunningCapSheet((current) => ({ ...current, visible: false }));
-          navigate({ tab: 'profile', screen: 'premium', reason: 'program_cap' });
         }}
       />
       {/* Built months ago and left unwired — the strings even said so. The
