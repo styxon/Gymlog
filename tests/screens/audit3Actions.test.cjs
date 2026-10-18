@@ -116,7 +116,7 @@ module.exports = [
       // Back is the reflexive no on Android; the dialog that carries this
       // question has to accept it.
       const dialog = strip(read('src', 'components', 'ConfirmDialog.tsx'));
-      assert.match(dialog, /<Modal visible=\{visible\} transparent animationType="fade" onRequestClose=\{onCancel\}>/);
+      assert.match(dialog, /<Modal visible=\{visible\} transparent animationType="fade" onRequestClose=\{onCancel\}[\s>]/);
     },
   },
 ];

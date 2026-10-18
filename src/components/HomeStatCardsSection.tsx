@@ -43,6 +43,11 @@ interface HomeStatCardsSectionProps {
   onOpenCard: (key: string) => void;
   reduceMotion: boolean;
   language?: AppLanguage;
+  /**
+   * Whether the add sheet is up. Home holds its sign-in dialog back while it
+   * is: iOS cannot present a second modal over this one (iOS hunt 2026-10-17).
+   */
+  onSheetVisibleChange?: (visible: boolean) => void;
 }
 
 function StatIcon({ icon, size = 20, color }: { icon: HomeStatCardIcon; size?: number; color?: string }) {
@@ -234,6 +239,7 @@ export function HomeStatCardsSection({
   onOpenCard,
   reduceMotion,
   language = 'en',
+  onSheetVisibleChange,
 }: HomeStatCardsSectionProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -245,6 +251,9 @@ export function HomeStatCardsSection({
     setAddSheetVisible(false);
     setAddPicks([]);
   };
+  useEffect(() => {
+    onSheetVisibleChange?.(addSheetVisible);
+  }, [addSheetVisible, onSheetVisibleChange]);
 
   const cardByKey = useMemo(() => new Map(catalogCards.map((card) => [card.key, card])), [catalogCards]);
   const pinnedCards = pinnedKeys.map((key) => cardByKey.get(key)).filter((card): card is HomeStatCard => Boolean(card));

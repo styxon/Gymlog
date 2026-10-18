@@ -57,6 +57,7 @@ export interface AppShellDeps {
   renderLegalConsent: (shellPadsBottom: boolean) => React.ReactNode;
   tourElement: React.ReactNode;
   appUpdateHeld: boolean;
+  onAppUpdateShownChange: (shown: boolean) => void;
   handleServerNoticeSeen: (id: string) => void;
   SettingsImportSheet: React.ComponentType<SettingsImportSheetProps>;
   settingsImportVisible: boolean;
@@ -105,6 +106,7 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
     renderLegalConsent,
     tourElement,
     appUpdateHeld,
+    onAppUpdateShownChange,
     handleServerNoticeSeen,
     SettingsImportSheet,
     settingsImportVisible,
@@ -212,7 +214,11 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
       }
     >
       {content}
-      <AppUpdateDialog language={preferences.appLanguage} held={appUpdateHeld} />
+      <AppUpdateDialog
+        language={preferences.appLanguage}
+        held={appUpdateHeld}
+        onShownChange={onAppUpdateShownChange}
+      />
       <ServerNoticeDialog
         language={preferences.appLanguage}
         held={appUpdateHeld}

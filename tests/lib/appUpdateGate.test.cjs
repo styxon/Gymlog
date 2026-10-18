@@ -144,7 +144,10 @@ module.exports = [
       // Registered from index.ts before App's modules load (bug hunt 2026-10-03), so an early crash's report names it too.
       assert.match(read('src/features/appUpdate/registerAppIdentityAtStartup.ts'), /registerAppIdentity\(Constants\.expoConfig\?\.version \?\? appInfo\.version, Platform\.OS\)/);
       // The dialog mounts in the shell's render tail, which moved to src/app.
-      assert.match(strip(readAppWiring()), /<AppUpdateDialog language=\{preferences\.appLanguage\} held=\{appUpdateHeld\} \/>/);
+      assert.match(
+        strip(readAppWiring()),
+        /<AppUpdateDialog\s+language=\{preferences\.appLanguage\}\s+held=\{appUpdateHeld\}\s+onShownChange=\{onAppUpdateShownChange\}\s*\/>/,
+      );
       // Never over the terms sheet, the tour or a workout in progress (review, 2026-09-28).
       // Bounded on both anchors, read from the whole shell: the hold left
       // App.tsx for a src/app hook in the phase-C split (2026-10-01).

@@ -45,6 +45,8 @@ export interface HomeDashboardDeps {
   homeWidgetState: { supported: boolean; added: boolean } | null;
   handleAddHomeWidget: () => Promise<void>;
   homePrompt: HomePrompt;
+  /** A shell modal is up over Home; its sign-in dialog waits (HomeScreen). */
+  shellSheetOpen: boolean;
   handleAccountSignIn: ReturnType<typeof useAccountOutcome>['handleAccountSignIn'];
   homeTrainingSchedule: NonNullable<HomeScreenProps['trainingSchedule']>;
   homeDoneThisWeekSessionIds: string[];
@@ -93,6 +95,7 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
     homeWidgetState,
     handleAddHomeWidget,
     homePrompt,
+    shellSheetOpen,
     handleAccountSignIn,
     homeTrainingSchedule,
     homeDoneThisWeekSessionIds,
@@ -180,6 +183,7 @@ export function renderHomeDashboard(deps: HomeDashboardDeps): React.ReactNode {
             }
           : null
       }
+      shellSheetOpen={shellSheetOpen}
       accountBackupPrompt={
         // One prompt at a time, and this one waits for the third logged
         // session (lib/homePrompts): a fresh install has nothing worth

@@ -18,6 +18,8 @@ interface ConfirmDialogProps {
   selectableMessage?: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  /** The Modal's onDismiss, for useModalHandoff (iOS only; see TrackChangeDialog). */
+  onDismissed?: () => void;
 }
 
 export function ConfirmDialog({
@@ -31,13 +33,14 @@ export function ConfirmDialog({
   selectableMessage = false,
   onCancel,
   onConfirm,
+  onDismissed,
 }: ConfirmDialogProps) {
   const styles = useThemedStyles(makeStyles);
   // Back is the reflexive "no" on Android, and a dialog that asks before
   // something destructive has to accept it: without onRequestClose the
   // hardware back button did nothing at all here (audit 3, 2026-09-19).
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel} onDismiss={onDismissed}>
       <View style={styles.overlay}>
         <View style={styles.dialog}>
           <Text style={styles.title}>{title}</Text>
