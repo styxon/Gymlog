@@ -19,6 +19,10 @@
  * - BACKUP_PATH_SECRET     — any long random string; changing it orphans stored backups
  * - APPLE_BUNDLE_ID        — optional, default app.vinha; an Apple identity
  *   token's audience must match
+ * - APPLE_TEAM_ID, APPLE_KEY_ID, APPLE_PRIVATE_KEY — the Sign in with Apple
+ *   key (Apple Developer → Keys) that signs the client secret for Apple's
+ *   token revocation on Delete account (below). Without them the account is
+ *   still deleted; Apple's sign-in is not ended, and the log says why.
  * - BACKUP_MAX_BYTES       — optional payload cap, default 4 MB (Vercel refuses
  *   request and response bodies over 4.5 MB whatever this says)
  *
@@ -41,7 +45,7 @@
  *   overwrites: refusing it would stop every installed phone backing up until
  *   the reader updates, which is a worse loss than the one this closes.
  */
-import { createHmac, createPublicKey, timingSafeEqual, verify } from 'node:crypto';
+import { createHmac, createPrivateKey, createPublicKey, sign, timingSafeEqual, verify } from 'node:crypto';
 import { BlobNotFoundError, BlobPreconditionFailedError, del, get, head, list, put } from '@vercel/blob';
 
 import { appUpdateRefusalBody, isAppVersionRefused } from '../src/lib/appUpdateGate';
@@ -149,8 +153,17 @@ async function verifyGoogleIdToken(idToken: string, clientId: string): Promise<V
  * expiry. The phone checks with Apple that the sign-in has not been revoked
  * before it sends one, and deleting the account (DELETE with
  * `x-backup-action: delete-account`) records a revocation that ends every
- * session issued before it. Apple's own token revocation is not called: it
- * needs a client secret signed with the team's key (docs/ios-launch.md).
+ * session issued before it.
+ *
+ * It also ends the sign-in at Apple, which takes Vinha off the reader's Sign
+ * in with Apple list (App Review asks for it with account deletion). The phone
+ * asks Apple for a one-time authorization code as the reader confirms, and
+ * sends it with the delete (`x-apple-authorization-code`); this trades it at
+ * Apple's /auth/token and revokes what it gets at /auth/revoke, with a client
+ * secret signed by the team's key. Nothing of it is stored. It runs after the
+ * copy and the sessions are gone and never decides the answer: a missing key,
+ * a refused code or Apple not answering is logged, and the account is still
+ * deleted — a deletion that waited on Apple would be the worse failure.
  *
  * Apple subjects are stored as `apple:<sub>`, so they can never land on a
  * Google account's blob. Google subjects stay bare: prefixing them now would
@@ -180,6 +193,17 @@ const DELETE_ACCOUNT_ACTION = 'delete-account';
  */
 const DELETE_REQUEST_ID_HEADER = 'x-delete-request-id';
 const DELETE_REQUEST_ID = /^[0-9a-f]{32}$/;
+/**
+ * On a Delete account DELETE from an Apple account: Apple's one-time
+ * authorization code, for ending the sign-in at Apple (above). Anything that
+ * does not look like one is ignored.
+ */
+const APPLE_CODE_HEADER = 'x-apple-authorization-code';
+const APPLE_CODE = /^[A-Za-z0-9._-]{16,512}$/;
+const APPLE_TOKEN_URL = 'https://appleid.apple.com/auth/token';
+const APPLE_REVOKE_URL = 'https://appleid.apple.com/auth/revoke';
+/** Each of Apple's two calls; the phone is waiting for the delete's answer. */
+const APPLE_REVOKE_TIMEOUT_MS = 4000;
 
 type AppleKey = { kty: string; n: string; e: string; kid?: string; alg?: string };
 let appleKeys: { keys: AppleKey[]; fetchedAt: number } | null = null;
@@ -204,6 +228,110 @@ function decodeSegment<T>(segment: string): T | null {
     return JSON.parse(Buffer.from(segment, 'base64url').toString('utf8')) as T;
   } catch {
     return null;
+  }
+}
+
+/**
+ * The client secret for Apple's token endpoints: an ES256 JWT signed with the
+ * Sign in with Apple key, for the app's own client id. Null when the key is
+ * not configured; throws when it is configured and cannot be read.
+ */
+function appleClientSecret(clientId: string): string | null {
+  const teamId = (process.env.APPLE_TEAM_ID ?? '').trim();
+  const keyId = (process.env.APPLE_KEY_ID ?? '').trim();
+  // A .p8 pasted into one line keeps its line breaks as "\n".
+  const pem = (process.env.APPLE_PRIVATE_KEY ?? '').replace(/\\n/g, '\n').trim();
+  if (!teamId || !keyId || !pem) {
+    return null;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  const header = Buffer.from(JSON.stringify({ alg: 'ES256', kid: keyId })).toString('base64url');
+  const payload = Buffer.from(
+    JSON.stringify({ iss: teamId, iat: now, exp: now + 300, aud: APPLE_ISSUER, sub: clientId }),
+  ).toString('base64url');
+  const signature = sign('sha256', Buffer.from(`${header}.${payload}`), {
+    key: createPrivateKey(pem),
+    dsaEncoding: 'ieee-p1363',
+  }).toString('base64url');
+  return `${header}.${payload}.${signature}`;
+}
+
+async function postToApple(url: string, form: Record<string, string>): Promise<Response> {
+  return fetch(url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(form).toString(),
+    signal: AbortSignal.timeout(APPLE_REVOKE_TIMEOUT_MS),
+  });
+}
+
+/**
+ * Ends the reader's Sign in with Apple at Apple (see the Apple session notes
+ * above): trades the one-time code for the grant, checks the grant is this
+ * account's, and revokes it. Never throws; the outcome is for the log.
+ */
+async function endAppleSignIn(
+  code: string,
+  appleUser: string,
+  clientId: string,
+): Promise<'revoked' | 'not_configured' | 'refused' | 'failed'> {
+  let clientSecret: string | null;
+  try {
+    clientSecret = appleClientSecret(clientId);
+  } catch (error) {
+    console.error('apple revoke: APPLE_PRIVATE_KEY unreadable:', error instanceof Error ? error.message.slice(0, 120) : 'unknown');
+    return 'failed';
+  }
+  if (!clientSecret) {
+    console.error('apple revoke skipped: APPLE_TEAM_ID, APPLE_KEY_ID or APPLE_PRIVATE_KEY is not set');
+    return 'not_configured';
+  }
+  try {
+    const traded = await postToApple(APPLE_TOKEN_URL, {
+      client_id: clientId,
+      client_secret: clientSecret,
+      code,
+      grant_type: 'authorization_code',
+    });
+    const grant = (await traded.json().catch(() => null)) as {
+      refresh_token?: unknown;
+      access_token?: unknown;
+      id_token?: unknown;
+      error?: unknown;
+    } | null;
+    if (!traded.ok || !grant) {
+      // invalid_grant: a used or expired code, or one for another client id.
+      console.error('apple revoke: code refused', traded.status, typeof grant?.error === 'string' ? grant.error.slice(0, 40) : '');
+      return 'refused';
+    }
+    // From Apple itself, over the call just made: read, not verified again.
+    const claims =
+      typeof grant.id_token === 'string' ? decodeSegment<{ sub?: unknown }>(grant.id_token.split('.')[1] ?? '') : null;
+    if (!claims || claims.sub !== appleUser) {
+      // A code from another Apple ID than the account being deleted: not ours to end.
+      console.error('apple revoke: the code is not this account\'s');
+      return 'refused';
+    }
+    const refresh = typeof grant.refresh_token === 'string' ? grant.refresh_token : '';
+    const access = typeof grant.access_token === 'string' ? grant.access_token : '';
+    if (!refresh && !access) {
+      console.error('apple revoke: the grant carried no token');
+      return 'refused';
+    }
+    const revoked = await postToApple(APPLE_REVOKE_URL, {
+      client_id: clientId,
+      client_secret: clientSecret,
+      token: refresh || access,
+      token_type_hint: refresh ? 'refresh_token' : 'access_token',
+    });
+    if (!revoked.ok) {
+      console.error('apple revoke: refused', revoked.status);
+      return 'failed';
+    }
+    return 'revoked';
+  } catch (error) {
+    console.error('apple revoke failed:', error instanceof Error ? error.message.slice(0, 120) : 'unknown');
+    return 'failed';
   }
 }
 
@@ -1091,6 +1219,23 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             res.status(502).json({ ok: false, error: 'STORE_UNAVAILABLE' });
             return;
           }
+        }
+        // And the sign-in at Apple, now that everything of ours is gone. Its
+        // outcome is logged and does not change the answer (see the Apple
+        // session notes above).
+        const codeHeader = req.headers[APPLE_CODE_HEADER];
+        const code = (Array.isArray(codeHeader) ? codeHeader[0] : codeHeader)?.trim();
+        if (code && APPLE_CODE.test(code)) {
+          const ended = await endAppleSignIn(
+            code,
+            identity.sub.slice('apple:'.length),
+            (process.env.APPLE_BUNDLE_ID ?? '').trim() || 'app.vinha',
+          );
+          if (ended !== 'revoked') {
+            console.error('backup delete-account: Apple sign-in not ended:', ended);
+          }
+        } else {
+          console.error('backup delete-account: no Apple authorization code');
         }
       }
       res.status(200).json({ ok: true });

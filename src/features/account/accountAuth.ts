@@ -11,6 +11,7 @@
  */
 import {
   APPLE_SUB_PREFIX,
+  appleDeletionCode,
   getFreshAppleToken,
   isAppleSignInConfigured,
   renewAppleSessionIfDue,
@@ -57,6 +58,23 @@ export async function signInWith(provider: SignInProvider): Promise<SignInResult
 /** The fresh token for the account `sub`, from the provider that account signed in with. */
 export async function getFreshIdToken(sub: string): Promise<FreshIdTokenResult> {
   return sub.startsWith(APPLE_SUB_PREFIX) ? getFreshAppleToken(sub.slice(APPLE_SUB_PREFIX.length)) : getFreshGoogleToken(sub);
+}
+
+/**
+ * What the account's provider gives for deleting it: for an Apple account,
+ * Apple's one-time code, so the server can end the sign-in at Apple too
+ * (appleDeletionCode). A Google account has nothing to add — Google's grant
+ * ends with Google's own account settings, and the server keeps no token of
+ * it.
+ */
+export async function getAccountDeletionGrant(
+  sub: string,
+): Promise<{ status: 'ok'; appleAuthorizationCode: string } | { status: 'cancelled' } | { status: 'none' }> {
+  if (!sub.startsWith(APPLE_SUB_PREFIX)) {
+    return { status: 'none' };
+  }
+  const result = await appleDeletionCode(sub.slice(APPLE_SUB_PREFIX.length));
+  return result.status === 'ok' ? { status: 'ok', appleAuthorizationCode: result.code } : result;
 }
 
 /** On coming back to the app: an Apple session inside its renewal window is renewed, backup or not. */

@@ -439,4 +439,56 @@ module.exports = [
       assert.equal(JSON.parse(failing.storage.items.get(KEY)).sessionToken, 'vs1.session', 'a failed renewal touched the session');
     }),
   },
+  {
+    name: 'apple deletion code: asked as the reader confirms, with no scopes, and only ever the account\'s own Apple ID\'s',
+    run: withAppleCache(async () => {
+      const asked = [];
+      const credential = (overrides = {}) => async (options) => {
+        asked.push(options);
+        return { user: 'apple-user-1', identityToken: 'x.y.z', authorizationCode: 'code-1', email: null, fullName: null, ...overrides };
+      };
+      let { auth } = loadApple({ apple: { signInAsync: credential() } });
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'ok', code: 'code-1' });
+      assert.deepEqual(asked, [{ requestedScopes: [] }], 'a confirmation asked Apple for the name and email again');
+      // Another Apple ID on the phone: its grant is not this account's to end.
+      ({ auth } = loadApple({ apple: { signInAsync: credential({ user: 'apple-user-2' }) } }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'none' });
+      ({ auth } = loadApple({ apple: { signInAsync: credential({ authorizationCode: null }) } }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'none' });
+      // Backing out of Apple's sheet is the reader's answer; anything else is no code.
+      const failing = (code) => async () => {
+        throw Object.assign(new Error('apple'), { code });
+      };
+      ({ auth } = loadApple({ apple: { signInAsync: failing('ERR_REQUEST_CANCELED') } }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'cancelled' });
+      ({ auth } = loadApple({ apple: { signInAsync: failing('ERR_REQUEST_FAILED') } }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'none' });
+      ({ auth } = loadApple({ apple: { isAvailableAsync: async () => false } }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'none' });
+      ({ auth } = loadApple({ os: 'android' }));
+      assert.deepEqual(await auth.appleDeletionCode('apple-user-1'), { status: 'none' });
+    }),
+  },
+  {
+    name: 'account auth: only an Apple account asks Apple for a deletion code, for its own Apple user',
+    async run() {
+      const asked = [];
+      const auth = requireWithStubs(ACCOUNT_AUTH, {
+        './appleAuth': {
+          APPLE_SUB_PREFIX: 'apple:',
+          isAppleSignInConfigured: () => true,
+          appleDeletionCode: async (user) => {
+            asked.push(user);
+            return user === 'apple-user-1' ? { status: 'ok', code: 'code-1' } : { status: 'cancelled' };
+          },
+        },
+        './googleAuth': { isGoogleSignInConfigured: () => true },
+      });
+      assert.deepEqual(await auth.getAccountDeletionGrant('google-sub-1'), { status: 'none' });
+      assert.deepEqual(asked, [], 'a Google account opened Apple\'s sheet');
+      assert.deepEqual(await auth.getAccountDeletionGrant('apple:apple-user-1'), { status: 'ok', appleAuthorizationCode: 'code-1' });
+      assert.deepEqual(await auth.getAccountDeletionGrant('apple:apple-user-2'), { status: 'cancelled' });
+      assert.deepEqual(asked, ['apple-user-1', 'apple-user-2']);
+    },
+  },
 ];

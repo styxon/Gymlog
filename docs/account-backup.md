@@ -253,13 +253,37 @@ Vercel deploy** — until
 then the app's `delete-account` request is an ordinary `DELETE` that leaves the
 Apple sessions alive, and the new codes are never sent.
 
+**Ending the sign-in at Apple (2026-10-17).** App Review asks an app that
+offers Sign in with Apple to revoke the reader's tokens when the account is
+deleted, and until then Vinha stayed on the reader's Apple ID → Sign in with
+Apple list. As the reader confirms Delete account, the phone asks Apple once
+more (`signInAsync` with no scopes, `appleAuth.appleDeletionCode`) for a
+one-time authorization code, and sends it with the delete as
+`x-apple-authorization-code`. After the copy and the sessions are gone the
+server trades it at `https://appleid.apple.com/auth/token` with a client
+secret it signs (ES256, `iss` = Team ID, `sub` = `APPLE_BUNDLE_ID`, `aud` =
+`https://appleid.apple.com`, `kid` = Key ID, five minutes), checks that the
+grant's `id_token` names the account being deleted, and revokes the refresh
+token at `/auth/revoke`. Nothing of it is stored. It never decides the
+answer: no key configured, a refused code or Apple not answering (4 s per call)
+is logged as `apple revoke …` and the account is still deleted. Backing out of
+Apple's sheet backs out of the deletion before anything is sent; a phone that
+cannot show the sheet deletes without the code, as before.
+
 Apple accounts are stored under `apple:<sub>`, so an Apple account and a
 Google account never share a blob. Google subjects stay unprefixed — changing
 them would orphan every existing backup.
 
-Setup: nothing on the server beyond the existing env (`APPLE_BUNDLE_ID` only if
-the bundle id ever changes). On Apple's side, the App ID needs the "Sign in
-with Apple" capability; EAS sets it from `ios.usesAppleSignIn`.
+Setup: `APPLE_BUNDLE_ID` only if the bundle id ever changes. For ending the
+sign-in at Apple, three more, all Production: in Apple Developer → Certificates,
+Identifiers & Profiles → Keys, a new key with "Sign in with Apple" enabled and
+`app.vinha` as its primary App ID; download the `.p8` (once only) and note
+its Key ID. Then in Vercel: `APPLE_TEAM_ID` (the team id, top right in Apple
+Developer), `APPLE_KEY_ID`, and `APPLE_PRIVATE_KEY` (the `.p8`'s whole text;
+pasted on one line, its line breaks may be written `\n`), and redeploy.
+Without them deletion works as before and the log says `apple revoke skipped`.
+On Apple's side, the App ID needs the "Sign in with Apple" capability; EAS sets
+it from `ios.usesAppleSignIn`.
 
 ## Deleting from the web page (2026-10-03)
 

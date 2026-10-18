@@ -136,10 +136,12 @@ export async function downloadBackup(idToken: string): Promise<BackupDownloadRes
  * Deletes the cloud copy. With `account: true` the server also ends the Apple
  * sessions it has issued for the account, this phone's included
  * (api/backup.ts, `delete-account`); without it the reader stays signed in.
+ * `appleAuthorizationCode`, with `account: true` only, lets the server end
+ * the sign-in at Apple as well (appleAuth.appleDeletionCode).
  */
 export async function deleteBackup(
   idToken: string,
-  options: { account?: boolean; requestId?: string } = {},
+  options: { account?: boolean; requestId?: string; appleAuthorizationCode?: string } = {},
 ): Promise<{ ok: boolean; error?: string; definite?: boolean; deleteRequestId?: string | null }> {
   if (!BACKUP_API_URL) {
     return { ok: false };
@@ -154,6 +156,9 @@ export async function deleteBackup(
         // Lets the server say, when it later turns this phone away because the
         // account is gone, whether the delete that did it was this phone's.
         ...(options.account && options.requestId ? { 'x-delete-request-id': options.requestId } : {}),
+        ...(options.account && options.appleAuthorizationCode
+          ? { 'x-apple-authorization-code': options.appleAuthorizationCode }
+          : {}),
         ...appVersionHeaders(),
       },
       signal,
