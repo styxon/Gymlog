@@ -65,9 +65,12 @@ jobs:
 
       # The built app, keyed on everything that goes into it. A run that only
       # changes the Maestro flow or the compositor skips the 30-minute build.
-      - name: Cache the simulator build
+      # Restored here and saved straight after the build: actions/cache's own
+      # save runs only when the whole job passes, so a failed shoot threw the
+      # build away and the next run built it again (2026-10-18).
+      - name: Restore the simulator build
         id: app-cache
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: shots-app
           key: shots-app-v1-${{ hashFiles('package-lock.json', 'app.json', 'app.config.js', 'eas.json', 'index.ts', 'App.tsx', 'babel.config.js', 'metro.config.js', 'src/**', 'assets/**', 'plugins/**', 'modules/**') }}
@@ -90,6 +93,13 @@ jobs:
           mkdir -p shots-app
           cp -R ios/build/Build/Products/Release-iphonesimulator/*.app shots-app/Vinha.app
           ls shots-app/Vinha.app | head
+
+      - name: Save the simulator build
+        if: steps.app-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: shots-app
+          key: ${{ steps.app-cache.outputs.cache-primary-key }}
 
       - name: Install Maestro
         run: |

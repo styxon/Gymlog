@@ -101,8 +101,23 @@ name: Store screenshots
     timeout: 5000
 - takeScreenshot: 07-home
 
-# 8. The coach (preview answers: this build has no server).
+# 8. Programs.
+- tapOn: "Ohjelmat|Programs"
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 08-programs
+
+# 9. The coach, and 10. a conversation with it: a starter chip, answered in
+#    preview mode (this build has no server) from the seeded history.
 - tapOn: "Avaa Vinha-valmentaja|Open Vinha Coach"
 - waitForAnimationToEnd:
     timeout: 5000
-- takeScreenshot: 08-coach
+- takeScreenshot: 09-coach
+- tapOn: 'Miten viikkoni meni\?|How did my week go\?|Analysoi viime treenini|Analyze my last workout'
+- waitForAnimationToEnd:
+    timeout: 15000
+- swipe:
+    direction: UP
+- waitForAnimationToEnd:
+    timeout: 5000
+- takeScreenshot: 10-coach-chat

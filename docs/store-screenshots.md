@@ -20,13 +20,16 @@ The Android set is still made by hand with adb (memory: ref-website-screenshots)
      | Folder | Pixels | App Store Connect slot | From |
      |---|---|---|---|
      | `6.9` | 1320 × 2868 | iPhone 6.9" | iPhone 17 Pro Max |
-     | `6.5` | 1284 × 2778 | iPhone 6.5" (what 1.1.0 uses) | iPhone 17 Pro Max |
+     | `6.5` | 1284 × 2778 | iPhone 6.5" only: the "Dynamic Island (medium display)" slot refused this size on 2026-10-18 | iPhone 17 Pro Max |
      | `6.3` | 1206 × 2622 | iPhone 6.3" | iPhone 17 |
 
      It also writes `header/header-<language>-<theme>-3840x1646.png`: three
      screens and a caption, an experiment for the "Header and Search
      Results" image (#to-do 12).
-   - `raw-screenshots`: the simulator's own captures, before any caption.
+   - `raw-screenshots`: the simulator's own captures, before any caption or
+     frame, at the simulator's size: `iphone-6.9/<language>-<theme>/` at
+     1320 × 2868 and `iphone-6.3/<language>-<theme>/` at 1206 × 2622. These
+     are what the Design canvas's panels take.
      It also holds Maestro's logs and view hierarchies (`maestro-<attempt>/`
      beside each variant's shots), plus a `failure.png` when a variant failed
      twice.
@@ -79,8 +82,9 @@ The status bar is set to 9:41, full Wi-Fi and a charged battery.
 
 **Shots.** Each run captures these screens: 01 set screen, 02 rest with the
 next lift, 03 workout complete, 04 Progress summary, 05 records, 06 history,
-07 Home, 08 the coach. The coach runs in preview mode, since this build has
-no server URLs. For the same reason the build has no analytics and no store.
+07 Home, 08 Programs, 09 the coach, 10 a conversation with the coach (a
+starter chip). The coach answers in preview mode, since this build has no
+server URLs. For the same reason the build has no analytics and no store.
 
 ## Changing it
 
