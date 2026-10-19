@@ -9,12 +9,14 @@ import { AppLanguage } from '../types/models';
  * exerciseNameLabel.ts. The English name is the key, because the English name
  * is the id everywhere else in this app.
  *
- * COVERAGE. The library holds 873 exercises and 3722 steps. This file covers
- * the ones a reader actually meets inside a program — the lifts the ready
- * catalogs prescribe and that resolve to a library entry — and grows outward
- * from there. Anything not here falls back to the English steps rather than to
- * a blank: an honest English instruction beats a missing one, and it is the
- * same rule the name layer follows.
+ * COVERAGE. This file covers the ones a reader meets inside a program — the
+ * lifts the ready catalogs prescribe and that resolve to a library entry. The
+ * rest of the library (the browse list, 708 more entries) is in
+ * exerciseInstructionsFiMore.ts, which is loaded on first use because of its
+ * size. Together they cover every library entry that has English steps, and a
+ * test fails if an entry's Finnish steps are its English steps. The fallback to
+ * the English steps below is therefore only for a name the library does not
+ * know (a custom exercise); it is the same rule the name layer follows.
  *
  * ONE EXCEPTION TO THE BREATHING RULE, ON PURPOSE. Power Clean keeps its
  * "vedä henkeä" and "pidätä hengitystä" steps (user decision, 2026-09-08): in a
@@ -1509,12 +1511,31 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
 };
 
+type FinnishInstructionTable = Record<string, string[]>;
+
+let moreFinnish: FinnishInstructionTable | null = null;
+
+/**
+ * The second table, loaded the first time a Finnish reader opens an exercise
+ * the first table does not hold. A plain require inside a function, so the
+ * module is not evaluated at app start (it is about 0.4 MB of text), and an
+ * English reader never loads it.
+ */
+function moreFinnishInstructions(): FinnishInstructionTable {
+  if (moreFinnish === null) {
+    moreFinnish = (require('./exerciseInstructionsFiMore') as {
+      EXERCISE_INSTRUCTIONS_FI_MORE: FinnishInstructionTable;
+    }).EXERCISE_INSTRUCTIONS_FI_MORE;
+  }
+  return moreFinnish;
+}
+
 /**
  * The steps to draw for one exercise.
  *
  * Falls back to the English steps rather than to nothing: the library is an
- * English dataset and a missing translation is a gap in this file, not a reason
- * to leave a reader without instructions.
+ * English dataset and a missing translation is a gap in these files, not a
+ * reason to leave a reader without instructions.
  */
 export function getExerciseInstructions(
   name: string | null | undefined,
@@ -1526,9 +1547,16 @@ export function getExerciseInstructions(
     return english;
   }
 
-  const finnish = EXERCISE_INSTRUCTIONS_FI[name.trim()];
+  const key = name.trim();
+  const finnish = EXERCISE_INSTRUCTIONS_FI[key] ?? moreFinnishInstructions()[key];
   return finnish && finnish.length > 0 ? finnish : english;
 }
 
-/** Exported for the tests that keep this file paired with the library. */
-export const EXERCISE_INSTRUCTIONS_FI_TABLE = EXERCISE_INSTRUCTIONS_FI;
+/**
+ * Both Finnish tables as one, for the tests that keep them paired with the
+ * library and for the text export. Loads the second table, so the app itself
+ * never calls it.
+ */
+export function finnishInstructionTable(): FinnishInstructionTable {
+  return { ...EXERCISE_INSTRUCTIONS_FI, ...moreFinnishInstructions() };
+}
