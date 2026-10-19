@@ -106,3 +106,21 @@ export function resolveLiftPraise(
     loadKg: loaded && Math.max(...lifted) > 0 ? Math.max(...lifted) : null,
   };
 }
+
+/**
+ * Which lift the walk-up banner may praise: the one whose last set the reader
+ * has just logged, never the one they are walking up to.
+ *
+ * The banner sits on the NEXT lift's card, so the step before the walk-up must
+ * be a set, of a different slot than the walk-up's own (a lift's card never
+ * praises itself). Null when there is no such lift.
+ */
+export function praisedSlotBeforeWalkUp(
+  before: { type: string; slotId?: string } | null | undefined,
+  current: { type: string; slotId?: string },
+): string | null {
+  if (current.type !== 'position' || !before || before.type !== 'set' || !before.slotId) {
+    return null;
+  }
+  return before.slotId === current.slotId ? null : before.slotId;
+}

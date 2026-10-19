@@ -150,6 +150,11 @@ update to carry, not for each fix.
   (docs/account-backup.md); until then deletion works as before and the log
   says `apple revoke skipped`.
 
+- Walk-up praise names the lift just done ("Edellinen liike: ..."); the
+  Recovery sheet hides ACWR when there is no ratio and sets a glued session
+  number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
+  first cue no longer cuts the user's music.
+
 ## Known, not yet fixed
 
 Logged in `#bugs` after the vc4 device check (2026-10-15):

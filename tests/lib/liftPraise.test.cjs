@@ -21,6 +21,18 @@ const last = (reps, loadKg = 60) => reps.map((count) => ({ loadKg, reps: count }
 
 module.exports = [
   {
+    name: 'lift praise: the banner is about the lift just logged, never the one walked up to',
+    run() {
+      const { praisedSlotBeforeWalkUp } = require('../../.test-dist/lib/liftPraise.js');
+      const walkUp = { type: 'position', slotId: 'bench' };
+      assert.equal(praisedSlotBeforeWalkUp({ type: 'set', slotId: 'squat' }, walkUp), 'squat');
+      assert.equal(praisedSlotBeforeWalkUp({ type: 'set', slotId: 'bench' }, walkUp), null);
+      assert.equal(praisedSlotBeforeWalkUp({ type: 'rest', slotId: 'squat' }, walkUp), null);
+      assert.equal(praisedSlotBeforeWalkUp(undefined, walkUp), null);
+      assert.equal(praisedSlotBeforeWalkUp({ type: 'set', slotId: 'squat' }, { type: 'set', slotId: 'bench' }), null);
+    },
+  },
+  {
     name: 'lift praise: a lowered target climbed and met is praised',
     run() {
       const sets = done([7, 7, 7], { plannedTargetReps: 7 });
@@ -100,7 +112,7 @@ module.exports = [
       const { t } = require('../../.test-dist/lib/i18n.js');
       assert.equal(
         t('fi', 'guided.walk.praise', { name: 'Penkkipunnerrus', dose: '60 kg 3 × 7' }),
-        'Loistavaa! Penkkipunnerrus 60 kg 3 × 7, enemmän kuin viimeksi.',
+        'Loistavaa! Edellinen liike: Penkkipunnerrus 60 kg 3 × 7, enemmän kuin viimeksi.',
       );
       assert.notEqual(t('en', 'guided.walk.praise', { name: 'x', dose: 'y' }), 'guided.walk.praise');
     },

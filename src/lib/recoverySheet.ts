@@ -6,6 +6,7 @@ import { isProUnlocked } from './proEntitlement';
 import { progressionFatigueSignalAt, type ProgressionFatigueSignal } from './progressionGate';
 import type { FatigueModelInput } from './fatigueModel';
 import type { AppLanguage } from '../types/models';
+import { localizeSessionName } from './sessionNameLabel';
 import { nearestDayStart } from './trainingSchedule';
 
 /**
@@ -51,7 +52,12 @@ export interface RecoverySheetModel {
    */
   score: number | null;
   lead: string;
-  acwrLabel: string;
+  /**
+   * The load ratio as a number, or null when it would mean nothing: with no
+   * usual week to compare to, or a week with nothing in it, the model's 0 is
+   * "no ratio", not "0,00" (#bugs 2026-10-18).
+   */
+  acwrLabel: string | null;
   /** Where the "you" marker sits on the zone bar, 2..98 (percent). */
   markerPercent: number;
   acuteLabel: string;
@@ -136,6 +142,30 @@ export function recoveryWeek(sessionDates: ReadonlyArray<string>, now: Date, lan
   });
 }
 
+/** The ratio to print, or null while there is no usual week to divide by. */
+export function acwrLabelOf(fatigue: Pick<FatigueResult, 'acwr' | 'chronicLoadKg' | 'confident'>): string | null {
+  if (!fatigue.confident || !(fatigue.chronicLoadKg > 0) || !Number.isFinite(fatigue.acwr) || !(fatigue.acwr > 0)) {
+    return null;
+  }
+  return applyDecimalSeparator(fatigue.acwr.toFixed(2));
+}
+
+/**
+ * A session title as a sentence may carry it: a name saved with its number
+ * glued on ("Legs1") reads as a typo, so the number is set apart before the
+ * name is translated ("Jalat 1"). Blank titles are no title.
+ */
+export function tidySessionTitle(title: string | null | undefined, language: AppLanguage): string | null {
+  const spaced = (title ?? '').trim().replace(/\s+/g, ' ').replace(/(\p{L})(\d+)$/u, '$1 $2');
+  if (!spaced) {
+    return null;
+  }
+  // "Legs 1" is not a dictionary phrase; "Legs" is. Translate the name and
+  // keep the number beside it.
+  const numbered = spaced.match(/^(.*\S)\s+(\d+)$/u);
+  return numbered ? `${localizeSessionName(numbered[1], language)} ${numbered[2]}` : localizeSessionName(spaced, language);
+}
+
 export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetModel | null {
   const { fatigue, language } = input;
   // Same gate as the row: without a confident model there is no row to open.
@@ -173,6 +203,8 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
               : t(language, 'recovery.lead.light', { pct: under })
           : t(language, 'recovery.lead.green');
 
+  const nextTitle = tidySessionTitle(input.nextSessionTitle, language);
+
   const todos =
     tone === 'red'
       ? [
@@ -189,8 +221,8 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
       : tone === 'amber'
         ? [t(language, 'recovery.todo.amber.hold'), t(language, 'recovery.todo.amber.lastSet'), t(language, 'recovery.todo.amber.rest')]
         : [
-            input.nextSessionTitle
-              ? t(language, 'recovery.todo.green.next', { session: input.nextSessionTitle })
+            nextTitle
+              ? t(language, 'recovery.todo.green.next', { session: nextTitle })
               : t(language, 'recovery.todo.green.plan'),
             // Only when it is on: "progression stays on" for a reader who
             // switched it off would be the app describing a different app.
@@ -228,7 +260,7 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
     status,
     score: fatigue.signal === 'undertrained' ? null : fatigue.recoveryScore,
     lead,
-    acwrLabel: applyDecimalSeparator(fatigue.acwr.toFixed(2)),
+    acwrLabel: acwrLabelOf(fatigue),
     markerPercent: Math.max(2, Math.min(98, ((fatigue.acwr - ZONE_MIN) / ZONE_SPAN) * 100)),
     acuteLabel: formatLoadKg(fatigue.acuteLoadKg),
     chronicLabel: formatLoadKg(fatigue.chronicLoadKg),

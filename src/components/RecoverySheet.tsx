@@ -91,7 +91,9 @@ export function RecoverySheet({
         <View style={styles.card}>
           <View style={styles.cardHead}>
             <Text style={styles.eyebrow}>{t(language, 'recovery.card.title')}</Text>
-            <Text style={styles.acwr}>{t(language, 'recovery.card.acwr', { value: model.acwrLabel })}</Text>
+            {model.acwrLabel !== null ? (
+              <Text style={styles.acwr}>{t(language, 'recovery.card.acwr', { value: model.acwrLabel })}</Text>
+            ) : null}
           </View>
 
           <View style={styles.zoneWrap}>
