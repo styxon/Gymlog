@@ -137,6 +137,9 @@ update to carry, not for each fix.
 - #397 Home says "Vinha Fitness" again (Fitness in orange); About you's gender
   row shows Male in blue and Female in pink, and the gender sheet's Skip sits
   lower under its rule.
+- #402 AI coach without a connection names the workout in the reader's
+  language ("HUGE Pro - Päivä 1: Ylävartalo", not "Day 1: Upper Body"), and
+  the English answer's broken dash ("order â the first lift") is a dash again.
 
 ## Server
 
