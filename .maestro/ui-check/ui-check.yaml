@@ -9,7 +9,8 @@
 # Controls are found by their visible text or accessibility label as
 # "Finnish|English" (src/lib/i18n.ts) where that is reliable, and by testID
 # (`id:`) where a text match repeated another screen in the first run: the
-# catalog link, a programme card, a library row, the Records Seg, a History
+# catalog link, a programme card, a library row, the Progress section tabs
+# and the Records Seg, a History
 # session and the Settings rows. Each part starts
 # from a bottom tab, which resets that tab to its root. A control found by id
 # is NOT optional: a tap that landed on nothing used to leave a repeat of the
@@ -123,18 +124,22 @@ name: UI check
 - tapOn:
     text: "Kehitys|Progress"
     optional: true
+- runFlow:
+    file: top.yaml
 - tapOn:
-    text: "Yhteenveto|Summary"
-    optional: true
+    id: "seg-overview"
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
       P: "07-progress-summary"
-- tapOn:
-    text: "Ennätykset|Records"
-    optional: true
 - runFlow:
     file: top.yaml
+- tapOn:
+    id: "seg-records"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "seg-weight"
 - waitForAnimationToEnd:
@@ -163,25 +168,34 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "08-records-volume"
+- runFlow:
+    file: top.yaml
 - tapOn:
-    text: "Liikkeet|Exercises"
-    optional: true
+    id: "seg-tracked"
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
       P: "09-lifts"
+- runFlow:
+    file: top.yaml
 - tapOn:
-    text: "Mitat|Measures"
-    optional: true
+    id: "seg-measures"
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
       P: "10-measures"
 
 # 11 History from the summary's card, 12 one session.
+- runFlow:
+    file: top.yaml
 - tapOn:
-    text: "Yhteenveto|Summary"
-    optional: true
+    id: "seg-overview"
+- waitForAnimationToEnd:
+    timeout: 2500
 - scrollUntilVisible:
     element:
       text: "Näytä kaikki|See all"
