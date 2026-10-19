@@ -23,6 +23,7 @@ update to carry, not for each fix.
 ## Merged
 
 - Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
+- Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
 - Fixes: a lift added mid-workout opens at its last weight; hold and minutes lifts no longer get a PR card on the finish screen; editing programme emphasis keeps superset pairs at one set count; the screen no longer stays awake after leaving a workout right away; swapping a lift in a ready programme keeps the weekday labels; "Squat 5x5" is no longer split in the recovery sheet.
 - Pro: "Restore purchase" on the Pro page now really restores (tap shows "Checking purchases..."), repeated taps on either Restore link start one restore, a failed renewal no longer grants an extra period of Pro, and deleting the cloud backup clears the old "Backup paused" reason on the account row.
 - Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
