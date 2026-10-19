@@ -163,7 +163,7 @@ export function tidySessionTitle(title: string | null | undefined, language: App
   }
   // "Legs 1" is not a dictionary phrase; "Legs" is. Translate the name and
   // keep the number beside it.
-  // The whole title goes first: "Day 2" is a phrase of its own ("P�iv� 2").
+  // The whole title goes first: "Day 2" is a phrase of its own ("Päivä 2").
   const whole = localizeSessionName(spaced, language);
   if (whole !== spaced) {
     return whole;
