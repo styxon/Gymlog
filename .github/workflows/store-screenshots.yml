@@ -11,6 +11,11 @@
 # compose.py lays the store images out at App Store Connect's sizes. Nothing
 # is uploaded anywhere but this run's artifacts.
 #
+# flow=ui-check swaps the store shots for a walk through every list and menu
+# screen (.maestro/ui-check/), to look for clipped or overlapping text and
+# wrong colours after a restyle. It skips the compositor and uploads the raw
+# PNGs as one artifact per run, ui-check-<devices>-<languages>-<themes>-<size>.
+#
 # Run it from the Actions tab (workflow_dispatch), or push a branch named
 # store-screenshots — the way to run it before this file is on main.
 name: Store screenshots
@@ -18,6 +23,11 @@ name: Store screenshots
 on:
   workflow_dispatch:
     inputs:
+      flow:
+        description: 'store = the App Store images; ui-check = every list and menu screen, raw'
+        type: choice
+        options: [store, ui-check]
+        default: store
       languages:
         description: 'Languages (space separated)'
         default: 'fi en'
@@ -25,8 +35,13 @@ on:
         description: 'Themes (space separated)'
         default: 'dark light'
       devices:
-        description: 'Simulators, "Name|folder" comma separated'
+        description: 'Simulators, "Name|folder" comma separated; "small|iphone-small" is the smallest iPhone the runner can create (SE 3rd generation, else 16e)'
         default: 'iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3'
+      content_size:
+        description: 'Simulator text size (ui-check): default, or accessibility-extra-large'
+        type: choice
+        options: [default, accessibility-extra-large]
+        default: default
   push:
     branches: [store-screenshots]
 
@@ -54,7 +69,7 @@ jobs:
           echo "Using $XCODE"
           sudo xcode-select -s "$XCODE/Contents/Developer"
           xcodebuild -version
-          xcrun simctl list devicetypes | grep -i "iPhone 17" || true
+          xcrun simctl list devicetypes | grep -iE "iPhone 17|iPhone SE|iPhone 16e" || true
 
       - uses: actions/setup-node@v4
         with:
@@ -131,18 +146,20 @@ jobs:
           LANGUAGES: ${{ inputs.languages || 'fi en' }}
           THEMES: ${{ inputs.themes || 'dark light' }}
           DEVICES: ${{ inputs.devices || 'iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3' }}
+          FLOW: ${{ inputs.flow || 'store' }}
+          CONTENT_SIZE: ${{ inputs.content_size || 'default' }}
           MAESTRO_DRIVER_STARTUP_TIMEOUT: '240000'
           MAESTRO_CLI_NO_ANALYTICS: '1'
         run: bash scripts/store-screenshots/shoot.sh shots-app/Vinha.app shots/raw
 
       - name: Compose
-        if: always()
+        if: always() && inputs.flow != 'ui-check'
         run: |
           python3 -m pip install --quiet --break-system-packages Pillow
           python3 scripts/store-screenshots/compose.py shots/raw shots/store
 
       - name: Upload the store images
-        if: always()
+        if: always() && inputs.flow != 'ui-check'
         uses: actions/upload-artifact@v4
         with:
           name: store-screenshots
@@ -150,9 +167,32 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload the raw shots and Maestro's logs
-        if: always()
+        if: always() && inputs.flow != 'ui-check'
         uses: actions/upload-artifact@v4
         with:
           name: raw-screenshots
+          path: shots/raw
+          if-no-files-found: warn
+
+      # ui-check-<device folders>-<languages>-<themes>-<text size>, from this
+      # run's inputs (through env, not into the script text).
+      - name: Name the UI check artifact
+        id: ui-name
+        if: always() && inputs.flow == 'ui-check'
+        env:
+          DEVICES: ${{ inputs.devices || 'iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3' }}
+          LANGUAGES: ${{ inputs.languages || 'fi en' }}
+          THEMES: ${{ inputs.themes || 'dark light' }}
+          CONTENT_SIZE: ${{ inputs.content_size || 'default' }}
+        run: |
+          folders=$(printf '%s' "$DEVICES" | tr ',' '\n' | sed 's/.*|//' | paste -sd+ -)
+          name=$(printf '%s' "ui-check-$folders-$LANGUAGES-$THEMES-$CONTENT_SIZE" | tr -c 'A-Za-z0-9._+-' '-')
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Upload the UI check shots and Maestro's logs
+        if: always() && inputs.flow == 'ui-check'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.ui-name.outputs.name }}
           path: shots/raw
           if-no-files-found: warn

@@ -12,11 +12,29 @@
 # Writes <out-dir>/<device>/<language>-<theme>/NN-name.png at the simulator's
 # own resolution, with Maestro's logs beside them (maestro-<attempt>/).
 # Override the matrix with DEVICES ("Name|folder,..."), LANGUAGES and THEMES. macOS only: xcrun, simctl and maestro on PATH.
+#
+# FLOW=ui-check walks every list and menu screen instead of taking the store
+# shots (.maestro/ui-check/, docs/store-screenshots.md). Its shots land in
+# <device>/<language>-<theme>[-<content size>]/. CONTENT_SIZE (default
+# "default", the phone's own) sets the simulator's text size for the run
+# (xcrun simctl ui <udid> content_size). A device named "small" is the
+# smallest iPhone the runner's Xcode can create (iPhone SE 3rd generation,
+# else iPhone 16e).
 set -euo pipefail
 
 APP=${1:?usage: shoot.sh <Vinha.app> <out-dir>}
 OUT=${2:?usage: shoot.sh <Vinha.app> <out-dir>}
-FLOWS="$(cd "$(dirname "$0")/../.." && pwd)/.maestro/store-screenshots"
+FLOW=${FLOW:-store}
+case "$FLOW" in
+  store) FLOW_DIR=store-screenshots; MAIN=store.yaml ;;
+  ui-check) FLOW_DIR=ui-check; MAIN=ui-check.yaml ;;
+  *) echo "::error::unknown FLOW: $FLOW"; exit 2 ;;
+esac
+FLOWS="$(cd "$(dirname "$0")/../.." && pwd)/.maestro/$FLOW_DIR"
+CONTENT_SIZE=${CONTENT_SIZE:-default}
+case "$CONTENT_SIZE" in
+  *[!a-z-]*) echo "::error::bad CONTENT_SIZE: $CONTENT_SIZE"; exit 2 ;;
+esac
 DEVICES=${DEVICES:-"iPhone 17 Pro Max|iphone-6.9,iPhone 17|iphone-6.3"}
 LANGUAGES=${LANGUAGES:-"fi en"}
 THEMES=${THEMES:-"dark light"}
@@ -48,7 +66,24 @@ IFS=',' read -ra SPECS <<< "$DEVICES"
 for spec in "${SPECS[@]}"; do
   name=${spec%%|*}
   folder=${spec##*|}
-  udid=$(xcrun simctl create "shots $folder" "$name" "$RUNTIME")
+  if [ "$name" = small ]; then
+    udid=""
+    for candidate in "iPhone SE (3rd generation)" "iPhone 16e"; do
+      if udid=$(xcrun simctl create "shots $folder" "$candidate" "$RUNTIME" 2>/dev/null); then
+        name=$candidate
+        break
+      fi
+      udid=""
+    done
+    if [ -z "$udid" ]; then
+      echo "::error::no small iPhone could be created on $RUNTIME"
+      xcrun simctl list devicetypes | grep -i iphone || true
+      failures=$((failures + 1))
+      continue
+    fi
+  else
+    udid=$(xcrun simctl create "shots $folder" "$name" "$RUNTIME")
+  fi
   echo "== $name ($folder) $udid"
   for language in $LANGUAGES; do
     # The phone's own language too, for anything the app leaves to the system
@@ -60,8 +95,15 @@ for spec in "${SPECS[@]}"; do
     xcrun simctl shutdown "$udid"
     boot "$udid"
     status_bar "$udid"
+    # The phone's text size. "default" leaves it alone.
+    if [ "$CONTENT_SIZE" != default ]; then
+      xcrun simctl ui "$udid" content_size "$CONTENT_SIZE"
+    fi
     for theme in $THEMES; do
       dir="$OUT/$folder/$language-$theme"
+      if [ "$FLOW" = ui-check ] && [ "$CONTENT_SIZE" != default ]; then
+        dir="$dir-$CONTENT_SIZE"
+      fi
       mkdir -p "$dir"
       echo "-- $folder $language $theme"
       # A fresh install every run: the seed only writes on a first launch.
@@ -69,11 +111,11 @@ for spec in "${SPECS[@]}"; do
       xcrun simctl install "$udid" "$APP"
       cp "$FLOWS"/*.yaml "$dir/"
       check=$([ "$language" = fi ] && echo Koti || echo Home)
-      sed -i '' "s/@LANGUAGE_CHECK@/$check/" "$dir/store.yaml"
+      sed -i '' "s/@LANGUAGE_CHECK@/$check/" "$dir/$MAIN"
       # The coach answer starts under the see-through header on the 6.3"
       # phone only; there the flow drags the thread down a little.
       nudge=$([ "$folder" = iphone-6.3 ] && echo true || echo false)
-      sed -i '' "s/@CHAT_NUDGE@/$nudge/" "$dir/store.yaml"
+      sed -i '' "s/@CHAT_NUDGE@/$nudge/" "$dir/$MAIN"
       ok=0
       # Twice: the first Maestro run on a fresh boot builds its driver, and
       # on the runner that has outlasted any timeout (2026-10-18).
@@ -84,7 +126,7 @@ for spec in "${SPECS[@]}"; do
           xcrun simctl install "$udid" "$APP"
         fi
         xcrun simctl launch "$udid" app.vinha -vinhaLanguage "$language" -vinhaTheme "$theme" >/dev/null
-        if (cd "$dir" && maestro --device "$udid" test --test-output-dir "$dir/maestro-$attempt" store.yaml); then
+        if (cd "$dir" && maestro --device "$udid" test --test-output-dir "$dir/maestro-$attempt" "$MAIN"); then
           # takeScreenshot writes under the test output, not beside the flow.
           find "$dir/maestro-$attempt" -path '*/takeScreenshot/*.png' -exec cp {} "$dir/" \;
           ok=1

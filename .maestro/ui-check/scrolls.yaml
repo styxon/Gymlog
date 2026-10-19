@@ -1,0 +1,15 @@
+# Three shots of one long screen, top to bottom: ${P}, ${P}-2, ${P}-3.
+# A scroll that finds the end of the list just repeats the last view.
+appId: app.vinha
+---
+- waitForAnimationToEnd:
+    timeout: 4000
+- takeScreenshot: "${P}"
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: "${P}-2"
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: "${P}-3"

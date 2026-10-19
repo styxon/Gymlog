@@ -46,6 +46,38 @@ them is a manual step.
 No secrets are needed. The workflow builds with `xcodebuild` on the runner
 and does not use EAS.
 
+## UI check mode
+
+The same workflow can check that a restyle broke nothing on iOS: text cut
+off mid-word, overlap, clipped cards, wrong colours in light and dark. Run
+it with `flow: ui-check`. It reuses the seeded build, its cache and the
+coach stub, walks every list and menu screen (Home, Programs, catalog, a
+programme page, exercise library and an exercise, Progress with each
+section and each of Records' Weight / Reps / Volume, History and a session,
+Profile, Milestones, Settings and its sub-screens, the profile editor, the
+coach), scrolling each long one top to bottom in three shots, and skips
+`compose.py`. The walk is `.maestro/ui-check/ui-check.yaml` (plus
+`scrolls.yaml` and `settings-row.yaml`); every step after the first screen is
+`optional`, so a control that is not found leaves a repeated screen in the
+output rather than ending the run. Shots are `NN-<screen>[-k]`, where `-2`
+and `-3` are further down the same screen. The Training plan page is not
+in the walk: it opens only from the "set training days" prompts.
+
+Extra inputs: `content_size` (`default`, or `accessibility-extra-large`,
+applied with `xcrun simctl ui <udid> content_size` before the launch) and a
+device named `small|iphone-small`, which is the smallest iPhone the runner can
+create (iPhone SE 3rd generation, else iPhone 16e). One artifact per run,
+`ui-check-<device folders>-<languages>-<themes>-<size>` (for example
+`ui-check-iphone-6.9-fi-en-dark-light-default`), holding the raw PNGs in
+`<device>/<language>-<theme>[-<size>]/` and Maestro's logs. A run after a
+change to `src/` rebuilds the app first (about 30–40 min); then about 6–8
+minutes per device × language × theme.
+
+```bash
+gh workflow run store-screenshots.yml -f flow=ui-check
+gh workflow run store-screenshots.yml -f flow=ui-check -f 'devices=small|iphone-small' -f languages=fi -f content_size=accessibility-extra-large
+```
+
 ## What runs
 
 | Piece | File |
