@@ -13,44 +13,72 @@ export interface KeepAwakeHandle {
 }
 
 /**
- * The newest handle per tag. A late release from an old handle (its activation
- * settled after the view was gone) must not switch off a tag a newer handle
- * has taken since: the screen went to sleep mid-workout.
+ * Live holders per tag. A tag is switched off only when the last holder has
+ * left, whichever handle that is:
+ * - a late release or late activation of an old handle must not switch off a
+ *   tag a newer handle holds (the screen went to sleep mid-workout);
+ * - a newer handle whose activation failed holds nothing, so the older
+ *   activated handle's release still switches the tag off;
+ * - handle ids come from one counter that never restarts, so a stale pending
+ *   activation can never be mistaken for a newer handle.
  */
-const latestGeneration = new Map<string, number>();
+interface TagState {
+  /** Handles that are neither released nor failed. */
+  holders: Set<number>;
+  /** An activation has succeeded and the tag has not been deactivated since. */
+  maybeOn: boolean;
+}
+
+const tagStates = new Map<string, TagState>();
+let nextHandleId = 1;
+
+function runDeactivate(deactivate: () => unknown) {
+  try {
+    void Promise.resolve(deactivate()).catch(() => {
+      // Same rule on the way out: comfort feature, never a crash.
+    });
+  } catch {
+    // Same rule on the way out.
+  }
+}
 
 export function startKeepAwake(
   activate: () => Promise<unknown>,
   deactivate: () => unknown,
   tag?: string,
 ): KeepAwakeHandle {
-  let generation = 0;
+  const id = nextHandleId++;
+  let state: TagState | undefined;
   if (tag !== undefined) {
-    generation = (latestGeneration.get(tag) ?? 0) + 1;
-    latestGeneration.set(tag, generation);
+    state = tagStates.get(tag);
+    if (!state) {
+      state = { holders: new Set(), maybeOn: false };
+      tagStates.set(tag, state);
+    }
+    state.holders.add(id);
   }
   let released = false;
   let activated = false;
   let deactivated = false;
 
-  const safeDeactivate = () => {
-    if (deactivated) {
+  /** Switches the tag off if nobody holds it any more. */
+  const settle = () => {
+    if (tag === undefined || !state) {
+      if (!deactivated && released && activated) {
+        deactivated = true;
+        runDeactivate(deactivate);
+      }
       return;
     }
-    deactivated = true;
-    if (tag !== undefined) {
-      if (latestGeneration.get(tag) !== generation) {
-        return;
-      }
-      latestGeneration.delete(tag);
+    if (state.holders.size > 0) {
+      return;
     }
-    try {
-      void Promise.resolve(deactivate()).catch(() => {
-        // Same rule on the way out: comfort feature, never a crash.
-      });
-    } catch {
-      // Same rule on the way out.
+    if (state.maybeOn) {
+      state.maybeOn = false;
+      runDeactivate(deactivate);
     }
+    // The state stays in the map: a pending activation may still settle into
+    // it, and a handle started meanwhile must share it. Tags are few.
   };
 
   let pending: Promise<unknown>;
@@ -62,20 +90,32 @@ export function startKeepAwake(
   pending.then(
     () => {
       activated = true;
+      if (state) {
+        state.maybeOn = true;
+      }
       if (released) {
-        safeDeactivate();
+        settle();
       }
     },
     () => {
-      // Keep-awake is a comfort feature; ignore activation failures.
+      // Keep-awake is a comfort feature; ignore activation failures. A failed
+      // handle holds nothing: if it was the last one, an older activation
+      // that is still on must now be switched off.
+      if (state) {
+        state.holders.delete(id);
+        settle();
+      }
     },
   );
 
   return {
     release() {
       released = true;
-      if (activated) {
-        safeDeactivate();
+      if (state) {
+        state.holders.delete(id);
+        settle();
+      } else if (activated) {
+        settle();
       }
     },
   };

@@ -146,7 +146,8 @@ module.exports = [
       // that does. A stated value now travels on the suggestion and the
       // button logs it in one tap; the unit must fit the measurement, so a
       // bodyweight in centimetres is dropped rather than drawn.
-      assert.match(screen, /kind === 'bodyweight' \? suggestion\.unit === 'kg' : suggestion\.unit === 'cm' \|\| suggestion\.unit === '%'/);
+      // The shared validator (measurementIntent.ts) holds the unit and range rule.
+      assert.match(screen, /validMeasurementIntent\(kind, suggestion\.value, suggestion\.unit\)/);
       assert.match(screen, /type: 'log' as const,/);
       const endpointSrc = fs.readFileSync(path.join(__dirname, '../../api/ai-coach.ts'), 'utf8');
       // The server refuses to forward garbage a button would then write.

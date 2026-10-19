@@ -399,8 +399,11 @@ export function removeTrailingZeros(value: number) {
   // app never stored and the reader never dialled, which then walked up the
   // bar as 1,3 · 2,5 · 3,8 · 5 (#bugs 2026-08-26). Trailing zeros still go,
   // so 2.5 stays "2,5" and 60 stays "60".
-  const text =
+  const raw =
     value % 1 === 0 ? `${value}` : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+  // -0.004 rounds to "-0.00" and lost its zeros down to "-0": a sign in front
+  // of nothing.
+  const text = raw === '-0' ? '0' : raw;
   return decimalSeparator === '.' ? text : text.replace('.', decimalSeparator);
 }
 

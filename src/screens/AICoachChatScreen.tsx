@@ -37,7 +37,7 @@ import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
 import { I18nKey, t } from '../lib/i18n';
 import { keyboardOpenBottomPadding } from '../lib/keyboardLift';
-import { MeasurementIntent, isMeasurementIntentKind, parseMeasurementIntent } from '../lib/measurementIntent';
+import { MeasurementIntent, isMeasurementIntentKind, parseMeasurementIntent, validMeasurementIntent } from '../lib/measurementIntent';
 import { GoalIntent, parseGoalIntent } from '../lib/goalIntent';
 // Deterministic: asking the coach to name a programme gets programmes that do
 // not exist; a scorer over the real catalog cannot.
@@ -890,7 +890,22 @@ export function AICoachChatScreen({
         return;
       }
       if (offer.type === 'log') {
-        await onLogMeasurement(offer.intent);
+        try {
+          await onLogMeasurement(offer.intent);
+        } catch {
+          // "Logged" follows a write that resolved. A refused or failed one
+          // says so instead (the offer stays, so a second tap can retry).
+          setMessages((current) =>
+            current.some((message) => message.id === `${messageId}:failed`)
+              ? current // a second failed tap adds no second notice
+              : current.flatMap((message) =>
+                  message.id === messageId
+                    ? [message, { id: `${messageId}:failed`, fromCoach: true, text: t(language, 'coachChat.measure.failed') }]
+                    : [message],
+                ),
+          );
+          return;
+        }
         const pinned = pinnedStatCardKeys.includes(offer.intent.kind);
         setMessages((current) =>
           current.flatMap((message) =>
@@ -1248,17 +1263,19 @@ export function AICoachChatScreen({
             // request its own reply could have carried the button for
             // (user, 2026-08-25). The unit must fit the measurement: kilograms
             // belong to bodyweight, centimetres and percentages to the tape.
-            const unitFits =
-              kind === 'bodyweight' ? suggestion.unit === 'kg' : suggestion.unit === 'cm' || suggestion.unit === '%';
-            if (typeof suggestion.value === 'number' && Number.isFinite(suggestion.value) && suggestion.value > 0 && unitFits) {
+            // The same unit and range rule as a typed reading
+            // (validMeasurementIntent): an implausible value is dropped, not
+            // offered.
+            if (suggestion.value !== undefined && suggestion.value !== null) {
+              const intent = validMeasurementIntent(kind, suggestion.value, suggestion.unit);
+              if (!intent) {
+                return null;
+              }
               return {
                 id: `suggest:${token}`,
                 fromCoach: true,
                 text: '',
-                offer: {
-                  type: 'log' as const,
-                  intent: { kind, value: suggestion.value, unit: suggestion.unit as 'cm' | 'kg' | '%' },
-                },
+                offer: { type: 'log' as const, intent },
                 suggestionKind: 'log_measurement' as const,
               };
             }

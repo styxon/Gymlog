@@ -1327,8 +1327,15 @@ ${paletteLiteral('dark', DARK, 'dark')}
                 // read. "pad", not "off" — a rest day now carries a tint, and
                 // these cells must carry none.
                 val inMonth = day?.optBoolean("inMonth") == true
-                val state = if (inMonth) day?.optString("state") else "pad"
-                val today = inMonth && day?.optString("dateKey") == todayKey()
+                val dateKey = day?.optString("dateKey") ?: ""
+                val today = inMonth && dateKey == todayKey()
+                // A planned day is only planned until its date has passed. The
+                // payload is written days before it is drawn (nextMonth most of
+                // all: it is built at write time and swapped in when the
+                // calendar turns), so the clock decides here. The keys are
+                // yyyy-MM-dd, which sort as dates.
+                val stored = if (inMonth) day?.optString("state") else "pad"
+                val state = if (stored == "plan" && dateKey.isNotEmpty() && dateKey < todayKey()) "off" else stored
 
                 views.setTextViewText(cellIds[cellIndex], if (inMonth) day?.optString("dateLabel") ?: "" else "")
                 views.setTextColor(cellIds[cellIndex], palette.dateInk(state, today))

@@ -211,10 +211,8 @@ export interface HomeRecentSessionItem {
 interface HomePlanCard {
   programId: string;
   programType?: 'ready' | 'custom';
-  eyebrow: string;
   goalLabel: string;
   title: string;
-  subtitle: string;
   weekLabel: string;
   progressPercent: number;
   sessionsDone: number;
