@@ -80,6 +80,11 @@ interface PremiumScreenProps {
   onPurchase: (plan: PlanId) => void | Promise<void>;
   /** Where an existing subscriber goes instead of the buy CTA. */
   onManageSubscription: () => void;
+  /**
+   * Runs the store restore. Absent where there is no store (demo build), and
+   * the link then keeps opening the subscription screen.
+   */
+  onRestorePurchases?: () => Promise<void>;
   onOpenLegal: (document: 'privacy' | 'terms') => void;
 }
 
@@ -244,11 +249,35 @@ export function PremiumScreen({
   onBack,
   onPurchase,
   onManageSubscription,
+  onRestorePurchases,
   onOpenLegal,
 }: PremiumScreenProps) {
   const [tab, setTab] = useState<ProTierKey>('pro');
   const [plan, setPlan] = useState<ProPlanId>(() => defaultPlanForTier('pro'));
   const purchasing = useRef(false);
+  const restoring = useRef(false);
+  const [restorePending, setRestorePending] = useState(false);
+  const restore = () => {
+    if (!onRestorePurchases) {
+      onManageSubscription();
+      return;
+    }
+    if (restoring.current) {
+      return;
+    }
+    restoring.current = true;
+    setRestorePending(true);
+    void (async () => {
+      try {
+        await onRestorePurchases();
+      } catch (error) {
+        console.error('Pro restore failed', error);
+      } finally {
+        restoring.current = false;
+        setRestorePending(false);
+      }
+    })();
+  };
   // Scroll metrics of the benefit list, so the foot fade shows only while
   // there is more list below the card's edge.
   // A ref for the numbers and state for the answer: a scroll re-renders the
@@ -511,8 +540,8 @@ export function PremiumScreen({
             <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.legalLink}>{t(language, 'pro.page.privacy')}</Text>
           </Pressable>
           <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.legalDot}>·</Text>
-          <Pressable accessibilityRole="link" onPress={onManageSubscription} hitSlop={8}>
-            <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.legalLink}>{t(language, 'pro.page.restore')}</Text>
+          <Pressable accessibilityRole="link" onPress={restore} hitSlop={8}>
+            <Text maxFontSizeMultiplier={FIXED_FONT_CAP} style={styles.legalLink}>{t(language, restorePending ? 'subs.restore.pending' : 'pro.page.restore')}</Text>
           </Pressable>
         </View>
       </View>
