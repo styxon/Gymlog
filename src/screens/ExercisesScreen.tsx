@@ -1,12 +1,11 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { StyleSheet, View } from 'react-native';
 import { BackButton } from '../components/BackButton';
 
 import { ExerciseLibraryBrowser } from '../components/ExerciseLibraryBrowser';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
 import { t } from '../lib/i18n';
-import { Theme, useTheme, useThemedStyles } from '../theming';
+import { Theme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 
 interface ExercisesScreenProps {
@@ -31,14 +30,15 @@ export function ExercisesScreen({
   onOpenLearnIndex,
 }: ExercisesScreenProps) {
   const styles = useThemedStyles(makeStyles);
-  const theme = useTheme();
   return (
     <View style={styles.content}>
       {/* This screen declared an onBack prop and then never took it, so the
           library was a dead end: the only way out was noticing that tapping
           the Programs tab resets it. */}
       {onBack ? (
-        <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
+        <View style={styles.backRow}>
+          <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
+        </View>
       ) : null}
       <ExerciseLibraryBrowser
         items={items}
@@ -57,18 +57,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.bg,
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 16,
-    paddingTop: 52,
+  backRow: {
+    alignItems: 'flex-start',
+    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 4,
-  },
-  backText: {
-    color: theme.ink,
-    fontSize: 15,
-    lineHeight: 20,
-    fontWeight: '800',
   },
 });

@@ -128,7 +128,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     paddingHorizontal: 20,
-    paddingTop: 52,
+    paddingTop: 8,
     paddingBottom: 4,
   },
   backButton: {

@@ -580,7 +580,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     paddingTop: 8,
     paddingBottom: 6,
   },

@@ -107,9 +107,11 @@ export function Seg<T extends string>({
               <Text
                 numberOfLines={1}
                 adjustsFontSizeToFit={Boolean(showLabels)}
-                minimumFontScale={0.8}
+                minimumFontScale={showLabels ? 0.7 : undefined}
+                maxFontSizeMultiplier={showLabels ? 1.2 : undefined}
                 style={[
                   styles.segText,
+                  showLabels && styles.segTextLabelled,
                   active && styles.segTextActive,
                   active && dark && styles.segTextActiveDark,
                   locked && styles.segTextLocked,
@@ -128,7 +130,7 @@ export function Seg<T extends string>({
             accessibilityState={{ selected: active, disabled: false }}
             accessibilityLabel={option.label}
             onPress={() => (locked ? onLockedPress?.() : onChange(option.key))}
-            style={grow && styles.segItemGrow}
+            style={(grow || showLabels) && styles.segItemGrow}
           >
             <View style={[styles.segItem, showLabels && styles.segItemLabelled, active && styles.segItemActive, active && dark && styles.segItemActiveDark]}>
               {inner}
@@ -157,13 +159,27 @@ const makeSegStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 11,
     paddingVertical: 5,
   },
+  // Labelled tabs stack the glyph above the word: side by side they needed
+  // more than the ~48dp a tab gets at 360dp. minWidth 0 / flexShrink let the
+  // word shrink to the tab instead of overflowing it.
   segItemLabelled: {
-    paddingHorizontal: 5,
+    flexDirection: 'column',
+    paddingHorizontal: 4,
+    paddingVertical: 6,
     gap: 3,
     maxWidth: '100%',
+    flexShrink: 1,
+    minWidth: 0,
+    alignSelf: 'stretch',
+  },
+  segTextLabelled: {
+    fontSize: 11,
+    flexShrink: 1,
+    minWidth: 0,
   },
   segItemGrow: {
     flex: 1,
+    minWidth: 0,
     alignItems: 'center',
   },
   segItemActive: {

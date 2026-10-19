@@ -102,21 +102,21 @@ export function ListRow({
       {leading}
       <View style={styles.copy}>
         <View style={styles.titleLine}>
-          <Text style={[styles.title, muted && styles.titleMuted]} numberOfLines={1}>
+          <Text style={[styles.title, muted && styles.titleMuted]} numberOfLines={2}>
             {title}
           </Text>
-          {accessory}
+          {accessory ? <View style={styles.accessory}>{accessory}</View> : null}
         </View>
         {meta ? (
           <View style={styles.metaLine}>
             {metaDot ? <View style={[styles.metaDot, { backgroundColor: metaDot }]} /> : null}
-            <Text style={styles.meta} numberOfLines={1}>
+            <Text style={styles.meta} numberOfLines={2}>
               {meta}
             </Text>
           </View>
         ) : null}
         {detail ? (
-          <Text style={styles.meta} numberOfLines={1}>
+          <Text style={styles.meta} numberOfLines={2}>
             {detail}
           </Text>
         ) : null}
@@ -124,7 +124,7 @@ export function ListRow({
       {right ??
         (trailing ? (
           <View style={styles.figure}>
-            <Text style={styles.trailing} numberOfLines={1}>
+            <Text style={styles.trailing} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
               {trailing}
             </Text>
             {delta ? (
@@ -212,16 +212,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
   },
+  accessory: {
+    flexShrink: 0,
+  },
   figure: {
     alignItems: 'flex-end',
     flexShrink: 0,
+    maxWidth: '45%',
   },
   trailing: {
     color: theme.ink,
+    // One static weight: a bold style on it renders regular on iOS and a
+    // synthesized bold on Android, so none is set.
     fontFamily: 'JetBrainsMono',
     fontSize: 14,
     lineHeight: 19,
-    fontWeight: '700',
   },
   delta: {
     marginTop: 2,
