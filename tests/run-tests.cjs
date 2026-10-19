@@ -334,6 +334,7 @@ const suites = [
   ...require('./lib/programBrowse.test.cjs'),
   ...require('./lib/readyProgramCards.test.cjs'),
   ...require('./lib/exerciseInstructionsFi.test.cjs'),
+  ...require('./lib/exerciseInstructionsFiSafety.test.cjs'),
   ...require('./lib/buildArchitectures.test.cjs'),
   ...require('./lib/programCategories.test.cjs'),
   ...require('./lib/programFingerprint.test.cjs'),
