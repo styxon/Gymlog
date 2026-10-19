@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 import { SimpleLineChart } from '../components/SimpleLineChart';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { localizeSessionName } from '../lib/sessionNameLabel';
 import { getExerciseInstructions } from '../lib/exerciseInstructions';
 import { countRemainingStatements } from '../lib/exerciseLearning';
 import { getComparableLogSets } from '../lib/exerciseLog';
@@ -456,7 +457,11 @@ export function ExerciseDetailScreen({
                 <StatCard
                   label={t(language, 'exDetail.lastDone')}
                   value={history?.latestLog ? formatLastDone(history.latestLog.performedAt, language) : '—'}
-                  meta={history?.latestLog?.workoutNameSnapshot ?? undefined}
+                  meta={
+                    history?.latestLog?.workoutNameSnapshot
+                      ? localizeSessionName(history.latestLog.workoutNameSnapshot, language)
+                      : undefined
+                  }
                 />
                 <StatCard
                   label={t(language, 'detail.sessions').toUpperCase()}

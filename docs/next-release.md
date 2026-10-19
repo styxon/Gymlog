@@ -155,6 +155,14 @@ update to carry, not for each fix.
   number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
   first cue no longer cuts the user's music.
 
+- Hunt fixes: the quiet reminder level keeps a training day's reminder over the
+  morning weigh-in; the plan review has a back control; building a week with the
+  AI coach counts as a coach question and stops when none are left; the Android
+  widget swaps to next month (needs the new APK, widget payload v10) and a
+  rate-limited coach question leaves no duplicate bubble; About you shows kg with
+  a comma, Last done shows the localized session name, the lock-screen card
+  names the lift in Finnish, and "1 toisto" replaces "1 toistoa".
+
 ## Known, not yet fixed
 
 Logged in `#bugs` after the vc4 device check (2026-10-15):

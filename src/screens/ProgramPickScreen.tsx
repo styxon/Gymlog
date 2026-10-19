@@ -3,6 +3,7 @@ import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-nati
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, Polygon, Stop } from 'react-native-svg';
 
+import { OnboardingBackButton } from '../components/OnboardingBackButton';
 import { HG } from '../lightTheme';
 import { HG_DARK } from '../darkTheme';
 import { darkTheme, Theme, useTheme, useThemeName } from '../theming';
@@ -106,6 +107,8 @@ export interface ProgramPickScreenProps {
    */
   onTopToneChange?: (iconStyle: 'light' | 'dark' | null) => void;
   busy?: boolean;
+  /** A back control top-left, for a caller that has somewhere to go back to. */
+  onBack?: () => void;
 }
 
 function FocusBar({ focus, light, language }: { focus: ProgramFocusSegment[]; light: boolean; language: AppLanguage }) {
@@ -200,6 +203,7 @@ export function ProgramPickScreen({
   weekNote,
   onTopToneChange,
   busy = false,
+  onBack,
 }: ProgramPickScreenProps) {
   const theme = useTheme();
   const styles = stylesFor(theme);
@@ -382,7 +386,8 @@ export function ProgramPickScreen({
           light card, it could not follow the theme, and the screen read as
           "too white". A band with its own surface cannot disappear behind
           either choice, because it is not on either of them. */}
-      <View style={[styles.titleBand, { paddingTop: insets.top + 8 }]}>
+      {onBack ? <OnboardingBackButton language={language} onPress={onBack} disabled={busy} /> : null}
+      <View style={[styles.titleBand, { paddingTop: insets.top + 8 + (onBack ? 48 : 0) }]}>
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>

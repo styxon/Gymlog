@@ -157,6 +157,11 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
    * programme the composer would have refused.
    */
   async function composeProgramme(brief: string, signal?: AbortSignal) {
+    // No questions left: no call. The chat checks first and says why; this is
+    // the same rule where the request is made, so a stale tap cannot bill.
+    if (resolveCoachQuota(preferences.aiCoachProQuota).remaining <= 0) {
+      return null;
+    }
     const live = await requestProgrammeComposition(
       {
         brief,
@@ -171,6 +176,12 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
       // restored offer is tapped again.
       signal,
     );
+    // A build that reached the model is a billed call, so it spends one of the
+    // month's coach questions like an answer does. A crisis answer, or a build
+    // that fell back to the device, did not reach it and is free.
+    if (live && !isProgrammeCompositionCrisis(live)) {
+      void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+    }
     // The crisis answer goes back to the chat to be said. It is not "no
     // week" and must not reach the device composer (review, 2026-10-08).
     if (isProgrammeCompositionCrisis(live)) {

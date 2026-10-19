@@ -765,6 +765,29 @@ export function AICoachChatScreen({
           onOpenPremium();
           return;
         }
+        // A build is a billed model call, so it is metered like a question:
+        // out of this month's, it does not start. The offer stays, for next
+        // month, and the thread says why.
+        if (questionsRemaining <= 0) {
+          const reset = coachQuotaReset();
+          setMessages((current) => [
+            ...current,
+            {
+              id: `${messageId}:spent`,
+              fromCoach: true,
+              text: [
+                t(language, 'coachChat.compose.spent'),
+                reset.inDays === 1
+                  ? t(language, 'coachChat.quotaResetTomorrow')
+                  : t(language, 'coachChat.quotaResetIn', {
+                      date: formatShortDate(reset.at.toISOString(), language),
+                      count: reset.inDays,
+                    }),
+              ].join(' '),
+            },
+          ]);
+          return;
+        }
         // The offer stays where it is while the week is built, and the
         // building line is drawn over it from `composingIds` — so the thread
         // that gets published upward still holds the offer, and walking away
@@ -892,6 +915,7 @@ export function AICoachChatScreen({
       preferences,
       proUnlocked,
       pinnedStatCardKeys,
+      questionsRemaining,
     ],
   );
 
@@ -1072,8 +1096,12 @@ export function AICoachChatScreen({
           // was, nothing is charged, and the question goes back into the
           // field to send again. The canned answer and OFFLINE made a wait
           // look like an outage (#bugs, 2026-09-30).
+          //
+          // The question bubble is lifted out, as the unmount path lifts it:
+          // the question goes back into the field, so leaving it in the
+          // thread logged it twice when sent again.
           setMessages((current) => [
-            ...current,
+            ...current.filter((message) => message.id !== `me:${token}` && message.id !== `offer:${token}`),
             { id: `coach:${token}`, fromCoach: true, text: t(language, 'coachChat.rateLimited') },
           ]);
           setDraft((current) => (current.trim() ? current : trimmed));
