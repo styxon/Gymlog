@@ -8,6 +8,7 @@ import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { blockWeekOfSession, blockWeekTally } from '../lib/homePlanProgress';
 import { t, type I18nKey } from '../lib/i18n';
 import { isNewestSession, type AdviceTemplateLookup } from '../lib/nextSessionAdvice';
+import { resolveProgressionOptions } from '../lib/proEntitlement';
 import { progressionFatigueSignalAt } from '../lib/progressionGate';
 import { guidedNextUpIndex } from '../lib/programSessionList';
 import { buildSessionAnalysis } from '../lib/sessionAnalysis';
@@ -116,6 +117,10 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
   // Profile "TRAINING PLAN" card. Reuses the same composed plan Home renders so
   // the two screens can never disagree about what the user is running.
   // Built only while the analysis route is open; it reads the whole log table.
+  // Automatic progression is Pro (owner 2026-10-19): the switch ANDed with the
+  // entitlement, as a start resolves it. A Free reader's switch defaults on, and
+  // the analysis must not hand them the raise Pro's next start would make.
+  const analysisProgressionOn = resolveProgressionOptions(preferences).automatedProgressionEnabled;
   const sessionAnalysis = useMemo(
     () =>
       analysisSessionId
@@ -128,7 +133,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
             level: preferences.setupLevel,
             // The programme the session was started from, for the gate's rep range.
             lookupTemplate: adviceTemplateLookup,
-            automatedProgressionEnabled: preferences.automatedProgressionEnabled,
+            automatedProgressionEnabled: analysisProgressionOn,
             // The recovery hold the next start applies, read as a start reads
             // it, and only for the newest session: an older one's next start
             // has already happened.
@@ -160,7 +165,7 @@ export function usePlanReadouts(deps: PlanReadoutsDeps) {
       database,
       homeActivePlanCard,
       preferences.appLanguage,
-      preferences.automatedProgressionEnabled,
+      analysisProgressionOn,
       preferences.setupCautionFlags,
       preferences.setupLevel,
       // The recovery read is dated: the windows count back from today.

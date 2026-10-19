@@ -603,9 +603,11 @@ module.exports = [
       // App.tsx: all three start call sites go through the one helper that
       // combines the toggle with the entitlement. The advisers read the
       // reader's own switch on purpose and start nothing: off, they promise no
-      // raise; on Free, the analysis and the completion lock sell the raise Pro
-      // makes (owner Q5, 2026-10-12).
-      const ADVISERS = new Set(['usePlanReadouts.tsx', 'useProInsights.ts']);
+      // raise; on Free, the completion lock sells the raise Pro makes (owner Q5,
+      // 2026-10-12). The session analysis is not one of them any more: it
+      // delivers advice, and Free gets no automatic progression (owner
+      // 2026-10-19), so it resolves the switch with Pro like the coach does.
+      const ADVISERS = new Set(['useProInsights.ts']);
       const appDir = path.join(__dirname, '..', '..', 'src', 'app');
       const rawToggle = /automatedProgressionEnabled: (preferences|nextPreferences)\.automatedProgressionEnabled/;
       const wiring = [
@@ -631,7 +633,7 @@ module.exports = [
       // coach context resolves it too, to tell the coach what the next start
       // does; it starts nothing.
       const resolving = wiring
-        .filter(([name]) => name !== 'useCoachContext.ts')
+        .filter(([name]) => name !== 'useCoachContext.ts' && name !== 'usePlanReadouts.tsx')
         .map(([, source]) => source)
         .join('\n');
       assert.equal(
