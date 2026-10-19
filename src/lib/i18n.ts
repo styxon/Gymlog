@@ -2762,6 +2762,7 @@ const EN = {
   'subs.end.keeps': 'Your log, your programmes and your records stay. Nothing is deleted — only these go quiet.',
   'subs.end.cta': 'End membership',
   'subs.end.keep': 'Keep Vinha Pro',
+  'subs.end.cancelledNote': 'Already cancelled. Pro works until {date}.',
   'subs.end.splashTitle': 'Membership ending',
   'subs.end.splashBody': 'Pro is on until {date}.',
   // Cancel survey
@@ -6145,6 +6146,7 @@ const FI: Record<I18nKey, string> = {
   'subs.end.keeps': 'Lokisi, ohjelmasi ja ennätyksesi säilyvät. Mitään ei poisteta — vain nämä hiljenevät.',
   'subs.end.cta': 'Lopeta jäsenyys',
   'subs.end.keep': 'Pidä Vinha Pro',
+  'subs.end.cancelledNote': 'Jo peruttu. Pro toimii {date} asti.',
   'subs.end.splashTitle': 'Jäsenyys päättyy',
   'subs.end.splashBody': 'Pro on käytössä {date} asti.',
   // Palautekysely

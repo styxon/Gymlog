@@ -78,6 +78,7 @@ const suites = [
   ...require('./scripts/claudeReviewWorkflow.test.cjs'),
   ...require('./lib/appIcon.test.cjs'),
   ...require('./lib/proBenefits.test.cjs'),
+  ...require('./lib/membershipEndView.test.cjs'),
   ...require('./features/workout/workoutAppAdapter.test.cjs'),
   ...require('./features/workout/workoutState.test.cjs'),
   ...require('./features/workout/supersetSession.test.cjs'),
