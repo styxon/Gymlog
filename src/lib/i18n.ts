@@ -241,7 +241,7 @@ const EN = {
   'pr.locked.titleOne': '1 older record is locked',
   'pr.locked.body': 'Free reads the last {months} months. Your older bests are still here — Pro shows the figures.',
   'pr.locked.cta': 'See Pro',
-  'pr.new': 'NEW',
+  'pr.lastSession': 'Last session',
   'pr.liftCount': '{count} EXERCISES',
   'pr.liftCountOne': '1 EXERCISE',
   'pr.value.weight': '{weight} kg × {reps}',
@@ -407,7 +407,7 @@ const EN = {
 
   // ── History ────────────────────────────────────────────────────────────
   'history.title': 'History',
-  'history.subtitle': 'Open the session worth keeping.',  'history.savedSession': 'Saved session',
+  'history.savedSession': 'Saved session',
   'history.browse.meta': '{sessions} sessions',
   'history.browse.metaOne': '1 session',
   'history.cardio': 'Cardio',
@@ -3839,7 +3839,7 @@ const FI: Record<I18nKey, string> = {
   'pr.locked.titleOne': '1 vanhempi ennätys on lukossa',
   'pr.locked.body': 'Ilmainen lukee {months} kuukautta taaksepäin. Vanhemmat ennätyksesi ovat yhä tallessa — Pro näyttää lukemat.',
   'pr.locked.cta': 'Katso Pro',
-  'pr.new': 'UUSI',
+  'pr.lastSession': 'Viime treenissä',
   'pr.liftCount': '{count} LIIKETTÄ',
   'pr.liftCountOne': '1 LIIKE',
   'pr.value.weight': '{weight} kg × {reps}',
@@ -4000,7 +4000,7 @@ const FI: Record<I18nKey, string> = {
   'progress.workingWeight': 'Työpaino',
 
   'history.title': 'Historia',
-  'history.subtitle': 'Avaa treeni, jonka haluat nähdä.',  'history.savedSession': 'Tallennettu treeni',
+  'history.savedSession': 'Tallennettu treeni',
   'history.browse.meta': '{sessions} treeniä',
   'history.browse.metaOne': '1 treeni',
   'history.cardio': 'Cardio',

@@ -114,7 +114,7 @@ module.exports = [
       // An unanswered session gets no stripe. A default colour would turn
       // "never asked" into a verdict, and most sessions predate the question.
       assert.match(historySource, /const feelColor = session\.feel \? sessionFeelColor\(theme, session\.feel\) : null;/);
-      assert.match(historySource, /\{feelColor \?[\s\S]{0,160}sessionFeelStripe/);
+      assert.match(historySource, /metaDot={feelColor}/); // the feel is a dot before the date since 2026-10-19
 
       // The summary describes the training, so a search must not change it:
       // it runs over sessionViewModels, never filteredSessions.

@@ -8,6 +8,7 @@ import { VinhaIcon } from '../components/VinhaIcon';
 import { EmptyBox } from '../components/EmptyBox';
 import { KitRow, KitSheet } from '../components/sheetKit';
 import { Seg } from '../components/Seg';
+import { ListCard } from '../components/ListCard';
 import {
   formatOverviewVolumeTick,
   getOverviewBodyweightTicks,
@@ -1504,7 +1505,7 @@ export function ProgressScreen({
                 </Pressable>
               }
             />
-            <View style={styles.recordsList}>
+            <ListCard style={styles.recordsList}>
               {topRecords.map((record) => {
                 const locked = isRecordLocked(record.performedAt, proUnlocked);
                 return (
@@ -1519,7 +1520,7 @@ export function ProgressScreen({
                   />
                 );
               })}
-            </View>
+            </ListCard>
           </>
         ) : null}
 
@@ -2414,7 +2415,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
   },
   recordsList: {
-    gap: 9,
     marginBottom: 4,
   },
   sectionHead: {

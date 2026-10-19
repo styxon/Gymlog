@@ -12,7 +12,7 @@ import {
   formatDurationMinutes,
   formatLogResult,
   formatSessionDate,
-  formatShortDate,
+  formatListDate,
   formatVolume,
   formatWeight,
 } from '../lib/format';
@@ -26,6 +26,9 @@ import { SessionFeelSummary, sessionFeelColor, summariseSessionFeel } from '../l
 import { groupByMonth } from '../lib/monthGroups';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { StatusCap } from '../components/StatusCap';
+import { PageHeader } from '../components/BackButton';
+import { ListCard, ListRow } from '../components/ListCard';
+import { SectionLabel } from '../components/SettingsUi';
 import { I18nKey, t } from '../lib/i18n';
 import { localizeSessionName } from '../lib/sessionNameLabel';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -40,7 +43,6 @@ import { AppDatabase, AppLanguage, UnitPreference } from '../types/models';
  * The detail view is deliberately Workout Complete revisited — same purple
  * hero, same stat card, same lift rows — because that is what it is.
  */
-const HAIRLINE = '#EEEAF7';
 const HERO_STOPS = ['#8B5CF6', '#7C3AED', '#6D28D9'] as const;
 // The gradient is drawn at a fixed size and clipped by the hero's overflow.
 // A percentage-height Svg does not stretch to a dynamic parent on Android — it
@@ -86,12 +88,6 @@ function formatTopLift(session: HistorySessionViewModel, unitPreference: UnitPre
   }
   const name = exerciseNameLabel(language, formatLiftDisplayLabel(session.topLiftName));
   return `${name} ${formatWeight(session.topLiftWeightKg, unitPreference)}`;
-}
-
-function SectionLabel({ label }: { label: string }) {
-  const styles = useThemedStyles(makeStyles);
-
-  return <Text style={styles.sectionLabel}>{label}</Text>;
 }
 
 function Badge({ label, tone = 'neutral' }: { label: string; tone?: 'neutral' | 'purple' | 'warn' }) {
@@ -233,30 +229,29 @@ const SessionRow = React.memo(function SessionRow({
 
   const topLift = formatTopLift(session, unitPreference, language);
   const meta = [
-    formatShortDate(session.performedAt, language),
+    formatListDate(session.performedAt, language, { weekday: true }),
     countLabel(language, session.exerciseCount, 'history.exerciseOne', 'history.exerciseMany'),
     session.durationMinutes ? formatDurationMinutes(session.durationMinutes) : null,
   ]
     .filter(Boolean)
     .join(' · ');
 
-  // Only an answered session is coloured. A default colour for the rest would
-  // turn "never asked" into a verdict, and most sessions predate the question.
+  // Only an answered session is coloured, and only as a dot before the date.
+  // A default colour for the rest would turn "never asked" into a verdict, and
+  // most sessions predate the question.
   const feelColor = session.feel ? sessionFeelColor(theme, session.feel) : null;
 
   return (
-    <Pressable
+    <ListRow
+      title={sessionTitle(session.workoutName, language)}
+      meta={meta}
+      metaDot={feelColor}
+      detail={topLift}
+      trailing={formatVolume(session.totalVolume, unitPreference)}
+      chevron={!onDelete}
       onPress={() => onPress(session.sessionId)}
-      style={({ pressed }) => [styles.sessionCard, pressed && styles.pressed]}
-    >
-      {feelColor ? (
-        <View style={[styles.sessionFeelStripe, { backgroundColor: feelColor }]} />
-      ) : null}
-      <View style={styles.sessionCardTop}>
-        <Text style={styles.sessionCardTitle} numberOfLines={1}>
-          {sessionTitle(session.workoutName, language)}
-        </Text>
-        {onDelete ? (
+      action={
+        onDelete ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'history.delete')}
@@ -278,18 +273,9 @@ const SessionRow = React.memo(function SessionRow({
               />
             </Svg>
           </Pressable>
-        ) : null}
-      </View>
-      <Text style={styles.sessionCardMeta}>{meta}</Text>
-      <View style={styles.sessionCardFooter}>
-        <Text style={styles.sessionCardVolume}>{formatVolume(session.totalVolume, unitPreference)}</Text>
-        {topLift ? (
-          <Text style={styles.sessionCardLift} numberOfLines={1}>
-            {topLift}
-          </Text>
-        ) : null}
-      </View>
-    </Pressable>
+        ) : undefined
+      }
+    />
   );
 });
 
@@ -613,18 +599,7 @@ export function HistoryScreen({
       >
         {/* History opens from Home and from Progress, so the way back is on
             the page, not only in the system gesture (#bugs 2026-10-01). */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.listBack, pressed && styles.pressed]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <Text style={styles.pageTitle}>{t(language, 'history.title')}</Text>
-        <Text style={styles.pageSubtitle}>{t(language, 'history.subtitle')}</Text>
+        <PageHeader title={t(language, 'history.title')} onBack={onBack} backLabel={t(language, 'common.back')} />
 
         {/*
           Nothing logged means nothing of EITHER kind.
@@ -655,32 +630,32 @@ export function HistoryScreen({
                     not a history (Progress v2, piece 04). */}
                 {groupByMonth(filteredSessions, (session) => session.performedAt).map(
                   (group, groupIndex) => (
-                    <View key={`${group.year}-${group.month}`}>
-                      <View style={styles.monthHead}>
-                        <Text style={styles.monthLabel}>
-                          {`${HISTORY_MONTHS[language][group.month]} ${group.year}`}
-                        </Text>
-                        {groupIndex === 0 && onDeleteSession ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityState={{ selected: editing }}
-                            onPress={() => setEditing((value) => !value)}
-                            hitSlop={10}
-                            style={({ pressed }) => [pressed && styles.pressed]}
-                          >
-                            <Text style={styles.monthAction}>
-                              {t(language, editing ? 'plan.done' : 'plan.edit')}
+                    <View key={`${group.year}-${group.month}`} style={styles.monthGroup}>
+                      <SectionLabel
+                        label={`${HISTORY_MONTHS[language][group.month]} ${group.year}`}
+                        right={
+                          groupIndex === 0 && onDeleteSession ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityState={{ selected: editing }}
+                              onPress={() => setEditing((value) => !value)}
+                              hitSlop={10}
+                              style={({ pressed }) => [pressed && styles.pressed]}
+                            >
+                              <Text style={styles.monthAction}>
+                                {t(language, editing ? 'plan.done' : 'plan.edit')}
+                              </Text>
+                            </Pressable>
+                          ) : (
+                            <Text style={styles.monthCount}>
+                              {t(language, group.items.length === 1 ? 'history.browse.metaOne' : 'history.browse.meta', {
+                                sessions: group.items.length,
+                              })}
                             </Text>
-                          </Pressable>
-                        ) : (
-                          <Text style={styles.monthCount}>
-                            {t(language, group.items.length === 1 ? 'history.browse.metaOne' : 'history.browse.meta', {
-                              sessions: group.items.length,
-                            })}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={styles.sessionList}>
+                          )
+                        }
+                      />
+                      <ListCard>
                         {group.items.map((session) => (
                           <SessionRow
                             key={session.sessionId}
@@ -691,7 +666,7 @@ export function HistoryScreen({
                             onDelete={editing && onDeleteSession ? requestDelete : undefined}
                           />
                         ))}
-                      </View>
+                      </ListCard>
                     </View>
                   ),
                 )}
@@ -728,43 +703,44 @@ export function HistoryScreen({
             {cardioSessions.length > 0 && !filtersActive ? (
               <>
                 <SectionLabel label={t(language, 'history.cardio')} />
-                <View style={styles.liftCard}>
-                  {cardioSessions.map((session, index) => {
+                <ListCard>
+                  {cardioSessions.map((session) => {
                     const activity = getCardioActivity(session.activityType);
                     return (
-                      <View key={session.id} style={[styles.cardioRow, index > 0 && styles.liftRowDivided]}>
-                        <View style={styles.cardioIcon}>
-                          <CardioIcon kind={activity.icon} size={19} color={theme.purple} />
-                        </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <Text style={styles.liftName} numberOfLines={1}>
-                            {/* The activity table's name is English; the cardio screen translates it, and so does History now. */}
-                            {t(language, `cardio.activity.${session.activityType}` as I18nKey)}
-                          </Text>
-                          <Text style={styles.liftMeta}>
-                            {formatShortDate(session.performedAt, language)} {'·'}{' '}
-                            {buildCardioStatsLine(session.durationSec, session.distanceKm)}
-                          </Text>
-                        </View>
-                        {/* The same affordance the workout rows above have. A
-                            list where one kind of entry can be removed and the
-                            one beside it cannot reads as a bug, and was one
-                            (#bugs 2026-08-26). */}
-                        {onDeleteCardioSession ? (
-                          <Pressable
-                            accessibilityRole="button"
-                            accessibilityLabel={t(language, 'history.deleteCardio')}
-                            hitSlop={10}
-                            onPress={() => setPendingCardioDelete({ id: session.id, name: activity.name })}
-                            style={({ pressed }) => [styles.cardioDelete, pressed && { opacity: 0.6 }]}
-                          >
-                            <Text style={styles.cardioDeleteGlyph}>×</Text>
-                          </Pressable>
-                        ) : null}
-                      </View>
+                      <ListRow
+                        key={session.id}
+                        leading={
+                          <View style={styles.cardioIcon}>
+                            <CardioIcon kind={activity.icon} size={19} color={theme.purple} />
+                          </View>
+                        }
+                        // The activity table's name is English; the cardio screen translates it, and so does History now.
+                        title={t(language, `cardio.activity.${session.activityType}` as I18nKey)}
+                        meta={`${formatListDate(session.performedAt, language, { weekday: true })} · ${buildCardioStatsLine(
+                          session.durationSec,
+                          session.distanceKm,
+                        )}`}
+                        // The same affordance the workout rows above have. A
+                        // list where one kind of entry can be removed and the
+                        // one beside it cannot reads as a bug, and was one
+                        // (#bugs 2026-08-26).
+                        action={
+                          onDeleteCardioSession ? (
+                            <Pressable
+                              accessibilityRole="button"
+                              accessibilityLabel={t(language, 'history.deleteCardio')}
+                              hitSlop={10}
+                              onPress={() => setPendingCardioDelete({ id: session.id, name: activity.name })}
+                              style={({ pressed }) => [styles.cardioDelete, pressed && { opacity: 0.6 }]}
+                            >
+                              <Text style={styles.cardioDeleteGlyph}>×</Text>
+                            </Pressable>
+                          ) : undefined
+                        }
+                      />
                     );
                   })}
-                </View>
+                </ListCard>
               </>
             ) : null}
 
@@ -791,14 +767,6 @@ export function HistoryScreen({
   );
 }
 
-const CARD_SHADOW = {
-  shadowColor: '#281C5A',
-  shadowOffset: { width: 0, height: 12 },
-  shadowOpacity: 0.07,
-  shadowRadius: 26,
-  elevation: 2,
-} as const;
-
 const makeStyles = (theme: Theme) => StyleSheet.create({
   screen: {
     flex: 1,
@@ -815,44 +783,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: spacing.lg,
     gap: 14,
   },
-  listBack: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pageTitle: {
-    color: theme.ink,
-    fontSize: 30,
-    lineHeight: 36,
-    fontWeight: '800',
-    letterSpacing: -0.6,
-  },
-  pageSubtitle: {
-    marginTop: -8,
-    color: theme.muted,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '600',
-  },
-  monthHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 18,
-    marginBottom: 8,
-  },
-  monthLabel: {
-    color: theme.ink,
-    fontSize: 13,
-    lineHeight: 17,
-    fontWeight: '800',
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
+  monthGroup: {
+    marginTop: 8,
   },
   monthAction: {
     color: theme.highlight,
@@ -873,36 +805,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 17.5,
     fontWeight: '600',
   },
-  sessionList: {
-    gap: 10,
-  },
-  sessionCard: {
-    backgroundColor: theme.surface,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: HAIRLINE,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    ...CARD_SHADOW,
-  },
-  /**
-   * Inset rather than clipped to the card edge: `overflow: 'hidden'` on a
-   * shadowed card drops the shadow on Android, so the stripe carries its own
-   * radius and sits just inside the border instead.
-   */
-  sessionFeelStripe: {
-    position: 'absolute',
-    left: 5,
-    top: 12,
-    bottom: 12,
-    width: 4,
-    borderRadius: 2,
-  },
   feelSummary: {
     backgroundColor: theme.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: theme.border,
     paddingVertical: 12,
     paddingHorizontal: 16,
     marginBottom: 12,
@@ -941,46 +848,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 999,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sessionCardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sessionCardTitle: {
-    flex: 1,
-    color: theme.ink,
-    fontSize: 16.5,
-    lineHeight: 21,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  sessionCardMeta: {
-    marginTop: 3,
-    color: theme.muted,
-    fontSize: 12.5,
-    lineHeight: 17,
-    fontWeight: '600',
-  },
-  sessionCardFooter: {
-    marginTop: 9,
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 10,
-  },
-  sessionCardVolume: {
-    color: theme.ink,
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '800',
-    fontVariant: ['tabular-nums'],
-  },
-  sessionCardLift: {
-    flex: 1,
-    color: theme.faint,
-    fontSize: 12.5,
-    lineHeight: 17,
-    fontWeight: '700',
   },
 
   /* detail */
@@ -1035,12 +902,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'flex-start',
     gap: 4,
     backgroundColor: theme.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: theme.border,
     paddingVertical: 17,
     paddingHorizontal: 6,
-    ...CARD_SHADOW,
   },
   statCell: {
     flex: 1,
@@ -1068,19 +934,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 1,
     height: 40,
     marginTop: 1,
-    backgroundColor: HAIRLINE,
+    backgroundColor: theme.border,
   },
   noteCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 13,
     backgroundColor: theme.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: theme.border,
     paddingVertical: 14,
     paddingHorizontal: 15,
-    ...CARD_SHADOW,
   },
   noteIconTile: {
     width: 44,
@@ -1088,7 +953,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#FBF1DA',
+    backgroundColor: theme.amberSoft,
   },
   noteCopy: {
     flex: 1,
@@ -1117,22 +982,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 17,
     fontWeight: '600',
   },
-  sectionLabel: {
-    marginTop: 4,
-    color: theme.faint,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
   liftCard: {
     backgroundColor: theme.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: theme.border,
     paddingHorizontal: 16,
-    ...CARD_SHADOW,
   },
   liftRow: {
     flexDirection: 'row',
@@ -1142,7 +997,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   liftRowDivided: {
     borderTopWidth: 1,
-    borderTopColor: HAIRLINE,
+    borderTopColor: theme.border,
   },
   liftCopy: {
     flex: 1,
@@ -1191,12 +1046,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexWrap: 'wrap',
     gap: 6,
   },
-  cardioRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-  },
   cardioDelete: {
     width: 30,
     height: 30,
@@ -1229,7 +1078,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.purpleSoft,
   },
   badgeWarn: {
-    backgroundColor: '#FEF3C7',
+    backgroundColor: theme.amberSoft,
   },
   badgeText: {
     color: theme.muted,
@@ -1243,17 +1092,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.purple,
   },
   badgeTextWarn: {
-    color: '#B45309',
+    color: theme.amberInk,
   },
   emptyState: {
     backgroundColor: theme.surface,
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: HAIRLINE,
+    borderColor: theme.border,
     paddingVertical: 26,
     paddingHorizontal: 20,
     alignItems: 'center',
-    ...CARD_SHADOW,
   },
   emptyTitle: {
     color: theme.ink,

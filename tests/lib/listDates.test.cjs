@@ -1,0 +1,86 @@
+const assert = require('node:assert/strict');
+
+const { formatListDate } = require('../../.test-dist/lib/format.js');
+const { splitLastSessionRecords } = require('../../.test-dist/lib/personalRecords.js');
+
+const NOW = new Date(2026, 9, 19, 12, 0);
+
+function record(key, performedAt, fresh) {
+  return {
+    key,
+    name: key,
+    bodyPart: null,
+    kind: 'weight',
+    value: 100,
+    companion: 5,
+    performedAt,
+    firstAt: performedAt,
+    previous: null,
+    fresh,
+  };
+}
+
+/**
+ * The one date every list row prints, and the "last session" group that
+ * replaced the NEW badge (owner, 2026-10-19).
+ */
+module.exports = [
+  {
+    name: 'listDates: Finnish 19.10., English Oct 19, no year in the current year',
+    run() {
+      const day = new Date(2026, 9, 19, 18, 6);
+      assert.equal(formatListDate(day, 'fi', { now: NOW }), '19.10.');
+      assert.equal(formatListDate(day, 'en', { now: NOW }), 'Oct 19');
+      assert.equal(formatListDate(new Date(2026, 0, 5), 'fi', { now: NOW }), '5.1.');
+      assert.equal(formatListDate(new Date(2026, 0, 5), 'en', { now: NOW }), 'Jan 5');
+    },
+  },
+  {
+    name: 'listDates: the weekday joins on request (su 18.10. / Sun, Oct 18)',
+    run() {
+      const sunday = new Date(2026, 9, 18, 9, 0);
+      assert.equal(formatListDate(sunday, 'fi', { weekday: true, now: NOW }), 'su 18.10.');
+      assert.equal(formatListDate(sunday, 'en', { weekday: true, now: NOW }), 'Sun, Oct 18');
+      const monday = new Date(2026, 9, 19, 9, 0);
+      assert.equal(formatListDate(monday, 'fi', { weekday: true, now: NOW }), 'ma 19.10.');
+    },
+  },
+  {
+    name: 'listDates: another year is named, and an ISO string reads as a local day',
+    run() {
+      const last = new Date(2025, 11, 31, 20, 0);
+      assert.equal(formatListDate(last, 'fi', { now: NOW }), '31.12.2025');
+      assert.equal(formatListDate(last, 'en', { now: NOW }), 'Dec 31, 2025');
+      assert.equal(formatListDate(new Date(2026, 9, 19, 8, 0).toISOString(), 'fi', { now: NOW }), '19.10.');
+    },
+  },
+  {
+    name: 'listDates: an unparseable date is empty, never NaN',
+    run() {
+      assert.equal(formatListDate('not a date', 'fi', { now: NOW }), '');
+      assert.equal(formatListDate('', 'en', { now: NOW }), '');
+    },
+  },
+  {
+    name: 'lastSessionRecords: the newest session leads, the rest keep their order',
+    run() {
+      const newest = new Date(2026, 9, 18, 18, 0).toISOString();
+      const sameSession = new Date(2026, 9, 18, 17, 30).toISOString();
+      const older = new Date(2026, 9, 10, 18, 0).toISOString();
+      const records = [record('b', older, true), record('a', newest, true), record('c', sameSession, true)];
+      const { lastSession, rest } = splitLastSessionRecords(records);
+      assert.deepEqual(lastSession.map((r) => r.key), ['a', 'c']);
+      assert.deepEqual(rest.map((r) => r.key), ['b']);
+    },
+  },
+  {
+    name: 'lastSessionRecords: a newest record that is not fresh opens no group',
+    run() {
+      const old = new Date(2026, 5, 1, 18, 0).toISOString();
+      const { lastSession, rest } = splitLastSessionRecords([record('a', old, false)]);
+      assert.deepEqual(lastSession, []);
+      assert.equal(rest.length, 1);
+      assert.deepEqual(splitLastSessionRecords([]), { lastSession: [], rest: [] });
+    },
+  },
+];

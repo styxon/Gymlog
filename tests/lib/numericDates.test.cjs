@@ -30,9 +30,9 @@ module.exports = [
     },
   },
   {
-    name: 'numericDates: the records list and the set log sheet go through the shared formatter',
+    name: 'numericDates: the set log sheet goes through the shared formatter (Records uses formatListDate since 2026-10-19)',
     run() {
-      for (const file of [['src', 'screens', 'RecordsScreen.tsx'], ['src', 'components', 'SetLogSheet.tsx']]) {
+      for (const file of [['src', 'components', 'SetLogSheet.tsx']]) {
         const source = read(...file).replace(/\r\n/g, '\n');
         const start = source.indexOf('function formatDay(');
         assert.notEqual(start, -1, `${file.join('/')}: formatDay missing`);

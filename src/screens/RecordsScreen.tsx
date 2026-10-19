@@ -9,10 +9,12 @@ import { I18nKey, t } from '../lib/i18n';
 import { repsDeltaLabel } from '../lib/repCountCopy';
 import { libraryLabel } from '../lib/libraryLabel';
 import { CutSurface } from '../components/CutSurface';
-import { groupRecordsByMonth, PersonalRecord, RecordKind } from '../lib/personalRecords';
+import { groupRecordsByMonth, PersonalRecord, RecordKind, splitLastSessionRecords } from '../lib/personalRecords';
+import { ListCard, ListRow } from '../components/ListCard';
+import { SectionLabel } from '../components/SettingsUi';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import type { AppLanguage } from '../types/models';
-import { formatDateNumeric, groupThousands, removeTrailingZeros } from '../lib/format';
+import { formatListDate, groupThousands, removeTrailingZeros } from '../lib/format';
 
 /**
  * Your bests, in three kinds.
@@ -47,11 +49,9 @@ const MONTHS: Record<AppLanguage, string[]> = {
 };
 
 function formatDay(iso: string, language: AppLanguage) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return formatDateNumeric(date, language);
+  // The list date every list shares ("19.10." / "Oct 19"), not the numeric
+  // one with its year: a record's month is already its group's header.
+  return formatListDate(iso, language);
 }
 
 function recordValue(record: PersonalRecord, language: AppLanguage) {
@@ -108,49 +108,29 @@ export function RecordRow({
   const theme = useTheme();
   const delta = recordDelta(record, language);
 
+  const meta = [record.bodyPart ? libraryLabel(record.bodyPart, language) : null, formatDay(record.performedAt, language)]
+    .filter(Boolean)
+    .join(' · ');
+
+  // No "NEW" badge and no purple border on a fresh row: what is new is said
+  // once, by the "last session" group on top of the list.
   return (
-    <Pressable
-      accessibilityRole={onPress ? 'button' : undefined}
+    <ListRow
+      title={exerciseNameLabel(language, record.name)}
+      meta={meta}
+      muted={locked}
+      trailing={locked ? null : recordValue(record, language)}
+      delta={locked ? null : delta}
+      right={
+        locked ? (
+          <View style={styles.lockPill}>
+            <LockGlyph color={theme.muted} />
+            <Text style={styles.lockPillText}>{t(language, 'pr.locked.value')}</Text>
+          </View>
+        ) : undefined
+      }
       onPress={onPress}
-      style={({ pressed }) => [
-        styles.row,
-        record.fresh && !locked && styles.rowFresh,
-        locked && styles.rowLocked,
-        pressed && styles.pressed,
-      ]}
-    >
-      <View style={styles.rowCopy}>
-        <View style={styles.rowTitleLine}>
-          <Text style={[styles.rowName, locked && styles.rowNameLocked]} numberOfLines={1}>
-            {exerciseNameLabel(language, record.name)}
-          </Text>
-          {record.fresh && !locked ? (
-            <View style={styles.freshTag}>
-              <Text style={styles.freshTagText}>{t(language, 'pr.new')}</Text>
-            </View>
-          ) : null}
-        </View>
-        <Text style={styles.rowMeta} numberOfLines={1}>
-          {[
-            record.bodyPart ? libraryLabel(record.bodyPart, language) : null,
-            formatDay(record.performedAt, language),
-          ]
-            .filter(Boolean)
-            .join(' · ')}
-        </Text>
-      </View>
-      {locked ? (
-        <View style={styles.lockPill}>
-          <LockGlyph color={theme.muted} />
-          <Text style={styles.lockPillText}>{t(language, 'pr.locked.value')}</Text>
-        </View>
-      ) : (
-        <View style={styles.rowValueBlock}>
-          <Text style={styles.rowValue}>{recordValue(record, language)}</Text>
-          {delta ? <Text style={styles.rowDelta}>{delta}</Text> : null}
-        </View>
-      )}
-    </Pressable>
+    />
   );
 }
 
@@ -181,10 +161,28 @@ export function RecordsList({
   const [kind, setKind] = useState<RecordKind>('weight');
 
   const shown = records[kind];
-  const groups = groupRecordsByMonth(shown);
+  const { lastSession, rest } = splitLastSessionRecords(shown);
+  const groups = groupRecordsByMonth(rest);
   const lockedCount = shown.filter((record) =>
     isRecordLocked(record.performedAt, proUnlocked),
   ).length;
+
+  const renderRows = (rows: PersonalRecord[]) => (
+    <ListCard>
+      {rows.map((record) => {
+        const locked = isRecordLocked(record.performedAt, proUnlocked);
+        return (
+          <RecordRow
+            key={`${record.key}-${record.kind}`}
+            record={record}
+            language={language}
+            locked={locked}
+            onPress={locked ? onOpenPro : onOpenExercise ? () => onOpenExercise(record.key) : undefined}
+          />
+        );
+      })}
+    </ListCard>
+  );
 
   return (
     <>
@@ -263,31 +261,16 @@ export function RecordsList({
               <Text style={styles.lockCardCta}>{t(language, 'pr.locked.cta')}</Text>
             </Pressable>
           ) : null}
+          {lastSession.length > 0 ? (
+            <View style={styles.group}>
+              <SectionLabel label={t(language, 'pr.lastSession')} />
+              {renderRows(lastSession)}
+            </View>
+          ) : null}
           {groups.map((group) => (
             <View key={`${group.year}-${group.month}`} style={styles.group}>
-              <Text style={styles.groupLabel}>
-                {`${MONTHS[language][group.month]} ${group.year}`.toUpperCase()}
-              </Text>
-              <View style={styles.groupRows}>
-                {group.records.map((record) => {
-                  const locked = isRecordLocked(record.performedAt, proUnlocked);
-                  return (
-                    <RecordRow
-                      key={`${record.key}-${record.kind}`}
-                      record={record}
-                      language={language}
-                      locked={locked}
-                      onPress={
-                        locked
-                          ? onOpenPro
-                          : onOpenExercise
-                            ? () => onOpenExercise(record.key)
-                            : undefined
-                      }
-                    />
-                  );
-                })}
-              </View>
+              <SectionLabel label={`${MONTHS[language][group.month]} ${group.year}`} />
+              {renderRows(group.records)}
             </View>
           ))}
         </>
@@ -316,55 +299,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   group: {
     marginBottom: 20,
   },
-  groupLabel: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 1,
-    paddingHorizontal: 2,
-    marginBottom: 10,
-  },
-  groupRows: {
-    gap: 9,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  rowFresh: {
-    borderColor: theme.purple,
-  },
-  rowLocked: {
-    backgroundColor: theme.bg,
-    borderStyle: 'dashed',
-  },
-  rowCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitleLine: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  rowName: {
-    flexShrink: 1,
-    color: theme.ink,
-    fontSize: 14.5,
-    lineHeight: 19,
-    fontWeight: '800',
-  },
-  rowNameLocked: {
-    color: theme.muted,
-  },
   lockPill: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -388,12 +322,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: theme.purple,
+    borderColor: theme.border,
     backgroundColor: theme.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     marginBottom: 18,
   },
   lockCardIcon: {
@@ -428,48 +362,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '900',
     flexShrink: 0,
   },
-  freshTag: {
-    borderRadius: 5,
-    // The white-label violet (accessibility audit, 2026-09-21).
-    backgroundColor: theme.purpleFill,
-    paddingHorizontal: 6,
-    paddingVertical: 2.5,
-  },
-  freshTagText: {
-    color: '#FFFFFF',
-    fontSize: 9.5,
-    lineHeight: 12,
-    fontWeight: '900',
-    letterSpacing: 0.9,
-  },
-  rowMeta: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '700',
-    marginTop: 3,
-  },
-  rowValueBlock: {
-    alignItems: 'flex-end',
-    flexShrink: 0,
-  },
-  rowValue: {
-    color: theme.ink,
-    fontSize: 15.5,
-    lineHeight: 20,
-    fontWeight: '800',
-    letterSpacing: -0.2,
-  },
-  rowDelta: {
-    color: '#157A3A',
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-    marginTop: 3,
-  },
   emptyCard: {
     alignItems: 'center',
-    borderRadius: 20,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: theme.border,
     backgroundColor: theme.surface,

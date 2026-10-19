@@ -72,7 +72,7 @@ export interface PersonalRecord {
   firstAt: string;
   /** The record that stood before this one, or null if this is the first. */
   previous: number | null;
-  /** Set within the freshness window — drives the "UUSI" badge. */
+  /** Set within the freshness window — feeds the last-session group. */
   fresh: boolean;
 }
 
@@ -324,6 +324,48 @@ export function firstRecordDates(records: Record<RecordKind, readonly PersonalRe
     }
   }
   return [...firstByLift.values()];
+}
+
+/** Records set within this long of the newest one came from the same session. */
+export const SAME_SESSION_MS = 3 * 60 * 60 * 1000;
+
+/**
+ * The records the most recent session set, split from the rest.
+ *
+ * Replaces the "NEW" badge on every fresh row (owner, 2026-10-19): a badge on
+ * each of a month's worth of rows says nothing, a group at the top says which
+ * session just moved the numbers. A session is the records whose date is
+ * within three hours of the newest one — a lift's logs carry the session's own
+ * stamp, so in practice it is equality, and the margin only absorbs a log
+ * written a moment apart.
+ *
+ * Only a FRESH newest record opens the group. Otherwise the newest record is
+ * months old, and a group called "last session" would claim that the reader's
+ * latest workout set it. Input order does not matter; each side keeps it.
+ */
+export function splitLastSessionRecords(records: readonly PersonalRecord[]): {
+  lastSession: PersonalRecord[];
+  rest: PersonalRecord[];
+} {
+  let newest = Number.NEGATIVE_INFINITY;
+  let newestFresh = false;
+  for (const record of records) {
+    const stamp = Date.parse(record.performedAt);
+    if (Number.isFinite(stamp) && stamp > newest) {
+      newest = stamp;
+      newestFresh = record.fresh;
+    }
+  }
+  if (!newestFresh) {
+    return { lastSession: [], rest: [...records] };
+  }
+  const lastSession: PersonalRecord[] = [];
+  const rest: PersonalRecord[] = [];
+  for (const record of records) {
+    const stamp = Date.parse(record.performedAt);
+    (Number.isFinite(stamp) && newest - stamp <= SAME_SESSION_MS ? lastSession : rest).push(record);
+  }
+  return { lastSession, rest };
 }
 
 /** Records grouped by the month they were set, newest month first. */
