@@ -202,7 +202,7 @@ import {
 } from '../features/workout/workoutState';
 import { isUsableEntry, resolveLastTimeEntry } from '../lib/exerciseHistoryLookup';
 import { liftOfSet, setsOfCurrentLift } from '../lib/liftSegments';
-import { resolveLiftPraise } from '../lib/liftPraise';
+import { praisedSlotBeforeWalkUp, resolveLiftPraise } from '../lib/liftPraise';
 import {
   isMinutesTrackingMode,
   isTimedTrackingMode,
@@ -3502,16 +3502,17 @@ function GuidedPlayer({
    */
   const walkPraise = (() => {
     const before = step.type === 'position' ? steps[stepIndex - 1] : undefined;
-    if (!before || before.type !== 'set') {
+    const justLoggedSlotId = praisedSlotBeforeWalkUp(before, step);
+    if (!before || before.type !== 'set' || !justLoggedSlotId) {
       return null;
     }
-    const done = exerciseBySlot.get(before.slotId);
+    const done = exerciseBySlot.get(justLoggedSlotId);
     if (!done || done.swappedAfterSetIndex !== undefined) {
       return null;
     }
     const praise = resolveLiftPraise(
       done.sets,
-      resolveSlotHistory(before.slotId, done.exerciseName)?.sets ?? null,
+      resolveSlotHistory(justLoggedSlotId, done.exerciseName)?.sets ?? null,
       done.trackingMode,
       // Last time's sets up to the programme's count: a set last time added
       // does not hold back praise for every programme set raised and met.

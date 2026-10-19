@@ -198,6 +198,29 @@ module.exports = [
     },
   },
   {
+    name: 'recovery sheet: no ACWR is printed where there is no usual week to compare to',
+    run() {
+      assert.equal(sheet({}, { acwr: 0, acuteLoadKg: 0, signal: 'undertrained' }).acwrLabel, null);
+      assert.equal(sheet({}, { chronicLoadKg: 0, acwr: 0 }).acwrLabel, null);
+      assert.equal(sheet({}, { acwr: Number.NaN }).acwrLabel, null);
+      assert.notEqual(sheet({}, { acwr: 0.4, signal: 'undertrained' }).acwrLabel, null);
+      const component = read('src', 'components', 'RecoverySheet.tsx');
+      assert.match(component, /model\.acwrLabel !== null/);
+    },
+  },
+  {
+    name: 'recovery sheet: the next session reads as a name, not as a glued number',
+    run() {
+      const todo = (title) => sheet({ nextSessionTitle: title }).todos[0];
+      assert.match(todo('Legs1'), /Jalat 1/);
+      assert.doesNotMatch(todo('Legs1'), /Legs|Jalat1/);
+      assert.match(todo('Push A'), /Push A/);
+      // Nothing to name: the line carries on without a dangling "seuraavana".
+      assert.equal(todo('   '), todo(null));
+      assert.doesNotMatch(todo(null), /\{|undefined|null/);
+    },
+  },
+  {
     name: 'recovery sheet: the numbers read the reader\'s way — comma, thin thousands, a marker kept on the bar',
     run() {
       setNumberLanguage('fi');

@@ -267,6 +267,7 @@ const suites = [
   ...require('./lib/progressionPerSet.test.cjs'),
   ...require('./lib/missedRepsTarget.test.cjs'),
   ...require('./lib/liftPraise.test.cjs'),
+  ...require('./lib/onceReady.test.cjs'),
   ...require('./lib/guidedSetPlan.test.cjs'),
   ...require('./lib/guidedSetRow.test.cjs'),
   ...require('./lib/hunt12ProgressionPlayer.test.cjs'),

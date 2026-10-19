@@ -1496,7 +1496,7 @@ const EN = {
   'guided.walk.added': 'Added after this one: {name}',
   'guided.walk.contentMore': '+{count} more',
   'guided.walk.lastLift': 'This is the last exercise',
-  'guided.walk.praise': 'Great work! {name} {dose}, more than last time.',
+  'guided.walk.praise': 'Great work! Last lift: {name} {dose}, more than last time.',
   'guided.sheet.tab.learn': 'Learn',
   'guided.sheet.tab.howTo': 'How to',
   'exerciseSheet.expand': 'Expand',
@@ -4987,7 +4987,7 @@ const FI: Record<I18nKey, string> = {
   'guided.walk.added': 'Lisätty tämän jälkeen: {name}',
   'guided.walk.contentMore': '+{count} muuta',
   'guided.walk.lastLift': 'Tämä on viimeinen liike',
-  'guided.walk.praise': 'Loistavaa! {name} {dose}, enemmän kuin viimeksi.',
+  'guided.walk.praise': 'Loistavaa! Edellinen liike: {name} {dose}, enemmän kuin viimeksi.',
   // "Opettele", not "Opi": this tab is deliberate practice on one lift —
   // three cues and a self-audit — while "Opi" is the name of the section that
   // holds the courses (user 2026-09-04).
