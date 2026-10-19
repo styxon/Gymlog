@@ -27,6 +27,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
+import { accountAfterCloudCopyDeleted, visibleBackupPause } from '../../lib/backupPause';
 import type { AppDatabase } from '../../types/models';
 import type { WorkoutHistoryStore } from '../workout/workoutTypes';
 import {
@@ -1385,18 +1386,9 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       // history back eight seconds after the next weigh-in, and the delete
       // was undone without a word. The row now says "No backup yet", and
       // "Back up now" — their own decision — is what starts backups again.
-      await persistAccount({
-        ...current,
-        lastBackupAt: null,
-        lastBackupItemCount: null,
-        lastBackupHistoryCount: null,
-        lastBackupFingerprint: null,
-        autoBackupPaused: true,
-        cloudVersion: null,
-        // The copy is gone by the reader's own hand, so an older "deleted
-        // elsewhere" mark has nothing left to say; the row reads "No backup yet".
-        cloudCopyDeletedAt: null,
-      });
+      // (accountAfterCloudCopyDeleted: also clears an older "deleted
+      // elsewhere" mark, so the row reads "No backup yet".)
+      await persistAccount(accountAfterCloudCopyDeleted(current));
       // The pause the row showed (another phone, a smaller phone, a copy
       // deleted elsewhere) described a copy that no longer exists.
       clearPause();
@@ -1661,7 +1653,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       lastBackupAt: account.lastBackupAt,
       provider: account.sub.startsWith(APPLE_ACCOUNT_PREFIX) ? 'apple' : 'google',
       // Held across launches on the account: the copy stays deleted until the reader backs up again.
-      backupPaused: backupPaused ?? (account.cloudCopyDeletedAt ? 'copy_deleted' : null),
+      backupPaused: visibleBackupPause(backupPaused, account.cloudCopyDeletedAt),
     };
   }, [account, available, backupPaused, loaded]);
 

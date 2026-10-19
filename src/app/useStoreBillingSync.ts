@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
+import { AppState } from 'react-native';
 
 import { onStoreCustomerChange, readStoreCustomer } from '../features/billing/storeBilling';
 import { isDemoBuild } from '../lib/demoMode';
+import { shouldRefreshStoreOnForeground } from '../lib/storeRefreshPolicy';
 import { purchaseRecordFromStore, samePurchaseRecord, type StoreCustomerSnapshot } from '../lib/storePurchase';
 import type { PreferencesPatch } from '../state/AppProvider';
 import { AppPreferences } from '../types/models';
@@ -57,11 +59,33 @@ export function useStoreBillingSync(deps: StoreBillingSyncDeps): void {
     // After the first frame has had its turn: the SDK and its native bridge
     // start here, and none of it is needed to draw Home.
     let unsubscribe: () => void = () => undefined;
+    let appStateSubscription: { remove: () => void } | null = null;
+    let reading = false;
+    const read = () => {
+      if (reading) {
+        return;
+      }
+      reading = true;
+      void readStoreCustomer()
+        .then((customer) => {
+          if (customer) {
+            apply(customer);
+          }
+        })
+        .finally(() => {
+          reading = false;
+        });
+    };
     const timer = setTimeout(() => {
       unsubscribe = onStoreCustomerChange(apply);
-      void readStoreCustomer().then((customer) => {
-        if (customer) {
-          apply(customer);
+      read();
+      // A renewal that went through while the app was closed (a billing-retry
+      // payer whose card cleared) reaches us only by asking. Once per return
+      // to the front, one read at a time, and only for a record whose answer
+      // could differ (storeRefreshPolicy). The store is RevenueCat's SDK.
+      appStateSubscription = AppState.addEventListener('change', (state) => {
+        if (state === 'active' && shouldRefreshStoreOnForeground(preferencesRef.current)) {
+          read();
         }
       });
     }, 0);
@@ -69,6 +93,7 @@ export function useStoreBillingSync(deps: StoreBillingSyncDeps): void {
       live = false;
       clearTimeout(timer);
       unsubscribe();
+      appStateSubscription?.remove();
     };
   }, [hydrated]);
 }

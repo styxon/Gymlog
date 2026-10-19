@@ -31,6 +31,7 @@ import { CoachChatIntroInput, CoachContextChip, buildCoachContextChips, buildCoa
 import { coachSmallTalkReplyKey, parseCoachSmallTalk } from '../lib/coachSmallTalk';
 import { coachHistoryAfterAnswer } from '../lib/coachCrisisTurn';
 import { COACH_DEMO_MOMENTS, coachDemoMomentOrdinal } from '../lib/coachDemoMoments';
+import { afterRateLimitedQuestion, withNotice } from '../lib/coachThread';
 import { CoachChatMemory, resumeCoachChat } from '../lib/coachChatMemory';
 import { CoachSuggestionKind } from '../lib/coachSuggestions';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -391,6 +392,10 @@ export function AICoachChatScreen({
   const themeName = useThemeName();
   const styles = useThemedStyles(makeStyles);
   const [draft, setDraft] = useState('');
+  // The field as it stands when an answer lands, which a closure over the
+  // render that started the ask would not see.
+  const draftRef = useRef(draft);
+  draftRef.current = draft;
   /**
    * Reopened rather than restarted. The check runs once, on mount: a thread
    * that was live when the reader tapped through to a workout is still live
@@ -493,6 +498,8 @@ export function AICoachChatScreen({
    * same build again on their return (audit 3, 2026-09-19).
    */
   const composeControllersRef = useRef(new Map<string, AbortController>());
+  /** Offers whose build has been started, set synchronously (see resolveOffer). */
+  const composeGate = useRef(new Set<string>());
   const messagesRef = useRef(messages);
   messagesRef.current = messages;
   const onMemoryChangeRef = useRef(onMemoryChange);
@@ -770,9 +777,11 @@ export function AICoachChatScreen({
         // month, and the thread says why.
         if (questionsRemaining <= 0) {
           const reset = coachQuotaReset();
-          setMessages((current) => [
-            ...current,
-            {
+          // Replaced, not appended: each tap used to add another bubble with
+          // the same id, which is a duplicate React key and a stack of the
+          // same line.
+          setMessages((current) =>
+            withNotice(current, {
               id: `${messageId}:spent`,
               fromCoach: true,
               text: [
@@ -784,10 +793,17 @@ export function AICoachChatScreen({
                       count: reset.inDays,
                     }),
               ].join(' '),
-            },
-          ]);
+            }),
+          );
           return;
         }
+        // Two quick taps both read the same unspent quota and the same empty
+        // `composingIds` before either re-render, so both would start a billed
+        // build. The ref is set synchronously, before the first await.
+        if (composeGate.current.has(messageId)) {
+          return;
+        }
+        composeGate.current.add(messageId);
         // The offer stays where it is while the week is built, and the
         // building line is drawn over it from `composingIds` — so the thread
         // that gets published upward still holds the offer, and walking away
@@ -807,6 +823,7 @@ export function AICoachChatScreen({
           // rather than leaving the offer under a spinner with no way out.
           setComposingIds((current) => current.filter((id) => id !== messageId));
           composeControllersRef.current.delete(messageId);
+          composeGate.current.delete(messageId);
         }
         // A brief read as a crisis, by this build's filter or the server's:
         // the offer becomes the crisis answer, drawn as send() draws its own,
@@ -1100,11 +1117,18 @@ export function AICoachChatScreen({
           // The question bubble is lifted out, as the unmount path lifts it:
           // the question goes back into the field, so leaving it in the
           // thread logged it twice when sent again.
-          setMessages((current) => [
-            ...current.filter((message) => message.id !== `me:${token}` && message.id !== `offer:${token}`),
-            { id: `coach:${token}`, fromCoach: true, text: t(language, 'coachChat.rateLimited') },
-          ]);
-          setDraft((current) => (current.trim() ? current : trimmed));
+          //
+          // A reader who has typed something else meanwhile keeps that draft,
+          // and then the old question stays in the thread instead of being
+          // lost from both places (afterRateLimitedQuestion).
+          const limitedReply: ChatMessage = {
+            id: `coach:${token}`,
+            fromCoach: true,
+            text: t(language, 'coachChat.rateLimited'),
+          };
+          const draftNow = draftRef.current;
+          setMessages((current) => afterRateLimitedQuestion(current, token, trimmed, draftNow, limitedReply).messages);
+          setDraft(afterRateLimitedQuestion([], token, trimmed, draftNow, limitedReply).draft);
           return;
         }
         const answer = result.answer;

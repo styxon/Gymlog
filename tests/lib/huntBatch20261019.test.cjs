@@ -102,7 +102,8 @@ module.exports = [
       const start = chat.indexOf('if (result.limited) {');
       assert.ok(start > 0);
       const block = chat.slice(start, start + 1400);
-      assert.match(block, /message\.id !== `me:\$\{token\}` && message\.id !== `offer:\$\{token\}`/);
+      // The rule itself is behaviour-tested in reviewGaps400s.test.cjs.
+      assert.match(block, /afterRateLimitedQuestion\(current, token, trimmed, draftNow, limitedReply\)/);
     },
   },
   {

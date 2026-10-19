@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- Pro and coach review follow-ups: Pro now ends exactly where the store says (a grace period the store extends keeps Pro on, a cancelled trial ends with the trial), the app asks the store again when it returns to the front for a cancelled or past-due subscription, a promo, trial or review member no longer reads "already cancelled" on the membership end screen, a rate-limited coach question is not lost when something new was typed meanwhile, and tapping "Build the week" twice with no questions left no longer stacks notices or starts two builds.
 - Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
 - Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
 - Fixes: a lift added mid-workout opens at its last weight; hold and minutes lifts no longer get a PR card on the finish screen; editing programme emphasis keeps superset pairs at one set count; the screen no longer stays awake after leaving a workout right away; swapping a lift in a ready programme keeps the weekday labels; "Squat 5x5" is no longer split in the recovery sheet.

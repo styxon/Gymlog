@@ -19,6 +19,7 @@
 export interface PurchaseRecord {
   mockSubscriptionPurchasedAt: string | null;
   mockSubscriptionCancelledAt: string | null;
+  mockSubscriptionEndsAt: string | null;
 }
 
 export function normalizePurchaseRecord(
@@ -40,7 +41,16 @@ export function normalizePurchaseRecord(
       : stored?.mockSubscriptionCancelled === true
         ? now.toISOString()
         : fallback.mockSubscriptionCancelledAt;
+  // A stored end that is not a parseable date is no end (an install from
+  // before the field existed has none at all): the entitlement then counts the
+  // period from the cancellation stamp, as it always did.
+  const storedEndsAt = stored?.mockSubscriptionEndsAt;
+  const endsAt =
+    typeof storedEndsAt === 'string' && Number.isFinite(new Date(storedEndsAt).getTime())
+      ? storedEndsAt
+      : fallback.mockSubscriptionEndsAt;
   return {
+    mockSubscriptionEndsAt: purchasedAt === null ? null : endsAt,
     mockSubscriptionPurchasedAt: purchasedAt,
     // A cancellation without a purchase is nothing to cancel.
     mockSubscriptionCancelledAt: purchasedAt === null ? null : cancelledAt,

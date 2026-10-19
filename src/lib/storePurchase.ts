@@ -48,7 +48,7 @@ export interface StoreCustomerSnapshot {
 
 export type PurchaseRecord = Pick<
   AppPreferences,
-  'mockSubscriptionPurchasedAt' | 'mockSubscriptionTerm' | 'mockSubscriptionCancelledAt'
+  'mockSubscriptionPurchasedAt' | 'mockSubscriptionTerm' | 'mockSubscriptionCancelledAt' | 'mockSubscriptionEndsAt'
 >;
 
 /** RevenueCat's package slot for each plan the Pro page sells. */
@@ -91,10 +91,9 @@ function isoOrNull(value: string | null | undefined): string | null {
  * demo's invented one) all end here. `current` supplies the term to keep when
  * the store names none, and a cancellation stamp already made for this period.
  *
- * A cancelled subscription keeps Pro to the end of the period it was cancelled
- * in. The record says that the way the entitlement counts it — period start
- * plus a cancellation inside the period — so `resolveProEntitlement` names the
- * same end the store will.
+ * A cancelled subscription keeps Pro to the end of the period the store says
+ * it paid for (`mockSubscriptionEndsAt`, from `expirationDate`), so a grace
+ * period or a trial ends where the store ends it, not a term after the start.
  */
 export function purchaseRecordFromStore(
   customer: StoreCustomerSnapshot,
@@ -108,6 +107,7 @@ export function purchaseRecordFromStore(
       mockSubscriptionPurchasedAt: null,
       mockSubscriptionTerm: current.mockSubscriptionTerm,
       mockSubscriptionCancelledAt: null,
+      mockSubscriptionEndsAt: null,
     };
   }
 
@@ -120,27 +120,25 @@ export function purchaseRecordFromStore(
   // Lifetime has no renewal to turn off; the store reports willRenew false
   // for it all the same, and the entitlement ignores a stamp on it anyway.
   const cancelled = term !== 'lifetime' && !entitlement.willRenew;
-  // With no date from the store, the first sync that saw the cancellation
-  // stamps it and later syncs of the same period keep that stamp, so an
-  // unchanged answer writes nothing.
+  // With no unsubscribe date from the store, the first sync that saw the
+  // cancellation stamps it and later syncs of the same period keep that stamp,
+  // so an unchanged answer writes nothing. The stamp is only a moment, the
+  // "cancelled" flag; where Pro ends is `mockSubscriptionEndsAt` below.
   const keptStamp =
     current.mockSubscriptionPurchasedAt === purchasedAt ? current.mockSubscriptionCancelledAt : null;
-  // A renewal that failed into grace or billing retry has no unsubscribe
-  // moment, only the end of the paid period (`expirationDate`). Stamping "now"
-  // would let the entitlement count a whole further period from today. The
-  // period's own start is a moment inside the period the store says ends at
-  // expirationDate, so the entitlement names that end and no later one.
-  const expiresAt = isoOrNull(entitlement.expirationDate);
-  const periodStamp =
-    expiresAt !== null && new Date(expiresAt).getTime() > new Date(purchasedAt).getTime()
-      ? purchasedAt
-      : null;
+  // The store's own end of the paid period. It already includes a grace period
+  // the store extended and a trial's real length, which purchase date plus a
+  // term cannot know; a lifetime purchase has none. The entitlement honours
+  // it beside a cancellation stamp, and a stamp from older code (a "now", or
+  // the period start) cannot outlive it.
+  const expiresAt = term === 'lifetime' ? null : isoOrNull(entitlement.expirationDate);
   return {
     mockSubscriptionPurchasedAt: purchasedAt,
     mockSubscriptionTerm: term,
     mockSubscriptionCancelledAt: cancelled
-      ? isoOrNull(entitlement.unsubscribeDetectedAt) ?? keptStamp ?? periodStamp ?? now.toISOString()
+      ? isoOrNull(entitlement.unsubscribeDetectedAt) ?? keptStamp ?? now.toISOString()
       : null,
+    mockSubscriptionEndsAt: expiresAt,
   };
 }
 
@@ -149,6 +147,7 @@ export function samePurchaseRecord(current: PurchaseRecord, next: PurchaseRecord
   return (
     current.mockSubscriptionPurchasedAt === next.mockSubscriptionPurchasedAt &&
     current.mockSubscriptionTerm === next.mockSubscriptionTerm &&
-    current.mockSubscriptionCancelledAt === next.mockSubscriptionCancelledAt
+    current.mockSubscriptionCancelledAt === next.mockSubscriptionCancelledAt &&
+    current.mockSubscriptionEndsAt === next.mockSubscriptionEndsAt
   );
 }
