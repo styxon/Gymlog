@@ -182,11 +182,12 @@ module.exports = [
         assert.notEqual(t(language, 'settings.autoProgression.sub'), 'settings.autoProgression.sub');
       }
 
-      // The advice sells the raise to Free, so it reads the reader's own switch;
-      // the coach is told what the next start does, so it reads the switch with Pro.
-      for (const file of [['src', 'app', 'useProInsights.ts'], ['src', 'app', 'usePlanReadouts.tsx']]) {
-        assert.match(read(...file), /automatedProgressionEnabled: preferences\.automatedProgressionEnabled/, file.join('/'));
-      }
+      // The completion lock (a Pro teaser) sells the raise to Free, so it reads
+      // the reader's own switch. The session analysis is delivered, not sold:
+      // owner 2026-10-19, Free gets no automatic progression, so it reads the
+      // switch with Pro, as the coach does (tests/lib/freeNoAutoProgression).
+      assert.match(read('src', 'app', 'useProInsights.ts'), /automatedProgressionEnabled: preferences\.automatedProgressionEnabled/);
+      assert.match(read('src', 'app', 'usePlanReadouts.tsx'), /automatedProgressionEnabled: analysisProgressionOn,/);
       const coach = read('src', 'app', 'useCoachContext.ts');
       assert.match(coach, /const progressionOn = resolveProgressionOptions\(preferences\)\.automatedProgressionEnabled;/);
       assert.match(coach, /automatedProgressionEnabled: progressionOn,/);

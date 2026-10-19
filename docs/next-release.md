@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- Automatic progression is Pro only, with no exception: a Free reader's workout analysis no longer suggests a heavier weight for next time (Free keeps opening each lift on what they logged last, and the Pro features are unchanged).
 - Pro and coach review follow-ups: Pro now ends exactly where the store says (a grace period the store extends keeps Pro on, a cancelled trial ends with the trial), the app asks the store again when it returns to the front for a cancelled or past-due subscription, a promo, trial or review member no longer reads "already cancelled" on the membership end screen, a rate-limited coach question is not lost when something new was typed meanwhile, and tapping "Build the week" twice with no questions left no longer stacks notices or starts two builds.
 - Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
 - Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
