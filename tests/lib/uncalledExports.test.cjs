@@ -30,7 +30,7 @@ const ALLOWED = {
   TRANSLATED_EXERCISE_NAMES: 'The translation table, exposed for the coverage test.',
   PLAIN_EXERCISE_NAMES: 'The English display table, exposed for the sweep that keeps every entry the same lift.',
   LEGACY_LIBRARY_ID_TARGETS: 'The retired lib_* ids, exposed for the sweep that keeps every one of them remappable.',
-  EXERCISE_INSTRUCTIONS_FI_TABLE: 'The Finnish instruction table, exposed for the test that keeps it paired with the English library step for step.',
+  finnishInstructionTable: 'Both Finnish instruction tables as one, exposed for the test that keeps them paired with the English library step for step, and for the text export.',
   EXERCISE_TEACHING_TABLES: 'Both teaching tables, exposed for the sweep that keeps every swap pointing at a real library lift and never at itself.',
   EXERCISE_COLLECTION_TABLES: 'Both collection tables, exposed for the sweep that keeps every course entry pointing at a lift the reader can open.',
   HOLD_EXERCISE_NAME_LIST: 'The hold list, exposed for the test that keeps the catalog data and this list one truth in both directions.',

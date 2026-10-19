@@ -213,7 +213,7 @@ module.exports = [
     name: 'extras: every row is named and instructed in both languages, step for step, and filed with real values',
     run() {
       const { TRANSLATED_EXERCISE_NAMES } = require('../../.test-dist/lib/exerciseNameLabel.js');
-      const { EXERCISE_INSTRUCTIONS_FI_TABLE } = require('../../.test-dist/lib/exerciseInstructions.js');
+      const EXERCISE_INSTRUCTIONS_FI_TABLE = require('../../.test-dist/lib/exerciseInstructions.js').finnishInstructionTable();
       const { isSpecialtyExercise } = require('../../.test-dist/lib/exerciseClassification.js');
       const BODY_PARTS = new Set(['chest', 'back', 'shoulders', 'legs', 'biceps', 'triceps', 'core', 'glutes', 'full body']);
       const EQUIPMENT = new Set(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight']);

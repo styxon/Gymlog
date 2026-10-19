@@ -97,6 +97,7 @@ function finnishSlices() {
     ['src/lib/readyProgramContentFi.ts', read('src/lib/readyProgramContentFi.ts')],
     ['src/lib/progressionRuleLabel.ts', read('src/lib/progressionRuleLabel.ts')],
     ['src/lib/exerciseInstructions.ts', read('src/lib/exerciseInstructions.ts')],
+    ['src/lib/exerciseInstructionsFiMore.ts', read('src/lib/exerciseInstructionsFiMore.ts')],
     ['src/lib/sessionNameLabel.ts', read('src/lib/sessionNameLabel.ts')],
     // The exercise names themselves: "Myötäotteinen leuanveto" named the
     // chin-up with the retired word — and the wrong grip — because this file
