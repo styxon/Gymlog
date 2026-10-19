@@ -563,7 +563,7 @@ export function EmptyWorkoutScreen({
     return {
       title: t(language, 'rest.notify.sessionTitle', {
         session: t(language, 'emptyWorkout.title'),
-        exercise: current?.name ?? '',
+        exercise: current ? exerciseNameLabel(language, current.name) : '',
       }),
       body: t(language, totalSetCount === 1 ? 'rest.notify.sessionBodyOne' : 'rest.notify.sessionBody', {
         done: doneSetCount,

@@ -1393,7 +1393,13 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         lastBackupFingerprint: null,
         autoBackupPaused: true,
         cloudVersion: null,
+        // The copy is gone by the reader's own hand, so an older "deleted
+        // elsewhere" mark has nothing left to say; the row reads "No backup yet".
+        cloudCopyDeletedAt: null,
       });
+      // The pause the row showed (another phone, a smaller phone, a copy
+      // deleted elsewhere) described a copy that no longer exists.
+      clearPause();
       return 'done';
     } catch (error) {
       if (error instanceof SessionEnded) {

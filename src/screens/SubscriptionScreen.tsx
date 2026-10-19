@@ -137,16 +137,19 @@ export function SubscriptionScreen({
   // One store round-trip at a time: a second tap while the first is out is
   // ignored, as the Pro page ignores a second Buy.
   const restoring = useRef(false);
+  const [restorePending, setRestorePending] = useState(false);
   const restore = onRestorePurchases
     ? async () => {
         if (restoring.current) {
           return;
         }
         restoring.current = true;
+        setRestorePending(true);
         try {
           await onRestorePurchases();
         } finally {
           restoring.current = false;
+          setRestorePending(false);
         }
       }
     : null;
@@ -611,7 +614,7 @@ export function SubscriptionScreen({
                   <Row
                     icon="restore"
                     title={t(language, 'subs.row.restore')}
-                    sub={t(language, 'subs.row.restoreSub')}
+                    sub={t(language, restorePending ? 'subs.restore.pending' : 'subs.row.restoreSub')}
                     onPress={
                       restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE))
                     }

@@ -23,6 +23,7 @@ update to carry, not for each fix.
 ## Merged
 
 - Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
+- Pro: "Restore purchase" on the Pro page now really restores (tap shows "Checking purchases..."), repeated taps on either Restore link start one restore, a failed renewal no longer grants an extra period of Pro, and deleting the cloud backup clears the old "Backup paused" reason on the account row.
 - Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
 - #382 Onboarding: a disabled Continue button says on a line under it what
   it still waits for.
@@ -155,6 +156,14 @@ update to carry, not for each fix.
   Recovery sheet hides ACWR when there is no ratio and sets a glued session
   number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
   first cue no longer cuts the user's music.
+
+- Hunt fixes: the quiet reminder level keeps a training day's reminder over the
+  morning weigh-in; the plan review has a back control; building a week with the
+  AI coach counts as a coach question and stops when none are left; the Android
+  widget swaps to next month (needs the new APK, widget payload v10) and a
+  rate-limited coach question leaves no duplicate bubble; About you shows kg with
+  a comma, Last done shows the localized session name, the lock-screen card
+  names the lift in Finnish, and "1 toisto" replaces "1 toistoa".
 
 ## Known, not yet fixed
 
