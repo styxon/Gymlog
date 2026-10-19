@@ -191,6 +191,9 @@ async function allowWorkoutAlerts(): Promise<NotificationAccessState> {
   return 'granted';
 }
 
+/** A store restore is out. Module-level because this function re-runs on every render. */
+const restoreInFlight = { current: false };
+
 function allowExactAlarms() {
   void openExactAlarmSettings();
 }
@@ -279,6 +282,43 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
     }
   };
 
+  // Restore from the store. One at a time (a second tap while the first is out
+  // is ignored), and the record is built from the preferences as they are when
+  // the store answers, not from the render that started it. The success toast
+  // follows the saved answer, never the tap. Without a store in this build
+  // there is nothing to run, and the callers keep their old destination.
+  const restoreFromStore: (() => Promise<void>) | undefined =
+    !isDemoBuild() && isStoreBillingConfigured()
+      ? async () => {
+          if (restoreInFlight.current) {
+            return;
+          }
+          restoreInFlight.current = true;
+          try {
+            const customer = await restoreStorePurchases();
+            if (!customer) {
+              showToast(t(preferences.appLanguage, 'subs.restore.failed'));
+              return;
+            }
+            let restored = false;
+            try {
+              await updatePreferences((current) => {
+                const record = purchaseRecordFromStore(customer, current);
+                restored = record.mockSubscriptionPurchasedAt !== null;
+                return record;
+              });
+            } catch (error) {
+              console.error('Failed to save the restored purchase', error);
+              showToast(t(preferences.appLanguage, 'subs.restore.failed'));
+              return;
+            }
+            showToast(t(preferences.appLanguage, restored ? 'subs.restore.done' : 'subs.restore.none'));
+          } finally {
+            restoreInFlight.current = false;
+          }
+        }
+      : undefined;
+
   if (route.screen === 'premium') {
     return (
       <PremiumScreen
@@ -287,6 +327,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         proUnlocked={coachProUnlocked}
         trialAvailable={canStartProTrial(preferences)}
         onManageSubscription={() => navigate({ tab: 'profile', screen: 'subscription' })}
+        onRestorePurchases={restoreFromStore}
         onBack={() => navigateBack(ROOT_ROUTES.profile)}
         onPurchase={async (plan) => {
           /**
@@ -648,31 +689,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         demoBuild={isDemoBuild()}
         // The success toast follows the saved answer, never the tap. Without a
         // store in this build the row keeps sending the reader to Play.
-        onRestorePurchases={
-          releaseBuild && isStoreBillingConfigured()
-            ? async () => {
-                const customer = await restoreStorePurchases();
-                if (!customer) {
-                  showToast(t(preferences.appLanguage, 'subs.restore.failed'));
-                  return;
-                }
-                const record = purchaseRecordFromStore(customer, preferences);
-                try {
-                  await updatePreferences(record);
-                } catch (error) {
-                  console.error('Failed to save the restored purchase', error);
-                  showToast(t(preferences.appLanguage, 'subs.restore.failed'));
-                  return;
-                }
-                showToast(
-                  t(
-                    preferences.appLanguage,
-                    record.mockSubscriptionPurchasedAt ? 'subs.restore.done' : 'subs.restore.none',
-                  ),
-                );
-              }
-            : undefined
-        }
+        onRestorePurchases={restoreFromStore}
         onBack={() => navigateBack({ tab: 'profile', screen: 'settings' })}
         onManageMembership={() => navigate({ tab: 'profile', screen: 'membership_end' })}
         onOpenPremium={() => navigate({ tab: 'profile', screen: 'premium' })}
