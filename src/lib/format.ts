@@ -495,3 +495,12 @@ export function formatDecimalTenths(value: number) {
   const tenths = Math.sign(value) * (Math.round(Math.abs(value) * 10) / 10);
   return applyDecimalSeparator(Number.isInteger(tenths) ? String(tenths) : tenths.toFixed(1));
 }
+
+/**
+ * A number and its unit read as one word: "47 min" must not wrap as "47" /
+ * "min". Swaps the space between a figure and a short unit for a no-break
+ * space; every other space is left alone.
+ */
+export function keepUnitsTogether(text: string) {
+  return text.replace(/(\d) (min|h|s|kg|lb|lbs|g|km|m|cm|mm|kcal|t|kpl|pcs|reps|sets)(?![\p{L}\d])/gu, '$1 $2');
+}

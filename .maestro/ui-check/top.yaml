@@ -1,0 +1,17 @@
+# Back to the top of the screen in front. scrolls.yaml leaves a screen
+# scrolled two pages down, and the next id lookup then fails: a control above
+# the viewport is not "visible", and scrolling DOWN never reaches it. In the
+# first runs that left a half-hidden row under the status bar tapped at the
+# wrong spot, or the tap landed on nothing, and the shot showed the previous
+# screen. Five swipes from upper to lower screen outlast any list here.
+appId: app.vinha
+---
+- repeat:
+    times: 5
+    commands:
+      - swipe:
+          start: "50%,25%"
+          end: "50%,85%"
+          duration: 250
+- waitForAnimationToEnd:
+    timeout: 2500

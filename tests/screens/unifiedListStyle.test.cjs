@@ -93,7 +93,9 @@ module.exports = [
       assert.match(seg, /minimumFontScale=\{showLabels \? 0\.7/);
       const row = read('src', 'components', 'ListCard.tsx');
       assert.doesNotMatch(row, /styles\.title, muted && styles\.titleMuted\]\} numberOfLines=\{1\}/);
-      assert.match(row, /maxWidth: '45%'/);
+      // The figure keeps its size (no auto-shrink, no cap); the title wraps by word.
+      assert.doesNotMatch(row, /adjustsFontSizeToFit/);
+      assert.match(row, /titleLine: \{[^}]*flexWrap: 'wrap'/);
       const trailing = row.slice(row.indexOf('  trailing: {'), row.indexOf('  delta: {'));
       assert.doesNotMatch(trailing, /fontWeight/);
       const header = read('src', 'components', 'BackButton.tsx');

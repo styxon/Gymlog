@@ -2807,10 +2807,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   measureRowActive: {
     backgroundColor: theme.purpleSoft,
   },
+  // Stacked, so the name keeps the width on a 375dp phone.
   measureRowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+    flexDirection: 'column',
+    alignItems: 'flex-end',
+    gap: 4,
   },
   measureRowIcon: {
     width: 38,
