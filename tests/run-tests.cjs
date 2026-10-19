@@ -338,6 +338,7 @@ const suites = [
   ...require('./lib/readyProgramCards.test.cjs'),
   ...require('./lib/exerciseInstructionsFi.test.cjs'),
   ...require('./lib/exerciseInstructionsFiSafety.test.cjs'),
+  ...require('./lib/exerciseInstructionsGuards.test.cjs'),
   ...require('./lib/buildArchitectures.test.cjs'),
   ...require('./lib/programCategories.test.cjs'),
   ...require('./lib/programFingerprint.test.cjs'),

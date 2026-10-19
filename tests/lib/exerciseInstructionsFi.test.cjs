@@ -10,7 +10,8 @@ const assert = require('node:assert/strict');
  * a translation that merges two steps into one loses a number the reader is
  * counting along with.
  */
-const { getExerciseInstructions, finnishInstructionTable } = require('../../.test-dist/lib/exerciseInstructions.js');
+const { getExerciseInstructions, finnishInstructionTable, effectiveEnglishInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
+const { EXERCISE_INSTRUCTIONS_EN } = require('../../.test-dist/lib/exerciseInstructionsEn.js');
 const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
 const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
 const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
@@ -36,9 +37,14 @@ const EXERCISE_INSTRUCTIONS_FI_TABLE = finnishInstructionTable();
  */
 const SAME_AS_ENGLISH_ALLOWED = new Map([]);
 
-/** The English steps the reader would see: blank steps are dropped, as the app drops them. */
+/**
+ * The English steps the reader would see: the audit's correction where there is
+ * one (exerciseInstructionsEn.ts), the library row's own otherwise, and blank
+ * steps dropped, as the app drops them. The Finnish steps are paired with THESE,
+ * not with the upstream text the corrections replace.
+ */
 function visibleEnglishSteps(item) {
-  return (item?.instructions ?? []).filter((step) => step && step.trim());
+  return item ? effectiveEnglishInstructions(item.name, item.instructions) : [];
 }
 
 /** Every library entry a ready program can actually put in front of a reader. */
@@ -89,6 +95,30 @@ function reachableLibraryEntries() {
 }
 
 module.exports = [
+  {
+    name: 'instructions: every English correction is for an exercise the library has, and pairs with a Finnish entry',
+    run() {
+      const table = EXERCISE_INSTRUCTIONS_EN;
+      const orphans = Object.keys(table).filter((name) => !BY_NAME.has(name));
+      assert.deepEqual(orphans, [], `English corrections keyed to exercises the library does not have: ${orphans.join(', ')}`);
+      const unpaired = Object.keys(table).filter((name) => !EXERCISE_INSTRUCTIONS_FI_TABLE[name]);
+      assert.deepEqual(unpaired, [], `English corrections with no Finnish steps: ${unpaired.join(', ')}`);
+      for (const [name, steps] of Object.entries(table)) {
+        assert.ok(steps.length > 0 && steps.every((step) => step.trim()), `${name} has a blank English correction`);
+      }
+    },
+  },
+  {
+    name: 'instructions: the correction is what English readers get, and the library row is untouched',
+    run() {
+      const table = EXERCISE_INSTRUCTIONS_EN;
+      const name = Object.keys(table)[0];
+      const row = BY_NAME.get(name);
+      assert.deepEqual(getExerciseInstructions(name, row.instructions, 'en'), table[name]);
+      assert.deepEqual(effectiveEnglishInstructions(name, row.instructions), table[name]);
+      assert.deepEqual(effectiveEnglishInstructions('Not In The Table', ['A.', '', 'B.']), ['A.', 'B.']);
+    },
+  },
   {
     name: 'instructions: every translated exercise still exists in the library',
     run() {
@@ -220,7 +250,7 @@ module.exports = [
       const translated = BY_NAME.get(Object.keys(EXERCISE_INSTRUCTIONS_FI_TABLE)[0]);
       assert.deepEqual(
         getExerciseInstructions(translated.name, translated.instructions, 'en'),
-        translated.instructions,
+        effectiveEnglishInstructions(translated.name, translated.instructions),
       );
       assert.deepEqual(
         getExerciseInstructions(translated.name, translated.instructions, 'fi'),

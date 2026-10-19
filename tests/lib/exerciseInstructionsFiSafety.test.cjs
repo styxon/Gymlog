@@ -97,11 +97,8 @@ module.exports = [
   {
     name: 'the neck lifts carry their caution',
     run() {
-      for (const name of ['Neck Press', 'Barbell Guillotine Bench Press']) {
-        const text = TABLE[name].join(' ');
-        assert.match(text, /Varoitus: käytä vain kevyttä painoa ja pyydä vierelle varmistaja/, name);
-        assert.match(text, /Tanko ei saa koskaan levätä kaulalla/, name);
-      }
+      // Neck Press and Barbell Guillotine Bench Press are checked in both
+      // languages in exerciseInstructionsGuards.test.cjs, against the audit's wording.
       for (const name of [
         'Push Press - Behind the Neck',
         'Standing Barbell Press Behind Neck',
