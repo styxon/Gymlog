@@ -463,6 +463,7 @@ const suites = [
   ...require('./lib/coachProgrammeTracking.test.cjs'),
   ...require('./lib/equipmentBuckets.test.cjs'),
   ...require('./lib/librarySweep.test.cjs'),
+  ...require('./lib/bodyweightNamedEquipment.test.cjs'),
   ...require('./lib/drillsAreNotSets.test.cjs'),
   ...require('./lib/pickerAuditClassification.test.cjs'),
   ...require('./lib/aiCoachPreview.test.cjs'),

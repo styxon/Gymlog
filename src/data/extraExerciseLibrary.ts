@@ -145,6 +145,25 @@ export const EXTRA_EXERCISE_LIBRARY: ExerciseLibraryItem[] = [
     ],
   },
   {
+    // The unloaded reverse lunge. "Bodyweight Reverse Lunge" (ten prescribed
+    // rows, trackingMode bodyweight) resolved through an alias to the entry
+    // above, so its card read "Käsipaino" and the equipment chip listed it with
+    // the dumbbell lifts (#bugs 2026-10-19). An exact name beats the alias.
+    id: 'extra_bodyweight_reverse_lunge',
+    name: 'Bodyweight Reverse Lunge',
+    category: 'compound',
+    bodyPart: 'legs',
+    equipment: 'bodyweight',
+    primaryMuscles: ['quadriceps', 'glutes'],
+    secondaryMuscles: ['hamstrings'],
+    instructions: [
+      'Stand tall with your feet hip-width apart and your hands on your hips.',
+      'Step one foot back about half a metre and lower straight down until the back knee nearly touches the floor, keeping your torso upright and the front shin close to vertical.',
+      'Push through the front heel to stand back up.',
+      'Do the same on the other leg.',
+    ],
+  },
+  {
     // The calf raise that needs nothing. The "seated calf raise" fallback and
     // the bodyweight calves pool pointed at "Donkey Calf Raises", whose own
     // steps open with "you will need access to a donkey calf raise machine" -

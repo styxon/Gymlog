@@ -1059,6 +1059,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Työnnä etukantapäällä takaisin ylös.',
     'Tee sama toisella jalalla.',
   ],
+  'Bodyweight Reverse Lunge': [
+    'Seiso ryhdikkäästi jalat lantion leveydellä ja kädet lantiolla.',
+    'Astu toisella jalalla noin puoli metriä taakse ja laskeudu suoraan alas, kunnes takapolvi melkein koskettaa lattiaa. Pidä ylävartalo pystyssä ja etusääri lähes kohtisuorassa.',
+    'Työnnä etukantapäällä takaisin ylös.',
+    'Tee sama toisella jalalla.',
+  ],
   'Stiff-Legged Dumbbell Deadlift': [
     'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',
     'Seiso ryhti suorana jalat hartioiden leveydellä tai kapeammin, polvet hieman koukussa.',

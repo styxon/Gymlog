@@ -1518,9 +1518,8 @@ export const GUIDED_LIBRARY_ALIASES: Record<string, string> = {
   // which is a different movement AND filed under 'back' — so every leg day
   // running one picked up a pull vote.
   'reverse lunge': 'dumbbell rear lunge',
-  // The app opens its own "Reverse Lunge" (extraExerciseLibrary), whose steps
-  // hold with or without dumbbells; the alias below is the generated list's.
-  'bodyweight reverse lunge': 'reverse lunge',
+  // The app opens its own "Reverse Lunge" and "Bodyweight Reverse Lunge"
+  // (extraExerciseLibrary); the latter lists no dumbbell.
   'banded hip thrust': 'barbell hip thrust',
   'single-leg hip thrust': 'single leg glute bridge',
   // A band bridge is a floor bridge: the barbell bridge's steps start with a
@@ -1724,7 +1723,6 @@ export const DEMO_ONLY_ALIASES = new Map<string, string | null>([
   ['glute bridge hold', 'barbell glute bridge'],
   ['banded glute bridge', 'barbell glute bridge'],
   ['cable pullover', 'straight-arm dumbbell pullover'],
-  ['bodyweight reverse lunge', 'dumbbell rear lunge'],
   // A generic name, or a lift done without the row's implement: the row shows
   // the movement, but it is one variant of several (catalog audit, 2026-10-06).
   ['leg curl', null],
