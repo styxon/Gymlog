@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- One list style across History and Records: a list is a single rounded card with thin dividers, dates read "su 19.10." / "Sun, Oct 19", a round back button sits beside the title, and section labels look the same everywhere. Records drop the NEW badge for a "Last session" group at the top; History shows how the session felt as a small coloured dot before the date; the History subtitle is gone. The remaining list and menu screens follow in the next updates.
 - Reading a programme from a photo (Pro) now counts as one of the month's 25 coach questions, like building a week with the coach; with none left the sheet says so instead of reading the photo, and a photo that fails to read costs nothing.
 - Second review follow-ups: the screen reliably goes to sleep after a workout even when a second keep-awake request failed, the coach's "log this" button only appears for a plausible reading in the right unit (and says so if the save was refused), the home-screen widget no longer shows days that have already passed as planned after it rolls to the next month, and older installs can no longer land on an English-only workouts list.
 - Automatic progression is Pro only, with no exception: a Free reader's workout analysis no longer suggests a heavier weight for next time (Free keeps opening each lift on what they logged last, and the Pro features are unchanged).

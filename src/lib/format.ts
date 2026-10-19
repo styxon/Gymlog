@@ -90,6 +90,45 @@ export function formatDateNumeric(date: Date, language: AppLanguage) {
     : `${formatDayMonthNumeric(date, language)}/${date.getFullYear()}`;
 }
 
+const LIST_WEEKDAYS: Record<AppLanguage, readonly string[]> = {
+  fi: ['su', 'ma', 'ti', 'ke', 'to', 'pe', 'la'],
+  en: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+};
+const LIST_MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/**
+ * THE date of a list row (owner-approved, 2026-10-19): "19.10." in Finnish,
+ * "Oct 19" in English; with `weekday`, "su 19.10." / "Sun, Oct 19". The year
+ * joins only when it is not the current one ("19.10.2025" / "Oct 19, 2025"),
+ * so a list that spans New Year says which one it means and the rest stay
+ * short. Local calendar day, written out rather than through Intl so a test
+ * can pin it and so Hermes without Intl data reads the same.
+ *
+ * An unparseable date is an empty string, not "NaN.NaN.".
+ */
+export function formatListDate(
+  value: string | Date,
+  language: AppLanguage,
+  options: { weekday?: boolean; now?: Date } = {},
+): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+  const now = options.now ?? new Date();
+  const withYear = date.getFullYear() !== now.getFullYear();
+  const day = date.getDate();
+  const month = date.getMonth();
+  const weekday = options.weekday ? LIST_WEEKDAYS[language][date.getDay()] : null;
+
+  if (language === 'fi') {
+    const core = `${day}.${month + 1}.${withYear ? date.getFullYear() : ''}`;
+    return weekday ? `${weekday} ${core}` : core;
+  }
+  const core = `${LIST_MONTHS_EN[month]} ${day}${withYear ? `, ${date.getFullYear()}` : ''}`;
+  return weekday ? `${weekday}, ${core}` : core;
+}
+
 export function formatShortDate(dateString: string, language?: AppLanguage) {
   return getDateTimeFormat(localeFor(language), {
     day: 'numeric',

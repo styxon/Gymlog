@@ -326,6 +326,8 @@ const suites = [
   ...require('./lib/oneFormatterPerQuantity.test.cjs'),
   ...require('./lib/appWrittenNamesTranslated.test.cjs'),
   ...require('./lib/numericDates.test.cjs'),
+  ...require('./lib/listDates.test.cjs'),
+  ...require('./screens/unifiedListStyle.test.cjs'),
   ...require('./lib/programEquipment.test.cjs'),
   ...require('./lib/programEquipmentBucket.test.cjs'),
   ...require('./lib/progressionRuleLabel.test.cjs'),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -10,25 +10,38 @@ import { Theme, useTheme, useThemedStyles } from '../theming';
  * a second, drifting copy.
  */
 
+/**
+ * THE section label (owner-approved, 2026-10-19): 11/800 uppercase, wide
+ * tracking, `muted`, with an optional action on the right in `highlight`.
+ * History, Progress, ExerciseDetail, Programs, Records and the library each
+ * had a local copy; they all go through this one.
+ */
 export function SectionLabel({
   label,
   actionLabel,
   onAction,
+  right,
+  style,
 }: {
   label: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** A non-text right side (a count, a link with a chevron); wins over `actionLabel`. */
+  right?: React.ReactNode;
+  style?: StyleProp<ViewStyle>;
 }) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={styles.sectionHead}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {actionLabel ? (
-        <Text onPress={onAction} style={styles.sectionAction}>
-          {actionLabel}
-        </Text>
-      ) : null}
+    <View style={[styles.sectionHead, style]}>
+      <Text accessibilityRole="header" style={styles.sectionLabel}>
+        {label}
+      </Text>
+      {right ??
+        (actionLabel ? (
+          <Text accessibilityRole="button" onPress={onAction} suppressHighlighting style={styles.sectionAction}>
+            {actionLabel}
+          </Text>
+        ) : null)}
     </View>
   );
 }
@@ -135,14 +148,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingBottom: 11,
   },
   sectionLabel: {
-    color: theme.faint,
-    fontSize: 11.5,
+    color: theme.muted,
+    fontSize: 11,
+    lineHeight: 15,
     fontWeight: '800',
-    letterSpacing: 1.15,
+    letterSpacing: 1.4,
+    textTransform: 'uppercase',
   },
   sectionAction: {
     color: theme.highlight,
-    fontSize: 12.5,
+    fontSize: 13,
+    lineHeight: 17,
     fontWeight: '800',
   },
   setRow: {
