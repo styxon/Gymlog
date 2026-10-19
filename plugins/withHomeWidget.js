@@ -50,7 +50,7 @@ const { withAndroidManifest, withDangerousMod } = require('@expo/config-plugins'
 const PACKAGE = 'app.vinha';
 const PAYLOAD_FILE = 'vinha-widget.json';
 /** Must match HOME_WIDGET_PAYLOAD_VERSION in src/lib/widgetPayload.ts. */
-const PAYLOAD_VERSION = 9;
+const PAYLOAD_VERSION = 10;
 /** Must match HOME_WIDGET_MONTH_ROWS in src/lib/widgetPayload.ts. */
 const MONTH_ROWS = 6;
 const DAY_COUNT = 7;
@@ -1258,13 +1258,25 @@ ${paletteLiteral('dark', DARK, 'dark')}
             R.layout.home_widget_streak -> renderTotal(context, views, payload, palette)
             R.layout.home_widget_routine -> renderRoutine(context, views, payload, palette)
             R.layout.home_widget_stats -> {
-                renderCalendar(views, payload, palette)
-                renderStats(views, payload, palette)
-                views.setOnClickPendingIntent(R.id.widget_root, targetIntent(context, "calendar"))
+                val month = monthFor(payload)
+                if (month == null) {
+                    renderSetup(context, views, layoutId, palette)
+                    views.setOnClickPendingIntent(R.id.widget_root, launchIntent(context))
+                } else {
+                    renderCalendar(views, payload, month, palette)
+                    renderStats(views, month, palette)
+                    views.setOnClickPendingIntent(R.id.widget_root, targetIntent(context, "calendar"))
+                }
             }
             else -> {
-                renderCalendar(views, payload, palette)
-                views.setOnClickPendingIntent(R.id.widget_root, targetIntent(context, "calendar"))
+                val month = monthFor(payload)
+                if (month == null) {
+                    renderSetup(context, views, layoutId, palette)
+                    views.setOnClickPendingIntent(R.id.widget_root, launchIntent(context))
+                } else {
+                    renderCalendar(views, payload, month, palette)
+                    views.setOnClickPendingIntent(R.id.widget_root, targetIntent(context, "calendar"))
+                }
             }
         }
 
@@ -1292,8 +1304,8 @@ ${paletteLiteral('dark', DARK, 'dark')}
      * the ones this month does not use are hidden rather than left blank, so
      * the rows that remain spread across the whole card.
      */
-    private fun renderCalendar(views: RemoteViews, payload: JSONObject, palette: Palette) {
-        views.setTextViewText(R.id.widget_month, payload.optString("monthLabel"))
+    private fun renderCalendar(views: RemoteViews, payload: JSONObject, month: JSONObject, palette: Palette) {
+        views.setTextViewText(R.id.widget_month, month.optString("monthLabel"))
         views.setTextColor(R.id.widget_month, palette.ink)
 
         val labels = payload.optJSONArray("weekdayLabels")
@@ -1302,7 +1314,7 @@ ${paletteLiteral('dark', DARK, 'dark')}
             views.setTextColor(axisIds[index], palette.faint)
         }
 
-        val weeks = payload.optJSONArray("monthWeeks")
+        val weeks = month.optJSONArray("monthWeeks")
         for (rowIndex in 0 until MONTH_ROWS) {
             val week = weeks?.optJSONArray(rowIndex)
             views.setViewVisibility(rowIds[rowIndex], if (week == null) View.GONE else View.VISIBLE)
@@ -1326,8 +1338,8 @@ ${paletteLiteral('dark', DARK, 'dark')}
     }
 
     /** The three figures beside the month, in the order the payload lists them. */
-    private fun renderStats(views: RemoteViews, payload: JSONObject, palette: Palette) {
-        val stats = payload.optJSONArray("stats")
+    private fun renderStats(views: RemoteViews, month: JSONObject, palette: Palette) {
+        val stats = month.optJSONArray("stats")
         for (index in 0 until STAT_COUNT) {
             val stat = stats?.optJSONObject(index)
             views.setTextViewText(statValueIds[index], stat?.optString("value") ?: "")
@@ -1385,6 +1397,21 @@ ${paletteLiteral('dark', DARK, 'dark')}
         views.setTextViewTextSize(R.id.widget_routine_title, TypedValue.COMPLEX_UNIT_SP, if (prompt) 13f else 22f)
         views.setInt(R.id.widget_arrow, "setColorFilter", palette.muted)
         views.setOnClickPendingIntent(R.id.widget_root, targetIntent(context, today?.optString("target")))
+    }
+
+    /**
+     * The month block that is true today: the one the app built, or the
+     * following month it also built when the calendar has turned since. Neither
+     * means the file is older than that, and the card asks to be opened rather
+     * than drawing a month that is over.
+     */
+    private fun monthFor(payload: JSONObject): JSONObject? {
+        val key = SimpleDateFormat("yyyy-MM", Locale.US).format(Date())
+        if (payload.optString("monthKey") == key) {
+            return payload
+        }
+        val next = payload.optJSONObject("nextMonth")
+        return if (next != null && next.optString("monthKey") == key) next else null
     }
 
     /** "2026-08-20" in the device's own timezone, matching the payload's keys. */

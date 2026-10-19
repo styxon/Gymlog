@@ -2751,6 +2751,7 @@ export function OnboardingScreen({
           void runAction(() => onCompleteToTraining(selection, activeRecommendedProgramId));
         }}
         onTopToneChange={onFullBleedReviewChange}
+        onBack={stageBack}
         busy={busy}
       />
     );
@@ -3049,9 +3050,19 @@ export function OnboardingScreen({
     }
     return isBuildingPlan ? () => undefined : stageBack;
   };
-  backActionRef.current = resolveBackAction(() =>
-    setStageIndex((current) => Math.max(0, current - 1)),
-  );
+  // The plan review had no way out but saving a plan (iOS has no hardware
+  // key). Back walks to the previous question; where the editor was opened ON
+  // the review ("Create a new plan"), it leaves without saving, as the other
+  // opening steps do.
+  const reviewOpenedHere = editMode && (initialStage ?? 'review') === 'review';
+  const stageBack = () => {
+    if (stage === 'review' && reviewOpenedHere) {
+      void runAction(() => onCancel?.());
+      return;
+    }
+    setStageIndex((current) => Math.max(0, current - 1));
+  };
+  backActionRef.current = resolveBackAction(stageBack);
 
   if (isBuildingPlan) {
     return renderBuildingPlan();

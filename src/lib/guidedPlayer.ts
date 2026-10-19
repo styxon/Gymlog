@@ -613,11 +613,11 @@ function formatKg(value: number): string {
 
 export function formatGuidedTarget(target: GuidedSetTarget, language: AppLanguage = 'en'): string {
   if (target.loadKg === null) {
-    return t(
-      language,
-      target.minutes ? 'guided.target.minutes' : target.timed ? 'guided.target.seconds' : 'guided.target.reps',
-      { reps: target.reps },
-    );
+    // "1 toistoa" is not Finnish: one repetition has its own form.
+    const repsKey = target.reps === 1 ? 'guided.target.repsOne' : 'guided.target.reps';
+    return t(language, target.minutes ? 'guided.target.minutes' : target.timed ? 'guided.target.seconds' : repsKey, {
+      reps: target.reps,
+    });
   }
   return `${target.reps} × ${formatKg(target.loadKg)} kg`;
 }

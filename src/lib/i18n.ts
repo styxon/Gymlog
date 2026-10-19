@@ -1365,6 +1365,7 @@ const EN = {
   // ── Active Workout logger (list view) ──────────────────────────────────
   // Previous column, bodyweight lift: no load to show, just what was done.
   'logger.repsValue': '{count} reps',
+  'logger.repsValueOne': '1 rep',
   'logger.secondsValue': '{count} s',
   'logger.minutesValue': '{count} min',
   // A number column, headed the same way the freestyle logger heads it. The
@@ -1426,6 +1427,7 @@ const EN = {
   'guided.next.setTitle': '{name} — Set {index} of {count}',
   'guided.next.finish': 'Finish',
   'guided.target.reps': '{reps} reps',
+  'guided.target.repsOne': '1 rep',
   'guided.target.seconds': '{reps} s',
   'guided.target.minutes': '{reps} min',
   'guided.howTo': 'How to ›',
@@ -2183,6 +2185,7 @@ const EN = {
   'coachChat.compose.catalogMeta': '{count} days a week · designed programme with its own progression',
   'coachChat.compose.catalogOpen': 'Look at it',
   'coachChat.compose.failed': 'That did not come together. Try telling me again in different words.',
+  'coachChat.compose.spent': 'Building a week counts as one coach question, and the questions for this month are used up.',
   'coachChat.compose.build': 'Build it',
   'coachChat.compose.pro': 'Building a programme is part of Pro.',
   // The new-programme sheet's AI path: the coach asks the frame of the week,
@@ -4893,6 +4896,7 @@ const FI: Record<I18nKey, string> = {
 
   // ── Active Workout logger ──────────────────────────────────────────────
   'logger.repsValue': '{count} toistoa',
+  'logger.repsValueOne': '1 toisto',
   'logger.secondsValue': '{count} s',
   'logger.minutesValue': '{count} min',
 
@@ -4942,6 +4946,7 @@ const FI: Record<I18nKey, string> = {
   'guided.next.setTitle': '{name} — sarja {index}/{count}',
   'guided.next.finish': 'Lopetus',
   'guided.target.reps': '{reps} toistoa',
+  'guided.target.repsOne': '1 toisto',
   'guided.target.seconds': '{reps} s',
   'guided.target.minutes': '{reps} min',
   'guided.howTo': 'Miten tehdään ›',
@@ -5619,6 +5624,7 @@ const FI: Record<I18nKey, string> = {
   'coachChat.compose.catalogMeta': '{count} päivää viikossa · suunniteltu ohjelma omine progressioineen',
   'coachChat.compose.catalogOpen': 'Katso se',
   'coachChat.compose.failed': 'Tämä ei nyt onnistunut. Kerro se uudestaan hieman toisin sanoin.',
+  'coachChat.compose.spent': 'Viikon rakentaminen vie yhden valmentajakysymyksen, ja tämän kuun kysymykset on käytetty.',
   'coachChat.compose.build': 'Rakenna',
   'coachChat.compose.pro': 'Ohjelman rakentaminen kuuluu Prohon.',
   'programIntake.intro': 'Muutama nopea kysymys, niin rakennan viikon vastaustesi pohjalta.',

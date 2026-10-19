@@ -31,5 +31,7 @@ export function trackedLiftAmount(
     }
     return `${weight} × ${dose ? t(language, dose, { count: firstReps }) : firstReps}`;
   }
-  return firstReps ? t(language, dose ?? 'logger.repsValue', { count: firstReps }) : '-';
+  return firstReps
+    ? t(language, dose ?? (Number(firstReps) === 1 ? 'logger.repsValueOne' : 'logger.repsValue'), { count: firstReps })
+    : '-';
 }

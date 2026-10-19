@@ -86,7 +86,7 @@ export function getTopSetLabel(
     // load goes through here.
     return `${formatWeight(weight)} × ${top.reps}`;
   }
-  return t(language, 'logger.repsValue', { count: top.reps ?? 0 });
+  return t(language, top.reps === 1 ? 'logger.repsValueOne' : 'logger.repsValue', { count: top.reps ?? 0 });
 }
 
 /**

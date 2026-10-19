@@ -217,6 +217,7 @@ const suites = [
   ...require('./lib/legalLinks.test.cjs'),
   ...require('./lib/transcriptEntry.test.cjs'),
   ...require('./lib/notificationPlan.test.cjs'),
+  ...require('./lib/huntBatch20261019.test.cjs'),
   ...require('./lib/planNotificationSync.test.cjs'),
   ...require('./lib/programCsvExport.test.cjs'),
   ...require('./lib/programCsvRoundTrip.test.cjs'),
