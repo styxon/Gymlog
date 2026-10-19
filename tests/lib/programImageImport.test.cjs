@@ -55,7 +55,7 @@ function loadOnboardingFinishes(stubs) {
  * notice, with every outside call recorded. `answer` plays the reader's part
  * when the notice opens: it gets the Alert's buttons and options.
  */
-function photoImportWorld(answer) {
+function photoImportWorld(answer, overrides = {}) {
   const calls = [];
   const record = (name, value) => (...args) => {
     calls.push([name, ...args]);
@@ -72,7 +72,10 @@ function photoImportWorld(answer) {
     },
     '../lib/aiCoachClient': {
       isAiCoachLiveConfigured: () => true,
-      requestProgramTableFromImage: record('requestProgramTableFromImage', Promise.resolve([])),
+      requestProgramTableFromImage: record(
+        'requestProgramTableFromImage',
+        Promise.resolve(overrides.rows === undefined ? [] : overrides.rows),
+      ),
     },
     '../lib/proEntitlement': { resolveProEntitlement: () => ({ unlocked: true }) },
     '../utils/programImagePicker': {
@@ -92,6 +95,7 @@ function photoImportWorld(answer) {
       aiLogId: null,
       activePlanIds: [],
       activePlanId: null,
+      aiCoachProQuota: overrides.quota,
     },
     updatePreferences: record('updatePreferences', Promise.resolve()),
     completeOnboarding: noop,
@@ -124,6 +128,37 @@ const LIBRARY = [
 ];
 
 module.exports = [
+  {
+    name: 'photo import spends one coach question, only on a successful read, and none when spent',
+    async run() {
+      const month = require('../../.test-dist/lib/aiCoachQuota.js').coachQuotaMonthStart();
+      const accept = (buttons) => buttons.find((b) => b.style !== 'cancel').onPress();
+      const rows = [{ day: 'Ma', exercise: 'Back Squat', sets: 3, reps: '5' }];
+      const names = (calls) => calls.map((c) => c[0]);
+
+      // Success: one charge, and it is a functional update recording a question.
+      const ok = photoImportWorld(accept, { rows, quota: { monthStart: month, used: 3 } });
+      const read = await ok.finishes.handlePickProgramImage();
+      assert.equal(read.status, 'read');
+      const charges = ok.calls.filter((c) => c[0] === 'updatePreferences' && typeof c[1] === 'function');
+      assert.equal(charges.length, 1);
+      assert.deepEqual(charges[0][1]({ aiCoachProQuota: { monthStart: month, used: 3 } }), {
+        aiCoachProQuota: { monthStart: month, used: 4 },
+      });
+
+      // Failure (empty answer): no charge.
+      const empty = photoImportWorld(accept, { rows: [], quota: { monthStart: month, used: 3 } });
+      assert.equal((await empty.finishes.handlePickProgramImage()).status, 'failed');
+      assert.equal(empty.calls.filter((c) => c[0] === 'updatePreferences' && typeof c[1] === 'function').length, 0);
+
+      // Spent: refused before the notice, the picker and the paid call.
+      const spent = photoImportWorld(accept, { rows, quota: { monthStart: month, used: 25 } });
+      assert.equal((await spent.finishes.handlePickProgramImage()).status, 'spent');
+      for (const forbidden of ['Alert.alert', 'pickProgramImage', 'requestProgramTableFromImage']) {
+        assert.ok(!names(spent.calls).includes(forbidden), forbidden + ' must not run when spent');
+      }
+    },
+  },
   {
     name: 'image import: a good answer survives, junk rows are dropped',
     run() {

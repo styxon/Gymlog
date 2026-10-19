@@ -33,6 +33,7 @@ export type PickProgramImageResult =
 export type ProgramImageImportResult =
   | { status: 'read'; csv: string }
   | { status: 'cancelled' }
+  | { status: 'spent' }
   | { status: 'failed' };
 
 /**

@@ -42,8 +42,8 @@ module.exports = [
       assert.match(app, /function askPhotoOnlineNotice\(\): Promise<boolean> \{/);
       assert.match(
         app,
-        // Only the Pro check (2026-09-29) may come first: it sends nothing.
-        /async function pickProgramImageForImport\(\): Promise<ProgramImageImportResult> \{\s*(?:if \(!resolveProEntitlement\(preferences\)\.unlocked\) \{\s*return \{ status: 'cancelled' \};\s*\}\s*)?if \(!\(await askPhotoOnlineNotice\(\)\)\) \{/,
+        // Only the Pro check (2026-09-29) and the coach-question check (2026-10-19) may come first: neither sends anything.
+        /async function pickProgramImageForImport\(\): Promise<ProgramImageImportResult> \{\s*(?:if \(!resolveProEntitlement\(preferences\)\.unlocked\) \{\s*return \{ status: 'cancelled' \};\s*\}\s*)?(?:\/\/[^\n]*\n\s*)*if \(resolveCoachQuota\(preferences\.aiCoachProQuota\)\.remaining <= 0\) \{\s*return \{ status: 'spent' \};\s*\}\s*if \(!\(await askPhotoOnlineNotice\(\)\)\) \{/,
         'the notice must be asked before anything else in the import',
       );
       /*
@@ -122,9 +122,10 @@ module.exports = [
       // Four endings, three answers: read, the reader ended it, or it failed.
       assert.match(read('src', 'utils', 'programImagePicker.ts'), /export type ProgramImageImportResult =/);
       assert.match(app, /if \(picked\.status === 'cancelled'\) \{\s*return \{ status: 'cancelled' \};/);
-      assert.match(app, /\? \{ status: 'read', csv: programTableToCsv\(rows\) \} : \{ status: 'failed' \};/);
+      assert.match(app, /return \{ status: 'read', csv: programTableToCsv\(rows\) \};/);
+      assert.match(app, /if \(!rows \|\| rows\.length === 0\) \{\s*return \{ status: 'failed' \};/);
       // The sheet speaks only for a real failure.
-      assert.match(sheet, /if \(result\.status === 'read'\) \{\s*setCsvText\(result\.csv\);\s*\} else if \(result\.status === 'failed'\) \{/);
+      assert.match(sheet, /if \(result\.status === 'read'\) \{\s*setCsvText\(result\.csv\);\s*\} else if \(result\.status === 'spent'\) \{[^}]*\} else if \(result\.status === 'failed'\) \{/);
       assert.doesNotMatch(sheet, /const csv = await onPickImage\(\)/, 'the sheet reads the old null-for-everything shape');
     },
   },

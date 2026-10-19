@@ -6,6 +6,7 @@ import {
   findReplaceableOnboardingTemplateId,
   resolveActiveProgramCap,
 } from '../lib/activeProgramSet';
+import { recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/aiCoachClient';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
@@ -261,6 +262,12 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
     if (!resolveProEntitlement(preferences).unlocked) {
       return { status: 'cancelled' };
     }
+    // A photo read is a billed model call, so it spends one of the month's coach
+    // questions like the composer does (owner, 2026-10-19). Checked before the
+    // notice and the picker so nothing is asked of a reader who cannot go on.
+    if (resolveCoachQuota(preferences.aiCoachProQuota).remaining <= 0) {
+      return { status: 'spent' };
+    }
     if (!(await askPhotoOnlineNotice())) {
       return { status: 'cancelled' };
     }
@@ -281,7 +288,13 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
       keepConsent: preferences.aiLogPhotoConsent,
       logId: preferences.aiLogId,
     });
-    return rows && rows.length > 0 ? { status: 'read', csv: programTableToCsv(rows) } : { status: 'failed' };
+    if (!rows || rows.length === 0) {
+      return { status: 'failed' };
+    }
+    // Charged on a read that produced a programme, not on a failure or an
+    // empty answer (same rule as the composer: the question follows the result).
+    void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+    return { status: 'read', csv: programTableToCsv(rows) };
   }
 
   const handlePickProgramImage = isAiCoachLiveConfigured() ? pickProgramImageForImport : undefined;
