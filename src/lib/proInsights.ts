@@ -643,7 +643,9 @@ export function buildWeeklyRead(
       meta: t(language, fatigue.sessionCount7d === 1 ? 'pro.read.recoveryMetaOne' : 'pro.read.recoveryMeta', {
         count: fatigue.sessionCount7d,
       }),
-      bars: normalizedBars([fatigue.recoveryScore]),
+      // No bars: one value normalised against itself drew a single fat block
+      // that meant nothing. The status word and the session count say it.
+      bars: [],
       locked:
         tone === 'green'
           ? null

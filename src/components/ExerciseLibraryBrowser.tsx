@@ -27,6 +27,7 @@ import {
   ExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
 import { exercisePickerChipLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
+import { SectionLabel } from './SettingsUi';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
@@ -630,7 +631,7 @@ export function ExerciseLibraryBrowser({
                 <Text style={styles.filtersTitle}>{t(language, 'library.filtersTitle')}</Text>
                 <Text style={styles.filtersSubtitle}>{t(language, 'library.filtersSubtitle')}</Text>
 
-                <Text style={styles.filterSectionLabel}>{t(language, 'library.filterType')}</Text>
+                <SectionLabel style={styles.filterSectionLabel} label={t(language, 'library.filterType')} />
                 <View style={styles.filterGrid}>
                   {categoryOptions.map((option) => {
                     const selected = categoryFilter === option;
@@ -648,9 +649,7 @@ export function ExerciseLibraryBrowser({
                   })}
                 </View>
 
-                <Text style={[styles.filterSectionLabel, styles.filterSectionLabelSpaced]}>
-                  {t(language, 'library.filterEquipment')}
-                </Text>
+                <SectionLabel style={[styles.filterSectionLabel, styles.filterSectionLabelSpaced]} label={t(language, 'library.filterEquipment')} />
                 <View style={styles.filterGrid}>
                   {equipmentOptions.map((option) => {
                     const selected = equipmentFilter === option;
@@ -911,11 +910,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginTop: 2,
   },
   filterSectionLabel: {
-    color: theme.faint,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.4,
     marginTop: 14,
+    paddingBottom: 8,
+    paddingHorizontal: 0,
   },
   filterSectionLabelSpaced: {
     marginTop: 16,

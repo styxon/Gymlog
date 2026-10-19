@@ -36,12 +36,16 @@ export function SectionLabel({
       <Text accessibilityRole="header" style={styles.sectionLabel}>
         {label}
       </Text>
-      {right ??
+      {typeof right === 'string' ? (
+        <Text style={styles.sectionAction}>{right}</Text>
+      ) : (
+        right ??
         (actionLabel ? (
           <Text accessibilityRole="button" onPress={onAction} suppressHighlighting style={styles.sectionAction}>
             {actionLabel}
           </Text>
-        ) : null)}
+        ) : null)
+      )}
     </View>
   );
 }

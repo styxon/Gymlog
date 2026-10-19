@@ -59,4 +59,27 @@ module.exports = [
       assert.match(back, /theme\.surfaceSoft/);
     },
   },
+  {
+    name: 'unifiedListStyle: no screen keeps its own SectionLabel, and pushed screens use the round back button',
+    run() {
+      const dir = path.join(ROOT, 'src', 'screens');
+      for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.tsx'))) {
+        assert.doesNotMatch(read('src', 'screens', name), /function SectionLabel/, `${name} has a local SectionLabel`);
+      }
+      for (const name of ['Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription']) {
+        assert.match(read('src', 'screens', `${name}Screen.tsx`), /<PageHeader/, `${name} lost the shared header`);
+      }
+      for (const name of ['ProgramDetail', 'Catalog', 'LearnIndex', 'Exercises']) {
+        assert.match(read('src', 'screens', `${name}Screen.tsx`), /<BackButton/, `${name} lost the shared back button`);
+      }
+    },
+  },
+  {
+    name: 'unifiedListStyle: the recovery row draws no single-bar meter; Progress tabs show icon and label',
+    run() {
+      assert.match(read('src', 'lib', 'proInsights.ts'), /bars: \[\],/);
+      assert.doesNotMatch(read('src', 'lib', 'proInsights.ts'), /normalizedBars\(\[fatigue/);
+      assert.match(read('src', 'screens', 'ProgressScreen.tsx'), /<Seg\s+grow\s+showLabels/);
+    },
+  },
 ];

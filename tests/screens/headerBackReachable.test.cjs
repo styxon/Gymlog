@@ -54,7 +54,7 @@ module.exports = [
       for (const name of expected) {
         const source = fs.readFileSync(path.join(screensDir, `${name}.tsx`), 'utf8');
         assert.ok(
-          source.includes('<ScreenHeaderTitle'),
+          source.includes('<ScreenHeaderTitle') || source.includes('<PageHeader'),
           `${name} no longer renders ScreenHeaderTitle; its back button is probably unreachable again`,
         );
       }

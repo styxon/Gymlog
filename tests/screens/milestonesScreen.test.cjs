@@ -96,8 +96,8 @@ module.exports = [
   {
     name: 'milestones: the page lists the reached rungs first, with a day each, and the ladder\'s front row below',
     run() {
-      assert.match(screen, /import \{ ScreenHeaderTitle \} from '\.\.\/components\/ScreenHeaderTitle'/);
-      assert.match(screen, /<ScreenHeaderTitle title=\{t\(language, 'milestones\.title'\)\} \/>/);
+      assert.match(screen, /import \{ PageHeader \} from '\.\.\/components\/BackButton'/);
+      assert.match(screen, /title=\{t\(language, 'milestones\.title'\)\}/);
       assert.match(screen, /buildMilestoneLedgerRows\(\{ ledger, lifetime, unitPreference, language \}\)/);
       const reached = screen.indexOf("'milestones.section.reached'");
       const upNext = screen.indexOf("'milestones.section.upNext'");

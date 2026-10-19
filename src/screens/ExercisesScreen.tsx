@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { BackButton } from '../components/BackButton';
 
 import { ExerciseLibraryBrowser } from '../components/ExerciseLibraryBrowser';
 import type { LibraryCollectionState } from '../lib/exerciseCollections';
@@ -37,24 +38,7 @@ export function ExercisesScreen({
           library was a dead end: the only way out was noticing that tapping
           the Programs tab resets it. */}
       {onBack ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          hitSlop={10}
-          style={styles.backButton}
-        >
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M15 6l-6 6 6 6"
-              stroke={theme.ink}
-              strokeWidth={2.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-          <Text style={styles.backText}>{t(language, 'common.back')}</Text>
-        </Pressable>
+        <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
       ) : null}
       <ExerciseLibraryBrowser
         items={items}

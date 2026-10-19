@@ -18,6 +18,7 @@ import { exerciseMechanic, exerciseTypeOf } from '../lib/exerciseClassification'
 import { exercisePickerLabel } from '../lib/exercisePicker';
 import { ExerciseProgressSummary } from '../lib/progression';
 import { ProLockIcon } from '../components/ProLockMarks';
+import { SectionLabel } from '../components/SettingsUi';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 
@@ -155,17 +156,6 @@ function Chip({ label, filled }: { label: string; filled?: boolean }) {
   return (
     <View style={[styles.chip, filled ? styles.chipFilled : styles.chipSoft]}>
       <Text style={[styles.chipText, filled ? styles.chipTextFilled : styles.chipTextSoft]}>{label}</Text>
-    </View>
-  );
-}
-
-function SectionLabel({ children, right }: { children: string; right?: React.ReactNode }) {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <View style={styles.sectionLabelRow}>
-      <Text style={styles.sectionLabel}>{children}</Text>
-      {right}
     </View>
   );
 }
@@ -384,7 +374,7 @@ export function ExerciseDetailScreen({
         {teaching ? (
           <>
             <View style={styles.section}>
-              <SectionLabel>{t(language, 'exDetail.cues')}</SectionLabel>
+              <SectionLabel label={t(language, 'exDetail.cues')} />
               <View style={styles.teachCard}>
                 {teaching.cues.map((cue, index) => (
                   <View
@@ -399,7 +389,7 @@ export function ExerciseDetailScreen({
             </View>
 
             <View style={styles.section}>
-              <SectionLabel>{t(language, 'exDetail.mistakes')}</SectionLabel>
+              <SectionLabel label={t(language, 'exDetail.mistakes')} />
               <View style={styles.mistakeCard}>
                 {teaching.mistakes.map((entry, index) => (
                   <View
@@ -417,7 +407,7 @@ export function ExerciseDetailScreen({
             </View>
 
             <View style={styles.section}>
-              <SectionLabel>{t(language, 'exDetail.feel')}</SectionLabel>
+              <SectionLabel label={t(language, 'exDetail.feel')} />
               <View style={styles.feelCard}>
                 <Text style={styles.feelText}>{teaching.feel}</Text>
                 <View style={styles.tempoRow}>
@@ -439,7 +429,7 @@ export function ExerciseDetailScreen({
         ) : null}
 
         <View style={styles.section}>
-          <SectionLabel>{t(language, 'exDetail.yourHistory')}</SectionLabel>
+          <SectionLabel label={t(language, 'exDetail.yourHistory')} />
           {hasHistory ? (
             <>
               <View style={styles.statGrid}>
@@ -502,7 +492,7 @@ export function ExerciseDetailScreen({
         </View>
 
         <View style={styles.section}>
-          <SectionLabel>{t(language, 'exDetail.targetMuscles')}</SectionLabel>
+          <SectionLabel label={t(language, 'exDetail.targetMuscles')} />
           <View style={styles.musclesCard}>
             <Text style={styles.musclesGroupLabel}>{t(language, 'exDetail.primary')}</Text>
             <View style={styles.chipRow}>
@@ -527,7 +517,7 @@ export function ExerciseDetailScreen({
 
         {teaching && teaching.swaps.length > 0 ? (
           <View style={styles.section}>
-            <SectionLabel>{t(language, 'exDetail.swaps')}</SectionLabel>
+            <SectionLabel label={t(language, 'exDetail.swaps')} />
             <View style={{ gap: 10 }}>
               {teaching.swaps.map((swap) => (
                 <Pressable
@@ -559,7 +549,7 @@ export function ExerciseDetailScreen({
         ) : null}
 
         <View style={styles.section}>
-          <SectionLabel>{t(language, 'exDetail.howTo')}</SectionLabel>
+          <SectionLabel label={t(language, 'exDetail.howTo')} />
           <View style={styles.howToCard}>
             {instructions.length ? (
               instructions.map((step, index) => (
@@ -583,7 +573,7 @@ export function ExerciseDetailScreen({
 
         {teaching && teaching.check.length > 0 ? (
           <View style={styles.section}>
-            <SectionLabel>{t(language, 'exDetail.check')}</SectionLabel>
+            <SectionLabel label={t(language, 'exDetail.check')} />
             <View style={styles.checkCard}>
               {teaching.check.map((statement, index) => {
                 const ticked = checkedStatements.includes(index);
@@ -984,19 +974,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   section: {
     marginTop: 24,
-  },
-  sectionLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-    paddingBottom: 11,
-  },
-  sectionLabel: {
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.faint,
   },
   statGrid: {
     flexDirection: 'row',

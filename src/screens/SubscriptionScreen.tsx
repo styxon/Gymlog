@@ -3,8 +3,8 @@ import { Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { CutSurface } from '../components/CutSurface';
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { ListCard } from '../components/ListCard';
+import { PageHeader } from '../components/BackButton';
 import { CARD_SHADOW, SectionLabel } from '../components/SettingsUi';
 import { SubscriptionSheet } from '../components/SubscriptionSheet';
 import { formatDate } from '../lib/format';
@@ -383,27 +383,12 @@ export function SubscriptionScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={goBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M15 5l-7 7 7 7"
-              stroke={theme.ink}
-              strokeWidth={2.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle
-          title={t(language, view === 'membership' ? 'subs.header.membership' : 'subs.header.subs')}
-        />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, view === 'membership' ? 'subs.header.membership' : 'subs.header.subs')}
+        onBack={goBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         {view === 'membership' ? (
@@ -411,7 +396,7 @@ export function SubscriptionScreen({
             {billing ? (
               <>
                 <SectionLabel label={t(language, 'subs.section.paying')} />
-                <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+                <ListCard divided={false} style={styles.card}>
                   <Row
                     icon="card"
                     title={t(language, 'subs.row.changeMethod')}
@@ -436,18 +421,18 @@ export function SubscriptionScreen({
                     sub={t(language, 'subs.row.receiptsSub')}
                     onPress={() => setSheet('receipts')}
                   />
-                </CutSurface>
+                </ListCard>
               </>
             ) : null}
 
             <SectionLabel label={t(language, 'subs.section.membership')} />
             {lifetime ? (
-              <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={[styles.card, styles.notePad]}>
+              <ListCard divided={false} style={[styles.card, styles.notePad]}>
                 <Text style={styles.noteTitle}>{t(language, 'subs.lifetime.title')}</Text>
                 <Text style={styles.noteBody}>{t(language, 'subs.lifetime.body')}</Text>
-              </CutSurface>
+              </ListCard>
             ) : model.grant ? (
-              <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={[styles.card, styles.notePad]}>
+              <ListCard divided={false} style={[styles.card, styles.notePad]}>
                 <Text style={styles.noteBody}>
                   {model.grant === 'trial'
                     ? t(language, 'subs.trialNote', { date: date(model.endsAt) })
@@ -455,18 +440,18 @@ export function SubscriptionScreen({
                       ? t(language, 'subs.reviewNote')
                       : t(language, 'subs.promoNote')}
                 </Text>
-              </CutSurface>
+              </ListCard>
             ) : lifetime ? null : model.cancelled ? (
-              <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+              <ListCard divided={false} style={styles.card}>
                 <Row
                   icon="restore"
                   title={t(language, 'subs.row.resume')}
                   sub={t(language, 'subs.row.resumeSub', { date: date(model.endsAt) })}
                   onPress={() => onChangeMockCancelled(false)}
                 />
-              </CutSurface>
+              </ListCard>
             ) : (
-              <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+              <ListCard divided={false} style={styles.card}>
                 <Row
                   icon="warn"
                   title={t(language, 'subs.row.end')}
@@ -474,7 +459,7 @@ export function SubscriptionScreen({
                   onPress={onManageMembership}
                   danger
                 />
-              </CutSurface>
+              </ListCard>
             )}
 
             {/* The promo or trial card above already says there is nothing to
@@ -489,7 +474,7 @@ export function SubscriptionScreen({
         ) : (
           <>
             {/* status */}
-            <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={[styles.card, styles.statusCard]}>
+            <ListCard divided={false} style={[styles.card, styles.statusCard]}>
               <View style={styles.statusTopRow}>
                 <View style={[styles.shieldTile, { backgroundColor: statusTile }]}>
                   <Glyph
@@ -531,12 +516,12 @@ export function SubscriptionScreen({
                   ) : null}
                 </>
               )}
-            </CutSurface>
+            </ListCard>
 
             {model.state === 'active' ? (
               <>
                 <SectionLabel label={t(language, 'subs.section.yours')} />
-                <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+                <ListCard divided={false} style={styles.card}>
                   {model.cancelled && billing ? (
                     <Row
                       icon="restore"
@@ -587,7 +572,7 @@ export function SubscriptionScreen({
                       }
                     />
                   )}
-                </CutSurface>
+                </ListCard>
               </>
             ) : (
               <>
@@ -610,7 +595,7 @@ export function SubscriptionScreen({
                 </Pressable>
 
                 <SectionLabel label={t(language, 'subs.section.other')} />
-                <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+                <ListCard divided={false} style={styles.card}>
                   <Row
                     icon="restore"
                     title={t(language, 'subs.row.restore')}
@@ -628,7 +613,7 @@ export function SubscriptionScreen({
                       void Linking.openURL(manageSubscriptionsUrl(STORE))
                     }
                   />
-                </CutSurface>
+                </ListCard>
               </>
             )}
 
@@ -869,20 +854,9 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.bg,
     },
     header: {
-      height: 56,
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-    },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: theme.surface,
-      borderWidth: 1,
-      borderColor: theme.border,
-      alignItems: 'center',
-      justifyContent: 'center',
+      paddingHorizontal: 18,
+      paddingTop: 8,
+      paddingBottom: 6,
     },
     body: {
       paddingTop: 4,
