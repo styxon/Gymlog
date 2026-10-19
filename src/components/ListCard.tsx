@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
+import { keepUnitsTogether } from '../lib/format';
 import { Theme, useThemedStyles } from '../theming';
 import { ChevronIcon } from './SettingsUi';
 
@@ -114,20 +115,20 @@ export function ListRow({
           <View style={styles.metaLine}>
             {metaDot ? <View style={[styles.metaDot, { backgroundColor: metaDot }]} /> : null}
             <Text style={styles.meta} numberOfLines={2}>
-              {meta}
+              {keepUnitsTogether(meta)}
             </Text>
           </View>
         ) : null}
         {detail ? (
           <Text style={styles.meta} numberOfLines={2}>
-            {detail}
+            {keepUnitsTogether(detail)}
           </Text>
         ) : null}
       </View>
       {right ??
         (trailing ? (
           <View style={styles.figure}>
-            <Text style={styles.trailing} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            <Text style={styles.trailing} numberOfLines={1}>
               {trailing}
             </Text>
             {delta ? (
@@ -185,8 +186,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   titleLine: {
     flexDirection: 'row',
+    // A badge beside the title drops under it rather than squeezing it:
+    // a long single word must never break mid-word.
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: 7,
+    columnGap: 7,
+    rowGap: 4,
   },
   title: {
     flexShrink: 1,
@@ -222,7 +227,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   figure: {
     alignItems: 'flex-end',
     flexShrink: 0,
-    maxWidth: '45%',
+    // A bound, not a shrink: the figure keeps its size and the title wraps.
+    maxWidth: '55%',
   },
   trailing: {
     color: theme.ink,
