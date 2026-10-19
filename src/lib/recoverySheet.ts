@@ -153,10 +153,11 @@ export function acwrLabelOf(fatigue: Pick<FatigueResult, 'acwr' | 'chronicLoadKg
 /**
  * A session title as a sentence may carry it: a name saved with its number
  * glued on ("Legs1") reads as a typo, so the number is set apart before the
- * name is translated ("Jalat 1"). Blank titles are no title.
+ * name is translated ("Jalat 1"). Only that case: one plain word with the
+ * number glued on, as the whole title; "Squat 5x5" and "HIIT 20" stay as written. Blank titles are no title.
  */
 export function tidySessionTitle(title: string | null | undefined, language: AppLanguage): string | null {
-  const spaced = (title ?? '').trim().replace(/\s+/g, ' ').replace(/(\p{L})(\d+)$/u, '$1 $2');
+  const spaced = (title ?? '').trim().replace(/\s+/g, ' ').replace(/^(\p{L}+)(\d+)$/u, '$1 $2');
   if (!spaced) {
     return null;
   }
