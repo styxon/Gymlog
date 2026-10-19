@@ -70,6 +70,10 @@ for spec in "${SPECS[@]}"; do
       cp "$FLOWS"/*.yaml "$dir/"
       check=$([ "$language" = fi ] && echo Koti || echo Home)
       sed -i '' "s/@LANGUAGE_CHECK@/$check/" "$dir/store.yaml"
+      # The coach answer starts under the see-through header on the 6.3"
+      # phone only; there the flow drags the thread down a little.
+      nudge=$([ "$folder" = iphone-6.3 ] && echo true || echo false)
+      sed -i '' "s/@CHAT_NUDGE@/$nudge/" "$dir/store.yaml"
       ok=0
       # Twice: the first Maestro run on a fresh boot builds its driver, and
       # on the runner that has outlasted any timeout (2026-10-18).

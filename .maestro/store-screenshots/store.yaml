@@ -135,11 +135,12 @@ name: Store screenshots
     timeout: 10000
 # Under the coach's see-through header still counts as visible, so on the
 # smaller phone the sentence stopped there, half hidden (6.3", 2026-10-19).
-# Where the link above the question is off screen, drag the thread down a
-# little, slowly so it does not fling.
+# There shoot.sh writes true over @CHAT_NUDGE@ and the thread is dragged down
+# a little, slowly so it does not fling. Visibility cannot decide it: the link
+# above the question counted as visible under the header too.
 - runFlow:
     when:
-      notVisible: "Katso koko analyysi|See full analysis"
+      true: "${@CHAT_NUDGE@}"
     commands:
       - swipe:
           start: "50%, 40%"
