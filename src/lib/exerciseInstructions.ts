@@ -53,11 +53,11 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   // Added with the "Arnold Press" alias fix (bug hunt, 2026-10-04): the name used
   // to open the kettlebell version. Five steps, as in the English entry.
   'Arnold Dumbbell Press': [
-    'Istu selkänojalliselle penkille ja pidä kahta käsipainoa edessäsi rintakorkeudella kämmenet vartaloa kohti ja kyynärpäät koukussa. Kyynärpäät ovat vartalon vieressä, ja alkuasento näyttää käsipainocurlin yläasennolta.',
+    'Istu selkänojalliselle penkille ja pidä kahta käsipainoa edessäsi ylärinnan korkeudella, kämmenet vartaloa kohti ja kyynärpäät koukussa. Kyynärpäät ovat vartalon vieressä, ja alkuasento näyttää käsipainocurlin yläasennolta.',
     'Nosta käsipainoja ja kierrä samalla kämmeniä, kunnes ne osoittavat eteenpäin.',
-    'Jatka nostoa, kunnes kädet ovat suorina pään yläpuolella. Hengitä ulos tämän vaiheen aikana.',
-    'Pysähdy hetkeksi ylös ja laske käsipainot takaisin alkuasentoon kiertäen kämmenet takaisin kohti itseäsi. Vasen käsi kiertyy vastapäivään ja oikea myötäpäivään. Hengitä sisään laskun aikana.',
-    'Toista suositeltu määrä toistoja.',
+    'Jatka nostoa, kunnes kädet ovat ojennettuina pään yläpuolella.',
+    'Pysähdy hetkeksi ylös ja laske käsipainot hallitusti alkuasentoon kiertäen kämmenet takaisin itseäsi kohti.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Ball Leg Curl': [
     'Asetu selinmakuulle lattialle ja nosta jalat jumppapallon päälle.',
@@ -83,10 +83,10 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä olkavarret paikallaan ja käännä tanko ylös hauiksilla. Vain kyynärvarret liikkuvat.',
     'Jatka, kunnes hauikset ovat täysin supistuneet ja tanko on hartioiden korkeudella. Purista sekunnin ajan.',
     'Laske tanko hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Barbell Deadlift': [
-    'Asetu seisomaan ladatun tangon taakse.',
+    'Seiso ladatun tangon edessä.',
     'Pidä selkä suorana, koukista polvet ja taivuta lantiosta eteen. Ota tangosta hartioiden levyinen yliote. Jos ote ei kestä, käytä sekaotetta tai rannelenkkejä.',
     'Aloita nosto työntämällä jaloilla ja suorista vartalo pystyyn. Ylhäällä rinta ulos ja lavat yhteen.',
     'Palaa alas koukistamalla polvia ja taivuttamalla lantiosta selkä suorana. Kun levyt koskettavat lattiaa, olet valmis seuraavaan toistoon.',
@@ -98,17 +98,17 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Astu taaksepäin ja asetu hartioiden levyiseen haara-asentoon varpaat hieman ulospäin. Pidä katse eteenpäin ja selkä suorana.',
     'Laskeudu hitaasti koukistamalla polvia ja työntämällä lantiota taakse. Jatka alas niin syvälle kuin liikkuvuutesi sallii.',
     'Nouse ylös työntämällä kantapäillä ja ojentamalla polvet ja lantio suoriksi.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Barbell Glute Bridge': [
     'Istu lattialle ladattu tanko jalkojen päällä. Tangon pehmuste vähentää painetta lantiolla. Rullaa tanko suoraan lantion päälle ja asetu selinmakuulle.',
     'Aloita liike työntämällä kantapäillä ja ojenna lantio ylös tangon läpi. Paino on yläselällä ja kantapäillä.',
-    'Ojenna niin ylös kuin pystyt ja palaa hallitusti alkuasentoon.',
+    'Ojenna, kunnes vartalo on suorassa linjassa hartioista polviin, ja palaa hallitusti alkuasentoon.',
   ],
   'Barbell Hip Thrust': [
     'Istu lattialle penkki selän takana ja ladattu tanko jalkojen päällä. Tangon pehmuste vähentää painetta lantiolla.',
     'Rullaa tanko suoraan lantion päälle ja nojaa penkkiin niin, että lapaluut ovat sen yläreunan kohdalla.',
-    'Työnnä jalkaterillä ja ojenna lantio ylös tangon läpi. Paino on lapaluilla ja jalkaterillä. Ojenna niin ylös kuin pystyt ja palaa hallitusti alas.',
+    'Työnnä jalkaterillä ja ojenna lantio ylös tangon läpi. Paino on lapaluilla ja jalkaterillä. Ojenna, kunnes vartalo on suorassa linjassa hartioista polviin, ja palaa hallitusti alas.',
   ],
   'Burpee': [
     'Seiso suorassa, laskeudu kyykkyyn ja aseta molemmat kämmenet lattiaan jalkaterien ulkopuolelle.',
@@ -116,7 +116,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Hyppää jalat takaisin käsien viereen ja nouse hyppyyn kädet ylhäällä. Laskeudu pehmeästi ja jatka suoraan seuraavaan toistoon.',
   ],
   'Kettlebell Swing': [
-    'Aseta kahvakuula lattialle noin jalan päähän eteesi, jalat hieman lantiota leveämmällä. Työnnä lantio taakse selkä suorana ja ota kahvasta molemmin käsin.',
+    'Aseta kahvakuula lattialle noin 30 cm päähän eteesi, jalat hieman lantiota leveämmällä. Työnnä lantio taakse selkä suorana ja ota kahvasta molemmin käsin.',
     'Heilauta kuula jalkojen välistä taakse ja ojenna lantio räjähtävästi eteen. Kädet vain ohjaavat — työn tekee lantio, ja kuula nousee itsestään rintakehän korkeudelle.',
     'Anna kuulan pudota takaisin jalkojen väliin lantio taakse työntäen ja jatka suoraan seuraavaan toistoon. Selkä pysyy suorana ensimmäisestä toistosta viimeiseen.',
   ],
@@ -138,43 +138,43 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   // The rows the ready programmes' names reach by alias since the catalog
   // audit (2026-10-06); each was reached before only by a near-miss name.
   'EZ-Bar Skullcrusher': [
-    'Ota EZ-tangosta kapea ote, nosta tanko ja käy selällesi penkille kyynärpäät lähellä toisiaan. Kädet osoittavat suoraan kattoa kohti. Tämä on lähtöasento.',
-    'Pidä olkavarret paikallaan ja laske tankoa koukistamalla kyynärpäitä. Hengitä sisään laskun aikana. Pysähdy, kun tanko on suoraan otsan yläpuolella.',
-    'Ojenna kyynärpäät ja nosta tanko takaisin lähtöasentoon uloshengityksellä.',
-    'Toista.',
+    'Ota EZ-tangosta kapea ote, nosta tanko ja käy selällesi penkille kyynärpäät lähellä toisiaan. Kädet osoittavat suoraan kattoa kohti. Tämä on alkuasento.',
+    'Pidä olkavarret paikallaan ja laske tankoa koukistamalla kyynärpäitä. Pysähdy, kun tanko on suoraan otsan yläpuolella.',
+    'Ojenna kyynärpäät ja nosta tanko takaisin alkuasentoon.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Standing Dumbbell Triceps Extension': [
-    'Seiso jalat noin hartioiden leveydellä ja pidä käsipainoa molemmin käsin. Nosta paino hitaasti pään yläpuolelle, kunnes kädet ovat täysin suorat.',
-    'Paino lepää kämmenillä peukalot sen ympärillä, ja kämmenet osoittavat kattoon. Tämä on lähtöasento.',
-    'Pidä olkavarret lähellä päätä, kyynärpäät sisällä ja pystysuorassa, ja laske painoa kaarella pään taakse, kunnes kyynärvarret koskettavat hauiksia. Vain kyynärvarret liikkuvat, olkavarret pysyvät paikallaan. Hengitä sisään laskun aikana.',
-    'Nosta paino ojentajilla takaisin lähtöasentoon. Hengitä ulos noston aikana.',
-    'Toista ohjelman toistomäärä.',
+    'Seiso jalat noin hartioiden leveydellä ja pidä käsipainoa molemmin käsin. Nosta paino hitaasti pään yläpuolelle, kunnes kädet ovat suorat.',
+    'Paino lepää kämmenillä peukalot sen ympärillä, ja kämmenet osoittavat kattoon. Tämä on alkuasento.',
+    'Pidä olkavarret lähellä päätä, kyynärpäät sisällä ja pystysuorassa, ja laske painoa kaarella pään taakse, kunnes kyynärvarret koskettavat hauiksia. Vain kyynärvarret liikkuvat, olkavarret pysyvät paikallaan.',
+    'Nosta paino ojentajilla takaisin alkuasentoon.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Close-Grip Barbell Bench Press': [
-    'Käy selällesi tasapenkille. Ota tangosta kapea, noin hartioiden levyinen ote, nosta tanko telineestä ja pidä se suoraan yläpuolellasi kädet suorina. Tämä on lähtöasento.',
-    'Hengitä sisään ja laske tanko hitaasti rintakehän keskiosaan. Pidä kyynärpäät koko ajan lähellä vartaloa, toisin kuin tavallisessa penkkipunnerruksessa, jotta ojentajat tekevät työn.',
-    'Pidä sekunnin tauko ja työnnä tanko ojentajilla takaisin lähtöasentoon uloshengityksellä. Pidä kädet suorina sekunnin ajan ja aloita lasku taas hitaasti: laskun pitäisi kestää vähintään kaksi kertaa niin kauan kuin nousun.',
-    'Toista ohjelman toistomäärä.',
+    'Käy selällesi tasapenkille. Ota tangosta kapea, noin hartioiden levyinen ote, nosta tanko telineestä ja pidä se suoraan yläpuolellasi kädet ojennettuina. Tämä on alkuasento.',
+    'Laske tanko hitaasti rintakehän keskiosaan. Pidä kyynärpäät koko ajan lähellä vartaloa, toisin kuin tavallisessa penkkipunnerruksessa, jotta ojentajat tekevät työn.',
+    'Pidä sekunnin tauko ja työnnä tanko ojentajilla takaisin alkuasentoon. Pysähdy ylhäällä sekunniksi ja aloita lasku taas hitaasti: laskun pitäisi kestää vähintään kaksi kertaa niin kauan kuin nousun.',
+    'Toista ohjelman mukainen määrä toistoja.',
     'Lopuksi laske tanko takaisin telineeseen.',
   ],
   'T-Bar Row with Handle': [
     'Aseta tangon toinen pää maamiinatelineeseen tai nurkkaan, jotta se ei liiku, ja lisää sopiva paino omaan päähäsi.',
     'Seiso tangon yläpuolella ja aseta V-kahva tangon ympärille lähelle levyjen lukkoa. Nouse seisomaan lantion ja jalkojen voimalla.',
-    'Ota leveä asento, vie lantio taakse ja pidä rintakehä ylhäällä, kädet suorina. Tämä on lähtöasento.',
+    'Ota leveä asento, vie lantio taakse ja pidä rinta ylhäällä selkä suorana, kädet ojennettuina. Tämä on alkuasento.',
     'Vedä paino ylävatsaa kohti vetämällä lapaluita yhteen ja koukistamalla kyynärpäitä. Älä nykäise painoa tai huijaa liikkeessä.',
-    'Pidä lyhyt tauko ja palaa lähtöasentoon.',
+    'Pidä lyhyt tauko ja palaa alkuasentoon.',
   ],
   'Push-Ups - Close Triceps Position': [
     'Asetu vatsallesi lattialle ja aseta kädet hartioita kapeammalle. Nosta vartalo suorin käsin ylös.',
-    'Hengitä sisään ja laskeudu, kunnes rintakehä melkein koskettaa lattiaa.',
-    'Punnerra ojentajilla ja rintalihaksilla takaisin lähtöasentoon ja purista rintaa. Hengitä ulos noston aikana.',
-    'Pidä sekunnin tauko yläasennossa ja toista ohjelman toistomäärä.',
+    'Laskeudu, kunnes rintakehä melkein koskettaa lattiaa.',
+    'Punnerra ojentajilla ja rintalihaksilla takaisin alkuasentoon ja purista rintaa.',
+    'Pidä sekunnin tauko yläasennossa ja toista ohjelman mukainen määrä toistoja.',
   ],
   'Natural Glute Ham Raise': [
-    'Asetu ylätaljan reisituen tai preacher-penkin luo niin, että nilkat ovat tyynyjen alla, polvet istuimella ja selkä laitetta kohti. Pysy pystyssä hyvässä ryhdissä.',
-    'Tämä on lähtöasento. Laskeudu hallitusti eteenpäin, kunnes polvet ovat lähes suorat.',
-    'Nouse hallitusti takaisin lähtöasentoon.',
-    'Jos toisto ei onnistu, ota apua kuminauhasta, kaverista tai työntämällä korokkeesta.',
+    'Asetu ylätaljan reisituen tai saarnaajapenkin luo niin, että nilkat ovat tyynyjen alla, polvet istuimella ja selkä laitetta kohti. Pysy pystyssä hyvässä ryhdissä.',
+    'Tämä on alkuasento. Laskeudu hallitusti eteenpäin, kunnes polvet ovat lähes suorat.',
+    'Nouse hallitusti takaisin alkuasentoon.',
+    'Jos toisto ei onnistu, ota apua kuminauhasta, parilta tai työntämällä korokkeesta.',
   ],
   'Side Plank': [
     'Käy kyljellesi jalat suorina päällekkäin ja nouse alemman kyynärvarren varaan niin, että kyynärpää on suoraan olkapään alla. Helpommassa versiossa koukista polvet ja pidä ne lattiassa.',
@@ -183,7 +183,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Landmine Press': [
     'Aseta levytangon toinen pää landmine-telineeseen tai nurkkaan ja lisää painot toiseen päähän. Seiso tankoa kohti ja pidä painotettua päätä yhdellä kädellä olkapään edessä.',
-    'Jännitä keskivartalo ja punnerra tanko ylös ja eteen, kunnes käsi on suora. Tanko kulkee kaarella edessäsi, joten olkapään ei tarvitse ojentua suoraan pään yli.',
+    'Jännitä keskivartalo ja paina tanko ylös ja eteen, kunnes käsi on suora. Tanko kulkee kaarella edessäsi, joten olkapään ei tarvitse ojentua suoraan pään yli.',
     'Laske tanko hallitusti takaisin olkapäälle. Tee sarja loppuun ja vaihda kättä.',
   ],
   'Machine Hip Thrust': [
@@ -205,22 +205,22 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Astu takajalalla eteen ja toista askelkyykky toisella jalalla.',
   ],
   'Battling Ropes': [
-    'Tarvitset paksun köyden, joka on ankkuroitu keskeltä noin viiden metrin päähän. Seiso köyden edessä pää kummassakin kädessä, kädet suorina sivuilla.',
+    'Tarvitset paksun köyden, joka on ankkuroitu keskeltä noin viiden metrin päähän. Seiso köyden edessä pää kummassakin kädessä, kädet sivuilla.',
     'Aloita nostamalla toinen käsi nopeasti hartioiden korkeudelle.',
     'Kun käsi laskeutuu alas, nosta toinen käsi ylös.',
     'Jatka vuorotellen ja piiskaa köysiä ylös ja alas niin nopeasti kuin pystyt.',
   ],
   'Bench Press - Powerlifting': [
-    'Asetu penkille niin, että pää on tangon takana. Vedä jalat vartalon alle ja kaarra selkää. Nosta lavat irti penkistä ja purista ne yhteen. Työnnä jaloilla epäkäslihakset penkkiä vasten ja pidä keho tiukkana koko liikkeen ajan.',
+    'Asetu penkille niin, että pää on tangon alla. Vedä jalat vartalon alle ja tee yläselkään tukeva kaari. Nosta lavat irti penkistä ja purista ne yhteen. Työnnä jaloilla epäkäslihakset penkkiä vasten ja pidä keho tiukkana koko liikkeen ajan.',
     'Olipa ote miten leveä tahansa, sen tulee peittää tangon merkkirengas. Vedä tanko telineestä lapoja irrottamatta. Purista tankoa ja yritä repiä sitä auki.',
     'Laske tanko alarinnalle tai ylävatsalle. Tangon, ranteen ja kyynärpään tulee pysyä samassa linjassa.',
-    'Pidä tauko tangon koskettaessa vartaloa ja työnnä sitten ylös niin voimakkaasti kuin pystyt. Kyynärpäät pysyvät lähellä vartaloa lukkoon asti.',
+    'Pidä tauko tangon koskettaessa vartaloa ja työnnä sitten ylös niin voimakkaasti kuin pystyt. Kyynärpäät pysyvät lähellä vartaloa, kunnes kädet ovat suorina.',
   ],
   'Bent Over Barbell Row': [
     'Ota tangosta yliote, koukista polvia hieman ja taivuta ylävartalo lantiosta lähes vaakatasoon selkä suorana. Pidä katse eteenpäin. Tanko roikkuu suoraan edessäsi kädet suorina.',
     'Pidä ylävartalo paikallaan ja vedä tanko vartaloa kohti. Kyynärpäät kulkevat lähellä kylkiä. Purista selkälihakset ylhäällä yhteen.',
     'Laske tanko hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Bodyweight Squat': [
     'Seiso jalat hartioiden leveydellä. Voit pitää kädet niskan takana.',
@@ -235,7 +235,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Box Squat': [
     'Laatikkokyykyssä voit kyykätä haluamaasi syvyyteen ja kehittää räjähtävää voimaa. Asetu telineeseen laatikko takanasi sopivalla korkeudella. Tavallisesti laatikko on sellainen, että kyykky tulee vaakatasoon, mutta voit harjoitella myös korkeammalta tai matalammalta.',
-    'Astu tangon alle ja aseta se yläselän päälle. Purista lavat yhteen ja kierrä kyynärpäät eteen, ikään kuin taivuttaisit tankoa hartioidesi päällä. Nosta tanko telineestä, jännitä alaselkä notkolle ja astu taakse. Leveämpi asento painottaa selkää, pakaroita ja takareisiä, kapeampi etureisiä. Katse eteenpäin.',
+    'Astu tangon alle ja aseta se yläselän päälle. Purista lavat yhteen ja kierrä kyynärpäät eteen, ikään kuin taivuttaisit tankoa hartioidesi päällä. Nosta tanko telineestä, pidä alaselkä luonnollisessa kaaressa ja astu taakse. Leveämpi asento painottaa selkää, pakaroita ja takareisiä, kapeampi etureisiä. Katse eteenpäin.',
     'Pidä selkä, hartiat ja keskivartalo tiukkana ja työnnä polvia ja lantiota ulospäin laskeutuessasi. Istu lantio edellä alas laatikolle. Sääret ovat mieluiten kohtisuorassa lattiaan nähden. Pysähdy laatikolle ja rentouta lonkankoukistajat. Älä koskaan pompi laatikolta.',
     'Pidä paino kantapäillä, työnnä jalkateriä ja polvia ulos ja nouse laatikolta pää edellä. Jatka ylös pitäen koko keho tiukkana.',
   ],
@@ -249,23 +249,23 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Cable Crunch': [
     'Asetu polvilleen ylätaljan alle, jossa on naruvedin.',
     'Ota narusta kiinni ja vedä se kasvojen viereen.',
-    'Koukista lantiota hieman ja anna painon venyttää alaselkää kevyesti.',
+    'Koukista lantiota hieman ja pidä selkä suorana. Tämä on alkuasento.',
     'Pidä lantio paikallaan ja koukista ylävartaloa vatsalihaksilla niin, että kyynärpäät kulkevat kohti reisiä. Purista supistus sekunnin ajan.',
     'Palaa hitaasti alkuasentoon. Pidä vatsalihakset jännityksessä koko ajan äläkä valitse niin raskasta painoa, että alaselkä tekee työn.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Cable Hammer Curls - Rope Attachment': [
     'Kiinnitä naruvedin alataljaan ja seiso noin 30 senttimetrin päässä laitteesta.',
     'Ota narusta neutraali ote kämmenet vastakkain ja seiso ryhdikkäästi ylävartalo paikallaan.',
     'Pidä kyynärpäät kylkiä vasten koko liikkeen ajan. Vain kyynärvarret liikkuvat.',
-    'Käännä kädet ylös hauiksilla, kunnes hauis ja kyynärvarsi koskettavat. Kyynärpäät ja olkavarret pysyvät paikallaan.',
+    'Nosta kädet ylös hauiksilla, kunnes hauis ja kyynärvarsi koskettavat. Kyynärpäät ja olkavarret pysyvät paikallaan.',
     'Purista sekunnin ajan ja laske paino hitaasti takaisin.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Cable Rear Delt Fly': [
     'Säädä taljat pään yläpuolelle ja valitse vastus.',
     'Ota vasen kahva oikeaan käteen ja oikea kahva vasempaan, kädet ristissä edessäsi.',
-    'Vie kädet taakse ja ulospäin pitäen ne suorina koko liikkeen ajan.',
+    'Vie kädet taakse ja ulospäin pitäen kyynärpäät hieman koukussa koko liikkeen ajan.',
     'Pidä tauko liikkeen lopussa ja palauta kahvat hallitusti alkuasentoon.',
   ],
   'Cable Seated Lateral Raise': [
@@ -273,9 +273,9 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Istu penkin reunalle jalat polvien edessä.',
     'Taivuta ylävartalo eteen selkä suorana ja lepuuta rintakehä reisiä vasten.',
     'Ota kahvat käsiin ristikkäin: vasen talja oikeaan käteen ja oikea talja vasempaan. Vaijerit kulkevat polvien alta, kädet ovat lähes suorina kämmenet vastakkain.',
-    'Pidä kädet suorina ja nosta olkavarret sivuille hartioiden korkeudelle. Purista supistus sekunnin ajan.',
+    'Pidä kyynärpäissä kevyt koukku ja nosta olkavarret sivuille hartioiden korkeudelle. Purista supistus sekunnin ajan.',
     'Laske kädet hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja. Pidä olkavarret kohtisuorassa vartaloon nähden ja kyynärpäissä sama kevyt koukku koko liikkeen ajan.',
+    'Toista ohjelman mukainen määrä toistoja. Pidä olkavarret kohtisuorassa vartaloon nähden ja kyynärpäissä sama kevyt koukku koko liikkeen ajan.',
   ],
   'Cable Wrist Curl': [
     'Aseta penkki alataljan eteen ja kiinnitä taljaan suora tanko.',
@@ -283,7 +283,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Käännä ranteita ylöspäin ja pidä supistus sekunnin ajan.',
     'Laske ranteet hitaasti takaisin alas.',
     'Kyynärvarret pysyvät paikallaan — vain ranteet liikkuvat.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Cat Stretch': [
     'Asetu lattialle konttausasentoon käsien ja polvien varaan.',
@@ -310,7 +310,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Dead Bug': [
     'Asetu selinmakuulle kädet suoraan ylös kohti kattoa.',
     'Nosta jalat ilmaan niin, että lantio ja polvet ovat 90 asteen kulmassa.',
-    'Puhalla ilmat ulos, laske kylkiluut alas ja paina alaselkä lattiaa vasten. Kallista lantiota ylös ja purista pakarat. Pidä tämä asento koko liikkeen ajan.',
+    'Laske kylkiluut alas ja paina alaselkä lattiaa vasten. Kallista lantiota ylös ja purista pakarat. Pidä tämä asento koko liikkeen ajan.',
     'Aloita ojentamalla toinen jalka suoraksi lattian yläpuolelle.',
     'Pidä alaselkä ja lantio paikallaan koko ajan — selkä pyrkii notkolle.',
     'Pysy tiukkana ja tuo jalka takaisin alkuasentoon.',
@@ -333,7 +333,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Deficit Deadlift': [
     'Ota koroke tai levyt, joiden päällä seisot — tavallisesti 3–8 senttimetriä. Asetu tangon taakse niin, että se on jalkaterien keskikohdan päällä, jalat lantion leveydellä. Taivuta lantiosta ja ota tangosta hartioiden levyinen ote. Käytä yliotetta tai raskaissa sarjoissa sekaotetta.',
-    'Kun jalat ja ote ovat paikallaan, vedä henkeä, laske lantiota ja koukista polvia, kunnes sääret koskettavat tankoa. Katse eteen, rinta ylös ja selkä kevyessä notkossa. Työnnä kantapäillä ja aloita nosto. Kun tanko ohittaa polvet, vedä lavat yhteen ja työnnä lantio tankoa vasten.',
+    'Kun jalat ja ote ovat paikallaan, vedä henkeä, laske lantiota ja koukista polvia, kunnes sääret koskettavat tankoa. Katse eteen, rinta ylös ja selkä suorana ja alaselän luonnollinen kaari säilyttäen. Työnnä kantapäillä ja aloita nosto. Kun tanko ohittaa polvet, vedä lavat yhteen ja työnnä lantio tankoa vasten.',
     'Laske tanko alas taivuttamalla lantiosta ja ohjaa se hallitusti lattiaan.',
   ],
   'Dumbbell Bench Press': [
@@ -347,7 +347,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso ryhdikkäästi käsipainot suorilla käsillä. Pidä kyynärpäät lähellä vartaloa ja käännä kämmenet eteenpäin.',
     'Pidä olkavarret paikallaan ja käännä painot ylös hauiksilla. Jatka, kunnes hauikset ovat täysin supistuneet ja painot ovat hartioiden korkeudella. Purista hetken ajan.',
     'Laske painot hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Dumbbell Floor Press': [
     'Asetu selinmakuulle lattialle käsipainot käsissä. Polvet voivat olla koukussa. Aloita painot suorilla käsillä ylhäällä.',
@@ -356,7 +356,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Dumbbell Flyes': [
     'Asetu selinmakuulle penkille käsipainot reisien päällä, kämmenet vastakkain.',
-    'Auta reisillä ja nosta painot hartioiden leveydelle eteesi kämmenet vastakkain. Nosta kuin punnertaisit, mutta pysähdy juuri ennen lukkoa.',
+    'Auta reisillä ja nosta painot hartioiden leveydelle eteesi kämmenet vastakkain. Nosta kuin painaisit käsipainot ylös, mutta pysähdy ennen kuin kyynärpäät ojentuvat täysin.',
     'Pidä kyynärpäissä kevyt koukku ja laske kädet sivuille laajassa kaaressa, kunnes tunnet venytyksen rinnassa. Kädet pysyvät muuten paikallaan — liike tapahtuu vain olkanivelestä.',
     'Palauta kädet takaisin ylös puristamalla rintalihakset yhteen. Käytä samaa kaarta kuin laskiessa.',
     'Pidä sekunti ylhäällä ja toista ohjelman mukainen määrä toistoja.',
@@ -369,7 +369,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Dumbbell Rear Lunge': [
     'Seiso ryhdikkäästi käsipainot käsissä vartalon sivuilla.',
-    'Astu oikealla jalalla noin puoli metriä taakse ja laskeudu alas ylävartalo pystyssä. Älä anna etupolven ohittaa varpaita ja pidä etusääri kohtisuorassa lattiaan nähden. Pitkä askel painottaa pakaroita, lyhyt etureisiä.',
+    'Astu oikealla jalalla noin puoli metriä taakse ja laskeudu alas ylävartalo pystyssä. Pidä etupolvi jalkaterän suuntaisena ja etusääri suunnilleen pystysuorassa. Pitkä askel painottaa pakaroita, lyhyt etureisiä.',
     'Työnnä itsesi takaisin alkuasentoon. Päkiällä työntäminen painottaa etureisiä, kantapäällä pakaroita.',
     'Toista toisella jalalla.',
   ],
@@ -379,14 +379,17 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Käännä ranteet niin, että kämmenet osoittavat eteenpäin.',
     'Työnnä painot ylös, kunnes ne koskettavat toisiaan ylhäällä.',
     'Pidä lyhyt tauko ylhäällä ja laske painot hitaasti takaisin alas.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Dynamic Back Stretch': [
     'Seiso jalat hartioiden leveydellä.',
     'Heiluta suoria käsiä eteen ja ylös 5–10 kertaa. Kasvata liikerataa joka kerralla, kunnes kädet nousevat pään yläpuolelle.',
   ],
   'Face Pull': [
-    'Asetu ylätaljan eteen naru tai kaksoiskahvat kiinnitettynä. Vedä paino suoraan kohti kasvoja ja erota kädet vedon aikana. Pidä olkavarret vaakatasossa.',
+    'Kiinnitä naru ylätaljaan ja tartu siihen molemmin käsin kämmenet toisiaan kohti. Astu taaksepäin, kunnes paino on irti pinosta, ja seiso jalat hartioiden leveydellä kädet ojennettuina.',
+    'Vedä naru kohti kasvoja ja erota kädet vedon aikana. Pidä kyynärpäät ylhäällä ja olkavarret suunnilleen vaakatasossa.',
+    'Purista lavat yhteen ja pysähdy hetkeksi kädet korvien vieressä.',
+    'Palaa hitaasti alkuasentoon ja pidä ylävartalo paikallaan.',
   ],
   "Farmer's Walk": [
     'Farmarikävelyyn käy moni väline: raskaat käsipainot tai lyhyet tangot ajavat saman asian. Asetu seisomaan välineiden väliin.',
@@ -398,16 +401,16 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä katse eteenpäin ja selkä suorana, jalat hartioiden leveydellä.',
     'Kyykkää alas selkä suorana ja rinta ylhäällä, kunnes reidet ovat vaakatasossa tai alempana.',
     'Ponnista päkiöillä suoraan ylös niin korkealle kuin pystyt. Käytä reisiä jousina.',
-    'Kun osut lattiaan, kyykkää heti alas ja hyppää uudelleen.',
-    'Toista suositeltu määrä toistoja.',
+    'Kun jalat osuvat lattiaan, kyykkää heti alas ja hyppää uudelleen.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Front Barbell Squat': [
-    'Tee liike turvallisuuden vuoksi kyykkytelineessä. Aseta tanko oman pituutesi mukaiselle korkeudelle. Tuo kädet tangon alle kyynärpäät korkealla ja olkavarret hieman vaakatason yläpuolella. Anna tangon levätä olkapäiden päällä ja ristiä kädet sen päälle.',
+    'Tee liike turvallisuuden vuoksi kyykkytelineessä. Aseta tanko oman pituutesi mukaiselle korkeudelle. Tuo kädet tangon alle kyynärpäät korkealla ja olkavarret hieman vaakatason yläpuolella. Anna tangon levätä olkapäiden päällä ja risti kädet sen päälle.',
     'Nosta tanko telineestä työntämällä jaloilla ja suoristamalla vartalo.',
-    'Astu taaksepäin ja asetu hartioiden levyiseen haara-asentoon varpaat hieman ulospäin. Pidä katse eteenpäin — alas katsominen vie tasapainon — ja selkä suorana.',
-    'Laskeudu hitaasti koukistamalla polvia ryhti pystyssä. Jatka, kunnes reidet ovat hieman vaakatason alapuolella. Oikein tehtynä polvet piirtävät kuvitteellisen suoran linjan varpaiden kanssa; jos polvet ohittavat varpaat, liike kuormittaa polvea väärin.',
+    'Astu taaksepäin ja asetu hartioiden levyiseen haara-asentoon varpaat hieman ulospäin. Pidä katse eteenpäin, sillä alas katsominen vie tasapainon. Pidä selkä suorana ja alaselän luonnollinen kaari.',
+    'Laskeudu hitaasti koukistamalla polvia ryhti pystyssä. Jatka, kunnes reidet ovat hieman vaakatason alapuolella. Pidä polvet varpaiden suuntaisina ja kantapäät lattiassa.',
     'Nouse ylös työntämällä jalkaterän keskiosalla ja ojentamalla jalat suoriksi.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Front Box Jump': [
     'Aseta sopivan korkuinen laatikko noin puolen metrin päähän eteesi ja seiso jalat hartioiden leveydellä.',
@@ -434,7 +437,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Good Morning': [
     'Aseta tanko telineeseen hartioiden korkeudelle. Aseta se yläselän päälle kuten kyykyssä, ei niskan päälle. Pidä selkä jännitettynä, lavat yhdessä ja polvet kevyesti koukussa. Astu telineestä taakse.',
-    'Taivuta lantiosta ja työnnä sitä taakse, kunnes ylävartalo on lähes vaakatasossa. Pidä selkä kevyessä notkossa ja niska selkärangan jatkeena.',
+    'Taivuta lantiosta ja työnnä sitä taakse, kunnes ylävartalo on lähes vaakatasossa. Pidä selkä suorana alaselän luonnollinen kaari säilyttäen ja niska selkärangan jatkeena. Käytä kevyttä painoa.',
     'Palaa ylös ojentamalla lantio pakaroilla ja takareisillä. Jatka, kunnes olet takaisin pystyasennossa.',
   ],
   'Hack Squat': [
@@ -442,28 +445,28 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Aseta jalat levylle hartioiden levyiseen asentoon varpaat hieman ulospäin. Pidä katse eteenpäin ja selkä tukea vasten koko ajan.',
     'Ota kiinni sivukahvoista ja vapauta turvatuet kääntämällä kahvat sivuasentoon.',
     'Ojenna jalat suoriksi lukitsematta polvia.',
-    'Laskeudu hitaasti koukistamalla polvia ryhti pystyssä ja selkä tukea vasten. Jatka, kunnes reidet ovat hieman vaakatason alapuolella. Oikein tehtynä polvet eivät ohita varpaita.',
+    'Laskeudu hitaasti koukistamalla polvia ryhti pystyssä ja selkä tukea vasten. Jatka, kunnes reidet ovat hieman vaakatason alapuolella. Pidä polvet varpaiden suunnassa ja kantapäät levyllä.',
     'Nouse ylös työntämällä kantapäillä ja ojentamalla jalat suoriksi.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Hammer Curls': [
     'Seiso ryhdikkäästi käsipainot suorilla käsillä, kyynärpäät lähellä vartaloa.',
     'Kämmenet osoittavat vartaloa kohti.',
     'Pidä olkavarret paikallaan ja käännä paino ylös hauiksella. Jatka, kunnes hauis on täysin supistunut ja paino on hartian korkeudella. Purista hetken ajan. Vain kyynärvarsi liikkuu.',
     'Laske painot hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Hanging Leg Raise': [
-    'Roiku leukatangossa suorilla käsillä leveällä tai keskileveällä otteella. Jalat ovat suorina alhaalla ja lantio hieman taaksepäin kallistettuna.',
+    'Roiku leuanvetotangossa suorilla käsillä leveällä tai keskileveällä otteella. Jalat ovat suorina alhaalla ja lantio hieman taaksepäin kallistettuna.',
     'Nosta jalat ylös, kunnes ylävartalo ja jalat ovat 90 asteen kulmassa. Pidä supistus hetken ajan.',
     'Laske jalat hitaasti takaisin alas.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'High Cable Curls': [
     'Seiso kahden ylätaljan välissä kahva kummassakin kädessä. Aseta olkavarret vaakatasoon kämmenet itseäsi kohti.',
     'Käännä kahvat korvien viereen ja purista hauikset. Olkavarret pysyvät paikallaan, vain kyynärvarret liikkuvat. Pidä sekunti supistuksessa.',
     'Palauta kädet hitaasti alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Hip Circles (prone)': [
     'Asetu konttausasentoon käsien ja polvien varaan. Pidä ryhti hyvänä ja nosta toinen koukussa oleva polvi irti lattiasta.',
@@ -489,14 +492,14 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Istu vinopenkille käsipainot suorilla käsillä. Pidä kyynärpäät lähellä vartaloa ja käännä kämmenet eteenpäin.',
     'Pidä olkavarret paikallaan ja käännä painot ylös hauiksilla. Vain kyynärvarret liikkuvat. Jatka, kunnes hauikset ovat täysin supistuneet ja painot ovat hartioiden korkeudella. Pidä sekunti supistuksessa.',
     'Laske painot hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Incline Dumbbell Press': [
-    'Asetu vinopenkkiin käsipainot reisien päällä, kämmenet vastakkain.',
+    'Asetu selälleen vinopenkille käsipainot reisien päällä, kämmenet vastakkain.',
     'Auta reisillä ja nosta painot yksi kerrallaan hartioiden leveydelle.',
     'Käännä ranteet niin, että kämmenet osoittavat eteenpäin.',
     'Pidä painot hallinnassa koko ajan ja työnnä ne ylös rintalihaksilla.',
-    'Ojenna kädet ylhäällä, pidä sekunti ja ala laskea hitaasti alas. Laskuvaihe saa kestää noin kaksi kertaa noston verran.',
+    'Ojenna kädet ylhäällä kyynärpäitä lukitsematta, pidä sekunti ja ala laskea hitaasti alas. Laskuvaihe saa kestää noin kaksi kertaa noston verran.',
     'Toista ohjelman mukainen määrä toistoja.',
     'Laske painot lopuksi ensin reisille ja sitten lattialle. Se on turvallisin tapa päästää niistä irti.',
   ],
@@ -514,7 +517,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Ota tangosta hartioita leveämpi ote ja asetu roikkumaan tangon alle. Vartalo on suorana, kantapäät lattiassa ja kädet suorina.',
     'Vedä rintaa kohti tankoa koukistamalla kyynärpäitä. Vedä lavat yhteen liikkeen aikana.',
     'Pidä tauko ylhäällä ja laskeudu takaisin alkuasentoon.',
-    'Toista haluttu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'IT Band and Glute Stretch': [
     'Pujota vyö, naru tai kuminauha toisen jalkaterän ympäri ja heilauta jalka vartalon yli vastakkaiselle puolelle. Jalka pysyy suorana ja makaat selälläsi.',
@@ -543,17 +546,17 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Jatka edestakaisin useita toistoja.',
   ],
   'Leg Extensions': [
-    'Liikkeeseen tarvitaan reiden ojennuslaite. Valitse vastus ja istu laitteeseen jalat pehmusteen alle varpaat eteenpäin, kädet sivukahvoilla. Säädä pehmuste säären alaosaan juuri nilkkojen yläpuolelle ja varmista, että sääri ja reisi ovat 90 asteen kulmassa. Sitä ahtaampi kulma vie polven varpaiden yli ja kuormittaa polviniveltä turhaan.',
-    'Ojenna jalat suoriksi etureisillä. Muu vartalo pysyy paikallaan penkissä. Pidä sekunti supistuksessa.',
-    'Laske paino hitaasti takaisin alas äläkä mene 90 asteen kulmaa ahtaammalle.',
-    'Toista suositeltu määrä toistoja.',
+    'Liikkeeseen tarvitaan reiden ojennuslaite. Valitse vastus ja istu laitteeseen jalat pehmusteen alle varpaat eteenpäin ja kädet sivukahvoilla. Säädä selkänoja niin, että polvi on laitteen nivelen kohdalla, ja pehmuste säären alaosaan juuri nilkkojen yläpuolelle. Tämä on alkuasento.',
+    'Ojenna jalat suoriksi etureisillä äläkä paiskaa polvia lukkoon. Muu vartalo pysyy paikallaan penkissä. Pidä sekunti ylhäällä.',
+    'Laske paino hallitusti takaisin alkuasentoon.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Leg Press': [
     'Istu jalkaprässiin ja aseta jalat levylle hartioiden levyiseen asentoon.',
     'Vapauta turvatuet ja työnnä levy ylös, kunnes jalat ovat lähes suorina. Älä lukitse polvia. Ylävartalon ja jalkojen tulee muodostaa 90 asteen kulma.',
     'Laske levyä hitaasti alas, kunnes reisi ja sääri ovat 90 asteen kulmassa.',
     'Työnnä takaisin ylös kantapäillä ja etureisillä.',
-    'Toista suositeltu määrä toistoja ja lukitse turvatuet huolellisesti lopuksi. Täyteen ladattu levy ei saa päästä putoamaan päällesi.',
+    'Toista ohjelman mukainen määrä toistoja ja lukitse turvatuet huolellisesti lopuksi. Täyteen ladattu levy ei saa päästä putoamaan päällesi.',
   ],
   'Leverage Chest Press': [
     'Aseta sopiva vastus ja säädä istuin pituutesi mukaan. Kahvojen tulee olla rintalihasten alaosan tai keskiosan kohdalla liikkeen alussa.',
@@ -573,13 +576,13 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Aseta kyynärpäät 90 asteen kulmaan niin, että olkavarret ovat kohtisuorassa vartaloon nähden. Pidä kyynärpäät lähellä toisiaan, olkavarret osoittavat kattoon ja kyynärvarret pään takana olevaa taljaa kohti.',
     'Ojenna kyynärvarret suoriksi pystysuuntaan. Olkavarret ja kyynärpäät pysyvät paikallaan — vain kyynärvarret liikkuvat. Purista ojentajat sekunnin ajan.',
     'Palaa hitaasti alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Lying Leg Curls': [
     'Säädä laite pituutesi mukaan ja asetu vatsalleen niin, että pehmuste on säärten takana hieman pohkeiden alapuolella. Kulmassa oleva laite aktivoi takareidet paremmin kuin tasainen.',
     'Pidä ylävartalo penkkiä vasten, jalat suorina ja ota kiinni sivukahvoista. Varpaat osoittavat suoraan eteenpäin.',
     'Koukista jalat niin ylös kuin pystyt nostamatta reisiä pehmusteelta. Pidä sekunti täydessä supistuksessa.',
-    'Laske jalat takaisin alkuasentoon. Toista suositeltu määrä toistoja.',
+    'Laske jalat takaisin alkuasentoon. Toista ohjelman mukainen määrä toistoja.',
   ],
   'Lying T-Bar Row': [
     'Lataa T-tankosoutulaite ja säädä korkeus niin, että ylärinta on tuen yläreunassa. Joissakin laitteissa korkeus säädetään astumalla sopivalle askelmalle.',
@@ -587,7 +590,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nosta tanko telineestä ja ojenna kädet suoriksi eteesi.',
     'Vedä paino hitaasti ylös ja purista selkä yhteen liikkeen lopussa. Pidä olkavarret lähellä vartaloa, jotta selkä tekee työn. Älä irrota vartaloa tuesta äläkä vedä hauiksilla.',
     'Pidä sekunti supistuksessa ja laske hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Machine Bicep Curl': [
     'Säädä istuin sopivalle korkeudelle ja valitse vastus. Aseta olkavarret pehmusteita vasten ja ota kahvoista kiinni.',
@@ -614,7 +617,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Vaihda puolta ja toista toisella kädellä.',
   ],
   'One-Arm Medicine Ball Slam': [
-    'Seiso käyntiasennossa urheilullisessa asennossa. Pidä kuntopalloa toisessa kädessä, samalla puolella kuin takajalka.',
+    'Seiso porrastetussa asennossa, toinen jalka toisen edessä. Pidä painopalloa toisessa kädessä, samalla puolella kuin takajalka. Tämä on alkuasento.',
     'Vie käsi taakse ja nosta pallo pään yläpuolelle. Ojenna samalla lantio, polvet ja nilkat latautuaksesi iskuun.',
     'Ojennuksen huipulla koukista olkapäätä, selkärankaa ja lantiota ja iske pallo voimalla lattiaan suoraan eteesi.',
     'Ota pallo kiinni pompusta ja jatka halutun toistomäärän ajan.',
@@ -624,7 +627,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Asetu painopakkaa kohti noin puolen metrin päähän ja ota tukea rungosta.',
     'Pidä polvet ja lantio kevyesti koukussa ja keskivartalo tiukkana. Potkaise työskentelevä jalka taakse kaaressa niin ylös kuin mukavasti pääset puristamalla pakaraa. Purista pakara sekunnin ajan ääriasennossa.',
     'Tuo jalka hitaasti takaisin eteen vastustaen taljan vetoa.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
     'Vaihda jalkaa ja toista toiselle puolelle.',
   ],
   'Palms-Down Wrist Curl Over A Bench': [
@@ -634,22 +637,22 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Käännä ranteita ylöspäin.',
     'Laske ranteet hitaasti takaisin alkuasentoon.',
     'Kyynärvarret pysyvät paikallaan — vain ranteet liikkuvat.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Parallel Bar Dip': [
     'Asetu dippitankojen väliin. Ota kummastakin tangosta kiinni ja ponnista kevyesti ylös suorille käsille.',
     'Laskeudu koukistamalla kyynärpäitä, kunnes olkavarret ohittavat 90 asteen kulman. Älä heilu ja pidä ryhti hyvänä koko laskun ajan.',
     'Työnnä itsesi takaisin ylös ojentamalla kyynärpäät.',
-    'Toista haluttu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   Plank: [
     'Asetu vatsalleen lattialle varpaiden ja kyynärvarsien varaan. Kyynärpäät ovat koukussa suoraan olkapäiden alla.',
-    'Pidä vartalo suorana ja asento niin kauan kuin jaksat. Vaikeutta saa lisää nostamalla toisen käden tai jalan irti.',
+    'Pidä vartalo suorana linjana päästä kantapäihin, vatsa ja pakarat tiukkoina, jotta alaselkä ei painu. Pidä asento ohjelman mukainen aika. Vaikeutta saa lisää nostamalla toisen käden tai jalan irti.',
   ],
   'Power Clean': [
     'Seiso jalat hieman hartioita leveämmällä varpaat kevyesti ulospäin.',
     'Kyykkää alas ja ota tangosta yliote kädet hieman hartioita leveämmällä polvien ulkopuolelta, kädet suorina.',
-    'Tanko on noin kolme senttimetriä säärten edessä päkiöiden yläpuolella.',
+    'Tanko on noin 2–3 cm säärten edessä päkiöiden yläpuolella.',
     'Selkä on suorana tai kevyessä notkossa, rinta ylhäällä ja lavat vedettyinä taakse.',
     'Pidä pää selkärangan jatkeena ja katse suoraan eteen. Vedä henkeä tässä vaiheessa.',
     'Nosta tanko lattiasta ojentamalla lantio ja polvet voimakkaasti. Ylävartalon kulma pysyy samana — älä taivuta vielä vyötäröstä äläkä anna lantion nousta hartioita nopeammin.',
@@ -670,23 +673,23 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Laske tanko alas vähentämällä käsien jännitystä vähitellen ja ohjaa se hallitusti reisille.',
     'Koukista samalla lantiota ja polvia vaimentamaan tangon isku reisiin.',
     'Kyykkää alas kädet suorina, kunnes tanko koskettaa lattiaa.',
-    'Aloita alusta ja toista suositeltu määrä toistoja.',
+    'Aloita alusta ja toista ohjelman mukainen määrä toistoja.',
   ],
   'Preacher Curl': [
     'Tarvitset saarnaajapenkin ja EZ-tangon. Ota tangosta kiinni sisemmistä kahvoista. Kämmenet osoittavat eteenpäin ja kääntyvät tangon muodon mukaan hieman sisäänpäin.',
     'Aseta olkavarret pehmustetta vasten ja rinta tukea vasten. Pidä tankoa suorilla käsillä.',
     'Laske tankoa hitaasti, kunnes olkavarsi on ojentunut ja hauis täysin venynyt.',
     'Käännä paino ylös hauiksilla, kunnes hauikset ovat täysin supistuneet ja tanko on hartioiden korkeudella. Purista hauikset ja pidä asento sekunnin ajan.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Pull Through': [
     'Seiso muutaman askeleen päässä alataljan edessä naru tai kahva kiinnitettynä. Käänny poispäin laitteesta niin, että vaijeri kulkee jalkojen välistä, jalat leveässä haara-asennossa.',
-    'Kurota kädet jalkojen välistä niin pitkälle taakse kuin pystyt taivuttamalla lantiosta. Polvet ovat kevyesti koukussa. Pidä kädet suorina ja ojenna lantio pystyasentoon. Älä vedä hartioilla — koko liike tulee lantiosta.',
+    'Kurota kädet jalkojen välistä taakse taivuttamalla lantiosta, selkä suorana alaselän luonnollinen kaari säilyttäen. Polvet ovat kevyesti koukussa. Pidä kädet suorina ja ojenna lantio pystyasentoon. Älä vedä hartioilla, koko liike tulee lantiosta.',
   ],
   Pullups: [
     'Ota leukatangosta yliote ohjelman mukaisella otteella. Leveä ote on hartioita leveämpi, keskileveä hartioiden levyinen ja kapea hartioita kapeampi.',
     'Roiku suorilla käsillä ja kallista ylävartaloa noin 30 astetta taakse. Alaselkä kevyessä notkossa ja rinta ulos.',
-    'Vedä itsesi ylös, kunnes tanko koskettaa ylärintaa. Vedä hartiat ja olkavarret alas ja taakse. Purista selkälihakset ääriasennossa. Ylävartalo pysyy suorana ja vain kädet liikkuvat.',
+    'Vedä itsesi ylös, kunnes tanko koskettaa ylärintaa. Vedä hartiat ja olkavarret alas ja taakse. Purista selkälihakset ääriasennossa. Ylävartalo pysyy paikallaan ja vain kädet liikkuvat.',
     'Pidä sekunti supistuksessa ja laskeudu hitaasti takaisin suorille käsille, jolloin leveät selkälihakset venyvät täysin.',
     'Toista ohjelman mukainen määrä toistoja.',
   ],
@@ -715,21 +718,21 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä kyynärpäissä kevyt koukku ja vie painot sivuille kaaressa poispäin toisistaan. Purista lapaluita yhteen.',
     'Nosta kädet vaakatasoon asti.',
     'Tunne supistus ja laske painot hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Reverse Grip Bent-Over Rows': [
     'Seiso ryhdikkäästi tanko alaotteella kämmenet ylöspäin.',
     'Koukista polvia hieman ja taivuta ylävartalo lantiosta lähes vaakatasoon selkä suorana. Pidä katse eteenpäin. Tanko roikkuu suoraan edessäsi kädet suorina.',
     'Pidä ylävartalo paikallaan ja vedä tanko ylös kyynärpäät lähellä vartaloa. Kyynärvarsi vain pitää painoa kiinni. Purista selkälihakset ääriasennossa ja pidä sekunti.',
     'Laske paino hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Reverse Hyperextension': [
     'Aseta sopiva vastus ja pujota jalat pehmusteiden väliin. Asetu vatsalleen ylätuen päälle niin, että lantio jää tuen reunan yli, ja ota kahvoista kiinni.',
     'Aloita liike koukistamalla lantiota ja vedä jalat eteen.',
     'Palaa ojentamalla lantio ja potkaise jalat taakse. Älä yliojenna lantiota — pysähdy ennen liikeradan ääriasentoa.',
     'Palaa koukistamalla lantiota ja vedä kelkka eteen niin pitkälle kuin pystyt.',
-    'Toista haluttu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Reverse Machine Flyes': [
     'Säädä kahvat kokonaan taakse. Valitse vastus ja säädä istuimen korkeus niin, että kahvat ovat hartioiden korkeudella. Ota kahvoista kiinni kämmenet sisäänpäin.',
@@ -741,22 +744,22 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Aseta tanko lattialle eteesi ja ota siitä yliote hieman hartioita leveämmältä. Painon mukaan voit tarvita rannelenkkejä ja korokkeen, joka sallii pidemmän liikeradan.',
     'Koukista polvia hieman, pidä sääret pystyssä, lantio taakse ja selkä suorana.',
     'Pidä selkä ja kädet täysin suorina ja nosta tanko ojentamalla lantio. Liike ei ole nopea vaan tasainen ja hallittu.',
-    'Kun olet täysin pystyssä, laske tanko työntämällä lantiota taakse ja koukistamalla polvia vain hieman — toisin kuin kyykyssä. Vedä henkeä liikkeen alussa ja pidä rinta ylhäällä.',
-    'Toista suositeltu määrä toistoja.',
+    'Kun olet täysin pystyssä, laske tanko työntämällä lantiota taakse ja koukistamalla polvia vain hieman — toisin kuin kyykyssä. Vedä henkeä liikkeen alussa, jännitä keskivartalo ja pidä rinta ylhäällä. Hengitä ulos liikkeen lopussa.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Russian Twist': [
-    'Asetu selinmakuulle lattialle ja lukitse jalat jonkin painavan alle tai anna kaverin pitää niistä kiinni. Polvet ovat koukussa.',
+    'Asetu selinmakuulle lattialle ja kiinnitä jalat jonkin painavan alle tai anna parin pitää niistä kiinni. Polvet ovat koukussa.',
     'Nosta ylävartalo ylös niin, että vartalo ja reidet muodostavat V-kirjaimen. Kädet ovat suorina edessäsi kohtisuoraan vartaloon nähden sormet lomittain.',
     'Kierrä ylävartaloa oikealle, kunnes kädet ovat lattian suuntaisesti.',
     'Pidä supistus sekunnin ajan ja palaa alkuasentoon. Kierrä sitten samalla tavalla vasemmalle.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Seated Cable Rows': [
     'Tarvitset alataljasoutulaitteen ja V-kahvan, joka antaa neutraalin otteen kämmenet vastakkain. Istu laitteeseen ja aseta jalat etulevylle polvet kevyesti koukussa.',
     'Nojaa eteen selän luonnollinen asento säilyttäen ja ota V-kahvasta kiinni.',
     'Vedä kädet suorina takaisin, kunnes ylävartalo on 90 asteen kulmassa jalkoihin nähden. Selkä on kevyessä notkossa ja rinta ulkona. Tunnet venytyksen leveissä selkälihaksissa.',
     'Pidä ylävartalo paikallaan ja vedä kahvat vartaloa kohti kädet lähellä kylkiä, kunnes kosketat vatsaa. Purista selkälihakset kunnolla, pidä sekunti ja palaa hitaasti alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Seated Calf Raise': [
     'Istu laitteeseen ja aseta päkiät levyn alaosaan kantapäät ilmassa. Valitse varpaiden asento: eteenpäin, sisään tai ulos.',
@@ -764,14 +767,14 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Nosta vipua hieman työntämällä kantapäillä ja vapauta turvatuki.',
     'Laske kantapäät hitaasti alas nilkoista taivuttaen, kunnes pohkeet ovat täysin venyneet.',
     'Nosta kantapäät niin ylös kuin pystyt ojentamalla nilkat ja purista pohkeet. Pidä sekunti ääriasennossa.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Seated Dumbbell Curl': [
     'Istu tasaiselle penkille käsipainot suorilla käsillä, kyynärpäät lähellä vartaloa.',
     'Käännä kämmenet vartaloa kohti.',
     'Pidä olkavarret paikallaan ja käännä painot ylös. Kierrä ranteita, kun painot ohittavat reidet, niin että kämmenet osoittavat lopussa eteenpäin. Vain kyynärvarret liikkuvat. Jatka, kunnes hauikset ovat täysin supistuneet ja painot ovat hartioiden korkeudella. Pidä sekunti supistuksessa.',
     'Laske painot hitaasti takaisin alas ja kierrä ranteet takaisin neutraaliksi.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Seated Dumbbell Press': [
     'Ota käsipainot ja istu selkänojalliselle penkille painot pystyssä reisien päällä.',
@@ -779,7 +782,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Käännä ranteet niin, että kämmenet osoittavat eteenpäin.',
     'Työnnä painot ylös, kunnes ne koskettavat toisiaan ylhäällä.',
     'Pidä sekunnin tauko ja laske hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Seated Floor Hamstring Stretch': [
     'Istu alustalle oikea jalka suorana edessäsi ja vasen polvi koukussa jalkaterä oikeaa sisäreittä vasten.',
@@ -790,13 +793,13 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Aseta säärten takaosa pehmusteen päälle hieman pohkeiden alapuolelle ja lukitse reisituki polvien yläpuolelle. Ota kiinni sivukahvoista, varpaat suoraan eteenpäin ja jalat suorina edessäsi.',
     'Vedä vipu niin pitkälle reisien alle kuin pystyt koukistamalla polvia. Ylävartalo pysyy paikallaan. Pidä sekunti supistuksessa.',
     'Palaa hitaasti alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Side Lateral Raise': [
     'Ota käsipainot ja seiso ryhdikkäästi kädet suorina sivuilla kämmenet vartaloa kohti.',
     'Pidä ylävartalo paikallaan — ei heilautusta — ja nosta painot sivuille kevyt koukku kyynärpäissä. Kallista käsiä hieman eteen kuin kaataisit vettä lasiin. Jatka, kunnes kädet ovat vaakatasossa. Pidä sekunti ylhäällä.',
     'Laske painot hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Single Leg Glute Bridge': [
     'Asetu selinmakuulle jalkaterät lattiassa ja polvet koukussa.',
@@ -812,12 +815,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Sled Push': [
     'Lastaa työntöreki haluttuun painoon.',
-    'Asetu urheilulliseen asentoon, nojaa rekeen kädet suorina ja ota kahvoista kiinni. Työnnä rekeä niin nopeasti kuin pystyt ja keskity ojentamaan lantio ja polvet, niin takaketju tekee työn.',
+    'Asetu urheilulliseen asentoon, nojaa rekeen kädet suorina ja ota kahvoista kiinni. Työnnä rekeä niin nopeasti kuin pystyt ja keskity ojentamaan lantio ja polvet.',
   ],
   'Smith Machine Close-Grip Bench Press': [
     'Aseta tasainen penkki smith-laitteen alle ja tanko korkeudelle, johon yletät maaten kädet lähes suorina. Valitse paino ja asetu penkille. Ota tangosta hartioiden levyinen yliote, vapauta tanko telineestä ja pidä sitä suorilla käsillä yläpuolellasi.',
     'Laske tankoa hitaasti alas, kunnes se koskettaa keskirintaa. Toisin kuin tavallisessa penkkipunnerruksessa, pidä kyynärpäät lähellä vartaloa koko ajan, jotta ojentajat tekevät työn.',
-    'Pidä sekunnin tauko ja työnnä tanko takaisin ylös ojentajilla. Ojenna kädet ylhäällä, pidä sekunti ja laske hitaasti alas. Laskuvaihe saa kestää vähintään kaksi kertaa noston verran.',
+    'Pidä sekunnin tauko ja työnnä tanko takaisin ylös ojentajilla. Ojenna kädet ylhäällä kyynärpäitä lukitsematta, pidä sekunti ja laske hitaasti alas. Laskuvaihe saa kestää vähintään kaksi kertaa noston verran.',
     'Toista ohjelman mukainen määrä toistoja.',
     'Lukitse tanko telineeseen sarjan päätteeksi.',
   ],
@@ -834,16 +837,16 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Vaihda suuntaa heti laskeutumisen jälkeen: nouse ylös ja hyppää vaihtaen jalkojen paikkaa. Toista 5–10 kertaa kummallakin jalalla.',
   ],
   Stairmaster: [
-    'Astu porraslaitteeseen ja valitse haluamasi vaihtoehto valikosta. Voit valita manuaalisen asetuksen tai valmiin ohjelman. Yleensä voit syöttää ikäsi ja painosi, jolloin laite arvioi kulutetut kalorit.',
-    'Pumppaa jalkoja tasaisessa rytmissä ja paina poljinta alas, mutta älä pohjaan asti. Pidä kiinni kahvoista, jotta et putoa. Kahvoista voi myös seurata sykettä ja pitää tehon oikeana.',
-    'Älä nojaa kahvojen varaan. Kahvat ovat tasapainoa varten — jos joudut roikkumaan niissä pysyäksesi mukana, laske vauhtia.',
+    'Astu laitteeseen ja aloita rauhallisella vauhdilla. Valitse manuaalinen asetus tai valmis ohjelma.',
+    'Astu tasaisessa rytmissä ja paina poljinta alas, mutta älä pohjaan asti. Seiso pitkänä ja pidä kädet kevyesti kahvoilla tasapainon vuoksi.',
+    'Älä nojaa kahvojen varaan. Jos joudut roikkumaan niissä pysyäksesi mukana, laske vauhtia.',
   ],
   'Standing Calf Raises': [
     'Säädä pohjelaitteen pehmuste pituutesi mukaan.',
     'Aseta hartiat pehmusteiden alle ja varpaat suoraan eteenpäin. Päkiät ovat askelman päällä ja kantapäät sen reunan yli. Työnnä vipu ylös ojentamalla lantio ja polvet, kunnes olet pystyasennossa. Pidä polvissa kevyt koukku — älä koskaan lukitse niitä.',
     'Nosta kantapäät niin ylös kuin pystyt ojentamalla nilkat ja purista pohkeet. Polvi pysyy paikallaan koko ajan. Pidä sekunti ääriasennossa ennen kuin lasket alas.',
     'Palaa hitaasti alkuasentoon laskemalla kantapäät alas, kunnes pohkeet ovat venyneet.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Standing Hamstring and Calf Stretch': [
     'Pujota vyö, kuminauha tai naru toisen jalkaterän ympäri. Seiso ja vie tämä jalka eteen.',
@@ -859,10 +862,10 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Standing Military Press': [
     'Aseta tanko kyykkytelineeseen suunnilleen rinnan korkeudelle. Valitse painot ja ota tangosta yliote hieman hartioita leveämmältä.',
     'Koukista polvia hieman ja aseta tanko solisluiden päälle. Nosta tanko ylös rintaa vasten, astu askel taakse ja asetu jalat hartioiden leveydelle.',
-    'Työnnä tanko pään yli suorille käsille. Pidä sitä hartioiden korkeudella hieman pään edessä.',
+    'Työnnä tanko pään yläpuolelle ja ojenna kädet lukitsematta kyynärpäitä väkisin. Pidä tanko hieman pään edessä. Tämä on alkuasento.',
     'Laske tanko hitaasti alas solisluille.',
     'Työnnä tanko takaisin ylös alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Step-up with Knee Raise': [
     'Seiso sopivan korkuisen laatikon tai penkin edessä jalat vierekkäin.',
@@ -874,15 +877,15 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Vedä keuhkot hitaasti täyteen ilmaa ja puhalla sitten kaikki ulos vetäen samalla vatsaa niin sisään kuin pystyt. Pidä asento ja kuvittele navan koskettavan selkärankaa.',
     'Yksi pito kestää noin 20 sekuntia. Yritä hengittää normaalisti pidon aikana. Vedä sitten henkeä ja päästä vatsa takaisin alkuasentoon.',
     'Kun liike on tuttu, pidennä pitoa yli 20 sekunnin. Tavoittele lopulta 40–60 sekuntia.',
-    'Toista suositeltu määrä sarjoja.',
+    'Toista ohjelman mukainen määrä sarjoja.',
   ],
   // The cable pullover opens this row since 2026-10-08 (it used to open the
   // dumbbell pullover, which is filed under the chest).
   'Straight-Arm Pulldown': [
-    'Tartu leveällä, kämmenet alaspäin -otteella ylätaljan tankoon ja astu pari askelta taaksepäin.',
-    'Taivuta ylävartaloa lonkasta noin 30 astetta eteen, kädet suorina edessäsi ja kyynärpäät hieman koukussa. Jännitä leveät selkälihakset.',
-    'Pidä kädet suorina ja vedä tanko alas reisien viereen leveillä selkälihaksilla. Hengitä ulos.',
-    'Palaa hallitusti alkuasentoon ja hengitä sisään.',
+    'Tartu ylätaljan leveään tankoon hartioita leveämmällä yliotteella (kämmenet alaspäin) ja astu pari askelta taaksepäin.',
+    'Taivuta ylävartaloa lonkista noin 30 astetta eteen, kädet suorina edessäsi ja kyynärpäät hieman koukussa. Pidä selkä suorana ja jännitä leveät selkälihakset.',
+    'Pidä kädet suorina ja vedä tanko alas reisien viereen leveillä selkälihaksilla.',
+    'Palaa hallitusti alkuasentoon.',
     'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Straight-Arm Dumbbell Pullover': [
@@ -894,7 +897,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä sekunti alkuasennossa ja toista ohjelman mukainen määrä toistoja.',
   ],
   'Sumo Deadlift': [
-    'Asetu ladatun tangon taakse niin, että tanko on jalkaterien keskikohdan päällä. Jalat ovat hyvin leveällä lähellä levyjä. Taivuta lantiosta ja ota tangosta kiinni. Kädet ovat suoraan olkapäiden alla jalkojen sisäpuolella. Käytä yliotetta, sekaotetta tai koukkuotetta. Rentouta hartiat, jolloin kädet pitenevät.',
+    'Astu ladatun tangon luo niin, että tanko on jalkaterien keskikohdan päällä. Jalat ovat hyvin leveällä lähellä levyjä. Taivu lonkista ja tartu tankoon. Kädet ovat suoraan hartioiden alla jalkojen sisäpuolella. Käytä yliotetta, sekaotetta tai koukkuotetta. Rentouta hartiat, jolloin kädet pitenevät.',
     'Vedä henkeä ja laske lantiota, katse eteen ja rinta ylhäällä. Työnnä lattiaa vasten ja levitä jalkoja ulospäin paino jalkaterien takaosalla. Ojenna lantio ja polvet.',
     'Kun tanko ohittaa polvet, nojaa taakse ja työnnä lantio tankoa vasten vetäen lavat yhteen.',
     'Laske paino takaisin lattiaan taivuttamalla lantiosta ja hallitse liike koko matkan.',
@@ -916,23 +919,23 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso ryhdikkäästi hyvin kevyesti eteen nojaten. Pidä olkavarret lähellä vartaloa ja kohtisuorassa lattiaan nähden, kyynärvarret ylöspäin kohti taljaa.',
     'Työnnä tanko alas ojentajilla, kunnes se koskettaa reisiä ja kädet ovat suorina. Olkavarret pysyvät paikallaan vartalon vieressä — vain kyynärvarret liikkuvat.',
     'Pidä sekunti ääriasennossa ja palauta tanko hitaasti ylös.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Triceps Pushdown - Rope Attachment': [
     'Kiinnitä naruvedin ylätaljaan ja ota siitä neutraali ote kämmenet vastakkain.',
     'Seiso ryhdikkäästi hyvin kevyesti eteen nojaten. Pidä olkavarret lähellä vartaloa ja kohtisuorassa lattiaan nähden, kyynärvarret ylöspäin kohti taljaa kämmenet vastakkain.',
     'Työnnä naru alas ojentajilla ja vie narun päät reisien sivuille. Lopussa kädet ovat suorina kohtisuoraan lattiaan nähden. Olkavarret pysyvät paikallaan — vain kyynärvarret liikkuvat.',
     'Pidä sekunti ääriasennossa ja palauta naru hitaasti ylös.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   // Pystysoutu. Käännetty kun liikkeestä tuli tavoiteliike ja se lisättiin
   // kahdelle olkapääpäivälle (1.9.2026): valmisohjelman määräämä liike ei saa
   // pudota englantiin.
   'Upright Barbell Row': [
-    'Ota tangosta yliote hieman hartioita kapeammalta ja anna sen levätä reisiä vasten kädet suorina, kyynärpäissä kevyt koukku. Pidä selkä suorana.',
-    'Nosta tankoa vartalon myötäisesti vetäen kyynärpäät ylös ja sivuille. Pidä tanko lähellä vartaloa ja jatka, kunnes se on lähes leuan tasolla. Kyynärpäät johtavat liikettä ja pysyvät kyynärvarsia ylempänä. Ylävartalo pysyy paikallaan. Pidä sekunti ääriasennossa.',
+    'Ota tangosta yliote hartioiden levyiseltä. Anna tangon levätä reisiä vasten kädet suorina, kyynärpäissä kevyt koukku. Pidä selkä suorana.',
+    'Nosta tankoa vartalon myötäisesti vetäen kyynärpäät ylös ja sivuille. Pidä tanko lähellä vartaloa ja jatka, kunnes se on noin rinnan keskikorkeudella ja kyynärpäät enintään hartioiden tasolla. Kyynärpäät johtavat liikettä ja pysyvät kyynärvarsia ylempänä. Ylävartalo pysyy paikallaan. Pidä sekunti ääriasennossa.',
     'Laske tanko hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Weighted Pull Ups': [
     'Kiinnitä paino dippivyöhön ja aseta vyö vyötärölle. Ota leukatangosta yliote. Keskileveässä otteessa kädet ovat hartioiden leveydellä. Roiku suorilla käsillä.',
@@ -944,7 +947,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso ryhdikkäästi jalat hartioiden leveydellä ja kantapäät koholla. Ota toisella kädellä kiinni kyykkytelineen pystytolpasta ja pidä toisella levyä rintaa vasten.',
     'Pidä kiinni tolpasta, koukista polvia ja laske ylävartaloa hitaasti kohti lattiaa viemällä lantiota ja polvia eteen. Pysähdy, kun reiden ja säären väliin jää lähes 90 asteen kulma. Pidä venytys sekunnin ajan.',
     'Nouse takaisin alkuasentoon etureisillä.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Wide-Grip Lat Pulldown': [
     'Istu ylätaljalaitteeseen, jossa on leveä tanko. Säädä polvituki pituutesi mukaan, jotta paino ei nosta sinua ylös.',
@@ -965,7 +968,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Aloita polkeva liike: ojenna oikea jalka eteen ja vedä vasen polvi lähemmäs. Vie samalla oikea kyynärpää kohti vasenta polvea kiertämällä ylävartaloa.',
     'Palaa alkuasentoon.',
     'Kierrä toiselle puolelle ja vie vasen kyynärpää kohti oikeaa polvea samalla kun jatkat polkemista.',
-    'Jatka vuorotellen, kunnes molemmille puolille on tehty suositeltu määrä toistoja.',
+    'Jatka vuorotellen, kunnes molemmille puolille on tehty ohjelman mukainen määrä toistoja.',
   ],
   'Band Pull Apart': [
     'Aloita kädet suorina edessäsi kuminauha molemmissa käsissä.',
@@ -975,9 +978,9 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Bench Dips': [
     'Aseta penkki selkäsi taakse poikittain. Ota penkin reunasta kiinni kädet suorina hartioiden leveydellä ja katse poispäin penkistä. Jalat ovat suorina edessä lantiosta taivutettuna.',
-    'Laskeudu hitaasti alas koukistamalla kyynärpäitä, kunnes olkavarren ja kyynärvarren väliin jää hieman alle 90 asteen kulma. Pidä kyynärpäät mahdollisimman lähellä toisiaan ja kyynärvarret pystysuunnassa.',
+    'Laskeudu hitaasti alas koukistamalla kyynärpäitä, kunnes olkavarren ja kyynärvarren välissä on noin 90 asteen kulma. Älä mene syvemmälle. Pidä kyynärpäät mahdollisimman lähellä toisiaan ja kyynärvarret pystysuunnassa.',
     'Nosta itsesi takaisin ylös ojentajilla.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Bicycling, Stationary': [
     'Istu pyörään ja säädä satula niin, että polvi jää alimmassa kohdassa kevyeen koukkuun.',
@@ -987,7 +990,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso ryhdikkäästi käsipaino vasemmassa kädessä kämmen vartaloa kohti ja oikea käsi lantiolla. Jalat ovat hartioiden leveydellä.',
     'Pidä selkä suorana ja katse eteenpäin ja taivuta vain vyötäröstä oikealle niin pitkälle kuin pystyt. Pidä sekunti ja palaa ylös alkuasentoon. Muu vartalo pysyy paikallaan.',
     'Toista sama taivuttamalla vasemmalle. Pidä sekunti ja palaa alkuasentoon.',
-    'Toista suositeltu määrä toistoja ja vaihda sitten kättä.',
+    'Toista ohjelman mukainen määrä toistoja ja vaihda sitten kättä.',
   ],
   'Kettlebell Pistol Squat': [
     'Ota kahvakuula molempiin käsiin sarvista kiinni. Nosta toinen jalka irti lattiasta ja kyykkää toisen varassa.',
@@ -1000,7 +1003,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Ota kahvoista kiinni sivuilta kyynärpäät koukussa vartalon linjassa.',
     'Työnnä kahvat ylös ja ojenna kädet suoriksi. Pidä supistus sekunnin ajan ylhäällä.',
     'Laske kahvat hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Muscle Up': [
     'Ota renkaista valeote (false grip) niin, että kämmenten tyvi on renkaiden päällä. Aloita leuanveto vetämällä kyynärpäät alas kylkiin.',
@@ -1011,17 +1014,17 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Plie Dumbbell Squat': [
     'Ota käsipainosta kiinni molemmin käsin sen alapäästä ja seiso suorana. Vie jalat hartioita leveämmälle polvet kevyesti koukussa.',
     'Varpaat osoittavat ulospäin. Kädet pysyvät paikallaan koko liikkeen ajan.',
-    'Koukista polvia hitaasti ja laskeudu, kunnes reidet ovat lattian suuntaisesti.',
+    'Koukista polvia hitaasti ja laskeudu, kunnes reidet ovat lattian suuntaiset. Pidä polvet varpaiden suunnassa.',
     'Nouse takaisin ylös työntämällä pääosin kantapäillä.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Quad Stretch': [
     'Asetu kyljellesi. Pujota vyö, naru tai kuminauha ylemmän jalan jalkaterän ympäri. Koukista polvea ja ojenna lonkkaa yrittäen koskettaa kantapäällä pakaraa, ja pidä nauhasta kiinni käsilläsi.',
     'Pidä nauhaa olkapään yli tai pään yläpuolella ja vedä varovasti, jolloin etureiden venytys kasvaa. Pidä 10–20 sekuntia ja vaihda puolta.',
   ],
   'Elliptical Trainer': [
-    'Astu crosstrainerille ja valitse valikosta haluamasi vaihtoehto. Useimmissa laitteissa on manuaaliasetus, tai voit valita valmiin ohjelman. Vastusta ja kaltevuutta säätämällä muutat kuormitusta.',
-    'Kahvoilla voit seurata sykettäsi, jotta pysyt sopivalla teholla.',
+    'Astu crosstrainerin askelmille ja tartu kahvoihin. Säädä vastus ja kaltevuus sellaiseksi, että jaksat pitää tasaisen rytmin.',
+    'Astu tasaisesti eteen ja taakse ryhti pystyssä ja keskivartalo jännitettynä. Seuraa sykettäsi kahvoista ja pidä teho tasaisena.',
   ],
   'Rowing, Stationary': [
     'Istu soutulaitteeseen. Varmista, että kantapäät ovat tukevasti poljinten pohjaa vasten ja hihnat kiristettyinä. Valitse haluamasi ohjelma, jos laitteessa on sellainen. Istu ryhdikkäästi ja taivuta lantiosta eteen.',
@@ -1032,7 +1035,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Seiso ryhdikkäästi ja pidä alataljaan kiinnitetystä EZ-tangosta kiinni hartioiden levyisellä alaotteella kämmenet ylöspäin. Kyynärpäät ovat lähellä vartaloa.',
     'Pidä olkavarret paikallaan ja käännä tanko ylös hauiksilla. Vain kyynärvarret liikkuvat. Jatka, kunnes hauikset ovat täysin supistuneet ja tanko on hartioiden korkeudella. Purista sekunnin ajan.',
     'Laske tanko hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Standing Dumbbell Press': [
     'Seiso jalat hartioiden leveydellä käsipaino kummassakin kädessä. Nosta painot pään korkeudelle kyynärpäät sivuilla noin 90 asteen kulmassa.',
@@ -1067,10 +1070,10 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Stiff-Legged Dumbbell Deadlift': [
     'Ota käsipaino kumpaankin käteen ja pidä ne suorin käsin kylkien vieressä.',
-    'Seiso ryhti suorana jalat hartioiden leveydellä tai kapeammin, polvet hieman koukussa.',
-    'Pidä polvet paikallaan ja laske painot jalkapöytien yläpuolelle taivuttamalla lantiosta selkä suorana, kunnes tunnet venytyksen takareisissä.',
-    'Nouse takaisin pystyyn ojentamalla lantio.',
-    'Toista ohjelman toistomäärä.',
+    'Seiso ylävartalo suorana, jalat hartioiden levyisessä tai kapeammassa asennossa ja polvet hieman koukussa.',
+    'Pidä polvet paikallaan ja laske painot jalkaterien yli taivuttamalla lonkista selkä suorana, kunnes tunnet venytyksen takareisissä.',
+    'Nouse takaisin pystyyn ojentamalla lonkat.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Butt Lift (Bridge)': [
     'Asetu selinmakuulle kädet kylkien vieressä ja polvet koukussa, jalat noin hartioiden leveydellä.',
@@ -1081,32 +1084,32 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Ota käsipaino kumpaankin käteen kämmenet vartaloa kohti, koukista polvia hieman ja kallista ylävartalo eteen selkä suorana, lähes lattian suuntaiseksi. Pidä pää ylhäällä ja anna painojen roikkua suoraan alaspäin.',
     'Pidä ylävartalo paikallaan ja vedä painot kylkiin kyynärpäät lähellä vartaloa. Purista yläasennossa lapoja yhteen sekunnin ajan.',
     'Laske painot hitaasti takaisin alas.',
-    'Toista ohjelman toistomäärä.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Reverse Plate Curls': [
     'Seiso suorana ja pidä levypainoa molemmin käsin kämmenet alaspäin, kädet suorina. Tartu levyyn kellotaulun kohdista 11 ja 1.',
     'Pidä jalat hartioiden leveydellä ja levy lantion edessä.',
     'Nosta levy hitaasti ylös kyynärpäät kyljissä ja olkavarret paikallaan, kunnes kyynärvarret ja hauikset kohtaavat.',
     'Pidä sekunti ja laske levy hitaasti takaisin alas.',
-    'Toista ohjelman toistomäärä.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Donkey Calf Raises': [
     'Liikkeeseen tarvitaan donkey-pohjenostolaite. Asetu laitteen pehmusteen alle niin, että se on häntäluun kohdalla.',
     'Ota kiinni sivukahvoista ja aseta päkiät korokkeelle kantapäät reunan yli. Ojenna polvet lukitsematta niitä.',
     'Nouse päkiöille niin korkealle kuin pystyt polvet paikallaan. Pidä yläasennossa sekunti.',
     'Laske kantapäät hitaasti alas, kunnes pohkeet venyvät.',
-    'Toista ohjelman toistomäärä.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Trail Running/Walking': [
-    'Juokse tai kävele maastopolulla hyvissä kengissä. Ylämäessä työ tulee pohkeista ja pakaroista, alamäessä polvet ja nilkat ottavat iskut vastaan: lyhennä askelta, pidä polvet koukussa ja hidasta vauhtia.',
-    'Ylämäki kuormittaa selvästi enemmän kuin tasainen maasto, ja juoksu enemmän kuin kävely.',
+    'Juokse tai kävele maastopolulla tukevissa, hyvin pitävissä kengissä. Aloita rauhallisella vauhdilla ja pidä askel lyhyenä epätasaisella alustalla.',
+    'Ylämäessä työnnä pohkeilla ja pakaroilla ja nojaa hieman rinteeseen. Alamäessä lyhennä askelta, pidä polvet pehmeinä ja hidasta vauhtia, jotta pysyt hallinnassa.',
   ],
   'Reverse Crunch': [
     'Asetu selinmakuulle jalat suorina ja kädet vartalon vieressä kämmenet lattiassa. Kädet pysyvät paikallaan koko liikkeen ajan.',
     'Nosta jalat niin, että reidet ovat pystysuorassa ja sääret lattian suuntaisesti jalat yhdessä.',
     'Tuo polvet kohti rintaa kiertämällä lantiota taaksepäin, kunnes lantio nousee irti lattiasta.',
     'Pidä sekunti ja laske jalat hallitusti takaisin alkuasentoon.',
-    'Toista ohjelman toistomäärä.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
 
   // ── The app's own rows for the last 79 programme names (catalog audit,
@@ -1184,7 +1187,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Seated Spinal Twist': [
     'Istu lattialla jalat suorina. Koukista toinen polvi ja nosta jalkaterä toisen jalan yli lattialle vastakkaisen polven viereen.',
     'Istu ryhdikkäästi ja kierrä rintakehää koukussa olevan polven suuntaan. Aseta saman puolen käsi lattialle taaksesi ja halaa polvea toisella kädellä tai vie kyynärpää sen ulkopuolelle.',
-    'Kasva pidemmäksi jokaisella sisäänhengityksellä ja kierrä hieman lisää uloshengityksellä. Pidä asento ohjelman ajan ja vaihda sitten puolta.',
+    'Pidennä selkää ylöspäin ja kierrä rauhallisesti hieman lisää. Pidä asento ohjelman ajan ja vaihda sitten puolta.',
   ],
   'Single-Leg Balance Hold': [
     'Seiso ryhdikkäästi seinän tai tuolin vieressä niin, että voit ottaa siitä tarvittaessa tukea, ja siirrä paino toiselle jalalle.',
@@ -1223,12 +1226,12 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Tuck Planche Hold': [
     'Asetu polvillesi lattialle ja aseta kämmenet lantion viereen sormet ulos tai hieman taaksepäin, kädet suorina. Punnerrustelineet keventävät ranteiden kuormaa.',
-    'Kallista hartioita käsien yli eteen, pyöristä yläselkä ja vedä polvet tiukasti rintaa vasten samalla kun nostat jalat irti lattiasta. Tasapainottele suorien käsien varassa.',
+    'Kallista hartioita käsien yli eteen, pyöristä yläselkää hieman ja vedä polvet tiukasti rintaa vasten samalla kun nostat jalat irti lattiasta. Tasapainottele suorien käsien varassa.',
     'Pidä asento ohjelman ajan ja laske jalat sitten hallitusti alas. Kallistu vähemmän, jos kädet eivät pysy suorina.',
   ],
   'Wall Handstand Hold': [
     'Aseta kämmenet lattialle hartioiden leveydelle noin kämmenen mitan päähän seinästä, sormet harallaan.',
-    'Potkaise jalat yksi kerrallaan ylös, kunnes kantapäät nojaavat seinään. Kädet ovat suorina ja lukittuina ja pää käsien välissä. Voit myös kävellä jalat seinää pitkin ylös vatsa seinään päin, mikä on helpompi hallita.',
+    'Potkaise jalat yksi kerrallaan ylös, kunnes kantapäät nojaavat seinään. Kädet ovat suorina ja pää käsien välissä. Voit myös kävellä jalat seinää pitkin ylös vatsa seinään päin, mikä on helpompi hallita.',
     'Työnnä lattiaa poispäin, jännitä vatsa ja pakarat ja pidä asento ohjelman ajan. Tule alas jalka kerrallaan.',
   ],
   'Ankle Mobility Drill': [
@@ -1243,7 +1246,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   'Shoulder Dislocations (PVC)': [
     'Seiso ryhdikkäästi ja pidä muoviputkea, harjanvartta tai kuminauhaa leveällä yliotteella reisien edessä kädet suorina.',
-    'Pidä kädet suorina ja vie keppi pään yli taakse niin pitkälle kuin se menee, kohti alaselkää.',
+    'Pidä kädet suorina ja vie keppi pään yli taakse niin pitkälle kuin se mukavasti menee, kohti alaselkää. Liiku hitaasti ja pysy kivuttomalla liikealueella.',
     'Tuo keppi pään yli takaisin eteen. Levennä otetta, jos joudut koukistamaan kyynärpäitä, ja kavenna sitä vähitellen olkapäiden avautuessa.',
   ],
   'Thoracic Extension on Roller': [
@@ -1279,7 +1282,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Pelvic Floor Activation (Kegel)': [
     'Käy selällesi polvet koukussa tai istu mukavasti ja rentouta vatsa, pakarat ja reidet.',
     'Purista ja nosta lantionpohjan lihaksia kevyesti ylöspäin, ikään kuin pidättäisit virtsaa ja ilmaa yhtä aikaa. Pidä muutama sekunti ja hengitä normaalisti.',
-    'Päästä kokonaan irti ja lepää yhtä kauan kuin pidit ennen seuraavaa toistoa. Jos tunnet kipua tai painon tunnetta, lopeta ja kysy fysioterapeutilta.',
+    'Päästä kokonaan irti ja lepää yhtä kauan kuin pidit ennen seuraavaa toistoa. Jos tunnet kipua tai painon tunnetta, lopeta.',
   ],
   'Plank Jack': [
     'Aloita lankusta suorin käsin, kädet hartioiden alla, vartalo suorana ja jalat yhdessä.',
@@ -1384,7 +1387,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   'Single-Leg RDL': [
     'Seiso yhdellä jalalla polvi pehmeänä. Pidä käsipainoa vastakkaisessa kädessä, jos ohjelmasi kirjaa painon; muuten ojenna kädet eteen tai pidä ne lanteilla.',
     'Taivuta lantiosta eteen ja anna vapaan jalan nousta suorana taakse, kunnes vartalo ja takajalka ovat lähes lattian suuntaiset. Pidä selkä suorana ja lantio suorassa lattiaan nähden.',
-    'Työnnä seisovan jalan lonkka eteen ja nouse ylös. Tee kaikki toistot yhdellä jalalla ja vaihda sitten. Ota toisella kädellä tukea seinästä, jos tasapaino on se, mikä pysäyttää.',
+    'Työnnä seisovan jalan lonkka eteen ja nouse ylös. Tee kaikki toistot yhdellä jalalla ja vaihda sitten. Ota toisella kädellä tukea seinästä, jos tasapaino rajoittaa liikettä.',
   ],
   'Sit-to-Stand (Chair Squat)': [
     'Istu tukevan tuolin etuosassa jalkapohjat lattiassa lantion leveydellä ja hieman polvien takana. Ristitä kädet rinnalle tai ojenna ne eteen.',
@@ -1453,7 +1456,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
   ],
   Sprint: [
     'Lämmittele ensin kunnolla: kevyttä hölkkää, jalkojen heilautuksia ja muutama vähitellen kiihtyvä veto.',
-    'Lähde seisovalta lähdöltä ja juokse ohjelman matka, esimerkiksi 40 tai 200 metriä. Työskentele polvilla ja käsillä ja pysy päkiöillä. Juokse lyhyet vedot täysillä ja pidemmät kovimmalla vauhdilla, jonka jaksat maaliin asti.',
+    'Lähde seisovalta lähdöltä ja juokse ohjelman matka, esimerkiksi 40 tai 200 metriä. Vie polvia ja käsiä voimakkaasti ja pysy päkiöillä. Juokse lyhyet vedot täysillä ja pidemmät kovimmalla vauhdilla, jonka jaksat maaliin asti.',
     'Kävele takaisin tai lepää kunnolla vetojen välissä, jotta jokainen veto on yhtä nopea kuin ensimmäinen.',
   ],
   'Easy Run Blocks': [
@@ -1494,7 +1497,7 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Tartu kahvoihin. Säädä laite niin, että olkavarret ovat lattian suuntaisesti.',
     'Tuo kahvat hitaasti yhteen edessäsi ja purista rintaa keskeltä. Pidä supistus sekunnin ajan.',
     'Palaa hitaasti alkuasentoon, kunnes tunnet rinnassa venytyksen.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
   'Band Assisted Pull-Up': [
     'Kiedo kuminauha leuanvetotangon keskelle. Eri vahvuisilla nauhoilla saat eri määrän apua.',
@@ -1513,13 +1516,44 @@ const EXERCISE_INSTRUCTIONS_FI: Record<string, string[]> = {
     'Pidä olkavarret paikallaan ja käännä tanko ylös hauiksilla. Vain kyynärvarret liikkuvat.',
     'Jatka, kunnes hauikset ovat täysin supistuneet ja tanko on hartioiden korkeudella. Purista hetki yläasennossa.',
     'Laske tanko hitaasti takaisin alkuasentoon.',
-    'Toista suositeltu määrä toistoja.',
+    'Toista ohjelman mukainen määrä toistoja.',
   ],
 };
 
 type FinnishInstructionTable = Record<string, string[]>;
 
 let moreFinnish: FinnishInstructionTable | null = null;
+let englishOverlay: FinnishInstructionTable | null = null;
+
+/**
+ * The English corrections (exerciseInstructionsEn.ts), loaded on first use for
+ * the same reason as the second Finnish table.
+ */
+function englishInstructionOverlay(): FinnishInstructionTable {
+  if (englishOverlay === null) {
+    englishOverlay = (require('./exerciseInstructionsEn') as {
+      EXERCISE_INSTRUCTIONS_EN: FinnishInstructionTable;
+    }).EXERCISE_INSTRUCTIONS_EN;
+  }
+  return englishOverlay;
+}
+
+/**
+ * The English steps in force for one exercise: the correction when the audit
+ * wrote one, otherwise the library row's own. Every place that shows English
+ * steps reads them through here (or through getExerciseInstructions).
+ */
+export function effectiveEnglishInstructions(
+  name: string | null | undefined,
+  englishSteps: string[] | null | undefined,
+): string[] {
+  const own = (englishSteps ?? []).filter(Boolean);
+  if (!name) {
+    return own;
+  }
+  const corrected = englishInstructionOverlay()[name.trim()];
+  return corrected && corrected.length > 0 ? corrected : own;
+}
 
 /**
  * The second table, loaded the first time a Finnish reader opens an exercise
@@ -1548,7 +1582,7 @@ export function getExerciseInstructions(
   englishSteps: string[] | null | undefined,
   language: AppLanguage = 'en',
 ): string[] {
-  const english = (englishSteps ?? []).filter(Boolean);
+  const english = effectiveEnglishInstructions(name, englishSteps);
   if (language !== 'fi' || !name) {
     return english;
   }

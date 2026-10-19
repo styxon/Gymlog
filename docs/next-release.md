@@ -174,6 +174,12 @@ update to carry, not for each fix.
   leave-and-return; "1 toisto" / "1 rep" everywhere a count is shown; the swap
   search field grows with large text; a hold exercise gets no PR card.
 
+- Exercise instructions audit: 390 exercises got corrected steps in English and
+  Finnish (no knees-past-toes, hard lockout, reps to failure, chin-high upright
+  row or bar on the neck; kg and cm only; menu and marketing filler replaced by
+  coaching cues; "Toista ohjelman mukainen määrä toistoja" everywhere). The swap
+  sheet's how-to now follows the app language too.
+
 ## Known, not yet fixed
 
 Logged in `#bugs` after the vc4 device check (2026-10-15):

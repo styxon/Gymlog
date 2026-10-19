@@ -6944,7 +6944,7 @@ function HowToSheetView({
       ) : null}
       <ScrollView style={{ maxHeight: 380 }} showsVerticalScrollIndicator={false}>
         <View style={{ gap: 13, marginTop: 18, paddingBottom: 8 }}>
-          {(libraryItem?.instructions ?? []).map((instruction, index) => (
+          {getExerciseInstructions(libraryItem?.name, libraryItem?.instructions, language).map((instruction, index) => (
             <View key={index} style={{ flexDirection: 'row', gap: 13, alignItems: 'flex-start' }}>
               <View style={styles.howToNumber}>
                 <Text style={{ fontSize: 13, fontWeight: '800', color: theme.purpleDark }}>{index + 1}</Text>
