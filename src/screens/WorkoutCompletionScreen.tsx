@@ -23,6 +23,7 @@ import { CoachDemoSheet } from '../components/CoachDemoSheet';
 import { ProLockedCard } from '../components/ProLockedCard';
 import { ProMomentSheet } from '../components/ProMomentSheet';
 import { KitSheet } from '../components/sheetKit';
+import { useSheetsSettled } from '../hooks/useSheetsSettled';
 import { Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { AppLanguage, SessionFeel } from '../types/models';
 import { haptics } from '../utils/haptics';
@@ -333,11 +334,12 @@ export function WorkoutCompletionScreen({
    * numbers register first.
    */
   const [demoSheetVisible, setDemoSheetVisible] = useState(false);
+  const [demoDue, setDemoDue] = useState(false);
   useEffect(() => {
     if (!demoQuestion) {
       return undefined;
     }
-    const timer = setTimeout(() => setDemoSheetVisible(true), 900);
+    const timer = setTimeout(() => setDemoDue(true), 900);
     return () => clearTimeout(timer);
   }, [demoQuestion]);
   /**
@@ -346,6 +348,20 @@ export function WorkoutCompletionScreen({
    * accident had no way back, only four answers and Skip (#bugs 2026-09-24).
    */
   const [feelSheetVisible, setFeelSheetVisible] = useState(false);
+  /**
+   * The demo opens on a timer, so it can come due while the feel or the Pro
+   * sheet is up or still leaving. On iOS a modal presented then is refused and
+   * its layer takes every touch: it waits until both have gone (useSheetsSettled).
+   */
+  const { settled: otherSheetsSettled, onDismissed: onOtherSheetDismissed } = useSheetsSettled(
+    feelSheetVisible || momentSheetVisible,
+  );
+  useEffect(() => {
+    if (demoDue && otherSheetsSettled) {
+      setDemoDue(false);
+      setDemoSheetVisible(true);
+    }
+  }, [demoDue, otherSheetsSettled]);
   const pr = prCards[0] ?? null;
 
   // The workout is saved by the time this screen mounts — mark the moment.
@@ -838,6 +854,7 @@ export function WorkoutCompletionScreen({
         bottomInset={insets.bottom}
         closeLabel={t(language, 'common.close')}
         reduceMotion={reduceMotion}
+        onDismissed={onOtherSheetDismissed}
       >
         <View style={styles.feelOptions}>
           {/* Built from the shared scale so the sheet that collects the
@@ -884,6 +901,7 @@ export function WorkoutCompletionScreen({
           language={language}
           bottomInset={insets.bottom}
           onClose={() => setMomentSheetVisible(false)}
+          onDismissed={onOtherSheetDismissed}
           onSeePro={() => {
             setMomentSheetVisible(false);
             onOpenPremium?.();
