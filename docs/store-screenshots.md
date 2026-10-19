@@ -23,9 +23,15 @@ The Android set is still made by hand with adb (memory: ref-website-screenshots)
      | `6.5` | 1284 × 2778 | iPhone 6.5" only: the "Dynamic Island (medium display)" slot refused this size on 2026-10-18 | iPhone 17 Pro Max |
      | `6.3` | 1206 × 2622 | iPhone 6.3" | iPhone 17 |
 
-     It also writes `header/header-<language>-<theme>-3840x1646.png`: three
-     screens and a caption, an experiment for the "Header and Search
-     Results" image (#to-do 12).
+     It also writes the iOS 27 "Header and Search Results" images, a
+     caption over three screens, per language and theme:
+     `header/header-<language>-<theme>-3840x1646.png` and
+     `search/search-<language>-<theme>-3840x2560.png`. Everything that
+     matters is inside App Store Connect's safe areas: x 1097–2743,
+     y 493–1154 for the header, and x 836–3004, y 765–1795 for search. On an
+     iPhone the app's icon, name and Search button cover the header's lower
+     part. Each screen fades out at 78 % of its height, above the tab bar and
+     the list row it half covers.
    - `raw-screenshots`: the simulator's own captures, before any caption or
      frame, at the simulator's size: `iphone-6.9/<language>-<theme>/` at
      1320 × 2868 and `iphone-6.3/<language>-<theme>/` at 1206 × 2622. These
@@ -50,6 +56,7 @@ and does not use EAS.
 | Simulator walk | `.maestro/store-screenshots/*.yaml` |
 | Device matrix | `scripts/store-screenshots/shoot.sh` |
 | Layout and captions | `scripts/store-screenshots/compose.py`, `captions.json` |
+| Coach stand-in | `scripts/store-screenshots/coach-stub.cjs` |
 | Workflow | `.github/workflows/store-screenshots.yml` |
 | EAS alternative | the `screenshots` profile in `eas.json` |
 
@@ -82,9 +89,19 @@ The status bar is set to 9:41, full Wi-Fi and a charged battery.
 
 **Shots.** Each run captures these screens: 01 set screen, 02 rest with the
 next lift, 03 workout complete, 04 Progress summary, 05 records, 06 history,
-07 Home, 08 Programs, 09 the coach, 10 a conversation with the coach (a
-starter chip). The coach answers in preview mode, since this build has no
-server URLs. For the same reason the build has no analytics and no store.
+07 Home, 08 Programs, 09 the coach, 10 a conversation with the coach (the
+"Analyze my last workout" chip). The build has no analytics and no store.
+
+**The coach.** A build with no coach address shows an OFFLINE badge, and
+the real server costs money per answer. So the build points
+`EXPO_PUBLIC_AI_COACH_API_URL` at `http://localhost:8787`, where
+`coach-stub.cjs` runs on the runner. The simulator shares the runner's
+localhost. The stub replies in the server's shape with the app's own
+preview answer, built from the context the app sent, so the numbers and the
+language are the reader's. Nothing reaches Vercel or Anthropic. The flow
+waits for the answer and for the Online badge; if the stub cannot be
+reached, the badge turns OFFLINE and the run fails instead of shipping that
+shot.
 
 ## Changing it
 

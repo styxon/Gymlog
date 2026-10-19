@@ -89,7 +89,7 @@ export interface CoachTickerRow {
  * The tab opened onto most of a screen of nothing: the greeting sat at the
  * bottom and the middle was empty. Filling it with an illustration would be
  * noise in the one place there could be proof, so it is filled with the
- * reader's own numbers instead â which is also the claim Pro is sold on.
+ * reader's own numbers instead — which is also the claim Pro is sold on.
  *
  * Every row is read from the log. A row whose data does not exist is left out
  * rather than shown empty, so a fresh account gets a short readout or none,

@@ -2030,7 +2030,7 @@ const EN = {
   'coachPreview.lastSession.rhythm': '{week} sessions this week, {month} in the last 30 days.',
   'coachPreview.lastSession.next1': 'Repeat the same weights and aim for the top of the rep range.',
   'coachPreview.lastSession.next2': 'Add the smallest step to the first lift once every set hits the top.',
-  'coachPreview.lastSession.next3': 'Keep the session order â the first lift is the one that decides the day.',
+  'coachPreview.lastSession.next3': 'Keep the session order — the first lift is the one that decides the day.',
   'coachPreview.lastSession.nextPlateau': '{name} has not moved for three sessions. Hold the weight and chase the reps.',
   'coachPreview.lastSession.nextFatigue': 'The last weeks have been heavy. Repeat the weights rather than adding.',
   'coachPreview.lastSession.nextSwaps': 'You swapped {count} exercises. If the swap works, make it the default.',

@@ -73,13 +73,18 @@ jobs:
         uses: actions/cache/restore@v4
         with:
           path: shots-app
-          key: shots-app-v1-${{ hashFiles('package-lock.json', 'app.json', 'app.config.js', 'eas.json', 'index.ts', 'App.tsx', 'babel.config.js', 'metro.config.js', 'src/**', 'assets/**', 'plugins/**', 'modules/**') }}
+          key: shots-app-v2-${{ hashFiles('package-lock.json', 'app.json', 'app.config.js', 'eas.json', 'index.ts', 'App.tsx', 'babel.config.js', 'metro.config.js', 'src/**', 'assets/**', 'plugins/**', 'modules/**') }}
 
       - name: Build for the simulator
         if: steps.app-cache.outputs.cache-hit != 'true'
         env:
           CI: '1'
           EXPO_PUBLIC_SCREENSHOT_SEED: '1'
+          # The coach stub below, not the real server: a build with no coach
+          # address wears an OFFLINE badge, and a real call is billed. The key
+          # is a placeholder; the client only needs one to be set.
+          EXPO_PUBLIC_AI_COACH_API_URL: http://localhost:8787/api/ai-coach
+          EXPO_PUBLIC_AI_COACH_APP_KEY: screenshots-stub
           NODE_ENV: production
         run: |
           npx expo prebuild --platform ios --no-install
@@ -100,6 +105,21 @@ jobs:
         with:
           path: shots-app
           key: ${{ steps.app-cache.outputs.cache-primary-key }}
+
+      # Answers the coach chat on the runner's localhost, which the simulator
+      # shares (scripts/store-screenshots/coach-stub.cjs). Built from the
+      # app's own lib, so it needs the test compile.
+      - name: Start the coach stub
+        run: |
+          npx tsc -p tsconfig.test.json
+          mkdir -p shots/raw
+          nohup node scripts/store-screenshots/coach-stub.cjs 8787 > shots/raw/coach-stub.log 2>&1 &
+          for i in $(seq 1 20); do
+            curl -fsS http://localhost:8787/api/notice > /dev/null && break
+            sleep 1
+          done
+          # Up, or the step fails here rather than as an OFFLINE badge later.
+          curl -fsS http://localhost:8787/api/notice || { cat shots/raw/coach-stub.log; exit 1; }
 
       - name: Install Maestro
         run: |

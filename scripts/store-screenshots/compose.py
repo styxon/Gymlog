@@ -12,8 +12,10 @@ Written at exactly the sizes App Store Connect takes:
   6.9"  1320 x 2868  from the iPhone 17 Pro Max shots
   6.5"  1284 x 2778  from the same shots (the size the 1.1.0 listing uses)
   6.3"  1206 x 2622  from the iPhone 17 shots
-as <out-dir>/<size>/<language>/<theme>/NN-name.png, and one header image per
-language and theme, 3840 x 1646, at <out-dir>/header/.
+as <out-dir>/<size>/<language>/<theme>/NN-name.png. Per language and theme it
+also writes the iOS 27 header (3840 x 1646, <out-dir>/header/) and search
+results image (3840 x 2560, <out-dir>/search/), everything that matters inside
+App Store Connect's safe areas (WIDE below).
 
 Needs Pillow. Paths in, nothing read from anywhere else but the repo's font.
 """
@@ -33,7 +35,6 @@ TARGETS = {
     "6.5": (1284, 2778, "iphone-6.9"),
     "6.3": (1206, 2622, "iphone-6.3"),
 }
-HEADER = (3840, 1646)
 
 THEMES = {
     "light": dict(bg=(239, 234, 249), glow=(255, 255, 255), ink=(23, 19, 31), accent=(109, 40, 217), ring=(205, 190, 230), shadow=70),
@@ -138,35 +139,70 @@ def store_image(size, theme, shot, text, accent, pro):
     return im
 
 
-def header_image(theme, shots, text, accent):
-    w, h = HEADER
-    im = ground(theme, HEADER)
-    # The caption on the left third, the three screens on the right.
-    text_w = round(w * 0.36)
-    s = h / 1920
-    font_size = round(86 * s * 1.5)
-    d = ImageDraw.Draw(im)
-    font = ImageFont.truetype(FONT, font_size)
-    lines = wrap(d, text, font, text_w - 120)
-    block = len(lines) * int(font_size * 1.18)
-    y = (h - block) // 2
+# App Store Connect's "Header and Search Results" images (iOS 27). Each has a
+# safe area: on an iPhone only that much of the header shows, and the app's
+# icon, name and Search button sit over its lower part (the owner checked on a
+# phone, 2026-10-18). The caption and the screens go inside it.
+#   name: (size, safe area (left, top, right, bottom), where the screens end)
+# The header's screens run on below its safe area to the image's edge: on an
+# iPhone that band is under the app's own row, and elsewhere the whole image
+# shows. The search image keeps them inside.
+WIDE = {
+    "header": ((3840, 1646), (1097, 493, 2743, 1154), 1646),
+    "search": ((3840, 2560), (836, 765, 3004, 1795), 1795),
+}
+# How much of each screen is shown before it fades into the ground. Below this
+# the app's floating tab bar covers a half-drawn list row (records, progress),
+# and a cut row is not something to show on the store page.
+SCREEN_SHOWN = 0.78
+SCREEN_FADE = 0.12
+
+
+def wide_image(kind, theme, shots, text, accent):
+    """The caption across the top of the safe area, the screens side by side
+    under it, each shown from the top and faded out at SCREEN_SHOWN."""
+    size, (left, top, right, _), screens_end = WIDE[kind]
+    w, h = size
+    safe_w = right - left
+    im = ground(theme, size)
     t = THEMES[theme]
+    d = ImageDraw.Draw(im)
+    # One line if it fits at a readable size: a second line pushes the
+    # screens down into the part an iPhone covers.
+    for font_size in range(96, 79, -4):
+        font = ImageFont.truetype(FONT, font_size)
+        lines = wrap(d, text, font, safe_w - 120)
+        if len(lines) == 1:
+            break
+    y = top + 24
     for line in lines:
-        x = 160
+        x = left + (safe_w - d.textlength(line, font=font)) / 2
         for i, word in enumerate(line.split()):
             piece = word + (" " if i < len(line.split()) - 1 else "")
             d.text((x, y), piece, font=font, fill=t["accent"] if bare(word) == bare(accent) else t["ink"])
             x += d.textlength(piece, font=font)
         y += int(font_size * 1.18)
-    margin = round(h * 0.08)
-    gap = round(w * 0.025)
-    room_w = w - text_w - 160
-    width = min(fit_width(shots[0], h - 2 * margin, 10_000), (room_w - 2 * gap) // 3)
-    x = text_w + (room_w - (3 * width + 2 * gap)) // 2
+    screens_top = y + 56
+    # Tall enough that SCREEN_SHOWN of it ends where the screens end.
+    with Image.open(shots[0]) as src:
+        aspect = src.height / src.width
+    screen_h = (screens_end - screens_top) / SCREEN_SHOWN
+    gap = 56
+    width = min(round(screen_h / aspect), (safe_w - 2 * gap) // 3)
+    screen_h = round(width * aspect)
+    x0 = left + (safe_w - (3 * width + 2 * gap)) // 2
+    drawn = im.copy()
     for i, shot in enumerate(shots):
-        with Image.open(shot) as src:
-            ph = round(src.height * width / src.width)
-        phone(im, theme, shot, x + i * (width + gap), (h - ph) // 2, width, radius=round(width * 0.075))
+        phone(drawn, theme, shot, x0 + i * (width + gap), screens_top, width, radius=round(width * 0.075))
+    # Everything below the cut is the ground again, through a short fade.
+    cut = screens_top + round(screen_h * SCREEN_SHOWN)
+    fade = round(screen_h * SCREEN_FADE)
+    keep = Image.new("L", size, 0)
+    kd = ImageDraw.Draw(keep)
+    kd.rectangle((0, 0, w, cut - fade), fill=255)
+    for row in range(fade):
+        kd.line((0, cut - fade + row, w, cut - fade + row), fill=round(255 * (1 - row / fade)))
+    im.paste(drawn, (0, 0), keep)
     return im
 
 
@@ -218,11 +254,13 @@ def main(raw, out):
                 shots = [os.path.join(device_dir, variant, name + ".png") for name in head["shots"]]
                 if all(os.path.isfile(p) for p in shots):
                     words = head[language]
-                    im = header_image(theme, shots, words["text"], words["accent"])
-                    dest = os.path.join(out, "header")
-                    os.makedirs(dest, exist_ok=True)
-                    im.save(os.path.join(dest, f"header-{language}-{theme}-3840x1646.png"), optimize=True)
-                    written += 1
+                    for kind, (size, _, _) in WIDE.items():
+                        im = wide_image(kind, theme, shots, words["text"], words["accent"])
+                        assert im.size == size, im.size
+                        dest = os.path.join(out, kind)
+                        os.makedirs(dest, exist_ok=True)
+                        im.save(os.path.join(dest, f"{kind}-{language}-{theme}-{size[0]}x{size[1]}.png"), optimize=True)
+                        written += 1
     for path in sorted(missing):
         print(f"missing raw shot: {path}")
     for line in sorted(mismatched):
