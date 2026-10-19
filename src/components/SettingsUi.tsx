@@ -21,6 +21,7 @@ export function SectionLabel({
   actionLabel,
   onAction,
   right,
+  spaced,
   style,
 }: {
   label: string;
@@ -28,11 +29,13 @@ export function SectionLabel({
   onAction?: () => void;
   /** A non-text right side (a count, a link with a chevron); wins over `actionLabel`. */
   right?: React.ReactNode;
+  /** Sits under a card or another block: adds the shared gap above the label. */
+  spaced?: boolean;
   style?: StyleProp<ViewStyle>;
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
-    <View style={[styles.sectionHead, style]}>
+    <View style={[styles.sectionHead, spaced && styles.sectionSpaced, style]}>
       <Text accessibilityRole="header" numberOfLines={2} style={styles.sectionLabel}>
         {label}
       </Text>
@@ -153,6 +156,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 2,
     paddingBottom: 11,
   },
+  sectionSpaced: {
+    marginTop: 22,
+  },
   sectionActionWrap: {
     flexShrink: 0,
     marginLeft: 12,
@@ -211,7 +217,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 48,
     height: 28,
     borderRadius: 999,
-    backgroundColor: '#E4DBF5',
+    backgroundColor: theme.switchOff,
     padding: 3,
     justifyContent: 'center',
   },

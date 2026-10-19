@@ -84,6 +84,16 @@ export function listPickerExercises<T extends ExerciseLibraryItem>(
   return rankExerciseMatches(narrowed, typed, language, popularity);
 }
 
+/**
+ * How many exercises the library screen lists unsearched, unfiltered. Any
+ * other "N exercises" line (Programs' library row) uses this, so the two
+ * numbers cannot drift: the raw library also holds the strongman implements,
+ * which the list keeps for a query or their own chip.
+ */
+export function countListedExercises(items: readonly ExerciseLibraryItem[]): number {
+  return items.filter((item) => passesSpecialtyGate(item, { query: '', type: NO_PICKER_FILTERS.category })).length;
+}
+
 /** An unsearched list's order: the alphabet of the name the reader sees, not the stored English one. */
 export function compareByShownName(language: AppLanguage) {
   return (left: Pick<ExerciseLibraryItem, 'name'>, right: Pick<ExerciseLibraryItem, 'name'>) =>

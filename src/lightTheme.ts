@@ -66,6 +66,9 @@ export const HG = {
   highlight: '#6D28D9',
   highlightSoft: 'rgba(167, 139, 250, 0.22)',
   onHighlight: '#FFFFFF',
+  controlFill: '#FFFFFF',
+  controlBorder: '#CDBEE6',
+  switchOff: '#B9A9DB',
   blue: '#0A84FF',
   gold: '#E4B14C',
   // Deep enough to read as 13px text on white (about 5:1).

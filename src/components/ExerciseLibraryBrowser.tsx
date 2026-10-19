@@ -327,6 +327,7 @@ export function ExerciseLibraryRow({
   imageKey,
   onPress,
   trailing,
+  testID,
 }: {
   title: string;
   accessibilityLabel: string;
@@ -334,6 +335,8 @@ export function ExerciseLibraryRow({
   imageKey: string | null;
   onPress?: () => void;
   trailing?: React.ReactNode;
+  /** For the UI-check walk (.maestro/ui-check). */
+  testID?: string;
 }) {
   const styles = useThemedStyles(makeStyles);
 
@@ -341,6 +344,7 @@ export function ExerciseLibraryRow({
     // A button when it does something: the swap sheet's rows were announced
     // as buttons before they became library rows (review, 2026-09-30).
     <Pressable
+      testID={testID}
       accessibilityRole={onPress ? 'button' : undefined}
       onPress={onPress}
       disabled={!onPress}
@@ -366,13 +370,16 @@ function ExRow({
   item,
   language,
   onOpen,
+  testID,
 }: {
   item: ExerciseLibraryItem;
   language: AppLanguage;
   onOpen?: () => void;
+  testID?: string;
 }) {
   return (
     <ExerciseLibraryRow
+      testID={testID}
       title={exerciseListLabel(language, item.name)}
       accessibilityLabel={exerciseNameLabel(language, item.name)}
       meta={exerciseLibraryRowMeta(item, language)}
@@ -553,17 +560,10 @@ export function ExerciseLibraryBrowser({
                 <Text style={styles.subtitle}>{t(language, 'library.subtitle')}</Text>
               </View>
               <View style={styles.headerActions}>
-                {/* Named: two icon-only buttons with no label were invisible to
+                {/* Named: an icon-only button with no label was invisible to
                     a screen reader — and to the walkthrough that could not
-                    find the filter panel. */}
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t(language, 'library.a11y.search')}
-                  onPress={() => searchRef.current?.focus()}
-                  style={styles.iconButton}
-                >
-                  <SearchIcon color={theme.purpleDark} size={19} />
-                </Pressable>
+                    find the filter panel. (The search icon beside it only
+                    focused the field directly below; it is gone.) */}
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t(language, 'library.a11y.filters')}
@@ -585,6 +585,7 @@ export function ExerciseLibraryBrowser({
               <SearchIcon />
               <TextInput
                 ref={searchRef}
+                accessibilityLabel={t(language, 'library.a11y.search')}
                 value={search}
                 onChangeText={setSearch}
                 placeholder={t(language, 'sheet.searchPlaceholder')}
@@ -749,8 +750,9 @@ export function ExerciseLibraryBrowser({
             <Text style={styles.emptyText}>{t(language, 'library.noMatchesBody')}</Text>
           </View>
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <ExRow language={language}
+            testID={`exercise-row-${index}`}
             item={item}
             onOpen={onOpenItem ? () => handleOpen(item) : undefined}
           />

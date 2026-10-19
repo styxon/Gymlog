@@ -1635,7 +1635,7 @@ export function AICoachChatScreen({
         <ScrollView
           ref={scrollRef}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.thread}
+          contentContainerStyle={[styles.thread, messages.length === 0 && styles.threadOpening]}
           keyboardShouldPersistTaps="handled"
           // The multiline composer's return key is a new line and send does
           // not blur it: a drag on the thread is the way to put the keys away.
@@ -2374,6 +2374,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 14,
     gap: 20,
+  },
+  // Only the opening (the noticed card and its pager) and no conversation yet:
+  // top-anchored, so it starts under the header instead of floating ~900px
+  // down on a tall phone with nothing above it.
+  threadOpening: {
+    justifyContent: 'flex-start',
   },
   onlineCard: {
     borderRadius: 16,

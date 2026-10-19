@@ -102,6 +102,15 @@ export interface Theme {
    * PW.proInk on dark `purpleLight` was 1.6:1 (#bugs 2026-10-01 audit).
    */
   proInk: string;
+  /**
+   * A round control sitting on the page (the pushed screen's back button).
+   * Light: white with a hairline, since `surfaceSoft` is within a shade of
+   * `bg` there and the button all but vanished. Dark: the soft surface, no line.
+   */
+  controlFill: string;
+  controlBorder: string;
+  /** A switch's off-state track; visible on the card it sits in. */
+  switchOff: string;
 }
 
 /** The light theme is the palette itself — not a copy of it. */

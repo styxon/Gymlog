@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Modal,
   NativeScrollEvent,
@@ -32,6 +32,7 @@ import { NewProgramSheet } from '../components/NewProgramSheet';
 import { ProgramLadderRow } from '../components/ProgramLadderRow';
 import { CsvLibraryEntry } from '../lib/csvProgramImport';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
+import { countListedExercises } from '../lib/exercisePicker';
 import {
   availableLadderSorts,
   partitionByReaderWeek,
@@ -196,7 +197,6 @@ interface ProgramsHomeScreenProps {
    * free limit, so the limit sheet never arrives as news.
    */
   ownProgramsLine?: string | null;
-  exerciseLibraryCount: number;
   onOpenExploreProgram: (programId: string) => void;
   onOpenCustomProgram: (programId: string, programType: 'ready' | 'custom') => void;
   onCreateProgram: () => void;
@@ -757,7 +757,6 @@ export function ProgramsHomeScreen({
   onRemoveGoal,
   customPrograms,
   ownProgramsLine = null,
-  exerciseLibraryCount,
   onOpenExploreProgram,
   onOpenCustomProgram,
   onCreateProgram,
@@ -779,6 +778,7 @@ export function ProgramsHomeScreen({
 }: ProgramsHomeScreenProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const listedExerciseCount = useMemo(() => countListedExercises(exerciseLibraryEntries), [exerciseLibraryEntries]);
   // Read here, on the screen: inside ProgramSheet's own Modal
   // useSafeAreaInsets itself always answers 0.
   const insets = useSafeAreaInsets();
@@ -957,6 +957,7 @@ export function ProgramsHomeScreen({
             catalogue screen already does both; this is its door. */}
         {onBrowseCatalog && catalogCount > 0 ? (
           <Pressable
+            testID="programs-all-link"
             accessibilityRole="button"
             onPress={onBrowseCatalog}
             hitSlop={8}
@@ -981,11 +982,12 @@ export function ProgramsHomeScreen({
               contentContainerStyle={styles.exploreRow}
               style={styles.exploreScroll}
             >
-              {recommendations.map((item) => {
+              {recommendations.map((item, cardIndex) => {
                 const style = item.cover;
                 return (
                   <Pressable
                     key={item.id}
+                    testID={`program-card-${cardIndex}`}
                     accessibilityRole="button"
                     accessibilityLabel={t(language, 'programs.switchTo', { name: item.name })}
                     // The card says "Katso lisätietoja", so it opens the
@@ -1284,7 +1286,7 @@ export function ProgramsHomeScreen({
               </View>
             }
             title={t(language, 'programs.exerciseLibrary')}
-            meta={t(language, 'programs.library.sub', { count: exerciseLibraryCount })}
+            meta={t(language, 'programs.library.sub', { count: listedExerciseCount })}
             accessibilityLabel={t(language, 'programs.openLibrary')}
             onPress={onOpenLibrary}
           />
@@ -1500,9 +1502,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingLeft: 24,
     paddingRight: 14,
   },
+  // The speed line is skewed about the card's centre, so on this tall card
+  // its top edge leans well past the 24dp row padding; clear it.
   goalEmpty: {
     paddingVertical: 16,
-    paddingLeft: 24,
+    paddingLeft: 40,
     paddingRight: 16,
     gap: 8,
   },

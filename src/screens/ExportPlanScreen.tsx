@@ -210,7 +210,7 @@ export function ExportPlanScreen({ language = 'en', plans, log, onBack }: Export
           hostage negotiation.
         */}
         <View style={styles.section}>
-          <SectionLabel label={t(language, 'export.log.section')} />
+          <SectionLabel spaced label={t(language, 'export.log.section')} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={t(language, 'export.log.title')}
@@ -244,13 +244,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingTop: 8,
     paddingBottom: 6,
   },
   body: {
     paddingTop: 4,
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
   intro: {
@@ -262,7 +262,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 20,
   },
   section: {
-    marginTop: 2,
+    marginTop: 0,
   },
   card: {
     backgroundColor: theme.surface,

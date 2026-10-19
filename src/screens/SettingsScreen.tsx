@@ -209,6 +209,7 @@ function Row({
   positive = false,
   last = false,
   disabled = false,
+  testID,
   onPress,
 }: {
   icon: IcName;
@@ -229,6 +230,8 @@ function Row({
    * looked exactly like a live one and swallowed the tap without a word.
    */
   disabled?: boolean;
+  /** For the UI-check walk (.maestro/ui-check): a control found by id, not by its words. */
+  testID?: string;
   onPress?: () => void;
 }) {
   const theme = useTheme();
@@ -261,7 +264,7 @@ function Row({
     );
   }
   return onPress ? (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
+    <Pressable testID={testID} accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.pressed}>
       {inner}
     </Pressable>
   ) : (
@@ -345,6 +348,7 @@ export function SettingsScreen({
         {/* profile chip */}
         <Pressable
           accessibilityRole="button"
+          testID="settings-profile"
           accessibilityLabel={t(language, 'settings.a11y.editProfile')}
           onPress={onOpenEditProfile}
           style={({ pressed }) => [styles.profileChip, pressed && styles.pressed]}
@@ -480,6 +484,7 @@ export function SettingsScreen({
               sub={t(language, 'settings.trainingBreak.sub')}
               chevron
               last
+              testID="settings-training-break"
               onPress={onOpenTrainingBreak}
             />
           </View>
@@ -494,15 +499,17 @@ export function SettingsScreen({
               title={t(language, 'settings.notifications')}
               sub={t(language, 'settings.notifications.sub')}
               chevron
+              testID="settings-notifications"
               onPress={onOpenNotifications}
             />
-            <Row icon="body" title={t(language, 'settings.myData')} sub={t(language, 'settings.myData.sub')} chevron onPress={onOpenMyData} />
+            <Row icon="body" title={t(language, 'settings.myData')} sub={t(language, 'settings.myData.sub')} chevron testID="settings-my-data" onPress={onOpenMyData} />
             {/* Before Pro the row is the way to Pro; after, it manages it. */}
             <Row
               icon="card"
               title={t(language, proUnlocked ? 'settings.subscription' : 'settings.pro')}
               chevron
               last
+              testID="settings-subscription"
               onPress={proUnlocked ? onOpenSubscription : onOpenPremium}
             />
           </View>
@@ -596,6 +603,7 @@ export function SettingsScreen({
               sub={t(language, 'settings.exportCsv.sub')}
               chevron
               last={!homeWidget}
+              testID="settings-export-plan"
               onPress={onExportPlan}
             />
             {/* Hidden entirely where pinning is unsupported. When the widget is
@@ -837,7 +845,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingTop: 8,
     paddingBottom: 6,
   },
@@ -846,7 +854,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   body: {
     paddingTop: 4,
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
   appleSignIn: {

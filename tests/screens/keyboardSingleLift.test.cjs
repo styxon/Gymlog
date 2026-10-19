@@ -87,7 +87,7 @@ module.exports = [
     name: 'keyboard: the chat and the goal flow put the keys away from the scroll, with no return key to do it',
     run() {
       const chat = read('src/screens/AICoachChatScreen.tsx');
-      assert.match(chat, /contentContainerStyle=\{styles\.thread\}\s+keyboardShouldPersistTaps="handled"[\s\S]{0,200}?keyboardDismissMode="on-drag"/);
+      assert.match(chat, /contentContainerStyle=\{\[styles\.thread, [^\]]*\]\}\s+keyboardShouldPersistTaps="handled"[\s\S]{0,200}?keyboardDismissMode="on-drag"/);
       const goal = read('src/screens/StrengthGoalFlowScreen.tsx');
       assert.match(goal, /contentContainerStyle=\{styles\.listContent\}\s+keyboardShouldPersistTaps="handled"[\s\S]{0,200}?keyboardDismissMode="on-drag"/);
     },

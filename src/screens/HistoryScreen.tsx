@@ -243,6 +243,7 @@ const SessionRow = React.memo(function SessionRow({
 
   return (
     <ListRow
+      testID="history-session"
       title={sessionTitle(session.workoutName, language)}
       meta={meta}
       metaDot={feelColor}
@@ -779,8 +780,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
 
   /* list */
   listContent: {
-    paddingHorizontal: 18,
-    paddingTop: spacing.lg,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
     gap: 14,
   },
   monthGroup: {
@@ -893,7 +894,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '700',
   },
   body: {
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingTop: 18,
     gap: 14,
   },

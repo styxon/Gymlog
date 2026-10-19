@@ -6,8 +6,11 @@
 # seeded build as the store flow (docs/store-screenshots.md). The simulator's
 # text size may be raised (content_size input) to see what large type does.
 #
-# The app has no testIDs: controls are found by their visible text or
-# accessibility label as "Finnish|English" (src/lib/i18n.ts). Each part starts
+# Controls are found by their visible text or accessibility label as
+# "Finnish|English" (src/lib/i18n.ts) where that is reliable, and by testID
+# (`id:`) where a text match repeated another screen in the first run: the
+# catalog link, a programme card, a library row, the Records Seg, a History
+# session and the Settings rows. Each part starts
 # from a bottom tab, which resets that tab to its root, and every step after
 # the first screen is optional, so one missing control does not end the walk.
 # Screens are named NN-<screen>[-k]; -2 and -3 are further down the same
@@ -40,22 +43,36 @@ name: UI check
 # 03 All programs (the catalog), 04 a ready programme's page.
 - scrollUntilVisible:
     element:
-      text: ".*(Kaikki [0-9]+ ohjelmaa|All [0-9]+ programs).*"
+      id: "programs-all-link"
     direction: DOWN
-    timeout: 15000
+    timeout: 20000
     optional: true
 - tapOn:
-    text: ".*(Kaikki [0-9]+ ohjelmaa|All [0-9]+ programs).*"
+    id: "programs-all-link"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:
       P: "03-catalog"
-# Not the coach button, whose label also starts with "Avaa"/"Open".
+# Back to the Programs tab, whose recommendation cards open a programme's page.
 - tapOn:
-    text: "(Avaa|Open) (?!Vinha).*"
-    index: 0
+    text: "Ohjelmat|Programs"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
+- scrollUntilVisible:
+    element:
+      id: "program-card-0"
+    direction: DOWN
+    timeout: 20000
+    optional: true
+- tapOn:
+    id: "program-card-0"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:
@@ -78,10 +95,17 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "05-exercise-library"
-- tapOn:
-    text: "(Avaa|Open) (?!Vinha).*"
-    index: 0
+- scrollUntilVisible:
+    element:
+      id: "exercise-row-0"
+    direction: DOWN
+    timeout: 15000
     optional: true
+- tapOn:
+    id: "exercise-row-0"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:
@@ -103,22 +127,28 @@ name: UI check
     text: "Ennätykset|Records"
     optional: true
 - tapOn:
-    text: "Paino|Weight"
+    id: "seg-weight"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
       P: "08-records-weight"
 - tapOn:
-    text: "Toistot|Reps"
+    id: "seg-reps"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
       P: "08-records-reps"
 - tapOn:
-    text: "Volyymi|Volume"
+    id: "seg-volume"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 2500
 - runFlow:
     file: scrolls.yaml
     env:
@@ -156,10 +186,17 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "11-history"
-- tapOn:
-    text: ".*[0-9]+ (liikettä|exercises).*"
-    index: 0
+- scrollUntilVisible:
+    element:
+      id: "history-session"
+    direction: DOWN
+    timeout: 10000
     optional: true
+- tapOn:
+    id: "history-session"
+    optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:
@@ -217,27 +254,27 @@ name: UI check
 - runFlow:
     file: settings-row.yaml
     env:
-      ROW: "Ilmoitukset.*|Notifications.*"
+      ROW: "settings-notifications"
       P: "16-notifications"
 - runFlow:
     file: settings-row.yaml
     env:
-      ROW: "Omat tiedot.+|My data.+"
+      ROW: "settings-my-data"
       P: "17-my-data"
 - runFlow:
     file: settings-row.yaml
     env:
-      ROW: "Vie ohjelma.*|Export plan.*"
+      ROW: "settings-export-plan"
       P: "18-export-plan"
 - runFlow:
     file: settings-row.yaml
     env:
-      ROW: "Treenitauko.*|Training break.*"
+      ROW: "settings-training-break"
       P: "19-training-break"
 - runFlow:
     file: settings-row.yaml
     env:
-      ROW: "Hallinnoi tilausta.*|Manage subscription.*|Vinha Pro.*"
+      ROW: "settings-subscription"
       P: "20-subscription"
 
 # 21 About you: the profile editor, from Settings' header.
@@ -248,8 +285,10 @@ name: UI check
     text: "Asetukset|Settings"
     optional: true
 - tapOn:
-    text: "Muokkaa profiilia|Edit profile"
+    id: "settings-profile"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:

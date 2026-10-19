@@ -125,7 +125,9 @@ function BmiGauge({ bmi, width }: { bmi: number; width: number }) {
             {removeTrailingZeros(tick)}
           </Text>
         ))}
-        <Text style={[styles.tickLabel, { left: width - TICK_LABEL_WIDTH / 2 }]}>
+        {/* Right-aligned to the bar's end: centred on it, half the label hung
+            past the card's inner edge. */}
+        <Text style={[styles.tickLabel, styles.tickLabelLast, { left: width - TICK_LABEL_WIDTH }]}>
           {BMI_SCALE_MAX_TICK}
         </Text>
       </View>
@@ -401,6 +403,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
     color: theme.muted,
+  },
+  tickLabelLast: {
+    textAlign: 'right',
   },
   divider: {
     height: 1,

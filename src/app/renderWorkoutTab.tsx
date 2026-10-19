@@ -1389,7 +1389,6 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
               })
             : null;
         })()}
-        exerciseLibraryCount={exerciseBrowserItems.length}
         exerciseLibraryEntries={exerciseBrowserItems}
         nameBook={exerciseNameBook}
         onTeachName={(wrote, exercise) => teachExerciseName(wrote, { name: exercise.name, libraryItemId: exercise.id })}
