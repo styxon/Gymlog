@@ -125,11 +125,21 @@ export function purchaseRecordFromStore(
   // unchanged answer writes nothing.
   const keptStamp =
     current.mockSubscriptionPurchasedAt === purchasedAt ? current.mockSubscriptionCancelledAt : null;
+  // A renewal that failed into grace or billing retry has no unsubscribe
+  // moment, only the end of the paid period (`expirationDate`). Stamping "now"
+  // would let the entitlement count a whole further period from today. The
+  // period's own start is a moment inside the period the store says ends at
+  // expirationDate, so the entitlement names that end and no later one.
+  const expiresAt = isoOrNull(entitlement.expirationDate);
+  const periodStamp =
+    expiresAt !== null && new Date(expiresAt).getTime() > new Date(purchasedAt).getTime()
+      ? purchasedAt
+      : null;
   return {
     mockSubscriptionPurchasedAt: purchasedAt,
     mockSubscriptionTerm: term,
     mockSubscriptionCancelledAt: cancelled
-      ? isoOrNull(entitlement.unsubscribeDetectedAt) ?? keptStamp ?? now.toISOString()
+      ? isoOrNull(entitlement.unsubscribeDetectedAt) ?? keptStamp ?? periodStamp ?? now.toISOString()
       : null,
   };
 }

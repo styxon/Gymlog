@@ -104,7 +104,7 @@ module.exports = [
   {
     name: 'store purchase: a cancellation with no date is stamped once, and a later sync of the same answer writes nothing',
     run() {
-      const answer = customer(entitlement({ willRenew: false }));
+      const answer = customer(entitlement({ willRenew: false, expirationDate: null }));
       const first = purchaseRecordFromStore(answer, EMPTY, new Date('2026-10-06T00:00:00.000Z'));
       assert.equal(first.mockSubscriptionCancelledAt, '2026-10-06T00:00:00.000Z');
       const again = purchaseRecordFromStore(answer, first, new Date('2026-10-07T00:00:00.000Z'));
@@ -112,11 +112,23 @@ module.exports = [
       assert.equal(samePurchaseRecord(first, again), true);
       // A new period is a new purchase, and an old stamp does not carry over.
       const renewed = purchaseRecordFromStore(
-        customer(entitlement({ willRenew: false, latestPurchaseDate: '2026-11-01T10:00:00.000Z' })),
+        customer(entitlement({ willRenew: false, expirationDate: null, latestPurchaseDate: '2026-11-01T10:00:00.000Z' })),
         first,
         new Date('2026-11-03T00:00:00.000Z'),
       );
       assert.equal(renewed.mockSubscriptionCancelledAt, '2026-11-03T00:00:00.000Z');
+    },
+  },
+  {
+    name: 'store purchase: a failed renewal (grace, no unsubscribe date) ends at the store expiration, not a period from now',
+    run() {
+      const now = new Date('2026-11-03T00:00:00.000Z');
+      const answer = customer(entitlement({ willRenew: false, expirationDate: '2026-11-01T10:00:00.000Z' }));
+      const record = purchaseRecordFromStore(answer, EMPTY, now);
+      assert.equal(record.mockSubscriptionCancelledAt, '2026-10-01T10:00:00.000Z');
+      assert.equal(resolveProEntitlement(prefs(record), now).unlocked, false);
+      const inPeriod = resolveProEntitlement(prefs(record), new Date('2026-10-20T00:00:00.000Z'));
+      assert.equal(inPeriod.purchaseEndsAt, '2026-11-01T10:00:00.000Z');
     },
   },
   {
@@ -229,16 +241,16 @@ module.exports = [
       assert.match(term, /^onChangeMockTerm=\{\(term\) => \{\s*if \(releaseBuild\) \{\s*openStoreSubscriptions\(\);\s*return;\s*\}/);
 
       // Restore: the toast follows the saved answer.
-      const restoreAt = profile.indexOf('onRestorePurchases={');
+      const restoreAt = profile.indexOf('const restoreFromStore');
       assert.ok(restoreAt > -1, 'the restore handler moved');
-      const restore = profile.slice(restoreAt, profile.indexOf('onBack=', restoreAt));
-      const saved = restore.indexOf('await updatePreferences(record);');
+      const restore = profile.slice(restoreAt, profile.indexOf("route.screen === 'premium'", restoreAt));
+      const saved = restore.indexOf('await updatePreferences((current)');
       const said = restore.indexOf("'subs.restore.done'");
       assert.ok(saved > -1 && said > saved, 'the restore is announced before it is stored');
       const subs = read('src', 'screens', 'SubscriptionScreen.tsx');
       assert.match(subs, /restore \? \(\) => void restore\(\) : \(\) => void Linking\.openURL\(manageSubscriptionsUrl\(STORE\)\)/);
       // A second tap while the store is being asked does nothing.
-      assert.match(subs, /if \(restoring\.current\) \{\s*return;\s*\}\s*restoring\.current = true;\s*try \{\s*await onRestorePurchases\(\);\s*\} finally \{\s*restoring\.current = false;\s*\}/);
+      assert.match(subs, /if \(restoring\.current\) \{\s*return;\s*\}\s*restoring\.current = true;\s*setRestorePending\(true\);\s*try \{\s*await onRestorePurchases\(\);\s*\} finally \{\s*restoring\.current = false;\s*setRestorePending\(false\);\s*\}/);
 
       // A renewing store subscription names its next payment; "none
       // scheduled" is for a cancelled one and a grant.
@@ -253,6 +265,33 @@ module.exports = [
       for (const key of ['premium.purchasePending', 'premium.purchaseFailed', 'subs.restore.done', 'subs.restore.none', 'subs.restore.failed']) {
         assert.equal(i18n.split(`'${key}':`).length - 1, 2, `${key} in both languages`);
       }
+    },
+  },
+  {
+    name: 'restore wiring: the Pro page link runs the restore, one at a time, with fresh preferences and a pending line',
+    run() {
+      const premium = read('src', 'screens', 'PremiumScreen.tsx');
+      assert.match(premium, /onPress=\{restore\} hitSlop=\{8\}/);
+      assert.doesNotMatch(premium, /onPress=\{onManageSubscription\} hitSlop=\{8\}/);
+      assert.match(premium, /if \(restoring\.current\) \{\s*return;\s*\}\s*restoring\.current = true;/);
+
+      const profile = read('src', 'app', 'renderProfileTab.tsx');
+      assert.equal(profile.split('onRestorePurchases={restoreFromStore}').length - 1, 2);
+      assert.match(profile, /if \(restoreInFlight\.current\) \{\s*return;\s*\}\s*restoreInFlight\.current = true;/);
+      assert.match(profile, /updatePreferences\(\(current\) => \{\s*const record = purchaseRecordFromStore\(customer, current\);/);
+      assert.doesNotMatch(profile, /purchaseRecordFromStore\(customer, preferences\)/);
+
+      const i18n = read('src', 'lib', 'i18n.ts');
+      assert.equal(i18n.split("'subs.restore.pending':").length - 1, 2);
+    },
+  },
+  {
+    name: 'backup: deleting the cloud copy clears the pause the row showed',
+    run() {
+      const hook = read('src', 'features', 'account', 'useAccountBackup.ts');
+      const del = hook.slice(hook.indexOf('const deleteRemoteBackup = useCallback'));
+      const body = del.slice(0, del.indexOf('const deleteAccount = useCallback'));
+      assert.match(body, /cloudCopyDeletedAt: null,\s*\}\);\s*clearPause\(\);\s*return 'done';/);
     },
   },
 ];
