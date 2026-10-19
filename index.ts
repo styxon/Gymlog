@@ -13,4 +13,10 @@ import App from './App';
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
 // It also ensures that whether you load the app in Expo Go or in a native build,
 // the environment is set up appropriately
-registerRootComponent(App);
+//
+// The store screenshots' build (docs/store-screenshots.md) opens on a seeded
+// reader instead. The flag is read at bundle time and no store build sets it;
+// tests/lib/screenshotSeedGate.test.cjs keeps this the only door to the seed.
+registerRootComponent(
+  process.env.EXPO_PUBLIC_SCREENSHOT_SEED === '1' ? require('./src/screenshots/SeededApp').default : App,
+);

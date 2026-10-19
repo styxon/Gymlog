@@ -1,0 +1,120 @@
+{
+  "_comment": "One caption per raw shot, per language. 'accent' is the one word drawn in violet; 'pro' adds the gold PRO pill. Shots missing here are skipped. Order is the store order.",
+  "shots": [
+    {
+      "shot": "01-set-logging",
+      "fi": {
+        "text": "Kirjaa sarja yhdellä napautuksella",
+        "accent": "yhdellä"
+      },
+      "en": {
+        "text": "Log a set with one tap",
+        "accent": "one"
+      }
+    },
+    {
+      "shot": "02-next-exercise",
+      "fi": {
+        "text": "Lepoajastin ja seuraava liike valmiina",
+        "accent": "Lepoajastin"
+      },
+      "en": {
+        "text": "Rest timer and the next lift, ready",
+        "accent": "Rest"
+      }
+    },
+    {
+      "shot": "04-progress",
+      "fi": {
+        "text": "Kehitys näkyy kuvaajina",
+        "accent": "Kehitys"
+      },
+      "en": {
+        "text": "Your progress, in charts",
+        "accent": "progress,"
+      }
+    },
+    {
+      "shot": "05-records",
+      "fi": {
+        "text": "Ennätykset ja kuukausi yhdellä silmäyksellä",
+        "accent": "Ennätykset"
+      },
+      "en": {
+        "text": "Records and your month at a glance",
+        "accent": "Records"
+      }
+    },
+    {
+      "shot": "06-history",
+      "fi": {
+        "text": "Jokainen treeni tallessa",
+        "accent": "Jokainen"
+      },
+      "en": {
+        "text": "Every workout, kept",
+        "accent": "Every"
+      }
+    },
+    {
+      "shot": "03-workout-complete",
+      "fi": {
+        "text": "Ennätykset huomataan heti",
+        "accent": "huomataan"
+      },
+      "en": {
+        "text": "Records spotted the moment you set them",
+        "accent": "spotted"
+      }
+    },
+    {
+      "shot": "07-home",
+      "fi": {
+        "text": "Tämän päivän treeni valmiina",
+        "accent": "treeni"
+      },
+      "en": {
+        "text": "Today's workout, ready",
+        "accent": "workout,"
+      }
+    },
+    {
+      "shot": "08-programs",
+      "fi": {
+        "text": "Valmiit ohjelmat voimaan, kasvuun ja kuntoon",
+        "accent": "Valmiit"
+      },
+      "en": {
+        "text": "Ready programs for strength, size and fitness",
+        "accent": "Ready"
+      }
+    },
+    {
+      "shot": "10-coach-chat",
+      "pro": true,
+      "fi": {
+        "text": "AI-valmentaja, joka lukee treenisi",
+        "accent": "AI-valmentaja"
+      },
+      "en": {
+        "text": "An AI coach that reads your training",
+        "accent": "AI"
+      }
+    }
+  ],
+  "header": {
+    "shots": [
+      "04-progress",
+      "01-set-logging",
+      "05-records"
+    ],
+    "fi": {
+      "text": "Treeniloki, joka ohjaa sarjasta toiseen",
+      "accent": "ohjaa"
+    },
+    "en": {
+      "text": "A training log that guides every set",
+      "accent": "guides"
+    }
+  }
+}

@@ -203,6 +203,8 @@ const suites = [
   ...require('./lib/storePurchase.test.cjs'),
   ...require('./lib/storePrices.test.cjs'),
   ...require('./lib/proLock.test.cjs'),
+  ...require('./lib/screenshotSeed.test.cjs'),
+  ...require('./lib/screenshotSeedGate.test.cjs'),
   ...require('./lib/proTiers.test.cjs'),
   ...require('./lib/runningProgrammes.test.cjs'),
   ...require('./lib/proSurfaces.test.cjs'),
