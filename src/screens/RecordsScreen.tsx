@@ -6,6 +6,7 @@ import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { Seg } from '../components/Seg';
 import { FREE_RECORD_MONTHS, isRecordLocked } from '../lib/historyWindow';
 import { I18nKey, t } from '../lib/i18n';
+import { repsDeltaLabel } from '../lib/repCountCopy';
 import { libraryLabel } from '../lib/libraryLabel';
 import { CutSurface } from '../components/CutSurface';
 import { groupRecordsByMonth, PersonalRecord, RecordKind } from '../lib/personalRecords';
@@ -75,7 +76,7 @@ function recordDelta(record: PersonalRecord, language: AppLanguage) {
   }
   const delta = record.value - record.previous;
   if (record.kind === 'reps') {
-    return t(language, 'pr.delta.reps', { delta });
+    return repsDeltaLabel(delta, language);
   }
   return t(language, 'pr.delta.weight', {
     delta: record.kind === 'volume' ? groupThousands(delta) : removeTrailingZeros(delta),

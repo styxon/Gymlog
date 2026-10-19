@@ -12,10 +12,23 @@ export interface KeepAwakeHandle {
   release(): void;
 }
 
+/**
+ * The newest handle per tag. A late release from an old handle (its activation
+ * settled after the view was gone) must not switch off a tag a newer handle
+ * has taken since: the screen went to sleep mid-workout.
+ */
+const latestGeneration = new Map<string, number>();
+
 export function startKeepAwake(
   activate: () => Promise<unknown>,
   deactivate: () => unknown,
+  tag?: string,
 ): KeepAwakeHandle {
+  let generation = 0;
+  if (tag !== undefined) {
+    generation = (latestGeneration.get(tag) ?? 0) + 1;
+    latestGeneration.set(tag, generation);
+  }
   let released = false;
   let activated = false;
   let deactivated = false;
@@ -25,6 +38,12 @@ export function startKeepAwake(
       return;
     }
     deactivated = true;
+    if (tag !== undefined) {
+      if (latestGeneration.get(tag) !== generation) {
+        return;
+      }
+      latestGeneration.delete(tag);
+    }
     try {
       void Promise.resolve(deactivate()).catch(() => {
         // Same rule on the way out: comfort feature, never a crash.

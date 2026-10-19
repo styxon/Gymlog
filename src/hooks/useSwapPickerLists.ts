@@ -9,7 +9,7 @@ import { findGuidedLibraryIndex } from '../lib/guidedPlayer';
 import { t } from '../lib/i18n';
 import { libraryLabel } from '../lib/libraryLabel';
 import { effectiveSwapBodyPart, effectiveSwapCategory, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
-import { buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
+import { buildSwapPickerLibrary, narrowSwapAlternatives, swapSuggestionFilters } from '../lib/swapPickerLists';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 
 interface SwapPickerListsInput {
@@ -88,12 +88,15 @@ export function useSwapPickerLists({
       // The type chip reaches the cards only when the reader moved it: the
       // stretch default narrows the library, not the programme's own answer
       // (a core slot filed as a stretch kept none of its four).
-      narrowSwapAlternatives(alternativeRows, { ...filters, category: categoryPick ?? 'all' }).map(({ name, item }) => ({
+      narrowSwapAlternatives(
+        alternativeRows,
+        swapSuggestionFilters(filters, { category: categoryPick, bodyPart: bodyPartPick }),
+      ).map(({ name, item }) => ({
         key: `suggested-${name}`,
         name,
         item,
       })),
-    [alternativeRows, categoryPick, filters],
+    [alternativeRows, bodyPartPick, categoryPick, filters],
   );
   const libraryEntries = useMemo<ExercisePickerEntry[]>(() => {
     if (!currentName || !exerciseLibrary) {

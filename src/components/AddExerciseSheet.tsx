@@ -358,6 +358,7 @@ export function ExercisePickerSheet({
             placeholder={copy.searchPlaceholder}
             placeholderTextColor={theme.faint}
             style={styles.searchInput}
+            maxFontSizeMultiplier={1.6}
             selectionColor={theme.purple}
             autoCorrect={false}
             multiline={false}
@@ -970,11 +971,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    // A fixed height with no vertical padding and the text centred: with only
-    // a minHeight the placeholder sat at the bottom of the box (#bugs
-    // 2026-10-19). textAlignVertical is Android's centring, the zero padding
-    // and the single line are iOS's.
-    height: 52,
+    // minHeight, not height: a fixed 52 clipped the text at iOS accessibility
+    // font sizes. With no vertical padding and the text centred the placeholder
+    // still sits mid-box (#bugs 2026-10-19). textAlignVertical is Android's
+    // centring, the zero padding is iOS's.
+    minHeight: 52,
     paddingVertical: 0,
     textAlignVertical: 'center',
     borderRadius: radii.md,

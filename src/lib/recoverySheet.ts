@@ -58,8 +58,8 @@ export interface RecoverySheetModel {
    * "no ratio", not "0,00" (#bugs 2026-10-18).
    */
   acwrLabel: string | null;
-  /** Where the "you" marker sits on the zone bar, 2..98 (percent). */
-  markerPercent: number;
+  /** Where the "you" marker sits on the zone bar, 2..98 (percent); null with no ratio to place. */
+  markerPercent: number | null;
   acuteLabel: string;
   chronicLabel: string;
   week: RecoveryWeekDay[];
@@ -163,6 +163,11 @@ export function tidySessionTitle(title: string | null | undefined, language: App
   }
   // "Legs 1" is not a dictionary phrase; "Legs" is. Translate the name and
   // keep the number beside it.
+  // The whole title goes first: "Day 2" is a phrase of its own ("P�iv� 2").
+  const whole = localizeSessionName(spaced, language);
+  if (whole !== spaced) {
+    return whole;
+  }
   const numbered = spaced.match(/^(.*\S)\s+(\d+)$/u);
   return numbered ? `${localizeSessionName(numbered[1], language)} ${numbered[2]}` : localizeSessionName(spaced, language);
 }
@@ -262,7 +267,11 @@ export function buildRecoverySheet(input: RecoverySheetInput): RecoverySheetMode
     score: fatigue.signal === 'undertrained' ? null : fatigue.recoveryScore,
     lead,
     acwrLabel: acwrLabelOf(fatigue),
-    markerPercent: Math.max(2, Math.min(98, ((fatigue.acwr - ZONE_MIN) / ZONE_SPAN) * 100)),
+    // No ratio, no marker: a "you" pinned at 2% with no number beside it says nothing.
+    markerPercent:
+      acwrLabelOf(fatigue) === null
+        ? null
+        : Math.max(2, Math.min(98, ((fatigue.acwr - ZONE_MIN) / ZONE_SPAN) * 100)),
     acuteLabel: formatLoadKg(fatigue.acuteLoadKg),
     chronicLabel: formatLoadKg(fatigue.chronicLoadKg),
     week: recoveryWeek(input.sessionDates, input.now, language),

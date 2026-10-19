@@ -143,3 +143,16 @@ export function narrowSwapAlternatives<T extends { item: ExerciseLibraryItem | n
   const narrowed = filters.category !== 'all' || filters.equipment !== 'all' || filters.bodyPart !== 'all';
   return rows.filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, filters)));
 }
+
+/**
+ * The chips that reach the Suggested cards: only the ones the reader moved.
+ * The full filters carry the lift's own muscle and type as defaults, which narrow
+ * the library but must not hide the programme's own alternatives before
+ * anything is tapped (the list could end up empty).
+ */
+export function swapSuggestionFilters(
+  filters: ExercisePickerFilters,
+  picks: { category: ExercisePickerFilters['category'] | null; bodyPart: ExercisePickerFilters['bodyPart'] | null },
+): ExercisePickerFilters {
+  return { ...filters, category: picks.category ?? 'all', bodyPart: picks.bodyPart ?? 'all' };
+}

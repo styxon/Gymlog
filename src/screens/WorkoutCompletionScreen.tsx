@@ -12,6 +12,7 @@ const HERO_GRADIENT_HEIGHT = 360;
 
 import { formatPercent, formatShortDate, formatTime, formatWeight, removeTrailingZeros } from '../lib/format';
 import { bodyPartLabel, t } from '../lib/i18n';
+import { prMoreRepsLabel } from '../lib/repCountCopy';
 import { Movement, WhatMovedRow } from '../lib/sessionMovement';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { localizeSessionName } from '../lib/sessionNameLabel';
@@ -284,10 +285,11 @@ function formatPrNote(pr: WorkoutCompletionPrCard, language: AppLanguage) {
   // Same weight, more reps is a record too (2026-09-26) — and "+0 kg" would
   // say it was not one. The reps are what moved.
   if (pr.performedWeightKg === pr.previousBestWeightKg && pr.previousBestReps !== null) {
-    return t(language, 'complete.pr.moreReps', {
-      delta: pr.performedReps - pr.previousBestReps,
-      weight: removeTrailingZeros(pr.performedWeightKg),
-    });
+    return prMoreRepsLabel(
+      pr.performedReps - pr.previousBestReps,
+      removeTrailingZeros(pr.performedWeightKg),
+      language,
+    );
   }
   const delta = pr.performedWeightKg - pr.previousBestWeightKg;
   // The delta alone made the reader do the arithmetic mid-celebration
