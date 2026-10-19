@@ -688,6 +688,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // guess which of promo / demo switch is keeping Pro on.
         source={proEntitlement.source ?? 'none'}
         promoUntil={proEntitlement.promoUntil}
+        cancelled={preferences.mockSubscriptionCancelledAt !== null}
         // Counted from the same instant the subscription screen counts from,
         // or the two screens name different dates for the same period.
         // The date the entitlement itself will stop on: the end of the current

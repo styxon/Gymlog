@@ -46,9 +46,23 @@ const SEQUENCING = {
   // is up, and takes no press before it has arrived (onShow). Pinned in
   // tests/screens/iosModalHandoff.test.cjs.
   'opened-when-clear': 'opens only with no other sheet up, and waits for onShow',
-  // Neither yet. Listed so that the count can only shrink: each of these is
-  // safe only while nothing opens or closes in the same tick as it does.
-  'not-yet': 'not sequenced yet',
+  // Opened by a timer or an effect, so it can come due while another modal of
+  // its screen is up or leaving: it waits for useSheetsSettled, which turns
+  // true only after the other modals' onDismiss. Pinned below.
+  'opens-when-settled': 'opens on its own only after the screen\'s other modals have gone',
+  // Opened only by a touch on the page under it, from a handler that closes no
+  // other modal. Each entry says, in `why`, which modals share its screen and
+  // why none of them can be closing as it opens. A touch cannot arrive in the
+  // window a dismissal takes: the dismissing sheet still covers the screen and
+  // UIKit gives the presenting view no touches until the transition is done.
+  // Android stacks modals and never shows any of this.
+  'opened-by-touch': 'opened only by a touch, from a handler that closes no other modal',
+  // Never presented on iOS at all: the code that would open it is gated off
+  // there. Pinned below.
+  'never-on-ios': 'the code that opens it does not run on iOS',
+  // Never opened on any platform: nothing sets its visible prop to true.
+  // Pinned below.
+  'never-opened': 'nothing opens it',
 };
 
 /**
@@ -57,34 +71,31 @@ const SEQUENCING = {
  * (no visible prop, or a bare `visible`).
  */
 const LEDGER = {
-  'src/components/AddExerciseSheet.tsx': [{ in: 'ExercisePickerSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/CoachDemoSheet.tsx': [{ in: 'CoachDemoSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/AddExerciseSheet.tsx': [{ in: 'ExercisePickerSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'Its four screens (the programme builder, the empty workout, the guided player, the programme day) open it from an Add exercise button, and every close path (pick, confirm, back) closes only this sheet. The guided player\'s rest-alerts ask is the one modal that opens by itself, and it only arrives on a rest step, where the add sheet cannot have been opened.' }],
+  'src/components/CoachDemoSheet.tsx': [{ in: 'CoachDemoSheet', closes: 'visible', sequencing: 'opens-when-settled' }],
   'src/components/ConfirmDialog.tsx': [{ in: 'ConfirmDialog', closes: 'visible', sequencing: 'reports-dismiss' }],
-  'src/components/ExerciseSheet.tsx': [{ in: 'ExerciseSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/MeasureRulerSheet.tsx': [{ in: 'SheetShell', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/NewProgramSheet.tsx': [{ in: 'NewProgramSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/ProMomentSheet.tsx': [{ in: 'ProMomentSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/ExerciseSheet.tsx': [{ in: 'ExerciseSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'Mounted by the guided player\'s card tap only. The one modal that opens by itself there, the rest-alerts ask, is held back while it is up (blocked: runSheetOpen || setPanelsOpen, pinned below), and no handler closes another modal as it opens.' }],
+  'src/components/MeasureRulerSheet.tsx': [{ in: 'SheetShell', closes: 'visible', sequencing: 'opened-by-touch', why: 'The three ruler sheets open from a button on Progress or About you, and each saves or cancels with its own state flag only. About you\'s move from the gender or age sheet to the weight sheet already goes through useModalHandoff; the weight sheet itself closes into nothing.' }],
+  'src/components/NewProgramSheet.tsx': [{ in: 'NewProgramSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'Opened by the Create button of the programme screens and by the settings import row. Choosing a door closes it and then navigates to another route, which opens no modal in the same tick; the screens it sits on have no other modal that is closed from its handlers.' }],
+  'src/components/ProMomentSheet.tsx': [{ in: 'ProMomentSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/components/ProgramLimitSheet.tsx': [{ in: 'ProgramLimitSheet', closes: 'visible', sequencing: 'in-tree-on-ios' }],
-  'src/components/RateAppSheet.tsx': [{ in: 'RateAppSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/RateAppSheet.tsx': [{ in: 'RateAppSheet', closes: 'visible', sequencing: 'never-on-ios' }],
   'src/components/RestAlertsSheet.tsx': [{ in: 'RestAlertsSheet', closes: 'visible', sequencing: 'opened-when-clear' }],
-  'src/components/SetLogSheet.tsx': [{ in: 'SetLogSheet', closes: 'visible', sequencing: 'not-yet' }],
-  'src/components/SubscriptionSheet.tsx': [{ in: 'SubscriptionSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/components/SetLogSheet.tsx': [{ in: 'SetLogSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'Opened by a row tap on Progress. Progress\'s other sheets (weight, measure, BMI, recovery, Pro moment) are each opened by a touch of their own and closed by their own flag, and this sheet\'s Start and Pro buttons close it and navigate away, opening no modal.' }],
+  'src/components/SubscriptionSheet.tsx': [{ in: 'SubscriptionSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'The four panels share one state (`sheet`), so at most one is up and every change of it is a touch. Their buttons close the panel with setSheet(null) and open nothing.' }],
   'src/components/ThemeChoiceDialog.tsx': [{ in: 'ThemeChoiceDialog', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/components/TrackChangeDialog.tsx': [{ in: 'TrackChangeDialog', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/components/sheetKit.tsx': [{ in: 'KitSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
-  'src/screens/CardioScreen.tsx': [{ in: 'CardioSheet', closes: 'unmount', sequencing: 'not-yet' }],
+  'src/screens/CardioScreen.tsx': [{ in: 'CardioSheet', closes: 'unmount', sequencing: 'opened-by-touch', why: 'The end sheet needs a running cardio session (player mode, from the exit button or Android\'s back key) and the conflict sheet is opened from the activity list, which is shown only without one. Choosing in either closes it and starts a different mode, which has no modal.' }],
   'src/screens/GuidedPlayerScreen.tsx': [
     { in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' },
     { in: 'LoggedSetEditor', closes: 'unmount', sequencing: 'opened-after-handoff' },
   ],
   'src/screens/HomeScreen.tsx': [{ in: 'HomeScreen', closes: 'visible', sequencing: 'deferred-open' }],
-  'src/screens/MyDataScreen.tsx': [{ in: 'MyDataScreen', closes: 'visible', sequencing: 'not-yet' }],
-  'src/screens/OnboardingScreen.tsx': [{ in: 'OnboardingScreen', closes: 'visible', sequencing: 'not-yet' }],
-  'src/screens/ProgramsHomeScreen.tsx': [{ in: 'ProgramSheet', closes: 'visible', sequencing: 'not-yet' }],
+  'src/screens/MyDataScreen.tsx': [{ in: 'MyDataScreen', closes: 'visible', sequencing: 'opened-by-touch', why: 'The screen\'s only modal. A field row opens the editor, and Save or Cancel closes it.' }],
+  'src/screens/OnboardingScreen.tsx': [{ in: 'OnboardingScreen', closes: 'visible', sequencing: 'never-opened' }],
+  'src/screens/ProgramsHomeScreen.tsx': [{ in: 'ProgramSheet', closes: 'visible', sequencing: 'opened-by-touch', why: 'The category sheet is opened by a category card, and picking a row closes it and navigates. The screen\'s other modal, the create sheet, is opened by its own button; no handler closes one and opens the other.' }],
 };
-
-/** May only go down: a new site is sequenced from the start. */
-const NOT_YET_CEILING = 13;
 
 function listSourceFiles() {
   const files = {};
@@ -190,6 +201,12 @@ function checkModalLedger(files) {
       if (entry.sequencing === 'opened-when-clear' && !/\sonShow=\{/.test(site.tag)) {
         problems.push(`${file} (${site.in}): listed as waiting for its own arrival, but its Modal has no onShow.`);
       }
+      if (entry.sequencing === 'opened-by-touch' && !(typeof entry.why === 'string' && entry.why.length > 40)) {
+        problems.push(`${file} (${site.in}): listed as opened by a touch, but the entry does not say why no other modal can be closing.`);
+      }
+      if (entry.sequencing === 'opens-when-settled' && site.onDismiss !== null) {
+        problems.push(`${file} (${site.in}): listed as opening when settled, but it reports a dismissal now; list it as reporting its dismissal.`);
+      }
       if (entry.sequencing === 'opened-after-handoff' && site.closes === 'visible') {
         problems.push(`${file} (${site.in}): listed as opened after a handoff by mounting, but it closes through visible now; list it as reporting its dismissal.`);
       }
@@ -202,10 +219,6 @@ function checkModalLedger(files) {
     if (!byFile[file]) {
       problems.push(`${file}: listed in the ledger but has no <Modal any more. Remove the entry.`);
     }
-  }
-  const notYet = Object.values(LEDGER).flat().filter((entry) => entry.sequencing === 'not-yet').length;
-  if (notYet > NOT_YET_CEILING) {
-    problems.push(`${notYet} sites are 'not-yet', over the ceiling of ${NOT_YET_CEILING}: sequence the new one instead.`);
   }
   return problems;
 }
@@ -359,6 +372,63 @@ module.exports = [
       assert.match(inTree, /pointerEvents=\{visible \? 'auto' : 'none'\}/);
       assert.match(inTree, /if \(!visible && !drawn\) \{\s*return null;\s*\}/);
       assert.match(inTree, /if \(finished && !visible\) \{\s*setDrawn\(false\);/);
+    },
+  },
+  {
+    name: 'iOS modal sequencing: the completion screen\'s demo waits for the feel and Pro sheets to leave',
+    run() {
+      const screen = read('src', 'screens', 'WorkoutCompletionScreen.tsx');
+      // The timer only marks the demo due; an effect opens it once settled.
+      assert.match(screen, /setTimeout\(\(\) => setDemoDue\(true\), 900\)/);
+      assert.doesNotMatch(screen, /setTimeout\(\(\) => setDemoSheetVisible\(true\)/);
+      assert.match(
+        screen,
+        /useSheetsSettled\(\s*feelSheetVisible \|\| momentSheetVisible,?\s*\)/,
+      );
+      assert.match(
+        screen,
+        /if \(demoDue && otherSheetsSettled\) \{\s*setDemoDue\(false\);\s*setDemoSheetVisible\(true\);/,
+      );
+      // Both sheets it waits for report their dismissal to the hook.
+      assert.equal((screen.match(/onDismissed=\{onOtherSheetDismissed\}/g) || []).length, 2);
+      // The hook: not settled in the render that closes a sheet, settled again on onDismiss or the fallback.
+      const hook = read('src', 'hooks', 'useSheetsSettled.ts');
+      assert.match(hook, /if \(up !== previousUp\) \{\s*setPreviousUp\(up\);\s*setLeaving\(!up && Platform\.OS === 'ios'\);/);
+      assert.match(hook, /setTimeout\(\(\) => setLeaving\(false\), MODAL_HANDOFF_FALLBACK_MS\)/);
+      assert.match(hook, /return \{ settled: !up && !leaving, onDismissed \};/);
+    },
+  },
+  {
+    name: 'iOS modal sequencing: the rating sheet is never presented on iOS, and the onboarding helper never opens',
+    run() {
+      // Both ways to the rating sheet go through usesSystemReviewPrompt, which
+      // is true on iOS: there Apple's prompt (or the store page) is used.
+      const finish = read('src', 'app', 'finishExits.ts');
+      assert.match(
+        finish,
+        /if \(usesSystemReviewPrompt\(storePlatformOf\(Platform\.OS\)\)\) \{\s*void requestSystemReview\(\);\s*\} else \{\s*setRatingSheetVisible\(true\);/,
+      );
+      const profile = read('src', 'app', 'renderProfileTab.tsx');
+      assert.match(
+        profile,
+        /if \(!usesSystemReviewPrompt\(store\)\) \{\s*return \(\) => setRatingSheetVisible\(true\);/,
+      );
+      for (const file of Object.keys(listSourceFiles())) {
+        if (file === 'src/app/finishExits.ts' || file === 'src/app/renderProfileTab.tsx') continue;
+        assert.doesNotMatch(read(...file.split('/')), /setRatingSheetVisible\(true\)/, `${file} opens the rating sheet`);
+      }
+      // The onboarding AI helper's Modal has no opener: its flag is only ever set to false.
+      const onboarding = read('src', 'screens', 'OnboardingScreen.tsx');
+      assert.match(onboarding, /const \[helperVisible, setHelperVisible\] = useState\(false\);/);
+      assert.doesNotMatch(onboarding, /setHelperVisible\((?!false\))/);
+      assert.doesNotMatch(onboarding, /setHelperVisible\(\(/);
+    },
+  },
+  {
+    name: 'iOS modal sequencing: the guided player\'s rest-alerts ask is held back while the lift sheet is up',
+    run() {
+      const guided = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      assert.match(guided, /blocked: runSheetOpen \|\| setPanelsOpen,/);
     },
   },
   {

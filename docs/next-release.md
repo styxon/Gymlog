@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
 - #382 Onboarding: a disabled Continue button says on a line under it what
   it still waits for.
 - #384 Onboarding: the chosen start-path card is a soft violet tint instead
@@ -137,6 +138,9 @@ update to carry, not for each fix.
 - #397 Home says "Vinha Fitness" again (Fitness in orange); About you's gender
   row shows Male in blue and Female in pink, and the gender sheet's Skip sits
   lower under its rule.
+- iPhone, workout summary: the Coach demo question no longer opens over the
+  "how did it feel" or the Pro sheet if one is up or still closing (it waits,
+  then appears); the other sheets are checked and need no change.
 - #402 AI coach without a connection names the workout in the reader's
   language ("HUGE Pro - Päivä 1: Ylävartalo", not "Day 1: Upper Body"), and
   the English answer's broken dash ("order â the first lift") is a dash again.

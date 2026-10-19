@@ -41,9 +41,11 @@ interface ProMomentSheetProps {
   bottomInset: number;
   onClose: () => void;
   onSeePro: () => void;
+  /** The Modal's onDismiss, for useSheetsSettled / useModalHandoff (iOS only). */
+  onDismissed?: () => void;
 }
 
-export function ProMomentSheet({ visible, content, language, bottomInset, onClose, onSeePro }: ProMomentSheetProps) {
+export function ProMomentSheet({ visible, content, language, bottomInset, onClose, onSeePro, onDismissed }: ProMomentSheetProps) {
   const styles = useThemedStyles(makeStyles);
   const storePrices = useStorePlanPrices();
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -74,7 +76,7 @@ export function ProMomentSheet({ visible, content, language, bottomInset, onClos
   }
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onDismiss={onDismissed}>
       <Pressable style={styles.scrim} onPress={onClose}>
         <Animated.View style={{ transform: [{ translateY: slideTranslate }] }}>
           <Pressable
