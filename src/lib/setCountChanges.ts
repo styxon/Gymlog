@@ -10,6 +10,8 @@
  * a moment the reader saw.
  */
 
+import { buildSupersetRuns, normalizeSupersetGroups } from './supersetGrouping';
+
 export interface SetCountChange {
   name: string;
   from: number;
@@ -17,7 +19,37 @@ export interface SetCountChange {
 }
 
 interface SessionRows {
-  exercises: ReadonlyArray<{ id: string; name: string; targetSets: number }>;
+  exercises: ReadonlyArray<{ id: string; name: string; targetSets: number; supersetGroup?: string | null }>;
+}
+
+/**
+ * The emphasis counts with each superset's partners brought along.
+ *
+ * A block's set count is one number (linking and prescribing keep it so), but
+ * the emphasis sliders write per row, so a save could leave a pair at 4 + 3.
+ * Within a block the first row the save names decides, in programme order, and
+ * every other member takes its count. A block the save names nowhere is left alone.
+ */
+export function withSupersetPartners(
+  sessions: ReadonlyArray<SessionRows>,
+  setsByExerciseId: ReadonlyMap<string, number>,
+): Map<string, number> {
+  const expanded = new Map(setsByExerciseId);
+  for (const session of sessions) {
+    const rows = session.exercises;
+    buildSupersetRuns(normalizeSupersetGroups(rows)).forEach((run) => {
+      if (run.groupId === null || run.indexes.length < 2) {
+        return;
+      }
+      const named = run.indexes.find((index) => setsByExerciseId.has(rows[index].id));
+      if (named === undefined) {
+        return;
+      }
+      const sets = setsByExerciseId.get(rows[named].id) as number;
+      run.indexes.forEach((index) => expanded.set(rows[index].id, sets));
+    });
+  }
+  return expanded;
 }
 
 /**

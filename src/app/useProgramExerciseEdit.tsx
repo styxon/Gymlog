@@ -10,7 +10,7 @@ import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
 import { findGuidedLibraryIndex } from '../lib/guidedPlayer';
 import { t } from '../lib/i18n';
 import { createId } from '../lib/ids';
-import { buildCustomProgramPlanId, buildProgramWorkoutPlan, buildReadyProgramPlanId } from '../lib/programAdoption';
+import { buildCustomProgramPlanId, buildProgramWorkoutPlan, carryPlanLabels, buildReadyProgramPlanId } from '../lib/programAdoption';
 import { liveSessionBlocksProgrammeDelete } from '../lib/programmeDeletion';
 import { applyProgramSessionEdit, ProgramPrescription } from '../lib/programSessionEdit';
 import { ProgramLimitReachedError, type ProgramSlots } from '../lib/programSlots';
@@ -611,14 +611,14 @@ export function useProgramExerciseEdit(deps: ProgramExerciseEditDeps) {
       const replacedPlan = wasHeld
         ? database.workoutPlans.find((item) => item.id === readyPlanId) ?? null
         : null;
-      const plan = buildProgramWorkoutPlan({
+      const plan = carryPlanLabels(buildProgramWorkoutPlan({
         planId,
         workoutTemplateId,
         programName: formatWorkoutDisplayLabel(draft.name),
         sessionIds,
         dayLabels: planLabelsForProgramme(sessionIds.length, preferences.setupAvailableDays, new Date()),
         now: replacedPlan?.updatedAt ?? new Date().toISOString(),
-      });
+      }), replacedPlan);
       // And its rhythm: a new id, so the plan write cannot carry it over.
       await upsertWorkoutPlan({ ...plan, trainingCycle: planTrainingCycle(replacedPlan) });
       // The copy takes the ready programme's place rather than joining it —

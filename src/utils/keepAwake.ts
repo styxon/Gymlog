@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { startKeepAwake } from '../lib/keepAwakeLifecycle';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 
 /**
@@ -13,23 +14,10 @@ export function useKeepScreenAwake(enabled: boolean, tag: string) {
       return;
     }
 
-    let active = false;
-    activateKeepAwakeAsync(tag)
-      .then(() => {
-        active = true;
-      })
-      .catch(() => {
-        // Keep-awake is a comfort feature; ignore activation failures.
-      });
-
-    return () => {
-      if (active) {
-        try {
-          void deactivateKeepAwake(tag);
-        } catch {
-          // Same rule on the way out.
-        }
-      }
-    };
+    const handle = startKeepAwake(
+      () => activateKeepAwakeAsync(tag),
+      () => deactivateKeepAwake(tag),
+    );
+    return () => handle.release();
   }, [enabled, tag]);
 }

@@ -163,7 +163,13 @@ export type WorkoutAction =
       type: 'exercise/insertAfter';
       // null when the session has no main-block exercise to insert after — a
       // cooldown-only session's mid-workout add (recheck round 2026-09-29).
-      payload: { afterSlotId: string | null; exercise: WorkoutExerciseInsertInput };
+      payload: {
+        afterSlotId: string | null;
+        exercise: WorkoutExerciseInsertInput;
+        // The lift's own history seeds its sets, as a swap's does, so the
+        // draft is written in the unit the logger reads back. kg when absent.
+        unitPreference?: 'kg' | 'lb';
+      };
     }
   | {
       type: 'exercise/swap';
@@ -2236,6 +2242,12 @@ function reduceWorkoutAction(state: WorkoutFeatureState, action: WorkoutAction):
       }
 
       const insertedExercise = materializeInsertedExercise(action.payload.exercise, insertIndex);
+      // A lift added mid-workout opened at 0 kg even when it had been done
+      // before; a swap pre-fills from history, so an insert does too.
+      const insertedEntry = findCurrentLiftEntry(state.history, insertedExercise);
+      insertedExercise.sets.forEach((set) => {
+        replanSetForCurrentLift(insertedExercise, set, insertedEntry, action.payload.unitPreference ?? 'kg');
+      });
       session.exercises.splice(insertIndex, 0, insertedExercise);
       session.exercises = session.exercises.map((exercise, index) => ({
         ...exercise,

@@ -65,7 +65,11 @@ interface WorkoutContextValue {
    * inserts at the front of the (empty) list instead (recheck round
    * 2026-09-29).
    */
-  insertExerciseAfter: (afterSlotId: string | null, exercise: WorkoutExerciseInsertInput) => void;
+  insertExerciseAfter: (
+    afterSlotId: string | null,
+    exercise: WorkoutExerciseInsertInput,
+    unitPreference?: UnitPreference,
+  ) => void;
   updateSetDraft: (slotId: string, setIndex: number, patch: { loadText?: string; repsText?: string }) => void;
   completeSet: (slotId: string, setIndex: number, unitPreference: UnitPreference) => void;
   /** Correct a set that is already logged, without moving the session on. */
@@ -362,8 +366,8 @@ export function WorkoutProvider({ children }: React.PropsWithChildren) {
       collapseExercise(slotId) {
         dispatch({ type: 'exercise/collapse', payload: { slotId } });
       },
-      insertExerciseAfter(afterSlotId, exercise) {
-        dispatch({ type: 'exercise/insertAfter', payload: { afterSlotId, exercise } });
+      insertExerciseAfter(afterSlotId, exercise, unitPreference) {
+        dispatch({ type: 'exercise/insertAfter', payload: { afterSlotId, exercise, unitPreference } });
       },
       updateSetDraft(slotId, setIndex, patch) {
         dispatch({ type: 'set/updateDraft', payload: { slotId, setIndex, patch } });

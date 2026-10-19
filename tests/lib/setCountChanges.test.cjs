@@ -91,7 +91,7 @@ module.exports = [
       const start = source.indexOf('async function handleSaveEmphasis(');
       const body = source.slice(start, source.indexOf('function setCountToast(', start));
       assert.ok(start > 0 && body.length > 0);
-      assert.match(body, /changes = setCountChanges\(sessions, setsByExerciseId\)/, 'computed inside the write slot');
+      assert.match(body, /changes = setCountChanges\(sessions, counts\)/, 'computed inside the write slot');
       const savedCheck = body.indexOf('if (!result.saved)');
       const toast = body.indexOf('showToast(setCountToast(changes))');
       assert.ok(savedCheck > 0 && toast > savedCheck, 'no line before the save resolves');

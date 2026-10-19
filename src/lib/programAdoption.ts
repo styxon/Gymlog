@@ -59,6 +59,36 @@ export function buildCustomProgramPlanId(workoutTemplateId: string): string {
   return `custom_plan_${workoutTemplateId}`;
 }
 
+/**
+ * A copy of a held programme takes the weekday labels of the plan it replaces,
+ * entry for entry.
+ *
+ * The labels used to be rebuilt from the reader's availability and rotated as
+ * if session 1 were next, so the next workout of a swapped-in programme landed
+ * on the wrong day. The copy has the same sessions in the same order, so the
+ * original's labels are the right ones. Only when the two have the same number
+ * of entries — otherwise there is no entry-for-entry answer and the plan is
+ * left as built.
+ */
+export function carryPlanLabels(
+  plan: WorkoutPlan,
+  replacedPlan: Pick<WorkoutPlan, 'entries'> | null | undefined,
+): WorkoutPlan {
+  if (!replacedPlan) {
+    return plan;
+  }
+  const original = replacedPlan.entries.slice().sort((left, right) => left.orderIndex - right.orderIndex);
+  if (original.length === 0 || original.length !== plan.entries.length) {
+    return plan;
+  }
+  const ordered = plan.entries.slice().sort((left, right) => left.orderIndex - right.orderIndex);
+  const labelByEntryId = new Map(ordered.map((entry, index) => [entry.id, original[index].label] as const));
+  return {
+    ...plan,
+    entries: plan.entries.map((entry) => ({ ...entry, label: labelByEntryId.get(entry.id) ?? entry.label })),
+  };
+}
+
 export function buildProgramWorkoutPlan(input: ProgramPlanInput): WorkoutPlan {
   const planId = input.planId;
   const entryCount = Math.max(1, input.sessionIds.length);
