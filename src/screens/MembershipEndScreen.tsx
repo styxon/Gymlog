@@ -13,6 +13,7 @@ import {
   PRO_UNLOCK_LIMIT_VARS,
   resolveMembershipEndPlan,
 } from '../lib/proBenefits';
+import { resolveMembershipEndView } from '../lib/membershipEndView';
 import { CANCEL_REASON_KEYS, CancelReasonKey } from '../lib/cancelSurvey';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
@@ -27,6 +28,8 @@ interface MembershipEndScreenProps {
    * is not promo-based — a cancelled subscription keeps working until then.
    */
   periodEndsAt?: string | null;
+  /** A cancellation is on record: the screen offers only a way back. */
+  cancelled?: boolean;
   language?: AppLanguage;
   onBack: () => void;
   /** Keeps Pro — goes back where the reader came from. */
@@ -67,6 +70,7 @@ export function MembershipEndScreen({
   source,
   promoUntil,
   periodEndsAt = null,
+  cancelled = false,
   language = 'en',
   onBack,
   onKeep,
@@ -84,6 +88,7 @@ export function MembershipEndScreen({
   const [step, setStep] = useState<'page' | 'splash' | 'survey'>('page');
 
   const endsAt = plan.lapsesOn ?? periodEndsAt;
+  const view = resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled });
 
   return step === 'splash' ? (
     <EndSplash
@@ -177,35 +182,49 @@ export function MembershipEndScreen({
       </ScrollView>
 
       <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
-        {/* Two buttons: keeping is the filled one, ending the outlined red one
-            under it, so the destructive choice never sits where the thumb
-            lands and is still a button you can see is one (owner, 2026-10-15:
-            the red text line under one big bar did not read as a choice). */}
-        <Pressable
-          accessibilityRole="button"
-          onPress={onKeep}
-          style={({ pressed }) => [styles.keepButton, pressed && { opacity: 0.85 }]}
-        >
-          <Text style={styles.keepButtonText}>{t(language, 'subs.end.keep')}</Text>
-        </Pressable>
-        {plan.canEndNow ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={onEndInStore ?? (() => setStep('splash'))}
-            style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
-          >
-            <Text style={styles.endLinkText}>{t(language, 'subs.end.cta')}</Text>
-          </Pressable>
+        {view.mode === 'decide' ? (
+          <>
+            {/* Keeping is the one filled button; ending is the outlined red
+                one under it, so the destructive choice never sits where the
+                thumb lands and is still visibly a button. */}
+            <Pressable
+              accessibilityRole="button"
+              onPress={onKeep}
+              style={({ pressed }) => [styles.keepButton, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.keepButtonText}>{t(language, 'subs.end.keep')}</Text>
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onEndInStore ?? (() => setStep('splash'))}
+              style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
+            >
+              <Text style={styles.endLinkText}>{t(language, 'subs.end.cta')}</Text>
+            </Pressable>
+          </>
         ) : (
-          // No line, because there is no action. A greyed-out "Cancel" here
-          // would read as something the app is refusing to let you do.
-          <Text style={styles.noActionNote}>
-            {plan.lapsesOn
-              ? t(language, 'membership.end.noActionPromo', {
-                  date: formatDate(plan.lapsesOn, language),
-                })
-              : t(language, 'membership.end.noAction')}
-          </Text>
+          <>
+            {/* Nothing to decide, so one action: back. A cancelled or promo
+                membership is never asked to be kept or ended again. */}
+            <Text style={styles.noActionNote}>
+              {view.alreadyCancelled
+                ? endsAt
+                  ? t(language, 'subs.end.cancelledNote', { date: formatDate(endsAt, language) })
+                  : t(language, 'subs.cancelledNote')
+                : plan.lapsesOn
+                  ? t(language, 'membership.end.noActionPromo', {
+                      date: formatDate(plan.lapsesOn, language),
+                    })
+                  : t(language, 'membership.end.noAction')}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              onPress={onBack}
+              style={({ pressed }) => [styles.keepButton, pressed && { opacity: 0.85 }]}
+            >
+              <Text style={styles.keepButtonText}>{t(language, 'common.back')}</Text>
+            </Pressable>
+          </>
         )}
       </View>
     </View>
@@ -553,9 +572,6 @@ const makeStyles = (theme: Theme) =>
       marginTop: 18,
     },
     footer: {
-      backgroundColor: theme.surface,
-      borderTopWidth: 1,
-      borderTopColor: theme.border,
       paddingHorizontal: 20,
       paddingTop: 13,
       gap: 10,
