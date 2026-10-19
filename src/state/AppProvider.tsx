@@ -4,6 +4,7 @@ import { StorageLoadFailedScreen } from '../components/StorageLoadFailedScreen';
 import { resolveDeviceLanguage } from '../storage/deviceLocale';
 import { findSavedCardioRun, mergeContinuedCardioRun } from '../lib/cardio';
 import { createId } from '../lib/ids';
+import { isPlausibleBodyweightKg } from '../lib/weightLimits';
 import { groupLogsBySession, logsOfSession } from '../lib/sessionLogIndex';
 import { preferencesForRestore } from '../lib/accountBackup';
 import { moveTrainingCycleToLeadPlan, withPlanTrainingCycle } from '../lib/planTrainingCycle';
@@ -1078,8 +1079,11 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   function addBodyweightEntry(weightKg: number, recordedAt = new Date().toISOString()) {
     return runExclusive(async () => {
       const current = databaseRef.current;
-      if (weightKg <= 0) {
-        return;
+      // Rejected, not silently skipped: a caller that gets a resolved promise
+      // tells the reader "logged". The same window the loader reads back, so
+      // nothing is stored that the next launch would drop.
+      if (!isPlausibleBodyweightKg(weightKg)) {
+        throw new Error('Implausible bodyweight');
       }
 
       const entry: BodyweightEntry = {

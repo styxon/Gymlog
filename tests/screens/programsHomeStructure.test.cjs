@@ -33,7 +33,9 @@ module.exports = [
       // seed default back to false is the data-free rollback.
       assert.match(modelsSource, /programsTabEnabled: boolean/);
       assert.match(seedSource, /programsTabEnabled: true/);
-      assert.match(databaseSource, /programsTabEnabled:\s*\n?\s*typeof input\?\.preferences\?\.programsTabEnabled === 'boolean'/);
+      // The loader forces it on: a stored false from an old install must not
+      // reach the legacy English-only list.
+      assert.match(databaseSource, /programsTabEnabled: true,/);
       // Dedicated route, not the legacy list.
       assert.match(routesSource, /tab: 'workout';\s*screen: 'programs_home';/);
       // Tab press honours the flag; default (off) keeps the legacy behaviour.

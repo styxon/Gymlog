@@ -85,10 +85,27 @@ export function parseMeasurementIntent(text: string, _language: AppLanguage = 'f
     // "rinta 80 kg" is a bench press, not a chest measurement.
     return null;
   }
-  const [min, max] = RANGE[unit];
-  if (!Number.isFinite(value) || value < min || value > max) {
+  return validMeasurementIntent(match.kind, value, unit);
+}
+
+/**
+ * The one rule for a reading to be offered for logging, whoever proposed it:
+ * the typed message above, or a value the coach's reply carried. The unit has
+ * to be the kind's own (kilograms for bodyweight, percent for body fat, cm for
+ * the tape) and the value inside that unit's plausible window; anything else
+ * is null, and the caller drops the offer.
+ */
+export function validMeasurementIntent(kind: MeasurementIntentKind, value: unknown, unit: unknown): MeasurementIntent | null {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
     return null;
   }
-
-  return { kind: match.kind, value: Math.round(value * 10) / 10, unit };
+  const expected = unitFor(kind);
+  if (unit !== expected) {
+    return null;
+  }
+  const [min, max] = RANGE[expected];
+  if (value < min || value > max) {
+    return null;
+  }
+  return { kind, value: Math.round(value * 10) / 10, unit: expected };
 }

@@ -1498,10 +1498,11 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         input?.preferences?.activePlanIds,
         input?.preferences?.activePlanId,
       ),
-      programsTabEnabled:
-        typeof input?.preferences?.programsTabEnabled === 'boolean'
-          ? input.preferences.programsTabEnabled
-          : fallback.preferences.programsTabEnabled,
+      // Always on. The flag was a rollout switch; nothing in the UI sets it any
+      // more, and a stored `false` (installs and backups from before
+      // 2026-07-11) would land the reader on the legacy Workouts list, which
+      // is English-only.
+      programsTabEnabled: true,
     },
   };
 }

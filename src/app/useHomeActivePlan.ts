@@ -7,6 +7,7 @@ import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatSetScheme } from '../lib/format';
 import { buildHomePlanProgress } from '../lib/homePlanProgress';
+import { t } from '../lib/i18n';
 import {
   buildSessionEquipmentLabel,
   classifySessionFocus,
@@ -243,7 +244,11 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
             // writes against. The slot id belongs to the runtime and cannot
             // find a row in the stored template.
             exerciseId: exercise.id,
-            setsLabel: `${exercise.targetSets} sets`,
+            setsLabel: t(
+              preferences.appLanguage,
+              exercise.targetSets === 1 ? 'home.section.setOne' : 'home.section.setMany',
+              { count: exercise.targetSets },
+            ),
             targetSets: exercise.targetSets,
             schemeLabel: formatSetScheme(
               exercise.targetSets,
@@ -371,7 +376,6 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
           // asking which week a past session filled counts from the same
           // place the hero does.
           blockStartedAt: activeWorkoutPlan.updatedAt,
-          eyebrow: `${rotationEntries.length} day custom plan`,
           goalLabel: formatGoalLabel(preferences.aiPlannerGoal || preferences.setupGoal || 'general'),
           // For a CUSTOM programme the template's name wins, and the plan's
           // copy is only the fallback. Both records hold the name — the plan
@@ -391,7 +395,6 @@ export function useHomeActivePlan(deps: HomeActivePlanDeps) {
             activePlanProgramType === 'custom'
               ? formatWorkoutDisplayLabel(activeTemplate.name || activeWorkoutPlan.name, 'Workout plan')
               : runningProgrammeTitle(readyPlanTemplate, activeWorkoutPlan.name, preferences.appLanguage),
-          subtitle: `${rotationEntries.length} workouts in rotation.`,
           weekLabel: planProgress.weekLabel,
           progressPercent: planProgress.progressPercent,
           sessionsDone: planProgress.sessionsDone,
