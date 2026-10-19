@@ -287,7 +287,7 @@ module.exports = [
     },
   },
   {
-    name: 'round 3: a demo moved for Cable Pullover or Bodyweight Reverse Lunge leaves their history filed where it was',
+    name: 'round 3: a demo moved for Cable Pullover leaves its history filed where it was; Bodyweight Reverse Lunge has its own row',
     run() {
       const { findFiledLibraryIndex, findGuidedLibraryIndex } = require(dist + 'lib/guidedPlayer.js');
       const { createSeedExerciseLibrary } = require(dist + 'data/seed.js');
@@ -295,8 +295,8 @@ module.exports = [
       const nameAt = (index) => (index === null ? null : libraryNames[index]);
       assert.equal(nameAt(findGuidedLibraryIndex('Cable Pullover', libraryNames)), 'Straight-Arm Pulldown');
       assert.equal(nameAt(findFiledLibraryIndex('Cable Pullover', libraryNames)), 'Straight-Arm Dumbbell Pullover');
-      assert.equal(nameAt(findGuidedLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Reverse Lunge');
-      assert.equal(nameAt(findFiledLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Dumbbell Rear Lunge');
+      assert.equal(nameAt(findGuidedLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Bodyweight Reverse Lunge');
+      assert.equal(nameAt(findFiledLibraryIndex('Bodyweight Reverse Lunge', libraryNames)), 'Bodyweight Reverse Lunge');
     },
   },
   {

@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
 - Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
 - #382 Onboarding: a disabled Continue button says on a line under it what
   it still waits for.

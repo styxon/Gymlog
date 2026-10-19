@@ -68,7 +68,7 @@ module.exports = [
     },
   },
   {
-    name: 'swap alternatives: the body-part chip leaves them, category and equipment narrow them',
+    name: 'swap alternatives: body part, category and equipment all narrow them, as in the add sheet',
     run() {
       // By the chip's own rule: the stored equipment of a kettlebell windmill
       // says dumbbell, and the chip reads what the row prints.
@@ -82,7 +82,17 @@ module.exports = [
         { name: 'A Programme Name The Library Lacks', item: null },
       ];
       assert.equal(narrowSwapAlternatives(rows, NO_CHIPS).length, 3);
-      assert.equal(narrowSwapAlternatives(rows, { ...NO_CHIPS, bodyPart: 'chest' }).length, 3);
+      // Every card that survives a body-part chip is one the add sheet's list
+      // would show under that chip; the unknown name steps aside.
+      for (const bodyPart of ['chest', 'legs', 'full body', 'back']) {
+        const kept = narrowSwapAlternatives(rows, { ...NO_CHIPS, bodyPart });
+        assert.ok(kept.every((row) => row.item && matchesExercisePickerFilters(row.item, { ...NO_CHIPS, bodyPart })));
+        assert.ok(!kept.some((row) => row.item === null));
+      }
+      const legLift = library.find((item) => item.bodyPart === 'legs' && !isStretchExercise(item));
+      const legRows = [{ name: legLift.name, item: legLift }];
+      assert.equal(narrowSwapAlternatives(legRows, { ...NO_CHIPS, bodyPart: 'full body' }).length, 0);
+      assert.equal(narrowSwapAlternatives(legRows, { ...NO_CHIPS, bodyPart: 'legs' }).length, 1);
       const dumbbellOnly = narrowSwapAlternatives(rows, { ...NO_CHIPS, equipment: 'dumbbell' });
       assert.deepEqual(dumbbellOnly.map((row) => row.name), [dumbbell.name]);
     },

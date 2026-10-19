@@ -129,19 +129,17 @@ export function buildSwapPickerLibrary<T extends ExerciseLibraryItem>(
 /**
  * The programme's alternatives, as the sheet's first cards, under its chips.
  *
- * The body-part chip does not reach them — it opens on the lift's own body
- * part, and the alternatives are the programme's answer whatever chip is on —
- * but a category or equipment chip does: a reader who taps "Käsipaino" is
- * asking for dumbbell lifts, and a barbell card above them would argue with
- * the chip. An alternative the library does not hold cannot be checked, so it
- * steps aside while one of those two is on.
+ * Every chip reaches them, the body part too: with "Koko keho" on, a
+ * bodyweight squat's suggestions still listed leg lifts while the add sheet
+ * narrowed (#bugs 2026-10-19). A reader who taps a chip is asking for that
+ * kind of lift, and a card above the list that argues with it is the filter
+ * not working. An alternative the library does not hold cannot be checked,
+ * so it steps aside while any chip is on.
  */
 export function narrowSwapAlternatives<T extends { item: ExerciseLibraryItem | null }>(
   rows: readonly T[],
   filters: ExercisePickerFilters,
 ): T[] {
-  const narrowed = filters.category !== 'all' || filters.equipment !== 'all';
-  return rows.filter(
-    ({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, { ...filters, bodyPart: 'all' })),
-  );
+  const narrowed = filters.category !== 'all' || filters.equipment !== 'all' || filters.bodyPart !== 'all';
+  return rows.filter(({ item }) => !narrowed || (item !== null && matchesExercisePickerFilters(item, filters)));
 }

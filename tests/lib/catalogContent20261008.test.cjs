@@ -144,9 +144,15 @@ module.exports = [
       for (const name of ['Reverse Lunge', 'Bodyweight Reverse Lunge']) {
         const row = rowOf(name);
         assert.ok(row, name);
-        assert.equal(row.name, 'Reverse Lunge', `${name} opens the app's own entry`);
+        assert.equal(row.name, name, `${name} opens the app's own entry`);
         const steps = row.instructions.join(' ');
-        assert.match(steps, /otherwise/, `${name}: the steps allow an unloaded lunge`);
+        if (name === 'Reverse Lunge') {
+          assert.match(steps, /otherwise/, `${name}: the steps allow an unloaded lunge`);
+        } else {
+          // Its own row, so it lists no dumbbell (#bugs 2026-10-19).
+          assert.equal(row.equipment, 'bodyweight');
+          assert.doesNotMatch(steps, /dumbbell/i);
+        }
         assert.notEqual(row.bodyPart, 'back', `${name} is not filed under the back`);
       }
     },
