@@ -85,7 +85,8 @@ module.exports = [
     name: 'the last-workout answer is read from the session, not invented',
     run() {
       const answer = buildAiCoachPreviewAnswer('Analysoi viime treenini', context(), 'fi');
-      assert.match(answer.takeaway, /Kyykky & Penkki/);
+      // Named as History and the chat's own readout name it (localizeSessionName).
+      assert.match(answer.takeaway, /Kyykky ja Penkki/);
       assert.ok(answer.why.some((line) => line.includes('14')), 'the set count it recorded');
       assert.ok(answer.why.some((line) => line.includes('48')), 'the duration it recorded');
       assert.ok(answer.why.some((line) => line.includes('80')), 'the top set it recorded');

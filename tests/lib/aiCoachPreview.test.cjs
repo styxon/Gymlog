@@ -284,8 +284,8 @@ module.exports.push(
       assert.match(analysis.takeaway, /Push/);
       const analysisWithPlateau = buildAiCoachPreviewAnswer('Analysoi viime treenini', baseContext({ ...plateau, ...session }), 'en');
       assert.match(analysisWithPlateau.takeaway, /Push/);
-      // "Analyse" on its own still reads the last session.
-      assert.match(buildAiCoachPreviewAnswer('Analysoi', baseContext(session), 'fi').takeaway, /Push/);
+      // "Analyse" on its own still reads the last session, its name in Finnish.
+      assert.match(buildAiCoachPreviewAnswer('Analysoi', baseContext(session), 'fi').takeaway, /Työntö/);
 
       // "Analyse my programme" and "analyse my bench" name something else,
       // and get that thing's answer — not a summary of the last session.
@@ -361,3 +361,45 @@ module.exports.push(
     },
   },
 );
+
+module.exports.push({
+  // The session name is stored in English ("HUGE Pro - Day 1: Upper Body")
+  // and every other screen localizes it; the offline answer printed it raw
+  // into a Finnish sentence (App Store screenshots, 2026-10-18).
+  name: 'preview: session names come back in the reader’s language',
+  run() {
+    const title = 'HUGE Pro - Day 1: Upper Body';
+    const session = { recentCompletedSessions: [{ title, setsCompleted: 10, durationMinutes: 47, swappedExercises: 0 }] };
+    const fi = buildAiCoachPreviewAnswer('Analysoi viime treenini', baseContext(session), 'fi').takeaway;
+    assert.match(fi, /HUGE Pro - Päivä 1: Ylävartalo/);
+    assert.doesNotMatch(fi, /Day 1|Upper Body/);
+    const en = buildAiCoachPreviewAnswer('Analyze my last workout', baseContext(session), 'en').takeaway;
+    assert.match(en, /HUGE Pro - Day 1: Upper Body/);
+
+    // The active session and the last one, as the general answer's context line.
+    for (const overrides of [{ activeSession: { title, nextExercise: null } }, session]) {
+      const answer = buildAiCoachPreviewAnswer('Hei', baseContext(overrides), 'fi');
+      const text = [answer.takeaway, ...answer.why, ...answer.nextSteps].join(' ');
+      assert.match(text, /Päivä 1: Ylävartalo/);
+      assert.doesNotMatch(text, /Day 1|Upper Body/);
+    }
+  },
+});
+
+module.exports.push({
+  // "1 sessions this week" / "1 treeniä tällä viikolla" on a Monday (App Store
+  // screenshots, 2026-10-19): the week's count goes through sessionsWord.
+  name: 'preview: one session this week is singular',
+  run() {
+    const session = { recentCompletedSessions: [{ title: 'Push', setsCompleted: 10, durationMinutes: 47, swappedExercises: 0 }] };
+    const ctx = baseContext({ ...session, sessionsThisWeek: 1, sessionsLast30Days: 18 });
+    const en = buildAiCoachPreviewAnswer('Analyze my last workout', ctx, 'en').why.join(' ');
+    assert.match(en, /\b1 session this week/);
+    assert.doesNotMatch(en, /1 sessions/);
+    const fi = buildAiCoachPreviewAnswer('Analysoi viime treenini', ctx, 'fi').why.join(' ');
+    assert.match(fi, /\b1 treeni tällä viikolla/);
+    assert.doesNotMatch(fi, /1 treeniä/);
+    const four = buildAiCoachPreviewAnswer('Analysoi viime treenini', baseContext({ ...session, sessionsThisWeek: 4 }), 'fi').why.join(' ');
+    assert.match(four, /4 treeniä tällä viikolla/);
+  },
+});

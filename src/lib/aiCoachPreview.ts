@@ -6,6 +6,7 @@ import { AICoachAdvice, AICoachPlateauSummary, AICoachTrainingContext } from '..
 import { AppLanguage } from '../types/models';
 import { applyDecimalSeparator, removeTrailingZeros, withNumberLanguage } from './format';
 import { exerciseNameLabel } from './exerciseNameLabel';
+import { localizeSessionName } from './sessionNameLabel';
 
 /**
  * The offline coach.
@@ -24,11 +25,11 @@ function formatActiveContext(context: AICoachTrainingContext, language: AppLangu
   if (!context.activeSession) return null;
   if (context.activeSession.nextExercise) {
     return t(language, 'coachPreview.nowNext', {
-      title: context.activeSession.title,
+      title: localizeSessionName(context.activeSession.title, language),
       next: exerciseNameLabel(language, context.activeSession.nextExercise),
     });
   }
-  return t(language, 'coachPreview.now', { title: context.activeSession.title });
+  return t(language, 'coachPreview.now', { title: localizeSessionName(context.activeSession.title, language) });
 }
 
 function formatLiftLine(context: AICoachTrainingContext, language: AppLanguage) {
@@ -54,7 +55,7 @@ function formatTopSetLine(context: AICoachTrainingContext, language: AppLanguage
 function formatRecentSessionLine(context: AICoachTrainingContext, language: AppLanguage) {
   const session = context.recentCompletedSessions[0];
   if (!session) return null;
-  return t(language, 'coachPreview.last', { title: session.title });
+  return t(language, 'coachPreview.last', { title: localizeSessionName(session.title, language) });
 }
 
 /**
@@ -199,7 +200,7 @@ function buildPlateauResponse(
         ? extraPlateaus === 1
           ? t(language, 'coachPreview.plateau.why3One')
           : t(language, 'coachPreview.plateau.why3Many', { count: extraPlateaus })
-        : t(language, 'coachPreview.plateau.why3None', { count: context.sessionsThisWeek }),
+        : t(language, 'coachPreview.plateau.why3None', { sessions: sessionsWord(context.sessionsThisWeek, language) }),
     ],
     nextSteps: [
       t(language, 'coachPreview.plateau.next1', { lift: exerciseNameLabel(language, plateau.name) }),
@@ -390,14 +391,14 @@ function buildPreviewAnswer(
       .join(' · ');
 
     return {
-      takeaway: t(language, 'coachPreview.lastSession.takeaway', { title: session.title }),
+      takeaway: t(language, 'coachPreview.lastSession.takeaway', { title: localizeSessionName(session.title, language) }),
       why: [
         shape || t(language, 'coachPreview.lastSession.noShape'),
         topSetLine
           ? t(language, 'coachPreview.lastSession.topSet', { line: topSetLine })
           : t(language, 'coachPreview.lastSession.noTopSet'),
         t(language, 'coachPreview.lastSession.rhythm', {
-          week: context.sessionsThisWeek,
+          sessions: sessionsWord(context.sessionsThisWeek, language),
           month: context.sessionsLast30Days,
         }),
       ],
@@ -671,7 +672,7 @@ function buildPreviewAnswer(
       takeaway: t(language, 'coachPreview.lift.takeaway'),
       why: [
         t(language, 'coachPreview.lift.why1'),
-        t(language, 'coachPreview.lift.why2', { count: context.sessionsThisWeek }),
+        t(language, 'coachPreview.lift.why2', { sessions: sessionsWord(context.sessionsThisWeek, language) }),
         topSetLine ?? liftLine ?? t(language, 'coachPreview.lift.why3Fallback'),
       ],
       nextSteps: [

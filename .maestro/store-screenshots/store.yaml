@@ -107,17 +107,45 @@ name: Store screenshots
     timeout: 5000
 - takeScreenshot: 08-programs
 
-# 9. The coach, and 10. a conversation with it: a starter chip, answered in
-#    preview mode (this build has no server) from the seeded history.
+# 9. The coach, and 10. a conversation with it: a starter chip, answered by
+#    the coach stub on the runner (scripts/store-screenshots/coach-stub.cjs)
+#    from the seeded history. The badge must say Online: an OFFLINE one means
+#    the stub was not reached, and that shot must not ship.
 - tapOn: "Avaa Vinha-valmentaja|Open Vinha Coach"
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: 09-coach
-- tapOn: 'Miten viikkoni meni\?|How did my week go\?|Analysoi viime treenini|Analyze my last workout'
+- tapOn: "Analysoi viime treenini|Analyze my last workout"
 - waitForAnimationToEnd:
     timeout: 15000
-- swipe:
+- extendedWaitUntil:
+    visible: '.*(Tämä siitä jäi|Here is what it left behind).*'
+    timeout: 30000
+- extendedWaitUntil:
+    visible: "Online: vastaukset tulevat valmentajalta.|Online: answers come from the coach."
+    timeout: 20000
+# The answer's first sentence whole, under the header: a fixed swipe left it
+# cut in half in Finnish, where the answer is longer (2026-10-19).
+- scrollUntilVisible:
+    element:
+      text: '.*(Tämä siitä jäi|Here is what it left behind).*'
     direction: UP
+    visibilityPercentage: 100
+    centerElement: false
+    timeout: 10000
+# Under the coach's see-through header still counts as visible, so on the
+# smaller phone the sentence stopped there, half hidden (6.3", 2026-10-19).
+# There shoot.sh writes true over @CHAT_NUDGE@ and the thread is dragged down
+# a little, slowly so it does not fling. Visibility cannot decide it: the link
+# above the question counted as visible under the header too.
+- runFlow:
+    when:
+      true: "${@CHAT_NUDGE@}"
+    commands:
+      - swipe:
+          start: "50%, 40%"
+          end: "50%, 55%"
+          duration: 800
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: 10-coach-chat

@@ -38,4 +38,28 @@ module.exports = [
       assert.deepEqual(bad, [], `not valid UTF-8: ${bad.join(', ')}`);
     },
   },
+  {
+    // Valid UTF-8 can still be wrong: text that was read as Windows-1252 and
+    // saved back as UTF-8 turns an em dash into a-circumflex and two control
+    // characters, and "ä" into A-tilde and a currency sign. One such dash
+    // reached the English coach answer and the App Store screenshots
+    // (2026-10-18). The pattern is written as escapes so this file does not
+    // trip itself.
+    name: 'source encoding: no UTF-8 read as Windows-1252 (mojibake) under src, api and tests',
+    run() {
+      const MOJIBAKE = new RegExp('\\u00e2[\\u0080-\\u00bf\\u20ac]|\\u00c3[\\u0080-\\u00bf]|\\u00c2[\\u0080-\\u00bf]');
+      const bad = [];
+      for (const dir of ['src', 'api', 'tests']) {
+        const full = path.join(ROOT, dir);
+        if (!fs.existsSync(full)) continue;
+        for (const file of walk(full, [])) {
+          const lines = fs.readFileSync(file, 'utf8').split('\n');
+          lines.forEach((line, index) => {
+            if (MOJIBAKE.test(line)) bad.push(`${path.relative(ROOT, file)}:${index + 1}`);
+          });
+        }
+      }
+      assert.deepEqual(bad, [], `mojibake at ${bad.join(', ')}`);
+    },
+  },
 ];
