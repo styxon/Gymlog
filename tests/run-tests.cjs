@@ -290,6 +290,7 @@ const suites = [
   ...require('./lib/emptyProgrammeDays.test.cjs'),
   ...require('./lib/recoverySheet.test.cjs'),
   ...require('./lib/huntBatchFixes.test.cjs'),
+  ...require('./lib/reviewRegressions20261019.test.cjs'),
   ...require('./lib/recoveryWeekAgreement.test.cjs'),
   ...require('./lib/planSessionOrder.test.cjs'),
   ...require('./lib/weightDial.test.cjs'),

@@ -165,6 +165,7 @@ import { formatClock } from '../lib/restSchedule';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetGroupIndexes, supersetPositions } from '../lib/supersetGrouping';
 import { I18nKey, t } from '../lib/i18n';
+import { unloadedSetRowLabel, walkRampLabel, walkSupersetRampLabel } from '../lib/repCountCopy';
 import { haptics } from '../utils/haptics';
 import { subscribeRestActions, useRestEndAlert } from '../hooks/useRestEndAlert';
 import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMoment';
@@ -190,7 +191,7 @@ import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
 import { ExercisePickerFilters } from '../lib/exercisePicker';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { effectiveSwapBodyPart, effectiveSwapCategory, resolveSwapBrowsePrefilter } from '../lib/swapBrowsePrefilter';
-import { buildSwapAlternatives, buildSwapPickerLibrary, narrowSwapAlternatives } from '../lib/swapPickerLists';
+import { buildSwapAlternatives, buildSwapPickerLibrary, narrowSwapAlternatives, swapSuggestionFilters } from '../lib/swapPickerLists';
 import { useKeepScreenAwake } from '../utils/keepAwake';
 import { queryReduceMotion } from '../utils/reduceMotion';
 import {
@@ -2855,12 +2856,15 @@ function GuidedPlayer({
   const swapFeaturedEntries = useMemo<ExercisePickerEntry[]>(
     () =>
       // Only a type chip the reader moved reaches the cards (useSwapPickerLists).
-      narrowSwapAlternatives(swapSuggestionRows, { ...swapFilters, category: swapCategoryPick ?? 'all' }).map(({ name, item }) => ({
+      narrowSwapAlternatives(
+        swapSuggestionRows,
+        swapSuggestionFilters(swapFilters, { category: swapCategoryPick, bodyPart: swapBodyPartFilter }),
+      ).map(({ name, item }) => ({
         key: `suggested-${name}`,
         name,
         item,
       })),
-    [swapCategoryPick, swapFilters, swapSuggestionRows],
+    [swapBodyPartFilter, swapCategoryPick, swapFilters, swapSuggestionRows],
   );
   const swapLibraryEntries = useMemo<ExercisePickerEntry[]>(
     () => swapLibrary.map((item) => ({ key: item.id, name: item.name, item })),
@@ -3441,10 +3445,7 @@ function GuidedPlayer({
       // which is the last thing read before walking to the rack.
       planLine: supersetNext
         ? walkPlan.kind === 'ramp'
-          ? t(language, 'guided.walk.planSupersetRamp', {
-              reps: walkPlan.reps.join('/'),
-              name: exerciseNameLabel(language, supersetNext),
-            })
+          ? walkSupersetRampLabel(walkPlan.reps, exerciseNameLabel(language, supersetNext), language)
           : walkPlan.kind === 'lowered'
             ? t(language, 'guided.walk.planSupersetLowered', {
                 sets: instance.sets.length,
@@ -3458,7 +3459,7 @@ function GuidedPlayer({
                 name: exerciseNameLabel(language, supersetNext),
               })
         : walkPlan.kind === 'ramp'
-          ? t(language, 'guided.walk.planRamp', { reps: walkPlan.reps.join('/'), rest })
+          ? walkRampLabel(walkPlan.reps, rest, language)
         : walkPlan.kind === 'lowered'
           ? t(language, 'guided.walk.planLowered', {
               sets: instance.sets.length,
@@ -5535,7 +5536,7 @@ function LoggedSetEditor({
                 // guards (break round 2026-09-29).
                 const rowUnloaded = isUnloadedTrackingMode(row.trackingMode);
                 const detail = rowUnloaded
-                  ? t(language, 'guided.rest.setRowUnloaded', { reps: row.reps })
+                  ? unloadedSetRowLabel(row.reps, language)
                   : t(language, 'guided.rest.setRow', {
                       weight: formatWeight(row.loadKg, unitPreference),
                       reps: row.reps,

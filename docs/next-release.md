@@ -159,13 +159,19 @@ update to carry, not for each fix.
   number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
   first cue no longer cuts the user's music.
 
-- Hunt fixes: the quiet reminder level keeps a training day's reminder over the
-  morning weigh-in; the plan review has a back control; building a week with the
+- Hunt fixes: the morning weigh-in outranks the training-day reminder at every
+  level (quiet keeps only the weigh-in, normal keeps both); the plan review has a back control; building a week with the
   AI coach counts as a coach question and stops when none are left; the Android
   widget swaps to next month (needs the new APK, widget payload v10) and a
   rate-limited coach question leaves no duplicate bubble; About you shows kg with
   a comma, Last done shows the localized session name, the lock-screen card
   names the lift in Finnish, and "1 toisto" replaces "1 toistoa".
+
+- Review fixes: Swap suggestions are narrowed only by a body-part chip you tapped,
+  not the lift's own muscle; the Recovery sheet says "Päivä 2" and hides the zone
+  marker without a ratio; the screen no longer sleeps mid-workout after a quick
+  leave-and-return; "1 toisto" / "1 rep" everywhere a count is shown; the swap
+  search field grows with large text; a hold exercise gets no PR card.
 
 ## Known, not yet fixed
 

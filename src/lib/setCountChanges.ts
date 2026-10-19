@@ -23,6 +23,18 @@ interface SessionRows {
 }
 
 /**
+ * The set count an emphasis save writes for one row: the expanded count
+ * (withSupersetPartners) when the save names the row or its superset partner,
+ * the row's own count otherwise.
+ */
+export function targetSetsAfterEmphasis(
+  exercise: { id: string; targetSets: number },
+  counts: ReadonlyMap<string, number>,
+): number {
+  return counts.get(exercise.id) ?? exercise.targetSets;
+}
+
+/**
  * The emphasis counts with each superset's partners brought along.
  *
  * A block's set count is one number (linking and prescribing keep it so), but

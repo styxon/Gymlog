@@ -191,7 +191,7 @@ module.exports = [
       }
       const walk = between(playerSource, 'const walkNext = (() => {', '})();');
       assert.match(walk, /resolveGuidedWalkPlan\(/);
-      assert.match(walk, /guided\.walk\.planSupersetRamp/);
+      assert.match(walk, /walkSupersetRampLabel\(/);
       assert.match(walk, /guided\.walk\.planSupersetLowered/);
       // The reps are not worked out in the screen any more.
       assert.doesNotMatch(walk, /rampTargetReps/);

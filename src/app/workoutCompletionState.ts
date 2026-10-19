@@ -72,6 +72,7 @@ export function recordSetsOfExercise(exercise: AdaptedCompletedWorkoutExercise):
       set.status === 'completed' && typeof set.weightKg === 'number' && typeof set.reps === 'number',
   );
   if (
+    exercise.trackingMode === 'hold' ||
     isDoseLog({
       exerciseNameSnapshot: exercise.exerciseName,
       repsUnit: isMinutesTrackingMode(exercise.trackingMode) ? 'minutes' : undefined,

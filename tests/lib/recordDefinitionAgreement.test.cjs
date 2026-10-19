@@ -263,7 +263,7 @@ module.exports = [
         .replace(/\r\n/g, '\n');
       assert.match(
         screen,
-        /if \(pr\.performedWeightKg === pr\.previousBestWeightKg && pr\.previousBestReps !== null\) \{\s*return t\(language, 'complete\.pr\.moreReps'/,
+        /if \(pr\.performedWeightKg === pr\.previousBestWeightKg && pr\.previousBestReps !== null\) \{\s*return prMoreRepsLabel\(/,
       );
     },
   },

@@ -240,7 +240,7 @@ module.exports = [
         const source = fs.readFileSync(path.join(__dirname, '../..', file), 'utf8');
         assert.match(source, /category: effectiveSwapCategory\(/, `${file} does not open a stretch on stretches`);
         assert.ok(
-          source.includes(`category: ${pick} ?? 'all' })`) && /narrowSwapAlternatives\(\w+, \{ \.\.\.\w+, category: \w+ \?\? 'all' \}\)/.test(source),
+          source.includes(`category: ${pick}`) && /swapSuggestionFilters\(/.test(source),
           `${file}: the default chip narrows the cards`,
         );
       }

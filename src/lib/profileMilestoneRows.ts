@@ -2,6 +2,7 @@
 // space in Finnish, a comma in English. The card had a thin space of its own.
 import { formatDate, formatDecimalTenths, groupThousands } from './format';
 import { I18nKey, t } from './i18n';
+import { milestoneRepsMeta, milestoneRepsTitle } from './repCountCopy';
 import { LifetimeTrainingSummary } from './lifetimeSummary';
 import { MilestoneLedger, ReachedMilestone } from './milestoneFacts';
 import {
@@ -115,7 +116,7 @@ export function milestoneTitle(
     case 'weeks':
       return t(language, 'profile.milestone.weeks.title', { target });
     case 'reps':
-      return t(language, 'profile.milestone.reps.title', { target: formatMilestoneCount(target) });
+      return milestoneRepsTitle(target, formatMilestoneCount(target), language);
     case 'sets':
       return t(language, 'profile.milestone.sets.title', { target: formatMilestoneCount(target) });
     case 'exercises':
@@ -225,10 +226,12 @@ function describe(
         title,
         remainder: t(language, 'profile.milestone.toGo', { count: formatMilestoneCount(item.remaining) }),
         fillPercent: fill,
-        meta: t(language, 'profile.milestone.reps.meta', {
-          current: formatMilestoneCount(item.current),
-          target: formatMilestoneCount(item.target),
-        }),
+        meta: milestoneRepsMeta(
+          formatMilestoneCount(item.current),
+          item.target,
+          formatMilestoneCount(item.target),
+          language,
+        ),
       };
     case 'sets':
       return {

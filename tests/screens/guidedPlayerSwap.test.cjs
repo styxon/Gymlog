@@ -481,7 +481,7 @@ module.exports = [
      */
     name: 'guided walk-up: a lift that runs into the next one quotes no rest',
     run() {
-      assert.match(playerSource, /planLine: supersetNext\s*\?\s*walkPlan\.kind === 'ramp'\s*\?\s*t\(language, 'guided\.walk\.planSupersetRamp'/);
+      assert.match(playerSource, /planLine: supersetNext\s*\?\s*walkPlan\.kind === 'ramp'\s*\?\s*walkSupersetRampLabel\(/);
       // Both dictionaries carry it — plain, ramp and lowered (hunt 12) — and
       // no version mentions a rest.
       const lines = i18nSource.match(/'guided\.walk\.planSuperset(?:Ramp|Lowered)?': '[^']+'/g) ?? [];
@@ -614,7 +614,7 @@ module.exports = [
       );
       assert.match(editorFn, /sets\.length > 1 \? \(/);
       assert.match(editorFn, /onPress=\{\(\) => onSelectSet\(row\.setIndex\)\}/);
-      assert.match(editorFn, /t\(language, 'guided\.rest\.setRowUnloaded', \{ reps: row\.reps \}\)/);
+      assert.match(editorFn, /unloadedSetRowLabel\(row\.reps, language\)/);
       assert.match(
         editorFn,
         /t\(language, 'guided\.rest\.setRow', \{\s*weight: formatWeight\(row\.loadKg, unitPreference\),\s*reps: row\.reps,\s*\}\)/,

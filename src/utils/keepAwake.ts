@@ -17,6 +17,7 @@ export function useKeepScreenAwake(enabled: boolean, tag: string) {
     const handle = startKeepAwake(
       () => activateKeepAwakeAsync(tag),
       () => deactivateKeepAwake(tag),
+      tag,
     );
     return () => handle.release();
   }, [enabled, tag]);

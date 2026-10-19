@@ -97,12 +97,14 @@ export function RecoverySheet({
           </View>
 
           <View style={styles.zoneWrap}>
-            <View style={[styles.marker, { left: `${model.markerPercent}%` }]} pointerEvents="none">
-              <View style={[styles.markerPill, { backgroundColor: tone.dot }]}>
-                <Text style={styles.markerText}>{t(language, 'recovery.you')}</Text>
+            {model.markerPercent !== null ? (
+              <View style={[styles.marker, { left: `${model.markerPercent}%` }]} pointerEvents="none">
+                <View style={[styles.markerPill, { backgroundColor: tone.dot }]}>
+                  <Text style={styles.markerText}>{t(language, 'recovery.you')}</Text>
+                </View>
+                <View style={[styles.markerStem, { backgroundColor: tone.dot }]} />
               </View>
-              <View style={[styles.markerStem, { backgroundColor: tone.dot }]} />
-            </View>
+            ) : null}
             <View style={styles.zoneBar}>
               {ZONE_FLEX.map((flex, index) => (
                 <View key={index} style={[styles.zone, { flex, backgroundColor: zoneFills[index] }]} />

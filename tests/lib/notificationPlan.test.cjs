@@ -149,24 +149,56 @@ module.exports = [
     },
   },
   {
-    name: 'notificationPlan: on the quiet level a training day keeps its reminder and the weigh-in keeps the other days',
+    name: 'notificationPlan: the weigh-in outranks the training-day reminder at every level; the reminder keeps days without one',
     run() {
-      // The weigh-in is every morning; a reminder the reader switched on must
-      // not lose to it on every training day it applies to.
+      // Owner decision 2026-10-19 (reverses #406): asked for by name, the
+      // weigh-in beats a reminder that is on by default.
+      const onDay = (plan, y, m, d) =>
+        plan.filter((item) => item.fireAtMs >= at(y, m, d, 0, 0) && item.fireAtMs < at(y, m, d + 1, 0, 0));
       const quiet = planWith({
-        prefs: { weighInReminder: true, level: 'quiet' },
+        prefs: { weighInReminder: true, level: 'quiet', weeklySummary: false },
         schedule: weekdaySchedule([0, 2, 4]),
       });
-      const onDay = (y, m, d) =>
-        quiet.filter((item) => item.fireAtMs >= at(y, m, d, 0, 0) && item.fireAtMs < at(y, m, d + 1, 0, 0));
-      // Fri 2026-07-03 is a training day.
-      const friday = onDay(2026, 7, 3);
-      assert.equal(friday.length, 1, 'quiet is one message a day');
-      assert.equal(friday[0].category, 'reminder');
-      // Thu 2026-07-02 is not.
-      const thursday = onDay(2026, 7, 2);
-      assert.deepEqual(thursday.map((item) => item.category), ['weighIn']);
-      assert.ok(quiet.some((item) => item.category === 'reminder'), 'reminders fire at all');
+      // Fri 2026-07-03 is a training day: quiet is one message, the weigh-in.
+      assert.deepEqual(onDay(quiet, 2026, 7, 3).map((item) => item.category), ['weighIn']);
+      assert.ok(
+        !quiet.some(
+          (item) => item.category === 'reminder' && item.fireAtMs >= at(2026, 7, 2, 0, 0) && item.fireAtMs < at(2026, 7, 10, 0, 0),
+        ),
+        'every training day of the week ahead has a weigh-in on it',
+      );
+
+      const normal = planWith({
+        prefs: { weighInReminder: true, level: 'normal', weeklySummary: false },
+        schedule: weekdaySchedule([0, 2, 4]),
+      });
+      assert.deepEqual(
+        onDay(normal, 2026, 7, 3).map((item) => item.category).sort(),
+        ['reminder', 'weighIn'],
+        'normal has room for both',
+      );
+
+      // No weigh-in on, the reminder is the day's message.
+      const noWeighIn = planWith({ prefs: { weighInReminder: false, level: 'quiet', weeklySummary: false } });
+      assert.deepEqual(onDay(noWeighIn, 2026, 7, 3).map((item) => item.category), ['reminder']);
+    },
+  },
+  {
+    name: 'notificationPlan: on a PR day the weigh-in beats the reminder (quiet) and the record keeps its place (normal)',
+    run() {
+      const latestPr = { exerciseName: 'Deadlift', weightKg: 180, reps: 1, achievedAtMs: at(2026, 7, 2, 19, 0) };
+      const friday = (plan) =>
+        plan.filter((item) => item.fireAtMs >= at(2026, 7, 3, 0, 0) && item.fireAtMs < at(2026, 7, 4, 0, 0));
+      const common = { weighInReminder: true, weeklySummary: false, comebackNudge: false };
+      const quiet = planWith({ prefs: { ...common, level: 'quiet' }, latestPr });
+      // Quiet: one slot, and the record is the only thing that outranks the weigh-in.
+      assert.deepEqual(friday(quiet).map((item) => item.category), ['record']);
+      const normal = planWith({ prefs: { ...common, level: 'normal' }, latestPr });
+      assert.deepEqual(
+        friday(normal).map((item) => item.category).sort(),
+        ['record', 'weighIn'],
+        'normal: [record, weighIn, reminder] keeps record and weigh-in',
+      );
     },
   },
   {
@@ -511,10 +543,7 @@ module.exports = [
       const quiet = planWith({ ...base, prefs: { ...prefs, level: 'quiet' } });
       assert.deepEqual(sunday(quiet).map((item) => item.category), ['weekly'], 'quiet: the summary, not the weigh-in');
       // The weigh-in still has every other morning.
-      // The training days (Mon/Wed/Fri) now belong to their reminder.
-      const quietWeighIns = quiet.filter((item) => item.category === 'weighIn');
-      assert.ok(quietWeighIns.length >= 5);
-      assert.ok(quietWeighIns.every((item) => [0, 2, 4, 6].includes(new Date(item.fireAtMs).getDay())));
+      assert.ok(quiet.filter((item) => item.category === 'weighIn').length >= 10);
 
       // Normal on a training Sunday: weigh-in, reminder and summary want two slots.
       const normal = planWith({ ...base, schedule: weekdaySchedule([0, 2, 4, 6]), prefs: { ...prefs, level: 'normal' } });

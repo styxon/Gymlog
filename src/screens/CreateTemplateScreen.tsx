@@ -14,6 +14,7 @@ import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
 import { formatRepRange } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
+import { templateSetsRepsLabel } from '../lib/repCountCopy';
 import { exercisePickerRowMeta } from '../lib/exercisePicker';
 import { layout, radii, spacing } from '../theme';
 import {
@@ -804,16 +805,17 @@ export function CreateTemplateScreen({
                                 ? // Every picker's line, so the row says what the sheet said
                                   // when it was picked — kettlebell rows included.
                                   exercisePickerRowMeta(libraryItem, language)
-                                : t(language, 'tpl.setsReps', {
-                                    sets: exercise.targetSets,
+                                : templateSetsRepsLabel(
+                                    exercise.targetSets,
                                     // "12-12 toistoa" — the row printed both
                                     // ends of the range even when they were the
                                     // same number (#bugs 2026-08-26). The app
                                     // has one rep-range formatter and it has
                                     // always collapsed an equal range; this row
                                     // was interpolating the raw fields instead.
-                                    reps: formatRepRange(exercise.repMin, exercise.repMax),
-                                  })}
+                                    formatRepRange(exercise.repMin, exercise.repMax),
+                                    language,
+                                  )}
                             </Text>
                           </View>
                         </View>

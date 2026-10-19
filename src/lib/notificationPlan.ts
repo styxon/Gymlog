@@ -473,16 +473,6 @@ function applyDailyCap(planned: PlannedNotification[], level: NotificationLevel)
     if (weekly && !day.includes(weekly) && weighInSlot !== -1) {
       day[weighInSlot] = weekly;
     }
-    // The same goes for the training-day reminder: the weigh-in is every
-    // morning, so on the quiet level it outranked the reminder on every
-    // training day and a reminder the reader had switched on never fired. The
-    // rarer message (training days) keeps the slot; the weigh-in still owns
-    // every day that is not one.
-    const reminder = ranked.find((item) => item.category === 'reminder');
-    const slotAfterWeekly = day.findIndex((item) => item.category === 'weighIn');
-    if (reminder && !day.includes(reminder) && slotAfterWeekly !== -1) {
-      day[slotAfterWeekly] = reminder;
-    }
     kept.push(...day);
   });
 
