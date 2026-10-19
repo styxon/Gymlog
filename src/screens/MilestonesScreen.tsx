@@ -108,13 +108,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingTop: 8,
     paddingBottom: 6,
   },
   body: {
     paddingTop: 8,
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
   summary: {

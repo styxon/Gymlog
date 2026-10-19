@@ -66,6 +66,7 @@ export function ListRow({
   chevron,
   muted = false,
   accessibilityLabel,
+  testID,
 }: {
   title: string;
   /** Date and details. */
@@ -93,6 +94,8 @@ export function ListRow({
   /** A row whose figure is withheld reads one step quieter. */
   muted?: boolean;
   accessibilityLabel?: string;
+  /** For the UI-check walk (.maestro/ui-check): found by id, not by its words. */
+  testID?: string;
 }) {
   const styles = useThemedStyles(makeStyles);
   const showChevron = chevron ?? Boolean(onPress);
@@ -142,6 +145,7 @@ export function ListRow({
   }
   return (
     <Pressable
+      testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}

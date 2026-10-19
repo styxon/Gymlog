@@ -295,7 +295,7 @@ module.exports = [
       assert.match(programsHomeSource, /customPrograms\.map/);
       assert.match(programsHomeSource, /programs\.create/);
       assert.match(programsHomeSource, /programs\.exerciseLibrary/);
-      assert.match(programsHomeSource, /count: exerciseLibraryCount/);
+      assert.match(programsHomeSource, /count: listedExerciseCount/);
     },
   },
   {

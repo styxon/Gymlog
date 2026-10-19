@@ -358,4 +358,18 @@ module.exports = [
       assert.deepEqual(specialty, []);
     },
   },
+  {
+    name: 'library count: the Programs row counts exactly what the library screen lists',
+    run() {
+      // 959 on the Programs row against 938 in the library header: the row
+      // counted the raw library, the list keeps the strongman implements for a
+      // query or their own chip.
+      const listed = picker.listPickerExercises(library, { language: 'en', listsStretches: true });
+      assert.equal(picker.countListedExercises(library), listed.length);
+      assert.ok(
+        picker.countListedExercises(library) < library.length,
+        'the library holds specialty rows the unsearched list hides',
+      );
+    },
+  },
 ];

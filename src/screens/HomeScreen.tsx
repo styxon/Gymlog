@@ -52,7 +52,7 @@ import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { buildSwapAlternatives } from '../lib/swapPickerLists';
 import { doseAfterSwap } from '../lib/swapDose';
-import { formatSetScheme } from '../lib/format';
+import { formatListDate, formatSetScheme } from '../lib/format';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { ExercisePickerSheet } from '../components/AddExerciseSheet';
 import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
@@ -741,12 +741,11 @@ export function HomeScreen({
   // The greeting line and the rule above it are gone (user 2026-08-25): the
   // header is the wordmark, the PRO pill and the date. The greeting rotation
   // (lib/homeGreeting) went with its only caller.
-  const todayStamp = useMemo(() => {
-    const today = topCalendarDays.find((day) => day.isToday);
-    const now = new Date();
-    const stamp = `${`${now.getDate()}`.padStart(2, '0')}.${`${now.getMonth() + 1}`.padStart(2, '0')}`;
-    return today ? `${today.weekdayLabel} ${stamp}` : stamp;
-  }, [topCalendarDays]);
+  // The one shared list-date formatter: "MA 19.10." in Finnish, "MON, OCT 19"
+  // in English. This used to print the Finnish day.month for both.
+  // Per render, not memoised: a stamp frozen at first render stays yesterday's
+  // after midnight.
+  const todayStamp = formatListDate(new Date(), language, { weekday: true }).toUpperCase();
 
   // Classified in App.tsx from the full exercise list; the five rows Home
   // receives are not enough to work it out here.
@@ -2836,7 +2835,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     // and with the border gone it was an indent with nothing to explain it.
     // The rules now span the same width as the week strip above them.
     paddingTop: 2,
-    paddingBottom: 16,
+    // The last phase row already pads 16 under its text; another 16 here plus
+    // the programme's 30 left a ~90dp band under a collapsed Recovery.
+    paddingBottom: 0,
   },
   hero: {
     marginTop: 12,
@@ -2845,7 +2846,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   // Room to breathe under the box (user 2026-08-31): the programme used to
   // start where the session ended.
   programSection: {
-    marginTop: 30,
+    marginTop: 24,
   },
   // Green like the strip's rest dot, small like a kicker: the exception is
   // marked, the ordinary training day is not.

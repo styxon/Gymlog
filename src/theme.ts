@@ -41,6 +41,10 @@ export const radii = {
 };
 
 export const layout = {
+  /** Side gutter of every list/menu screen, tab or pushed: cards and headers share it. */
+  screenGutter: 20,
+  /** Space above a pushed screen's PageHeader (History, Milestones, Settings...). */
+  pageHeaderTop: 8,
   /** The floating tab bar's own height: 16 above the pill, 64 pill, 8 below. */
   bottomTabBarHeight: 88,
   /** Scrolling content clears the bar with a section's air; a fixed foot does not. */

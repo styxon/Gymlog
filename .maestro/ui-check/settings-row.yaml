@@ -1,8 +1,9 @@
 # One row of Settings: Profile -> Settings, find the row (the list is long
 # enough to need a scroll), open it, shoot it top to bottom, go back.
-#   ROW   regex for the row's label in either language. A row is one
-#         accessible Pressable, so its label may carry the subtitle after the
-#         title: the pattern ends in .* / .+ for that.
+#   ROW   the row's testID (settings-notifications, settings-my-data, ...).
+#         Found by id because the label match repeated Settings in the first
+#         run: a row is one accessible Pressable whose label carries its
+#         subtitle, so a text pattern was unreliable.
 #   P     the screenshot name.
 # Every step is optional: a row that is not there leaves a repeat of Settings
 # in the artifact instead of stopping the walk.
@@ -18,13 +19,15 @@ appId: app.vinha
     timeout: 3000
 - scrollUntilVisible:
     element:
-      text: "${ROW}"
+      id: "${ROW}"
     direction: DOWN
     timeout: 15000
     optional: true
 - tapOn:
-    text: "${ROW}"
+    id: "${ROW}"
     optional: true
+- waitForAnimationToEnd:
+    timeout: 3000
 - runFlow:
     file: scrolls.yaml
     env:

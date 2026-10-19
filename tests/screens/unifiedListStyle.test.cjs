@@ -56,7 +56,9 @@ module.exports = [
       const back = read('src', 'components', 'BackButton.tsx');
       assert.match(back, /width: 40/);
       assert.match(back, /borderRadius: 999/);
-      assert.match(back, /theme\.surfaceSoft/);
+      assert.match(back, /theme\.controlFill/);
+      assert.match(back, /theme\.controlBorder/);
+      assert.doesNotMatch(back, /theme\.surfaceSoft/);
     },
   },
   {
@@ -103,6 +105,62 @@ module.exports = [
       for (const name of ['Catalog', 'LearnIndex']) {
         assert.doesNotMatch(read('src', 'screens', name + 'Screen.tsx'), /paddingTop: 52/);
       }
+    },
+  },
+  {
+    name: 'unifiedListStyle: Lifts and Measures are one ListCard each, the new-best pill takes theme tokens',
+    run() {
+      const source = read('src', 'screens', 'ProgressScreen.tsx');
+      const tracked = source.slice(source.indexOf('function renderTracked()'), source.indexOf('function renderMeasures()'));
+      assert.match(tracked, /<ListCard>/);
+      assert.match(tracked, /<ListRow/);
+      assert.doesNotMatch(tracked, /trackedCard|trackedList/);
+      const measures = source.slice(source.indexOf('function renderMeasureList()'), source.indexOf('<KitSheet'));
+      assert.match(measures, /<ListCard>/);
+      assert.match(measures, /<ListRow/);
+      assert.doesNotMatch(measures, /measureRowLogged|measureList|purpleBright/);
+      assert.doesNotMatch(source, /SIGNAL_STYLES|#E4F6EA|#E7F6EC|#FBEFDD/);
+      assert.match(source, /greenSoft/);
+      assert.match(source, /greenInk/);
+    },
+  },
+  {
+    name: 'unifiedListStyle: the calendar marks only done days solid; the switch and back button use visible tokens',
+    run() {
+      const source = read('src', 'screens', 'ProgressScreen.tsx');
+      assert.match(source, /const training = status === 'done'/);
+      assert.match(source, /calendarBubblePlanned/);
+      assert.match(read('src', 'components', 'SettingsUi.tsx'), /backgroundColor: theme\.switchOff/);
+      assert.doesNotMatch(read('src', 'components', 'SettingsUi.tsx'), /#E4DBF5/);
+      const light = read('src', 'lightTheme.ts');
+      assert.match(light, /controlFill: '#FFFFFF'/);
+      assert.match(light, /controlBorder:/);
+    },
+  },
+  {
+    name: 'unifiedListStyle: one gutter and header offset, section labels spaced under cards',
+    run() {
+      assert.match(read('src', 'theme.ts'), /screenGutter: 20/);
+      for (const name of ['History', 'Milestones', 'Settings', 'Notifications', 'MyData', 'ExportPlan', 'Subscription']) {
+        const source = read('src', 'screens', `${name}Screen.tsx`);
+        assert.doesNotMatch(source, /paddingHorizontal: 18,/, `${name} keeps its own 18 gutter`);
+        assert.match(source, /layout\.screenGutter/, `${name} lost the shared gutter`);
+      }
+      assert.match(read('src', 'screens', 'HistoryScreen.tsx'), /paddingTop: layout\.pageHeaderTop/);
+      const sub = read('src', 'screens', 'SubscriptionScreen.tsx');
+      assert.match(sub, /<SectionLabel spaced label=\{t\(language, 'subs\.section\.yours'\)\}/);
+      assert.match(read('src', 'screens', 'ExportPlanScreen.tsx'), /<SectionLabel spaced/);
+      assert.match(read('src', 'components', 'SettingsUi.tsx'), /sectionSpaced: \{\s*marginTop: 22/);
+    },
+  },
+  {
+    name: 'unifiedListStyle: Home dates through the shared formatter; coach opening is top-anchored; library has one search',
+    run() {
+      assert.match(read('src', 'screens', 'HomeScreen.tsx'), /formatListDate\(new Date\(\), language, \{ weekday: true \}\)/);
+      const coach = read('src', 'screens', 'AICoachChatScreen.tsx');
+      assert.match(coach, /messages\.length === 0 && styles\.threadOpening/);
+      const lib = read('src', 'components', 'ExerciseLibraryBrowser.tsx');
+      assert.doesNotMatch(lib, /onPress=\{\(\) => searchRef\.current\?\.focus\(\)\}/);
     },
   },
 ];

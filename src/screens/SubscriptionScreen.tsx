@@ -425,7 +425,7 @@ export function SubscriptionScreen({
               </>
             ) : null}
 
-            <SectionLabel label={t(language, 'subs.section.membership')} />
+            <SectionLabel spaced={Boolean(billing)} label={t(language, 'subs.section.membership')} />
             {lifetime ? (
               <ListCard divided={false} style={[styles.card, styles.notePad]}>
                 <Text style={styles.noteTitle}>{t(language, 'subs.lifetime.title')}</Text>
@@ -520,7 +520,7 @@ export function SubscriptionScreen({
 
             {model.state === 'active' ? (
               <>
-                <SectionLabel label={t(language, 'subs.section.yours')} />
+                <SectionLabel spaced label={t(language, 'subs.section.yours')} />
                 <ListCard divided={false} style={styles.card}>
                   {model.cancelled && billing ? (
                     <Row
@@ -576,7 +576,7 @@ export function SubscriptionScreen({
               </>
             ) : (
               <>
-                <SectionLabel label={t(language, 'subs.section.pro')} />
+                <SectionLabel spaced label={t(language, 'subs.section.pro')} />
                 <Pressable
                   accessibilityRole="button"
                   onPress={onOpenPremium}
@@ -594,7 +594,7 @@ export function SubscriptionScreen({
                   </View>
                 </Pressable>
 
-                <SectionLabel label={t(language, 'subs.section.other')} />
+                <SectionLabel spaced label={t(language, 'subs.section.other')} />
                 <ListCard divided={false} style={styles.card}>
                   <Row
                     icon="restore"
@@ -854,13 +854,13 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.bg,
     },
     header: {
-      paddingHorizontal: 18,
+      paddingHorizontal: layout.screenGutter,
       paddingTop: 8,
       paddingBottom: 6,
     },
     body: {
       paddingTop: 4,
-      paddingHorizontal: 18,
+      paddingHorizontal: layout.screenGutter,
       paddingBottom: layout.bottomTabBarReserve,
     },
     // Shape, fill and border belong to CutSurface now; the shadow is the

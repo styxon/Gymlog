@@ -126,6 +126,7 @@ export function Seg<T extends string>({
         return (
           <Pressable
             key={option.key}
+            testID={`seg-${option.key}`}
             accessibilityRole="button"
             accessibilityState={{ selected: active, disabled: false }}
             accessibilityLabel={option.label}

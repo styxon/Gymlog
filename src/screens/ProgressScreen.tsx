@@ -8,7 +8,7 @@ import { VinhaIcon } from '../components/VinhaIcon';
 import { EmptyBox } from '../components/EmptyBox';
 import { KitRow, KitSheet } from '../components/sheetKit';
 import { Seg } from '../components/Seg';
-import { ListCard } from '../components/ListCard';
+import { ListCard, ListRow } from '../components/ListCard';
 import { SectionLabel } from '../components/SettingsUi';
 import {
   formatOverviewVolumeTick,
@@ -333,17 +333,25 @@ const MEASURE_CONFIG: Array<{
   { key: 'calves', labelKey: 'progress.measure.calves', hintKey: 'progress.measure.hint.calves', icon: 'tape', kind: 'calves', lowerIsBetter: false },
 ];
 
-// Honest signal palette (light) keyed by getExerciseProgressSignal kinds.
-const SIGNAL_STYLES: Record<
-  ReturnType<typeof getExerciseProgressSignal>['kind'],
-  { fg: string; bg: string; dot: string }
-> = {
-  new_best: { fg: '#157A3A', bg: '#E4F6EA', dot: '#1FA64E' },
-  moving_up: { fg: '#157A3A', bg: '#E9F6EE', dot: '#37C46B' },
-  building: { fg: '#5B21B6', bg: '#EFE7FF', dot: '#8B5CF6' },
-  below_last: { fg: '#9A5B16', bg: '#FBEFDD', dot: '#E0922F' },
-  starting: { fg: '#667085', bg: '#EEF0F4', dot: '#98A2B3' },
-};
+// Honest signal palette keyed by getExerciseProgressSignal kinds. Theme
+// tokens, so the pill is a dark chip in dark mode instead of a light patch
+// (the mint pill glared on the dark card, ui check 2026-10-19).
+function signalPalette(
+  theme: Theme,
+  kind: ReturnType<typeof getExerciseProgressSignal>['kind'],
+): { fg: string; bg: string; dot: string } {
+  switch (kind) {
+    case 'new_best':
+    case 'moving_up':
+      return { fg: theme.greenInk, bg: theme.greenSoft, dot: theme.green };
+    case 'building':
+      return { fg: theme.purpleBright, bg: theme.purpleSoft, dot: theme.purple };
+    case 'below_last':
+      return { fg: theme.amberInk, bg: theme.amberSoft, dot: theme.amber };
+    default:
+      return { fg: theme.muted, bg: theme.surfaceSoft, dot: theme.faint };
+  }
+}
 
 const CM_TO_IN = 0.393700787;
 
@@ -569,6 +577,14 @@ function ChevronDown({ open }: { open: boolean }) {
   );
 }
 
+function CheckMark({ color }: { color: string }) {
+  return (
+    <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+      <Path d="M5 13l4 4L19 7" stroke={color} strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+
 function MeasureIcon({ name }: { name: MeasureIconName }) {
   const theme = useTheme();
 
@@ -608,9 +624,10 @@ function ArrowGlyph({ up, color }: { up: boolean; color: string }) {
 
 function SignalBadge({ summary, language }: { summary: ExerciseProgressSummary; language: AppLanguage }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
 
   const signal = getExerciseProgressSignal(summary, language);
-  const palette = SIGNAL_STYLES[signal.kind];
+  const palette = signalPalette(theme, signal.kind);
   return (
     <View style={[styles.signalBadge, { backgroundColor: palette.bg }]}>
       <View style={[styles.signalBadgeDot, { backgroundColor: palette.dot }]} />
@@ -621,11 +638,12 @@ function SignalBadge({ summary, language }: { summary: ExerciseProgressSummary; 
 
 function DeltaPill({ delta, unit, lowerIsBetter = false }: { delta: number; unit: string; lowerIsBetter?: boolean }) {
   const styles = useThemedStyles(makeStyles);
+  const theme = useTheme();
 
   const up = delta > 0;
   const good = lowerIsBetter ? !up : up;
-  const color = good ? '#157A3A' : '#9A5B16';
-  const background = good ? '#E7F6EC' : '#FBEFDD';
+  const color = good ? theme.greenInk : theme.amberInk;
+  const background = good ? theme.greenSoft : theme.amberSoft;
   return (
     <View style={[styles.deltaPill, { backgroundColor: background }]}>
       <ArrowGlyph up={up} color={color} />
@@ -1563,10 +1581,8 @@ export function ProgressScreen({
                 return <View key={day.dayStart} style={styles.calendarCell} />;
               }
 
-              // One mark, one meaning (user 2026-08-25): a training day —
-              // trained, ahead, or behind — is the solid mark, and everything
-              // else is quiet. No trained/planned split and no legend to
-              // explain it: one colour means training day, full stop.
+              // One solid mark, one meaning: a day you trained. Everything else
+              // is quiet or outlined (see below). No legend to explain it.
               //
               // That colour is VIOLET now, not the accent. The brief opens on
               // it: "The calendar was a wall of orange. Logged days are violet
@@ -1574,21 +1590,30 @@ export function ProgressScreen({
               // Twenty-five orange squares out of thirty read as a screen full
               // of buttons, and not one of them does anything when tapped. The
               // one-mark rule survives; only the ink changed.
-              const training = status !== 'rest';
+              //
+              // Done is the solid mark and only done: the header counts the
+              // solid squares, and a planned day ahead (or one that passed
+              // untrained) painted the same violet made the grid claim more
+              // sessions than the number beside it (ui check, 2026-10-19).
+              // A day still ahead wears the outline; a missed one is quiet.
+              const training = status === 'done';
+              const planned = status === 'upcoming';
               return (
                 <View key={day.dayStart} style={styles.calendarCell}>
                   <View
                     style={[
                       styles.calendarBubble,
                       training && styles.calendarBubbleTraining,
-                      !training && day.isToday && styles.calendarBubbleToday,
+                      planned && styles.calendarBubblePlanned,
+                      !training && !planned && day.isToday && styles.calendarBubbleToday,
                     ]}
                   >
                     <Text
                       style={[
                         styles.calendarBubbleText,
                         training && styles.calendarBubbleTextTraining,
-                        !training && day.isToday && styles.calendarBubbleTextToday,
+                        planned && styles.calendarBubbleTextPlanned,
+                        !training && !planned && day.isToday && styles.calendarBubbleTextToday,
                       ]}
                     >
                       {day.dayNumber}
@@ -1666,71 +1691,60 @@ export function ProgressScreen({
             <Text style={styles.emptyTitle}>{t(language, 'progress.noTracked.title')}</Text>
           </View>
         ) : (
-          <View style={styles.trackedList}>
+          <ListCard>
             {trackedRows.map(({ lift, summary }) => {
               if (!summary) {
                 // Nothing aimed at and nothing logged. The row stays, because
                 // a lift you cannot see is one you cannot pick.
                 return (
-                  <Pressable
+                  <ListRow
                     key={lift.exerciseName}
-                    accessibilityRole="button"
+                    title={formatLiftDisplayLabel(exerciseNameLabel(language, lift.exerciseName))}
+                    meta={t(language, 'progress.noTargetYet')}
+                    right={<Text style={styles.trackedSetTarget}>{t(language, 'programs.goals.add')}</Text>}
                     onPress={() => onSetTarget?.(lift.exerciseName)}
-                    style={({ pressed }) => [styles.trackedCard, pressed && { opacity: 0.85 }]}
-                  >
-                    <View style={styles.trackedHead}>
-                      <View style={styles.trackedCopy}>
-                        <Text numberOfLines={1} style={styles.trackedName}>
-                          {formatLiftDisplayLabel(exerciseNameLabel(language, lift.exerciseName))}
-                        </Text>
-                        <Text numberOfLines={1} style={styles.trackedMeta}>
-                          {t(language, 'progress.noTargetYet')}
-                        </Text>
-                      </View>
-                      <Text style={styles.trackedSetTarget}>{t(language, 'programs.goals.add')}</Text>
-                    </View>
-                  </Pressable>
+                  />
                 );
               }
               const isOpen = expandedKey === summary.key;
-              const signalDot = SIGNAL_STYLES[getExerciseProgressSignal(summary).kind].dot;
+              const signalDot = signalPalette(theme, getExerciseProgressSignal(summary).kind).dot;
               const values = trackedValues.get(summary.key) ?? [];
               const points = isOpen ? expandedTrackedPoints ?? [] : [];
               const start = values[0] ?? null;
               const latest = values.length ? values[values.length - 1] : null;
               const delta = start !== null && latest !== null && values.length > 1 ? latest - start : null;
               return (
-                <View key={summary.key} style={styles.trackedCard}>
+                <View key={summary.key}>
                   {/* The row opens the set log; the chevron still expands the
                       chart in place, so the curve stays one tap away without
                       going through the sheet. */}
-                  <Pressable
-                    accessibilityRole="button"
-                    onPress={() => setSetLogTarget({ key: summary.key, fromLift: true })}
-                    style={styles.trackedHead}
-                  >
-                    <View style={styles.trackedCopy}>
-                      <Text numberOfLines={1} style={styles.trackedName}>
-                        {formatLiftDisplayLabel(exerciseNameLabel(language, summary.name))}
-                      </Text>
-                      <View style={styles.trackedMetaRow}>
-                        <SignalBadge summary={summary} language={language} />
-                        <Text numberOfLines={1} style={styles.trackedMeta}>
-                          {trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}
-                          {summary.latestLog ? ` · ${formatShortDate(summary.latestLog.performedAt, language)}` : ''}
-                        </Text>
+                  <ListRow
+                    title={formatLiftDisplayLabel(exerciseNameLabel(language, summary.name))}
+                    accessory={<SignalBadge summary={summary} language={language} />}
+                    meta={`${trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}${
+                      summary.latestLog ? ` · ${formatShortDate(summary.latestLog.performedAt, language)}` : ''
+                    }`}
+                    chevron={false}
+                    right={
+                      <View style={styles.trackedRight}>
+                        <Sparkline values={values} color={signalDot} />
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={t(
+                            language,
+                            isOpen ? 'home.a11y.collapseSection' : 'home.a11y.expandSection',
+                            { title: formatLiftDisplayLabel(exerciseNameLabel(language, summary.name)) },
+                          )}
+                          accessibilityState={{ expanded: isOpen }}
+                          onPress={() => setExpandedKey(isOpen ? null : summary.key)}
+                          hitSlop={10}
+                        >
+                          <ChevronDown open={isOpen} />
+                        </Pressable>
                       </View>
-                    </View>
-                    <Sparkline values={values} color={signalDot} />
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityState={{ expanded: isOpen }}
-                      onPress={() => setExpandedKey(isOpen ? null : summary.key)}
-                      hitSlop={10}
-                    >
-                      <ChevronDown open={isOpen} />
-                    </Pressable>
-                  </Pressable>
+                    }
+                    onPress={() => setSetLogTarget({ key: summary.key, fromLift: true })}
+                  />
                   {isOpen ? (
                     <View style={styles.trackedDetail}>
                       {delta !== null ? (
@@ -1773,7 +1787,7 @@ export function ProgressScreen({
                 </View>
               );
             })}
-          </View>
+          </ListCard>
         )}
       </>
     );
@@ -2012,52 +2026,59 @@ export function ProgressScreen({
     return (
       <>
         <SectionLabel style={styles.sectionGap} label={t(language, 'progress.section.youTrack')} />
-        <View style={styles.measureList}>
-          {/* Measures with entries first, outlined (user 2026-08-23): the
-              catalog order buried "Rinta · 93,5 cm" under three empty rows.
-              The sort is stable, so within each half the catalog order holds. */}
+        <ListCard>
+          {/* Measures with entries first (user 2026-08-23): the catalog order
+              buried "Rinta · 93,5 cm" under three empty rows. The sort is
+              stable, so within each half the catalog order holds. One list
+              card, hairlines between rows; the selected row is told apart by
+              a soft fill and a check, not by a purple border. */}
           {[...tracked]
             .sort((left, right) => Number(right.values.length > 0) - Number(left.values.length > 0))
             .map((item) => {
-            const active = item.key === selectedMeasure;
-            const latest = item.values.length ? item.values[item.values.length - 1] : null;
-            const delta = item.values.length >= 2 ? item.values[item.values.length - 1] - item.values[0] : null;
-            const good = delta === null ? true : item.lowerIsBetter ? delta < 0 : delta > 0;
-            return (
-              <Pressable
-                key={item.key}
-                onPress={() => setSelectedMeasure(item.key)}
-                style={[
-                  styles.measureRow,
-                  latest !== null && styles.measureRowLogged,
-                  active && styles.measureRowActive,
-                ]}
-              >
-                <View style={styles.measureRowIcon}>
-                  <MeasureIcon name={item.icon} />
+              const active = item.key === selectedMeasure;
+              const latest = item.values.length ? item.values[item.values.length - 1] : null;
+              const delta = item.values.length >= 2 ? item.values[item.values.length - 1] - item.values[0] : null;
+              const good = delta === null ? true : item.lowerIsBetter ? delta < 0 : delta > 0;
+              return (
+                <View key={item.key} style={active ? styles.measureRowActive : undefined}>
+                  <ListRow
+                    title={t(language, item.labelKey)}
+                    meta={
+                      latest !== null
+                        ? `${removeTrailingZeros(Number(latest.toFixed(1)))} ${item.unit}`
+                        : t(language, 'progress.noEntriesYet')
+                    }
+                    leading={
+                      <View style={styles.measureRowIcon}>
+                        <MeasureIcon name={item.icon} />
+                      </View>
+                    }
+                    accessory={active ? <CheckMark color={theme.purple} /> : undefined}
+                    chevron={false}
+                    right={
+                      <View style={styles.measureRowRight}>
+                        <Sparkline
+                          values={item.values.slice(-8)}
+                          color={delta === null ? theme.faint : good ? theme.green : theme.amber}
+                          width={58}
+                        />
+                        {delta !== null && delta !== 0 ? (
+                          <DeltaPill delta={delta} unit={item.unit} lowerIsBetter={item.lowerIsBetter} />
+                        ) : null}
+                      </View>
+                    }
+                    accessibilityLabel={t(language, item.labelKey)}
+                    onPress={() => setSelectedMeasure(item.key)}
+                  />
                 </View>
-                <View style={styles.measureRowCopy}>
-                  <Text style={styles.measureRowTitle}>{t(language, item.labelKey)}</Text>
-                  <Text style={styles.measureRowMeta}>
-                    {latest !== null ? `${removeTrailingZeros(Number(latest.toFixed(1)))} ${item.unit}` : t(language, 'progress.noEntriesYet')}
-                  </Text>
-                </View>
-                <Sparkline
-                  values={item.values.slice(-8)}
-                  color={delta === null ? theme.faint : good ? '#37C46B' : '#E0922F'}
-                  width={58}
-                />
-                {delta !== null && delta !== 0 ? (
-                  <DeltaPill delta={delta} unit={item.unit} lowerIsBetter={item.lowerIsBetter} />
-                ) : null}
-              </Pressable>
-            );
-          })}
+              );
+            })}
           {/* One row for everything else. A measure you have never taken is
               not a row you want to read past every time you open the tab — it
               is a thing you might start, which is one line. */}
           {untracked.length ? (
             <Pressable
+              key="add-measure"
               accessibilityRole="button"
               onPress={() => setMeasurePickerVisible(true)}
               style={({ pressed }) => [styles.measureAddRow, pressed && { opacity: 0.8 }]}
@@ -2073,7 +2094,7 @@ export function ProgressScreen({
               <Text style={styles.measureAddText}>{t(language, 'progress.addMeasure')}</Text>
             </Pressable>
           ) : null}
-        </View>
+        </ListCard>
 
         {/* The kit's own sheet, the same one Home adds a stat card with. */}
         {/* No title: it repeated the row that opened it, and the list names
@@ -2519,6 +2540,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   calendarBubbleTraining: {
     backgroundColor: theme.purpleFill,
   },
+  // Planned, not yet trained: the violet outline with no fill.
+  calendarBubblePlanned: {
+    borderWidth: 1.5,
+    borderColor: theme.purple,
+    backgroundColor: 'transparent',
+  },
+  calendarBubbleTextPlanned: {
+    color: theme.purple,
+    fontWeight: '700',
+  },
   calendarBubbleToday: {
     borderWidth: 1.5,
     borderColor: theme.purple,
@@ -2601,47 +2632,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   filterChipActive: {
   },
-  trackedList: {
-    gap: 10,
-  },
-  trackedCard: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 18,
-    padding: 14,
-  },
-  trackedHead: {
+  trackedRight: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  trackedCopy: {
-    flex: 1,
-    minWidth: 0,
   },
   trackedSetTarget: {
     color: theme.highlight,
     fontSize: 12.5,
     lineHeight: 16,
     fontWeight: '800',
-  },
-  trackedName: {
-    color: theme.ink,
-    fontSize: 15.5,
-    fontWeight: '800',
-  },
-  trackedMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 5,
-  },
-  trackedMeta: {
-    flexShrink: 1,
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '700',
   },
   trackedLogLink: {
     flexDirection: 'row',
@@ -2662,14 +2662,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
   },
   trackedDetail: {
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
     gap: 10,
   },
   trackedDelta: {
-    color: '#157A3A',
+    color: theme.greenInk,
     fontSize: 12.5,
     fontWeight: '700',
     textAlign: 'right',
@@ -2805,29 +2803,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 18,
     fontWeight: '800',
   },
-  measureList: {
-    gap: 9,
+  // The selected measure: a soft violet wash across its row.
+  measureRowActive: {
+    backgroundColor: theme.purpleSoft,
   },
-  measureRow: {
+  measureRowRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 13,
-    paddingVertical: 11,
-    backgroundColor: theme.surface,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-  },
-  // A row that holds data wears a quiet outline; the selected row keeps the
-  // full-strength purple so the two states stay tellable apart.
-  measureRowLogged: {
-    borderColor: theme.purpleBright,
-    borderWidth: 1,
-  },
-  measureRowActive: {
-    borderColor: theme.purple,
-    borderWidth: 1.5,
+    gap: 8,
   },
   measureRowIcon: {
     width: 38,
@@ -2836,20 +2819,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.purpleLight,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  measureRowCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  measureRowTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
-  measureRowMeta: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
   },
 });
