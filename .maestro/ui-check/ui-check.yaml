@@ -1,0 +1,268 @@
+# UI check: every list and menu screen, scrolled top to bottom, one language
+# and one theme per run. For eyes, not for the store: look for text cut off
+# mid-word, overlap, clipped cards, wrong colours in light and dark.
+#
+# Run by scripts/store-screenshots/shoot.sh with FLOW=ui-check, on the same
+# seeded build as the store flow (docs/store-screenshots.md). The simulator's
+# text size may be raised (content_size input) to see what large type does.
+#
+# The app has no testIDs: controls are found by their visible text or
+# accessibility label as "Finnish|English" (src/lib/i18n.ts). Each part starts
+# from a bottom tab, which resets that tab to its root, and every step after
+# the first screen is optional, so one missing control does not end the walk.
+# Screens are named NN-<screen>[-k]; -2 and -3 are further down the same
+# screen.
+appId: app.vinha
+name: UI check
+---
+- extendedWaitUntil:
+    visible: "Jatka kesken olevaa treeniä|Resume the workout in progress|Kirjaa sarja 2|Log set 2"
+    timeout: 60000
+- assertVisible: "@LANGUAGE_CHECK@"
+- waitForAnimationToEnd:
+    timeout: 6000
+
+# 01 Home. The seeded workout is left open, so Home shows "Resume".
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "01-home"
+
+# 02 Programs tab.
+- tapOn:
+    text: "Ohjelmat|Programs"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "02-programs"
+
+# 03 All programs (the catalog), 04 a ready programme's page.
+- scrollUntilVisible:
+    element:
+      text: ".*(Kaikki [0-9]+ ohjelmaa|All [0-9]+ programs).*"
+    direction: DOWN
+    timeout: 15000
+    optional: true
+- tapOn:
+    text: ".*(Kaikki [0-9]+ ohjelmaa|All [0-9]+ programs).*"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "03-catalog"
+# Not the coach button, whose label also starts with "Avaa"/"Open".
+- tapOn:
+    text: "(Avaa|Open) (?!Vinha).*"
+    index: 0
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "04-program-detail"
+
+# 05 Exercise library, 06 one exercise.
+- tapOn:
+    text: "Ohjelmat|Programs"
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Avaa liikekirjasto|Open the exercise library"
+    direction: DOWN
+    timeout: 20000
+    optional: true
+- tapOn:
+    text: "Avaa liikekirjasto|Open the exercise library"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "05-exercise-library"
+- tapOn:
+    text: "(Avaa|Open) (?!Vinha).*"
+    index: 0
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "06-exercise-detail"
+
+# 07 Progress: the summary (trend, month, calendar, history card), then each
+#    section tab. 08 Records with each of Weight / Reps / Volume.
+- tapOn:
+    text: "Kehitys|Progress"
+    optional: true
+- tapOn:
+    text: "Yhteenveto|Summary"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "07-progress-summary"
+- tapOn:
+    text: "Ennätykset|Records"
+    optional: true
+- tapOn:
+    text: "Paino|Weight"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "08-records-weight"
+- tapOn:
+    text: "Toistot|Reps"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "08-records-reps"
+- tapOn:
+    text: "Volyymi|Volume"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "08-records-volume"
+- tapOn:
+    text: "Liikkeet|Exercises"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "09-lifts"
+- tapOn:
+    text: "Mitat|Measures"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "10-measures"
+
+# 11 History from the summary's card, 12 one session.
+- tapOn:
+    text: "Yhteenveto|Summary"
+    optional: true
+- scrollUntilVisible:
+    element:
+      text: "Näytä kaikki|See all"
+    direction: DOWN
+    timeout: 20000
+    optional: true
+- tapOn:
+    text: "Näytä kaikki|See all"
+    rightOf: "Historia|History"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "11-history"
+- tapOn:
+    text: ".*[0-9]+ (liikettä|exercises).*"
+    index: 0
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "12-session-detail"
+
+# 13 Profile, 14 Milestones.
+- tapOn:
+    text: "Profiili|Profile"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "13-profile"
+- scrollUntilVisible:
+    element:
+      text: "Virstanpylväät.*|Milestones.*"
+    direction: DOWN
+    timeout: 10000
+    optional: true
+- tapOn:
+    text: "Virstanpylväät.*|Milestones.*"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "14-milestones"
+
+# 15 Settings: long, so six views of it.
+- tapOn:
+    text: "Profiili|Profile"
+    optional: true
+- tapOn:
+    text: "Asetukset|Settings"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "15-settings"
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: "15-settings-4"
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: "15-settings-5"
+- scroll
+- waitForAnimationToEnd:
+    timeout: 2500
+- takeScreenshot: "15-settings-6"
+
+# 16-20 The sub-screens, each from Profile -> Settings (settings-row.yaml).
+# The Training plan page is not here: it opens only from the "set training
+# days" prompts, which the seeded reader (training days set) never shows.
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "Ilmoitukset.*|Notifications.*"
+      P: "16-notifications"
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "Omat tiedot.+|My data.+"
+      P: "17-my-data"
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "Vie ohjelma.*|Export plan.*"
+      P: "18-export-plan"
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "Treenitauko.*|Training break.*"
+      P: "19-training-break"
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "Hallinnoi tilausta.*|Manage subscription.*|Vinha Pro.*"
+      P: "20-subscription"
+
+# 21 About you: the profile editor, from Settings' header.
+- tapOn:
+    text: "Profiili|Profile"
+    optional: true
+- tapOn:
+    text: "Asetukset|Settings"
+    optional: true
+- tapOn:
+    text: "Muokkaa profiilia|Edit profile"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "21-about-you"
+
+# 22 The coach.
+- tapOn:
+    text: "Koti|Home"
+    optional: true
+- tapOn:
+    text: "Avaa Vinha-valmentaja|Open Vinha Coach"
+    optional: true
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "22-coach"
