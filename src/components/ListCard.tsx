@@ -18,11 +18,17 @@ import { ChevronIcon } from './SettingsUi';
 export function ListCard({
   children,
   style,
+  divided = true,
 }: {
   children: React.ReactNode;
   style?: StyleProp<ViewStyle>;
+  /** False when the rows draw their own dividers (SettingsRow). */
+  divided?: boolean;
 }) {
   const styles = useThemedStyles(makeStyles);
+  if (!divided) {
+    return <View style={[styles.card, style]}>{children}</View>;
+  }
   const rows = React.Children.toArray(children);
 
   return (

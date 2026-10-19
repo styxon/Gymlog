@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { BackButton } from '../components/BackButton';
 
 import { ProgramLadderRow, ProgramRowItem } from '../components/ProgramLadderRow';
 import { I18nKey, t } from '../lib/i18n';
@@ -110,15 +111,7 @@ export function CatalogScreen({
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          hitSlop={8}
-          style={styles.backButton}
-        >
-          <ChevronLeftIcon color={theme.ink} />
-        </Pressable>
+        <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
         <Text style={styles.title}>{t(language, 'programCatalog.title')}</Text>
       </View>
 

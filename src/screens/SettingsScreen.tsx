@@ -5,7 +5,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 import { AppleSignInButton } from '../components/AppleSignInButton';
 import { GoogleSignInButton } from '../components/GoogleSignInButton';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { PageHeader } from '../components/BackButton';
 import { ProPill } from '../components/ProLockMarks';
 import { CARD_SHADOW, SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import type { SignInProvider } from '../features/account/accountAuth';
@@ -320,22 +320,12 @@ export function SettingsScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'settings.a11y.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Ic n="back" c={theme.ink} s={20} sw={2.4} />
-        </Pressable>
-        <ScreenHeaderTitle title={t(language, 'settings.title')} />
-        {/* No PRO pill. It moved here from the profile chip on 2026-08-25 and
-            was still a badge that told the reader something they already know,
-            on the screen where they came to change a setting (user
-            2026-09-04). The subscription row below says what they have. */}
-        <View style={styles.headerSpacer} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'settings.title')}
+        onBack={onBack}
+        backLabel={t(language, 'settings.a11y.back')}
+      />
 
       <ScrollView
         ref={scrollRef}
@@ -847,23 +837,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerSpacer: {
-    width: 40,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   pressed: {
     opacity: 0.75,

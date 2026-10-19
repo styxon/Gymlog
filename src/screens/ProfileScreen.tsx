@@ -4,6 +4,7 @@ import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg'
 
 import { AnimatedGreeting } from '../components/AnimatedGreeting';
 import { CutSurface } from '../components/CutSurface';
+import { ListCard } from '../components/ListCard';
 import { CARD_SHADOW, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { formatLiftDisplayLabel } from '../lib/displayLabel';
@@ -326,13 +327,7 @@ export function ProfileScreen({
             onPress={onOpenRating}
             style={({ pressed }) => [pressed && styles.pressedRow]}
           >
-            <CutSurface
-              size="lg"
-              fill={theme.surface}
-              stroke={theme.border}
-              strokeWidth={1}
-              style={styles.rateCard}
-            >
+            <ListCard divided={false} style={styles.rateCard}>
               <Text style={styles.rateTitle}>{t(language, 'settings.rate')}</Text>
               <View style={styles.rateStars}>
                 {[0, 1, 2, 3, 4].map((star) => (
@@ -346,7 +341,7 @@ export function ProfileScreen({
                   </Svg>
                 ))}
               </View>
-            </CutSurface>
+            </ListCard>
           </Pressable>
         ) : null}
 
@@ -360,7 +355,7 @@ export function ProfileScreen({
               rung with its day, and every family's next one. Only the footer
               presses — a Pressable around the whole card would fold the three
               rows into one node for a screen reader. */}
-          <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.milestoneCard}>
+          <ListCard divided={false} style={styles.milestoneCard}>
             {milestoneRows.map((row, index) => (
               <View key={row.key} style={[styles.milestoneRow, index > 0 && styles.milestoneRowDivider]}>
                 <View style={styles.milestoneHead}>
@@ -394,7 +389,7 @@ export function ProfileScreen({
                 </Svg>
               </Pressable>
             ) : null}
-          </CutSurface>
+          </ListCard>
         </View>
 
         {/* PERSONAL RECORDS — one number and a way in.
@@ -409,14 +404,7 @@ export function ProfileScreen({
             onPress={onOpenRecords}
             style={({ pressed }) => [pressed && styles.pressedRow]}
           >
-            <CutSurface
-              size="lg"
-              fill={theme.surface}
-              stroke={theme.border}
-              strokeWidth={1}
-              speedLine={{ color: theme.purpleBright }}
-              style={styles.recordsLinkCard}
-            >
+            <ListCard divided={false} style={styles.recordsLinkCard}>
             <View style={styles.recordTile}>
               <TrophyIcon />
             </View>
@@ -437,7 +425,7 @@ export function ProfileScreen({
                 strokeLinejoin="round"
               />
             </Svg>
-            </CutSurface>
+            </ListCard>
           </Pressable>
         </View>
 

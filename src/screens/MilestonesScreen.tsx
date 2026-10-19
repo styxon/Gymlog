@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { CutSurface } from '../components/CutSurface';
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { ListCard } from '../components/ListCard';
+import { PageHeader } from '../components/BackButton';
 import { SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { LifetimeTrainingSummary } from '../lib/lifetimeSummary';
@@ -44,19 +44,12 @@ export function MilestonesScreen({ language = 'en', lifetime, ledger, unitPrefer
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle title={t(language, 'milestones.title')} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'milestones.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <Text style={styles.summary}>{rows.summary}</Text>
@@ -65,7 +58,7 @@ export function MilestonesScreen({ language = 'en', lifetime, ledger, unitPrefer
           <SectionLabel label={t(language, 'milestones.section.reached')} />
           {/* No speed line: a list of dates is read, and the stripe crossed
               the words (user 2026-09-03: "poista tuo korostusviiva"). */}
-          <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+          <ListCard divided={false} style={styles.card}>
             {rows.reached.length === 0 ? (
               <View style={styles.row}>
                 <Text style={styles.rowTitle}>{t(language, 'milestones.emptyTitle')}</Text>
@@ -79,12 +72,12 @@ export function MilestonesScreen({ language = 'en', lifetime, ledger, unitPrefer
                 </View>
               ))
             )}
-          </CutSurface>
+          </ListCard>
         </View>
 
         <View style={settingsStyles.section}>
           <SectionLabel label={t(language, 'milestones.section.upNext')} />
-          <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
+          <ListCard divided={false} style={styles.card}>
             {rows.upcoming.map((row, index) => (
               <View key={row.key} style={[styles.progressRow, index > 0 && styles.rowDivider]}>
                 <View style={styles.progressHead}>
@@ -102,7 +95,7 @@ export function MilestonesScreen({ language = 'en', lifetime, ledger, unitPrefer
                 <Text style={styles.rowMeta}>{row.meta}</Text>
               </View>
             ))}
-          </CutSurface>
+          </ListCard>
         </View>
       </ScrollView>
     </View>
@@ -115,20 +108,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   body: {
     paddingTop: 8,

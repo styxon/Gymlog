@@ -562,7 +562,7 @@ module.exports = [
       assert.doesNotMatch(seg, /size="chip"/, 'the pill is a cut surface again');
       assert.match(
         seg,
-        /<View style=\{\[styles\.segItem, active && styles\.segItemActive, active && dark && styles\.segItemActiveDark\]\}/,
+        /<View style=\{\[styles\.segItem, showLabels && styles\.segItemLabelled, active && styles\.segItemActive, active && dark && styles\.segItemActiveDark\]\}/,
       );
 
       // Both states are the same box, so the row cannot change height when the

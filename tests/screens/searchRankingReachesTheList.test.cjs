@@ -121,7 +121,7 @@ module.exports = [
       // the row on the phone — is gone from the screen with its per-theme inks
       // ("leikkaus on jotenkin outo", user 2026-09-09, asking for the metric
       // bar's look).
-      assert.match(progress, /<Seg\s+grow\s+options=\{PROGRESS_SECTIONS\.map\(\(section\) => \(\{[\s\S]*?icon: section\.icon,/);
+      assert.match(progress, /<Seg\s+grow\s+showLabels\s+options=\{PROGRESS_SECTIONS\.map\(\(section\) => \(\{[\s\S]*?icon: section\.icon,/);
       assert.doesNotMatch(progress, /tabActiveFill|tabActiveInk|tabIdleInk|<CutSurface/);
       // The dark-theme fix moved into Seg, where the metric bar gets it too:
       // dark inherited light's tokens and made the selected option the dimmest

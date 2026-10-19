@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { PageHeader } from '../components/BackButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NewProgramSheet } from '../components/NewProgramSheet';
@@ -286,20 +287,12 @@ export function TrainingPlanScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <Text style={styles.headerTitle}>{t(language, 'plan.title')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'plan.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         {planName ? (
@@ -587,30 +580,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.ink,
-    fontSize: 17,
-    fontWeight: '800',
-  },
-  headerSpacer: {
-    width: 40,
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   body: {
     paddingHorizontal: 20,

@@ -666,7 +666,7 @@ module.exports = [
 
       // A chevron, not the word "Open" on every row.
       assert.doesNotMatch(home, /styles\.customAction/);
-      assert.match(home, /d="M9 5l7 7-7 7"/);
+      assert.match(home, /<ListRow[\s\S]{0,200}leading=\{<GradientTile/); // the row's own chevron since 2026-10-19
 
       // The create card is filled and wears the accent, not a dashed outline.
       assert.doesNotMatch(home, /fill="transparent"[\s\S]{0,120}dashed/);

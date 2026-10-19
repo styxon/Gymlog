@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Keyboard, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BackButton } from '../components/BackButton';
 
 import { KitSheet } from '../components/sheetKit';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -805,23 +806,7 @@ export function ProgramDetailScreen({
           was decoration of something the reader was about to read.
         */}
         <View style={styles.headerRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t(language, 'common.back')}
-            hitSlop={10}
-            onPress={onBack}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
-          >
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M15 6l-6 6 6 6"
-                stroke={theme.ink}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </Svg>
-          </Pressable>
+          <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
           {levelLabel ? (
             <View style={styles.levelPill}>
               <Text style={styles.levelPillText}>{levelLabel}</Text>

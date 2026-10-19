@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { PageHeader } from '../components/BackButton';
 import { CARD_SHADOW, ChevronIcon, SectionLabel } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { buildProgramCsv, CsvExportSession, summarizeExportSessions } from '../lib/programCsvExport';
@@ -157,19 +157,12 @@ export function ExportPlanScreen({ language = 'en', plans, log, onBack }: Export
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle title={t(language, 'export.title')} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'export.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <Text style={styles.intro}>{t(language, 'export.intro')}</Text>
@@ -251,20 +244,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 6,
   },
   body: {
     paddingTop: 4,

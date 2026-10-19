@@ -9,6 +9,7 @@ import { EmptyBox } from '../components/EmptyBox';
 import { KitRow, KitSheet } from '../components/sheetKit';
 import { Seg } from '../components/Seg';
 import { ListCard } from '../components/ListCard';
+import { SectionLabel } from '../components/SettingsUi';
 import {
   formatOverviewVolumeTick,
   getOverviewBodyweightTicks,
@@ -604,21 +605,6 @@ function ArrowGlyph({ up, color }: { up: boolean; color: string }) {
 }
 
 // ── shared light widgets ──
-
-function SectionLabel({ label, right }: { label: string; right?: React.ReactNode }) {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <View style={styles.sectionHead}>
-      <Text style={styles.sectionHeadLabel}>{label}</Text>
-      {typeof right === 'string' ? (
-        <Text style={styles.sectionHeadRight}>{right}</Text>
-      ) : (
-        right ?? null
-      )}
-    </View>
-  );
-}
 
 function SignalBadge({ summary, language }: { summary: ExerciseProgressSummary; language: AppLanguage }) {
   const styles = useThemedStyles(makeStyles);
@@ -1287,8 +1273,8 @@ export function ProgressScreen({
     }
     return (
       <View style={styles.readBlock}>
-        <Text style={styles.readTitle}>{t(language, 'pro.read.title')}</Text>
-        <View style={styles.readList}>
+        <SectionLabel label={t(language, 'pro.read.title')} />
+        <ListCard>
           {weeklyRead.map((row) => {
             // The dot keeps the paywall palette; the status WORD is text, and
             // reads in the theme's inks. PW green and amber are 3.30 and 3.19:1
@@ -1343,6 +1329,7 @@ export function ProgressScreen({
                       <Text style={styles.readMeta}>{row.meta}</Text>
                     )}
                   </View>
+                  {row.bars.length > 0 ? (
                   <View style={styles.readBars}>
                     {row.bars.map((bar, index) => (
                       <View
@@ -1357,6 +1344,7 @@ export function ProgressScreen({
                       />
                     ))}
                   </View>
+                  ) : null}
                   {recoveryDoor ? (
                     <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
                       <Path
@@ -1398,7 +1386,7 @@ export function ProgressScreen({
               </View>
             );
           })}
-        </View>
+        </ListCard>
       </View>
     );
   }
@@ -1420,7 +1408,7 @@ export function ProgressScreen({
             photographed on the device reading "0 kg × 15" over a flat line
             from 0 to 0. Gone: the headline number belongs to the chart, and
             the chart is what the tab is for (Progress v2, piece 01). */}
-        <SectionLabel label={t(language, 'progress.section.trend')} />
+        <SectionLabel style={styles.sectionGap} label={t(language, 'progress.section.trend')} />
         <View style={styles.card}>
           <View style={styles.trendMetricRow}>
             <Seg
@@ -1469,7 +1457,7 @@ export function ProgressScreen({
           </View>
         </View>
 
-        <SectionLabel label={t(language, 'progress.section.thisMonth')} />
+        <SectionLabel style={styles.sectionGap} label={t(language, 'progress.section.thisMonth')} />
         <View style={styles.monthGrid}>
           <View style={styles.monthCard}>
             <Text style={styles.monthLabel}>{t(language, 'progress.stat.sessions')}</Text>
@@ -1490,7 +1478,7 @@ export function ProgressScreen({
 
         {topRecords.length > 0 ? (
           <>
-            <SectionLabel
+            <SectionLabel style={styles.sectionGap}
               label={t(language, 'pr.records')}
               right={
                 <Pressable
@@ -1534,7 +1522,7 @@ export function ProgressScreen({
             }
           }}
         >
-          <SectionLabel
+          <SectionLabel style={styles.sectionGap}
             label={t(language, 'progress.section.activity')}
             right={calendarMonthLabel}
           />
@@ -1942,7 +1930,7 @@ export function ProgressScreen({
             first version wrapped SectionLabel in a flex row with its own
             Pressable — a third way to draw a section head in a file that
             already had two. */}
-        <SectionLabel
+        <SectionLabel style={styles.sectionGap}
           label={t(language, 'progress.entries')}
           right={
             <Pressable
@@ -2023,7 +2011,7 @@ export function ProgressScreen({
 
     return (
       <>
-        <SectionLabel label={t(language, 'progress.section.youTrack')} />
+        <SectionLabel style={styles.sectionGap} label={t(language, 'progress.section.youTrack')} />
         <View style={styles.measureList}>
           {/* Measures with entries first, outlined (user 2026-08-23): the
               catalog order buried "Rinta · 93,5 cm" under three empty rows.
@@ -2121,7 +2109,7 @@ export function ProgressScreen({
         {/* No subtitle. It sat above all four sub-tabs and described none of
             them — "ylhäällä sama treeni jonka olet rakentanut" on the records
             page, the measures page and the trend (#bugs 2026-09-05). */}
-        <Text style={styles.headerTitle}>{t(language, 'progress.title')}</Text>
+        <Text accessibilityRole="header" style={styles.headerTitle}>{t(language, 'progress.title')}</Text>
         {/* The same control as every selector below it. This was a hand-built
             shell with a second cut surface inside the selected tab — the two
             parallel diagonals Seg took out of the others on 2026-09-07 — and on
@@ -2131,6 +2119,7 @@ export function ProgressScreen({
         <View style={styles.tabsRow}>
           <Seg
             grow
+            showLabels
             options={PROGRESS_SECTIONS.map((section) => ({
               key: section.key,
               label: t(language, section.labelKey),
@@ -2272,22 +2261,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   readBlock: {
     marginBottom: 18,
   },
-  readTitle: {
-    fontSize: 10.5,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.faint,
-    marginBottom: 11,
-  },
-  readList: {
-    gap: 10,
-  },
   readRow: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 18,
-    paddingVertical: 15,
+    paddingVertical: 14,
     paddingHorizontal: 16,
   },
   readRowPressed: { opacity: 0.7 },
@@ -2363,7 +2338,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.ink,
     fontSize: 28,
     fontWeight: '800',
-    letterSpacing: -0.5,
+    letterSpacing: -0.6,
   },
   tabsRow: {
     marginTop: 14,
@@ -2417,24 +2392,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   recordsList: {
     marginBottom: 4,
   },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-    paddingBottom: 11,
+  sectionGap: {
     marginTop: 22,
-  },
-  sectionHeadLabel: {
-    color: theme.faint,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  sectionHeadRight: {
-    color: theme.purple,
-    fontSize: 12.5,
-    fontWeight: '800',
   },
   card: {
     backgroundColor: theme.surface,

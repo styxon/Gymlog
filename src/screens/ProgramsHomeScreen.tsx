@@ -24,6 +24,8 @@ import Svg, {
 } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { ListCard, ListRow } from '../components/ListCard';
+import { SectionLabel } from '../components/SettingsUi';
 import { CutSurface } from '../components/CutSurface';
 import { LAYERS_MOTIF, ProgramCoverStyle, programCoverStyle } from '../lib/programVisualIdentity';
 import { NewProgramSheet } from '../components/NewProgramSheet';
@@ -829,53 +831,27 @@ export function ProgramsHomeScreen({
             ohjelmasi" further down already is, and what the active programme
             on Home already is. Three answers to one question. */}
 
-        <Text style={styles.sectionEyebrowStandalone}>{t(language, 'programs.yourPrograms')}</Text>
+        <SectionLabel style={styles.eyebrowStandalone} label={t(language, 'programs.yourPrograms')} />
         {ownProgramsLine ? <Text style={styles.ownProgramsLine}>{ownProgramsLine}</Text> : null}
-        {customPrograms.map((program) => (
-          <Pressable
-            key={program.id}
-            accessibilityRole="button"
-            accessibilityLabel={t(language, 'programs.open', { name: program.name })}
-            onPress={() => onOpenCustomProgram(program.id, program.programType ?? 'custom')}
-            style={({ pressed }) => [styles.customRowWrap, pressed && styles.rowPressed]}
-          >
-            <CutSurface
-              size="lg"
-              fill={theme.surface}
-              stroke={theme.border}
-              strokeWidth={1}
-              speedLine={{ color: theme.purpleBright }}
-              style={styles.customRow}
-            >
-            <GradientTile stops={SAVED_TILE} size={44} radius={12} />
-            <View style={styles.customCopy}>
-              <View style={styles.customTitleRow}>
-                <Text style={styles.customTitle} numberOfLines={1}>
-                  {program.name}
-                </Text>
-                {program.active ? (
-                  <Text style={styles.customActiveTag}>{t(language, 'programs.activeTag')}</Text>
-                ) : null}
-              </View>
-              <Text style={styles.customSubtitle} numberOfLines={1}>
-                {program.subtitle}
-              </Text>
-            </View>
-            {/* A chevron, not the word "Open" (user 2026-09-01). Every row
-                on this list opens; the word was on all three saying the same
-                thing, and the arrow says it without taking a column. */}
-            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-              <Path
-                d="M9 5l7 7-7 7"
-                stroke={theme.faint}
-                strokeWidth={2.2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
+        {customPrograms.length > 0 ? (
+          <ListCard style={styles.customList}>
+            {customPrograms.map((program) => (
+              <ListRow
+                key={program.id}
+                leading={<GradientTile stops={SAVED_TILE} size={44} radius={12} />}
+                title={program.name}
+                accessory={
+                  program.active ? (
+                    <Text style={styles.customActiveTag}>{t(language, 'programs.activeTag')}</Text>
+                  ) : undefined
+                }
+                meta={program.subtitle}
+                accessibilityLabel={t(language, 'programs.open', { name: program.name })}
+                onPress={() => onOpenCustomProgram(program.id, program.programType ?? 'custom')}
               />
-            </Svg>
-            </CutSurface>
-          </Pressable>
-        ))}
+            ))}
+          </ListCard>
+        ) : null}
         {/* The only "new program" entry on the page now. It opens the sheet
             rather than the editor, so removing the duplicate button at the top
             did not remove the AI and CSV routes with it. */}
@@ -913,7 +889,7 @@ export function ProgramsHomeScreen({
             instead of read, colour and shape land before a word does, and nine
             identical grey pills are read one at a time. */}
         <View style={styles.sectionHeadRow}>
-          <Text style={styles.sectionEyebrow}>{t(language, 'programs.browse')}</Text>
+          <SectionLabel style={styles.eyebrowInline} label={t(language, 'programs.browse')} />
           <Pressable onPress={() => setAllCategories((value) => !value)} hitSlop={8}>
             <Text style={styles.sectionLink}>
               {t(language, allCategories ? 'programs.showLess' : 'programs.viewAll')}
@@ -997,7 +973,7 @@ export function ProgramsHomeScreen({
         {recommendations.length > 0 ? (
           <View>
             <View style={styles.sectionHeadRow}>
-              <Text style={styles.sectionEyebrow}>{t(language, 'programs.forYou')}</Text>
+              <SectionLabel style={styles.eyebrowInline} label={t(language, 'programs.forYou')} />
             </View>
             <ScrollView
               horizontal
@@ -1084,7 +1060,7 @@ export function ProgramsHomeScreen({
         {true ? (
           <View>
             <View style={styles.sectionHeadRow}>
-              <Text style={styles.sectionEyebrow}>{t(language, 'programs.goals')}</Text>
+              <SectionLabel style={styles.eyebrowInline} label={t(language, 'programs.goals')} />
               {/* Only when there IS one. Empty, the card below carries the
                   same door as a button you cannot miss, and two of them beside
                   each other is the duplicate this tab keeps growing. */}
@@ -1249,7 +1225,7 @@ export function ProgramsHomeScreen({
         {learnRows.length > 0 ? (
           <View>
             <View style={styles.sectionHeadRow}>
-              <Text style={styles.sectionEyebrow}>{t(language, 'programs.learn')}</Text>
+              <SectionLabel style={styles.eyebrowInline} label={t(language, 'programs.learn')} />
               {onOpenLearnIndex ? (
                 <Pressable onPress={onOpenLearnIndex} hitSlop={8}>
                   <Text style={styles.sectionLink}>{t(language, 'programs.learn.all')}</Text>
@@ -1297,37 +1273,22 @@ export function ProgramsHomeScreen({
           </View>
         ) : null}
 
-        <Text style={styles.sectionEyebrowStandalone}>{t(language, 'programs.library')}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'programs.openLibrary')}
-          onPress={onOpenLibrary}
-          style={({ pressed }) => [pressed && styles.rowPressed]}
-        >
-          <CutSurface
-            size="lg"
-            fill={theme.surface}
-            stroke={theme.border}
-            strokeWidth={1}
-            speedLine={{ color: theme.purpleBright }}
-            style={styles.libraryRow}
-          >
-          <View style={styles.libraryIcon}>
-            <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-              <Path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" stroke={theme.purple} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-            </Svg>
-          </View>
-          <View style={styles.libraryCopy}>
-            <Text style={styles.libraryTitle}>{t(language, 'programs.exerciseLibrary')}</Text>
-            <Text style={styles.librarySubtitle} numberOfLines={1}>
-              {t(language, 'programs.library.sub', { count: exerciseLibraryCount })}
-            </Text>
-          </View>
-          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-            <Path d="m9 6 6 6-6 6" stroke={theme.faint} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-          </CutSurface>
-        </Pressable>
+        <SectionLabel style={styles.eyebrowStandalone} label={t(language, 'programs.library')} />
+        <ListCard>
+          <ListRow
+            leading={
+              <View style={styles.libraryIcon}>
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path d="M4 9v6M7 7v10M17 7v10M20 9v6M7 12h10" stroke={theme.purple} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                </Svg>
+              </View>
+            }
+            title={t(language, 'programs.exerciseLibrary')}
+            meta={t(language, 'programs.library.sub', { count: exerciseLibraryCount })}
+            accessibilityLabel={t(language, 'programs.openLibrary')}
+            onPress={onOpenLibrary}
+          />
+        </ListCard>
 
         <View style={styles.bottomSafeFade} />
       </ScrollView>
@@ -1474,12 +1435,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 11,
     paddingHorizontal: 2,
   },
-  sectionEyebrow: {
-    color: theme.faint,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 1.1,
+  eyebrowInline: {
+    paddingBottom: 0,
+    paddingHorizontal: 0,
   },
   categoryRow: {
     paddingHorizontal: 20,
@@ -1872,15 +1830,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 10,
     paddingHorizontal: 2,
   },
-  sectionEyebrowStandalone: {
-    color: theme.faint,
-    fontSize: 12,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 1.1,
+  eyebrowStandalone: {
     marginTop: 26,
-    marginBottom: 11,
+    paddingBottom: 11,
     paddingHorizontal: 2,
+  },
+  customList: {
+    marginBottom: 10,
   },
   allProgramsLink: {
     alignSelf: 'flex-start',

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Defs, LinearGradient, Path, Rect, Stop } from 'react-native-svg';
+import { BackButton } from '../components/BackButton';
 
 import { ExerciseCollection, resolveCollectionProgress } from '../lib/exerciseCollections';
 import { t } from '../lib/i18n';
@@ -47,15 +48,7 @@ export function LearnIndexScreen({
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          hitSlop={8}
-          style={styles.backButton}
-        >
-          <ChevronLeftIcon color={theme.ink} />
-        </Pressable>
+        <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
         <View style={{ flex: 1, minWidth: 0 }}>
           <Text style={styles.title}>{t(language, 'learn.title')}</Text>
           <Text style={styles.subtitle}>{t(language, 'learn.subtitle')}</Text>

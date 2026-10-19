@@ -32,6 +32,7 @@ export function Seg<T extends string>({
   value,
   onChange,
   grow,
+  showLabels,
   lockedKeys,
   onLockedPress,
 }: {
@@ -40,6 +41,8 @@ export function Seg<T extends string>({
   value: T;
   onChange: (next: T) => void;
   grow?: boolean;
+  /** Options with a glyph also print their label beside it. */
+  showLabels?: boolean;
   /**
    * Options that exist but are not this reader's to pick.
    *
@@ -90,7 +93,7 @@ export function Seg<T extends string>({
               </Svg>
             ) : null}
             {option.icon ? (
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+              <Svg width={showLabels ? 16 : 20} height={showLabels ? 16 : 20} viewBox="0 0 24 24" fill="none">
                 <Path
                   d={option.icon}
                   stroke={locked ? theme.faint : active ? activeInk : idleInk}
@@ -99,8 +102,12 @@ export function Seg<T extends string>({
                   strokeLinejoin="round"
                 />
               </Svg>
-            ) : (
+            ) : null}
+            {!option.icon || showLabels ? (
               <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit={Boolean(showLabels)}
+                minimumFontScale={0.8}
                 style={[
                   styles.segText,
                   active && styles.segTextActive,
@@ -110,7 +117,7 @@ export function Seg<T extends string>({
               >
                 {option.label}
               </Text>
-            )}
+            ) : null}
           </>
         );
 
@@ -123,7 +130,7 @@ export function Seg<T extends string>({
             onPress={() => (locked ? onLockedPress?.() : onChange(option.key))}
             style={grow && styles.segItemGrow}
           >
-            <View style={[styles.segItem, active && styles.segItemActive, active && dark && styles.segItemActiveDark]}>
+            <View style={[styles.segItem, showLabels && styles.segItemLabelled, active && styles.segItemActive, active && dark && styles.segItemActiveDark]}>
               {inner}
             </View>
           </Pressable>
@@ -149,6 +156,11 @@ const makeSegStyles = (theme: Theme) => StyleSheet.create({
     gap: 4,
     paddingHorizontal: 11,
     paddingVertical: 5,
+  },
+  segItemLabelled: {
+    paddingHorizontal: 5,
+    gap: 3,
+    maxWidth: '100%',
   },
   segItemGrow: {
     flex: 1,
