@@ -619,6 +619,15 @@ export interface AppPreferences {
    */
   mockSubscriptionPurchasedAt: string | null;
   /**
+   * The end of the paid period as the STORE states it (RevenueCat's
+   * expirationDate), ISO; null for lifetime, for a record the store never
+   * wrote (the demo's) and for an install from before the field existed.
+   * Written only by purchaseRecordFromStore. A cancelled or failed-renewal
+   * subscription keeps Pro until exactly this instant, so a grace period the
+   * store extended, or a trial, is not guessed from purchase date plus a term.
+   */
+  mockSubscriptionEndsAt: string | null;
+  /**
    * True while the signed-in Google account is Play's review account
    * (lib/reviewAccount): Pro is on for it, with source 'review'. Written only
    * by app/useReviewProAccount from the signed-in account, cleared when that

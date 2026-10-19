@@ -27,8 +27,23 @@ export interface MembershipEndView {
 }
 
 export function resolveMembershipEndView({ canEndNow, cancelled }: MembershipEndViewInput): MembershipEndView {
-  if (cancelled) {
+  // "Already cancelled" is a fact about a purchase. A promo, trial or review
+  // grant with a stale stamp left by an earlier purchase has nothing cancelled.
+  if (cancelled && canEndNow) {
     return { mode: 'back', alreadyCancelled: true };
   }
   return { mode: canEndNow ? 'decide' : 'back', alreadyCancelled: false };
+}
+
+/**
+ * The `cancelled` the screen is handed: true only when Pro is running as a
+ * purchase and its cancellation stamp is set. The stamp survives a purchase
+ * that ended, so reading it alone told a promo, trial or review user "already
+ * cancelled" for a subscription they no longer have.
+ */
+export function membershipEndCancelled(
+  entitlementSource: string | null,
+  cancelledAt: string | null,
+): boolean {
+  return entitlementSource === 'purchase' && cancelledAt !== null;
 }

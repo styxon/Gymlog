@@ -202,6 +202,8 @@ const suites = [
   ...require('./lib/proEntitlementRestore.test.cjs'),
   ...require('./lib/reviewAccount.test.cjs'),
   ...require('./lib/storePurchase.test.cjs'),
+  ...require('./lib/storeGraceEnd.test.cjs'),
+  ...require('./lib/reviewGaps400s.test.cjs'),
   ...require('./lib/storePrices.test.cjs'),
   ...require('./lib/proLock.test.cjs'),
   ...require('./lib/screenshotSeed.test.cjs'),

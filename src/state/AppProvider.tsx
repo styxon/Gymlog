@@ -291,6 +291,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       mockSubscriptionTerm: 'yearly',
       mockSubscriptionCancelledAt: null,
       mockSubscriptionPurchasedAt: null,
+      mockSubscriptionEndsAt: null,
       reviewProAccount: false,
       cancelSurveyAnswer: null,
       featureVotedIds: [],

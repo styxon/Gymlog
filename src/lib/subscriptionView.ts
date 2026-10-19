@@ -265,7 +265,9 @@ export function resolveSubscriptionView(input: {
       state: 'active',
       term: mockTerm,
       cancelled,
-      endsAt: charge,
+      // A cancelled or failing subscription names the end the store gave
+      // (grace, trial); the counted one is for a record with no such end.
+      endsAt: cancelled ? entitlement.purchaseEndsAt ?? charge : charge,
       nextChargeAt: cancelled ? null : charge,
       grant: null,
     };

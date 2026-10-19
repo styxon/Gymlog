@@ -59,6 +59,9 @@ type ProPreferences = Pick<
   | 'mockSubscriptionTerm'
   | 'mockSubscriptionCancelledAt'
 > &
+  // The store's stated end of the paid period. Optional for the same reason
+  // as below: absent reads as none, and the older rule applies.
+  Partial<Pick<AppPreferences, 'mockSubscriptionEndsAt'>> &
   // Optional so a caller holding only the older fields still type-checks;
   // absent reads as no, which is the safe direction.
   Partial<Pick<AppPreferences, 'reviewProAccount'>>;
@@ -166,6 +169,20 @@ function resolvePurchaseEntitlement(preferences: ProPreferences, now: Date): Pro
   // lifetime purchase is a refund, which the store reports, not this field.
   if (preferences.mockSubscriptionTerm === 'lifetime') {
     return { ...purchased, purchaseEndsAt: null };
+  }
+
+  // Cancelled, or a renewal the store could not collect (grace, billing
+  // retry). When the store stated where the paid period ends, that instant is
+  // the end: it already includes a grace period the store extended and a
+  // trial's own length, which no purchase date plus a term can know. It only
+  // counts here, beside a cancellation stamp - a subscription still renewing
+  // has no end, and one whose renewal landed while the app was closed must
+  // not lock on a date the store has already moved. Any stamp, however old,
+  // is bounded by it, so a stale one cannot outlive the store's end.
+  const storedEnd = preferences.mockSubscriptionEndsAt;
+  const storedEndTime = storedEnd ? new Date(storedEnd).getTime() : Number.NaN;
+  if (Number.isFinite(storedEndTime)) {
+    return storedEndTime > now.getTime() ? { ...purchased, purchaseEndsAt: storedEnd as string } : NOT_UNLOCKED;
   }
 
   // Cancelled. The period it runs to is the one it was cancelled IN —
@@ -312,6 +329,7 @@ export const DEVICE_ONLY_PREFERENCE_FIELDS = [
   'mockSubscriptionPurchasedAt',
   'mockSubscriptionTerm',
   'mockSubscriptionCancelledAt',
+  'mockSubscriptionEndsAt',
   'aiCoachProQuota',
   'coachDemoMomentsUsed',
   'firstLaunchAt',

@@ -178,7 +178,10 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
     );
     // A build that reached the model is a billed call, so it spends one of the
     // month's coach questions like an answer does. A crisis answer, or a build
-    // that fell back to the device, did not reach it and is free.
+    // that never got a live answer (the request failed), did not reach it and
+    // is free. A live answer that is afterwards replaced by the device
+    // composer (liveProposalOrPreview, nothing usable in it) was still a
+    // billed call and is still charged.
     if (live && !isProgrammeCompositionCrisis(live)) {
       void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
     }

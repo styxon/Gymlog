@@ -22,6 +22,7 @@ update to carry, not for each fix.
 
 ## Merged
 
+- Pro and coach review follow-ups: Pro now ends exactly where the store says (a grace period the store extends keeps Pro on, a cancelled trial ends with the trial), the app asks the store again when it returns to the front for a cancelled or past-due subscription, a promo, trial or review member no longer reads "already cancelled" on the membership end screen, a rate-limited coach question is not lost when something new was typed meanwhile, and tapping "Build the week" twice with no questions left no longer stacks notices or starts two builds.
 - Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
 - Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
 - Exercise instructions (Finnish): the 708 translated exercises no longer say knees must not pass the toes, "arch your back" no longer reads as a rounded back, presses say "ojenna kädet" instead of a hard lockout, upright rows stop at chest or shoulder height, the neck and behind-the-neck lifts carry a caution, "to failure" and breathing narration are gone, and the rep line follows the programme.

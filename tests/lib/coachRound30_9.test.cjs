@@ -125,7 +125,7 @@ module.exports = [
       assert.ok(limited > 0 && limited < offline && limited < charged, 'the limited branch returns before the badge and the charge');
       const branch = chat.slice(limited, chat.indexOf('return;', limited));
       assert.match(branch, /t\(language, 'coachChat\.rateLimited'\)/);
-      assert.match(branch, /setDraft\(\(current\) => \(current\.trim\(\) \? current : trimmed\)\);/);
+      assert.match(branch, /setDraft\(afterRateLimitedQuestion\(\[\], token, trimmed, draftNow, limitedReply\)\.draft\);/);
     },
   },
 ];

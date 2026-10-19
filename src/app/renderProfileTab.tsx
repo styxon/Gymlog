@@ -24,6 +24,8 @@ import { forgetAiCoachLog, lastAiLogCarriedAt } from '../lib/aiCoachClient';
 import { aiLogDeleteSettlesAt } from '../lib/aiLogDeletion';
 import { randomLogId } from '../lib/aiCoachLogId';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
+import { createSingleFlight } from '../lib/singleFlight';
+import { membershipEndCancelled } from '../lib/membershipEndView';
 import { MOCK_BILLING, currentPeriodEndAt, nextChargeAt } from '../lib/subscriptionView';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { remindersOptedIn } from '../lib/reminderOptIn';
@@ -192,7 +194,7 @@ async function allowWorkoutAlerts(): Promise<NotificationAccessState> {
 }
 
 /** A store restore is out. Module-level because this function re-runs on every render. */
-const restoreInFlight = { current: false };
+const restoreFlight = createSingleFlight();
 
 function allowExactAlarms() {
   void openExactAlarmSettings();
@@ -290,11 +292,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
   const restoreFromStore: (() => Promise<void>) | undefined =
     !isDemoBuild() && isStoreBillingConfigured()
       ? async () => {
-          if (restoreInFlight.current) {
-            return;
-          }
-          restoreInFlight.current = true;
-          try {
+          await restoreFlight.run(async () => {
             const customer = await restoreStorePurchases();
             if (!customer) {
               showToast(t(preferences.appLanguage, 'subs.restore.failed'));
@@ -313,9 +311,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
               return;
             }
             showToast(t(preferences.appLanguage, restored ? 'subs.restore.done' : 'subs.restore.none'));
-          } finally {
-            restoreInFlight.current = false;
-          }
+          });
         }
       : undefined;
 
@@ -705,7 +701,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // guess which of promo / demo switch is keeping Pro on.
         source={proEntitlement.source ?? 'none'}
         promoUntil={proEntitlement.promoUntil}
-        cancelled={preferences.mockSubscriptionCancelledAt !== null}
+        cancelled={membershipEndCancelled(proEntitlement.source, preferences.mockSubscriptionCancelledAt)}
         // Counted from the same instant the subscription screen counts from,
         // or the two screens name different dates for the same period.
         // The date the entitlement itself will stop on: the end of the current

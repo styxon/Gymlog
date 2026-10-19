@@ -31,6 +31,7 @@ const EMPTY = {
   mockSubscriptionPurchasedAt: null,
   mockSubscriptionTerm: 'yearly',
   mockSubscriptionCancelledAt: null,
+  mockSubscriptionEndsAt: null,
 };
 
 function customer(entitlement) {
@@ -76,6 +77,7 @@ module.exports = [
         mockSubscriptionPurchasedAt: '2026-10-01T10:00:00.000Z',
         mockSubscriptionTerm: 'monthly',
         mockSubscriptionCancelledAt: null,
+        mockSubscriptionEndsAt: '2026-11-01T10:00:00.000Z',
       });
       const pro = resolveProEntitlement(prefs(record), now);
       assert.equal(pro.unlocked, true);
@@ -125,7 +127,9 @@ module.exports = [
       const now = new Date('2026-11-03T00:00:00.000Z');
       const answer = customer(entitlement({ willRenew: false, expirationDate: '2026-11-01T10:00:00.000Z' }));
       const record = purchaseRecordFromStore(answer, EMPTY, now);
-      assert.equal(record.mockSubscriptionCancelledAt, '2026-10-01T10:00:00.000Z');
+      // The stamp is only a moment; the end is the store's own.
+      assert.equal(record.mockSubscriptionEndsAt, '2026-11-01T10:00:00.000Z');
+      assert.equal(record.mockSubscriptionCancelledAt, now.toISOString());
       assert.equal(resolveProEntitlement(prefs(record), now).unlocked, false);
       const inPeriod = resolveProEntitlement(prefs(record), new Date('2026-10-20T00:00:00.000Z'));
       assert.equal(inPeriod.purchaseEndsAt, '2026-11-01T10:00:00.000Z');
@@ -138,6 +142,7 @@ module.exports = [
         mockSubscriptionPurchasedAt: '2026-08-15T00:00:00.000Z',
         mockSubscriptionTerm: 'lifetime',
         mockSubscriptionCancelledAt: null,
+        mockSubscriptionEndsAt: null,
       };
       const now = new Date('2026-10-08T12:00:00.000Z');
       assert.equal(resolveProEntitlement(prefs(invented), now).unlocked, true);
@@ -218,7 +223,7 @@ module.exports = [
       const timer = sync.indexOf('setTimeout(');
       assert.ok(timer > -1, 'the store is asked on its own turn');
       assert.ok(sync.indexOf('onStoreCustomerChange(apply)') > timer, 'subscribing loads the SDK, so it waits too');
-      assert.ok(sync.indexOf('readStoreCustomer()') > timer);
+      assert.ok(sync.indexOf('read();', timer) > timer, 'the first read waits for its own turn');
       // A sync that agrees writes nothing: every write is the whole database.
       assert.match(sync, /if \(samePurchaseRecord\(preferencesRef\.current, next\)\) \{\s*return;\s*\}/);
       assert.match(read('App.tsx'), /useStoreBillingSync\(\{ hydrated, preferences, updatePreferences \}\);/);
@@ -277,7 +282,8 @@ module.exports = [
 
       const profile = read('src', 'app', 'renderProfileTab.tsx');
       assert.equal(profile.split('onRestorePurchases={restoreFromStore}').length - 1, 2);
-      assert.match(profile, /if \(restoreInFlight\.current\) \{\s*return;\s*\}\s*restoreInFlight\.current = true;/);
+      // One at a time: the guard itself is behaviour-tested in singleFlight.test.cjs.
+      assert.match(profile, /await restoreFlight\.run\(async \(\) => \{/);
       assert.match(profile, /updatePreferences\(\(current\) => \{\s*const record = purchaseRecordFromStore\(customer, current\);/);
       assert.doesNotMatch(profile, /purchaseRecordFromStore\(customer, preferences\)/);
 
@@ -285,13 +291,5 @@ module.exports = [
       assert.equal(i18n.split("'subs.restore.pending':").length - 1, 2);
     },
   },
-  {
-    name: 'backup: deleting the cloud copy clears the pause the row showed',
-    run() {
-      const hook = read('src', 'features', 'account', 'useAccountBackup.ts');
-      const del = hook.slice(hook.indexOf('const deleteRemoteBackup = useCallback'));
-      const body = del.slice(0, del.indexOf('const deleteAccount = useCallback'));
-      assert.match(body, /cloudCopyDeletedAt: null,\s*\}\);\s*clearPause\(\);\s*return 'done';/);
-    },
-  },
+  // The backup pause clearing is behaviour-tested in reviewGaps400s.test.cjs.
 ];
