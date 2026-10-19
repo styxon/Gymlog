@@ -3040,7 +3040,7 @@ function GuidedPlayer({
       restSecondsMax: defaults.restSeconds,
       substitutionGroup: item.id,
       libraryItemId: item.id,
-    });
+    }, unitPreference);
   };
 
   const backOne = () => {

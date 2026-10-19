@@ -35,7 +35,7 @@ import { t } from './i18n';
 import { AppLanguage } from '../types/models';
 
 /** Bumped whenever the shape changes, so a stale file is ignored, not misread. */
-export const HOME_WIDGET_PAYLOAD_VERSION = 9;
+export const HOME_WIDGET_PAYLOAD_VERSION = 10;
 
 /**
  * How many week rows the native layout holds.
@@ -136,6 +136,13 @@ export interface HomeWidgetStat {
   value: string;
 }
 
+export interface HomeWidgetNextMonth {
+  monthKey: string;
+  monthLabel: string;
+  monthWeeks: HomeWidgetDay[][];
+  stats: HomeWidgetStat[];
+}
+
 export interface HomeWidgetPayload {
   version: number;
   updatedAt: string;
@@ -145,6 +152,12 @@ export interface HomeWidgetPayload {
    * in the payload rather than being re-derived there.
    */
   theme: 'light' | 'dark';
+  /**
+   * The month the grid below was built for, "YYYY-MM". The launcher draws the
+   * card for as long as the app is not opened, so the native side compares
+   * this with its own clock instead of trusting the grid is current.
+   */
+  monthKey: string;
   /** "August 2026" / "elokuu 2026" — the calendar's heading. */
   monthLabel: string;
   /** "MA".."SU" — the calendar's axis. */
@@ -156,6 +169,13 @@ export interface HomeWidgetPayload {
   monthWeeks: HomeWidgetDay[][];
   /** Exactly three, in the order the 4×2 draws them. */
   stats: HomeWidgetStat[];
+  /**
+   * The following month, ready made. If the app is not opened at the turn of
+   * the month the widget swaps to this one: an empty grid with a zeroed
+   * month is the truth until something is logged, and logging opens the app.
+   * Past that, the widget draws neither rather than a month that is over.
+   */
+  nextMonth: HomeWidgetNextMonth;
   /** Every workout ever logged, as the app's own lifetime summary counts them. */
   totalValue: string;
   /** "workouts", pre-translated. */
@@ -495,6 +515,11 @@ export function resolveHomeWidgetSessionTap(input: {
   return { kind: 'open', next };
 }
 
+/** "2026-08" in local time: the key the native side compares with its own clock. */
+export function homeWidgetMonthKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
 export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayload {
   const { nowMs, language, theme, schedule, sessions } = input;
   const now = new Date(nowMs);
@@ -513,31 +538,39 @@ export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayloa
   // The month the reader is in, built by the same function the app's own
   // calendar screen uses — including which days belong to the neighbouring
   // months, which a Monday-first grid always drags in.
-  const month = getHomeMonthCalendar(now, language);
-  const monthWeeks: HomeWidgetDay[][] = month.weeks.map((week) =>
-    week.map((day) => {
-      const isPast = day.dayStart < todayStart;
-      const isTraining = scheduleKnown && trainsOn(schedule, new Date(day.dayStart));
+  const buildMonth = (monthOffset: number) => {
+    const month = getHomeMonthCalendar(now, language, monthOffset);
+    const monthWeeks: HomeWidgetDay[][] = month.weeks.map((week) =>
+      week.map((day) => {
+        const isPast = day.dayStart < todayStart;
+        const isTraining = scheduleKnown && trainsOn(schedule, new Date(day.dayStart));
 
-      // A past training day that was never logged draws as free. The history is
-      // a record of what happened, and the home screen is no place to be
-      // reminded of what did not.
-      const state: HomeWidgetDayState = doneDays.has(day.dayStart)
-        ? 'done'
-        : !isPast && isTraining
-          ? 'plan'
-          : 'off';
+        // A past training day that was never logged draws as free. The history is
+        // a record of what happened, and the home screen is no place to be
+        // reminded of what did not.
+        const state: HomeWidgetDayState = doneDays.has(day.dayStart)
+          ? 'done'
+          : !isPast && isTraining
+            ? 'plan'
+            : 'off';
 
-      // The days either side of the month are drawn as nothing at all. They are
-      // there to keep the columns honest, not to be read.
-      return {
-        dateLabel: day.inMonth ? `${day.dayOfMonth}` : '',
-        dateKey: toDateKey(new Date(day.dayStart)),
-        inMonth: day.inMonth,
-        state: day.inMonth ? state : 'pad',
-      };
-    }),
-  );
+        // The days either side of the month are drawn as nothing at all. They are
+        // there to keep the columns honest, not to be read.
+        return {
+          dateLabel: day.inMonth ? `${day.dayOfMonth}` : '',
+          dateKey: toDateKey(new Date(day.dayStart)),
+          inMonth: day.inMonth,
+          state: day.inMonth ? state : 'pad',
+        };
+      }),
+    );
+    // Stepped by calendar month through day 1, never by a number of days.
+    const first = new Date(now.getFullYear(), now.getMonth() + monthOffset, 1);
+    return { month, monthWeeks, monthKey: homeWidgetMonthKey(first) };
+  };
+  const current = buildMonth(0);
+  const upcoming = buildMonth(1);
+  const { month, monthWeeks } = current;
 
   const total = Math.max(0, Math.round(input.totalWorkouts ?? 0));
 
@@ -545,10 +578,18 @@ export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayloa
     version: HOME_WIDGET_PAYLOAD_VERSION,
     updatedAt: new Date(nowMs).toISOString(),
     theme,
+    monthKey: current.monthKey,
     monthLabel: month.monthLabel,
     weekdayLabels: [...month.weekdayLabels],
     monthWeeks,
     stats: buildStats(language, input.monthTotals),
+    nextMonth: {
+      monthKey: upcoming.monthKey,
+      monthLabel: upcoming.month.monthLabel,
+      monthWeeks: upcoming.monthWeeks,
+      // Nothing is logged in a month that has not begun.
+      stats: buildStats(language, undefined),
+    },
     totalValue: `${total}`,
     totalLabel: t(language, 'aboutYou.stat.workouts'),
   };

@@ -9,7 +9,9 @@ import {
   WhatMovedRow,
 } from '../lib/sessionMovement';
 import { getTopSetLabel, MuscleFocusRow } from '../lib/workoutCompleteView';
-import { beatsBest, heaviestOfSets } from '../lib/personalRecords';
+import { isDoseLog } from '../lib/holdExercises';
+import { beatsBest, heaviestOfSets, WeightedSet } from '../lib/personalRecords';
+import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
 import {
   buildExercisePrLookup,
   resolvePreviousExercisePr,
@@ -58,6 +60,30 @@ function isWorkoutCompletionPrCard(
 }
 
 /**
+ * The sets this lift offers the records, as the Records tab reads them
+ * (recordSetsOfLog): none for a dose, minutes of a bout or seconds of a hold.
+ * heaviestOfSets alone ignores the tracking mode, so a weighted plank or
+ * twenty minutes on a bike was a "new record" every session and the movement
+ * rows compared seconds as kilos.
+ */
+export function recordSetsOfExercise(exercise: AdaptedCompletedWorkoutExercise): WeightedSet[] {
+  const done = exercise.sets.filter(
+    (set): set is typeof set & { weightKg: number; reps: number } =>
+      set.status === 'completed' && typeof set.weightKg === 'number' && typeof set.reps === 'number',
+  );
+  if (
+    isDoseLog({
+      exerciseNameSnapshot: exercise.exerciseName,
+      repsUnit: isMinutesTrackingMode(exercise.trackingMode) ? 'minutes' : undefined,
+      sets: done.map((set) => ({ reps: set.reps })),
+    })
+  ) {
+    return [];
+  }
+  return done.map((set) => ({ weight: set.weightKg, reps: set.reps }));
+}
+
+/**
  * How each lift compares with the last session it was trained in.
  *
  * Built from the persisted logs rather than from the live session, because
@@ -91,14 +117,7 @@ export function buildSessionMovement({
   const rows: Array<{ id: string; row: MovementRow }> = exercises
     .map((exercise): { id: string; row: MovementRow } | null => {
       // The records rule (heaviestOfSets), as the PR cards below read it.
-      const top = heaviestOfSets(
-        exercise.sets
-          .filter(
-            (set): set is typeof set & { weightKg: number; reps: number } =>
-              set.status === 'completed' && typeof set.weightKg === 'number' && typeof set.reps === 'number',
-          )
-          .map((set) => ({ weight: set.weightKg, reps: set.reps })),
-      );
+      const top = heaviestOfSets(recordSetsOfExercise(exercise));
       const best = top ? { kg: top.weight, reps: top.reps } : null;
       if (!best) {
         return null;
@@ -173,11 +192,7 @@ export function buildCompletionCardsFromAdaptedSession({
         ? templatesById.get(exercise.persistedExerciseTemplateId) ?? null
         : null;
       const libraryItem = template?.libraryItemId ? libraryById.get(template.libraryItemId) ?? null : null;
-      const completedSets = exercise.sets.filter(
-        (set): set is typeof set & { weightKg: number; reps: number } =>
-          set.status === 'completed' && typeof set.weightKg === 'number' && typeof set.reps === 'number',
-      );
-      const bestSet = heaviestOfSets(completedSets.map((set) => ({ weight: set.weightKg, reps: set.reps })));
+      const bestSet = heaviestOfSets(recordSetsOfExercise(exercise));
 
       if (!bestSet) {
         return null;

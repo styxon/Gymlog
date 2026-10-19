@@ -4,7 +4,7 @@ import { placeWeekdaysOnPlan } from '../lib/planWeekdayPlacement';
 import { toDraftExercise } from '../lib/programSessionEdit';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { t } from '../lib/i18n';
-import { SetCountChange, setCountChanges, setCountToastParts } from '../lib/setCountChanges';
+import { SetCountChange, setCountChanges, setCountToastParts, withSupersetPartners } from '../lib/setCountChanges';
 import { WEEKDAY_KEYS } from '../lib/programTrainingDays';
 import type { AdoptReadyOptions } from '../lib/runningProgrammes';
 import { planLabelsFromWeekdays, weekdaysFromPlanLabels } from '../lib/trainingWeekSync';
@@ -274,7 +274,10 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
     let result: Awaited<ReturnType<typeof editWorkoutTemplateSessions>>;
     try {
       result = await editWorkoutTemplateSessions(workoutTemplateId, (sessions) => {
-        changes = setCountChanges(sessions, setsByExerciseId);
+        // A superset's set count is one number: the partner of a lifted row
+        // follows it, as it does when linking or prescribing.
+        const counts = withSupersetPartners(sessions, setsByExerciseId);
+        changes = setCountChanges(sessions, counts);
         return {
           kind: 'save',
           sessions: sessions.map((session) => ({
@@ -282,7 +285,7 @@ export function createProgrammePlanEdits(deps: ProgrammePlanEditsDeps) {
             name: session.name,
             exercises: session.exercises.map((exercise) => ({
               ...toDraftExercise(exercise),
-              targetSets: setsByExerciseId.get(exercise.id) ?? exercise.targetSets,
+              targetSets: counts.get(exercise.id) ?? exercise.targetSets,
             })),
           })),
         };

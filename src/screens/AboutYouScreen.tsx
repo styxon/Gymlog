@@ -11,6 +11,7 @@ import { useHardwareBack } from '../hooks/useHardwareBack';
 import { WeightLogSheet } from '../components/MeasureRulerSheet';
 import { useModalHandoff } from '../hooks/useModalHandoff';
 import { canContinueAboutYou, firstMissingAboutYou } from '../lib/aboutYouRules';
+import { formatWeight } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
 import { darkTheme, Theme, useThemedStyles } from '../theming';
 import { HG_DARK } from '../darkTheme';
@@ -280,7 +281,7 @@ export function AboutYouScreen({
       key: 'weight',
       label: t(language, 'aboutYou.row.weight'),
       value: weightChosen
-        ? `${weightKg} kg`
+        ? formatWeight(weightKg)
         : weightSkipped
           ? t(language, 'aboutYou.value.skipped')
           : t(language, 'aboutYou.value.optional'),
