@@ -138,6 +138,9 @@ update to carry, not for each fix.
 - #397 Home says "Vinha Fitness" again (Fitness in orange); About you's gender
   row shows Male in blue and Female in pink, and the gender sheet's Skip sits
   lower under its rule.
+- iPhone, workout summary: the Coach demo question no longer opens over the
+  "how did it feel" or the Pro sheet if one is up or still closing (it waits,
+  then appears); the other sheets are checked and need no change.
 
 ## Server
 
