@@ -33,17 +33,19 @@ export function SectionLabel({
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.sectionHead, style]}>
-      <Text accessibilityRole="header" style={styles.sectionLabel}>
+      <Text accessibilityRole="header" numberOfLines={2} style={styles.sectionLabel}>
         {label}
       </Text>
       {typeof right === 'string' ? (
-        <Text style={styles.sectionAction}>{right}</Text>
+        <View style={styles.sectionActionWrap}>
+          <Text style={styles.sectionAction}>{right}</Text>
+        </View>
       ) : (
         right ??
         (actionLabel ? (
-          <Text accessibilityRole="button" onPress={onAction} suppressHighlighting style={styles.sectionAction}>
-            {actionLabel}
-          </Text>
+          <Pressable accessibilityRole="button" onPress={onAction} hitSlop={8} style={styles.sectionActionWrap}>
+            <Text style={styles.sectionAction}>{actionLabel}</Text>
+          </Pressable>
         ) : null)
       )}
     </View>
@@ -151,7 +153,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 2,
     paddingBottom: 11,
   },
+  sectionActionWrap: {
+    flexShrink: 0,
+    marginLeft: 12,
+  },
   sectionLabel: {
+    flexShrink: 1,
     color: theme.muted,
     fontSize: 11,
     lineHeight: 15,

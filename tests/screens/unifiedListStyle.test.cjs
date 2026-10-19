@@ -82,4 +82,27 @@ module.exports = [
       assert.match(read('src', 'screens', 'ProgressScreen.tsx'), /<Seg\s+grow\s+showLabels/);
     },
   },
+  {
+    name: 'unifiedListStyle: labelled Seg tabs shrink to fit, list titles wrap, back button sits in padding',
+    run() {
+      const seg = read('src', 'components', 'Seg.tsx');
+      assert.match(seg, /segItemLabelled: \{\s*flexDirection: 'column'/);
+      assert.match(seg, /segTextLabelled: \{[^}]*flexShrink: 1[^}]*minWidth: 0/);
+      assert.match(seg, /minimumFontScale=\{showLabels \? 0\.7/);
+      const row = read('src', 'components', 'ListCard.tsx');
+      assert.doesNotMatch(row, /styles\.title, muted && styles\.titleMuted\]\} numberOfLines=\{1\}/);
+      assert.match(row, /maxWidth: '45%'/);
+      const trailing = row.slice(row.indexOf('  trailing: {'), row.indexOf('  delta: {'));
+      assert.doesNotMatch(trailing, /fontWeight/);
+      const header = read('src', 'components', 'BackButton.tsx');
+      assert.match(header, /adjustsFontSizeToFit/);
+      assert.match(header, /minimumFontScale=\{0\.7\}/);
+      const ex = read('src', 'screens', 'ExercisesScreen.tsx');
+      assert.match(ex, /styles\.backRow/);
+      assert.doesNotMatch(ex, /backText|paddingTop: 52/);
+      for (const name of ['Catalog', 'LearnIndex']) {
+        assert.doesNotMatch(read('src', 'screens', name + 'Screen.tsx'), /paddingTop: 52/);
+      }
+    },
+  },
 ];

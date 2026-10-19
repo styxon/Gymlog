@@ -60,7 +60,12 @@ export function PageHeader({
   return (
     <View style={[styles.header, style]}>
       {onBack ? <BackButton onPress={onBack} accessibilityLabel={backLabel ?? ''} /> : null}
-      <Text accessibilityRole="header" style={styles.title} numberOfLines={2}>
+      <Text accessibilityRole="header" style={styles.title}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+        maxFontSizeMultiplier={1.3}
+      >
         {title}
       </Text>
       {right}
@@ -87,6 +92,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   title: {
     flex: 1,
+    minWidth: 0,
     color: theme.ink,
     fontSize: 28,
     lineHeight: 34,
