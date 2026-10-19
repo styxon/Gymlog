@@ -143,7 +143,9 @@ update to carry, not for each fix.
   then appears); the other sheets are checked and need no change.
 - #402 AI coach without a connection names the workout in the reader's
   language ("HUGE Pro - Päivä 1: Ylävartalo", not "Day 1: Upper Body"), and
-  the English answer's broken dash ("order â the first lift") is a dash again.
+  the English answer's broken dash ("order â the first lift") is a dash again;
+  one workout this week reads "1 treeni" / "1 session", not "1 treeniä" /
+  "1 sessions".
 
 ## Server
 

@@ -200,7 +200,7 @@ function buildPlateauResponse(
         ? extraPlateaus === 1
           ? t(language, 'coachPreview.plateau.why3One')
           : t(language, 'coachPreview.plateau.why3Many', { count: extraPlateaus })
-        : t(language, 'coachPreview.plateau.why3None', { count: context.sessionsThisWeek }),
+        : t(language, 'coachPreview.plateau.why3None', { sessions: sessionsWord(context.sessionsThisWeek, language) }),
     ],
     nextSteps: [
       t(language, 'coachPreview.plateau.next1', { lift: exerciseNameLabel(language, plateau.name) }),
@@ -398,7 +398,7 @@ function buildPreviewAnswer(
           ? t(language, 'coachPreview.lastSession.topSet', { line: topSetLine })
           : t(language, 'coachPreview.lastSession.noTopSet'),
         t(language, 'coachPreview.lastSession.rhythm', {
-          week: context.sessionsThisWeek,
+          sessions: sessionsWord(context.sessionsThisWeek, language),
           month: context.sessionsLast30Days,
         }),
       ],
@@ -672,7 +672,7 @@ function buildPreviewAnswer(
       takeaway: t(language, 'coachPreview.lift.takeaway'),
       why: [
         t(language, 'coachPreview.lift.why1'),
-        t(language, 'coachPreview.lift.why2', { count: context.sessionsThisWeek }),
+        t(language, 'coachPreview.lift.why2', { sessions: sessionsWord(context.sessionsThisWeek, language) }),
         topSetLine ?? liftLine ?? t(language, 'coachPreview.lift.why3Fallback'),
       ],
       nextSteps: [

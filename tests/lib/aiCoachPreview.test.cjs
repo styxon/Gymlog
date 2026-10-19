@@ -385,3 +385,21 @@ module.exports.push({
     }
   },
 });
+
+module.exports.push({
+  // "1 sessions this week" / "1 treeniä tällä viikolla" on a Monday (App Store
+  // screenshots, 2026-10-19): the week's count goes through sessionsWord.
+  name: 'preview: one session this week is singular',
+  run() {
+    const session = { recentCompletedSessions: [{ title: 'Push', setsCompleted: 10, durationMinutes: 47, swappedExercises: 0 }] };
+    const ctx = baseContext({ ...session, sessionsThisWeek: 1, sessionsLast30Days: 18 });
+    const en = buildAiCoachPreviewAnswer('Analyze my last workout', ctx, 'en').why.join(' ');
+    assert.match(en, /\b1 session this week/);
+    assert.doesNotMatch(en, /1 sessions/);
+    const fi = buildAiCoachPreviewAnswer('Analysoi viime treenini', ctx, 'fi').why.join(' ');
+    assert.match(fi, /\b1 treeni tällä viikolla/);
+    assert.doesNotMatch(fi, /1 treeniä/);
+    const four = buildAiCoachPreviewAnswer('Analysoi viime treenini', baseContext({ ...session, sessionsThisWeek: 4 }), 'fi').why.join(' ');
+    assert.match(four, /4 treeniä tällä viikolla/);
+  },
+});

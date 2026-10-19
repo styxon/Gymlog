@@ -124,8 +124,15 @@ name: Store screenshots
 - extendedWaitUntil:
     visible: "Online: vastaukset tulevat valmentajalta.|Online: answers come from the coach."
     timeout: 20000
-- swipe:
+# The answer's first sentence whole, under the header: a fixed swipe left it
+# cut in half in Finnish, where the answer is longer (2026-10-19).
+- scrollUntilVisible:
+    element:
+      text: '.*(Tämä siitä jäi|Here is what it left behind).*'
     direction: UP
+    visibilityPercentage: 100
+    centerElement: false
+    timeout: 10000
 - waitForAnimationToEnd:
     timeout: 5000
 - takeScreenshot: 10-coach-chat
