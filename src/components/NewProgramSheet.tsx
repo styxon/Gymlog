@@ -221,6 +221,9 @@ export function NewProgramSheet({
       const result = await onPickImage();
       if (result.status === 'read') {
         setCsvText(result.csv);
+      } else if (result.status === 'spent') {
+        // Nothing was sent: the month's coach questions are used up.
+        setImageNote(t(language, 'csv.photo.spent'));
       } else if (result.status === 'failed') {
         // One sentence for every way this ends badly. The reader is in the
         // same place whether the network failed, the photo was not a
