@@ -252,10 +252,21 @@ name: UI check
       P: "14-milestones"
 
 # 15 Settings: three views, like every screen (a longer walk only repeated the end).
+# Another tab first: tapping the Profile tab while Settings is already open
+# on it did not bring Profile back, so the gear opened nothing new and the
+# assertion below failed on every variant (run 39379511117).
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "tab-profile"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "profile-settings"
+- waitForAnimationToEnd:
+    timeout: 3000
 - assertVisible:
     id: "settings-profile"
 - runFlow:
@@ -294,9 +305,17 @@ name: UI check
 
 # 21 About you: the profile editor, from Settings' header.
 - tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn:
     id: "tab-profile"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "profile-settings"
+- waitForAnimationToEnd:
+    timeout: 3000
 - assertVisible:
     id: "settings-profile"
 - runFlow:
