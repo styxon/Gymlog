@@ -165,4 +165,14 @@ module.exports = [
       assert.doesNotMatch(lib, /onPress=\{\(\) => searchRef\.current\?\.focus\(\)\}/);
     },
   },
+  {
+    name: 'unifiedListStyle: the exercise page goes back through the shared, labelled BackButton',
+    run() {
+      // Its own square chevron had no accessibility label: VoiceOver read
+      // nothing and the ui-check walk could not find it (2026-10-20).
+      const detail = read('src', 'screens', 'ExerciseDetailScreen.tsx');
+      assert.ok(detail.includes("accessibilityLabel={t(language, 'common.back')}") && detail.includes('<BackButton'));
+      assert.doesNotMatch(detail, /ChevronLeftIcon/);
+    },
+  },
 ];

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
+import { BackButton } from '../components/BackButton';
 import { SimpleLineChart } from '../components/SimpleLineChart';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
@@ -69,16 +70,6 @@ function formatLastDone(iso: string, language: AppLanguage) {
   // at 09:00 today, not "today". The date from the seventh day on, as on
   // Profile and the Home cards — one wording for all three.
   return formatRelativeDay(iso, Date.now(), language);
-}
-
-function ChevronLeftIcon() {
-  const theme = useTheme();
-
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 6l-6 6 6 6" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
 }
 
 
@@ -341,9 +332,11 @@ export function ExerciseDetailScreen({
   return (
     <View style={styles.screen}>
       <View style={styles.topBar}>
-        <Pressable onPress={onBack} hitSlop={8} style={styles.iconButton}>
-          <ChevronLeftIcon />
-        </Pressable>
+        <BackButton
+          onPress={onBack}
+          accessibilityLabel={t(language, 'common.back')}
+          testID="exercise-detail-back"
+        />
         <Text style={styles.topBarTitle}>{t(language, 'exDetail.title')}</Text>
         {/* The star was here too, and it went with the library's
             (2026-09-01). Its one effect — putting the lift on Progress before
@@ -660,19 +653,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 2,
     paddingBottom: 8,
   },
-  iconButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  // The width of the shared round BackButton, so the title stays centred.
   iconSpacer: {
-    width: 38,
-    height: 38,
+    width: 40,
+    height: 40,
   },
   topBarTitle: {
     fontSize: 13,
