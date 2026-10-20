@@ -29,6 +29,10 @@ appId: app.vinha
     id: "profile-settings"
 - waitForAnimationToEnd:
     timeout: 3000
+# Settings keeps its scroll position between visits, so its profile row can
+# be above the viewport (run 39393234051): back to the top before asserting.
+- runFlow:
+    file: top.yaml
 # Settings is open before the row is looked for: its profile row is on it and
 # on no sub-screen.
 - assertVisible:
