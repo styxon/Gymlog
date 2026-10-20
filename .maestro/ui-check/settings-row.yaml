@@ -14,10 +14,21 @@
 # found by scrolling down.
 appId: app.vinha
 ---
+# Another tab first: tapping the Profile tab while Settings is already open
+# on it did not bring Profile back, so the gear opened nothing new and the
+# assertion below failed on every variant (run 39379511117).
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "tab-profile"
+- waitForAnimationToEnd:
+    timeout: 2500
 - tapOn:
     id: "profile-settings"
+- waitForAnimationToEnd:
+    timeout: 3000
 # Settings is open before the row is looked for: its profile row is on it and
 # on no sub-screen.
 - assertVisible:
