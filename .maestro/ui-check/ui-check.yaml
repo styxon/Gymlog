@@ -118,6 +118,13 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "06-exercise-detail"
+# The detail page hides the tab bar: go back to the library first.
+- runFlow:
+    file: top.yaml
+- tapOn:
+    id: "exercise-detail-back"
+- waitForAnimationToEnd:
+    timeout: 2500
 
 # 07 Progress: the summary (trend, month, calendar, history card), then each
 #    section tab. 08 Records with each of Weight / Reps / Volume.

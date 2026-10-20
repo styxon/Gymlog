@@ -13,10 +13,12 @@ export function BackButton({
   onPress,
   accessibilityLabel,
   style,
+  testID,
 }: {
   onPress: () => void;
   accessibilityLabel: string;
   style?: StyleProp<ViewStyle>;
+  testID?: string;
 }) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -25,6 +27,7 @@ export function BackButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      testID={testID}
       onPress={onPress}
       hitSlop={6}
       style={({ pressed }) => [styles.back, style, pressed && styles.pressed]}
