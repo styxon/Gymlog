@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { t } from '../lib/i18n';

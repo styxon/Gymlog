@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 
 import { CutButton } from './CutButton';
 import { CutSurface } from './CutSurface';

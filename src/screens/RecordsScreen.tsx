@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';

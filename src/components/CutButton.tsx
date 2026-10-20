@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Text } from './AppText';
 
 import { CutSize, CutSurface } from './CutSurface';
 import { Theme, useTheme, useThemedStyles } from '../theming';

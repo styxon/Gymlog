@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import {
-  FlatList,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { useKeyboardOpen } from '../hooks/useKeyboardOpen';

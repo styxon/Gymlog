@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 
 import { t } from '../lib/i18n';
 import { Theme, useThemedStyles } from '../theming';

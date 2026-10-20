@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 
 import { t } from '../lib/i18n';
 import type { RecoveryAction, RecoveryActionKind, RecoverySheetModel, RecoveryTone } from '../lib/recoverySheet';

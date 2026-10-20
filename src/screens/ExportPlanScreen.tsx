@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { PageHeader } from '../components/BackButton';

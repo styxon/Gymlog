@@ -1,14 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import {
-  Animated,
-  Easing,
-  Modal,
-  Pressable,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './AppText';
 import Svg, { Path, Circle } from 'react-native-svg';
 
 import { Theme, useTheme, useThemedStyles } from '../theming';

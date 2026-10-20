@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Modal, PanResponder, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path, Rect } from 'react-native-svg';
 
 import { ExerciseSetLog, formatSetLogSet, SET_LOG_SESSIONS } from '../lib/exerciseSetLog';

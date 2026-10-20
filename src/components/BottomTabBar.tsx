@@ -1,15 +1,7 @@
 import { CutSurface } from './CutSurface';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  LayoutChangeEvent,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { AccessibilityInfo, Animated, Easing, LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Circle, Defs, LinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { TourTargetRegistry } from '../features/tour/tourTargets';

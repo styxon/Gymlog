@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Platform, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { AnimatedGreeting } from '../components/AnimatedGreeting';

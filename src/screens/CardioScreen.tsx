@@ -8,18 +8,8 @@
  * Offline-first and timer-based — no GPS anywhere in v1.
  */
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Animated,
-  BackHandler,
-  Easing,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { Animated, BackHandler, Easing, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { StatusBar } from 'expo-status-bar';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

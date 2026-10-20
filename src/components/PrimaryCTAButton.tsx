@@ -1,15 +1,6 @@
 import React from 'react';
-import {
-  Animated,
-  Easing,
-  GestureResponderEvent,
-  Pressable,
-  StyleProp,
-  StyleSheet,
-  Text,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { Animated, Easing, GestureResponderEvent, Pressable, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Text } from './AppText';
 
 import { Theme, useThemedStyles } from '../theming';
 

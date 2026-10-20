@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path, Polygon, Rect } from 'react-native-svg';
 
 import { WeightTrendChart } from './WeightTrendChart';

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, StyleProp, StyleSheet, Text, TextStyle, View } from 'react-native';
+import { Animated, Easing, StyleProp, StyleSheet, TextStyle, View } from 'react-native';
+import { Text } from './AppText';
+import { AnimatedText } from './AnimatedText';
 
 import { useTheme } from '../theming';
 
@@ -158,14 +160,14 @@ export function AnimatedGreeting({
 
   if (mode === 'line') {
     return (
-      <Animated.Text
+      <AnimatedText
         style={[style, revealStyle(0)]}
         numberOfLines={numberOfLines}
         adjustsFontSizeToFit={adjustsFontSizeToFit}
         minimumFontScale={minimumFontScale}
       >
         {renderBrandWord(text, accentColor, 'line-brand')}
-      </Animated.Text>
+      </AnimatedText>
     );
   }
 
@@ -185,9 +187,9 @@ export function AnimatedGreeting({
         return (
           // Key by position, not by content: a content key remounts every word
           // when the text changes, which tears down live animated nodes.
-          <Animated.Text key={`word-${index}`} style={[style, revealStyle(index)]}>
+          <AnimatedText key={`word-${index}`} style={[style, revealStyle(index)]}>
             {renderBrandWord(word, accentColor, `word-${index}-brand`)}
-          </Animated.Text>
+          </AnimatedText>
         );
       })}
     </View>
