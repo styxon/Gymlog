@@ -1,8 +1,7 @@
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { PageHeader } from '../components/BackButton';
 import { CARD_SHADOW, ToggleSwitch } from '../components/SettingsUi';
 import { formatDate } from '../lib/format';
 import { t } from '../lib/i18n';
@@ -38,19 +37,12 @@ export function TrainingBreakScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle title={t(language, 'break.title')} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'break.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <View style={styles.card}>
@@ -87,24 +79,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
+    paddingBottom: 6,
   },
   body: {
     paddingTop: 8,
-    paddingHorizontal: 18,
+    paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
   card: {

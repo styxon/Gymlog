@@ -161,6 +161,7 @@ function SideTab({
       onLayout={(event) => onMeasure(tab.key, event)}
       accessibilityRole="button"
       accessibilityLabel={label}
+      testID={`tab-${tab.key}`}
       accessibilityState={{ selected: active }}
       style={styles.sideTab}
     >
@@ -373,6 +374,7 @@ export function BottomTabBar({ activeTab, aiActive = false, onTabPress, onAiPres
             onPress={onAiPress}
             accessibilityRole="button"
             accessibilityLabel={t(language, 'tabs.aiCoach')}
+            testID="tab-ai"
             style={({ pressed }) => [styles.centerTab, pressed && styles.pressed]}
           >
             <Animated.View style={[styles.centerGlow, aiLit && styles.centerGlowActive, { transform: [{ scale: fabPop }] }]}>

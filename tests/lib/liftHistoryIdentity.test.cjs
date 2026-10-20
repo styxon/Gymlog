@@ -398,11 +398,11 @@ module.exports = [
         path.join(__dirname, '..', '..', 'src', 'screens', 'ExerciseDetailScreen.tsx'),
         'utf8',
       );
+      // Since the shared PageHeader (2026-10-20) the title is left-aligned and
+      // there is nothing to balance, so no spacer is drawn at all.
       assert.doesNotMatch(screen, /<View style=\{styles\.iconButton\} \/>/);
-      assert.match(screen, /<View style=\{styles\.iconSpacer\} \/>/);
-      const spacer = screen.match(/iconSpacer: \{([^}]*)\}/);
-      assert.ok(spacer, 'the spacer style is missing');
-      assert.doesNotMatch(spacer[1], /backgroundColor|borderWidth/, 'the spacer wears chrome again');
+      assert.doesNotMatch(screen, /styles\.iconSpacer/);
+      assert.match(screen, /<PageHeader/);
     },
   },
   {

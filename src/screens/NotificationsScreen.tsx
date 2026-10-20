@@ -507,7 +507,7 @@ export function NotificationsScreen({
           </View>
           <View style={styles.rowCopy}>
             <Text style={styles.groupTitle}>{t(language, group.titleKey)}</Text>
-            <Text numberOfLines={1} style={[styles.rowSub, !groupOn && styles.rowSubOff]}>
+            <Text numberOfLines={2} style={[styles.rowSub, !groupOn && styles.rowSubOff]}>
               {summary}
             </Text>
           </View>

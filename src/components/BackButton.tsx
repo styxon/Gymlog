@@ -49,12 +49,14 @@ export function PageHeader({
   title,
   onBack,
   backLabel,
+  backTestID,
   right,
   style,
 }: {
   title: string;
   onBack?: () => void;
   backLabel?: string;
+  backTestID?: string;
   right?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
 }) {
@@ -62,7 +64,7 @@ export function PageHeader({
 
   return (
     <View style={[styles.header, style]}>
-      {onBack ? <BackButton onPress={onBack} accessibilityLabel={backLabel ?? ''} /> : null}
+      {onBack ? <BackButton onPress={onBack} accessibilityLabel={backLabel ?? ''} testID={backTestID} /> : null}
       <Text accessibilityRole="header" style={styles.title}
         numberOfLines={1}
         adjustsFontSizeToFit
