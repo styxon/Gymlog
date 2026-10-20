@@ -549,7 +549,7 @@ const makeStyles = (theme: Theme) =>
       color: theme.muted,
       marginTop: 4,
     },
-    // No fontFamily: the app's default face (globalFont), like the meta lines
+    // No fontFamily: the app's default face (AppText), like the meta lines
     // on the programme rows.
     rowMetaApp: {
       fontSize: 12.5,
