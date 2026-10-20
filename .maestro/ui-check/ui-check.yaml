@@ -267,6 +267,10 @@ name: UI check
     id: "profile-settings"
 - waitForAnimationToEnd:
     timeout: 3000
+# Settings keeps its scroll position between visits, so its profile row can
+# be above the viewport (run 39393234051): back to the top before asserting.
+- runFlow:
+    file: top.yaml
 - assertVisible:
     id: "settings-profile"
 - runFlow:
@@ -316,6 +320,10 @@ name: UI check
     id: "profile-settings"
 - waitForAnimationToEnd:
     timeout: 3000
+# Settings keeps its scroll position between visits, so its profile row can
+# be above the viewport (run 39393234051): back to the top before asserting.
+- runFlow:
+    file: top.yaml
 - assertVisible:
     id: "settings-profile"
 - runFlow:
