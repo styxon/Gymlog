@@ -36,9 +36,19 @@ export type ManropeStyleOverride = { fontFamily: string; fontWeight: 'normal' };
  * An explicit family other than the generic 'Manrope' (JetBrainsMono, Inter, a
  * static Manrope-*) stays. The static file carries the weight, so fontWeight
  * goes to normal: Android would otherwise synthesize a second bold.
+ *
+ * `nested` is a Text inside another Text. One that names neither a family nor
+ * a weight is left alone, so it inherits the parent's resolved family: a
+ * coloured word inside a bold heading stays bold instead of dropping to Regular.
  */
-export function manropeOverride(flat: { fontFamily?: unknown; fontWeight?: unknown } | null | undefined): ManropeStyleOverride | null {
+export function manropeOverride(
+  flat: { fontFamily?: unknown; fontWeight?: unknown } | null | undefined,
+  nested = false,
+): ManropeStyleOverride | null {
   const family = flat?.fontFamily;
+  if (nested && family === undefined && flat?.fontWeight === undefined) {
+    return null;
+  }
   if (typeof family === 'string' && family !== 'Manrope') {
     return null;
   }
