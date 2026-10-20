@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { createContext, useContext } from 'react';
 import { Platform, StyleSheet, Text as RNText, TextInput as RNTextInput } from 'react-native';
 
 import { manropeOverride } from '../lib/manropeFamily';
@@ -24,17 +24,25 @@ import { TEXT_SCALE_CAP } from '../textScale';
 type RNTextProps = React.ComponentProps<typeof RNText> & { ref?: React.Ref<RNText> };
 type RNTextInputProps = React.ComponentProps<typeof RNTextInput> & { ref?: React.Ref<RNTextInput> };
 
+/** True below an app Text, where React Native lets a nested Text inherit the parent's font. */
+const InsideText = createContext(false);
+
 /** The style with the Manrope family for its weight appended; the style itself when it names another family, or on web. */
-function withAppFont(style: unknown): any {
+function withAppFont(style: unknown, nested = false): any {
   if (Platform.OS === 'web') {
     return style;
   }
-  const override = manropeOverride(StyleSheet.flatten(style as never) as { fontFamily?: unknown; fontWeight?: unknown } | undefined);
+  const override = manropeOverride(StyleSheet.flatten(style as never) as { fontFamily?: unknown; fontWeight?: unknown } | undefined, nested);
   return override ? [style, override] : style;
 }
 
 export function Text(props: RNTextProps) {
-  return <RNText {...props} style={withAppFont(props.style)} maxFontSizeMultiplier={props.maxFontSizeMultiplier || TEXT_SCALE_CAP} />;
+  const nested = useContext(InsideText);
+  const text = <RNText {...props} style={withAppFont(props.style, nested)} maxFontSizeMultiplier={props.maxFontSizeMultiplier || TEXT_SCALE_CAP} />;
+  if (nested) {
+    return text;
+  }
+  return <InsideText.Provider value>{text}</InsideText.Provider>;
 }
 // `useRef<Text>` and `ComponentProps<typeof Text>` keep working at the call sites.
 export type Text = RNText;
