@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, TextInput, TextStyle, View } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, TextStyle, View } from 'react-native';
+import { Text, TextInput } from './AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { parseTypedRulerValue, RulerBounds } from '../lib/rulerValue';

@@ -338,7 +338,7 @@ module.exports = [
       const block = source.slice(source.indexOf('searchInput: {'), source.indexOf('clearButton: {'));
       assert.match(block, /minHeight: 52/);
       assert.doesNotMatch(block, /\n\s*height: 52/);
-      assert.match(source, /maxFontSizeMultiplier=\{1\.6\}/);
+      assert.match(source, /maxFontSizeMultiplier=\{TEXT_SCALE_CAP\}/);
     },
   },
 ];

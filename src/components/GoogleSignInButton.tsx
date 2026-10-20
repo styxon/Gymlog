@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleProp, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Path } from 'react-native-svg';
 
 /** The four-colour Google G. */

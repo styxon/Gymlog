@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
+import { AnimatedText } from '../components/AnimatedText';
 import Svg, { Defs, LinearGradient as SvgLinearGradient, Path, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -571,12 +573,12 @@ export function WorkoutCompletionScreen({
             </Animated.View>
           </View>
 
-          <Animated.Text style={[styles.heroKicker, { color: gold.kicker }, rise(0)]}>
+          <AnimatedText style={[styles.heroKicker, { color: gold.kicker }, rise(0)]}>
             {t(language, pr ? 'complete.kicker.record' : 'complete.kicker.done')}
-          </Animated.Text>
-          <Animated.Text style={[styles.heroTitle, { color: gold.title }, rise(0)]}>
+          </AnimatedText>
+          <AnimatedText style={[styles.heroTitle, { color: gold.title }, rise(0)]}>
             {t(language, 'complete.title')}
-          </Animated.Text>
+          </AnimatedText>
           <Animated.View style={[styles.heroRule, { backgroundColor: gold.rule }, rise(1)]} />
           <Animated.View style={[styles.heroSubRow, rise(1)]}>
             <Text style={[styles.heroSubName, { color: gold.meta }]}>

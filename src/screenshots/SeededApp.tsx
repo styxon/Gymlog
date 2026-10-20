@@ -16,7 +16,8 @@
  * and the dark theme.
  */
 import React, { useEffect, useState } from 'react';
-import { Settings, Text, View } from 'react-native';
+import { Settings, View } from 'react-native';
+import { Text } from '../components/AppText';
 
 import App from '../../App';
 import { saveWorkoutBundle } from '../features/workout/workoutPersistence';

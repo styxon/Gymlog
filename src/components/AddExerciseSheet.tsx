@@ -1,18 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  FlatList,
-  Image,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
+import { FlatList, Image, Keyboard, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from './AppText';
 
 import {
   getPopularExerciseLibraryItems,
@@ -44,6 +32,7 @@ import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 import { KitBar } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { radii, spacing } from '../theme';
+import { TEXT_SCALE_CAP } from '../textScale';
 
 /**
  * One array, shared by every caller that has nothing selected.
@@ -358,7 +347,7 @@ export function ExercisePickerSheet({
             placeholder={copy.searchPlaceholder}
             placeholderTextColor={theme.faint}
             style={styles.searchInput}
-            maxFontSizeMultiplier={1.6}
+            maxFontSizeMultiplier={TEXT_SCALE_CAP}
             selectionColor={theme.purple}
             autoCorrect={false}
             multiline={false}

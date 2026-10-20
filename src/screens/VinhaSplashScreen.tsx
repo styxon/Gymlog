@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  AccessibilityInfo,
-  Animated,
-  Easing,
-  StyleSheet,
-  View,
-  useWindowDimensions,
-} from 'react-native';
+import { AccessibilityInfo, Animated, Easing, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { AnimatedText } from '../components/AnimatedText';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -317,14 +311,14 @@ export function VinhaSplashScreen({ language = 'en', onDone }: VinhaSplashScreen
         </Animated.View>
       ) : null}
 
-      <Animated.Text
+      <AnimatedText
         style={[
           styles.slogan,
           { bottom: geometry.sloganBottom, opacity: sloganOpacity, transform: [{ translateY: sloganY }] },
         ]}
       >
         {t(language, 'brand.tagline')}
-      </Animated.Text>
+      </AnimatedText>
     </View>
   );
 }

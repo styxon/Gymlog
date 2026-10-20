@@ -1,5 +1,6 @@
 import React, { useId, useMemo, useState } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Defs, FeGaussianBlur, Filter, G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { layoutBlurredLines } from '../lib/blurredPreviewText';

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
+import { AnimatedText } from '../components/AnimatedText';
 import Svg, { Path } from 'react-native-svg';
 
 import { isStoreBillingConfigured } from '../features/billing/storeBilling';
@@ -214,17 +216,17 @@ export function PremiumUnlockScreen({
           </View>
         </Animated.View>
 
-        <Animated.Text style={[styles.headline, ready && riseStyle(0)]}>
+        <AnimatedText style={[styles.headline, ready && riseStyle(0)]}>
           {/* Derived, not typed: a hardcoded "five" lies the day a row moves. */}
           {t(language, 'unlock.headline', { count: countWord(PRO_UNLOCK_CARDS.length, language) })}
-        </Animated.Text>
-        <Animated.Text style={[styles.lead, ready && riseStyle(0)]}>
+        </AnimatedText>
+        <AnimatedText style={[styles.lead, ready && riseStyle(0)]}>
           {/* "You just made the next stretch possible" thanks a payment; a
               trial made none. */}
           {trialEndsAt
             ? t(language, 'unlock.body.trial', { days: PRO_TRIAL_DAYS })
             : t(language, 'unlock.body')}
-        </Animated.Text>
+        </AnimatedText>
 
         <CutSurface size="lg" fill={theme.surface} stroke={theme.border} strokeWidth={1} style={styles.card}>
           {PRO_UNLOCK_CARDS.map((row, index) => (

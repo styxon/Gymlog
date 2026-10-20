@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Animated, Easing, LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Circle, G, Path } from 'react-native-svg';
 
 import { holdBackForTour } from '../features/tour/tourBack';

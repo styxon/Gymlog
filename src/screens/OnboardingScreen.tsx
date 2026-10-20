@@ -1,19 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Easing,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TextStyle,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { ActivityIndicator, Animated, Dimensions, Easing, Modal, Pressable, ScrollView, StyleSheet, TextStyle, View, ViewStyle } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { HG } from '../lightTheme';
 import { useThemeName } from '../theming';
 import { HG_DARK } from '../darkTheme';

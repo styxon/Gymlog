@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { Text } from './AppText';
 
 import { CutSurface } from './CutSurface';
 import { Theme, useTheme, useThemedStyles } from '../theming';

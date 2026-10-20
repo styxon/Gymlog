@@ -8,7 +8,8 @@
  * screen is Log."
  */
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, LayoutChangeEvent, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';
 
 import { WEIGHT_LABEL_WIDTH, WeightWindowDay, buildWeightAxisTicks, weightLabelIndexes, weightMarkersFit } from '../lib/bodyweightCard';

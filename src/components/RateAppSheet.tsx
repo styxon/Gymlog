@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 import Svg, { Circle, Path } from 'react-native-svg';
 
 import { t } from '../lib/i18n';

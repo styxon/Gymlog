@@ -1,5 +1,6 @@
 ﻿import React, { useRef, useState } from 'react';
-import { Linking, Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { Text } from '../components/AppText';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { AppleSignInButton } from '../components/AppleSignInButton';

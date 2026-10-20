@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  Keyboard,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
-  ScrollView,
-  TextInput,
-} from 'react-native';
+import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, ScrollView } from 'react-native';
+import { TextInput } from '../components/AppText';
 
 /**
  * Keep the field you are typing into on screen.

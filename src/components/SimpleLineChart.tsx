@@ -1,5 +1,6 @@
 import React from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { Text } from './AppText';
 
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import Svg, { Circle, Line, Polyline } from 'react-native-svg';

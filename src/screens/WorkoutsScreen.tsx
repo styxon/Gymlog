@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ImageBackground, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ImageBackground, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Text, TextInput } from '../components/AppText';
 import { Barbell } from 'phosphor-react-native/lib/commonjs/icons/Barbell';
 import { CalendarBlank } from 'phosphor-react-native/lib/commonjs/icons/CalendarBlank';
 import { Clock } from 'phosphor-react-native/lib/commonjs/icons/Clock';
