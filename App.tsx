@@ -1,5 +1,3 @@
-import './src/globalFont';
-
 import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
@@ -484,7 +482,7 @@ function VinhaApp() {
       await Font.loadAsync({
         Inter: require('./assets/fonts/Inter.ttf'),
         // Variable Manrope kept as a fallback; the static per-weight families
-        // below are what globalFont.ts maps fontWeight onto, because Android
+        // below are what AppText.tsx maps fontWeight onto, because Android
         // does not drive a variable font's weight axis (headings rendered at
         // the ExtraLight default with a synthetic bold otherwise).
         Manrope: require('./assets/fonts/Manrope.ttf'),

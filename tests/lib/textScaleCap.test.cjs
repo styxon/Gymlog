@@ -14,8 +14,8 @@ function walk(dir, out = []) {
   return out;
 }
 
-// globalFont.ts patches react-native's own Text/TextInput; AppText.tsx wraps them.
-const ALLOWED = new Set(['src/globalFont.ts', 'src/components/AppText.tsx']);
+// AppText.tsx wraps react-native's own Text/TextInput.
+const ALLOWED = new Set(['src/components/AppText.tsx']);
 
 module.exports = [
   {

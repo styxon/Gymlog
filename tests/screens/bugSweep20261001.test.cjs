@@ -68,12 +68,12 @@ module.exports = [
   {
     // Web: the font patch put an array style on a DOM <span> and crashed, and
     // a merged object there lost the weights that sit in class names.
-    name: 'font patch: native only, so web neither crashes nor drops its weights',
+    name: 'font mapping: native only, so web neither crashes nor drops its weights',
     run() {
-      const source = read('src', 'globalFont.ts');
-      assert.match(source, /if \(Platform\.OS !== 'web'\) \{\s*applyBaseFont\(Text as unknown as RenderableComponent\);\s*applyBaseFont\(TextInput as unknown as RenderableComponent\);\s*\}/);
+      const source = read('src', 'components', 'AppText.tsx');
+      assert.match(source, /if \(Platform\.OS === 'web'\) \{\s*return style;\s*\}/);
       // Native keeps the appended array, so the static family wins there.
-      assert.match(source, /style: \[element\.props\.style, \{ fontFamily: family, fontWeight: 'normal' as const \}\]/);
+      assert.match(source, /return override \? \[style, override\] : style;/);
     },
   },
   {
