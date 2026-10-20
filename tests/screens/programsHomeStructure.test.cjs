@@ -345,7 +345,7 @@ module.exports = [
       assert.match(appSource, /<ExercisesScreen[\s\S]{0,200}onBack=\{\(\) => navigateBack/);
       const library = read('src', 'screens', 'ExercisesScreen.tsx');
       assert.match(library, /onBack,/);
-      assert.match(library, /onPress=\{onBack\}/);
+      assert.match(library, /onBack=\{onBack\}/);
       // Status-bar/shell treatment matches the other light workout screens —
       // by the shell's light default, not a flag: `programsHomeActive` was
       // never read and went with the other dead flags (#bugs 2026-10-01).

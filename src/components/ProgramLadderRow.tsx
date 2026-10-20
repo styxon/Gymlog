@@ -116,7 +116,7 @@ export function ProgramLadderRow({
       <ProgramRowCover style={item.cover} fingerprint={item.fingerprint} />
       <View style={styles.copy}>
         <View style={styles.titleLine}>
-          <Text style={styles.name} numberOfLines={1}>
+          <Text style={styles.name} numberOfLines={2}>
             {item.name}
           </Text>
           {shouldShowLevelBadge(item.level, levelFilter) ? (
@@ -178,7 +178,9 @@ const makeStyles = (theme: Theme) =>
     titleLine: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 7,
+      flexWrap: 'wrap',
+      columnGap: 7,
+      rowGap: 3,
     },
     name: {
       flexShrink: 1,

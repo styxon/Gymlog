@@ -815,7 +815,7 @@ export function ProgramDetailScreen({
         </View>
         {nameDraft === null ? (
           <View style={styles.titleRow}>
-            <Text style={styles.pageTitle} numberOfLines={3}>
+            <Text style={styles.pageTitle} numberOfLines={3} testID="program-detail-title">
               {displayTitle}
             </Text>
             {/* A programme's own name, on the page that shows the programme.

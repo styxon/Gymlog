@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Animated, Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 
-import { BackButton } from '../components/BackButton';
+import { PageHeader } from '../components/BackButton';
 import { SimpleLineChart } from '../components/SimpleLineChart';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
@@ -21,6 +21,7 @@ import { ExerciseProgressSummary } from '../lib/progression';
 import { ProLockIcon } from '../components/ProLockMarks';
 import { SectionLabel } from '../components/SettingsUi';
 import { Theme, useTheme, useThemedStyles } from '../theming';
+import { layout } from '../theme';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 
 
@@ -184,7 +185,7 @@ function StatCard({
         </Text>
       )}
       {(lock ? lock.meta : meta) ? (
-        <Text numberOfLines={1} style={styles.statMeta}>
+        <Text numberOfLines={2} style={styles.statMeta}>
           {lock ? lock.meta : meta}
         </Text>
       ) : null}
@@ -331,21 +332,13 @@ export function ExerciseDetailScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.topBar}>
-        <BackButton
-          onPress={onBack}
-          accessibilityLabel={t(language, 'common.back')}
-          testID="exercise-detail-back"
-        />
-        <Text style={styles.topBarTitle}>{t(language, 'exDetail.title')}</Text>
-        {/* The star was here too, and it went with the library's
-            (2026-09-01). Its one effect — putting the lift on Progress before
-            it had been logged — belongs to a target now, which names a number
-            with it. The spacer keeps the title centred, and is only a width:
-            it used to keep the button's surface and border too, and drew an
-            empty square where the star had been. */}
-        <View style={styles.iconSpacer} />
-      </View>
+      <PageHeader
+        title={t(language, 'exDetail.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+        backTestID="exercise-detail-back"
+        style={styles.topBar}
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -646,23 +639,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   topBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingTop: 2,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
     paddingBottom: 8,
-  },
-  // The width of the shared round BackButton, so the title stays centred.
-  iconSpacer: {
-    width: 40,
-    height: 40,
-  },
-  topBarTitle: {
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: theme.faint,
   },
   scroll: {
     flex: 1,

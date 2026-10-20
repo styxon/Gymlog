@@ -27,6 +27,7 @@ import {
   ExerciseTypeFilter,
 } from '../lib/exerciseBrowseFilter';
 import { exercisePickerChipLabel, exercisePickerRowMeta, listPickerExercises } from '../lib/exercisePicker';
+import { BackButton } from './BackButton';
 import { SectionLabel } from './SettingsUi';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
@@ -52,6 +53,8 @@ interface ExerciseLibraryBrowserProps {
     | null;
   onOpenCollection?: (collectionId: string) => void;
   onOpenLearnIndex?: () => void;
+  /** The way back, drawn as the round BackButton on the title's own row. */
+  onBack?: () => void;
 }
 
 function formatCompactBodyPartLabel(raw: string, language: AppLanguage = 'en') {
@@ -419,6 +422,7 @@ export function ExerciseLibraryBrowser({
   learnCollection = null,
   onOpenCollection,
   onOpenLearnIndex,
+  onBack,
 }: ExerciseLibraryBrowserProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
@@ -555,6 +559,9 @@ export function ExerciseLibraryBrowser({
         ListHeaderComponent={
           <View style={styles.headerBlock}>
             <View style={styles.headerRow}>
+              {onBack ? (
+                <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
+              ) : null}
               <View style={styles.headerCopy}>
                 <Text style={styles.title}>{t(language, 'library.title')}</Text>
                 <Text style={styles.subtitle}>{t(language, 'library.subtitle')}</Text>
@@ -795,6 +802,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   title: {
     color: theme.ink,
     fontSize: 28,
+    lineHeight: 40,
     fontWeight: '800',
     letterSpacing: -0.5,
   },

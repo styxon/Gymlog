@@ -38,8 +38,7 @@ name: UI check
 
 # 02 Programs tab.
 - tapOn:
-    text: "Ohjelmat|Programs"
-    optional: true
+    id: "tab-workout"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -54,6 +53,7 @@ name: UI check
     direction: DOWN
     timeout: 20000
     visibilityPercentage: 50
+    centerElement: true
 - tapOn:
     id: "programs-all-link"
 - waitForAnimationToEnd:
@@ -64,8 +64,7 @@ name: UI check
       P: "03-catalog"
 # Back to the Programs tab, whose recommendation cards open a programme's page.
 - tapOn:
-    text: "Ohjelmat|Programs"
-    optional: true
+    id: "tab-workout"
 - waitForAnimationToEnd:
     timeout: 3000
 - runFlow:
@@ -76,10 +75,13 @@ name: UI check
     direction: DOWN
     timeout: 20000
     visibilityPercentage: 50
+    centerElement: true
 - tapOn:
     id: "program-card-0"
 - waitForAnimationToEnd:
     timeout: 3000
+- assertVisible:
+    id: "program-detail-title"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -87,17 +89,14 @@ name: UI check
 
 # 05 Exercise library, 06 one exercise.
 - tapOn:
-    text: "Ohjelmat|Programs"
-    optional: true
+    id: "tab-workout"
 - scrollUntilVisible:
     element:
       text: "Avaa liikekirjasto|Open the exercise library"
     direction: DOWN
     timeout: 20000
-    optional: true
 - tapOn:
     text: "Avaa liikekirjasto|Open the exercise library"
-    optional: true
 - runFlow:
     file: scrolls.yaml
     env:
@@ -110,6 +109,7 @@ name: UI check
     direction: DOWN
     timeout: 15000
     visibilityPercentage: 50
+    centerElement: true
 - tapOn:
     id: "exercise-row-0"
 - waitForAnimationToEnd:
@@ -129,8 +129,7 @@ name: UI check
 # 07 Progress: the summary (trend, month, calendar, history card), then each
 #    section tab. 08 Records with each of Weight / Reps / Volume.
 - tapOn:
-    text: "Kehitys|Progress"
-    optional: true
+    id: "tab-progress"
 - runFlow:
     file: top.yaml
 - tapOn:
@@ -208,11 +207,9 @@ name: UI check
       text: "Näytä kaikki|See all"
     direction: DOWN
     timeout: 20000
-    optional: true
 - tapOn:
     text: "Näytä kaikki|See all"
     rightOf: "Historia|History"
-    optional: true
 - runFlow:
     file: scrolls.yaml
     env:
@@ -225,6 +222,7 @@ name: UI check
     direction: DOWN
     timeout: 10000
     visibilityPercentage: 50
+    centerElement: true
 - tapOn:
     id: "history-session"
 - waitForAnimationToEnd:
@@ -236,8 +234,7 @@ name: UI check
 
 # 13 Profile, 14 Milestones.
 - tapOn:
-    text: "Profiili|Profile"
-    optional: true
+    id: "tab-profile"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -247,10 +244,8 @@ name: UI check
       text: "Virstanpylväät.*|Milestones.*"
     direction: DOWN
     timeout: 10000
-    optional: true
 - tapOn:
     text: "Virstanpylväät.*|Milestones.*"
-    optional: true
 - runFlow:
     file: scrolls.yaml
     env:
@@ -258,11 +253,11 @@ name: UI check
 
 # 15 Settings: three views, like every screen (a longer walk only repeated the end).
 - tapOn:
-    text: "Profiili|Profile"
-    optional: true
+    id: "tab-profile"
 - tapOn:
-    text: "Asetukset|Settings"
-    optional: true
+    id: "profile-settings"
+- assertVisible:
+    id: "settings-profile"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -299,17 +294,19 @@ name: UI check
 
 # 21 About you: the profile editor, from Settings' header.
 - tapOn:
-    text: "Profiili|Profile"
-    optional: true
+    id: "tab-profile"
 - tapOn:
-    text: "Asetukset|Settings"
-    optional: true
+    id: "profile-settings"
+- assertVisible:
+    id: "settings-profile"
 - runFlow:
     file: top.yaml
 - tapOn:
     id: "settings-profile"
 - waitForAnimationToEnd:
     timeout: 3000
+- assertNotVisible:
+    id: "settings-profile"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -317,11 +314,9 @@ name: UI check
 
 # 22 The coach.
 - tapOn:
-    text: "Koti|Home"
-    optional: true
+    id: "tab-home"
 - tapOn:
-    text: "Avaa Vinha-valmentaja|Open Vinha Coach"
-    optional: true
+    id: "tab-ai"
 - runFlow:
     file: scrolls.yaml
     env:

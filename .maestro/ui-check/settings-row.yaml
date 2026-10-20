@@ -1,5 +1,7 @@
-# One row of Settings: Profile -> Settings, find the row (the list is long
-# enough to need a scroll), open it, shoot it top to bottom, go back.
+# One row of Settings: Profile tab -> its gear, find the row (the list is long
+# enough to need a scroll), open it, shoot it top to bottom. Every hop is by
+# testID (tab-profile, profile-settings) and checked: Settings must be open
+# before the row is looked for, and gone once the row was tapped.
 #   ROW   the row's testID (settings-notifications, settings-my-data, ...).
 #         Found by id because the label match repeated Settings in the first
 #         run: a row is one accessible Pressable whose label carries its
@@ -13,11 +15,13 @@
 appId: app.vinha
 ---
 - tapOn:
-    text: "Profiili|Profile"
-    optional: true
+    id: "tab-profile"
 - tapOn:
-    text: "Asetukset|Settings"
-    optional: true
+    id: "profile-settings"
+# Settings is open before the row is looked for: its profile row is on it and
+# on no sub-screen.
+- assertVisible:
+    id: "settings-profile"
 - waitForAnimationToEnd:
     timeout: 3000
 - runFlow:
@@ -28,14 +32,18 @@ appId: app.vinha
     direction: DOWN
     timeout: 15000
     visibilityPercentage: 60
+    centerElement: true
 - tapOn:
     id: "${ROW}"
 - waitForAnimationToEnd:
     timeout: 3000
+# The tap opened a sub-screen: Settings' own marker is gone. A tap that missed
+# (a row half under the tab bar) stops the run here instead of shooting
+# Settings under the sub-screen's name.
+- assertNotVisible:
+    id: "settings-profile"
 - runFlow:
     file: scrolls.yaml
     env:
       P: "${P}"
-- tapOn:
-    text: "Takaisin|Back"
-    optional: true
+# No Back tap: the next part starts from the Profile tab, which resets it.

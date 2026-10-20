@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 
 import { t } from '../lib/i18n';
+import { PageHeader } from '../components/BackButton';
 import { clampProfileName, characterCount, storedProfileName, MAX_PROFILE_NAME_LENGTH, profileInitials } from '../lib/profileName';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
@@ -47,28 +48,25 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <Text style={styles.headerTitle}>{t(language, 'editProfile.title')}</Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ disabled: !dirty || saving }}
-          onPress={handleSave}
-          hitSlop={8}
-          style={styles.saveButton}
-        >
-          <Text style={[styles.saveText, !dirty && styles.saveTextDisabled]}>{t(language, 'editProfile.save')}</Text>
-        </Pressable>
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'editProfile.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !dirty || saving }}
+            onPress={handleSave}
+            hitSlop={8}
+            style={styles.saveButton}
+          >
+            <Text style={[styles.saveText, (!dirty || saving) && styles.saveTextDisabled]}>
+              {t(language, 'editProfile.save')}
+            </Text>
+          </Pressable>
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
         <View style={styles.avatarWrap}>
@@ -123,30 +121,14 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.ink,
-    fontSize: 17,
-    fontWeight: '800',
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
+    paddingBottom: 6,
   },
   saveButton: {
-    minWidth: 40,
+    minHeight: 40,
+    minWidth: 44,
+    justifyContent: 'center',
     alignItems: 'flex-end',
   },
   saveText: {

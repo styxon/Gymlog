@@ -68,12 +68,14 @@ module.exports = [
       for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.tsx'))) {
         assert.doesNotMatch(read('src', 'screens', name), /function SectionLabel/, `${name} has a local SectionLabel`);
       }
-      for (const name of ['Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription']) {
+      for (const name of ['Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription', 'TrainingBreak', 'EditProfile', 'ExerciseDetail']) {
         assert.match(read('src', 'screens', `${name}Screen.tsx`), /<PageHeader/, `${name} lost the shared header`);
       }
-      for (const name of ['ProgramDetail', 'Catalog', 'LearnIndex', 'Exercises']) {
+      for (const name of ['ProgramDetail', 'Catalog', 'LearnIndex']) {
         assert.match(read('src', 'screens', `${name}Screen.tsx`), /<BackButton/, `${name} lost the shared back button`);
       }
+      // The library draws it on its own title row, inside the browser.
+      assert.match(read('src', 'components', 'ExerciseLibraryBrowser.tsx'), /<BackButton/);
     },
   },
   {
@@ -102,7 +104,8 @@ module.exports = [
       assert.match(header, /adjustsFontSizeToFit/);
       assert.match(header, /minimumFontScale=\{0\.7\}/);
       const ex = read('src', 'screens', 'ExercisesScreen.tsx');
-      assert.match(ex, /styles\.backRow/);
+      assert.doesNotMatch(ex, /styles\.backRow/);
+      assert.match(ex, /onBack=\{onBack\}/);
       assert.doesNotMatch(ex, /backText|paddingTop: 52/);
       for (const name of ['Catalog', 'LearnIndex']) {
         assert.doesNotMatch(read('src', 'screens', name + 'Screen.tsx'), /paddingTop: 52/);
@@ -171,7 +174,8 @@ module.exports = [
       // Its own square chevron had no accessibility label: VoiceOver read
       // nothing and the ui-check walk could not find it (2026-10-20).
       const detail = read('src', 'screens', 'ExerciseDetailScreen.tsx');
-      assert.ok(detail.includes("accessibilityLabel={t(language, 'common.back')}") && detail.includes('<BackButton'));
+      assert.ok(detail.includes("backLabel={t(language, 'common.back')}") && detail.includes('<PageHeader'));
+      assert.ok(detail.includes('backTestID="exercise-detail-back"'));
       assert.doesNotMatch(detail, /ChevronLeftIcon/);
     },
   },

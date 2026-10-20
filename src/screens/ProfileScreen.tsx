@@ -244,6 +244,7 @@ export function ProfileScreen({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={t(language, 'profile.a11y.settings')}
+          testID="profile-settings"
           onPress={onOpenSettings}
           style={({ pressed }) => [pressed && styles.pressed]}
         >
