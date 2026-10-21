@@ -132,6 +132,15 @@ export async function downloadBackup(idToken: string): Promise<BackupDownloadRes
   }
 }
 
+export type DeleteBackupResult = {
+  ok: boolean;
+  error?: string;
+  definite?: boolean;
+  deleteRequestId?: string | null;
+  /** Delete account on an Apple account: whether Apple's sign-in was really ended. Absent from older servers. */
+  appleRevoked?: boolean;
+};
+
 /**
  * Deletes the cloud copy. With `account: true` the server also ends the Apple
  * sessions it has issued for the account, this phone's included
@@ -142,7 +151,7 @@ export async function downloadBackup(idToken: string): Promise<BackupDownloadRes
 export async function deleteBackup(
   idToken: string,
   options: { account?: boolean; requestId?: string; appleAuthorizationCode?: string } = {},
-): Promise<{ ok: boolean; error?: string; definite?: boolean; deleteRequestId?: string | null }> {
+): Promise<DeleteBackupResult> {
   if (!BACKUP_API_URL) {
     return { ok: false };
   }
@@ -168,6 +177,7 @@ export async function deleteBackup(
       ok?: boolean;
       error?: string;
       deleteRequestId?: unknown;
+      appleRevoked?: unknown;
     } | null;
     noteServerAnswer(response.status, body);
     // The server turning the sign-in itself away — SESSION_REVOKED, SESSION_EXPIRED
@@ -196,6 +206,10 @@ export async function deleteBackup(
     return {
       ok: response.ok && body?.ok === true,
       ...(response.status < 500 && response.status !== 429 && serverJson ? { definite: true } : {}),
+      // Only a boolean from the server; an older server omits it.
+      ...(response.ok && body?.ok === true && typeof body.appleRevoked === 'boolean'
+        ? { appleRevoked: body.appleRevoked }
+        : {}),
     };
   } catch {
     return { ok: false };

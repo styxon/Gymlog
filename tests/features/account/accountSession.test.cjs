@@ -470,7 +470,7 @@ module.exports = [
       const profile = read('src', 'app', 'renderProfileTab.tsx');
       const from = profile.indexOf('onDeleteAccount: () => {');
       const handler = profile.slice(from, profile.indexOf('onOpenLegal=', from));
-      const done = handler.indexOf("if (result === 'done') {");
+      const done = handler.indexOf("if (result === 'done' || result === 'done_apple_kept') {");
       const ended = handler.indexOf("else if (result === 'ended')");
       const cleanup = handler.indexOf('deleteCoachCopiesAfterAccountDeletion()');
       assert.ok(done > 0 && cleanup > done && cleanup < ended, 'the coach copies are asked for outside the "deleted" branch');

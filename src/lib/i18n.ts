@@ -1769,6 +1769,8 @@ const EN = {
     'This deletes your cloud backup from our server and signs you out on this phone. Your other phones signed in with Apple are signed out the next time they connect to our server. Apple asks you to confirm once, and Vinha leaves your Sign in with Apple list. The training data on this phone stays — Reset all data clears that separately.',
   'account.deleteAccount.done.title': 'Account deleted',
   'account.deleteAccount.done.body': 'Your cloud backup is deleted and you are signed out. Your training data is still on this phone.',
+  'account.deleteAccount.doneAppleKept.body':
+    'Your cloud backup is deleted and you are signed out. Vinha is still on your Sign in with Apple list: remove it yourself in Settings → your name → Sign in with Apple. Your training data is still on this phone.',
   'account.deleteAccount.failed': 'Could not delete the account. Check your connection and try again.',
   'account.sessionEnded': 'Signed out — your sign-in had ended. Sign in again to continue.',
   'account.deleteAccount.ended.title': 'Signed out',
@@ -5237,6 +5239,8 @@ const FI: Record<I18nKey, string> = {
     'Tämä poistaa pilvivarmuuskopion palvelimeltamme ja kirjaa sinut ulos tästä puhelimesta. Muut puhelimesi, joihin olet kirjautunut Applella, kirjautuvat ulos, kun ne seuraavan kerran ottavat yhteyttä palvelimeemme. Apple pyytää vahvistamaan kerran, ja Vinha poistuu Kirjaudu Applella -luettelostasi. Treenitiedot tässä puhelimessa säilyvät — Nollaa kaikki tiedot tyhjentää ne erikseen.',
   'account.deleteAccount.done.title': 'Tili poistettu',
   'account.deleteAccount.done.body': 'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Treenitietosi ovat edelleen tässä puhelimessa.',
+  'account.deleteAccount.doneAppleKept.body':
+    'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Vinha on yhä Kirjaudu Applella -luettelossasi: poista se itse kohdasta Asetukset → nimesi → Kirjaudu Applella. Treenitietosi ovat edelleen tässä puhelimessa.',
   'account.deleteAccount.failed': 'Tiliä ei voitu poistaa. Tarkista yhteys ja yritä uudelleen.',
   'account.sessionEnded': 'Kirjauduit ulos — kirjautumisesi oli päättynyt. Kirjaudu uudelleen jatkaaksesi.',
   'account.deleteAccount.ended.title': 'Kirjauduit ulos',

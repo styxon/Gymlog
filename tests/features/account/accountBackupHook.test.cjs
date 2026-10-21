@@ -92,7 +92,7 @@ async function withHook({ local, stored = null, cloud = null }, scenario) {
   const runtime = createHookRuntime();
   const listeners = new Set();
   const calls = { upload: 0, download: 0, delete: 0, deleteOptions: [], signedOut: 0, restoreDatabase: 0, restoreHistory: 0, restored: 0, expected: [] };
-  const server = Object.assign(versionedStore(cloud), { uploadError: null, downloadError: null, deleteOk: true, deleteError: null, deleteLost: false, gates: {} });
+  const server = Object.assign(versionedStore(cloud), { uploadError: null, downloadError: null, deleteOk: true, appleRevoked: undefined, deleteError: null, deleteLost: false, gates: {} });
   const google = {
     // What Delete account's provider step gives (accountAuth.getAccountDeletionGrant).
     deletionGrant: { status: 'none' },
@@ -164,7 +164,7 @@ async function withHook({ local, stored = null, cloud = null }, scenario) {
           return { ok: false };
         }
         server.blob = null;
-        return { ok: true };
+        return { ok: true, ...(server.appleRevoked === undefined ? {} : { appleRevoked: server.appleRevoked }) };
       },
     },
     './accountAuth': {
@@ -297,6 +297,57 @@ async function switchToNewAccount(env) {
 }
 
 module.exports = [
+  {
+    name: 'account hook: Delete account says so when Apple’s sign-in was kept, signs out anyway when the phone cannot persist it, and reads a lost answer as done even when Apple has ended the credential',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const appleAccount = (extra) => syncedAccount(local, { sub: 'apple:001234.abc', ...extra });
+
+      // Bug A: the server says Apple's sign-in was not ended -> a distinct outcome; true, or no field (older server, Google) -> done.
+      for (const [revoked, expected] of [[false, 'done_apple_kept'], [true, 'done'], [undefined, 'done']]) {
+        await withHook({ local, stored: appleAccount(), cloud: cloudCopy(local) }, async (env) => {
+          env.server.appleRevoked = revoked;
+          assert.equal(await env.api.deleteAccount(), expected, `appleRevoked ${revoked}`);
+          await env.settle();
+          assert.equal(env.store.account, null, 'the deletion was not carried through on the phone');
+          assert.equal(env.api.state.status, 'signed_out');
+        });
+      }
+
+      // Bug B: the server said ok; the sign-out cannot be written on the phone. Still a deleted account.
+      await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
+        const logged = [];
+        const realError = console.error;
+        console.error = (...args) => logged.push(args.join(' '));
+        try {
+          env.store.clearError = new Error('disk full');
+          assert.equal(await env.api.deleteAccount(), 'done', 'a local sign-out failure after the server said ok read as a failed deletion');
+          assert.equal(env.server.blob, null);
+          assert.ok(logged.some((line) => line.includes('sign-out not persisted')), 'the failure was not logged');
+        } finally {
+          console.error = realError;
+        }
+      });
+
+      // Bug C: a retry after a lost answer meets Apple's REVOKED credential (signed_out).
+      const gone = { status: 'signed_out' };
+      await withHook({ local, stored: appleAccount({ deleteAccountPendingAt: '2026-10-02T08:00:00.000Z' }), cloud: cloudCopy(local) }, async (env) => {
+        env.google.silent = gone;
+        assert.equal(await env.api.deleteAccount(), 'done', 'this phone’s own delete, answer lost, read as deleted elsewhere');
+        await env.settle();
+        assert.equal(env.store.account, null);
+        assert.equal(env.calls.signedOut, 1);
+        assert.equal(env.calls.delete, 0, 'no credential, so nothing is sent');
+      });
+      await withHook({ local, stored: appleAccount(), cloud: cloudCopy(local) }, async (env) => {
+        env.google.silent = gone;
+        assert.equal(await env.api.deleteAccount(), 'ended');
+        await env.settle();
+        assert.equal(env.store.account, null);
+        assert.equal(env.calls.signedOut, 1);
+      });
+    },
+  },
   {
     // Break round, 2026-09-28 (user decision: ask). Sign-out keeps the data;
     // the next account used to get all of it as its first backup, unasked.
