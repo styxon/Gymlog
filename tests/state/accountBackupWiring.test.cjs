@@ -103,7 +103,7 @@ module.exports = [
       const call = handler.indexOf('.deleteAccount()');
       const done = handler.indexOf("'account.deleteAccount.done.title'");
       assert.ok(call > 0 && done > call, 'the done message is shown before the delete is asked for');
-      assert.match(handler.slice(call, done), /\.then\(\(result\) => \{\s*if \(result === 'done'\) \{\s*Alert\.alert\(\s*t\(preferences\.appLanguage,\s*$/);
+      assert.match(handler.slice(call, done), /\.then\(\(result\) => \{\s*if \(result === 'done' \|\| result === 'done_apple_kept'\) \{\s*Alert\.alert\(\s*t\(preferences\.appLanguage,\s*$/);
       // The phone signed out because the account was deleted elsewhere: told that, not "deleted".
       assert.match(handler, /result === 'ended'\) \{[\s\S]*?'account\.deleteAccount\.ended\.title'[\s\S]*?'account\.deleteAccount\.ended\.body'/);
       assert.ok(handler.indexOf("'account.deleteAccount.done.title'") < handler.indexOf("'account.deleteAccount.ended.title'"));
@@ -119,7 +119,8 @@ module.exports = [
       const grant = body.indexOf('const grant = await getAccountDeletionGrant(current.sub);');
       assert.ok(grant > 0 && grant < body.indexOf('await persistAccount(') && grant < sent, 'Apple is asked after the delete was marked as sent');
       assert.match(body, /if \(grant\.status === 'cancelled'\) \{\s*return 'cancelled';\s*\}/);
-      assert.match(body, /if \(answer\.ok\) \{\s*await signOut\(\);\s*return 'done';\s*\}/);
+      // Done only after the server said yes; a sign-out the phone cannot persist does not undo that.
+      assert.match(body, /if \(answer\.ok\) \{[\s\S]*?try \{\s*await signOut\(\);\s*\} catch[\s\S]*?return answer\.appleRevoked === false \? 'done_apple_kept' : 'done';\s*\}/);
       // The pending record is written before the request goes out, never after.
       const marked = body.indexOf('deleteAccountPendingAt: new Date()');
       assert.ok(marked > 0 && marked < sent, 'the pending record is not written before the request');

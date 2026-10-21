@@ -1096,12 +1096,14 @@ function checkAfter(outcome) {
   // An earlier request of its own that never got an answer is not proof: only the server naming this
   // phone's request id is (#273).
   const attempted = Boolean(outcome.startAccount?.deleteAccountPendingAt);
-  if (outcome.deleteResult === 'done' && !phone.deletedByMe) {
+  // 'done_apple_kept' is "deleted" too, with a note about Apple's list.
+  const saidDeleted = outcome.deleteResult === 'done' || outcome.deleteResult === 'done_apple_kept';
+  if (saidDeleted && !phone.deletedByMe) {
     const sub = outcome.startAccount?.sub;
     const copy = sub && world.store.body(backupPathOf(sub)) !== null;
     bad(`3: ${phone.name} reported "account deleted" though no request of its own deleted the copy${attempted ? ' (an earlier request of its own never got an answer)' : ''}${copy ? ' and a copy of the account is there' : ''}`);
   }
-  if ((outcome.deleteResult === 'done' || outcome.deleteResult === 'ended') && storedAccount(phone)) {
+  if ((saidDeleted || outcome.deleteResult === 'ended') && storedAccount(phone)) {
     bad(`3: ${phone.name} reported "${outcome.deleteResult}" and is still signed in`);
   }
   if (outcome.deleteRemote === 'done' && outcome.deleteRemoteSub && world.store.body(backupPathOf(outcome.deleteRemoteSub)) !== null) {
@@ -1118,7 +1120,7 @@ function checkAfter(outcome) {
     if (over && !signedOut) {
       bad(`4: ${phone.name} was answered ${over.error} on its Apple session (${over.op}) and stayed signed in`);
     }
-    const explained = signingOutEvent(event) && (event.t !== 'deleteAccount' || outcome.deleteResult === 'done' || outcome.deleteResult === 'ended');
+    const explained = signingOutEvent(event) && (event.t !== 'deleteAccount' || outcome.deleteResult === 'done' || outcome.deleteResult === 'done_apple_kept' || outcome.deleteResult === 'ended');
     if (signedOut && !explained && !over && !outcome.reason) {
       bad(`4: ${phone.name} was signed out by ${describe(event)} with no SESSION_* answer and no lost credential (answers seen: ${JSON.stringify(phone.seen)})`);
     }

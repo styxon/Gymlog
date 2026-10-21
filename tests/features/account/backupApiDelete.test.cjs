@@ -172,4 +172,20 @@ module.exports = [
       });
     },
   },
+  {
+    name: 'backup client: the server’s appleRevoked reaches the caller only as a boolean, and only on a yes',
+    async run() {
+      for (const appleRevoked of [true, false]) {
+        await withApi({ status: 200, body: { ok: true, appleRevoked } }, async (api) => {
+          assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: true, definite: true, appleRevoked });
+        });
+      }
+      await withApi({ status: 200, body: { ok: true, appleRevoked: 'no' } }, async (api) => {
+        assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: true, definite: true });
+      });
+      await withApi({ status: 502, body: { ok: false, appleRevoked: false } }, async (api) => {
+        assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: false });
+      });
+    },
+  },
 ];

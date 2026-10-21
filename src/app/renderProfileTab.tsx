@@ -930,10 +930,15 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
                           void accountBackup
                             .deleteAccount()
                             .then((result) => {
-                              if (result === 'done') {
+                              if (result === 'done' || result === 'done_apple_kept') {
                                 Alert.alert(
                                   t(preferences.appLanguage, 'account.deleteAccount.done.title'),
-                                  t(preferences.appLanguage, 'account.deleteAccount.done.body'),
+                                  t(
+                                    preferences.appLanguage,
+                                    result === 'done_apple_kept'
+                                      ? 'account.deleteAccount.doneAppleKept.body'
+                                      : 'account.deleteAccount.done.body',
+                                  ),
                                 );
                                 // The account is deleted; the coach's kept copies
                                 // go with it, asked for after and on their own:
