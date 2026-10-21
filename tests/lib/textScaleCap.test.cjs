@@ -25,8 +25,24 @@ module.exports = [
       assert.match(read('src', 'textScale.ts'), /export const TEXT_SCALE_CAP = 1\.5;/);
       const source = read('src', 'components', 'AppText.tsx');
       assert.match(source, /props\.maxFontSizeMultiplier \|\| TEXT_SCALE_CAP/);
-      assert.equal(source.match(/\|\| TEXT_SCALE_CAP/g).length, 2, 'both Text and TextInput default to the cap');
+      assert.equal(source.match(/\|\| TEXT_SCALE_CAP/g).length, 1, 'TextInput defaults to the cap');
+      assert.match(source, /resolveFontSizeMultiplier\(props\.maxFontSizeMultiplier, nested\)/, 'Text defaults to the cap through the nested-aware helper');
       assert.match(read('src', 'components', 'AnimatedText.tsx'), /Animated\.createAnimatedComponent\(Text\)/);
+    },
+  },
+  {
+    // A nested span's own multiplier overrides its parent's on native, so AppText must not
+    // default it (PremiumScreen's price row caps at 1.3 and its nested price spans scaled to 1.5).
+    name: 'text scale cap: a nested Text inherits the parent cap unless its call site sets one',
+    run() {
+      const { resolveFontSizeMultiplier } = require('../../.test-dist/textScale.js');
+      assert.equal(resolveFontSizeMultiplier(undefined, true), undefined);
+      assert.equal(resolveFontSizeMultiplier(0, true), undefined);
+      assert.equal(resolveFontSizeMultiplier(1.2, true), 1.2);
+      assert.equal(resolveFontSizeMultiplier(undefined, false), 1.5);
+      assert.equal(resolveFontSizeMultiplier(0, false), 1.5);
+      assert.equal(resolveFontSizeMultiplier(1.3, false), 1.3);
+      assert.match(read('src', 'components', 'AppText.tsx'), /resolveFontSizeMultiplier\(props\.maxFontSizeMultiplier, nested\)/);
     },
   },
   {

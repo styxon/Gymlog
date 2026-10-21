@@ -7,3 +7,17 @@
  * Native widgets (home widget) are outside this cap.
  */
 export const TEXT_SCALE_CAP = 1.5;
+
+/**
+ * The maxFontSizeMultiplier AppText passes down. A top-level Text gets the
+ * call site's value or the cap; a nested Text gets only the call site's value
+ * (undefined otherwise), because on native a nested span's own value overrides
+ * its parent's and a default here would lift a tighter parent cap (1.3) back
+ * to 1.5x.
+ */
+export function resolveFontSizeMultiplier(requested: number | null | undefined, nested: boolean): number | undefined {
+  if (requested) {
+    return requested;
+  }
+  return nested ? undefined : TEXT_SCALE_CAP;
+}

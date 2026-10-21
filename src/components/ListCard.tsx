@@ -68,6 +68,7 @@ export function ListRow({
   chevron,
   muted = false,
   accessibilityLabel,
+  selected,
   testID,
 }: {
   title: string;
@@ -96,6 +97,8 @@ export function ListRow({
   /** A row whose figure is withheld reads one step quieter. */
   muted?: boolean;
   accessibilityLabel?: string;
+  /** Screen readers: this row is the chosen one (colour and a check mark alone say nothing to them). */
+  selected?: boolean;
   /** For the UI-check walk (.maestro/ui-check): found by id, not by its words. */
   testID?: string;
 }) {
@@ -143,13 +146,23 @@ export function ListRow({
   );
 
   if (!onPress) {
-    return <View style={styles.row}>{body}</View>;
+    return (
+      <View
+        testID={testID}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityState={selected === undefined ? undefined : { selected }}
+        style={styles.row}
+      >
+        {body}
+      </View>
+    );
   }
   return (
     <Pressable
       testID={testID}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityState={selected === undefined ? undefined : { selected }}
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}
     >
