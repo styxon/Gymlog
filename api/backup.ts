@@ -1176,6 +1176,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       // the reader able to ask again — the other order would lock them out of
       // a copy they were deleting. A Google account has no session of ours to
       // end (Google's token is checked with Google on every request).
+      // Whether the sign-in at Apple was really ended, told to the app so it
+      // can say what is left for the reader to do. Only for an Apple account;
+      // an older app ignores the field.
+      let appleRevoked: boolean | undefined;
       if (action === DELETE_ACCOUNT_ACTION && identity.sub.startsWith('apple:')) {
         try {
           const marker = revocationPathname(identity.sub, pathSecret);
@@ -1221,8 +1225,8 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           }
         }
         // And the sign-in at Apple, now that everything of ours is gone. Its
-        // outcome is logged and does not change the answer (see the Apple
-        // session notes above).
+        // outcome is logged and reported as appleRevoked; it does not fail the
+        // deletion (see the Apple session notes above).
         const codeHeader = req.headers[APPLE_CODE_HEADER];
         const code = (Array.isArray(codeHeader) ? codeHeader[0] : codeHeader)?.trim();
         if (code && APPLE_CODE.test(code)) {
@@ -1231,14 +1235,16 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
             identity.sub.slice('apple:'.length),
             (process.env.APPLE_BUNDLE_ID ?? '').trim() || 'app.vinha',
           );
+          appleRevoked = ended === 'revoked';
           if (ended !== 'revoked') {
             console.error('backup delete-account: Apple sign-in not ended:', ended);
           }
         } else {
+          appleRevoked = false;
           console.error('backup delete-account: no Apple authorization code');
         }
       }
-      res.status(200).json({ ok: true });
+      res.status(200).json(appleRevoked === undefined ? { ok: true } : { ok: true, appleRevoked });
       return;
     }
 

@@ -1319,7 +1319,8 @@ module.exports = [
             });
             const deleted = await call('DELETE', session, deleteWithCode());
             assert.equal(deleted.status, 200);
-            assert.deepEqual(deleted.body, { ok: true });
+            // The sign-in at Apple really ended: the app is told so.
+            assert.deepEqual(deleted.body, { ok: true, appleRevoked: true });
             assert.deepEqual(
               apple.calls.map((entry) => `${entry.method} ${entry.url}`),
               ['POST https://appleid.apple.com/auth/token', 'POST https://appleid.apple.com/auth/revoke'],
@@ -1391,7 +1392,8 @@ module.exports = [
             await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
             const deleted = await call('DELETE', session, deleteWithCode());
             assert.equal(deleted.status, 200, `${entry.label}: the deletion failed`);
-            assert.deepEqual(deleted.body, { ok: true }, entry.label);
+            // Deleted all the same, but the app is told Apple's sign-in was NOT ended.
+            assert.deepEqual(deleted.body, { ok: true, appleRevoked: false }, entry.label);
             assert.equal(backupsIn(blobs).length, 0, `${entry.label}: the copy stayed`);
             assert.equal((await call('GET', session)).status, 401, `${entry.label}: the session lived on`);
             assert.deepEqual(
@@ -1426,7 +1428,10 @@ module.exports = [
       apple = fakeApple();
       await withEndpoint(
         async ({ call }) => {
-          assert.equal((await call('DELETE', 'google-id-token', deleteWithCode())).status, 200);
+          const googleDeleted = await call('DELETE', 'google-id-token', deleteWithCode());
+          assert.equal(googleDeleted.status, 200);
+          // Nothing of Apple's to end, so nothing to report either: no appleRevoked:false for a Google account.
+          assert.deepEqual(googleDeleted.body, { ok: true });
         },
         { env: APPLE_ENV, apple: apple.handler },
       );
@@ -1441,7 +1446,9 @@ module.exports = [
             console.error = (...args) => logged.push(args.join(' '));
             const session = (await exchange(appleToken())).body.sessionToken;
             await call('PUT', session, { 'x-backup-expected-version': 'none' }, copy('apple-1'));
-            assert.equal((await call('DELETE', session, headers)).status, 200);
+            const noCode = await call('DELETE', session, headers);
+            assert.equal(noCode.status, 200);
+            assert.deepEqual(noCode.body, { ok: true, appleRevoked: false });
             assert.equal(backupsIn(blobs).length, 0);
             assert.ok(logged.some((line) => line.includes('no Apple authorization code')));
           },
