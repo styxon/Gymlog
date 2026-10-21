@@ -68,7 +68,7 @@ module.exports = [
       const sameSession = new Date(2026, 9, 18, 17, 30).toISOString();
       const older = new Date(2026, 9, 10, 18, 0).toISOString();
       const records = [record('b', older, true), record('a', newest, true), record('c', sameSession, true)];
-      const { lastSession, rest } = splitLastSessionRecords(records);
+      const { lastSession, rest } = splitLastSessionRecords(records, newest);
       assert.deepEqual(lastSession.map((r) => r.key), ['a', 'c']);
       assert.deepEqual(rest.map((r) => r.key), ['b']);
     },
@@ -77,10 +77,43 @@ module.exports = [
     name: 'lastSessionRecords: a newest record that is not fresh opens no group',
     run() {
       const old = new Date(2026, 5, 1, 18, 0).toISOString();
-      const { lastSession, rest } = splitLastSessionRecords([record('a', old, false)]);
+      const { lastSession, rest } = splitLastSessionRecords([record('a', old, false)], old);
       assert.deepEqual(lastSession, []);
       assert.equal(rest.length, 1);
-      assert.deepEqual(splitLastSessionRecords([]), { lastSession: [], rest: [] });
+      assert.deepEqual(splitLastSessionRecords([], old), { lastSession: [], rest: [] });
+    },
+  },
+  {
+    name: 'lastSessionRecords: a fresh record from an older session than the latest workout opens no group',
+    run() {
+      const recordAt = new Date(2026, 9, 1, 18, 0).toISOString(); // 20 days before NOW, still fresh
+      const laterSession = new Date(2026, 9, 18, 18, 0).toISOString(); // lighter sessions since
+      const { lastSession, rest } = splitLastSessionRecords([record('squat', recordAt, true)], laterSession);
+      assert.deepEqual(lastSession, []);
+      assert.deepEqual(rest.map((r) => r.key), ['squat']);
+    },
+  },
+  {
+    name: 'lastSessionRecords: records set in the latest session open the group, older ones stay below',
+    run() {
+      const latest = new Date(2026, 9, 18, 18, 0).toISOString();
+      const sameSession = new Date(2026, 9, 18, 17, 45).toISOString();
+      const older = new Date(2026, 9, 5, 18, 0).toISOString();
+      const records = [record('old', older, true), record('bench', latest, true), record('row', sameSession, true)];
+      const { lastSession, rest } = splitLastSessionRecords(records, latest);
+      assert.deepEqual(lastSession.map((r) => r.key), ['bench', 'row']);
+      assert.deepEqual(rest.map((r) => r.key), ['old']);
+    },
+  },
+  {
+    name: 'lastSessionRecords: with no completed session the group stays closed',
+    run() {
+      const at = new Date(2026, 9, 18, 18, 0).toISOString();
+      for (const none of [null, undefined, '', 'not a date']) {
+        const { lastSession, rest } = splitLastSessionRecords([record('a', at, true)], none);
+        assert.deepEqual(lastSession, []);
+        assert.equal(rest.length, 1);
+      }
     },
   },
 ];
