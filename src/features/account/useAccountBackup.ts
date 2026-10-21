@@ -167,8 +167,12 @@ export type SignInOutcome =
  */
 export type AccountOperationResult = 'done' | 'failed' | 'cancelled' | 'ended';
 
-/** Delete account's own results are the same set. */
-export type DeleteAccountResult = AccountOperationResult;
+/**
+ * Delete account's own results are the same set, plus 'done_apple_kept':
+ * deleted, but the sign-in at Apple could not be ended, so Vinha is still on
+ * the reader's Sign in with Apple list and they remove it themselves.
+ */
+export type DeleteAccountResult = AccountOperationResult | 'done_apple_kept';
 
 export interface AccountBackupApi {
   available: boolean;
@@ -1442,8 +1446,15 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // The provider has no session for this app any more, so there is no
         // credential to delete with: signed out here the full way, and the
         // reader signs in again to delete — said as 'ended', not as a failed
-        // connection and not as a deleted account.
+        // connection and not as a deleted account. Unless THIS phone's own
+        // delete went through with its answer lost (the pending record, read
+        // before sign-out clears it): then it is 'done', by the same rule as
+        // revokedDeleteOutcome with no request id.
+        const ownDeleteWentThrough = Boolean(current.deleteAccountPendingAt);
         await signOutRef.current();
+        if (ownDeleteWentThrough) {
+          return 'done';
+        }
         throw new SessionEnded();
       }
       if (token.status !== 'ok') {
@@ -1488,8 +1499,14 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // The server has deleted; now this phone forgets the account. Sign-out
         // ends whatever else is running, clears the Google or Apple session and
         // the pending record with the account record.
-        await signOut();
-        return 'done';
+        // The server has said ok, so a failure to persist the sign-out must
+        // not turn this into a failed deletion.
+        try {
+          await signOut();
+        } catch (error) {
+          console.error('delete account: sign-out not persisted:', error instanceof Error ? error.message.slice(0, 120) : 'unknown');
+        }
+        return answer.appleRevoked === false ? 'done_apple_kept' : 'done';
       }
       if (
         token.idToken.startsWith(APPLE_SESSION_PREFIX) &&
