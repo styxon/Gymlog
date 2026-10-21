@@ -1770,7 +1770,7 @@ const EN = {
   'account.deleteAccount.done.title': 'Account deleted',
   'account.deleteAccount.done.body': 'Your cloud backup is deleted and you are signed out. Your training data is still on this phone.',
   'account.deleteAccount.doneAppleKept.body':
-    'Your cloud backup is deleted and you are signed out. Vinha is still on your Sign in with Apple list: remove it yourself in Settings → your name → Sign in with Apple. Your training data is still on this phone.',
+    'Your cloud backup is deleted and you are signed out. Vinha is still on your Sign in with Apple list: remove it yourself in Settings → your name → Sign-In & Security → Sign in with Apple. Your training data is still on this phone.',
   'account.deleteAccount.failed': 'Could not delete the account. Check your connection and try again.',
   'account.sessionEnded': 'Signed out — your sign-in had ended. Sign in again to continue.',
   'account.deleteAccount.ended.title': 'Signed out',
@@ -5240,7 +5240,7 @@ const FI: Record<I18nKey, string> = {
   'account.deleteAccount.done.title': 'Tili poistettu',
   'account.deleteAccount.done.body': 'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Treenitietosi ovat edelleen tässä puhelimessa.',
   'account.deleteAccount.doneAppleKept.body':
-    'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Vinha on yhä Kirjaudu Applella -luettelossasi: poista se itse kohdasta Asetukset → nimesi → Kirjaudu Applella. Treenitietosi ovat edelleen tässä puhelimessa.',
+    'Pilvivarmuuskopio on poistettu ja olet kirjautunut ulos. Vinha on yhä Kirjaudu Applella -luettelossasi: poista se itse kohdasta Asetukset → nimesi → Kirjautuminen ja suojaus → Kirjaudu Applella. Treenitietosi ovat edelleen tässä puhelimessa.',
   'account.deleteAccount.failed': 'Tiliä ei voitu poistaa. Tarkista yhteys ja yritä uudelleen.',
   'account.sessionEnded': 'Kirjauduit ulos — kirjautumisesi oli päättynyt. Kirjaudu uudelleen jatkaaksesi.',
   'account.deleteAccount.ended.title': 'Kirjauduit ulos',

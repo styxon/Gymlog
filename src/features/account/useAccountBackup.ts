@@ -167,11 +167,10 @@ export type SignInOutcome =
  */
 export type AccountOperationResult = 'done' | 'failed' | 'cancelled' | 'ended';
 
-/** Delete account's own results are the same set. */
 /**
- * 'done_apple_kept': deleted, but the sign-in at Apple could not be ended, so
- * Vinha is still on the reader's Sign in with Apple list and they remove it
- * themselves.
+ * Delete account's own results are the same set, plus 'done_apple_kept':
+ * deleted, but the sign-in at Apple could not be ended, so Vinha is still on
+ * the reader's Sign in with Apple list and they remove it themselves.
  */
 export type DeleteAccountResult = AccountOperationResult | 'done_apple_kept';
 
