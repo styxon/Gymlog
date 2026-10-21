@@ -3,11 +3,13 @@
 What has merged to `main` since the last store build, so the release notes
 write themselves when the next version ships.
 
-**Last shipped:** Android 1.1.0 (versionCode 4), `main` df3f039b, sent to
-production review 2026-10-16.
+**In store review:** 1.1.0 — iOS build 6 (`main` 46e4e963, sent
+2026-10-18) and Android versionCode 6 (`main` 2bbbab84, the same app code).
+Not yet published in either store.
 
-**Next:** versionCode 5 — not scheduled. It ships when there is a larger
-update to carry, not for each fix.
+**Next:** 1.1.1 (iOS build 7, Android versionCode 7) — not scheduled. Test
+builds only after 1.1.0 is approved and published; it ships when there is a
+larger update to carry, not for each fix.
 
 ## How to keep this file
 
@@ -16,26 +18,69 @@ update to carry, not for each fix.
   user notices, in plain words. Server-only changes (`api/`) go under
   **Server**, because they reach users without a store build.
 - Tests, docs, tooling and refactors with no visible change are not listed.
-- When the build ships: write the Play release notes (FI + EN, 500 characters
-  each) from **Merged**, run `npm run release:android:done`, then empty both
-  lists and update **Last shipped**.
+- When 1.1.0 is published: write its store notes (FI + EN, 500 characters
+  each) from **In 1.1.0**, run `npm run release:ios:done` and
+  `npm run release:android:done`, then delete that section and move the
+  **In store review** line to **Last shipped**.
+- When a later build ships: the same from **Merged**, then empty **Merged**
+  and **Server** and update **Last shipped**.
 
 ## Merged
 
-- The app's own typeface (Manrope) is back on every screen; since 3.10 most text used the phone's system font. A coloured word inside bold text (the greeting's "AI") keeps the bold weight.
-- Very large system text sizes now stop growing at 1.5x, so titles, exercise names and charts stay readable instead of breaking mid-word or overlapping.
-- Lists and menus look the same everywhere now: Settings, Notifications, My data, Export, Training plan, Milestones, Subscription, Progress (read rows and records), Profile cards and the Programs rows sit in one rounded card with thin dividers; pushed screens have a round back button next to a left-aligned title; section labels are one style; the Progress tabs show icon and name; the Recovery row no longer draws a meaningless single bar. Follow-ups: Progress lifts and measures are one list card each, the new-best pill and the switch off-state are readable in dark and light, the Progress calendar fills only days you trained (planned days are outlined), the BMI scale fits its card, Home shows the date in the app language and no longer leaves a gap under a collapsed Recovery row, the coach opening sits under the header, the library count matches its list, and the library header has one search. Also: exercise names on lifts and measures no longer break mid-word on small phones, the Records row value keeps its size, and a number in a list line stays with its unit ("47 min"). The exercise page has the same round back button, now announced as "Back" by VoiceOver and TalkBack. Last of the headers: Training break, Edit profile (its Save keeps its place on the right), the exercise library and the exercise page use it too. The exercise page's working-weight chart reads in rounded steps (70 / 72.5 / 75) with the unit said once above the axis, stat-card lines and programme or notification lines wrap to two lines instead of ending in "...", and a programme's level badge drops under its name instead of cutting the name short.
-- One list style across History and Records: a list is a single rounded card with thin dividers, dates read "su 19.10." / "Sun, Oct 19", a round back button sits beside the title, and section labels look the same everywhere. Records drop the NEW badge for a "Last session" group at the top; History shows how the session felt as a small coloured dot before the date; the History subtitle is gone. The remaining list and menu screens follow in the next updates. Tabs, long titles and headers now fit narrow screens and large text.
-- Reading a programme from a photo (Pro) now counts as one of the month's 25 coach questions, like building a week with the coach; with none left the sheet says so instead of reading the photo, and a photo that fails to read costs nothing.
-- Second review follow-ups: the screen reliably goes to sleep after a workout even when a second keep-awake request failed, the coach's "log this" button only appears for a plausible reading in the right unit (and says so if the save was refused), the home-screen widget no longer shows days that have already passed as planned after it rolls to the next month, and older installs can no longer land on an English-only workouts list.
-- Automatic progression is Pro only, with no exception: a Free reader's workout analysis no longer suggests a heavier weight for next time (Free keeps opening each lift on what they logged last, and the Pro features are unchanged).
-- Pro and coach review follow-ups: Pro now ends exactly where the store says (a grace period the store extends keeps Pro on, a cancelled trial ends with the trial), the app asks the store again when it returns to the front for a cancelled or past-due subscription, a promo, trial or review member no longer reads "already cancelled" on the membership end screen, a rate-limited coach question is not lost when something new was typed meanwhile, and tapping "Build the week" twice with no questions left no longer stacks notices or starts two builds.
-- Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
-- Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
-- Exercise instructions (Finnish): the 708 translated exercises no longer say knees must not pass the toes, "arch your back" no longer reads as a rounded back, presses say "ojenna kädet" instead of a hard lockout, upright rows stop at chest or shoulder height, the neck and behind-the-neck lifts carry a caution, "to failure" and breathing narration are gone, and the rep line follows the programme.
-- Fixes: a lift added mid-workout opens at its last weight; hold and minutes lifts no longer get a PR card on the finish screen; editing programme emphasis keeps superset pairs at one set count; the screen no longer stays awake after leaving a workout right away; swapping a lift in a ready programme keeps the weekday labels; "Squat 5x5" is no longer split in the recovery sheet.
-- Pro: "Restore purchase" on the Pro page now really restores (tap shows "Checking purchases..."), repeated taps on either Restore link start one restore, a failed renewal no longer grants an extra period of Pro, and deleting the cloud backup clears the old "Backup paused" reason on the account row.
-- Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
+Since build 6 (`main` 2bbbab84); goes into 1.1.1.
+
+- #427, #429 The app's own typeface (Manrope) is back on every screen; since 3.10 most text used the phone's system font. A coloured word inside bold text (the greeting's "AI") keeps the bold weight.
+- #425 Very large system text sizes now stop growing at 1.5x, so titles, exercise names and charts stay readable instead of breaking mid-word or overlapping.
+- #417, #419–#424 Lists and menus look the same everywhere now: Settings, Notifications, My data, Export, Training plan, Milestones, Subscription, Progress (read rows and records), Profile cards and the Programs rows sit in one rounded card with thin dividers; pushed screens have a round back button next to a left-aligned title; section labels are one style; the Progress tabs show icon and name; the Recovery row no longer draws a meaningless single bar. Follow-ups: Progress lifts and measures are one list card each, the new-best pill and the switch off-state are readable in dark and light, the Progress calendar fills only days you trained (planned days are outlined), the BMI scale fits its card, Home shows the date in the app language and no longer leaves a gap under a collapsed Recovery row, the coach opening sits under the header, the library count matches its list, and the library header has one search. Also: exercise names on lifts and measures no longer break mid-word on small phones, the Records row value keeps its size, and a number in a list line stays with its unit ("47 min"). The exercise page has the same round back button, now announced as "Back" by VoiceOver and TalkBack. Last of the headers: Training break, Edit profile (its Save keeps its place on the right), the exercise library and the exercise page use it too. The exercise page's working-weight chart reads in rounded steps (70 / 72.5 / 75) with the unit said once above the axis, stat-card lines and programme or notification lines wrap to two lines instead of ending in "...", and a programme's level badge drops under its name instead of cutting the name short.
+- #416 One list style across History and Records: a list is a single rounded card with thin dividers, dates read "su 19.10." / "Sun, Oct 19", a round back button sits beside the title, and section labels look the same everywhere. Records drop the NEW badge for a "Last session" group at the top; History shows how the session felt as a small coloured dot before the date; the History subtitle is gone. The remaining list and menu screens follow in the next updates. Tabs, long titles and headers now fit narrow screens and large text.
+- #415 Reading a programme from a photo (Pro) now counts as one of the month's 25 coach questions, like building a week with the coach; with none left the sheet says so instead of reading the photo, and a photo that fails to read costs nothing.
+- #414 Second review follow-ups: the screen reliably goes to sleep after a workout even when a second keep-awake request failed, the coach's "log this" button only appears for a plausible reading in the right unit (and says so if the save was refused), the home-screen widget no longer shows days that have already passed as planned after it rolls to the next month, and older installs can no longer land on an English-only workouts list.
+- #413 Automatic progression is Pro only, with no exception: a Free reader's workout analysis no longer suggests a heavier weight for next time (Free keeps opening each lift on what they logged last, and the Pro features are unchanged).
+- #411 Pro and coach review follow-ups: Pro now ends exactly where the store says (a grace period the store extends keeps Pro on, a cancelled trial ends with the trial), the app asks the store again when it returns to the front for a cancelled or past-due subscription, a promo, trial or review member no longer reads "already cancelled" on the membership end screen, a rate-limited coach question is not lost when something new was typed meanwhile, and tapping "Build the week" twice with no questions left no longer stacks notices or starts two builds.
+- #412 Exercise instructions audit: 390 exercises got corrected steps in English and
+  Finnish (no knees-past-toes, hard lockout, reps to failure, chin-high upright
+  row or bar on the neck; kg and cm only; menu and marketing filler replaced by
+  coaching cues; "Toista ohjelman mukainen määrä toistoja" everywhere). The swap
+  sheet's how-to now follows the app language too.
+- #410 Exercise instructions (Finnish): the 708 translated exercises no longer say knees must not pass the toes, "arch your back" no longer reads as a rounded back, presses say "ojenna kädet" instead of a hard lockout, upright rows stop at chest or shoulder height, the neck and behind-the-neck lifts carry a caution, "to failure" and breathing narration are gone, and the rep line follows the programme.
+- #409 Review fixes: Swap suggestions are narrowed only by a body-part chip you tapped,
+  not the lift's own muscle; the Recovery sheet says "Päivä 2" and hides the zone
+  marker without a ratio; the screen no longer sleeps mid-workout after a quick
+  leave-and-return; "1 toisto" / "1 rep" everywhere a count is shown; the swap
+  search field grows with large text; a hold exercise gets no PR card.
+- #408 Exercise instructions: the other 708 exercises in the library now show their steps in Finnish too, in the exercise detail and in the guided workout (before, they stayed in English).
+- #407 Swap sheet: the body-part filter now narrows the suggested lifts too; the exercise search field centres its placeholder; Bodyweight Reverse Lunge is listed as bodyweight, not dumbbell.
+- #406, #409 Hunt fixes: the morning weigh-in outranks the training-day reminder at every
+  level (quiet keeps only the weigh-in, normal keeps both); the plan review has a back control; building a week with the
+  AI coach counts as a coach question and stops when none are left; the Android
+  widget swaps to next month (needs the new APK, widget payload v10) and a
+  rate-limited coach question leaves no duplicate bubble; About you shows kg with
+  a comma, Last done shows the localized session name, the lock-screen card
+  names the lift in Finnish, and "1 toisto" replaces "1 toistoa".
+- #405 Fixes: a lift added mid-workout opens at its last weight; hold and minutes lifts no longer get a PR card on the finish screen; editing programme emphasis keeps superset pairs at one set count; the screen no longer stays awake after leaving a workout right away; swapping a lift in a ready programme keeps the weekday labels; "Squat 5x5" is no longer split in the recovery sheet.
+- #404 Pro: "Restore purchase" on the Pro page now really restores (tap shows "Checking purchases..."), repeated taps on either Restore link start one restore, a failed renewal no longer grants an extra period of Pro, and deleting the cloud backup clears the old "Backup paused" reason on the account row.
+- #403 Walk-up praise names the lift just done ("Edellinen liike: ..."); the
+  Recovery sheet hides ACWR when there is no ratio and sets a glued session
+  number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
+  first cue no longer cuts the user's music.
+- #402 AI coach without a connection names the workout in the reader's
+  language ("HUGE Pro - Päivä 1: Ylävartalo", not "Day 1: Upper Body"), and
+  the English answer's broken dash ("order â the first lift") is a dash again;
+  one workout this week reads "1 treeni" / "1 session", not "1 treeniä" /
+  "1 sessions".
+- #401 iPhone, workout summary: the Coach demo question no longer opens over the
+  "how did it feel" or the Pro sheet if one is up or still closing (it waits,
+  then appears); the other sheets are checked and need no change.
+- #400 Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
+
+## Server
+
+Since build 6: nothing.
+
+## In 1.1.0 (build 6, in store review)
+
+Kept until 1.1.0 is published, for its store notes.
+
 - #382 Onboarding: a disabled Continue button says on a line under it what
   it still waits for.
 - #384 Onboarding: the chosen start-path card is a soft violet tint instead
@@ -85,7 +130,6 @@ update to carry, not for each fix.
   orange.
 - #385 Terms and privacy policy name the trade name's holder correctly
   (Tatu Ylönen); dated 17.10.2026, so every reader is asked to accept again.
-
 - #389 iPhone: "Skip this exercise" in the workout menu no longer freezes the
   app; the confirmation, the exercise swap, the workout contents and the end
   confirmation open once the menu has closed.
@@ -151,16 +195,8 @@ update to carry, not for each fix.
 - #397 Home says "Vinha Fitness" again (Fitness in orange); About you's gender
   row shows Male in blue and Female in pink, and the gender sheet's Skip sits
   lower under its rule.
-- iPhone, workout summary: the Coach demo question no longer opens over the
-  "how did it feel" or the Pro sheet if one is up or still closing (it waits,
-  then appears); the other sheets are checked and need no change.
-- #402 AI coach without a connection names the workout in the reader's
-  language ("HUGE Pro - Päivä 1: Ylävartalo", not "Day 1: Upper Body"), and
-  the English answer's broken dash ("order â the first lift") is a dash again;
-  one workout this week reads "1 treeni" / "1 session", not "1 treeniä" /
-  "1 sessions".
 
-## Server
+Server, live before the build:
 
 - #396 `api/backup.ts`: Delete account on an Apple account trades the
   phone's one-time Apple code and revokes the grant at Apple. Live once
@@ -168,36 +204,10 @@ update to carry, not for each fix.
   (docs/account-backup.md); until then deletion works as before and the log
   says `apple revoke skipped`.
 
-- Walk-up praise names the lift just done ("Edellinen liike: ..."); the
-  Recovery sheet hides ACWR when there is no ratio and sets a glued session
-  number apart ("Jalat 1"); iPhone cue sounds wait for the audio mode, so the
-  first cue no longer cuts the user's music.
-
-- Hunt fixes: the morning weigh-in outranks the training-day reminder at every
-  level (quiet keeps only the weigh-in, normal keeps both); the plan review has a back control; building a week with the
-  AI coach counts as a coach question and stops when none are left; the Android
-  widget swaps to next month (needs the new APK, widget payload v10) and a
-  rate-limited coach question leaves no duplicate bubble; About you shows kg with
-  a comma, Last done shows the localized session name, the lock-screen card
-  names the lift in Finnish, and "1 toisto" replaces "1 toistoa".
-
-- Review fixes: Swap suggestions are narrowed only by a body-part chip you tapped,
-  not the lift's own muscle; the Recovery sheet says "Päivä 2" and hides the zone
-  marker without a ratio; the screen no longer sleeps mid-workout after a quick
-  leave-and-return; "1 toisto" / "1 rep" everywhere a count is shown; the swap
-  search field grows with large text; a hold exercise gets no PR card.
-
-- Exercise instructions audit: 390 exercises got corrected steps in English and
-  Finnish (no knees-past-toes, hard lockout, reps to failure, chin-high upright
-  row or bar on the neck; kg and cm only; menu and marketing filler replaced by
-  coaching cues; "Toista ohjelman mukainen määrä toistoja" everywhere). The swap
-  sheet's how-to now follows the app language too.
-
 ## Known, not yet fixed
 
-Logged in `#bugs` after the vc4 device check (2026-10-15):
-
-- Membership end screen: the two buttons should stand on their own, without
-  the large box behind them.
-- Membership end screen after the subscription is already cancelled: the
-  screen should go away, or its buttons change (for example to "Back").
+- Delete account leaves the name that sign-in copied into the profile on
+  the phone (on purpose: the phone's own data stays until Reset all data);
+  could clear it when it is still the account's name. After the 1.1.0 review.
+- The Sign in with Apple button follows the phone's language, not the app's
+  (it is Apple's system button, which App Review requires). Leave as is.
