@@ -2,7 +2,7 @@ import React, { createContext, useContext } from 'react';
 import { Platform, StyleSheet, Text as RNText, TextInput as RNTextInput } from 'react-native';
 
 import { manropeOverride } from '../lib/manropeFamily';
-import { TEXT_SCALE_CAP } from '../textScale';
+import { TEXT_SCALE_CAP, resolveFontSizeMultiplier } from '../textScale';
 
 /**
  * The app's Text and TextInput (the animated one is AnimatedText.tsx). Every screen imports these
@@ -38,7 +38,7 @@ function withAppFont(style: unknown, nested = false): any {
 
 export function Text(props: RNTextProps) {
   const nested = useContext(InsideText);
-  const text = <RNText {...props} style={withAppFont(props.style, nested)} maxFontSizeMultiplier={props.maxFontSizeMultiplier || TEXT_SCALE_CAP} />;
+  const text = <RNText {...props} style={withAppFont(props.style, nested)} maxFontSizeMultiplier={resolveFontSizeMultiplier(props.maxFontSizeMultiplier, nested)} />;
   if (nested) {
     return text;
   }

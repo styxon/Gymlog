@@ -115,7 +115,7 @@ module.exports = [
           };
         }
         if (request === '../lib/manropeFamily') return originalLoad.call(this, family, ...rest);
-        if (request === '../textScale') return { TEXT_SCALE_CAP: 1.5 };
+        if (request === '../textScale') return require('../../.test-dist/textScale.js');
         return originalLoad.call(this, request, ...rest);
       };
       try {

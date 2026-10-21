@@ -36,6 +36,7 @@ export function Seg<T extends string>({
   showLabels,
   lockedKeys,
   onLockedPress,
+  lockedHint,
 }: {
   /** `icon` is an SVG path drawn in a 24-box; given, the label is its spoken name. */
   options: Array<{ key: T; label: string; icon?: string }>;
@@ -54,6 +55,8 @@ export function Seg<T extends string>({
    */
   lockedKeys?: readonly T[];
   onLockedPress?: () => void;
+  /** Spoken on a locked option ("needs Pro, opens Pro"); the lock glyph says nothing to a screen reader. */
+  lockedHint?: string;
 }) {
   const styles = useThemedStyles(makeSegStyles);
   const theme = useTheme();
@@ -131,6 +134,7 @@ export function Seg<T extends string>({
             accessibilityRole="button"
             accessibilityState={{ selected: active, disabled: false }}
             accessibilityLabel={option.label}
+            accessibilityHint={locked ? lockedHint : undefined}
             onPress={() => (locked ? onLockedPress?.() : onChange(option.key))}
             style={(grow || showLabels) && styles.segItemGrow}
           >

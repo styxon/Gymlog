@@ -1472,6 +1472,7 @@ export function ProgressScreen({
               onChange={setOverviewRange}
               lockedKeys={lockedTrendRanges}
               onLockedPress={onOpenPremium}
+              lockedHint={t(language, 'seg.lockedA11y')}
             />
           </View>
         </View>
@@ -1843,6 +1844,7 @@ export function ProgressScreen({
                     onChange={setMeasureRange}
                     lockedKeys={lockedMeasureRanges}
                     onLockedPress={onOpenPremium}
+                    lockedHint={t(language, 'seg.lockedA11y')}
                   />
                 </View>
               }
@@ -1919,6 +1921,7 @@ export function ProgressScreen({
                 onChange={setMeasureRange}
                 lockedKeys={lockedMeasureRanges}
                 onLockedPress={onOpenPremium}
+                lockedHint={t(language, 'seg.lockedA11y')}
               />
             </View>
           </View>
@@ -2081,6 +2084,7 @@ export function ProgressScreen({
                       </View>
                     }
                     accessibilityLabel={t(language, item.labelKey)}
+                    selected={active}
                     onPress={() => setSelectedMeasure(item.key)}
                   />
                 </View>
