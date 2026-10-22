@@ -1673,6 +1673,17 @@ export function ProgressScreen({
   }
 
   function renderRecords() {
+    // Records come from lifting logs, so "the last workout" is the newest
+    // completed lifting session; a run cannot have set one.
+    let latestStrengthSessionAt: string | null = null;
+    let latestStamp = Number.NEGATIVE_INFINITY;
+    for (const session of workoutSessions) {
+      const stamp = Date.parse(session.performedAt);
+      if (Number.isFinite(stamp) && stamp > latestStamp) {
+        latestStamp = stamp;
+        latestStrengthSessionAt = session.performedAt;
+      }
+    }
     return (
       <RecordsList
         records={records}
@@ -1681,6 +1692,7 @@ export function ProgressScreen({
         onOpenPro={() => onOpenPremium?.()}
         onStartWorkout={() => onStartWorkout?.()}
         onOpenExercise={(key) => setSetLogTarget({ key, fromLift: false })}
+        latestSessionAt={latestStrengthSessionAt}
       />
     );
   }

@@ -339,14 +339,23 @@ export const SAME_SESSION_MS = 3 * 60 * 60 * 1000;
  * stamp, so in practice it is equality, and the margin only absorbs a log
  * written a moment apart.
  *
- * Only a FRESH newest record opens the group. Otherwise the newest record is
- * months old, and a group called "last session" would claim that the reader's
- * latest workout set it. Input order does not matter; each side keeps it.
+ * Only a FRESH newest record that belongs to the reader's latest completed
+ * workout opens the group: its date must be within the same three hours of
+ * `latestSessionAt` (the newest completed session's `performedAt`). Freshness
+ * alone is not enough — a record set 20 days ago is still fresh, but three
+ * lighter sessions since then mean the latest workout did not set it, and a
+ * group called "last session" would say it did. No latest session, or an
+ * unreadable date, keeps the group closed. Input order does not matter; each
+ * side keeps it.
  */
-export function splitLastSessionRecords(records: readonly PersonalRecord[]): {
+export function splitLastSessionRecords(
+  records: readonly PersonalRecord[],
+  latestSessionAt: string | null | undefined,
+): {
   lastSession: PersonalRecord[];
   rest: PersonalRecord[];
 } {
+  const latestSession = latestSessionAt ? Date.parse(latestSessionAt) : Number.NaN;
   let newest = Number.NEGATIVE_INFINITY;
   let newestFresh = false;
   for (const record of records) {
@@ -356,7 +365,8 @@ export function splitLastSessionRecords(records: readonly PersonalRecord[]): {
       newestFresh = record.fresh;
     }
   }
-  if (!newestFresh) {
+  const fromLatestSession = Number.isFinite(latestSession) && Math.abs(latestSession - newest) <= SAME_SESSION_MS;
+  if (!newestFresh || !fromLatestSession) {
     return { lastSession: [], rest: [...records] };
   }
   const lastSession: PersonalRecord[] = [];

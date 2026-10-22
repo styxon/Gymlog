@@ -143,6 +143,8 @@ interface RecordsListProps {
   onStartWorkout: () => void;
   onOpenExercise?: (key: string) => void;
   onOpenPro: () => void;
+  /** performedAt of the newest completed workout; the "last session" group opens only for records it set. */
+  latestSessionAt?: string | null;
 }
 
 /**
@@ -156,13 +158,14 @@ export function RecordsList({
   onStartWorkout,
   onOpenExercise,
   onOpenPro,
+  latestSessionAt = null,
 }: RecordsListProps) {
   const styles = useThemedStyles(makeStyles);
   const theme = useTheme();
   const [kind, setKind] = useState<RecordKind>('weight');
 
   const shown = records[kind];
-  const { lastSession, rest } = splitLastSessionRecords(shown);
+  const { lastSession, rest } = splitLastSessionRecords(shown, latestSessionAt);
   const groups = groupRecordsByMonth(rest);
   const lockedCount = shown.filter((record) =>
     isRecordLocked(record.performedAt, proUnlocked),

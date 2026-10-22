@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.
 - #432 The price row on the Pro page keeps its size when the system text is at its largest; screen readers now say which measure is selected on the Progress tab, and that a locked option needs Pro.
 - #431 Delete account: if Apple's sign-in could not be ended, the "Account deleted" message now says Vinha is still on your Sign in with Apple list and tells you to remove it in Settings → your name → Sign-In & Security → Sign in with Apple. A deletion the server finished no longer shows "could not delete" when the phone cannot save the sign-out, and retrying a deletion whose answer was lost no longer says "signed out, deleted elsewhere".
 - #427, #429 The app's own typeface (Manrope) is back on every screen; since 3.10 most text used the phone's system font. A coloured word inside bold text (the greeting's "AI") keeps the bold weight.
