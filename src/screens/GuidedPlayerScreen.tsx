@@ -6258,6 +6258,7 @@ function SetStepView({
             minutesMode ? 'minutes' : timed ? 'seconds' : 'reps',
           )}
           accessibilityHint={t(language, 'guided.panelsToggle')}
+          testID="set-exercise-card"
           onPress={onOpenSheet}
           style={styles.setExerciseCard}
         >
