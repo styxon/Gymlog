@@ -828,6 +828,7 @@ export function ProgramDayScreen({
                     left removal reachable only from inside the swap sheet. */}
                 {exercise.slotId && onSwapExercise ? (
                   <Pressable
+                    testID={`day-swap-${index}`}
                     accessibilityRole="button"
                     accessibilityLabel={t(language, 'detail.day.a11y.swap', {
                       name: exerciseNameLabel(language, exercise.name),
@@ -1107,6 +1108,7 @@ export function ProgramDayScreen({
               opens over this screen — see onAddExercises. */}
           {canAddExercises ? (
             <Pressable
+              testID="day-add-exercise"
               accessibilityRole="button"
               onPress={() => setAddSheetOpen(true)}
               style={({ pressed }) => [styles.addRow, pressed && styles.swapOptionPressed]}

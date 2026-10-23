@@ -846,6 +846,7 @@ export function ProgramsHomeScreen({
             rather than the editor, so removing the duplicate button at the top
             did not remove the AI and CSV routes with it. */}
         <Pressable
+          testID="programs-create"
           accessibilityRole="button"
           accessibilityLabel={t(language, 'programs.create')}
           onPress={() => setCreateOpen(true)}

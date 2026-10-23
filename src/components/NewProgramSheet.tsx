@@ -438,6 +438,7 @@ export function NewProgramSheet({
                 {aiLocked ? <ProLockIcon color={theme.purple} size={18} /> : <Chevron />}
               </Pressable>
               <Pressable
+                testID="new-program-build"
                 accessibilityRole="button"
                 accessibilityLabel={t(language, 'csv.buildA11y')}
                 onPress={() => {

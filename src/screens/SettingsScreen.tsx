@@ -647,6 +647,7 @@ export function SettingsScreen({
               icon="shield"
               title={t(language, 'settings.privacy')}
               chevron
+              testID="settings-privacy"
               onPress={() => onOpenLegal('privacy')}
             />
             <Row icon="doc" title={t(language, 'settings.terms')} chevron last onPress={() => onOpenLegal('terms')} />
