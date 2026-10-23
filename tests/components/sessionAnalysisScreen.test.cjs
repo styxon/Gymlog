@@ -47,7 +47,8 @@ module.exports = [
 
       // Labels and highlights go through it rather than raw gold…
       assert.match(between(source, '  eyebrow: {', '},'), /color: goldText\(theme\)/);
-      assert.match(between(source, '  sectionLabel: {', '},'), /color: goldText\(theme\)/);
+      // The section labels are the app's shared SectionLabel (unified list style).
+      assert.match(source, /<SectionLabel style=\{styles\.label\} label=\{t\(language, 'analysis\.breakdown'\)\} \/>/);
       // …while the current bar is a fill, where gold reads on either ground.
       assert.match(between(source, '  barCurrent: {', '},'), /backgroundColor: theme\.gold/);
 

@@ -1845,27 +1845,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 18,
     fontWeight: '600',
   },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: 16,
-    paddingBottom: 9,
-  },
-  sectionTitle: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 0.9,
-  },
-  sectionMeta: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-  },
   noteCard: {
     marginHorizontal: spacing.lg,
     borderRadius: radii.lg,

@@ -5,6 +5,7 @@ import Svg, { Path } from 'react-native-svg';
 
 import { PageHeader } from '../components/BackButton';
 import { CoachHighlightedText } from '../components/CoachHighlightedText';
+import { SectionLabel } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { SessionAnalysis, SessionTrend, describeVolumeChange } from '../lib/sessionAnalysis';
 import { layout } from '../theme';
@@ -124,7 +125,7 @@ export function SessionAnalysisScreen({
           {/* 3 · key numbers */}
           {analysis.keyNumbers.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.key.label')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.key.label')} />
               <View style={styles.metricRow}>
                 {analysis.keyNumbers.map((metric) => (
                   <View key={metric.labelKey} style={[styles.metricCell, { flex: metric.grow }]}>
@@ -148,9 +149,10 @@ export function SessionAnalysisScreen({
           {/* 4 · volume over comparable sessions */}
           {bars.length > 0 ? (
             <View style={styles.section}>
-              <View style={styles.sectionHeadRow}>
-                <Text style={styles.sectionLabel}>{t(language, 'analysis.volumeLabel')}</Text>
-                {volumeChange ? (
+              <SectionLabel
+                style={styles.label}
+                label={t(language, 'analysis.volumeLabel')}
+                right={volumeChange ? (
                   <View
                     style={[
                       styles.changePill,
@@ -169,7 +171,7 @@ export function SessionAnalysisScreen({
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              />
 
               <View style={styles.barRow}>
                 {bars.map((bar) => {
@@ -199,7 +201,7 @@ export function SessionAnalysisScreen({
           {/* 5 · exercise breakdown */}
           {analysis.exercises.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.breakdown')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.breakdown')} />
               {analysis.exercises.map((row) => (
                 <View key={row.key} style={styles.exerciseRow}>
                   <View style={styles.exerciseCopy}>
@@ -231,7 +233,7 @@ export function SessionAnalysisScreen({
           {/* 6 · what the coach noticed */}
           {analysis.observations.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.noticed')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.noticed')} />
               {analysis.observations.map((entry, index) => (
                 <View key={`${entry.trend}:${index}`} style={styles.observationRow}>
                   <View style={[styles.observationSquare, { backgroundColor: toneColor(theme, entry.trend) }]} />
@@ -249,7 +251,7 @@ export function SessionAnalysisScreen({
           {/* 7 · next session */}
           {analysis.nextActions.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.next')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.next')} />
               <View style={styles.nextCard}>
                 {analysis.nextActions.map((action, index) => (
                   <View key={index} style={styles.nextRow}>
@@ -396,16 +398,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopColor: aw3ForTheme(theme).hair,
     paddingTop: 18,
   },
-  sectionHeadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionLabel: {
-    color: goldText(theme),
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+  // The shared label; each block below keeps the gap it already had to it.
+  label: {
+    paddingBottom: 0,
   },
   sectionNote: {
     color: theme.faint,
