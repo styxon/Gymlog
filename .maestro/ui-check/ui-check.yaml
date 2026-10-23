@@ -439,6 +439,11 @@ name: UI check
       P: "25-create-program"
 # Leaving the builder asks "Discard changes?" (run 39992399965 stopped at 26
 # with the dialog still open over the tabs). Answer it, then carry on.
+# The name field opens focused, and on iOS its keyboard covers the tab bar
+# (runs 40003253456, 40003257684 stopped at 26): close it first.
+- hideKeyboard
+- waitForAnimationToEnd:
+    timeout: 1500
 - tapOn:
     id: "tab-home"
 - waitForAnimationToEnd:
