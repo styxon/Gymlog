@@ -4,7 +4,7 @@ import { Text, TextInput } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { PageHeader } from '../components/BackButton';
 import { countWord } from '../lib/countWord';
 import { formatDate } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
@@ -16,6 +16,7 @@ import {
 } from '../lib/proBenefits';
 import { resolveMembershipEndView } from '../lib/membershipEndView';
 import { CANCEL_REASON_KEYS, CancelReasonKey } from '../lib/cancelSurvey';
+import { layout } from '../theme';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -110,25 +111,12 @@ export function MembershipEndScreen({
     />
   ) : (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M15 5l-7 7 7 7"
-              stroke={theme.ink}
-              strokeWidth={2.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle title={t(language, 'membership.end.header')} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'membership.end.header')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         {/* The same change rows as the unlock screen, run backwards: what you
@@ -453,24 +441,13 @@ const makeStyles = (theme: Theme) =>
       backgroundColor: theme.bg,
     },
     header: {
-      height: 56,
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-    },
-    backButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: theme.surface,
-      borderWidth: 1,
-      borderColor: theme.border,
-      alignItems: 'center',
-      justifyContent: 'center',
+      paddingHorizontal: layout.screenGutter,
+      paddingTop: layout.pageHeaderTop,
+      paddingBottom: 6,
     },
     body: {
       paddingTop: 6,
-      paddingHorizontal: 20,
+      paddingHorizontal: layout.screenGutter,
       paddingBottom: 24,
     },
     title: {

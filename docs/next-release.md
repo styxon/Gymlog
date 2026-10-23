@@ -29,6 +29,9 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #442 Dates in lists read the same everywhere ("19.10." / "Oct 19", with the year only when it is not this one): the Progress lifts, recent sessions on Home and Progress, the exercise sheet's history and the set log sheet.
+- #439 The last hand-drawn lists join the one-card list style: Progress "Recent sessions" and the bodyweight entries, My data, Export, the notification groups (one card per section; a group that is on shows a lit icon instead of a purple border), the training plan's sessions, Home's other programmes and the Profile milestones. Section headings on a programme page, the session analysis and the exercise library use the shared label; the library's Popular and Suggested headings lose a "View all" that did nothing when tapped.
+- #437 The last pushed screens get the round back button beside a left-aligned title: the session analysis, the legal documents, the membership end page, a programme day and the programme builder (its Save stays on the right). A collection's back button over its cover is round too.
 - #436 Records: "Last session" no longer shows a record from an earlier workout the same day when your latest workout set none.
 - #435 Delete account (Google): a retry after a try that got no answer no longer says "Account deleted" when Google has meanwhile signed the phone out — the copy may still be on the server, so it says to sign in again. A deletion that went through no longer shows "could not delete" when the phone cannot save the sign-out.
 - #443 Edit profile: tapping Back while your name is still saving goes back one screen, to Settings, instead of two.

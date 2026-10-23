@@ -9,7 +9,7 @@ import { Theme, useTheme, useThemedStyles } from '../theming';
 
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { ConfirmDialog } from '../components/ConfirmDialog';
-import { ScreenHeader } from '../components/ScreenHeader';
+import { PageHeader } from '../components/BackButton';
 import { getExerciseImageSource } from '../assets/exerciseImages';
 import { exerciseNameLabel } from '../lib/exerciseNameLabel';
 import { getExerciseTemplateDefaults } from '../lib/exerciseSuggestions';
@@ -930,15 +930,21 @@ export function CreateTemplateScreen({
 
   return (
     <View style={styles.screen}>
-      <ScreenHeader
-        language={language}
+      <PageHeader
+        style={styles.header}
         title={t(language, initialDraft.id ? 'tpl.editTitle' : 'tpl.createTitle')}
         onBack={handleBack}
+        backLabel={t(language, 'common.back')}
         // Same gate as the button at the bottom: while a day is empty there is
         // no save action, so the header shows none rather than a word that
         // does nothing when tapped.
-        rightActionLabel={canSave && !saving ? t(language, 'common.save') : undefined}
-        onRightActionPress={canSave && !saving ? () => void handleSave() : undefined}
+        right={
+          canSave && !saving ? (
+            <Pressable accessibilityRole="button" hitSlop={10} onPress={() => void handleSave()} style={styles.headerAction}>
+              <Text style={styles.headerActionText}>{t(language, 'common.save')}</Text>
+            </Pressable>
+          ) : null
+        }
       />
 
       {renderStepIndicator()}
@@ -1068,6 +1074,20 @@ const makeStyles = (theme: Theme) =>
     screen: {
       flex: 1,
       backgroundColor: theme.bg,
+    },
+    header: {
+      paddingHorizontal: spacing.lg,
+      paddingTop: layout.pageHeaderTop,
+      paddingBottom: spacing.sm,
+    },
+    headerAction: {
+      minHeight: 40,
+      justifyContent: 'center',
+    },
+    headerActionText: {
+      color: theme.highlight,
+      fontSize: 15,
+      fontWeight: '800',
     },
     content: {
       paddingHorizontal: spacing.lg,

@@ -392,21 +392,6 @@ function ExRow({
   );
 }
 
-function SectionHead({ label, action, onAction }: { label: string; action?: string; onAction?: () => void }) {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <View style={styles.sectionHead}>
-      <Text style={styles.sectionHeadLabel}>{label}</Text>
-      {action ? (
-        <Text onPress={onAction} style={styles.sectionHeadAction}>
-          {action}
-        </Text>
-      ) : null}
-    </View>
-  );
-}
-
 export function ExerciseLibraryBrowser({
   items,
   language = 'en',
@@ -679,12 +664,12 @@ export function ExerciseLibraryBrowser({
                     finished the course. Only the heading changes. */}
                 {learnCollection && onOpenCollection ? (
                   <View style={styles.dashboardSection}>
-                    <SectionHead
+                    <SectionLabel
                       label={t(
                         language,
                         learnCollection.state === 'inProgress' ? 'library.pickUp' : 'learn.eyebrow',
                       )}
-                      action={onOpenLearnIndex ? t(language, 'library.learnAll') : undefined}
+                      actionLabel={onOpenLearnIndex ? t(language, 'library.learnAll') : undefined}
                       onAction={onOpenLearnIndex}
                     />
                     <Pressable
@@ -718,7 +703,8 @@ export function ExerciseLibraryBrowser({
                 ) : null}
 
                 <View style={styles.dashboardSection}>
-                  <SectionHead label={t(language, 'library.popular')} action={t(language, 'programs.viewAll')} />
+                  {/* No "View all": it had no handler, a word that did nothing when tapped. */}
+                  <SectionLabel label={t(language, 'library.popular')} />
                   {renderRail(popularItems)}
                 </View>
 
@@ -727,7 +713,7 @@ export function ExerciseLibraryBrowser({
                     whose one effect was on a different tab entirely. */}
 
                 <View style={styles.dashboardSection}>
-                  <SectionHead label={t(language, 'library.suggested')} action={t(language, 'programs.viewAll')} />
+                  <SectionLabel label={t(language, 'library.suggested')} />
                   {renderRail(suggestedItems)}
                 </View>
               </>
@@ -949,24 +935,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   dashboardSection: {
     marginTop: 22,
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
-    paddingBottom: 11,
-  },
-  sectionHeadLabel: {
-    color: theme.faint,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  sectionHeadAction: {
-    color: theme.highlight,
-    fontSize: 12.5,
-    fontWeight: '800',
   },
   rail: {
     gap: 12,
