@@ -202,14 +202,22 @@ name: UI check
     id: "seg-overview"
 - waitForAnimationToEnd:
     timeout: 2500
+# By id: the text "Näytä kaikki|See all" also matched Profile's milestones
+# footer, and run 39982349828 saved the Profile tab as 11-history.
 - scrollUntilVisible:
     element:
-      text: "Näytä kaikki|See all"
+      id: "progress-history-all"
     direction: DOWN
     timeout: 20000
+    visibilityPercentage: 60
+    centerElement: true
 - tapOn:
-    text: "Näytä kaikki|See all"
-    rightOf: "Historia|History"
+    id: "progress-history-all"
+- waitForAnimationToEnd:
+    timeout: 3000
+# History is open before it is shot: a wrong screen stops the run here.
+- assertVisible:
+    id: "history-back"
 - runFlow:
     file: scrolls.yaml
     env:
@@ -348,3 +356,192 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "22-coach"
+
+# 23-30 The pushed screens and sheets the walk above does not reach (added
+# 2026-10-23 for the unified list style). Each starts from a bottom tab, and
+# the running workout comes last: the player hides the tab bar.
+# Not reachable from the seeded reader, so not here:
+#  - Training plan: opens only from the "set training days" prompts.
+#  - Membership end: the seed's Pro is a lifetime purchase, which has no
+#    "End membership" row.
+#  - The Workout tab's Programs list ('plans'): its only route is the
+#    workout tab's root when programsTabEnabled is false, and the loader
+#    forces that flag on.
+
+# 23 Session analysis, from the coach's "See full analysis" link (Pro).
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn:
+    id: "tab-ai"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    file: top.yaml
+- scrollUntilVisible:
+    element:
+      id: "coach-full-analysis"
+    direction: DOWN
+    timeout: 15000
+    visibilityPercentage: 60
+    centerElement: true
+- tapOn:
+    id: "coach-full-analysis"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "coach-full-analysis"
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "23-session-analysis"
+
+# 24 A legal document (the privacy policy), from Settings.
+- runFlow:
+    file: settings-row.yaml
+    env:
+      ROW: "settings-privacy"
+      P: "24-legal-document"
+
+# 25 Create program: Programs tab -> "New program" sheet -> build it yourself.
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn:
+    id: "tab-workout"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    file: top.yaml
+- scrollUntilVisible:
+    element:
+      id: "programs-create"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 60
+    centerElement: true
+- tapOn:
+    id: "programs-create"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: "25-new-program-sheet"
+- tapOn:
+    id: "new-program-build"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "new-program-build"
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "25-create-program"
+# Leaving the builder asks "Discard changes?" (run 39992399965 stopped at 26
+# with the dialog still open over the tabs). Answer it, then carry on.
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- runFlow:
+    when:
+      visible: "Hylätäänkö muutokset.*|Discard changes.*"
+    commands:
+      - tapOn: "Hylkää|Discard"
+      - waitForAnimationToEnd:
+          timeout: 2500
+
+# 26 A programme day (the first day of the first programme card), 27 its Add
+#    exercise sheet, 28 its Swap exercise sheet. Swap is offered only on a day
+#    that is not the running workout's, so 28 is conditional.
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- tapOn:
+    id: "tab-workout"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    file: top.yaml
+- scrollUntilVisible:
+    element:
+      id: "program-card-0"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 50
+    centerElement: true
+- tapOn:
+    id: "program-card-0"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    id: "program-detail-title"
+- scrollUntilVisible:
+    element:
+      id: "program-day-0"
+    direction: DOWN
+    timeout: 20000
+    visibilityPercentage: 60
+    centerElement: true
+- tapOn:
+    id: "program-day-0"
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertNotVisible:
+    id: "program-detail-title"
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "26-program-day"
+- scrollUntilVisible:
+    element:
+      id: "day-add-exercise"
+    direction: DOWN
+    timeout: 15000
+    visibilityPercentage: 60
+    centerElement: true
+- tapOn:
+    id: "day-add-exercise"
+- waitForAnimationToEnd:
+    timeout: 3000
+- takeScreenshot: "27-add-exercise-sheet"
+- tapOn: "Sulje|Close"
+- waitForAnimationToEnd:
+    timeout: 2500
+- runFlow:
+    file: top.yaml
+- runFlow:
+    when:
+      visible:
+        id: "day-swap-0"
+    commands:
+      - tapOn:
+          id: "day-swap-0"
+      - waitForAnimationToEnd:
+          timeout: 3000
+      - takeScreenshot: "28-swap-exercise-sheet"
+      - tapOn: "Sulje|Close"
+      - waitForAnimationToEnd:
+          timeout: 2500
+
+# 29 The running workout's set screen, 30 the lift's exercise sheet. Last:
+#    the player hides the tab bar.
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    file: top.yaml
+- runFlow:
+    file: open-player.yaml
+- assertVisible: "Kirjaa sarja 2|Log set 2"
+- takeScreenshot: "29-set-screen"
+- tapOn:
+    id: "set-exercise-card"
+- waitForAnimationToEnd:
+    timeout: 3000
+- runFlow:
+    file: scrolls.yaml
+    env:
+      P: "30-exercise-sheet"
