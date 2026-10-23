@@ -147,7 +147,7 @@ import { formatClock } from '../lib/restSchedule';
 import { estimateSessionMinutes } from '../lib/sessionDuration';
 import { buildSupersetRuns, normalizeSupersetGroups, supersetGroupIndexes, supersetPositions } from '../lib/supersetGrouping';
 import { I18nKey, t } from '../lib/i18n';
-import { unloadedSetRowLabel, walkRampLabel, walkSupersetRampLabel } from '../lib/repCountCopy';
+import { setCountLabel, unloadedSetRowLabel, walkRampLabel, walkSupersetRampLabel } from '../lib/repCountCopy';
 import { haptics } from '../utils/haptics';
 import { subscribeRestActions, useRestEndAlert } from '../hooks/useRestEndAlert';
 import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMoment';
@@ -3593,7 +3593,7 @@ function GuidedPlayer({
                 activeExercises.length === 1
                   ? t(language, 'guided.count.exerciseOne')
                   : t(language, 'guided.count.exerciseMany', { count: activeExercises.length }),
-                t(language, 'guided.count.sets', { count: totalSets }),
+                setCountLabel(totalSets, language),
                 t(language, 'guided.entry.duration', { min: durationMinutes }),
               ].join(' · ')}
             </Text>
@@ -3662,7 +3662,7 @@ function GuidedPlayer({
                         activeExercises.length === 1
                           ? t(language, 'guided.count.exerciseOne')
                           : t(language, 'guided.count.exerciseMany', { count: activeExercises.length })
-                      } · ${t(language, 'guided.count.sets', { count: totalSets })}`,
+                      } · ${setCountLabel(totalSets, language)}`,
                       // In runs, so a superset is one box on this table too.
                       // Two lifts that will be done back to back are read
                       // before the session starts, which is when knowing it

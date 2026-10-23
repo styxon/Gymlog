@@ -598,9 +598,11 @@ export function AICoachChatScreen({
    */
   const contextLine = useMemo(() => {
     const read =
-      sessionCount > 0
-        ? t(language, 'coachChat.subtitle', { count: sessionCount })
-        : t(language, 'coachChat.subtitleFresh');
+      sessionCount === 1
+        ? t(language, 'coachChat.subtitleOne')
+        : sessionCount > 0
+          ? t(language, 'coachChat.subtitle', { count: sessionCount })
+          : t(language, 'coachChat.subtitleFresh');
     const today = chips[0]?.label;
     return today ? `${read} · ${today}` : read;
   }, [chips, language, sessionCount]);

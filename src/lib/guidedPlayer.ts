@@ -15,6 +15,7 @@ import { parseNumberInput, removeTrailingZeros } from './format';
 // that loop stays a type relationship and never becomes a module cycle.
 import type { SessionRoutineBlock } from './homeSessionHero';
 import { t } from './i18n';
+import { setCountLabel } from './repCountCopy';
 import { IntervalRecoveryKind, IntervalScheme, parseIntervalScheme } from './intervalScheme';
 import { liftBeforeSwap, liftOfSet } from './liftSegments';
 import { localizeSessionFocus } from './sessionNameLabel';
@@ -340,7 +341,7 @@ export function buildGuidedSteps(
       type: 'splash',
       phase: 'work',
       title: t(language, 'guided.phase.workout'),
-      sub: `${exerciseCount} · ${t(language, 'guided.count.sets', { count: totalSets })}`,
+      sub: `${exerciseCount} · ${setCountLabel(totalSets, language)}`,
       doneLabel: input.warmup.length > 0 ? t(language, 'guided.done.warmup') : null,
     });
     // A superset is one block of work, so the runs — not the exercises — are

@@ -381,7 +381,9 @@ function buildPreviewAnswer(
 
     const shape = [
       session.setsCompleted !== null
-        ? t(language, 'coachPreview.lastSession.sets', { count: session.setsCompleted })
+        ? session.setsCompleted === 1
+          ? t(language, 'coachPreview.lastSession.setsOne')
+          : t(language, 'coachPreview.lastSession.sets', { count: session.setsCompleted })
         : null,
       session.durationMinutes !== null
         ? t(language, 'coachPreview.lastSession.minutes', { count: session.durationMinutes })

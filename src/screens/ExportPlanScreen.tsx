@@ -7,6 +7,7 @@ import { ListCard, ListRow } from '../components/ListCard';
 import { CARD_SHADOW, SectionLabel } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { buildProgramCsv, CsvExportSession, summarizeExportSessions } from '../lib/programCsvExport';
+import { exportLogMetaLabel } from '../lib/repCountCopy';
 import { buildWorkoutLogCsv, summarizeWorkoutLog, WorkoutLogCsvInput } from '../lib/workoutLogCsvExport';
 import { Theme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
@@ -84,7 +85,7 @@ export function ExportPlanScreen({ language = 'en', plans, log, onBack }: Export
   const logEmpty = logSummary.sets === 0 && logSummary.cardio === 0;
   const logMeta = [
     logSummary.sets > 0
-      ? t(language, 'export.log.meta', { sessions: logSummary.sessions, sets: logSummary.sets })
+      ? exportLogMetaLabel(logSummary.sessions, logSummary.sets, language)
       : null,
     logSummary.cardio === 1
       ? t(language, 'export.log.cardioOne')

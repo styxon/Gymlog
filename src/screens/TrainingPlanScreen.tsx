@@ -9,6 +9,7 @@ import { ListCard, ListRow } from '../components/ListCard';
 import { SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { CsvLibraryEntry } from '../lib/csvProgramImport';
 import { I18nKey, t } from '../lib/i18n';
+import { planSessionMetaLabel } from '../lib/repCountCopy';
 import { scheduleDraftSave } from '../lib/scheduleDraft';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { cycleSchedule, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
@@ -483,10 +484,7 @@ export function TrainingPlanScreen({
                         </View>
                       ) : null
                     }
-                    meta={t(language, 'plan.sessionMeta', {
-                      exercises: session.exerciseCount,
-                      sets: session.totalSets,
-                    })}
+                    meta={planSessionMetaLabel(session.exerciseCount, session.totalSets, language)}
                     onPress={onEditCustomPlan}
                   />
                 ))}
