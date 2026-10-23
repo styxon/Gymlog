@@ -1632,6 +1632,7 @@ export function ProgressScreen({
           label={t(language, 'progress.history')}
           actionLabel={onOpenSessionHistory ? t(language, 'progress.seeAll') : undefined}
           onAction={onOpenSessionHistory}
+          actionTestID="progress-history-all"
         />
         {recentSessions.length > 0 ? (
           <ListCard>
