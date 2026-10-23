@@ -21,6 +21,7 @@ export function SectionLabel({
   label,
   actionLabel,
   onAction,
+  actionTestID,
   right,
   spaced,
   style,
@@ -28,6 +29,8 @@ export function SectionLabel({
   label: string;
   actionLabel?: string;
   onAction?: () => void;
+  /** For the UI-check walk (.maestro/ui-check): the action found by id, not by its words. */
+  actionTestID?: string;
   /** A non-text right side (a count, a link with a chevron); wins over `actionLabel`. */
   right?: React.ReactNode;
   /** Sits under a card or another block: adds the shared gap above the label. */
@@ -47,7 +50,13 @@ export function SectionLabel({
       ) : (
         right ??
         (actionLabel ? (
-          <Pressable accessibilityRole="button" onPress={onAction} hitSlop={8} style={styles.sectionActionWrap}>
+          <Pressable
+            testID={actionTestID}
+            accessibilityRole="button"
+            onPress={onAction}
+            hitSlop={8}
+            style={styles.sectionActionWrap}
+          >
             <Text style={styles.sectionAction}>{actionLabel}</Text>
           </Pressable>
         ) : null)
