@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AddExerciseSheet, ExercisePickerSheet } from '../components/AddExerciseSheet';
 import { useSwapPickerLists } from '../hooks/useSwapPickerLists';
 import { exerciseSheetCopy } from '../lib/exerciseSheetMode';
+import { BackButton } from '../components/BackButton';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { KitBar, KitRow, KitSheet } from '../components/sheetKit';
 import { CutSurface } from '../components/CutSurface';
@@ -827,6 +828,7 @@ export function ProgramDayScreen({
                     left removal reachable only from inside the swap sheet. */}
                 {exercise.slotId && onSwapExercise ? (
                   <Pressable
+                    testID={`day-swap-${index}`}
                     accessibilityRole="button"
                     accessibilityLabel={t(language, 'detail.day.a11y.swap', {
                       name: exerciseNameLabel(language, exercise.name),
@@ -951,24 +953,7 @@ export function ProgramDayScreen({
           carrying, and they stay, as does everything under it.
         */}
         <View style={styles.headerRow}>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t(language, 'common.back')}
-            hitSlop={10}
-            onPress={onBack}
-            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}
-          >
-            <Svg viewBox="0 0 24 24" width={18} height={18}>
-              <Path
-                d="M15 6l-6 6 6 6"
-                stroke={theme.ink}
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                fill="none"
-              />
-            </Svg>
-          </Pressable>
+          <BackButton onPress={onBack} accessibilityLabel={t(language, 'common.back')} />
         </View>
         {/*
           The day, named exactly as the row you tapped named it.
@@ -1123,6 +1108,7 @@ export function ProgramDayScreen({
               opens over this screen — see onAddExercises. */}
           {canAddExercises ? (
             <Pressable
+              testID="day-add-exercise"
               accessibilityRole="button"
               onPress={() => setAddSheetOpen(true)}
               style={({ pressed }) => [styles.addRow, pressed && styles.swapOptionPressed]}
@@ -1688,16 +1674,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginTop: 6,
   },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   pageTitle: {
     color: theme.ink,
     fontSize: 30,
@@ -1868,27 +1844,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12.5,
     lineHeight: 18,
     fontWeight: '600',
-  },
-  sectionHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingTop: 16,
-    paddingBottom: 9,
-  },
-  sectionTitle: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 0.9,
-  },
-  sectionMeta: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
   },
   noteCard: {
     marginHorizontal: spacing.lg,

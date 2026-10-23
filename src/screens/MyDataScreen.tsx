@@ -4,7 +4,8 @@ import { Text, TextInput } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { PageHeader } from '../components/BackButton';
-import { CARD_SHADOW, ChevronIcon, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
+import { ListCard } from '../components/ListCard';
+import { ChevronIcon, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { getSetupEquipmentTitle, getSetupGoalTitle } from '../lib/firstRunSetup';
 import { I18nKey, t } from '../lib/i18n';
 import { Theme, useTheme, useThemedStyles } from '../theming';
@@ -132,19 +133,20 @@ function DataRow({
   label,
   value,
   editLabel,
-  isLast = false,
   onPress,
 }: {
   label: string;
   value: string;
   editLabel?: string;
-  isLast?: boolean;
   onPress?: () => void;
 }) {
   const styles = useThemedStyles(makeStyles);
 
+  // A label over its value, not ListRow's title-and-figure: the values are
+  // sentences ("Barbell, dumbbells, cable") that a trailing figure would cut.
+  // The card and its hairlines are ListCard's.
   const inner = (
-    <View style={[styles.dataRow, !isLast && styles.dataRowDivider]}>
+    <View style={styles.dataRow}>
       <View style={styles.dataCopy}>
         <Text style={styles.dataLabel}>{label.toUpperCase()}</Text>
         <Text style={styles.dataValue}>{value}</Text>
@@ -320,32 +322,30 @@ export function MyDataScreen({
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <View style={settingsStyles.section}>
           <SectionLabel label={t(language, 'myData.basics')} />
-          <View style={styles.card}>
+          <ListCard>
             {basics.map((row, index) => (
               <DataRow
                 key={row.key}
                 label={row.label}
                 value={row.value ?? t(language, 'myData.notSet')}
                 editLabel={row.edits ? t(language, 'myData.edit', { field: row.label }) : undefined}
-                isLast={index === basics.length - 1}
                 onPress={row.onPress}
               />
             ))}
-          </View>
+          </ListCard>
         </View>
 
         <View style={settingsStyles.section}>
           <SectionLabel label={t(language, 'myData.trainingPrefs')} />
-          <View style={styles.card}>
+          <ListCard>
             {training.map((row, index) => (
               <DataRow
                 key={row.label}
                 label={row.label}
                 value={row.value ?? t(language, 'myData.notSet')}
-                isLast={index === training.length - 1}
               />
             ))}
-          </View>
+          </ListCard>
           <Pressable
             accessibilityRole="button"
             onPress={onCreateNewPlan}
@@ -360,9 +360,9 @@ export function MyDataScreen({
 
         <View style={settingsStyles.section}>
           <SectionLabel label={t(language, 'myData.additional')} />
-          <View style={styles.card}>
+          <ListCard>
             {limitations.length > 0 ? (
-              limitations.map((flag, index) => (
+              limitations.map((flag) => (
                 <Pressable
                   key={flag.area}
                   accessibilityRole="button"
@@ -372,7 +372,6 @@ export function MyDataScreen({
                   onPress={onEditLimitations}
                   style={({ pressed }) => [
                     styles.limitRow,
-                    index !== limitations.length - 1 && styles.dataRowDivider,
                     pressed && { opacity: 0.65 },
                   ]}
                 >
@@ -390,11 +389,10 @@ export function MyDataScreen({
                 label={t(language, 'myData.limitations')}
                 value={t(language, 'myData.nothingNoted')}
                 editLabel={t(language, 'myData.edit', { field: t(language, 'myData.limitations') })}
-                isLast
                 onPress={onEditLimitations}
               />
             )}
-          </View>
+          </ListCard>
         </View>
 
         <Text style={styles.footerText}>
@@ -529,23 +527,13 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
-  card: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 18,
-    ...CARD_SHADOW,
-  },
   dataRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
-  },
-  dataRowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   dataCopy: {
     flex: 1,
@@ -587,11 +575,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 2,
   },
   limitRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 15,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   limitTile: {
     width: 40,

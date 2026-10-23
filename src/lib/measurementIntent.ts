@@ -32,7 +32,78 @@ export const KIND_WORDS: Array<{ kind: MeasurementIntentKind; pattern: RegExp }>
   { kind: 'shoulders', pattern: /\bhartia|\bolkapä|\bshoulders?\b/i },
 ];
 
-const NUMBER = /(\d{1,3}(?:[.,]\d{1,2})?)\s*(cm|kg|%)?/i;
+/**
+ * Every number in the message, whole ("1000" is one token, never "100"), with
+ * where it stands and the unit written after it, if any. A clock time with a
+ * colon ("7:15") is not a number here at all. Imperial units are read only to
+ * be refused: "180 lb" logged as 180 kg would be a wrong reading, not a missed
+ * one (hunt 1.1.1).
+ */
+const NUMBER_TOKEN = /(?<![\d.,])(?<!\d:)(\d+(?:[.,]\d+)*)(\.?)(?!\d|:\d)\s*(cm|kg|%|lbs?\b|pounds?\b|inch(?:es)?\b|in(?=\s*(?:$|[.,!;)]))|")?/gi;
+/** A reading as a person types one: up to three digits, at most two decimals. */
+const READING = /^\d{1,3}(?:[.,]\d{1,2})?$/;
+/** Said just before a clock time: "klo 22.30", "kello 7". */
+const CLOCK_BEFORE = /(?:\bklo|\bkello|@)\s*$/i;
+
+interface NumberToken {
+  raw: string;
+  index: number;
+  /** Where the token, its unit and the spaces after it end. */
+  end: number;
+  unit: string | null;
+  /** A clock time after "klo", or a full date "30.10.2026": never a reading. */
+  notReading: boolean;
+  /** "30.10." — a date when it comes before the measurement word. */
+  dayMonth: boolean;
+}
+
+function numberTokens(message: string): NumberToken[] {
+  const tokens: NumberToken[] = [];
+  for (const match of message.matchAll(NUMBER_TOKEN)) {
+    const raw = match[1];
+    const index = match.index ?? 0;
+    const parts = raw.split(/[.,]/);
+    const before = message.slice(0, index);
+    // A closing quote is not inches when an opening one came before: painoni "82".
+    const unit = match[3] === '"' && before.includes('"') ? null : match[3] ? match[3].toLowerCase() : null;
+    tokens.push({
+      raw,
+      index,
+      end: index + match[0].length,
+      unit,
+      notReading: parts.length > 2 || CLOCK_BEFORE.test(before),
+      dayMonth:
+        parts.length === 2 &&
+        raw.includes('.') &&
+        match[2] === '.' &&
+        Number(parts[0]) >= 1 &&
+        Number(parts[0]) <= 31 &&
+        Number(parts[1]) >= 1 &&
+        Number(parts[1]) <= 12,
+    });
+  }
+  return tokens;
+}
+
+/**
+ * The reading is the number that follows the measurement's own word: "paino
+ * 82 ja vyötärö 90 cm" is 82 kg, "painoni 82 (viime viikolla 84 kg)" is 82.
+ * Taking the first number in the message read a date or clock before it, and
+ * taking any number with a unit read another measurement's (re-check of hunt
+ * 1.1.1). A number right before the word, nothing between them, comes first:
+ * "82 kg paino, treenasin 3 kertaa" is 82, "18 % rasvaprosentti 3 kk sitten"
+ * is 18 (second re-check). With nothing after the word, the last number before it
+ * that is not a date.
+ */
+function readingToken(tokens: readonly NumberToken[], message: string, wordAt: number): NumberToken | undefined {
+  const usable = tokens.filter((token) => !token.notReading);
+  const before = usable.filter((token) => token.index < wordAt && !token.dayMonth);
+  const leading = before[before.length - 1];
+  if (leading && message.slice(leading.end, wordAt).trim() === '') {
+    return leading;
+  }
+  return usable.find((token) => token.index > wordAt) ?? leading;
+}
 
 const RANGE: Record<MeasurementIntent['unit'], [number, number]> = {
   cm: [15, 250],
@@ -75,13 +146,15 @@ export function parseMeasurementIntent(text: string, _language: AppLanguage = 'f
     return null;
   }
 
-  const number = message.match(NUMBER);
-  if (!number) {
+  // A number that is not a reading shape is refused, never cut short: "1000 kg".
+  const number = readingToken(numberTokens(message), message, message.search(match.pattern));
+  if (!number || !READING.test(number.raw)) {
     return null;
   }
-  const value = Number(number[1].replace(',', '.'));
-  const unit = (number[2]?.toLowerCase() as MeasurementIntent['unit'] | undefined) ?? unitFor(match.kind);
+  const value = Number(number.raw.replace(',', '.'));
+  const unit = (number.unit as MeasurementIntent['unit'] | null) ?? unitFor(match.kind);
   if (unit !== unitFor(match.kind)) {
+    // Also "180 lb" and "82 in": not this app's units, so not offered.
     // "rinta 80 kg" is a bench press, not a chest measurement.
     return null;
   }

@@ -417,7 +417,7 @@ module.exports = [
     name: 'progress: a weight entry cannot be deleted from a resting row',
     run() {
       assert.match(screen, /const \[entriesEditing, setEntriesEditing\] = useState\(false\);/);
-      assert.match(screen, /\{entriesEditing \? \(/, 'the delete draws on every row again');
+      assert.match(screen, /entriesEditing \? \(\s*<Pressable/, 'the delete draws on every row again');
       assert.match(screen, /setEntriesEditing\(\(value\) => !value\)/);
       // It opens closed: a list first, deletes on request.
       assert.doesNotMatch(screen, /useState\(true\); \/\/ entriesEditing/);
@@ -446,7 +446,7 @@ module.exports = [
       // A weight entry carries its whole stamp. "Sep 1 / Sep 1" cannot tell
       // two weigh-ins on one day apart, and those are the ones you came to
       // delete.
-      assert.match(screen, /styles\.entryDate\}>\{formatSessionDate\(row\.recordedAt, language\)\}/);
+      assert.match(screen, /title=\{formatSessionDate\(row\.recordedAt, language\)\}/);
 
       // A day that lifted nothing is not a zero-volume day, it is a day with
       // no volume reading. Plotted as 0 it pinned the line to the axis and
@@ -521,7 +521,7 @@ module.exports = [
     name: 'progress: the calendar is a record, not a wall of buttons',
     run() {
       const styles = screen.slice(screen.indexOf('  calendarBubbleTraining: {'));
-      const block = styles.slice(0, styles.indexOf('  progressHistoryCard: {'));
+      const block = styles.slice(0, styles.indexOf('  historyEmpty: {'));
       assert.ok(block.length > 80, 'the calendar styles moved — recheck by hand');
 
       // Nothing in the calendar's own styles takes the pressable accent.

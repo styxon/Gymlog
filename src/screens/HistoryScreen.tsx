@@ -601,7 +601,12 @@ export function HistoryScreen({
       >
         {/* History opens from Home and from Progress, so the way back is on
             the page, not only in the system gesture (#bugs 2026-10-01). */}
-        <PageHeader title={t(language, 'history.title')} onBack={onBack} backLabel={t(language, 'common.back')} />
+        <PageHeader
+          title={t(language, 'history.title')}
+          onBack={onBack}
+          backLabel={t(language, 'common.back')}
+          backTestID="history-back"
+        />
 
         {/*
           Nothing logged means nothing of EITHER kind.
@@ -861,6 +866,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 26,
   },
+  // Not the shared BackButton on purpose: it sits on the hero gradient, so
+  // it keeps that button's shape (40, round) with a frosted fill and a white
+  // chevron instead of the light control fill.
   heroBack: {
     width: 40,
     height: 40,

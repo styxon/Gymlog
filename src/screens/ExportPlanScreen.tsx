@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ScrollView, Share, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
-import Svg, { Path } from 'react-native-svg';
 
 import { PageHeader } from '../components/BackButton';
-import { CARD_SHADOW, ChevronIcon, SectionLabel } from '../components/SettingsUi';
+import { ListCard, ListRow } from '../components/ListCard';
+import { CARD_SHADOW, SectionLabel } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { buildProgramCsv, CsvExportSession, summarizeExportSessions } from '../lib/programCsvExport';
 import { exportLogMetaLabel } from '../lib/repCountCopy';
 import { buildWorkoutLogCsv, summarizeWorkoutLog, WorkoutLogCsvInput } from '../lib/workoutLogCsvExport';
-import { Theme, useTheme, useThemedStyles } from '../theming';
+import { Theme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage } from '../types/models';
 
@@ -67,7 +67,6 @@ interface ExportPlanScreenProps {
  * paste it straight back into the importer.
  */
 export function ExportPlanScreen({ language = 'en', plans, log, onBack }: ExportPlanScreenProps) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   async function sharePlan(plan: ExportablePlan) {
     try {
@@ -177,30 +176,20 @@ export function ExportPlanScreen({ language = 'en', plans, log, onBack }: Export
         ) : (
           <View style={styles.section}>
             <SectionLabel label={t(language, 'export.section')} />
-            <View style={styles.card}>
-              {plans.map((plan, index) => {
+            <ListCard>
+              {plans.map((plan) => {
                 const { dayCount, exerciseCount } = summarizeExportSessions(plan.sessions);
                 return (
-                  <Pressable
+                  <ListRow
                     key={plan.id}
-                    accessibilityRole="button"
                     accessibilityLabel={t(language, 'export.shareA11y', { name: plan.name })}
+                    title={plan.name}
+                    meta={countLabel(language, dayCount, exerciseCount)}
                     onPress={() => void sharePlan(plan)}
-                    style={({ pressed }) => [
-                      styles.row,
-                      index !== plans.length - 1 && styles.rowDivider,
-                      pressed && { opacity: 0.7 },
-                    ]}
-                  >
-                    <View style={styles.rowCopy}>
-                      <Text style={styles.rowTitle}>{plan.name}</Text>
-                      <Text style={styles.rowSub}>{countLabel(language, dayCount, exerciseCount)}</Text>
-                    </View>
-                    <ChevronIcon />
-                  </Pressable>
+                  />
                 );
               })}
-            </View>
+            </ListCard>
           </View>
         )}
 
@@ -213,24 +202,15 @@ export function ExportPlanScreen({ language = 'en', plans, log, onBack }: Export
         */}
         <View style={styles.section}>
           <SectionLabel spaced label={t(language, 'export.log.section')} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t(language, 'export.log.title')}
-            disabled={logEmpty}
-            onPress={() => void shareLog()}
-            style={({ pressed }) => [
-              styles.card,
-              styles.row,
-              logEmpty && { opacity: 0.55 },
-              pressed && { opacity: 0.7 },
-            ]}
-          >
-            <View style={styles.rowCopy}>
-              <Text style={styles.rowTitle}>{t(language, 'export.log.title')}</Text>
-              <Text style={styles.rowSub}>{logEmpty ? t(language, 'export.log.empty') : logMeta}</Text>
-            </View>
-            {logEmpty ? null : <ChevronIcon />}
-          </Pressable>
+          {/* With nothing logged the row is not a button at all: no press, no chevron. */}
+          <ListCard style={logEmpty && styles.rowDisabled}>
+            <ListRow
+              accessibilityLabel={t(language, 'export.log.title')}
+              title={t(language, 'export.log.title')}
+              meta={logEmpty ? t(language, 'export.log.empty') : logMeta}
+              onPress={logEmpty ? undefined : () => void shareLog()}
+            />
+          </ListCard>
           {logError ? <Text style={styles.rowError}>{logError}</Text> : null}
         </View>
 
@@ -288,31 +268,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 19,
     marginTop: 6,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    paddingVertical: 14,
-    paddingHorizontal: 15,
-  },
-  rowDivider: {
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  rowCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  rowTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
-  rowSub: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
+  rowDisabled: {
+    opacity: 0.55,
   },
   rowError: {
     color: theme.danger,

@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
-import Svg, { Path } from 'react-native-svg';
 import { PageHeader } from '../components/BackButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NewProgramSheet } from '../components/NewProgramSheet';
-import { ChevronIcon, SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
+import { ListCard, ListRow } from '../components/ListCard';
+import { SectionLabel, makeSettingsStyles } from '../components/SettingsUi';
 import { CsvLibraryEntry } from '../lib/csvProgramImport';
 import { I18nKey, t } from '../lib/i18n';
 import { planSessionMetaLabel } from '../lib/repCountCopy';
 import { scheduleDraftSave } from '../lib/scheduleDraft';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { cycleSchedule, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';
-import { Theme, useTheme, useThemedStyles } from '../theming';
+import { Theme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import type { AppLanguage, ExerciseLibraryItem, SetupWeekday, WorkoutTemplateDraft, ExerciseNameBookEntry } from '../types/models';
 
@@ -162,7 +162,6 @@ export function TrainingPlanScreen({
   onBuildYourself,
   onImportProgram,
 }: TrainingPlanScreenProps) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const settingsStyles = useThemedStyles(makeSettingsStyles);
   // Read here, on the screen: inside NewProgramSheet's own Modal,
@@ -472,46 +471,24 @@ export function TrainingPlanScreen({
             {/* SESSIONS */}
             <View style={settingsStyles.section}>
               <SectionLabel label={t(language, 'plan.sessions')} />
-              <View style={settingsStyles.card}>
-                {sessions.map((session, index) => {
-                  const row = (
-                    <View
-                      style={[styles.sessionRow, index === sessions.length - 1 && styles.sessionRowLast]}
-                    >
-                      <SessionTile title={session.title} />
-                      <View style={styles.sessionCopy}>
-                        <View style={styles.sessionTitleRow}>
-                          <Text numberOfLines={2} style={styles.sessionTitle}>
-                            {session.title}
-                          </Text>
-                          {session.isNext ? (
-                            <View style={styles.nextBadge}>
-                              <Text style={styles.nextBadgeText}>{t(language, 'plan.upNext')}</Text>
-                            </View>
-                          ) : null}
+              <ListCard>
+                {sessions.map((session) => (
+                  <ListRow
+                    key={session.id}
+                    leading={<SessionTile title={session.title} />}
+                    title={session.title}
+                    accessory={
+                      session.isNext ? (
+                        <View style={styles.nextBadge}>
+                          <Text style={styles.nextBadgeText}>{t(language, 'plan.upNext')}</Text>
                         </View>
-                        <Text style={styles.sessionMeta}>
-                          {planSessionMetaLabel(session.exerciseCount, session.totalSets, language)}
-                        </Text>
-                      </View>
-                      {onEditCustomPlan ? <ChevronIcon /> : null}
-                    </View>
-                  );
-
-                  return onEditCustomPlan ? (
-                    <Pressable
-                      key={session.id}
-                      accessibilityRole="button"
-                      onPress={onEditCustomPlan}
-                      style={({ pressed }) => pressed && { opacity: 0.65 }}
-                    >
-                      {row}
-                    </Pressable>
-                  ) : (
-                    <View key={session.id}>{row}</View>
-                  );
-                })}
-              </View>
+                      ) : null
+                    }
+                    meta={planSessionMetaLabel(session.exerciseCount, session.totalSets, language)}
+                    onPress={onEditCustomPlan}
+                  />
+                ))}
+              </ListCard>
               {/* "Tee tästä oma versio" stood under this note. Removed with
                   the other two: a fixed programme is now changed by changing a
                   lift in it, and the copy happens underneath that. */}
@@ -771,17 +748,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '600',
     marginTop: 12,
   },
-  sessionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  sessionRowLast: {
-    borderBottomWidth: 0,
-  },
   sessionTile: {
     width: 42,
     height: 42,
@@ -795,21 +761,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 16,
     fontWeight: '800',
   },
-  sessionCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  sessionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  sessionTitle: {
-    flexShrink: 1,
-    color: theme.ink,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
   nextBadge: {
     paddingHorizontal: 7,
     paddingVertical: 2,
@@ -821,12 +772,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 9.5,
     fontWeight: '800',
     letterSpacing: 0.5,
-  },
-  sessionMeta: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
   },
   readOnlyNote: {
     color: theme.faint,

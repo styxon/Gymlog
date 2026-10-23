@@ -31,7 +31,8 @@ module.exports = [
     run() {
       const after = afterRateLimitedQuestion(thread, 3, 'how much protein?', 'and sleep?', reply);
       assert.equal(after.draft, 'and sleep?');
-      assert.deepEqual(after.messages.map((m) => m.id), ['me:3', 'coach:1', 'coach:3']);
+      // Its log offer stays with it (hunt 1.1.1): lifted alone, the reading in the question could no longer be logged.
+      assert.deepEqual(after.messages.map((m) => m.id), ['me:3', 'offer:3', 'coach:1', 'coach:3']);
       // The question is never in neither place.
       assert.ok(after.draft.includes('sleep') && after.messages.some((m) => m.text === 'how much protein?'));
     },

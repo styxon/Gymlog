@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 
 import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
-import { formatDurationMinutes, formatShortDate, formatVolume } from '../lib/format';
+import { formatDurationMinutes, formatListDate, formatVolume } from '../lib/format';
 import { t } from '../lib/i18n';
 import { setCountLabel } from '../lib/repCountCopy';
 import { localizeSessionName } from '../lib/sessionNameLabel';
@@ -76,7 +76,7 @@ export function useRecentSessions(deps: RecentSessionsDeps) {
               formatWorkoutDisplayLabel(session.workoutNameSnapshot, t(preferences.appLanguage, 'ai.signal.workout')),
               preferences.appLanguage,
             ),
-            dateLabel: formatShortDate(session.performedAt, preferences.appLanguage),
+            dateLabel: formatListDate(session.performedAt, preferences.appLanguage),
             durationLabel:
               typeof session.durationMinutes === 'number' && session.durationMinutes > 0
                 ? formatDurationMinutes(session.durationMinutes)
