@@ -19,14 +19,6 @@ import { AppLanguage } from '../types/models';
  * the app look bigger and be worth less.
  */
 
-function ChevronLeftIcon({ color }: { color: string }) {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 6l-6 6 6 6" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
 interface LearnIndexScreenProps {
   collections: ExerciseCollection[];
   language?: AppLanguage;

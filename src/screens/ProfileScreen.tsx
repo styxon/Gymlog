@@ -357,9 +357,9 @@ export function ProfileScreen({
               rung with its day, and every family's next one. Only the footer
               presses — a Pressable around the whole card would fold the three
               rows into one node for a screen reader. */}
-          <ListCard divided={false} style={styles.milestoneCard}>
+          <ListCard>
             {milestoneRows.map((row, index) => (
-              <View key={row.key} style={[styles.milestoneRow, index > 0 && styles.milestoneRowDivider]}>
+              <View key={row.key} style={styles.milestoneRow}>
                 <View style={styles.milestoneHead}>
                   <Text style={styles.milestoneTitle}>{row.title}</Text>
                   {row.remainder ? <Text style={styles.milestoneRemainder}>{row.remainder}</Text> : null}
@@ -383,7 +383,7 @@ export function ProfileScreen({
                 accessibilityRole="button"
                 accessibilityLabel={t(language, 'milestones.title')}
                 onPress={onOpenMilestones}
-                style={({ pressed }) => [styles.milestoneRowDivider, styles.milestoneFooter, pressed && { opacity: 0.7 }]}
+                style={({ pressed }) => [styles.milestoneFooter, pressed && { opacity: 0.7 }]}
               >
                 <Text style={styles.milestoneFooterText}>{milestoneCardFooter(milestoneLedger.reachedCount, language)}</Text>
                 <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
@@ -580,17 +580,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 999,
     backgroundColor: theme.highlightSoft,
   },
-  milestoneCard: {
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-  },
+  // Rows of the shared ListCard: its hairlines run edge to edge, so the
+  // inset is on the row.
   milestoneRow: {
-    paddingVertical: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     gap: 7,
-  },
-  milestoneRowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
   },
   milestoneHead: {
     flexDirection: 'row',
@@ -630,7 +625,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 11,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
   milestoneFooterText: {
     color: theme.highlight,

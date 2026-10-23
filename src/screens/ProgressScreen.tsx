@@ -5,7 +5,6 @@ import Svg, { Circle, Path, Polyline, Rect } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
-import { VinhaIcon } from '../components/VinhaIcon';
 import { EmptyBox } from '../components/EmptyBox';
 import { KitRow, KitSheet } from '../components/sheetKit';
 import { Seg } from '../components/Seg';
@@ -41,7 +40,7 @@ import {
   formatCompactVolume,
   formatDate,
   formatDurationMinutes,
-  formatShortDate,
+  formatListDate,
   formatSessionDate,
   formatTime,
   formatVolume,
@@ -1628,46 +1627,30 @@ export function ProgressScreen({
 
         </View>
 
-        <View style={styles.progressHistoryCard}>
-          <View style={styles.historyHeadRow}>
-            <Text style={styles.referenceCardTitle}>{t(language, 'progress.history')}</Text>
-            {onOpenSessionHistory ? (
-              <Pressable testID="progress-history-all" accessibilityRole="button" onPress={onOpenSessionHistory} hitSlop={8}>
-                <Text style={styles.historySeeAll}>{t(language, 'progress.seeAll')}</Text>
-              </Pressable>
-            ) : null}
+        <SectionLabel
+          style={styles.sectionGap}
+          label={t(language, 'progress.history')}
+          actionLabel={onOpenSessionHistory ? t(language, 'progress.seeAll') : undefined}
+          onAction={onOpenSessionHistory}
+          actionTestID="progress-history-all"
+        />
+        {recentSessions.length > 0 ? (
+          <ListCard>
+            {recentSessions.slice(0, 3).map((session) => (
+              <ListRow
+                key={session.id}
+                title={session.title}
+                meta={`${session.dateLabel} · ${session.durationLabel} · ${session.volumeLabel}`}
+                onPress={onOpenRecentSession ? () => onOpenRecentSession(session.id) : undefined}
+              />
+            ))}
+          </ListCard>
+        ) : (
+          <View style={[styles.card, styles.historyEmpty]}>
+            <Text style={styles.emptyTitle}>{t(language, 'progress.noSessions.title')}</Text>
+            <Text style={styles.emptyText}>{t(language, 'progress.noSessions.body')}</Text>
           </View>
-          {recentSessions.length > 0 ? (
-            <View style={styles.historyList}>
-              {recentSessions.slice(0, 3).map((session) => (
-                <Pressable
-                  key={session.id}
-                  onPress={() => onOpenRecentSession?.(session.id)}
-                  disabled={!onOpenRecentSession}
-                  style={styles.historyRow}
-                >
-                  <View style={styles.historyIcon}>
-                    <VinhaIcon name="dumbbell" color={theme.purpleDark} size={17} />
-                  </View>
-                  <View style={styles.historyCopy}>
-                    <Text numberOfLines={1} style={styles.historyTitle}>
-                      {session.title}
-                    </Text>
-                    <Text numberOfLines={1} style={styles.historyMeta}>
-                      {session.dateLabel} · {session.durationLabel} · {session.volumeLabel}
-                    </Text>
-                  </View>
-                  <VinhaIcon name="chevronRight" color={theme.faint} size={16} />
-                </Pressable>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.historyEmpty}>
-              <Text style={styles.emptyTitle}>{t(language, 'progress.noSessions.title')}</Text>
-              <Text style={styles.emptyText}>{t(language, 'progress.noSessions.body')}</Text>
-            </View>
-          )}
-        </View>
+        )}
       </>
     );
   }
@@ -1736,7 +1719,7 @@ export function ProgressScreen({
                     title={formatLiftDisplayLabel(exerciseNameLabel(language, summary.name))}
                     accessory={<SignalBadge summary={summary} language={language} />}
                     meta={`${trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}${
-                      summary.latestLog ? ` · ${formatShortDate(summary.latestLog.performedAt, language)}` : ''
+                      summary.latestLog ? ` · ${formatListDate(summary.latestLog.performedAt, language)}` : ''
                     }`}
                     chevron={false}
                     right={
@@ -1976,31 +1959,31 @@ export function ProgressScreen({
             </Pressable>
           }
         />
-        <View style={styles.card}>
-          {rows.map((row, index) => (
-            <View key={row.id} style={[styles.entryRow, index > 0 && styles.entryRowDivided]}>
-              {/* The whole stamp, not "Sep 1". Two weigh-ins on one day are
-                  the ones you came to delete, and "Sep 1 / Sep 1" cannot tell
-                  them apart — the row has the width for it (user
-                  2026-09-02). */}
-              <Text style={styles.entryDate}>{formatSessionDate(row.recordedAt, language)}</Text>
-              <Text style={styles.entryValue}>
-                {removeTrailingZeros(Number(row.value.toFixed(1)))} {model.unit}
-              </Text>
-              {entriesEditing ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t(language, 'progress.entries.delete')}
-                  hitSlop={10}
-                  onPress={() => setPendingEntryDelete(row.id)}
-                  style={({ pressed }) => [styles.entryDelete, pressed && { opacity: 0.6 }]}
-                >
-                  <Text style={styles.entryDeleteGlyph}>×</Text>
-                </Pressable>
-              ) : null}
-            </View>
+        <ListCard>
+          {rows.map((row) => (
+            <ListRow
+              key={row.id}
+              // The whole stamp, not "Sep 1". Two weigh-ins on one day are
+              // the ones you came to delete, and "Sep 1 / Sep 1" cannot tell
+              // them apart — the row has the width for it (user 2026-09-02).
+              title={formatSessionDate(row.recordedAt, language)}
+              trailing={`${removeTrailingZeros(Number(row.value.toFixed(1)))} ${model.unit}`}
+              action={
+                entriesEditing ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t(language, 'progress.entries.delete')}
+                    hitSlop={10}
+                    onPress={() => setPendingEntryDelete(row.id)}
+                    style={({ pressed }) => [styles.entryDelete, pressed && { opacity: 0.6 }]}
+                  >
+                    <Text style={styles.entryDeleteGlyph}>×</Text>
+                  </Pressable>
+                ) : null
+              }
+            />
           ))}
-        </View>
+        </ListCard>
         <ConfirmDialog
           visible={pendingEntryDelete !== null}
           language={language}
@@ -2586,66 +2569,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   calendarBubbleTextToday: {
     color: theme.purple,
   },
-  progressHistoryCard: {
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 22,
-  },
-  historyHeadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  referenceCardTitle: {
-    color: theme.ink,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  historySeeAll: {
-    color: theme.highlight,
-    fontSize: 12.5,
-    fontWeight: '800',
-  },
-  historyList: {
-    marginTop: 6,
-  },
-  historyRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 11,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  historyIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 11,
-    backgroundColor: theme.purpleLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  historyCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  historyTitle: {
-    color: theme.ink,
-    fontSize: 14,
-    fontWeight: '800',
-  },
-  historyMeta: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
   historyEmpty: {
-    paddingTop: 12,
-    paddingBottom: 4,
+    padding: 16,
   },
   filterChipActive: {
   },
@@ -2765,27 +2690,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   measureLogPillText: {
     color: theme.onHighlight,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
-  entryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 11,
-  },
-  entryRowDivided: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: theme.border,
-  },
-  entryDate: {
-    flex: 1,
-    color: theme.muted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  entryValue: {
-    color: theme.ink,
     fontSize: 14.5,
     fontWeight: '800',
   },

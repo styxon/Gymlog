@@ -682,7 +682,7 @@ module.exports = [
       assert.match(programDetailSource, /\) : activePlanSummary \? null : \(/);
       assert.match(programDetailSource, /program\.primaryActionLabel/);
       // The switch is the shared one, not a second spelling of a toggle.
-      assert.match(programDetailSource, /import \{ ToggleSwitch \} from '\.\.\/components\/SettingsUi';/);
+      assert.match(programDetailSource, /import \{ SectionLabel, ToggleSwitch \} from '\.\.\/components\/SettingsUi';/);
       assert.match(programDetailSource, /t\(language, 'detail\.active'\)/);
       // And turning it off stops the programme rather than merely unleading
       // it: every plan pointing at the programme goes, because one programme
@@ -856,7 +856,7 @@ module.exports = [
       assert.match(programDetailSource, /rhythmDayLabelOn: \{\s*\r?\n\s*color: theme\.onHighlight,/);
 
       // Text actions travel with it.
-      for (const style of ['sectionAction', 'emphasisEdit', 'rhythmHint', 'workoutActionText']) {
+      for (const style of ['sectionAction', 'rhythmHint', 'workoutActionText']) {
         assert.match(
           programDetailSource,
           new RegExp(`${style}: \\{[\\s\\S]{0,60}color: theme\\.highlight,`),

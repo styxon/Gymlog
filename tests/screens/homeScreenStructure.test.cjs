@@ -713,11 +713,11 @@ module.exports = [
       assert.match(progressScreenSource, /onOpenRecentSession\?: \(sessionId: string\) => void/);
       assert.match(
         progressScreenSource,
-        /<Text style=\{styles\.referenceCardTitle\}>\{t\(language, 'progress\.history'\)\}<\/Text>/,
+        /<SectionLabel\s+style=\{styles\.sectionGap\}\s+label=\{t\(language, 'progress\.history'\)\}/,
       );
       assert.match(progressScreenSource, /recentSessions\.slice\(0, 3\)\.map/);
-      assert.match(progressScreenSource, /progressHistoryCard/);
-      assert.match(progressScreenSource, /onOpenRecentSession\?\.\(session\.id\)/);
+      assert.match(progressScreenSource, /label=\{t\(language, 'progress\.history'\)\}/);
+      assert.match(progressScreenSource, /onOpenRecentSession \? \(\) => onOpenRecentSession\(session\.id\)/);
       assert.match(progressScreenSource, /useState<ProgressSection>\(initialSection \?\? 'overview'\)/);
       assert.match(progressScreenSource, /useEffect\(\(\) => \{[\s\S]*setProgressSection\(initialSection\);[\s\S]*\}, \[initialSection, routeOpenedAt\]\)/);
       // Wired in the progress module since phase A.

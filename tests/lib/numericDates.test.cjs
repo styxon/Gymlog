@@ -30,14 +30,14 @@ module.exports = [
     },
   },
   {
-    name: 'numericDates: the set log sheet goes through the shared formatter (Records uses formatListDate since 2026-10-19)',
+    name: 'numericDates: the set log sheet goes through the shared list date, like Records (2026-10-23)',
     run() {
       for (const file of [['src', 'components', 'SetLogSheet.tsx']]) {
         const source = read(...file).replace(/\r\n/g, '\n');
         const start = source.indexOf('function formatDay(');
         assert.notEqual(start, -1, `${file.join('/')}: formatDay missing`);
         const body = source.slice(start, source.indexOf('\n}\n', start));
-        assert.match(body, /return formatDateNumeric\(date, language\);/, `${file.join('/')} uses formatDateNumeric`);
+        assert.match(body, /return formatListDate\(iso, language\);/, `${file.join('/')} uses formatListDate`);
         assert.doesNotMatch(body, /getMonth\(\) \+ 1/, `${file.join('/')} builds no date by hand`);
       }
     },

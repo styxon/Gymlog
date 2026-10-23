@@ -31,10 +31,12 @@ module.exports = [
       // Released only after the save settles, so a refused save can be retried.
       assert.match(screen, /\} finally \{\s*savingRef\.current = false;\s*setSaving\(false\);/);
       // Both save buttons, the header's and the bottom one, go quiet meanwhile.
-      assert.match(screen, /onRightActionPress=\{canSave && !saving \? \(\) => void handleSave\(\) : undefined\}/);
       // And the header's word goes with its action: a Save with nothing behind
       // it is what this header avoids (CI review of #173).
-      assert.match(screen, /rightActionLabel=\{canSave && !saving \? t\(language, 'common\.save'\) : undefined\}/);
+      assert.match(
+        screen,
+        /right=\{\s*canSave && !saving \? \(\s*<Pressable[^>]*onPress=\{\(\) => void handleSave\(\)\}[^>]*>\s*<Text[^>]*>\{t\(language, 'common\.save'\)\}<\/Text>/,
+      );
       assert.match(screen, /onPress=\{canSave && !saving \? \(\) => void handleSave\(\) : undefined\}/);
     },
   },

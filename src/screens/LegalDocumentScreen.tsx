@@ -1,15 +1,14 @@
 import React, { useMemo } from 'react';
 import { Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
-import Svg, { Path } from 'react-native-svg';
 
-import { ScreenHeaderTitle } from '../components/ScreenHeaderTitle';
+import { PageHeader } from '../components/BackButton';
 import { CARD_SHADOW } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { LegalDocumentId, buildLegalDocument } from '../lib/legalDocuments';
 import { legalWebUrl, splitLegalLinks } from '../lib/legalLinks';
 import { storePlatformOf } from '../lib/storeLinks';
-import { Theme, useTheme, useThemedStyles } from '../theming';
+import { Theme, useThemedStyles } from '../theming';
 import { layout } from '../theme';
 import { AppLanguage } from '../types/models';
 
@@ -27,7 +26,6 @@ interface LegalDocumentScreenProps {
  * having none. Both read from the same data the Markdown export uses.
  */
 export function LegalDocumentScreen({ document, language, onBack }: LegalDocumentScreenProps) {
-  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   // The phone's own store and backup: an iPhone is not told about Google Play.
   // The published documents (docs/legal) are the ones that name both.
@@ -52,19 +50,7 @@ export function LegalDocumentScreen({ document, language, onBack }: LegalDocumen
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.75 }]}
-        >
-          <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-            <Path d="M15 5l-7 7 7 7" stroke={theme.ink} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-          </Svg>
-        </Pressable>
-        <ScreenHeaderTitle title={doc.title} />
-      </View>
+      <PageHeader style={styles.header} title={doc.title} onBack={onBack} backLabel={t(language, 'common.back')} />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <Text style={styles.updated}>{doc.updatedLabel}</Text>
@@ -109,23 +95,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
+    paddingBottom: 6,
   },
   body: {
-    paddingHorizontal: 16,
+    paddingHorizontal: layout.screenGutter,
     paddingBottom: layout.bottomTabBarReserve,
   },
   updated: {

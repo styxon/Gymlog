@@ -3,7 +3,9 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
+import { PageHeader } from '../components/BackButton';
 import { CoachHighlightedText } from '../components/CoachHighlightedText';
+import { SectionLabel } from '../components/SettingsUi';
 import { t } from '../lib/i18n';
 import { SessionAnalysis, SessionTrend, describeVolumeChange } from '../lib/sessionAnalysis';
 import { layout } from '../theme';
@@ -84,26 +86,12 @@ export function SessionAnalysisScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M15 5l-7 7 7 7"
-              stroke={theme.ink}
-              strokeWidth={2.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </Pressable>
-        <Text style={styles.headerTitle}>{t(language, 'analysis.title')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'analysis.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       {!analysis ? (
         <View style={styles.emptyWrap}>
@@ -137,7 +125,7 @@ export function SessionAnalysisScreen({
           {/* 3 · key numbers */}
           {analysis.keyNumbers.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.key.label')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.key.label')} />
               <View style={styles.metricRow}>
                 {analysis.keyNumbers.map((metric) => (
                   <View key={metric.labelKey} style={[styles.metricCell, { flex: metric.grow }]}>
@@ -161,9 +149,10 @@ export function SessionAnalysisScreen({
           {/* 4 · volume over comparable sessions */}
           {bars.length > 0 ? (
             <View style={styles.section}>
-              <View style={styles.sectionHeadRow}>
-                <Text style={styles.sectionLabel}>{t(language, 'analysis.volumeLabel')}</Text>
-                {volumeChange ? (
+              <SectionLabel
+                style={styles.label}
+                label={t(language, 'analysis.volumeLabel')}
+                right={volumeChange ? (
                   <View
                     style={[
                       styles.changePill,
@@ -182,7 +171,7 @@ export function SessionAnalysisScreen({
                     </Text>
                   </View>
                 ) : null}
-              </View>
+              />
 
               <View style={styles.barRow}>
                 {bars.map((bar) => {
@@ -212,7 +201,7 @@ export function SessionAnalysisScreen({
           {/* 5 · exercise breakdown */}
           {analysis.exercises.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.breakdown')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.breakdown')} />
               {analysis.exercises.map((row) => (
                 <View key={row.key} style={styles.exerciseRow}>
                   <View style={styles.exerciseCopy}>
@@ -244,7 +233,7 @@ export function SessionAnalysisScreen({
           {/* 6 · what the coach noticed */}
           {analysis.observations.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.noticed')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.noticed')} />
               {analysis.observations.map((entry, index) => (
                 <View key={`${entry.trend}:${index}`} style={styles.observationRow}>
                   <View style={[styles.observationSquare, { backgroundColor: toneColor(theme, entry.trend) }]} />
@@ -262,7 +251,7 @@ export function SessionAnalysisScreen({
           {/* 7 · next session */}
           {analysis.nextActions.length > 0 ? (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t(language, 'analysis.next')}</Text>
+              <SectionLabel style={styles.label} label={t(language, 'analysis.next')} />
               <View style={styles.nextCard}>
                 {analysis.nextActions.map((action, index) => (
                   <View key={index} style={styles.nextRow}>
@@ -324,28 +313,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.ink,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  headerSpacer: {
-    width: 38,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
+    paddingBottom: 6,
   },
   emptyWrap: {
     flex: 1,
@@ -360,7 +330,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: 'center',
   },
   body: {
-    paddingHorizontal: 22,
+    paddingHorizontal: layout.screenGutter,
     // The tab bar floats over this screen, so the last card needs to clear it.
     paddingBottom: layout.bottomTabBarReserve,
   },
@@ -428,16 +398,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderTopColor: aw3ForTheme(theme).hair,
     paddingTop: 18,
   },
-  sectionHeadRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  sectionLabel: {
-    color: goldText(theme),
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.2,
+  // The shared label; each block below keeps the gap it already had to it.
+  label: {
+    paddingBottom: 0,
   },
   sectionNote: {
     color: theme.faint,
