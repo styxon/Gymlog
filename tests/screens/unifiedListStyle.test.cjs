@@ -68,14 +68,23 @@ module.exports = [
       for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.tsx'))) {
         assert.doesNotMatch(read('src', 'screens', name), /function SectionLabel/, `${name} has a local SectionLabel`);
       }
-      for (const name of ['Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription', 'TrainingBreak', 'EditProfile', 'ExerciseDetail']) {
-        assert.match(read('src', 'screens', `${name}Screen.tsx`), /<PageHeader/, `${name} lost the shared header`);
+      for (const name of [
+        'Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription', 'TrainingBreak',
+        'EditProfile', 'ExerciseDetail', 'SessionAnalysis', 'LegalDocument', 'MembershipEnd', 'CreateTemplate',
+      ]) {
+        const source = read('src', 'screens', `${name}Screen.tsx`);
+        assert.match(source, /<PageHeader/, `${name} lost the shared header`);
+        assert.doesNotMatch(source, /<ScreenHeader\b|<ScreenHeaderTitle/, `${name} draws an old header beside the shared one`);
       }
-      for (const name of ['ProgramDetail', 'Catalog', 'LearnIndex']) {
+      for (const name of ['ProgramDetail', 'ProgramDay', 'Catalog', 'LearnIndex']) {
         assert.match(read('src', 'screens', `${name}Screen.tsx`), /<BackButton/, `${name} lost the shared back button`);
       }
       // The library draws it on its own title row, inside the browser.
       assert.match(read('src', 'components', 'ExerciseLibraryBrowser.tsx'), /<BackButton/);
+      // The two backs over a painted hero keep their scrim, in the shared shape.
+      const history = read('src', 'screens', 'HistoryScreen.tsx');
+      assert.match(history, /heroBack: \{\s*width: 40,\s*height: 40,\s*borderRadius: 999/);
+      assert.match(read('src', 'screens', 'CollectionScreen.tsx'), /coverBack: \{[^}]*width: 40,\s*height: 40,\s*borderRadius: 999/);
     },
   },
   {

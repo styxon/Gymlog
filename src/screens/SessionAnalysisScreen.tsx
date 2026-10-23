@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
+import { PageHeader } from '../components/BackButton';
 import { CoachHighlightedText } from '../components/CoachHighlightedText';
 import { t } from '../lib/i18n';
 import { SessionAnalysis, SessionTrend, describeVolumeChange } from '../lib/sessionAnalysis';
@@ -84,26 +85,12 @@ export function SessionAnalysisScreen({
 
   return (
     <View style={styles.screen}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={t(language, 'common.back')}
-          onPress={onBack}
-          style={({ pressed }) => [styles.backButton, pressed && styles.pressed]}
-        >
-          <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-            <Path
-              d="M15 5l-7 7 7 7"
-              stroke={theme.ink}
-              strokeWidth={2.4}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </Svg>
-        </Pressable>
-        <Text style={styles.headerTitle}>{t(language, 'analysis.title')}</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <PageHeader
+        style={styles.header}
+        title={t(language, 'analysis.title')}
+        onBack={onBack}
+        backLabel={t(language, 'common.back')}
+      />
 
       {!analysis ? (
         <View style={styles.emptyWrap}>
@@ -324,28 +311,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
   },
   header: {
-    height: 56,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-  },
-  backButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    flex: 1,
-    textAlign: 'center',
-    color: theme.ink,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  headerSpacer: {
-    width: 38,
+    paddingHorizontal: layout.screenGutter,
+    paddingTop: layout.pageHeaderTop,
+    paddingBottom: 6,
   },
   emptyWrap: {
     flex: 1,
@@ -360,7 +328,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textAlign: 'center',
   },
   body: {
-    paddingHorizontal: 22,
+    paddingHorizontal: layout.screenGutter,
     // The tab bar floats over this screen, so the last card needs to clear it.
     paddingBottom: layout.bottomTabBarReserve,
   },

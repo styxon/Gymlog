@@ -861,6 +861,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 26,
   },
+  // Not the shared BackButton on purpose: it sits on the hero gradient, so
+  // it keeps that button's shape (40, round) with a frosted fill and a white
+  // chevron instead of the light control fill.
   heroBack: {
     width: 40,
     height: 40,
