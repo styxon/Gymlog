@@ -4,6 +4,7 @@ import { Text } from './AppText';
 
 import { KitBar, KitSheet } from './sheetKit';
 import { t } from '../lib/i18n';
+import { setCountLabel } from '../lib/repCountCopy';
 import { formatPercent } from '../lib/format';
 import { EMPHASIS_AREA_KEYS, EmphasisArea, summariseEmphasis } from '../lib/programEmphasis';
 import {
@@ -186,7 +187,7 @@ export function EmphasisSheet({
                     {t(language, EMPHASIS_AREA_KEYS[area])}
                   </Text>
                   <Text style={styles.rowMeta}>
-                    {t(language, 'emphasis.sheet.sets', { sets: current })}
+                    {setCountLabel(current, language)}
                     {delta !== 0 ? (
                       <Text style={styles.rowDelta}>{`  ${delta > 0 ? '+' : ''}${delta}`}</Text>
                     ) : null}

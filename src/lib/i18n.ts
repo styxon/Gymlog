@@ -1389,7 +1389,6 @@ const EN = {
   // Counts are separate singular/plural keys — no pluralization engine.
   'guided.count.exerciseOne': '1 exercise',
   'guided.count.exerciseMany': '{count} exercises',
-  'guided.count.sets': '{count} sets',
   // The one word the box and the set screen both wear. Capitalised at the
   // point of use, so the dictionary carries the word and not a style.
   'guided.superset.pill': 'SUPERSET',
@@ -2034,6 +2033,7 @@ const EN = {
   'coachPreview.program.plan3': 'Leave one easier day.',
   'coachPreview.lastSession.takeaway': 'Your last session was {title}. Here is what it left behind.',
   'coachPreview.lastSession.sets': '{count} sets logged',
+  'coachPreview.lastSession.setsOne': '1 set logged',
   'coachPreview.lastSession.minutes': '{count} min',
   'coachPreview.lastSession.noShape': 'The session was saved without a duration or set count.',
   'coachPreview.lastSession.topSet': 'Heaviest set: {line}',
@@ -2262,6 +2262,7 @@ const EN = {
 
   'coachChat.readout.rhythmValue': '{week} this week · {month} in the last 30 days',
   'coachChat.open.logged': '{count} sessions logged this week. Ask me anything about them.',
+  'coachChat.open.loggedOne': '1 session logged this week. Ask me anything about it.',
   'coachChat.open.fresh': 'Log a session and I can read it. Until then, ask me anything about training.',
   'coachChat.ask.about': 'What should I do about my {subject}?',
   'coachChat.ask.walkThrough': 'Walk me through {session} today.',
@@ -3314,7 +3315,6 @@ const EN = {
   'detail.level.advanced': 'PRO',
   'emphasis.sheet.title': 'How the week is split',
   'emphasis.sheet.total': '{sets} sets / week',
-  'emphasis.sheet.sets': '{sets} sets',
   'emphasis.sheet.less': 'Less {area}',
   'emphasis.sheet.more': 'More {area}',
   'emphasis.sheet.note': 'One press moves {step} sets. The week keeps its total, so raising one area lowers the others. No exercise drops below {min} set or climbs past {max}.',
@@ -3592,7 +3592,6 @@ const EN = {
   // ── Activity calendar legend ──────────────────────────────────────────
   // ── Progress hero delta ───────────────────────────────────────────────
   // ── Recent session rows ───────────────────────────────────────────────
-  'recent.setCount': '{count} sets',
   'recent.exerciseCount': '{count} exercises',
   'recent.completed': 'Workout completed',
   // ── Full analysis screen ──────────────────────────────────────────────
@@ -4934,7 +4933,6 @@ const FI: Record<I18nKey, string> = {
   'guided.sessionFallback': 'Treeni',
   'guided.count.exerciseOne': '1 liike',
   'guided.count.exerciseMany': '{count} liikettä',
-  'guided.count.sets': '{count} sarjaa',
   'guided.superset.pill': 'SUPERSARJA',
   'guided.superset.thenRest': 'sitten lepo',
   'guided.superset.next': 'Ei taukoa — suoraan: {name}',
@@ -5492,6 +5490,7 @@ const FI: Record<I18nKey, string> = {
   'coachPreview.program.plan3': 'Jätä yksi kevyempi päivä.',
   'coachPreview.lastSession.takeaway': 'Viime treenisi oli {title}. Tämä siitä jäi.',
   'coachPreview.lastSession.sets': '{count} sarjaa kirjattu',
+  'coachPreview.lastSession.setsOne': '1 sarja kirjattu',
   'coachPreview.lastSession.minutes': '{count} min',
   'coachPreview.lastSession.noShape': 'Treeni tallentui ilman kestoa ja sarjamäärää.',
   'coachPreview.lastSession.topSet': 'Kovin sarja: {line}',
@@ -5713,6 +5712,7 @@ const FI: Record<I18nKey, string> = {
 
   'coachChat.readout.rhythmValue': '{week} tällä viikolla · {month} viimeisen 30 pv aikana',
   'coachChat.open.logged': '{count} treeniä kirjattu tällä viikolla. Kysy niistä mitä vain.',
+  'coachChat.open.loggedOne': '1 treeni kirjattu tällä viikolla. Kysy siitä mitä vain.',
   'coachChat.open.fresh': 'Kirjaa treeni, niin voin lukea sen. Siihen asti kysy mitä vain treenaamisesta.',
   'coachChat.ask.about': '{Subject}: mitä minun pitäisi tehdä seuraavaksi?',
   'coachChat.ask.walkThrough': 'Käy tämän päivän {session} läpi.',
@@ -6676,7 +6676,6 @@ const FI: Record<I18nKey, string> = {
   'detail.level.advanced': 'PRO',
   'emphasis.sheet.title': 'Mihin viikko jakautuu',
   'emphasis.sheet.total': '{sets} sarjaa / viikko',
-  'emphasis.sheet.sets': '{sets} sarjaa',
   'emphasis.sheet.less': 'Vähemmän: {area}',
   'emphasis.sheet.more': 'Enemmän: {area}',
   'emphasis.sheet.note': 'Yksi painallus siirtää {step} sarjaa. Viikon kokonaismäärä pysyy samana, joten yhden alueen nosto laskee muita. Yksikään liike ei mene alle {min} sarjan eikä yli {max}:n.',
@@ -6939,7 +6938,6 @@ const FI: Record<I18nKey, string> = {
   // ── Activity calendar legend ──────────────────────────────────────────
   // ── Progress hero delta ───────────────────────────────────────────────
   // ── Recent session rows ───────────────────────────────────────────────
-  'recent.setCount': '{count} sarjaa',
   'recent.exerciseCount': '{count} liikettä',
   'recent.completed': 'Treeni suoritettu',
   // ── Full analysis screen ──────────────────────────────────────────────

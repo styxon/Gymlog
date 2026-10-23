@@ -4,6 +4,7 @@ import { getCanonicalCompletedSessions } from '../lib/completedSessions';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatDurationMinutes, formatShortDate, formatVolume } from '../lib/format';
 import { t } from '../lib/i18n';
+import { setCountLabel } from '../lib/repCountCopy';
 import { localizeSessionName } from '../lib/sessionNameLabel';
 import type { AppDatabase, AppPreferences, UnitPreference } from '../types/models';
 
@@ -83,7 +84,7 @@ export function useRecentSessions(deps: RecentSessionsDeps) {
             volumeLabel: formatVolume(session.totalVolumeKg ?? 0, unitPreference),
             detailLabel:
               completedSets !== null
-                ? t(preferences.appLanguage, 'recent.setCount', { count: completedSets })
+                ? setCountLabel(completedSets, preferences.appLanguage)
                 : t(preferences.appLanguage, 'recent.exerciseCount', { count: completedExercises }),
             exercisePreview: exercisePreview || t(preferences.appLanguage, 'recent.completed'),
             notePreview,

@@ -254,7 +254,9 @@ export function buildCoachOpeningLine(input: CoachChatIntroInput, language: AppL
     return t(language, 'coachChat.open.rest', { session: input.nextSessionTitle });
   }
   if (input.sessionsThisWeek > 0) {
-    return t(language, 'coachChat.open.logged', { count: input.sessionsThisWeek });
+    return input.sessionsThisWeek === 1
+      ? t(language, 'coachChat.open.loggedOne')
+      : t(language, 'coachChat.open.logged', { count: input.sessionsThisWeek });
   }
   return t(language, 'coachChat.open.fresh');
 }
