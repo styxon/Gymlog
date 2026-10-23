@@ -7,8 +7,9 @@ import { AppPreferences } from '../types/models';
  * four things: the trial, a recorded purchase, a promo grant that is still
  * running, and the review account.
  *
- * The review account is the one grant that is not a date: Play's reviewers
- * sign in with a dedicated Google account (lib/reviewAccount), and while it is
+ * The review account is the one grant that is not a date: the stores'
+ * reviewers sign in with a dedicated Google or Apple account
+ * (lib/reviewAccount), and while it is
  * signed in `reviewProAccount` is true and Pro is on. The flag is set from the
  * signed-in account and cleared with it (app/useReviewProAccount), never from
  * anything the reader can press, and it is device-only: a backup restore
