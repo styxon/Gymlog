@@ -166,7 +166,7 @@ module.exports = [
 
       const exportScreen = code(read('src', 'screens', 'ExportPlanScreen.tsx'));
       assert.match(exportScreen, /const logEmpty = logSummary\.sets === 0 && logSummary\.cardio === 0;/);
-      assert.match(exportScreen, /disabled=\{logEmpty\}/);
+      assert.match(exportScreen, /onPress=\{logEmpty \? undefined : \(\) => void shareLog\(\)\}/);
       assert.doesNotMatch(exportScreen, /logSummary\.sets === 0 \?/);
     },
   },

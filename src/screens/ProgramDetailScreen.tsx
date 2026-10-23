@@ -9,7 +9,7 @@ import { KitSheet } from '../components/sheetKit';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { CutSurface } from '../components/CutSurface';
 import { ProgramPhotoSlot } from '../components/ProgramPhotoSlot';
-import { ToggleSwitch } from '../components/SettingsUi';
+import { SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatPercent } from '../lib/format';
 import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
@@ -934,9 +934,7 @@ export function ProgramDetailScreen({
             week that does not have room for it. */}
         {aboutCopy ? (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t(language, 'detail.forWhom')}</Text>
-            </View>
+            <SectionLabel style={styles.sectionLabel} label={t(language, 'detail.forWhom')} />
             {/* A warning triangle stood here: "Vaatii 4 päivää viikossa. Sinun
                 viikossasi on 1." It compared the programme's day count against
                 the reader's stated AVAILABILITY, which is a different thing
@@ -963,45 +961,48 @@ export function ProgramDetailScreen({
         {/* The week as seven chips: which days train, and what they are. A
             dot-and-word list said "Treeni / Palautuminen" seven times and
             never named a single session. */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t(language, 'detail.rhythm')}</Text>
-          <View style={styles.sectionHeaderEnd}>
-            <Text style={styles.sectionMeta}>
-              {trainingCycle
-                ? // The honest number for a rhythm that ignores weekdays: the
-                  // cycle's own shape, not the mask's day count.
-                  t(language, 'detail.week.pattern', {
-                    on: trainingCycle.pattern.filter(Boolean).length,
-                    off: trainingCycle.pattern.filter((day) => !day).length,
-                  })
-                : t(language, 'detail.trainingDays', { count: program.daysPerWeek })}
-            </Text>
-            {onSaveRhythm ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityState={{ expanded: rhythmEditing }}
-                onPress={() =>
-                  setRhythmEditing((open) => {
-                    // Closing discards an uncommitted draft. Without this the
-                    // chips went inert while the "pick another day" hint kept
-                    // showing — advice about controls that no longer take a
-                    // tap — and the week on screen stayed the unsaved one.
-                    if (open) {
-                      setDraftDays(null);
-                    }
-                    return !open;
-                  })
-                }
-                hitSlop={8}
-                style={({ pressed }) => pressed && { opacity: 0.65 }}
-              >
-                <Text style={styles.sectionAction}>
-                  {t(language, rhythmEditing ? 'detail.rhythm.done' : 'detail.rhythm.edit')}
-                </Text>
-              </Pressable>
-            ) : null}
-          </View>
-        </View>
+        <SectionLabel
+          style={styles.sectionLabel}
+          label={t(language, 'detail.rhythm')}
+          right={
+            <View style={styles.sectionHeaderEnd}>
+              <Text style={styles.sectionMeta}>
+                {trainingCycle
+                  ? // The honest number for a rhythm that ignores weekdays: the
+                    // cycle's own shape, not the mask's day count.
+                    t(language, 'detail.week.pattern', {
+                      on: trainingCycle.pattern.filter(Boolean).length,
+                      off: trainingCycle.pattern.filter((day) => !day).length,
+                    })
+                  : t(language, 'detail.trainingDays', { count: program.daysPerWeek })}
+              </Text>
+              {onSaveRhythm ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: rhythmEditing }}
+                  onPress={() =>
+                    setRhythmEditing((open) => {
+                      // Closing discards an uncommitted draft. Without this the
+                      // chips went inert while the "pick another day" hint kept
+                      // showing — advice about controls that no longer take a
+                      // tap — and the week on screen stayed the unsaved one.
+                      if (open) {
+                        setDraftDays(null);
+                      }
+                      return !open;
+                    })
+                  }
+                  hitSlop={8}
+                  style={({ pressed }) => pressed && { opacity: 0.65 }}
+                >
+                  <Text style={styles.sectionAction}>
+                    {t(language, rhythmEditing ? 'detail.rhythm.done' : 'detail.rhythm.edit')}
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          }
+        />
         <View style={styles.rhythmRow}>
           {scheduleSlots.map((slot, index) => {
             // While a cycle runs, the chips PREVIEW the current calendar week
@@ -1146,14 +1147,12 @@ export function ProgramDetailScreen({
 
         {emphasis ? (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.emphasisTitle}>{t(language, 'detail.emphasis.title')}</Text>
-              {onSaveEmphasis ? (
-                <Pressable hitSlop={8} onPress={() => setEmphasisSheetVisible(true)}>
-                  <Text style={styles.emphasisEdit}>{t(language, 'detail.emphasis.edit')}</Text>
-                </Pressable>
-              ) : null}
-            </View>
+            <SectionLabel
+              style={styles.sectionLabel}
+              label={t(language, 'detail.emphasis.title')}
+              actionLabel={onSaveEmphasis ? t(language, 'detail.emphasis.edit') : undefined}
+              onAction={onSaveEmphasis ? () => setEmphasisSheetVisible(true) : undefined}
+            />
             <View style={styles.emphasisCard}>
               <View style={styles.emphasisBar}>
                 {emphasis.slices.map((slice) => (
@@ -1191,9 +1190,7 @@ export function ProgramDetailScreen({
           and two ways for them to disagree — and the one this heading offered
           was the one that knows less about the day it is editing.
         */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t(language, 'detail.workouts')}</Text>
-        </View>
+        <SectionLabel style={styles.sectionLabel} label={t(language, 'detail.workouts')} />
         {/* Compact rows now (design: "päivärivi vie tänne") — the full
             content moved to the day view, where roles, rests and the warm-up
             have the room the inline list never gave them. The row still keeps
@@ -1374,9 +1371,7 @@ export function ProgramDetailScreen({
             the same way exercise names are. */}
         {progressionRules ? (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t(language, 'detail.progression')}</Text>
-            </View>
+            <SectionLabel style={styles.sectionLabel} label={t(language, 'detail.progression')} />
             <View style={styles.ruleCard}>
               {(
                 [
@@ -1400,9 +1395,7 @@ export function ProgramDetailScreen({
 
         {equipment.length > 0 ? (
           <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t(language, 'detail.equipment')}</Text>
-            </View>
+            <SectionLabel style={styles.sectionLabel} label={t(language, 'detail.equipment')} />
             {/* Derived from the program's own exercises, not from a sentence
                 someone wrote. The chips are the names the setup already
                 stores, so the two lists compare directly. */}
@@ -1574,16 +1567,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
     marginTop: 6,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   // The level, in the theme's own wash rather than a white chip that only
   // worked because it sat on a painted background.
@@ -1904,18 +1887,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingBottom: layout.bottomTabBarReserve,
     gap: spacing.md,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    gap: spacing.md,
-    marginTop: spacing.xs,
-  },
-  sectionTitle: {
-    color: theme.ink,
-    fontSize: 22,
-    fontWeight: '900',
-    letterSpacing: -0.3,
+  // The shared label; the content's own gap stands in for its bottom padding.
+  sectionLabel: {
+    marginTop: spacing.md,
+    paddingBottom: 0,
   },
   sectionHeaderEnd: {
     flexDirection: 'row',
@@ -2021,19 +1996,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   workoutCardPressed: {
     transform: [{ scale: 0.985 }],
-  },
-  emphasisEdit: {
-    color: theme.highlight,
-    fontSize: 12.5,
-    lineHeight: 16,
-    fontWeight: '800',
-  },
-  emphasisTitle: {
-    color: theme.faint,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 0.9,
   },
   emphasisCard: {
     borderRadius: radii.lg,
