@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #435 Delete account (Google): a retry after a try that got no answer no longer says "Account deleted" when Google has meanwhile signed the phone out — the copy may still be on the server, so it says to sign in again. A deletion that went through no longer shows "could not delete" when the phone cannot save the sign-out.
 - #443 Edit profile: tapping Back while your name is still saving goes back one screen, to Settings, instead of two.
 - #434 The store reviewers' Pro account is now santeriylonen@icloud.com, and it unlocks Pro through Sign in with Apple as well as Google; review@vinha.app no longer does.
 - #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.

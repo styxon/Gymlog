@@ -349,6 +349,56 @@ module.exports = [
     },
   },
   {
+    name: 'account hook: a Google retry with no session after an unanswered delete is not "deleted", and a sign-out the disk refuses on a settled delete is not "failed" (hunt 1.1.1)',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const gone = { status: 'signed_out' };
+
+      // A Google try that may never have left the phone (no answer), then the Google session drops:
+      // the cloud copy may still be there, so the retry must not say "Account deleted".
+      await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
+        env.server.deleteError = 'STORE_UNAVAILABLE';
+        assert.equal(await env.api.deleteAccount(), 'failed');
+        await env.settle();
+        assert.equal(typeof env.store.account.deleteAccountPendingAt, 'string');
+        env.google.silent = gone;
+        assert.equal(await env.api.deleteAccount(), 'ended', 'a Google try with no answer read as a deleted account');
+        await env.settle();
+        assert.equal(env.store.account, null);
+      });
+
+      // Apple, lost answer, credential gone, and the sign-out cannot be written: still done, not a failed toast.
+      await withHook(
+        { local, stored: syncedAccount(local, { sub: 'apple:001234.abc', deleteAccountPendingAt: '2026-10-02T08:00:00.000Z' }), cloud: cloudCopy(local) },
+        async (env) => {
+          const realError = console.error;
+          console.error = () => {};
+          try {
+            env.google.silent = gone;
+            env.store.clearError = new Error('disk full');
+            assert.equal(await env.api.deleteAccount(), 'done', 'a sign-out write error after Apple ended the session read as failed');
+          } finally {
+            console.error = realError;
+          }
+        },
+      );
+
+      // Apple, the retry's answer is SESSION_REVOKED, and the sign-out cannot be written: the outcome stands.
+      await withHook({ local, stored: syncedAccount(local, { deleteAccountPendingAt: '2026-10-02T08:00:00.000Z' }), cloud: cloudCopy(local) }, async (env) => {
+        const realError = console.error;
+        console.error = () => {};
+        try {
+          env.google.silent = { status: 'ok', idToken: 'vs1.session.mac' };
+          env.server.deleteError = 'SESSION_REVOKED';
+          env.store.clearError = new Error('disk full');
+          assert.equal(await env.api.deleteAccount(), 'done', 'a sign-out write error after a revoked session read as failed');
+        } finally {
+          console.error = realError;
+        }
+      });
+    },
+  },
+  {
     // Break round, 2026-09-28 (user decision: ask). Sign-out keeps the data;
     // the next account used to get all of it as its first backup, unasked.
     name: 'account hook: another account signing in is asked before this phone\'s data becomes its backup, and "not now" sends nothing',
