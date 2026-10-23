@@ -87,6 +87,17 @@ module.exports = [
     },
   },
   {
+    name: 'a past row reads the list date, the year only when it is not today\'s',
+    run() {
+      const today = session('2026-09-04T18:00:00.000Z', [[62.5, 7]]);
+      const past = [session('2025-12-30T12:00:00.000Z', [[55, 8]]), session('2026-08-27T12:00:00.000Z', [[60, 8]])];
+      const en = buildExerciseSheetHistory(past, today, 'en').rows.map((row) => row.dateLabel);
+      assert.deepEqual(en, ['Today', 'Aug 27', 'Dec 30, 2025']);
+      const fi = buildExerciseSheetHistory(past, today, 'fi').rows.map((row) => row.dateLabel);
+      assert.deepEqual(fi, ['Tänään', '27.8.', '30.12.2025']);
+    },
+  },
+  {
     name: 'the stats read the whole history, and an empty one claims nothing',
     run() {
       const view = buildExerciseSheetHistory(

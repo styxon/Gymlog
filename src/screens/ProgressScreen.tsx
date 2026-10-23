@@ -40,7 +40,7 @@ import {
   formatCompactVolume,
   formatDate,
   formatDurationMinutes,
-  formatShortDate,
+  formatListDate,
   formatSessionDate,
   formatTime,
   formatVolume,
@@ -1719,7 +1719,7 @@ export function ProgressScreen({
                     title={formatLiftDisplayLabel(exerciseNameLabel(language, summary.name))}
                     accessory={<SignalBadge summary={summary} language={language} />}
                     meta={`${trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}${
-                      summary.latestLog ? ` · ${formatShortDate(summary.latestLog.performedAt, language)}` : ''
+                      summary.latestLog ? ` · ${formatListDate(summary.latestLog.performedAt, language)}` : ''
                     }`}
                     chevron={false}
                     right={
