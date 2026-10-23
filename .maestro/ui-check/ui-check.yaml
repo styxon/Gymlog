@@ -445,7 +445,7 @@ name: UI check
     timeout: 2500
 - runFlow:
     when:
-      visible: "Hylätäänkö muutokset\?|Discard changes\?"
+      visible: "Hylätäänkö muutokset.*|Discard changes.*"
     commands:
       - tapOn: "Hylkää|Discard"
       - waitForAnimationToEnd:
