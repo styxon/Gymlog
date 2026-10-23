@@ -628,7 +628,7 @@ export interface AppPreferences {
    */
   mockSubscriptionEndsAt: string | null;
   /**
-   * True while the signed-in Google account is Play's review account
+   * True while the signed-in Google or Apple account is the stores' review account
    * (lib/reviewAccount): Pro is on for it, with source 'review'. Written only
    * by app/useReviewProAccount from the signed-in account, cleared when that
    * account signs out or is deleted. Device-only: a backup neither carries nor
