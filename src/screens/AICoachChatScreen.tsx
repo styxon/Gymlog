@@ -1704,6 +1704,7 @@ export function AICoachChatScreen({
               link rather than a card: one sentence does not need a surface. */}
           {lastSession && !programmeOnly ? (
             <Pressable
+              testID="coach-full-analysis"
               accessibilityRole="button"
               onPress={() => (proUnlocked ? onOpenAnalysis(lastSession.id) : onOpenPremium())}
               style={({ pressed }) => [styles.analysisLink, pressed && styles.pressed]}

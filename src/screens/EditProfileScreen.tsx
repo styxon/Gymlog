@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Text, TextInput } from '../components/AppText';
 import Svg, { Circle, Defs, LinearGradient, Path, Stop } from 'react-native-svg';
@@ -28,6 +28,24 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
   const styles = useThemedStyles(makeStyles);
   const [name, setName] = useState(initialName ?? '');
   const [saving, setSaving] = useState(false);
+  // Set once the reader has left (Back, or the screen unmounted by a hardware
+  // back): a save resolving after that must not pop a second route, which
+  // took them past Settings to the Profile root (hunt 1.1.1).
+  const leftRef = useRef(false);
+  useEffect(() => {
+    // Reset on mount: a development remount runs the cleanup once first.
+    leftRef.current = false;
+    return () => {
+      leftRef.current = true;
+    };
+  }, []);
+  const leave = () => {
+    if (leftRef.current) {
+      return;
+    }
+    leftRef.current = true;
+    onBack();
+  };
 
   const trimmed = name.trim();
   const dirty = trimmed !== (initialName ?? '').trim();
@@ -41,8 +59,8 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
     // with what was typed, and the parent has said why.
     const saved = await onSave(trimmed.length > 0 ? storedProfileName(trimmed) : null);
     if (saved) {
-      onBack();
-    } else {
+      leave();
+    } else if (!leftRef.current) {
       setSaving(false);
     }
   };
@@ -52,7 +70,7 @@ export function EditProfileScreen({ initialName, language = 'en', onBack, onSave
       <PageHeader
         style={styles.header}
         title={t(language, 'editProfile.title')}
-        onBack={onBack}
+        onBack={leave}
         backLabel={t(language, 'common.back')}
         right={
           <Pressable
