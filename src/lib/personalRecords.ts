@@ -326,8 +326,13 @@ export function firstRecordDates(records: Record<RecordKind, readonly PersonalRe
   return [...firstByLift.values()];
 }
 
-/** Records set within this long of the newest one came from the same session. */
-export const SAME_SESSION_MS = 3 * 60 * 60 * 1000;
+/**
+ * Records stamped within this long of the newest one came from the same session.
+ * A log carries its session's own `performedAt` (progression.ts), so a session's
+ * records share one stamp; the margin only absorbs rounding. Three hours, as it
+ * first was, also took in an earlier workout the same day (hunt 1.1.1).
+ */
+export const SAME_SESSION_MS = 60 * 1000;
 
 /**
  * The records the most recent session set, split from the rest.
@@ -335,12 +340,11 @@ export const SAME_SESSION_MS = 3 * 60 * 60 * 1000;
  * Replaces the "NEW" badge on every fresh row (owner, 2026-10-19): a badge on
  * each of a month's worth of rows says nothing, a group at the top says which
  * session just moved the numbers. A session is the records whose date is
- * within three hours of the newest one — a lift's logs carry the session's own
- * stamp, so in practice it is equality, and the margin only absorbs a log
- * written a moment apart.
+ * the newest one's — a lift's logs carry the session's own stamp, so it is
+ * equality, within SAME_SESSION_MS.
  *
  * Only a FRESH newest record that belongs to the reader's latest completed
- * workout opens the group: its date must be within the same three hours of
+ * workout opens the group: its date must be the same as
  * `latestSessionAt` (the newest completed session's `performedAt`). Freshness
  * alone is not enough — a record set 20 days ago is still fresh, but three
  * lighter sessions since then mean the latest workout did not set it, and a
