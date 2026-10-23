@@ -1632,7 +1632,7 @@ export function ProgressScreen({
           <View style={styles.historyHeadRow}>
             <Text style={styles.referenceCardTitle}>{t(language, 'progress.history')}</Text>
             {onOpenSessionHistory ? (
-              <Pressable onPress={onOpenSessionHistory} hitSlop={8}>
+              <Pressable testID="progress-history-all" accessibilityRole="button" onPress={onOpenSessionHistory} hitSlop={8}>
                 <Text style={styles.historySeeAll}>{t(language, 'progress.seeAll')}</Text>
               </Pressable>
             ) : null}

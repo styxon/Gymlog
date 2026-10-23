@@ -202,14 +202,22 @@ name: UI check
     id: "seg-overview"
 - waitForAnimationToEnd:
     timeout: 2500
+# By id: the text "Näytä kaikki|See all" also matched Profile's milestones
+# footer, and run 39982349828 saved the Profile tab as 11-history.
 - scrollUntilVisible:
     element:
-      text: "Näytä kaikki|See all"
+      id: "progress-history-all"
     direction: DOWN
     timeout: 20000
+    visibilityPercentage: 60
+    centerElement: true
 - tapOn:
-    text: "Näytä kaikki|See all"
-    rightOf: "Historia|History"
+    id: "progress-history-all"
+- waitForAnimationToEnd:
+    timeout: 3000
+# History is open before it is shot: a wrong screen stops the run here.
+- assertVisible:
+    id: "history-back"
 - runFlow:
     file: scrolls.yaml
     env:
