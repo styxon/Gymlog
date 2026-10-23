@@ -61,4 +61,24 @@ module.exports = [
       assert.equal(parseMeasurementIntent('vyötärö 8250'), null);
     },
   },
+  {
+    name: 'measurementIntent: the reading is the number after its own word, not another measurement or a note (hunt 1.1.1 re-check)',
+    run() {
+      const kg = (value) => ({ kind: 'bodyweight', value, unit: 'kg' });
+      assert.deepEqual(parseMeasurementIntent('paino 82 ja vyötärö 90 cm'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('paino 82, vyötärö 90 cm'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('painoni 82 (viime viikolla 84 kg)'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('paino 82-83 kg'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('vyötärö 90, hauis 35 cm'), { kind: 'waist', value: 90, unit: 'cm' });
+      assert.deepEqual(parseMeasurementIntent('82 kg paino'), kg(82));
+      // A trailing full stop after the reading is not a date.
+      assert.deepEqual(parseMeasurementIntent('rasvaprosentti 18.5.'), { kind: 'bodyfat', value: 18.5, unit: '%' });
+      assert.deepEqual(parseMeasurementIntent('body fat 12.5.', 'en'), { kind: 'bodyfat', value: 12.5, unit: '%' });
+      // "at", a colon and quotes are not clocks or inches.
+      assert.deepEqual(parseMeasurementIntent('my weight is at 82', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('paino 82:'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('painoni "82"'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('kello 7 paino 81,4'), kg(81.4));
+    },
+  },
 ];
