@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #443 Edit profile: tapping Back while your name is still saving goes back one screen, to Settings, instead of two.
 - #434 The store reviewers' Pro account is now santeriylonen@icloud.com, and it unlocks Pro through Sign in with Apple as well as Google; review@vinha.app no longer does.
 - #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.
 - #432 The price row on the Pro page keeps its size when the system text is at its largest; screen readers now say which measure is selected on the Progress tab, and that a locked option needs Pro.
