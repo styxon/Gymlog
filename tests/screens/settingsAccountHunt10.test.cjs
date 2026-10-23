@@ -100,8 +100,9 @@ module.exports = [
 
       const edit = strip(read('src/screens/EditProfileScreen.tsx'));
       assert.match(edit, /const saved = await onSave\(/);
-      assert.match(edit, /if \(saved\) \{\s*onBack\(\);/);
-      assert.ok(edit.indexOf('await onSave(') < edit.indexOf('onBack();'), 'the editor closes before the write resolved');
+      // leave(): onBack once, never again after the reader already left (hunt 1.1.1).
+      assert.match(edit, /if \(saved\) \{\s*leave\(\);/);
+      assert.ok(edit.indexOf('await onSave(') < edit.indexOf('leave();'), 'the editor closes before the write resolved');
 
       const myData = strip(read('src/screens/MyDataScreen.tsx'));
       assert.match(myData, /if \(await onSaveBasics\(patch\)\) \{\s*setEditing\(null\);/);

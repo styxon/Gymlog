@@ -114,13 +114,14 @@ module.exports = [
       const body = hook.slice(hook.indexOf('const deleteAccount = useCallback('), hook.indexOf('// Auto-backup: when signed in'));
       // The request also carries Apple's one-time code for an Apple account (iOS hunt 2026-10-17, D1-1).
       const sent = body.search(/deleteBackup\(token\.idToken, \{\s*account: true,\s*requestId,/);
-      assert.ok(sent > 0 && sent < body.indexOf('await signOut();'), 'the phone signs out before the server has deleted');
+      assert.ok(sent > 0 && sent < body.indexOf('await signOutAfterDelete();', body.indexOf('if (answer.ok)')), 'the phone signs out before the server has deleted');
       // Apple's sheet comes before anything is written or sent, and backing out of it sends nothing.
       const grant = body.indexOf('const grant = await getAccountDeletionGrant(current.sub);');
       assert.ok(grant > 0 && grant < body.indexOf('await persistAccount(') && grant < sent, 'Apple is asked after the delete was marked as sent');
       assert.match(body, /if \(grant\.status === 'cancelled'\) \{\s*return 'cancelled';\s*\}/);
       // Done only after the server said yes; a sign-out the phone cannot persist does not undo that.
-      assert.match(body, /if \(answer\.ok\) \{[\s\S]*?try \{\s*await signOut\(\);\s*\} catch[\s\S]*?return answer\.appleRevoked === false \? 'done_apple_kept' : 'done';\s*\}/);
+      assert.match(body, /const signOutAfterDelete = async \(\) => \{\s*try \{\s*await signOutRef\.current\(\);\s*\} catch/);
+      assert.match(body, /if \(answer\.ok\) \{[\s\S]*?await signOutAfterDelete\(\);\s*return answer\.appleRevoked === false \? 'done_apple_kept' : 'done';\s*\}/);
       // The pending record is written before the request goes out, never after.
       const marked = body.indexOf('deleteAccountPendingAt: new Date()');
       assert.ok(marked > 0 && marked < sent, 'the pending record is not written before the request');

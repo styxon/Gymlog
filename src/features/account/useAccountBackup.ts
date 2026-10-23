@@ -1438,6 +1438,16 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
     if (!current) {
       return 'failed';
     }
+    // Every outcome that signs out here is settled before it: the server has
+    // answered or the provider has ended the session. A sign-out the disk
+    // would not keep must not turn that into a failed deletion.
+    const signOutAfterDelete = async () => {
+      try {
+        await signOutRef.current();
+      } catch (error) {
+        console.error('delete account: sign-out not persisted:', error instanceof Error ? error.message.slice(0, 120) : 'unknown');
+      }
+    };
     enterPhase('deleting');
     try {
       const token = await getFreshIdToken(current.sub);
@@ -1449,9 +1459,15 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // connection and not as a deleted account. Unless THIS phone's own
         // delete went through with its answer lost (the pending record, read
         // before sign-out clears it): then it is 'done', by the same rule as
-        // revokedDeleteOutcome with no request id.
-        const ownDeleteWentThrough = Boolean(current.deleteAccountPendingAt);
-        await signOutRef.current();
+        // revokedDeleteOutcome with no request id. Only an Apple account: the
+        // server ends Apple's sign-in when it deletes, so a delete that went
+        // through is one way to land here. A Google session never ends
+        // because of a delete, so for Google the record is only a try that
+        // may never have left the phone (offline, a 5xx) — 'done' there would
+        // say "deleted" with the cloud copy still on the server.
+        const ownDeleteWentThrough =
+          Boolean(current.deleteAccountPendingAt) && current.sub.startsWith(APPLE_ACCOUNT_PREFIX);
+        await signOutAfterDelete();
         if (ownDeleteWentThrough) {
           return 'done';
         }
@@ -1499,13 +1515,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // The server has deleted; now this phone forgets the account. Sign-out
         // ends whatever else is running, clears the Google or Apple session and
         // the pending record with the account record.
-        // The server has said ok, so a failure to persist the sign-out must
-        // not turn this into a failed deletion.
-        try {
-          await signOut();
-        } catch (error) {
-          console.error('delete account: sign-out not persisted:', error instanceof Error ? error.message.slice(0, 120) : 'unknown');
-        }
+        await signOutAfterDelete();
         return answer.appleRevoked === false ? 'done_apple_kept' : 'done';
       }
       if (
@@ -1521,7 +1531,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // request id settles it exactly (revokedDeleteOutcome); the pending
         // record alone could not tell a lost delete from one another phone made
         // after this phone's try never arrived.
-        await signOut();
+        await signOutAfterDelete();
         return answer.error === SESSION_REVOKED
           ? revokedDeleteOutcome({ pendingBefore: triedBefore, ownRequestId: requestId, answerRequestId: answer.deleteRequestId })
           : 'ended';

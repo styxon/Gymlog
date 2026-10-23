@@ -73,6 +73,8 @@ module.exports = [
       }
       assert.equal(new Set(REVIEW_ACCOUNT_HASHES).size, REVIEW_ACCOUNT_HASHES.length);
       assert.ok(!REVIEW_ACCOUNT_HASHES.some((hash) => hash.startsWith('cee13c28')));
+      // review@vinha.app, removed from Workspace 23.10.2026.
+      assert.ok(!REVIEW_ACCOUNT_HASHES.some((hash) => hash.startsWith('f9cd180f')));
     },
   },
   {
@@ -114,13 +116,16 @@ module.exports = [
     },
   },
   {
-    name: 'review account: the stored flag is for a signed-in Google account only',
+    name: 'review account: the stored flag is for a signed-in Google or Apple account only',
     run() {
       const who = { email: FIXTURE_EMAIL, sub: FIXTURE_SUB };
       assert.equal(reviewAccountFlag({ ...who, status: 'signed_in', provider: 'google' }, BOTH_LIST), true);
-      assert.equal(reviewAccountFlag({ ...who, status: 'signed_in', provider: 'apple' }, BOTH_LIST), false);
+      assert.equal(reviewAccountFlag({ ...who, status: 'signed_in', provider: 'apple' }, BOTH_LIST), true);
+      assert.equal(reviewAccountFlag({ ...who, status: 'signed_in', provider: null }, BOTH_LIST), false);
+      assert.equal(reviewAccountFlag({ ...who, status: 'signed_in', provider: 'github' }, BOTH_LIST), false);
       for (const status of ['signed_out', 'loading', 'unavailable']) {
         assert.equal(reviewAccountFlag({ ...who, status, provider: 'google' }, BOTH_LIST), false, status);
+        assert.equal(reviewAccountFlag({ ...who, status, provider: 'apple' }, BOTH_LIST), false, status);
       }
       assert.equal(
         reviewAccountFlag({ email: 'x@y.test', sub: '1', status: 'signed_in', provider: 'google' }, BOTH_LIST),

@@ -601,7 +601,12 @@ export function HistoryScreen({
       >
         {/* History opens from Home and from Progress, so the way back is on
             the page, not only in the system gesture (#bugs 2026-10-01). */}
-        <PageHeader title={t(language, 'history.title')} onBack={onBack} backLabel={t(language, 'common.back')} />
+        <PageHeader
+          title={t(language, 'history.title')}
+          onBack={onBack}
+          backLabel={t(language, 'common.back')}
+          backTestID="history-back"
+        />
 
         {/*
           Nothing logged means nothing of EITHER kind.
