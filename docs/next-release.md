@@ -30,6 +30,7 @@ larger update to carry, not for each fix.
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
 - #435 Delete account (Google): a retry after a try that got no answer no longer says "Account deleted" when Google has meanwhile signed the phone out — the copy may still be on the server, so it says to sign in again. A deletion that went through no longer shows "could not delete" when the phone cannot save the sign-out.
+- #434 The store reviewers' Pro account is now santeriylonen@icloud.com, and it unlocks Pro through Sign in with Apple as well as Google; review@vinha.app no longer does.
 - #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.
 - #432 The price row on the Pro page keeps its size when the system text is at its largest; screen readers now say which measure is selected on the Progress tab, and that a locked option needs Pro.
 - #431 Delete account: if Apple's sign-in could not be ended, the "Account deleted" message now says Vinha is still on your Sign in with Apple list and tells you to remove it in Settings → your name → Sign-In & Security → Sign in with Apple. A deletion the server finished no longer shows "could not delete" when the phone cannot save the sign-out, and retrying a deletion whose answer was lost no longer says "signed out, deleted elsewhere".
