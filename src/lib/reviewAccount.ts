@@ -1,8 +1,9 @@
 /**
- * The Google account Play's reviewers sign in with.
+ * The account Play's and Apple's reviewers sign in with.
  *
  * Reviewers cannot buy Pro and cannot be given a code that works in a build
- * with no codes in it, so one dedicated Google account is recognised instead:
+ * with no codes in it, so one dedicated account is recognised instead, through
+ * either Google's or Apple's sign-in:
  * when the signed-in account's email, or its Google account id (the `sub`
  * stored with the sign-in), hashes to a value on the list below, Pro is on for
  * as long as that account is signed in (entitlement source 'review',
@@ -28,12 +29,13 @@
  * trimmed) or its Google `sub` exactly as stored. One list serves both, since
  * a 64-character hash of one cannot collide with a hash of the other.
  *
- * The email claim in Google's ID token is not certain to be the address the
- * account was created with, so the `sub` is accepted as well. A sub hash can
+ * The email claim in the ID token is not certain to be the address the
+ * account was created with (Apple's is a private relay address when the
+ * reviewer chooses Hide My Email), so the `sub` is accepted as well. A sub hash can
  * be added here as a second line once the account's sub is known.
  */
 export const REVIEW_ACCOUNT_HASHES: readonly string[] = [
-  'f9cd180f98b67714b418a34f025d3230ea147599196df288dfe36c6ec361b020',
+  '2ea3e1bb8f3b76542ccf30b3c0cae3a80d840425d03250b17340f44b0420df5d',
 ];
 
 const K = [
@@ -158,9 +160,9 @@ export function isReviewAccount(
 }
 
 /**
- * The flag the app stores for the signed-in account: true only for a Google
- * sign-in that is a review account's. Apple's address (or its private relay)
- * is never a review account — the dedicated account is a Google one.
+ * The flag the app stores for the signed-in account: true only for a Google or
+ * Apple sign-in that is a review account's. The same address is a Google
+ * account and an Apple ID, so either sign-in unlocks it.
  */
 export function reviewAccountFlag(
   account: { status: string; email: string | null; sub: string | null; provider: string | null },
@@ -168,7 +170,7 @@ export function reviewAccountFlag(
 ): boolean {
   return (
     account.status === 'signed_in' &&
-    account.provider === 'google' &&
+    (account.provider === 'google' || account.provider === 'apple') &&
     isReviewAccount({ email: account.email, sub: account.sub }, hashes)
   );
 }
