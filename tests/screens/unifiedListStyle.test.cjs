@@ -116,6 +116,21 @@ module.exports = [
     },
   },
   {
+    name: 'unifiedListStyle: list dates go through formatListDate; no dead left chevrons',
+    run() {
+      const progress = read('src', 'screens', 'ProgressScreen.tsx');
+      assert.match(progress, /summary\.latestLog \? ` · \$\{formatListDate\(summary\.latestLog\.performedAt, language\)\}`/);
+      assert.doesNotMatch(progress, /formatShortDate/);
+      assert.match(read('src', 'app', 'useRecentSessions.ts'), /dateLabel: formatListDate\(session\.performedAt, preferences\.appLanguage\)/);
+      assert.match(read('src', 'lib', 'exerciseSheetHistory.ts'), /formatListDate\(item\.session\.performedAt, language/);
+      assert.doesNotMatch(read('src', 'lib', 'exerciseSheetHistory.ts'), /formatShortDate/);
+      assert.match(read('src', 'components', 'SetLogSheet.tsx'), /return formatListDate\(iso, language\);/);
+      for (const name of ['LearnIndex', 'Catalog']) {
+        assert.doesNotMatch(read('src', 'screens', `${name}Screen.tsx`), /ChevronLeftIcon/, `${name} keeps a dead chevron`);
+      }
+    },
+  },
+  {
     name: 'unifiedListStyle: section headings go through the shared SectionLabel',
     run() {
       assert.doesNotMatch(read('src', 'screens', 'ProgramDetailScreen.tsx'), /styles\.sectionTitle|styles\.emphasisTitle/);
