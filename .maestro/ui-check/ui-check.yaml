@@ -437,6 +437,19 @@ name: UI check
     file: scrolls.yaml
     env:
       P: "25-create-program"
+# Leaving the builder asks "Discard changes?" (run 39992399965 stopped at 26
+# with the dialog still open over the tabs). Answer it, then carry on.
+- tapOn:
+    id: "tab-home"
+- waitForAnimationToEnd:
+    timeout: 2500
+- runFlow:
+    when:
+      visible: "Hylätäänkö muutokset\?|Discard changes\?"
+    commands:
+      - tapOn: "Hylkää|Discard"
+      - waitForAnimationToEnd:
+          timeout: 2500
 
 # 26 A programme day (the first day of the first programme card), 27 its Add
 #    exercise sheet, 28 its Swap exercise sheet. Swap is offered only on a day
