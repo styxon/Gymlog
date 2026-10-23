@@ -14,8 +14,8 @@ interface Bubble {
  * the field to be sent again, and its bubble is lifted out so sending it
  * again does not show it twice. If the reader has already typed something else
  * meanwhile, that draft is theirs and stays untouched; the old question then
- * stays in the thread, because lifting it out would lose it - out of the
- * thread and never in the field.
+ * stays in the thread, with its log offer, because lifting it out would lose
+ * it - out of the thread and never in the field.
  */
 export function afterRateLimitedQuestion<M extends Bubble>(
   messages: readonly M[],
@@ -25,9 +25,12 @@ export function afterRateLimitedQuestion<M extends Bubble>(
   rateLimitedReply: M,
 ): { messages: M[]; draft: string } {
   const draftIsFree = currentDraft.trim() === '';
-  const kept = messages.filter(
-    (message) => message.id !== `offer:${token}` && (!draftIsFree || message.id !== `me:${token}`),
-  );
+  // The question's log offer goes with its bubble: a bubble left in the
+  // thread keeps its offer, and one lifted out takes it along (sending again
+  // makes a new one).
+  const kept = draftIsFree
+    ? messages.filter((message) => message.id !== `offer:${token}` && message.id !== `me:${token}`)
+    : [...messages];
   return {
     messages: [...kept, rateLimitedReply],
     draft: draftIsFree ? question : currentDraft,
