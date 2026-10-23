@@ -1255,6 +1255,7 @@ export function ProgramDetailScreen({
               ]}
             >
             <Pressable
+              testID={`program-day-${index}`}
               onPress={() => (onOpenSession ?? onStartSession)(session.id)}
               style={({ pressed }) => [styles.workoutCard, pressed && styles.workoutCardPressed]}
             >
