@@ -25,8 +25,8 @@ import { AppLanguage } from '../types/models';
 
 function ChevronLeftIcon({ color }: { color: string }) {
   return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 6l-6 6 6 6" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
+    <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+      <Path d="M15 5l-7 7 7 7" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
@@ -193,13 +193,16 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
+  // The shared BackButton's shape (40, round) and chevron, but a scrim and a
+  // white chevron: it sits on the collection's own gradient, where the
+  // button's light fill would be a white disc on a painted cover.
   coverBack: {
     position: 'absolute',
     top: 46,
     left: 16,
-    width: 34,
-    height: 34,
-    borderRadius: 11,
+    width: 40,
+    height: 40,
+    borderRadius: 999,
     backgroundColor: 'rgba(10, 7, 20, 0.4)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.22)',

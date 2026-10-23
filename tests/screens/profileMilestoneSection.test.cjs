@@ -38,11 +38,11 @@ module.exports = [
       assert.ok(section > 0 && records > section && rate < section, 'order: rate, milestone, records');
       const block = profile.slice(section, records);
       // The speed line came off (user 2026-09-03): it crossed the row copy.
-      assert.match(block, /<ListCard divided=\{false\} style=\{styles\.milestoneCard\}>/);
+      assert.match(block, /<ListCard>/);
       assert.doesNotMatch(block, /speedLine/);
-      // Rows: hairline above every row but the first, the nearest one in the
+      // Rows: ListCard draws the hairline between them; the nearest one in the
       // accent, the rest in violet, the fill clamped by the rule.
-      assert.match(block, /index > 0 && styles\.milestoneRowDivider/);
+      assert.doesNotMatch(block, /milestoneRowDivider/);
       assert.match(block, /index === 0 \? theme\.highlight : theme\.purpleBright/);
       assert.match(block, /width: `\$\{row\.fillPercent\}%`/);
       // The card is the ladder's front row, not a second reading of the log.

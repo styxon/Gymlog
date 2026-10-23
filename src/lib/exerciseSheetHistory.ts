@@ -10,7 +10,7 @@
  * grows as sets are logged: the bar is the top set SO FAR, and it is marked as
  * a record only once it actually beats every session before it.
  */
-import { formatShortDate, removeTrailingZeros } from './format';
+import { formatListDate, removeTrailingZeros } from './format';
 import { isRecordLocked, isSetLogLocked } from './historyWindow';
 import { t } from './i18n';
 import { beatsBest } from './personalRecords';
@@ -198,7 +198,10 @@ export function buildExerciseSheetHistory(
         key: `${item.session.performedAt}-${index}`,
         dateLabel: item.isToday
           ? t(language, 'guided.sheet.today')
-          : formatShortDate(item.session.performedAt, language),
+          : // The list date ("19.10." / "Oct 19"), the year only when it is not
+            // this one; "this one" is today's session's, so the row reads the
+            // same in a test as on the phone.
+            formatListDate(item.session.performedAt, language, today ? { now: new Date(today.performedAt) } : {}),
         loadLabel: top && top.loadKg > 0 ? `${removeTrailingZeros(top.loadKg)} kg` : null,
         pills: item.session.sets.map((set) =>
           isMinutesTrackingMode(trackingMode) ? t(language, 'logger.minutesValue', { count: set.reps }) : `${set.reps}`,

@@ -4,6 +4,7 @@ import { Text } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
 import { PageHeader } from '../components/BackButton';
+import { ListCard } from '../components/ListCard';
 import { Seg } from '../components/Seg';
 import { CARD_SHADOW, SectionLabel, ToggleSwitch } from '../components/SettingsUi';
 import { MEASUREMENT_LABEL_KEYS } from '../lib/homeStatCards';
@@ -493,7 +494,9 @@ export function NotificationsScreen({
         : null;
 
     return (
-      <View key={group.key} style={[styles.card, styles.groupCard, groupOn && styles.groupCardOn]}>
+      // A row of the section's one ListCard, not a card of its own: the lit
+      // icon says it is on, not a purple border (the unified list style).
+      <View key={group.key}>
         <View style={styles.groupHead}>
           <View style={[styles.groupIcon, groupOn && styles.groupIconOn]}>
             <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
@@ -588,7 +591,7 @@ export function NotificationsScreen({
         {/* The workout alerts: their own switch, outside the master's reach. */}
         <View style={styles.firstSection}>
           <SectionLabel label={t(language, 'notif.section.workout')} />
-          {workoutGroups.map(renderGroup)}
+          <ListCard>{workoutGroups.map(renderGroup)}</ListCard>
         </View>
 
         {/* master — the scheduled notifications */}
@@ -618,7 +621,7 @@ export function NotificationsScreen({
           <View style={effectiveEnabled ? null : styles.dimmed}>
             <View style={styles.section}>
               <SectionLabel label={t(language, 'notif.section.what')} />
-              {scheduledGroups.map(renderGroup)}
+              <ListCard>{scheduledGroups.map(renderGroup)}</ListCard>
             </View>
 
             <View style={styles.section}>
@@ -671,7 +674,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     gap: 13,
     padding: 15,
-    marginTop: 12,
+    marginTop: 22,
   },
   firstSection: {
     marginTop: 4,
@@ -718,18 +721,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   section: {
     marginTop: 22,
   },
-  groupCard: {
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  groupCardOn: {
-    borderColor: theme.purpleBright,
-  },
   groupHead: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
-    padding: 15,
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   groupIcon: {
     width: 36,
@@ -751,7 +748,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     paddingTop: 9,
     paddingBottom: 11,
     borderTopWidth: 1,

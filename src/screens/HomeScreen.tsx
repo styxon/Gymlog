@@ -55,6 +55,7 @@ import { weekdayCodeForDate, weekdayLabel } from '../lib/planWeekdays';
 import { I18nKey, t } from '../lib/i18n';
 import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
 import { ProMomentContent } from '../lib/proInsights';
+import { ListCard } from '../components/ListCard';
 import { CutButton } from '../components/CutButton';
 import { VinhaWordmark } from '../components/VinhaWordmark';
 import { CutSurface } from '../components/CutSurface';
@@ -1861,75 +1862,80 @@ export function HomeScreen({
             {/* Only when a place is at stake. A count nobody is near is a sign
                 about nothing, and those teach people to stop reading signs. */}
             {programCapLine ? <Text style={styles.otherProgramsCap}>{programCapLine}</Text> : null}
-            {otherPrograms.map((program) => {
-              const pending = pendingRemoval === program.planId;
-              return (
-                <Pressable
-                  key={program.planId}
-                  accessibilityRole="button"
-                  accessibilityLabel={program.title}
-                  onPress={() => (pending ? undoRemoval() : onOpenOtherProgram?.(program.planId))}
-                  style={({ pressed }) => [styles.otherProgramRow, pressed && styles.pressed]}
-                >
-                  <View style={styles.otherProgramCopy}>
-                    <Text
-                      style={[styles.otherProgramTitle, pending && styles.otherProgramGone]}
-                      numberOfLines={1}
-                    >
-                      {program.title}
-                    </Text>
-                    <Text
-                      style={[styles.otherProgramMeta, pending && styles.otherProgramGone]}
-                      numberOfLines={1}
-                    >
-                      {pending ? t(language, 'home.removeProgram.pending') : program.meta}
-                    </Text>
-                  </View>
-                  {/* The way back out of the cap. Without it, two programmes is
-                      a dead end and every later choice is a paywall the reader
-                      cannot dismiss by changing their mind.
-                      It used to take effect on the tap. Nothing was destroyed —
-                      the programme stays in the Programs tab — but a row that
-                      vanishes under your thumb reads as destruction, and the
-                      reader has to already know that to feel otherwise
-                      (user 2026-08-26). So the row waits, struck through, and
-                      says how to get it back. */}
-                  {pending ? (
-                    /* No countdown. A timer means the reader is racing the app
-                       to keep their own programme, and "hurry up" is the wrong
-                       thing to say about a decision (user 2026-08-26, "otetaan
-                       aika pois"). The row waits as long as it takes: Kumoa on
-                       the row, and the red X confirms. */
-                    <View style={styles.otherProgramConfirm}>
-                      <Text style={styles.otherProgramUndo}>{t(language, 'home.removeProgram.undo')}</Text>
+            {/* One ListCard, its rows drawn here rather than by ListRow: a row
+                waiting to be removed is struck through and carries its own
+                Undo and X, which ListRow has no shape for. */}
+            <ListCard>
+              {otherPrograms.map((program) => {
+                const pending = pendingRemoval === program.planId;
+                return (
+                  <Pressable
+                    key={program.planId}
+                    accessibilityRole="button"
+                    accessibilityLabel={program.title}
+                    onPress={() => (pending ? undoRemoval() : onOpenOtherProgram?.(program.planId))}
+                    style={({ pressed }) => [styles.otherProgramRow, pressed && styles.pressed]}
+                  >
+                    <View style={styles.otherProgramCopy}>
+                      <Text
+                        style={[styles.otherProgramTitle, pending && styles.otherProgramGone]}
+                        numberOfLines={1}
+                      >
+                        {program.title}
+                      </Text>
+                      <Text
+                        style={[styles.otherProgramMeta, pending && styles.otherProgramGone]}
+                        numberOfLines={1}
+                      >
+                        {pending ? t(language, 'home.removeProgram.pending') : program.meta}
+                      </Text>
+                    </View>
+                    {/* The way back out of the cap. Without it, two programmes is
+                        a dead end and every later choice is a paywall the reader
+                        cannot dismiss by changing their mind.
+                        It used to take effect on the tap. Nothing was destroyed —
+                        the programme stays in the Programs tab — but a row that
+                        vanishes under your thumb reads as destruction, and the
+                        reader has to already know that to feel otherwise
+                        (user 2026-08-26). So the row waits, struck through, and
+                        says how to get it back. */}
+                    {pending ? (
+                      /* No countdown. A timer means the reader is racing the app
+                         to keep their own programme, and "hurry up" is the wrong
+                         thing to say about a decision (user 2026-08-26, "otetaan
+                         aika pois"). The row waits as long as it takes: Kumoa on
+                         the row, and the red X confirms. */
+                      <View style={styles.otherProgramConfirm}>
+                        <Text style={styles.otherProgramUndo}>{t(language, 'home.removeProgram.undo')}</Text>
+                        <Pressable
+                          accessibilityRole="button"
+                          accessibilityLabel={t(language, 'home.removeProgram.confirm', { program: program.title })}
+                          hitSlop={10}
+                          onPress={() => confirmRemoval(program.planId)}
+                          style={({ pressed }) => [styles.otherProgramRemove, pressed && styles.pressed]}
+                        >
+                          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                            <Path d="M6 6l12 12M18 6L6 18" stroke={theme.danger} strokeWidth={2.6} strokeLinecap="round" />
+                          </Svg>
+                        </Pressable>
+                      </View>
+                    ) : (
                       <Pressable
                         accessibilityRole="button"
-                        accessibilityLabel={t(language, 'home.removeProgram.confirm', { program: program.title })}
+                        accessibilityLabel={t(language, 'home.removeProgram', { program: program.title })}
                         hitSlop={10}
-                        onPress={() => confirmRemoval(program.planId)}
+                        onPress={() => beginRemoval(program.planId)}
                         style={({ pressed }) => [styles.otherProgramRemove, pressed && styles.pressed]}
                       >
                         <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                          <Path d="M6 6l12 12M18 6L6 18" stroke={theme.danger} strokeWidth={2.6} strokeLinecap="round" />
+                          <Path d="M6 6l12 12M18 6L6 18" stroke={theme.faint} strokeWidth={2.2} strokeLinecap="round" />
                         </Svg>
                       </Pressable>
-                    </View>
-                  ) : (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={t(language, 'home.removeProgram', { program: program.title })}
-                      hitSlop={10}
-                      onPress={() => beginRemoval(program.planId)}
-                      style={({ pressed }) => [styles.otherProgramRemove, pressed && styles.pressed]}
-                    >
-                      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                        <Path d="M6 6l12 12M18 6L6 18" stroke={theme.faint} strokeWidth={2.2} strokeLinecap="round" />
-                      </Svg>
-                    </Pressable>
-                  )}
-                </Pressable>
-              );
-            })}
+                    )}
+                  </Pressable>
+                );
+              })}
+            </ListCard>
           </Animated.View>
         ) : null}
 
@@ -3264,15 +3270,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 8,
   },
   otherProgramRow: {
+    minHeight: 56,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   otherProgramCopy: {
     flex: 1,
@@ -3280,13 +3283,15 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   otherProgramTitle: {
     color: theme.ink,
-    fontSize: 14.5,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '800',
   },
   otherProgramMeta: {
-    color: theme.muted,
-    fontSize: 12.5,
-    fontWeight: '700',
+    color: theme.faint,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   otherProgramRemove: {
     width: 28,

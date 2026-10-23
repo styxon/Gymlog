@@ -13,7 +13,7 @@ import { libraryLabel } from '../lib/libraryLabel';
 import { PersonalRecord } from '../lib/personalRecords';
 import { Theme, darkTheme, useTheme, useThemedStyles } from '../theming';
 import type { AppLanguage } from '../types/models';
-import { formatDateNumeric, groupThousands, removeTrailingZeros } from '../lib/format';
+import { formatListDate, groupThousands, removeTrailingZeros } from '../lib/format';
 
 /**
  * One lift's set log, on a sheet over the exercise it belongs to.
@@ -52,12 +52,9 @@ interface SetLogSheetProps {
   bottomInset?: number;
 }
 
+/** The list date, "19.10." / "Oct 19" (an unparseable one is ''). */
 function formatDay(iso: string, language: AppLanguage) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-  return formatDateNumeric(date, language);
+  return formatListDate(iso, language);
 }
 
 const WEEKDAY_KEYS: I18nKey[] = [

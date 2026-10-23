@@ -40,14 +40,6 @@ const LEVEL_CHIPS: Array<{ level: WorkoutLevel | null; key: I18nKey }> = [
   { level: 'advanced', key: 'programs.level.advanced' },
 ];
 
-function ChevronLeftIcon({ color }: { color: string }) {
-  return (
-    <Svg width={19} height={19} viewBox="0 0 24 24" fill="none">
-      <Path d="M15 6l-6 6 6 6" stroke={color} strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" />
-    </Svg>
-  );
-}
-
 function SearchIcon({ color }: { color: string }) {
   return (
     <Svg width={17} height={17} viewBox="0 0 24 24" fill="none">

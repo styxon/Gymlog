@@ -68,14 +68,77 @@ module.exports = [
       for (const name of fs.readdirSync(dir).filter((n) => n.endsWith('.tsx'))) {
         assert.doesNotMatch(read('src', 'screens', name), /function SectionLabel/, `${name} has a local SectionLabel`);
       }
-      for (const name of ['Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription', 'TrainingBreak', 'EditProfile', 'ExerciseDetail']) {
-        assert.match(read('src', 'screens', `${name}Screen.tsx`), /<PageHeader/, `${name} lost the shared header`);
+      for (const name of [
+        'Settings', 'Notifications', 'MyData', 'ExportPlan', 'TrainingPlan', 'Milestones', 'Subscription', 'TrainingBreak',
+        'EditProfile', 'ExerciseDetail', 'SessionAnalysis', 'LegalDocument', 'MembershipEnd', 'CreateTemplate',
+      ]) {
+        const source = read('src', 'screens', `${name}Screen.tsx`);
+        assert.match(source, /<PageHeader/, `${name} lost the shared header`);
+        assert.doesNotMatch(source, /<ScreenHeader\b|<ScreenHeaderTitle/, `${name} draws an old header beside the shared one`);
       }
-      for (const name of ['ProgramDetail', 'Catalog', 'LearnIndex']) {
+      for (const name of ['ProgramDetail', 'ProgramDay', 'Catalog', 'LearnIndex']) {
         assert.match(read('src', 'screens', `${name}Screen.tsx`), /<BackButton/, `${name} lost the shared back button`);
       }
       // The library draws it on its own title row, inside the browser.
       assert.match(read('src', 'components', 'ExerciseLibraryBrowser.tsx'), /<BackButton/);
+      // The two backs over a painted hero keep their scrim, in the shared shape.
+      const history = read('src', 'screens', 'HistoryScreen.tsx');
+      assert.match(history, /heroBack: \{\s*width: 40,\s*height: 40,\s*borderRadius: 999/);
+      assert.match(read('src', 'screens', 'CollectionScreen.tsx'), /coverBack: \{[^}]*width: 40,\s*height: 40,\s*borderRadius: 999/);
+    },
+  },
+  {
+    name: 'unifiedListStyle: the last hand-drawn lists are one ListCard each (audit 2026-10-23)',
+    run() {
+      const progress = read('src', 'screens', 'ProgressScreen.tsx');
+      assert.doesNotMatch(progress, /progressHistoryCard|historyRow|entryRowDivided/);
+      assert.match(progress, /<SectionLabel\s+style=\{styles\.sectionGap\}\s+label=\{t\(language, 'progress\.history'\)\}/);
+      const entries = progress.slice(progress.indexOf('const rows = model.entryIds'), progress.indexOf('<ConfirmDialog'));
+      assert.match(entries, /<ListCard>[\s\S]*<ListRow[\s\S]*title=\{formatSessionDate\(row\.recordedAt, language\)\}/);
+      // Rows that are ListCard's: no screen-drawn divider or per-row card left.
+      const gone = {
+        MyData: /dataRowDivider|\.\.\.CARD_SHADOW,\s*\},\s*dataRow/,
+        ExportPlan: /rowDivider|styles\.rowTitle/,
+        Notifications: /groupCard/,
+        TrainingPlan: /sessionRowLast|sessionTitle:/,
+        Profile: /milestoneRowDivider|divided=\{false\} style=\{styles\.milestoneCard\}/,
+      };
+      for (const [name, pattern] of Object.entries(gone)) {
+        const source = read('src', 'screens', `${name}Screen.tsx`);
+        assert.match(source, /<ListCard/, `${name} lost its ListCard`);
+        assert.doesNotMatch(source, pattern, `${name} draws its own list again`);
+      }
+      const home = read('src', 'screens', 'HomeScreen.tsx');
+      const other = home.slice(home.indexOf("t(language, 'home.otherPrograms')"), home.indexOf('styles.sectionDivider, rise('));
+      assert.match(other, /<ListCard>[\s\S]*<\/ListCard>/);
+      const otherRow = home.slice(home.indexOf('  otherProgramRow: {'), home.indexOf('  otherProgramCopy: {'));
+      assert.doesNotMatch(otherRow, /borderWidth|borderRadius|backgroundColor/);
+    },
+  },
+  {
+    name: 'unifiedListStyle: list dates go through formatListDate; no dead left chevrons',
+    run() {
+      const progress = read('src', 'screens', 'ProgressScreen.tsx');
+      assert.match(progress, /summary\.latestLog \? ` · \$\{formatListDate\(summary\.latestLog\.performedAt, language\)\}`/);
+      assert.doesNotMatch(progress, /formatShortDate/);
+      assert.match(read('src', 'app', 'useRecentSessions.ts'), /dateLabel: formatListDate\(session\.performedAt, preferences\.appLanguage\)/);
+      assert.match(read('src', 'lib', 'exerciseSheetHistory.ts'), /formatListDate\(item\.session\.performedAt, language/);
+      assert.doesNotMatch(read('src', 'lib', 'exerciseSheetHistory.ts'), /formatShortDate/);
+      assert.match(read('src', 'components', 'SetLogSheet.tsx'), /return formatListDate\(iso, language\);/);
+      for (const name of ['LearnIndex', 'Catalog']) {
+        assert.doesNotMatch(read('src', 'screens', `${name}Screen.tsx`), /ChevronLeftIcon/, `${name} keeps a dead chevron`);
+      }
+    },
+  },
+  {
+    name: 'unifiedListStyle: section headings go through the shared SectionLabel',
+    run() {
+      assert.doesNotMatch(read('src', 'screens', 'ProgramDetailScreen.tsx'), /styles\.sectionTitle|styles\.emphasisTitle/);
+      assert.doesNotMatch(read('src', 'screens', 'ProgramDayScreen.tsx'), /sectionHead: \{/);
+      assert.doesNotMatch(read('src', 'components', 'ExerciseLibraryBrowser.tsx'), /function SectionHead|<SectionHead\b/);
+      const analysis = read('src', 'screens', 'SessionAnalysisScreen.tsx');
+      assert.doesNotMatch(analysis, /styles\.sectionLabel/);
+      assert.match(analysis, /<SectionLabel/);
     },
   },
   {
