@@ -29,7 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
-- AI coach: a measurement typed into the chat is offered for logging with the right number — a date or time before it ("30.10. painoni 82 kg") is no longer read as the value, pounds and inches are no longer offered as kg or cm, and "1000 kg" is refused instead of offered as 100. A question turned away for rate while you were typing keeps its "log this" button.
+- #438 AI coach: a measurement typed into the chat is offered for logging with the right number — a date or time before it ("30.10. painoni 82 kg") is no longer read as the value, pounds and inches are no longer offered as kg or cm, and "1000 kg" is refused instead of offered as 100. A question turned away for rate while you were typing keeps its "log this" button.
 - #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.
 - #432 The price row on the Pro page keeps its size when the system text is at its largest; screen readers now say which measure is selected on the Progress tab, and that a locked option needs Pro.
 - #431 Delete account: if Apple's sign-in could not be ended, the "Account deleted" message now says Vinha is still on your Sign in with Apple list and tells you to remove it in Settings → your name → Sign-In & Security → Sign in with Apple. A deletion the server finished no longer shows "could not delete" when the phone cannot save the sign-out, and retrying a deletion whose answer was lost no longer says "signed out, deleted elsewhere".
