@@ -15,7 +15,7 @@ export interface ReviewProAccountDeps {
 }
 
 /**
- * Keeps `reviewProAccount` equal to "the signed-in account is Play's review
+ * Keeps `reviewProAccount` equal to "the signed-in account is the stores' review
  * account" (lib/reviewAccount), and so gives that account Pro.
  *
  * One reconciliation rather than a write at each end of sign-in. Whatever
