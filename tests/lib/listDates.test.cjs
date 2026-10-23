@@ -65,7 +65,7 @@ module.exports = [
     name: 'lastSessionRecords: the newest session leads, the rest keep their order',
     run() {
       const newest = new Date(2026, 9, 18, 18, 0).toISOString();
-      const sameSession = new Date(2026, 9, 18, 17, 30).toISOString();
+      const sameSession = new Date(2026, 9, 18, 18, 0, 20).toISOString();
       const older = new Date(2026, 9, 10, 18, 0).toISOString();
       const records = [record('b', older, true), record('a', newest, true), record('c', sameSession, true)];
       const { lastSession, rest } = splitLastSessionRecords(records, newest);
@@ -97,12 +97,26 @@ module.exports = [
     name: 'lastSessionRecords: records set in the latest session open the group, older ones stay below',
     run() {
       const latest = new Date(2026, 9, 18, 18, 0).toISOString();
-      const sameSession = new Date(2026, 9, 18, 17, 45).toISOString();
+      const sameSession = latest; // a lift's logs carry the session's stamp
       const older = new Date(2026, 9, 5, 18, 0).toISOString();
       const records = [record('old', older, true), record('bench', latest, true), record('row', sameSession, true)];
       const { lastSession, rest } = splitLastSessionRecords(records, latest);
       assert.deepEqual(lastSession.map((r) => r.key), ['bench', 'row']);
       assert.deepEqual(rest.map((r) => r.key), ['old']);
+    },
+  },
+  {
+    name: 'lastSessionRecords: an earlier workout the same day is not the last session (hunt 1.1.1)',
+    run() {
+      const morning = new Date(2026, 9, 18, 8, 0).toISOString();
+      const evening = new Date(2026, 9, 18, 10, 0).toISOString();
+      // The morning set a squat record; the later workout set nothing.
+      const none = splitLastSessionRecords([record('squat', morning, true)], evening);
+      assert.deepEqual(none.lastSession, [], 'a record from two hours earlier sat under "Last session"');
+      // Both set one: only the later workout's record is in the group.
+      const both = splitLastSessionRecords([record('squat', morning, true), record('bench', evening, true)], evening);
+      assert.deepEqual(both.lastSession.map((r) => r.key), ['bench']);
+      assert.deepEqual(both.rest.map((r) => r.key), ['squat']);
     },
   },
   {
