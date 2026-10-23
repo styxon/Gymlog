@@ -71,6 +71,14 @@ module.exports = [
       assert.deepEqual(parseMeasurementIntent('paino 82-83 kg'), kg(82));
       assert.deepEqual(parseMeasurementIntent('vyötärö 90, hauis 35 cm'), { kind: 'waist', value: 90, unit: 'cm' });
       assert.deepEqual(parseMeasurementIntent('82 kg paino'), kg(82));
+      // A value with its unit right before the word wins over a number after it (second re-check).
+      assert.deepEqual(parseMeasurementIntent('82 kg paino, treenasin 3 kertaa'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('82 kg paino 3.11.'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('82 paino 3 kertaa'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('18 % rasvaprosentti 3 kk sitten'), { kind: 'bodyfat', value: 18, unit: '%' });
+      assert.deepEqual(parseMeasurementIntent('90 cm vyötärö 2 viikon jälkeen'), { kind: 'waist', value: 90, unit: 'cm' });
+      // Another measurement's value before the word is not adjacent: still the one after.
+      assert.deepEqual(parseMeasurementIntent('vyötärö 90cm, paino 82kg'), kg(82));
       // A trailing full stop after the reading is not a date.
       assert.deepEqual(parseMeasurementIntent('rasvaprosentti 18.5.'), { kind: 'bodyfat', value: 18.5, unit: '%' });
       assert.deepEqual(parseMeasurementIntent('body fat 12.5.', 'en'), { kind: 'bodyfat', value: 12.5, unit: '%' });

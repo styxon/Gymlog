@@ -48,6 +48,8 @@ const CLOCK_BEFORE = /(?:\bklo|\bkello|@)\s*$/i;
 interface NumberToken {
   raw: string;
   index: number;
+  /** Where the token, its unit and the spaces after it end. */
+  end: number;
   unit: string | null;
   /** A clock time after "klo", or a full date "30.10.2026": never a reading. */
   notReading: boolean;
@@ -67,6 +69,7 @@ function numberTokens(message: string): NumberToken[] {
     tokens.push({
       raw,
       index,
+      end: index + match[0].length,
       unit,
       notReading: parts.length > 2 || CLOCK_BEFORE.test(before),
       dayMonth:
@@ -87,15 +90,19 @@ function numberTokens(message: string): NumberToken[] {
  * 82 ja vyötärö 90 cm" is 82 kg, "painoni 82 (viime viikolla 84 kg)" is 82.
  * Taking the first number in the message read a date or clock before it, and
  * taking any number with a unit read another measurement's (re-check of hunt
- * 1.1.1). With nothing after the word, the last number before it that is not
- * a date: "82 kg paino".
+ * 1.1.1). A number right before the word, nothing between them, comes first:
+ * "82 kg paino, treenasin 3 kertaa" is 82, "18 % rasvaprosentti 3 kk sitten"
+ * is 18 (second re-check). With nothing after the word, the last number before it
+ * that is not a date.
  */
-function readingToken(tokens: readonly NumberToken[], wordAt: number): NumberToken | undefined {
+function readingToken(tokens: readonly NumberToken[], message: string, wordAt: number): NumberToken | undefined {
   const usable = tokens.filter((token) => !token.notReading);
-  return (
-    usable.find((token) => token.index > wordAt) ??
-    usable.filter((token) => token.index < wordAt && !token.dayMonth).pop()
-  );
+  const before = usable.filter((token) => token.index < wordAt && !token.dayMonth);
+  const leading = before[before.length - 1];
+  if (leading && message.slice(leading.end, wordAt).trim() === '') {
+    return leading;
+  }
+  return usable.find((token) => token.index > wordAt) ?? leading;
 }
 
 const RANGE: Record<MeasurementIntent['unit'], [number, number]> = {
@@ -140,7 +147,7 @@ export function parseMeasurementIntent(text: string, _language: AppLanguage = 'f
   }
 
   // A number that is not a reading shape is refused, never cut short: "1000 kg".
-  const number = readingToken(numberTokens(message), message.search(match.pattern));
+  const number = readingToken(numberTokens(message), message, message.search(match.pattern));
   if (!number || !READING.test(number.raw)) {
     return null;
   }
