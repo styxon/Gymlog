@@ -29,7 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
-- #PR1 The last pushed screens get the round back button beside a left-aligned title: the session analysis, the legal documents, the membership end page, a programme day and the programme builder (its Save stays on the right). A collection's back button over its cover is round too.
+- #437 The last pushed screens get the round back button beside a left-aligned title: the session analysis, the legal documents, the membership end page, a programme day and the programme builder (its Save stays on the right). A collection's back button over its cover is round too.
 
 - #433 Records: the "Last session" group now shows only records your latest workout set; a record from weeks ago no longer sits under that heading.
 - #432 The price row on the Pro page keeps its size when the system text is at its largest; screen readers now say which measure is selected on the Progress tab, and that a locked option needs Pro.
