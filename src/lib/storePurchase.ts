@@ -39,6 +39,12 @@ export interface StoreEntitlementSnapshot {
   productPlanIdentifier?: string | null;
   /** ISO. When the store saw the reader turn renewal off. */
   unsubscribeDetectedAt: string | null;
+  /**
+   * ISO. When the store saw a renewal payment fail (grace period or billing
+   * retry); null once it is resolved. The entitlement stays active meanwhile
+   * and `willRenew` reads false, which is NOT the reader cancelling.
+   */
+  billingIssueDetectedAt?: string | null;
 }
 
 /** The fields of RevenueCat's CustomerInfo this reads. */
@@ -48,7 +54,11 @@ export interface StoreCustomerSnapshot {
 
 export type PurchaseRecord = Pick<
   AppPreferences,
-  'mockSubscriptionPurchasedAt' | 'mockSubscriptionTerm' | 'mockSubscriptionCancelledAt' | 'mockSubscriptionEndsAt'
+  | 'mockSubscriptionPurchasedAt'
+  | 'mockSubscriptionTerm'
+  | 'mockSubscriptionCancelledAt'
+  | 'mockSubscriptionEndsAt'
+  | 'mockSubscriptionBillingIssue'
 >;
 
 /** RevenueCat's package slot for each plan the Pro page sells. */
@@ -108,6 +118,7 @@ export function purchaseRecordFromStore(
       mockSubscriptionTerm: current.mockSubscriptionTerm,
       mockSubscriptionCancelledAt: null,
       mockSubscriptionEndsAt: null,
+      mockSubscriptionBillingIssue: false,
     };
   }
 
@@ -139,6 +150,13 @@ export function purchaseRecordFromStore(
       ? isoOrNull(entitlement.unsubscribeDetectedAt) ?? keptStamp ?? now.toISOString()
       : null,
     mockSubscriptionEndsAt: expiresAt,
+    // The stamp above still bounds Pro (the entitlement is unchanged); this only
+    // tells the screens the cause is a failed payment the store is retrying,
+    // not the reader ending it.
+    mockSubscriptionBillingIssue:
+      cancelled &&
+      isoOrNull(entitlement.unsubscribeDetectedAt) === null &&
+      isoOrNull(entitlement.billingIssueDetectedAt) !== null,
   };
 }
 
@@ -148,6 +166,7 @@ export function samePurchaseRecord(current: PurchaseRecord, next: PurchaseRecord
     current.mockSubscriptionPurchasedAt === next.mockSubscriptionPurchasedAt &&
     current.mockSubscriptionTerm === next.mockSubscriptionTerm &&
     current.mockSubscriptionCancelledAt === next.mockSubscriptionCancelledAt &&
-    current.mockSubscriptionEndsAt === next.mockSubscriptionEndsAt
+    current.mockSubscriptionEndsAt === next.mockSubscriptionEndsAt &&
+    current.mockSubscriptionBillingIssue === next.mockSubscriptionBillingIssue
   );
 }

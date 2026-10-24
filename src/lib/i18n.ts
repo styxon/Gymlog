@@ -2779,6 +2779,11 @@ const EN = {
   'subs.end.cta': 'End membership',
   'subs.end.keep': 'Keep Vinha Pro',
   'subs.end.cancelledNote': 'Already cancelled. Pro works until {date}.',
+  'subs.end.billingNote': 'The payment did not go through and the store is retrying. Pro works until {date}.',
+  'subs.billingIssueNote': 'The payment did not go through and the store is retrying. Update your payment method in the store.',
+  'subs.status.billingIssue': 'Payment failed · runs until {date}',
+  'subs.row.fixPayment': 'Update payment method',
+  'subs.row.fixPaymentSub': 'Payment did not go through — Pro works until {date}.',
   'subs.end.splashTitle': 'Membership ending',
   'subs.end.splashBody': 'Pro is on until {date}.',
   // Cancel survey
@@ -6185,6 +6190,11 @@ const FI: Record<I18nKey, string> = {
   'subs.end.cta': 'Lopeta jäsenyys',
   'subs.end.keep': 'Pidä Vinha Pro',
   'subs.end.cancelledNote': 'Jo peruttu. Pro toimii {date} asti.',
+  'subs.end.billingNote': 'Maksu ei mennyt läpi – kauppa yrittää uudelleen. Pro toimii {date} asti.',
+  'subs.billingIssueNote': 'Maksu ei mennyt läpi – kauppa yrittää uudelleen. Päivitä maksutapa kaupassa.',
+  'subs.status.billingIssue': 'Maksu epäonnistui · voimassa {date} asti',
+  'subs.row.fixPayment': 'Päivitä maksutapa',
+  'subs.row.fixPaymentSub': 'Maksu ei mennyt läpi — Pro toimii {date} asti.',
   'subs.end.splashTitle': 'Jäsenyys päättyy',
   'subs.end.splashBody': 'Pro on käytössä {date} asti.',
   // Palautekysely

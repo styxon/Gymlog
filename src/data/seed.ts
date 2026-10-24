@@ -66,6 +66,7 @@ const DEFAULT_PREFERENCES = {
   mockSubscriptionCancelledAt: null as string | null,
   mockSubscriptionPurchasedAt: null as string | null,
   mockSubscriptionEndsAt: null as string | null,
+  mockSubscriptionBillingIssue: false,
   reviewProAccount: false,
   cancelSurveyAnswer: null as import('../lib/cancelSurvey').CancelSurveyAnswer | null,
   featureVotedIds: [] as string[],

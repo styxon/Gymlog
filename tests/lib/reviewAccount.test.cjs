@@ -199,6 +199,7 @@ module.exports = [
         state: 'active',
         term: null,
         cancelled: false,
+        billingIssue: false,
         endsAt: null,
         nextChargeAt: null,
         grant: 'review',

@@ -331,6 +331,7 @@ export const DEVICE_ONLY_PREFERENCE_FIELDS = [
   'mockSubscriptionTerm',
   'mockSubscriptionCancelledAt',
   'mockSubscriptionEndsAt',
+  'mockSubscriptionBillingIssue',
   'aiCoachProQuota',
   'coachDemoMomentsUsed',
   'firstLaunchAt',

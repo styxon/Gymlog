@@ -20,6 +20,7 @@ export interface PurchaseRecord {
   mockSubscriptionPurchasedAt: string | null;
   mockSubscriptionCancelledAt: string | null;
   mockSubscriptionEndsAt: string | null;
+  mockSubscriptionBillingIssue: boolean;
 }
 
 export function normalizePurchaseRecord(
@@ -50,6 +51,9 @@ export function normalizePurchaseRecord(
       ? storedEndsAt
       : fallback.mockSubscriptionEndsAt;
   return {
+    // `true` or it is not (absent on every install from before the field).
+    mockSubscriptionBillingIssue:
+      purchasedAt !== null && cancelledAt !== null && stored?.mockSubscriptionBillingIssue === true,
     mockSubscriptionEndsAt: purchasedAt === null ? null : endsAt,
     mockSubscriptionPurchasedAt: purchasedAt,
     // A cancellation without a purchase is nothing to cancel.
