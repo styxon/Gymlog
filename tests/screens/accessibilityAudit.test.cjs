@@ -229,7 +229,7 @@ module.exports = [
       const kitChips = read('src', 'components', 'sheetKit.tsx');
       assert.match(kitChips, /export const SHEET_CHIP_SLOP = \{ top: 6, bottom: 6 \} as const;/);
       assert.match(kitChips, /hitSlop=\{SHEET_CHIP_SLOP\}/);
-      assert.match(kitChips, /chip: \{\s*height: 32,/);
+      assert.match(kitChips, /chip: \{\s*minHeight: 32,/);
       // A row that scrolls holds the slop in its padding, and the pull-back is
       // on the scroll view, not on its content (owner's #12, iOS hunt
       // 2026-10-17; tests/screens/scrollContentOffset.test.cjs).

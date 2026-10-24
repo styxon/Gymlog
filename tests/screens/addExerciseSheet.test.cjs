@@ -58,10 +58,10 @@ module.exports = [
       for (const literal of ['#22C55E', '#E8F6EC', '#F8FFFA', '#D1D5DB']) {
         assert.ok(!sheet.includes(literal), `${literal} is a literal that cannot follow the theme`);
       }
-      // White on a purple fill is the app's existing pairing and reads on both
-      // themes, so that one literal stays — everything else is a token.
+      // Everything is a token. White on a purple fill was the one literal the
+      // cards kept; the rows have no purple fill (menu redesign, 2026-10-24).
       const literals = sheet.match(/'#[0-9A-Fa-f]{6}'/g) ?? [];
-      assert.deepEqual([...new Set(literals)], ["'#FFFFFF'"]);
+      assert.deepEqual([...new Set(literals)], []);
     },
   },
   {

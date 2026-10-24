@@ -229,11 +229,6 @@ export function SheetChip({ label, selected, onPress, caret = false, expanded, a
 /** 32 drawn + 6 above and below = 44 to the thumb. A row that scrolls pads itself by this, so the slop is not clipped. */
 export const SHEET_CHIP_SLOP = { top: 6, bottom: 6 } as const;
 
-/** A group's heading inside a sheet: 11/800, spaced capitals, muted. */
-export function SheetSectionLabel({ children }: { children: React.ReactNode }) {
-  const styles = useThemedStyles(makeStyles);
-  return <Text style={styles.sectionLabel}>{children}</Text>;
-}
 
 interface KitSearchProps {
   value: string;
@@ -598,8 +593,9 @@ const makeStyles = (theme: Theme) =>
       color: theme.muted,
       marginTop: 4,
     },
+    // minHeight: a fixed height clips the label at large text sizes (#bugs 2026-10-19).
     chip: {
-      height: 32,
+      minHeight: 32,
       flexDirection: 'row',
       alignItems: 'center',
       gap: 6,
@@ -615,13 +611,7 @@ const makeStyles = (theme: Theme) =>
     chipCaret: { paddingRight: 10 },
     chipText: { fontSize: 13, fontWeight: '700', color: theme.muted },
     chipTextOn: { color: theme.ink },
-    sectionLabel: {
-      fontSize: 11,
-      fontWeight: '800',
-      letterSpacing: 1.4,
-      textTransform: 'uppercase',
-      color: theme.muted,
-    },
+
     search: {
       flexDirection: 'row',
       alignItems: 'center',

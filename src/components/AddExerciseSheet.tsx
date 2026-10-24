@@ -30,7 +30,8 @@ import { t } from '../lib/i18n';
 import { ExerciseSheetMode, exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
 import Svg, { Circle, Path } from 'react-native-svg';
-import { KitBar, SHEET_CHIP_SLOP, SheetChip, SheetHead, SheetSectionLabel } from './sheetKit';
+import { SectionLabel } from './SettingsUi';
+import { KitBar, SHEET_CHIP_SLOP, SheetChip, SheetHead } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { radii, spacing } from '../theme';
 import { TEXT_SCALE_CAP } from '../textScale';
@@ -203,6 +204,12 @@ interface ExerciseRowProps {
   language: AppLanguage;
   /** Where the row sits in its card: the first and last carry the card's corners, the rest a hairline above. */
   position: 'only' | 'first' | 'middle' | 'last';
+  /**
+   * The tap applies the pick at once — no bar asks after it (the guided
+   * player's swap). The row then names the action instead of drawing a tick
+   * that promises a choice still to be confirmed.
+   */
+  commitsOnTap: boolean;
   onPress: () => void;
 }
 
@@ -215,7 +222,7 @@ interface ExerciseRowProps {
  * The whole row is the one tap target. The mark only says what a tap does:
  * an orange + while adding several, otherwise a tick that fills when picked.
  */
-function ExerciseRow({ entry, selected, multiSelect, actionLabel, language, position, onPress }: ExerciseRowProps) {
+function ExerciseRow({ entry, selected, multiSelect, actionLabel, language, position, commitsOnTap, onPress }: ExerciseRowProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { item, name } = entry;
@@ -268,12 +275,16 @@ function ExerciseRow({ entry, selected, multiSelect, actionLabel, language, posi
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
             <Path
               d={selected ? 'M5 13l4 4L19 7' : 'M12 5v14M5 12h14'}
-              stroke={selected ? '#FFFFFF' : theme.onHighlight}
+              stroke={theme.onHighlight}
               strokeWidth={2.6}
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </Svg>
+        </View>
+      ) : commitsOnTap ? (
+        <View style={styles.rowAction}>
+          <Text style={styles.rowActionText}>{actionLabel}</Text>
         </View>
       ) : (
         <View style={[styles.rowTick, selected && styles.rowTickOn]}>
@@ -299,7 +310,7 @@ function SectionHead({ section }: { section: ExercisePickerSection }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.sectionHeader}>
-      <SheetSectionLabel>{section.title}</SheetSectionLabel>
+      <SectionLabel label={section.title} style={styles.sectionLabel} />
       {section.subtitle ? <Text style={styles.sectionSubtitle}>{section.subtitle}</Text> : null}
     </View>
   );
@@ -397,6 +408,8 @@ export function ExercisePickerSheet({
     pickedName !== null ? entry.name === pickedName : entry.item ? selectedIds.includes(entry.item.id) : false;
 
   const featuredEntries = featured?.entries ?? [];
+  // No bar follows a pick: the tap is the swap itself (the guided player).
+  const commitsOnTap = !multiSelect && pickedName === null && footer === null;
 
   const listHeader = (
     <>
@@ -433,13 +446,14 @@ export function ExercisePickerSheet({
           horizontal
           keyboardShouldPersistTaps="handled"
           showsHorizontalScrollIndicator={false}
-          style={[styles.chipScroll, styles.filters]}
+          style={styles.chipScroll}
           contentContainerStyle={styles.chipScrollRow}
         >
           {BODY_PART_FILTERS.map((option) => (
             <SheetChip
               key={option}
               label={exercisePickerChipLabel(option, language)}
+              accessibilityLabel={`${t(language, 'sheet.bodyPart')}: ${exercisePickerChipLabel(option, language)}`}
               selected={option === filters.bodyPart}
               onPress={() => onFiltersChange({ ...filters, bodyPart: option })}
             />
@@ -460,6 +474,7 @@ export function ExercisePickerSheet({
                 position={rowPosition(index, featuredEntries.length)}
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
+                commitsOnTap={commitsOnTap}
                 actionLabel={cardAction}
                 language={language}
                 onPress={() => onSelect(entry)}
@@ -548,6 +563,7 @@ export function ExercisePickerSheet({
                 position={rowPosition(index, main.entries.length)}
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
+                commitsOnTap={commitsOnTap}
                 actionLabel={cardAction}
                 language={language}
                 onPress={() => onSelect(entry)}
@@ -1019,6 +1035,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 2,
     paddingLeft: 4,
   },
+  // The section's own gap spaces it from the rows; the label's padding would double it.
+  sectionLabel: {
+    paddingBottom: 0,
+  },
   sectionSubtitle: {
     color: theme.faint,
     fontSize: 13,
@@ -1100,9 +1120,24 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // Added: violet, a fact about the row now, no longer the action.
+  // Added: the same accent as the row's wash, the + turned to a tick (the
+  // kit's rule: picked is accent, violet is state).
   rowAddOn: {
-    backgroundColor: theme.purpleFill,
+    backgroundColor: theme.highlight,
+  },
+  rowAction: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.highlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowActionText: {
+    color: theme.highlight,
+    fontSize: 13,
+    fontWeight: '800',
   },
   rowTick: {
     width: 24,
