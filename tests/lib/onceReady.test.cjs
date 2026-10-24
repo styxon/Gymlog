@@ -101,9 +101,10 @@ module.exports = [
       const path = require('node:path');
       const read = (f) => fs.readFileSync(path.join(__dirname, '../../src', f), 'utf8');
       const sound = read('utils/sound.ts');
-      assert.match(sound, /whenReady\(\(\) =>/);
+      // Only the countdown tick is dropped when late; done and finish still play.
+      assert.match(sound, /cue === 'tick' \? whenReady :/);
       assert.doesNotMatch(sound, /^void ensureAudioMode/m);
-      for (const screen of ['GuidedPlayerScreen', 'EmptyWorkoutScreen', 'CardioScreen']) {
+      for (const screen of ['GuidedPlayerScreen', 'EmptyWorkoutScreen']) {
         assert.match(read(`screens/${screen}.tsx`), /prepareCueSounds\(\);/, screen);
       }
     },

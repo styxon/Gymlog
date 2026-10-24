@@ -82,9 +82,11 @@ function play(cue: CueSound) {
   if (Platform.OS === 'web' || !enabled) {
     return;
   }
-  // Fire-and-forget for callers; the cue waits for the audio mode, and is
-  // dropped if that took so long that the cue's moment has passed.
-  whenReady(() => {
+  // Fire-and-forget for callers; the cue waits for the audio mode. A countdown
+  // tick that waited past its moment is dropped (a late "2" is a wrong count);
+  // the one-off cues still play, since losing "done" or "finish" is worse.
+  const gate = cue === 'tick' ? whenReady : (run: () => void) => void ensureAudioMode().then(run);
+  gate(() => {
     // The preference may have been switched off while the mode was settling.
     if (!enabled) {
       return;

@@ -32,7 +32,7 @@ import {
 } from '../lib/cardio';
 import { I18nKey, t } from '../lib/i18n';
 import { haptics } from '../utils/haptics';
-import { prepareCueSounds, sound } from '../utils/sound';
+import { sound } from '../utils/sound';
 import { Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { AppLanguage, CardioActivityType, CardioFeel, CardioSession } from '../types/models';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
@@ -102,11 +102,6 @@ export function CardioScreen({
   const completeInFlightRef = useRef(false);
 
   const mode: 'list' | 'player' | 'finish' = activeCardio ? (finishing ? 'finish' : 'player') : 'list';
-
-  // Warm the audio mode so the first cue does not wait on it.
-  useEffect(() => {
-    prepareCueSounds();
-  }, []);
 
   // Reset transient state whenever the live session goes away.
   useEffect(() => {
