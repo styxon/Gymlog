@@ -31,3 +31,30 @@ export function createOnceReady(
     return ready;
   };
 }
+
+/** A cue still waiting for the audio mode after this long is dropped. */
+export const CUE_STALE_MS = 500;
+
+/**
+ * Runs a cue once the audio mode is ready, unless the cue's moment has passed.
+ *
+ * A countdown beep that arrives a second late is worse than none, and when the
+ * setup is slow every waiting cue is released at the same instant and they all
+ * fire together. So a cue records when it was asked for and, on release, is
+ * dropped if it waited longer than `staleMs`. The clock is injected.
+ */
+export function createCueGate(
+  ready: () => Promise<void>,
+  now: () => number,
+  staleMs = CUE_STALE_MS,
+): (play: () => void) => void {
+  return (play) => {
+    const askedAt = now();
+    void ready().then(() => {
+      if (now() - askedAt > staleMs) {
+        return;
+      }
+      play();
+    });
+  };
+}
