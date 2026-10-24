@@ -66,7 +66,7 @@ module.exports = [
       // A 502 with an error code is the store failing, not a session ending: no code, so no sign-out.
       for (const status of [500, 502, 503]) {
         await withApi({ status, body: { ok: false, error: 'STORE_UNAVAILABLE' } }, async (api) => {
-          assert.deepEqual(await api.deleteBackup('vs1.x.y'), { ok: false });
+          assert.deepEqual(await api.deleteBackup('vs1.x.y'), { ok: false, mayHaveReached: true }, 'a 5xx may have been carried out');
         });
       }
       await withApi({ status: 200, body: { ok: false } }, async (api) => {
@@ -184,7 +184,7 @@ module.exports = [
         assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: true, definite: true });
       });
       await withApi({ status: 502, body: { ok: false, appleRevoked: false } }, async (api) => {
-        assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: false });
+        assert.deepEqual(await api.deleteBackup('vs1.x.y', { account: true }), { ok: false, mayHaveReached: true });
       });
     },
   },

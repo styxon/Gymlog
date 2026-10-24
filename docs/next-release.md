@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #454 Delete account on an iPhone: if the first try failed offline and Apple later reports the sign-in gone, the app says the session ended and to sign in again, instead of claiming the account was deleted while the cloud copy was still there.
 - #453 Subscription: a payment the store could not collect (card declined, store retrying) no longer reads as "Cancelled" / "Jo peruttu" on the membership pages; they say the payment did not go through and the store is retrying, and Pro still runs to the same date.
 - #452 AI coach allowance: two programme builds, a photo read or a chat question beside a build, can no longer both take the month's last question (the 25 a month was exceeded by one). A build or photo read whose charge cannot be saved no longer comes through free; it reports failure instead.
 - #451 The first beep or cue of a workout no longer plays up to a second and a half late. The sound setup starts when the workout screen opens, and a countdown tick that missed its moment is skipped instead of firing in a burst with the next ones.

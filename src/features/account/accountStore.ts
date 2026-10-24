@@ -78,6 +78,14 @@ export interface StoredAccount {
    */
   deleteRequestId?: string | null;
   /**
+   * Set once a try of "Delete account" ended with a 5xx or a timeout: the server
+   * may have carried it out. A try that failed offline leaves the pending record
+   * without this, because it never reached the server; a later "your Apple
+   * sign-in is gone" then does not mean this phone's delete went through. Cleared
+   * with the record.
+   */
+  deleteMayHaveReached?: boolean;
+  /**
    * accountBackupFingerprint of the data the latest uploads (newest first, at
    * most three) were made of, written BEFORE each request goes out and cleared
    * once an answer settles which copy the cloud holds. An upload can land while
@@ -109,6 +117,9 @@ export function normalizeStoredAccount(parsed: Partial<StoredAccount> | null | u
     cloudVersion: typeof parsed.cloudVersion === 'string' && parsed.cloudVersion ? parsed.cloudVersion : null,
     ...(isIsoDateString(parsed.deleteAccountPendingAt) ? { deleteAccountPendingAt: parsed.deleteAccountPendingAt } : {}),
     ...(isDeleteRequestId(parsed.deleteRequestId) ? { deleteRequestId: parsed.deleteRequestId } : {}),
+    ...(parsed.deleteMayHaveReached === true && isIsoDateString(parsed.deleteAccountPendingAt)
+      ? { deleteMayHaveReached: true }
+      : {}),
     ...(isIsoDateString(parsed.cloudCopyDeletedAt) ? { cloudCopyDeletedAt: parsed.cloudCopyDeletedAt } : {}),
     ...(Array.isArray(parsed.uploadInFlightFingerprints) &&
     parsed.uploadInFlightFingerprints.some((entry) => typeof entry === 'string' && entry)

@@ -134,7 +134,7 @@ async function withHook({ local, stored = null, cloud = null, storedVersion = 1 
         }
         if (server.deleteLost) {
           write(null);
-          return { ok: false };
+          return { ok: false, mayHaveReached: true };
         }
         write(null);
         return { ok: true };

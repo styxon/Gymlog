@@ -137,6 +137,15 @@ export type DeleteBackupResult = {
   error?: string;
   definite?: boolean;
   deleteRequestId?: string | null;
+  /**
+   * The request may have been carried out although no usable answer came back:
+   * a 5xx, or the timeout (the server can have acted before the connection
+   * died). Absent for a network failure before any response (offline: the
+   * request never left), a 429 (turned away before it was read) and a page
+   * that is not the server's. The only thing a retry can know about whether
+   * its earlier try reached the server.
+   */
+  mayHaveReached?: boolean;
   /** Delete account on an Apple account: whether Apple's sign-in was really ended. Absent from older servers. */
   appleRevoked?: boolean;
 };
@@ -206,13 +215,16 @@ export async function deleteBackup(
     return {
       ok: response.ok && body?.ok === true,
       ...(response.status < 500 && response.status !== 429 && serverJson ? { definite: true } : {}),
+      ...(response.status >= 500 ? { mayHaveReached: true } : {}),
       // Only a boolean from the server; an older server omits it.
       ...(response.ok && body?.ok === true && typeof body.appleRevoked === 'boolean'
         ? { appleRevoked: body.appleRevoked }
         : {}),
     };
   } catch {
-    return { ok: false };
+    // Aborted by the timeout: the request was on its way and may have landed.
+    // Any other failure with no response is a network that never carried it.
+    return signal.aborted ? { ok: false, mayHaveReached: true } : { ok: false };
   } finally {
     cleanup();
   }

@@ -1464,9 +1464,13 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // through is one way to land here. A Google session never ends
         // because of a delete, so for Google the record is only a try that
         // may never have left the phone (offline, a 5xx) — 'done' there would
-        // say "deleted" with the cloud copy still on the server.
+        // say "deleted" with the cloud copy still on the server. The same for
+        // an Apple try that failed offline: only a try that ended in a 5xx or
+        // a timeout (deleteMayHaveReached) can have reached the server.
         const ownDeleteWentThrough =
-          Boolean(current.deleteAccountPendingAt) && current.sub.startsWith(APPLE_ACCOUNT_PREFIX);
+          Boolean(current.deleteAccountPendingAt) &&
+          current.deleteMayHaveReached === true &&
+          current.sub.startsWith(APPLE_ACCOUNT_PREFIX);
         await signOutAfterDelete();
         if (ownDeleteWentThrough) {
           return 'done';
@@ -1492,7 +1496,7 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
       // Written BEFORE sending, cleared by any answer that settles it: if the
       // answer is slow or lost, the retry meets a session the server has by
       // then ended, and this is how that retry knows its own try went through.
-      const triedBefore = Boolean(current.deleteAccountPendingAt);
+      const triedBefore = Boolean(current.deleteAccountPendingAt) && current.deleteMayHaveReached === true;
       // The id this phone's request carries, kept with the record: the server
       // writes it into the revocation marker and hands it back when it turns a
       // later request away, so "the account is gone" can be told apart as this
@@ -1542,7 +1546,14 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // have gone through.)
         const latest = accountRef.current;
         if (latest) {
-          await persistAccount({ ...latest, deleteAccountPendingAt: null, deleteRequestId: null });
+          await persistAccount({ ...latest, deleteAccountPendingAt: null, deleteRequestId: null, deleteMayHaveReached: false });
+        }
+      } else if (answer.mayHaveReached) {
+        // A 5xx or a timeout: this try may have gone through. Remembered, so a
+        // later retry that finds the account gone knows it can be its own.
+        const latest = accountRef.current;
+        if (latest && !latest.deleteMayHaveReached) {
+          await persistAccount({ ...latest, deleteMayHaveReached: true });
         }
       }
       reportOperationFailed('account_delete', answer.error);
