@@ -6,7 +6,7 @@ import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { findSavedCardioRun } from '../lib/cardio';
 import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../lib/aiCoachClient';
 import { randomLogId } from '../lib/aiCoachLogId';
-import { recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
+import { CoachQuotaLedger, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
 import { buildProgrammeDraft, composeProgrammePreview, liveProposalOrPreview, resolveLiveProposal } from '../lib/programmeBrief';
 import { recordSuggestionAccepted, recordSuggestionRejected } from '../lib/coachSuggestions';
@@ -42,6 +42,8 @@ type HistoryScreenProps = React.ComponentProps<typeof HistoryScreen>;
  * state was just cleared, which is App.tsx's business, not a tab's.
  */
 export interface HomeScreensDeps {
+  /** Coach questions in flight, shared with the photo read so the two cannot both take the last one. */
+  coachQuotaLedger: CoachQuotaLedger;
   route: AppRoute;
   navigate: (route: AppRoute) => void;
   /** Same screen, different params, no new history entry. */
@@ -106,6 +108,7 @@ export interface HomeScreensDeps {
 
 export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | null {
   const {
+    coachQuotaLedger,
     route,
     navigate,
     replaceRoute,
@@ -159,31 +162,49 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
   async function composeProgramme(brief: string, signal?: AbortSignal) {
     // No questions left: no call. The chat checks first and says why; this is
     // the same rule where the request is made, so a stale tap cannot bill.
-    if (resolveCoachQuota(preferences.aiCoachProQuota).remaining <= 0) {
+    //
+    // The check and the claim are one synchronous step (the ledger): a second
+    // build, or a photo read, started while this one waits on the model reads
+    // the same stored count, and both used to pass on the last question.
+    if (!coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
       return null;
     }
-    const live = await requestProgrammeComposition(
-      {
-        brief,
-        context: aiCoachTrainingContext,
-        language: preferences.appLanguage,
-        // The composer line of the consent sheet, read as it stands now.
-        keepConsent: preferences.aiLogComposerConsent,
-        logId: preferences.aiLogId,
-      },
-      // Leaving the chat cancels the build: it is a billed call, and an
-      // answer with no screen to land on is paid for twice over when the
-      // restored offer is tapped again.
-      signal,
-    );
-    // A build that reached the model is a billed call, so it spends one of the
-    // month's coach questions like an answer does. A crisis answer, or a build
-    // that never got a live answer (the request failed), did not reach it and
-    // is free. A live answer that is afterwards replaced by the device
-    // composer (liveProposalOrPreview, nothing usable in it) was still a
-    // billed call and is still charged.
-    if (live && !isProgrammeCompositionCrisis(live)) {
-      void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+    let live: Awaited<ReturnType<typeof requestProgrammeComposition>>;
+    try {
+      live = await requestProgrammeComposition(
+        {
+          brief,
+          context: aiCoachTrainingContext,
+          language: preferences.appLanguage,
+          // The composer line of the consent sheet, read as it stands now.
+          keepConsent: preferences.aiLogComposerConsent,
+          logId: preferences.aiLogId,
+        },
+        // Leaving the chat cancels the build: it is a billed call, and an
+        // answer with no screen to land on is paid for twice over when the
+        // restored offer is tapped again.
+        signal,
+      );
+      // A build that reached the model is a billed call, so it spends one of the
+      // month's coach questions like an answer does. A crisis answer, or a build
+      // that never got a live answer (the request failed), did not reach it and
+      // is free. A live answer that is afterwards replaced by the device
+      // composer (liveProposalOrPreview, nothing usable in it) was still a
+      // billed call and is still charged.
+      if (live && !isProgrammeCompositionCrisis(live)) {
+        try {
+          await updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }));
+        } catch (error) {
+          // The charge did not land, so the week is not handed over: a refused
+          // write must not be a free build. The chat says it failed.
+          console.error('Failed to record the build against the coach allowance', error);
+          return null;
+        }
+      }
+    } finally {
+      // Every ending gives the claim back: the spend is in the stored count
+      // by now, and a failed or crisis build spent nothing.
+      coachQuotaLedger.release();
     }
     // The crisis answer goes back to the chat to be said. It is not "no
     // week" and must not reach the device composer (review, 2026-10-08).
@@ -367,9 +388,13 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           });
         }}
         questionsRemaining={resolveCoachQuota(preferences.aiCoachProQuota).remaining}
-        onQuestionUsed={() =>
-          void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }))
-        }
+        onQuestionUsed={() => {
+          // The answer is already on screen, so a refused write cannot unsay
+          // it; it is caught so it is not an unhandled rejection.
+          updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) })).catch(
+            (error) => console.error('Failed to record the coach question', error),
+          );
+        }}
         demoQuestion={route.demoQuestion ?? null}
         demoMomentKey={route.demoMomentKey ?? null}
         onDemoQuestionSent={() => {

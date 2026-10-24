@@ -241,9 +241,9 @@ module.exports = [
       // on it. The tier flipped on 2026-08-29 — the counter belongs to Pro now,
       // and free reaches the model only through its three demo moments.
       assert.match(appSource, /questionsRemaining=\{resolveCoachQuota\(preferences\.aiCoachProQuota\)\.remaining\}/);
-      assert.match(appSource, /recordCoachQuestion\(current\.aiCoachProQuota\)/);
+      assert.match(appSource, /coachQuotaLedger\.record\(current\.aiCoachProQuota\)/);
       const chat = read('src', 'screens', 'AICoachChatScreen.tsx');
-      assert.match(chat, /const canAsk = proUnlocked && questionsRemaining > 0;/);
+      assert.match(chat, /const canAsk = proUnlocked && questionsRemaining - composingIds\.length > 0;/);
       // And the demo question is the only thing allowed past that gate.
       assert.match(chat, /if \(!canAsk && !force\) \{/);
       assert.match(appSource, /resolveDueCoachDemoMoment\(\{/);

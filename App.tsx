@@ -98,6 +98,7 @@ import { liveSessionBlocksProgrammeDelete } from './src/lib/programmeDeletion';
 import { AppRoute, ROOT_ROUTES, RootTabKey, WORKOUT_PLAN_ROUTE } from './src/navigation/routes';
 import { renderProfileTab } from './src/app/renderProfileTab';
 import { renderHomeScreens } from './src/app/renderHomeScreens';
+import { CoachQuotaLedger, createCoachQuotaLedger } from './src/lib/aiCoachQuota';
 import { renderAppShell } from './src/app/renderAppShell';
 import { renderHomeDashboard } from './src/app/renderHomeDashboard';
 import { renderOnboardingFlow, renderSetupEditor, renderSetupHandoff } from './src/app/renderOnboarding';
@@ -254,6 +255,13 @@ function VinhaApp() {
   const freestyleDraft = discardSavedFreestyleDraft(workout.freestyleDraft, database);
   // For listeners that must not re-subscribe on every workout change: the
   // context is a new object once a second while a rest timer or cardio runs.
+  // Coach questions in flight (a build, a photo read): one ledger for both, so
+  // two requests started before either is paid for cannot both take the last.
+  const coachQuotaLedgerRef = useRef<CoachQuotaLedger | null>(null);
+  if (coachQuotaLedgerRef.current === null) {
+    coachQuotaLedgerRef.current = createCoachQuotaLedger();
+  }
+  const coachQuotaLedger = coachQuotaLedgerRef.current;
   const workoutRef = useRef(workout);
   workoutRef.current = workout;
   // A boolean, so the back listener below can ask it without depending on the
@@ -1591,6 +1599,7 @@ function VinhaApp() {
     handleSaveSetupLimitations,
     handleSetupCompleteToTraining,
   } = createOnboardingFinishes({
+    coachQuotaLedger,
     database,
     preferences,
     updatePreferences,
@@ -2104,6 +2113,7 @@ function VinhaApp() {
     // Every home sub-screen; the dashboard stays in the chain's final else,
     // where it doubles as the safety net for cleared guard state.
     content = renderHomeScreens({
+      coachQuotaLedger,
       route,
       navigate,
       replaceRoute,

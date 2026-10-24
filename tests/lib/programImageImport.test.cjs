@@ -57,6 +57,7 @@ function loadOnboardingFinishes(stubs) {
  */
 function photoImportWorld(answer, overrides = {}) {
   const calls = [];
+  const ledger = overrides.ledger || require('../../.test-dist/lib/aiCoachQuota.js').createCoachQuotaLedger();
   const record = (name, value) => (...args) => {
     calls.push([name, ...args]);
     return value;
@@ -97,7 +98,8 @@ function photoImportWorld(answer, overrides = {}) {
       activePlanId: null,
       aiCoachProQuota: overrides.quota,
     },
-    updatePreferences: record('updatePreferences', Promise.resolve()),
+    updatePreferences: overrides.updatePreferences || record('updatePreferences', Promise.resolve()),
+    coachQuotaLedger: ledger,
     completeOnboarding: noop,
     upsertWorkoutPlan: noop,
     saveOnboardingResult: noop,
@@ -157,6 +159,47 @@ module.exports = [
       for (const forbidden of ['Alert.alert', 'pickProgramImage', 'requestProgramTableFromImage']) {
         assert.ok(!names(spent.calls).includes(forbidden), forbidden + ' must not run when spent');
       }
+    },
+  },
+  {
+    name: 'photo import: a build holding the last question refuses it, a refused charge gives no free read, a failure releases',
+    async run() {
+      const { createCoachQuotaLedger, coachQuotaMonthStart } = require('../../.test-dist/lib/aiCoachQuota.js');
+      const month = coachQuotaMonthStart();
+      const accept = (buttons) => buttons.find((b) => b.style !== 'cancel').onPress();
+      const rows = [{ day: 'Ma', exercise: 'Back Squat', sets: 3, reps: '5' }];
+      const quota = { monthStart: month, used: 24 };
+
+      // A coach build has already claimed the last question: no notice, no call.
+      const busy = createCoachQuotaLedger();
+      assert.equal(busy.reserve(quota), true);
+      const refused = photoImportWorld(accept, { rows, quota, ledger: busy });
+      assert.equal((await refused.finishes.handlePickProgramImage()).status, 'spent');
+      assert.ok(!refused.calls.some((c) => c[0] === 'requestProgramTableFromImage'));
+
+      // The charge is refused by the disk: the read is not handed over, and the claim is given back.
+      const ledger = createCoachQuotaLedger();
+      const broken = photoImportWorld(accept, {
+        rows,
+        quota,
+        ledger,
+        // Only the charge (a functional update) is refused; the notice's flag write goes through.
+        updatePreferences: (patch) => (typeof patch === 'function' ? Promise.reject(new Error('disk full')) : Promise.resolve()),
+      });
+      const silence = console.error;
+      console.error = () => undefined;
+      try {
+        assert.equal((await broken.finishes.handlePickProgramImage()).status, 'failed');
+      } finally {
+        console.error = silence;
+      }
+      assert.equal(ledger.held(), 0);
+
+      // A photo that fails to read costs nothing and releases (#415).
+      const empty = photoImportWorld(accept, { rows: [], quota, ledger });
+      assert.equal((await empty.finishes.handlePickProgramImage()).status, 'failed');
+      assert.equal(ledger.held(), 0);
+      assert.equal(ledger.reserve(quota), true);
     },
   },
   {
