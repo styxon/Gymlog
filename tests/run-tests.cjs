@@ -247,6 +247,7 @@ const suites = [
   ...require('./lib/proInsights.test.cjs'),
   ...require('./lib/bugHunt20261009ProInsights.test.cjs'),
   ...require('./lib/aiCoachQuota.test.cjs'),
+  ...require('./lib/coachQuotaReservation.test.cjs'),
   ...require('./lib/coachChat.test.cjs'),
   ...require('./lib/coachDemoMoments.test.cjs'),
   ...require('./lib/guidedMediaHeight.test.cjs'),

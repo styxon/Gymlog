@@ -30,6 +30,7 @@ larger update to carry, not for each fix.
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
 - #PR Delete account on an iPhone: if the first try failed offline and Apple later reports the sign-in gone, the app says the session ended and to sign in again, instead of claiming the account was deleted while the cloud copy was still there.
+- #452 AI coach allowance: two programme builds, a photo read or a chat question beside a build, can no longer both take the month's last question (the 25 a month was exceeded by one). A build or photo read whose charge cannot be saved no longer comes through free; it reports failure instead.
 - #451 The first beep or cue of a workout no longer plays up to a second and a half late. The sound setup starts when the workout screen opens, and a countdown tick that missed its moment is skipped instead of firing in a burst with the next ones.
 - #449 More counts of one in the singular: a one-day programme reads "1 training day" and "1 day / week" ("1 treenipäivä", "1 pv / viikko"), a one-workout programme "1 workout", a recent session without sets "1 exercise", and a one-programme group "1 program".
 - #448 Light theme: the empty pick circle on Add exercise and Swap exercise rows, and the sheet's grab handle, show again. Opening another filter (say Equipment after Body part) starts its options at "All" instead of where the last list was scrolled.

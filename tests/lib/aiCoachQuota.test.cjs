@@ -108,7 +108,7 @@ module.exports = [
         path.join(root, 'src', 'screens', 'AICoachChatScreen.tsx'),
         'utf8',
       );
-      assert.match(chat, /const canAsk = proUnlocked && questionsRemaining > 0;/);
+      assert.match(chat, /const canAsk = proUnlocked && questionsRemaining - composingIds\.length > 0;/);
     },
   },
 ];
