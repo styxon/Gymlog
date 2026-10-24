@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #448 Light theme: the empty pick circle on Add exercise and Swap exercise rows, and the sheet's grab handle, show again. Opening another filter (say Equipment after Body part) starts its options at "All" instead of where the last list was scrolled.
 - #447 AI coach: a measurement typed with a date after it ("painoni 30.10. oli 82") or a week number before it ("viikolla 43 painoni oli 82 kg") is offered as 82 kg, not 30.1 or 43.
 - #446 Light theme: the exercise sheet's selected tab, card frames and lock icon, and the New programme icons, stand out from their card again. In the New programme paste view, Android's back button returns to the menu instead of closing the sheet and dropping the pasted text, and a "questions used up" photo note no longer reappears the next time the sheet opens.
 - #445 One menu style: New programme, Add exercise, Swap exercise and the exercise sheet share a left-aligned title with a round ✕ (the exercise sheet had none), one chip style, and lifts as a list with a small picture instead of a two-column grid, so long names read whole. Swap and the full add sheet fold their three filter rows into one row of chips that open their options. The New programme choices are one card with shorter lines.
