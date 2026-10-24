@@ -32,6 +32,7 @@ const EMPTY = {
   mockSubscriptionTerm: 'yearly',
   mockSubscriptionCancelledAt: null,
   mockSubscriptionEndsAt: null,
+  mockSubscriptionBillingIssue: false,
 };
 
 function customer(entitlement) {
@@ -78,6 +79,7 @@ module.exports = [
         mockSubscriptionTerm: 'monthly',
         mockSubscriptionCancelledAt: null,
         mockSubscriptionEndsAt: '2026-11-01T10:00:00.000Z',
+        mockSubscriptionBillingIssue: false,
       });
       const pro = resolveProEntitlement(prefs(record), now);
       assert.equal(pro.unlocked, true);
@@ -143,6 +145,7 @@ module.exports = [
         mockSubscriptionTerm: 'lifetime',
         mockSubscriptionCancelledAt: null,
         mockSubscriptionEndsAt: null,
+        mockSubscriptionBillingIssue: false,
       };
       const now = new Date('2026-10-08T12:00:00.000Z');
       assert.equal(resolveProEntitlement(prefs(invented), now).unlocked, true);

@@ -32,6 +32,8 @@ interface MembershipEndScreenProps {
   periodEndsAt?: string | null;
   /** A cancellation is on record: the screen offers only a way back. */
   cancelled?: boolean;
+  /** The cancellation stamp is a failed payment the store is retrying, not the reader's choice. */
+  billingIssue?: boolean;
   language?: AppLanguage;
   onBack: () => void;
   /** Keeps Pro — goes back where the reader came from. */
@@ -73,6 +75,7 @@ export function MembershipEndScreen({
   promoUntil,
   periodEndsAt = null,
   cancelled = false,
+  billingIssue = false,
   language = 'en',
   onBack,
   onKeep,
@@ -90,7 +93,7 @@ export function MembershipEndScreen({
   const [step, setStep] = useState<'page' | 'splash' | 'survey'>('page');
 
   const endsAt = plan.lapsesOn ?? periodEndsAt;
-  const view = resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled });
+  const view = resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled, billingIssue });
 
   return step === 'splash' ? (
     <EndSplash
@@ -196,7 +199,11 @@ export function MembershipEndScreen({
             {/* Nothing to decide, so one action: back. A cancelled or promo
                 membership is never asked to be kept or ended again. */}
             <Text style={styles.noActionNote}>
-              {view.alreadyCancelled
+              {view.billingIssue
+                ? endsAt
+                  ? t(language, 'subs.end.billingNote', { date: formatDate(endsAt, language) })
+                  : t(language, 'subs.billingIssueNote')
+                : view.alreadyCancelled
                 ? endsAt
                   ? t(language, 'subs.end.cancelledNote', { date: formatDate(endsAt, language) })
                   : t(language, 'subs.cancelledNote')
