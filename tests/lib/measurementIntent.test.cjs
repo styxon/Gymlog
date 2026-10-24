@@ -89,4 +89,25 @@ module.exports = [
       assert.deepEqual(parseMeasurementIntent('kello 7 paino 81,4'), kg(81.4));
     },
   },
+  {
+    name: 'measurementIntent: a date after the word or a count just before it is not the reading (hunt 1.1.1 r2)',
+    run() {
+      const kg = (value) => ({ kind: 'bodyweight', value, unit: 'kg' });
+      // A "30.10." after the word, with the reading behind it, was read as 30.1.
+      assert.deepEqual(parseMeasurementIntent('painoni 30.10. oli 82'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('paino 28.10. 82 kg'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('weight 30.10. 82kg', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('vyötärö 30.10. 90 cm'), { kind: 'waist', value: 90, unit: 'cm' });
+      // A week or day number right before the word lost to nothing: 43 kg.
+      assert.deepEqual(parseMeasurementIntent('viikolla 43 painoni oli 82 kg'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('week 43 weight 82 kg', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('päivä 40 paino 82'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('Day 30 weight 82', 'en'), kg(82));
+      // Still the number before the word when what follows is no reading.
+      assert.deepEqual(parseMeasurementIntent('82 paino 3 kertaa'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('82 kg paino, treenasin 3 kertaa'), kg(82));
+      // A lone "30.5." after the word is still the reading, not a date.
+      assert.deepEqual(parseMeasurementIntent('pohje 30.5.'), { kind: 'calves', value: 30.5, unit: 'cm' });
+    },
+  },
 ];
