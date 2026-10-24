@@ -43,7 +43,7 @@ module.exports = [
       assert.match(
         app,
         // Only the Pro check (2026-09-29) and the coach-question check (2026-10-19) may come first: neither sends anything.
-        /async function pickProgramImageForImport\(\): Promise<ProgramImageImportResult> \{\s*(?:if \(!resolveProEntitlement\(preferences\)\.unlocked\) \{\s*return \{ status: 'cancelled' \};\s*\}\s*)?(?:\/\/[^\n]*\n\s*)*if \(resolveCoachQuota\(preferences\.aiCoachProQuota\)\.remaining <= 0\) \{\s*return \{ status: 'spent' \};\s*\}\s*if \(!\(await askPhotoOnlineNotice\(\)\)\) \{/,
+        /async function pickProgramImageForImport\(\): Promise<ProgramImageImportResult> \{\s*(?:if \(!resolveProEntitlement\(preferences\)\.unlocked\) \{\s*return \{ status: 'cancelled' \};\s*\}\s*)?(?:\/\/[^\n]*\n\s*)*if \(!coachQuotaLedger\.reserve\(preferences\.aiCoachProQuota\)\) \{\s*return \{ status: 'spent' \};\s*\}\s*try \{\s*if \(!\(await askPhotoOnlineNotice\(\)\)\) \{/,
         'the notice must be asked before anything else in the import',
       );
       /*

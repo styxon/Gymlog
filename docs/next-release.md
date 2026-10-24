@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #PR AI coach allowance: two programme builds, or a photo read beside a build, can no longer both take the month's last question (the 25 a month was exceeded by one). A build or photo read whose charge cannot be saved no longer comes through free; it reports failure instead.
 - #449 More counts of one in the singular: a one-day programme reads "1 training day" and "1 day / week" ("1 treenipäivä", "1 pv / viikko"), a one-workout programme "1 workout", a recent session without sets "1 exercise", and a one-programme group "1 program".
 - #448 Light theme: the empty pick circle on Add exercise and Swap exercise rows, and the sheet's grab handle, show again. Opening another filter (say Equipment after Body part) starts its options at "All" instead of where the last list was scrolled.
 - #447 AI coach: a measurement typed with a date after it ("painoni 30.10. oli 82") or a week number before it ("viikolla 43 painoni oli 82 kg") is offered as 82 kg, not 30.1 or 43.

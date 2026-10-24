@@ -76,3 +76,42 @@ export function recordCoachQuestion(
   const current = resolveCoachQuota(state, now);
   return { monthStart: current.monthStart, used: current.used + 1 };
 }
+
+/**
+ * Questions that are in flight: promised to a request that has not been paid for yet.
+ *
+ * A build or a photo read checks the allowance, waits many seconds for the
+ * model, and only then records the spend. Two of them started in that window
+ * read the same stored count (a render-time snapshot, not even the latest
+ * write), both passed, and the month ended on 26 of 25. The check and the
+ * claim have to be one synchronous step: `reserve` counts what the stored
+ * state says is left MINUS what other requests have already claimed, and
+ * claims one before returning. The holder gives it back with `release` when it
+ * is done — after the spend is recorded, or at once when nothing was spent
+ * (a photo that failed to read costs nothing, #415).
+ */
+export interface CoachQuotaLedger {
+  /** True and claims one when the stored allowance minus other claims leaves one. */
+  reserve(state: CoachQuotaState | null | undefined, now?: Date): boolean;
+  /** Gives one claim back. Never goes below zero. */
+  release(): void;
+  /** Claims held now. */
+  held(): number;
+}
+
+export function createCoachQuotaLedger(): CoachQuotaLedger {
+  let held = 0;
+  return {
+    reserve(state, now) {
+      if (resolveCoachQuota(state, now).remaining - held <= 0) {
+        return false;
+      }
+      held += 1;
+      return true;
+    },
+    release() {
+      held = Math.max(0, held - 1);
+    },
+    held: () => held,
+  };
+}

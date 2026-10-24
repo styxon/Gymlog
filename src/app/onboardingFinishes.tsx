@@ -6,7 +6,7 @@ import {
   findReplaceableOnboardingTemplateId,
   resolveActiveProgramCap,
 } from '../lib/activeProgramSet';
-import { recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
+import { CoachQuotaLedger, recordCoachQuestion } from '../lib/aiCoachQuota';
 import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/aiCoachClient';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
@@ -51,6 +51,8 @@ export interface OnboardingFinishesDeps {
   database: AppContextValue['database'];
   preferences: AppContextValue['preferences'];
   updatePreferences: AppContextValue['updatePreferences'];
+  /** Coach questions in flight, shared with the chat's build so the two cannot both take the last one. */
+  coachQuotaLedger: CoachQuotaLedger;
   completeOnboarding: AppContextValue['completeOnboarding'];
   upsertWorkoutPlan: AppContextValue['upsertWorkoutPlan'];
   saveOnboardingResult: AppContextValue['saveOnboardingResult'];
@@ -73,6 +75,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
     database,
     preferences,
     updatePreferences,
+    coachQuotaLedger,
     completeOnboarding,
     upsertWorkoutPlan,
     saveOnboardingResult,
@@ -263,38 +266,53 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
       return { status: 'cancelled' };
     }
     // A photo read is a billed model call, so it spends one of the month's coach
-    // questions like the composer does (owner, 2026-10-19). Checked before the
-    // notice and the picker so nothing is asked of a reader who cannot go on.
-    if (resolveCoachQuota(preferences.aiCoachProQuota).remaining <= 0) {
+    // questions like the composer does (owner, 2026-10-19). Reserved before the
+    // notice and the picker, in one synchronous step with the check: nothing is
+    // asked of a reader who cannot go on, and a build running beside this
+    // cannot take the same last question (a render-time snapshot let both).
+    if (!coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
       return { status: 'spent' };
     }
-    if (!(await askPhotoOnlineNotice())) {
-      return { status: 'cancelled' };
+    try {
+      if (!(await askPhotoOnlineNotice())) {
+        return { status: 'cancelled' };
+      }
+      const picked = await pickProgramImage();
+      if (picked.status === 'cancelled') {
+        // Backing out of the picker is an answer, not a failure. It used to come
+        // back as the same null every other ending did, so the sheet told a
+        // reader who had chosen nothing that their photo could not be read.
+        return { status: 'cancelled' };
+      }
+      if (picked.status !== 'picked') {
+        return { status: 'failed' };
+      }
+      const rows = await requestProgramTableFromImage({
+        ...picked.image,
+        // The photo line of the consent sheet, read at the moment the photo is
+        // sent rather than remembered from when the screen opened.
+        keepConsent: preferences.aiLogPhotoConsent,
+        logId: preferences.aiLogId,
+      });
+      if (!rows || rows.length === 0) {
+        return { status: 'failed' };
+      }
+      // Charged on a read that produced a programme, not on a failure or an
+      // empty answer (same rule as the composer: the question follows the
+      // result). The read is handed over only once the charge is on disk: a
+      // write the disk refused used to be dropped, which made the read free.
+      try {
+        await updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+      } catch (error) {
+        console.error('Failed to record the photo read against the coach allowance', error);
+        return { status: 'failed' };
+      }
+      return { status: 'read', csv: programTableToCsv(rows) };
+    } finally {
+      // Every ending gives the claim back: the spend, if there was one, is in
+      // the stored count by now, and a failure spent nothing.
+      coachQuotaLedger.release();
     }
-    const picked = await pickProgramImage();
-    if (picked.status === 'cancelled') {
-      // Backing out of the picker is an answer, not a failure. It used to come
-      // back as the same null every other ending did, so the sheet told a
-      // reader who had chosen nothing that their photo could not be read.
-      return { status: 'cancelled' };
-    }
-    if (picked.status !== 'picked') {
-      return { status: 'failed' };
-    }
-    const rows = await requestProgramTableFromImage({
-      ...picked.image,
-      // The photo line of the consent sheet, read at the moment the photo is
-      // sent rather than remembered from when the screen opened.
-      keepConsent: preferences.aiLogPhotoConsent,
-      logId: preferences.aiLogId,
-    });
-    if (!rows || rows.length === 0) {
-      return { status: 'failed' };
-    }
-    // Charged on a read that produced a programme, not on a failure or an
-    // empty answer (same rule as the composer: the question follows the result).
-    void updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
-    return { status: 'read', csv: programTableToCsv(rows) };
   }
 
   const handlePickProgramImage = isAiCoachLiveConfigured() ? pickProgramImageForImport : undefined;
