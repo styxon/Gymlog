@@ -18,21 +18,37 @@ export interface MembershipEndViewInput {
   canEndNow: boolean;
   /** A cancellation is on record for the current purchase. */
   cancelled: boolean;
+  /**
+   * The store could not collect the renewal and is retrying (grace period):
+   * the subscription is not renewing right now, but the reader did not end it.
+   */
+  billingIssue?: boolean;
 }
 
 export interface MembershipEndView {
   mode: MembershipEndMode;
   /** Say that it is already cancelled, instead of "nothing to cancel". */
   alreadyCancelled: boolean;
+  /** Say that the payment failed and the store is retrying - not "cancelled". */
+  billingIssue: boolean;
 }
 
-export function resolveMembershipEndView({ canEndNow, cancelled }: MembershipEndViewInput): MembershipEndView {
+export function resolveMembershipEndView({
+  canEndNow,
+  cancelled,
+  billingIssue = false,
+}: MembershipEndViewInput): MembershipEndView {
+  // A failed payment is not a cancellation: nothing to end, nothing to call
+  // cancelled. The way out is fixing the payment method in the store.
+  if (cancelled && canEndNow && billingIssue) {
+    return { mode: 'back', alreadyCancelled: false, billingIssue: true };
+  }
   // "Already cancelled" is a fact about a purchase. A promo, trial or review
   // grant with a stale stamp left by an earlier purchase has nothing cancelled.
   if (cancelled && canEndNow) {
-    return { mode: 'back', alreadyCancelled: true };
+    return { mode: 'back', alreadyCancelled: true, billingIssue: false };
   }
-  return { mode: canEndNow ? 'decide' : 'back', alreadyCancelled: false };
+  return { mode: canEndNow ? 'decide' : 'back', alreadyCancelled: false, billingIssue: false };
 }
 
 /**

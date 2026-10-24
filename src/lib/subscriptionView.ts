@@ -164,6 +164,11 @@ export interface SubscriptionView {
   /** True when the reader has cancelled but Pro is still running. */
   cancelled: boolean;
   /**
+   * `cancelled` because the store could not collect a renewal (it keeps
+   * retrying), not because the reader ended it. Only ever true beside `cancelled`.
+   */
+  billingIssue: boolean;
+  /**
    * When Pro stops. For a promo or the trial this is the real expiry; for mock
    * billing it is the derived next-charge date, which is also when a cancelled
    * term lapses.
@@ -200,6 +205,8 @@ export function resolveSubscriptionView(input: {
   /** The reader's stored mock term. Ignored for promo-backed Pro. */
   mockTerm: SubscriptionTermKey;
   mockCancelled: boolean;
+  /** The stored cancellation is a failed payment the store is retrying. */
+  mockBillingIssue?: boolean;
   /**
    * When this reader actually turned Pro on, ISO.
    *
@@ -219,6 +226,7 @@ export function resolveSubscriptionView(input: {
     entitlement,
     mockTerm,
     mockCancelled,
+    mockBillingIssue = false,
     purchasedAt = null,
     lapsedPromoUntil = null,
     lapsedTrialUntil = null,
@@ -244,13 +252,14 @@ export function resolveSubscriptionView(input: {
         state: 'active',
         term: null,
         cancelled: false,
+        billingIssue: false,
         endsAt: entitlement.promoUntil,
         nextChargeAt: null,
         grant: entitlement.source,
       };
     }
     if (entitlement.source === 'review') {
-      return { state: 'active', term: null, cancelled: false, endsAt: null, nextChargeAt: null, grant: 'review' };
+      return { state: 'active', term: null, cancelled: false, billingIssue: false, endsAt: null, nextChargeAt: null, grant: 'review' };
     }
 
     // The end of the CURRENT period, rolled forward through renewals. One
@@ -265,6 +274,7 @@ export function resolveSubscriptionView(input: {
       state: 'active',
       term: mockTerm,
       cancelled,
+      billingIssue: cancelled && mockBillingIssue,
       // A cancelled or failing subscription names the end the store gave
       // (grace, trial); the counted one is for a record with no such end.
       endsAt: cancelled ? entitlement.purchaseEndsAt ?? charge : charge,
@@ -283,6 +293,7 @@ export function resolveSubscriptionView(input: {
     state: lapsed ? 'lapsed' : 'none',
     term: null,
     cancelled: false,
+    billingIssue: false,
     endsAt: !lapsed ? null : trialLast ? lapsedTrialUntil : lapsedPromoUntil,
     nextChargeAt: null,
     grant: !lapsed ? null : trialLast ? 'trial' : 'promo',

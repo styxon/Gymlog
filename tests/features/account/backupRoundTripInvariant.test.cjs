@@ -98,6 +98,7 @@ const DEVICE_ONLY = [
   'mockSubscriptionTerm',
   'mockSubscriptionCancelledAt',
   'mockSubscriptionEndsAt',
+  'mockSubscriptionBillingIssue',
   'aiCoachProQuota',
   'coachDemoMomentsUsed',
   'firstLaunchAt',
