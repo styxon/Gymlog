@@ -694,6 +694,7 @@ const suites = [
   ...require('./storage/corruptCopies.test.cjs'),
   ...require('./screens/oneCount.test.cjs'),
   ...require('./lib/themeContrast.test.cjs'),
+  ...require('./lib/newProgramSheetBack.test.cjs'),
   ...require('./lib/accessibilityLabels.test.cjs'),
   ...require('./screens/accessibilityAudit.test.cjs'),
   ...require('./screens/sheetBottomInset.test.cjs'),

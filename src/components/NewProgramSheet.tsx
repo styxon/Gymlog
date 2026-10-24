@@ -310,11 +310,24 @@ export function NewProgramSheet({
     setProgramName(defaultProgramName);
     setImporting(false);
     setImportError(null);
+    // A spent or failed photo note belongs to that try, not to the next opening.
+    setImageNote(null);
   }
 
   function handleClose() {
     reset();
     onClose();
+  }
+
+  // The header's back arrow and Android's back button take the same step:
+  // out of the paste view to the menu, and only from the first view out of
+  // the sheet, so the system back no longer drops a pasted programme.
+  function handleBack() {
+    if (view !== initialView) {
+      setView('menu');
+      return;
+    }
+    handleClose();
   }
 
   async function handleImportHistory() {
@@ -362,7 +375,7 @@ export function NewProgramSheet({
   }
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={handleBack}>
       <Pressable style={styles.scrim} onPress={handleClose} />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.panelWrap} pointerEvents="box-none">
         <View style={[styles.panel, view === 'csv' && styles.panelTall, { paddingBottom: 28 + bottomInset }]}>
@@ -377,7 +390,7 @@ export function NewProgramSheet({
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={t(language, 'common.back')}
-                  onPress={() => setView('menu')}
+                  onPress={handleBack}
                   hitSlop={4}
                   style={styles.roundButton}
                 >
@@ -860,7 +873,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 12,
-    backgroundColor: theme.purpleSoft,
+    backgroundColor: theme.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },

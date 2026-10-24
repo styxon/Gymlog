@@ -310,4 +310,40 @@ module.exports = [
       }
     },
   },
+  {
+    name: 'contrast: a shape on the sheet\'s soft card still shows, in both themes (hunt 1.1.1 r2)',
+    run() {
+      // #445 moved the sheets to `surface` and their cards to `surfaceSoft`,
+      // but kept the old pairs: the exercise sheet's active tab in
+      // `purpleLight` on a `surfaceSoft` track was 1.04:1 in light, and so
+      // were the cards' `purpleLight` frames, the lock card's icon disc and
+      // the new-program menu's icon tiles. Each pair is read from the style
+      // source, so a later edit is measured too. 1.07 is not a contrast
+      // standard; it is the line under which these shapes all but vanish.
+      const tokenOf = (source, style, prop) => {
+        const block = source.match(new RegExp(`\\n  ${style}: \\{([^}]*)\\}`));
+        assert.ok(block, `${style} not found`);
+        const value = block[1].match(new RegExp(`${prop}: theme\\.(\\w+)`));
+        assert.ok(value, `${style}.${prop} is not a theme token`);
+        return value[1];
+      };
+      const sheet = read('src', 'components', 'ExerciseSheet.tsx');
+      const menu = read('src', 'components', 'NewProgramSheet.tsx');
+      const pairs = [
+        ['exercise sheet active tab on its track', tokenOf(sheet, 'tabActive', 'backgroundColor'), tokenOf(sheet, 'tabs', 'backgroundColor')],
+        ['lock card icon disc on its card', tokenOf(sheet, 'lockCardIcon', 'backgroundColor'), tokenOf(sheet, 'lockCard', 'backgroundColor')],
+        ['new-program icon tile on the menu card', tokenOf(menu, 'optionIconTile', 'backgroundColor'), tokenOf(menu, 'menuCard', 'backgroundColor')],
+      ];
+      for (const style of ['checkCard', 'stat', 'lockCard', 'chip']) {
+        pairs.push([`exercise sheet ${style} frame on its fill`, tokenOf(sheet, style, 'borderColor'), tokenOf(sheet, style, 'backgroundColor')]);
+      }
+      for (const [themeName, palette] of THEMES) {
+        for (const [what, front, ground] of pairs) {
+          const groundHex = palette[ground];
+          const frontHex = compositeOver(palette[front], groundHex);
+          atLeast(contrastRatio(frontHex, groundHex), 1.07, `${themeName} ${what} (${front} on ${ground})`);
+        }
+      }
+    },
+  },
 ];
