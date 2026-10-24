@@ -115,15 +115,7 @@ export function KitSheet({
               {context ? <Text style={styles.context}>{context.toUpperCase()}</Text> : null}
               {!context && description ? <Text style={styles.desc}>{description}</Text> : null}
             </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={closeLabel}
-              onPress={onClose}
-              hitSlop={8}
-              style={({ pressed }) => [styles.x, pressed && styles.pressed]}
-            >
-              <XGlyph />
-            </Pressable>
+            <SheetCloseButton label={closeLabel} onPress={onClose} />
           </View>
           {children}
         </View>
@@ -133,14 +125,110 @@ export function KitSheet({
   );
 }
 
-function XGlyph() {
+/**
+ * The one way out of every sheet: a round 40 px ✕, top right (owner-approved
+ * menu redesign, 2026-10-24). Before it the new-programme sheet had a round ✕,
+ * the exercise pickers a "Sulje" text button and the exercise sheet none.
+ */
+export function SheetCloseButton({ label, onPress }: { label: string; onPress: () => void }) {
   const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
   return (
-    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
-      <Path d="M6 6l12 12M18 6L6 18" stroke={theme.muted} strokeWidth={2.4} strokeLinecap="round" />
-    </Svg>
+    <Pressable
+      testID="sheet-close"
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      hitSlop={4}
+      style={({ pressed }) => [styles.x, pressed && styles.pressed]}
+    >
+      <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+        <Path d="M6 6l12 12M18 6L6 18" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" />
+      </Svg>
+    </Pressable>
   );
 }
+
+interface SheetHeadProps {
+  title: string;
+  /** What the sheet acts on, or one line of instruction: muted, 13. */
+  subtitle?: string | null;
+  closeLabel: string;
+  onClose: () => void;
+  /** Before the title: a back button, for a sheet with a second view. */
+  leading?: React.ReactNode;
+}
+
+/**
+ * Every sheet's head: the title left at 22/800, a muted line under it, the ✕
+ * right. Not centred — a centred title over a left-aligned list was the
+ * new-programme sheet's own dialect.
+ */
+export function SheetHead({ title, subtitle = null, closeLabel, onClose, leading = null }: SheetHeadProps) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.sheetHead}>
+      {leading}
+      <View style={styles.headText}>
+        <Text style={styles.sheetTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        {subtitle ? <Text style={styles.sheetSubtitle}>{subtitle}</Text> : null}
+      </View>
+      <SheetCloseButton label={closeLabel} onPress={onClose} />
+    </View>
+  );
+}
+
+interface SheetChipProps {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+  /** A chip that opens its group's options draws a caret. */
+  caret?: boolean;
+  /** For a chip that opens a group: whether it is open. */
+  expanded?: boolean;
+  accessibilityLabel?: string;
+  onLayout?: (x: number) => void;
+}
+
+/**
+ * The one chip: 32 drawn, 44 to the thumb. Picked is violet — a filter is
+ * state, not an action — and the rest are a hairline. Before it the add sheet
+ * filled its picked chip and the swap sheet outlined it.
+ */
+export function SheetChip({ label, selected, onPress, caret = false, expanded, accessibilityLabel, onLayout }: SheetChipProps) {
+  const theme = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
+      accessibilityState={expanded === undefined ? { selected } : { selected, expanded }}
+      hitSlop={SHEET_CHIP_SLOP}
+      onPress={onPress}
+      onLayout={onLayout ? (event) => onLayout(event.nativeEvent.layout.x) : undefined}
+      style={({ pressed }) => [styles.chip, selected && styles.chipOn, caret && styles.chipCaret, pressed && styles.pressed]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextOn]}>{label}</Text>
+      {caret ? (
+        <Svg width={12} height={12} viewBox="0 0 24 24" fill="none">
+          <Path
+            d={expanded ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6'}
+            stroke={selected ? theme.ink : theme.muted}
+            strokeWidth={2.6}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      ) : null}
+    </Pressable>
+  );
+}
+
+/** 32 drawn + 6 above and below = 44 to the thumb. A row that scrolls pads itself by this, so the slop is not clipped. */
+export const SHEET_CHIP_SLOP = { top: 6, bottom: 6 } as const;
+
 
 interface KitSearchProps {
   value: string;
@@ -453,11 +541,11 @@ const makeStyles = (theme: Theme) =>
     },
     headText: { flex: 1, minWidth: 0 },
     title: {
-      fontSize: 19,
+      fontSize: 22,
       fontWeight: '800',
       letterSpacing: -0.4,
       color: theme.ink,
-      lineHeight: 24,
+      lineHeight: 27,
     },
     context: {
       fontFamily: MONO,
@@ -476,15 +564,54 @@ const makeStyles = (theme: Theme) =>
       maxWidth: 280,
     },
     x: {
-      width: 32,
-      height: 32,
-      borderRadius: 11,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: theme.border,
-      backgroundColor: 'rgba(255,255,255,0.04)',
+      backgroundColor: theme.surfaceSoft,
       alignItems: 'center',
       justifyContent: 'center',
+      flexShrink: 0,
     },
+    sheetHead: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 12,
+    },
+    sheetTitle: {
+      fontSize: 22,
+      fontWeight: '800',
+      letterSpacing: -0.4,
+      lineHeight: 27,
+      color: theme.ink,
+    },
+    sheetSubtitle: {
+      fontSize: 13,
+      fontWeight: '600',
+      lineHeight: 18,
+      color: theme.muted,
+      marginTop: 4,
+    },
+    // minHeight: a fixed height clips the label at large text sizes (#bugs 2026-10-19).
+    chip: {
+      minHeight: 32,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      paddingHorizontal: 14,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: theme.border,
+    },
+    chipOn: {
+      backgroundColor: theme.purpleLight,
+      borderColor: theme.purpleBright,
+    },
+    chipCaret: { paddingRight: 10 },
+    chipText: { fontSize: 13, fontWeight: '700', color: theme.muted },
+    chipTextOn: { color: theme.ink },
+
     search: {
       flexDirection: 'row',
       alignItems: 'center',

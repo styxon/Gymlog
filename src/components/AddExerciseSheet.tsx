@@ -29,7 +29,9 @@ import { orderExercisesBySelection } from '../lib/exerciseSelectionOrder';
 import { t } from '../lib/i18n';
 import { ExerciseSheetMode, exerciseSheetCopy } from '../lib/exerciseSheetMode';
 import { AppLanguage, ExerciseLibraryItem } from '../types/models';
-import { KitBar } from './sheetKit';
+import Svg, { Circle, Path } from 'react-native-svg';
+import { SectionLabel } from './SettingsUi';
+import { KitBar, SHEET_CHIP_SLOP, SheetChip, SheetHead } from './sheetKit';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { radii, spacing } from '../theme';
 import { TEXT_SCALE_CAP } from '../textScale';
@@ -82,29 +84,39 @@ const equipmentOptions: SheetEquipmentOption[] = EQUIPMENT_FILTERS;
 // the sheet kept its own dictionary, and a lift the library screen called
 // "Moninivel · Käsipainot" read "Perusliike · Käsipaino" here (#bugs 2026-10-06).
 
-/** 38 drawn, 44 to the thumb. */
-const PILL_SLOP = { top: 3, bottom: 3 } as const;
+type FilterGroupKey = keyof ExercisePickerFilters;
 
-interface FilterPillGroupProps<T extends string> {
-  title: string;
-  options: T[];
-  selected: T;
-  language: AppLanguage;
-  onSelect: (value: T) => void;
+const FILTER_GROUPS: { key: FilterGroupKey; titleKey: 'sheet.category' | 'sheet.bodyPart' | 'sheet.equipment' }[] = [
+  { key: 'bodyPart', titleKey: 'sheet.bodyPart' },
+  { key: 'equipment', titleKey: 'sheet.equipment' },
+  { key: 'category', titleKey: 'sheet.category' },
+];
+
+function filterOptions(key: FilterGroupKey): string[] {
+  if (key === 'bodyPart') return BODY_PART_FILTERS;
+  if (key === 'equipment') return equipmentOptions;
+  return categoryOptions;
 }
 
-function FilterPillGroup<T extends string>({
-  title,
-  options,
-  selected,
-  language,
-  onSelect,
-}: FilterPillGroupProps<T>) {
+interface PickerFiltersProps {
+  filters: ExercisePickerFilters;
+  language: AppLanguage;
+  onChange: (next: ExercisePickerFilters) => void;
+}
+
+/**
+ * The three groups as one row of chips, each opening its own options under it
+ * (menu redesign, 2026-10-24). Three rows of chips took a third of the sheet
+ * before the first lift. A chip says its group until a value is picked, then
+ * the value — so a group chosen before the sheet opened (Swap preselects the
+ * lift's body part) reads as that value straight away.
+ */
+function PickerFilters({ filters, language, onChange }: PickerFiltersProps) {
   const styles = useThemedStyles(makeStyles);
+  const [open, setOpen] = useState<FilterGroupKey | null>(null);
   const rowRef = useRef<ScrollView>(null);
   const revealed = useRef(false);
-  // A filter chosen before the sheet opened (Swap preselects the lift's body
-  // part) can sit past the right edge; bring it into view once, on open.
+  // The picked value can sit past the right edge; bring it into view once.
   const revealActive = (x: number) => {
     if (revealed.current) return;
     revealed.current = true;
@@ -112,37 +124,55 @@ function FilterPillGroup<T extends string>({
   };
 
   return (
-    <View style={styles.filterGroup}>
-      <Text style={styles.filterTitle}>{title}</Text>
-      {/* One row that scrolls sideways: wrapped, the three groups filled the
-          sheet and pushed the exercises below the fold (#bugs 2026-10-09). */}
-      <ScrollView
-        ref={rowRef}
-        horizontal
-        keyboardShouldPersistTaps="handled"
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterRow}
-      >
-        {options.map((option) => {
-          const active = option === selected;
+    <View style={styles.filters}>
+      <View style={styles.filterRow}>
+        {FILTER_GROUPS.map((group) => {
+          const value = filters[group.key];
+          const picked = value !== 'all';
+          const title = t(language, group.titleKey);
+          const label = picked ? exercisePickerChipLabel(value, language) : title;
           return (
-            <Pressable
-              key={option}
-              accessibilityRole="button"
-              accessibilityState={{ selected: active }}
-              hitSlop={PILL_SLOP}
-              onPress={() => onSelect(option)}
-              onLayout={active ? (event) => revealActive(event.nativeEvent.layout.x) : undefined}
-              style={[styles.filterPill, active && styles.filterPillActive]}
-            >
-              <Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>
-                {exercisePickerChipLabel(option, language)}
-              </Text>
-            </Pressable>
+            <SheetChip
+              key={group.key}
+              label={label}
+              accessibilityLabel={picked ? `${title}: ${label}` : title}
+              selected={picked}
+              caret
+              expanded={open === group.key}
+              onPress={() => {
+                revealed.current = false;
+                setOpen(open === group.key ? null : group.key);
+              }}
+            />
           );
         })}
-      </ScrollView>
+      </View>
+      {open ? (
+        <ScrollView
+          ref={rowRef}
+          horizontal
+          keyboardShouldPersistTaps="handled"
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipScrollRow}
+        >
+          {filterOptions(open).map((option) => {
+            const active = option === filters[open];
+            return (
+              <SheetChip
+                key={option}
+                label={exercisePickerChipLabel(option as ExercisePickerFilters[typeof open], language)}
+                selected={active}
+                onLayout={active ? revealActive : undefined}
+                onPress={() => {
+                  onChange({ ...filters, [open]: option });
+                  setOpen(null);
+                }}
+              />
+            );
+          })}
+        </ScrollView>
+      ) : null}
     </View>
   );
 }
@@ -166,80 +196,123 @@ interface ExercisePickerSection {
   entries: ExercisePickerEntry[];
 }
 
-interface ExerciseCardProps {
+interface ExerciseRowProps {
   entry: ExercisePickerEntry;
-  featured?: boolean;
   selected: boolean;
   multiSelect: boolean;
   actionLabel: string;
-  /** What a selected card's pill says: "Lisätty" once added, "Valittu" while a pick waits for its question. */
-  selectedLabel: string;
   language: AppLanguage;
+  /** Where the row sits in its card: the first and last carry the card's corners, the rest a hairline above. */
+  position: 'only' | 'first' | 'middle' | 'last';
+  /**
+   * The tap applies the pick at once — no bar asks after it (the guided
+   * player's swap). The row then names the action instead of drawing a tick
+   * that promises a choice still to be confirmed.
+   */
+  commitsOnTap: boolean;
   onPress: () => void;
 }
 
-function ExerciseCard({ entry, featured = false, selected, multiSelect, actionLabel, selectedLabel, language, onPress }: ExerciseCardProps) {
+/**
+ * One lift: a 48 picture, the name, the library's line under it and one mark
+ * at the end (menu redesign, 2026-10-24). The two-column picture cards fitted
+ * two lifts to a screen and broke the long Finnish names mid-word
+ * ("Kilpapenkkipunner-rus"); a row fits five and reads the name whole.
+ *
+ * The whole row is the one tap target. The mark only says what a tap does:
+ * an orange + while adding several, otherwise a tick that fills when picked.
+ */
+function ExerciseRow({ entry, selected, multiSelect, actionLabel, language, position, commitsOnTap, onPress }: ExerciseRowProps) {
+  const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
   const { item, name } = entry;
   const previewImage = getExerciseImageSource(item?.imageKey);
-  // The library screen's line, split over the card's two: body part, then equipment · type.
-  const rowLabels = item ? exercisePickerRowLabels(item, language) : [];
+  const shownName = exerciseNameLabel(language, name);
+  const meta = item ? exercisePickerRowLabels(item, language).join(' · ') : null;
+  const first = position === 'first' || position === 'only';
+  const last = position === 'last' || position === 'only';
 
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`${actionLabel} · ${exerciseNameLabel(language, name)}`}
+      accessibilityLabel={`${actionLabel} · ${shownName}`}
       accessibilityState={{ selected }}
       onPress={onPress}
-      style={[styles.gridCard, featured && styles.featuredCard, selected && styles.gridCardSelected]}
+      style={({ pressed }) => [
+        styles.row,
+        first && styles.rowFirst,
+        last && styles.rowLast,
+        !first && styles.rowDivided,
+        selected && styles.rowSelected,
+        pressed && styles.rowPressed,
+      ]}
     >
-      <View style={styles.gridCardMedia}>
-        {previewImage ? (
-          <Image source={previewImage} style={styles.gridCardImage} resizeMode="cover" />
-        ) : (
-          <View style={styles.gridCardImageFallback}>
-            <Text style={styles.gridCardImageFallbackText}>{exerciseInitials(exerciseNameLabel(language, name))}</Text>
-          </View>
-        )}
-
-        {multiSelect ? (
-          <View style={[styles.gridCheckBadge, selected && styles.gridCheckBadgeActive]}>
-            <Text style={[styles.gridCheckBadgeText, selected && styles.gridCheckBadgeTextActive]}>
-              {selected ? '✓' : '+'}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.gridCardCopy}>
-        {/* On its syllables when it has to break (lib/exerciseNameLabel exerciseCardLabel). */}
+      {previewImage ? (
+        <Image source={previewImage} style={styles.rowImage} resizeMode="cover" />
+      ) : (
+        <View style={[styles.rowImage, styles.rowImageFallback]}>
+          <Text style={styles.rowImageFallbackText}>{exerciseInitials(exerciseNameLabel(language, name))}</Text>
+        </View>
+      )}
+      <View style={styles.rowCopy}>
+        {/* The list's short form ("KP"), read in full; on its syllables when it breaks. */}
         <Text
-          numberOfLines={3}
-          style={styles.gridCardTitle}
+          style={styles.rowTitle}
+          numberOfLines={2}
           accessibilityLabel={exerciseNameLabel(language, name)}
           android_hyphenationFrequency="normal"
         >
           {exerciseCardLabel(language, name)}
         </Text>
-        {item ? (
-          <>
-            <Text numberOfLines={1} style={styles.gridCardBodyPart}>
-              {rowLabels[0]}
-            </Text>
-            <Text numberOfLines={2} style={styles.gridCardMeta}>
-              {rowLabels.slice(1).join(' · ')}
-            </Text>
-          </>
-        ) : null}
-        {!multiSelect ? (
-          <View style={[styles.gridActionPill, selected && styles.gridActionPillSelected]}>
-            <Text style={[styles.gridActionText, selected && styles.gridActionTextSelected]}>
-              {selected ? selectedLabel : actionLabel}
-            </Text>
-          </View>
+        {meta ? (
+          <Text style={[styles.rowMeta, selected && styles.rowMetaSelected]} numberOfLines={1}>
+            {meta}
+          </Text>
         ) : null}
       </View>
+      {multiSelect ? (
+        <View style={[styles.rowAdd, selected && styles.rowAddOn]}>
+          <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+            <Path
+              d={selected ? 'M5 13l4 4L19 7' : 'M12 5v14M5 12h14'}
+              stroke={theme.onHighlight}
+              strokeWidth={2.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
+        </View>
+      ) : commitsOnTap ? (
+        <View style={styles.rowAction}>
+          <Text style={styles.rowActionText}>{actionLabel}</Text>
+        </View>
+      ) : (
+        <View style={[styles.rowTick, selected && styles.rowTickOn]}>
+          {selected ? (
+            <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+              <Path d="M5 13l4 4L19 7" stroke={theme.onHighlight} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
+          ) : null}
+        </View>
+      )}
     </Pressable>
+  );
+}
+
+function rowPosition(index: number, count: number): ExerciseRowProps['position'] {
+  if (count === 1) return 'only';
+  if (index === 0) return 'first';
+  if (index === count - 1) return 'last';
+  return 'middle';
+}
+
+function SectionHead({ section }: { section: ExercisePickerSection }) {
+  const styles = useThemedStyles(makeStyles);
+  return (
+    <View style={styles.sectionHeader}>
+      <SectionLabel label={section.title} style={styles.sectionLabel} />
+      {section.subtitle ? <Text style={styles.sectionSubtitle}>{section.subtitle}</Text> : null}
+    </View>
   );
 }
 
@@ -279,6 +352,14 @@ interface ExercisePickerSheetProps {
    * alternative may have no library row — and says "Valittu".
    */
   pickedName?: string | null;
+  /**
+   * A tap applies the pick at once, with no bar asking after it (the guided
+   * player's swap, a single add). Its rows name the action instead of drawing
+   * a tick that promises a choice still to be confirmed. Said by the caller:
+   * a sheet that asks after the pick has no pick yet when it opens, so
+   * nothing the sheet holds tells the two apart.
+   */
+  commitsOnTap?: boolean;
   onSelect: (entry: ExercisePickerEntry) => void;
   /** Under the list, after its note: actions that are not a pick (Home's drop, keep and remove). */
   listFooter?: React.ReactNode;
@@ -320,6 +401,7 @@ export function ExercisePickerSheet({
   selectedIds = NOTHING_SELECTED,
   multiSelect = false,
   pickedName = null,
+  commitsOnTap = false,
   onSelect,
   listFooter = null,
   footer = null,
@@ -333,19 +415,24 @@ export function ExercisePickerSheet({
   const cardAction = actionLabel ?? copy.actionLabel;
   const isSelected = (entry: ExercisePickerEntry) =>
     pickedName !== null ? entry.name === pickedName : entry.item ? selectedIds.includes(entry.item.id) : false;
-  const selectedLabel = t(language, pickedName !== null ? 'sheet.picked' : 'sheet.added');
+
+  const featuredEntries = featured?.entries ?? [];
 
   const listHeader = (
     <>
-      <View style={styles.searchCard}>
-        <Text style={styles.searchLabel}>{t(language, 'sheet.search')}</Text>
-        <View style={styles.searchRow}>
+      <View style={styles.searchRow}>
+        <View style={styles.searchField}>
+          <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
+            <Circle cx={11} cy={11} r={6.5} stroke={theme.faint} strokeWidth={2.2} />
+            <Path d="M16 16l4.5 4.5" stroke={theme.faint} strokeWidth={2.2} strokeLinecap="round" />
+          </Svg>
           <TextInput
             ref={searchRef}
             value={search}
             onChangeText={onSearchChange}
             placeholder={copy.searchPlaceholder}
             placeholderTextColor={theme.faint}
+            accessibilityLabel={copy.searchPlaceholder}
             style={styles.searchInput}
             maxFontSizeMultiplier={TEXT_SCALE_CAP}
             selectionColor={theme.purple}
@@ -353,78 +440,49 @@ export function ExercisePickerSheet({
             multiline={false}
             returnKeyType="search"
           />
-          {search.length > 0 ? (
-            <Pressable accessibilityRole="button" onPress={() => onSearchChange('')} style={styles.clearButton}>
-              <Text style={styles.clearButtonText}>{t(language, 'sheet.clear')}</Text>
-            </Pressable>
-          ) : null}
         </View>
+        {search.length > 0 ? (
+          <Pressable accessibilityRole="button" onPress={() => onSearchChange('')} style={styles.clearButton}>
+            <Text style={styles.clearButtonText}>{t(language, 'sheet.clear')}</Text>
+          </Pressable>
+        ) : null}
       </View>
 
       {quickBodyPartOnly ? (
-        <View style={styles.quickBodyPartGroup}>
-          <Text style={styles.filterTitle}>{t(language, 'sheet.bodyPart')}</Text>
-          <ScrollView horizontal keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickBodyPartRow}>
-            {BODY_PART_FILTERS.map((option) => {
-              const active = option === filters.bodyPart;
-              return (
-                <Pressable
-                  key={option}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: active }}
-                  onPress={() => onFiltersChange({ ...filters, bodyPart: option })}
-                  style={[styles.quickBodyPartChip, active && styles.quickBodyPartChipActive]}
-                >
-                  <Text style={[styles.quickBodyPartChipText, active && styles.quickBodyPartChipTextActive]}>
-                    {exercisePickerChipLabel(option, language)}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        </View>
+        <ScrollView
+          horizontal
+          keyboardShouldPersistTaps="handled"
+          showsHorizontalScrollIndicator={false}
+          style={styles.chipScroll}
+          contentContainerStyle={styles.chipScrollRow}
+        >
+          {BODY_PART_FILTERS.map((option) => (
+            <SheetChip
+              key={option}
+              label={exercisePickerChipLabel(option, language)}
+              accessibilityLabel={`${t(language, 'sheet.bodyPart')}: ${exercisePickerChipLabel(option, language)}`}
+              selected={option === filters.bodyPart}
+              onPress={() => onFiltersChange({ ...filters, bodyPart: option })}
+            />
+          ))}
+        </ScrollView>
       ) : (
-        <>
-          <FilterPillGroup
-            title={t(language, 'sheet.category')}
-            options={categoryOptions}
-            selected={filters.category}
-            language={language}
-            onSelect={(category) => onFiltersChange({ ...filters, category })}
-          />
-          <FilterPillGroup
-            title={t(language, 'sheet.bodyPart')}
-            options={BODY_PART_FILTERS}
-            selected={filters.bodyPart}
-            language={language}
-            onSelect={(bodyPart) => onFiltersChange({ ...filters, bodyPart })}
-          />
-          <FilterPillGroup
-            title={t(language, 'sheet.equipment')}
-            options={equipmentOptions}
-            selected={filters.equipment}
-            language={language}
-            onSelect={(equipment) => onFiltersChange({ ...filters, equipment })}
-          />
-        </>
+        <PickerFilters filters={filters} language={language} onChange={onFiltersChange} />
       )}
 
-      {featured && featured.entries.length > 0 ? (
+      {featured && featuredEntries.length > 0 ? (
         <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{featured.title}</Text>
-            {featured.subtitle ? <Text style={styles.sectionSubtitle}>{featured.subtitle}</Text> : null}
-          </View>
-          <View style={styles.featuredGrid}>
-            {featured.entries.map((entry) => (
-              <ExerciseCard
+          <SectionHead section={featured} />
+          <View>
+            {featuredEntries.map((entry, index) => (
+              <ExerciseRow
                 key={entry.key}
                 entry={entry}
-                featured
+                position={rowPosition(index, featuredEntries.length)}
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
+                commitsOnTap={commitsOnTap}
                 actionLabel={cardAction}
-                selectedLabel={selectedLabel}
                 language={language}
                 onPress={() => onSelect(entry)}
               />
@@ -433,11 +491,8 @@ export function ExercisePickerSheet({
         </View>
       ) : null}
 
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{main.title}</Text>
-          {main.subtitle ? <Text style={styles.sectionSubtitle}>{main.subtitle}</Text> : null}
-        </View>
+      <View style={[styles.section, styles.sectionMain]}>
+        <SectionHead section={main} />
       </View>
     </>
   );
@@ -459,13 +514,12 @@ export function ExercisePickerSheet({
         <View style={styles.sheet}>
           <View style={styles.handle} />
           <View style={styles.header}>
-            <View style={styles.headerCopy}>
-              <Text style={styles.headerTitle}>{sheetTitle}</Text>
-              {sheetSubtitle ? <Text style={styles.headerSubtitle}>{sheetSubtitle}</Text> : null}
-            </View>
-            <Pressable accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>{t(language, 'common.close')}</Text>
-            </Pressable>
+            <SheetHead
+              title={sheetTitle}
+              subtitle={sheetSubtitle}
+              closeLabel={t(language, 'common.close')}
+              onClose={onClose}
+            />
           </View>
 
           {/* `flex: 1, minHeight: 0` is what keeps the footer on screen.
@@ -479,7 +533,6 @@ export function ExercisePickerSheet({
             style={styles.grid}
             data={main.entries}
             keyExtractor={(entry) => entry.key}
-            numColumns={2}
             initialNumToRender={12}
             maxToRenderPerBatch={16}
             windowSize={8}
@@ -488,7 +541,6 @@ export function ExercisePickerSheet({
             // the rest of the list and the bar come back.
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
-            columnWrapperStyle={styles.gridRow}
             // Without a footer bar the list runs to the sheet's bottom edge, so
             // it carries the button-bar inset itself: the last cards sat under
             // the phone's buttons in single-select mode.
@@ -512,13 +564,14 @@ export function ExercisePickerSheet({
                 </>
               ) : null
             }
-            renderItem={({ item: entry }) => (
-              <ExerciseCard
+            renderItem={({ item: entry, index }) => (
+              <ExerciseRow
                 entry={entry}
+                position={rowPosition(index, main.entries.length)}
                 selected={isSelected(entry)}
                 multiSelect={multiSelect}
+                commitsOnTap={commitsOnTap}
                 actionLabel={cardAction}
-                selectedLabel={selectedLabel}
                 language={language}
                 onPress={() => onSelect(entry)}
               />
@@ -768,6 +821,7 @@ export function AddExerciseSheet({
       bottomInset={bottomInset}
       language={language}
       mode="add"
+      commitsOnTap={!multiSelect}
       title={sheetTitle}
       subtitle={subtitle}
       actionLabel={addLabel}
@@ -783,7 +837,7 @@ export function AddExerciseSheet({
       quickBodyPartOnly={multiSelect}
       featured={
         featuredEntries.length > 0
-          ? { title: t(language, 'sheet.popular'), subtitle: t(language, 'sheet.popularSub'), entries: featuredEntries }
+          ? { title: t(language, 'sheet.popular'), entries: featuredEntries }
           : null
       }
       main={{
@@ -876,368 +930,241 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: 'rgba(6, 4, 16, 0.45)',
   },
   /**
-   * The sheet stands on `bg`, not on `surface`.
+   * The sheet stands on `surface`, its lists on `surfaceSoft`.
    *
-   * Both the sheet and the cards inside it were `surface`, which in dark is a
-   * lighter indigo than the app behind them — so the sheet read as a pale
-   * rectangle pasted over a near-black screen, and the cards had no edge
-   * against it ("tausta värikin näyttää oudolta", #bugs 2026-08-26). Ground on
-   * `bg` and the sheet belongs to the app; the cards keep `surface` and lift
-   * off it.
+   * It stood on `bg` once, because sheet and cards were both `surface` and
+   * the cards had no edge ("tausta värikin näyttää oudolta", #bugs
+   * 2026-08-26). Every sheet now shares the kit's ground (menu redesign,
+   * 2026-10-24), and the list card lifts off it one shade lighter.
    */
   sheet: {
     maxHeight: '92%',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    backgroundColor: theme.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    backgroundColor: theme.surface,
     borderWidth: 1,
     borderColor: theme.border,
     overflow: 'hidden',
   },
   handle: {
     alignSelf: 'center',
-    width: 36,
+    width: 40,
     height: 4,
     borderRadius: radii.pill,
-    backgroundColor: theme.border,
-    marginTop: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.18)',
+    marginTop: 10,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.md,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-  },
-  headerCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  headerTitle: {
-    color: theme.ink,
-    fontSize: 22,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  headerSubtitle: {
-    color: theme.muted,
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  closeButton: {
-    minHeight: 36,
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    color: theme.ink,
-    fontSize: 14,
-    fontWeight: '700',
+    paddingTop: 14,
+    paddingBottom: 14,
   },
   // The list takes the space left over, rather than the space it wants.
   grid: { flexGrow: 1, flexShrink: 1, minHeight: 0 },
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxl,
-    gap: spacing.lg,
-  },
-  searchCard: {
-    gap: spacing.xs,
-    marginBottom: spacing.lg,
-  },
-  searchLabel: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
   },
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: 14,
+  },
+  searchField: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
+    paddingHorizontal: 14,
   },
   searchInput: {
     flex: 1,
-    // minHeight, not height: a fixed 52 clipped the text at iOS accessibility
-    // font sizes. With no vertical padding and the text centred the placeholder
-    // still sits mid-box (#bugs 2026-10-19). textAlignVertical is Android's
-    // centring, the zero padding is iOS's.
-    minHeight: 52,
+    // minHeight, not height: a fixed height clipped the text at iOS
+    // accessibility font sizes. With no vertical padding and the text centred
+    // the placeholder still sits mid-box (#bugs 2026-10-19). textAlignVertical
+    // is Android's centring, the zero padding is iOS's.
+    minHeight: 44,
     paddingVertical: 0,
     textAlignVertical: 'center',
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    paddingHorizontal: spacing.md,
+    minWidth: 0,
     color: theme.ink,
     fontSize: 15,
     fontWeight: '600',
   },
   clearButton: {
-    minHeight: 40,
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
   },
   clearButtonText: {
     color: theme.muted,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
   },
-  filterGroup: {
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  filterTitle: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  // The row is padded by the pills' slop, so a 38 dp pill reaches 44 to the
-  // thumb and the slop is not clipped to the row (accessibility audit,
-  // 2026-09-21 pattern), and the scroll view is pulled back by the same so
-  // the group keeps its height. The pull-back was on the content container:
-  // iOS counts a content container's own offset twice, so every chip's top
-  // was cut and the three rows slid up and down out of line (owner's #12,
-  // iOS hunt 2026-10-17). On the scroll view itself it is ordinary layout.
-  filterScroll: {
-    marginVertical: -PILL_SLOP.top,
+  filters: {
+    marginBottom: 6,
   },
   filterRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
-    paddingRight: spacing.md,
-    paddingVertical: PILL_SLOP.top,
   },
-  filterPill: {
-    minHeight: 38,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
+  // Pulled back by the chips' slop so a 32 dp chip reaches 44 to the thumb
+  // without the slop being clipped. On the scroll view, not its content
+  // container: iOS counts a content container's own offset twice, so every
+  // chip's top was cut (owner's #12, iOS hunt 2026-10-17).
+  chipScroll: {
+    marginTop: spacing.sm - SHEET_CHIP_SLOP.top,
+    marginBottom: -SHEET_CHIP_SLOP.bottom,
+    marginHorizontal: -spacing.lg,
   },
-  filterPillActive: {
-    backgroundColor: theme.purpleLight,
-    borderColor: theme.purple,
-  },
-  filterPillText: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  filterPillTextActive: {
-    color: theme.purpleDark,
-  },
-  quickBodyPartGroup: {
+  chipScrollRow: {
+    flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  quickBodyPartRow: {
-    gap: spacing.sm,
-    paddingRight: spacing.md,
-  },
-  quickBodyPartChip: {
-    minHeight: 44,
     paddingHorizontal: spacing.lg,
-    borderRadius: radii.pill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-  },
-  // purpleFill, not purple, wherever white is written on the violet: in dark
-  // `purple` is a text violet and white on it is 3.5:1 (accessibility audit,
-  // 2026-09-21).
-  quickBodyPartChipActive: {
-    backgroundColor: theme.purpleFill,
-    borderColor: theme.purpleFill,
-  },
-  quickBodyPartChipText: {
-    color: theme.muted,
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  quickBodyPartChipTextActive: {
-    color: '#FFFFFF',
+    paddingVertical: SHEET_CHIP_SLOP.top,
   },
   section: {
-    paddingTop: spacing.xs,
-    paddingBottom: spacing.sm,
+    marginTop: 18,
+    gap: spacing.sm,
+  },
+  sectionMain: {
+    marginBottom: spacing.sm,
   },
   sectionHeader: {
     gap: 2,
+    paddingLeft: 4,
   },
-  sectionTitle: {
-    color: theme.ink,
-    fontSize: 18,
-    fontWeight: '800',
+  // The section's own gap spaces it from the rows; the label's padding would double it.
+  sectionLabel: {
+    paddingBottom: 0,
   },
   sectionSubtitle: {
-    color: theme.muted,
+    color: theme.faint,
     fontSize: 13,
     fontWeight: '600',
   },
-  featuredGrid: {
+  row: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  /**
-   * Two per row, by giving the card a width to wrap on.
-   *
-   * It inherited `flex: 1` from gridCard, and `flex: 1` means `flexBasis: 0` —
-   * a child with no base width never makes the line overflow, so `flexWrap`
-   * had nothing to trigger on and all four popular exercises shared one row at
-   * about 80dp each. The names broke every three letters (user 2026-08-26).
-   *
-   * The basis is 47 rather than 48 because the gap counts too: two 48% cards
-   * plus a 16dp gap is wider than the row, which would wrap them to one per
-   * line instead. Grow fills whatever is left over, capped at 48%.
-   */
-  featuredCard: {
-    flexGrow: 1,
-    flexShrink: 0,
-    flexBasis: '47%',
-    maxWidth: '48%',
-    marginBottom: 0,
-  },
-  gridRow: {
-    gap: spacing.md,
-  },
-  gridCard: {
-    flex: 1,
-    maxWidth: '48%',
-    borderRadius: radii.lg,
-    borderWidth: 1,
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 72,
+    paddingVertical: 12,
+    paddingLeft: 14,
+    paddingRight: 12,
+    backgroundColor: theme.surfaceSoft,
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
   },
-  gridCardSelected: {
-    borderColor: theme.purple,
+  rowFirst: {
+    borderTopWidth: 1,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18,
+  },
+  rowLast: {
+    borderBottomWidth: 1,
+    borderBottomLeftRadius: 18,
+    borderBottomRightRadius: 18,
+  },
+  // The hairline between rows is the row's own top edge, in the border colour.
+  rowDivided: {
+    borderTopWidth: 1,
+  },
+  rowSelected: {
+    backgroundColor: theme.highlightSoft,
+  },
+  rowPressed: {
+    opacity: 0.8,
+  },
+  rowImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+  },
+  rowImageFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: theme.purpleLight,
   },
-  gridCardMedia: {
-    position: 'relative',
-    aspectRatio: 0.84,
-    backgroundColor: theme.surfaceSoft,
+  rowImageFallbackText: {
+    color: theme.ink,
+    fontSize: 15,
+    fontWeight: '900',
   },
-  gridCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  gridCardImageFallback: {
+  rowCopy: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surfaceSoft,
+    minWidth: 0,
+    gap: 3,
   },
-  gridCardImageFallbackText: {
+  rowTitle: {
     color: theme.ink,
-    fontSize: 28,
-    fontWeight: '900',
-  },
-  gridCheckBadge: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  gridCheckBadgeActive: {
-    backgroundColor: theme.purpleFill,
-    borderColor: theme.purpleFill,
-  },
-  gridCheckBadgeText: {
-    color: theme.ink,
-    fontSize: 16,
-    fontWeight: '900',
-    lineHeight: 18,
-  },
-  gridCheckBadgeTextActive: {
-    color: '#FFFFFF',
-  },
-  gridCardCopy: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    gap: 4,
-  },
-  /**
-   * Sized for Finnish compounds, not for English.
-   *
-   * "Istuen ojentajapunnerrus" broke as "Istuen ojentajap / unnerrus" and the
-   * card next to it truncated mid-word at two lines (#bugs 2026-08-26). The
-   * card is about 141dp of text at a 411dp screen, and the longest single word
-   * in the library is 25 characters, so no size makes every name fit on one
-   * line — the aim is that the common name fits and the long one is at least
-   * shown whole. 14dp holds roughly eighteen characters, and the third line
-   * takes what is left rather than cutting it off.
-   */
-  gridCardTitle: {
-    color: theme.ink,
-    fontSize: 14,
+    fontSize: 15,
+    lineHeight: 20,
     fontWeight: '800',
-    lineHeight: 18,
   },
-  gridCardBodyPart: {
-    color: theme.ink,
+  rowMeta: {
+    color: theme.faint,
     fontSize: 13,
-    fontWeight: '700',
-  },
-  gridCardMeta: {
-    color: theme.muted,
-    fontSize: 12,
+    lineHeight: 18,
     fontWeight: '600',
-    lineHeight: 16,
-    minHeight: 32,
   },
-  gridActionPill: {
-    marginTop: 6,
-    alignSelf: 'flex-start',
-    minHeight: 28,
-    paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
+  rowMetaSelected: {
+    color: theme.muted,
+  },
+  rowAdd: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: theme.highlight,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: theme.purpleFill,
   },
-  gridActionPillSelected: {
-    backgroundColor: theme.purpleLight,
+  // Added: the same accent as the row's wash, the + turned to a tick (the
+  // kit's rule: picked is accent, violet is state).
+  rowAddOn: {
+    backgroundColor: theme.highlight,
   },
-  gridActionText: {
-    color: '#FFFFFF',
-    fontSize: 11,
+  rowAction: {
+    minHeight: 32,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: theme.highlight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowActionText: {
+    color: theme.highlight,
+    fontSize: 13,
     fontWeight: '800',
   },
-  gridActionTextSelected: {
-    color: theme.purpleDark,
+  rowTick: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255,255,255,0.22)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rowTickOn: {
+    backgroundColor: theme.highlight,
+    borderColor: theme.highlight,
   },
   emptyCard: {
     borderRadius: radii.lg,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     padding: spacing.lg,
     gap: spacing.xs,
   },

@@ -511,7 +511,8 @@ name: UI check
 - waitForAnimationToEnd:
     timeout: 3000
 - takeScreenshot: "27-add-exercise-sheet"
-- tapOn: "Sulje|Close"
+- tapOn:
+    id: "sheet-close"
 - waitForAnimationToEnd:
     timeout: 2500
 - runFlow:
@@ -526,7 +527,8 @@ name: UI check
       - waitForAnimationToEnd:
           timeout: 3000
       - takeScreenshot: "28-swap-exercise-sheet"
-      - tapOn: "Sulje|Close"
+      - tapOn:
+          id: "sheet-close"
       - waitForAnimationToEnd:
           timeout: 2500
 

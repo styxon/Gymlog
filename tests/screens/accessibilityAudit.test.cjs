@@ -95,7 +95,8 @@ module.exports = [
       );
 
       // The sheet kit's ✕ is named at every call site; its scrim is out of the tree.
-      assert.match(kit, /accessibilityLabel=\{closeLabel\}/);
+      assert.match(kit, /<SheetCloseButton label=\{closeLabel\}/);
+      assert.match(kit, /accessibilityLabel=\{label\}/);
       assert.match(kit, /closeLabel: string;/);
       assert.match(kit, /style=\{styles\.scrim\}\s*onPress=\{onClose\}\s*accessible=\{false\}\s*importantForAccessibility="no"/);
       for (const dir of ['src/screens', 'src/components']) {
@@ -224,14 +225,17 @@ module.exports = [
       // the thumb by the same hitSlop + padded-row pattern as above.
       assert.doesNotMatch(player, /swapBrowseToggle|swapBrowseChip/);
       const sheet = read('src', 'components', 'AddExerciseSheet.tsx');
-      assert.match(sheet, /const PILL_SLOP = \{ top: 3, bottom: 3 \} as const;/);
-      assert.match(sheet, /hitSlop=\{PILL_SLOP\}\s*onPress=\{\(\) => onSelect\(option\)\}/);
-      // The pull-back on the scroll view, not on its content (owner's #12,
-      // iOS hunt 2026-10-17; tests/screens/scrollContentOffset.test.cjs).
-      assert.match(sheet, /filterScroll: \{\s*marginVertical: -PILL_SLOP\.top,\s*\}/);
-      assert.match(sheet, /filterRow: \{[^}]*paddingVertical: PILL_SLOP\.top,\s*\}/);
-      assert.match(sheet, /style=\{styles\.filterScroll\}\s*contentContainerStyle=\{styles\.filterRow\}/);
-      assert.match(sheet, /filterPill: \{\s*minHeight: 38,/);
+      // The sheets' one chip (sheetKit SheetChip): 32 drawn, slopped to 44.
+      const kitChips = read('src', 'components', 'sheetKit.tsx');
+      assert.match(kitChips, /export const SHEET_CHIP_SLOP = \{ top: 6, bottom: 6 \} as const;/);
+      assert.match(kitChips, /hitSlop=\{SHEET_CHIP_SLOP\}/);
+      assert.match(kitChips, /chip: \{\s*minHeight: 32,/);
+      // A row that scrolls holds the slop in its padding, and the pull-back is
+      // on the scroll view, not on its content (owner's #12, iOS hunt
+      // 2026-10-17; tests/screens/scrollContentOffset.test.cjs).
+      assert.match(sheet, /chipScroll: \{\s*marginTop: spacing\.sm - SHEET_CHIP_SLOP\.top,\s*marginBottom: -SHEET_CHIP_SLOP\.bottom,/);
+      assert.match(sheet, /chipScrollRow: \{[^}]*paddingVertical: SHEET_CHIP_SLOP\.top,\s*\}/);
+      assert.equal((sheet.match(/contentContainerStyle=\{styles\.chipScrollRow\}/g) ?? []).length, 2);
     },
   },
   {
