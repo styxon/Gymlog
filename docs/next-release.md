@@ -29,7 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
-- #PR Subscription: a payment the store could not collect (card declined, store retrying) no longer reads as "Cancelled" / "Jo peruttu" on the membership pages; they say the payment did not go through and the store is retrying, and Pro still runs to the same date.
+- #453 Subscription: a payment the store could not collect (card declined, store retrying) no longer reads as "Cancelled" / "Jo peruttu" on the membership pages; they say the payment did not go through and the store is retrying, and Pro still runs to the same date.
 - #451 The first beep or cue of a workout no longer plays up to a second and a half late. The sound setup starts when the workout screen opens, and a countdown tick that missed its moment is skipped instead of firing in a burst with the next ones.
 - #449 More counts of one in the singular: a one-day programme reads "1 training day" and "1 day / week" ("1 treenipäivä", "1 pv / viikko"), a one-workout programme "1 workout", a recent session without sets "1 exercise", and a one-programme group "1 program".
 - #448 Light theme: the empty pick circle on Add exercise and Swap exercise rows, and the sheet's grab handle, show again. Opening another filter (say Equipment after Body part) starts its options at "All" instead of where the last list was scrolled.
