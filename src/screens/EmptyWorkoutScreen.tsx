@@ -57,7 +57,7 @@ import { describeRest, extendRest, formatClock } from '../lib/restSchedule';
 import { useKeyboardReveal } from '../hooks/useKeyboardReveal';
 import { haptics } from '../utils/haptics';
 import { useKeepScreenAwake } from '../utils/keepAwake';
-import { sound } from '../utils/sound';
+import { prepareCueSounds, sound } from '../utils/sound';
 
 /**
  * Freestyle logging in the Vinha (HG) language — replaces the old generic
@@ -248,6 +248,10 @@ export function EmptyWorkoutScreen({
 }: EmptyWorkoutScreenProps) {
   const theme = useTheme();
   const styles = useThemedStyles(makeStyles);
+  // Warm the audio mode so the first cue does not wait on it.
+  useEffect(() => {
+    prepareCueSounds();
+  }, []);
   const AW3 = useAW3();
   /*
    * The session outlives the process. Everything here lived in React state
