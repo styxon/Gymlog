@@ -14,6 +14,7 @@ import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { formatPercent } from '../lib/format';
 import { PROGRAMME_NAME_MAX } from '../lib/templateBuilderSteps';
 import { I18nKey, t } from '../lib/i18n';
+import { countLabel } from '../lib/repCountCopy';
 import { cycleSchedule, resolveCycleAnchor, sessionSlotOn } from '../lib/trainingSchedule';
 import { sessionForSlot } from '../lib/homeCalendar';
 import { ProgramDetailViewModel } from '../lib/programDetails';
@@ -571,7 +572,7 @@ export function ProgramDetailScreen({
     activePlanSummary?.weeklyMinutes ??
     (durationMinutes > 0
       ? `~${durationMinutes * Math.max(1, program.daysPerWeek)} min`
-      : t(language, 'detail.workoutCount', { count: program.sessions.length }));
+      : countLabel(program.sessions.length, 'detail.workoutCountOne', 'detail.workoutCount', language));
   /**
    * The rhythm the strip shows: the plan's own days when it names them, the
    * derived spread otherwise.
@@ -974,7 +975,7 @@ export function ProgramDetailScreen({
                       on: trainingCycle.pattern.filter(Boolean).length,
                       off: trainingCycle.pattern.filter((day) => !day).length,
                     })
-                  : t(language, 'detail.trainingDays', { count: program.daysPerWeek })}
+                  : countLabel(program.daysPerWeek, 'detail.trainingDaysOne', 'detail.trainingDays', language)}
               </Text>
               {onSaveRhythm ? (
                 <Pressable

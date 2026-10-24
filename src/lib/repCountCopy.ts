@@ -1,5 +1,5 @@
 import { AppLanguage } from '../types/models';
-import { t } from './i18n';
+import { I18nKey, t } from './i18n';
 
 /**
  * Copy that counts repetitions, with the singular form where the count is 1.
@@ -46,6 +46,20 @@ export function milestoneRepsMeta(current: string, target: number, formattedTarg
   return target === 1
     ? t(language, 'profile.milestone.reps.metaOne', { current })
     : t(language, 'profile.milestone.reps.meta', { current, target: formattedTarget });
+}
+
+/**
+ * A count line with its own key for 1: "1 training day", "3 training days".
+ * The many key gets `{count}`; both get the extra vars.
+ */
+export function countLabel(
+  count: number,
+  oneKey: I18nKey,
+  manyKey: I18nKey,
+  language: AppLanguage,
+  vars: Record<string, string | number> = {},
+): string {
+  return t(language, count === 1 ? oneKey : manyKey, { ...vars, count });
 }
 
 /** "1 set", "3 sets" / "1 sarja", "3 sarjaa". */

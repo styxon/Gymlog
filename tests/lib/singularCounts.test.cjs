@@ -61,4 +61,36 @@ module.exports = [
       assert.match(read('src', 'lib', 'aiCoachPreview.ts'), /setsCompleted === 1\s*\? t\(language, 'coachPreview\.lastSession\.setsOne'\)/);
     },
   },
+  {
+    name: 'singular counts: training days, workouts, a recent row\'s exercises and programme counts of one (hunt 1.1.1 r2)',
+    run() {
+      const { countLabel } = require('../../.test-dist/lib/repCountCopy.js');
+      // Missed by #440: "1 training days", "1 workouts", "1 exercises",
+      // "1 days / week", "1 programs".
+      const cases = [
+        ['detail.trainingDaysOne', 'detail.trainingDays', {}, '1 training day', '1 treenipäivä', '3 training days'],
+        ['detail.workoutCountOne', 'detail.workoutCount', {}, '1 workout', '1 treeni', '3 workouts'],
+        ['tpl.exerciseOne', 'recent.exerciseCount', {}, '1 exercise', '1 liike', '3 exercises'],
+        ['programs.card.daysOne', 'programs.card.days', {}, '1 day / week', '1 pv / viikko', '3 days / week'],
+        ['programs.sheet.countOne', 'programs.sheet.count', { focus: 'Strength' }, '1 program · Strength', '1 ohjelma · Strength', '3 programs · Strength'],
+      ];
+      for (const [one, many, vars, en, fi, enMany] of cases) {
+        assert.equal(countLabel(1, one, many, 'en', vars), en);
+        assert.equal(countLabel(1, one, many, 'fi', vars), fi);
+        assert.equal(countLabel(3, one, many, 'en', vars), enMany);
+      }
+      const wiring = [
+        [['src', 'screens', 'ProgramDetailScreen.tsx'], /countLabel\(program\.daysPerWeek, 'detail\.trainingDaysOne'/],
+        [['src', 'screens', 'ProgramDetailScreen.tsx'], /countLabel\(program\.sessions\.length, 'detail\.workoutCountOne'/],
+        [['src', 'app', 'useRecentSessions.ts'], /countLabel\(completedExercises, 'tpl\.exerciseOne', 'recent\.exerciseCount'/],
+        [['App.tsx'], /countLabel\(days, 'programs\.card\.daysOne'/],
+        [['src', 'app', 'useProgramsCustomItems.ts'], /countLabel\(template\.daysPerWeek, 'programs\.card\.daysOne'/],
+        [['src', 'screens', 'ProgramsHomeScreen.tsx'], /countLabel\(item\.days, 'programs\.card\.daysOne'/],
+        [['src', 'screens', 'ProgramsHomeScreen.tsx'], /countLabel\(items\.length, 'programs\.sheet\.countOne'/],
+      ];
+      for (const [file, pattern] of wiring) {
+        assert.match(read(...file), pattern, file.join('/'));
+      }
+    },
+  },
 ];
