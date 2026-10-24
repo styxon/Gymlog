@@ -9,7 +9,7 @@
  * Sound files are generated: node scripts/generate_cue_sounds.mjs
  */
 import { Platform } from 'react-native';
-import { createOnceReady } from '../lib/onceReady';
+import { createCueGate, createOnceReady } from '../lib/onceReady';
 import { createAudioPlayer, setAudioModeAsync, type AudioPlayer } from 'expo-audio';
 
 export type CueSound = 'tick' | 'go' | 'done' | 'rest' | 'finish';
@@ -48,6 +48,21 @@ const ensureAudioMode = createOnceReady(
   (ms) => new Promise<void>((resolve) => setTimeout(resolve, ms)),
 );
 
+const whenReady = createCueGate(ensureAudioMode, Date.now);
+
+/**
+ * Starts the audio-mode setup ahead of the first cue. Screens that play cues
+ * call this when they mount, so the mode is set by the time a rest countdown
+ * needs it instead of the first beep waiting on it. Idempotent, and never at
+ * module load.
+ */
+export function prepareCueSounds() {
+  if (Platform.OS === 'web' || !enabled) {
+    return;
+  }
+  void ensureAudioMode();
+}
+
 function getPlayer(cue: CueSound): AudioPlayer | null {
   const existing = players.get(cue);
   if (existing) {
@@ -67,8 +82,9 @@ function play(cue: CueSound) {
   if (Platform.OS === 'web' || !enabled) {
     return;
   }
-  // Fire-and-forget for callers; the cue itself waits for the audio mode.
-  void ensureAudioMode().then(() => {
+  // Fire-and-forget for callers; the cue waits for the audio mode, and is
+  // dropped if that took so long that the cue's moment has passed.
+  whenReady(() => {
     // The preference may have been switched off while the mode was settling.
     if (!enabled) {
       return;
