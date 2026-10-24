@@ -154,7 +154,7 @@ import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMom
 import { useModalHandoff } from '../hooks/useModalHandoff';
 import { RestAlertsSheet } from '../components/RestAlertsSheet';
 import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
-import { sound, type CueSound } from '../utils/sound';
+import { prepareCueSounds, sound, type CueSound } from '../utils/sound';
 import { readableOn, Theme, useTheme, useThemeName, useThemedStyles } from '../theming';
 import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -1554,6 +1554,10 @@ export function GuidedPlayerScreen(props: GuidedPlayerScreenProps) {
   const theme = useTheme();
   const { activeSession } = useWorkoutContext();
   const [reduceMotion, setReduceMotion] = useState(false);
+  // Warm the audio mode so the first cue does not wait on it.
+  useEffect(() => {
+    prepareCueSounds();
+  }, []);
   useEffect(() => {
     let mounted = true;
     void queryReduceMotion().then((reduced) => {
