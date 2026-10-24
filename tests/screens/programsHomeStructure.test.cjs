@@ -632,7 +632,7 @@ module.exports = [
       assert.match(customItems, /subtitle: active\s*\r?\n?\s*\? t\(preferences\.appLanguage, 'programs\.activeSubtitle'\)/);
       // A running programme that does not lead says its week; one switched
       // off says so instead (device, 2026-09-16).
-      assert.match(customItems, /\? t\(preferences\.appLanguage, 'programs\.card\.days', \{ count: template\.daysPerWeek \}\)\s*: t\(preferences\.appLanguage, 'programs\.card\.switchedOff'\),/);
+      assert.match(customItems, /\? countLabel\(template\.daysPerWeek, 'programs\.card\.daysOne', 'programs\.card\.days', preferences\.appLanguage\)\s*: t\(preferences\.appLanguage, 'programs\.card\.switchedOff'\),/);
       // Only what the catalog can open — a plan pointing at a deleted custom
       // template is neither authored nor ready, and its row would navigate
       // nowhere.

@@ -30,6 +30,7 @@ import {
   sortProgramLadder,
 } from '../lib/programLadder';
 import { I18nKey, t } from '../lib/i18n';
+import { countLabel } from '../lib/repCountCopy';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { PROGRAM_CATEGORIES, ProgramCategoryKey } from '../lib/programCategories';
 import { GoalProgrammeSuggestionView } from '../lib/goalProgramme';
@@ -620,7 +621,7 @@ function ProgramSheet({
                 {title}
               </Text>
               <Text style={styles.catSheetFocus} numberOfLines={2}>
-                {t(language, 'programs.sheet.count', { count: items.length, focus })}
+                {countLabel(items.length, 'programs.sheet.countOne', 'programs.sheet.count', language, { focus })}
               </Text>
             </View>
             <Pressable onPress={onClose} hitSlop={10}>
@@ -1015,7 +1016,7 @@ export function ProgramsHomeScreen({
                         <View style={styles.recBulletRow}>
                           <View style={styles.recDot} />
                           <Text style={styles.recBulletText} numberOfLines={1}>
-                            {t(language, 'programs.card.days', { count: item.days })} · ~{item.minutes} min
+                            {countLabel(item.days, 'programs.card.daysOne', 'programs.card.days', language)} · ~{item.minutes} min
                           </Text>
                         </View>
                         <View style={styles.recBulletRow}>

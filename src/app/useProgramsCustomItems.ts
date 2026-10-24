@@ -3,6 +3,7 @@ import { useMemo } from 'react';
 import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import { t } from '../lib/i18n';
+import { countLabel } from '../lib/repCountCopy';
 import { leadTemplateId, listHeldProgrammes } from '../lib/runningProgrammes';
 import type { AppDatabase, AppPreferences } from '../types/models';
 import type { useCustomProgramViews } from './useCustomProgramViews';
@@ -120,7 +121,7 @@ export function useProgramsCustomItems(deps: ProgramsCustomItemsDeps) {
           subtitle: active
             ? t(preferences.appLanguage, 'programs.activeSubtitle')
             : row.running
-              ? t(preferences.appLanguage, 'programs.card.days', { count: template.daysPerWeek })
+              ? countLabel(template.daysPerWeek, 'programs.card.daysOne', 'programs.card.days', preferences.appLanguage)
               : t(preferences.appLanguage, 'programs.card.switchedOff'),
           active,
           programType: 'ready' as const,

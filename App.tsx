@@ -55,6 +55,7 @@ import { useRecordsAndMilestones } from './src/app/useRecordsAndMilestones';
 import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
 import { useStableActiveWorkoutSummary } from './src/app/useStableActiveWorkoutSummary';
 import { I18nKey, t } from './src/lib/i18n';
+import { countLabel } from './src/lib/repCountCopy';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
 import { trackEvent } from './src/features/analytics/analyticsClient';
@@ -1246,7 +1247,7 @@ function VinhaApp() {
         return {
           planId,
           title: runningProgrammeTitle(templateId, ownTemplate?.name || plan.name, days),
-          meta: t(preferences.appLanguage, 'programs.card.days', { count: days }),
+          meta: countLabel(days, 'programs.card.daysOne', 'programs.card.days', preferences.appLanguage),
         };
       })
       .filter((row): row is { planId: string; title: string; meta: string } => row !== null);
