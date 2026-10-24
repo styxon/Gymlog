@@ -6,7 +6,7 @@ import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { findSavedCardioRun } from '../lib/cardio';
 import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../lib/aiCoachClient';
 import { randomLogId } from '../lib/aiCoachLogId';
-import { CoachQuotaLedger, recordCoachQuestion, resolveCoachQuota } from '../lib/aiCoachQuota';
+import { CoachQuotaLedger, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
 import { buildProgrammeDraft, composeProgrammePreview, liveProposalOrPreview, resolveLiveProposal } from '../lib/programmeBrief';
 import { recordSuggestionAccepted, recordSuggestionRejected } from '../lib/coachSuggestions';
@@ -193,7 +193,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
       // billed call and is still charged.
       if (live && !isProgrammeCompositionCrisis(live)) {
         try {
-          await updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+          await updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }));
         } catch (error) {
           // The charge did not land, so the week is not handed over: a refused
           // write must not be a free build. The chat says it failed.
@@ -391,7 +391,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
         onQuestionUsed={() => {
           // The answer is already on screen, so a refused write cannot unsay
           // it; it is caught so it is not an unhandled rejection.
-          updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) })).catch(
+          updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) })).catch(
             (error) => console.error('Failed to record the coach question', error),
           );
         }}

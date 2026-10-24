@@ -95,15 +95,28 @@ export interface CoachQuotaLedger {
   reserve(state: CoachQuotaState | null | undefined, now?: Date): boolean;
   /** Gives one claim back. Never goes below zero. */
   release(): void;
+  /**
+   * The allowance a spend just wrote. A request started from a closure older
+   * than that write still passes the count from before it; `reserve` reads
+   * whichever of the two has used more in the same month.
+   */
+  note(written: CoachQuotaState): void;
+  /** recordCoachQuestion, with the result noted: the updater every spend writes through. */
+  record(state: CoachQuotaState | null | undefined, now?: Date): CoachQuotaState;
   /** Claims held now. */
   held(): number;
 }
 
 export function createCoachQuotaLedger(): CoachQuotaLedger {
   let held = 0;
+  let written: CoachQuotaState | null = null;
   return {
     reserve(state, now) {
-      if (resolveCoachQuota(state, now).remaining - held <= 0) {
+      const passed = resolveCoachQuota(state, now);
+      const latest = written ? resolveCoachQuota(written, now) : null;
+      const remaining =
+        latest && latest.monthStart === passed.monthStart ? Math.min(passed.remaining, latest.remaining) : passed.remaining;
+      if (remaining - held <= 0) {
         return false;
       }
       held += 1;
@@ -111,6 +124,14 @@ export function createCoachQuotaLedger(): CoachQuotaLedger {
     },
     release() {
       held = Math.max(0, held - 1);
+    },
+    note(next) {
+      written = next;
+    },
+    record(state, now) {
+      const next = recordCoachQuestion(state, now);
+      written = next;
+      return next;
     },
     held: () => held,
   };

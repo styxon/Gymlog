@@ -6,7 +6,7 @@ import {
   findReplaceableOnboardingTemplateId,
   resolveActiveProgramCap,
 } from '../lib/activeProgramSet';
-import { CoachQuotaLedger, recordCoachQuestion } from '../lib/aiCoachQuota';
+import { CoachQuotaLedger } from '../lib/aiCoachQuota';
 import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/aiCoachClient';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
@@ -302,7 +302,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
       // result). The read is handed over only once the charge is on disk: a
       // write the disk refused used to be dropped, which made the read free.
       try {
-        await updatePreferences((current) => ({ aiCoachProQuota: recordCoachQuestion(current.aiCoachProQuota) }));
+        await updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }));
       } catch (error) {
         console.error('Failed to record the photo read against the coach allowance', error);
         return { status: 'failed' };

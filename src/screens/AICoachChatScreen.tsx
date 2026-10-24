@@ -611,7 +611,9 @@ export function AICoachChatScreen({
   // is the blurred local answer below — the real deterministic one, which
   // costs nothing — plus three demo moments. The door stays open at a price
   // the free tier can carry.
-  const canAsk = proUnlocked && questionsRemaining > 0;
+  // A build still running holds a question it has not been charged for yet;
+  // a chat question sent beside it must not take the same last one.
+  const canAsk = proUnlocked && questionsRemaining - composingIds.length > 0;
   /**
    * Only the first locked answer keeps its full body — that is the one that
    * sells. Every one after it collapses to a single line, so the thread reads
