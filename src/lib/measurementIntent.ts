@@ -90,19 +90,30 @@ function numberTokens(message: string): NumberToken[] {
  * 82 ja vyötärö 90 cm" is 82 kg, "painoni 82 (viime viikolla 84 kg)" is 82.
  * Taking the first number in the message read a date or clock before it, and
  * taking any number with a unit read another measurement's (re-check of hunt
- * 1.1.1). A number right before the word, nothing between them, comes first:
- * "82 kg paino, treenasin 3 kertaa" is 82, "18 % rasvaprosentti 3 kk sitten"
- * is 18 (second re-check). With nothing after the word, the last number before it
- * that is not a date.
+ * 1.1.1). A number right before the word, nothing between them, comes first
+ * when it carries a unit or no reading follows the word: "82 kg paino,
+ * treenasin 3 kertaa" is 82, "18 % rasvaprosentti 3 kk sitten" is 18, "82
+ * paino 3 kertaa" is 82 (second re-check), but "viikolla 43 painoni oli 82 kg"
+ * is 82, not the week (round 2). After the word, a "30.10." with another
+ * number behind it is a date: "painoni 30.10. oli 82" is 82. With nothing
+ * after the word, the last number before it that is not a date.
  */
-function readingToken(tokens: readonly NumberToken[], message: string, wordAt: number): NumberToken | undefined {
+function readingToken(
+  tokens: readonly NumberToken[],
+  message: string,
+  wordAt: number,
+  plausible: (token: NumberToken) => boolean,
+): NumberToken | undefined {
   const usable = tokens.filter((token) => !token.notReading);
   const before = usable.filter((token) => token.index < wordAt && !token.dayMonth);
+  const after = usable.filter((token) => token.index > wordAt);
   const leading = before[before.length - 1];
-  if (leading && message.slice(leading.end, wordAt).trim() === '') {
+  const following = after.find((token, at) => !(token.dayMonth && at < after.length - 1));
+  const adjacent = leading !== undefined && message.slice(leading.end, wordAt).trim() === '';
+  if (adjacent && (leading.unit !== null || !following || !plausible(following))) {
     return leading;
   }
-  return usable.find((token) => token.index > wordAt) ?? leading;
+  return following ?? leading;
 }
 
 const RANGE: Record<MeasurementIntent['unit'], [number, number]> = {
@@ -146,19 +157,22 @@ export function parseMeasurementIntent(text: string, _language: AppLanguage = 'f
     return null;
   }
 
-  // A number that is not a reading shape is refused, never cut short: "1000 kg".
-  const number = readingToken(numberTokens(message), message, message.search(match.pattern));
-  if (!number || !READING.test(number.raw)) {
-    return null;
-  }
-  const value = Number(number.raw.replace(',', '.'));
-  const unit = (number.unit as MeasurementIntent['unit'] | null) ?? unitFor(match.kind);
-  if (unit !== unitFor(match.kind)) {
-    // Also "180 lb" and "82 in": not this app's units, so not offered.
-    // "rinta 80 kg" is a bench press, not a chest measurement.
-    return null;
-  }
-  return validMeasurementIntent(match.kind, value, unit);
+  const read = (token: NumberToken): MeasurementIntent | null => {
+    // A number that is not a reading shape is refused, never cut short: "1000 kg".
+    if (!READING.test(token.raw)) {
+      return null;
+    }
+    const value = Number(token.raw.replace(',', '.'));
+    const unit = (token.unit as MeasurementIntent['unit'] | null) ?? unitFor(match.kind);
+    if (unit !== unitFor(match.kind)) {
+      // Also "180 lb" and "82 in": not this app's units, so not offered.
+      // "rinta 80 kg" is a bench press, not a chest measurement.
+      return null;
+    }
+    return validMeasurementIntent(match.kind, value, unit);
+  };
+  const number = readingToken(numberTokens(message), message, message.search(match.pattern), (token) => read(token) !== null);
+  return number ? read(number) : null;
 }
 
 /**
