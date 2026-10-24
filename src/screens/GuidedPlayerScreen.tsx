@@ -5307,6 +5307,7 @@ function GuidedPlayer({
             ? t(language, 'swap.alreadyInSession', { names: swapSessionHits.join(', ') })
             : null
         }
+        commitsOnTap
         onSelect={(entry) => applySwap(entry.name)}
         onClose={() => {
           setSwapOpen(false);

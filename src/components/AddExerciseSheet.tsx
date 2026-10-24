@@ -352,6 +352,14 @@ interface ExercisePickerSheetProps {
    * alternative may have no library row — and says "Valittu".
    */
   pickedName?: string | null;
+  /**
+   * A tap applies the pick at once, with no bar asking after it (the guided
+   * player's swap, a single add). Its rows name the action instead of drawing
+   * a tick that promises a choice still to be confirmed. Said by the caller:
+   * a sheet that asks after the pick has no pick yet when it opens, so
+   * nothing the sheet holds tells the two apart.
+   */
+  commitsOnTap?: boolean;
   onSelect: (entry: ExercisePickerEntry) => void;
   /** Under the list, after its note: actions that are not a pick (Home's drop, keep and remove). */
   listFooter?: React.ReactNode;
@@ -393,6 +401,7 @@ export function ExercisePickerSheet({
   selectedIds = NOTHING_SELECTED,
   multiSelect = false,
   pickedName = null,
+  commitsOnTap = false,
   onSelect,
   listFooter = null,
   footer = null,
@@ -408,8 +417,6 @@ export function ExercisePickerSheet({
     pickedName !== null ? entry.name === pickedName : entry.item ? selectedIds.includes(entry.item.id) : false;
 
   const featuredEntries = featured?.entries ?? [];
-  // No bar follows a pick: the tap is the swap itself (the guided player).
-  const commitsOnTap = !multiSelect && pickedName === null && footer === null;
 
   const listHeader = (
     <>
@@ -814,6 +821,7 @@ export function AddExerciseSheet({
       bottomInset={bottomInset}
       language={language}
       mode="add"
+      commitsOnTap={!multiSelect}
       title={sheetTitle}
       subtitle={subtitle}
       actionLabel={addLabel}
