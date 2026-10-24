@@ -628,6 +628,12 @@ export interface AppPreferences {
    */
   mockSubscriptionEndsAt: string | null;
   /**
+   * True while the store reports a failed renewal payment (grace period or
+   * billing retry): Pro runs to the store's end, but the reader did not cancel.
+   * Written only by purchaseRecordFromStore; absent on older installs (false).
+   */
+  mockSubscriptionBillingIssue: boolean;
+  /**
    * True while the signed-in Google or Apple account is the stores' review account
    * (lib/reviewAccount): Pro is on for it, with source 'review'. Written only
    * by app/useReviewProAccount from the signed-in account, cleared when that

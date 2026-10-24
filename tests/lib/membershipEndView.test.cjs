@@ -10,6 +10,7 @@ module.exports = [
       assert.deepEqual(resolveMembershipEndView({ canEndNow: true, cancelled: false }), {
         mode: 'decide',
         alreadyCancelled: false,
+        billingIssue: false,
       });
     },
   },
@@ -21,6 +22,7 @@ module.exports = [
       assert.deepEqual(resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled: true }), {
         mode: 'back',
         alreadyCancelled: true,
+        billingIssue: false,
       });
     },
   },
@@ -32,6 +34,7 @@ module.exports = [
         assert.deepEqual(resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled: false }), {
           mode: 'back',
           alreadyCancelled: false,
+          billingIssue: false,
         });
       }
     },

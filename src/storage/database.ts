@@ -974,6 +974,7 @@ export function normalizeDatabase(input: Partial<AppDatabase> | null | undefined
         mockSubscriptionPurchasedAt: fallback.preferences.mockSubscriptionPurchasedAt,
         mockSubscriptionCancelledAt: fallback.preferences.mockSubscriptionCancelledAt,
         mockSubscriptionEndsAt: fallback.preferences.mockSubscriptionEndsAt,
+        mockSubscriptionBillingIssue: fallback.preferences.mockSubscriptionBillingIssue,
       }),
       // `true` or it is not: a stored string, a number or a missing field is no.
       reviewProAccount: input?.preferences?.reviewProAccount === true,

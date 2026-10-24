@@ -648,6 +648,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         lapsedTrialUntil={proEntitlement.unlocked ? null : preferences.proTrialUntil}
         mockTerm={preferences.mockSubscriptionTerm}
         mockCancelled={preferences.mockSubscriptionCancelledAt !== null}
+        mockBillingIssue={preferences.mockSubscriptionBillingIssue}
         purchasedAt={preferences.mockSubscriptionPurchasedAt}
         onChangeMockTerm={(term) => {
           if (releaseBuild) {
@@ -702,6 +703,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         source={proEntitlement.source ?? 'none'}
         promoUntil={proEntitlement.promoUntil}
         cancelled={membershipEndCancelled(proEntitlement.source, preferences.mockSubscriptionCancelledAt)}
+        billingIssue={preferences.mockSubscriptionBillingIssue}
         // Counted from the same instant the subscription screen counts from,
         // or the two screens name different dates for the same period.
         // The date the entitlement itself will stop on: the end of the current

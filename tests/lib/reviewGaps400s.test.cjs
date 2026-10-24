@@ -149,6 +149,7 @@ module.exports = [
       assert.deepEqual(resolveMembershipEndView({ canEndNow: false, cancelled: true }), {
         mode: 'back',
         alreadyCancelled: false,
+        billingIssue: false,
       });
     },
   },

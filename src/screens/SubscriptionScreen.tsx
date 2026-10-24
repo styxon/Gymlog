@@ -37,6 +37,8 @@ interface SubscriptionScreenProps {
   lapsedTrialUntil: string | null;
   mockTerm: SubscriptionTermKey;
   mockCancelled: boolean;
+  /** The cancellation is a failed payment the store is retrying, not the reader's choice. */
+  mockBillingIssue?: boolean;
   /** When Pro was turned on, ISO. The renewal date is counted from it. */
   purchasedAt: string | null;
   onChangeMockTerm: (term: SubscriptionTermKey) => void;
@@ -116,6 +118,7 @@ export function SubscriptionScreen({
   lapsedTrialUntil,
   mockTerm,
   mockCancelled,
+  mockBillingIssue = false,
   purchasedAt,
   onChangeMockTerm,
   onChangeMockCancelled,
@@ -159,6 +162,7 @@ export function SubscriptionScreen({
     entitlement,
     mockTerm,
     mockCancelled,
+    mockBillingIssue,
     purchasedAt,
     lapsedPromoUntil,
     lapsedTrialUntil,
@@ -199,7 +203,9 @@ export function SubscriptionScreen({
       return t(language, 'subs.status.review');
     }
     if (model.cancelled) {
-      return t(language, 'subs.status.cancelled', { date: date(model.endsAt) });
+      return t(language, model.billingIssue ? 'subs.status.billingIssue' : 'subs.status.cancelled', {
+        date: date(model.endsAt),
+      });
     }
     return t(language, 'subs.status.activeOn', { term: t(language, term!.labelKey) });
   };
@@ -446,8 +452,10 @@ export function SubscriptionScreen({
               <ListCard divided={false} style={styles.card}>
                 <Row
                   icon="restore"
-                  title={t(language, 'subs.row.resume')}
-                  sub={t(language, 'subs.row.resumeSub', { date: date(model.endsAt) })}
+                  title={t(language, model.billingIssue ? 'subs.row.fixPayment' : 'subs.row.resume')}
+                  sub={t(language, model.billingIssue ? 'subs.row.fixPaymentSub' : 'subs.row.resumeSub', {
+                    date: date(model.endsAt),
+                  })}
                   onPress={() => onChangeMockCancelled(false)}
                 />
               </ListCard>
@@ -512,7 +520,9 @@ export function SubscriptionScreen({
                   {model.cancelled ? (
                     <View style={styles.warnBanner}>
                       <Glyph name="warn" color={theme.amberInk} size={16} />
-                      <Text style={styles.warnText}>{t(language, 'subs.cancelledNote')}</Text>
+                      <Text style={styles.warnText}>
+                        {t(language, model.billingIssue ? 'subs.billingIssueNote' : 'subs.cancelledNote')}
+                      </Text>
                     </View>
                   ) : null}
                 </>
@@ -526,8 +536,10 @@ export function SubscriptionScreen({
                   {model.cancelled && billing ? (
                     <Row
                       icon="restore"
-                      title={t(language, 'subs.row.resume')}
-                      sub={t(language, 'subs.row.resumeSub', { date: date(model.endsAt) })}
+                      title={t(language, model.billingIssue ? 'subs.row.fixPayment' : 'subs.row.resume')}
+                      sub={t(language, model.billingIssue ? 'subs.row.fixPaymentSub' : 'subs.row.resumeSub', {
+                        date: date(model.endsAt),
+                      })}
                       onPress={() => onChangeMockCancelled(false)}
                       divider
                     />
