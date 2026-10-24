@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #448 Light theme: the empty pick circle on Add exercise and Swap exercise rows, and the sheet's grab handle, show again. Opening another filter (say Equipment after Body part) starts its options at "All" instead of where the last list was scrolled.
 - #446 Light theme: the exercise sheet's selected tab, card frames and lock icon, and the New programme icons, stand out from their card again. In the New programme paste view, Android's back button returns to the menu instead of closing the sheet and dropping the pasted text, and a "questions used up" photo note no longer reappears the next time the sheet opens.
 - #445 One menu style: New programme, Add exercise, Swap exercise and the exercise sheet share a left-aligned title with a round ✕ (the exercise sheet had none), one chip style, and lifts as a list with a small picture instead of a two-column grid, so long names read whole. Swap and the full add sheet fold their three filter rows into one row of chips that open their options. The New programme choices are one card with shorter lines.
 - #440 Counts of one read in the singular: a one-lift plan day says "1 exercise · 3 sets" ("1 liike · 3 sarjaa"), a one-set row "1 set · 8-12 reps" ("1 sarja"), the training log export "1 session" ("1 treeni"), the coach's header "Reads your 1 logged session" and its opening line, the recent-session row, the guided start card and the emphasis sheet ("1 set" / "1 sarja").

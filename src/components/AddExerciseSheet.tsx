@@ -149,6 +149,8 @@ function PickerFilters({ filters, language, onChange }: PickerFiltersProps) {
       </View>
       {open ? (
         <ScrollView
+          // A new group starts at its first option, not at the last group's offset.
+          key={open}
           ref={rowRef}
           horizontal
           keyboardShouldPersistTaps="handled"
@@ -951,7 +953,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     width: 40,
     height: 4,
     borderRadius: radii.pill,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    backgroundColor: theme.border,
     marginTop: 10,
   },
   header: {
@@ -1152,7 +1154,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 1.5,
-    borderColor: 'rgba(255,255,255,0.22)',
+    // A theme ink, not dark-only white: on the light row it was 1.03:1 and
+    // the pick ring vanished.
+    borderColor: theme.faint,
     alignItems: 'center',
     justifyContent: 'center',
   },
