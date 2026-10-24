@@ -336,8 +336,9 @@ module.exports = [
       const path = require('node:path');
       const source = fs.readFileSync(path.join(__dirname, '../../src/components/AddExerciseSheet.tsx'), 'utf8');
       const block = source.slice(source.indexOf('searchInput: {'), source.indexOf('clearButton: {'));
-      assert.match(block, /minHeight: 52/);
-      assert.doesNotMatch(block, /\n\s*height: 52/);
+      // 44 since the menu redesign (2026-10-24); a minimum either way.
+      assert.match(block, /minHeight: 44/);
+      assert.doesNotMatch(block, /\n\s*height: \d+/);
       assert.match(source, /maxFontSizeMultiplier=\{TEXT_SCALE_CAP\}/);
     },
   },

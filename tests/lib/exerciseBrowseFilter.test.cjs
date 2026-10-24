@@ -137,7 +137,7 @@ module.exports = [
       // Both rows map the shared list, and no hand-written body-part list
       // ('all' followed by a body part) sits beside it.
       assert.match(sheet, /BODY_PART_FILTERS\.map\(/, 'the quick row');
-      assert.match(sheet, /options=\{BODY_PART_FILTERS\}/, 'the full filter');
+      assert.match(sheet, /if \(key === 'bodyPart'\) return BODY_PART_FILTERS;/, 'the full filter');
       assert.doesNotMatch(sheet, /'all',\s*'(?:chest|back|shoulders|legs|biceps|triceps)'/);
       // The chips' rule and labels are every picker's (lib/exercisePicker).
       const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');

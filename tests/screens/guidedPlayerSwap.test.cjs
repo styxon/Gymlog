@@ -818,10 +818,13 @@ module.exports = [
       // the sheet has no mode branch in its layout, only in its copy.
       assert.match(sheet, /const copy = exerciseSheetCopy\(mode, language, swappedName\);/);
       assert.equal((sheet.match(/mode === 'swap'|mode === 'add'/g) ?? []).length, 0);
+      // The three groups are one row of chips that open their options
+      // (menu redesign, 2026-10-24), in both modes.
       for (const group of ['sheet.category', 'sheet.bodyPart', 'sheet.equipment']) {
-        assert.ok(sheet.includes(`t(language, '${group}')`), group);
+        assert.ok(sheet.includes(`titleKey: '${group}'`), group);
       }
-      assert.match(sheet, /options=\{equipmentOptions\}/);
+      assert.match(sheet, /if \(key === 'equipment'\) return equipmentOptions;/);
+      assert.match(sheet, /<PickerFilters filters=\{filters\} language=\{language\} onChange=\{onFiltersChange\} \/>/);
       // The swap list obeys all three groups through every picker's one list
       // (lib/exercisePicker), the add sheet's too.
       assert.match(source, /buildSwapPickerLibrary\(exerciseLibrary, \{\s*query: swapQuery,\s*filters: swapFilters,/);

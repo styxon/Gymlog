@@ -29,6 +29,7 @@ larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #PR One menu style: New programme, Add exercise, Swap exercise and the exercise sheet share a left-aligned title with a round ✕ (the exercise sheet had none), one chip style, and lifts as a list with a small picture instead of a two-column grid, so long names read whole. Swap and the full add sheet fold their three filter rows into one row of chips that open their options. The New programme choices are one card with shorter lines.
 - #440 Counts of one read in the singular: a one-lift plan day says "1 exercise · 3 sets" ("1 liike · 3 sarjaa"), a one-set row "1 set · 8-12 reps" ("1 sarja"), the training log export "1 session" ("1 treeni"), the coach's header "Reads your 1 logged session" and its opening line, the recent-session row, the guided start card and the emphasis sheet ("1 set" / "1 sarja").
 - #438 AI coach: a measurement typed into the chat is offered for logging with the right number — a date or time before it ("30.10. painoni 82 kg") is no longer read as the value, pounds and inches are no longer offered as kg or cm, and "1000 kg" is refused instead of offered as 100. A question turned away for rate while you were typing keeps its "log this" button.
 - #442 Dates in lists read the same everywhere ("19.10." / "Oct 19", with the year only when it is not this one): the Progress lifts, recent sessions on Home and Progress, the exercise sheet's history and the set log sheet.

@@ -120,7 +120,8 @@ module.exports = [
       // to the route handler, which leaves the summary altogether.
       assert.match(kitSource, /onRequestClose=\{onClose\}/);
       assert.match(kitSource, /style=\{styles\.scrim\}\s*onPress=\{onClose\}/);
-      assert.match(kitSource, /accessibilityLabel=\{closeLabel\}\s*onPress=\{onClose\}/);
+      assert.match(kitSource, /<SheetCloseButton label=\{closeLabel\} onPress=\{onClose\} \/>/);
+      assert.match(kitSource, /accessibilityLabel=\{label\}\s*onPress=\{onPress\}/);
 
       // Skip is still there, still one tap.
       assert.match(i18nSource, /'complete\.feel\.skip':/);

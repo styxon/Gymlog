@@ -65,24 +65,19 @@ module.exports = [
     },
   },
   {
-    name: 'add-exercise sheet: the popular cards wrap two per row instead of sharing one',
+    name: 'add-exercise sheet: lifts are one column of rows, popular ones too',
     run() {
       const sheet = read('src/components/AddExerciseSheet.tsx');
 
-      // "4 korttia näkyy samaan aikaan todella kapeasti, tekstit ovat tyyliin 3
-      // kirjainta ja sitten katkeaa" (user 2026-08-26). The featured card
-      // inherited `flex: 1` from gridCard, and `flex: 1` means `flexBasis: 0` —
-      // a child with no base width never makes the line overflow, so flexWrap
-      // had nothing to trigger on. On a 328px row: four cards at 70px each,
-      // which leaves ~54px for a 16px bold title.
-      const featured = sheet.slice(sheet.indexOf('featuredCard: {'), sheet.indexOf('gridRow: {'));
-      assert.match(featured, /flexBasis: '47%'/);
-      assert.match(featured, /flexGrow: 1/);
-      assert.doesNotMatch(featured, /flex: 1/);
-
-      // 47 rather than 48 because the gap counts: two 48% cards plus a 16dp gap
-      // overflow the row and wrap to one per line — the opposite failure.
-      assert.match(sheet, /featuredGrid: \{[\s\S]{0,140}gap: spacing\.md/);
+      // The two-column cards fitted two lifts to a screen and broke long
+      // names mid-word ("4 korttia näkyy samaan aikaan todella kapeasti",
+      // user 2026-08-26; "Kilpapenkkipunner-rus"). Since the menu redesign
+      // (2026-10-24) every lift is a row the sheet's full width: no grid, no
+      // two-per-row basis left behind for the next card to inherit.
+      assert.doesNotMatch(sheet, /numColumns=/);
+      assert.doesNotMatch(sheet, /flexBasis: '4\d%'/);
+      assert.match(sheet, /featuredEntries\.map\(\(entry, index\) => \(\s*<ExerciseRow/);
+      assert.match(sheet, /renderItem=\{\(\{ item: entry, index \}\) => \(\s*<ExerciseRow/);
     },
   },
   {

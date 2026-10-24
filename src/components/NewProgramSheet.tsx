@@ -12,7 +12,9 @@ import { HevyImportPreview, isHevyHistoryCsv, parseHevyCsv } from '../lib/hevyIm
 import { I18nKey, t } from '../lib/i18n';
 import { WEIGHT_DIAL_MAX_KG } from '../lib/weightLimits';
 import type { ProgramImageImportResult } from '../utils/programImagePicker';
+import { ListCard } from './ListCard';
 import { ProLockIcon, ProPill } from './ProLockMarks';
+import { SheetHead } from './sheetKit';
 import type { AppLanguage, ExerciseLibraryItem, ExerciseNameBookEntry, WorkoutTemplateDraft } from '../types/models';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 
@@ -365,134 +367,127 @@ export function NewProgramSheet({
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.panelWrap} pointerEvents="box-none">
         <View style={[styles.panel, view === 'csv' && styles.panelTall, { paddingBottom: 28 + bottomInset }]}>
           <View style={styles.grabHandle} />
-          <View style={styles.headerRow}>
-            {view !== initialView ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'common.back')}
-                onPress={() => setView('menu')}
-                hitSlop={8}
-                style={styles.roundButton}
-              >
-                <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
-                  <Path d="M15 6l-6 6 6 6" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
-                </Svg>
-              </Pressable>
-            ) : (
-              <View style={styles.roundButtonSpacer} />
-            )}
-            <Text style={styles.headerTitle}>{t(language, view === 'csv' ? 'csv.title' : 'csv.newProgram')}</Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t(language, 'common.close')}
-              onPress={handleClose}
-              hitSlop={8}
-              style={styles.roundButton}
-            >
-              <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
-                <Path d="M6 6l12 12M18 6L6 18" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" />
-              </Svg>
-            </Pressable>
-          </View>
+          <SheetHead
+            title={t(language, view === 'csv' ? 'csv.title' : 'csv.newProgram')}
+            subtitle={view === 'menu' ? t(language, 'csv.pickHow') : null}
+            closeLabel={t(language, 'common.close')}
+            onClose={handleClose}
+            leading={
+              view !== initialView ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t(language, 'common.back')}
+                  onPress={() => setView('menu')}
+                  hitSlop={4}
+                  style={styles.roundButton}
+                >
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Path d="M15 6l-6 6 6 6" stroke={theme.ink} strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" />
+                  </Svg>
+                </Pressable>
+              ) : null
+            }
+          />
 
           {view === 'menu' ? (
             <View style={styles.menu}>
-              <Text style={styles.subtitle}>{t(language, 'csv.pickHow')}</Text>
-              {/* The catalog first. The brief drew it fourth and said so in its
-                  own notes — "probably the most-used door and it is currently
-                  last" — and the call on 2026-08-31 was to try it high. It
-                  only appears when a caller can actually open it. */}
-              {/* AI-assisted leads, then building it yourself (user
-                  2026-09-01). The catalog moved to the bottom: it is the
-                  widest door and it has its own screen, so it was the one
-                  option here that did not need to be first. */}
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(language, aiLocked ? 'csv.aiLockedA11y' : 'csv.aiA11y')}
-                onPress={() => {
-                  handleClose();
-                  if (aiLocked) {
-                    onOpenPaywall?.();
-                    return;
-                  }
-                  onAiAssisted();
-                }}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-              >
-                <View style={[styles.optionIconTile, styles.optionIconTileAccent]}>
-                  <OptionIcon name="spark" />
-                </View>
-                <View style={styles.optionCopy}>
-                  <View style={styles.optionTitleLine}>
-                    <Text style={styles.optionTitle}>{t(language, 'csv.ai')}</Text>
-                    {aiLocked ? <ProPill /> : null}
-                  </View>
-                  {/* The description stays: it is what makes the feature worth
-                      unlocking. The line under it says the price, so the
-                      padlock is not the only thing carrying that. */}
-                  <Text style={styles.optionBody}>{t(language, 'csv.aiBody')}</Text>
-                  {aiLocked ? (
-                    <Text style={styles.optionUnlock}>{t(language, 'csv.aiUnlock')}</Text>
-                  ) : null}
-                </View>
-                {aiLocked ? <ProLockIcon color={theme.purple} size={18} /> : <Chevron />}
-              </Pressable>
-              <Pressable
-                testID="new-program-build"
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'csv.buildA11y')}
-                onPress={() => {
-                  handleClose();
-                  onBuildYourself();
-                }}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-              >
-                <View style={styles.optionIconTile}>
-                  <OptionIcon name="build" />
-                </View>
-                <View style={styles.optionCopy}>
-                  <Text style={styles.optionTitle}>{t(language, 'csv.build')}</Text>
-                  <Text style={styles.optionBody}>{t(language, 'csv.buildBody')}</Text>
-                </View>
-                <Chevron />
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t(language, 'csv.importA11y')}
-                onPress={() => setView('csv')}
-                style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
-              >
-                <View style={styles.optionIconTile}>
-                  <OptionIcon name="table" />
-                </View>
-                <View style={styles.optionCopy}>
-                  <Text style={styles.optionTitle}>{t(language, 'csv.title')}</Text>
-                  <Text style={styles.optionBody}>{t(language, 'csv.importBody')}</Text>
-                </View>
-                <Chevron />
-              </Pressable>
-              {onBrowseCatalog ? (
+              <ListCard style={styles.menuCard}>
+                {/* The catalog first. The brief drew it fourth and said so in its
+                    own notes — "probably the most-used door and it is currently
+                    last" — and the call on 2026-08-31 was to try it high. It
+                    only appears when a caller can actually open it. */}
+                {/* AI-assisted leads, then building it yourself (user
+                    2026-09-01). The catalog moved to the bottom: it is the
+                    widest door and it has its own screen, so it was the one
+                    option here that did not need to be first. */}
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={t(language, 'csv.catalogA11y')}
+                  accessibilityLabel={t(language, aiLocked ? 'csv.aiLockedA11y' : 'csv.aiA11y')}
                   onPress={() => {
                     handleClose();
-                    onBrowseCatalog();
+                    if (aiLocked) {
+                      onOpenPaywall?.();
+                      return;
+                    }
+                    onAiAssisted();
+                  }}
+                  style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
+                >
+                  <View style={[styles.optionIconTile, styles.optionIconTileAccent]}>
+                    <OptionIcon name="spark" />
+                  </View>
+                  <View style={styles.optionCopy}>
+                    <View style={styles.optionTitleLine}>
+                      <Text style={styles.optionTitle}>{t(language, 'csv.ai')}</Text>
+                      {aiLocked ? <ProPill /> : null}
+                    </View>
+                    {/* The description stays: it is what makes the feature worth
+                        unlocking. The line under it says the price, so the
+                        padlock is not the only thing carrying that. */}
+                    <Text style={styles.optionBody}>{t(language, 'csv.aiBody')}</Text>
+                    {aiLocked ? (
+                      <Text style={styles.optionUnlock}>{t(language, 'csv.aiUnlock')}</Text>
+                    ) : null}
+                  </View>
+                  {aiLocked ? <ProLockIcon color={theme.purple} size={18} /> : <Chevron />}
+                </Pressable>
+                <Pressable
+                  testID="new-program-build"
+                  accessibilityRole="button"
+                  accessibilityLabel={t(language, 'csv.buildA11y')}
+                  onPress={() => {
+                    handleClose();
+                    onBuildYourself();
                   }}
                   style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
                 >
                   <View style={styles.optionIconTile}>
-                    <OptionIcon name="layers" />
+                    <OptionIcon name="build" />
                   </View>
                   <View style={styles.optionCopy}>
-                    <Text style={styles.optionTitle}>{t(language, 'csv.catalog')}</Text>
-                    <Text style={styles.optionBody}>
-                      {t(language, 'csv.catalogBody', { count: catalogCount })}
-                    </Text>
+                    <Text style={styles.optionTitle}>{t(language, 'csv.build')}</Text>
+                    <Text style={styles.optionBody}>{t(language, 'csv.buildBody')}</Text>
                   </View>
                   <Chevron />
                 </Pressable>
-              ) : null}
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t(language, 'csv.importA11y')}
+                  onPress={() => setView('csv')}
+                  style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
+                >
+                  <View style={styles.optionIconTile}>
+                    <OptionIcon name="table" />
+                  </View>
+                  <View style={styles.optionCopy}>
+                    <Text style={styles.optionTitle}>{t(language, 'csv.title')}</Text>
+                    <Text style={styles.optionBody}>{t(language, 'csv.importBody')}</Text>
+                  </View>
+                  <Chevron />
+                </Pressable>
+                {onBrowseCatalog ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={t(language, 'csv.catalogA11y')}
+                    onPress={() => {
+                      handleClose();
+                      onBrowseCatalog();
+                    }}
+                    style={({ pressed }) => [styles.optionCard, pressed && styles.pressed]}
+                  >
+                    <View style={styles.optionIconTile}>
+                      <OptionIcon name="layers" />
+                    </View>
+                    <View style={styles.optionCopy}>
+                      <Text style={styles.optionTitle}>{t(language, 'csv.catalog')}</Text>
+                      <Text style={styles.optionBody}>
+                        {t(language, 'csv.catalogBody', { count: catalogCount })}
+                      </Text>
+                    </View>
+                    <Chevron />
+                  </Pressable>
+                ) : null}
+              </ListCard>
             </View>
           ) : (
             <ScrollView contentContainerStyle={styles.csvContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
@@ -805,8 +800,10 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   panel: {
     borderTopLeftRadius: 26,
     borderTopRightRadius: 26,
-    backgroundColor: theme.bg,
-    paddingHorizontal: 20,
+    backgroundColor: theme.surface,
+    borderTopWidth: 1,
+    borderColor: theme.border,
+    paddingHorizontal: 16,
     paddingBottom: 28,
     shadowColor: '#140C28',
     shadowOpacity: 0.25,
@@ -824,31 +821,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 999,
     backgroundColor: theme.border,
     marginTop: 10,
-    marginBottom: 8,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 4,
-  },
-  headerTitle: {
-    color: theme.ink,
-    fontSize: 19,
-    lineHeight: 24,
-    fontWeight: '800',
+    marginBottom: 16,
   },
   roundButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: theme.purpleSoft,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: theme.border,
+    backgroundColor: theme.surfaceSoft,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  roundButtonSpacer: {
-    width: 34,
-    height: 34,
   },
   subtitle: {
     color: theme.muted,
@@ -858,23 +841,25 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     marginBottom: 14,
   },
   menu: {
-    paddingTop: 6,
-    gap: 12,
+    paddingTop: 16,
+  },
+  // The four ways in are one list, not four cards (menu redesign, 2026-10-24):
+  // surfaceSoft so the card reads against the sheet's own surface.
+  menuCard: {
+    backgroundColor: theme.surfaceSoft,
   },
   optionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 13,
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    padding: 15,
+    gap: 14,
+    minHeight: 64,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
   },
   optionIconTile: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
+    width: 40,
+    height: 40,
+    borderRadius: 12,
     backgroundColor: theme.purpleSoft,
     alignItems: 'center',
     justifyContent: 'center',
@@ -893,7 +878,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   optionTitle: {
     color: theme.ink,
-    fontSize: 16,
+    fontSize: 15,
     lineHeight: 20,
     fontWeight: '800',
   },
@@ -905,9 +890,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
   },
   optionBody: {
-    color: theme.muted,
-    fontSize: 12.5,
-    lineHeight: 17,
+    color: theme.faint,
+    fontSize: 13,
+    lineHeight: 18,
     fontWeight: '600',
   },
   pressed: {
@@ -923,7 +908,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     padding: 12,
     color: theme.ink,
     fontSize: 13,
@@ -985,7 +970,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     overflow: 'hidden',
   },
   previewHeader: {
@@ -1084,7 +1069,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 10,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     paddingHorizontal: 10,
     color: theme.ink,
     fontSize: 13,
@@ -1093,7 +1078,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 9,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
   },
   teachResultPressed: {
     backgroundColor: theme.purpleLight,
@@ -1119,7 +1104,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 13,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     paddingHorizontal: 13,
     color: theme.ink,
     fontSize: 14.5,
@@ -1148,7 +1133,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderRadius: 14,
     borderWidth: 1,
     borderColor: theme.border,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     padding: 14,
     gap: 10,
   },

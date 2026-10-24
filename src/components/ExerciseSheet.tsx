@@ -8,6 +8,7 @@ import { removeTrailingZeros } from '../lib/format';
 import { FREE_RECORD_MONTHS } from '../lib/historyWindow';
 import { t } from '../lib/i18n';
 import { ProLockIcon, ProPill } from './ProLockMarks';
+import { SheetCloseButton } from './sheetKit';
 import { Theme, useThemedStyles, useTheme } from '../theming';
 import { AppLanguage } from '../types/models';
 
@@ -237,9 +238,14 @@ export function ExerciseSheet({
               onAccessibilityAction={() => snapTo(!expandedRef.current)}
             >
               <View style={styles.grip} />
+            </View>
+            {/* The ✕ every sheet has (menu redesign, 2026-10-24): this one
+                closed by a pull or a tap above it only, which nobody is told. */}
+            <View style={styles.titleRow}>
               <Text style={styles.title} numberOfLines={2}>
                 {exerciseName}
               </Text>
+              <SheetCloseButton label={t(language, 'common.close')} onPress={onClose} />
             </View>
 
             <View style={styles.tabs}>
@@ -273,7 +279,9 @@ export function ExerciseSheet({
                     <Text style={styles.sectionLabel}>{t(language, 'guided.sheet.cues')}</Text>
                     {learn.cues.map((cue, index) => (
                       <View key={index} style={styles.stepRow}>
-                        <Text style={styles.stepIndex}>{index + 1}</Text>
+                        <View style={styles.stepBadge}>
+                          <Text style={styles.stepIndex}>{index + 1}</Text>
+                        </View>
                         <Text style={styles.stepText}>{cue}</Text>
                       </View>
                     ))}
@@ -344,7 +352,9 @@ export function ExerciseSheet({
                 {instructions.length > 0 ? (
                   instructions.map((instruction, index) => (
                     <View key={index} style={styles.stepRow}>
-                      <Text style={styles.stepIndex}>{index + 1}</Text>
+                      <View style={styles.stepBadge}>
+                          <Text style={styles.stepIndex}>{index + 1}</Text>
+                        </View>
                       <Text style={styles.stepText}>{instruction}</Text>
                     </View>
                   ))
@@ -508,9 +518,9 @@ export function ExerciseSheet({
 const makeStyles = (theme: Theme) => StyleSheet.create({
   veil: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'flex-end' },
   sheet: {
-    backgroundColor: theme.bg,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    backgroundColor: theme.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     paddingHorizontal: 20,
     paddingTop: 10,
     /*
@@ -539,7 +549,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.border,
     marginBottom: 14,
   },
-  title: { fontSize: 21, fontWeight: '800', letterSpacing: -0.5, color: theme.ink },
+  titleRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  title: { flex: 1, fontSize: 22, fontWeight: '800', letterSpacing: -0.4, lineHeight: 27, color: theme.ink },
   tabs: {
     flexDirection: 'row',
     gap: 6,
@@ -549,12 +560,12 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     padding: 4,
   },
   tab: { flex: 1, alignItems: 'center', paddingVertical: 9, borderRadius: 11 },
-  tabActive: { backgroundColor: theme.surface },
+  tabActive: { backgroundColor: theme.purpleLight },
   tabText: { fontSize: 13.5, fontWeight: '700', color: theme.muted },
   tabTextActive: { color: theme.ink, fontWeight: '800' },
   body: { flex: 1, marginTop: 16 },
   checkCard: {
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     borderWidth: 1.5,
     borderColor: theme.purpleLight,
     borderRadius: 16,
@@ -599,12 +610,21 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   photoInitials: { fontSize: 46, fontWeight: '800', color: theme.faint },
   sectionLabel: { fontSize: 10.5, fontWeight: '800', letterSpacing: 1.3, color: theme.faint },
   stepRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
+  // A numbered disc, so the steps read as steps at a glance.
+  stepBadge: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: theme.purpleLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -2,
+  },
   stepIndex: {
-    width: 20,
     fontSize: 13,
     fontWeight: '800',
-    color: theme.faint,
-    lineHeight: 21,
+    color: theme.purpleBright,
+    lineHeight: 16,
     fontVariant: ['tabular-nums'],
   },
   stepText: { flex: 1, fontSize: 14.5, fontWeight: '600', color: theme.ink, lineHeight: 21 },
@@ -622,7 +642,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   statRow: { flexDirection: 'row', gap: 10 },
   stat: {
     flex: 1,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     borderWidth: 1.5,
     borderColor: theme.purpleLight,
     borderRadius: 14,
@@ -678,7 +698,7 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    backgroundColor: theme.surface,
+    backgroundColor: theme.surfaceSoft,
     borderWidth: 1.5,
     borderColor: theme.purpleLight,
     borderRadius: 16,
