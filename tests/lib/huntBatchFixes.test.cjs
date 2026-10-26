@@ -19,6 +19,7 @@ function adapted(exerciseName, trackingMode, weightKg, reps) {
     slotId: `slot_${exerciseName}`,
     exerciseName,
     persistedExerciseTemplateId: null,
+    tracked: true,
     trackingMode,
     notes: null,
     sets: [{ orderIndex: 0, status: 'completed', weightKg, reps }],

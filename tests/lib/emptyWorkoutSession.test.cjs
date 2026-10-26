@@ -16,7 +16,7 @@ const {
   resolveFreestyleSaveTarget,
 } = require('../../.test-dist/lib/emptyWorkoutSession.js');
 
-const emptyPrLookup = { byLibraryItemId: {}, byName: {} };
+const emptyPrLookup = { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} };
 
 function makeExercise(overrides = {}) {
   return {
@@ -227,7 +227,7 @@ module.exports = [
         startedAtIso: '2026-07-22T10:00:00.000Z',
         performedAtIso: '2026-07-22T10:40:00.000Z',
         elapsedSeconds: 600,
-        exercisePrLookup: { byLibraryItemId: { ex_squat: { weight: 140, reps: 5 } }, byName: {} },
+        exercisePrLookup: { byLibraryItemId: { ex_squat: { weight: 140, reps: 5 } }, byName: {}, namesWithRecordsRow: {} },
       });
       assert.equal(beaten.summary.prCards.length, 0);
     },

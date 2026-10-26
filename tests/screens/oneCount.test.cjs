@@ -91,7 +91,7 @@ module.exports = [
           startedAtIso: new Date(Date.parse(iso) - 40 * 60000).toISOString(),
           performedAtIso: iso,
           elapsedSeconds: 2400,
-          exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+          exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
         });
         return persistCompletedWorkoutSessionToDatabase(database, {
           sessionId: id('session'), workoutTemplateId: 'tpl_free', workoutNameSnapshot: summary.workoutName,

@@ -395,10 +395,14 @@ export function getLiftProgress(
     return null;
   }
   // Each log sits in exactly one tracked summary, so the union has no repeats.
-  return finalizeExerciseSummary(
-    normalizeExerciseKey(name),
-    name,
-    matching.flatMap((summary) => summary.logs),
+  // The story from the tracked logs, the bests from every performed set — as
+  // each summary is built. Built from `logs` alone, the card called an 85 kg
+  // bench "Uusi ennätys" over a 100 kg set done in an untracked slot that
+  // Records already showed (bug hunt, 2026-10-26).
+  const key = normalizeExerciseKey(name);
+  return withBestsFrom(
+    finalizeExerciseSummary(key, name, matching.flatMap((summary) => summary.logs)),
+    finalizeExerciseSummary(key, name, matching.flatMap((summary) => summary.allLogs)),
   );
 }
 
@@ -450,6 +454,44 @@ export function getLiftHistoryByName(database: AppDatabase): Map<string, LiftHis
   return byName;
 }
 
+/**
+ * The lifts that get a row on Records, keyed the way the rows are: tracked in
+ * at least one performed log, or named by a target.
+ *
+ * About 300 of the ready programmes' slots are `progressionPriority: 'low'` —
+ * warm-ups, mobility, the accessory after the main lift — and they are logged
+ * untracked, so Records stays the lifts the programmes progress. The finish
+ * screen's record card and the morning-after notification read this same set:
+ * they called a Lateral Raise a new record that Records had no row for (bug
+ * hunt, 2026-10-26). A notice for a number the list never shows is a claim
+ * the reader cannot find again.
+ */
+export function liftKeysWithRecordsRow(
+  database: Pick<AppDatabase, 'exerciseLogs' | 'workoutSessions' | 'exerciseTemplates'> & {
+    preferences?: Pick<AppDatabase['preferences'], 'strengthGoals'>;
+  },
+): Set<string> {
+  const exercisesById = Object.fromEntries(
+    database.exerciseTemplates.map((exercise) => [exercise.id, exercise] as const),
+  );
+  const sessionIds = new Set(database.workoutSessions.map((session) => session.id));
+  const keys = new Set<string>();
+  for (const log of database.exerciseLogs) {
+    // The same logs the rows are built from: performed, and in a session.
+    if (!log.tracked || log.skipped || !sessionIds.has(log.sessionId) || !logRecordedWork(log)) {
+      continue;
+    }
+    keys.add(normalizeExerciseKey(resolveCanonicalExerciseName(log, exercisesById)));
+  }
+  for (const goal of database.preferences?.strengthGoals ?? []) {
+    const name = goal.exerciseName.trim();
+    if (name) {
+      keys.add(normalizeExerciseKey(name));
+    }
+  }
+  return keys;
+}
+
 export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgressSummary[] {
   const exercisesById = Object.fromEntries(
     database.exerciseTemplates.map((exercise) => [exercise.id, exercise] as const),
@@ -459,7 +501,7 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
   );
   const grouped = new Map<
     string,
-    { name: string; logs: ExerciseLogWithSession[]; trackedLogs: ExerciseLogWithSession[]; anyTracked: boolean }
+    { name: string; logs: ExerciseLogWithSession[]; trackedLogs: ExerciseLogWithSession[] }
   >();
 
   database.exerciseLogs.forEach((log) => {
@@ -485,23 +527,21 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
         existing.trackedLogs.push(attachedLog);
       }
       existing.name = name;
-      existing.anyTracked = existing.anyTracked || log.tracked;
       return;
     }
 
-    grouped.set(key, { name, logs: [attachedLog], trackedLogs: log.tracked ? [attachedLog] : [], anyTracked: log.tracked });
+    grouped.set(key, { name, logs: [attachedLog], trackedLogs: log.tracked ? [attachedLog] : [] });
   });
 
   // Tracking decides which lifts get a row, not which sets count for it. A
   // heavier performed set is a record whatever the slot's progression
   // priority was; buildExercisePrLookup (the completion screen's PR badge)
   // already counts every log, so Records read 100 where the badge read 110
-  // (bug hunt, 2026-10-04). A lift never tracked anywhere still gets no row.
-  const goalKeys = new Set(
-    (database.preferences.strengthGoals ?? []).map((goal) => normalizeExerciseKey(goal.exerciseName.trim())),
-  );
-  for (const [key, group] of [...grouped.entries()]) {
-    if (!group.anyTracked && !goalKeys.has(key)) {
+  // (bug hunt, 2026-10-04). A lift never tracked anywhere still gets no row
+  // — and, by the same rule (liftKeysWithRecordsRow), no record notice.
+  const rowKeys = liftKeysWithRecordsRow(database);
+  for (const key of [...grouped.keys()]) {
+    if (!rowKeys.has(key)) {
       grouped.delete(key);
     }
   }
@@ -528,7 +568,7 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
     if (grouped.has(key)) {
       return;
     }
-    grouped.set(key, { name, logs: [], trackedLogs: [], anyTracked: false });
+    grouped.set(key, { name, logs: [], trackedLogs: [] });
   });
 
   return Array.from(grouped.entries())

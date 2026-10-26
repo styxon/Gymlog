@@ -37,6 +37,7 @@ function priorLog(sessionId, weightKg, reps) {
     weight: weightKg,
     repsPerSet: [reps],
     sets: [],
+    tracked: true,
     skipped: false,
   };
 }
@@ -50,6 +51,7 @@ function completionCards(weightKg, reps, exercisePrLookup) {
         slotId: 'bench',
         exerciseName: 'Bench Press',
         persistedExerciseTemplateId: null,
+        tracked: true,
         trackingMode: 'load_and_reps',
         notes: null,
         sets: [{ orderIndex: 0, status: 'completed', weightKg, reps }],
@@ -273,7 +275,7 @@ module.exports = [
     // set at 0 kg produces no weight candidate at all.
     name: 'an unloaded set never earns a weight record',
     run() {
-      const emptyLookup = { byLibraryItemId: {}, byName: {} };
+      const emptyLookup = { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} };
       assert.equal(completionCards(0, 12, emptyLookup).length, 0, 'completion screen');
       assert.equal(freestyleCards(0, 12, emptyLookup).length, 0, 'freestyle completion');
 

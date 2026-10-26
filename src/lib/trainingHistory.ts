@@ -391,7 +391,10 @@ export function stalledRunPoints(lift: Pick<LiftHistory, 'points' | 'stalledSess
   // lift logged at a lighter weight earlier in the same workout) sits inside the
   // slice. The run is the points at the run's weight, as `buildLiftHistories`
   // counts it.
-  const latest = lift.points[lift.points.length - 1];
+  // The run's weight is the latest session's best, as `buildLiftHistories`
+  // reads it — not the last log, which may be that session's back-off.
+  const sessionPoints = sessionBestPoints(lift);
+  const latest = sessionPoints[sessionPoints.length - 1];
   const atRunWeight = latest
     ? lift.points.slice(start).filter((point) => Math.abs(point.topSetWeightKg - latest.topSetWeightKg) < 0.001)
     : [];
@@ -446,20 +449,33 @@ export function buildLiftHistories(
 
   for (const [key, bucket] of buckets) {
     const points = [...bucket.points].sort((left, right) => left.time - right.time);
-    const first = points[0];
-    const latest = points[points.length - 1];
+    // First and latest are sessions, each at its heaviest top set, as the
+    // bars beside them are. Per log, a lighter back-off log of the lift in the
+    // last workout sorted last: 60 → 65 → 70 + 50 read "-10 kg", "Laskussa"
+    // (bug hunt, 2026-10-26).
+    const sessionPoints = sessionBestPoints({ points });
+    const first = sessionPoints[0];
+    const latest = sessionPoints[sessionPoints.length - 1];
 
     // The run at the latest weight, counted in SESSIONS: the same lift logged
     // twice in one workout is one session, not two (a plateau after two
     // workouts otherwise). `points` keeps one entry per log for the charts.
-    let runStart = points.length - 1;
+    let runStart = sessionPoints.length - 1;
     while (
       runStart > 0 &&
-      Math.abs(points[runStart - 1].topSetWeightKg - latest.topSetWeightKg) < 0.001
+      Math.abs(sessionPoints[runStart - 1].topSetWeightKg - latest.topSetWeightKg) < 0.001
     ) {
       runStart -= 1;
     }
-    const stalledSessions = sessionsSinceRepBest(collapseBySession(points.slice(runStart)));
+    const runSessionIds = new Set(sessionPoints.slice(runStart).map((point) => point.sessionId));
+    const stalledSessions = sessionsSinceRepBest(
+      collapseBySession(
+        points.filter(
+          (point) =>
+            runSessionIds.has(point.sessionId) && Math.abs(point.topSetWeightKg - latest.topSetWeightKg) < 0.001,
+        ),
+      ),
+    );
 
     histories.push({
       key,
