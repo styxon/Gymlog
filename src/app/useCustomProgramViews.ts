@@ -127,14 +127,20 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
     [database.exerciseLogs, database.exerciseTemplates, database.workoutSessions, exerciseLibrary],
   );
   const recentExerciseBrowserItems = recentExerciseLibraryItems;
+  // The targets, for which lifts have a Records row: a record is announced only on one.
+  const recordRowPreferences = useMemo(
+    () => ({ strengthGoals: database.preferences.strengthGoals }),
+    [database.preferences.strengthGoals],
+  );
   const exercisePrLookup = useMemo(
     () =>
       buildExercisePrLookup({
         exerciseLogs: database.exerciseLogs,
         workoutSessions: database.workoutSessions,
         exerciseTemplates: database.exerciseTemplates,
+        preferences: recordRowPreferences,
       }),
-    [database.exerciseLogs, database.exerciseTemplates, database.workoutSessions],
+    [database.exerciseLogs, database.exerciseTemplates, database.workoutSessions, recordRowPreferences],
   );
   // What a free workout board's Finish compares against: without its own earlier save when it is one
   // carried on after it (the guided finish does the same in finishSaves).
@@ -145,11 +151,12 @@ export function useCustomProgramViews(deps: CustomProgramViewsDeps) {
           exerciseLogs: database.exerciseLogs,
           workoutSessions: database.workoutSessions,
           exerciseTemplates: database.exerciseTemplates,
+          preferences: recordRowPreferences,
         },
         sessionId,
         exercisePrLookup,
       ),
-    [database.exerciseLogs, database.exerciseTemplates, database.workoutSessions, exercisePrLookup],
+    [database.exerciseLogs, database.exerciseTemplates, database.workoutSessions, recordRowPreferences, exercisePrLookup],
   );
 
   return {

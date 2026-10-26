@@ -1,5 +1,6 @@
 import { WeightedSet, beatsBest, heaviestOfSets, recordSetsOfLog } from './personalRecords';
-import { ExerciseLog, ExerciseTemplate, WorkoutSession } from '../types/models';
+import { liftKeysWithRecordsRow } from './progression';
+import { AppPreferences, ExerciseLog, ExerciseTemplate, WorkoutSession } from '../types/models';
 
 export interface WorkoutCompletionExerciseCard {
   id: string;
@@ -33,6 +34,32 @@ export interface WorkoutCompletionPrCard {
 export interface ExercisePrLookup {
   byLibraryItemId: Record<string, WeightedSet>;
   byName: Record<string, WeightedSet>;
+  /** Lowercased names of the lifts Records has a row for (liftKeysWithRecordsRow). */
+  namesWithRecordsRow: Record<string, true>;
+}
+
+type PrLookupTables = {
+  exerciseLogs: ExerciseLog[];
+  workoutSessions: WorkoutSession[];
+  exerciseTemplates: ExerciseTemplate[];
+  /** For the targets: a target lift has a Records row however it was logged. */
+  preferences?: Pick<AppPreferences, 'strengthGoals'>;
+};
+
+/**
+ * Whether a record on this lift is one to announce: the lift is tracked in
+ * this workout, or Records already has its row. The finish screen's card and
+ * the morning-after notification name only a number Records shows — an
+ * untracked Lateral Raise beat itself and got a card Records had no row for
+ * (bug hunt, 2026-10-26).
+ */
+export function announcesRecord(
+  lookup: ExercisePrLookup,
+  exerciseName: string,
+  /** Tracked in any row of this workout: a second, untracked row of the lift shares the row. */
+  trackedHere: boolean,
+): boolean {
+  return trackedHere || lookup.namesWithRecordsRow[normalize(exerciseName)] === true;
 }
 
 function normalize(value: string) {
@@ -67,11 +94,8 @@ export function buildExercisePrLookup({
   exerciseLogs,
   workoutSessions,
   exerciseTemplates,
-}: {
-  exerciseLogs: ExerciseLog[];
-  workoutSessions: WorkoutSession[];
-  exerciseTemplates: ExerciseTemplate[];
-}): ExercisePrLookup {
+  preferences,
+}: PrLookupTables): ExercisePrLookup {
   const sessionsById = new Map(workoutSessions.map((session) => [session.id, session] as const));
   const templatesById = new Map(exerciseTemplates.map((exercise) => [exercise.id, exercise] as const));
 
@@ -103,9 +127,15 @@ export function buildExercisePrLookup({
     }
   });
 
+  const namesWithRecordsRow: Record<string, true> = {};
+  liftKeysWithRecordsRow({ exerciseLogs, workoutSessions, exerciseTemplates, preferences }).forEach((key) => {
+    namesWithRecordsRow[key] = true;
+  });
+
   return {
     byLibraryItemId: Object.fromEntries(bestByLibraryItemId),
     byName: Object.fromEntries(bestByName),
+    namesWithRecordsRow,
   };
 }
 
@@ -116,7 +146,7 @@ export function buildExercisePrLookup({
  * `full` is returned when the database holds no such workout, so the common finish rebuilds nothing.
  */
 export function buildExercisePrLookupBefore(
-  tables: { exerciseLogs: ExerciseLog[]; workoutSessions: WorkoutSession[]; exerciseTemplates: ExerciseTemplate[] },
+  tables: PrLookupTables,
   sessionId: string | null | undefined,
   full: ExercisePrLookup,
 ): ExercisePrLookup {
@@ -127,6 +157,7 @@ export function buildExercisePrLookupBefore(
     exerciseLogs: tables.exerciseLogs.filter((log) => log.sessionId !== sessionId),
     workoutSessions: tables.workoutSessions.filter((session) => session.id !== sessionId),
     exerciseTemplates: tables.exerciseTemplates,
+    preferences: tables.preferences,
   });
 }
 
@@ -155,11 +186,8 @@ export function findLatestSessionPr({
   workoutSessions,
   exerciseLogs,
   exerciseTemplates,
-}: {
-  workoutSessions: WorkoutSession[];
-  exerciseLogs: ExerciseLog[];
-  exerciseTemplates: ExerciseTemplate[];
-}): LatestSessionPr | null {
+  preferences,
+}: PrLookupTables): LatestSessionPr | null {
   let latestSession: WorkoutSession | null = null;
   let latestAtMs = Number.NEGATIVE_INFINITY;
   for (const session of workoutSessions) {
@@ -179,9 +207,12 @@ export function findLatestSessionPr({
     exerciseLogs: exerciseLogs.filter((log) => log.sessionId !== latest.id),
     workoutSessions: workoutSessions.filter((session) => session.id !== latest.id),
     exerciseTemplates,
+    preferences,
   });
 
   const templatesById = new Map(exerciseTemplates.map((exercise) => [exercise.id, exercise] as const));
+  // The rows Records has once this session is in: tracked in any of its logs, before or now.
+  const rowKeys = liftKeysWithRecordsRow({ exerciseLogs, workoutSessions, exerciseTemplates, preferences });
   const candidates: LatestSessionPr[] = [];
 
   exerciseLogs
@@ -194,7 +225,7 @@ export function findLatestSessionPr({
         lookup: priorLookup,
       });
 
-      if (previousBest === null) {
+      if (previousBest === null || !rowKeys.has(normalize(log.exerciseNameSnapshot))) {
         return;
       }
 

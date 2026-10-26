@@ -13,6 +13,7 @@ import { isDoseLog } from '../lib/holdExercises';
 import { beatsBest, heaviestOfSets, WeightedSet } from '../lib/personalRecords';
 import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
 import {
+  announcesRecord,
   buildExercisePrLookup,
   resolvePreviousExercisePr,
   WorkoutCompletionExerciseCard,
@@ -187,6 +188,9 @@ export function buildCompletionCardsFromAdaptedSession({
     };
   });
 
+  const trackedHere = new Set(
+    exercises.filter((exercise) => exercise.tracked).map((exercise) => exercise.exerciseName.trim().toLowerCase()),
+  );
   const prCards: WorkoutCompletionPrCard[] = exercises
     .map((exercise): WorkoutCompletionPrCard | null => {
       const template = exercise.persistedExerciseTemplateId
@@ -195,7 +199,8 @@ export function buildCompletionCardsFromAdaptedSession({
       const libraryItem = template?.libraryItemId ? libraryById.get(template.libraryItemId) ?? null : null;
       const bestSet = heaviestOfSets(recordSetsOfExercise(exercise));
 
-      if (!bestSet) {
+      // A record Records will show, or none: an untracked accessory has no row there.
+      if (!bestSet || !announcesRecord(exercisePrLookup, exercise.exerciseName, trackedHere.has(exercise.exerciseName.trim().toLowerCase()))) {
         return null;
       }
 
