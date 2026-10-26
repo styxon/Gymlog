@@ -103,4 +103,21 @@ module.exports = [
       assert.equal(getProgressActivityDayStatus(day(20), { schedule: weekdaySchedule([0]) }), 'rest');
     },
   },
+  {
+    name: 'the Progress calendar fills only trained days: planned ones are outlined, missed ones quiet',
+    run() {
+      // The 1.1.0 build painted planned and missed days the same violet as
+      // trained ones, so October showed 18 filled squares beside "13 sessions"
+      // (store shots, 2026-10-26). Fixed in #420; this keeps the fill tied to
+      // 'done' alone.
+      const source = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '../../src/screens/ProgressScreen.tsx'),
+        'utf8',
+      );
+      assert.match(source, /const training = status === 'done';/);
+      assert.match(source, /const planned = status === 'upcoming';/);
+      assert.match(source, /training && styles\.calendarBubbleTraining,/);
+      assert.match(source, /planned && styles\.calendarBubblePlanned,/);
+    },
+  },
 ];

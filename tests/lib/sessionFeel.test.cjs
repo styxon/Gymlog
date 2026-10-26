@@ -97,7 +97,8 @@ module.exports = [
         'complete.feel.skip',
         'history.feel.heading',
         'history.feel.demanding',
-        'history.feel.balanced',
+        'history.feel.steady',
+        'history.feel.mixed',
         'history.feel.light',
         'history.feel.basis',
         'history.feel.tooFew',
@@ -159,11 +160,19 @@ module.exports = [
     },
   },
   {
-    name: 'sessionFeel: a lopsided run leans, a mixed one stays balanced',
+    name: 'sessionFeel: a lopsided run leans, a mixed one stays mixed',
     run() {
       assert.equal(summariseSessionFeel([s('hard'), s('hard'), s('too_hard')]).read, 'demanding');
       assert.equal(summariseSessionFeel([s('easy'), s('easy'), s('easy')]).read, 'light');
-      assert.equal(summariseSessionFeel([s('right'), s('right'), s('right')]).read, 'balanced');
+      // A run of "just right" is steady, never "mixed" — the 1.1.0 history card
+      // said "Mixed, from 12 of 12 sessions" to someone who had answered
+      // "Just right" every time.
+      assert.equal(summariseSessionFeel([s('right'), s('right'), s('right')]).read, 'steady');
+      assert.equal(summariseSessionFeel(Array.from({ length: 12 }, () => s('right'))).read, 'steady');
+      assert.equal(
+        summariseSessionFeel([s('right'), s('right'), s('right'), s('hard'), s('easy')]).read,
+        'steady',
+      );
 
       // Three hard out of five is 0.6 — the lean starts exactly here.
       assert.equal(
@@ -173,7 +182,7 @@ module.exports = [
       // Two of five is not.
       assert.equal(
         summariseSessionFeel([s('hard'), s('hard'), s('right'), s('right'), s('easy')]).read,
-        'balanced',
+        'mixed',
       );
     },
   },
@@ -184,7 +193,13 @@ module.exports = [
       // that felt too hard are not "just right", and filing them there would
       // hide exactly the pattern worth looking at.
       const split = summariseSessionFeel([s('easy'), s('too_hard'), s('easy'), s('too_hard')]);
-      assert.equal(split.read, 'balanced');
+      assert.equal(split.read, 'mixed');
+
+      // Light against hard with nothing dominating is mixed too.
+      assert.equal(
+        summariseSessionFeel([s('easy'), s('hard'), s('easy'), s('hard'), s('right')]).read,
+        'mixed',
+      );
       assert.equal(split.tooHardCount, 2, 'the brutal sessions stay visible on their own');
     },
   },
