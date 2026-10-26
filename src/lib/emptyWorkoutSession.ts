@@ -18,6 +18,7 @@ import {
   ExercisePrLookup,
   WorkoutCompletionExerciseCard,
   WorkoutCompletionPrCard,
+  announcesRecord,
   resolvePreviousExercisePr,
 } from './workoutCompletionSummary';
 import { buildPersistedSessionNames } from './workoutEditorNaming';
@@ -1029,6 +1030,9 @@ export function buildFreestyleFinish({
     notes: null,
   }));
 
+  const trackedHere = new Set(
+    named.filter((exercise) => exercise.trackedDefault).map((exercise) => exercise.name.trim().toLowerCase()),
+  );
   const prCards: WorkoutCompletionPrCard[] = named
     .map((exercise): WorkoutCompletionPrCard | null => {
       const doneSets = exercise.sets
@@ -1037,7 +1041,8 @@ export function buildFreestyleFinish({
         .filter((set): set is { weight: number; reps: number } => set.weight !== null && set.reps !== null);
       const bestSet = heaviestOfSets(doneSets);
 
-      if (!bestSet) {
+      // A record Records will show, or none: an untracked lift has no row there.
+      if (!bestSet || !announcesRecord(exercisePrLookup, exercise.name, trackedHere.has(exercise.name.trim().toLowerCase()))) {
         return null;
       }
 

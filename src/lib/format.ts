@@ -259,13 +259,23 @@ export function formatVolume(value: number, _unitPreference: UnitPreference = 'k
   return `${groupThousands(value)} kg`;
 }
 
-/** Compact lifetime/monthly volume: "412 kg", "4.5 t". */
+/**
+ * Compact lifetime/monthly volume: "412 kg", "4.5 t", "1 250 t".
+ *
+ * Rounded first, the unit chosen after: 999.6 kg was under 1000 when the unit
+ * was picked and printed "1000 kg" (bug hunt, 2026-10-26). Whole tonnes are
+ * grouped like every other big number, so 999 999 kg reads "1 000 t".
+ */
 export function formatCompactVolume(totalKg: number, _unitPreference: UnitPreference = 'kg') {
-  if (totalKg >= 1000) {
-    const tonnes = totalKg / 1000;
-    return `${removeTrailingZeros(Number(tonnes.toFixed(tonnes >= 100 ? 0 : 1)))} t`;
+  const kg = Math.round(totalKg);
+  if (kg < 1000) {
+    return `${removeTrailingZeros(kg)} kg`;
   }
-  return `${removeTrailingZeros(Math.round(totalKg))} kg`;
+  const tenthsOfTonne = Math.round(totalKg / 100) / 10;
+  if (tenthsOfTonne < 100) {
+    return `${removeTrailingZeros(tenthsOfTonne)} t`;
+  }
+  return `${groupThousands(totalKg / 1000)} t`;
 }
 
 export function formatDurationMinutes(totalMinutes: number) {

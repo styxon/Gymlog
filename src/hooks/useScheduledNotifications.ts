@@ -66,6 +66,7 @@ export function useScheduledNotifications(
         workoutSessions: database.workoutSessions,
         exerciseLogs: database.exerciseLogs,
         exerciseTemplates: database.exerciseTemplates,
+        preferences: database.preferences,
       }),
       // So this morning's nudge disappears once the scale has been used.
       lastBodyweightAtMs: database.bodyweightEntries.reduce<number | null>((latest, entry) => {
@@ -94,6 +95,7 @@ export function useScheduledNotifications(
       database.exerciseTemplates,
       database.bodyweightEntries,
       database.measurementEntries,
+      database.preferences.strengthGoals,
       foregroundTick,
     ],
   );

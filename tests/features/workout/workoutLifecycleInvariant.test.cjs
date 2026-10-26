@@ -1096,7 +1096,7 @@ function finishDeps(proc, ev) {
       proc.runExclusive(async () => {
         await proc.part.commit(workoutTemplateRepository.remove(proc.dbRef.current, id));
       }),
-    exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+    exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
     setCompletionSummary: (summary) => {
       if (summary) {
         assertDurable(summary.sessionId, 'the completion summary was shown');
@@ -1398,7 +1398,7 @@ async function finishFreestyle(ev) {
     startedAtIso: new Date(board.startedAtMs ?? world.now).toISOString(),
     performedAtIso: new Date(world.now).toISOString(),
     elapsedSeconds: 600,
-    exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+    exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
     sessionId: board.sessionId,
   });
   // A true retry: a session already saved under this board's id with exactly these sets. Anything else must be written.

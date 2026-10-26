@@ -186,7 +186,7 @@ module.exports = [
         exercises: adapted.exercises,
         exerciseTemplates: [],
         exerciseLibrary: [],
-        exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+        exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
         language: 'fi',
       });
       assert.equal(exerciseCards.filter((card) => card.completedSets > 0).length, saved.summary.exercisesCompleted);
@@ -213,7 +213,7 @@ module.exports = [
         startedAtIso: '2026-09-15T16:20:00.000Z',
         performedAtIso: '2026-09-15T17:00:00.000Z',
         elapsedSeconds: 2400,
-        exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+        exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
       });
       assert.equal(summary.exercisesLogged, 1, 'every named row counted');
 

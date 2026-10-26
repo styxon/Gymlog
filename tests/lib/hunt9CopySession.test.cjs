@@ -259,7 +259,7 @@ module.exports = [
         startedAtIso: new Date(started).toISOString(),
         performedAtIso: new Date(stale.performedAtMs).toISOString(),
         elapsedSeconds: stale.elapsedSeconds,
-        exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+        exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
       });
       assert.equal(summary.durationMinutes, 60);
       assert.equal(summary.performedAt, new Date(lastEdit).toISOString());

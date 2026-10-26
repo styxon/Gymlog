@@ -6,6 +6,7 @@ const exercise = (slotId, name, weightKg, reps) => ({
   slotId,
   exerciseName: name,
   persistedExerciseTemplateId: null,
+  tracked: true,
   trackingMode: 'load_and_reps',
   notes: null,
   sets: [{ orderIndex: 0, status: 'completed', weightKg, reps }],
@@ -31,7 +32,7 @@ module.exports = [
         ],
         exerciseTemplates: [],
         exerciseLibrary: [],
-        exercisePrLookup: { byLibraryItemId: {}, byName: {} },
+        exercisePrLookup: { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} },
         language: 'en',
       });
       assert.deepEqual(
