@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 /**
  * Every Modal in the app, and how it keeps out of another one's way on iOS.
@@ -264,7 +265,7 @@ module.exports = [
   {
     name: 'iOS modal sequencing: the hand-off\'s hop to the Pro page lands in the same render as its write',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       // Not a transition: the route and the Pro-step write commit together, so
       // the second half is never due on the old route for a frame.
       const body = app.match(/function navigateNow\(nextRoute: AppRoute\) \{([\s\S]*?)\n  \}/);
@@ -318,7 +319,7 @@ module.exports = [
       // And the shell's modals, from App: the walls, the import, the rating
       // ask and the update dialog.
       assert.match(
-        read('App.tsx'),
+        readAppWiring(),
         /shellSheetOpen: programLimitVisible \|\| runningCapSheet\.visible \|\| settingsImportVisible \|\| ratingSheetVisible \|\| appUpdateShown,/,
       );
       assert.match(

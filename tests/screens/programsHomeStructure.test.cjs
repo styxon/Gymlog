@@ -587,7 +587,7 @@ module.exports = [
     name: 'programs tab: the active programme leads, and a target can be removed',
     run() {
       const home = read('src', 'screens', 'ProgramsHomeScreen.tsx');
-      const app = read('App.tsx');
+      const app = readAppWiring();
       // "Omat ohjelmasi", bounded to its own memo and found in the shell: it
       // left App.tsx for useProgramsCustomItems (phase-C split, 2026-10-01).
       // CRLF-normalised: the end anchor spans line breaks, and a Windows

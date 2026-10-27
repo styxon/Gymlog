@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
+const { readAppWiring } = require('../../helpers/appWiringSource.cjs');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeAsyncStorage.cjs');
 
@@ -317,7 +318,7 @@ const compileAppProviderPart = (() => {
   return new Function(`'use strict';\n${js}\nreturn __part;`)();
 })();
 
-const APP_SHELL = fs.readFileSync(path.join(ROOT, 'App.tsx'), 'utf8').replace(/\r\n/g, '\n');
+const APP_SHELL = readAppWiring().replace(/\r\n/g, '\n');
 const NAVIGATE_SOURCE = liftFunction(APP_SHELL, 'function navigateToActiveWorkout(options?: { message?: string; resume?: boolean }) {');
 
 /** App.tsx's navigateToActiveWorkout, the door every Start goes through, run as written. */

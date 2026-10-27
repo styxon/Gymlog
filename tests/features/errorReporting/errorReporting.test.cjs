@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 const React = require('react');
+const { readAppWiring } = require('../../helpers/appWiringSource.cjs');
 
 const { flush, requireWithStubs } = require('../../helpers/hookHarness.cjs');
 
@@ -178,7 +179,7 @@ module.exports = [
         'the error handlers first, the identity second',
       );
       assert.ok(imports.indexOf('./App') > 1, 'App after both');
-      assert.ok(!/registerAppIdentity\(/.test(read('App.tsx')), 'registered once, before App, not again at its bottom');
+      assert.ok(!/registerAppIdentity\(/.test(readAppWiring()), 'registered once, before App, not again at its bottom');
 
       const signal = require(path.join(DIST, 'features', 'appUpdate', 'appUpdateSignal.js'));
       signal.registerAppIdentity(undefined, undefined);
@@ -963,7 +964,7 @@ module.exports = [
 
       // Wired: the workout tab and the finish screens are drawn inside the area boundary, the provider marks its
       // reducer (where the stored bundle is applied), and the shell marks its read of the session for Home.
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(app, /const inWorkoutArea = \(node: React\.ReactNode\) => \(node == null \? node : <WorkoutAreaBoundary>\{node\}<\/WorkoutAreaBoundary>\);/);
       assert.match(app, /content = inWorkoutArea\(renderWorkoutTab\(\{/);
       assert.match(app, /content = inWorkoutArea\(renderWorkoutCompletion\(\{/);

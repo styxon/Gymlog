@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { between, functionBody } = require('../helpers/sourceSlices.cjs');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const { createTemplateLeaveGuard, releaseHeldLeave } = require('../../.test-dist/lib/templateLeaveGuard.js');
 const { pushRoute, popRoute, withoutTrailingRoute } = require('../../.test-dist/navigation/routeHistory.js');
@@ -17,7 +18,7 @@ module.exports = [
     // builder without the question its Back asks.
     name: 'hunt 11 #1: widget, notification and lock-screen taps ask the builder before dropping its draft',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(
         functionBody(app, '  function resetToRouteThroughGuard('),
         /leaveThroughScreenGuard\(\(\) => resetToRoute\(nextRoute\)\);/,
@@ -100,7 +101,7 @@ module.exports = [
       const other = { tab: 'workout', screen: 'summary' };
       assert.deepEqual(withoutTrailingRoute(history, other), history);
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(
         functionBody(app, '  function replaceRoute('),
         /history: withoutTrailingRoute\(current\.history, nextRoute\),/,
@@ -128,7 +129,7 @@ module.exports = [
         /await writeTrainingDays\(days\);\s*\} catch \(error\) \{\s*saveRefused\(error\);/,
       );
       assert.match(
-        functionBody(read('App.tsx'), '  async function handlePickTodaySession('),
+        functionBody(readAppWiring(), '  async function handlePickTodaySession('),
         /catch \(error\) \{[\s\S]*reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
       );
       assert.match(

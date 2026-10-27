@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const { getReadyTemplatePresentation, runningProgrammeTitle } = require('../../.test-dist/lib/templatePresentation.js');
 const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
@@ -30,7 +31,7 @@ module.exports = [
       const home = read('src/app/useHomeActivePlan.ts');
       assert.match(home, /runningProgrammeTitle\(readyPlanTemplate, activeWorkoutPlan\.name, preferences\.appLanguage\)/);
       assert.doesNotMatch(home, /activeWorkoutPlan\.name \|\| activeTemplate\.name/, 'Home reads the stored plan name first again');
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(app, /runningProgrammeTitleOf\(/);
       assert.doesNotMatch(
         between(app, 'const runningProgrammeTitle = useCallback(', '[preferences.appLanguage],'),

@@ -34,7 +34,7 @@ const workoutsScreenSource = fs.readFileSync(
 );
 const routesSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'navigation', 'routes.ts'), 'utf8');
 const i18nSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'i18n.ts'), 'utf8');
-const appSource = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
+const appSource = readAppWiring();
 // The whole shell — App.tsx plus the src/app modules the phase-A and phase-B
 // splits (2026-08-26, 2026-09-30) moved VinhaApp's wiring into — for the
 // absence guards: a name or a shape that must not come back must not come

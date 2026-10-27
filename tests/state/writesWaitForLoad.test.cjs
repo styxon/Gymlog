@@ -83,7 +83,7 @@ module.exports = [
   {
     name: 'writesWaitForLoad: the Google name is adopted only after the stored preferences loaded',
     run() {
-      const app = code(read('App.tsx'));
+      const app = code(readAppWiring());
       const at = app.indexOf('const step = accountNameStep({');
       assert.notEqual(at, -1);
       const effect = app.slice(app.lastIndexOf('useEffect(() => {', at), app.indexOf(']);', app.indexOf('}, [', at)) + 3);

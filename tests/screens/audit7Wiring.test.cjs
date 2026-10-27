@@ -83,7 +83,7 @@ module.exports = [
       const shell = strip(readAppWiring().replace(/\r\n/g, '\n'));
       assert.match(shell, /const setupSelection = useMemo\(\s*\(\) => buildSetupSelectionFromPreferences\(preferences, null, leadTrainingCycle\),\s*\[setupSelectionKey\],\s*\);/);
       assert.match(shell, /buildSetupSelectionFromPreferences\(preferences, latestWeighInKg, leadTrainingCycle\),\s*\[setupSelectionKey, latestWeighInKg\],/);
-      const app = strip(read('App.tsx').replace(/\r\n/g, '\n'));
+      const app = strip(readAppWiring().replace(/\r\n/g, '\n'));
       // The setup route's render moved to src/app/renderOnboarding.tsx
       // (phase C, 2026-10-01), so the editor is looked for over the shell.
       const editor = shell.match(/<OnboardingScreen\s[^>]*?mode="edit"[\s\S]*?\/>/);

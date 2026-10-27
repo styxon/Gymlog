@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const appSource = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
+const appSource = readAppWiring();
 const appShellSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'AppShell.tsx'), 'utf8');
 const onboardingSource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'screens', 'OnboardingScreen.tsx'),

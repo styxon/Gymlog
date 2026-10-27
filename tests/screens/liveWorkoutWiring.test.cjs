@@ -101,7 +101,7 @@ module.exports = [
   {
     name: 'live workout wiring: a programme with a workout of it running is not deleted, and the reader is told why',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const handler = app.slice(
         app.indexOf('  async function handleDeleteCustomWorkout(workoutTemplateId: string) {'),
         app.indexOf('  function leaveDeletedProgramme('),

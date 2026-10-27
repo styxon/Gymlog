@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8').replace(/\r\n/g, '\n');
@@ -21,7 +22,7 @@ module.exports = [
   {
     name: 'App.tsx: the account restore\'s onRestored handler awaits the coach memory erase',
     run() {
-      const app = strip(read('App.tsx'));
+      const app = strip(readAppWiring());
       const start = app.indexOf('onRestored: async () => {');
       assert.ok(start >= 0, 'onRestored is gone, or no longer declared async — useAccountBackup awaits it, and a sync handler cannot hold the restore open for a promise it never returns');
       const end = app.indexOf('\n    },', start);

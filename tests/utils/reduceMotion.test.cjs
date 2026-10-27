@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const root = path.join(__dirname, '..', '..');
 
@@ -73,7 +74,7 @@ module.exports = [
     name: 'reduceMotion: the splash cannot hold the app on a pending answer',
     run() {
       const splash = read('src', 'screens', 'VinhaSplashScreen.tsx');
-      const app = read('App.tsx');
+      const app = readAppWiring();
 
       // The splash is the one screen where a third state is fatal, because
       // App renders nothing else until it reports done.

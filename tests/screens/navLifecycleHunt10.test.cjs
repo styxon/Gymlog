@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { functionBody, between } = require('../helpers/sourceSlices.cjs');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '../..', ...parts), 'utf8').replace(/\r\n/g, '\n');
 
@@ -32,7 +33,7 @@ module.exports = [
       assert.match(bar, /onAiPress=\{\(\) => leaveThroughScreenGuard\(\(\) => navigate\(\{ tab: 'home', screen: 'ai_chat' \}\)\)\}/);
       assert.doesNotMatch(bar, /onTabPress=\{navigateToTab\}/);
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(
         functionBody(app, '  function leaveThroughScreenGuard('),
         /if \(templateLeaveGuardRef\.current\?\.\(leave\)\) \{\s*return;\s*\}\s*leave\(\);/,
@@ -61,7 +62,7 @@ module.exports = [
     // programme Start next replaces.
     name: 'hunt 10 #20: the doors that replace a finished programme report the count running now',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const starts = read('src', 'app', 'programmeStarts.tsx');
       for (const [source, signature] of [
         [app, '  async function handleAdoptReadyProgram('],
@@ -81,7 +82,7 @@ module.exports = [
     // rejection behind a `void` press: the change sprang back with no word.
     name: 'hunt 10 #37: a refused programme delete, remove or switch says so',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(
         functionBody(app, '  async function handleDeleteCustomWorkout('),
         /try \{\s*await deleteWorkoutTemplate\(workoutTemplateId\);\s*\} catch \(error\) \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.programDeleteFailed'\)\);\s*return;\s*\}\s*void haptics\.success\(\);\s*leaveDeletedProgramme\(workoutTemplateId\);/,

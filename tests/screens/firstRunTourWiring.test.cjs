@@ -19,7 +19,7 @@ const progressSource = read('src/screens/ProgressScreen.tsx');
 const profileSource = read('src/screens/ProfileScreen.tsx');
 const barSource = read('src/components/BottomTabBar.tsx');
 const shellSource = read('src/components/AppShell.tsx');
-const appSource = read('App.tsx');
+const appSource = readAppWiring();
 // App.tsx plus the src/app modules: phase C (2026-10-01) moved the tour's gate,
 // the prompt queue and the layer's element to src/app hooks, the <HomeScreen>
 // element to src/app/renderHomeDashboard.tsx and the shell's return (tab bar,
