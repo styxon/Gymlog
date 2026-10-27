@@ -135,8 +135,9 @@ function EmptyState({ title, body }: { title: string; body: string }) {
 
 const FEEL_READ_LABEL_KEY = {
   demanding: 'history.feel.demanding',
-  balanced: 'history.feel.balanced',
+  steady: 'history.feel.steady',
   light: 'history.feel.light',
+  mixed: 'history.feel.mixed',
 } as const;
 
 /**

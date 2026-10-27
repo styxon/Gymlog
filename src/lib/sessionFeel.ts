@@ -54,8 +54,14 @@ export function sessionFeelColor(
   }
 }
 
-/** How the recent stretch of training has felt, as a whole. */
-export type SessionFeelRead = 'light' | 'balanced' | 'demanding';
+/**
+ * How the recent stretch of training has felt, as a whole.
+ *
+ * `steady` is a run that mostly felt about right; `mixed` is one where no
+ * answer dominates. They used to share one label ("Mixed"), so twelve answers
+ * of "Just right" read back as mixed — which they are not.
+ */
+export type SessionFeelRead = 'light' | 'steady' | 'demanding' | 'mixed';
 
 export interface SessionFeelSummary {
   /** Sessions looked at — answered or not. */
@@ -75,7 +81,7 @@ export interface SessionFeelSummary {
    * Sessions answered "too hard", counted on their own.
    *
    * It does not average. Two brutal sessions among ten comfortable ones is
-   * worth seeing, and a mean would file them under "balanced" and hide them.
+   * worth seeing, and a mean would file them under "mixed" and hide them.
    */
   tooHardCount: number;
 }
@@ -91,7 +97,7 @@ export const SESSION_FEEL_WINDOW = 12;
  */
 const MIN_ANSWERED = 3;
 
-/** How lopsided the answers must be before the read stops being "balanced". */
+/** How lopsided the answers must be before the read stops being "mixed". */
 const LEAN_SHARE = 0.6;
 
 /**
@@ -122,6 +128,7 @@ export function summariseSessionFeel(
 
   const hardShare = answers.filter((feel) => feel === 'hard' || feel === 'too_hard').length / answers.length;
   const easyShare = answers.filter((feel) => feel === 'easy').length / answers.length;
+  const rightShare = answers.filter((feel) => feel === 'right').length / answers.length;
 
   if (hardShare >= LEAN_SHARE) {
     return { ...base, read: 'demanding' };
@@ -129,7 +136,10 @@ export function summariseSessionFeel(
   if (easyShare >= LEAN_SHARE) {
     return { ...base, read: 'light' };
   }
-  // Everything else — including a run of "just right", and including a split
-  // between easy and too hard, which is genuinely mixed rather than average.
-  return { ...base, read: 'balanced' };
+  if (rightShare >= LEAN_SHARE) {
+    return { ...base, read: 'steady' };
+  }
+  // Nothing dominates — including a split between easy and too hard, which is
+  // genuinely mixed rather than average.
+  return { ...base, read: 'mixed' };
 }
