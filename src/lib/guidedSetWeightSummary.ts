@@ -54,7 +54,7 @@ export function formatLoadOrRange(loadsKg: readonly number[]): string | null {
   return `${removeTrailingZeros(min)}-${removeTrailingZeros(max)} kg`;
 }
 
-export interface HistoricalSetChipsView {
+interface HistoricalSetChipsView {
   /** True when every logged set here carried the same weight. */
   uniform: boolean;
   /** One chip per set, in set order: "8" (reps only) when uniform, "16,25×8"

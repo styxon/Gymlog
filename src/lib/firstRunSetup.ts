@@ -74,7 +74,7 @@ export interface FirstRunSetupSelection {
   unitPreference: UnitPreference;
 }
 
-export interface FirstRunRecommendation {
+interface FirstRunRecommendation {
   featuredProgramId: string;
   secondaryProgramId: string | null;
   alternativeProgramIds: string[];
@@ -87,17 +87,6 @@ export interface FirstRunRecommendation {
   waterfall: RecommendationWaterfallDecision | null;
   mismatchNote: string | null;
 }
-
-export type FirstRunStep =
-  | 'location'
-  | 'goal'
-  | 'profile'
-  | 'focus'
-  | 'review'
-  | 'gender'
-  | 'planning'
-  | 'about'
-  | 'recommendation';
 
 const PROGRAM_IDS = {
   minimal: 'tpl_2_day_minimal_full_body_v1',
@@ -412,7 +401,7 @@ function buildLowEquipmentMismatchNote(
  * 4 days read "lighter than your target" over four days (persona hunt,
  * 2026-10-08).
  */
-export function buildRecommendationMismatchNote(
+function buildRecommendationMismatchNote(
   selection: FirstRunSetupSelection,
   featuredProgramId: string,
   secondaryProgramId: string | null,

@@ -20,16 +20,16 @@ import { StrengthGoal } from './strengthGoals';
  */
 
 /** The narrowest shape every programme source (catalog, custom, plan) can offer. */
-export interface GoalProgrammeExercise {
+interface GoalProgrammeExercise {
   exerciseName: string;
   role?: 'primary' | 'secondary' | 'accessory';
 }
 
-export interface GoalProgrammeSession {
+interface GoalProgrammeSession {
   exercises: GoalProgrammeExercise[];
 }
 
-export interface GoalProgrammeCandidate {
+interface GoalProgrammeCandidate {
   id: string;
   sessions: GoalProgrammeSession[];
   /** Catalog level, when known. Absent on a programme the reader wrote. */
@@ -39,7 +39,7 @@ export interface GoalProgrammeCandidate {
 }
 
 /** Who the suggestion is for. Without it the ranking is level-blind. */
-export interface GoalProgrammeReader {
+interface GoalProgrammeReader {
   /** Setup level, which maps onto the catalog's three tiers. */
   level?: 'beginner' | 'advanced' | 'pro' | null;
   daysPerWeek?: number | null;
@@ -103,7 +103,7 @@ function levelPenalty(candidate: GoalProgrammeCandidate, reader: GoalProgrammeRe
   return Math.abs(order.indexOf(candidate.level) - order.indexOf(wanted)) * 2;
 }
 
-export interface GoalProgrammeMatch {
+interface GoalProgrammeMatch {
   id: string;
   /** Sessions in the programme that train the lift. */
   sessionCount: number;
@@ -474,7 +474,7 @@ export interface GoalProgrammeSuggestionView {
   } | null;
 }
 
-export type GoalCoverageStatus =
+type GoalCoverageStatus =
   /** An active programme trains the lift. */
   | 'covered'
   /** There are active programmes and none of them trains the lift. */
@@ -482,7 +482,7 @@ export type GoalCoverageStatus =
   /** Nothing is active, so nothing can be said about it yet. */
   | 'noProgramme';
 
-export interface GoalCoverage {
+interface GoalCoverage {
   goal: StrengthGoal;
   status: GoalCoverageStatus;
   /** The id of the active programme that covers the lift, when one does. */

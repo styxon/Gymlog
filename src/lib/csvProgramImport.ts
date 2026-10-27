@@ -86,7 +86,7 @@ function indexLibrary(library: CsvLibraryEntry[]): IndexedLibraryEntry[] {
   return indexed;
 }
 
-export interface CsvProgramRow {
+interface CsvProgramRow {
   day: string;
   exerciseName: string;
   sets: number;
@@ -121,7 +121,7 @@ export interface CsvProgramRow {
   viaNameBook: boolean;
 }
 
-export interface CsvProgramPreview {
+interface CsvProgramPreview {
   rows: CsvProgramRow[];
   matchedCount: number;
   unmatchedCount: number;
@@ -273,17 +273,17 @@ function splitCsvLine(line: string, delimiter: string): string[] {
  * seconds for a hold. A typo of 100000 is past both and is refused, like a
  * sets count over the editor's 12.
  */
-export const CSV_REPS_MAX = 500;
-export const CSV_HOLD_SECONDS_MAX = 600;
+const CSV_REPS_MAX = 500;
+const CSV_HOLD_SECONDS_MAX = 600;
 /** Five hours: the player's minutes dial (MINUTES_DIAL) stops there too. */
-export const CSV_MINUTES_MAX = MINUTES_DIAL.max;
+const CSV_MINUTES_MAX = MINUTES_DIAL.max;
 /**
  * The rest between minutes blocks ("Easy Run Blocks, 4, 5 min"): the middle
  * of the 45–75 s the ready catalogue prescribes for its own. The importer gave
  * every minutes row 0, which only fits a single steady bout (bug hunt,
  * 2026-10-07).
  */
-export const CSV_MINUTES_BLOCK_REST_SECONDS = 60;
+const CSV_MINUTES_BLOCK_REST_SECONDS = 60;
 
 /**
  * The unit a Reps cell wrote out, when it wrote one: "20 min", "30-45 s",

@@ -10,12 +10,12 @@ import { PROGRAM_IMAGE_MAX_BASE64_CHARS, ProgramImageMediaType } from '../lib/pr
  * system picker and the image encoder.
  */
 
-export interface PickedProgramImage {
+interface PickedProgramImage {
   dataBase64: string;
   mediaType: ProgramImageMediaType;
 }
 
-export type PickProgramImageResult =
+type PickProgramImageResult =
   | { status: 'picked'; image: PickedProgramImage }
   | { status: 'cancelled' }
   | { status: 'too_large' }

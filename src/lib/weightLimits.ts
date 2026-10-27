@@ -93,8 +93,8 @@ export function positiveWholeCount(value: unknown, max: number = MAX_STORED_SETS
  * lifter would delete their history, while a negative or a 5000 kg number is
  * only ever a damaged or foreign file (D6-6).
  */
-export const BODYWEIGHT_MIN_KG = 20;
-export const BODYWEIGHT_MAX_KG = 400;
+const BODYWEIGHT_MIN_KG = 20;
+const BODYWEIGHT_MAX_KG = 400;
 
 export function isPlausibleBodyweightKg(kg: unknown): kg is number {
   return typeof kg === 'number' && Number.isFinite(kg) && kg >= BODYWEIGHT_MIN_KG && kg <= BODYWEIGHT_MAX_KG;

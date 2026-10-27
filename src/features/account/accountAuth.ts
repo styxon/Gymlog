@@ -22,7 +22,7 @@ import type { FreshIdTokenResult, GoogleSignInResult } from './googleAuth';
 import { getFreshIdToken as getFreshGoogleToken, isGoogleSignInConfigured, signInWithGoogle, signOutGoogle } from './googleAuth';
 
 export type SignInProvider = 'google' | 'apple';
-export type SignInResult = GoogleSignInResult;
+type SignInResult = GoogleSignInResult;
 
 /** The providers this build offers, in the order the screens show them: Apple first, as Apple asks. */
 export function availableSignInProviders(): SignInProvider[] {

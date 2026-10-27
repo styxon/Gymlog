@@ -34,7 +34,7 @@ type RunningCapSheet = { visible: boolean } & RunningCapRefusal;
  * rather than moved: the sheet must stay the same component, or React would
  * remount it, and both are App.tsx module scope, outside this phase's cut.
  */
-export interface AppShellDeps {
+interface AppShellDeps {
   content: React.ReactNode;
   route: AppRoute;
   historySessionActive: boolean;

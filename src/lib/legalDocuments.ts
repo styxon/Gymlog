@@ -7,7 +7,7 @@ import type { StorePlatform } from './storeLinks';
  * Two rules govern this file:
  *
  * 1. Every factual claim here is checked against the code. The app has exactly
- *    three outbound request sites — src/lib/aiCoachClient.ts (the coach, the
+ *    three outbound request sites — src/features/aiCoach/aiCoachClient.ts (the coach, the
  *    programme composer and the photo import, only when
  *    EXPO_PUBLIC_AI_COACH_API_URL is set), src/features/account/backupApi.ts
  *    (the optional cloud backup, keyed by Google sign-in) and
@@ -109,14 +109,14 @@ export type LegalDocumentId = 'privacy' | 'terms';
  * Whose phone is reading. The app passes its own; the published documents are
  * 'both', which names Google Play and the App Store side by side.
  */
-export type LegalPlatform = StorePlatform | 'both';
+type LegalPlatform = StorePlatform | 'both';
 
 /** One wording per audience. The three are written together so they stay the same claim. */
 function pick(platform: LegalPlatform, words: { android: string; ios: string; both: string }): string {
   return words[platform];
 }
 
-export interface LegalSection {
+interface LegalSection {
   heading: string;
   /** Paragraphs, rendered in order. */
   body?: string[];
@@ -124,7 +124,7 @@ export interface LegalSection {
   bullets?: string[];
 }
 
-export interface LegalDocument {
+interface LegalDocument {
   id: LegalDocumentId;
   title: string;
   /** One sentence under the title: what this document is for. */

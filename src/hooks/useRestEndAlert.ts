@@ -17,14 +17,14 @@ import {
  * What the ongoing lock-screen card says when no rest is running. The screen
  * that owns the session passes it; `null` means no card between rests.
  */
-export interface SessionCardSummary {
+interface SessionCardSummary {
   /** "Push A · Bench Press, set 3 of 4" */
   title: string;
   /** "8 of 17 sets logged" */
   body: string;
 }
 
-export interface RestAlertOptions {
+interface RestAlertOptions {
   /** The 10 s haptic warning before the end. A setting; default on. */
   warning?: boolean;
   /** Whether to keep the ongoing session card at all. A setting; default on. */

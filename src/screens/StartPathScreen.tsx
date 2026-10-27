@@ -326,13 +326,6 @@ const makeStyles = (theme: Theme) => {
     fontWeight: '800',
     letterSpacing: -0.4,
   },
-  subheading: {
-    color: C.soft,
-    fontSize: 14.5,
-    lineHeight: 20,
-    fontWeight: '700',
-    marginTop: 6,
-  },
   scroll: {
     flex: 1,
     marginHorizontal: -24,
@@ -436,17 +429,6 @@ const makeStyles = (theme: Theme) => {
   },
   footer: {
     paddingTop: 8,
-  },
-  backLink: {
-    alignSelf: 'center',
-    marginTop: 6,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-  },
-  backText: {
-    color: C.muted,
-    fontSize: 14.5,
-    fontWeight: '700',
   },
 });
 };

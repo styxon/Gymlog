@@ -40,7 +40,7 @@ export type ProTierKey = 'free' | 'pro' | 'life';
 /** Plan ids the CTA can buy. 'free' buys nothing and dismisses the page. */
 export type ProPlanId = 'free' | 'monthly' | 'yearly' | 'lifetime';
 
-export interface ProTierRow {
+interface ProTierRow {
   key: string;
   /** Glyph name in the screen's own icon table. */
   icon: string;
@@ -54,7 +54,7 @@ export interface ProTierRow {
   proof: string;
 }
 
-export interface ProTierPlan {
+interface ProTierPlan {
   id: ProPlanId;
   nameKey: I18nKey;
   priceKey: I18nKey;

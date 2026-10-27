@@ -33,7 +33,7 @@ export interface RecoveryAction {
   label: string;
 }
 
-export interface RecoveryWeekDay {
+interface RecoveryWeekDay {
   /** Local midnight. */
   dayStart: number;
   label: string;
@@ -73,7 +73,7 @@ export interface RecoverySheetModel {
   restTomorrowMarked: boolean;
 }
 
-export interface RecoverySheetInput {
+interface RecoverySheetInput {
   fatigue: FatigueResult;
   /** performedAt of every logged strength session. */
   sessionDates: ReadonlyArray<string>;
@@ -118,7 +118,7 @@ export function formatLoadKg(kg: number): string {
   return `${groupThousands(Math.max(0, kg))} kg`;
 }
 
-export function recoveryTone(fatigue: Pick<FatigueResult, 'signal'>): RecoveryTone {
+function recoveryTone(fatigue: Pick<FatigueResult, 'signal'>): RecoveryTone {
   return fatigue.signal === 'high' ? 'red' : fatigue.signal === 'elevated' ? 'amber' : 'green';
 }
 
@@ -143,7 +143,7 @@ export function recoveryWeek(sessionDates: ReadonlyArray<string>, now: Date, lan
 }
 
 /** The ratio to print, or null while there is no usual week to divide by. */
-export function acwrLabelOf(fatigue: Pick<FatigueResult, 'acwr' | 'chronicLoadKg' | 'confident'>): string | null {
+function acwrLabelOf(fatigue: Pick<FatigueResult, 'acwr' | 'chronicLoadKg' | 'confident'>): string | null {
   if (!fatigue.confident || !(fatigue.chronicLoadKg > 0) || !Number.isFinite(fatigue.acwr) || !(fatigue.acwr > 0)) {
     return null;
   }

@@ -3,7 +3,7 @@ import { getWorkoutTemplateById } from '../features/workout/workoutCatalog';
 import type { AdviceTemplate, AdviceTemplateLookup } from '../lib/nextSessionAdvice';
 import type { AppDatabase, WorkoutTemplateSessionWithExercises } from '../types/models';
 
-export interface AdviceTemplateLookupDeps {
+interface AdviceTemplateLookupDeps {
   /** The reader's own programmes. */
   workoutTemplates: AppDatabase['workoutTemplates'];
   getWorkoutTemplateSessions: (workoutTemplateId: string) => WorkoutTemplateSessionWithExercises[];

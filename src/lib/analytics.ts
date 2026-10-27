@@ -71,10 +71,10 @@ export interface AnalyticsEvent {
   props?: AnalyticsEventProps;
 }
 
-export type StepProps = { step?: number; path?: string };
+type StepProps = { step?: number; path?: string };
 export type AnalyticsEventProps = StepProps | AppErrorProps | OperationFailedProps;
 
-export interface AnalyticsBatch {
+interface AnalyticsBatch {
   /** Random UUID minted on the device. Identifies an install, not a person. */
   installId: string;
   sentAt: string;
@@ -91,7 +91,7 @@ export const MAX_QUEUED_EVENTS = 200;
  * both in one go, and a client that sends more is not counting.
  */
 export const MAX_APP_ERRORS_PER_BATCH = 20;
-export const MAX_OPERATION_FAILURES_PER_BATCH = 40;
+const MAX_OPERATION_FAILURES_PER_BATCH = 40;
 
 const INSTALL_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -114,7 +114,7 @@ function isIsoTimestamp(value: unknown): value is string {
   );
 }
 
-export function isValidEventName(name: unknown): name is AnalyticsEventName {
+function isValidEventName(name: unknown): name is AnalyticsEventName {
   return typeof name === 'string' && (ANALYTICS_EVENTS as readonly string[]).includes(name);
 }
 
@@ -179,7 +179,7 @@ export function isValidEvent(value: unknown): value is AnalyticsEvent {
  * the rest are counted and dropped; only a batch that is not a batch at all
  * (the envelope, or more than MAX_BATCH_EVENTS) is refused.
  */
-export interface AcceptedBatch {
+interface AcceptedBatch {
   batch: AnalyticsBatch;
   dropped: number;
 }

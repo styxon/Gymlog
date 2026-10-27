@@ -21,14 +21,7 @@ const ROOT = path.join(__dirname, '..', '..');
  * yet. Each entry names why; the guard fails if a parked module gains an
  * importer (take it off the list) or loses its file (same).
  */
-const PARKED = new Map([
-  // The coaching stack's profile layer. Designed and documented
-  // (docs/coaching-architecture.md, docs/system-architecture.md §Profile
-  // layer, glossary) as the derived UserFitnessProfile that the recommendation
-  // and coaching engines will read; the engines are not wired yet. Its own
-  // test keeps the derivation honest until they are.
-  ['userFitnessProfile', 'coaching profile layer, documented and awaiting its readers'],
-]);
+const PARKED = new Map([]);
 
 function walk(dir) {
   const out = [];

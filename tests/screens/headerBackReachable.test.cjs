@@ -20,8 +20,8 @@ module.exports = [
       // pointerEvents does nothing on a Text on Android — as a style OR a prop,
       // both were tried on device — so the title swallowed every press landing
       // in its band, and the visible chevron sits inside that band. Back was
-      // unreachable on ten screens. ScreenHeaderTitle wraps the Text in a View,
-      // where pointerEvents actually works.
+      // unreachable on ten screens. PageHeader (src/components/BackButton.tsx)
+      // is the shared header that does not have this problem.
       const offenders = [];
       for (const { name, source } of screenFiles()) {
         if (!/headerTitle:\s*\{/.test(source)) continue;
@@ -34,12 +34,12 @@ module.exports = [
       assert.deepEqual(
         offenders,
         [],
-        `${offenders.join(', ')} re-introduced the absolute header title. Use ScreenHeaderTitle instead — a bare Text covers the back button and pointerEvents does not save it on Android.`,
+        `${offenders.join(', ')} re-introduced the absolute header title. Use PageHeader instead — a bare Text covers the back button and pointerEvents does not save it on Android.`,
       );
     },
   },
   {
-    name: 'every screen with a back button and a centred title uses ScreenHeaderTitle',
+    name: 'every screen with a back button and a centred title uses PageHeader',
     run() {
       const expected = [
         // Support, feature requests, the design shelf and the AI info page
@@ -54,27 +54,10 @@ module.exports = [
       for (const name of expected) {
         const source = fs.readFileSync(path.join(screensDir, `${name}.tsx`), 'utf8');
         assert.ok(
-          source.includes('<ScreenHeaderTitle') || source.includes('<PageHeader'),
-          `${name} no longer renders ScreenHeaderTitle; its back button is probably unreachable again`,
+          source.includes('<PageHeader'),
+          `${name} no longer renders PageHeader; its back button is probably unreachable again`,
         );
       }
-    },
-  },
-  {
-    name: 'ScreenHeaderTitle puts pointerEvents on a View, not on the Text',
-    run() {
-      const source = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'src', 'components', 'ScreenHeaderTitle.tsx'),
-        'utf8',
-      );
-      assert.ok(
-        /<View pointerEvents="none"/.test(source),
-        'the wrapper must carry pointerEvents — that is the entire reason this component exists',
-      );
-      assert.ok(
-        !/<Text[^>]*pointerEvents/.test(source),
-        'pointerEvents on a Text does nothing on Android; it belongs on the wrapping View',
-      );
     },
   },
 ];

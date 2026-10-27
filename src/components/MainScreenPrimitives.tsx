@@ -4,7 +4,7 @@ import { Text } from './AppText';
 
 import { colors, radii, spacing } from '../theme';
 
-export type SurfaceAccent = 'blue' | 'rose' | 'orange' | 'neutral';
+type SurfaceAccent = 'blue' | 'rose' | 'orange' | 'neutral';
 
 const accentTokens: Record<SurfaceAccent, { border: string; accent: string; wash: string; kicker: string }> = {
   blue: {

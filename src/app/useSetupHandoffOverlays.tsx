@@ -48,7 +48,7 @@ import { useAttemptOnce } from './useAttemptOnce';
  * before. renderLegalConsent is still a plain function made on every render,
  * as it was in VinhaApp; the shell calls it below its early return.
  */
-export interface SetupHandoffOverlaysDeps {
+interface SetupHandoffOverlaysDeps {
   /** Passed whole, so the deps arrays read as they did in App.tsx. */
   preferences: AppPreferences;
   updatePreferences: (patch: Partial<AppPreferences>) => Promise<unknown>;

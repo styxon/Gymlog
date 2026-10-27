@@ -7,13 +7,13 @@
  */
 
 /** One of our requests the OS reports as pending. */
-export interface PendingPlanRequest {
+interface PendingPlanRequest {
   identifier: string;
   /** The plan item it was scheduled for; empty when it carries none. */
   signature: string;
 }
 
-export interface PlanSyncSteps {
+interface PlanSyncSteps {
   /** Pending requests to cancel, by identifier. */
   cancel: string[];
   /** Plan signatures to schedule, in plan order. */

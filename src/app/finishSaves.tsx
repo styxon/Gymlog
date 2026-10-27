@@ -48,7 +48,7 @@ type WorkoutContextValue = ReturnType<typeof useWorkoutContext>;
  * .tsx only because the context types come from src/state/AppProvider.tsx and
  * src/features/workout/WorkoutProvider.tsx; no .ts module imports this file.
  */
-export interface FinishSavesDeps {
+interface FinishSavesDeps {
   workout: Pick<
     WorkoutContextValue,
     'activeSession' | 'discardWorkout' | 'adoptSessionId' | 'finishWorkout' | 'clearCompletedWorkout' | 'recordLoggedWorkout'

@@ -4,13 +4,13 @@ import { formatWorkoutDisplayLabel } from './displayLabel';
 import { I18nKey, t } from './i18n';
 import { getReadyProgramContent } from './readyProgramContent';
 
-export interface CustomTemplatePresentationInput {
+interface CustomTemplatePresentationInput {
   name: string;
   sessionCount: number;
   exerciseCount: number;
 }
 
-export interface TemplatePresentation {
+interface TemplatePresentation {
   title: string;
   subtitle: string;
   tags: string[];

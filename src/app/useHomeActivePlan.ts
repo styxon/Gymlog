@@ -54,7 +54,7 @@ import type { useCustomProgramViews } from './useCustomProgramViews';
  * module that reads it takes ReturnType<typeof useHomeActivePlan>. The session
  * ref stays inside; VinhaApp reads only what this returns.
  */
-export interface HomeActivePlanDeps {
+interface HomeActivePlanDeps {
   /** The whole database: the plan records, sessions and logs. */
   database: AppDatabase;
   /** The reader's preferences: the lead plan, the goal, today's pick, the dismissed completion cards. */

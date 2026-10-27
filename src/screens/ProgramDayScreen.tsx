@@ -1730,27 +1730,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  pageStats: {
-    flexDirection: 'row',
-    gap: 22,
-    marginTop: 16,
-    paddingHorizontal: spacing.lg,
-  },
-  pageStatValue: {
-    color: theme.ink,
-    fontSize: 18,
-    lineHeight: 22,
-    fontWeight: '800',
-    letterSpacing: -0.3,
-  },
-  pageStatLabel: {
-    color: theme.faint,
-    fontSize: 10,
-    lineHeight: 13,
-    fontWeight: '800',
-    letterSpacing: 0.8,
-    marginTop: 1,
-  },
   // Was pulled up by -58 so it overlapped the painted hero and made the
   // colour read as a header rather than a band that stops. With no hero to
   // overlap, it sits in the flow like every other card.
@@ -1843,22 +1822,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.muted,
     fontSize: 12.5,
     lineHeight: 18,
-    fontWeight: '600',
-  },
-  noteCard: {
-    marginHorizontal: spacing.lg,
-    borderRadius: radii.lg,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    gap: 4,
-  },
-  noteLine: {
-    color: theme.ink,
-    fontSize: 13,
-    lineHeight: 19,
     fontWeight: '600',
   },
   secCard: {
@@ -2014,39 +1977,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   roundButtonOff: {
     opacity: 0.45,
   },
-  tuneDone: {
-    marginTop: 18,
-    borderRadius: radii.md,
-    backgroundColor: theme.surfaceSoft,
-    borderWidth: 1,
-    borderColor: theme.border,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  tuneDoneText: {
-    color: theme.ink,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '800',
-  },
-  // Right-aligned above the rows: an action ON the list, not a row in it.
-  moveButtonOff: {
-    opacity: 0.4,
-  },
-  swapButton: {
-    borderRadius: 9,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surfaceSoft,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  swapButtonText: {
-    color: theme.purple,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '800',
-  },
   // Below the replacements and behind a rule: a different kind of answer, and
   // not one that should sit where a mis-tap in the list lands.
   /** The swap sheet's keep and remove, under the cards rather than among them. */
@@ -2064,58 +1994,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 20,
     fontWeight: '700',
   },
-  swapSearch: {
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 12,
-    backgroundColor: theme.surfaceSoft,
-    color: theme.ink,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 15,
-    fontWeight: '600',
-    marginTop: 10,
-  },
-  swapOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  swapOptionGrow: { flex: 1 },
-  swapOptionKeep: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  swapOptionKeepText: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  swapGroup: {
-    color: theme.faint,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginTop: 10,
-    marginBottom: 2,
-  },
   swapRemoveNote: {
     color: theme.faint,
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',
-  },
-  swapOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  swapScrim: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(30, 18, 70, 0.42)',
   },
   /**
    * 88%, not 70%.
@@ -2134,39 +2017,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingBottom: 28,
     maxHeight: '88%',
   },
-  swapGrip: {
-    alignSelf: 'center',
-    width: 38,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: theme.border,
-    marginTop: 10,
-    marginBottom: 14,
-  },
-  swapTitle: {
-    color: theme.ink,
-    fontSize: 16,
-    lineHeight: 21,
-    fontWeight: '800',
-    marginBottom: 10,
-  },
-  swapOption: {
-    borderRadius: radii.md,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    paddingHorizontal: 14,
-    paddingVertical: 13,
-    marginBottom: 8,
-  },
   swapOptionPressed: {
     opacity: 0.7,
-  },
-  swapOptionName: {
-    color: theme.ink,
-    fontSize: 14,
-    lineHeight: 19,
-    fontWeight: '700',
   },
   // No gap: the rows are separated by the hairline each one carries, the way
   // a list is, rather than by air between cards (user 2026-08-31).
@@ -2202,28 +2054,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     borderStyle: 'dashed',
     borderColor: theme.border,
   },
-  addGlyph: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surfaceSoft,
-  },
   addRowText: {
     color: theme.purpleDark,
     fontSize: 16,
     lineHeight: 21,
     fontWeight: '800',
-  },
-  addFixedBlock: {
-    gap: 10,
-  },
-  addFixedNote: {
-    color: theme.faint,
-    fontSize: 12.5,
-    lineHeight: 18,
-    fontWeight: '600',
   },
   dragHandle: {
     width: 28,

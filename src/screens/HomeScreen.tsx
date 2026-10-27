@@ -237,7 +237,7 @@ interface HomePlanCard {
   } | null;
 }
 
-export interface HomeOtherProgram {
+interface HomeOtherProgram {
   planId: string;
   title: string;
   /** e.g. "RUN · 3 pv / viikko" — enough to tell two programmes apart. */
@@ -3171,79 +3171,9 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   programWeekDayCodeOff: {
     color: theme.faint,
   },
-  dayRowToday: {
-    borderColor: theme.purple,
-    borderWidth: 1.5,
-  },
-  // The quieter of the two: the row it sits on already carries the outline.
-  nextPillText: {
-    color: theme.purple,
-  },
   programActions: {
     gap: 10,
     marginTop: 12,
-  },
-  programPrimary: {
-    flex: 1.4,
-    height: 50,
-    borderRadius: 14,
-    backgroundColor: theme.purpleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  programPrimaryText: {
-    color: '#FFFFFF',
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '800',
-  },
-  programSecondary: {
-    flex: 1,
-    height: 50,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  programSecondaryText: {
-    color: theme.ink,
-    fontSize: 15,
-    lineHeight: 19,
-    fontWeight: '800',
-  },
-  adaptSearch: {
-    borderWidth: 1,
-    borderColor: theme.border,
-    borderRadius: 12,
-    backgroundColor: theme.surfaceSoft,
-    color: theme.ink,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 10,
-  },
-  adaptOptRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  adaptOptGrow: { flex: 1 },
-  // A quiet pill, not a second button: the row beside it is the answer most
-  // taps want, and two equal-weight targets would make the reader choose twice.
-  adaptOptKeep: {
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: theme.border,
-  },
-  adaptOptKeepText: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '800',
   },
   otherProgramsCap: {
     color: theme.muted,
@@ -3468,14 +3398,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   bottomSafeFade: {
     height: 16,
   },
-  adaptOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(12, 7, 26, 0.5)',
-  },
-  adaptScrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
   // The kicker and the title stack; that stack shares the row with the session
   // counter. Put in the row directly, the kicker became a third column and
   // squeezed the title down to one shrunken letter.
@@ -3509,10 +3431,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     // take the last row with it.
     maxHeight: 380,
   },
-  todayRowActive: {
-    borderColor: theme.purpleBright,
-    backgroundColor: theme.purpleLight,
-  },
   todayRowEditing: {
     gap: 8,
   },
@@ -3536,62 +3454,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 13,
     fontWeight: '800',
   },
-  todayBadge: {
-    color: theme.purpleDark,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  // Was a fixed pink on a fixed cream — a white card sitting in a dark sheet.
-  // The same class as the button that drew white on white: a colour copied in
-  // rather than taken from the theme is only ever right for one of them.
-  adaptOptionTitle: {
-    color: theme.ink,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  adaptOptionSub: {
-    color: theme.muted,
-    fontSize: 12.5,
-    lineHeight: 17,
-    fontWeight: '700',
-  },
-  adaptSheet: {
-    maxHeight: '94%',
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    backgroundColor: theme.surface,
-    paddingHorizontal: 22,
-    paddingTop: 12,
-    // paddingBottom is applied at the call site from the safe-area inset:
-    // a fixed 26 put Cancel under the phone's own navigation buttons.
-  },
-  adaptGrip: {
-    alignSelf: 'center',
-    width: 42,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: theme.border,
-    marginBottom: 18,
-  },
-  adaptTitle: {
-    color: theme.ink,
-    fontSize: 22,
-    lineHeight: 27,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-  },
-  adaptSub: {
-    marginTop: 6,
-    color: theme.muted,
-    fontSize: 13.5,
-    lineHeight: 20,
-    fontWeight: '600',
-  },
-  adaptOpts: {
-    marginTop: 18,
-    gap: 9,
-  },
   adaptOpt: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -3602,33 +3464,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.bg,
     paddingHorizontal: 15,
     paddingVertical: 14,
-  },
-  adaptOptCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  adaptOptTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    lineHeight: 18,
-    fontWeight: '800',
-  },
-  adaptPrimary: {
-    height: 56,
-    borderRadius: 18,
-    backgroundColor: theme.purpleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 18,
-  },
-  adaptPrimaryText: { fontSize: 16, fontWeight: '800', letterSpacing: -0.2, color: '#FFFFFF' },
-  adaptOptGroup: {
-    color: theme.faint,
-    fontSize: 11,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-    textTransform: 'uppercase',
-    marginBottom: 2,
   },
   // Separated from the replacement rows by a rule. The two answers are then
   // told apart by colour, because they differ in how far they reach: orange is
@@ -3655,20 +3490,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     fontWeight: '600',
-  },
-  adaptCancel: {
-    alignSelf: 'center',
-    minHeight: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 16,
-    marginTop: 8,
-  },
-  adaptCancelText: {
-    color: theme.muted,
-    fontSize: 14,
-    lineHeight: 18,
-    fontWeight: '700',
   },
   plateauCard: {
     marginTop: 16,

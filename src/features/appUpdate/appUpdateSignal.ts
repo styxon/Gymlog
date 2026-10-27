@@ -3,7 +3,7 @@
  * server has said it is too old.
  *
  * Free of React Native on purpose. The clients that talk to the server
- * (lib/aiCoachClient, features/account/backupApi, features/analytics) run
+ * (features/aiCoach/aiCoachClient, features/account/backupApi, features/analytics) run
  * under the Node test suites too, so the version and platform are handed in
  * once by App.tsx (registerAppIdentity) rather than read here.
  *

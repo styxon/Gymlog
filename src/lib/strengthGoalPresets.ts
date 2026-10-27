@@ -28,7 +28,7 @@
  * the app is measured, not an addition to this list.
  */
 
-export interface StrengthGoalPreset {
+interface StrengthGoalPreset {
   /** Matches ExerciseProgressSummary.name — the stored English name. */
   exerciseName: string;
 }

@@ -16,11 +16,11 @@ import { SCROLL_SETTLE_MS, scrollOffsetForTarget, TourRect, TourSurface, TourTar
  * reader sees it.
  */
 
-export interface TourMeasurable {
+interface TourMeasurable {
   measureInWindow: (callback: (x: number, y: number, width: number, height: number) => void) => void;
 }
 
-export interface TourScroller {
+interface TourScroller {
   /** The scroll view's own node, measured to turn a window y into an offset. */
   viewport: TourMeasurable | null;
   getOffset: () => number;

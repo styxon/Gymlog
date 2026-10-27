@@ -197,7 +197,7 @@ function makeCounters() {
 function violation(name, message, shape) {
   const error = new Error(`${name}: ${message}`);
   error.invariant = name;
-  // A named shape lets KNOWN pass over one recorded bug and nothing else.
+  // The shape names which variant of the invariant failed.
   error.shape = shape;
   return error;
 }
@@ -504,14 +504,6 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
   const chance = (p) => random() < p;
   const log = [];
   const fail = (error) => {
-    // A failure already on record (KNOWN) is counted, not thrown: the walk
-    // goes on checking every other invariant.
-    const known = error.invariant && KNOWN[error.invariant];
-    if (known && known.matches(error)) {
-      notes.known[error.invariant] = (notes.known[error.invariant] ?? 0) + 1;
-      if (!notes.firstKnown[error.invariant]) notes.firstKnown[error.invariant] = `seed ${seed}: ${error.message}`;
-      return;
-    }
     // PROGRESSION_INVARIANT_COLLECT=1: count every violation instead of stopping (hunting aid).
     if (error.invariant && process.env.PROGRESSION_INVARIANT_COLLECT) {
       const list = (notes.collected[error.invariant] = notes.collected[error.invariant] ?? []);
@@ -783,7 +775,7 @@ function runSequence(seed, sessionsPerRun, counters, notes) {
 
 function runAll(sequences, sessionsPerRun) {
   const counters = makeCounters();
-  const notes = { p9NotComparable: 0, known: {}, firstKnown: {}, collected: {} };
+  const notes = { p9NotComparable: 0, collected: {} };
   withHelsinkiClocks(() => {
     for (let seed = 1; seed <= sequences; seed += 1) {
       runSequence(seed, sessionsPerRun, counters, notes);
@@ -808,9 +800,6 @@ function sharedRun() {
 const SEQUENCES = 160;
 const SESSIONS = 7;
 
-/** Known, recorded failures: the suite prints SKIP rather than go red (tests/hunt/run12/progression/findings.json). */
-const KNOWN = {};
-
 function invariantSuite(name, title, minimum) {
   return {
     name: `progression invariant ${name}: ${title}`,
@@ -819,11 +808,6 @@ function invariantSuite(name, title, minimum) {
       if (error) {
         if (error.invariant === name) throw error;
         throw new Error(`the walk stopped at ${error.invariant ?? 'an error'} before ${name} was done: ${error.message.split('\n')[0]}`);
-      }
-      if (KNOWN[name]) {
-        // Recorded, not hidden: the one shape on record is counted and printed;
-        // every other violation of this invariant still fails the walk.
-        console.log(`SKIP ${name} (one shape only, finding ${KNOWN[name].finding}): ${KNOWN[name].reason} — ${result.notes.known[name] ?? 0} hits; first: ${(result.notes.firstKnown[name] ?? 'none').split('\n')[0]}`);
       }
       const count = result.counters[name];
       assert.ok(count >= minimum, `${name} checked only ${count} cases (want >= ${minimum}): the walk no longer reaches it`);

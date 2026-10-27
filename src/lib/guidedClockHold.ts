@@ -21,7 +21,7 @@
  * longer takes anything away from under the thumb, and the pencil itself
  * opens the correction sheet, which does hold.
  */
-export interface GuidedOverlayState {
+interface GuidedOverlayState {
   /** The reader's own Pause. */
   paused: boolean;
   howToOpen: boolean;

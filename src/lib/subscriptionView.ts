@@ -35,7 +35,7 @@ export type { SubscriptionTermKey } from './subscriptionTerm';
  * subscription, it is the absence of one, so every "next payment" line has to
  * read differently rather than showing a date far away.
  */
-export interface SubscriptionTerm {
+interface SubscriptionTerm {
   key: SubscriptionTermKey;
   nameKey: I18nKey;
   labelKey: I18nKey;
@@ -104,14 +104,14 @@ export const SUBSCRIPTION_TERM_ORDER: SubscriptionTermKey[] = ['yearly', 'monthl
  *   2. It is one export. Deleting `MOCK_BILLING` breaks compilation everywhere
  *      it is read, which is the point — no quiet survival into a real release.
  */
-export interface MockPaymentMethod {
+interface MockPaymentMethod {
   id: string;
   titleKey: I18nKey;
   subKey: I18nKey;
   icon: 'card' | 'wallet';
 }
 
-export interface MockReceipt {
+interface MockReceipt {
   /** ISO, so the screen formats it in the reader's language. */
   paidAt: string;
   priceKey: I18nKey;
@@ -155,9 +155,9 @@ export { currentPeriodEndAt, isSubscriptionTermKey, nextChargeAt } from './subsc
 
 /** ── end mock billing ──────────────────────────────────────────────────────── */
 
-export type SubscriptionState = 'active' | 'lapsed' | 'none';
+type SubscriptionState = 'active' | 'lapsed' | 'none';
 
-export interface SubscriptionView {
+interface SubscriptionView {
   state: SubscriptionState;
   /** Which term the active card describes. Null unless active. */
   term: SubscriptionTermKey | null;

@@ -40,7 +40,7 @@ export function formatWeeklyLoad(days: number, minutes: number, language: AppLan
   return `${safeDays} × ${safeMinutes} min ≈ ${formatDurationMinutes(safeDays * safeMinutes)} ${perWeek}`;
 }
 
-export interface ProgramLadderGroups<T> {
+interface ProgramLadderGroups<T> {
   /** Rows whose week is the reader's week, theirs-level first. */
   fits: T[];
   /** Everything else, in catalog order. */

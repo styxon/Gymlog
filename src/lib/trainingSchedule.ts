@@ -16,7 +16,7 @@
 import { calendarDaysBetween } from './completedSessions';
 
 /** Day-of-week indexes, Monday first, matching the rest of the app. */
-export interface WeekdaySchedule {
+interface WeekdaySchedule {
   kind: 'weekdays';
   weekdayIndexes: number[];
   /** Days the reader took off (see withRestDays). */
@@ -30,7 +30,7 @@ export interface WeekdaySchedule {
  * two on, one off. The anchor is a local day start, because a cycle that drifts
  * by an hour drifts by a day twice a year.
  */
-export interface CycleSchedule {
+interface CycleSchedule {
   kind: 'cycle';
   pattern: boolean[];
   anchorDayStart: number;

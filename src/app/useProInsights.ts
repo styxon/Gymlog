@@ -36,7 +36,7 @@ import type { AppDatabase, AppPreferences } from '../types/models';
  * set, the plateau lift and the completion lift stay inside; VinhaApp reads
  * only what this returns.
  */
-export interface ProInsightsDeps {
+interface ProInsightsDeps {
   /** The whole database: the workout sessions and exercise logs are read. */
   database: AppDatabase;
   /** The reader's preferences: language, level and the dismissed plateau episodes. */

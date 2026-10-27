@@ -13,7 +13,7 @@ import { I18nKey } from './i18n';
  * of invented figure the rest of this codebase refuses to print.
  */
 
-export interface BodyweightCardStats {
+interface BodyweightCardStats {
   /** Most recent entry by date. Null when nothing is logged. */
   currentKg: number | null;
   heaviestKg: number | null;
@@ -93,9 +93,9 @@ export function buildBodyweightCardStats(
 }
 
 /** WHO bands, in the order the gauge paints them left to right. */
-export type BmiBandKey = 'severe' | 'moderate' | 'mild' | 'healthy' | 'over' | 'obese1' | 'obese2';
+type BmiBandKey = 'severe' | 'moderate' | 'mild' | 'healthy' | 'over' | 'obese1' | 'obese2';
 
-export interface BmiBand {
+interface BmiBand {
   key: BmiBandKey;
   /** Inclusive lower bound; the first band has none. */
   from: number | null;
@@ -245,7 +245,7 @@ export const WEIGHT_LABEL_WIDTH = 40;
  * "14.9." is about 30 px wide inside its 40 px box, and the box's own padding
  * is not overlap — "3.9." and "14.9." eleven slots apart read fine.
  */
-export const WEIGHT_LABEL_CLEARANCE = 30;
+const WEIGHT_LABEL_CLEARANCE = 30;
 
 /**
  * Which days of a window get an x-axis label.

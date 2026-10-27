@@ -23,7 +23,7 @@ import { AppLanguage, UnitPreference } from '../types/models';
  * of 1 000 kg" is what was done. Nothing here says what the reader will
  * gain.
  */
-export interface ProfileMilestoneRow {
+interface ProfileMilestoneRow {
   key: string;
   title: string;
   /** Empty for the first-session row, which has nothing to count down. */
@@ -42,12 +42,12 @@ export function formatMilestoneVolume(value: number, unitPreference: UnitPrefere
  * The same, rounded DOWN — for the figure the reader has.
  * Rounding it up printed "1 000 kg of 1 000 kg" beside "1 kg to go".
  */
-export function formatMilestoneVolumeReached(value: number, unitPreference: UnitPreference): string {
+function formatMilestoneVolumeReached(value: number, unitPreference: UnitPreference): string {
   return `${groupThousands(Math.floor(Math.max(0, value)))} ${unitPreference === 'lb' ? 'lb' : 'kg'}`;
 }
 
 /** "12 500" — a whole count, thousands grouped with a space. */
-export function formatMilestoneCount(value: number): string {
+function formatMilestoneCount(value: number): string {
   return groupThousands(Math.round(Math.max(0, value)));
 }
 
@@ -140,7 +140,7 @@ const TIER_KEY: Record<MilestoneTier, I18nKey> = {
   hard: 'milestones.tier.hard',
 };
 
-export function milestoneTierLabel(tier: MilestoneTier, language: AppLanguage): string {
+function milestoneTierLabel(tier: MilestoneTier, language: AppLanguage): string {
   return t(language, TIER_KEY[tier]);
 }
 
@@ -288,7 +288,7 @@ function describe(
 }
 
 /** A reached rung as the page lists it: the name, the day, and its tier. */
-export interface ReachedMilestoneRow {
+interface ReachedMilestoneRow {
   key: string;
   title: string;
   /** "Easy · 12 Aug 2026" */
@@ -296,7 +296,7 @@ export interface ReachedMilestoneRow {
   tier: MilestoneTier;
 }
 
-export interface MilestoneLedgerRows {
+interface MilestoneLedgerRows {
   /** "12 of 150 reached" */
   summary: string;
   reached: ReachedMilestoneRow[];

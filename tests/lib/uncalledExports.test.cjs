@@ -40,10 +40,7 @@ const ALLOWED = {
   isCatalogExercise: 'Pool membership, pinned so the catalog and the filters cannot diverge.',
   GUIDED_LIBRARY_ALIASES: 'The alias table, exposed so a test can prove every target is a real library entry — a misspelled target resolves to nothing and says so nowhere.',
   getPlanWeekPhase: 'Plan phase wording, written ahead of the surface that will show it.',
-  emptyRatingPromptState: 'Rating prompt state machine, waiting for its post-workout wiring; the demo shelf that exercised it was removed 2026-08-22.',
-  decideRatingPrompt: 'See emptyRatingPromptState.',
-  recordRatingAsked: 'See emptyRatingPromptState.',
-  recordRatingCompleted: 'See emptyRatingPromptState.',
+  emptyRatingPromptState: 'The empty rating-prompt state, pinned by tests so its shape cannot drift; the rest of the state machine is wired in src/app/finishExits.ts.',
   UNLISTED_READY_PROGRAMS:
     'A declaration, not a call: the programmes deliberately kept out of the browse collections, read only by the guard that fails when a template is in neither. Wiring it to a screen would give it behaviour it must not have — it exists so that "not browsable" is always a decision someone wrote down.',
 };

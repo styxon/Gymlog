@@ -90,7 +90,7 @@ export interface EvalCaseResult {
   score: number;
 }
 
-export interface EvalRunResult {
+interface EvalRunResult {
   cases: EvalCaseResult[];
   passedChecks: number;
   totalChecks: number;

@@ -15,7 +15,7 @@ type CompletionProps = React.ComponentProps<typeof WorkoutCompletionScreen>;
  * in hand — stays in App.tsx: when the finish-flow state was just cleared the
  * chain must fall through to the dashboard, which is App.tsx's business.
  */
-export interface WorkoutCompletionDeps {
+interface WorkoutCompletionDeps {
   preferences: AppPreferences;
   completionWeekProgress: CompletionProps['weekProgress'];
   guidedNextUp: CompletionProps['nextUp'];

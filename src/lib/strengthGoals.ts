@@ -98,7 +98,7 @@ export function resolveGoalProgress(
 }
 
 /** Whether two goal names are one lift. The default compares the names exactly. */
-export type GoalLiftMatcher = (left: string, right: string) => boolean;
+type GoalLiftMatcher = (left: string, right: string) => boolean;
 
 const sameName: GoalLiftMatcher = (left, right) => left === right;
 

@@ -68,7 +68,7 @@ const ANALYTICS_GUARDS = [
  * any caller is safe (the analytics queue).
  */
 const ENTRY_POINTS = {
-  'src/lib/aiCoachClient.ts#reportAiCoachAnswer': {
+  'src/features/aiCoach/aiCoachClient.ts#reportAiCoachAnswer': {
     trigger: 'user tap: Send on the "report this coach answer" sheet',
     bounds: ['user-action', 'in-flight-guard'],
     callers: [
@@ -81,7 +81,7 @@ const ENTRY_POINTS = {
       },
     ],
   },
-  'src/lib/aiCoachClient.ts#forgetAiCoachLog': {
+  'src/features/aiCoach/aiCoachClient.ts#forgetAiCoachLog': {
     trigger: 'a delete of the kept coach copies: the reader\'s own switch, Reset, account deletion - and the retry of an owed delete',
     bounds: ['user-action', 'once-per-launch', 'once-per-foreground', 'paced', 'in-flight-guard'],
     callers: [
@@ -109,7 +109,7 @@ const ENTRY_POINTS = {
       },
     ],
   },
-  'src/lib/aiCoachClient.ts#requestAiCoachAdvice': {
+  'src/features/aiCoach/aiCoachClient.ts#requestAiCoachAdvice': {
     trigger: 'user sends a question to the coach (chat, onboarding helper, the free tier\'s three demo moments)',
     bounds: ['user-action', 'in-flight-guard'],
     callers: [
@@ -130,12 +130,12 @@ const ENTRY_POINTS = {
       },
     ],
   },
-  'src/lib/aiCoachClient.ts#requestProgramTableFromImage': {
+  'src/features/aiCoach/aiCoachClient.ts#requestProgramTableFromImage': {
     trigger: 'user picks a photo of a programme to import (Pro)',
     bounds: ['user-action'],
     callers: [{ file: 'src/app/onboardingFinishes.tsx', trigger: 'the photo picker\'s result', bounds: ['user-action'] }],
   },
-  'src/lib/aiCoachClient.ts#requestProgrammeComposition': {
+  'src/features/aiCoach/aiCoachClient.ts#requestProgrammeComposition': {
     trigger: 'user taps Build the week on a programme offer (Pro)',
     bounds: ['user-action', 'in-flight-guard'],
     callers: [{ file: 'src/app/renderHomeScreens.tsx', trigger: 'the chat\'s onComposeProgramme', bounds: ['user-action', 'in-flight-guard'] }],
@@ -539,9 +539,9 @@ module.exports = [
         keys.map((key) => key.split('#')[0]).filter((file, index, all) => all.indexOf(file) === index),
         [
           'src/features/account/backupApi.ts',
+          'src/features/aiCoach/aiCoachClient.ts',
           'src/features/analytics/analyticsClient.ts',
           'src/features/serverNotice/serverNoticeClient.ts',
-          'src/lib/aiCoachClient.ts',
         ],
         'a new client file means a new set of server calls: state each in ENTRY_POINTS',
       );
@@ -593,7 +593,7 @@ module.exports = [
       const planted = {
         ...realTree,
         'src/screens/NewCoachScreen.tsx': [
-          "import { requestAiCoachAdvice } from '../lib/aiCoachClient';",
+          "import { requestAiCoachAdvice } from '../features/aiCoach/aiCoachClient';",
           'export function Ask() {',
           '  return requestAiCoachAdvice({ prompt: "hi" });',
           '}',

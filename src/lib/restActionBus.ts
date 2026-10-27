@@ -32,7 +32,7 @@ export type RestActionListener = (action: RestAction) => void;
  */
 export const PENDING_REST_ACTION_TTL_MS = 30000;
 
-export interface RestActionBus {
+interface RestActionBus {
   /** Listen for actions. `sessionId` is the session this screen belongs to, when it has one. */
   subscribe(listener: RestActionListener, sessionId?: string | null): () => void;
   /**

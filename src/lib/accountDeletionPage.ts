@@ -14,7 +14,7 @@ import { LEGAL_ENTITY } from './legalDocuments';
  * renames the page too. What is deleted and what stays repeats the privacy
  * policy's "Delete account" paragraph; keep the two saying the same thing.
  */
-export type AccountDeletionSection = {
+type AccountDeletionSection = {
   heading: string;
   body?: string[];
   steps?: string[];
@@ -23,7 +23,7 @@ export type AccountDeletionSection = {
   webDeletion?: boolean;
 };
 
-export type AccountDeletionPage = {
+type AccountDeletionPage = {
   title: string;
   summary: string;
   sections: AccountDeletionSection[];

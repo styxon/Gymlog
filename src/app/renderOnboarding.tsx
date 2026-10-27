@@ -31,7 +31,7 @@ type OnboardingStep = 'path' | 'about' | 'questionnaire' | 'ready_catalog';
  * it is drawn. The `content` assignments are kept as they stood, so every
  * line moved byte for byte, one indent shallower.
  */
-export interface OnboardingFlowDeps {
+interface OnboardingFlowDeps {
   entryFlowActive: boolean;
   onboardingStep: OnboardingStep;
   setOnboardingStep: React.Dispatch<React.SetStateAction<OnboardingStep>>;
@@ -217,7 +217,7 @@ export function renderOnboardingFlow(deps: OnboardingFlowDeps): React.ReactNode 
  * App.tsx's render chain; the overlay style is App.tsx's own constant, passed
  * in rather than copied so the consent sheet and this keep one geometry.
  */
-export interface SetupHandoffDeps {
+interface SetupHandoffDeps {
   preferences: AppPreferences;
   setupHandoffPlan: SetupHandoffPlan;
   handleSetupHandoffDone: (choices: SetupHandoffChoices) => Promise<void>;
@@ -302,7 +302,7 @@ export function renderSetupHandoff(deps: SetupHandoffDeps): React.ReactNode {
  * from App.tsx's render chain; its `key` still remounts it whenever the
  * recommendation, the setup state or the stage changes.
  */
-export interface SetupEditorDeps {
+interface SetupEditorDeps {
   route: Extract<AppRoute, { tab: 'profile'; screen: 'setup' }>;
   preferences: AppPreferences;
   setupEditSelection: FirstRunSetupSelection | null;

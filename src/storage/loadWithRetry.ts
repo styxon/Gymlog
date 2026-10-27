@@ -11,13 +11,13 @@
  * `isCancelled` is asked after every await: a provider that unmounted, or
  * started another attempt, must not have this one land.
  */
-export type LoadWithRetryResult<T> =
+type LoadWithRetryResult<T> =
   | { kind: 'loaded'; value: T }
   | { kind: 'failed'; error: unknown }
   | { kind: 'cancelled' };
 
 export const LOAD_ATTEMPTS = 3;
-export const LOAD_BACKOFF_MS = 400;
+const LOAD_BACKOFF_MS = 400;
 
 export async function loadWithRetry<T>(
   load: () => Promise<T>,

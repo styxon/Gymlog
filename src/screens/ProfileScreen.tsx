@@ -568,18 +568,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     flexDirection: 'row',
     gap: 4,
   },
-  // The inactive fill was hardcoded pale, so under the dark theme the rest
-  // days lit up white while the training days (theme.purpleLight, a dark tint)
-  // went quiet — the card read backwards.
-  badge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 999,
-    backgroundColor: theme.highlightSoft,
-  },
   // Rows of the shared ListCard: its hairlines run edge to edge, so the
   // inset is on the row.
   milestoneRow: {

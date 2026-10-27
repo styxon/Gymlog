@@ -60,7 +60,7 @@ const LOOKAHEAD_DAYS = 14;
  * While rest was transparent the two could share a state — a rest day with a
  * colour cannot be shared with a day that must have none (2026-08-25).
  */
-export type HomeWidgetDayState = 'done' | 'plan' | 'off' | 'pad';
+type HomeWidgetDayState = 'done' | 'plan' | 'off' | 'pad';
 
 /**
  * Where a tap goes. Slugs, not routes: the app resolves them against live
@@ -69,7 +69,7 @@ export type HomeWidgetDayState = 'done' | 'plan' | 'off' | 'pad';
  */
 export type HomeWidgetTarget = 'session' | 'suggestion' | 'calendar' | 'home' | 'programs' | 'schedule';
 
-export interface HomeWidgetDay {
+interface HomeWidgetDay {
   /** Day of month, e.g. "30" — empty for the days either side of the month. */
   dateLabel: string;
   /**
@@ -105,9 +105,9 @@ export interface HomeWidgetDay {
  * day. `prompt` is the states that have something to ask instead, and those
  * keep their sentence.
  */
-export type HomeWidgetRoutineKind = 'rest' | 'work' | 'done' | 'prompt';
+type HomeWidgetRoutineKind = 'rest' | 'work' | 'done' | 'prompt';
 
-export interface HomeWidgetRoutineDay {
+interface HomeWidgetRoutineDay {
   kind: HomeWidgetRoutineKind;
   /**
    * "2026-08-21". Which day this entry is for, matched against the device's
@@ -129,14 +129,14 @@ export interface HomeWidgetRoutineDay {
 }
 
 /** One of the three figures the 4×2 puts beside the calendar. */
-export interface HomeWidgetStat {
+interface HomeWidgetStat {
   /** Pre-translated: "Workouts", "Duration", "Volume". */
   label: string;
   /** Already formatted: "6", "4 h 20 min", "12,4 t". */
   value: string;
 }
 
-export interface HomeWidgetNextMonth {
+interface HomeWidgetNextMonth {
   monthKey: string;
   monthLabel: string;
   monthWeeks: HomeWidgetDay[][];
@@ -184,7 +184,7 @@ export interface HomeWidgetPayload {
   routineDays: HomeWidgetRoutineDay[];
 }
 
-export interface HomeWidgetInput {
+interface HomeWidgetInput {
   nowMs: number;
   language: AppLanguage;
   /** The theme the app actually resolved — already through the Pro gate. */
@@ -317,7 +317,7 @@ function weekdayIndexOf(date: Date) {
   return date.getDay() === 0 ? 6 : date.getDay() - 1;
 }
 
-export interface HomeWidgetNextSession {
+interface HomeWidgetNextSession {
   session: HomeDaySessionSummary;
   /** Days from today. 0 only when today is a training day still to be done. */
   offset: number;
@@ -458,7 +458,7 @@ function buildStats(language: AppLanguage, totals: HomeWidgetInput['monthTotals'
  * Home's own "continue" button, which is the button this tile should have
  * been.
  */
-export type HomeWidgetSessionTap =
+type HomeWidgetSessionTap =
   | { kind: 'resume' }
   | { kind: 'open'; next: HomeWidgetNextSession }
   | { kind: 'home' };

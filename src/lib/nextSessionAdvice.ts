@@ -42,7 +42,7 @@ export type NextSessionAdvice =
 export const NO_NEXT_SESSION_ADVICE: NextSessionAdvice = { kind: 'none' };
 
 /** The part of a programme's exercise the gate reads. */
-export interface AdviceTemplateExercise {
+interface AdviceTemplateExercise {
   exerciseName: string;
   slotId: string;
   sets: number;
@@ -60,7 +60,7 @@ export interface AdviceTemplate {
 /** The programme a logged session was started from, or null when it is gone. */
 export type AdviceTemplateLookup = (templateId: string) => AdviceTemplate | null;
 
-export interface NextSessionAdviceInput {
+interface NextSessionAdviceInput {
   /** The lift, by the name it was logged under. */
   liftName: string;
   /** The session the advice follows; the gate reads the history up to it. */

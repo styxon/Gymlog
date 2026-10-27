@@ -13,13 +13,13 @@
  */
 
 /** The pages allowed to send the request. Nothing else gets a CORS header. */
-export const WEB_DELETION_ORIGINS = ['https://styxon.fi', 'https://www.styxon.fi'] as const;
+const WEB_DELETION_ORIGINS = ['https://styxon.fi', 'https://www.styxon.fi'] as const;
 
 /** Where the page sends it. */
 export const WEB_DELETION_ENDPOINT = 'https://api.vinha.app/api/backup';
 
 /** The headers the page sends besides the simple ones. */
-export const WEB_DELETION_REQUEST_HEADERS = ['authorization', 'x-backup-action'] as const;
+const WEB_DELETION_REQUEST_HEADERS = ['authorization', 'x-backup-action'] as const;
 
 /**
  * The CORS headers for one request, or null when it gets none.

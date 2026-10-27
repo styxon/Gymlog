@@ -31,8 +31,8 @@ export const SESSION_FEEL_LABEL_KEY: Record<SessionFeel, I18nKey> = {
  * to red, so the two ends that are not already theme colours are named here
  * and nowhere else.
  */
-export const SESSION_FEEL_HARD_COLOR = '#E0922F';
-export const SESSION_FEEL_TOO_HARD_COLOR = '#D64545';
+const SESSION_FEEL_HARD_COLOR = '#E0922F';
+const SESSION_FEEL_TOO_HARD_COLOR = '#D64545';
 
 /**
  * Takes the two theme colours it needs rather than the whole Theme, so this
@@ -61,7 +61,7 @@ export function sessionFeelColor(
  * answer dominates. They used to share one label ("Mixed"), so twelve answers
  * of "Just right" read back as mixed — which they are not.
  */
-export type SessionFeelRead = 'light' | 'steady' | 'demanding' | 'mixed';
+type SessionFeelRead = 'light' | 'steady' | 'demanding' | 'mixed';
 
 export interface SessionFeelSummary {
   /** Sessions looked at — answered or not. */

@@ -1,13 +1,9 @@
 import React, { useId, useMemo, useState } from 'react';
-import { LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
-import { Text } from './AppText';
+import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import Svg, { Defs, FeGaussianBlur, Filter, G, Rect, Text as SvgText } from 'react-native-svg';
 
 import { layoutBlurredLines } from '../lib/blurredPreviewText';
-import { t } from '../lib/i18n';
 import { Theme, useThemedStyles, useTheme } from '../theming';
-import { AppLanguage } from '../types/models';
-import { ProLockIcon, ProPill } from './ProLockMarks';
 
 /**
  * A real gaussian blur, with no new native dependency.
@@ -38,7 +34,7 @@ import { ProLockIcon, ProPill } from './ProLockMarks';
  */
 const DEFAULT_BLUR = 10;
 
-export type BlurredContent =
+type BlurredContent =
   | {
       kind: 'text';
       /** The REAL conclusion. Never a generic feature list — that is a lie you can un-blur. */
@@ -182,70 +178,6 @@ function BlurredBarMarks({
   );
 }
 
-interface ProPreviewCardProps {
-  language: AppLanguage;
-  /** Plain-text finding, readable. What the app already knows for free. */
-  teaser: string;
-  /** The locked conclusion, drawn blurred. */
-  content: BlurredContent;
-  /** Height of the blurred block. */
-  previewHeight?: number;
-  /** Big line laid over the blur, e.g. "Your answer is ready". */
-  overlayTitle?: string;
-  cta?: string;
-  onPress: () => void;
-}
-
-/**
- * The composition the 100M-download competitor uses, in Vinha's clothes: real
- * content behind a blur, a headline sitting ON the blur, and the CTA inside the
- * same card rather than at the far end of a paywall page. The reader never
- * leaves the thing they were reading to find out what it costs.
- */
-export function ProPreviewCard({
-  language,
-  teaser,
-  content,
-  previewHeight = 92,
-  overlayTitle,
-  cta,
-  onPress,
-}: ProPreviewCardProps) {
-  const styles = useThemedStyles(makeStyles);
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={teaser}
-      onPress={onPress}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      <View style={styles.headRow}>
-        <ProLockIcon />
-        <Text style={styles.teaser} numberOfLines={2}>
-          {teaser}
-        </Text>
-        <ProPill />
-      </View>
-
-      <View style={styles.previewWrap}>
-        <BlurredPreview content={content} height={previewHeight} />
-        {overlayTitle ? (
-          <View style={styles.overlay} pointerEvents="none">
-            <Text style={styles.overlayTitle} numberOfLines={2}>
-              {overlayTitle}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-
-      <View style={styles.ctaButton}>
-        <Text style={styles.ctaText}>{cta ?? t(language, 'pro.locked.cta')}</Text>
-      </View>
-    </Pressable>
-  );
-}
-
 const makeStyles = (theme: Theme) => StyleSheet.create({
   block: {
     width: '100%',
@@ -257,59 +189,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     // Low, because the gaussian blur is doing the real work here. It only has
     // to be enough to cover a device that ignores SVG filters.
     opacity: 0.35,
-  },
-  card: {
-    backgroundColor: theme.purpleLight,
-    borderWidth: 1.5,
-    borderColor: theme.purple,
-    borderStyle: 'dashed',
-    borderRadius: 14,
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-  headRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-  },
-  teaser: {
-    flex: 1,
-    fontSize: 12.5,
-    fontWeight: '800',
-    color: theme.proInk,
-  },
-  previewWrap: {
-    marginTop: 10,
-    position: 'relative',
-  },
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 8,
-  },
-  overlayTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: theme.proInk,
-    textAlign: 'center',
-    lineHeight: 21,
-  },
-  ctaButton: {
-    marginTop: 12,
-    height: 44,
-    borderRadius: 12,
-    // The white-label violet (accessibility audit, 2026-09-21).
-    backgroundColor: theme.purpleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  ctaText: {
-    fontSize: 14.5,
-    fontWeight: '800',
-    color: '#FFFFFF',
   },
 });

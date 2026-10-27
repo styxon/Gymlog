@@ -35,7 +35,7 @@ import { reportPlanSaveFailed } from './planSaveFailure';
  * build does not compile it. "Above" and "beside" in the moved docs still
  * point inside this file: the reorder sits above syncPlanToTemplate here too.
  */
-export interface ProgrammeDayEditsDeps {
+interface ProgrammeDayEditsDeps {
   database: AppDatabase;
   preferences: AppPreferences;
   updatePreferences: (patch: PreferencesPatch) => Promise<void>;

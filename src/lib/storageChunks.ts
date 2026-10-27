@@ -46,7 +46,7 @@ export const STORAGE_CHUNK_CHARS = 256_000;
 const MANIFEST_PREFIX = 'vinha-chunks:';
 const MANIFEST_PATTERN = /^vinha-chunks:(\d+):(\d+)$/;
 
-export interface ChunkManifest {
+interface ChunkManifest {
   /** How many parts follow the base key, as `${key}#0` … `${key}#${count - 1}`. */
   count: number;
   /** The joined length, so a part that came back short is caught, not parsed. */

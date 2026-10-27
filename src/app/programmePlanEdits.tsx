@@ -33,7 +33,7 @@ type AppContextValue = ReturnType<typeof useAppContext>;
  * .tsx only because the context types come from src/state/AppProvider.tsx; no
  * .ts module imports this file, and the test build does not compile it.
  */
-export interface ProgrammePlanEditsDeps {
+interface ProgrammePlanEditsDeps {
   database: AppContextValue['database'];
   preferences: AppContextValue['preferences'];
   updatePreferences: AppContextValue['updatePreferences'];

@@ -68,7 +68,7 @@ export function isSpecialtyExercise(item: Pick<ExerciseLibraryItem, 'name'> & Pa
 
 // ── mechanic and type ────────────────────────────────────────────────────
 
-export type ExerciseMechanic = 'compound' | 'isolation';
+type ExerciseMechanic = 'compound' | 'isolation';
 
 /**
  * Compound or isolation, as the source says it — the generator's `category`

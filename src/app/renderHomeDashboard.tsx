@@ -23,7 +23,7 @@ type TourFocus = HomeScreenProps['tourFocus'];
  * when no branch claimed the route or a tab module declined it, exactly where
  * the JSX stood, so the same HomeScreen instance survives every render.
  */
-export interface HomeDashboardDeps {
+interface HomeDashboardDeps {
   preferences: AppPreferences;
   updatePreferences: (patch: PreferencesPatch) => Promise<void>;
   tourRegistry: NonNullable<HomeScreenProps['tourTargets']>;

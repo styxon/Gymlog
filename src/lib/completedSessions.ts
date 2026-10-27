@@ -234,7 +234,7 @@ export function getRollingWindowStart(now: Date | string | number, days: number)
  * 03:00 transitions only times in that hour are affected, which is why the week
  * helpers below — always at local midnight — are exact.
  */
-export function addCalendarDays(reference: Date | string | number, days: number) {
+function addCalendarDays(reference: Date | string | number, days: number) {
   const date = new Date(reference);
 
   return new Date(

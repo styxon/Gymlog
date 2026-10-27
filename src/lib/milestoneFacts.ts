@@ -34,14 +34,14 @@ import { AppDatabase, ExerciseLog, UnitPreference } from '../types/models';
  * Volume is kept in kilograms here and converted at the ladder, the same way
  * the card converts it — one place decides what a pound is.
  */
-export interface MilestonePoint {
+interface MilestonePoint {
   /** ISO timestamp of the event that moved the figure. */
   at: string;
   /** The family's figure after it. */
   total: number;
 }
 
-export interface MilestoneFacts {
+interface MilestoneFacts {
   current: Record<MilestoneFamily, number>;
   timelines: Record<MilestoneFamily, MilestonePoint[]>;
 }

@@ -146,7 +146,7 @@ const CAUTION_LEVEL_KEYS: readonly AICoachCautionArea['level'][] = ['info', 'car
 
 type AiCardioInput = Pick<CardioSession, 'id' | 'activityType' | 'performedAt' | 'durationSec' | 'distanceKm'>;
 
-export interface BuildAiTrainingContextInput {
+interface BuildAiTrainingContextInput {
   unitPreference: UnitPreference;
   activeWorkoutSummary: {
     title: string;

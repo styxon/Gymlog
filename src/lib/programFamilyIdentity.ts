@@ -23,9 +23,9 @@ import { I18nKey } from './i18n';
  * precomputed here and painted with an SVG LinearGradient.
  */
 
-export type ProgramFamily = 'HOME' | 'STRONG' | 'HUGE' | 'RESET' | 'FIT' | 'SHRED' | 'RUN' | 'FOCUS' | 'VITAL';
+type ProgramFamily = 'HOME' | 'STRONG' | 'HUGE' | 'RESET' | 'FIT' | 'SHRED' | 'RUN' | 'FOCUS' | 'VITAL';
 
-export interface ProgramFamilyIdentity {
+interface ProgramFamilyIdentity {
   family: ProgramFamily;
   /** Cover gradient, light stop first. oklch L .70 C .15 → L .46 C .19. */
   cover: [string, string];

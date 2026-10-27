@@ -370,7 +370,7 @@ export function KitRow({
   );
 }
 
-export interface KitBarButton {
+interface KitBarButton {
   label: string;
   /** p = accent (this time / plain confirm), d = danger (for ever), g = ghost. */
   kind: 'p' | 'd' | 'g';

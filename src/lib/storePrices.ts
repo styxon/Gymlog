@@ -25,7 +25,7 @@ import type { AppLanguage } from '../types/models';
  */
 
 /** The fields of RevenueCat's PurchasesStoreProduct this reads. */
-export interface StorePlanPrice {
+interface StorePlanPrice {
   price: number;
   /** Formatted by the store for the device's locale, currency sign included. */
   priceString: string;

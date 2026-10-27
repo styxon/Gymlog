@@ -16,7 +16,7 @@ import { resolveProgramAffinity } from './programAffinity';
  * Rendering it is Home's job; persisting the dismissal is the caller's.
  */
 
-export interface CompletionCardInput {
+interface CompletionCardInput {
   /** The active plan's id — the dismissal key. */
   planId: string;
   /** Sessions logged against the plan, from the same count the hero shows. */
@@ -31,7 +31,7 @@ export interface CompletionCardInput {
   dismissedPlanIds: readonly string[];
 }
 
-export interface CompletionCard {
+interface CompletionCard {
   planId: string;
   sessionsTotal: number;
   /**

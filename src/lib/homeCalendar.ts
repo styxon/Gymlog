@@ -70,7 +70,7 @@ function formatDayMonth(date: Date) {
   return `${formatTwoDigitDatePart(date.getDate())}/${formatTwoDigitDatePart(date.getMonth() + 1)}`;
 }
 
-export interface HomeMiniCalendarDay {
+interface HomeMiniCalendarDay {
   dayStart: number;
   label: string;
   weekdayLabel: string;
@@ -145,7 +145,7 @@ export interface HomeDaySessionSummary {
   }>;
 }
 
-export interface HomeDayView {
+interface HomeDayView {
   kind: 'training' | 'recovery';
   eyebrow: string;
   title: string;
@@ -192,7 +192,7 @@ export function getHomeCarouselCalendarDays(
   });
 }
 
-export interface HomeMonthCalendarDay {
+interface HomeMonthCalendarDay {
   dayStart: number;
   dayOfMonth: number;
   weekdayIndex: number;
@@ -200,7 +200,7 @@ export interface HomeMonthCalendarDay {
   isToday: boolean;
 }
 
-export interface HomeMonthCalendar {
+interface HomeMonthCalendar {
   monthLabel: string;
   weekdayLabels: string[];
   weeks: HomeMonthCalendarDay[][];

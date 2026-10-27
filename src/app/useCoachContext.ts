@@ -47,7 +47,7 @@ import type { AppDatabase, AppPreferences, UnitPreference } from '../types/model
  * state"), above the Home stat cards, was already apart from it and stays
  * there.
  */
-export interface CoachContextDeps {
+interface CoachContextDeps {
   workoutSessions: AppDatabase['workoutSessions'];
   cardioSessions: AppDatabase['cardioSessions'];
   database: AppDatabase;

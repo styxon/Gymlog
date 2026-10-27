@@ -16,7 +16,7 @@
  * So the pick's own instant decides: a session finished BEFORE the pick was
  * made cannot have answered it.
  */
-export interface TodaySessionPick {
+interface TodaySessionPick {
   dayStart: number;
   sessionId: string;
   pickedAt: number;
@@ -29,7 +29,7 @@ export interface TodaySessionPick {
   workoutTemplateId?: string | null;
 }
 
-export interface CompletedPlanSession {
+interface CompletedPlanSession {
   workoutTemplateId?: string | null;
   workoutTemplateSessionId?: string | null;
   performedAt: string;

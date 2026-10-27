@@ -17,7 +17,7 @@ import { AppLanguage } from '../types/models';
  * second collection ships when its lessons do, not before.
  */
 
-export interface ExerciseCollectionEntry {
+interface ExerciseCollectionEntry {
   /**
    * The movement pattern this lift stands for. The reason it is in the list —
    * "Barbell Squat" is the example; "Squat" is the lesson.
@@ -92,7 +92,7 @@ export function getExerciseCollection(
   return getExerciseCollections(language).find((collection) => collection.id === id) ?? null;
 }
 
-export interface CollectionProgress {
+interface CollectionProgress {
   done: number;
   total: number;
   /** The first entry not yet learned — what the screen marks NEXT. */
@@ -137,7 +137,7 @@ export function resolveCollectionProgress(
 /** Which of the three a library card is showing. */
 export type LibraryCollectionState = 'inProgress' | 'notStarted' | 'done';
 
-export interface PickedLibraryCollection {
+interface PickedLibraryCollection {
   collection: ExerciseCollection;
   progress: CollectionProgress;
   state: LibraryCollectionState;

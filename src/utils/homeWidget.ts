@@ -20,7 +20,7 @@ import { File, Paths } from 'expo-file-system';
 
 import type { HomeWidgetPayload } from '../lib/widgetPayload';
 
-export const HOME_WIDGET_FILE_NAME = 'vinha-widget.json';
+const HOME_WIDGET_FILE_NAME = 'vinha-widget.json';
 
 /**
  * Writes the payload. Returns the file URI on success, null when there was

@@ -20,7 +20,7 @@ export type CoachReportReason = (typeof COACH_REPORT_REASONS)[number];
 export const MAX_REPORT_LINE_CHARS = 600;
 export const MAX_REPORT_LIST_ITEMS = 8;
 
-export interface CoachReportAnswer {
+interface CoachReportAnswer {
   takeaway: string;
   why: string[];
   nextSteps: string[];
@@ -29,7 +29,7 @@ export interface CoachReportAnswer {
   plan: string[];
 }
 
-export interface CoachReport {
+interface CoachReport {
   reason: CoachReportReason;
   answer: CoachReportAnswer;
 }

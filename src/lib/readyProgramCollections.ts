@@ -1,7 +1,7 @@
 import { AppLanguage } from '../types/models';
 import { I18nKey, t } from './i18n';
 
-export interface ReadyProgramCollection {
+interface ReadyProgramCollection {
   key: string;
   label: string;
   templateIds: string[];

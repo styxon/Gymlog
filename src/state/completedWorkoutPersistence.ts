@@ -60,7 +60,7 @@ export interface PersistCompletedWorkoutInput {
   takenBackAt?: string[];
 }
 
-export interface PersistCompletedWorkoutResult {
+interface PersistCompletedWorkoutResult {
   database: AppDatabase;
   didPersist: boolean;
   summary: SessionSaveSummary;
@@ -74,13 +74,13 @@ export interface PersistCompletedWorkoutResult {
 }
 
 /** The pure result of building one completed workout: no database involved. */
-export interface CompletedWorkoutRecord {
+interface CompletedWorkoutRecord {
   session: WorkoutSession;
   logs: ExerciseLog[];
   summary: SessionSaveSummary;
 }
 
-export interface BatchImportResult {
+interface BatchImportResult {
   database: AppDatabase;
   imported: number;
   /** Workouts whose id is already in the history. */

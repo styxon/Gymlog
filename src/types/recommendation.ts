@@ -19,19 +19,19 @@ export type TemplateFamilyId =
   | 'low_impact';
 
 export type RecommendationConfidence = 'high' | 'medium' | 'low';
-export type RecommendationWeekRole = 'baseline' | 'build' | 'review';
-export type RecommendationEquipmentTier = 'full_gym' | 'low_equipment';
-export type RecommendationRecoveryDemand = 'low' | 'moderate' | 'high';
+type RecommendationWeekRole = 'baseline' | 'build' | 'review';
+type RecommendationEquipmentTier = 'full_gym' | 'low_equipment';
+type RecommendationRecoveryDemand = 'low' | 'moderate' | 'high';
 /**
  * 'machine_guided': the week's lifting is mostly on machines and cables, which
  * set the path of each lift (FIT Lite, HUGE Starter, HUGE Builder,
  * Joint-Friendly Strength, STRONG Guided; owner, 2026-10-12). What the age
  * rule offers a 16-18-year-old at the gym.
  */
-export type RecommendationStyleTag = 'heavy' | 'pump' | 'balanced' | 'express' | 'recovery' | 'conditioning' | 'machine_guided';
-export type RecommendationTargetGender = 'male' | 'female' | 'unisex';
-export type RecommendationProgrammeDurationStatus = 'starter' | 'standard' | 'long_catalog' | 'advanced_reference';
-export type RecommendationSessionBlockType = 'prep' | 'main' | 'support' | 'focus' | 'conditioning' | 'cooldown';
+type RecommendationStyleTag = 'heavy' | 'pump' | 'balanced' | 'express' | 'recovery' | 'conditioning' | 'machine_guided';
+type RecommendationTargetGender = 'male' | 'female' | 'unisex';
+type RecommendationProgrammeDurationStatus = 'starter' | 'standard' | 'long_catalog' | 'advanced_reference';
+type RecommendationSessionBlockType = 'prep' | 'main' | 'support' | 'focus' | 'conditioning' | 'cooldown';
 
 export interface RecommendationInput {
   goal: SetupGoal;
@@ -104,7 +104,7 @@ export interface RecommendationCandidate {
   breakdown: RecommendationScoreBreakdown;
 }
 
-export interface RecommendationProgrammeEasierWeek {
+interface RecommendationProgrammeEasierWeek {
   week: number;
   reason: string;
 }
@@ -155,7 +155,7 @@ export interface RecommendationTrainingBlock {
   nextWeekAction: string;
 }
 
-export type RecommendationPlanReadyScheduleDaySource = 'template' | 'suggested';
+type RecommendationPlanReadyScheduleDaySource = 'template' | 'suggested';
 
 export interface RecommendationPlanReadyScheduleDay {
   id: string;
@@ -208,7 +208,7 @@ export interface RecommendationPlanReadyPayload {
   fallbackReason: string | null;
 }
 
-export type RecommendationWaterfallRule =
+type RecommendationWaterfallRule =
   | 'home_equipment'
   | 'run_mobility'
   | 'beginner_first'

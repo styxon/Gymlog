@@ -40,15 +40,11 @@ export function isDevelopmentBuild(): boolean {
 }
 
 /**
- * The screen key reports will carry (lib/errorReport screenKeyForRoute). Set
- * while the app renders, not in an effect after it: an error thrown by the
- * screen being drawn must name that screen, not the one it replaced.
+ * What the shell is drawing right now: the setup flow, or the route's own key
+ * (lib/errorReport screenKeyForRoute). Set while the app renders, not in an
+ * effect after it: an error thrown by the screen being drawn must name that
+ * screen, not the one it replaced.
  */
-export function setErrorReportScreen(key: string): void {
-  screen = key;
-}
-
-/** What the shell is drawing right now: the setup flow, or the route's own key. */
 export function noteRenderedScreen(onboardingActive: boolean, route: { tab: string; screen: string }): void {
   screen = onboardingActive ? 'onboarding' : screenKeyForRoute(route);
 }

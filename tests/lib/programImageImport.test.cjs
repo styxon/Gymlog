@@ -71,7 +71,7 @@ function photoImportWorld(answer, overrides = {}) {
         },
       },
     },
-    '../lib/aiCoachClient': {
+    '../features/aiCoach/aiCoachClient': {
       isAiCoachLiveConfigured: () => true,
       requestProgramTableFromImage: record(
         'requestProgramTableFromImage',

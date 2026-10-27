@@ -15,7 +15,7 @@ type ProgressScreenProps = React.ComponentProps<typeof ProgressScreen>;
  * ProgressScreen element the chain produced, so the screen instance
  * survives route changes within the tab exactly as before.
  */
-export interface ProgressTabDeps {
+interface ProgressTabDeps {
   route: AppRoute;
   navigate: (route: AppRoute) => void;
   resetToRoute: (route: AppRoute) => void;

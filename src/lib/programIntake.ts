@@ -18,8 +18,8 @@ import { AiPlannerExperience, AiPlannerGoal, AppLanguage, AppPreferences } from 
  * sentence as text. tests/lib/programIntake.test.cjs holds that round trip.
  */
 
-export type ProgramIntakeStep = 'goal' | 'days' | 'minutes' | 'equipment' | 'experience' | 'extra';
-export type ProgramIntakeEquipment = 'gym' | 'home_dumbbells' | 'bodyweight';
+type ProgramIntakeStep = 'goal' | 'days' | 'minutes' | 'equipment' | 'experience' | 'extra';
+type ProgramIntakeEquipment = 'gym' | 'home_dumbbells' | 'bodyweight';
 
 export interface ProgramIntakeAnswers {
   goal: AiPlannerGoal | null;
@@ -43,7 +43,7 @@ export interface ProgramIntakeState {
   editing?: boolean;
 }
 
-export interface ProgramIntakeOption {
+interface ProgramIntakeOption {
   value: string;
   labelKey: I18nKey;
 }

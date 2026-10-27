@@ -12,7 +12,7 @@ import { ImageSourcePropType } from 'react-native';
  * why that is a legal matter rather than a taste one) are in
  * assets/fitness/programmes/README.md.
  */
-export const PROGRAMME_PHOTOS: Record<string, ImageSourcePropType> = {
+const PROGRAMME_PHOTOS: Record<string, ImageSourcePropType> = {
   tpl_gainer_dream_body_female_v1: require('../../assets/fitness/programmes/dream-body-female.jpg'),
   tpl_gainer_dream_body_man_v1: require('../../assets/fitness/programmes/dream-body-man.jpg'),
   tpl_gainer_hourglass_shape_v1: require('../../assets/fitness/programmes/hourglass-shape.jpg'),

@@ -23,12 +23,12 @@ import { PlanRotationEntry, PlanRotationSession, planTrainedOnDay, resolveNextPl
 import { WEEKDAY_KEYS } from './programTrainingDays';
 import { rotateLabelsForNextSession } from './trainingWeekSync';
 
-export interface PlanEntrySessionRef {
+interface PlanEntrySessionRef {
   workoutTemplateSessionId?: string | null;
   orderIndex: number;
 }
 
-export type PlanSessionOrderOutcome<T> =
+type PlanSessionOrderOutcome<T> =
   | { kind: 'skip'; reason: 'noSessionIds' | 'countMismatch' | 'unchanged' }
   | { kind: 'repointed'; entries: T[] };
 

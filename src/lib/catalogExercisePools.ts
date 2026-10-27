@@ -209,7 +209,7 @@ export function resolveLibraryItem<T extends { name: string }>(name: string, lib
  * the guided player opens the same exercise for both, so a day holding both
  * holds the lift twice. A name the library cannot place is its own identity.
  */
-export function resolveCatalogLibraryKey(name: string): string {
+function resolveCatalogLibraryKey(name: string): string {
   const trimmed = name.trim().toLowerCase();
   const index = findGuidedLibraryIndex(name, libraryNames);
   return index === null ? trimmed : libraryNames[index].trim().toLowerCase();
@@ -414,7 +414,7 @@ export function trackingModeAfterSwap(current: WorkoutTrackingMode, exerciseName
   return sameKind ? current : incoming;
 }
 
-export interface SwapPrescription {
+interface SwapPrescription {
   repsMin: number;
   repsMax: number;
 }
@@ -531,9 +531,9 @@ export function boutsAfterSwap(
 }
 
 /** What workoutCatalog doses Cat Stretch at in its own mobility programmes. */
-export const MOBILITY_REPS_DOSE = { reps: 6, maxSets: 3, restSecondsMin: 30, restSecondsMax: 45 } as const;
+const MOBILITY_REPS_DOSE = { reps: 6, maxSets: 3, restSecondsMin: 30, restSecondsMax: 45 } as const;
 
-export interface ComposedSlotDose {
+interface ComposedSlotDose {
   sets: number;
   repsMin: number;
   repsMax: number;
@@ -598,7 +598,7 @@ export function composedSlotDose(
 }
 
 /** Bodyweight-first, then the loaded version. Both are real catalog entries. */
-export interface FocusAccessoryPool {
+interface FocusAccessoryPool {
   bodyweight: string[];
   loaded: string[];
 }
@@ -676,7 +676,7 @@ export const FOCUS_ACCESSORY_POOL: Record<SetupFocusArea, FocusAccessoryPool> = 
  * a day that already trains it — a glute accessory belongs on leg day, not on
  * the upper-body day the round-robin happened to reach.
  */
-export const FOCUS_AREA_BODY_PARTS: Record<SetupFocusArea, string[]> = {
+const FOCUS_AREA_BODY_PARTS: Record<SetupFocusArea, string[]> = {
   chest: ['chest'],
   back: ['back'],
   shoulders: ['shoulders'],

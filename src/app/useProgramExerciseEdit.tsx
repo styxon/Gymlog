@@ -68,7 +68,7 @@ import { reportPlanSaveFailed } from './planSaveFailure';
  * programCapLine, the orphaned "Take one lift out" doc above it, and the
  * orphaned adoption doc below the call.
  */
-export interface ProgramExerciseEditDeps {
+interface ProgramExerciseEditDeps {
   /** The library a lift added or swapped in is looked up in, for its id and its defaults. */
   exerciseLibrary: AppDatabase['exerciseLibrary'];
   preferences: AppPreferences;

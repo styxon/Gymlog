@@ -34,7 +34,7 @@ import type { SetupFocusArea, SetupWeekday } from '../types/models';
  * drift apart.
  */
 
-export interface ComposedProgramSession {
+interface ComposedProgramSession {
   id: string;
   /** Raw schedule-day name; format with formatWorkoutDisplayLabel for UI. */
   name: string;

@@ -70,7 +70,7 @@ export interface LoggedHistorySession {
   }>;
 }
 
-export type WorkoutAction =
+type WorkoutAction =
   | { type: 'session/hydrate'; payload: WorkoutPersistenceBundle }
   | { type: 'session/markRestoring'; payload: { value: boolean } }
   | {
@@ -389,7 +389,7 @@ interface ResolvedSetDraft {
  * Exported so the set screen's "Last time" panel gates its lookup identically
  * — the two must resolve the same entry or the screen contradicts itself.
  */
-export function resolveBorrowRepWindow(exercise: {
+function resolveBorrowRepWindow(exercise: {
   trackingMode: WorkoutTrackingMode;
   repsMin: number;
   repsMax: number;
@@ -1006,7 +1006,7 @@ function materializeWorkoutSessionFromTemplate(
 }
 
 /** One lift's opening targets for its next session, set by set. */
-export interface NextSessionLiftTargets {
+interface NextSessionLiftTargets {
   exerciseName: string;
   trackingMode: WorkoutTrackingMode;
   sets: { loadKg: number | null; reps: number }[];
@@ -2859,60 +2859,6 @@ export function completeWorkoutSession(state: WorkoutFeatureState, performedAt =
   };
 }
 
-export function selectActiveExercise(session: WorkoutSessionRuntime | null) {
-  if (!session || !session.ui.activeSlotId) {
-    return null;
-  }
-  return session.exercises.find((exercise) => exercise.slotId === session.ui.activeSlotId) ?? null;
-}
-
-export function selectNextExercise(session: WorkoutSessionRuntime | null) {
-  if (!session) {
-    return null;
-  }
-  const activeIndex = session.exercises.findIndex((exercise) => exercise.slotId === session.ui.activeSlotId);
-  const nextIndex = session.exercises.findIndex((exercise, index) => index > activeIndex && exercise.status !== 'completed' && exercise.status !== 'skipped');
-  return session.exercises[nextIndex >= 0 ? nextIndex : -1] ?? null;
-}
-
 export function selectWorkoutSummary(state: WorkoutFeatureState) {
   return state.completionSummary;
 }
-
-export function selectProgressionHint(state: WorkoutFeatureState, slotId: string) {
-  const exercise = state.activeSession?.exercises.find((item) => item.slotId === slotId);
-  const history = exercise ? getHistoryEntriesForExercise(state.history, exercise)[0] : null;
-  if (!exercise || !history) {
-    return null;
-  }
-
-  const lastSet = history.sets[history.sets.length - 1];
-  if (!lastSet) {
-    return null;
-  }
-
-  if (lastSet.reps >= exercise.sets[0].plannedRepsMax) {
-    return 'Increase load next time';
-  }
-
-  if (lastSet.reps >= exercise.sets[0].plannedRepsMin) {
-    return 'Repeat load and beat reps';
-  }
-
-  return 'Repeat last load';
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

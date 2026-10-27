@@ -61,16 +61,6 @@ export const appInfo = {
   starterSuggestions: ['Ylakroppa', 'Alakroppa', 'Koko kroppa', 'Push', 'Pull', 'Jalat'],
 };
 
-export const shadows = {
-  card: {
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.18,
-    shadowRadius: 24,
-    elevation: 8,
-  },
-};
-
 /**
  * The Pro page's three tier skins (design: "Vinha Pro v6 — kolme tasoa").
  *

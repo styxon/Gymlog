@@ -14,14 +14,14 @@ import { getComparableLogSets } from './exerciseLog';
 import { convertWeightFromKg, formatLogSetSummary, formatVolume, removeTrailingZeros } from './format';
 import { getBodyweightProgress, getMostRecentSessionSummary, getRecentLogsForExercise } from './progression';
 
-export interface HomeLastSessionDeltaSummary {
+interface HomeLastSessionDeltaSummary {
   sessionId: string;
   title: string;
   value: string;
   detail: string;
 }
 
-export interface HomeStreakSummary {
+interface HomeStreakSummary {
   currentWeekStreak: number;
   sessionsThisWeek: number;
   sessionsLast30Days: number;

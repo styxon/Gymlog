@@ -17,7 +17,7 @@ import type { AppDatabase, AppPreferences, UnitPreference } from '../types/model
  * the lines stood — after the Home memos nothing reads any more, before
  * useProgramsCatalog — so every hook keeps its slot.
  */
-export interface RecentSessionsDeps {
+interface RecentSessionsDeps {
   /** The whole database: the canonical list is built from its sessions and logs. */
   database: AppDatabase;
   /** The app context's saved sessions, every one of them. */

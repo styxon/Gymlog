@@ -66,7 +66,7 @@ export function prescriptionUnitFromName(name: string): 'metres' | 'seconds' | n
   return null;
 }
 
-export interface DurationExerciseInput {
+interface DurationExerciseInput {
   sets: number;
   /** The top of the prescribed rep range — what the session is planned for. */
   reps: number;
@@ -105,7 +105,7 @@ export interface DurationExerciseInput {
   name?: string;
 }
 
-export interface SessionDurationInput {
+interface SessionDurationInput {
   exercises: DurationExerciseInput[];
   /** Warm-up and cool-down as prescribed, in seconds. Zero when there is none. */
   warmupSeconds?: number;

@@ -1,4 +1,4 @@
-// Debug one answer set: node tests/hunt/debugCase.cjs '{"items":["Dumbbells"],"goal":"general_fitness","level":"advanced","days":3}'
+// Debug one answer set: node scripts/dev/debugCase.cjs '{"items":["Dumbbells"],"goal":"general_fitness","level":"advanced","days":3}'
 const path = require('node:path');
 const dist = path.join(__dirname, '..', '..', '.test-dist');
 const { resolveFirstRunRecommendationWithTailoring } = require(path.join(dist, 'lib', 'firstRunSetup.js'));

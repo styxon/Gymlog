@@ -36,7 +36,7 @@ import type { useHomeActivePlan } from './useHomeActivePlan';
  * a plain read and moved with the block it opened. .tsx because the item
  * types come from src/screens, as in phase A.
  */
-export interface ProgramsCatalogDeps {
+interface ProgramsCatalogDeps {
   /** The reader's preferences: the language and the dismissed tips. */
   preferences: AppPreferences;
   /** The workout context's catalog. */

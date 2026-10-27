@@ -17,7 +17,7 @@ import { FREE_CUSTOM_PROGRAM_LIMIT } from './programSlots';
  * them to a GROUPS entry with no `soon` flag. When a SOON feature ships, add it
  * in both places; when a gate is removed, this list has to shrink with it.
  */
-export interface ProBenefit {
+interface ProBenefit {
   titleKey: I18nKey;
   bodyKey: I18nKey;
   /** The module that enforces it, so the claim can be checked against code. */
@@ -62,7 +62,7 @@ export const PRO_LIVE_BENEFITS: ProBenefit[] = [
  * test asserts the union of `gates` equals PRO_LIVE_BENEFITS exactly: remove a
  * benefit and the card announcing it fails loudly instead of lying quietly.
  */
-export interface ProUnlockCard {
+interface ProUnlockCard {
   titleKey: I18nKey;
   bodyKey: I18nKey;
   /** Where the feature lives, so "what happens next" answers itself. */
@@ -158,7 +158,7 @@ export const PRO_UNLOCK_LIMIT_VARS: Record<string, Record<string, string | numbe
 
 export type MembershipSource = 'promo' | 'trial' | 'purchase' | 'review' | 'none';
 
-export interface MembershipEndPlan {
+interface MembershipEndPlan {
   /** True when the user can end Pro from inside the app, right now. */
   canEndNow: boolean;
   /** ISO date it lapses on its own; null when nothing is scheduled. */

@@ -79,7 +79,7 @@ export interface MilestoneTotals {
   distance: number;
 }
 
-export interface ProfileMilestoneInput {
+interface ProfileMilestoneInput {
   lifetime: Pick<LifetimeTrainingSummary, 'sessionCount' | 'totalVolumeKg' | 'currentWeekStreak' | 'weeksActive'> &
     Partial<Pick<LifetimeTrainingSummary, 'bestWeekStreak'>>;
   recordCount: number;
@@ -98,23 +98,23 @@ interface Ladder {
   mediumUpTo: number;
 }
 
-export const VOLUME_RUNGS_KG = [
+const VOLUME_RUNGS_KG = [
   1000, 2500, 5000, 10000, 15000, 20000, 25000, 50000, 75000, 100000, 150000, 250000, 500000, 750000, 1000000,
 ] as const;
 export const VOLUME_RUNGS_LB = [
   2500, 5000, 10000, 25000, 40000, 50000, 60000, 100000, 150000, 250000, 300000, 500000, 1000000, 1500000, 2000000,
 ] as const;
 export const SESSION_RUNGS = [1, 3, 5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200, 250, 300, 365, 500, 750, 1000] as const;
-export const STREAK_RUNGS = [2, 3, 4, 6, 8, 10, 12, 16, 20, 26, 39, 52, 78, 104] as const;
-export const RECORD_RUNGS = [1, 3, 5, 10, 15, 20, 25, 40, 50, 75, 100, 150, 200] as const;
-export const WEEK_RUNGS = [4, 8, 12, 20, 26, 40, 52, 78, 104, 156, 208] as const;
-export const REP_RUNGS = [500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000] as const;
-export const SET_RUNGS = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000] as const;
-export const EXERCISE_RUNGS = [5, 10, 15, 20, 30, 40, 50, 75, 100] as const;
-export const HOUR_RUNGS = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
-export const BODYWEIGHT_RUNGS = [1, 5, 10, 25, 50, 100, 200, 365] as const;
-export const CARDIO_RUNGS = [1, 5, 10, 25, 50, 100, 200, 365] as const;
-export const DISTANCE_RUNGS = [5, 10, 25, 50, 100, 250, 500, 1000, 2000] as const;
+const STREAK_RUNGS = [2, 3, 4, 6, 8, 10, 12, 16, 20, 26, 39, 52, 78, 104] as const;
+const RECORD_RUNGS = [1, 3, 5, 10, 15, 20, 25, 40, 50, 75, 100, 150, 200] as const;
+const WEEK_RUNGS = [4, 8, 12, 20, 26, 40, 52, 78, 104, 156, 208] as const;
+const REP_RUNGS = [500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000] as const;
+const SET_RUNGS = [50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000] as const;
+const EXERCISE_RUNGS = [5, 10, 15, 20, 30, 40, 50, 75, 100] as const;
+const HOUR_RUNGS = [1, 5, 10, 25, 50, 100, 250, 500, 1000] as const;
+const BODYWEIGHT_RUNGS = [1, 5, 10, 25, 50, 100, 200, 365] as const;
+const CARDIO_RUNGS = [1, 5, 10, 25, 50, 100, 200, 365] as const;
+const DISTANCE_RUNGS = [5, 10, 25, 50, 100, 250, 500, 1000, 2000] as const;
 
 const LADDERS: Record<Exclude<MilestoneFamily, 'volume'>, Ladder> = {
   sessions: { rungs: SESSION_RUNGS, easyUpTo: 10, mediumUpTo: 100 },
@@ -205,7 +205,7 @@ function ceilTenths(value: number): number {
 }
 
 /** Families whose figure is read to one decimal. */
-export function hasFraction(family: MilestoneFamily): boolean {
+function hasFraction(family: MilestoneFamily): boolean {
   return family === 'hours' || family === 'distance';
 }
 
@@ -221,7 +221,7 @@ export function volumeInUnit(totalVolumeKg: number, unitPreference: UnitPreferen
 }
 
 /** The current figure of every family, from the summary and the extra totals. */
-export function currentFigures(input: ProfileMilestoneInput): Record<MilestoneFamily, number> {
+function currentFigures(input: ProfileMilestoneInput): Record<MilestoneFamily, number> {
   const totals = input.totals ?? {};
   return {
     volume: volumeInUnit(input.lifetime.totalVolumeKg, input.unitPreference),

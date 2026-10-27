@@ -124,16 +124,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 4,
   },
-  backButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 11,
-    borderWidth: 1,
-    borderColor: theme.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
   title: {
     color: theme.ink,
     fontSize: 21,

@@ -8,7 +8,7 @@ This backend path is designed so that the app can work in two modes:
 
 ## Files
 - <repo-root>\api\ai-coach.ts
-- <repo-root>\src\lib\aiCoachClient.ts
+- <repo-root>\src\features\aiCoach\aiCoachClient.ts
 - <repo-root>\src\lib\aiCoachPreview.ts
 - <repo-root>\src\types\aiCoach.ts
 

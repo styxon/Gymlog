@@ -19,7 +19,7 @@ import { planTrainedOnDay, PlanRotationEntry, PlanRotationSession, resolveNextPl
 import { rotateLabelsForNextSession } from './trainingWeekSync';
 import { SetupWeekday } from '../types/models';
 
-export interface PlacedPlanEntry extends ResolvablePlanEntry, PlanRotationEntry {
+interface PlacedPlanEntry extends ResolvablePlanEntry, PlanRotationEntry {
   id: string;
   label: string;
 }

@@ -33,7 +33,7 @@ import type { useHomeActivePlan } from './useHomeActivePlan';
  * WEEKDAY_LABEL_KEYS is App.tsx's module constant, passed in rather than
  * moved. weekProgressBase stays inside; VinhaApp reads only what this returns.
  */
-export interface PlanReadoutsDeps {
+interface PlanReadoutsDeps {
   /** The app context's custom programmes, every one of which the export carries. */
   workoutTemplates: AppDatabase['workoutTemplates'];
   /** Finds the programme a session was started from, for the gate's rep range (built once in App.tsx). */

@@ -654,7 +654,7 @@ function buildSwapOptionReason(exerciseName: string, preferences: TailoringPrefe
  * change a lift while looking at the plan, not only mid-session, and both have
  * to offer the same list or the two surfaces disagree about what a slot is.
  */
-export function getAllowedSwapNames(substitutionGroup: string): string[] {
+function getAllowedSwapNames(substitutionGroup: string): string[] {
   return (
     WORKOUT_SUBSTITUTION_GROUPS.find((group) => group.id === substitutionGroup)?.allowedExerciseNames ?? []
   );

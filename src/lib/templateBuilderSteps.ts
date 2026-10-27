@@ -19,7 +19,7 @@ export type TemplateDayCount = 1 | 2 | 3 | 4 | 5 | 6;
 
 export const TEMPLATE_DAY_OPTIONS: readonly TemplateDayCount[] = [1, 2, 3, 4, 5, 6];
 
-export const MAX_TEMPLATE_DAYS: TemplateDayCount = 6;
+const MAX_TEMPLATE_DAYS: TemplateDayCount = 6;
 
 /**
  * The longest a programme's or a day's name can be typed. One number for every

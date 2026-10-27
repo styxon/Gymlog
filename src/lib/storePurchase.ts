@@ -23,7 +23,7 @@ import type { SubscriptionTermKey } from './subscriptionTerm';
 export const STORE_PRO_ENTITLEMENT = 'pro';
 
 /** The fields of RevenueCat's PurchasesEntitlementInfo this reads. */
-export interface StoreEntitlementSnapshot {
+interface StoreEntitlementSnapshot {
   isActive: boolean;
   willRenew: boolean;
   /** ISO. The start of the current period for a subscription. */

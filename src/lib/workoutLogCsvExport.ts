@@ -94,7 +94,7 @@ function logRows(log: ExerciseLog): Array<{
 }
 
 /** "20 min" — what a minutes row's Reps cell holds. */
-export function formatCsvMinutes(minutes: number): string {
+function formatCsvMinutes(minutes: number): string {
   return `${minutes} min`;
 }
 

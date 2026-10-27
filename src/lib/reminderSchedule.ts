@@ -13,7 +13,7 @@ import { SetupWeekday } from '../types/models';
 import { planWeekdayIndexes, resolveDerivedTrainingDays, WEEKDAY_KEYS } from './programTrainingDays';
 import { cycleSchedule, TrainingSchedule, weekdaySchedule, withRestDays } from './trainingSchedule';
 
-export interface ReminderScheduleInput {
+interface ReminderScheduleInput {
   trainingCycle: { pattern: boolean[]; anchorDayStart: number } | null;
   /** The active plan's entries; their labels are weekdays when the plan names them. */
   planEntries: ReadonlyArray<{ label?: string | null }>;

@@ -317,13 +317,13 @@ export function moveHeldAdaptations(
 }
 
 /** One day of a ready programme, as far as the move needs to know it. */
-export interface CatalogueDayForMove {
+interface CatalogueDayForMove {
   id: string;
   exercises: ReadonlyArray<{ id: string; slotId: string }>;
 }
 
 /** The same day in the copy: its stored id, and each stored row with the catalogue row it came from. */
-export interface CopiedDayForMove {
+interface CopiedDayForMove {
   id: string;
   exercises: ReadonlyArray<{ id: string; fromExerciseId: string | null }>;
 }

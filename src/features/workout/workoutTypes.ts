@@ -9,9 +9,9 @@ import type { SessionMinutesClock } from '../../lib/minutesExercises';
 
 export type WorkoutGoalType = 'strength' | 'hypertrophy' | 'general';
 export type WorkoutLevel = 'beginner' | 'intermediate' | 'advanced';
-export type WorkoutSplitType = 'full_body' | 'upper_lower' | 'hybrid';
-export type WorkoutProgressionModel = 'double_progression';
-export type DefaultScheduleMode = 'rolling_sequence';
+type WorkoutSplitType = 'full_body' | 'upper_lower' | 'hybrid';
+type WorkoutProgressionModel = 'double_progression';
+type DefaultScheduleMode = 'rolling_sequence';
 export type WorkoutRole = 'primary' | 'secondary' | 'accessory';
 export type WorkoutProgressionPriority = 'high' | 'medium' | 'low';
 /**
@@ -89,8 +89,8 @@ export type WorkoutStatus = 'active' | 'paused' | 'completed';
 export type WorkoutExerciseStatus = 'pending' | 'active' | 'completed' | 'skipped' | 'swapped';
 export type WorkoutSetStatus = 'pending' | 'completed' | 'skipped';
 export type WorkoutSetEffort = 'easy' | 'good' | 'hard';
-export type RestTimerStatus = 'idle' | 'running' | 'paused';
-export type WorkoutInputField = 'load' | 'reps' | 'notes' | null;
+type RestTimerStatus = 'idle' | 'running' | 'paused';
+type WorkoutInputField = 'load' | 'reps' | 'notes' | null;
 
 export interface WorkoutSubstitutionGroup {
   id: string;
@@ -178,7 +178,7 @@ export interface WorkoutTemplateSession {
   exercises: WorkoutTemplateExercise[];
 }
 
-export interface WorkoutProgressionRules {
+interface WorkoutProgressionRules {
   primary: string;
   secondary: string;
   accessory: string;
@@ -607,11 +607,6 @@ export interface WorkoutExerciseInsertInput {
   restSecondsMax: number;
   substitutionGroup: string;
   libraryItemId?: string | null;
-}
-
-export interface WorkoutSwapOption {
-  exerciseName: string;
-  substitutionGroup: string;
 }
 
 /** What the logger needs to decide whether a prefill may move up. */

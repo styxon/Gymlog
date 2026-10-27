@@ -13,7 +13,7 @@ import type { AppPreferences } from '../types/models';
  * the memo stood (after the programme day edits), so the hook order is
  * unchanged.
  */
-export interface ProgramCapLineDeps {
+interface ProgramCapLineDeps {
   preferences: AppPreferences;
 }
 

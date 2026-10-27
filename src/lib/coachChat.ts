@@ -19,7 +19,7 @@ import { removeTrailingZeros } from './format';
  * expensive-looking part of the app free to render.
  */
 
-export type ChipTone = 'plan' | 'warn' | 'alert';
+type ChipTone = 'plan' | 'warn' | 'alert';
 
 export interface CoachContextChip {
   key: string;
@@ -27,7 +27,7 @@ export interface CoachContextChip {
   tone: ChipTone;
 }
 
-export interface CoachNoticedItem {
+interface CoachNoticedItem {
   key: string;
   tone: ChipTone;
   title: string;
@@ -62,7 +62,7 @@ export interface CoachChatIntroInput {
   fatigue: FatigueResult | null;
 }
 
-export interface CoachContextRow {
+interface CoachContextRow {
   key: 'lastSession' | 'lift' | 'rhythm';
   label: string;
   value: string;

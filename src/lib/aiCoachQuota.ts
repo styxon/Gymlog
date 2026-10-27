@@ -31,7 +31,7 @@
 /** What a Pro membership includes each calendar month. */
 export const PRO_COACH_QUESTIONS_PER_MONTH = 25;
 
-export interface CoachQuotaState {
+interface CoachQuotaState {
   /** First day of the counted month, YYYY-MM. */
   monthStart: string;
   used: number;

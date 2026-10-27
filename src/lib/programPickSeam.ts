@@ -34,7 +34,7 @@ export const PICK_TOP_PADDING = 18;
  */
 export const PICK_MAX_SLACK = 48;
 
-export interface PickSeamInput {
+interface PickSeamInput {
   /** The split area's height, in points. Zero before it is measured. */
   height: number;
   topSelected: boolean;

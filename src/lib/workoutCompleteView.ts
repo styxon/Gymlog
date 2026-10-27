@@ -10,13 +10,13 @@ import { t } from './i18n';
 import { formatWeight, removeTrailingZeros } from './format';
 import { bodyPartForExerciseName } from './catalogExercisePools';
 
-export interface CompletedSetLike {
+interface CompletedSetLike {
   status: 'completed' | 'skipped' | string;
   weightKg?: number | null;
   reps?: number | null;
 }
 
-export interface CompletedExerciseLike {
+interface CompletedExerciseLike {
   exerciseName: string;
   sets: CompletedSetLike[];
 }

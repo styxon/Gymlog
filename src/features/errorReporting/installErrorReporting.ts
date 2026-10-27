@@ -39,7 +39,7 @@ interface RuntimeScope {
   HermesInternal?: HermesInternalLike;
 }
 
-export interface InstallOptions {
+interface InstallOptions {
   /** Where the globals live; the test passes a fake. */
   scope?: RuntimeScope;
   report?: typeof reportAppError;

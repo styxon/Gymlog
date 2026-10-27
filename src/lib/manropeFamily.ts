@@ -29,7 +29,7 @@ export function familyForWeight(weight?: string | number | null): string {
   return WEIGHT_TO_FAMILY[String(weight)] ?? 'Manrope-Regular';
 }
 
-export type ManropeStyleOverride = { fontFamily: string; fontWeight: 'normal' };
+type ManropeStyleOverride = { fontFamily: string; fontWeight: 'normal' };
 
 /**
  * The style to append after a flattened style, or null to leave it alone.

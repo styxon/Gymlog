@@ -3,10 +3,10 @@
  * leaves behind. Pure, so the rules are tested as behaviour rather than read
  * back from the hook's source.
  */
-export type BackupPause = 'other_phone' | 'smaller_phone' | 'copy_deleted';
+type BackupPause = 'other_phone' | 'smaller_phone' | 'copy_deleted';
 
 /** The account fields a deleted cloud copy touches. */
-export interface BackupBookkeeping {
+interface BackupBookkeeping {
   lastBackupAt: string | null;
   lastBackupItemCount: number | null;
   lastBackupHistoryCount: number | null;

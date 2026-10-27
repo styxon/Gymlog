@@ -45,12 +45,12 @@ import { formatDurationMinutes, formatPercent, formatVolume, getDateTimeFormat, 
 
 export type SessionTrend = 'up' | 'flat' | 'down';
 
-export interface AnalysisText {
+interface AnalysisText {
   text: string;
   highlights: string[];
 }
 
-export interface AnalysisMetric {
+interface AnalysisMetric {
   labelKey: I18nKey;
   value: string;
   sub: string | null;
@@ -62,7 +62,7 @@ export interface AnalysisMetric {
   grow: number;
 }
 
-export interface AnalysisVolumeBar {
+interface AnalysisVolumeBar {
   sessionId: string;
   /** Short date for the axis. */
   label: string;
@@ -70,7 +70,7 @@ export interface AnalysisVolumeBar {
   isCurrent: boolean;
 }
 
-export interface AnalysisExerciseRow {
+interface AnalysisExerciseRow {
   key: string;
   name: string;
   /** "3 × 8 · 60 kg" — always from logged sets. */
@@ -81,7 +81,7 @@ export interface AnalysisExerciseRow {
   trendLabel: string | null;
 }
 
-export interface AnalysisObservation {
+interface AnalysisObservation {
   trend: SessionTrend;
   body: AnalysisText;
 }
@@ -103,9 +103,9 @@ export interface SessionAnalysis {
   nextActions: AnalysisText[];
 }
 
-export type VolumeChangeKind = 'up' | 'down' | 'flat';
+type VolumeChangeKind = 'up' | 'down' | 'flat';
 
-export interface VolumeChangeWording {
+interface VolumeChangeWording {
   kind: VolumeChangeKind;
   /** What to print. A percentage only when something actually changed. */
   text: string;
@@ -144,7 +144,7 @@ export function volumeChangePercent(current: number | null, previous: number | n
     : null;
 }
 
-export interface SessionAnalysisInput {
+interface SessionAnalysisInput {
   sessionId: string;
   sessions: WorkoutSession[];
   logs: ExerciseLog[];

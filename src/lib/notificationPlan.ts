@@ -55,14 +55,14 @@ export interface PlannedNotification {
   measureKind?: string;
 }
 
-export interface LatestPrSignal {
+interface LatestPrSignal {
   exerciseName: string;
   weightKg: number;
   reps: number;
   achievedAtMs: number;
 }
 
-export interface NotificationPlanInput {
+interface NotificationPlanInput {
   nowMs: number;
   prefs: NotificationPrefs;
   language: AppLanguage;
@@ -120,7 +120,7 @@ export const DAILY_CAP_BY_LEVEL: Record<NotificationLevel, number> = {
 export const REMINDER_HORIZON_DAYS = 28;
 /** Days of silence before the comeback nudge. */
 export const COMEBACK_AFTER_DAYS = 5;
-export const WEEKLY_SUMMARY_HOUR = 18;
+const WEEKLY_SUMMARY_HOUR = 18;
 /** Before breakfast: a weight taken at the same time of day is comparable. */
 export const WEIGH_IN_HOUR = 7;
 export const WEIGH_IN_MINUTE = 30;
@@ -128,8 +128,8 @@ export const WEIGH_IN_MINUTE = 30;
  * Half the reminder horizon. A daily message over four weeks would be 28 of
  * the 48 slots the OS allows, and the app re-plans on every launch anyway.
  */
-export const WEIGH_IN_HORIZON_DAYS = 14;
-export const RECORD_HOUR = 9;
+const WEIGH_IN_HORIZON_DAYS = 14;
+const RECORD_HOUR = 9;
 /** iOS keeps at most 64 pending local notifications; stay well under it. */
 export const MAX_SCHEDULED = 48;
 
@@ -487,7 +487,7 @@ const TRIAL_WARNING_DAYS = 2;
  * clock time, which is whenever the reader happened to tap "start" — 03:00
  * for somebody who did it after a night shift.
  */
-export const TRIAL_WARNING_HOUR = RECORD_HOUR;
+const TRIAL_WARNING_HOUR = RECORD_HOUR;
 
 /**
  * Two days before the trial ends, once, at 09:00 local time.

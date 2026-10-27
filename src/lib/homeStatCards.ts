@@ -16,7 +16,7 @@ import { formatRelativeDay, removeTrailingZeros } from './format';
 
 export type HomeStatCardIcon = 'scale' | 'drop' | 'lift' | 'tape';
 
-export interface HomeStatCardCatalogItem {
+interface HomeStatCardCatalogItem {
   key: string;
   label: string;
   unit: string;
@@ -43,14 +43,14 @@ export interface HomeStatCard extends HomeStatCardCatalogItem {
   weeklyTrend: number | null;
 }
 
-export interface HomeStatCardSources {
+interface HomeStatCardSources {
   bodyweightEntries: BodyweightEntry[];
   measurementEntries: MeasurementEntry[];
   trackedProgress: ExerciseProgressSummary[];
 }
 
 /** Points shown in a sparkline — roughly "recent memory", not all history. */
-export const SERIES_POINTS = 7;
+const SERIES_POINTS = 7;
 
 /** A weekly rate needs at least a week of calendar behind it. */
 export const TREND_MIN_SPAN_DAYS = 7;
@@ -67,7 +67,7 @@ const MAX_LIFT_CATALOG_ITEMS = 8;
 export const DEFAULT_HOME_STAT_CARD_KEYS = ['bodyweight'];
 
 /** Tape measurements, in the order the measurement screen lists them. */
-export const MEASUREMENT_CARD_KINDS: MeasurementKind[] = [
+const MEASUREMENT_CARD_KINDS: MeasurementKind[] = [
   'shoulders',
   'chest',
   'back',
@@ -275,7 +275,7 @@ export function resolveHomeStatCardKeys(stored: string[] | null): string[] {
  * Grouped by where the number COMES FROM, which is also where the reader goes
  * to change it: the scale, the tape, or a set they lifted.
  */
-export type HomeStatCardGroupKey = 'body' | 'measurements' | 'lifts';
+type HomeStatCardGroupKey = 'body' | 'measurements' | 'lifts';
 
 const GROUP_FOR_ICON: Record<HomeStatCardIcon, HomeStatCardGroupKey> = {
   scale: 'body',
@@ -284,7 +284,7 @@ const GROUP_FOR_ICON: Record<HomeStatCardIcon, HomeStatCardGroupKey> = {
   lift: 'lifts',
 };
 
-export interface HomeStatCardGroup<T extends HomeStatCardCatalogItem> {
+interface HomeStatCardGroup<T extends HomeStatCardCatalogItem> {
   key: HomeStatCardGroupKey;
   labelKey: I18nKey;
   items: T[];

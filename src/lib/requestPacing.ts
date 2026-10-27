@@ -16,7 +16,7 @@
  * can run a day of attempts in a loop.
  */
 
-export interface PacingPolicy {
+interface PacingPolicy {
   /** Least time between the starts of two requests. */
   minGapMs: number;
   /** Requests allowed to start within any `windowMs`. */

@@ -50,7 +50,7 @@ import { AppLanguage } from '../types/models';
  *
  * The page is deliberately dark in both themes — see PRO_TIER in theme.ts.
  */
-export type PlanId = 'monthly' | 'yearly' | 'lifetime';
+type PlanId = 'monthly' | 'yearly' | 'lifetime';
 
 interface PremiumScreenProps {
   /**
@@ -726,24 +726,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 11,
     lineHeight: 18,
-    paddingHorizontal: 6,
-  },
-  forever: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: PRO_SURFACE.inkFaint,
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 17,
-    paddingHorizontal: 6,
-  },
-  notice: {
-    fontSize: 11.5,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.34)',
-    textAlign: 'center',
-    marginTop: 6,
-    lineHeight: 16,
     paddingHorizontal: 6,
   },
 

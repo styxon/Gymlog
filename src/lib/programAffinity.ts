@@ -21,7 +21,7 @@ import { I18nKey } from './i18n';
  * and it is not: this is four comparisons and a sort.
  */
 
-export type AffinityReason =
+type AffinityReason =
   /** Same goal, one level up — the obvious next block. */
   | 'nextLevel'
   /** Same goal, same level, a different split. */
@@ -31,7 +31,7 @@ export type AffinityReason =
   /** Same goal, fewer days — for a week that got busier. */
   | 'lighterWeek';
 
-export interface AffinityMatch {
+interface AffinityMatch {
   templateId: string;
   reason: AffinityReason;
 }

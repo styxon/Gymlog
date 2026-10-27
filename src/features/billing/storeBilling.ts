@@ -79,7 +79,7 @@ export async function readStoreCustomer(): Promise<StoreCustomerSnapshot | null>
   }
 }
 
-export type StorePurchaseOutcome =
+type StorePurchaseOutcome =
   | { status: 'purchased'; customer: StoreCustomerSnapshot }
   | { status: 'cancelled' }
   /** The store took the order and the payment has not cleared (cash, slow bank). */

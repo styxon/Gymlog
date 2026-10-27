@@ -102,42 +102,6 @@ export function ChevronIcon({ color }: { color?: string }) {
   );
 }
 
-export function SettingsRow({
-  title,
-  subtitle,
-  right,
-  destructive = false,
-  isLast = false,
-  onPress,
-}: {
-  title: string;
-  subtitle?: string;
-  right?: React.ReactNode;
-  destructive?: boolean;
-  isLast?: boolean;
-  onPress?: () => void;
-}) {
-  const styles = useThemedStyles(makeStyles);
-
-  const inner = (
-    <View style={[styles.setRow, isLast && styles.setRowLast]}>
-      <View style={styles.setCopy}>
-        <Text style={[styles.setTitle, destructive && styles.setTitleDanger]}>{title}</Text>
-        {subtitle ? <Text style={styles.setSub}>{subtitle}</Text> : null}
-      </View>
-      {right}
-    </View>
-  );
-
-  return onPress ? (
-    <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => pressed && styles.rowPressed}>
-      {inner}
-    </Pressable>
-  ) : (
-    inner
-  );
-}
-
 /** The suite's card shadow (mock: 0 6px 18px rgba(120,80,200,.06)). */
 export const CARD_SHADOW = {
   boxShadow: '0 6px 18px rgba(120, 80, 200, 0.06)',
@@ -187,41 +151,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontSize: 13,
     lineHeight: 17,
     fontWeight: '800',
-  },
-  setRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 13,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.border,
-  },
-  setRowLast: {
-    borderBottomWidth: 0,
-  },
-  rowPressed: {
-    opacity: 0.65,
-  },
-  setCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  setTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
-  // The theme's danger ink, not a fixed #C0392B: that one was a light-surface
-  // red, 3.23:1 on the dark card (accessibility audit, 2026-09-21). #DC2626
-  // is 4.83 on white and #FF6B6B 6.33 on the dark surface.
-  setTitleDanger: {
-    color: theme.danger,
-  },
-  setSub: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
   },
   toggleTrack: {
     width: 48,

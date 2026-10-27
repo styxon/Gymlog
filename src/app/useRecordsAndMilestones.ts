@@ -20,7 +20,7 @@ import { AppDatabase, AppPreferences, UnitPreference } from '../types/models';
  * it as well. exercisePrLookup, which liftHistory's doc compares itself to, is
  * in useCustomProgramViews.
  */
-export interface RecordsAndMilestonesDeps {
+interface RecordsAndMilestonesDeps {
   exerciseBrowserItems: AppDatabase['exerciseLibrary'];
   trackedProgress: ExerciseProgressSummary[];
   database: AppDatabase;

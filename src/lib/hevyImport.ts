@@ -20,13 +20,13 @@ import { splitCsvRecords } from './csvRecords';
 import { resolveImportedExerciseName } from './hevyExerciseName';
 import { isLiftableWeight } from './weightLimits';
 
-export interface HevyImportedSet {
+interface HevyImportedSet {
   weightKg: number;
   reps: number;
   kind: 'working' | 'warmup' | 'drop';
 }
 
-export interface HevyImportedExercise {
+interface HevyImportedExercise {
   name: string;
   sets: HevyImportedSet[];
 }

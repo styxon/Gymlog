@@ -169,7 +169,7 @@ export function programTableToCsv(rows: readonly ProgramTableRow[]): string {
  */
 export const PROGRAM_IMAGE_MAX_BASE64_CHARS = 2_800_000;
 
-export const PROGRAM_IMAGE_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
+const PROGRAM_IMAGE_MEDIA_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 export type ProgramImageMediaType = (typeof PROGRAM_IMAGE_MEDIA_TYPES)[number];
 

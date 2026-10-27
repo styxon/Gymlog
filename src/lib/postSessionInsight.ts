@@ -6,7 +6,7 @@ import { PLATEAU_STALL_SESSIONS } from './proInsights';
 import { buildLiftHistories } from './trainingHistory';
 import { ExerciseLog, PostSessionInsightType, UnitPreference, WorkoutSession } from '../types/models';
 
-export type InsightType = PostSessionInsightType;
+type InsightType = PostSessionInsightType;
 
 export interface PostSessionInsight {
   type: InsightType;
@@ -15,7 +15,7 @@ export interface PostSessionInsight {
   exerciseKey?: string;
 }
 
-export interface PostSessionInsightInput {
+interface PostSessionInsightInput {
   completedSession: Pick<WorkoutSession, 'id' | 'performedAt' | 'totalVolumeKg' | 'setsCompleted'>;
   sessionExerciseLogs: ExerciseLog[];
   allPriorSessions: Pick<WorkoutSession, 'id' | 'performedAt' | 'totalVolumeKg' | 'setsCompleted'>[];

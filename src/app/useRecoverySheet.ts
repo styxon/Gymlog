@@ -25,7 +25,7 @@ import { haptics } from '../utils/haptics';
  * The schedules it asks (baseTrainingSchedule, and homeTrainingSchedule
  * beside it) stay in App.tsx, where every calendar reads them.
  */
-export interface RecoverySheetDeps {
+interface RecoverySheetDeps {
   proFatigue: FatigueResult;
   database: AppDatabase;
   /** Only the next session's title is read. */

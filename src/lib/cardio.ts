@@ -13,7 +13,7 @@ import { removeTrailingZeros } from './format';
 
 export type CardioIconKind = 'run' | 'walk' | 'treadmill' | 'cycle' | 'row';
 
-export interface CardioActivity {
+interface CardioActivity {
   id: CardioActivityType;
   name: string;
   /** Uppercase chip label; null hides the chip ("NO EQUIPMENT" is shown). */
@@ -335,10 +335,10 @@ export function getCardioEndedAt(session: ActiveCardioSession, nowMs: number): s
  * 2026-10-09). The free workout pins a forgotten board to its last edit; this
  * has nothing to pin to, so the reader says how long it was.
  */
-export const CARDIO_CONFIRM_ELAPSED_MS = 8 * 60 * 60 * 1000;
+const CARDIO_CONFIRM_ELAPSED_MS = 8 * 60 * 60 * 1000;
 
 /** The longest run the reader can type in: a day. */
-export const CARDIO_MAX_ENTERED_MINUTES = 24 * 60;
+const CARDIO_MAX_ENTERED_MINUTES = 24 * 60;
 
 /** Whole minutes from the field, or null when it is empty or not a minute count. */
 export function parseCardioMinutes(input: string): number | null {
@@ -350,7 +350,7 @@ export function parseCardioMinutes(input: string): number | null {
   return minutes >= 1 && minutes <= CARDIO_MAX_ENTERED_MINUTES ? minutes : null;
 }
 
-export interface CardioFinish {
+interface CardioFinish {
   /** The clock's own reading is too long to take as the run: the reader is asked. */
   needsMinutes: boolean;
   /** What would be saved; null while the reader still owes a duration. */

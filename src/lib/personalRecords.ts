@@ -32,12 +32,12 @@ import type { ExerciseLog } from '../types/models';
 
 export type RecordKind = 'weight' | 'reps' | 'volume';
 
-export interface RecordSet {
+interface RecordSet {
   weight: number;
   reps: number;
 }
 
-export interface RecordEntry {
+interface RecordEntry {
   /** ISO timestamp of the session this set belongs to. */
   performedAt: string;
   sets: RecordSet[];
@@ -332,7 +332,7 @@ export function firstRecordDates(records: Record<RecordKind, readonly PersonalRe
  * records share one stamp; the margin only absorbs rounding. Three hours, as it
  * first was, also took in an earlier workout the same day (hunt 1.1.1).
  */
-export const SAME_SESSION_MS = 60 * 1000;
+const SAME_SESSION_MS = 60 * 1000;
 
 /**
  * The records the most recent session set, split from the rest.

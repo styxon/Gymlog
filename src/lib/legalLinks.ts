@@ -12,14 +12,14 @@ import type { LegalDocumentId } from './legalDocuments';
  */
 export const LEGAL_SITE_URL = 'https://styxon.fi/vinha-fitness/legal';
 
-export type LegalWebPage = LegalDocumentId | 'delete-account';
+type LegalWebPage = LegalDocumentId | 'delete-account';
 
 /** styxon.fi serves each page without its .html, which is how the policy text writes them. */
 export function legalWebUrl(page: LegalWebPage, language: AppLanguage): string {
   return `${LEGAL_SITE_URL}/${page}.${language}`;
 }
 
-export interface LegalTextPart {
+interface LegalTextPart {
   text: string;
   /** Present when this part is a link: an https:// URL, or mailto: for an e-mail address. */
   url?: string;

@@ -54,7 +54,7 @@ export interface GoalFlowLift {
   daysSinceLogged: number | null;
 }
 
-export interface GoalFlowProposalDay {
+interface GoalFlowProposalDay {
   sessionId: string;
   name: string;
   /** The first few lifts, already joined — the screen does not compose. */

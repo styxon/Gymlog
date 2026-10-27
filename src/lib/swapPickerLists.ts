@@ -17,7 +17,7 @@ import { buildSwapOptionsForSlot, TailoringPreferencesInput } from './tailoringF
  * the reader opened it.
  */
 
-export interface SwapAlternativesInput {
+interface SwapAlternativesInput {
   /** The lift being replaced, as it stands now (today's swap included). */
   currentName: string;
   /** The slot's substitution group; '' when it has none. */
@@ -76,7 +76,7 @@ const UNSEARCHED_CAP = 25;
 /** Typing lifts the cap to something a reader can still read through. */
 const SEARCHED_CAP = 40;
 
-export interface SwapPickerLibraryOptions {
+interface SwapPickerLibraryOptions {
   query: string;
   filters: ExercisePickerFilters;
   language: AppLanguage;

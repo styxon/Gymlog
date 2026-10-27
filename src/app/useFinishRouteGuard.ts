@@ -27,7 +27,7 @@ import type { FinishSaveState } from './useFinishState';
  * so this reads and clears the flags the finish handlers set.
  * tests/screens/finishRouteGuard.test.cjs runs this source branch by branch.
  */
-export interface FinishRouteGuardDeps {
+interface FinishRouteGuardDeps {
   finishSaveState: FinishSaveState;
   setFinishSaveState: Dispatch<SetStateAction<FinishSaveState>>;
   completionSummary: CompletionSummaryState | null;

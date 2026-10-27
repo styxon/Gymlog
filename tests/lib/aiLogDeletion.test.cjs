@@ -278,7 +278,7 @@ module.exports = [
 
       // The window is the app's own outer bound on a coach call, which is
       // past the endpoint's upstream timeout.
-      const client = code('src', 'lib', 'aiCoachClient.ts');
+      const client = code('src', 'features', 'aiCoach', 'aiCoachClient.ts');
       assert.equal(Number(client.match(/const REQUEST_TIMEOUT_MS = (\d+);/)[1]), AI_LOG_WRITE_WINDOW_MS);
       const endpoint = read('api', 'ai-coach.ts');
       assert.ok(Number(endpoint.match(/AI_COACH_CLAUDE_TIMEOUT_MS \?\? (\d+)\)/)[1]) < AI_LOG_WRITE_WINDOW_MS);
@@ -294,7 +294,7 @@ module.exports = [
         key: process.env.EXPO_PUBLIC_AI_COACH_APP_KEY,
         mode: process.env.NODE_ENV,
       };
-      const modulePath = path.join(root, '.test-dist', 'lib', 'aiCoachClient.js');
+      const modulePath = path.join(root, '.test-dist', 'features', 'aiCoach', 'aiCoachClient.js');
       process.env.EXPO_PUBLIC_AI_COACH_API_URL = 'https://coach.example.test/api/ai-coach';
       process.env.EXPO_PUBLIC_AI_COACH_APP_KEY = 'app-key';
       // A development build reaches the URL without the spend-cap sign-off.

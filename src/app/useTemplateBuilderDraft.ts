@@ -13,7 +13,7 @@ import type { AppDatabase, AppPreferences, WorkoutTemplateDraft, WorkoutTemplate
  * the memo stood — after programsCustomItems, the last hook above the early
  * return — so every hook keeps its slot.
  */
-export interface TemplateBuilderDraftDeps {
+interface TemplateBuilderDraftDeps {
   /** VinhaApp's current route: the template route names the programme. */
   route: AppRoute;
   /** The reader's preferences: the app language, for the blank day names. */

@@ -413,7 +413,7 @@ module.exports = [
               },
             },
           },
-          '../lib/aiCoachClient': {
+          '../features/aiCoach/aiCoachClient': {
             isAiCoachLiveConfigured: () => true,
             lastAiLogCarriedAt: () => answers.carriedAt,
             async forgetAiCoachLog() {

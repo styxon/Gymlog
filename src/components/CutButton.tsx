@@ -17,7 +17,7 @@ import { Theme, useTheme, useThemedStyles } from '../theming';
  * calls this "nopeus": the button should feel like it already moved.
  */
 
-export type CutButtonVariant =
+type CutButtonVariant =
   | 'primary'
   | 'secondary'
   | 'outline'

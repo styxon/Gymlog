@@ -44,7 +44,7 @@ const MAX_CYCLE_OFF = 4;
 /** Today's cycle preview, and the six days that follow it. */
 const CYCLE_PREVIEW_DAYS = 7;
 
-export interface TrainingCycleValue {
+interface TrainingCycleValue {
   pattern: boolean[];
   anchorDayStart: number;
 }
@@ -64,7 +64,7 @@ function onOffOf(cycle: TrainingCycleValue | null): { on: number; off: number } 
   return { on: Math.max(1, on), off: Math.max(0, cycle.pattern.length - on) };
 }
 
-export interface TrainingPlanSessionItem {
+interface TrainingPlanSessionItem {
   id: string;
   title: string;
   exerciseCount: number;

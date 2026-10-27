@@ -34,7 +34,7 @@ export function placesToFree(used: number, cap: number): number {
   return Math.max(1, used - cap + 1);
 }
 
-export type ProgramAdoptionDecision =
+type ProgramAdoptionDecision =
   /** Already running it — the button should offer to train, not to join. */
   | { kind: 'already_active' }
   /** There is room; adopting adds it alongside what is already there. */
@@ -46,7 +46,7 @@ export type ProgramAdoptionDecision =
    */
   | { kind: 'blocked'; used: number; cap: number; canUpgrade: boolean };
 
-export interface ProgramAdoptionInput {
+interface ProgramAdoptionInput {
   /** Ids of the programmes already running. */
   activePlanIds: readonly string[];
   /** The plan id the reader is trying to add. */

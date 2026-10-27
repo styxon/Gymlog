@@ -11,7 +11,7 @@
  */
 
 /** `splitCsvRecords`'s result: the records, plus where recovery kicked in. */
-export interface CsvRecordSplit {
+interface CsvRecordSplit {
   records: string[];
   /**
    * 1-based position in `records` (matching the "row" numbers callers already

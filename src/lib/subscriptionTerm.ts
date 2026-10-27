@@ -10,7 +10,7 @@
 export type SubscriptionTermKey = 'monthly' | 'yearly' | 'lifetime';
 
 /** Lifetime is bought once and never charged again; the other two renew. */
-export const TERM_RENEWS: Record<SubscriptionTermKey, boolean> = {
+const TERM_RENEWS: Record<SubscriptionTermKey, boolean> = {
   monthly: true,
   yearly: true,
   lifetime: false,

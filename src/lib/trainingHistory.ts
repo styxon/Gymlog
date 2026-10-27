@@ -47,7 +47,7 @@ export interface SessionSummary {
   exerciseCount: number;
 }
 
-export interface LiftPoint {
+interface LiftPoint {
   sessionId: string;
   performedAt: string;
   time: number;
@@ -126,7 +126,7 @@ export function sessionBestPoints(lift: Pick<LiftHistory, 'points'>): LiftHistor
   return [...bySession.values()];
 }
 
-export interface RepsLiftPoint {
+interface RepsLiftPoint {
   sessionId: string;
   time: number;
   /** Completed reps per set, in set order. */
@@ -139,7 +139,7 @@ export interface RepsLiftPoint {
  * A lift logged with no added load — pull-ups, push-ups, dips. Its progress is
  * reps, and LiftHistory cannot carry it: a top set needs a weight above zero.
  */
-export interface RepsLiftHistory {
+interface RepsLiftHistory {
   key: string;
   name: string;
   /** Oldest first. */
@@ -151,7 +151,7 @@ export interface RepsLiftHistory {
   unchangedSessions: number;
 }
 
-export interface WeekSummary {
+interface WeekSummary {
   /** Monday of the week, as a local YYYY-MM-DD date. */
   weekStart: string;
   sessions: number;
@@ -163,7 +163,7 @@ export interface WeekSummary {
   plannedSessions: number | null;
 }
 
-export interface ScheduleAdherence {
+interface ScheduleAdherence {
   trainingDays: SetupWeekday[];
   /** A rolling rhythm the weekday list cannot express; null for weekday plans. */
   cycle?: { onDays: number; offDays: number; length: number } | null;
@@ -190,7 +190,7 @@ export interface TrainingHistory {
   sessionCount: number;
 }
 
-export interface TrainingHistoryInput {
+interface TrainingHistoryInput {
   sessions: WorkoutSession[];
   logs: ExerciseLog[];
   /** Weekdays the plan schedules; empty means the plan has no fixed days. */
@@ -236,7 +236,7 @@ export function topSetOf(log: ExerciseLog): { weight: number; reps: number } | n
   return top ? { weight: top.weight, reps: top.reps } : null;
 }
 
-export function completedReps(log: ExerciseLog) {
+function completedReps(log: ExerciseLog) {
   return (log.repsPerSet ?? []).filter((count) => count > 0);
 }
 

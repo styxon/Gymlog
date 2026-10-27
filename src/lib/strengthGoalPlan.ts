@@ -15,7 +15,7 @@
 import { calendarDaysBetween } from './completedSessions';
 
 /** One logged session of a lift: when, and the top set. */
-export interface RatePoint {
+interface RatePoint {
   time: number;
   topSetWeightKg: number;
 }
@@ -54,7 +54,7 @@ export const RATE_HORIZON_WEEKS = 104;
 export const RATE_MAX_GAP_WEEKS = 8;
 
 /** The shortest stretch a pace is measured over. See resolveObservedRate. */
-export const RATE_MIN_SPAN_WEEKS = 1;
+const RATE_MIN_SPAN_WEEKS = 1;
 
 const WEEK_MS = 7 * 86_400_000;
 
@@ -157,7 +157,7 @@ export function estimateWeeksToTarget(
   return { kind: 'weeks', weeks: Math.max(1, weeks), rate };
 }
 
-export interface TargetLiftRow {
+interface TargetLiftRow {
   /** The stored English library name — what a goal is keyed by. */
   exerciseName: string;
   bestKg: number | null;

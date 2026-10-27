@@ -53,7 +53,7 @@ import { AppDatabase, AppPreferences } from '../types/models';
  * which is what the orphaned "One array per library" note above
  * goalProgrammeSuggestions is about.
  */
-export interface GoalFlowDeps {
+interface GoalFlowDeps {
   /** The library every "is this that lift?" question is asked against. */
   exerciseLibrary: AppDatabase['exerciseLibrary'];
   /** Local midnight of today: "logged 2 days ago" counts calendar days from it. */

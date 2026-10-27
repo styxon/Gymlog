@@ -2572,8 +2572,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   historyEmpty: {
     padding: 16,
   },
-  filterChipActive: {
-  },
   trackedRight: {
     flexDirection: 'row',
     alignItems: 'center',

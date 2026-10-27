@@ -9,7 +9,7 @@
  * Newest month first, because both screens answer "what have I done lately"
  * before "what did I do in March".
  */
-export interface MonthGroup<T> {
+interface MonthGroup<T> {
   year: number;
   /** 0-based, matching Date#getMonth and the month label tables. */
   month: number;

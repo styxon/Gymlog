@@ -18,7 +18,7 @@ import { AppPreferences } from '../types/models';
  * and the order the effects run in are unchanged.
  */
 
-export interface FunnelAnalyticsDeps {
+interface FunnelAnalyticsDeps {
   /** The database store has loaded: `useAppContext().hydrated`. */
   hydrated: boolean;
   /** Onboarding is not finished: `!preferences.onboardingCompleted`. */

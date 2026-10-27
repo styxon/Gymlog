@@ -13,7 +13,7 @@ import { MeasurementKind, SetupWeekday } from '../types/models';
  * `kind` null is off. There is no separate on/off flag, because a flag that
  * is on with no kind chosen is a reminder that cannot say what to measure.
  */
-export interface MeasurementReminderSetting {
+interface MeasurementReminderSetting {
   kind: MeasurementReminderKind | null;
   day: SetupWeekday;
 }
@@ -23,7 +23,7 @@ export interface MeasurementReminderSetting {
  * not one a tape takes, and the reminder names its instrument — "Tape
  * measure: Body fat" would be a reminder for the wrong tool (PR review).
  */
-export type MeasurementReminderKind = Exclude<MeasurementKind, 'bodyfat'>;
+type MeasurementReminderKind = Exclude<MeasurementKind, 'bodyfat'>;
 
 export const MEASUREMENT_REMINDER_KINDS: readonly MeasurementReminderKind[] = MEASUREMENT_KIND_ORDER.filter(
   (kind): kind is MeasurementReminderKind => kind !== 'bodyfat',

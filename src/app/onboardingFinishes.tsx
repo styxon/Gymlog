@@ -7,7 +7,7 @@ import {
   resolveActiveProgramCap,
 } from '../lib/activeProgramSet';
 import { CoachQuotaLedger } from '../lib/aiCoachQuota';
-import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../lib/aiCoachClient';
+import { isAiCoachLiveConfigured, requestProgramTableFromImage } from '../features/aiCoach/aiCoachClient';
 import { joinedRunningSet } from '../lib/analyticsMoments';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
 import { FirstRunSetupSelection, isSetupDaysPerWeek } from '../lib/firstRunSetup';
@@ -47,7 +47,7 @@ type AppContextValue = ReturnType<typeof useAppContext>;
  * the About form's from src/screens/AboutYouScreen.tsx; no .ts module imports
  * this file, and the test build does not compile it.
  */
-export interface OnboardingFinishesDeps {
+interface OnboardingFinishesDeps {
   database: AppContextValue['database'];
   preferences: AppContextValue['preferences'];
   updatePreferences: AppContextValue['updatePreferences'];

@@ -30,7 +30,7 @@ export type ProgramCategoryKey =
   | 'focus'
   | 'beginner';
 
-export interface ProgramCategory {
+interface ProgramCategory {
   key: ProgramCategoryKey;
   labelKey: I18nKey;
   /** Drives the tile tint — one hue per category, as in the browse design. */

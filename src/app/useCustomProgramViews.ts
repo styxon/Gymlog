@@ -35,7 +35,7 @@ import type {
  * recentCompletedCustomTemplateId and recentExerciseLibraryItems stay inside;
  * VinhaApp reads only what this returns.
  */
-export interface CustomProgramViewsDeps {
+interface CustomProgramViewsDeps {
   /** The app context's custom programmes. */
   workoutTemplates: AppDatabase['workoutTemplates'];
   /** The app context's session reader for one custom programme. */

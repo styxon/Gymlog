@@ -24,7 +24,7 @@ import {
  * homeActivePlanCard — so every hook keeps its slot. setupSelectionKey and
  * tailoringKey stay inside: nothing else in VinhaApp reads them.
  */
-export interface SetupReadingsDeps {
+interface SetupReadingsDeps {
   /** The reader's preferences: the setup answers, the recommended programme, the language. */
   preferences: AppPreferences;
   /** The weigh-in log's progress; its latest weight seeds the questionnaire. */

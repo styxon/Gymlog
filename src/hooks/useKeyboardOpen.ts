@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Keyboard, Platform } from 'react-native';
 
-export interface KeyboardOpenState {
+interface KeyboardOpenState {
   open: boolean;
   /** The keyboard's measured height, 0 while it is down. */
   height: number;

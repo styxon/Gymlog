@@ -21,7 +21,7 @@ import { heaviestOfSets } from './personalRecords';
 import type { ExerciseLog } from '../types/models';
 
 /** The three figures the page's personal-best card can print. */
-export type LiftBestKind = 'weight' | 'reps' | 'minutes';
+type LiftBestKind = 'weight' | 'reps' | 'minutes';
 
 type BestLog = Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> & { performedAt: string };
 

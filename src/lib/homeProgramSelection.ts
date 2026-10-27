@@ -1,11 +1,11 @@
-export interface HomeCustomWorkoutItem {
+interface HomeCustomWorkoutItem {
   id: string;
   name: string;
   exerciseCount: number;
   updatedAt: string;
 }
 
-export interface HomeCustomProgramSelectionInput {
+interface HomeCustomProgramSelectionInput {
   customWorkouts: HomeCustomWorkoutItem[];
   activeSessionTemplateId: string | null;
   hasActiveSession: boolean;
@@ -13,7 +13,7 @@ export interface HomeCustomProgramSelectionInput {
   recentCompletedCustomTemplateId: string | null;
 }
 
-export interface HomeCustomProgramSelection {
+interface HomeCustomProgramSelection {
   mode: 'resume_active' | 'open_existing' | 'create_new';
   workoutId: string | null;
   title: string;

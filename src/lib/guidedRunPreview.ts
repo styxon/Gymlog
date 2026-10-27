@@ -14,7 +14,7 @@
  * fits, the last line of the space says how many are left out (the caller
  * draws it, and the full sheet is one tap away), so that line takes a row.
  */
-export interface RunPreviewFitInput {
+interface RunPreviewFitInput {
   /** Rows in the session (the contents sheet's items). */
   count: number;
   /** The row being walked up to; -1 when none is current. */
@@ -27,7 +27,7 @@ export interface RunPreviewFitInput {
   rowHeight: number;
 }
 
-export interface RunPreviewWindow {
+interface RunPreviewWindow {
   /** First row shown (inclusive). */
   start: number;
   /** One past the last row shown. */

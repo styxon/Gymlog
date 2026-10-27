@@ -21,7 +21,7 @@ import type { PlannedNotification } from '../lib/notificationPlan';
 import { planNotificationSync, shouldRearmPlan } from '../lib/planNotificationSync';
 import type { AppLanguage } from '../types/models';
 
-export const TRAINING_NOTIFICATION_CHANNEL_ID = 'training';
+const TRAINING_NOTIFICATION_CHANNEL_ID = 'training';
 
 /** The name the channel was last written with; null until it exists. */
 let channelName: string | null = null;

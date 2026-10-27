@@ -104,7 +104,7 @@ const TAPE: Record<'chest' | 'arms' | 'waist', number[]> = {
 const TODAY_STARTED_MINUTES_AGO = 52;
 const TODAY_DONE_EXERCISES = 3;
 
-export interface ScreenshotSeed {
+interface ScreenshotSeed {
   database: AppDatabase;
   workout: WorkoutPersistenceBundle;
 }
@@ -123,7 +123,7 @@ function sessionsInOrder(template: WorkoutTemplateV1) {
 }
 
 /** The calendar days that held a session, oldest first. */
-export function screenshotTrainingDays(now: Date): Date[] {
+function screenshotTrainingDays(now: Date): Date[] {
   const days: Date[] = [];
   for (let week = SCREENSHOT_WEEKS - 1; week >= 0; week -= 1) {
     WEEK_OFFSETS.forEach((offset, index) => {

@@ -41,25 +41,25 @@ import { ONGOING_NOTIFICATION_MARKER, installNotificationHandler } from './notif
 /** app.json's `android.package` — the one static id a channel-settings intent needs. */
 const ANDROID_PACKAGE_ID = 'app.vinha';
 
-export const REST_CHANNEL_ID = 'rest-timer';
-export const REST_WARNING_CHANNEL_ID = 'rest-warning';
-export const SESSION_CHANNEL_ID = 'session-ongoing';
-export const IDLE_CHANNEL_ID = 'session-idle';
+const REST_CHANNEL_ID = 'rest-timer';
+const REST_WARNING_CHANNEL_ID = 'rest-warning';
+const SESSION_CHANNEL_ID = 'session-ongoing';
+const IDLE_CHANNEL_ID = 'session-idle';
 
 /** Tags every notification here so shade sweeps leave unrelated ones alone. */
 export const SESSION_NOTIFICATION_MARKER = 'gymlogRest';
 
-export const CATEGORY_REST_RUNNING = 'vinha-rest-running';
-export const CATEGORY_REST_END = 'vinha-rest-end';
-export const CATEGORY_SESSION = 'vinha-session';
-export const CATEGORY_IDLE = 'vinha-idle';
+const CATEGORY_REST_RUNNING = 'vinha-rest-running';
+const CATEGORY_REST_END = 'vinha-rest-end';
+const CATEGORY_SESSION = 'vinha-session';
+const CATEGORY_IDLE = 'vinha-idle';
 
 /** Action identifiers the response listener dispatches on. */
 export const ACTION_EXTEND_30 = 'extend-30';
 export const ACTION_EXTEND_60 = 'extend-60';
 export const ACTION_SKIP_REST = 'skip-rest';
-export const ACTION_OPEN = 'open';
-export const ACTION_LOG_SET = 'log-set';
+const ACTION_OPEN = 'open';
+const ACTION_LOG_SET = 'log-set';
 export const ACTION_FINISH = 'finish';
 export const ACTION_STILL_GOING = 'still-going';
 
@@ -74,15 +74,15 @@ export const ACTION_STILL_GOING = 'still-going';
  * longer meant anything. A fixed id is its own handle: scheduling replaces,
  * and cancelling reaches whatever an earlier process left behind.
  */
-export const REST_LADDER_IDS = {
+const REST_LADDER_IDS = {
   warning: 'vinha-rest-warning',
   end: 'vinha-rest-end',
   repeat: 'vinha-rest-repeat',
 } as const;
 
 /** Our one ongoing card, by a fixed id so re-posting replaces rather than stacks. */
-export const ONGOING_ID = 'vinha-session-ongoing';
-export const IDLE_ID = 'vinha-session-idle';
+const ONGOING_ID = 'vinha-session-ongoing';
+const IDLE_ID = 'vinha-session-idle';
 
 export type RestAlertPermission = RestAlertPermissionAnswer;
 
@@ -98,7 +98,7 @@ let permission: RestAlertPermission = 'undetermined';
  */
 const runInOrder = createSerialTaskQueue();
 
-export interface SessionNotificationLabels {
+interface SessionNotificationLabels {
   extend30: string;
   extend60: string;
   skip: string;
@@ -113,7 +113,7 @@ export interface SessionNotificationLabels {
   idleChannel: string;
 }
 
-export function sessionNotificationLabels(language: AppLanguage): SessionNotificationLabels {
+function sessionNotificationLabels(language: AppLanguage): SessionNotificationLabels {
   return {
     extend30: t(language, 'rest.notify.action.extend30'),
     extend60: t(language, 'rest.notify.action.extend60'),
@@ -389,7 +389,7 @@ async function cancelLadderNow(): Promise<void> {
   await Promise.all(Object.values(REST_LADDER_IDS).map(cancelOne));
 }
 
-export interface RestLadderCopy {
+interface RestLadderCopy {
   warningTitle: string;
   warningBody: string;
   endTitle: string;

@@ -15,7 +15,7 @@ import type { AppDatabase, AppPreferences } from '../types/models';
  * useRoutineBlockCosts — so every hook keeps its slot and every reader in
  * App.tsx still sits below the values it reads.
  */
-export interface CoachEntryReadingsDeps {
+interface CoachEntryReadingsDeps {
   /** VinhaApp's current route: the analysis and chat screens are read off it. */
   route: AppRoute;
   /** The completed workout sessions the chat's analysis entry looks through. */

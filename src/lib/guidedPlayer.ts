@@ -28,12 +28,12 @@ import type {
 } from '../features/workout/workoutTypes';
 import { AppLanguage, SetupCautionArea } from '../types/models';
 
-export type GuidedPhase = 'warmup' | 'work' | 'cooldown';
+type GuidedPhase = 'warmup' | 'work' | 'cooldown';
 
 export const GUIDED_READY_SECONDS = 3;
 
 /** The shortest rest ring the player runs between two sets. */
-export const GUIDED_REST_FLOOR_SECONDS = 15;
+const GUIDED_REST_FLOOR_SECONDS = 15;
 
 /**
  * How long the ring between two sets runs for a prescribed rest. The walk-up
@@ -62,7 +62,7 @@ export interface GuidedDrill {
   seconds: number;
 }
 
-export interface GuidedExerciseInput {
+interface GuidedExerciseInput {
   slotId: string;
   name: string;
   restSeconds: number;
@@ -136,7 +136,7 @@ export type GuidedStep =
     }
   | { type: 'finish' };
 
-export interface GuidedGroup {
+interface GuidedGroup {
   phase: GuidedPhase;
   /**
    * Sets for a lift; ROUNDS for a superset, which is the unit a superset is
@@ -149,7 +149,7 @@ export interface GuidedGroup {
   supersetSize?: number;
 }
 
-export interface GuidedStepPlan {
+interface GuidedStepPlan {
   steps: GuidedStep[];
   groups: GuidedGroup[];
 }
@@ -485,7 +485,7 @@ export function getGuidedStepPlanKey(exercises: GuidedExerciseInput[]): string {
     .join('|');
 }
 
-export interface GuidedPhaseRail {
+interface GuidedPhaseRail {
   groups: GuidedGroup[];
   /** Where the reader is inside `groups`, not inside the whole session. */
   current: number;
@@ -602,7 +602,7 @@ export interface GuidedSetTarget {
   autoProgressedFromReps: number | null;
 }
 
-export interface GuidedNextPreview {
+interface GuidedNextPreview {
   title: string;
   sub: string;
   line: string;
@@ -732,7 +732,7 @@ function loggedOffPlan(set: { plannedLoadKg?: number; actualLoadKg?: number }): 
   return Math.abs(set.actualLoadKg - set.plannedLoadKg) >= 0.001;
 }
 
-export interface GuidedSetPlanChip {
+interface GuidedSetPlanChip {
   /** Done: the reps logged. Otherwise what the dial will open on. Null when there is no number. */
   reps: number | null;
   status: 'done' | 'current' | 'upcoming' | 'skipped';
@@ -818,7 +818,7 @@ export function resolveGuidedSetPlan(
 }
 
 /** A target lowered below the programme's floor after a short session. */
-export function isLoweredGuidedTarget(set: { plannedRepsMin: number; plannedTargetReps?: number }): boolean {
+function isLoweredGuidedTarget(set: { plannedRepsMin: number; plannedTargetReps?: number }): boolean {
   return typeof set.plannedTargetReps === 'number' && set.plannedTargetReps < set.plannedRepsMin;
 }
 
@@ -855,7 +855,7 @@ export function planRepsBounds(
 }
 
 /** The programme's own reps for a set, "8–12" or "8". */
-export function formatGuidedProgrammeReps(set: { plannedRepsMin: number; plannedRepsMax: number }): string {
+function formatGuidedProgrammeReps(set: { plannedRepsMin: number; plannedRepsMax: number }): string {
   return set.plannedRepsMin === set.plannedRepsMax
     ? `${set.plannedRepsMax}`
     : `${set.plannedRepsMin}–${set.plannedRepsMax}`;
@@ -874,7 +874,7 @@ export function formatGuidedRepsLabel(
   return formatGuidedProgrammeReps({ plannedRepsMin: min, plannedRepsMax: max });
 }
 
-export type GuidedWalkPlan =
+type GuidedWalkPlan =
   /** Set by set: "10/8/6", what each dial opens on when the sets go as planned. */
   | { kind: 'ramp'; reps: number[] }
   /** One number, lowered after a short session, with the programme's own beside it. */
@@ -1869,13 +1869,13 @@ function resolveGuidedLibraryIndex(normalized: string, lowerNames: readonly stri
  * badges live where the lifts are listed WITHOUT a box around them — the
  * programme's day view.
  */
-export interface GuidedRunMember {
+interface GuidedRunMember {
   name: string;
   /** The lift's slot, so the sheet can say what was logged in it. Null for a drill. */
   slotId: string | null;
 }
 
-export interface GuidedRunItem {
+interface GuidedRunItem {
   groupIndex: number;
   phase: GuidedPhase;
   name: string;
@@ -2066,7 +2066,7 @@ function groupIndexOfStep(step: GuidedStep | undefined): number | null {
   return step.groupIndex;
 }
 
-export interface GuidedOpening {
+interface GuidedOpening {
   /** Where the resume card and the pinned button point. */
   resumeIndex: number;
   /** The step the screen opens on. */

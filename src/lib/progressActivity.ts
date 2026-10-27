@@ -12,9 +12,9 @@ import { isScheduleKnown, TrainingSchedule, trainsOn } from './trainingSchedule'
  * the widget read, so a two-on-one-off cycle marks the same days here as it
  * does everywhere else. A weekday list could not say that (2026-08-25).
  */
-export type ProgressActivityDayStatus = 'done' | 'missed' | 'upcoming' | 'rest' | 'outside';
+type ProgressActivityDayStatus = 'done' | 'missed' | 'upcoming' | 'rest' | 'outside';
 
-export interface ProgressActivityDayInput {
+interface ProgressActivityDayInput {
   dayStart: number;
   dayNumber: number;
   active: boolean;
@@ -22,7 +22,7 @@ export interface ProgressActivityDayInput {
   inCurrentMonth: boolean;
 }
 
-export interface ProgressActivityOptions {
+interface ProgressActivityOptions {
   /** The plan's rhythm; unknown means nothing is ever called missed. */
   schedule?: TrainingSchedule;
   /** Start-of-day timestamp for today, used to place a day in past or future. */

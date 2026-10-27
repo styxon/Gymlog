@@ -13,7 +13,7 @@
  */
 
 /** Ticked statement indexes, per exercise library item id. */
-export type ExerciseTechniqueChecks = Record<string, number[]>;
+type ExerciseTechniqueChecks = Record<string, number[]>;
 
 /**
  * Stored ticks, made safe to draw a counter from.

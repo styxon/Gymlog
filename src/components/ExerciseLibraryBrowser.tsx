@@ -81,7 +81,7 @@ function getBodyPartIcon(bodyPart: BodyPartFilter): VinhaIconName {
   }
 }
 
-export function getItemImageKey(item: ExerciseLibraryItem) {
+function getItemImageKey(item: ExerciseLibraryItem) {
   return item.imageKey ?? null;
 }
 
@@ -89,7 +89,7 @@ export function getItemImageKey(item: ExerciseLibraryItem) {
  * "Rinta · Tanko · Moninivel" — the line under a library row's name, the same
  * words as every picker's (exercisePickerRowMeta).
  */
-export function exerciseLibraryRowMeta(item: ExerciseLibraryItem, language: AppLanguage): string {
+function exerciseLibraryRowMeta(item: ExerciseLibraryItem, language: AppLanguage): string {
   return exercisePickerRowMeta(item, language);
 }
 

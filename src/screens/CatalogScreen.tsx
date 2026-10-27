@@ -245,15 +245,6 @@ const makeStyles = (theme: Theme) =>
       paddingTop: 8,
       paddingBottom: 4,
     },
-    backButton: {
-      width: 34,
-      height: 34,
-      borderRadius: 11,
-      borderWidth: 1,
-      borderColor: theme.border,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
     title: {
       flex: 1,
       minWidth: 0,

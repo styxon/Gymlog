@@ -10,7 +10,7 @@ import { AppLanguage, ExerciseLibraryItem } from '../types/models';
  * `exerciseName` alone finds nothing for "kyykky". The caller localises once
  * and passes it along rather than this module learning about languages.
  */
-export type SearchableSwapOption = TailoredSwapOption & { searchLabel?: string };
+type SearchableSwapOption = TailoredSwapOption & { searchLabel?: string };
 
 /**
  * The swap list, ordered the way the question is asked.
@@ -61,7 +61,7 @@ export function movementHead(name: string): string {
   );
 }
 
-export interface SwapShortlist {
+interface SwapShortlist {
   /** The same movement, different gear or loading. */
   variations: SearchableSwapOption[];
   /** A different movement from the same pool — same area, other angle. */
@@ -96,7 +96,7 @@ export function identityKey(name: string): string {
     .join(' ');
 }
 
-export interface SwapShortlistOptions {
+interface SwapShortlistOptions {
   /**
    * Every lift already in today's session.
    *

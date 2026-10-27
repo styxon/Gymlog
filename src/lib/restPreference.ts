@@ -47,7 +47,7 @@ export function normalizeDefaultRestSeconds(value: unknown, fallback: number): n
  * file said (a 15-minute rest between heavy singles is real), and a cap the
  * loader applied would be saved back over it. Past an hour is a damaged row.
  */
-export const MAX_STORED_REST_SECONDS = 3600;
+const MAX_STORED_REST_SECONDS = 3600;
 
 /**
  * A stored exercise's own rest, made usable: null when it is not a number,

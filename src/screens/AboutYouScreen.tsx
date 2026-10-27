@@ -64,7 +64,7 @@ const ABOUT_DARK: AboutPalette = {
 const paletteFor = (theme: Theme): AboutPalette => (theme === darkTheme ? ABOUT_DARK : ABOUT_LIGHT);
 
 /** 'unspecified' is the gender sheet's Skip: an answer, stored as such. */
-export type AboutYouGender = 'male' | 'female' | 'unspecified' | null;
+type AboutYouGender = 'male' | 'female' | 'unspecified' | null;
 
 /**
  * Three answers, and each one is read by something.

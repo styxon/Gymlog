@@ -1,9 +1,9 @@
 import type { SetupEquipment, SetupTrainingEnvironment } from '../types/models';
 
 /** Heavy home gear upgrades the derived environment from minimal_equipment to home_gym. */
-export const HOME_HEAVY_EQUIPMENT_ITEMS: readonly string[] = ['Barbell & plates', 'Squat rack'];
+const HOME_HEAVY_EQUIPMENT_ITEMS: readonly string[] = ['Barbell & plates', 'Squat rack'];
 
-export interface EquipmentCard {
+interface EquipmentCard {
   id: SetupTrainingEnvironment;
   equipment: SetupEquipment;
   trainingEnvironment: SetupTrainingEnvironment;

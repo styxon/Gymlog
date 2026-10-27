@@ -429,7 +429,7 @@ module.exports = [
           + 'the constant is a human signature, not a computed value',
       );
 
-      const client = read('src/lib/aiCoachClient.ts');
+      const client = read('src/features/aiCoach/aiCoachClient.ts');
       assert.match(
         client,
         /resolveLiveAiCoachUrl\(\s*process\.env\.EXPO_PUBLIC_AI_COACH_API_URL/,
