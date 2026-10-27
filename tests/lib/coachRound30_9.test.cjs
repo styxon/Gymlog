@@ -113,7 +113,7 @@ module.exports = [
   {
     name: 'coach client: a rate-limited question is marked, and the chat says wait rather than OFFLINE',
     run() {
-      const client = read('src', 'lib', 'aiCoachClient.ts');
+      const client = read('src', 'features', 'aiCoach', 'aiCoachClient.ts');
       assert.match(client, /if \(isErrorResponse\(payload\) && payload\.error\?\.code === 'RATE_LIMIT'\) \{[\s\S]{0,300}limited: true,/);
       // Checked before the generic fallback, which would call it an outage.
       assert.ok(client.indexOf("payload.error?.code === 'RATE_LIMIT'") < client.indexOf('if (isErrorResponse(payload) && payload.fallback)'));

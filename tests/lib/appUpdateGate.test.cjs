@@ -125,7 +125,7 @@ module.exports = [
           entry.isDirectory() ? walk(`${dir}/${entry.name}`) : /\.tsx?$/.test(entry.name) ? [`${dir}/${entry.name}`] : [],
         );
       const clients = [...walk('src'), 'App.tsx'].filter((file) => /\bfetch\(/.test(read(file)));
-      for (const known of ['src/lib/aiCoachClient.ts', 'src/features/account/backupApi.ts', 'src/features/analytics/analyticsClient.ts']) {
+      for (const known of ['src/features/aiCoach/aiCoachClient.ts', 'src/features/account/backupApi.ts', 'src/features/analytics/analyticsClient.ts']) {
         assert.ok(clients.includes(known), `${known} makes no request any more — update this guard`);
       }
       for (const file of clients) {
@@ -139,7 +139,7 @@ module.exports = [
           assert.match(call, /noteServerAnswer\(response\.status,/, `${file} request ${index + 1} does not report the answer`);
         });
       }
-      assert.match(read('src/lib/aiCoachClient.ts'), /function coachHeaders\(\)[^}]*\.\.\.appVersionHeaders\(\)/);
+      assert.match(read('src/features/aiCoach/aiCoachClient.ts'), /function coachHeaders\(\)[^}]*\.\.\.appVersionHeaders\(\)/);
 
       // Registered from index.ts before App's modules load (bug hunt 2026-10-03), so an early crash's report names it too.
       assert.match(read('src/features/appUpdate/registerAppIdentityAtStartup.ts'), /registerAppIdentity\(Constants\.expoConfig\?\.version \?\? appInfo\.version, Platform\.OS\)/);

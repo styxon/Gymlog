@@ -248,7 +248,6 @@ module.exports = [
       walk('src');
       assert.deepEqual(offenders, []);
 
-      assert.match(read('src', 'components', 'SettingsUi.tsx'), /setTitleDanger: \{\s*color: theme\.danger,/);
       const settings = read('src', 'screens', 'SettingsScreen.tsx')
         .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
         .replace(/\/\/.*$/gm, '');

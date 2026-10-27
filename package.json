@@ -50,6 +50,7 @@
     "react-native-svg": "15.15.3"
   },
   "devDependencies": {
+    "@expo/config-plugins": "~55.0.11",
     "@types/react": "~19.2.2",
     "typescript": "~5.9.2"
   },

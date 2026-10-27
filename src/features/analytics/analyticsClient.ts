@@ -360,8 +360,3 @@ export function setUsageStatisticsEnabled(next: boolean): void {
     })
     .catch(() => undefined);
 }
-
-/** Whether this build reports usage at all — the settings screen states it. */
-export function isAnalyticsConfigured(): boolean {
-  return ANALYTICS_URL.length > 0;
-}

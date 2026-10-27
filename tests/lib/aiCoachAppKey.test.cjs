@@ -28,7 +28,7 @@ function loadClient(env) {
       process.env[key] = env[key];
     }
   }
-  const modulePath = path.join(root, '.test-dist', 'lib', 'aiCoachClient.js');
+  const modulePath = path.join(root, '.test-dist', 'features', 'aiCoach', 'aiCoachClient.js');
   delete require.cache[modulePath];
   delete require.cache[path.join(root, '.test-dist', 'lib', 'aiCoachLiveGate.js')];
   try {

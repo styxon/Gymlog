@@ -1,12 +1,12 @@
-import { buildAiCoachPreviewAnswer } from './aiCoachPreview';
-import { classifyCoachScope } from './aiCoachScope';
-import { resolveLiveAiCoachUrl } from './aiCoachLiveGate';
-import { ProgramImageMediaType, ProgramTableRow, validateProgramTable } from './programImageImport';
-import { AICoachAdvice, AICoachAdviceError, AICoachAdviceRequest, AICoachAdviceSuccess } from '../types/aiCoach';
-import { appVersionHeaders, noteServerAnswer } from '../features/appUpdate/appUpdateSignal';
-import { buildCoachReportBody, CoachReportReason } from './coachAnswerReport';
-import { COACH_COPIES_KEPT } from './aiCoachLogId';
-import { isCoachCrisisReply } from './coachCrisisTurn';
+import { buildAiCoachPreviewAnswer } from '../../lib/aiCoachPreview';
+import { classifyCoachScope } from '../../lib/aiCoachScope';
+import { resolveLiveAiCoachUrl } from '../../lib/aiCoachLiveGate';
+import { ProgramImageMediaType, ProgramTableRow, validateProgramTable } from '../../lib/programImageImport';
+import { AICoachAdvice, AICoachAdviceError, AICoachAdviceRequest, AICoachAdviceSuccess } from '../../types/aiCoach';
+import { appVersionHeaders, noteServerAnswer } from '../appUpdate/appUpdateSignal';
+import { buildCoachReportBody, CoachReportReason } from '../../lib/coachAnswerReport';
+import { COACH_COPIES_KEPT } from '../../lib/aiCoachLogId';
+import { isCoachCrisisReply } from '../../lib/coachCrisisTurn';
 
 // The key the endpoint asks for on every call (api/ai-coach.ts, hasAppKey).
 // Without it the server refuses, so a build that lacks it is a preview build
@@ -66,7 +66,7 @@ export function lastAiLogCarriedAt(logId: string): number | null {
   return aiLogCarriedAt.get(logId) ?? null;
 }
 
-export interface RequestAiCoachAdviceResult {
+interface RequestAiCoachAdviceResult {
   answer: AICoachAdvice;
   source: 'live' | 'preview';
   note?: string;
@@ -295,7 +295,7 @@ export async function requestAiCoachAdvice(input: AICoachAdviceRequest, upstream
  * proposal", it had the device compose a week from the words (review,
  * 2026-10-08).
  */
-export interface LiveProgrammeProposalPayload {
+interface LiveProgrammeProposalPayload {
   title: string;
   sessions: Array<{
     name: string;

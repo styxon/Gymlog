@@ -145,7 +145,7 @@ module.exports = [
       // Reported (or failed) only once the send has settled.
       assert.match(sheet, /arrived = await onSend\(reason\);/);
       assert.match(sheet, /\} finally \{[^}]*?sendingRef\.current = false;\s*setSending\(false\);\s*\}\s*if \(!arrived\) \{\s*setFailed\(true\);/);
-      const client = read(path.join(root, 'src', 'lib', 'aiCoachClient.ts'));
+      const client = read(path.join(root, 'src', 'features', 'aiCoach', 'aiCoachClient.ts'));
       assert.match(client, /return response\.ok && payload\.ok === true;\s*\} catch \{\s*return false;/);
     },
   },

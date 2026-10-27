@@ -4,7 +4,7 @@ import { trackEvent } from '../features/analytics/analyticsClient';
 import { reportOperationFailed } from '../features/errorReporting/errorReporter';
 import { isWorkoutInProgress } from '../lib/activeWorkout';
 import { findSavedCardioRun } from '../lib/cardio';
-import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../lib/aiCoachClient';
+import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../features/aiCoach/aiCoachClient';
 import { randomLogId } from '../lib/aiCoachLogId';
 import { CoachQuotaLedger, resolveCoachQuota } from '../lib/aiCoachQuota';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
@@ -41,7 +41,7 @@ type HistoryScreenProps = React.ComponentProps<typeof HistoryScreen>;
  * chain's final else and doubles as the safety net for a route whose guard
  * state was just cleared, which is App.tsx's business, not a tab's.
  */
-export interface HomeScreensDeps {
+interface HomeScreensDeps {
   /** Coach questions in flight, shared with the photo read so the two cannot both take the last one. */
   coachQuotaLedger: CoachQuotaLedger;
   route: AppRoute;

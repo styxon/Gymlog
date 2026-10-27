@@ -20,7 +20,7 @@ import {
   canResumePurchase,
   resolveTrialProUntil,
 } from '../lib/proEntitlement';
-import { forgetAiCoachLog, lastAiLogCarriedAt } from '../lib/aiCoachClient';
+import { forgetAiCoachLog, lastAiLogCarriedAt } from '../features/aiCoach/aiCoachClient';
 import { aiLogDeleteSettlesAt } from '../lib/aiLogDeletion';
 import { randomLogId } from '../lib/aiCoachLogId';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
@@ -74,7 +74,7 @@ import { createUnlessAtLimit } from './programLimitGuard';
  * switchboard, named. Types lean on ComponentProps where the screen already
  * owns the shape, so this file never restates one.
  */
-export interface ProfileTabDeps {
+interface ProfileTabDeps {
   route: AppRoute;
   navigate: (route: AppRoute) => void;
   navigateBack: (fallback?: AppRoute | null) => void;

@@ -377,7 +377,7 @@ module.exports = [
     run() {
       // Not over the network, not subject to the spend cap, and not dependent
       // on the model following its rules — and the message does not travel.
-      const client = read('src', 'lib', 'aiCoachClient.ts');
+      const client = read('src', 'features', 'aiCoach', 'aiCoachClient.ts');
       const start = client.indexOf('export async function requestAiCoachAdvice');
       assert.ok(start > 0, 'requestAiCoachAdvice is gone');
       // Anchored from the function's own start: the same line opens the

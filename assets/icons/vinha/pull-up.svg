@@ -1,9 +1,0 @@
-<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <path d="M5 4h14"/>
-  <path d="M7 4v4"/>
-  <path d="M17 4v4"/>
-  <circle cx="12" cy="10" r="2"/>
-  <path d="M8 12c1.5 2 6.5 2 8 0"/>
-  <path d="M10 14v5"/>
-  <path d="M14 14v5"/>
-</svg>

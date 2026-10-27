@@ -46,7 +46,7 @@ import { buildCautionAdaptationLine } from '../lib/cautionAdaptationLine';
 import { CAUTION_TO_FOCUS_AREAS } from '../lib/cautionExerciseFilter';
 import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { getReadyTemplatePresentation } from '../lib/templatePresentation';
-import { requestAiCoachAdvice } from '../lib/aiCoachClient';
+import { requestAiCoachAdvice } from '../features/aiCoach/aiCoachClient';
 import { AI_COACH_MAX_PROMPT_CHARS } from '../lib/aiCoachBudget';
 import { trackEvent } from '../features/analytics/analyticsClient';
 import { cycleSchedule, patternFromOnOff, resolveCycleAnchor, trainsOn } from '../lib/trainingSchedule';

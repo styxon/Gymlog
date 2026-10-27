@@ -14,7 +14,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
-import { forgetAiCoachLog, isAiCoachLiveConfigured, lastAiLogCarriedAt } from '../lib/aiCoachClient';
+import { forgetAiCoachLog, isAiCoachLiveConfigured, lastAiLogCarriedAt } from '../features/aiCoach/aiCoachClient';
 import { aiLogRetryAt, createAiLogDeletionRunner } from '../lib/aiLogDeletion';
 import {
   AI_LOG_RETRY_PACING,

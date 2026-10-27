@@ -586,16 +586,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '800',
     color: theme.onHighlight,
   },
-  quietLink: {
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 2,
-  },
-  quietLinkText: {
-    fontSize: 14,
-    fontWeight: '800',
-    color: theme.purple,
-  },
   pressed: {
     opacity: 0.85,
   },

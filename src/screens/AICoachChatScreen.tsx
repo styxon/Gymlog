@@ -9,7 +9,7 @@ import { CoachReportSheet } from '../components/CoachReportSheet';
 import { ProgrammeProposalCard } from '../components/ProgrammeProposalCard';
 import { ProLockedCard } from '../components/ProLockedCard';
 import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
-import { ProgrammeCompositionCrisis, isProgrammeCompositionCrisis, reportAiCoachAnswer, requestAiCoachAdvice } from '../lib/aiCoachClient';
+import { ProgrammeCompositionCrisis, isProgrammeCompositionCrisis, reportAiCoachAnswer, requestAiCoachAdvice } from '../features/aiCoach/aiCoachClient';
 import { COACH_COPIES_KEPT } from '../lib/aiCoachLogId';
 import { CoachReportReason } from '../lib/coachAnswerReport';
 import { trackEvent } from '../features/analytics/analyticsClient';

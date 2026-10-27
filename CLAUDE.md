@@ -14,7 +14,9 @@ npm run android:release # Build signed Android APK via Gradle
 npm run measure:startup # Cold start on the connected phone, after every APK install (fails over 3.5 s)
 npm run release:ios      # Store build for iOS, behind the version guard (scripts/releaseGuard.cjs)
 npm run release:android  # The same for Android
+npm run release:android:bundle # The same guard, but builds the AAB for Play
 npm run release:ios:done # After the store accepted it: tags ios-v<version>, so that version cannot ship twice
+npm run release:android:done # After Play accepted it: tags android-v<version>
 npm run exercise:sync   # Regenerate src/data/generatedExerciseLibrary.ts, and bundle its pictures (assets/exercises + src/assets/exerciseImages.ts)
 npm run texts:export    # Regenerate outputs/app-texts-fi-en/ (every static text, EN beside FI)
 npm run slack:notify    # Post a note to a Slack channel (see docs/slack-workflow.md)
@@ -120,12 +122,12 @@ What is worth flagging in this repo, beyond ordinary correctness:
 
 ### App shell
 
-`App.tsx` is the single monolithic shell. It owns:
+`App.tsx` is the shell that wires state and routing together; most rendering and handlers are delegated to `src/app/*` (`render*.tsx`, `use*.ts`, `backRoute.ts`, `programmeSwitches.tsx`, etc.; `tests/helpers/appWiringSource.cjs` reads `App.tsx` plus `src/app/*`). It owns:
 - All screen imports and conditional rendering
 - In-memory `route` + `routeHistory` state
 - Props passed into every screen (screens receive no props from React Navigation — there is no React Navigation)
 
-This file is large. When changing screen-level routing, always edit `App.tsx`.
+This file is large. Screen-level routing and wiring live in `App.tsx`; look in `src/app/` first for rendering and handler logic.
 
 ### Navigation
 
@@ -167,7 +169,7 @@ Pure TypeScript functions with no React dependencies. This is where all business
 | Recommendation & onboarding | `recommendationScoring`, `recommendationProfile`, `recommendationProgramme`, `firstRunSetup`, `onboardingPlanName` |
 | Home decisions | `homeProgramSelection`, `dashboard` |
 | Workout session | `guidedPlayer`, `sessionDuration`, `workoutLoggerNavigation` |
-| AI Coach | `aiCoachClient`, `aiCoachPreview`, `aiTrainingContext`, `aiCoachPlan` |
+| AI Coach | `aiCoachPreview`, `aiTrainingContext`, `aiCoachPlan` |
 | Progress & history | `historyView`, `progression`, `progressionGate` |
 | Formatting | `format`, `displayLabel` |
 
