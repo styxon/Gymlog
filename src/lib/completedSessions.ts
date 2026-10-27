@@ -202,7 +202,6 @@ export function getRollingWindowStart(now: Date | string | number, days: number)
   return addCalendarDays(now, -days);
 }
 
-
 /**
  * `reference` shifted by whole calendar months, keeping its day of the month
  * where that day exists — and the last day of the target month where it does
