@@ -123,7 +123,7 @@ What is worth flagging in this repo, beyond ordinary correctness:
 ### App shell
 
 `App.tsx` is the shell that wires state and routing together; most rendering and handlers are delegated to `src/app/*` (`render*.tsx`, `use*.ts`, `backRoute.ts`, `programmeSwitches.tsx`, etc.; `tests/helpers/appWiringSource.cjs` reads `App.tsx` plus `src/app/*`). It owns:
-- All screen imports and conditional rendering
+- The route-to-screen dispatch (each tab's screens are drawn by its `src/app/render*` module)
 - In-memory `route` + `routeHistory` state
 - Props passed into every screen (screens receive no props from React Navigation — there is no React Navigation)
 
