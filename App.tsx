@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AppShell } from './src/components/AppShell';
@@ -29,7 +29,6 @@ import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { useReviewProAccount } from './src/app/useReviewProAccount';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
 import { useAccountOutcome } from './src/app/useAccountOutcome';
-import { runningProgrammeTitle as runningProgrammeTitleOf } from './src/lib/templatePresentation';
 import {
   addActiveProgram,
   evaluateProgramAdoption,
@@ -51,9 +50,9 @@ import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
 import { useHomeActiveWorkoutSummary } from './src/app/useHomeActiveWorkoutSummary';
 import { useHeldSessionAdaptations } from './src/app/useHeldSessionAdaptations';
 import { useOnboardingGate } from './src/app/useOnboardingGate';
+import { useRunningProgrammeViews } from './src/app/useRunningProgrammeViews';
 import { createActiveWorkoutDoor } from './src/app/activeWorkoutDoor';
 import { t } from './src/lib/i18n';
-import { countLabel } from './src/lib/repCountCopy';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
 import { trackEvent } from './src/features/analytics/analyticsClient';
@@ -821,86 +820,8 @@ function VinhaApp() {
     completedSessionsForTemplate,
   });
 
-  /**
-   * Which programmes the active plans actually point at.
-   *
-   * Plan ids are not programme ids: onboarding writes onboarding_plan_<id> and
-   * adoption writes ready_plan_<id>, so a reader who picked a ready
-   * programme during onboarding holds a different plan id for the same
-   * programme. Membership has to be asked of the template, not the plan.
-   */
-  const activeProgramTemplateIds = useMemo(() => {
-    const byId = new Map(database.workoutPlans.map((plan) => [plan.id, plan]));
-    // The LEADER counts too. Several writers set `activePlanId` without
-    // adding it to `activePlanIds` (activating a held plan, among others),
-    // so the plan Home leads with could be missing from this set —
-    // and its own detail page then offered "Start this programme" for a
-    // programme that was already running (device, 2026-08-30).
-    return [...new Set([preferences.activePlanId, ...preferences.activePlanIds])]
-      .filter((planId): planId is string => Boolean(planId))
-      .map((planId) => byId.get(planId)?.entries[0]?.workoutTemplateId ?? null)
-      .filter((id): id is string => Boolean(id));
-  }, [database.workoutPlans, preferences.activePlanId, preferences.activePlanIds]);
-
-  /**
-   * What a RUNNING programme is called, wherever it is listed: the one rule in
-   * lib/templatePresentation (runningProgrammeTitleOf), which Home's hero and
-   * the coach read too. The Programs tab lists the same programmes Home does,
-   * so it has to reach the same answer.
-   */
-  const runningProgrammeTitle = useCallback(
-    (templateId: string | null, planName: string | null | undefined, days: number): string =>
-      runningProgrammeTitleOf(
-        templateId ? getWorkoutTemplateById(templateId) : null,
-        planName,
-        preferences.appLanguage,
-        days,
-      ),
-    [preferences.appLanguage],
-  );
-
-  /**
-   * The programmes running alongside the one Home leads with.
-   *
-   * Home's hero still belongs to a single plan; these are the rest, listed
-   * under it so a programme the reader added is visible rather than merely
-   * stored.
-   */
-  const homeOtherPrograms = useMemo(() => {
-    const byId = new Map(database.workoutPlans.map((plan) => [plan.id, plan]));
-    return preferences.activePlanIds
-      .filter((planId) => planId !== preferences.activePlanId)
-      .map((planId) => {
-        const plan = byId.get(planId);
-        const templateId = plan?.entries[0]?.workoutTemplateId ?? null;
-        const template = templateId ? getWorkoutTemplateById(templateId) : null;
-        if (!plan) {
-          return null;
-        }
-        const days = template?.daysPerWeek ?? plan.entries.length;
-        // The reader's own programme is named by its template, for the same
-        // reason the hero above is: the plan's copy of the name can be older
-        // than the last rename. A ready one is not in this map at all, and
-        // gets its presentation title from runningProgrammeTitle — the one
-        // helper every surface names a running programme with.
-        const ownTemplate = templateId
-          ? workoutTemplates.find((entry) => entry.id === templateId) ?? null
-          : null;
-        return {
-          planId,
-          title: runningProgrammeTitle(templateId, ownTemplate?.name || plan.name, days),
-          meta: countLabel(days, 'programs.card.daysOne', 'programs.card.days', preferences.appLanguage),
-        };
-      })
-      .filter((row): row is { planId: string; title: string; meta: string } => row !== null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    database.workoutPlans,
-    preferences.activePlanIds,
-    preferences.activePlanId,
-    preferences.appLanguage,
-    workoutTemplates,
-  ]);
+  const { activeProgramTemplateIds, runningProgrammeTitle, homeOtherPrograms } =
+    useRunningProgrammeViews({ database, preferences, workoutTemplates });
 
   const {
     promoteHeldProgramToLead,
