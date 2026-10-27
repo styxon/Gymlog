@@ -609,11 +609,6 @@ export interface WorkoutExerciseInsertInput {
   libraryItemId?: string | null;
 }
 
-export interface WorkoutSwapOption {
-  exerciseName: string;
-  substitutionGroup: string;
-}
-
 /** What the logger needs to decide whether a prefill may move up. */
 export interface WorkoutProgressionOptions {
   automatedProgressionEnabled: boolean;

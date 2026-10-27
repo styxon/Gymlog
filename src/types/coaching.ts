@@ -1,7 +1,6 @@
 /**
  * Vinha coaching system types.
  *
- * Implementation status per type is documented in docs/coaching-architecture.md.
  * Do not add types here ahead of an active implementation need.
  */
 

@@ -20,7 +20,6 @@ import {
 } from '../lib/exerciseBrowseFilter';
 import {
   ExercisePickerFilters,
-  NO_PICKER_FILTERS,
   exercisePickerChipLabel,
   exercisePickerRowLabels,
   listPickerExercises,
@@ -190,7 +189,6 @@ export interface ExercisePickerEntry {
 
 // The three groups' rule lives in lib/exercisePicker, with every picker's list.
 export type { ExercisePickerFilters };
-export const NO_SHEET_FILTERS: ExercisePickerFilters = NO_PICKER_FILTERS;
 
 interface ExercisePickerSection {
   title: string;

@@ -11,7 +11,7 @@ import { bringBackWorkoutAside, hasWorkoutAsideCopy } from '../../storage/workou
 
 import { CardioActivityType, UnitPreference } from '../../types/models';
 import { ActiveCardioSession } from '../../lib/cardio';
-import { CORE_WORKOUT_TEMPLATE_ID, WORKOUT_TEMPLATES_V1, getWorkoutTemplateById, getWorkoutTemplateSessions } from './workoutCatalog';
+import { CORE_WORKOUT_TEMPLATE_ID, WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } from './workoutCatalog';
 import { clearWorkoutBundle, loadWorkoutBundle, normalizeWorkoutBundle, saveWorkoutBundle } from './workoutPersistence';
 import { loadWithRetry } from '../../storage/loadWithRetry';
 import { GuidedResumeAnchor, WorkoutExerciseInsertInput, WorkoutHistoryStore, WorkoutPersistenceBundle, WorkoutProgressionOptions, WorkoutRuntimeTemplate, WorkoutSessionRuntime, WorkoutSetEffort } from './workoutTypes';
@@ -513,12 +513,4 @@ export function useWorkoutContext() {
     throw new Error('useWorkoutContext must be used inside WorkoutProvider');
   }
   return context;
-}
-
-export function useWorkoutTemplateCatalog() {
-  return WORKOUT_TEMPLATES_V1;
-}
-
-export function useWorkoutTemplateSessions(templateId: string) {
-  return getWorkoutTemplateSessions(templateId);
 }

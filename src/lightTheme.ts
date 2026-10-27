@@ -96,8 +96,6 @@ export const HG = {
   proInk: '#5B21B6',
 } as const;
 
-export type HGToken = keyof typeof HG;
-
 /**
  * Paywall-moment tokens ("PW", pw-shared.jsx): the locked-state language and
  * the caution colours the detection cards use. Shared by the locked card, the

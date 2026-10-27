@@ -489,7 +489,6 @@ function VinhaApp() {
 
     async function loadFonts() {
       await Font.loadAsync({
-        Inter: require('./assets/fonts/Inter.ttf'),
         // Variable Manrope kept as a fallback; the static per-weight families
         // below are what AppText.tsx maps fontWeight onto, because Android
         // does not drive a variable font's weight axis (headings rendered at

@@ -880,9 +880,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   cardFollow: {
     marginTop: 12,
   },
-  demoCardGap: {
-    marginTop: 10,
-  },
   profileChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1002,17 +999,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   segTextActive: {
     color: theme === darkTheme ? theme.ink : theme.purpleDark,
-  },
-  connectPill: {
-    paddingVertical: 7,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: theme.purpleLight,
-  },
-  connectPillText: {
-    color: theme.purpleDark,
-    fontSize: 13,
-    fontWeight: '800',
   },
   footer: {
     color: theme.faint,

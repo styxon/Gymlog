@@ -119,14 +119,3 @@ export const sound = {
   finish: () => play('finish'),
 };
 
-/** Frees the native players (used when tearing the app down in tests/dev). */
-export function releaseCueSounds() {
-  players.forEach((player) => {
-    try {
-      player.remove();
-    } catch {
-      // ignore
-    }
-  });
-  players.clear();
-}

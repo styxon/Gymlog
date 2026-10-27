@@ -164,11 +164,11 @@ Pure TypeScript functions with no React dependencies. This is where all business
 
 | Area | Files |
 |---|---|
-| Recommendation & onboarding | `recommendationScoring`, `recommendationProfile`, `recommendationProgramme`, `firstRunSetup`, `onboardingStructure` |
+| Recommendation & onboarding | `recommendationScoring`, `recommendationProfile`, `recommendationProgramme`, `firstRunSetup`, `onboardingPlanName` |
 | Home decisions | `homeProgramSelection`, `dashboard` |
-| Workout session | `guidedPlayer`, `sessionDuration`, `workoutLoggingSessionBootstrap`, `workoutLoggerNavigation` |
-| AI Coach | `aiCoachClient`, `aiCoachPreview`, `aiCoachActions`, `aiTrainingContext`, `aiCoachPlan` |
-| Progress & history | `historyView`, `progressionActivePlan`, `progressionSignal` |
+| Workout session | `guidedPlayer`, `sessionDuration`, `workoutLoggerNavigation` |
+| AI Coach | `aiCoachClient`, `aiCoachPreview`, `aiTrainingContext`, `aiCoachPlan` |
+| Progress & history | `historyView`, `progression`, `progressionGate` |
 | Formatting | `format`, `displayLabel` |
 
 New domain logic belongs in `src/lib/` as a pure function, covered by a test in `tests/lib/`.

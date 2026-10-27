@@ -9,10 +9,6 @@ export const fitnessPhotos: Record<FitnessPhotoKey, ImageSourcePropType> = {
   recovery: require('../../assets/fitness/selected/recovery.jpg'),
 };
 
-export function getFitnessPhotoByKey(key: FitnessPhotoKey) {
-  return fitnessPhotos[key];
-}
-
 function normalize(value: string | null | undefined) {
   return value?.trim().toLowerCase() ?? '';
 }

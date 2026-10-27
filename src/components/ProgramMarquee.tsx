@@ -23,20 +23,6 @@ const GAP = 12;
  */
 const ANGLE_DEG = 0;
 const OVERHANG = 140;
-/**
- * What the tilt adds to the band's height.
- *
- * A rotated band is taller than its rows by roughly its width times sin(angle),
- * and the caller has to know that number: centring the box without it centres
- * the empty part of the box and the tiles sit high (user 2026-08-27).
- */
-const TILT_ALLOWANCE = 96;
-
-/** How tall the band wants to be for this many rows, tilt included. */
-export function marqueeHeight(rowCount: number): number {
-  const rows = Math.max(1, rowCount);
-  return rows * TILE_HEIGHT + (rows - 1) * GAP + TILT_ALLOWANCE;
-}
 
 /** The rows alone, with no tilt allowance: the band runs level (ANGLE_DEG is 0). */
 export function marqueeRowsHeight(rowCount: number): number {

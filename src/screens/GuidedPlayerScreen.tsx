@@ -7276,7 +7276,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   gateRowName: { fontSize: 15, fontWeight: '700', color: theme.ink },
-  gateRowWhy: { fontSize: 12.5, fontWeight: '600', color: theme.muted, marginTop: 1 },
   gateRowLength: {
     fontSize: 13.5,
     fontWeight: '700',
@@ -7295,7 +7294,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     gap: 2,
   },
   gateOwnLabel: { fontSize: 16, fontWeight: '800', color: theme.ink },
-  gateOwnSub: { fontSize: 12.5, fontWeight: '600', color: theme.muted, textAlign: 'center' },
   // No border, no fill — quieter than the two buttons above it on purpose.
   gateAddExerciseLink: { alignItems: 'center', justifyContent: 'center', paddingVertical: 6 },
   gateAddExerciseLinkText: { fontSize: 14, fontWeight: '700', color: theme.muted },
@@ -7312,11 +7310,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     color: theme.ink,
     textAlign: 'center',
     paddingHorizontal: 20,
-  },
-  positionPlan: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: theme.muted,
   },
   drillCountdown: { fontSize: 104, fontWeight: '800', letterSpacing: -4, lineHeight: 110, fontVariant: ['tabular-nums'] },
   ctrlCircle: {

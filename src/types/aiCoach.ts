@@ -585,4 +585,3 @@ export interface AICoachAdviceError {
   note?: string;
 }
 
-export type AICoachAdviceResponse = AICoachAdviceSuccess | AICoachAdviceError;

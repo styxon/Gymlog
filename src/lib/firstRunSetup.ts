@@ -88,17 +88,6 @@ export interface FirstRunRecommendation {
   mismatchNote: string | null;
 }
 
-export type FirstRunStep =
-  | 'location'
-  | 'goal'
-  | 'profile'
-  | 'focus'
-  | 'review'
-  | 'gender'
-  | 'planning'
-  | 'about'
-  | 'recommendation';
-
 const PROGRAM_IDS = {
   minimal: 'tpl_2_day_minimal_full_body_v1',
   beginnerStrength: 'tpl_2_day_beginner_strength_v1',

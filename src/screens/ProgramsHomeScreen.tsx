@@ -1433,56 +1433,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingBottom: 0,
     paddingHorizontal: 0,
   },
-  categoryRow: {
-    paddingHorizontal: 20,
-    paddingBottom: 12,
-    gap: 8,
-  },
-  categoryChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    height: 36,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-  },
-  categoryChipOn: {
-    backgroundColor: theme.purpleLight,
-    borderColor: theme.purple,
-  },
-  categoryChipText: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: theme.ink,
-  },
-  categoryChipTextOn: {
-    color: theme.purple,
-    fontWeight: '800',
-  },
-  goalInput: {
-    marginTop: 14,
-    height: 54,
-    borderRadius: 14,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    backgroundColor: theme.surface,
-    paddingHorizontal: 16,
-    fontSize: 18,
-    fontWeight: '800',
-    color: theme.ink,
-  },
-  goalCard: {
-    marginHorizontal: 20,
-    marginBottom: 6,
-    borderRadius: 18,
-    backgroundColor: theme.surface,
-    borderWidth: 1.5,
-    borderColor: theme.border,
-    overflow: 'hidden',
-  },
   goalList: {
     gap: 10,
   },
@@ -1582,98 +1532,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   goalProgrammeOpen: {
     color: theme.purple,
-  },
-  forYouWhy: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    lineHeight: 15,
-    color: theme.purple,
-  },
-  // ── Rotating campaign hero ───────────────────────────────────────────
-  campaignBlock: {
-    marginTop: 22,
-  },
-  campaignScroll: {
-    flexGrow: 0,
-  },
-  campaignSlide: {
-    height: CAMPAIGN_H,
-    paddingHorizontal: 22,
-    // Centred, not top-aligned. Titles run one line or two depending on the
-    // slide, and a fixed top padding left a one-line slide with a third of the
-    // card empty under its own button.
-    justifyContent: 'center',
-  },
-  campaignKicker: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
-  campaignTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    lineHeight: 28,
-    fontWeight: '800',
-    letterSpacing: -0.4,
-    marginTop: 8,
-    paddingRight: 90,
-  },
-  campaignBody: {
-    color: 'rgba(255,255,255,0.86)',
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 6,
-    paddingRight: 84,
-  },
-  campaignCta: {
-    alignSelf: 'flex-start',
-    marginTop: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-  },
-  campaignCtaText: {
-    color: '#191036',
-    fontSize: 12.5,
-    lineHeight: 15,
-    fontWeight: '800',
-  },
-  campaignFooter: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    marginTop: 10,
-    minHeight: 26,
-  },
-  campaignDots: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  campaignDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: theme.border,
-  },
-  campaignDotOn: {
-    width: 18,
-    backgroundColor: theme.purple,
-  },
-  campaignPause: {
-    position: 'absolute',
-    right: 4,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.surface,
-    borderWidth: 1,
-    borderColor: theme.border,
   },
   // ── Category tiles ───────────────────────────────────────────────────
   // Expanded, the nine tiles fill the width three to a row (#bugs
@@ -1916,57 +1774,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 8,
   },
-  // A 21px title on a 104px cover eats the card; the small covers get their
-  // own scale rather than the same one shrunk by luck.
-  exploreMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    marginTop: 11,
-  },
-  exploreMeta: {
-    color: theme.muted,
-    fontSize: 11.5,
-    lineHeight: 15,
-    fontWeight: '700',
-  },
-  metaDot: {
-    width: 3,
-    height: 3,
-    borderRadius: 999,
-    backgroundColor: theme.faint,
-  },
-  customRowWrap: {
-    marginBottom: 10,
-  },
-  rowPressed: {
-    transform: [{ translateX: 3 }],
-  },
-  customRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    paddingRight: 14,
-    // Room for the speed line before the tile starts.
-    paddingLeft: 26,
-    paddingVertical: 13,
-  },
-  customCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  customTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  customTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    lineHeight: 19,
-    fontWeight: '800',
-    flexShrink: 1,
-  },
   customActiveTag: {
     color: theme.highlight,
     fontSize: 9.5,
@@ -1977,19 +1784,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 999,
     overflow: 'hidden',
-  },
-  customSubtitle: {
-    marginTop: 2,
-    color: theme.muted,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '700',
-  },
-  customAction: {
-    color: theme.purple,
-    fontSize: 12.5,
-    lineHeight: 16,
-    fontWeight: '800',
   },
   createRow: {
     flexDirection: 'row',
@@ -2004,14 +1798,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 18,
     fontWeight: '800',
   },
-  libraryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 13,
-    paddingRight: 15,
-    paddingLeft: 26,
-    paddingVertical: 14,
-  },
   libraryIcon: {
     width: 44,
     height: 44,
@@ -2019,23 +1805,6 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     backgroundColor: theme.purpleSoft,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  libraryCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  libraryTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    lineHeight: 19,
-    fontWeight: '800',
-  },
-  librarySubtitle: {
-    marginTop: 2,
-    color: theme.muted,
-    fontSize: 12,
-    lineHeight: 16,
-    fontWeight: '600',
   },
   bottomSafeFade: {
     height: 16,

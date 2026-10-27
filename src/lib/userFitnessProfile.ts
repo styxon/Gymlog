@@ -7,8 +7,6 @@ import { UserFitnessProfile } from '../types/coaching';
  * Pure function — no side effects, no storage access, no defaults invented.
  * When a value cannot be derived safely, returns null or a conservative default
  * that exists in the preferences schema.
- *
- * See docs/coaching-architecture.md for context.
  */
 export function buildUserFitnessProfile(prefs: AppPreferences): UserFitnessProfile {
   // Primary goal: prefer the singular setupGoal field.

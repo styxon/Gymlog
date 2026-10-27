@@ -830,86 +830,8 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     lineHeight: 20,
     fontWeight: '800',
   },
-  sheetScrim: {
-    flex: 1,
-    backgroundColor: 'rgba(16,10,32,0.42)',
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: theme.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 28,
-    maxHeight: '72%',
-  },
-  sheetGrip: {
-    alignSelf: 'center',
-    width: 44,
-    height: 5,
-    borderRadius: 999,
-    backgroundColor: theme.border,
-    marginBottom: 14,
-  },
-  sheetTitle: {
-    color: theme.ink,
-    fontSize: 19,
-    fontWeight: '800',
-  },
-  sheetSubtitle: {
-    color: theme.muted,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 19,
-    marginTop: 4,
-    marginBottom: 8,
-  },
   sheetList: {
     flexGrow: 0,
-  },
-  sheetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 12,
-  },
-  sheetRowDivider: {
-    borderTopWidth: 1,
-    borderTopColor: theme.border,
-  },
-  sheetIconTile: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: theme.purpleSoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sheetRowCopy: {
-    flex: 1,
-    minWidth: 0,
-  },
-  sheetRowTitle: {
-    color: theme.ink,
-    fontSize: 14.5,
-    fontWeight: '800',
-  },
-  sheetRowSub: {
-    color: theme.muted,
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  sheetAddButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    // The white-label violet (accessibility audit, 2026-09-21): white on the
-    // dark theme's purpleBright is 2.7:1.
-    backgroundColor: theme.purpleFill,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   sheetListPad: { paddingHorizontal: 18, paddingBottom: 6 },
   sheetEmpty: {
@@ -918,16 +840,5 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
     paddingVertical: 26,
-  },
-  sheetDone: {
-    alignSelf: 'center',
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 24,
-  },
-  sheetDoneText: {
-    color: theme.purpleBright,
-    fontSize: 14.5,
-    fontWeight: '800',
   },
 });
