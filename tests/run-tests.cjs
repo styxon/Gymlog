@@ -490,6 +490,7 @@ const suites = [
   ...require('./lib/coachChipAnswers.test.cjs'),
   ...require('./lib/displayLabel.test.cjs'),
   ...require('./lib/decimalSeparator.test.cjs'),
+  ...require('./lib/shellChrome.test.cjs'),
   ...require('./lib/localizedFormatting.test.cjs'),
   ...require('./lib/tailoringFit.test.cjs'),
   ...require('./lib/recommendationExplanation.test.cjs'),
