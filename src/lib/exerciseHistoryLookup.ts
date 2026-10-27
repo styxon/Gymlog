@@ -83,7 +83,7 @@ export function preferLoadedEntries(
   return selectLatestUsableEntry(loaded, nowMs) ? loaded : entries;
 }
 
-export interface NamedHistoryOptions {
+interface NamedHistoryOptions {
   /**
    * Reject entries where every set was logged at 0 kg. For a loaded lift such
    * an entry is not a weight, it is the absence of one — and the app really
@@ -404,7 +404,7 @@ export function selectLatestUsableEntry(
   return best;
 }
 
-export interface LastTimeQuery {
+interface LastTimeQuery {
   slotHistory: Record<string, WorkoutSlotHistoryEntry[]>;
   /** The scoped key this session writes under. */
   slotId: string;
@@ -425,7 +425,7 @@ export interface LastTimeQuery {
   dose?: ProgrammedDose | null;
 }
 
-export interface ResolvedLastTime {
+interface ResolvedLastTime {
   entry: WorkoutSlotHistoryEntry;
   /**
    * True when it came from somewhere else — another day of this programme,

@@ -52,7 +52,7 @@ export function exerciseInitials(name: string) {
 
 // ── finish payload ───────────────────────────────────────────────────────
 
-export interface FreestyleSetDraft {
+interface FreestyleSetDraft {
   localKey: string;
   kg: string;
   reps: string;
@@ -713,7 +713,7 @@ export function normalizeFreestyleDraftSnapshot(input: unknown): FreestyleDraftS
   };
 }
 
-export interface FreestyleFinishInput {
+interface FreestyleFinishInput {
   exercises: FreestyleExerciseDraft[];
   workoutName: string;
   startedAtIso: string;
@@ -740,7 +740,7 @@ export interface FreestyleFinishSummary {
   sessionId?: string;
 }
 
-export interface FreestyleFinishResult {
+interface FreestyleFinishResult {
   draft: WorkoutTemplateDraft;
   summary: FreestyleFinishSummary;
 }

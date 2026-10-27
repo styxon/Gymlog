@@ -21,7 +21,7 @@ import { removeTrailingZeros } from './format';
  * this page drew a two-day programme under a catalog row that said "3 ×"
  * (#bugs 2026-09-01).
  */
-export interface TrainingWeekLoad {
+interface TrainingWeekLoad {
   /** Training days in an average week. 5.6 for "4 on · 1 off". */
   daysPerWeek: number;
   /** One session's minutes; 0 when the programme does not say. */
@@ -30,7 +30,7 @@ export interface TrainingWeekLoad {
   minutesPerWeek: number;
 }
 
-export interface TrainingWeekLoadInput {
+interface TrainingWeekLoadInput {
   /** The active cycle's on/off pattern, or null for a weekday rhythm. */
   cyclePattern: readonly boolean[] | null;
   /** How many weekdays the rhythm trains on, or null when nothing says. */

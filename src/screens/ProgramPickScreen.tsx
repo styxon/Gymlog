@@ -46,7 +46,7 @@ const SEAM_PCT = 1.2;
 // the selected one — its block bottom-aligns into this gap (user, 2026-08-19).
 const CTA_ROOM = 140;
 
-export interface ProgramPickOption {
+interface ProgramPickOption {
   id: string;
   title: string;
   days: number;
@@ -66,14 +66,14 @@ export interface ProgramPickOption {
  * cells whatever the programme does, and the question the card is answering
  * here is which days, not which exercises — those are one tap away on Home.
  */
-export interface ProgramPickWeekDay {
+interface ProgramPickWeekDay {
   id: string;
   /** Already localised and already short: "Ma", "Mon". */
   weekday: string;
   training: boolean;
 }
 
-export interface ProgramPickScreenProps {
+interface ProgramPickScreenProps {
   language?: AppLanguage;
   title: string;
   meta: string;

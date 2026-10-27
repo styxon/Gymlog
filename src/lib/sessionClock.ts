@@ -56,7 +56,7 @@ function openIdleMs(session: WorkoutSessionRuntime, nowMs: number): number {
   return idleMs > SESSION_IDLE_MS ? idleMs : 0;
 }
 
-export function latestCompletedSetMs(session: WorkoutSessionRuntime): number {
+function latestCompletedSetMs(session: WorkoutSessionRuntime): number {
   let latest = -Infinity;
   session.exercises.forEach((exercise) => {
     exercise.sets.forEach((set) => {

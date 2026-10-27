@@ -18,7 +18,7 @@ import type { useCustomProgramViews } from './useCustomProgramViews';
  * hook keeps its slot. runningProgrammeTitle stays in App.tsx, where Home's
  * programme list asks it too, and is passed in.
  */
-export interface ProgramsCustomItemsDeps {
+interface ProgramsCustomItemsDeps {
   /** The reader's own programmes, newest first, with their counts. */
   customWorkouts: ReturnType<typeof useCustomProgramViews>['customWorkouts'];
   /** The whole database: the plan records. */

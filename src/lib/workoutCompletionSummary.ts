@@ -161,7 +161,7 @@ export function buildExercisePrLookupBefore(
   });
 }
 
-export interface LatestSessionPr {
+interface LatestSessionPr {
   exerciseName: string;
   weightKg: number;
   reps: number;

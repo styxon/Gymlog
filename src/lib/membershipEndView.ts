@@ -11,9 +11,9 @@
  *                must not offer to end it again or ask to be kept. Promo,
  *                trial and review accounts have nothing to cancel either.
  */
-export type MembershipEndMode = 'decide' | 'back';
+type MembershipEndMode = 'decide' | 'back';
 
-export interface MembershipEndViewInput {
+interface MembershipEndViewInput {
   /** The plan says the app can end it now (a purchase). */
   canEndNow: boolean;
   /** A cancellation is on record for the current purchase. */
@@ -25,7 +25,7 @@ export interface MembershipEndViewInput {
   billingIssue?: boolean;
 }
 
-export interface MembershipEndView {
+interface MembershipEndView {
   mode: MembershipEndMode;
   /** Say that it is already cancelled, instead of "nothing to cancel". */
   alreadyCancelled: boolean;

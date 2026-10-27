@@ -12,7 +12,7 @@ import { WorkoutLevel } from '../features/workout/workoutTypes';
  * list at once.
  */
 
-export interface ProgramCatalogRow {
+interface ProgramCatalogRow {
   id: string;
   name: string;
   blurb: string;

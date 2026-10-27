@@ -37,7 +37,7 @@ const MEASUREMENT_BY_FOCUS_AREA: Partial<Record<SetupFocusArea, MeasurementKind>
  */
 const BODYWEIGHT_GOALS: SetupGoal[] = ['muscle', 'lean_athletic'];
 
-export interface CardSuggestionInput {
+interface CardSuggestionInput {
   focusAreas: readonly SetupFocusArea[];
   goals: readonly (SetupGoal | null)[];
   /** Cards already on Home — never suggest what is already there. */

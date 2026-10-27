@@ -19,7 +19,7 @@ import { resolveLanguageFromLocale } from '../lib/deviceLanguage';
  * Every branch is wrapped. This runs before storage is read, and a throw here
  * would be a blank app rather than a wrong language.
  */
-export function readDeviceLocaleTag(): string | null {
+function readDeviceLocaleTag(): string | null {
   const candidates: Array<() => unknown> = [
     // RN's own wrapper — works on both architectures, Android only.
     () => (I18nManager as unknown as { getConstants?: () => { localeIdentifier?: string } })

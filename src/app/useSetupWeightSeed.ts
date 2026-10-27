@@ -14,7 +14,7 @@ import { useAttemptOnce } from './useAttemptOnce';
  * React's hook order and the order the effects run in are unchanged.
  */
 
-export interface SetupWeightSeedDeps {
+interface SetupWeightSeedDeps {
   /** The database store has loaded: `useAppContext().hydrated`. */
   hydrated: boolean;
   /** The stored preferences: onboarding finished, setup's weight, the seeded flag. */

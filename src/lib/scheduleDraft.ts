@@ -14,7 +14,7 @@
  * before the weekday check, so a refused Done still changed the plan behind an
  * editor that stayed open.
  */
-export interface ScheduleDraftState {
+interface ScheduleDraftState {
   /** The weekday draft differs from the stored weekdays. */
   daysDirty: boolean;
   /** The weekday draft holds an allowed number of days. */
@@ -25,7 +25,7 @@ export interface ScheduleDraftState {
   cycleDirty: boolean;
 }
 
-export interface ScheduleDraftSave {
+interface ScheduleDraftSave {
   /** Done is offered, and pressing it closes the editor. */
   canFinish: boolean;
   writeCycle: boolean;

@@ -14,7 +14,7 @@ import { AppLanguage } from '../types/models';
  */
 export type ExerciseSheetMode = 'add' | 'swap';
 
-export interface ExerciseSheetCopy {
+interface ExerciseSheetCopy {
   /** "Lisää liike" / "Vaihda Penkkipunnerrus". */
   title: string;
   /** The pill on every card: "Lisää" / "Vaihda". */

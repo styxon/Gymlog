@@ -72,7 +72,7 @@ const COVER_H = 176;
  * Computed by the caller rather than here: progress needs the learned-exercise
  * set, and this screen has no business reading it.
  */
-export interface ProgramsLearnRow {
+interface ProgramsLearnRow {
   id: string;
   title: string;
   blurb: string;
@@ -110,7 +110,7 @@ export interface ProgramsExploreItem {
   weeks: number;
 }
 
-export interface ProgramsCustomItem {
+interface ProgramsCustomItem {
   id: string;
   name: string;
   subtitle: string;

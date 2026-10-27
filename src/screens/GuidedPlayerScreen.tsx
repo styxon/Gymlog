@@ -266,13 +266,13 @@ function stepSeconds(target: GuidedStep): number {
   }
 }
 
-export interface GuidedWeekProgress {
+interface GuidedWeekProgress {
   weekLabel: string;
   done: number;
   target: number;
 }
 
-export interface GuidedNextUp {
+interface GuidedNextUp {
   name: string;
   weekday: string;
 }

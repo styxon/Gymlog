@@ -38,7 +38,7 @@ const REVEAL_GAP = 120;
 /** Corrections after the first scroll. Two is enough; three is a loop guard. */
 const MAX_REVEAL_PASSES = 3;
 
-export interface KeyboardRevealField {
+interface KeyboardRevealField {
   ref: (node: TextInput | null) => void;
   onFocus: () => void;
 }

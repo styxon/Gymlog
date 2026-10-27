@@ -66,14 +66,14 @@ const NAME_HINTS: Array<[RegExp, EmphasisArea]> = [
   [/plank|crunch|sit-?up|ab |core|dead bug|bird ?dog|twist|hollow body|l-sit|dragon flag|v-up|toes-to-bar|pelvic floor|vacuum|transverse abdominis|heel slide|side bend|lankku|rutistus|vatsa|keskivartalo|kierto|lantionpohja/i, 'core'],
 ];
 
-export interface EmphasisSlice {
+interface EmphasisSlice {
   area: EmphasisArea;
   sets: number;
   /** Whole percentages summing to exactly 100 (largest remainder). */
   percent: number;
 }
 
-export interface ProgramEmphasis {
+interface ProgramEmphasis {
   totalSets: number;
   /** Areas with at least one set, largest first. */
   slices: EmphasisSlice[];

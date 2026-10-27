@@ -21,14 +21,14 @@ import { AppLanguage } from '../types/models';
  * id everywhere else and it survives `npm run exercise:sync`.
  */
 
-export interface ExerciseTeachingMistake {
+interface ExerciseTeachingMistake {
   /** What people do. Named as the reader would recognise it, not as a rule. */
   mistake: string;
   /** What to do instead. A mistake without a fix is a scolding. */
   fix: string;
 }
 
-export interface ExerciseTeachingSwap {
+interface ExerciseTeachingSwap {
   direction: 'easier' | 'harder';
   /** The library name, so the row can open that lift's own screen. */
   exerciseName: string;
@@ -43,12 +43,12 @@ export interface ExerciseTeachingSwap {
  * otherwise: a caution on every screen is furniture, and furniture with an
  * alarm on it is what the day-count warning was before it was removed.
  */
-export interface ExerciseTeachingCaution {
+interface ExerciseTeachingCaution {
   area: SetupCautionArea;
   text: string;
 }
 
-export interface ExerciseTeaching {
+interface ExerciseTeaching {
   /** Three. Five would be the steps again, and the steps are already there. */
   cues: string[];
   mistakes: ExerciseTeachingMistake[];

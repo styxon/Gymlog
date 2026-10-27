@@ -16,7 +16,7 @@ import { useAttemptOnce } from './useAttemptOnce';
  * in are unchanged.
  */
 
-export interface InstallStampsDeps {
+interface InstallStampsDeps {
   /** Both stores have loaded: `hydrated && workout.hydrated` in App.tsx. */
   appHydrated: boolean;
   /** The stored preferences, passed whole so the deps arrays read as they did in App.tsx. */

@@ -18,7 +18,7 @@ import { AppPreferences } from '../types/models';
  * account-name effect above them and handleSetupHandoffDone below stay in
  * App.tsx.
  */
-export interface AccountOutcomeDeps {
+interface AccountOutcomeDeps {
   accountBackup: AccountBackupApi;
   preferences: AppPreferences;
   showToast: (message: string) => void;

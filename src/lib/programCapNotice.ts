@@ -23,7 +23,7 @@ import type { AppLanguage } from '../types/models';
  * RUNNING, and it is the one adopting spends.
  */
 
-export interface ProgramCapState {
+interface ProgramCapState {
   used: number;
   cap: number;
   /** Every place taken: the next choice means dropping something. */
@@ -37,7 +37,7 @@ export interface ProgramCapState {
   over: boolean;
 }
 
-export interface ProgramCapStateInput {
+interface ProgramCapStateInput {
   /** Ids running right now. */
   activePlanIds: readonly string[];
   proUnlocked: boolean;

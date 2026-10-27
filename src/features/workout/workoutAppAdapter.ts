@@ -11,10 +11,10 @@ import { LiftSegment, splitExerciseByLift } from '../../lib/liftSegments';
 import { buildLoggedSetPlan } from '../../lib/loggedSetPlan';
 import { lighterSessionPlannedSets } from '../../lib/warmupSets';
 
-export type LegacyWorkoutDataMismatch =
+type LegacyWorkoutDataMismatch =
   | 'template_exercise_id_not_mapped';
 
-export interface AdaptedCompletedWorkoutSet {
+interface AdaptedCompletedWorkoutSet {
   orderIndex: number;
   status: WorkoutSetStatus;
   weightKg: number | null;
@@ -53,7 +53,7 @@ export interface AdaptedCompletedWorkoutExercise {
   repsMax?: number;
 }
 
-export interface AdaptedCompletedWorkoutSession {
+interface AdaptedCompletedWorkoutSession {
   sessionId: string;
   workoutTemplateId: string;
   workoutTemplateSessionId: string | null;

@@ -1,6 +1,6 @@
 import { AppRoute } from './routes';
 
-export interface RouteHistoryResult {
+interface RouteHistoryResult {
   history: AppRoute[];
   route: AppRoute | null;
 }

@@ -18,7 +18,7 @@ import type { SetupFocusArea } from '../types/models';
  * A reader who chose this many days is handed a programme that fits them
  * rather than a longer split cut down (owner, 2026-10-07, #34).
  */
-export const SHORT_WEEK_DAYS = 2;
+const SHORT_WEEK_DAYS = 2;
 
 const shortWeekSplits = new Map<string, boolean>();
 

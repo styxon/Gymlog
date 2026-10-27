@@ -20,7 +20,7 @@ import type { WorkoutSlotHistoryEntry, WorkoutSlotHistorySet } from '../features
  * warm-up (user, 2026-10-05). Compared as `load * 10 < heaviest * 7`, so 49
  * against 70 is work and 48.9 is a warm-up.
  */
-export const WARMUP_SHARE_TENTHS = 7;
+const WARMUP_SHARE_TENTHS = 7;
 
 const SAME_LOAD_KG = 0.001;
 

@@ -81,7 +81,7 @@ export type TourTargetId =
 /** The bar's five items, left to right, as the sweep visits them. */
 export type TourBarStop = 'home' | 'programs' | 'ai' | 'progress' | 'profile';
 
-export const TOUR_BAR_STOPS: readonly TourBarStop[] = ['home', 'programs', 'ai', 'progress', 'profile'];
+const TOUR_BAR_STOPS: readonly TourBarStop[] = ['home', 'programs', 'ai', 'progress', 'profile'];
 
 export interface TourSectionBeat {
   kind: 'section';
@@ -138,7 +138,7 @@ export function beatFocus(beat: TourSectionBeat): TourTargetId {
   return beat.focus ?? beat.anchor ?? beat.target;
 }
 
-export interface TourInset {
+interface TourInset {
   x?: number;
   top?: number;
   bottom?: number;
@@ -193,7 +193,7 @@ export interface WorkoutTourStep {
  * "Seuraava" moves it, exactly like every other beat, and nothing on this
  * screen moves on its own.
  */
-export interface TourBarBeat {
+interface TourBarBeat {
   kind: 'bar';
   stops: readonly TourBarStop[];
 }
@@ -327,7 +327,7 @@ export function setRowCopyKey(canRemove: boolean, canWarmUp: boolean): I18nKey {
  * The set row's buttons as a legend, in the order the reader asked for them:
  * the green + that is always there, then the red − and the blue + when drawn.
  */
-export function setRowLegend(canRemove: boolean, canWarmUp: boolean): TourCalloutRow[] {
+function setRowLegend(canRemove: boolean, canWarmUp: boolean): TourCalloutRow[] {
   return [
     { icon: 'plus', tone: 'green', copyKey: 'tour.workout.row.add' },
     ...(canRemove ? [{ icon: 'minus', tone: 'danger', copyKey: 'tour.workout.row.remove' } as const] : []),
@@ -351,7 +351,7 @@ export const TOUR_BAR_STOP_COPY_KEY: Record<TourBarStop, I18nKey> = {
  * callouts inside 1.1 s would land a hundred milliseconds apart — so it
  * waits for the page to settle and starts then. Nothing is paused or slowed.
  */
-export const HOME_UNFOLD_SETTLED_MS = 600 + 500;
+const HOME_UNFOLD_SETTLED_MS = 600 + 500;
 export const TOUR_START_AFTER_UNFOLD_MS = HOME_UNFOLD_SETTLED_MS + 50;
 /** Under reduced motion there is no unfold to wait for. */
 export const TOUR_START_REDUCED_MS = 30;
@@ -361,7 +361,7 @@ export const TOUR_START_REDUCED_MS = 30;
  * the step has stopped moving and the reader has had a look at it.
  */
 export const WORKOUT_TOUR_START_MS = 900;
-export const WORKOUT_TOUR_START_REDUCED_MS = 150;
+const WORKOUT_TOUR_START_REDUCED_MS = 150;
 
 export const CALLOUT_ENTER_MS = 260;
 export const CALLOUT_LEAVE_MS = 160;
@@ -382,7 +382,7 @@ export const TOUR_REMEASURE_MS = 300;
  */
 export const TOUR_RESCROLL_QUIET_MS = 600;
 /** Sub-pixel measurement jitter is not a move. */
-export const RECT_EPSILON = 0.5;
+const RECT_EPSILON = 0.5;
 
 export function tourStartDelayMs(reduceMotion: boolean, surface: TourSurface = 'home'): number {
   if (surface !== 'home') {
@@ -407,9 +407,9 @@ export const CALLOUT_TOP_MIN = 12;
 export const CALLOUT_GAP = 14;
 export const CALLOUT_SIDE_INSET = 20;
 /** The ring's breathing room around a section, and its size on a bar item. */
-export const RING_PAD = 7;
+const RING_PAD = 7;
 export const RING_BAR_DIAMETER = 62;
-export const RING_BAR_AI_DIAMETER = 74;
+const RING_BAR_AI_DIAMETER = 74;
 /** A row's chevron is a 16 dp glyph; the ring is the tap target around it. */
 export const RING_CHEVRON_DIAMETER = 44;
 /** A ring on one control breathes, so the glyph under it reads as pressable. */
@@ -420,7 +420,7 @@ export const RING_CUT = 20;
 
 export type TourRingShape = 'section' | 'bar' | 'bar-ai' | 'chevron';
 
-export interface PlaceCalloutInput {
+interface PlaceCalloutInput {
   target: TourRect;
   calloutHeight: number;
   /** The overlay's height; the band's floor is derived from it or the bar. */
@@ -430,7 +430,7 @@ export interface PlaceCalloutInput {
   prefer: 'above' | 'below';
 }
 
-export interface CalloutPlacement {
+interface CalloutPlacement {
   top: number;
   /** True when the callout sits above its target, so the notch points down. */
   above: boolean;

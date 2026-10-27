@@ -21,7 +21,7 @@ import type { AppLanguage } from '../types/models';
  * reads it), so both parse the same shape.
  */
 
-export interface ServerNoticeText {
+interface ServerNoticeText {
   title: string;
   body: string;
 }

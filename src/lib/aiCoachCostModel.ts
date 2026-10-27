@@ -11,7 +11,7 @@
  * tier change moves every figure downstream.
  */
 
-export interface ModelPricing {
+interface ModelPricing {
   /** USD per million uncached input tokens. */
   inputPerMTok: number;
   /** USD per million tokens written to the prompt cache. */
@@ -64,7 +64,7 @@ export const TOKENIZER_FACTOR_VS_HAIKU_4_5: Record<'haiku-4-5' | 'sonnet-5', num
   'sonnet-5': 1.3,
 };
 
-export interface CoachUsageProfile {
+interface CoachUsageProfile {
   label: string;
   /**
    * Tokens in the cacheable prefix — tool schema, coach rules, and this user's
@@ -84,7 +84,7 @@ export interface CoachUsageProfile {
   conversationsPerMonth: number;
 }
 
-export interface ConversationCost {
+interface ConversationCost {
   /** USD for one conversation, with the endpoint's cache_control in place. */
   cachedUsd: number;
   /** USD for the same conversation with no prompt caching at all. */
@@ -142,7 +142,7 @@ export function cacheBreakEvenQuestions(pricing: ModelPricing = HAIKU_4_5_PRICIN
   return 1 + Math.ceil(writePremium / savedPerHit);
 }
 
-export interface MonthlyCost {
+interface MonthlyCost {
   perUserUsd: number;
   perUserCentsRounded: number;
   /** Cost for a fleet of Pro users, USD/month. */

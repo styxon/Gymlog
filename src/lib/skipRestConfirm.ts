@@ -9,7 +9,7 @@
  */
 export const SKIP_REST_CONFIRM_MS = 3000;
 
-export type SkipRestTap = 'arm' | 'skip';
+type SkipRestTap = 'arm' | 'skip';
 
 export function skipRestTap(armedAtMs: number | null, nowMs: number): SkipRestTap {
   if (armedAtMs === null) {

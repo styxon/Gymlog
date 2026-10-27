@@ -8,7 +8,7 @@ export type ReadyTimeFilter = 'all' | 'short' | 'balanced' | 'long';
 export type ReadyEquipmentFilter = 'all' | 'full_gym' | 'low_equipment';
 export type ReadyLevelFilter = 'all' | WorkoutLevel;
 
-export interface ReadyDiscoveryFilters {
+interface ReadyDiscoveryFilters {
   query: string;
   goal: 'all' | WorkoutGoalType;
   level: ReadyLevelFilter;
@@ -76,7 +76,7 @@ export function getReadyProgramEquipmentBucket(item: ReadyDiscoveryItem): Exclud
   );
 }
 
-export function getReadyProgramTradeoff(templateId: string) {
+function getReadyProgramTradeoff(templateId: string) {
   return READY_PROGRAM_TRADEOFFS[templateId] ?? 'Tradeoff: this plan works best when your week matches the template closely.';
 }
 

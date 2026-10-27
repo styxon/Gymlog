@@ -14,7 +14,7 @@
  */
 
 /** What the hard half asks for. */
-export type IntervalWorkKind = 'run' | 'hard';
+type IntervalWorkKind = 'run' | 'hard';
 
 /**
  * What the easy half asks for. `walk` is literal, `easy` is a lighter pace on

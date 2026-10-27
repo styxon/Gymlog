@@ -21,7 +21,7 @@ import { doseUnitSuffix, formatWeight } from './format';
 import { t } from './i18n';
 import { AppLanguage, UnitPreference } from '../types/models';
 
-export interface OverviewExerciseInput {
+interface OverviewExerciseInput {
   /**
    * The library name, untranslated. The caution matcher reads English
    * patterns, so a localized label here would silently flag nothing.
@@ -56,7 +56,7 @@ export function buildOverviewScheme(
   return `${plan} · ${formatWeight(input.loadKg, unitPreference)}`;
 }
 
-export interface OverviewColumns {
+interface OverviewColumns {
   /** The set count as text; '' for a drill, which has none. */
   sets: string;
   /** Reps; '' for a drill, and for a hold, whose seconds sit under `load`. */
@@ -90,7 +90,7 @@ export function buildOverviewColumns(
   };
 }
 
-export interface ProgressionMove {
+interface ProgressionMove {
   /** Today's number, and the one the gate raised it from. */
   loadKg: number | null;
   autoProgressedFromKg: number | null;

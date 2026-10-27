@@ -18,7 +18,7 @@ import { readsAsMinutesByName } from './minutesExercises';
  * sheet. The Settings row says that rather than promising a download.
  */
 
-export interface CsvExportExercise {
+interface CsvExportExercise {
   name: string;
   sets: number;
   repMin: number;

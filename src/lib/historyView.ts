@@ -3,7 +3,7 @@ import { getComparableLogSets } from './exerciseLog';
 import { heaviestOfSets } from './personalRecords';
 import { getSessionTotals } from './sessionTotals';
 
-export type HistoryFilter = 'all' | 'needs_review' | 'tracked';
+type HistoryFilter = 'all' | 'needs_review' | 'tracked';
 
 export interface HistorySessionViewModel {
   sessionId: string;

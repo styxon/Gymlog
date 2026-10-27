@@ -45,7 +45,7 @@ export function ListCard({
   );
 }
 
-export type ListRowTone = 'neutral' | 'positive';
+type ListRowTone = 'neutral' | 'positive';
 
 /**
  * Row anatomy: 56 high at least, 14 x 16 padding, a 15/800 title, a 13 faint

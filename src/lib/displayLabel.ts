@@ -52,7 +52,7 @@ function normalizeDisplayKey(value: string) {
   return `${copy.core} (${copy.word}${copy.copyIndex > 1 ? ` ${copy.copyIndex}` : ''})`;
 }
 
-export function formatDisplayLabel(
+function formatDisplayLabel(
   value: string | null | undefined,
   {
     fallback,

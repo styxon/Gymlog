@@ -740,7 +740,7 @@ function getFocusBodyPart(preferences: AppPreferences): ExerciseBodyPart | null 
  * (programmeBrief.resolveLiveProposal), so the two cannot disagree about what
  * "no deadlifts" or "bodyweight only" keeps out.
  */
-export interface PlannerLimits {
+interface PlannerLimits {
   allowedEquipment: Set<DisplayEquipmentValue>;
   avoidTerms: string[];
 }
@@ -1004,7 +1004,7 @@ function appendUnplacedMustIncludes(args: {
  * (buildNoLegDayBlueprints), or one refused only as a day of its own
  * (buildLegsSpreadBlueprints).
  */
-export interface AiCoachPlanOptions {
+interface AiCoachPlanOptions {
   noLegDay?: boolean;
   legsSpread?: boolean;
 }

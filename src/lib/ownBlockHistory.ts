@@ -16,7 +16,7 @@ import { AppLanguage } from '../types/models';
 
 export type OwnBlockPhase = 'warmup' | 'cooldown';
 
-export interface OwnBlockStat {
+interface OwnBlockStat {
   /** Seconds the last self-run block took. */
   lastSeconds: number;
 }

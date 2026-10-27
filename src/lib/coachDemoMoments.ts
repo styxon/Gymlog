@@ -39,7 +39,7 @@ import type { AppLanguage, SetupCautionFlag } from '../types/models';
  * Pure, so every precondition can be tested against a fixture without a clock.
  */
 
-export type CoachDemoMomentKey = 'week1' | 'month1' | 'month3';
+type CoachDemoMomentKey = 'week1' | 'month1' | 'month3';
 
 interface MomentSpec {
   key: CoachDemoMomentKey;
@@ -74,7 +74,7 @@ export interface CoachDemoMoment {
   vars?: Record<string, string | number>;
 }
 
-export interface CoachDemoMomentInput {
+interface CoachDemoMomentInput {
   /** When this install first ran. Null on an install that predates the field. */
   firstLaunchAt: string | null;
   /** Moment keys already spent. Three per install, ever — never reset. */

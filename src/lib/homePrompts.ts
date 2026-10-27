@@ -22,7 +22,7 @@
 /** Sessions in the log before the sign-in card may appear. */
 export const SIGN_IN_AFTER_SESSIONS = 3;
 
-export interface HomePromptInput {
+interface HomePromptInput {
   /** Backup is configured in this build and the reader is signed out. */
   signInAvailable: boolean;
   /** The reader already said no thanks — that answer is final. */

@@ -1,7 +1,7 @@
 import { I18nKey, t } from './i18n';
 import type { AppLanguage, SetupFocusArea } from '../types/models';
 
-export type FocusAreaAssetKey =
+type FocusAreaAssetKey =
   | 'chest'
   | 'back'
   | 'shoulders'
@@ -15,7 +15,7 @@ export type FocusAreaAssetKey =
   | 'legs'
   | 'conditioning';
 
-export interface FocusAreaPresentationOption {
+interface FocusAreaPresentationOption {
   area: SetupFocusArea;
   title: string;
   assetKey: FocusAreaAssetKey;

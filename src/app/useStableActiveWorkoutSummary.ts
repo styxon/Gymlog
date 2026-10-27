@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-export interface ActiveWorkoutSummary {
+interface ActiveWorkoutSummary {
   title: string;
   nextExercise: string | null;
   meta: string;

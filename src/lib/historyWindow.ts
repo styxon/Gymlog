@@ -40,9 +40,9 @@ export const FREE_TREND_MONTHS = 3;
  * nobody has data for is not a longer view, it is an emptier one, and the
  * reader who wants it is one tap away.
  */
-export type TrendRange = '7d' | '1m' | '3m' | '6m' | 'all';
+type TrendRange = '7d' | '1m' | '3m' | '6m' | 'all';
 /** Body-measure ranges, shortest first. */
-export type MeasureTrendRange = '7d' | '3m' | '1y' | 'all';
+type MeasureTrendRange = '7d' | '3m' | '1y' | 'all';
 
 // The week is shorter than the free cap, so it is free in every tier by
 // definition — a paywall on seven days would be a paywall on this week.

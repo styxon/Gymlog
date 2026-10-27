@@ -25,7 +25,7 @@ import type { RecommendationProgramDefinition } from '../types/recommendation';
  * catalog cannot.
  */
 
-export interface BriefProgrammeMatch {
+interface BriefProgrammeMatch {
   programId: string;
   /** Days the programme actually runs, so the caller can say it out loud. */
   daysPerWeek: number;

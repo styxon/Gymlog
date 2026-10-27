@@ -5,7 +5,7 @@
  * asks what is at home, and an empty answer is not one: it let the reader
  * through with "0 selected" (emulator pass, 2026-10-16).
  */
-export interface LocationStepAnswer {
+interface LocationStepAnswer {
   selectedId: string | null;
   itemCount: number;
 }

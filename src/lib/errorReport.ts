@@ -25,7 +25,7 @@
 import type { AppRoute } from '../navigation/routes';
 
 /** How the failure reached us. */
-export const APP_ERROR_KINDS = ['js_fatal', 'js_error', 'render', 'unhandled_rejection'] as const;
+const APP_ERROR_KINDS = ['js_fatal', 'js_error', 'render', 'unhandled_rejection'] as const;
 export type AppErrorKind = (typeof APP_ERROR_KINDS)[number];
 
 /** The operations whose failure the reader would feel as "it did not work". */
@@ -58,10 +58,10 @@ export const OPERATION_CODES = [
   'QUOTA',
   'UNKNOWN',
 ] as const;
-export type OperationCode = (typeof OPERATION_CODES)[number];
+type OperationCode = (typeof OPERATION_CODES)[number];
 
-export const ERROR_PLATFORMS = ['android', 'ios', 'unknown'] as const;
-export type ErrorPlatform = (typeof ERROR_PLATFORMS)[number];
+const ERROR_PLATFORMS = ['android', 'ios', 'unknown'] as const;
+type ErrorPlatform = (typeof ERROR_PLATFORMS)[number];
 
 export interface AppErrorProps {
   kind: AppErrorKind;
@@ -82,8 +82,8 @@ export interface OperationFailedProps {
   code: OperationCode;
 }
 
-export const MAX_ERROR_NAME_LENGTH = 40;
-export const MAX_ERROR_FRAMES = 5;
+const MAX_ERROR_NAME_LENGTH = 40;
+const MAX_ERROR_FRAMES = 5;
 const MAX_FRAME_LENGTH = 64;
 const MAX_VERSION_LENGTH = 24;
 

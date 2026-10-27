@@ -45,11 +45,11 @@ function normalizeSetEffort(value: ExerciseLogSet['effort'] | null | undefined):
   return null;
 }
 
-export function sortExerciseSets<T extends Pick<ExerciseLogSet, 'orderIndex'>>(sets: T[]) {
+function sortExerciseSets<T extends Pick<ExerciseLogSet, 'orderIndex'>>(sets: T[]) {
   return [...sets].sort((left, right) => left.orderIndex - right.orderIndex);
 }
 
-export function synthesizeSetsFromLegacy(weight: number | null | undefined, repsPerSet: number[] | null | undefined) {
+function synthesizeSetsFromLegacy(weight: number | null | undefined, repsPerSet: number[] | null | undefined) {
   const normalizedWeight = normalizeNumber(weight, 0);
 
   // The same rule as the set list below, because this is the other way in. A
@@ -140,7 +140,7 @@ export function normalizeExerciseSets(
   return synthesizeSetsFromLegacy(legacyWeight, legacyRepsPerSet);
 }
 
-export function getOrderedLogSets(
+function getOrderedLogSets(
   log: Pick<ExerciseLog, 'sets' | 'weight' | 'repsPerSet' | 'skipped'> | null | undefined,
 ) {
   if (!log) {
@@ -251,7 +251,7 @@ export function getLogSetStatusCounts(
   );
 }
 
-export function deriveLegacyLogFieldsFromSets(sets: ExerciseLogSet[]) {
+function deriveLegacyLogFieldsFromSets(sets: ExerciseLogSet[]) {
   const comparableSets = getComparableLogSets({
     sets,
     weight: 0,

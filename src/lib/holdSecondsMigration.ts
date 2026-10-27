@@ -38,7 +38,7 @@ export const HOLD_SECONDS_MIGRATION_ID = 'hold-seconds-for-old-stretches-2026-10
  * (Plank, Side Plank 20–40) and every stretch they prescribe at 30 s, so a
  * count below 20 was a count of repetitions.
  */
-export const REPS_NOT_SECONDS_BELOW = 20;
+const REPS_NOT_SECONDS_BELOW = 20;
 
 type HoldRow = Pick<ExerciseTemplate, 'name' | 'trackingMode' | 'repMin' | 'repMax' | 'libraryItemId'>;
 

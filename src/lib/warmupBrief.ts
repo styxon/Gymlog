@@ -13,7 +13,7 @@ import { libraryLabel } from './libraryLabel';
 import { buildOverviewScheme } from './sessionOverviewRows';
 import { AppLanguage, UnitPreference } from '../types/models';
 
-export interface WarmupBriefExercise {
+interface WarmupBriefExercise {
   /** The library name, untranslated — the caution matcher reads English. */
   exerciseName: string;
   /** From the library row; null when the lift is not in it. */
@@ -25,14 +25,14 @@ export interface WarmupBriefExercise {
   loadKg: number | null;
 }
 
-export interface WarmupBriefFirstLift {
+interface WarmupBriefFirstLift {
   /** Untranslated; the screen puts it through its own name label. */
   exerciseName: string;
   /** "4 × 7 · 62,5 kg". */
   scheme: string;
 }
 
-export interface WarmupBrief {
+interface WarmupBrief {
   /** Localized body-part labels, deduped, in the order the session meets them. */
   areas: string[];
   firstLift: WarmupBriefFirstLift | null;

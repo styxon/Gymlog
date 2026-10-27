@@ -743,7 +743,7 @@ export function countHistoryItems(history: unknown): number {
 }
 
 /** How much one copy holds, store by store. */
-export interface BackupCounts {
+interface BackupCounts {
   /** countBackupItems of the database. */
   itemCount: number;
   /** countHistoryItems of the workout history. */
@@ -807,7 +807,7 @@ export function autoBackupWouldShrinkLog(localItemCount: number, lastBackupItemC
 }
 
 /** What this phone knows about the cloud copy (its stored account). */
-export interface BackupSyncState {
+interface BackupSyncState {
   lastBackupAt: string | null;
   lastBackupItemCount: number | null;
   /** countHistoryItems of the copy; null for an account stored before it was kept. */

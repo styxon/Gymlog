@@ -18,7 +18,7 @@ import type { AppDatabase, AppPreferences } from '../types/models';
  * keeps its slot and the chat's demo props in App.tsx still read the values
  * from above.
  */
-export interface CoachDemoMomentDeps {
+interface CoachDemoMomentDeps {
   /** The reader's preferences: install date, the moments used, the language. */
   preferences: AppPreferences;
   /** Whether Pro is unlocked; Pro readers get no demo moment. */

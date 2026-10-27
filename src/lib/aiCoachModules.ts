@@ -34,40 +34,40 @@ import { WeightedSet, beatsBest } from './personalRecords';
  */
 
 /** A sentence plus the exact substrings the sheet renders in gold. */
-export interface CoachText {
+interface CoachText {
   text: string;
   highlights: string[];
 }
 
-export interface CoachMetric {
+interface CoachMetric {
   value: string;
   label: string;
 }
 
-export interface CoachFocusModule {
+interface CoachFocusModule {
   body: CoachText;
   metrics: CoachMetric[];
 }
 
-export type CoachBulletTone = 'up' | 'flat' | 'down';
+type CoachBulletTone = 'up' | 'flat' | 'down';
 
-export interface CoachBullet {
+interface CoachBullet {
   tone: CoachBulletTone;
   body: CoachText;
 }
 
-export interface CoachAnalysisModule {
+interface CoachAnalysisModule {
   /** Localized session name + date, e.g. "Ma · Koko keho". */
   caption: string;
   sessionId: string;
   bullets: CoachBullet[];
 }
 
-export interface CoachSuggestionModule {
+interface CoachSuggestionModule {
   body: CoachText;
 }
 
-export interface CoachModules {
+interface CoachModules {
   focus: CoachFocusModule | null;
   analysis: CoachAnalysisModule | null;
   suggestion: CoachSuggestionModule | null;
@@ -75,7 +75,7 @@ export interface CoachModules {
   needsMoreData: boolean;
 }
 
-export interface CoachModulesInput {
+interface CoachModulesInput {
   sessions: WorkoutSession[];
   logs: ExerciseLog[];
   language: AppLanguage;

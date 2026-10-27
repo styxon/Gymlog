@@ -47,7 +47,7 @@ export const AI_COACH_MAX_PROMPT_CHARS = 2000;
  */
 export const IMAGE_INPUT_TOKEN_CEILING = 4800;
 
-export interface AiCoachBudgetLimits {
+interface AiCoachBudgetLimits {
   /** Largest prompt the endpoint will forward, in characters. */
   maxPromptChars: number;
   /**
@@ -94,14 +94,14 @@ export function estimateTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN);
 }
 
-export type BudgetRejection =
+type BudgetRejection =
   | { reason: 'prompt_too_large'; limit: number; actual: number }
   | { reason: 'history_too_large'; limit: number; actual: number }
   | { reason: 'context_too_large'; limit: number; actual: number }
   | { reason: 'image_too_large'; limit: number; actual: number }
   | { reason: 'budget_exhausted'; resetAt: number };
 
-export interface BudgetDecision {
+interface BudgetDecision {
   allowed: boolean;
   rejection: BudgetRejection | null;
   /** Tokens this call is expected to cost, input + capped output. */

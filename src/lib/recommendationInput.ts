@@ -14,7 +14,7 @@ function clampMinutes(value: number) {
   return Math.max(30, Math.min(90, Math.round(value / 5) * 5));
 }
 
-export function inferPreferredSessionMinutes(selection: Pick<FirstRunSetupSelection, 'daysPerWeek' | 'weeklyMinutes'>) {
+function inferPreferredSessionMinutes(selection: Pick<FirstRunSetupSelection, 'daysPerWeek' | 'weeklyMinutes'>) {
   if (typeof selection.weeklyMinutes === 'number' && selection.weeklyMinutes > 0) {
     return clampMinutes(selection.weeklyMinutes / Math.max(selection.daysPerWeek, 1));
   }

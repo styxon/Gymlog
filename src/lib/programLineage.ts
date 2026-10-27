@@ -35,7 +35,7 @@ export function programmeOriginId(templateId: string, templates: readonly Progra
 }
 
 /** A logged session, as lineage reads it. */
-export interface LineageSession {
+interface LineageSession {
   workoutTemplateId?: string | null;
   workoutTemplateSessionId?: string | null;
 }

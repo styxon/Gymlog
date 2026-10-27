@@ -47,7 +47,7 @@ export const emptyRatingPromptState: RatingPromptState = {
   rated: false,
 };
 
-export interface RatingPromptInput {
+interface RatingPromptInput {
   state: RatingPromptState;
   /** Completed sessions in the log — cardio and strength both count. */
   sessionsLogged: number;
@@ -60,7 +60,7 @@ export interface RatingPromptInput {
   nowMs: number;
 }
 
-export type RatingPromptDecision =
+type RatingPromptDecision =
   | { ask: true }
   | {
       ask: false;

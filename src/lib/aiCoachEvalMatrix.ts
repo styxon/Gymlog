@@ -247,7 +247,7 @@ const inconsistentReader = buildEvalContext(inconsistentHistory.sessions, incons
 
 // ── Cases ───────────────────────────────────────────────────────────────────
 
-export type MatrixProfile =
+type MatrixProfile =
   | 'empty'
   | 'single'
   | 'beginner'
@@ -260,7 +260,7 @@ export type MatrixProfile =
   | 'bodyweight'
   | 'inconsistent';
 
-export interface MatrixCase extends AiCoachEvalCase {
+interface MatrixCase extends AiCoachEvalCase {
   profile: MatrixProfile;
   /** What a good answer does, for the person reading the saved answers. */
   goodAnswer: string;

@@ -22,7 +22,7 @@ import { loadCoachAdviceMemory, saveCoachAdviceMemory } from '../storage/coachAd
  * The memory and the coach thread stay VinhaApp state: a restore writes them
  * too. In the moved comments below, "this component" is VinhaApp.
  */
-export interface CoachAdviceMemoryDeps {
+interface CoachAdviceMemoryDeps {
   /** The app context's reset; the handler keeps the name, and the deps entry reads [resetAllData]. */
   resetAllData: () => Promise<void>;
   /** VinhaApp's setter for the coach's long memory. */

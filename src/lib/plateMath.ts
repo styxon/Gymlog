@@ -46,7 +46,7 @@ export function platesPerSide(totalKg: number, barKg: number = BAR_WEIGHT_KG): n
   return plates;
 }
 
-export interface PlateLoad {
+interface PlateLoad {
   /** One side, heaviest first. */
   plates: number[];
   /** Below the bar itself: no loading reaches this weight. */

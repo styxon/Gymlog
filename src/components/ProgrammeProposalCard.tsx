@@ -23,7 +23,7 @@ import { AppLanguage } from '../types/models';
  * 2026-08-26, "koostajaruudun voi poistaa").
  */
 
-export interface ProgrammeProposalCardProps {
+interface ProgrammeProposalCardProps {
   proposal: ProgrammeProposal;
   language: AppLanguage;
   /** 'saving' disables the action; the label says so. */

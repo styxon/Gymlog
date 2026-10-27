@@ -54,7 +54,7 @@ export interface AICoachPlateauSummary {
   topWeightKg: number | null;
 }
 
-export interface AICoachFatigueSummary {
+interface AICoachFatigueSummary {
   acwr: number;
   recoveryScore: number;
   signal: FatigueSignal;
@@ -116,12 +116,12 @@ export interface AICoachLastSession {
   previousSameName?: { day: string; volumeKg: number | null } | null;
 }
 
-export interface AICoachLastSessionSet {
+interface AICoachLastSessionSet {
   weightKg: number;
   reps: number;
 }
 
-export interface AICoachLastSessionExercise {
+interface AICoachLastSessionExercise {
   /** As stored, in English. */
   name: string;
   /** Completed sets in the order done; working sets only when there are any. */

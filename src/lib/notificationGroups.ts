@@ -175,7 +175,7 @@ export interface NotificationGroupMemo {
   values: Partial<NotificationPrefs>;
 }
 
-export interface NotificationGroupReading {
+interface NotificationGroupReading {
   onCount: number;
   total: number;
   /** A group is on when any of its switches is. */

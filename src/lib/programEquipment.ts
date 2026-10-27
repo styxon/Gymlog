@@ -31,7 +31,7 @@ const CHIP_ORDER = [
   'Yoga mat',
 ] as const;
 
-export type EquipmentChip = (typeof CHIP_ORDER)[number];
+type EquipmentChip = (typeof CHIP_ORDER)[number];
 
 export const EQUIPMENT_CHIP_KEYS: Record<string, I18nKey> = {
   Barbells: 'equip.barbell',
@@ -127,7 +127,7 @@ export function resolveProgramEquipment(exerciseNames: readonly string[]): Equip
 }
 
 /** Whether a program can be run outside a gym. */
-export type ProgramEquipmentBucket = 'full_gym' | 'low_equipment';
+type ProgramEquipmentBucket = 'full_gym' | 'low_equipment';
 
 /**
  * The chips a reader can own without a gym membership. A doorway pull-up bar,

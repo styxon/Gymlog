@@ -5,7 +5,7 @@ import { isUnloadedTrackingMode } from '../features/workout/workoutTypes';
 import type { WorkoutTemplateExercise } from '../features/workout/workoutTypes';
 import type { RecommendationGoalType, RecommendationSetupContext } from './recommendationProfile';
 
-export interface WorkoutContentFitInput {
+interface WorkoutContentFitInput {
   goalType: RecommendationGoalType;
   setupContext: RecommendationSetupContext;
   /**
@@ -16,7 +16,7 @@ export interface WorkoutContentFitInput {
   availableEquipment?: string[] | null;
 }
 
-export interface WorkoutContentFitSignals {
+interface WorkoutContentFitSignals {
   exerciseCount: number;
   accessoryExerciseCount: number;
   bodyweightExerciseCount: number;
@@ -35,7 +35,7 @@ export interface WorkoutContentFitSignals {
   hasFullGymOnlyExercises: boolean;
 }
 
-export interface WorkoutContentFitResult {
+interface WorkoutContentFitResult {
   programId: string;
   issues: string[];
   signals: WorkoutContentFitSignals;

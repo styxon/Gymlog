@@ -14,7 +14,7 @@
  */
 import { Platform } from 'react-native';
 
-export interface GoogleAccount {
+interface GoogleAccount {
   /** Google's stable subject — the backup key. Never shown to the user. */
   sub: string;
   email: string | null;

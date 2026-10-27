@@ -169,7 +169,7 @@ export async function setWorkoutBundleAside(): Promise<boolean> {
  * restore has freed a lower slot since; with more than one, each restore brings
  * back one. Null when no slot holds anything.
  */
-export async function readNewestWorkoutAsideCopy(): Promise<{ key: string; text: string } | null> {
+async function readNewestWorkoutAsideCopy(): Promise<{ key: string; text: string } | null> {
   return (await asideCopiesNewestFirst())[0] ?? null;
 }
 

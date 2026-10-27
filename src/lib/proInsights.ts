@@ -67,7 +67,7 @@ export interface PlateauDetection {
   topSetKg: number;
 }
 
-export interface LockedConclusion {
+interface LockedConclusion {
   /** Short line on the lock, e.g. "One fix, from your own 4 sessions". */
   teaser: string;
   /**
@@ -102,7 +102,7 @@ export interface ProMomentContent {
   bullets: string[];
 }
 
-export type ReadTone = 'green' | 'amber' | 'red';
+type ReadTone = 'green' | 'amber' | 'red';
 
 export interface WeeklyReadRow {
   key: string;

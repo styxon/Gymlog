@@ -20,9 +20,9 @@
  * token, and a 400 or 404 to that is a coach answering offline ('refused').
  */
 
-export type CoachKeyState = 'ok' | 'missing' | 'app_key_missing' | 'rejected' | 'refused' | 'unreachable';
+type CoachKeyState = 'ok' | 'missing' | 'app_key_missing' | 'rejected' | 'refused' | 'unreachable';
 
-export interface CoachKeyProbe {
+interface CoachKeyProbe {
   /** Whether ANTHROPIC_API_KEY is set at all. */
   keyConfigured: boolean;
   /**
@@ -34,7 +34,7 @@ export interface CoachKeyProbe {
   status: number | null;
 }
 
-export interface CoachKeyVerdict {
+interface CoachKeyVerdict {
   state: CoachKeyState;
   alert: boolean;
 }

@@ -17,8 +17,8 @@
  * the same header names and the same comparison.
  */
 
-export const APP_VERSION_HEADER = 'x-vinha-app-version';
-export const APP_PLATFORM_HEADER = 'x-vinha-platform';
+const APP_VERSION_HEADER = 'x-vinha-app-version';
+const APP_PLATFORM_HEADER = 'x-vinha-platform';
 
 /** The `error` of a refusal, sent with HTTP 426 Upgrade Required. */
 export const APP_UPDATE_REQUIRED = 'APP_UPDATE_REQUIRED';
@@ -76,7 +76,7 @@ export function appIdentityHeaders(identity: AppIdentity | null): Record<string,
  * The server's environment (process.env). Three settings are read, each
  * optional: APP_MIN_VERSION_ANDROID, APP_MIN_VERSION_IOS and APP_STORE_URL_IOS.
  */
-export type AppUpdateServerEnv = Record<string, string | undefined>;
+type AppUpdateServerEnv = Record<string, string | undefined>;
 
 function headerValue(headers: Record<string, string | string[] | undefined>, name: string): string | undefined {
   const value = headers[name];

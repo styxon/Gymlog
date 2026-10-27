@@ -19,9 +19,9 @@ export const REST_REPEAT_AFTER_SECONDS = 30;
 /** The idle nudge: nothing logged for this long and the session asks if it is still one. */
 export const IDLE_NUDGE_MINUTES = 25;
 
-export type RestPhase = 'running' | 'done';
+type RestPhase = 'running' | 'done';
 
-export interface RestStatus {
+interface RestStatus {
   phase: RestPhase;
   /** Seconds left while running; 0 once done. */
   remainingSeconds: number;
@@ -39,7 +39,7 @@ export function describeRest(endsAtMs: number, nowMs: number): RestStatus {
 }
 
 /** A rest in flight, as the screens hold it. */
-export interface RestWindow {
+interface RestWindow {
   totalSeconds: number;
   endsAtMs: number;
   startedAtMs: number;

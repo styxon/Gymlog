@@ -11,7 +11,7 @@ import { useAttemptOnce } from './useAttemptOnce';
  * ahead of the widget pin-state effect — so React's effect order is
  * unchanged. The doc below is the effect's own.
  */
-export interface LeadPlanRepairDeps {
+interface LeadPlanRepairDeps {
   /** Both stores loaded: nothing is repaired before the stored lead is read. */
   appHydrated: boolean;
   /** The reader's preferences: the lead plan and the held ones. */

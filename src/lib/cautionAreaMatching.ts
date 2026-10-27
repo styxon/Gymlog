@@ -422,7 +422,7 @@ export function exerciseHitsCautionArea(exerciseName: string, area: SetupCaution
 }
 
 /** The filter's lifts plus the ones that are held but stay in the week. */
-export function exerciseLoadsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
+function exerciseLoadsCautionArea(exerciseName: string, area: SetupCautionArea): boolean {
   return matchesArea(exerciseName, area, true);
 }
 

@@ -37,7 +37,7 @@ export interface ExercisePickerFilters {
   equipment: EquipmentFilter;
 }
 
-export const NO_PICKER_FILTERS: ExercisePickerFilters = { category: 'all', bodyPart: 'all', equipment: 'all' };
+const NO_PICKER_FILTERS: ExercisePickerFilters = { category: 'all', bodyPart: 'all', equipment: 'all' };
 
 /** The three chip groups as one rule: type, body part (with the leg muscles), equipment. */
 export function matchesExercisePickerFilters(item: ExerciseLibraryItem, filters: ExercisePickerFilters): boolean {
@@ -48,7 +48,7 @@ export function matchesExercisePickerFilters(item: ExerciseLibraryItem, filters:
   );
 }
 
-export interface PickerListOptions<T> {
+interface PickerListOptions<T> {
   /** What the reader typed. A query lifts the hiding: they named what they want. */
   query?: string;
   /** The chips in force; a picker without a group leaves it 'all'. */

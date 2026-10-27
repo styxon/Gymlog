@@ -17,13 +17,13 @@
 import { planCanRun, removeActiveProgram } from './activeProgramSet';
 
 /** The only part of a plan these rules read. */
-export interface RunningPlan {
+interface RunningPlan {
   id: string;
   name: string;
   entries: Array<{ workoutTemplateId: string }>;
 }
 
-export interface RunningProgramme {
+interface RunningProgramme {
   /** The programme, which is what a reader means by "a programme". */
   templateId: string;
   /** The plan the row was resolved from, for anything that writes by plan. */
@@ -182,7 +182,7 @@ export function runningSetWithout(input: {
 }
 
 /** A programme the reader holds, and whether it is running right now. */
-export interface HeldProgramme extends RunningProgramme {
+interface HeldProgramme extends RunningProgramme {
   running: boolean;
 }
 

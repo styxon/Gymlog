@@ -673,7 +673,7 @@ export function readerAskedForRecovery(
 }
 
 export const WALK_PROGRAM_ID = 'tpl_3_day_walk_mobility_v1';
-export const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
+const GUIDED_STRENGTH_PROGRAM_ID = 'tpl_3_day_guided_strength_v1';
 export const HOME_EASY_PROGRAM_ID = 'tpl_3_day_home_easy_strength_v1';
 export const SHRED_GUIDED_PROGRAM_ID = 'tpl_3_day_shred_guided_v1';
 export const SHRED_HOME_EASY_PROGRAM_ID = 'tpl_3_day_shred_home_easy_v1';
@@ -701,7 +701,7 @@ const LOAD_CHIPS = ['Dumbbells', 'Kettlebells', 'Barbells', 'Barbell & plates'];
  * Whether the reader can lift a weight: the gym card, or a dumbbell,
  * kettlebell or barbell among their own chips.
  */
-export function readerOwnsLoad(input: Pick<AgeRuleReader, 'equipment' | 'availableEquipment'>): boolean {
+function readerOwnsLoad(input: Pick<AgeRuleReader, 'equipment' | 'availableEquipment'>): boolean {
   return input.equipment === 'gym' || (input.availableEquipment ?? []).some((item) => LOAD_CHIPS.includes(item));
 }
 

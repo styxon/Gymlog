@@ -2,7 +2,7 @@ import type { FirstRunSetupSelection } from './firstRunSetup';
 
 export type RecommendationSetupContext = 'full_gym' | 'home_limited' | 'bodyweight' | 'outdoor_running';
 export type RecommendationGoalType = 'strength' | 'hypertrophy' | 'fat_loss' | 'recomposition' | 'endurance';
-export type RecommendationWeightDirection = 'gain' | 'loss' | 'maintain' | null;
+type RecommendationWeightDirection = 'gain' | 'loss' | 'maintain' | null;
 
 export interface RecommendationProfile {
   setupContext: RecommendationSetupContext;

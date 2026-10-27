@@ -13,7 +13,7 @@ import { storedProfileName } from './profileName';
 
 export { MAX_PROFILE_NAME_LENGTH } from './profileName';
 
-export type AccountNameStep =
+type AccountNameStep =
   /** Nothing to write. */
   | { kind: 'none' }
   /** The profile already has a name: the account's turn is over. */

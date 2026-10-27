@@ -25,7 +25,7 @@ import {
 import { MINUTES_DIAL } from './weightDial';
 
 /** Only the fields an edit reads. The stored row carries more. */
-export interface ProgramSessionExerciseSnapshot {
+interface ProgramSessionExerciseSnapshot {
   id: string;
   name: string;
   targetSets: number;
@@ -39,14 +39,14 @@ export interface ProgramSessionExerciseSnapshot {
   supersetGroup?: string | null;
 }
 
-export interface ProgramSessionSnapshot {
+interface ProgramSessionSnapshot {
   id: string;
   name: string;
   exercises: ReadonlyArray<ProgramSessionExerciseSnapshot>;
 }
 
 /** What the template writer takes back: the whole programme, every day. */
-export interface ProgramSessionDayDraft {
+interface ProgramSessionDayDraft {
   id: string;
   name: string;
   exercises: Array<{
@@ -94,11 +94,11 @@ export const PROGRAM_REPS_RANGE = { min: 1, max: 50 } as const;
  * dead (progression hunt, 2026-10-11, A14-8). Ten minutes is the importer's
  * hold ceiling; the minutes match the player's minutes dial.
  */
-export const PROGRAM_HOLD_SECONDS_RANGE = { min: 1, max: 600 } as const;
-export const PROGRAM_MINUTES_RANGE = { min: 1, max: MINUTES_DIAL.max } as const;
+const PROGRAM_HOLD_SECONDS_RANGE = { min: 1, max: 600 } as const;
+const PROGRAM_MINUTES_RANGE = { min: 1, max: MINUTES_DIAL.max } as const;
 
 /** What the reps row counts, as the day screen's rows already know it. */
-export interface ProgramPrescriptionUnit {
+interface ProgramPrescriptionUnit {
   timed?: boolean;
   minutes?: boolean;
 }
@@ -175,7 +175,7 @@ export function canStepProgramPrescription(
   return next !== current;
 }
 
-export type ProgramSessionEdit =
+type ProgramSessionEdit =
   | { kind: 'remove'; exerciseId: string }
   | { kind: 'replace'; exerciseId: string; exerciseName: string; libraryItemId: string | null }
   | { kind: 'add'; exercises: ReadonlyArray<ProgramSessionExerciseSnapshot> }
@@ -202,7 +202,7 @@ export type ProgramSessionEdit =
    */
   | { kind: 'supersetLink'; exerciseId: string; linked: boolean };
 
-export type ProgramSessionEditOutcome =
+type ProgramSessionEditOutcome =
   | { kind: 'save'; sessions: ProgramSessionDayDraft[] }
   /**
    * A day with nothing left in it is not a day: Home would draw a session card

@@ -52,7 +52,7 @@ export function isExerciseDone(log: LoggedExercise | null | undefined): boolean 
   );
 }
 
-export interface SessionTotals {
+interface SessionTotals {
   setsCompleted: number;
   totalVolumeKg: number;
   exercisesCompleted: number;

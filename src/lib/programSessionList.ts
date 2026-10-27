@@ -22,12 +22,12 @@ import { AppLanguage } from '../types/models';
  */
 
 /** Only the fields these read. Stored sessions carry more. */
-export interface ListedSession {
+interface ListedSession {
   id: string;
   orderIndex: number;
 }
 
-export type RemoveProgramSessionOutcome<T> =
+type RemoveProgramSessionOutcome<T> =
   | { kind: 'skip'; reason: 'sessionMissing' | 'lastSession' }
   | { kind: 'removed'; sessions: T[] };
 

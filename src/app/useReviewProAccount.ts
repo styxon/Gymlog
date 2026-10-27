@@ -4,7 +4,7 @@ import type { AccountBackupState } from '../features/account/useAccountBackup';
 import { reviewAccountFlag } from '../lib/reviewAccount';
 import type { PreferencesPatch } from '../state/AppProvider';
 
-export interface ReviewProAccountDeps {
+interface ReviewProAccountDeps {
   /** The database store has loaded: `useAppContext().hydrated`. */
   hydrated: boolean;
   /** `accountBackup.state`: who is signed in, once the stored account has been read. */

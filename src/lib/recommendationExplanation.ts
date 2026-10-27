@@ -12,7 +12,7 @@ import type {
   SetupWeekday,
 } from '../types/models';
 
-export interface RecommendationReasonOptions {
+interface RecommendationReasonOptions {
   projectedDaysPerWeek: number;
   estimatedSessionDuration?: number | null;
   mismatchNote?: string | null;

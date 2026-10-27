@@ -38,7 +38,7 @@ export const COACH_QUICK_ASKS_RETURNING: I18nKey[] = [
 ];
 
 /** From this many logged workouts on, the reader has a week worth reading. */
-export const ESTABLISHED_SESSION_COUNT = 5;
+const ESTABLISHED_SESSION_COUNT = 5;
 
 /**
  * @param sessionsLast30Days the coach context's own month count — the one the

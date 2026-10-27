@@ -27,7 +27,7 @@ import { isMinutesTrackingMode } from '../features/workout/workoutTypes';
  * shape outlived the component because the question did — "what did I lift
  * last time" is the first thing the card answers.
  */
-export interface LastTimeSet {
+interface LastTimeSet {
   /** 1-based, as the reader counts them. */
   setIndex: number;
   loadKg: number;
@@ -52,17 +52,17 @@ export interface LastTimeView {
 /** How many sessions the chart shows, today included. */
 export const SHEET_HISTORY_SESSIONS = 8;
 
-export interface SheetHistorySet {
+interface SheetHistorySet {
   loadKg: number;
   reps: number;
 }
 
-export interface SheetHistorySession {
+interface SheetHistorySession {
   performedAt: string;
   sets: SheetHistorySet[];
 }
 
-export interface SheetHistoryBar {
+interface SheetHistoryBar {
   /** The session's top set, by load; reps when the lift carries none. */
   value: number;
   /** 0–1 against the tallest bar in the window, for the column's height. */
@@ -70,7 +70,7 @@ export interface SheetHistoryBar {
   isToday: boolean;
 }
 
-export interface SheetHistoryRow {
+interface SheetHistoryRow {
   key: string;
   dateLabel: string;
   /** "62,5 kg", or null on a lift that logs no load. */
@@ -82,7 +82,7 @@ export interface SheetHistoryRow {
   isPr: boolean;
 }
 
-export interface ExerciseSheetHistory {
+interface ExerciseSheetHistory {
   /** "60 kg × 8", "14 reps", "45 s" — the heaviest set ever logged here. */
   bestSetLabel: string | null;
   estimatedOneRepMaxKg: number | null;

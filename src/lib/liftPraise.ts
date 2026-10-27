@@ -17,7 +17,7 @@
  * are seconds, and the rule is about reps.
  */
 
-export interface PraiseSet {
+interface PraiseSet {
   status: string;
   plannedLoadKg?: number;
   plannedRepsMax: number;
@@ -27,12 +27,12 @@ export interface PraiseSet {
   actualReps?: number;
 }
 
-export interface PraiseLastSet {
+interface PraiseLastSet {
   loadKg: number;
   reps: number;
 }
 
-export interface LiftPraise {
+interface LiftPraise {
   /** What was done, set by set. */
   reps: number[];
   /** The heaviest weight lifted, or null for an unloaded lift. */

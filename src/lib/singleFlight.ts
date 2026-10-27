@@ -6,7 +6,7 @@
  * Used for the store restore: two taps would ask the store twice and write the
  * purchase record twice.
  */
-export interface SingleFlight {
+interface SingleFlight {
   readonly busy: boolean;
   run<T>(action: () => Promise<T>): Promise<T | undefined>;
 }

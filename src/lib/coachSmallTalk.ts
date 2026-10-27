@@ -16,7 +16,7 @@
  * four words, and every one of them from the vocabulary.
  */
 
-export type CoachSmallTalkKind = 'thanks' | 'farewell' | 'greeting' | 'acknowledgement';
+type CoachSmallTalkKind = 'thanks' | 'farewell' | 'greeting' | 'acknowledgement';
 
 /**
  * A word that carries the intent. One of these must appear, or the message is
@@ -146,7 +146,7 @@ export function parseCoachSmallTalk(message: string): CoachSmallTalkKind | null 
  * does not get the same sentence back twice; the caller picks by how far into
  * the conversation it is, which keeps this pure.
  */
-export type CoachSmallTalkReplyKey = `coach.smalltalk.${CoachSmallTalkKind}.${'a' | 'b'}`;
+type CoachSmallTalkReplyKey = `coach.smalltalk.${CoachSmallTalkKind}.${'a' | 'b'}`;
 
 export function coachSmallTalkReplyKey(kind: CoachSmallTalkKind, turn: number): CoachSmallTalkReplyKey {
   const variants = ['a', 'b'] as const;

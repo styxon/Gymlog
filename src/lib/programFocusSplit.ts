@@ -25,7 +25,7 @@ import { prescriptionUnitFromName, SECONDS_PER_METRE, SECONDS_PER_REP, SET_SETUP
 import type { AppLanguage } from '../types/models';
 
 /** Structural subset so both catalog sessions and composed weeks fit. */
-export interface ProgramFocusSessionInput {
+interface ProgramFocusSessionInput {
   exercises: Array<{
     exerciseName: string;
     sets: number;
@@ -88,7 +88,7 @@ export function estimateFocusExerciseSeconds(exercise: ProgramFocusExerciseInput
  * or fewer, Muscle is everything lifted at more. One "Weights" share told a
  * 5x5 and a pump programme apart by nothing (user, 2026-10-05).
  */
-export type ProgramFocusQuality = 'Strength' | 'Muscle' | 'Conditioning' | 'Mobility';
+type ProgramFocusQuality = 'Strength' | 'Muscle' | 'Conditioning' | 'Mobility';
 
 /** The most reps a set may ask for and still count as strength work. */
 const STRENGTH_MAX_REPS = 6;

@@ -24,7 +24,7 @@ import { templateSessionsReader } from './planTemplateSessions';
  * says so, as they stood. The hero card they read the lead programme from is
  * useHomeActivePlan's.
  */
-export interface HomeTrainingScheduleDeps {
+interface HomeTrainingScheduleDeps {
   /** The whole database: the plan records, and what the done-this-week memo is keyed on. */
   database: AppDatabase;
   /** The reader's preferences: the lead plan, the available days and the rest days. */

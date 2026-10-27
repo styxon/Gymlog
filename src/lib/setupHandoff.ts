@@ -33,7 +33,7 @@ const FOCUS_MEASUREMENT: Partial<Record<SetupFocusArea, MeasurementKind>> = {
   core: 'waist',
 };
 
-export interface SetupTrackingOffer {
+interface SetupTrackingOffer {
   /** A key from the Home stat-card catalog — a measurement kind, or bodyweight. */
   cardKey: MeasurementKind | 'bodyweight';
   /**
@@ -58,7 +58,7 @@ export interface SetupTrackingOffer {
  * Empty when the reader named no focus area that maps to a tape measure. The
  * caller decides what to show then; this says nothing rather than guessing.
  */
-export function resolveFocusMeasurementSites(focusAreas: SetupFocusArea[]): MeasurementKind[] {
+function resolveFocusMeasurementSites(focusAreas: SetupFocusArea[]): MeasurementKind[] {
   const sites: MeasurementKind[] = [];
   for (const focus of focusAreas) {
     const kind = FOCUS_MEASUREMENT[focus];
@@ -87,7 +87,7 @@ export function resolveSetupTrackingOffer(focusAreas: SetupFocusArea[]): SetupTr
   return { cardKey: 'bodyweight', focus: null };
 }
 
-export interface SetupHandoffInput {
+interface SetupHandoffInput {
   /** False when the launcher cannot pin widgets, or one is already placed. */
   canOfferWidget: boolean;
   /** Card keys already on Home. Bodyweight is there by default. */
@@ -126,7 +126,7 @@ export interface SetupHandoffInput {
 }
 
 /** One screen of the hand-off. Pro is not one: it opens between the two halves. */
-export type SetupHandoffPage = 'signin' | 'tracking' | 'offers' | 'theme';
+type SetupHandoffPage = 'signin' | 'tracking' | 'offers' | 'theme';
 
 /**
  * Which half of the hand-off is showing.
@@ -135,7 +135,7 @@ export type SetupHandoffPage = 'signin' | 'tracking' | 'offers' | 'theme';
  * left once the reader is back from it, or everything when there was no Pro
  * page to show.
  */
-export type SetupHandoffPhase = 'beforePro' | 'afterPro';
+type SetupHandoffPhase = 'beforePro' | 'afterPro';
 
 export interface SetupHandoffPlan {
   /** False when there is nothing left to offer and the step must not appear. */

@@ -16,7 +16,7 @@ import { setSoundCuesEnabled } from '../utils/sound';
  * so React's hook order and the order the effects run in are unchanged.
  */
 
-export interface DeviceSwitchesDeps {
+interface DeviceSwitchesDeps {
   /** The database store has loaded: `useAppContext().hydrated`. */
   hydrated: boolean;
   /** The stored preferences, passed whole so the deps arrays read as they did in App.tsx. */

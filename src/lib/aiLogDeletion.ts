@@ -118,7 +118,7 @@ export function withoutOwedCoachLog<T extends CoachLogFields>(preferences: T): T
 /** How one label's delete ended: gone and final, confirmed but not yet final, or not confirmed at all. */
 type AiLogDeleteOutcome = 'deleted' | 'unsettled' | 'refused';
 
-export interface AiLogDeletionRunnerOptions {
+interface AiLogDeletionRunnerOptions {
   /**
    * Whether this build can reach the coach server with its key. A build that
    * cannot never kept a copy, so it sends nothing and reports nothing — and

@@ -28,7 +28,7 @@ type WidgetInput = Parameters<typeof buildHomeWidgetPayload>[0];
  * reaches for ./modules directly. The workout-only day list is returned:
  * the widget taps resolve against the same one.
  */
-export interface HomeWidgetFeedDeps {
+interface HomeWidgetFeedDeps {
   appHydrated: boolean;
   /** Passed whole, so the deps arrays read as they did in App.tsx. */
   preferences: AppPreferences;

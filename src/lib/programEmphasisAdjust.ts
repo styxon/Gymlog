@@ -56,7 +56,7 @@ function candidates(exercises: readonly EmphasisExercise[], inArea: boolean, are
     .map(({ index }) => index);
 }
 
-export interface EmphasisAdjustment {
+interface EmphasisAdjustment {
   /** New set count per exercise, same order and length as the input. */
   sets: number[];
   /**

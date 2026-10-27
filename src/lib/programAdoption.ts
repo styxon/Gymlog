@@ -24,7 +24,7 @@ import { WorkoutPlan } from '../types/models';
  * so both sources now build their plan the same way.
  */
 
-export interface ProgramPlanInput {
+interface ProgramPlanInput {
   /** `buildReadyProgramPlanId` or `buildCustomProgramPlanId`. */
   planId: string;
   workoutTemplateId: string;

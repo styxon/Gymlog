@@ -20,7 +20,7 @@ import type { AppPreferences } from '../types/models';
  * exactly where the lines stood — after useCoachEntryReadings, just ahead of
  * useSetupReadings — so every hook keeps its slot.
  */
-export interface RoutineBlockCostsDeps {
+interface RoutineBlockCostsDeps {
   /** The reader's preferences: language, setup equipment and drill swaps. */
   preferences: AppPreferences;
 }

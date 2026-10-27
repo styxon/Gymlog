@@ -17,7 +17,7 @@ const NOTICE_URL = serverNoticeUrl([
 ]);
 const REQUEST_TIMEOUT_MS = 8000;
 
-export interface ServerNoticeAnswer {
+interface ServerNoticeAnswer {
   notice: ServerNotice | null;
   paused: boolean;
 }

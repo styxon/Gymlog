@@ -64,7 +64,7 @@ export interface BodyweightProgressSummary {
   entries: BodyweightEntry[];
 }
 
-export interface ExerciseProgressSignal {
+interface ExerciseProgressSignal {
   kind: 'new_best' | 'moving_up' | 'below_last' | 'building' | 'starting';
   label: string;
 }
@@ -174,7 +174,7 @@ function repsPerSetValue(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets'
   return reps.length > 0 ? getTotalReps(reps) / reps.length : null;
 }
 
-export function getTotalReps(repsPerSet: number[]) {
+function getTotalReps(repsPerSet: number[]) {
   return repsPerSet.reduce((sum, reps) => sum + reps, 0);
 }
 
@@ -320,7 +320,7 @@ function finalizeExerciseSummary(
 }
 
 /** The three tables a lift's progress is read from. */
-export type ProgressDatabase = Pick<AppDatabase, 'exerciseLogs' | 'exerciseTemplates' | 'workoutSessions'>;
+type ProgressDatabase = Pick<AppDatabase, 'exerciseLogs' | 'exerciseTemplates' | 'workoutSessions'>;
 
 /**
  * `getExerciseProgressForName` for one database and matcher, remembering the

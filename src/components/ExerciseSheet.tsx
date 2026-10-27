@@ -32,9 +32,9 @@ const FILL_SIZE = { width: '100%', height: '100%' } as const;
  * Three tabs rather than a scroll, because they answer three different
  * questions and a reader mid-set has exactly one of them.
  */
-export type ExerciseSheetTab = 'learn' | 'howTo' | 'history';
+type ExerciseSheetTab = 'learn' | 'howTo' | 'history';
 
-export interface ExerciseSheetLearn {
+interface ExerciseSheetLearn {
   /** Three short cues — the ones worth remembering under the bar. */
   cues: string[];
   /**
@@ -50,7 +50,7 @@ export interface ExerciseSheetLearn {
   onToggleLearned: () => void;
 }
 
-export interface ExerciseSheetWatchFor {
+interface ExerciseSheetWatchFor {
   text: string;
   /** A caution the reader's own setup flags asked for — drawn amber. */
   flagged: boolean;

@@ -26,7 +26,7 @@ import type { FinishSaveState } from './useFinishState';
  * replaceRoute and resetToRoute in App.tsx, and "the summary branch" is the
  * summary screen's render there.
  */
-export interface FinishExitsDeps {
+interface FinishExitsDeps {
   /** The reader's preferences: the rating prompt's own record. */
   preferences: AppPreferences;
   /** The whole database, for the count of sessions logged. */

@@ -16,7 +16,7 @@ import { summarizeHistoricalSetChips } from './guidedSetWeightSummary';
 import { t } from './i18n';
 import { WEIGHT_DIAL_STEP_KG } from './weightDial';
 
-export interface LastTimeSummary {
+interface LastTimeSummary {
   /** Each set's load and reps, in order — the same data the card's own
    *  per-set chips are built from (decision "a", #bugs 2026-09-29). */
   sets: readonly { loadKg: number; reps: number }[];
@@ -59,7 +59,7 @@ export function exerciseCardAccessibilityLabel(
     : label;
 }
 
-export type CountUnit = 'reps' | 'seconds' | 'minutes';
+type CountUnit = 'reps' | 'seconds' | 'minutes';
 
 /** A set's number with its unit: a bare count for reps, "20 min" / "60 s" otherwise. */
 function countLabel(language: AppLanguage, count: number, unit: CountUnit): string {

@@ -16,7 +16,7 @@ import { getRollingWindowStart } from './completedSessions';
 
 export type CoachSuggestionKind = 'pin_stat_card' | 'set_goal' | 'weigh_in_reminder' | 'log_measurement';
 
-export interface CoachSuggestionRecord {
+interface CoachSuggestionRecord {
   /** How many times this kind of offer has been turned down. */
   rejectedCount: number;
   /** ISO date of the most recent refusal, for the cooling-off month. */
@@ -27,7 +27,7 @@ export interface CoachSuggestionRecord {
 
 export type CoachSuggestionState = Partial<Record<CoachSuggestionKind, CoachSuggestionRecord>>;
 
-export const COACH_SUGGESTION_KINDS: CoachSuggestionKind[] = [
+const COACH_SUGGESTION_KINDS: CoachSuggestionKind[] = [
   'pin_stat_card',
   'set_goal',
   'weigh_in_reminder',

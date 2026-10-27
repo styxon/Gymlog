@@ -19,7 +19,7 @@ import { hasWord, hasWordStart } from './wordMatch';
  * model sees it (api/ai-coach.ts), so a build whose copy is older still meets
  * the newest one.
  */
-export type CoachScopeVerdict = 'training' | 'off_topic' | 'crisis';
+type CoachScopeVerdict = 'training' | 'off_topic' | 'crisis';
 
 type CrisisSlots = readonly (readonly string[])[];
 

@@ -4,14 +4,14 @@ import { AppLanguage, WorkoutSession } from '../types/models';
 
 const DEFAULT_HOME_PLAN_TOTAL_WEEKS = 8;
 
-export interface HomePlanProgressInput {
+interface HomePlanProgressInput {
   completedSessions: number;
   sessionsPerWeek: number;
   totalWeeks?: number;
   language?: AppLanguage;
 }
 
-export interface HomePlanProgress {
+interface HomePlanProgress {
   weekLabel: string;
   progressPercent: number;
   weekProgressLabel: string;

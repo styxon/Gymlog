@@ -33,7 +33,7 @@ export function createOnceReady(
 }
 
 /** A cue still waiting for the audio mode after this long is dropped. */
-export const CUE_STALE_MS = 500;
+const CUE_STALE_MS = 500;
 
 /**
  * Runs a cue once the audio mode is ready, unless the cue's moment has passed.

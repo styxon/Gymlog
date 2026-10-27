@@ -237,7 +237,7 @@ interface HomePlanCard {
   } | null;
 }
 
-export interface HomeOtherProgram {
+interface HomeOtherProgram {
   planId: string;
   title: string;
   /** e.g. "RUN · 3 pv / viikko" — enough to tell two programmes apart. */

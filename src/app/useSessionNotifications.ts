@@ -43,7 +43,7 @@ import type { AppPreferences } from '../types/models';
  * App.tsx. The two refs start as no-ops and are returned for VinhaApp to fill
  * on every render, where navigateToActiveWorkout exists.
  */
-export interface SessionNotificationsDeps {
+interface SessionNotificationsDeps {
   /** The workout context: the live session, and whether its store has loaded. */
   workout: Pick<WorkoutFeatureState, 'activeSession' | 'hydrated'>;
   /** The reader's preferences: the app language and the idle-nudge switch. */

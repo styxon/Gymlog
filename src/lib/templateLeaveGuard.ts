@@ -10,7 +10,7 @@
  * - A clean draft lets the exit through (false).
  * - Unsaved work asks the question, and the exit waits on the answer.
  */
-export interface TemplateLeaveGuardState {
+interface TemplateLeaveGuardState {
   isSaving: () => boolean;
   hasUnsavedWork: () => boolean;
   /** Keep the exit until the running save ends. */

@@ -16,7 +16,7 @@ import { t } from './i18n';
 import { heaviestOfSets } from './personalRecords';
 import { AppLanguage, ExerciseLogSet, UnitPreference } from '../types/models';
 
-export interface MovementLogLike {
+interface MovementLogLike {
   sessionId: string;
   exerciseNameSnapshot: string;
   weight: number;
@@ -102,7 +102,7 @@ export function buildPreviousTopSets(input: {
   return Object.fromEntries(Object.entries(best).map(([key, value]) => [key, value.topKg]));
 }
 
-export type MovementKind = 'up' | 'down' | 'same' | 'new';
+type MovementKind = 'up' | 'down' | 'same' | 'new';
 
 export interface MovementRow {
   exerciseName: string;

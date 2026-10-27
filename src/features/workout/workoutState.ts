@@ -70,7 +70,7 @@ export interface LoggedHistorySession {
   }>;
 }
 
-export type WorkoutAction =
+type WorkoutAction =
   | { type: 'session/hydrate'; payload: WorkoutPersistenceBundle }
   | { type: 'session/markRestoring'; payload: { value: boolean } }
   | {
@@ -389,7 +389,7 @@ interface ResolvedSetDraft {
  * Exported so the set screen's "Last time" panel gates its lookup identically
  * — the two must resolve the same entry or the screen contradicts itself.
  */
-export function resolveBorrowRepWindow(exercise: {
+function resolveBorrowRepWindow(exercise: {
   trackingMode: WorkoutTrackingMode;
   repsMin: number;
   repsMax: number;
@@ -1006,7 +1006,7 @@ function materializeWorkoutSessionFromTemplate(
 }
 
 /** One lift's opening targets for its next session, set by set. */
-export interface NextSessionLiftTargets {
+interface NextSessionLiftTargets {
   exerciseName: string;
   trackingMode: WorkoutTrackingMode;
   sets: { loadKg: number | null; reps: number }[];

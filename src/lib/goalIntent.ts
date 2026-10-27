@@ -126,7 +126,7 @@ function unitFor(kind: MeasurementIntentKind): 'cm' | 'kg' | '%' {
   return 'cm';
 }
 
-export interface ParseGoalIntentOptions {
+interface ParseGoalIntentOptions {
   /**
    * The caller already knows this is a goal — the coach attached a `set_goal`
    * suggestion — so only the body part and the number are still in question.

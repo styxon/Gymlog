@@ -9,7 +9,7 @@ export const DUOTONE_RAMPS = {
 } as const;
 
 /** Rec.601 luma weights — the same ones feColorMatrix's own saturate uses. */
-export const DUOTONE_LUMA = [0.299, 0.587, 0.114] as const;
+const DUOTONE_LUMA = [0.299, 0.587, 0.114] as const;
 
 /**
  * The colour space a platform runs feColorMatrix in. Android applies it to the
@@ -19,7 +19,7 @@ export const DUOTONE_LUMA = [0.299, 0.587, 0.114] as const;
  * midtone on iPhone, and the photos looked washed out (owner's #11, iOS hunt
  * 2026-10-17): the light theme's black came out #9483b8 instead of #4c3a7a.
  */
-export type DuotoneSpace = 'srgb' | 'linear';
+type DuotoneSpace = 'srgb' | 'linear';
 
 /** The sRGB transfer curve, encoded value to linear light. */
 export function srgbToLinear(value: number): number {

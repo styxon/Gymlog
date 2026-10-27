@@ -23,7 +23,7 @@ export function isBackupApiConfigured(): boolean {
 export const BACKUP_CHANGED = 'BACKUP_CHANGED';
 
 /** `version` is the cloud copy's ETag; null from a server that does not send one yet. */
-export type BackupUploadResult = { ok: true; savedAt: string; version: string | null } | { ok: false; error: string };
+type BackupUploadResult = { ok: true; savedAt: string; version: string | null } | { ok: false; error: string };
 export type BackupDownloadResult =
   | { ok: true; payload: AccountBackupPayload; version: string | null }
   | { ok: false; error: 'NO_BACKUP' | string };
@@ -132,7 +132,7 @@ export async function downloadBackup(idToken: string): Promise<BackupDownloadRes
   }
 }
 
-export type DeleteBackupResult = {
+type DeleteBackupResult = {
   ok: boolean;
   error?: string;
   definite?: boolean;
@@ -230,7 +230,7 @@ export async function deleteBackup(
   }
 }
 
-export type AppleSessionResult = { ok: true; sessionToken: string; expiresAt: string } | { ok: false };
+type AppleSessionResult = { ok: true; sessionToken: string; expiresAt: string } | { ok: false };
 
 /**
  * Trades a ten-minute Apple identity token for the server's Apple session,

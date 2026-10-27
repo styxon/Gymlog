@@ -8,7 +8,7 @@ import type { BackupContents, RestoreChoiceSummary } from './accountBackup';
 import { formatDateNumeric } from './format';
 import { I18nKey, t } from './i18n';
 
-export interface RestoreQuestionCopy {
+interface RestoreQuestionCopy {
   title: string;
   body: string;
   keepLocal: string;
@@ -59,7 +59,7 @@ function contentsList(contents: BackupContents & { workoutInProgress?: boolean }
   return parts.length > 0 ? parts.join(', ') : t(language, 'account.count.workouts', { count: 0 });
 }
 
-export interface ConfirmUploadCopy {
+interface ConfirmUploadCopy {
   title: string;
   body: string;
   upload: string;

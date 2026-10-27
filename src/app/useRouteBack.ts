@@ -20,7 +20,7 @@ import { backSkipsHistory, getBackRoute } from './backRoute';
  * useSetupHandoffOverlays); workoutRef and summaryExitRouteRef keep their own
  * writers in App.tsx.
  */
-export interface RouteBackDeps {
+interface RouteBackDeps {
   cardioRunActive: boolean;
   route: AppRoute;
   /** Only the history's length is read, and depended on. */

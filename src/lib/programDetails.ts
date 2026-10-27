@@ -20,9 +20,9 @@ import { ProgrammeMinutesOptions, readyTemplateCardMinutes } from './programmeMi
 import { doseAfterSwap } from './swapDose';
 import { buildProgramFingerprint } from './programFingerprint';
 
-export type ProgramDetailSource = 'ready' | 'custom';
+type ProgramDetailSource = 'ready' | 'custom';
 
-export interface ProgramDetailExerciseItem {
+interface ProgramDetailExerciseItem {
   id: string;
   name: string;
   role: WorkoutRole;
@@ -277,7 +277,7 @@ export function programmeCardWeek(
   };
 }
 
-export interface ReaderComposedWeekContext {
+interface ReaderComposedWeekContext {
   /** The programme the questionnaire handed the reader. */
   recommendedProgramId: string | null | undefined;
   setupSelection: FirstRunSetupSelection | null;

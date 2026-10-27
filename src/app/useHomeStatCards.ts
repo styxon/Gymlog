@@ -20,7 +20,7 @@ import type { AppDatabase, AppPreferences } from '../types/models';
  * App.tsx. The card sources stay inside; VinhaApp reads only what this
  * returns.
  */
-export interface HomeStatCardsDeps {
+interface HomeStatCardsDeps {
   /** The whole database: the bodyweight and measurement entries are read. */
   database: AppDatabase;
   /** The app context's tracked-lift progress, one summary per tracked exercise. */

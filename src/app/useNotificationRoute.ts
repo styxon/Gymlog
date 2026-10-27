@@ -21,7 +21,7 @@ import type { AppRoute } from '../navigation/routes';
  * lock-screen listener, now in src/app/useSessionNotifications.ts, and "the
  * widget's target above" is App.tsx's widget-tap effect.
  */
-export interface NotificationRouteDeps {
+interface NotificationRouteDeps {
   /** Both stores loaded: VinhaApp's appHydrated. */
   appHydrated: boolean;
   /** VinhaApp's resetToRoute: a hoisted function declaration, so it exists at the call. */

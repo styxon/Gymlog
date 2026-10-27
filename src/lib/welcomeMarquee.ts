@@ -94,7 +94,7 @@ export const WELCOME_TILE_SWATCHES: ReadonlyArray<{
  * no longer exists is skipped rather than drawn — see buildWelcomeMarqueeRows,
  * which never invents a tile.
  */
-export const WELCOME_MARQUEE_PICKS: readonly string[] = [
+const WELCOME_MARQUEE_PICKS: readonly string[] = [
   'tpl_gainer_dream_body_female_v1', // Dream Body Female
   'tpl_gainer_dream_body_man_v1', // Dream Body Man
   'tpl_gainer_hourglass_shape_v1', // Hourglass Shape
@@ -120,7 +120,7 @@ export const WELCOME_MARQUEE_PICKS: readonly string[] = [
  * Never padded with invented entries: if the catalog is short, the wall is
  * short.
  */
-export function selectWelcomeProgrammes<T extends { id: string }>(
+function selectWelcomeProgrammes<T extends { id: string }>(
   programmes: ReadonlyArray<T>,
   wanted: number,
   picks: readonly string[] = WELCOME_MARQUEE_PICKS,

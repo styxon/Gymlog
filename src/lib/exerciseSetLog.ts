@@ -18,14 +18,14 @@ import type { AppLanguage } from '../types/models';
  * what the best bench is.
  */
 
-export interface SetLogSet {
+interface SetLogSet {
   weightKg: number;
   reps: number;
   /** True for the exact set that holds the weight record. */
   isRecord: boolean;
 }
 
-export interface SetLogSession {
+interface SetLogSession {
   performedAt: string;
   volumeKg: number;
   sets: SetLogSet[];

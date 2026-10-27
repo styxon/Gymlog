@@ -13,7 +13,7 @@
  * height of the sheet's own head (grip and title), and the bottom padding,
  * which carries the safe-area inset read on the screen (a Modal reads 0).
  */
-export interface SheetScrollBoundInput {
+interface SheetScrollBoundInput {
   /** Height of the area the sheet stands in (its scrim), measured. */
   areaHeight: number;
   /** The sheet's height cap as a share of that area, e.g. 0.78. */

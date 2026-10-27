@@ -22,7 +22,7 @@ import { WorkoutPlanEntry } from '../types/models';
  * count mismatch, because a drag must never invent or drop a training day.
  * Here the count is exactly what changed, so it is the thing to follow.
  */
-export interface PlanTemplateSyncInput {
+interface PlanTemplateSyncInput {
   /** The plan's entries as stored. */
   entries: readonly WorkoutPlanEntry[];
   /** The template's session ids, in the order the template stores them. */

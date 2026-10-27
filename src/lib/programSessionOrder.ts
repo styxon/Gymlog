@@ -16,12 +16,12 @@
  */
 
 /** Only the fields the move reads. Stored sessions carry more. */
-export interface OrderableSession {
+interface OrderableSession {
   id: string;
   orderIndex: number;
 }
 
-export type ProgramSessionOrderOutcome<T> =
+type ProgramSessionOrderOutcome<T> =
   | { kind: 'skip'; reason: 'sessionMissing' | 'alreadyThere' }
   | { kind: 'reordered'; sessions: T[] };
 

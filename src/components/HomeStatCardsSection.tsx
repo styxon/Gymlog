@@ -163,7 +163,7 @@ function Sparkline({ series }: { series: number[] }) {
  * and trend. One component for Home and for the first-run preview, so the
  * preview cannot drift from the card it promises.
  */
-export function StatCardFace({ card, language = 'en' }: { card: HomeStatCard; language?: AppLanguage }) {
+function StatCardFace({ card, language = 'en' }: { card: HomeStatCard; language?: AppLanguage }) {
   const styles = useThemedStyles(makeStyles);
 
   return (

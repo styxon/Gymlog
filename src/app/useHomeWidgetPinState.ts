@@ -17,7 +17,7 @@ import { AppPreferences } from '../types/models';
  * are passed in rather than imported, so nothing in src/app reaches for
  * ./modules directly.
  */
-export interface HomeWidgetPinStateDeps {
+interface HomeWidgetPinStateDeps {
   appHydrated: boolean;
   setHomeWidgetState: (state: { supported: boolean; added: boolean } | null) => void;
   updatePreferences: (patch: Partial<AppPreferences>) => Promise<unknown>;

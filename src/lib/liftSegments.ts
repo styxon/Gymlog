@@ -61,7 +61,7 @@ type SegmentableExercise = Pick<
  * correction sheet, one row at a time — can ask this without first
  * assembling a full set (break round 2026-09-29).
  */
-export type LiftIdentitySource = Pick<WorkoutSetInstance, 'setIndex' | 'status' | 'loggedAs'>;
+type LiftIdentitySource = Pick<WorkoutSetInstance, 'setIndex' | 'status' | 'loggedAs'>;
 
 /**
  * What `liftBeforeSwap`/`liftOfSet` actually need from the exercise: the

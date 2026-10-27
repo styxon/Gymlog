@@ -50,7 +50,7 @@ import { AppLanguage } from '../types/models';
  *
  * The page is deliberately dark in both themes — see PRO_TIER in theme.ts.
  */
-export type PlanId = 'monthly' | 'yearly' | 'lifetime';
+type PlanId = 'monthly' | 'yearly' | 'lifetime';
 
 interface PremiumScreenProps {
   /**

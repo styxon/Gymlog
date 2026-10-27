@@ -17,7 +17,7 @@ import { AppPreferences } from '../types/models';
  * requestPinHomeWidget is passed in rather than imported, so nothing in
  * src/app reaches for ./modules directly.
  */
-export interface SetupHandoffDoneDeps {
+interface SetupHandoffDoneDeps {
   /** Whether the page offered the widget, and which half of the hand-off it was. */
   setupHandoffPlan: { offerWidget: boolean; phase: 'beforePro' | 'afterPro' } | null;
   homePinnedStatCardKeys: string[];

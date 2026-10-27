@@ -51,7 +51,7 @@ type AppContextValue = ReturnType<typeof useAppContext>;
  * src/features/workout/WorkoutProvider.tsx; no .ts module imports this file,
  * and the test build does not compile it.
  */
-export interface ProgrammeStartsDeps {
+interface ProgrammeStartsDeps {
   database: AppContextValue['database'];
   preferences: AppContextValue['preferences'];
   unitPreference: AppContextValue['unitPreference'];

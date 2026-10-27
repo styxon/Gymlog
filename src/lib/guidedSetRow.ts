@@ -17,7 +17,7 @@ export const GUIDED_CARD_CHIP_CAP = 5;
 /** Boxes on the set row. */
 export const GUIDED_SET_BOX_CAP = 6;
 
-export interface GuidedWindow {
+interface GuidedWindow {
   /** First index shown. */
   start: number;
   /** One past the last index shown. */
@@ -56,7 +56,7 @@ export function guidedBoxesThatFit(available: number, itemWidth: number, gap: nu
   return Math.max(1, Math.min(cap, fit));
 }
 
-export type GuidedLoadTrend = 'up' | 'down' | null;
+type GuidedLoadTrend = 'up' | 'down' | null;
 
 /**
  * The arrow beside today's weight: green up when it is more than last time,

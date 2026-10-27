@@ -20,7 +20,7 @@ import { isLiftableWeight, isPlannedReps } from './weightLimits';
  */
 
 /** The live set's prefill fields, as workoutTypes.WorkoutSetInstance holds them. */
-export interface PlannedSetSource {
+interface PlannedSetSource {
   plannedLoadKg?: number;
   plannedRepsMin: number;
   plannedRepsMax: number;

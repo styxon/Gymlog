@@ -24,7 +24,7 @@
 import { createId } from './ids';
 
 /** Anything a list holds that can carry a pairing. */
-export interface SupersetMember {
+interface SupersetMember {
   supersetGroup?: string | null;
 }
 
@@ -35,7 +35,7 @@ export interface SupersetMember {
  * Every member of the source list appears in exactly one run, in order, so a
  * caller can rebuild the list from the runs without consulting the original.
  */
-export interface SupersetRun {
+interface SupersetRun {
   groupId: string | null;
   /** Indexes into the source list, ascending and contiguous. */
   indexes: number[];
@@ -49,7 +49,7 @@ export interface SupersetRun {
  * the first shape this shipped in, and the reader asked for the box instead
  * (2026-09-11).
  */
-export interface SupersetPosition {
+interface SupersetPosition {
   groupId: string | null;
   /** How many exercises the group holds. 1 when the row is not in a group. */
   size: number;
@@ -338,7 +338,7 @@ export function supersetGroupIndexes(members: readonly SupersetMember[], index: 
 }
 
 /** One set of one lift, addressed the way both loggers address it. */
-export interface SupersetPlaySlot {
+interface SupersetPlaySlot {
   exerciseIndex: number;
   setIndex: number;
 }

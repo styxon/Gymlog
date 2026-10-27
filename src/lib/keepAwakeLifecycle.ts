@@ -7,7 +7,7 @@
  * was gone. The release is therefore remembered: whichever of the two finishes
  * last (the activation, the release) makes sure the tag ends deactivated.
  */
-export interface KeepAwakeHandle {
+interface KeepAwakeHandle {
   /** Ends the request now, or as soon as a pending activation settles. */
   release(): void;
 }

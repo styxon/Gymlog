@@ -8,7 +8,7 @@ import { purchaseRecordFromStore, samePurchaseRecord, type StoreCustomerSnapshot
 import type { PreferencesPatch } from '../state/AppProvider';
 import { AppPreferences } from '../types/models';
 
-export interface StoreBillingSyncDeps {
+interface StoreBillingSyncDeps {
   /** The database store has loaded: `useAppContext().hydrated`. */
   hydrated: boolean;
   preferences: AppPreferences;

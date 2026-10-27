@@ -18,7 +18,7 @@ import type { AppDatabase, UnitPreference } from '../types/models';
  *
  * In the moved comment below, "here" means these memos, as it did in App.tsx.
  */
-export interface DaySummariesDeps {
+interface DaySummariesDeps {
   /** The whole database, as the summaries read it. */
   database: AppDatabase;
   /** The reader's kg/lb setting, for Home's summary. */

@@ -18,7 +18,7 @@ type TapInput = Parameters<typeof resolveHomeWidgetSessionTap>[0];
  * slot they stood in — after useHomeWidgetFeed, before useNotificationRoute —
  * so React's hook order and the order the effects run in are unchanged.
  */
-export interface WidgetTapsDeps {
+interface WidgetTapsDeps {
   appHydrated: boolean;
   workout: { activeSession: { status: string } | null };
   homeActivePlanCard: {

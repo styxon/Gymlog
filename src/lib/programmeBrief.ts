@@ -1070,7 +1070,7 @@ export function applyBriefToPreferences(
   };
 }
 
-export interface ProposedExercise {
+interface ProposedExercise {
   name: string;
   libraryItemId: string;
   sets: number;
@@ -1089,7 +1089,7 @@ export interface ProposedExercise {
   tracked: boolean;
 }
 
-export interface ProposedSession {
+interface ProposedSession {
   name: string;
   focus: string;
   exercises: ProposedExercise[];
@@ -1982,7 +1982,7 @@ export function composeProgrammePreview(
 }
 
 /** What the live endpoint is asked to return — names, not ids; the client resolves. */
-export interface LiveProgrammeProposal {
+interface LiveProgrammeProposal {
   title: string;
   sessions: Array<{
     name: string;
@@ -2192,7 +2192,7 @@ export function buildProgrammeDraft(proposal: ProgrammeProposal, existingNames: 
  * which is also the thing worth checking: get the days or the lifts wrong and
  * the whole build is wrong.
  */
-export interface ProgrammeBriefOutline {
+interface ProgrammeBriefOutline {
   /** What the composer will lay out. */
   plannedDays: number | null;
   /**

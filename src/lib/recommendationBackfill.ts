@@ -22,13 +22,13 @@ import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from './programAffinity'
  * Nothing here is a score and nothing is random. Same inputs, same row.
  */
 
-export interface RecommendationSlot {
+interface RecommendationSlot {
   templateId: string;
   /** The sentence under the name — always derived, never written per card. */
   whyKey: I18nKey;
 }
 
-export interface RecommendationBackfillInput {
+interface RecommendationBackfillInput {
   /** The questionnaire's picks, in order: primary, then alternative. */
   picks: readonly RecommendationSlot[];
   /** Programmes the reader is running — these have been chosen already. */

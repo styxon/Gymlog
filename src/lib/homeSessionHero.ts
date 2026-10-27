@@ -9,7 +9,7 @@ import { estimateRoutineBlockSeconds } from './guidedPlayer';
 import { I18nKey, t } from './i18n';
 import { AppLanguage, SetupCautionArea, SetupCautionFlag } from '../types/models';
 
-export interface SessionDrill {
+interface SessionDrill {
   /**
    * The drill's own i18n key — its identity across languages and equipment.
    *

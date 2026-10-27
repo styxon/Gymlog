@@ -47,7 +47,7 @@ export const MAX_DAYS = 7;
  */
 export const MAX_EXERCISES = 12;
 
-export interface ProgrammeCardSession {
+interface ProgrammeCardSession {
   title: string;
   dayLabel?: string | null;
   durationMinutes?: number | null;

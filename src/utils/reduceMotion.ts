@@ -27,7 +27,7 @@ import { AccessibilityInfo } from 'react-native';
  * that a slow-but-working device still gets its real setting, short enough that
  * a screen gated on the answer does not look broken.
  */
-export const REDUCE_MOTION_TIMEOUT_MS = 1200;
+const REDUCE_MOTION_TIMEOUT_MS = 1200;
 
 export function queryReduceMotion(timeoutMs: number = REDUCE_MOTION_TIMEOUT_MS): Promise<boolean> {
   return new Promise((resolve) => {

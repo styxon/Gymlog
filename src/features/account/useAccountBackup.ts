@@ -87,7 +87,7 @@ import {
   StoredAccount,
 } from './accountStore';
 
-export type AccountBackupPhase = 'idle' | 'signing_in' | 'backing_up' | 'restoring' | 'deleting';
+type AccountBackupPhase = 'idle' | 'signing_in' | 'backing_up' | 'restoring' | 'deleting';
 
 export interface AccountBackupState {
   /** 'unavailable' — this build has no sign-in configured; show nothing. */
@@ -111,7 +111,7 @@ export interface AccountBackupState {
   backupPaused: BackupPauseReason | null;
 }
 
-export type BackupPauseReason = 'other_phone' | 'smaller_phone' | 'copy_deleted';
+type BackupPauseReason = 'other_phone' | 'smaller_phone' | 'copy_deleted';
 
 export type SignInOutcome =
   | { kind: 'unavailable' }
@@ -165,14 +165,14 @@ export type SignInOutcome =
  * revoked or run-out session) — this phone is signed out, nothing was done by
  * this request, and the reader is told exactly that.
  */
-export type AccountOperationResult = 'done' | 'failed' | 'cancelled' | 'ended';
+type AccountOperationResult = 'done' | 'failed' | 'cancelled' | 'ended';
 
 /**
  * Delete account's own results are the same set, plus 'done_apple_kept':
  * deleted, but the sign-in at Apple could not be ended, so Vinha is still on
  * the reader's Sign in with Apple list and they remove it themselves.
  */
-export type DeleteAccountResult = AccountOperationResult | 'done_apple_kept';
+type DeleteAccountResult = AccountOperationResult | 'done_apple_kept';
 
 export interface AccountBackupApi {
   available: boolean;
@@ -227,7 +227,7 @@ export interface AccountBackupApi {
   deleteAccount: () => Promise<DeleteAccountResult>;
 }
 
-export interface AccountBackupInput {
+interface AccountBackupInput {
   /** Both stores loaded: an upload before the history has loaded writes an empty one. */
   hydrated: boolean;
   /** A workout or run is going. A restore would put it away, so it is asked about. */

@@ -21,9 +21,9 @@ import { gatingSets, isWithinOneDialStep } from './warmupSets';
  * implementation gets wrong.
  */
 
-export type ProgressionLevelTier = 'beginner' | 'intermediate';
+type ProgressionLevelTier = 'beginner' | 'intermediate';
 
-export interface ProgressionLevelParams {
+interface ProgressionLevelParams {
   /** Sessions of history needed before the gate says anything at all. */
   minSessions: number;
   /** Consecutive progression-ready sessions required before load moves. */
@@ -64,7 +64,7 @@ export function getProgressionTier(level: SetupLevel | null | undefined): Progre
 /** What the gate acts on, narrower than the fatigue model's own signal. */
 export type ProgressionFatigueSignal = 'normal' | 'elevated' | 'high';
 
-export type ProgressionHoldReason =
+type ProgressionHoldReason =
   | 'fatigue_high'
   | 'fatigue_elevated'
   | 'insufficient_sets'
@@ -113,12 +113,12 @@ export function progressionFatigueSignalAt(input: FatigueModelInput, now: Date):
   return toProgressionFatigueSignal(buildFatigueModel(input, now));
 }
 
-export type ProgressionDecision =
+type ProgressionDecision =
   | { recommendation: 'silent' }
   | { recommendation: 'hold'; holdReason: ProgressionHoldReason; loadKg: number }
   | { recommendation: 'increase'; loadKg: number; fromLoadKg: number; incrementKg: number };
 
-export interface ProgressionGateInput {
+interface ProgressionGateInput {
   /** Newest first, as the slot history stores it. */
   history: WorkoutSlotHistoryEntry[];
   repsMin: number;
@@ -581,14 +581,14 @@ export function resolveProgressedLoadKg(
 }
 
 /** One more rep, both tiers — a rep is already the smallest step there is. */
-export const REP_INCREMENT = 1;
+const REP_INCREMENT = 1;
 
 /**
  * Named, not inlined at the call site: `heldForFatigue` on the load resolver
  * shipped computed-but-dropped because the receiving object listed its fields
  * by hand. A named type keeps the field list in one place for both resolvers.
  */
-export interface ProgressedRepsResolution {
+interface ProgressedRepsResolution {
   /** What the reps dial should open at. */
   targetReps: number;
   progressed: boolean;
@@ -605,7 +605,7 @@ function entryMinReps(entry: WorkoutSlotHistoryEntry, targetSets: number): numbe
   return programmedSets(entry, targetSets).reduce((min, set) => Math.min(min, set.reps), Number.POSITIVE_INFINITY);
 }
 
-export interface ProgressedRepsInput {
+interface ProgressedRepsInput {
   /** Newest first, as the slot history stores it. */
   history: WorkoutSlotHistoryEntry[];
   /** The template's single rep target (repsMax; min equals it in the catalog). */
@@ -749,7 +749,7 @@ export function resolveProgressedReps(input: ProgressedRepsInput): ProgressedRep
   return { ...base, targetReps: floorReps, heldForFatigue };
 }
 
-export interface MissedRepsInput {
+interface MissedRepsInput {
   /** Newest first, this slot's own scoped history — never a borrowed one. */
   history: WorkoutSlotHistoryEntry[];
   repsMin: number;
@@ -774,7 +774,7 @@ export interface MissedRepsInput {
  * rule would have silenced this target on exactly the weekly programmes it was
  * written for (break round 2026-09-28).
  */
-export const MISSED_REPS_STALE_DAYS = 90;
+const MISSED_REPS_STALE_DAYS = 90;
 
 /**
  * Older than MISSED_REPS_STALE_DAYS calendar days, at the same time of day.
@@ -785,7 +785,7 @@ function isStale(performedMs: number, nowMs: number): boolean {
   return performedMs < getRollingWindowStart(nowMs, MISSED_REPS_STALE_DAYS);
 }
 
-export interface MissedRepsResolution {
+interface MissedRepsResolution {
   /** What every set's reps dial opens on, below the programme's floor. */
   targetReps: number;
   /** Last time's average over its sets, when that is where the target came from. */
@@ -888,7 +888,7 @@ export function resolveMissedRepsTarget(input: MissedRepsInput): MissedRepsResol
   return target >= repsMin ? null : { targetReps: target, fromAverage: Math.round(average * 100) / 100 };
 }
 
-export interface RampSetTargetInput {
+interface RampSetTargetInput {
   /** The session the set reads from: the slot's own latest, or a borrowed one. */
   entry: WorkoutSlotHistoryEntry | null | undefined;
   setIndex: number;

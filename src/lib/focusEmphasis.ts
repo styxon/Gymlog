@@ -48,7 +48,7 @@ function buildEmphasisExercise(name: string, sessionId: string, index: number): 
   };
 }
 
-export interface FocusEmphasisSessionInput {
+interface FocusEmphasisSessionInput {
   id: string;
   exercises: WorkoutTemplateExercise[];
 }

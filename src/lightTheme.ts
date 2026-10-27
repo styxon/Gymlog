@@ -134,7 +134,7 @@ export const AW3 = {
   danger: '#D64545',
 } as const;
 
-export type AW3Token = keyof typeof AW3;
+type AW3Token = keyof typeof AW3;
 
 /** The same keys, widened — a themed palette fills them with its own values. */
 export type AW3Palette = { readonly [K in AW3Token]: string };

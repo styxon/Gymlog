@@ -11,7 +11,7 @@ import { Easing } from 'react-native';
  * both *centres*. Measuring one from the top and the other from the centre is
  * exactly what made the wordmark jump between the two screens.
  */
-export const CANVAS_HEIGHT = 812;
+const CANVAS_HEIGHT = 812;
 
 /** Vertical centre of the lockup, on the reference canvas. */
 export const MARK_CENTER_SPLASH = 247;
@@ -61,7 +61,7 @@ export const EASE_SETTLE = Easing.bezier(0.16, 0.9, 0.2, 1);
  */
 export const EASE_RISE = Easing.bezier(0.22, 1, 0.36, 1);
 
-export interface MotionBar {
+interface MotionBar {
   y: number;
   width: number;
   height: number;

@@ -8,8 +8,8 @@ import { StrengthGoal } from '../lib/strengthGoals';
 import { SubscriptionTermKey } from '../lib/subscriptionView';
 export type UnitPreference = 'kg' | 'lb';
 export type AppLanguage = 'en' | 'fi';
-export type SignInMethod = 'apple' | 'email' | 'local' | 'google';
-export type AccessTier = 'free' | 'premium';
+type SignInMethod = 'apple' | 'email' | 'local' | 'google';
+type AccessTier = 'free' | 'premium';
 export type SetupGender = 'male' | 'female' | 'unspecified';
 export type SetupAgeRange = 'unspecified' | '18' | '19_25' | '26_30' | '31_40' | '41_plus';
 export type SetupGoal =
@@ -112,12 +112,12 @@ export interface SetupCautionFlag {
 export type SetupGuidanceMode = 'done_for_me' | 'guided_editable' | 'self_directed';
 export type SetupScheduleMode = 'app_managed' | 'self_managed';
 export type SetupWeekday = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
-export type TrainingFeelPreference = 'easy' | 'steady' | 'challenging' | 'intense';
-export type WorkoutVarietyPreference = 'stable' | 'balanced' | 'varied' | 'fresh';
+type TrainingFeelPreference = 'easy' | 'steady' | 'challenging' | 'intense';
+type WorkoutVarietyPreference = 'stable' | 'balanced' | 'varied' | 'fresh';
 export type ExerciseModalityPreference = 'avoid' | 'neutral' | 'prefer' | 'love';
 export type JointSwapBias = 'shoulders' | 'elbows' | 'knees';
 export type JointSwapPreference = 'neutral' | 'prefer' | 'prioritize';
-export type WorkoutPlanMode = 'weekday' | 'rotation';
+type WorkoutPlanMode = 'weekday' | 'rotation';
 export type ExerciseCategory = 'compound' | 'isolation' | 'cardio' | 'core';
 export type ExerciseBodyPart =
   | 'chest'
@@ -130,11 +130,11 @@ export type ExerciseBodyPart =
   | 'glutes'
   | 'full body';
 export type ExerciseEquipment = 'barbell' | 'dumbbell' | 'machine' | 'cable' | 'bodyweight';
-export type ExerciseSetKind = 'working' | 'warmup' | 'drop';
-export type ExerciseSetOutcome = 'completed' | 'failed' | 'skipped';
-export type ExerciseLogSetStatus = 'pending' | 'completed' | 'skipped';
+type ExerciseSetKind = 'working' | 'warmup' | 'drop';
+type ExerciseSetOutcome = 'completed' | 'failed' | 'skipped';
+type ExerciseLogSetStatus = 'pending' | 'completed' | 'skipped';
 export type ExerciseLogSetEffort = 'easy' | 'good' | 'hard';
-export type ExerciseLogStatus = 'active' | 'completed' | 'skipped' | 'swapped';
+type ExerciseLogStatus = 'active' | 'completed' | 'skipped' | 'swapped';
 /**
  * Arms and calves were missing, so the two tape readings a growth trainee
  * takes most often could not be logged at all — and picking "arms" as a focus
@@ -204,7 +204,7 @@ export interface WorkoutTemplate {
   sourceTemplateId?: string | null;
 }
 
-export type WorkoutTemplateOrigin = 'authored' | 'freestyle';
+type WorkoutTemplateOrigin = 'authored' | 'freestyle';
 
 export interface ExerciseTemplate {
   id: string;
