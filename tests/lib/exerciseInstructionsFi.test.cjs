@@ -11,7 +11,7 @@ const assert = require('node:assert/strict');
  * counting along with.
  */
 const { getExerciseInstructions, finnishInstructionTable, effectiveEnglishInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
-const { EXERCISE_INSTRUCTIONS_EN } = require('../../.test-dist/lib/exerciseInstructionsEn.js');
+const { EXERCISE_INSTRUCTIONS_EN } = require('../../.test-dist/data/exerciseInstructionsEn.js');
 const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
 const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
 const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
@@ -39,7 +39,7 @@ const SAME_AS_ENGLISH_ALLOWED = new Map([]);
 
 /**
  * The English steps the reader would see: the audit's correction where there is
- * one (exerciseInstructionsEn.ts), the library row's own otherwise, and blank
+ * one (src/data/exerciseInstructionsEn.ts), the library row's own otherwise, and blank
  * steps dropped, as the app drops them. The Finnish steps are paired with THESE,
  * not with the upstream text the corrections replace.
  */
@@ -275,10 +275,12 @@ module.exports = [
       const { spawnSync } = require('node:child_process');
       const path = require('node:path');
       const dist = path.resolve(__dirname, '../../.test-dist/lib');
+      const dataDist = path.resolve(__dirname, '../../.test-dist/data');
       const script = `
         const path = require('path');
         const dist = ${JSON.stringify(dist)};
-        const more = path.join(dist, 'exerciseInstructionsFiMore.js');
+        const dataDist = ${JSON.stringify(dataDist)};
+        const more = path.join(dataDist, 'exerciseInstructionsFiMore.js');
         const { getExerciseInstructions } = require(path.join(dist, 'exerciseInstructions.js'));
         const loaded = () => Boolean(require.cache[more]);
         const out = [];

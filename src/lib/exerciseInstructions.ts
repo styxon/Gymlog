@@ -12,7 +12,7 @@ import { AppLanguage } from '../types/models';
  * COVERAGE. This file covers the ones a reader meets inside a program — the
  * lifts the ready catalogs prescribe and that resolve to a library entry. The
  * rest of the library (the browse list, 708 more entries) is in
- * exerciseInstructionsFiMore.ts, which is loaded on first use because of its
+ * src/data/exerciseInstructionsFiMore.ts, which is loaded on first use because of its
  * size. Together they cover every library entry that has English steps, and a
  * test fails if an entry's Finnish steps are its English steps. The fallback to
  * the English steps below is therefore only for a name the library does not
@@ -1526,12 +1526,12 @@ let moreFinnish: FinnishInstructionTable | null = null;
 let englishOverlay: FinnishInstructionTable | null = null;
 
 /**
- * The English corrections (exerciseInstructionsEn.ts), loaded on first use for
+ * The English corrections (src/data/exerciseInstructionsEn.ts), loaded on first use for
  * the same reason as the second Finnish table.
  */
 function englishInstructionOverlay(): FinnishInstructionTable {
   if (englishOverlay === null) {
-    englishOverlay = (require('./exerciseInstructionsEn') as {
+    englishOverlay = (require('../data/exerciseInstructionsEn') as {
       EXERCISE_INSTRUCTIONS_EN: FinnishInstructionTable;
     }).EXERCISE_INSTRUCTIONS_EN;
   }
@@ -1563,7 +1563,7 @@ export function effectiveEnglishInstructions(
  */
 function moreFinnishInstructions(): FinnishInstructionTable {
   if (moreFinnish === null) {
-    moreFinnish = (require('./exerciseInstructionsFiMore') as {
+    moreFinnish = (require('../data/exerciseInstructionsFiMore') as {
       EXERCISE_INSTRUCTIONS_FI_MORE: FinnishInstructionTable;
     }).EXERCISE_INSTRUCTIONS_FI_MORE;
   }
