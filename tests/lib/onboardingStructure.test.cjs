@@ -588,8 +588,8 @@ module.exports = [
   {
     name: 'launch splash waits on every app start and welcome copy is plan focused',
     run() {
-      assert.match(appSource, /const \[minimumSplashElapsed, setMinimumSplashElapsed\] = useState\(false\)/);
-      assert.match(appSource, /if \(!minimumSplashElapsed\) \{\s*return;\s*\}/);
+      assert.match(shellSource, /const \[minimumSplashElapsed, setMinimumSplashElapsed\] = useState\(false\)/);
+      assert.match(shellSource, /if \(!minimumSplashElapsed\) \{\s*return;\s*\}/);
       assert.doesNotMatch(shellSource, /firstAppOpen/);
 
       // Light welcome: the copy lives in the i18n dictionary and the screen

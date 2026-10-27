@@ -198,7 +198,7 @@ module.exports = [
 
       // App settles it once both stores have loaded.
       const app = readAppWiring().replace(/\r\n/g, '\n');
-      assert.match(app, /if \(!hydrated \|\| !workout\.hydrated\) \{\s*return;\s*\}\s*const settled = settleSavedCardioRun\(activeCardio, cardioSessions\);\s*if \(settled\) \{\s*settleCardio\(settled, activeCardio\?\.resumedAt \?\? null\);/);
+      assert.match(app, /if \(!hydrated \|\| !workoutHydrated\) \{\s*return;\s*\}\s*const settled = settleSavedCardioRun\(activeCardio, cardioSessions\);\s*if \(settled\) \{\s*settleCardio\(settled, activeCardio\?\.resumedAt \?\? null\);/);
     },
   },
 ];

@@ -1,11 +1,9 @@
 import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AppShell } from './src/components/AppShell';
 import { isWorkoutInProgress } from './src/lib/activeWorkout';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
-import { settleSavedCardioRun } from './src/lib/cardio';
 import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
 import { programmeStartSessionId } from './src/lib/programSessionList';
 import { formatTime, pluralize } from './src/lib/format';
@@ -113,6 +111,7 @@ import { useDeviceSwitches } from './src/app/useDeviceSwitches';
 import { useStoreBillingSync } from './src/app/useStoreBillingSync';
 import { useFunnelAnalytics } from './src/app/useFunnelAnalytics';
 import { useAttemptOnce } from './src/app/useAttemptOnce';
+import { useAppBoot, useSettleSavedCardio } from './src/app/useAppBoot';
 import { useInstallStamps } from './src/app/useInstallStamps';
 import { useSetupWeightSeed } from './src/app/useSetupWeightSeed';
 import { useTodayKey } from './src/app/useTodayKey';
@@ -354,8 +353,6 @@ function VinhaApp() {
   const [homeWidgetState, setHomeWidgetState] = useState<{ supported: boolean; added: boolean } | null>(
     null,
   );
-  const [minimumSplashElapsed, setMinimumSplashElapsed] = useState(false);
-  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   // The brand animation plays once per cold start, after the native splash has
   // handed over. It is skipped entirely until the app is ready, so it never
   // becomes the thing hiding a slow start.
@@ -379,7 +376,6 @@ function VinhaApp() {
    * player's own state. Null on every other screen and every other step.
    */
   const [workoutTourStep, setWorkoutTourStep] = useState<WorkoutTourStep | null>(null);
-  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useDeviceSwitches({ hydrated, preferences });
 
@@ -438,90 +434,19 @@ function VinhaApp() {
 
   useInstallStamps({ appHydrated, preferences, updatePreferences });
 
-  // A saved run that came back running (its pause and its clear both lost) is stopped where it was
-  // saved, once both stores have loaded, before its clock carries the hours the app was dead into the
-  // next Complete (lib/cardio settleSavedCardioRun).
-  const activeCardio = workout.activeCardio;
-  const settleCardio = workout.settleCardio;
-  useEffect(() => {
-    if (!hydrated || !workout.hydrated) {
-      return;
-    }
-    const settled = settleSavedCardioRun(activeCardio, cardioSessions);
-    if (settled) {
-      settleCardio(settled, activeCardio?.resumedAt ?? null);
-    }
-  }, [hydrated, workout.hydrated, activeCardio, cardioSessions, settleCardio]);
+  useSettleSavedCardio({
+    hydrated,
+    workoutHydrated: workout.hydrated,
+    activeCardio: workout.activeCardio,
+    cardioSessions,
+    settleCardio: workout.settleCardio,
+  });
 
-  useEffect(() => {
-    const remaining = MINIMUM_SPLASH_MS - (performance.now() - splashFloorStartedAt);
-    const timeout = setTimeout(
-      () => setMinimumSplashElapsed(true),
-      Math.min(MINIMUM_SPLASH_MS, Math.max(0, remaining)),
-    );
-    return () => clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadFonts() {
-      await Font.loadAsync({
-        // Variable Manrope kept as a fallback; the static per-weight families
-        // below are what AppText.tsx maps fontWeight onto, because Android
-        // does not drive a variable font's weight axis (headings rendered at
-        // the ExtraLight default with a synthetic bold otherwise).
-        Manrope: require('./assets/fonts/Manrope.ttf'),
-        'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
-        'Manrope-Medium': require('./assets/fonts/Manrope-Medium.ttf'),
-        'Manrope-SemiBold': require('./assets/fonts/Manrope-SemiBold.ttf'),
-        'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
-        'Manrope-ExtraBold': require('./assets/fonts/Manrope-ExtraBold.ttf'),
-        // Sets × reps numerals on the Home agenda list (design: JetBrains Mono).
-        JetBrainsMono: require('./assets/fonts/JetBrainsMono.ttf'),
-      }).catch(() => {
-        // Keep the app usable if font loading fails in a dev host.
-      });
-
-      if (!cancelled) {
-        setFontsLoaded(true);
-      }
-    }
-
-    void loadFonts();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (nativeSplashHidden || !appHydrated || !fontsLoaded) {
-      return;
-    }
-
-    if (!minimumSplashElapsed) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function hideNativeSplash() {
-      await SplashScreen.hideAsync().catch(() => {
-        // Ignore host-level splash errors on warm reloads.
-      });
-
-      if (!cancelled) {
-        setNativeSplashHidden(true);
-      }
-    }
-
-    void hideNativeSplash();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [appHydrated, fontsLoaded, minimumSplashElapsed, nativeSplashHidden]);
+  const { nativeSplashHidden } = useAppBoot({
+    appHydrated,
+    splashFloorStartedAt,
+    minimumMs: MINIMUM_SPLASH_MS,
+  });
 
   function navigate(nextRoute: AppRoute) {
     startTransition(() =>
