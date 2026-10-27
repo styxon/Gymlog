@@ -83,7 +83,7 @@ module.exports = [
       const door = app.slice(app.indexOf('function navigateToActiveWorkout('), app.indexOf('/** Whether the running session is the very one'));
       assert.match(door, /!isWorkoutInProgress\(workout\.activeSession\)/, 'the door and its callers cannot disagree');
       assert.doesNotMatch(door, /status === 'completed'/);
-      assert.match(app, /import \{ isWorkoutInProgress \} from '\.\/src\/lib\/activeWorkout';/);
+      assert.match(read('src', 'app', 'activeWorkoutDoor.ts'), /import \{ isWorkoutInProgress \} from '\.\.\/lib\/activeWorkout';/);
     },
   },
 ];

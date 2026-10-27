@@ -395,7 +395,11 @@ module.exports = [
       summaryRuntime.unmount();
 
       const app = readAppWiring();
-      assert.match(app, /const homeActiveWorkoutSummary = useStableActiveWorkoutSummary\(homeActiveWorkoutParts\);/);
+      assert.match(app, /const homeActiveWorkoutSummary = useHomeActiveWorkoutSummary\(workout\.activeSession, preferences\.appLanguage\);/);
+      assert.match(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useHomeActiveWorkoutSummary.ts'), 'utf8'),
+        /return useStableActiveWorkoutSummary\(homeActiveWorkoutParts\);/,
+      );
     },
   },
 ];
