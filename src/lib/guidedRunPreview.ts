@@ -85,3 +85,15 @@ export function isLastWorkItem(items: ReadonlyArray<{ phase: string; status: str
   }
   return !items.slice(current + 1).some((item) => item.phase === 'work');
 }
+
+/**
+ * What the "+N muuta" line counts: the lifts after the window, not every row.
+ *
+ * A 7-lift workout with two recovery stretches said "+5 muuta" with three
+ * lifts left (hunt, 2026-10-26): the stretches are rows of the contents but
+ * not "more" to the reader. 0 means no line at all, even when stretches are
+ * left out of the window.
+ */
+export function hiddenWorkCount(items: ReadonlyArray<{ phase: string }>, end: number): number {
+  return items.slice(Math.max(0, end)).filter((item) => item.phase === 'work').length;
+}

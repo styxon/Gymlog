@@ -290,4 +290,79 @@ module.exports = [
       assert.equal(record, null, 'Records tab');
     },
   },
+  {
+    // Hunt, 2026-10-26: the lift card's chip compared kilos alone, so 80 × 8
+    // after 80 × 5 read "Rakentuu" while Records and the finish screen above
+    // called it a record. The chip reads the same rule (beatsBest).
+    name: "the lift card's chip agrees: the same weight for more reps is a new best, fewer reps is not",
+    run() {
+      const {
+        getTrackedExerciseProgress,
+        getLiftProgress,
+        getExerciseProgressSignal,
+      } = require('../../.test-dist/lib/progression.js');
+      let n = 0;
+      const entry = (performedAt, weight, reps, tracked = true) => {
+        n += 1;
+        const sessionId = `chip-s${n}`;
+        return {
+          session: { id: sessionId, performedAt, workoutNameSnapshot: 'Push' },
+          log: {
+            id: `chip-l${n}`,
+            sessionId,
+            exerciseTemplateId: null,
+            exerciseNameSnapshot: 'Bench Press',
+            weight,
+            repsPerSet: reps,
+            tracked,
+            skipped: false,
+            orderIndex: 0,
+            sets: reps.map((r, i) => ({ id: `chip-x${n}-${i}`, weight, reps: r, status: 'completed', kind: 'working' })),
+          },
+        };
+      };
+      const database = (entries) => ({
+        exerciseLogs: entries.map((e) => e.log),
+        workoutSessions: entries.map((e) => e.session),
+        exerciseTemplates: [],
+        preferences: { strengthGoals: [] },
+      });
+      const sameName = (a, b) => a.toLowerCase() === b.toLowerCase();
+      const chips = (entries) => {
+        const summaries = getTrackedExerciseProgress(database(entries));
+        return [
+          getExerciseProgressSignal(summaries[0]).kind,
+          getExerciseProgressSignal(getLiftProgress('Bench Press', summaries, sameName)).kind,
+        ];
+      };
+
+      const more = [entry('2026-10-01T10:00:00.000Z', 80, [5, 5, 5]), entry('2026-10-08T10:00:00.000Z', 80, [8, 8, 8])];
+      assert.deepEqual(chips(more), ['new_best', 'new_best'], 'same weight, more reps');
+      const record = resolveRecord(
+        {
+          key: 'bench-press',
+          name: 'Bench Press',
+          entries: [
+            { performedAt: '2026-10-01T10:00:00.000Z', sets: [{ weight: 80, reps: 5 }] },
+            { performedAt: '2026-10-08T10:00:00.000Z', sets: [{ weight: 80, reps: 8 }] },
+          ],
+        },
+        'weight',
+      );
+      assert.equal(record.performedAt, '2026-10-08T10:00:00.000Z', 'Records tab agrees');
+
+      const fewer = [entry('2026-10-01T10:00:00.000Z', 80, [8]), entry('2026-10-08T10:00:00.000Z', 80, [5])];
+      assert.ok(!chips(fewer).includes('new_best'), 'same weight, fewer reps');
+      const matched = [entry('2026-10-01T10:00:00.000Z', 80, [5]), entry('2026-10-08T10:00:00.000Z', 80, [5])];
+      assert.ok(!chips(matched).includes('new_best'), 'matched, not beaten');
+      // More reps than an untracked heavier set's weight is still not a best:
+      // the bests read every performed set.
+      const untrackedHeavier = [
+        entry('2026-09-01T10:00:00.000Z', 100, [3], false),
+        entry('2026-10-01T10:00:00.000Z', 80, [5]),
+        entry('2026-10-08T10:00:00.000Z', 80, [8]),
+      ];
+      assert.ok(!chips(untrackedHeavier).includes('new_best'), 'an untracked 100 kg stands');
+    },
+  },
 ];
