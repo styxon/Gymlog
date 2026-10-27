@@ -1,5 +1,4 @@
 import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Font from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 
@@ -54,7 +53,7 @@ import {
 import { useRecordsAndMilestones } from './src/app/useRecordsAndMilestones';
 import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
 import { useStableActiveWorkoutSummary } from './src/app/useStableActiveWorkoutSummary';
-import { I18nKey, t } from './src/lib/i18n';
+import { t } from './src/lib/i18n';
 import { countLabel } from './src/lib/repCountCopy';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
@@ -73,13 +72,9 @@ import {
 } from './src/lib/trainingWeekSync';
 import { findReadyProgrammeCopyId } from './src/lib/programmeCopyLink';
 import { useGoalFlow } from './src/app/useGoalFlow';
+import { SettingsImportSheet } from './src/app/SettingsImportSheet';
+import { LEGAL_OVER_CONSENT, LEGAL_OVER_HANDOFF, WEEKDAY_LABEL_KEYS } from './src/app/appConstants';
 
-/**
- * The listing, opened by every star. Not the in-app review API: Google's own
- * card must not be preceded by a custom prompt that asks for a rating, and the
- * sheet is exactly that.
- */
-const PLAY_LISTING_URL = 'https://play.google.com/store/apps/details?id=app.vinha';
 import { buildCustomSessionRuntimeTemplate } from './src/lib/programDetails';
 import {
   AdaptedSessionRef,
@@ -155,7 +150,6 @@ import { useProgramsCustomItems } from './src/app/useProgramsCustomItems';
 import { LaunchScreen } from './src/screens/LaunchScreen';
 import { setNumberLanguage } from './src/lib/format';
 import { VinhaSplashScreen } from './src/screens/VinhaSplashScreen';
-import { NewProgramSheet } from './src/components/NewProgramSheet';
 import { accountNameStep } from './src/lib/accountNameAdoption';
 import { WorkoutProvider, useWorkoutContext } from './src/features/workout/WorkoutProvider';
 import { getWorkoutTemplateById } from './src/features/workout/workoutCatalog';
@@ -183,22 +177,6 @@ const splashFloorStartedAt = performance.now();
 interface NavigationState {
   route: AppRoute;
   history: AppRoute[];
-}
-
-/**
- * Reads the inset for NewProgramSheet's Modal.
- *
- * VinhaApp itself cannot call `useSafeAreaInsets` — it is the component that
- * RETURNS `<AppShell>`, so its own fiber sits above AppShell's
- * SafeAreaProvider, not inside it, and the hook throws with no provider to
- * read from. This wrapper is rendered as an AppShell child instead (in the
- * same spot NewProgramSheet used to sit), which puts it inside the provider,
- * and it renders no Modal of its own — the same shape as a screen that reads
- * insets and hands them to a sheet component (#bugs 2026-08-28 pattern).
- */
-function SettingsImportSheet(props: Omit<React.ComponentProps<typeof NewProgramSheet>, 'bottomInset'>) {
-  const insets = useSafeAreaInsets();
-  return <NewProgramSheet {...props} bottomInset={insets.bottom} />;
 }
 
 function VinhaApp() {
@@ -2513,7 +2491,6 @@ function VinhaApp() {
     setRunningCapSheet,
     ratingSheetVisible,
     setRatingSheetVisible,
-    PLAY_LISTING_URL,
   });
 }
 
@@ -2552,68 +2529,3 @@ export default function App() {
     </AppErrorBoundary>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/** Stored weekday codes → the display keys the rest of the app uses. */
-/**
- * The legal document, laid over the hand-off rather than swapped in for it.
- *
- * Its own background is opaque, so nothing of the screen underneath shows
- * through; what survives is that screen's state, which is the whole point.
- */
-const LEGAL_OVER_HANDOFF = { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } as const;
-/** Above the consent sheet's zIndex/elevation (40). */
-const LEGAL_OVER_CONSENT = { ...LEGAL_OVER_HANDOFF, zIndex: 50, elevation: 50 } as const;
-
-const WEEKDAY_LABEL_KEYS: Record<string, I18nKey> = {
-  MON: 'setup.day.mon',
-  TUE: 'setup.day.tue',
-  WED: 'setup.day.wed',
-  THU: 'setup.day.thu',
-  FRI: 'setup.day.fri',
-  SAT: 'setup.day.sat',
-  SUN: 'setup.day.sun',
-};
-
-

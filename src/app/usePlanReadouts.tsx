@@ -30,8 +30,8 @@ import type { useHomeActivePlan } from './useHomeActivePlan';
  * separately) — so every hook keeps its slot. .tsx because ExportablePlan
  * comes from src/screens, as in phase A.
  *
- * WEEKDAY_LABEL_KEYS is App.tsx's module constant, passed in rather than
- * moved. weekProgressBase stays inside; VinhaApp reads only what this returns.
+ * WEEKDAY_LABEL_KEYS lives in src/app/appConstants.ts and is passed in rather
+ * than imported. weekProgressBase stays inside; VinhaApp reads only what this returns.
  */
 interface PlanReadoutsDeps {
   /** The app context's custom programmes, every one of which the export carries. */

@@ -10,6 +10,7 @@ import { AppUpdateDialog } from '../features/appUpdate/AppUpdateDialog';
 import { ServerNoticeDialog } from '../features/serverNotice/ServerNoticeDialog';
 import { hevyWorkoutsToLoggedSessions, HevyLoggedSession } from '../lib/hevyImport';
 import { t } from '../lib/i18n';
+import { PLAY_LISTING_URL } from '../lib/storeLinks';
 import { resolveProEntitlement } from '../lib/proEntitlement';
 import type { RunningCapRefusal } from '../lib/programCapNotice';
 import { ProgramSlots } from '../lib/programSlots';
@@ -30,9 +31,9 @@ type RunningCapSheet = { visible: boolean } & RunningCapRefusal;
  * this, after its two early returns (the launch screen and the brand
  * splash), so the tree React sees is the one it always saw.
  *
- * `SettingsImportSheet` and `PLAY_LISTING_URL` are App.tsx's own, passed in
- * rather than moved: the sheet must stay the same component, or React would
- * remount it, and both are App.tsx module scope, outside this phase's cut.
+ * `SettingsImportSheet` lives in its own module and is passed in: it must stay
+ * the same component, or React would remount it. The listing URL comes from
+ * src/lib/storeLinks.ts, the one copy.
  */
 interface AppShellDeps {
   content: React.ReactNode;
@@ -80,7 +81,6 @@ interface AppShellDeps {
   setRunningCapSheet: React.Dispatch<React.SetStateAction<RunningCapSheet>>;
   ratingSheetVisible: boolean;
   setRatingSheetVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  PLAY_LISTING_URL: string;
 }
 
 export function renderAppShell(deps: AppShellDeps): React.ReactElement {
@@ -126,7 +126,6 @@ export function renderAppShell(deps: AppShellDeps): React.ReactElement {
     setRunningCapSheet,
     ratingSheetVisible,
     setRatingSheetVisible,
-    PLAY_LISTING_URL,
   } = deps;
 
   const shellSafeAreaEdges: Array<'top' | 'left' | 'right' | 'bottom'> =
