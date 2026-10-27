@@ -10,6 +10,7 @@
  *
  * Pure and shared so the two cannot disagree again.
  */
+import { startOfLocalDay } from './calendarDays';
 
 export interface PlanRotationEntry {
   workoutTemplateId: string;
@@ -61,8 +62,7 @@ export function planTrainedOnDay(
     if (!Number.isFinite(stamp)) {
       return false;
     }
-    const day = new Date(stamp);
-    const start = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    const start = startOfLocalDay(new Date(stamp));
     return start === dayStart && entries.some((entry) => entryMatchesSession(entry, session));
   });
 }

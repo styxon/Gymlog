@@ -18,6 +18,7 @@
  * WHICH session lands on Tuesday, not whether Tuesday is a training day.
  */
 
+import { startOfLocalDay } from './calendarDays';
 import { SetupWeekday } from '../types/models';
 import { PlanRotationEntry, PlanRotationSession, planTrainedOnDay, resolveNextPlanEntryIndex } from './planRotation';
 import { WEEKDAY_KEYS } from './programTrainingDays';
@@ -109,7 +110,7 @@ export function reorderPlanWeek<T extends PlanEntrySessionRef & PlanRotationEntr
     planTrainedOnDay(
       repointed.entries,
       completed,
-      new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
+      startOfLocalDay(now),
     ),
   );
   return {

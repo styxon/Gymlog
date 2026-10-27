@@ -1,3 +1,4 @@
+import { startOfLocalDay } from './calendarDays';
 import { SessionFocusKind } from './homeSessionHero';
 import { nextStartableSessionIndex } from './programSessionList';
 import { forecastSlotOn, SessionForecast, TrainingSchedule } from './trainingSchedule';
@@ -296,7 +297,7 @@ export function sessionForForecastDay<T extends { exercises: ReadonlyArray<unkno
   forecast: SessionForecast | null,
 ): T | null {
   const slot = forecastSlotOn(schedule, date, forecast);
-  const dayStart = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  const dayStart = startOfLocalDay(date);
   if (slot === null || !forecast || dayStart < forecast.fromDayStart) {
     return sessionForSlot(sessions, slot);
   }

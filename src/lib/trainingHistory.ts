@@ -3,8 +3,8 @@ import {
   getCalendarWeekStartAfter,
   getCalendarWeekStartTimestamp,
   getRollingWindowStart,
-  localDateKey,
 } from './completedSessions';
+import { localDateKey } from './calendarDays';
 import { getComparableLogSets } from './exerciseLog';
 import { isDoseLog } from './holdExercises';
 import { heaviestOfSets } from './personalRecords';
@@ -276,10 +276,6 @@ export function previousComparableSession(session: WorkoutSession, sessions: Wor
 function startOfWeek(time: number) {
   // Monday-first: the app's one week start (duplicate sweep 13, 2026-10-12).
   return getCalendarWeekStartTimestamp(new Date(time));
-}
-
-function isoDate(time: number) {
-  return localDateKey(time);
 }
 
 function summarizeSession(
@@ -628,7 +624,7 @@ function buildWeeks(
     }
 
     weeks.push({
-      weekStart: isoDate(weekStart),
+      weekStart: localDateKey(weekStart),
       sessions: inWeek.length,
       volumeKg: Math.round(inWeek.reduce((sum, entry) => sum + (entry.volumeKg ?? 0), 0)),
       plannedSessions,
@@ -690,7 +686,7 @@ function nextTrainingDate(schedule: TrainingSchedule, now: number): string | nul
     day.setHours(0, 0, 0, 0);
     day.setDate(day.getDate() + offset);
     if (trainsOn(schedule, day)) {
-      return isoDate(day.getTime());
+      return localDateKey(day.getTime());
     }
   }
   return null;

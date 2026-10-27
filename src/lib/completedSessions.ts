@@ -1,5 +1,8 @@
+import { addCalendarDays, localDateKey } from './calendarDays';
 import { isExerciseDone } from './sessionTotals';
 import { AppDatabase, CardioSession, WorkoutSession } from '../types/models';
+
+export { localDateKey };
 
 const FI_MONTHS = [
   'tammikuu',
@@ -40,28 +43,6 @@ function toDayStart(dateInput: string | Date) {
 
 export function getCalendarDayStartTimestamp(dateInput: string | Date) {
   return toDayStart(dateInput).getTime();
-}
-
-/**
- * "2026-09-14" for the day the reader lived it, in the device's timezone.
- *
- * Not `toISOString().slice(0, 10)`, and not a stored ISO string's first ten
- * characters: both are UTC. A Helsinki session between midnight and 02:00
- * (03:00 in summer) is already today on the reader's clock and still yesterday
- * in UTC, so it merged into the previous day's chart point and was exported
- * under the wrong date. Empty for a value that is not a date.
- *
- * Device-side only: on the coach endpoint the process timezone is UTC, which
- * is why dates meant for the coach are resolved on the phone before sending.
- */
-export function localDateKey(value: string | number | Date): string {
-  const date = new Date(value);
-  if (!Number.isFinite(date.getTime())) {
-    return '';
-  }
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 export function getCalendarWeekStartTimestamp(dateInput: string | Date) {
@@ -221,32 +202,6 @@ export function getRollingWindowStart(now: Date | string | number, days: number)
   return addCalendarDays(now, -days);
 }
 
-/**
- * `reference` shifted by whole calendar days, keeping its time of day.
- *
- * The primitive under every window and week helper here. Adding or subtracting
- * `days * DAY_MS` instead drifts an hour whenever the span crosses a clock
- * change, and an hour is the whole distance between a timestamp that matches a
- * stored day or week start and one that matches nothing.
- *
- * One case the Date constructor decides rather than this function: a wall-clock
- * time that spring-forward skips normalizes forward an hour. Under Helsinki's
- * 03:00 transitions only times in that hour are affected, which is why the week
- * helpers below — always at local midnight — are exact.
- */
-function addCalendarDays(reference: Date | string | number, days: number) {
-  const date = new Date(reference);
-
-  return new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate() + days,
-    date.getHours(),
-    date.getMinutes(),
-    date.getSeconds(),
-    date.getMilliseconds(),
-  ).getTime();
-}
 
 /**
  * `reference` shifted by whole calendar months, keeping its day of the month
