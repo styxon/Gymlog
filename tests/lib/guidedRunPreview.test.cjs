@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { fitRunPreview, isLastWorkItem } = require('../../.test-dist/lib/guidedRunPreview.js');
+const { fitRunPreview, hiddenWorkCount, isLastWorkItem } = require('../../.test-dist/lib/guidedRunPreview.js');
 
 const ROW = 30;
 const HEAD = 28;
@@ -119,6 +119,29 @@ module.exports = [
       assert.match(player, /\{walkLastLift \? \(\s*<View style=\{styles\.walkRunRow\}>[\s\S]{0,160}t\(language, 'guided\.walk\.lastLift'\)/);
       const { t } = require('../../.test-dist/lib/i18n.js');
       assert.equal(t('fi', 'guided.walk.lastLift'), 'Tämä on viimeinen liike');
+    },
+  },
+  {
+    // A 7-lift workout with two recovery stretches showed 4 rows and "+5 muuta"
+    // with three lifts left (hunt, 2026-10-26): the line counts lifts only.
+    name: 'run preview: "+N muuta" counts the lifts left out, never the stretches',
+    run() {
+      const items = [...Array(7)]
+        .map((_, i) => ({ phase: 'work', status: i === 0 ? 'current' : 'upcoming' }))
+        .concat([{ phase: 'cooldown', status: 'upcoming' }, { phase: 'cooldown', status: 'upcoming' }]);
+      const fit = fitRunPreview({ count: items.length, currentIndex: 0, availableHeight: HEAD + 5 * ROW, headHeight: HEAD, rowHeight: ROW });
+      assert.deepEqual(fit, { start: 0, end: 4, hidden: 5 });
+      assert.equal(hiddenWorkCount(items, fit.end), 3);
+      // Only stretches left out: no line at all.
+      assert.equal(hiddenWorkCount(items, 7), 0);
+      assert.equal(hiddenWorkCount([{ phase: 'warmup' }, { phase: 'work' }], 0), 1);
+      assert.equal(hiddenWorkCount([], 3), 0);
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      assert.match(player, /hiddenWorkCount\(walkRunItems, walkRunFit\.end\)/);
+      assert.match(player, /\{walkHiddenLifts > 0 \? \([\s\S]{0,200}'guided\.walk\.contentMore', \{ count: walkHiddenLifts \}/);
+      assert.doesNotMatch(player, /count: walkRunFit\.hidden/);
     },
   },
 ];

@@ -87,7 +87,7 @@ function formatTopLift(session: HistorySessionViewModel, unitPreference: UnitPre
   if (!session.topLiftName || session.topLiftWeightKg === null) {
     return null;
   }
-  const name = exerciseNameLabel(language, formatLiftDisplayLabel(session.topLiftName));
+  const name = exerciseNameLabel(language, formatLiftDisplayLabel(session.topLiftName, language));
   return `${name} ${formatWeight(session.topLiftWeightKg, unitPreference)}`;
 }
 
@@ -512,7 +512,7 @@ export function HistoryScreen({
                     <View style={styles.liftCopy}>
                       <View style={styles.liftNameRow}>
                         <Text style={styles.liftName} numberOfLines={1}>
-                          {exerciseNameLabel(language, formatLiftDisplayLabel(log.exerciseNameSnapshot))}
+                          {exerciseNameLabel(language, formatLiftDisplayLabel(log.exerciseNameSnapshot, language))}
                         </Text>
                         {/* Inverted: a chip that is on for nearly every row says
                             nothing, and being on for every row is exactly what
@@ -527,7 +527,7 @@ export function HistoryScreen({
                       {log.swappedFrom ? (
                         <Text style={styles.liftMeta}>
                           {t(language, 'history.swappedFrom', {
-                            name: exerciseNameLabel(language, formatLiftDisplayLabel(log.swappedFrom)),
+                            name: exerciseNameLabel(language, formatLiftDisplayLabel(log.swappedFrom, language)),
                           })}
                         </Text>
                       ) : null}

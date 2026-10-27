@@ -167,7 +167,7 @@ import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
 import { AddExerciseSheet } from '../components/AddExerciseSheet';
 import { guidedClockHeld } from '../lib/guidedClockHold';
 import { sheetScrollMaxHeight } from '../lib/sheetScrollBound';
-import { fitRunPreview, isLastWorkItem } from '../lib/guidedRunPreview';
+import { fitRunPreview, hiddenWorkCount, isLastWorkItem } from '../lib/guidedRunPreview';
 import { ExercisePickerEntry, ExercisePickerSheet, SheetEquipmentOption } from '../components/AddExerciseSheet';
 import { BodyPartFilter } from '../lib/exerciseBrowseFilter';
 import { ExercisePickerFilters } from '../lib/exercisePicker';
@@ -2500,6 +2500,8 @@ function GuidedPlayer({
           rowHeight: WALK_RUN_ROW,
         })
       : null;
+  // "+N muuta" counts the lifts left out, not the stretches (lib/guidedRunPreview).
+  const walkHiddenLifts = walkRunFit && !walkLastLift ? hiddenWorkCount(walkRunItems, walkRunFit.end) : 0;
 
   const completedSetCount = exercises.reduce(
     (sum, exercise) => sum + exercise.sets.filter((set) => set.status === 'completed').length,
@@ -4267,10 +4269,10 @@ function GuidedPlayer({
                         </View>
                       );
                     })}
-                    {walkRunFit.hidden > 0 ? (
+                    {walkHiddenLifts > 0 ? (
                       <View style={styles.walkRunRow}>
                         <Text style={styles.walkRunMore}>
-                          {t(language, 'guided.walk.contentMore', { count: walkRunFit.hidden })}
+                          {t(language, 'guided.walk.contentMore', { count: walkHiddenLifts })}
                         </Text>
                       </View>
                     ) : null}

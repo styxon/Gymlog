@@ -1696,7 +1696,7 @@ export function ProgressScreen({
                 return (
                   <ListRow
                     key={lift.exerciseName}
-                    title={formatLiftDisplayLabel(exerciseNameLabel(language, lift.exerciseName))}
+                    title={formatLiftDisplayLabel(exerciseNameLabel(language, lift.exerciseName), language)}
                     meta={t(language, 'progress.noTargetYet')}
                     right={<Text style={styles.trackedSetTarget}>{t(language, 'programs.goals.add')}</Text>}
                     onPress={() => onSetTarget?.(lift.exerciseName)}
@@ -1716,7 +1716,7 @@ export function ProgressScreen({
                       chart in place, so the curve stays one tap away without
                       going through the sheet. */}
                   <ListRow
-                    title={formatLiftDisplayLabel(exerciseNameLabel(language, summary.name))}
+                    title={formatLiftDisplayLabel(exerciseNameLabel(language, summary.name), language)}
                     accessory={<SignalBadge summary={summary} language={language} />}
                     meta={`${trackedLiftAmount(summary.latestWeight, summary.latestReps, summary.latestLog, unitPreference, language)}${
                       summary.latestLog ? ` · ${formatListDate(summary.latestLog.performedAt, language)}` : ''
@@ -1730,7 +1730,7 @@ export function ProgressScreen({
                           accessibilityLabel={t(
                             language,
                             isOpen ? 'home.a11y.collapseSection' : 'home.a11y.expandSection',
-                            { title: formatLiftDisplayLabel(exerciseNameLabel(language, summary.name)) },
+                            { title: formatLiftDisplayLabel(exerciseNameLabel(language, summary.name), language) },
                           )}
                           accessibilityState={{ expanded: isOpen }}
                           onPress={() => setExpandedKey(isOpen ? null : summary.key)}

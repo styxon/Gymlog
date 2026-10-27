@@ -243,8 +243,8 @@ module.exports = [
       // The fallback stays for what is nothing: blank, or only a copy suffix.
       assert.equal(formatWorkoutDisplayLabel('   '), 'Custom workout');
       assert.equal(formatWorkoutDisplayLabel('(copy)'), 'Custom workout');
-      // And a one-character lift name is still a broken import.
-      assert.equal(formatLiftDisplayLabel('t'), 'Unnamed lift');
+      // A one-character lift name is shown as typed too (owner, 2026-10-27).
+      assert.equal(formatLiftDisplayLabel('t', 'fi'), 't');
     },
   },
   {

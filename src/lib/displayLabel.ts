@@ -90,8 +90,13 @@ export function formatWorkoutDisplayLabel(value: string | null | undefined, fall
   return formatDisplayLabel(value, { fallback, minimumCoreLength: 1 });
 }
 
-export function formatLiftDisplayLabel(value: string | null | undefined, fallback = 'Unnamed lift') {
-  return formatDisplayLabel(value, { fallback });
+/**
+ * A lift's name, shown as typed when it is anything at all: "X" was "Unnamed
+ * lift", in English on a Finnish phone, because of a two-character floor
+ * (owner, 2026-10-27). A blank one reads "Nimetön liike" / "Unnamed exercise".
+ */
+export function formatLiftDisplayLabel(value: string | null | undefined, language: AppLanguage) {
+  return formatDisplayLabel(value, { fallback: t(language, 'common.unnamedExercise'), minimumCoreLength: 1 });
 }
 
 /**

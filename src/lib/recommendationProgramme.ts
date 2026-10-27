@@ -744,7 +744,7 @@ function buildPlanReadyWeeklySchedule(selection: FirstRunSetupSelection, program
       weekdayLabel: rhythm[index] ?? `Day ${index + 1}`,
       name: session.name,
       meta: `${sessionMinutes[index] || template.estimatedSessionDuration} min - ${pluralize(session.exercises.length, 'exercise')}`,
-      keyLifts: session.exercises.slice(0, 2).map((exercise) => formatLiftDisplayLabel(exercise.exerciseName)),
+      keyLifts: session.exercises.slice(0, 2).map((exercise) => formatLiftDisplayLabel(exercise.exerciseName, 'en')),
       source: 'template',
       note: null,
     }));

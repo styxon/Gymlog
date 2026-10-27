@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { AccessibilityInfo, Animated, Dimensions, Easing, Pressable, StyleSheet, View } from 'react-native';
 import { Text } from '../components/AppText';
 import { AnimatedText } from '../components/AnimatedText';
@@ -12,7 +12,7 @@ import { StatusCap } from '../components/StatusCap';
 const HERO_GRADIENT_WIDTH = Dimensions.get('window').width;
 const HERO_GRADIENT_HEIGHT = 360;
 
-import { formatPercent, formatShortDate, formatTime, formatWeight, removeTrailingZeros } from '../lib/format';
+import { durationMinutesParts, formatPercent, formatShortDate, formatTime, formatWeight, removeTrailingZeros } from '../lib/format';
 import { bodyPartLabel, t } from '../lib/i18n';
 import { prMoreRepsLabel } from '../lib/repCountCopy';
 import { Movement, WhatMovedRow } from '../lib/sessionMovement';
@@ -641,8 +641,15 @@ export function WorkoutCompletionScreen({
           <Animated.View style={[styles.statsCard, rise(3)]}>
             <View style={styles.statCell}>
               <Text style={styles.statValue} numberOfLines={1} adjustsFontSizeToFit>
-                {durationMinutes}
-                <Text style={styles.statUnit}> min</Text>
+                {/* "1 h 15 min" as History writes it, each number large and
+                    its unit small (lib/format durationMinutesParts). */}
+                {durationMinutesParts(durationMinutes).map((part, index) => (
+                  <Fragment key={part.unit}>
+                    {index > 0 ? ' ' : ''}
+                    {part.value}
+                    <Text style={styles.statUnit}> {part.unit}</Text>
+                  </Fragment>
+                ))}
               </Text>
               <Text style={styles.statLabel}>{t(language, 'complete.stat.duration')}</Text>
             </View>
