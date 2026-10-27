@@ -132,7 +132,7 @@ function buildExerciseState(
   language: AppLanguage,
 ): FreestyleExerciseState {
   const defaults = getExerciseTemplateDefaults(item, defaultRestSeconds);
-  const displayName = exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'));
+  const displayName = exerciseNameLabel(language, formatLiftDisplayLabel(item.name, language));
 
   return {
     localKey: createId('draft'),
@@ -1157,14 +1157,14 @@ export function EmptyWorkoutScreen({
               <View style={styles.quickList}>
                 {quickItems.map((item) => (
                   <Pressable key={item.id} onPress={() => addExercises([item])} style={styles.quickRow}>
-                    <Tile initials={exerciseInitials(exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise')))} size={44} />
+                    <Tile initials={exerciseInitials(exerciseNameLabel(language, formatLiftDisplayLabel(item.name, language)))} size={44} />
                     <View style={styles.quickRowCopy}>
                       <Text
                         numberOfLines={2}
                         style={styles.quickRowName}
-                        accessibilityLabel={exerciseNameLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
+                        accessibilityLabel={exerciseNameLabel(language, formatLiftDisplayLabel(item.name, language))}
                       >
-                        {exerciseListLabel(language, formatLiftDisplayLabel(item.name, 'Exercise'))}
+                        {exerciseListLabel(language, formatLiftDisplayLabel(item.name, language))}
                       </Text>
                       <Text numberOfLines={1} style={styles.quickRowMeta}>
                         {exercisePickerLabel(item.bodyPart, language)}

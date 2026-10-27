@@ -279,13 +279,29 @@ export function formatCompactVolume(totalKg: number, _unitPreference: UnitPrefer
 }
 
 export function formatDurationMinutes(totalMinutes: number) {
+  return durationMinutesParts(totalMinutes)
+    .map((part) => `${part.value} ${part.unit}`)
+    .join(' ');
+}
+
+/**
+ * formatDurationMinutes in pieces, for a stat that draws the number large and
+ * the unit small: 75 is [1 h][15 min], 57 is [57 min]. The finish screen
+ * printed "75 min" where History says "1 h 15 min" (hunt, 2026-10-26).
+ */
+export function durationMinutesParts(totalMinutes: number): Array<{ value: number; unit: 'h' | 'min' }> {
   if (totalMinutes < 60) {
-    return `${totalMinutes} min`;
+    return [{ value: totalMinutes, unit: 'min' }];
   }
 
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return minutes ? `${hours} h ${minutes} min` : `${hours} h`;
+  return minutes
+    ? [
+        { value: hours, unit: 'h' },
+        { value: minutes, unit: 'min' },
+      ]
+    : [{ value: hours, unit: 'h' }];
 }
 
 export function formatRepRange(repMin: number, repMax: number) {

@@ -11,7 +11,7 @@
 import { getComparableLogSets, getWorkedLogSets, logRecordedWork } from './exerciseLog';
 import { t } from './i18n';
 import { isDoseLog } from './holdExercises';
-import { heaviestOfSets } from './personalRecords';
+import { WeightedSet, beatsBest, heaviestOfSets } from './personalRecords';
 
 export interface ExerciseLogWithSession extends ExerciseLog {
   performedAt: string;
@@ -47,6 +47,15 @@ export interface ExerciseProgressSummary {
   latestValue: number | null;
   previousValue: number | null;
   bestValueBefore: number | null;
+  /**
+   * A loaded lift's top sets, for the "new best" chip: the latest session's,
+   * and the best of every session before it. Read with `beatsBest`, the rule
+   * Records and the finish screen use, so 80 × 8 after 80 × 5 is a new best
+   * here too (hunt, 2026-10-26). Null for a lift judged in reps; absent on a
+   * summary built by hand, which falls back to the numbers above.
+   */
+  latestTopSet?: WeightedSet | null;
+  bestTopSetBefore?: WeightedSet | null;
 }
 
 export interface BodyweightProgressSummary {
@@ -135,6 +144,19 @@ function getTopComparableWeight(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' |
   }
 
   return heaviestOfSets(sets)?.weight ?? 0;
+}
+
+function topSetOf(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>): WeightedSet | null {
+  const top = heaviestOfSets(getComparableLogSets(log));
+  return top ? { weight: top.weight, reps: top.reps } : null;
+}
+
+/** The best top set of the logs, by the Records rule (beatsBest). */
+function bestTopSetOf(logs: readonly Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>[]): WeightedSet | null {
+  return logs.reduce<WeightedSet | null>((best, log) => {
+    const top = topSetOf(log);
+    return top && beatsBest(top, best) ? top : best;
+  }, null);
 }
 
 function getComparableReps(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>) {
@@ -292,6 +314,8 @@ function finalizeExerciseSummary(
       }
       return best === null || value > best ? value : best;
     }, null),
+    latestTopSet: !byReps && latestLog ? topSetOf(latestLog) : null,
+    bestTopSetBefore: byReps ? null : bestTopSetOf(sortedLogs.slice(1)),
   };
 }
 
@@ -595,9 +619,10 @@ function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgr
   const latestTime = trend.latestLog ? new Date(trend.latestLog.performedAt).getTime() : null;
   // "Before" means before: a lighter set logged AFTER the latest session
   // must not make the latest look like a new best.
-  const bestValueBefore = everything.logs
-    .filter((log) => log.id !== latestId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime))
-    .reduce<number | null>((best, log) => {
+  const logsBefore = everything.logs.filter(
+    (log) => log.id !== latestId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime),
+  );
+  const bestValueBefore = logsBefore.reduce<number | null>((best, log) => {
       const value = byReps ? repsPerSetValue(log) : getTopComparableWeight(log);
       if (value === null) {
         return best;
@@ -612,6 +637,7 @@ function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgr
     bestWeight: byReps ? trend.bestWeight : everything.bestWeight,
     bestReps: everything.bestReps,
     bestValueBefore,
+    bestTopSetBefore: byReps ? null : bestTopSetOf(logsBefore),
   };
 }
 
@@ -639,12 +665,19 @@ export function getExerciseProgressSignal(
    * session that merely repeats it. Combined with an unloaded lift reading 0
    * kg forever, that made the chip permanent, and a chip that is always on
    * says nothing. Mark the exception, not the normal.
+   *
+   * A loaded lift is beaten by the Records rule (beatsBest): heavier, or the
+   * same weight for more reps. Compared on kilos alone, 80 × 8 after 80 × 5
+   * read "Rakentuu" while Records and the finish screen called it a record
+   * (hunt, 2026-10-26).
    */
-  if (
-    summary.latestValue !== null &&
-    summary.bestValueBefore !== null &&
-    summary.latestValue - summary.bestValueBefore > 0.0001
-  ) {
+  const beaten =
+    summary.latestTopSet !== undefined && summary.bestTopSetBefore !== undefined && summary.latestTopSet !== null
+      ? summary.bestTopSetBefore !== null && beatsBest(summary.latestTopSet, summary.bestTopSetBefore)
+      : summary.latestValue !== null &&
+        summary.bestValueBefore !== null &&
+        summary.latestValue - summary.bestValueBefore > 0.0001;
+  if (beaten) {
     return {
       kind: 'new_best',
       label: t(language, 'signal.newBest'),

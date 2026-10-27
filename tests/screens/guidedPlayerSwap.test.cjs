@@ -947,8 +947,9 @@ module.exports = [
       assert.match(source, /const walkRunItems = step\.type === 'position' \? buildGuidedRunSheet\(stepPlan, stepIndex\) : \[\];/);
       assert.match(walk, /runPlanLine\(item\.members\[0\]\?\.slotId \?\? null\)/);
       assert.match(walk, /t\(language, 'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
-      // What did not fit is counted, and the whole sheet is one tap away.
-      assert.match(walk, /t\(language, 'guided\.walk\.contentMore', \{ count: walkRunFit\.hidden \}\)/);
+      // The lifts that did not fit are counted (not the stretches), and the
+      // whole sheet is one tap away.
+      assert.match(walk, /t\(language, 'guided\.walk\.contentMore', \{ count: walkHiddenLifts \}\)/);
       assert.match(walk, /onPress=\{\(\) => setRunSheetOpen\(true\)\}/);
       assert.equal((i18nSource.match(/'guided\.walk\.contentMore': '\+\{count\} [^']+'/g) ?? []).length, 2);
     },

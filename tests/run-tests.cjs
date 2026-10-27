@@ -314,6 +314,7 @@ const suites = [
   ...require('./lib/loggedSetPlan.test.cjs'),
   ...require('./lib/workoutCompletionCards.test.cjs'),
   ...require('./lib/recordDefinitionAgreement.test.cjs'),
+  ...require('./screens/ownerDecisions20261027.test.cjs'),
   ...require('./lib/deadLibModules.test.cjs'),
   ...require('./lib/sessionFeel.test.cjs'),
   ...require('./lib/exerciseNameBook.test.cjs'),

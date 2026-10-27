@@ -21,9 +21,15 @@ module.exports = [
     },
   },
   {
-    name: 'display labels fall back for broken one-character lift names',
+    // Owner, 2026-10-27: a one-character lift name is a name, shown as typed;
+    // a blank one falls back in the reader's language.
+    name: 'display labels show a one-character lift name as typed, a blank one translated',
     run() {
-      assert.equal(formatLiftDisplayLabel('t'), 'Unnamed lift');
+      assert.equal(formatLiftDisplayLabel('t', 'fi'), 't');
+      assert.equal(formatLiftDisplayLabel('  X ', 'en'), 'X');
+      assert.equal(formatLiftDisplayLabel('', 'fi'), 'Nimetön liike');
+      assert.equal(formatLiftDisplayLabel('   ', 'en'), 'Unnamed exercise');
+      assert.equal(formatLiftDisplayLabel(null, 'fi'), 'Nimetön liike');
     },
   },
   {

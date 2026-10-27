@@ -740,6 +740,7 @@ const EN = {
   'prog.custom.detail.openSession': 'Open session',
   'common.copySuffix': 'copy',
   'common.customWorkout': 'Custom workout',
+  'common.unnamedExercise': 'Unnamed exercise',
   'prog.custom.sub.fourPlus': 'A fuller weekly split with room to rotate focus.',
   'prog.custom.sub.three': 'A balanced weekly split you can repeat cleanly.',
 
@@ -4318,6 +4319,7 @@ const FI: Record<I18nKey, string> = {
   'prog.custom.detail.openSession': 'Avaa treeni',
   'common.copySuffix': 'kopio',
   'common.customWorkout': 'Oma treeni',
+  'common.unnamedExercise': 'Nimetön liike',
   'prog.custom.sub.fourPlus': 'Täydempi viikkojako, jossa on tilaa vaihdella painotusta.',
   'prog.custom.sub.three': 'Tasapainoinen viikkojako, jonka voi toistaa siististi.',
 
