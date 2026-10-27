@@ -19,12 +19,8 @@ import {
   refreshHomeWidget,
   requestPinHomeWidget,
 } from './modules/home-widget';
-import { createTourTargetRegistry } from './src/features/tour/tourTargets';
-import {
-  TourBarStop,
-  TourTargetId,
-  WorkoutTourStep,
-} from './src/lib/firstRunTour';
+import { useShellSheets } from './src/app/useShellSheets';
+import { useTourState } from './src/app/useTourState';
 import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { useReviewProAccount } from './src/app/useReviewProAccount';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
@@ -35,7 +31,6 @@ import {
 } from './src/lib/activeProgramSet';
 import {
   programCapFullMessage,
-  RunningCapRefusal,
   runningCapRefusal,
   runningCapRefusalMessage,
 } from './src/lib/programCapNotice';
@@ -334,9 +329,6 @@ function VinhaApp() {
     setFinishSaveState,
   } = useFinishState();
   const [cardioSaving, setCardioSaving] = useState(false);
-  // Settings' "Import plan (CSV)" opens the same sheet the Programs tab uses,
-  // straight into its paste view. One importer, two doors.
-  const [settingsImportVisible, setSettingsImportVisible] = useState(false);
   // null = still asking Android, or the device cannot pin widgets at all.
   const [homeWidgetState, setHomeWidgetState] = useState<{ supported: boolean; added: boolean } | null>(
     null,
@@ -345,22 +337,15 @@ function VinhaApp() {
   // handed over. It is skipped entirely until the app is ready, so it never
   // becomes the thing hiding a slow start.
   const [brandSplashDone, setBrandSplashDone] = useState(false);
-  // The first-run tour's wiring: where its targets are, and which bar item
-  // its sweep is resting on. The registry is one object for the app's life.
-  const tourRegistry = useRef(createTourTargetRegistry()).current;
-  const [tourSweep, setTourSweep] = useState<TourBarStop | null>(null);
-  /**
-   * Which section the tour is pointing at. Home reads it to shut its folds
-   * before the beat that rings one — the layer cannot reach into a screen's
-   * state, and should not, so it says where it is and the screen decides.
-   */
-  const [tourFocus, setTourFocus] = useState<TourTargetId | null>(null);
-  /**
-   * The guided player's plain set or rest, as the player reports it, for the
-   * workout tour. The route says only "the player"; which step it is on is the
-   * player's own state. Null on every other screen and every other step.
-   */
-  const [workoutTourStep, setWorkoutTourStep] = useState<WorkoutTourStep | null>(null);
+  const {
+    tourRegistry,
+    tourSweep,
+    setTourSweep,
+    tourFocus,
+    setTourFocus,
+    workoutTourStep,
+    setWorkoutTourStep,
+  } = useTourState();
 
   useDeviceSwitches({ hydrated, preferences });
 
@@ -520,21 +505,16 @@ function VinhaApp() {
    * question of a cold start is answered without it rather than delayed by it.
    */
   const [coachAdviceMemory, setCoachAdviceMemory] = useState<CoachAdviceMemoryEntry[]>([]);
-  // Shown when a create is blocked, from wherever it was attempted. Not a
-  // route: the user was in the middle of something, and a screen change
-  // would lose the thing they were doing to a wall they may dismiss.
-  const [programLimitVisible, setProgramLimitVisible] = useState(false);
-  // The running-programme wall on the free tier. The numbers outlive `visible`
-  // so the title does not read 0/0 while the sheet fades out.
-  const [runningCapSheet, setRunningCapSheet] = useState<{ visible: boolean } & RunningCapRefusal>({
-    visible: false,
-    used: 0,
-    cap: 0,
-    replacingStop: null,
-  });
-  // Whether the update dialog is up. Home's sign-in dialog waits for it, with
-  // the walls above: iOS presents one modal at a time (iOS hunt 2026-10-17).
-  const [appUpdateShown, setAppUpdateShown] = useState(false);
+  const {
+    settingsImportVisible,
+    setSettingsImportVisible,
+    programLimitVisible,
+    setProgramLimitVisible,
+    runningCapSheet,
+    setRunningCapSheet,
+    appUpdateShown,
+    setAppUpdateShown,
+  } = useShellSheets();
   useSetupWeightSeed({ hydrated, preferences, database, addBodyweightEntry, updatePreferences });
 
   useRouteBack({
