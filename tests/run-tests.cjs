@@ -670,6 +670,7 @@ const suites = [
   ...require('./lib/homeCalendarPaging.test.cjs'),
   ...require('./lib/drillMedia.test.cjs'),
   ...require('./lib/calendarDayCounts.test.cjs'),
+  ...require('./lib/calendarDays.test.cjs'),
   ...require('./lib/setupSeed.test.cjs'),
   ...require('./screens/onboardingEntryAndSaves.test.cjs'),
   ...require('./screens/onePressOneWrite.test.cjs'),

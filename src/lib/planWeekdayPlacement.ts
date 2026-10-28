@@ -14,6 +14,7 @@
  * adoption does (rotateLabelsForNextSession).
  */
 
+import { startOfLocalDay } from './calendarDays';
 import { livePlanEntries, ResolvablePlanEntry } from './planResolvableEntries';
 import { planTrainedOnDay, PlanRotationEntry, PlanRotationSession, resolveNextPlanEntryIndex } from './planRotation';
 import { rotateLabelsForNextSession } from './trainingWeekSync';
@@ -50,7 +51,7 @@ export function placeWeekdaysOnPlan<E extends PlacedPlanEntry>(
     labels,
     resolveNextPlanEntryIndex(ordered, completed),
     now,
-    planTrainedOnDay(ordered, completed, new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime()),
+    planTrainedOnDay(ordered, completed, startOfLocalDay(now)),
   );
   const labelByEntryId = new Map(ordered.map((entry, index) => [entry.id, placed[index]] as const));
   return allOrdered.map((entry) => {

@@ -26,7 +26,7 @@
  * marks that nobody could date, and the one number it anchored on ("2/3") said
  * less than a month of green does.
  */
-import { localDateKey } from './completedSessions';
+import { localDateKey, startOfLocalDay } from './calendarDays';
 import { formatCompactVolume, formatDurationMinutes } from './format';
 import { getHomeDayView, getHomeMonthCalendar, getMondayFirstWeekdayLabels, HomeDaySessionSummary } from './homeCalendar';
 import { localizeSessionName } from './sessionNameLabel';
@@ -250,10 +250,6 @@ interface HomeWidgetInput {
   todaySessionId?: string | null;
 }
 
-function toDayStartMs(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
-
 /**
  * "2026-08-20", in the device's own timezone.
  *
@@ -347,7 +343,7 @@ export function findHomeWidgetNextSession(input: {
   }
 
   const now = new Date(nowMs);
-  const doneDays = new Set((input.completedWorkoutDayStarts ?? []).map((ms) => toDayStartMs(new Date(ms))));
+  const doneDays = new Set((input.completedWorkoutDayStarts ?? []).map((ms) => startOfLocalDay(new Date(ms))));
   const labels = getMondayFirstWeekdayLabels();
   // The forecast speaks for this plan alone; the logged days are every
   // programme's and freestyle's too. Skipping today on a freestyle workout
@@ -356,7 +352,7 @@ export function findHomeWidgetNextSession(input: {
   // is no forecast to ask.
   const todayDone = input.sessionForecast
     ? input.sessionForecast.trainedToday
-    : doneDays.has(toDayStartMs(now));
+    : doneDays.has(startOfLocalDay(now));
 
   for (let offset = 0; offset <= LOOKAHEAD_DAYS; offset += 1) {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + offset);
@@ -370,7 +366,7 @@ export function findHomeWidgetNextSession(input: {
 
     const view = getHomeDayView(
       {
-        dayStart: toDayStartMs(date),
+        dayStart: startOfLocalDay(date),
         weekdayIndex,
         weekdayLabel: labels[weekdayIndex] ?? '',
         dateLabel: '',
@@ -409,7 +405,7 @@ function sessionForDate(
   const weekdayIndex = weekdayIndexOf(date);
   const view = getHomeDayView(
     {
-      dayStart: toDayStartMs(date),
+      dayStart: startOfLocalDay(date),
       weekdayIndex,
       weekdayLabel: getMondayFirstWeekdayLabels()[weekdayIndex] ?? '',
       dateLabel: '',
@@ -523,12 +519,12 @@ export function homeWidgetMonthKey(date: Date): string {
 export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayload {
   const { nowMs, language, theme, schedule, sessions } = input;
   const now = new Date(nowMs);
-  const todayStart = toDayStartMs(now);
-  const doneDays = new Set((input.completedDayStarts ?? []).map((ms) => toDayStartMs(new Date(ms))));
+  const todayStart = startOfLocalDay(now);
+  const doneDays = new Set((input.completedDayStarts ?? []).map((ms) => startOfLocalDay(new Date(ms))));
   // Workouts only, like the next-session lookup: a morning run marks the
   // calendar but does not finish what was planned for the day.
   const workoutDoneDays = new Set(
-    (input.completedWorkoutDayStarts ?? []).map((ms) => toDayStartMs(new Date(ms))),
+    (input.completedWorkoutDayStarts ?? []).map((ms) => startOfLocalDay(new Date(ms))),
   );
 
   // A rhythm is only real when there is something to do on those days. Without
@@ -659,7 +655,7 @@ export function buildHomeWidgetPayload(input: HomeWidgetInput): HomeWidgetPayloa
         session !== null &&
         (offset === 0 && input.sessionForecast
           ? input.sessionForecast.trainedToday && picked === null
-          : workoutDoneDays.has(toDayStartMs(date)));
+          : workoutDoneDays.has(startOfLocalDay(date)));
       return {
         kind: done ? ('done' as const) : session ? ('work' as const) : ('rest' as const),
         dateKey: toDateKey(date),

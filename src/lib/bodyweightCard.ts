@@ -1,4 +1,5 @@
 import { AppLanguage, BodyweightEntry } from '../types/models';
+import { startOfLocalDay } from './calendarDays';
 import { calendarDaysBetween } from './completedSessions';
 import { formatDayMonthNumeric } from './format';
 import { I18nKey } from './i18n';
@@ -24,11 +25,7 @@ interface BodyweightCardStats {
 
 /** Local midnight for an ISO timestamp — the day the reader stood on the scale. */
 function dayStartOf(recordedAt: string): number {
-  const date = new Date(recordedAt);
-  if (Number.isNaN(date.getTime())) {
-    return Number.NaN;
-  }
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  return startOfLocalDay(new Date(recordedAt));
 }
 
 /**
@@ -319,7 +316,7 @@ export function buildWeightWindow(
   days = 7,
 ): WeightWindowDay[] {
   const now = new Date(nowMs);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const today = startOfLocalDay(now);
   const byDay = new Map(collapseToLatestPerDay(entries).map((entry) => [dayStartOf(entry.recordedAt), entry]));
 
   return Array.from({ length: days }, (_, index) => {
@@ -464,7 +461,7 @@ export function buildValueWindow(
   language: AppLanguage,
 ): WeightWindowDay[] {
   const now = new Date(nowMs);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  const today = startOfLocalDay(now);
   // The window always ends today. It briefly ended later — anchored at the
   // first entry and running forward when the history was shorter than the
   // range — which drew days that have not happened yet.

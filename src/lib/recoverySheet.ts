@@ -1,4 +1,5 @@
 import type { WorkoutRuntimeTemplate } from '../features/workout/workoutTypes';
+import { dayStartPlus, startOfLocalDay } from './calendarDays';
 import type { FatigueResult } from './fatigueModel';
 import { applyDecimalSeparator, groupThousands } from './format';
 import { t } from './i18n';
@@ -104,14 +105,7 @@ const WEEKDAY_KEYS = [
   'setup.day.sat',
 ] as const;
 
-function dayStartOf(date: Date): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
-
-/** Local midnight `offset` calendar days from `date` — not `+ offset * DAY_MS`. */
-export function dayStartPlus(date: Date, offset: number): number {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + offset).getTime();
-}
+export { dayStartPlus };
 
 /** Whole kilograms, thousands grouped as everywhere else: "18 400 kg" / "18,400 kg". */
 export function formatLoadKg(kg: number): string {
@@ -128,7 +122,7 @@ export function recoveryWeek(sessionDates: ReadonlyArray<string>, now: Date, lan
     sessionDates
       .map((iso) => new Date(iso))
       .filter((date) => Number.isFinite(date.getTime()))
-      .map(dayStartOf),
+      .map(startOfLocalDay),
   );
   return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (6 - index));
@@ -307,7 +301,7 @@ export function isLightenPending(request: LightNextSession | null | undefined, n
   if (!Number.isFinite(at.getTime())) {
     return false;
   }
-  return dayStartOf(at) > dayStartPlus(now, -LIGHT_SESSION_DAYS) && at.getTime() <= now.getTime() + 60_000;
+  return startOfLocalDay(at) > dayStartPlus(now, -LIGHT_SESSION_DAYS) && at.getTime() <= now.getTime() + 60_000;
 }
 
 /**

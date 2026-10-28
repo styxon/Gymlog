@@ -16,7 +16,7 @@ const assert = require('node:assert/strict');
  */
 // The table #408 added. The first 245 entries are a separate file with their own
 // review; this suite guards the 708 that came from the public database.
-const { EXERCISE_INSTRUCTIONS_FI_MORE: TABLE } = require('../../.test-dist/lib/exerciseInstructionsFiMore.js');
+const { EXERCISE_INSTRUCTIONS_FI_MORE: TABLE } = require('../../.test-dist/data/exerciseInstructionsFiMore.js');
 
 function allSteps() {
   const rows = [];

@@ -1,6 +1,6 @@
 import { CardioSession, ExerciseLog, WorkoutSession } from '../types/models';
 import { getCardioActivity } from './cardio';
-import { localDateKey } from './completedSessions';
+import { localDateKey } from './calendarDays';
 import { guardCsvFormula } from './csvRecords';
 import { isMinutesLog } from './exerciseLog';
 
@@ -48,10 +48,6 @@ function csvField(value: string | number | null | undefined): string {
     return text;
   }
   return `"${text.replace(/"/g, '""')}"`;
-}
-
-function isoDate(value: string): string {
-  return localDateKey(value);
 }
 
 export interface WorkoutLogCsvInput {
@@ -159,7 +155,7 @@ export function buildWorkoutLogCsv({ sessions, logs, cardio = [] }: WorkoutLogCs
       for (const row of logRows(log)) {
         rows.push(
           [
-            csvField(isoDate(session.performedAt)),
+            csvField(localDateKey(session.performedAt)),
             csvField(session.workoutNameSnapshot),
             csvField(log.exerciseNameSnapshot),
             csvField(row.set),
@@ -202,7 +198,7 @@ function buildCardioRows(cardio: NonNullable<WorkoutLogCsvInput['cardio']>): str
     .sort((left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime())
     .map((session) =>
       [
-        csvField(isoDate(session.performedAt)),
+        csvField(localDateKey(session.performedAt)),
         csvField(getCardioActivity(session.activityType).name),
         csvField(Math.max(0, Math.round(session.durationSec))),
         csvField(session.distanceKm ?? ''),
