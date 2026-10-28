@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   getOverviewDurationTicks,
   getOverviewVolumeTicks,
-} = require('../../.test-dist/lib/progressChartTicks.js');
+} = require('../../src/lib/progressChartTicks');
 
 /**
  * The Progress tab's y-axes.

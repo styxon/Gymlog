@@ -4,9 +4,9 @@ const {
   buildUpcomingMilestones,
   MAX_PROFILE_MILESTONES,
   VOLUME_RUNGS_LB,
-} = require('../../.test-dist/lib/profileMilestones.js');
-const { formatMilestoneVolume, milestoneCardRows } = require('../../.test-dist/lib/profileMilestoneRows.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+} = require('../../src/lib/profileMilestones');
+const { formatMilestoneVolume, milestoneCardRows } = require('../../src/lib/profileMilestoneRows');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 const lifetime = (overrides = {}) => ({
   sessionCount: 4,

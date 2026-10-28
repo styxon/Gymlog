@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { canContinueLocation, firstMissingLocation } = require('../../.test-dist/lib/locationStepRules.js');
+const { canContinueLocation, firstMissingLocation } = require('../../src/lib/locationStepRules');
 
 module.exports = [
   {

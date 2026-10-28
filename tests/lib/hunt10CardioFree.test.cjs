@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..', '..');
-const dist = (...parts) => require(path.join(root, '.test-dist', ...parts));
+const dist = (...parts) => require(path.join(root, 'src', ...parts));
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8').replace(/\r\n/g, '\n');
 const HOUR = 60 * 60 * 1000;
 

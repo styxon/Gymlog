@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   getPopularExerciseLibraryItems,
   getPopularExerciseLibraryOrder,
-} = require('../../.test-dist/lib/exerciseSuggestions.js');
+} = require('../../src/lib/exerciseSuggestions');
 
 const library = [
   { id: 'axle_deadlift', name: 'Axle Deadlift', category: 'compound', bodyPart: 'back', equipment: 'barbell' },
@@ -51,7 +51,7 @@ module.exports = [
       // Front Lat Pulldown (Kapea ylätalja) and "Overhead Press" picked
       // Alternating Cable Shoulder Press, because a keyword match takes the
       // library's alphabet. The plain English label names the lift.
-      const real = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+      const real = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
       const names = getPopularExerciseLibraryItems(real).map((item) => item.name);
       assert.ok(names.includes('Wide-Grip Lat Pulldown'), names.join(', '));
       assert.ok(names.includes('Standing Military Press'), names.join(', '));
@@ -63,9 +63,9 @@ module.exports = [
   {
     name: 'a hold picked from the library opens in seconds a hold is held for, not a rep range (device walk 2026-10-05)',
     run() {
-      const { getExerciseTemplateDefaults } = require('../../.test-dist/lib/exerciseSuggestions.js');
-      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const { getExerciseTemplateDefaults } = require('../../src/lib/exerciseSuggestions');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
 
       const plank = GENERATED_EXERCISE_LIBRARY.find((item) => item.name === 'Plank');
       assert.ok(plank, 'the library has a Plank');
@@ -113,10 +113,10 @@ module.exports = [
   {
     name: 'a cardio machine picked from the library opens at one 20-minute bout, not 1 × 8-12 (bug hunt 2026-10-07)',
     run() {
-      const { getExerciseTemplateDefaults } = require('../../.test-dist/lib/exerciseSuggestions.js');
-      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { isMinutesExerciseName, DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises.js');
+      const { getExerciseTemplateDefaults } = require('../../src/lib/exerciseSuggestions');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { isMinutesExerciseName, DEFAULT_MINUTES_PRESCRIPTION } = require('../../src/lib/minutesExercises');
 
       // Every library row the minutes list claims: Stairmaster, the rower, the
       // treadmills. Their defaults were the cardio category's 1 × 8-12, which

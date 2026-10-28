@@ -53,7 +53,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  */
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const dist = (relative) => require(path.join(DIST, relative));
 
 const SEQUENCES = Number(process.env.INV2_SEQUENCES) || 3000;

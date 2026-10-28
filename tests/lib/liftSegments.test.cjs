@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { splitExerciseByLift, liftBeforeSwap, liftOfSet } = require('../../.test-dist/lib/liftSegments.js');
+const { splitExerciseByLift, liftBeforeSwap, liftOfSet } = require('../../src/lib/liftSegments');
 
 /**
  * Which lift each set of a slot was (swap audit, 2026-09-21). The sets before

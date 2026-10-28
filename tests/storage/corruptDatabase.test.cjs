@@ -50,7 +50,7 @@ module.exports = [
       const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
       const fake = createFakeAsyncStorage();
       const database = loadAgainstFake(fake, (requireDist) => requireDist('storage/database.js'));
-      const { createEmptyDatabase } = require(path.join(__dirname, '..', '..', '.test-dist', 'data', 'seed.js'));
+      const { createEmptyDatabase } = require(path.join(__dirname, '..', '..', 'src', 'data', 'seed.js'));
 
       const preferences = {
         ...createEmptyDatabase('en').preferences,

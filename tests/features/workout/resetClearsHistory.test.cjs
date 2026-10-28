@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
 
 const root = path.join(__dirname, '..', '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8').replace(/\r\n/g, '\n');

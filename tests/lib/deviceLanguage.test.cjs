@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { resolveLanguageFromLocale } = require('../../.test-dist/lib/deviceLanguage.js');
+const { resolveLanguageFromLocale } = require('../../src/lib/deviceLanguage');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');
@@ -82,7 +82,7 @@ module.exports = [
      */
     name: 'createEmptyDatabase spends the language it was given',
     run() {
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       assert.equal(createEmptyDatabase('fi').preferences.appLanguage, 'fi');
       assert.equal(createEmptyDatabase('en').preferences.appLanguage, 'en');
       // No argument is the structural fallback fixtures rely on.

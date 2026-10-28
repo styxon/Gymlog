@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { getReadyProgramBlockWeeks } = require('../../.test-dist/lib/readyProgramDuration.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { getReadyProgramBlockWeeks } = require('../../src/lib/readyProgramDuration');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
 
 const {
   buildFirstRunRecommendationReasons,
@@ -9,15 +9,15 @@ const {
   buildFirstRunPromptSuggestions,
   resolveProjectedTrainingDays,
   resolveFirstRunRecommendationWithTailoring,
-} = require('../../.test-dist/lib/firstRunSetup.js');
+} = require('../../src/lib/firstRunSetup');
 
 // Most of what is asserted here is the untailored recommendation. src used to
 // export a wrapper for it, which nothing but these tests ever called — so the
 // shorthand lives where it is used.
 const resolveFirstRunRecommendation = (selection) => resolveFirstRunRecommendationWithTailoring(selection, null);
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { evaluateWorkoutContentFit } = require('../../.test-dist/lib/workoutContentFit.js');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
+const { evaluateWorkoutContentFit } = require('../../src/lib/workoutContentFit');
 
 const HIGH_PRIORITY_BASE_SELECTION = {
   gender: 'unspecified',
@@ -81,7 +81,7 @@ function assertUserReadyRecommendation(selection, options = {}) {
   assert.deepEqual(fit.issues, [], `${recommendation.featuredProgramId}: ${fit.issues.join(', ')}`);
   // The three weekly-structure assertions that stood here required
   // recommendationWeeklyStructure, which 82e44cb deleted from src. They kept
-  // passing for months against a stale .test-dist artifact, because
+  // passing for months against a stale compiled artifact, because
   // `npm run test:unit` only runs the Node step and nobody had rebuilt from
   // clean. The composed week is now programDayComposer's job and is covered by
   // its own suite; this helper checks the recommendation, not the week.
@@ -617,7 +617,7 @@ module.exports = [
       // upper/lower five-day was listed as one, with 3 of 59 loaded sets at six
       // reps or fewer, and is a backup now like the hybrid (catalog audit,
       // 2026-10-05). Either is the honest five-day alternative.
-      const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+      const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
       const alternative = getRecommendationProgramDefinition(recommendation.secondaryProgramId);
       assert.equal(alternative.daysPerWeek, 5);
       assert.ok(alternative.backupGoals.includes('strength'), recommendation.secondaryProgramId);

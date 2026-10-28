@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState');
-const { hevySessionId, hevyWorkoutsToLoggedSessions, parseHevyCsv } = require('../../.test-dist/lib/hevyImport');
-const { persistCompletedWorkoutSessionsToDatabase } = require('../../.test-dist/state/completedWorkoutPersistence');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
-const { resolveLastTimeEntry } = require('../../.test-dist/lib/exerciseHistoryLookup');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { hevySessionId, hevyWorkoutsToLoggedSessions, parseHevyCsv } = require('../../src/lib/hevyImport');
+const { persistCompletedWorkoutSessionsToDatabase } = require('../../src/state/completedWorkoutPersistence');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { resolveLastTimeEntry } = require('../../src/lib/exerciseHistoryLookup');
 
 /**
  * An imported Hevy history is the lift's real last time.

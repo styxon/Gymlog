@@ -4,7 +4,7 @@ const {
   formatLastOwnBlock,
   normalizeOwnBlockStats,
   recordOwnBlock,
-} = require('../../.test-dist/lib/ownBlockHistory.js');
+} = require('../../src/lib/ownBlockHistory');
 
 module.exports = [
   {

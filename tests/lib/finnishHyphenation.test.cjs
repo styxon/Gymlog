@@ -4,7 +4,7 @@ const {
   SOFT_HYPHEN,
   hyphenateFinnish,
   hyphenateFinnishWord,
-} = require('../../.test-dist/lib/finnishHyphenation.js');
+} = require('../../src/lib/finnishHyphenation');
 
 const stripSoftHyphens = (text) => text.split(SOFT_HYPHEN).join('');
 

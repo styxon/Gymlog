@@ -9,7 +9,7 @@ const {
   formatHomeStatValue,
   DEFAULT_HOME_STAT_CARD_KEYS,
   TREND_MIN_SPAN_DAYS,
-} = require('../../.test-dist/lib/homeStatCards.js');
+} = require('../../src/lib/homeStatCards');
 
 function createLog(performedAt, weight, reps) {
   return {

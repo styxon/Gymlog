@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const tour = require('../../.test-dist/lib/firstRunTour');
-const eligibility = require('../../.test-dist/lib/workoutTourEligibility');
+const tour = require('../../src/lib/firstRunTour');
+const eligibility = require('../../src/lib/workoutTourEligibility');
 
 /**
  * The guided workout's first-run tour (2026-10-10), tested where it is decided.
@@ -504,7 +504,7 @@ module.exports = [
   {
     name: 'skip rest: the first press arms, a second inside the window skips, a late one arms again',
     run() {
-      const confirm = require('../../.test-dist/lib/skipRestConfirm');
+      const confirm = require('../../src/lib/skipRestConfirm');
       assert.equal(confirm.skipRestTap(null, 1000), 'arm');
       assert.equal(confirm.skipRestTap(1000, 1400), 'skip');
       assert.equal(confirm.skipRestTap(1000, 1000 + confirm.SKIP_REST_CONFIRM_MS), 'skip');

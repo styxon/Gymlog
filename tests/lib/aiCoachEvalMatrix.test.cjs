@@ -4,8 +4,8 @@ const {
   AI_COACH_EVAL_MATRIX,
   scoreGeneralRules,
   scoreMatrixCase,
-} = require('../../.test-dist/lib/aiCoachEvalMatrix.js');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+} = require('../../src/lib/aiCoachEvalMatrix');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
 
 function advice(overrides = {}) {
   return {

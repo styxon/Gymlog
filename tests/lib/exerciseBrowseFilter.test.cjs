@@ -7,8 +7,8 @@ const {
   filterBrowsableExercises,
   matchesBodyPartFilter,
   BODY_PART_FILTERS,
-} = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/exerciseBrowseFilter');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
 
 module.exports = [
   {
@@ -142,7 +142,7 @@ module.exports = [
       // The chips' rule and labels are every picker's (lib/exercisePicker).
       const shared = fs.readFileSync(path.join(__dirname, '../../src/lib/exercisePicker.ts'), 'utf8');
       assert.match(shared, /matchesBodyPartFilter\(item, filters\.bodyPart, filters\.category\)/);
-      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      const { exercisePickerLabel } = require('../../src/lib/exercisePicker');
       for (const [muscle, fi] of [['quadriceps', 'Etureidet'], ['hamstrings', 'Takareidet'], ['calves', 'Pohkeet']]) {
         assert.equal(exercisePickerLabel(muscle, 'fi'), fi, `no label for ${muscle}`);
       }

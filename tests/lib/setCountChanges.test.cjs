@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { setCountChanges, setCountToastParts, SET_COUNT_TOAST_NAMED } = require('../../.test-dist/lib/setCountChanges.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const { setCountChanges, setCountToastParts, SET_COUNT_TOAST_NAMED } = require('../../src/lib/setCountChanges');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * #to-do 2026-09-29: the emphasis sheet's sliders changed set counts on rows

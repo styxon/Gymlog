@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
-const { resolveGuidedSetTarget } = require('../../../.test-dist/lib/guidedPlayer');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
+const { resolveGuidedSetTarget } = require('../../../src/lib/guidedPlayer');
 
 /**
  * A ramp end to end (user 2026-10-01, option A): 40×10, 50×8, 60×5 logged,

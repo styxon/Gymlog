@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { buildRecommendationOptionIds } = require('../../.test-dist/lib/recommendationPresentation.js');
+const { buildRecommendationOptionIds } = require('../../src/lib/recommendationPresentation');
 
 module.exports = [
   {

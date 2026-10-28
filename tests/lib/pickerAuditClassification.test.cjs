@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { rankExerciseMatches } = require('../../src/lib/exerciseSearch');
 
 /**
  * Three findings of the picker audit (2026-10-06), each a classification the
@@ -62,9 +62,9 @@ module.exports = [
      */
     name: 'picker audit: every stretch is type "stretch", in no unsearched set list, and all of them under "Venytykset"',
     run() {
-      const classification = require('../../.test-dist/lib/exerciseClassification.js');
-      const { libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const classification = require('../../src/lib/exerciseClassification');
+      const { libraryLabel } = require('../../src/lib/libraryLabel');
+      const { t } = require('../../src/lib/i18n');
       // Judged by the suite's own reading of a row, over the whole library.
       const stretches = library.filter(
         (item) =>

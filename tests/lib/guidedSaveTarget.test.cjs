@@ -2,12 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const { resolveGuidedSaveTarget, mergeStoredWorkoutLogs } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { persistCompletedWorkoutSessionToDatabase } = require('../../.test-dist/state/completedWorkoutPersistence.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
-const { normalizeWorkoutBundle } = require('../../.test-dist/features/workout/workoutPersistence.js');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../.test-dist/features/workout/workoutAppAdapter.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { resolveGuidedSaveTarget, mergeStoredWorkoutLogs } = require('../../src/lib/emptyWorkoutSession');
+const { persistCompletedWorkoutSessionToDatabase } = require('../../src/state/completedWorkoutPersistence');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { normalizeWorkoutBundle } = require('../../src/features/workout/workoutPersistence');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../src/features/workout/workoutAppAdapter');
 
 /**
  * Finishing a guided session whose id a stored workout already holds (bug hunt 2026-10-03).
@@ -427,7 +427,7 @@ module.exports = [
         ['Bench Press<', 'Cable Row<Row'],
       );
       // A free board's merge keeps none of this: every board row is an added lift, and one taken off the board goes.
-      const { mergeStoredBoardLogs } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      const { mergeStoredBoardLogs } = require('../../src/lib/emptyWorkoutSession');
       const board = saved([lift('Bench Press', 0, [set(5, 100, 0, 1)]), { ...lift('Curl', 1, [pending(0)], 'curl'), sessionInserted: true }]);
       assert.deepEqual(mergeStoredBoardLogs(storedLogs(board), [lift('Bench Press', 0, [set(5, 100, 0, 1)])]).map((log) => log.exerciseNameSnapshot), ['Bench Press']);
       // A note the finish holds for the slot is the reader's latest word, and the stored one does not come back beside it.

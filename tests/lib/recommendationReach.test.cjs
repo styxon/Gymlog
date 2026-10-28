@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { recommendPrograms } = require('../../src/lib/recommendationScoring');
 
 /**
  * A program in the catalog that nobody registered here can never be

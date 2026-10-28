@@ -6,9 +6,9 @@ const {
   restSecondsLeft,
   restTimerHasEnded,
   sessionLastActiveMs,
-} = require('../../.test-dist/lib/sessionClock.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../.test-dist/features/workout/workoutAppAdapter.js');
+} = require('../../src/lib/sessionClock');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../src/features/workout/workoutAppAdapter');
 const { createCompletedSession, createExercise, createSet } = require('../helpers/workoutFixtures.cjs');
 
 /**

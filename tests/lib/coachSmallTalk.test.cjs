@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { parseCoachSmallTalk, coachSmallTalkReplyKey } = require('../../.test-dist/lib/coachSmallTalk.js');
+const { parseCoachSmallTalk, coachSmallTalkReplyKey } = require('../../src/lib/coachSmallTalk');
 
 module.exports = [
   {
@@ -75,7 +75,7 @@ module.exports = [
     name: 'small talk: every reply key it can return exists in both languages',
     run() {
       // A key with no string renders as the key itself in the chat bubble.
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       for (const kind of ['thanks', 'farewell', 'greeting', 'acknowledgement']) {
         for (const turn of [0, 1]) {
           const key = coachSmallTalkReplyKey(kind, turn);

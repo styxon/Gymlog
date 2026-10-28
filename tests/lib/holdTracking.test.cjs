@@ -3,11 +3,11 @@ const assert = require('node:assert/strict');
 const {
   isTimedTrackingMode,
   isUnloadedTrackingMode,
-} = require('../../.test-dist/features/workout/workoutTypes.js');
-const { formatSetScheme } = require('../../.test-dist/lib/format.js');
-const { resolveGuidedSetTarget } = require('../../.test-dist/lib/guidedPlayer.js');
-const { estimateWorkingSetSeconds } = require('../../.test-dist/lib/sessionDuration.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/features/workout/workoutTypes');
+const { formatSetScheme } = require('../../src/lib/format');
+const { resolveGuidedSetTarget } = require('../../src/lib/guidedPlayer');
+const { estimateWorkingSetSeconds } = require('../../src/lib/sessionDuration');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 const CATALOG_EXERCISES = WORKOUT_TEMPLATES_V1.flatMap((template) =>
   template.sessions.flatMap((session) =>
@@ -30,7 +30,7 @@ module.exports = [
       const {
         HOLD_EXERCISE_NAME_LIST,
         isHoldExerciseName,
-      } = require('../../.test-dist/lib/holdExercises.js');
+      } = require('../../src/lib/holdExercises');
 
       // Two lists would drift, and the drift would be silent: the same plank
       // reading "3 × 30-60 s" in a ready program and "3 × 60" in your own.
@@ -57,8 +57,8 @@ module.exports = [
   {
     name: 'a hold picked from the library gets seconds in a custom program too',
     run() {
-      const { getCatalogTrackingMode } = require('../../.test-dist/lib/catalogExercisePools.js');
-      const { isHoldExerciseName } = require('../../.test-dist/lib/holdExercises.js');
+      const { getCatalogTrackingMode } = require('../../src/lib/catalogExercisePools');
+      const { isHoldExerciseName } = require('../../src/lib/holdExercises');
 
       assert.equal(getCatalogTrackingMode('Plank'), 'hold');
       assert.equal(getCatalogTrackingMode("Child's Pose"), 'hold');
@@ -107,7 +107,7 @@ module.exports = [
   {
     name: 'the finish screen reports a hold in seconds',
     run() {
-      const { getTopSetLabel } = require('../../.test-dist/lib/workoutCompleteView.js');
+      const { getTopSetLabel } = require('../../src/lib/workoutCompleteView');
       const sets = [
         { status: 'completed', weightKg: 0, reps: 45 },
         { status: 'completed', weightKg: 0, reps: 60 },
@@ -197,7 +197,7 @@ module.exports = [
     name: 'a stretch or isometric picked from the library is logged in seconds, a dynamic one in reps (bug hunt 2026-10-05)',
     run() {
       const path = require('node:path');
-      const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+      const dist = (p) => require(path.join(__dirname, '..', '..', 'src', p));
       const { GENERATED_EXERCISE_LIBRARY } = dist('data/generatedExerciseLibrary.js');
       const { EXTRA_EXERCISE_LIBRARY } = dist('data/extraExerciseLibrary.js');
       const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = dist('features/workout/customWorkoutAdapter.js');
@@ -234,7 +234,7 @@ module.exports = [
     name: 'the library rows that are logged as holds are exactly this set (a compound movement that merely contains a hold name is not one)',
     run() {
       const path = require('node:path');
-      const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+      const dist = (p) => require(path.join(__dirname, '..', '..', 'src', p));
       const { isHoldExerciseName } = dist('lib/holdExercises.js');
       const { GENERATED_EXERCISE_LIBRARY } = dist('data/generatedExerciseLibrary.js');
       const { EXTRA_EXERCISE_LIBRARY } = dist('data/extraExerciseLibrary.js');

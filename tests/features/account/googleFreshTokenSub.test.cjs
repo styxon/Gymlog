@@ -21,7 +21,7 @@ const { requireWithStubs } = require('../../helpers/hookHarness.cjs');
  * as Apple's is, and B's own token still comes back for B.
  */
 
-const DIST = path.join(__dirname, '..', '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', '..', 'src');
 const ACCOUNT_AUTH = path.join(DIST, 'features', 'account', 'accountAuth.js');
 
 function tokenFor(sub) {

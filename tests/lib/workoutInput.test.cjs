@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { parseNumberInput } = require('../../.test-dist/lib/format.js');
+const { parseNumberInput } = require('../../src/lib/format');
 
 module.exports = [
   {

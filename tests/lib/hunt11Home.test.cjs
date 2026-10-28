@@ -1,7 +1,7 @@
 // Bug hunt 11, home cluster.
 process.env.TZ = 'Europe/Helsinki';
 const assert = require('node:assert/strict');
-const DIST = '../../.test-dist';
+const DIST = '../../src';
 
 const { programmeStartSessionId } = require(`${DIST}/lib/programSessionList.js`);
 const { sessionIsOnPlanToday } = require(`${DIST}/lib/coachChat.js`);

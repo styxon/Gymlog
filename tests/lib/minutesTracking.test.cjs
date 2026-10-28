@@ -10,7 +10,7 @@ const assert = require('node:assert/strict');
  * what the numbers were. These suites hold every place a set is read to it.
  */
 
-const dist = (path) => require(`../../.test-dist/${path}`);
+const dist = (path) => require(`../../src/${path}`);
 
 const { WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } = dist('features/workout/workoutCatalog.js');
 

@@ -16,22 +16,18 @@
  *     exist as text until someone asks.
  *   - Anything the reader typed: their programme names, their own exercises.
  *
- * Reads the compiled output in `.test-dist/`, like the tests do:
- *   npx tsc -p tsconfig.test.json && node scripts/export-app-texts.cjs
+ * Loads `src/` through the TypeScript hook, like the tests do:
+ *   node scripts/export-app-texts.cjs
  */
 
+require('./registerTs.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const OUT = path.join(ROOT, 'outputs', 'app-texts-fi-en');
-
-if (!fs.existsSync(DIST)) {
-  console.error('.test-dist/ is missing. Compile first:\n  npx tsc -p tsconfig.test.json');
-  process.exit(1);
-}
 
 const dist = (p) => require(path.join(DIST, p));
 
@@ -453,7 +449,6 @@ Generated ${new Date().toISOString().slice(0, 10)} from the working tree. **Do n
 They are output: change \`src/\`, run the command below, and the folder catches up.
 
 \`\`\`powershell
-npx tsc -p tsconfig.test.json
 node scripts/export-app-texts.cjs
 \`\`\`
 

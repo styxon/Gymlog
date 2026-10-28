@@ -4,7 +4,7 @@ const {
   EMPTY_SESSION_ADAPTATION,
   applySessionAdaptation,
   hasSessionAdaptation,
-} = require('../../.test-dist/lib/sessionAdaptation.js');
+} = require('../../src/lib/sessionAdaptation');
 
 const DAY = [
   { slotId: 'primary_squat', role: 'primary', sets: 4 },
@@ -114,15 +114,15 @@ module.exports = [
   {
     name: 'held adaptations: a swap and a drop made for one day are not read for another day of the programme',
     run() {
-      const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { buildReadySessionRuntimeTemplate } = require('../../.test-dist/lib/programDetails.js');
+      const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+      const { buildReadySessionRuntimeTemplate } = require('../../src/lib/programDetails');
       const {
         heldAdaptationFor,
         NO_HELD_SESSION_ADAPTATIONS,
         updateHeldAdaptation,
         withSessionDrop,
         withSessionSwap,
-      } = require('../../.test-dist/lib/sessionAdaptation.js');
+      } = require('../../src/lib/sessionAdaptation');
 
       // The audit's case. Full Body A and B share their slot ids: A's back
       // squat and B's leg press are both `primary_squat_1`, A's bench and B's
@@ -165,7 +165,7 @@ module.exports = [
         spendHeldAdaptation,
         updateHeldAdaptation,
         withSessionSwap,
-      } = require('../../.test-dist/lib/sessionAdaptation.js');
+      } = require('../../src/lib/sessionAdaptation');
       const dayA = { programId: 'tpl', sessionId: 'a' };
       const dayB = { programId: 'tpl', sessionId: 'b' };
       const today = new Date(2026, 8, 21).getTime();
@@ -203,7 +203,7 @@ module.exports = [
         withoutSessionSwapsTo,
         withSessionDrop,
         withSessionSwap,
-      } = require('../../.test-dist/lib/sessionAdaptation.js');
+      } = require('../../src/lib/sessionAdaptation');
       const day = { programId: 'tpl', sessionId: 'a' };
       const today = new Date(2026, 8, 21).getTime();
       const twice = withSessionDrop(withSessionDrop(EMPTY_SESSION_ADAPTATION, 'curl'), 'curl');

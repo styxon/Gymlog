@@ -9,7 +9,7 @@ npm run start           # Expo dev server (scan QR to open on device)
 npm run android         # Launch on Android emulator / device
 npm run typecheck       # TypeScript type check (no emit)
 npm run typecheck:api   # api/ without strict, as the Vercel deploy compiles it
-npm run test:unit       # Run all unit tests (requires .test-dist to be up to date)
+npm run test:unit       # Run all unit tests (loads src/ directly, no compile step)
 npm run android:release # Build signed Android APK via Gradle
 npm run measure:startup # Cold start on the connected phone, after every APK install (fails over 3.5 s)
 npm run release:ios      # Store build for iOS, behind the version guard (scripts/releaseGuard.cjs)
@@ -18,7 +18,7 @@ npm run release:android:bundle # The same guard, but builds the AAB for Play
 npm run release:ios:done # After the store accepted it: tags ios-v<version>, so that version cannot ship twice
 npm run release:android:done # After Play accepted it: tags android-v<version>
 npm run exercise:sync   # Regenerate src/data/generatedExerciseLibrary.ts, and bundle its pictures (assets/exercises + src/assets/exerciseImages.ts)
-npm run texts:export    # Regenerate outputs/app-texts-fi-en/ (every static text, EN beside FI)
+npm run texts:export    # Regenerate outputs/app-texts-fi-en/ (every static text, EN beside FI; no compile step)
 npm run slack:notify    # Post a note to a Slack channel (see docs/slack-workflow.md)
 ```
 
@@ -45,19 +45,21 @@ variables, and anyone holding one can post to that channel.
 
 ### Running tests
 
-Tests import from `.test-dist/`, which is compiled separately from the main Expo build.
-Compile first, then run:
+Tests load `src/` directly. `scripts/registerTs.cjs` is a small in-process
+require hook that transpiles each `.ts`/`.tsx` on first use (TypeScript's
+`transpileModule`, no type check, content-hashed cache under
+`node_modules/.cache/vinha-ts`), so there is no build directory to go stale and
+nothing to compile first. `tests/run-tests.cjs` installs it, and child processes
+inherit it through `NODE_OPTIONS`. `npm run typecheck` is the only type gate.
 
 ```powershell
-npx tsc -p tsconfig.test.json   # compile src/ -> .test-dist/
 node tests/run-tests.cjs        # run all suites
 ```
 
-`npm run test:unit` only runs the Node step — if you change `src/` files, recompile first.
-To run a single suite, require it directly:
+To run a single suite, preload the hook and require it directly:
 
 ```powershell
-node -e "const s = require('./tests/lib/guidedPlayer.test.cjs'); s.forEach(t => t.run()); console.log('ok')"
+node -r ./scripts/registerTs.cjs -e "const s = require('./tests/lib/guidedPlayer.test.cjs'); s.forEach(t => t.run()); console.log('ok')"
 ```
 
 ### Next release
@@ -191,7 +193,7 @@ module.exports = [
 ];
 ```
 
-No test framework — only `node:assert/strict`. Tests import compiled output from `.test-dist/` (mirrors `src/` path structure). Add new suites to `tests/run-tests.cjs` to include them in `npm run test:unit`.
+No test framework — only `node:assert/strict`. Tests import `src/` modules directly (`require('../../src/lib/x')`, extensionless; a `.js` suffix falls back to the `.ts`/`.tsx` file). Anything that reads the old compiled-test directory throws. Add new suites to `tests/run-tests.cjs` to include them in `npm run test:unit`.
 
 ### Storage
 

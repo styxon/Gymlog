@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   workoutReducer,
   workoutInitialState,
-} = require('../../../.test-dist/features/workout/workoutState.js');
+} = require('../../../src/features/workout/workoutState');
 const { createCompletedSession, createExercise, createSet } = require('../../helpers/workoutFixtures.cjs');
 
 const NOW = Date.parse('2026-03-19T10:10:00.000Z');

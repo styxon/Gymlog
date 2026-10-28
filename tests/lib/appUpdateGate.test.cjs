@@ -5,7 +5,7 @@ const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { between } = require('../helpers/sourceSlices.cjs');
 
 const root = path.join(__dirname, '..', '..');
-const DIST = path.join(root, '.test-dist');
+const DIST = path.join(root, 'src');
 const gate = require(path.join(DIST, 'lib', 'appUpdateGate.js'));
 
 // Comments are stripped before the source guards read a file: the comments

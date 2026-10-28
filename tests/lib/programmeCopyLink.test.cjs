@@ -7,7 +7,7 @@ const {
   onboardingSessionIdPrefix,
   resolveSourceReadyProgrammeId,
   expandRunningIdsWithSources,
-} = require('../../.test-dist/lib/programmeCopyLink.js');
+} = require('../../src/lib/programmeCopyLink');
 
 /**
  * The reader's own version of a catalog programme, found by either mark.

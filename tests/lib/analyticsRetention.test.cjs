@@ -7,7 +7,7 @@ const {
   analyticsRetentionCutoffDay,
   eventBlobDay,
   selectExpiredEventBlobs,
-} = require('../../.test-dist/lib/analyticsRetention.js');
+} = require('../../src/lib/analyticsRetention');
 
 const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');

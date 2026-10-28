@@ -1,15 +1,15 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { PROGRAM_CATEGORIES, isInCategory } = require('../../.test-dist/lib/programCategories.js');
-const { resolveProgramEquipment, resolveProgramEquipmentBucket } = require('../../.test-dist/lib/programEquipment.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
-const discovery = require('../../.test-dist/lib/workoutDiscovery.js');
-const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
-const { catalogLevelForSetup } = require('../../.test-dist/lib/goalProgramme.js');
-const { filterProgramCatalog } = require('../../.test-dist/lib/programCatalogFilter.js');
-const { partitionByReaderWeek } = require('../../.test-dist/lib/programLadder.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { PROGRAM_CATEGORIES, isInCategory } = require('../../src/lib/programCategories');
+const { resolveProgramEquipment, resolveProgramEquipmentBucket } = require('../../src/lib/programEquipment');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
+const discovery = require('../../src/lib/workoutDiscovery');
+const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
+const { catalogLevelForSetup } = require('../../src/lib/goalProgramme');
+const { filterProgramCatalog } = require('../../src/lib/programCatalogFilter');
+const { partitionByReaderWeek } = require('../../src/lib/programLadder');
 
 /**
  * Every programme filter against the catalog it filters (#bugs 2026-10-06,

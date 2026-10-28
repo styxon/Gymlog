@@ -7,7 +7,7 @@ const {
   isProgressionReadySession,
   resolveProgressedLoadKg,
   toProgressionFatigueSignal,
-} = require('../../.test-dist/lib/progressionGate.js');
+} = require('../../src/lib/progressionGate');
 
 const DAY_MS = 86400000;
 const NOW = Date.parse('2026-07-28T09:00:00.000Z');
@@ -149,7 +149,7 @@ module.exports = [
       }
 
       // The bodyweight rep gate reads the same rule.
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const reps = resolveProgressedReps({
         history: [entry(0, 12, 0), entry(0, 12, 7)],
         templateTargetReps: 12,
@@ -435,7 +435,7 @@ module.exports = [
   {
     name: 'rep progression: bodyweight moves the target by one when it is earned',
     run() {
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const base = {
         templateTargetReps: 12,
         targetSets: 3,
@@ -476,7 +476,7 @@ module.exports = [
   {
     name: 'rep progression: only bodyweight — loads have the load gate, holds are seconds',
     run() {
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const history = [entry(0, 12, 0), entry(0, 12, 3)];
       for (const trackingMode of ['load_and_reps', 'reps_first', 'hold']) {
         const result = resolveProgressedReps({
@@ -495,7 +495,7 @@ module.exports = [
   {
     name: 'rep progression: fatigue holds an earned jump and says so, like the load gate',
     run() {
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const base = {
         history: [entry(0, 12, 0), entry(0, 12, 3)],
         templateTargetReps: 12,
@@ -553,7 +553,7 @@ module.exports = [
     // more of the heaviest; a straight session is the missed-reps rule's.
     name: 'resolveRampSetTarget: a climbing session reads set by set, the heaviest one more',
     run() {
-      const { resolveRampSetTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveRampSetTarget } = require('../../src/lib/progressionGate');
       const NOW = Date.parse('2026-10-01T12:00:00.000Z');
       const entry = (sets, performedAt = '2026-09-27T09:00:00.000Z') => ({
         performedAt,
@@ -590,7 +590,7 @@ module.exports = [
     // waits for every set up to it at the ceiling.
     name: 'resolveRampSetTarget: once the top set is at the ceiling, the lighter sets climb, and the ramp earns its jump',
     run() {
-      const { resolveRampSetTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveRampSetTarget } = require('../../src/lib/progressionGate');
       const RAMP_NOW = Date.parse('2026-10-09T12:00:00.000Z');
       const at = (sets, setIndex, extra = {}) =>
         resolveRampSetTarget({
@@ -675,7 +675,7 @@ module.exports = [
 
       // The bodyweight rep gate reads the same sessions, and climbs from the
       // newest real one.
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const reps = resolveProgressedReps({
         history: [pending(1), entry(0, 14, 3), entry(0, 12, 6)],
         templateTargetReps: 12,
@@ -710,7 +710,7 @@ module.exports = [
       assert.equal(short.holdReason, 'rep_ceiling_not_reached');
 
       // The bodyweight rep gate: a tired extra set is not the proven floor.
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const withExtra = entry(0, [12, 12, 12], 0, {
         sets: [...entry(0, [12, 12, 12], 0).sets, { setIndex: 3, loadKg: 0, reps: 5, completedAt: '' }],
       });
@@ -755,7 +755,7 @@ module.exports = [
       assert.equal(gate({ history: [empty, ...earned], nowMs: NOW + 35 * DAY }).holdReason, 'gap_return');
 
       // The bodyweight rep gate reads the same rule.
-      const { resolveProgressedReps } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveProgressedReps } = require('../../src/lib/progressionGate');
       const reps = (days) =>
         resolveProgressedReps({
           history: [entry(0, 12, 0), entry(0, 12, 7)],
@@ -774,7 +774,7 @@ module.exports = [
   {
     name: 'progression: the first session back holds end to end, five weeks after the last one',
     run() {
-      const { workoutReducer } = require('../../.test-dist/features/workout/workoutState');
+      const { workoutReducer } = require('../../src/features/workout/workoutState');
       const template = {
         id: 'tpl_back',
         name: 'Push',
@@ -830,7 +830,7 @@ module.exports = [
       assert.equal(decision.loadKg, 62.5);
 
       // And the target the missed-reps rule reads is the real last session.
-      const { resolveMissedRepsTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveMissedRepsTarget } = require('../../src/lib/progressionGate');
       const short = entry(60, [6, 6, 6], 0);
       const target = resolveMissedRepsTarget({
         history: [entry(60, 12, -90), short],

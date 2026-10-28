@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { MAX_EXTRA_LINE_CHARS, readAnswerExtras, withoutExampleRepeats } = require('../../.test-dist/lib/aiCoachAnswerExtras.js');
+const { MAX_EXTRA_LINE_CHARS, readAnswerExtras, withoutExampleRepeats } = require('../../src/lib/aiCoachAnswerExtras');
 
 // The last-workout answer's shape (user, 2026-09-27): "Viime treenin havainto",
 // "Mitä tekisin seuraavaksi?", "Huomio" when there is one, "Kehitysesimerkki".

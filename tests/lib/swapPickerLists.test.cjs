@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { buildSwapPickerLibrary, narrowSwapAlternatives } = require('../../.test-dist/lib/swapPickerLists.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { isSpecialtyExercise, isStretchExercise } = require('../../.test-dist/lib/exerciseClassification.js');
-const { matchesExercisePickerFilters } = require('../../.test-dist/lib/exercisePicker.js');
+const { buildSwapPickerLibrary, narrowSwapAlternatives } = require('../../src/lib/swapPickerLists');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { getPopularExerciseLibraryOrder } = require('../../src/lib/exerciseSuggestions');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { isSpecialtyExercise, isStretchExercise } = require('../../src/lib/exerciseClassification');
+const { matchesExercisePickerFilters } = require('../../src/lib/exercisePicker');
 
 /**
  * The swap sheet's two lists, shared by the guided player and Home since

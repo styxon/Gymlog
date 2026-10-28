@@ -4,8 +4,8 @@ const {
   getExerciseTeaching,
   shouldShowTeachingCaution,
   EXERCISE_TEACHING_TABLES,
-} = require('../../.test-dist/lib/exerciseTeaching.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/exerciseTeaching');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
 
 /**
  * The teaching layer, kept honest against the library it points at.

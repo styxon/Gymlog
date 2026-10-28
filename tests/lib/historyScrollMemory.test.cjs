@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { clampHistoryScrollOffset, historyScrollMemoryMatches } = require('../../.test-dist/lib/historyScrollMemory.js');
+const { clampHistoryScrollOffset, historyScrollMemoryMatches } = require('../../src/lib/historyScrollMemory');
 
 module.exports = [
   {

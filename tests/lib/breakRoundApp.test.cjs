@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { canCompleteSet } = require('../../.test-dist/features/workout/workoutState.js');
-const { formatPlanSessionTitle, isReaderNamedSession } = require('../../.test-dist/lib/sessionNameLabel.js');
+const { canCompleteSet } = require('../../src/features/workout/workoutState');
+const { formatPlanSessionTitle, isReaderNamedSession } = require('../../src/lib/sessionNameLabel');
 const { createExercise, createSet } = require('../helpers/workoutFixtures.cjs');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');

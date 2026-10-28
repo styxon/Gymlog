@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { exerciseHitsCautionArea, applyCautionFlagsToExercises } = require('../../.test-dist/lib/cautionExerciseFilter');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary');
-const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog');
+const { exerciseHitsCautionArea, applyCautionFlagsToExercises } = require('../../src/lib/cautionExerciseFilter');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../src/features/workout/workoutCatalog');
 
 const AREAS = ['shoulders', 'lower_back', 'knees', 'elbows', 'wrists', 'hips', 'neck', 'ankles'];
 

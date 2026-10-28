@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const { mergeStoredBoardLogs, freestyleLogsOf } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { persistCompletedWorkoutSessionToDatabase } = require('../../.test-dist/state/completedWorkoutPersistence.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { mergeStoredBoardLogs, freestyleLogsOf } = require('../../src/lib/emptyWorkoutSession');
+const { persistCompletedWorkoutSessionToDatabase } = require('../../src/state/completedWorkoutPersistence');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
 
 /**
  * A free workout board finished again under the id its earlier save holds (bug hunt 2026-10-03).
@@ -143,8 +143,8 @@ module.exports = [
     // session's first save, so the set that set the record the first time was its own previous best.
     name: 'a free workout board finished again keeps its record cards: compared with what came before it, not with its own save',
     run() {
-      const { buildFreestyleFinish } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-      const { buildExercisePrLookup, buildExercisePrLookupBefore } = require('../../.test-dist/lib/workoutCompletionSummary.js');
+      const { buildFreestyleFinish } = require('../../src/lib/emptyWorkoutSession');
+      const { buildExercisePrLookup, buildExercisePrLookupBefore } = require('../../src/lib/workoutCompletionSummary');
       const tablesOf = (db) => ({ exerciseLogs: db.exerciseLogs, workoutSessions: db.workoutSessions, exerciseTemplates: db.exerciseTemplates });
       const board = [liftOn('l1', 'Bench Press', [row(100, 5)])];
       const finish = (db, performedAtIso) => {

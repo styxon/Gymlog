@@ -6,7 +6,7 @@ const {
   entryMatchesRepWindow,
   selectLatestUsableEntry,
   resolveLastTimeEntry,
-} = require('../../.test-dist/lib/exerciseHistoryLookup.js');
+} = require('../../src/lib/exerciseHistoryLookup');
 
 function entry(overrides = {}) {
   return {

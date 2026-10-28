@@ -8,7 +8,7 @@ const {
   inferEquipmentFromExerciseName,
   getDefaultWarmup,
   getDefaultCooldown,
-} = require('../../.test-dist/lib/homeSessionHero.js');
+} = require('../../src/lib/homeSessionHero');
 
 module.exports = [
   {
@@ -156,7 +156,7 @@ module.exports = [
       // (90 s + 60 s) while the player's entry screen said ~3 for the same
       // block. The minutes were the literals 6 and 4. Now they come from the
       // drills through the same estimate the player uses.
-      const { estimateRoutineBlockSeconds } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { estimateRoutineBlockSeconds } = require('../../src/lib/guidedPlayer');
       for (const focus of ['general', 'push', 'pull', 'upper', 'lower']) {
         for (const block of [getDefaultWarmup(focus), getDefaultCooldown(focus)]) {
           const expected = Math.max(1, Math.round(estimateRoutineBlockSeconds(block) / 60));

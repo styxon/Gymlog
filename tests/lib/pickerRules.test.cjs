@@ -1,14 +1,14 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary, createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const classification = require('../../.test-dist/lib/exerciseClassification.js');
-const picker = require('../../.test-dist/lib/exercisePicker.js');
-const { libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+const { createSeedExerciseLibrary, createEmptyDatabase } = require('../../src/data/seed');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../src/features/workout/workoutCatalog');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const classification = require('../../src/lib/exerciseClassification');
+const picker = require('../../src/lib/exercisePicker');
+const { libraryLabel } = require('../../src/lib/libraryLabel');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { buildSwapPickerLibrary } = require('../../src/lib/swapPickerLists');
 // Every swap sheet's library search since 2026-10-07: no chips, nothing being swapped.
 const swapSearch = (items, query, language, { excludeNames = [], popularOrder = new Map() } = {}) =>
   buildSwapPickerLibrary(items, {
@@ -23,10 +23,10 @@ const swapSearch = (items, query, language, { excludeNames = [], popularOrder = 
 const {
   getPopularExerciseLibraryItems,
   getSuggestedExerciseLibraryItems,
-} = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { buildAiCoachPlanSchema } = require('../../.test-dist/lib/aiCoachPlan.js');
-const { parseCsvProgram } = require('../../.test-dist/lib/csvProgramImport.js');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
+} = require('../../src/lib/exerciseSuggestions');
+const { buildAiCoachPlanSchema } = require('../../src/lib/aiCoachPlan');
+const { parseCsvProgram } = require('../../src/lib/csvProgramImport');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
 
 /**
  * The user's rules for every place the app offers exercises (#bugs

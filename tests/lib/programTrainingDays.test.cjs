@@ -4,7 +4,7 @@ const {
   resolveProgramTrainingDays,
   planWeekdayIndexes,
   sessionsOnTrainingDays,
-} = require('../../.test-dist/lib/programTrainingDays.js');
+} = require('../../src/lib/programTrainingDays');
 
 module.exports = [
   {
@@ -110,10 +110,10 @@ module.exports = [
     // Mon/Wed/Fri on the strip and Mon/Wed/Thu once saved.
     name: 'training days: the onboarding strip and the saved plan place every availability the same way',
     run() {
-      const { resolveProjectedTrainingDays } = require('../../.test-dist/lib/firstRunSetup.js');
-      const { planLabelsForProgramme } = require('../../.test-dist/lib/trainingWeekSync.js');
-      const { projectTrainingWeekdays, WEEKDAY_KEYS: keys } = require('../../.test-dist/lib/programTrainingDays.js');
-      const { DEFAULT_RHYTHM_BY_DAYS } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { resolveProjectedTrainingDays } = require('../../src/lib/firstRunSetup');
+      const { planLabelsForProgramme } = require('../../src/lib/trainingWeekSync');
+      const { projectTrainingWeekdays, WEEKDAY_KEYS: keys } = require('../../src/lib/programTrainingDays');
+      const { DEFAULT_RHYTHM_BY_DAYS } = require('../../src/lib/firstRunSetup');
 
       assert.deepEqual(resolveProgramTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 4]);
 

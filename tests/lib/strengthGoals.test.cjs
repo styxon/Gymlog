@@ -8,7 +8,7 @@ const {
   removeStrengthGoal,
   resolveGoalProgress,
   upsertStrengthGoal,
-} = require('../../.test-dist/lib/strengthGoals.js');
+} = require('../../src/lib/strengthGoals');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

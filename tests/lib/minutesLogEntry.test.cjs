@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { isMinutesLogEntry } = require('../../.test-dist/lib/minutesExercises.js');
-const { buildRepsLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
-const { getMilestoneFacts } = require('../../.test-dist/lib/milestoneFacts.js');
-const { recordSetsOfLog } = require('../../.test-dist/lib/personalRecords.js');
-const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+const { isMinutesLogEntry } = require('../../src/lib/minutesExercises');
+const { buildRepsLiftHistories } = require('../../src/lib/trainingHistory');
+const { getMilestoneFacts } = require('../../src/lib/milestoneFacts');
+const { recordSetsOfLog } = require('../../src/lib/personalRecords');
+const { getLifetimeTrainingSummary } = require('../../src/lib/lifetimeSummary');
 
 /**
  * Whether a log is minutes is one question with one answer: the log's own unit

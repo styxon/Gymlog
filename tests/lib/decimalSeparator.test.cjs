@@ -8,7 +8,7 @@ const {
   parseNumberInput,
   removeTrailingZeros,
   setNumberLanguage,
-} = require('../../.test-dist/lib/format.js');
+} = require('../../src/lib/format');
 
 const root = path.join(__dirname, '..', '..');
 

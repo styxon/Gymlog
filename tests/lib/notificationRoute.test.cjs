@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { routeForNotification } = require('../../.test-dist/lib/notificationRoute.js');
+const { routeForNotification } = require('../../src/lib/notificationRoute');
 const fs = require('node:fs');
 const path = require('node:path');
 

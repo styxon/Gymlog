@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { normalizeExerciseLog, normalizeExerciseSets } = require('../../.test-dist/lib/exerciseLog.js');
-const { scrubImpossibleSessionLoads, setCarriesImpossibleLoad } = require('../../.test-dist/lib/impossibleLoads.js');
-const { WEIGHT_DIAL_MAX_KG, isLiftableWeight } = require('../../.test-dist/lib/weightLimits.js');
+const { normalizeExerciseLog, normalizeExerciseSets } = require('../../src/lib/exerciseLog');
+const { scrubImpossibleSessionLoads, setCarriesImpossibleLoad } = require('../../src/lib/impossibleLoads');
+const { WEIGHT_DIAL_MAX_KG, isLiftableWeight } = require('../../src/lib/weightLimits');
 
 function set(weight, reps, extra = {}) {
   return {

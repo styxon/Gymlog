@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
 /**
@@ -88,7 +88,7 @@ module.exports = [
       // The refilled day trains what it is named for: an upper-body day gets
       // upper-body work, not the squats and lunges every refill used to draw
       // (review, 2026-10-04).
-      const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools.js');
+      const { FOCUS_ACCESSORY_POOL } = require('../../src/lib/catalogExercisePools');
       const lowerNames = new Set(
         ['legs', 'glutes', 'hamstrings', 'calves', 'quads'].flatMap((area) => [
           ...FOCUS_ACCESSORY_POOL[area].bodyweight,

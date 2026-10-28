@@ -4,7 +4,7 @@ const {
   buildTrainingWeekLoad,
   formatTrainingDays,
   formatTrainingMinutes,
-} = require('../../.test-dist/lib/trainingWeekLoad.js');
+} = require('../../src/lib/trainingWeekLoad');
 
 const base = {
   cyclePattern: null,

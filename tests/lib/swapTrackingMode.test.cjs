@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { prescriptionAfterSwap, trackingModeAfterSwap } = require('../../.test-dist/lib/catalogExercisePools.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.js');
-const { isTimedTrackingMode, isUnloadedTrackingMode } = require('../../.test-dist/features/workout/workoutTypes.js');
+const { prescriptionAfterSwap, trackingModeAfterSwap } = require('../../src/lib/catalogExercisePools');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { buildSwapOptionsForSlot } = require('../../src/lib/tailoringFit');
+const { isTimedTrackingMode, isUnloadedTrackingMode } = require('../../src/features/workout/workoutTypes');
 
 /**
  * A swap takes on the incoming lift's tracking mode (swap audit, 2026-09-21).
@@ -28,7 +28,7 @@ module.exports = [
   {
     name: 'swap tracking: the programmes answer for their own names before the library does',
     run() {
-      const { getCatalogTrackingMode } = require('../../.test-dist/lib/catalogExercisePools.js');
+      const { getCatalogTrackingMode } = require('../../src/lib/catalogExercisePools');
       // The library files the Russian twist under "bodyweight"; the
       // programmes load it. Asked of the library first, a swap to it from an
       // unloaded slot would have hidden the weight dial. (The example was the

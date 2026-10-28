@@ -10,7 +10,7 @@ const { requireWithStubs } = require('../../helpers/hookHarness.cjs');
  * hand the server's code through and nothing else.
  */
 
-const API = path.join(__dirname, '..', '..', '..', '.test-dist', 'features', 'account', 'backupApi.js');
+const API = path.join(__dirname, '..', '..', '..', 'src', 'features', 'account', 'backupApi.js');
 
 async function withApi(answer, scenario) {
   const savedFetch = global.fetch;

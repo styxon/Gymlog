@@ -7,7 +7,7 @@ const {
   PROGRAM_REST_RANGE,
   PROGRAM_REPS_RANGE,
   PROGRAM_SETS_RANGE,
-} = require('../../.test-dist/lib/programSessionEdit');
+} = require('../../src/lib/programSessionEdit');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
 

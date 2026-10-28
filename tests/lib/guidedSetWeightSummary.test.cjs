@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 // The decimal mark is a module-level setting (see format.ts), shared with
 // every other suite in the same run — leaving it on 'fi' bled a comma into
 // unrelated suites that assume 'en' (sessionOverviewRows, warmupBrief,
@@ -12,7 +12,7 @@ const {
   isUniformLoad,
   formatLoadOrRange,
   summarizeHistoricalSetChips,
-} = require('../../.test-dist/lib/guidedSetWeightSummary.js');
+} = require('../../src/lib/guidedSetWeightSummary');
 
 module.exports = [
   {

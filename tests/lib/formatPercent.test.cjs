@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { formatPercent } = require('../../.test-dist/lib/format.js');
+const { formatPercent } = require('../../src/lib/format');
 
 const ROOT = path.join(__dirname, '..', '..');
 

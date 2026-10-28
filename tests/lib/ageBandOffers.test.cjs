@@ -20,7 +20,7 @@ const path = require('node:path');
  * next option id.
  */
 
-const dist = path.join(__dirname, '..', '..', '.test-dist');
+const dist = path.join(__dirname, '..', '..', 'src');
 const lib = (name) => require(path.join(dist, 'lib', `${name}.js`));
 const { resolveFirstRunRecommendationWithTailoring } = lib('firstRunSetup');
 const { buildRecommendationOptionIds } = lib('recommendationPresentation');

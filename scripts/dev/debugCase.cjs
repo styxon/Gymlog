@@ -1,6 +1,7 @@
 // Debug one answer set: node scripts/dev/debugCase.cjs '{"items":["Dumbbells"],"goal":"general_fitness","level":"advanced","days":3}'
+require('../registerTs.cjs');
 const path = require('node:path');
-const dist = path.join(__dirname, '..', '..', '.test-dist');
+const dist = path.join(__dirname, '..', '..', 'src');
 const { resolveFirstRunRecommendationWithTailoring } = require(path.join(dist, 'lib', 'firstRunSetup.js'));
 const { selectWaterfallDecision } = require(path.join(dist, 'lib', 'recommendationWaterfall.js'));
 const { buildRecommendationInput } = require(path.join(dist, 'lib', 'recommendationInput.js'));

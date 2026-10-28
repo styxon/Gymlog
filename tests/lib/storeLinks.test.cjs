@@ -3,7 +3,7 @@ module.exports = [
     name: 'store links: an iPhone is sent to the App Store, never to Google Play',
     run() {
       const assert = require('node:assert/strict');
-      const links = require('../../.test-dist/lib/storeLinks.js');
+      const links = require('../../src/lib/storeLinks');
 
       assert.equal(links.storePlatformOf('ios'), 'ios');
       assert.equal(links.storePlatformOf('android'), 'android');
@@ -36,8 +36,8 @@ module.exports = [
     name: 'store links: every Play wording has an Apple one in both languages, and Android keeps its own',
     run() {
       const assert = require('node:assert/strict');
-      const { storeTextKey } = require('../../.test-dist/lib/storeLinks.js');
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { storeTextKey } = require('../../src/lib/storeLinks');
+      const { t } = require('../../src/lib/i18n');
       const playKeys = ['subs.row.play', 'subs.row.playSub', 'subs.foot.play', 'subs.pay.gplay', 'subs.receipts.sub'];
       for (const key of playKeys) {
         assert.equal(storeTextKey(key, 'android'), key);

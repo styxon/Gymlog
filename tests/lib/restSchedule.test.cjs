@@ -10,7 +10,7 @@ const {
   REST_WARNING_SECONDS,
   REST_REPEAT_AFTER_SECONDS,
   IDLE_NUDGE_MINUTES,
-} = require('../../.test-dist/lib/restSchedule.js');
+} = require('../../src/lib/restSchedule');
 
 module.exports = [
   {

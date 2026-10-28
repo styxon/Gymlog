@@ -6,14 +6,14 @@ const assert = require('node:assert/strict');
  * Finnish, so a suite that wants "62.5 kg" has to say so — otherwise it
  * passes or fails on whichever suite ran before it.
  */
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const {
   buildOverviewScheme,
   buildOverviewColumns,
   buildProgressionPill,
-} = require('../../.test-dist/lib/sessionOverviewRows.js');
+} = require('../../src/lib/sessionOverviewRows');
 
 const move = (loadKg, fromKg, reps = 8, fromReps = null) => ({
   loadKg,

@@ -46,6 +46,7 @@ yarn-error.*
 # local device + QA artifacts
 .superpowers/
 .android-home/
+# obsolete: the unit tests no longer compile into this (delete it if it lingers)
 .test-dist/
 dist-legal/
 _tmp_bodbot/

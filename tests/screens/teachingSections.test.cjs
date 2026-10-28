@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const {
   EXERCISE_TEACHING_TABLES,
-} = require('../../.test-dist/lib/exerciseTeaching.js');
+} = require('../../src/lib/exerciseTeaching');
 
 const read = (rel) => fs.readFileSync(path.join(__dirname, '..', '..', rel), 'utf8');
 const screen = read('src/screens/ExerciseDetailScreen.tsx');

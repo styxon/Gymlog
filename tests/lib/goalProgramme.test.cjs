@@ -5,13 +5,13 @@ const {
   isSameLift,
   matchProgrammeToLift,
   rankProgrammesForLift,
-} = require('../../.test-dist/lib/goalProgramme.js');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
+} = require('../../src/lib/goalProgramme');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
 const {
   WORKOUT_TEMPLATES_V1,
   getWorkoutTemplateById,
-} = require('../../.test-dist/features/workout/workoutCatalog.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+} = require('../../src/features/workout/workoutCatalog');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 const libraryNames = library.map((item) => item.name);
 
 const goal = (exerciseName) => ({ exerciseName, targetKg: 100, createdAt: '2026-08-18T00:00:00.000Z' });

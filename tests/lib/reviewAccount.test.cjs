@@ -1,21 +1,21 @@
 const assert = require('node:assert/strict');
 const crypto = require('node:crypto');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+const { createEmptyDatabase } = require('../../src/data/seed');
 const {
   REVIEW_ACCOUNT_HASHES,
   isReviewAccount,
   reviewAccountFlag,
   sha256Hex,
-} = require('../../.test-dist/lib/reviewAccount.js');
+} = require('../../src/lib/reviewAccount');
 const {
   DEVICE_ONLY_PREFERENCE_FIELDS,
   keepDeviceEntitlement,
   resolveProEntitlement,
   trialEndingAtMs,
-} = require('../../.test-dist/lib/proEntitlement.js');
-const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
-const { resolveMembershipEndPlan } = require('../../.test-dist/lib/proBenefits.js');
+} = require('../../src/lib/proEntitlement');
+const { resolveSubscriptionView } = require('../../src/lib/subscriptionView');
+const { resolveMembershipEndPlan } = require('../../src/lib/proBenefits');
 const { loadAgainstFake, createFakeAsyncStorage } = require('../storage/fakeAsyncStorage.cjs');
 
 /**

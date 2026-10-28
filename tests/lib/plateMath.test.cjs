@@ -5,7 +5,7 @@ const {
   PLATE_COLORS,
   PLATE_SIZES_KG,
   platesPerSide,
-} = require('../../.test-dist/lib/plateMath.js');
+} = require('../../src/lib/plateMath');
 
 module.exports = [
   {
@@ -50,7 +50,7 @@ module.exports = [
     // 62 without the other two (2026-09-26).
     name: 'plateLoad says when a weight is under the bar and what plates leave off',
     run() {
-      const { plateLoad } = require('../../.test-dist/lib/plateMath.js');
+      const { plateLoad } = require('../../src/lib/plateMath');
       assert.deepEqual(plateLoad(15), { plates: [], belowBar: true, remainderKg: 0 });
       assert.deepEqual(plateLoad(20), { plates: [], belowBar: false, remainderKg: 0 });
       assert.deepEqual(plateLoad(62), { plates: [20], belowBar: false, remainderKg: 2 });

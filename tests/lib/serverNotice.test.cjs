@@ -18,7 +18,7 @@ const {
   servicePausedBody,
   shouldCheckServerNotice,
   unseenServerNotice,
-} = require('../../.test-dist/lib/serverNotice');
+} = require('../../src/lib/serverNotice');
 
 const root = path.join(__dirname, '..', '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
@@ -123,9 +123,9 @@ module.exports = [
   {
     name: 'server notice: a closed notice stays closed through a restore and a reset',
     run() {
-      const { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
-      const { preferencesForRestore } = require('../../.test-dist/lib/accountBackup.js');
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+      const { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } = require('../../src/lib/proEntitlement');
+      const { preferencesForRestore } = require('../../src/lib/accountBackup');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       assert.ok(DEVICE_ONLY_PREFERENCE_FIELDS.includes('seenServerNoticeIds'));
       const device = { ...createEmptyDatabase('fi').preferences, seenServerNoticeIds: ['closed-here'] };
       const fromBackup = { ...createEmptyDatabase('fi').preferences, seenServerNoticeIds: [] };

@@ -10,7 +10,7 @@ const ROOT = path.join(__dirname, '..', '..');
  * read it (server audit, 2026-09-21).
  *
  * api/ is outside the test build, so the file is transpiled here. Its imports
- * of src/ are served from the compiled .test-dist — the same code the other
+ * of src/ are served through the TypeScript hook — the same code the other
  * suites run — and the packages named in `stubs` (the blob store) are
  * replaced by the test's fakes. Every call loads a fresh copy, so the
  * endpoint's per-instance state (rate limit, budget window) starts empty.
@@ -28,7 +28,7 @@ function loadApiModule(relativeFile, stubs = {}) {
       return stubs[id];
     }
     if (id.startsWith('../src/')) {
-      return require(path.join(ROOT, '.test-dist', id.slice('../src/'.length)));
+      return require(path.join(ROOT, 'src', id.slice('../src/'.length)));
     }
     return require(id);
   };

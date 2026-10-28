@@ -903,7 +903,7 @@ module.exports = [
   {
     name: 'Pro page: the card foot fade shows only while the list overflows, never on a short list',
     run() {
-      const { cardFadeVisible } = require('../../.test-dist/lib/proTiers');
+      const { cardFadeVisible } = require('../../src/lib/proTiers');
       // Lifetime: four rows fit, nothing below the edge -> no band across the card.
       assert.equal(cardFadeVisible(400, 260, 0), false);
       assert.equal(cardFadeVisible(0, 0, 0), false);

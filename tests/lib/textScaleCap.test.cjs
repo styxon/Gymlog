@@ -35,7 +35,7 @@ module.exports = [
     // default it (PremiumScreen's price row caps at 1.3 and its nested price spans scaled to 1.5).
     name: 'text scale cap: a nested Text inherits the parent cap unless its call site sets one',
     run() {
-      const { resolveFontSizeMultiplier } = require('../../.test-dist/textScale.js');
+      const { resolveFontSizeMultiplier } = require('../../src/textScale');
       assert.equal(resolveFontSizeMultiplier(undefined, true), undefined);
       assert.equal(resolveFontSizeMultiplier(0, true), undefined);
       assert.equal(resolveFontSizeMultiplier(1.2, true), 1.2);

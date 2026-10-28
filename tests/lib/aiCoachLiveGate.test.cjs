@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   AI_LIVE_SPEND_CAP_CONFIRMED,
   resolveLiveAiCoachUrl,
-} = require('../../.test-dist/lib/aiCoachLiveGate.js');
+} = require('../../src/lib/aiCoachLiveGate');
 
 const URL = 'https://vinha.example/api/ai-coach';
 

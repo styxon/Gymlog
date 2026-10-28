@@ -3,15 +3,15 @@ const assert = require('node:assert/strict');
 const {
   workoutReducer,
   workoutInitialState,
-} = require('../../.test-dist/features/workout/workoutState.js');
+} = require('../../src/features/workout/workoutState');
 const {
   buildCompletionCardsFromAdaptedSession,
   buildSessionMovement,
-} = require('../../.test-dist/app/workoutCompletionState.js');
-const { withSupersetPartners } = require('../../.test-dist/lib/setCountChanges.js');
-const { buildProgramWorkoutPlan, carryPlanLabels } = require('../../.test-dist/lib/programAdoption.js');
-const { startKeepAwake } = require('../../.test-dist/lib/keepAwakeLifecycle.js');
-const { tidySessionTitle } = require('../../.test-dist/lib/recoverySheet.js');
+} = require('../../src/app/workoutCompletionState');
+const { withSupersetPartners } = require('../../src/lib/setCountChanges');
+const { buildProgramWorkoutPlan, carryPlanLabels } = require('../../src/lib/programAdoption');
+const { startKeepAwake } = require('../../src/lib/keepAwakeLifecycle');
+const { tidySessionTitle } = require('../../src/lib/recoverySheet');
 const { createCompletedSession } = require('../helpers/workoutFixtures.cjs');
 
 function adapted(exerciseName, trackingMode, weightKg, reps) {
@@ -26,7 +26,7 @@ function adapted(exerciseName, trackingMode, weightKg, reps) {
   };
 }
 
-const { buildExercisePrLookup } = require('../../.test-dist/lib/workoutCompletionSummary.js');
+const { buildExercisePrLookup } = require('../../src/lib/workoutCompletionSummary');
 
 const NO_PR_LOOKUP = buildExercisePrLookup({ exerciseLogs: [], workoutSessions: [], exerciseTemplates: [] });
 

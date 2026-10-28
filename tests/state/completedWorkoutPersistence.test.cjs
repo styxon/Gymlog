@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
 const {
   persistCompletedWorkoutSessionToDatabase,
   persistCompletedWorkoutSessionsToDatabase,
-} = require('../../.test-dist/state/completedWorkoutPersistence.js');
-const { exerciseLogRepository } = require('../../.test-dist/storage/repositories.js');
+} = require('../../src/state/completedWorkoutPersistence');
+const { exerciseLogRepository } = require('../../src/storage/repositories');
 
 function createLog(overrides = {}) {
   return {

@@ -4,7 +4,7 @@ const {
   charsPerLine,
   layoutBlurredLines,
   splitIntoLines,
-} = require('../../.test-dist/lib/blurredPreviewText.js');
+} = require('../../src/lib/blurredPreviewText');
 
 module.exports = [
   {

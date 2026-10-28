@@ -2,21 +2,21 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { parseProgrammeBrief, briefAsksForSpecialty } = require('../../.test-dist/lib/programmeBrief.js');
-const { buildProgramIntakeBrief } = require('../../.test-dist/lib/programIntake.js');
-const { matchProgrammeToBrief } = require('../../.test-dist/lib/briefProgrammeMatch.js');
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { mergeStoredWorkoutLogs } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { effectiveSwapCategory } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
-const { listPickerExercises } = require('../../.test-dist/lib/exercisePicker.js');
-const { exerciseTypeOf } = require('../../.test-dist/lib/exerciseClassification.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { minutesClockOnStep, stopwatchElapsedMs, stopwatchForSet } = require('../../.test-dist/lib/minutesExercises.js');
+const { parseProgrammeBrief, briefAsksForSpecialty } = require('../../src/lib/programmeBrief');
+const { buildProgramIntakeBrief } = require('../../src/lib/programIntake');
+const { matchProgrammeToBrief } = require('../../src/lib/briefProgrammeMatch');
+const { createSeedDatabase } = require('../../src/data/seed');
+const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
+const { recommendPrograms } = require('../../src/lib/recommendationScoring');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { mergeStoredWorkoutLogs } = require('../../src/lib/emptyWorkoutSession');
+const { effectiveSwapCategory } = require('../../src/lib/swapBrowsePrefilter');
+const { listPickerExercises } = require('../../src/lib/exercisePicker');
+const { exerciseTypeOf } = require('../../src/lib/exerciseClassification');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { minutesClockOnStep, stopwatchElapsedMs, stopwatchForSet } = require('../../src/lib/minutesExercises');
 
 /**
  * The review of the 6.–7.10 merges (2026-10-07): each finding as the case

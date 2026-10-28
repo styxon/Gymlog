@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { HG } = require('../../.test-dist/lightTheme.js');
-const { HG_DARK } = require('../../.test-dist/darkTheme.js');
-const { PRO_SURFACE, PRO_TIER } = require('../../.test-dist/theme.js');
+const { HG } = require('../../src/lightTheme');
+const { HG_DARK } = require('../../src/darkTheme');
+const { PRO_SURFACE, PRO_TIER } = require('../../src/theme');
 const { contrastRatio, compositeOver, WCAG_AA_TEXT, WCAG_AA_LARGE } = require('../helpers/contrast.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');

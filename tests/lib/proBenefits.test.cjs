@@ -6,7 +6,7 @@ const {
   PRO_LIVE_BENEFITS,
   PRO_UNLOCK_CARDS,
   resolveMembershipEndPlan,
-} = require('../../.test-dist/lib/proBenefits');
+} = require('../../src/lib/proBenefits');
 
 const root = path.join(__dirname, '..', '..');
 const i18nSource = fs.readFileSync(path.join(root, 'src', 'lib', 'i18n.ts'), 'utf8');

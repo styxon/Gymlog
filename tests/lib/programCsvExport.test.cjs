@@ -5,8 +5,8 @@ const {
   formatCsvReps,
   summarizeExportSessions,
   CSV_EXPORT_HEADER,
-} = require('../../.test-dist/lib/programCsvExport.js');
-const { parseCsvProgram, buildDraftFromCsvPreview } = require('../../.test-dist/lib/csvProgramImport.js');
+} = require('../../src/lib/programCsvExport');
+const { parseCsvProgram, buildDraftFromCsvPreview } = require('../../src/lib/csvProgramImport');
 
 const SESSIONS = [
   {
@@ -138,13 +138,13 @@ module.exports = [
   {
     name: 'programCsvExport: every ready programme exported and imported again keeps each row in its own unit (bug hunt 2026-10-08)',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { prescriptionUnitOf } = require('../../.test-dist/features/workout/workoutTypes.js');
-      const { csvExportRowOfCatalogue } = require('../../.test-dist/lib/programCsvExport.js');
-      const { csvRowDayKey } = require('../../.test-dist/lib/csvProgramImport.js');
-      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-      const { parseIntervalScheme } = require('../../.test-dist/lib/intervalScheme.js');
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { prescriptionUnitOf } = require('../../src/features/workout/workoutTypes');
+      const { csvExportRowOfCatalogue } = require('../../src/lib/programCsvExport');
+      const { csvRowDayKey } = require('../../src/lib/csvProgramImport');
+      const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+      const { parseIntervalScheme } = require('../../src/lib/intervalScheme');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const library = createSeedExerciseLibrary();
       const entries = library.map((item) => ({ id: item.id, name: item.name, sourceCategory: item.sourceCategory }));
 

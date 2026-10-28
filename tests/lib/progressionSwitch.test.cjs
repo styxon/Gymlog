@@ -11,7 +11,7 @@ const read = (...parts) =>
  * off for a Pro reader, and then no surface promises the raise the next start
  * will not make.
  */
-const L = '../../.test-dist/lib/';
+const L = '../../src/lib/';
 const { buildNextSessionAdvice, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
 const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');
 const { buildCompletionConclusion, withProgrammeReads } = require(L + 'proInsights.js');

@@ -7,13 +7,13 @@ const {
   getExerciseProgressSignal,
   getLiftProgress,
   getTrackedExerciseProgress,
-} = require('../../.test-dist/lib/progression.js');
-const { isSameLift, isSameLiftAsLibraryRow } = require('../../.test-dist/lib/goalProgramme.js');
-const { liftGroupOf } = require('../../.test-dist/lib/liftIdentity.js');
-const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+} = require('../../src/lib/progression');
+const { isSameLift, isSameLiftAsLibraryRow } = require('../../src/lib/goalProgramme');
+const { liftGroupOf } = require('../../src/lib/liftIdentity');
+const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 const libraryNames = library.map((item) => item.name);
 // The matcher the goal flow and the target bars already read the log with.

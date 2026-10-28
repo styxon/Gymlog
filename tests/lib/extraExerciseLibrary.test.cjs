@@ -1,12 +1,12 @@
 const assert = require('node:assert/strict');
 
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { getExerciseInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { buildSwapOptionsForSlot } = require('../../src/lib/tailoringFit');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { getExerciseInstructions } = require('../../src/lib/exerciseInstructions');
 
 module.exports = [
   {
@@ -104,8 +104,8 @@ module.exports = [
   {
     name: 'the seated-calf-raise fallback and the bodyweight calves pool need no equipment',
     run() {
-      const { EQUIPMENT_FALLBACKS, isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-      const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools.js');
+      const { EQUIPMENT_FALLBACKS, isExerciseAllowedWithEquipment } = require('../../src/lib/equipmentExerciseFilter');
+      const { FOCUS_ACCESSORY_POOL } = require('../../src/lib/catalogExercisePools');
       const library = createSeedExerciseLibrary();
       const fallback = new Map(EQUIPMENT_FALLBACKS).get('seated calf raise');
       assert.ok(fallback && fallback.length > 0);
@@ -164,8 +164,8 @@ module.exports = [
     // to look, and a name that starts resolving correctly must leave it.
     name: 'catalogue: a row doable with no equipment never opens a demo that needs equipment',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { isExerciseAllowedWithEquipment } = require('../../src/lib/equipmentExerciseFilter');
       const library = createSeedExerciseLibrary();
       const names = library.map((item) => item.name);
       const ALLOW = new Map([
@@ -212,9 +212,9 @@ module.exports = [
     // filing is what the swap list, the chips and the hold rule read.
     name: 'extras: every row is named and instructed in both languages, step for step, and filed with real values',
     run() {
-      const { TRANSLATED_EXERCISE_NAMES } = require('../../.test-dist/lib/exerciseNameLabel.js');
-      const EXERCISE_INSTRUCTIONS_FI_TABLE = require('../../.test-dist/lib/exerciseInstructions.js').finnishInstructionTable();
-      const { isSpecialtyExercise } = require('../../.test-dist/lib/exerciseClassification.js');
+      const { TRANSLATED_EXERCISE_NAMES } = require('../../src/lib/exerciseNameLabel');
+      const EXERCISE_INSTRUCTIONS_FI_TABLE = require('../../src/lib/exerciseInstructions').finnishInstructionTable();
+      const { isSpecialtyExercise } = require('../../src/lib/exerciseClassification');
       const BODY_PARTS = new Set(['chest', 'back', 'shoulders', 'legs', 'biceps', 'triceps', 'core', 'glutes', 'full body']);
       const EQUIPMENT = new Set(['barbell', 'dumbbell', 'machine', 'cable', 'bodyweight']);
       const CATEGORIES = new Set(['compound', 'isolation', 'cardio', 'core']);
@@ -255,8 +255,8 @@ module.exports = [
   {
     name: 'extras: every ready-programme slot is filed under a row by its own name or an alias, never by a guess',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { findFiledLibraryIndex, GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { findFiledLibraryIndex, GUIDED_LIBRARY_ALIASES } = require('../../src/lib/guidedPlayer');
       const library = createSeedExerciseLibrary();
       const names = library.map((item) => item.name);
       const unfiled = [];

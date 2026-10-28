@@ -15,7 +15,7 @@ const {
   pauseCardioSession,
   resumeCardioSession,
   normalizeActiveCardioSession,
-} = require('../../.test-dist/lib/cardio.js');
+} = require('../../src/lib/cardio');
 
 module.exports = [
   {

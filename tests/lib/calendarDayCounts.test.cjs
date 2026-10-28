@@ -4,8 +4,8 @@ const path = require('node:path');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
-const { localDateKey, subtractCalendarMonths } = require('../../.test-dist/lib/completedSessions.js');
-const { buildWorkoutLogCsv } = require('../../.test-dist/lib/workoutLogCsvExport.js');
+const { localDateKey, subtractCalendarMonths } = require('../../src/lib/completedSessions');
+const { buildWorkoutLogCsv } = require('../../src/lib/workoutLogCsvExport');
 
 /**
  * Days as the reader lives them, not as 24-hour spans or UTC dates.

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const dist = '../../.test-dist/';
+const dist = '../../src/';
 const { RECOMMENDATION_PROGRAMS } = require(dist + 'lib/recommendationCatalog.js');
 const { getWorkoutTemplateById } = require(dist + 'features/workout/workoutCatalog.js');
 

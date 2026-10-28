@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { formatListDate } = require('../../.test-dist/lib/format.js');
-const { splitLastSessionRecords } = require('../../.test-dist/lib/personalRecords.js');
+const { formatListDate } = require('../../src/lib/format');
+const { splitLastSessionRecords } = require('../../src/lib/personalRecords');
 
 const NOW = new Date(2026, 9, 19, 12, 0);
 

@@ -19,8 +19,8 @@ const path = require('node:path');
  * (resolveProgressionOptions), on the same history. Free must match the plain
  * log; Pro must still move, so the gate cannot pass by being dead.
  */
-const L = '../../.test-dist/lib/';
-const { workoutReducer, previewNextSession } = require('../../.test-dist/features/workout/workoutState');
+const L = '../../src/lib/';
+const { workoutReducer, previewNextSession } = require('../../src/features/workout/workoutState');
 const { resolveGuidedSetTarget } = require(L + 'guidedPlayer.js');
 const { resolveProgressionOptions } = require(L + 'proEntitlement.js');
 const { buildSessionAnalysis } = require(L + 'sessionAnalysis.js');

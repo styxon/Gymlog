@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { getBodyweightProgress } = require('../../.test-dist/lib/progression.js');
-const { popRoute, pushRoute } = require('../../.test-dist/navigation/routeHistory.js');
+const { getBodyweightProgress } = require('../../src/lib/progression');
+const { popRoute, pushRoute } = require('../../src/navigation/routeHistory');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const root = path.join(__dirname, '..', '..');
@@ -59,8 +59,8 @@ module.exports = [
       const {
         buildSetupBasicsFromPreferences,
         buildSetupSelectionFromPreferences,
-      } = require('../../.test-dist/app/onboardingHandoff.js');
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+      } = require('../../src/app/onboardingHandoff');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       const base = createEmptyDatabase('fi').preferences;
       const told = { ...base, setupCurrentWeightKg: 75 };
       assert.equal(buildSetupBasicsFromPreferences(told, 82).currentWeightKg, 82);

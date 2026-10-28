@@ -58,7 +58,7 @@ module.exports = [
       assert.match(sheet, /const equipmentOptions: SheetEquipmentOption\[\] = EQUIPMENT_FILTERS;/);
       assert.match(filter, /export const EQUIPMENT_FILTERS: EquipmentFilter\[\] = \[[^\]]*'kettlebells'/s);
       // Labelled by the one label function, which knows the word.
-      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      const { exercisePickerLabel } = require('../../src/lib/exercisePicker');
       assert.equal(exercisePickerLabel('kettlebells', 'fi'), 'Kahvakuula');
     },
   },

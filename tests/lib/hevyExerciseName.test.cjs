@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { resolveImportedExerciseName } = require('../../.test-dist/lib/hevyExerciseName');
-const { isSameLift, isSameLiftAsLibraryRow } = require('../../.test-dist/lib/goalProgramme');
-const { resolveGoalProgress } = require('../../.test-dist/lib/strengthGoals');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets');
+const { resolveImportedExerciseName } = require('../../src/lib/hevyExerciseName');
+const { isSameLift, isSameLiftAsLibraryRow } = require('../../src/lib/goalProgramme');
+const { resolveGoalProgress } = require('../../src/lib/strengthGoals');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
 
 /**
  * Hevy titles a lift with its implement in brackets, and the app's names do

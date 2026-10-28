@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
-const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
 
 /**
  * The coach dates a session by the reader's calendar.

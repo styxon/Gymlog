@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildHomeWidgetPayload, homeWidgetMonthKey } = require('../../.test-dist/lib/widgetPayload.js');
-const { weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
-const { formatGuidedTarget } = require('../../.test-dist/lib/guidedPlayer.js');
-const { trackedLiftAmount } = require('../../.test-dist/lib/trackedLiftAmount.js');
+const { buildHomeWidgetPayload, homeWidgetMonthKey } = require('../../src/lib/widgetPayload');
+const { weekdaySchedule } = require('../../src/lib/trainingSchedule');
+const { formatGuidedTarget } = require('../../src/lib/guidedPlayer');
+const { trackedLiftAmount } = require('../../src/lib/trackedLiftAmount');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8').replace(/\r\n/g, '\n');
 const at = (year, month, day, hour = 12) => new Date(year, month - 1, day, hour, 0, 0, 0).getTime();

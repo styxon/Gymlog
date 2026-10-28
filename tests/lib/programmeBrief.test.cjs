@@ -8,9 +8,9 @@ const {
   outlineProgrammeBrief,
   parseProgrammeBrief,
   resolveLiveProposal,
-} = require('../../.test-dist/lib/programmeBrief.js');
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+} = require('../../src/lib/programmeBrief');
+const { createSeedDatabase } = require('../../src/data/seed');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 const preferences = createSeedDatabase().preferences;
 
@@ -205,8 +205,8 @@ module.exports = [
     // 400 of these answers got Axle Deadlift.
     name: 'a composed programme never picks a specialty movement the reader did not name',
     run() {
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-      const { isSpecialtyExercise } = require('../../.test-dist/lib/exerciseClassification.js');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
+      const { isSpecialtyExercise } = require('../../src/lib/exerciseClassification');
       const seeded = createSeedExerciseLibrary();
       const offenders = [];
       const briefs = [
@@ -244,7 +244,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const seeded = createSeedExerciseLibrary();
       const raw = {
         title: 'Legs',
@@ -315,7 +315,7 @@ module.exports = [
     // promises never to hide.
     name: 'a live answer with nothing usable falls back to the preview and keeps what it was refused',
     run() {
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const seeded = createSeedExerciseLibrary();
       const raw = {
         title: 'Strongman',

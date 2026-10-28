@@ -3,10 +3,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
-const { getHomeDayView, sessionForSlot } = require('../../.test-dist/lib/homeCalendar.js');
-const { hasOnlyEmptyDays, nextStartableSessionIndex } = require('../../.test-dist/lib/programSessionList.js');
-const { weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
-const { findHomeWidgetNextSession, resolveHomeWidgetSessionTap } = require('../../.test-dist/lib/widgetPayload.js');
+const { getHomeDayView, sessionForSlot } = require('../../src/lib/homeCalendar');
+const { hasOnlyEmptyDays, nextStartableSessionIndex } = require('../../src/lib/programSessionList');
+const { weekdaySchedule } = require('../../src/lib/trainingSchedule');
+const { findHomeWidgetNextSession, resolveHomeWidgetSessionTap } = require('../../src/lib/widgetPayload');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...segments) => fs.readFileSync(path.join(root, ...segments), 'utf8').replace(/\r\n/g, '\n');

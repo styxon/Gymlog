@@ -1,14 +1,14 @@
 const assert = require('node:assert/strict');
 
-const { programFitsEquipment, equipmentCandidatePool, GYM_ALWAYS_HAS } = require('../../.test-dist/lib/programEquipmentFit.js');
+const { programFitsEquipment, equipmentCandidatePool, GYM_ALWAYS_HAS } = require('../../src/lib/programEquipmentFit');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   resolveFirstRunRecommendationWithTailoring,
-} = require('../../.test-dist/lib/firstRunSetup.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+} = require('../../src/lib/firstRunSetup');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { applyEquipmentToExercises } = require('../../src/lib/equipmentExerciseFilter');
 
 const GOALS = ['strength', 'muscle', 'general', 'run_mobility', 'lean_athletic', 'general_fitness'];
 const LEVELS = ['beginner', 'advanced', 'pro'];
@@ -228,9 +228,9 @@ module.exports = [
       const fs = require('node:fs');
       const path = require('node:path');
       const root = path.join(__dirname, '..', '..');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
       const library = [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY];
       const names = library.map((item) => item.name);
 
@@ -281,7 +281,7 @@ module.exports = [
       // Home with every chip unticked is "nothing", not "unknown gear".
       const onboarding = fs.readFileSync(path.join(root, 'src', 'screens', 'OnboardingScreen.tsx'), 'utf8');
       assert.match(onboarding, /equipmentSetupForChips\(option, items\)/);
-      const { equipmentSetupForChips } = require('../../.test-dist/lib/equipmentCardSetup.js');
+      const { equipmentSetupForChips } = require('../../src/lib/equipmentCardSetup');
       assert.deepEqual(equipmentSetupForChips({ id: 'home_gym', equipment: 'home', trainingEnvironment: 'home_gym' }, []), {
         equipment: 'home',
         trainingEnvironment: 'bodyweight_only',

@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const format = require(`${DIST}/lib/format.js`);
 const { buildCoachModules } = require(`${DIST}/lib/aiCoachModules.js`);
 const { buildSessionAnalysis, volumeChangePercent } = require(`${DIST}/lib/sessionAnalysis.js`);

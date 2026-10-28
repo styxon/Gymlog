@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { getComparableLogSets, logRecordedWork } = require('../../.test-dist/lib/exerciseLog.js');
+const { getComparableLogSets, logRecordedWork } = require('../../src/lib/exerciseLog');
 
 const row = (weight, reps, status, orderIndex = 0) => ({ orderIndex, weight, reps, kind: 'working', outcome: null, status });
 

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   buildPersistedSessionNames,
   getAutoSessionName,
-} = require('../../.test-dist/lib/workoutEditorNaming.js');
+} = require('../../src/lib/workoutEditorNaming');
 
 module.exports = [
   {

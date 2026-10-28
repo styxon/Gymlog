@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const {
   normalizeAppliedMigrations,
   restoreTrackingAfterCategoryCorrection,
-} = require('../../.test-dist/lib/trackingCategoryMigration.js');
-const { CATEGORY_CORRECTED_LIBRARY_IDS } = require('../../.test-dist/data/categoryCorrectedLibraryIds.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/trackingCategoryMigration');
+const { CATEGORY_CORRECTED_LIBRARY_IDS } = require('../../src/data/categoryCorrectedLibraryIds');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
 
 /**
  * The rule that keeps a programme saved before the library's category

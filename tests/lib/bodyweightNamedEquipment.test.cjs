@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { displayEquipmentValue } = require('../../.test-dist/lib/libraryLabel.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { displayEquipmentValue } = require('../../src/lib/libraryLabel');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
 
 /**
  * A lift named for the body alone lists no weight (#bugs 2026-10-19): the swap

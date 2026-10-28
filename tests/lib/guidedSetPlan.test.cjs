@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveGuidedSetPlan, resolveGuidedSetTarget } = require('../../.test-dist/lib/guidedPlayer.js');
+const { resolveGuidedSetPlan, resolveGuidedSetTarget } = require('../../src/lib/guidedPlayer');
 
 // "Saadaanko näkyviin koko sarja mitä pitäisi tehdä eli esim tee 10 10 10 10
 // 9" (#bugs 2026-10-08): the set card shows today's sets beside last time's.
@@ -67,7 +67,7 @@ module.exports = [
       const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
       assert.match(player, /exercise && !minutesMode\s*\?\s*resolveGuidedSetPlan\(liftSets, step\.setIndex, exercise\.trackingMode, exercise\.swappedAfterSetIndex, exercise\)/);
       assert.match(player, /t\(language, 'guided\.card\.today'\)/);
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('fi', 'guided.card.today'), 'TÄNÄÄN');
     },
   },

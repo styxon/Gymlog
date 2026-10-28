@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
-const { getCurrentWeekStreak, getMonthlyActivityCalendar, subtractCalendarMonths } = require('../../.test-dist/lib/completedSessions.js');
-const { isRecordLocked } = require('../../.test-dist/lib/historyWindow.js');
-const { sumMonthTrainingTotals } = require('../../.test-dist/lib/dashboard.js');
-const { measurementUnitForKind } = require('../../.test-dist/lib/measurementKinds.js');
+const { weeklyTrainingStreak } = require('../../src/lib/trainingCalendar');
+const { getCurrentWeekStreak, getMonthlyActivityCalendar, subtractCalendarMonths } = require('../../src/lib/completedSessions');
+const { isRecordLocked } = require('../../src/lib/historyWindow');
+const { sumMonthTrainingTotals } = require('../../src/lib/dashboard');
+const { measurementUnitForKind } = require('../../src/lib/measurementKinds');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 

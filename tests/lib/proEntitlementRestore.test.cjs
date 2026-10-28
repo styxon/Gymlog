@@ -8,8 +8,8 @@ const {
   canStartProTrial,
   keepDeviceEntitlement,
   resolveProEntitlement,
-} = require('../../.test-dist/lib/proEntitlement.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+} = require('../../src/lib/proEntitlement');
+const { createEmptyDatabase } = require('../../src/data/seed');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
 /**

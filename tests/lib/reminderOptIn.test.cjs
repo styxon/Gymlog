@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { remindersOptedIn } = require('../../.test-dist/lib/reminderOptIn.js');
-const { buildNotificationPlan } = require('../../.test-dist/lib/notificationPlan.js');
-const { weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+const { remindersOptedIn } = require('../../src/lib/reminderOptIn');
+const { buildNotificationPlan } = require('../../src/lib/notificationPlan');
+const { weekdaySchedule } = require('../../src/lib/trainingSchedule');
 
 const ROOT = path.join(__dirname, '..', '..');
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

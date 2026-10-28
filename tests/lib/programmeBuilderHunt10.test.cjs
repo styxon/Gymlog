@@ -2,20 +2,20 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { PROGRAMME_NAME_MAX, SPLIT_PRESETS, typedSessionNames } = require('../../.test-dist/lib/templateBuilderSteps.js');
-const { quickLayoutLiftNames } = require('../../.test-dist/lib/quickLayoutExercises.js');
-const { formatPlanSessionTitle, isReaderNamedSession } = require('../../.test-dist/lib/sessionNameLabel.js');
+const { PROGRAMME_NAME_MAX, SPLIT_PRESETS, typedSessionNames } = require('../../src/lib/templateBuilderSteps');
+const { quickLayoutLiftNames } = require('../../src/lib/quickLayoutExercises');
+const { formatPlanSessionTitle, isReaderNamedSession } = require('../../src/lib/sessionNameLabel');
 const {
   buildDisplayCopyName,
   formatLiftDisplayLabel,
   formatWorkoutDisplayLabel,
-} = require('../../.test-dist/lib/displayLabel.js');
-const { buildSwapAlternatives } = require('../../.test-dist/lib/swapPickerLists.js');
-const { buildTailoringPreferences } = require('../../.test-dist/lib/tailoringFit.js');
-const { WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
-const i18n = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/displayLabel');
+const { buildSwapAlternatives } = require('../../src/lib/swapPickerLists');
+const { buildTailoringPreferences } = require('../../src/lib/tailoringFit');
+const { WORKOUT_SUBSTITUTION_GROUPS } = require('../../src/features/workout/workoutCatalog');
+const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { createSeedDatabase } = require('../../src/data/seed');
+const i18n = require('../../src/lib/i18n');
 
 /**
  * The programme builder, break round 10 (2026-10-09): what the builder writes

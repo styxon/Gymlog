@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildDuplicatedCustomProgramDraft } = require('../../.test-dist/lib/customProgramDuplication.js');
+const { buildDuplicatedCustomProgramDraft } = require('../../src/lib/customProgramDuplication');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');

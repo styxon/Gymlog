@@ -26,7 +26,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyn
  */
 
 const ROOT = path.join(__dirname, '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const IMAGE_DIR = path.join(ROOT, 'assets', 'exercises');
 const MAP_SOURCE = path.join(ROOT, 'src', 'assets', 'exerciseImages.ts');
 const RULES = JSON.parse(fs.readFileSync(path.join(ROOT, 'scripts', 'exercise-pictures.json'), 'utf8'));
@@ -77,7 +77,7 @@ function sourceFiles() {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       const full = path.join(dir, entry.name);
       if (entry.isDirectory()) {
-        if (entry.name === 'node_modules' || entry.name === '.test-dist' || full === path.join(ROOT, 'assets')) continue;
+        if (entry.name === 'node_modules' || entry.name === 'src' || full === path.join(ROOT, 'assets')) continue;
         walk(full);
       } else if (/\.(ts|tsx|js|cjs|mjs|json|py)$/.test(entry.name)) {
         out.push(full);

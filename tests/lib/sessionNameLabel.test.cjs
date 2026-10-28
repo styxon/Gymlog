@@ -4,13 +4,13 @@ const {
   formatPlanSessionTitle,
   localizeSessionName,
   localizeWorkoutFocus,
-} = require('../../.test-dist/lib/sessionNameLabel');
+} = require('../../src/lib/sessionNameLabel');
 
 module.exports = [
   {
     name: 'session focus: the ordinal goes where something else already names the day',
     run() {
-      const { localizeSessionFocus } = require('../../.test-dist/lib/sessionNameLabel.js');
+      const { localizeSessionFocus } = require('../../src/lib/sessionNameLabel');
 
       // The home card carries a MA/TO badge, so "Päivä 1:" said it twice and
       // cost the focus the width it then truncated for.
@@ -100,8 +100,8 @@ module.exports = [
   {
     name: 'no catalog session name reaches a Finnish reader with an ampersand in it',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { localizeSessionFocus } = require('../../.test-dist/lib/sessionNameLabel.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { localizeSessionFocus } = require('../../src/lib/sessionNameLabel');
       const left = [];
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const session of template.sessions) {
@@ -140,7 +140,7 @@ module.exports = [
   {
     name: 'no session name is left half-English, which a same-string check misses',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
       // The obvious check — "did the string come back unchanged" — passes for
       // "Morning Mobility (Full Body)" -> "Morning Mobility (Koko keho)",

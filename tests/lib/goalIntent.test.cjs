@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
-const { parseGoalIntent } = require('../../.test-dist/lib/goalIntent.js');
-const { parseMeasurementIntent } = require('../../.test-dist/lib/measurementIntent.js');
+const { parseGoalIntent } = require('../../src/lib/goalIntent');
+const { parseMeasurementIntent } = require('../../src/lib/measurementIntent');
 
 module.exports = [
   {

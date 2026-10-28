@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { renamePlansForTemplate, plansChanged } = require('../../.test-dist/lib/programRename.js');
+const { renamePlansForTemplate, plansChanged } = require('../../src/lib/programRename');
 
 const plan = (id, name, templateIds) => ({
   id,

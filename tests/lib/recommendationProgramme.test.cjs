@@ -4,9 +4,9 @@ const {
   buildRecommendationPlanReadyPayload,
   buildRecommendationProgrammeProfile,
   getRecommendationProgrammeSummary,
-} = require('../../.test-dist/lib/recommendationProgramme.js');
-const { getReadyProgramBlockWeeks, READY_PROGRAM_MIN_BLOCK_WEEKS } = require('../../.test-dist/lib/readyProgramDuration.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/recommendationProgramme');
+const { getReadyProgramBlockWeeks, READY_PROGRAM_MIN_BLOCK_WEEKS } = require('../../src/lib/readyProgramDuration');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
 
 /** What the catalog says this programme's block is — the single source. */
 function expectedCatalogWeeks(programId) {

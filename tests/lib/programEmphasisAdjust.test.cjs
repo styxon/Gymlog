@@ -5,7 +5,7 @@ const {
   EMPHASIS_STEP,
   MIN_SETS_PER_EXERCISE,
   MAX_SETS_PER_EXERCISE,
-} = require('../../.test-dist/lib/programEmphasisAdjust.js');
+} = require('../../src/lib/programEmphasisAdjust');
 
 const WEEK = [
   { area: 'glutesLegs', role: 'primary', sets: 4 },

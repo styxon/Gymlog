@@ -8,7 +8,7 @@ const {
   evaluateProgramAdoption,
   removeActiveProgram,
   resolveActiveProgramCap,
-} = require('../../.test-dist/lib/activeProgramSet.js');
+} = require('../../src/lib/activeProgramSet');
 
 module.exports = [
   {
@@ -258,7 +258,7 @@ module.exports = [
     name: 'the running set keeps only programmes whose plans can run, and the lead follows',
     run() {
       const assert = require('node:assert/strict');
-      const { reconcileRunningSet, planCanRun } = require('../../.test-dist/lib/activeProgramSet.js');
+      const { reconcileRunningSet, planCanRun } = require('../../src/lib/activeProgramSet');
       const plans = [
         { id: 'onboarding_plan_x', entries: [{}] },
         { id: 'ready_plan_run', entries: [{}] },

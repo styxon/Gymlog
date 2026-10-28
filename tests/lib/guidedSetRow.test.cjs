@@ -9,7 +9,7 @@ const {
   guidedLoadTrend,
   guidedTodayLoadKg,
   guidedWindow,
-} = require('../../.test-dist/lib/guidedSetRow.js');
+} = require('../../src/lib/guidedSetRow');
 
 const playerSource = fs
   .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')

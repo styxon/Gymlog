@@ -7,7 +7,7 @@ const {
   buildCoachNoticed,
   buildCoachOpeningRows,
   buildCoachOpeningOffer,
-} = require('../../.test-dist/lib/coachChat.js');
+} = require('../../src/lib/coachChat');
 
 function row(overrides) {
   return {

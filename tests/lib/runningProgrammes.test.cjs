@@ -13,7 +13,7 @@ const {
   resolveLeadPlanId,
   resumeProgramme,
   stopProgramme,
-} = require('../../.test-dist/lib/runningProgrammes.js');
+} = require('../../src/lib/runningProgrammes');
 
 const plan = (id, templateId, name = id) => ({
   id,

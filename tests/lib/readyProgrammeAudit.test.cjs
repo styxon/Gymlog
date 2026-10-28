@@ -10,7 +10,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const dist = (p) => require(path.join(__dirname, '..', '..', '.test-dist', p));
+const dist = (p) => require(path.join(__dirname, '..', '..', 'src', p));
 const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = dist('features/workout/workoutCatalog.js');
 const { RECOMMENDATION_PROGRAMS } = dist('lib/recommendationCatalog.js');
 const { createSeedExerciseLibrary } = dist('data/seed.js');

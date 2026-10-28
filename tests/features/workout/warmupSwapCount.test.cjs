@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { getWorkoutTemplateById } = require('../../../.test-dist/features/workout/workoutCatalog.js');
-const { buildReadySessionRuntimeTemplate } = require('../../../.test-dist/lib/programDetails.js');
-const { buildLoggedSetPlan } = require('../../../.test-dist/lib/loggedSetPlan.js');
-const { programmeSetCount, toWorkingHistoryEntry } = require('../../../.test-dist/lib/warmupSets.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { getWorkoutTemplateById } = require('../../../src/features/workout/workoutCatalog');
+const { buildReadySessionRuntimeTemplate } = require('../../../src/lib/programDetails');
+const { buildLoggedSetPlan } = require('../../../src/lib/loggedSetPlan');
+const { programmeSetCount, toWorkingHistoryEntry } = require('../../../src/lib/warmupSets');
 
 /**
  * A swap keeps the "added mid-session" mark (bug hunt W11, 2026-10-05, after

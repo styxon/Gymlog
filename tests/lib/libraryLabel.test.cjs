@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { displayEquipmentValue, libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+const { displayEquipmentValue, libraryLabel } = require('../../src/lib/libraryLabel');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 /** Every distinct value a library field takes, so the test tracks the data. */
 function distinct(field) {

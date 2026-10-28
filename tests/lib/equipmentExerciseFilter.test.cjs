@@ -4,10 +4,10 @@ const {
   applyEquipmentToExercises,
   isExerciseAllowedWithEquipment,
   resolveAvailableEquipment,
-} = require('../../.test-dist/lib/equipmentExerciseFilter');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/lib/equipmentExerciseFilter');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function exercise(name) {
   return {
@@ -268,9 +268,9 @@ module.exports = [
   {
     name: 'equipment filter: substring rules do not refuse bodyweight work with a gear word in its name',
     run() {
-      const { resolveProgramEquipment } = require('../../.test-dist/lib/programEquipment');
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary');
+      const { resolveProgramEquipment } = require('../../src/lib/programEquipment');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
       const falseRefusals = [
         'IT Band and Glute Stretch',
         'Nordic Hamstring Curl (Assisted)',
@@ -318,7 +318,7 @@ module.exports = [
   {
     name: "equipment filter: a rep lift that falls back to a hold takes the hold's own seconds, not its rep count",
     run() {
-      const { doseAfterSwap } = require('../../.test-dist/lib/swapDose');
+      const { doseAfterSwap } = require('../../src/lib/swapDose');
       // Cable crunch at 2 x 15 with dumbbells only became a 15-second plank:
       // the rep number was carried over as seconds (re-hunt, 2026-10-07).
       const crunch = { ...exercise('Cable Crunch'), trackingMode: 'reps_first', sets: 2, repsMin: 15, repsMax: 15 };
@@ -363,8 +363,8 @@ module.exports = [
   {
     name: "equipment filter: an interval that falls back to a bout of minutes takes the bout's own count, not the interval's",
     run() {
-      const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises');
-      const { estimateProgrammeSessionMinutesList } = require('../../.test-dist/lib/programmeMinutes');
+      const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../src/lib/minutesExercises');
+      const { estimateProgrammeSessionMinutesList } = require('../../src/lib/programmeMinutes');
       // SHRED's "Treadmill HIIT 8 × 30 s" with the cardio machines unticked
       // became "Trail Running/Walking 8 × 5 min": eight 30-second intervals
       // read as eight five-minute bouts, Day 1 at 80 min against 45 (bug

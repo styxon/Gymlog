@@ -261,7 +261,7 @@ module.exports = [
   {
     name: 'first-run tour: the back hold is the tour\'s own, and a replaced layer cannot clear the one that took over',
     run() {
-      const back = require('../../.test-dist/features/tour/tourBack');
+      const back = require('../../src/features/tour/tourBack');
       assert.equal(back.consumeBackForTour(), false, 'nothing held: the listener does its own thing');
       assert.equal(back.isBackHeldByTour(), false);
       let skipped = 0;
@@ -315,7 +315,7 @@ module.exports = [
     run() {
       const finish = between(layer, 'const finish = useCallback(', 'const skip = useCallback');
       assert.match(finish, /if \(shownRef\.current \|\| !isWorkoutTourSurface\(surface\)\) \{\s*onFinish\(surface, reason\);\s*\}/);
-      const tour = require('../../.test-dist/lib/firstRunTour');
+      const tour = require('../../src/lib/firstRunTour');
       assert.equal(tour.isWorkoutTourSurface('workoutSet'), true);
       assert.equal(tour.isWorkoutTourSurface('workoutRest'), true);
       assert.equal(tour.isWorkoutTourSurface('home'), false);

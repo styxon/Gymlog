@@ -6,7 +6,7 @@ const {
   applySessionAdaptation,
   hasSessionAdaptation,
   EMPTY_SESSION_ADAPTATION,
-} = require('../../.test-dist/lib/sessionAdaptation.js');
+} = require('../../src/lib/sessionAdaptation');
 
 const read = (relative) => fs.readFileSync(path.join(__dirname, '../..', relative), 'utf8');
 

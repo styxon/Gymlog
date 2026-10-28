@@ -5,8 +5,8 @@ const path = require('node:path');
 // workoutPersistence reaches storage/largeItem, which reads Platform from react-native.
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
-const { normalizeWorkoutBundle } = require('../../../.test-dist/features/workout/workoutPersistence');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
+const { normalizeWorkoutBundle } = require('../../../src/features/workout/workoutPersistence');
 const {
   minutesBoutDueMs,
   minutesToLog,
@@ -14,7 +14,7 @@ const {
   startStopwatch,
   stopwatchElapsedMs,
   stopwatchForSet,
-} = require('../../../.test-dist/lib/minutesExercises.js');
+} = require('../../../src/lib/minutesExercises');
 
 /**
  * #bugs 2026-10-06: a bout of minutes (bike, stair machine, run block) kept

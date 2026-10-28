@@ -9,10 +9,10 @@ const {
   normalizePendingAiLogDeletions,
   withPendingAiLogDeletion,
   withoutAiLogDeletions,
-} = require('../../.test-dist/lib/aiLogDeletion.js');
-const { buildAccountBackupPayload } = require('../../.test-dist/lib/accountBackup.js');
-const { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+} = require('../../src/lib/aiLogDeletion');
+const { buildAccountBackupPayload } = require('../../src/lib/accountBackup');
+const { DEVICE_ONLY_PREFERENCE_FIELDS, keepDeviceEntitlement } = require('../../src/lib/proEntitlement');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 /**
  * A coach-log delete that failed is owed, not forgotten (decision 2026-09-17).
@@ -294,15 +294,15 @@ module.exports = [
         key: process.env.EXPO_PUBLIC_AI_COACH_APP_KEY,
         mode: process.env.NODE_ENV,
       };
-      const modulePath = path.join(root, '.test-dist', 'features', 'aiCoach', 'aiCoachClient.js');
+      const modulePath = require.resolve(path.join(root, 'src', 'features', 'aiCoach', 'aiCoachClient.js'));
       process.env.EXPO_PUBLIC_AI_COACH_API_URL = 'https://coach.example.test/api/ai-coach';
       process.env.EXPO_PUBLIC_AI_COACH_APP_KEY = 'app-key';
       // A development build reaches the URL without the spend-cap sign-off.
       process.env.NODE_ENV = 'development';
       delete require.cache[modulePath];
-      delete require.cache[path.join(root, '.test-dist', 'lib', 'aiCoachLiveGate.js')];
+      delete require.cache[require.resolve(path.join(root, 'src', 'lib', 'aiCoachLiveGate.js'))];
       global.fetch = async () => ({ ok: true, status: 200, json: async () => ({ ok: true, source: 'live', answer: { takeaway: 'x', why: [], nextSteps: [], plan: [], assumptions: [] } }) });
-      const logIdModule = require(path.join(root, '.test-dist', 'lib', 'aiCoachLogId.js'));
+      const logIdModule = require(path.join(root, 'src', 'lib', 'aiCoachLogId.js'));
       const savedCopies = logIdModule.COACH_COPIES_KEPT;
       const sent = [];
       global.fetch = async (url, init) => {

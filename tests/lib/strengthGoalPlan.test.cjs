@@ -8,7 +8,7 @@ const {
   RATE_WINDOW_SESSIONS,
   resolveObservedRate,
   TARGET_DELTAS_KG,
-} = require('../../.test-dist/lib/strengthGoalPlan.js');
+} = require('../../src/lib/strengthGoalPlan');
 
 /**
  * The target flow's arithmetic.
@@ -186,7 +186,7 @@ module.exports = [
      */
     name: 'goal plan: nothing judges a target by what share of the best it adds',
     run() {
-      const planModule = require('../../.test-dist/lib/strengthGoalPlan.js');
+      const planModule = require('../../src/lib/strengthGoalPlan');
       assert.equal(planModule.describeStretch, undefined);
       assert.equal(planModule.STRETCH_RATIO, undefined);
 
@@ -256,7 +256,7 @@ module.exports = [
      */
     name: 'goal plan: the arithmetic survives a real lift history',
     run() {
-      const { buildLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
+      const { buildLiftHistories } = require('../../src/lib/trainingHistory');
 
       const day = (index) => new Date(Date.UTC(2026, 0, 5 + index * 3)).toISOString();
       const sessions = Array.from({ length: 8 }, (_, index) => ({
@@ -316,7 +316,7 @@ module.exports = [
     name: 'estimate: every kind the flow can reach renders a sentence',
     run() {
       const assert = require('node:assert/strict');
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       const rate = { kgPerWeek: 1, gainKg: 6, spanWeeks: 6 };
       const flat = { kgPerWeek: 0, gainKg: 0, spanWeeks: 6 };
       const crawl = { kgPerWeek: 0.001, gainKg: 0.006, spanWeeks: 6 };

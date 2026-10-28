@@ -2,23 +2,23 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { buildTrainingHistory, buildLiftHistories, topSetOf } = require('../../.test-dist/lib/trainingHistory.js');
-const { getSessionTotals } = require('../../.test-dist/lib/sessionTotals.js');
-const { buildAiTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
-const { computePostSessionInsight } = require('../../.test-dist/lib/postSessionInsight.js');
-const { heaviestOfSets, resolveRecord } = require('../../.test-dist/lib/personalRecords.js');
+const { buildTrainingHistory, buildLiftHistories, topSetOf } = require('../../src/lib/trainingHistory');
+const { getSessionTotals } = require('../../src/lib/sessionTotals');
+const { buildAiTrainingContext } = require('../../src/lib/aiTrainingContext');
+const { computePostSessionInsight } = require('../../src/lib/postSessionInsight');
+const { heaviestOfSets, resolveRecord } = require('../../src/lib/personalRecords');
 const {
   getExerciseProgressForName,
   getTotalVolume,
   getTrackedExerciseProgress,
-} = require('../../.test-dist/lib/progression.js');
-const { getTopComparableSet } = require('../../.test-dist/lib/profileOverview.js');
-const { buildHistorySessionViewModel } = require('../../.test-dist/lib/historyView.js');
-const { buildPreviousTopSets } = require('../../.test-dist/lib/sessionMovement.js');
-const { buildCoachModules } = require('../../.test-dist/lib/aiCoachModules.js');
-const { isSuggestionSilenced } = require('../../.test-dist/lib/coachSuggestions.js');
-const { decideRatingPrompt, RATING_MIN_SESSIONS } = require('../../.test-dist/lib/ratingPrompt.js');
-const { liftBestPerformedAt } = require('../../.test-dist/lib/liftBestGate.js');
+} = require('../../src/lib/progression');
+const { getTopComparableSet } = require('../../src/lib/profileOverview');
+const { buildHistorySessionViewModel } = require('../../src/lib/historyView');
+const { buildPreviousTopSets } = require('../../src/lib/sessionMovement');
+const { buildCoachModules } = require('../../src/lib/aiCoachModules');
+const { isSuggestionSilenced } = require('../../src/lib/coachSuggestions');
+const { decideRatingPrompt, RATING_MIN_SESSIONS } = require('../../src/lib/ratingPrompt');
+const { liftBestPerformedAt } = require('../../src/lib/liftBestGate');
 
 /**
  * The numbers the coach context, History and the post-session insight state

@@ -1,72 +1,12 @@
-/**
- * Compile-freshness gate. Runs before the first require, because the suites
- * themselves load .test-dist.
- *
- * The trap this closes has bitten more than once: tests import compiled
- * output, so editing src/ and re-running gives a green suite that proves
- * yesterday's code — and deleting a src file leaves its compiled module
- * behind, still importable, still green. "rm -rf .test-dist before trusting
- * green" lived in a note; now the runner refuses on its own.
- */
+// Unit tests load src/ directly through a small in-process TypeScript hook;
+// there is no compiled test build to keep fresh. Types are checked by
+// `npm run typecheck`. The hook is also inherited by child processes.
+require('../scripts/registerTs.cjs');
+
 {
-  const fs = require('node:fs');
-  const path = require('node:path');
-  const root = path.join(__dirname, '..');
-  const srcDir = path.join(root, 'src');
-  const distDir = path.join(root, '.test-dist');
-
-  const walk = (dir, ext, out = []) => {
-    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-      const full = path.join(dir, entry.name);
-      if (entry.isDirectory()) walk(full, ext, out);
-      else if (entry.name.endsWith(ext)) out.push(full);
-    }
-    return out;
-  };
-
-  const problems = [];
-  if (!fs.existsSync(distDir)) {
-    problems.push('.test-dist does not exist');
-  } else {
-    for (const source of walk(srcDir, '.ts')) {
-      if (source.endsWith('.d.ts')) continue;
-      const rel = path.relative(srcDir, source);
-      const compiled = path.join(distDir, rel.replace(/\.ts$/, '.js'));
-      if (!fs.existsSync(compiled)) {
-        problems.push(`never compiled: src/${rel}`);
-      } else if (fs.statSync(compiled).mtimeMs < fs.statSync(source).mtimeMs) {
-        problems.push(`older than its source: src/${rel}`);
-      }
-    }
-
-    for (const compiled of walk(distDir, '.js')) {
-      const rel = path.relative(distDir, compiled);
-      // tsc follows imports beyond the include list, so a compiled module's
-      // source can be .ts or .tsx.
-      const stem = path.join(srcDir, rel.replace(/\.js$/, ''));
-      if (!fs.existsSync(`${stem}.ts`) && !fs.existsSync(`${stem}.tsx`)) {
-        problems.push(`source deleted but still compiled: .test-dist/${rel}`);
-      } else if (
-        fs.existsSync(`${stem}.tsx`) &&
-        fs.statSync(compiled).mtimeMs < fs.statSync(`${stem}.tsx`).mtimeMs
-      ) {
-        // .tsx staleness lands here; the src walk above only sees .ts.
-        problems.push(`older than its source: ${path.relative(root, `${stem}.tsx`)}`);
-      }
-    }
-  }
-
-  if (problems.length > 0) {
-    console.error('.test-dist does not match src/ — a green run would prove nothing:');
-    for (const problem of problems.slice(0, 15)) {
-      console.error(`  ${problem}`);
-    }
-    if (problems.length > 15) {
-      console.error(`  ...and ${problems.length - 15} more`);
-    }
-    console.error('\nRecompile first:');
-    console.error('  Remove-Item -Recurse -Force .test-dist; npx tsc -p tsconfig.test.json');
-    process.exit(1);
+  const oldBuild = require('node:path').join(__dirname, '..', ['.test', 'dist'].join('-'));
+  if (require('node:fs').existsSync(oldBuild)) {
+    console.log(`Note: ${oldBuild} is unused now (tests load src/ directly) and can be deleted.`);
   }
 }
 
@@ -76,6 +16,8 @@ const suites = [
   ...require('./scripts/slackNotify.test.cjs'),
   ...require('./scripts/releaseGuard.test.cjs'),
   ...require('./scripts/claudeReviewWorkflow.test.cjs'),
+  ...require('./lib/noCompiledTestBuild.test.cjs'),
+  ...require('./lib/registerTsHook.test.cjs'),
   ...require('./lib/appIcon.test.cjs'),
   ...require('./lib/proBenefits.test.cjs'),
   ...require('./lib/membershipEndView.test.cjs'),

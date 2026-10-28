@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { getWorkoutTemplateById } = require('../../../.test-dist/features/workout/workoutCatalog.js');
-const { buildReadySessionRuntimeTemplate } = require('../../../.test-dist/lib/programDetails.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { getWorkoutTemplateById } = require('../../../src/features/workout/workoutCatalog');
+const { buildReadySessionRuntimeTemplate } = require('../../../src/lib/programDetails');
 
 /**
  * "Repeat last set" must not reach across a swap for its source (2026-09-26).

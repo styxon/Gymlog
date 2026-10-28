@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { resolveProgramAffinity, AFFINITY_REASON_KEYS } = require('../../.test-dist/lib/programAffinity.js');
-const { PROGRAM_CATEGORIES } = require('../../.test-dist/lib/programCategories.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+const { resolveProgramAffinity, AFFINITY_REASON_KEYS } = require('../../src/lib/programAffinity');
+const { PROGRAM_CATEGORIES } = require('../../src/lib/programCategories');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 const {
   READY_PROGRAM_COLLECTIONS,
   UNLISTED_READY_PROGRAMS,
-} = require('../../.test-dist/lib/readyProgramCollections.js');
+} = require('../../src/lib/readyProgramCollections');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

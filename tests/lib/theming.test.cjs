@@ -3,9 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const { darkTheme, lightTheme } = require('../../.test-dist/theming.js');
-const { HG } = require('../../.test-dist/lightTheme.js');
-const { resolveThemeName } = require('../../.test-dist/lib/themePreference.js');
+const { darkTheme, lightTheme } = require('../../src/theming');
+const { HG } = require('../../src/lightTheme');
+const { resolveThemeName } = require('../../src/lib/themePreference');
 
 const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');

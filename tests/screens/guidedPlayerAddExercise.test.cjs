@@ -95,7 +95,7 @@ module.exports = [
       // The list moved to lib/guidedClockHold (2026-10-06); the screen hands
       // it every overlay, this one included.
       assert.match(playerSource, /const frozen = guidedClockHeld\(\{[^}]*\baddExerciseOpen,[^}]*\}\);/);
-      const { guidedClockHeld } = require('../../.test-dist/lib/guidedClockHold.js');
+      const { guidedClockHeld } = require('../../src/lib/guidedClockHold');
       const none = {
         paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,
         addExerciseOpen: false, restEditOpen: false, runSheetOpen: false, ownBlockActive: false,

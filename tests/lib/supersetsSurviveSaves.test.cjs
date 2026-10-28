@@ -21,8 +21,8 @@ module.exports = [
   {
     name: 'supersetsSurviveSaves: the programme onboarding saves keeps the catalogue pairs',
     run() {
-      const { buildSavedOnboardingPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { buildSavedOnboardingPlan } = require('../../src/app/onboardingHandoff');
+      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
       const selection = {
         ...DEFAULT_FIRST_RUN_SELECTION,
         goal: 'muscle',
@@ -56,7 +56,7 @@ module.exports = [
   {
     name: 'supersetsSurviveSaves: the shared copy of a lift carries its superset',
     run() {
-      const { toDraftExercise } = require('../../.test-dist/lib/programSessionEdit.js');
+      const { toDraftExercise } = require('../../src/lib/programSessionEdit');
       const lift = {
         id: 'x',
         name: 'Lateral Raise',

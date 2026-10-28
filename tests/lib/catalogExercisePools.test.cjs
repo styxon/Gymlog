@@ -9,9 +9,9 @@ const {
   resolveCatalogBodyPart,
   sessionFocusAffinity,
   pickPoolVariant,
-} = require('../../.test-dist/lib/catalogExercisePools.js');
-const { EQUIPMENT_FALLBACKS } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { getFocusEmphasisCount } = require('../../.test-dist/lib/focusEmphasis.js');
+} = require('../../src/lib/catalogExercisePools');
+const { EQUIPMENT_FALLBACKS } = require('../../src/lib/equipmentExerciseFilter');
+const { getFocusEmphasisCount } = require('../../src/lib/focusEmphasis');
 
 /**
  * The guard for a bug family that appeared in three separate tables: exercise
@@ -95,8 +95,8 @@ module.exports = [
   {
     name: 'body parts resolve for names the templates spell differently',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
       const names = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
 
       // The ready templates say "Bench Press"; the library says "Barbell Bench
@@ -135,8 +135,8 @@ module.exports = [
   {
     name: 'a bracket carrying a prescription is never stripped, and a stripped name never guesses',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
       const names = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
       const resolved = (name) => {
         const index = findGuidedLibraryIndex(name, names);
@@ -169,7 +169,7 @@ module.exports = [
   {
     name: 'no program prescribes a block name in place of an exercise',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
       // "Mobility Flow", "Sun Salutation Flow", "Breath Reset" were rows in
       // RESET, RESET Yoga and RUN's recovery day. They name a block, not a
@@ -236,9 +236,9 @@ module.exports = [
   {
     name: 'the number of prescribed names that resolve to nothing does not grow',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const libraryNames = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
 
       const prescribed = new Set();
@@ -275,11 +275,11 @@ module.exports = [
   {
     name: 'every alias points at an exercise that actually exists',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { GUIDED_LIBRARY_ALIASES } = require('../../src/lib/guidedPlayer');
       // An alias may point at one of the app's own extras ("bodyweight calf
       // raise"): the shipped library is generated + extras (bug hunt, 2026-10-04).
-      const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
+      const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
       const libraryNames = new Set(
         [...GENERATED_EXERCISE_LIBRARY, ...EXTRA_EXERCISE_LIBRARY].map((entry) => entry.name.trim().toLowerCase()),
       );
@@ -297,8 +297,8 @@ module.exports = [
   {
     name: 'an alias beats the containment guess, so a near-miss cannot win',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
       const names = GENERATED_EXERCISE_LIBRARY.map((entry) => entry.name);
       const resolved = (name) => GENERATED_EXERCISE_LIBRARY[findGuidedLibraryIndex(name, names)].name;
 
@@ -315,7 +315,7 @@ module.exports = [
   {
     name: 'the share of catalog names the library cannot place only goes down',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
       // A ratchet, not a target. An unresolvable name fails silently — the
       // exercise still renders, just with no photo, no instructions and no

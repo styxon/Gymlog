@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const dist = '../../.test-dist/';
+const dist = '../../src/';
 const first = require(dist + 'lib/firstRunSetup.js');
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
 const { exerciseHitsCautionArea, AREA_CAREFUL_SWAPS, AREA_BODYWEIGHT_SWAPS } = require(dist + 'lib/cautionExerciseFilter.js');

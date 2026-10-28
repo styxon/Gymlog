@@ -14,7 +14,7 @@ const {
   resolveFreestyleSessionId,
   discardSavedFreestyleDraft,
   resolveFreestyleSaveTarget,
-} = require('../../.test-dist/lib/emptyWorkoutSession.js');
+} = require('../../src/lib/emptyWorkoutSession');
 
 const emptyPrLookup = { byLibraryItemId: {}, byName: {}, namesWithRecordsRow: {} };
 
@@ -353,7 +353,7 @@ module.exports = [
     // lead a session that also set a squat record (2026-09-26).
     name: 'freestyle record cards come strongest first',
     run() {
-      const { buildFreestyleFinish } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      const { buildFreestyleFinish } = require('../../src/lib/emptyWorkoutSession');
       const lift = (localKey, name, kg, reps) =>
         makeExercise({ localKey, name, libraryItemId: null, sets: [{ localKey: `${localKey}_1`, kg, reps, done: true }] });
       const { summary } = buildFreestyleFinish({
@@ -378,7 +378,7 @@ module.exports = [
         canFinishFreestyleSession,
         freestyleDoneSetCount,
         freestyleUnsavedWork,
-      } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      } = require('../../src/lib/emptyWorkoutSession');
       const blank = makeExercise({ sets: [{ localKey: 'set_1', kg: '', reps: '', done: true }] });
       assert.equal(canFinishFreestyleSession([blank]), false);
       assert.equal(freestyleDoneSetCount([blank]), 0);
@@ -412,7 +412,7 @@ module.exports = [
     // then dropped by the loader on the next launch.
     name: 'isLoggableFreestyleSet: a set nobody could lift cannot be ticked',
     run() {
-      const { isLoggableFreestyleSet } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      const { isLoggableFreestyleSet } = require('../../src/lib/emptyWorkoutSession');
       assert.equal(isLoggableFreestyleSet({ kg: '82,5', reps: '6' }), true);
       assert.equal(isLoggableFreestyleSet({ kg: '', reps: '' }), false);
       assert.equal(isLoggableFreestyleSet({ kg: '60', reps: '' }), false);
@@ -432,7 +432,7 @@ module.exports = [
      */
     name: 'a stored freestyle draft comes back with its lifts, rows and rest, and junk does not',
     run() {
-      const { normalizeFreestyleDraftSnapshot } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      const { normalizeFreestyleDraftSnapshot } = require('../../src/lib/emptyWorkoutSession');
       assert.equal(normalizeFreestyleDraftSnapshot(null), null);
       assert.equal(normalizeFreestyleDraftSnapshot({ exercises: [] }), null, 'no lifts is no draft');
       assert.equal(normalizeFreestyleDraftSnapshot({ exercises: [{ localKey: 'a', name: 'Bench', sets: [] }] }), null, 'a lift with no rows is dropped, and the draft with it');
@@ -489,7 +489,7 @@ module.exports = [
       const {
         resolveFreestyleDraftStart,
         FREESTYLE_DRAFT_CLOCK_MAX_AGE_MS,
-      } = require('../../.test-dist/lib/emptyWorkoutSession.js');
+      } = require('../../src/lib/emptyWorkoutSession');
       const now = 1_700_000_000_000;
       const startedAtMs = now - 45 * 60 * 1000;
 

@@ -11,7 +11,7 @@ const { spawnSync } = require('node:child_process');
  *
  * TZ is read when the process starts, so each zone runs in its own child.
  */
-const SCHEDULE_MODULE = path.join(__dirname, '..', '..', '.test-dist', 'lib', 'trainingSchedule.js');
+const SCHEDULE_MODULE = path.join(__dirname, '..', '..', 'src', 'lib', 'trainingSchedule.js');
 
 const CHILD = `
 const { cycleSchedule, trainsOn, withRestDays } = require(${JSON.stringify(SCHEDULE_MODULE)});

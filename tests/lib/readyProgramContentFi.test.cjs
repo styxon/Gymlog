@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 
 const {
   READY_PROGRAM_CONTENT_FI,
-} = require('../../.test-dist/lib/readyProgramContentFi');
-const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
-const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation');
+} = require('../../src/lib/readyProgramContentFi');
+const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { getReadyTemplatePresentation } = require('../../src/lib/templatePresentation');
 
 const FIELDS = ['summary', 'audience', 'equipmentProfile', 'whyItWorks'];
 

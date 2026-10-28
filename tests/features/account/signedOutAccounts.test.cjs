@@ -4,7 +4,7 @@ const path = require('node:path');
 const { requireWithStubs } = require('../../helpers/hookHarness.cjs');
 const { createFakeAsyncStorage } = require('../../storage/fakeAsyncStorage.cjs');
 
-const STORE = path.join(__dirname, '..', '..', '..', '.test-dist', 'features', 'account', 'accountStore.js');
+const STORE = path.join(__dirname, '..', '..', '..', 'src', 'features', 'account', 'accountStore.js');
 const KEY = '@vinha/account/signedout/v1';
 
 /**

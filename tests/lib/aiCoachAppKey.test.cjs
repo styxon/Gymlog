@@ -28,9 +28,9 @@ function loadClient(env) {
       process.env[key] = env[key];
     }
   }
-  const modulePath = path.join(root, '.test-dist', 'features', 'aiCoach', 'aiCoachClient.js');
+  const modulePath = require.resolve(path.join(root, 'src', 'features', 'aiCoach', 'aiCoachClient.js'));
   delete require.cache[modulePath];
-  delete require.cache[path.join(root, '.test-dist', 'lib', 'aiCoachLiveGate.js')];
+  delete require.cache[require.resolve(path.join(root, 'src', 'lib', 'aiCoachLiveGate.js'))];
   try {
     return require(modulePath);
   } finally {
@@ -180,7 +180,7 @@ module.exports = [
   {
     name: 'coach key: the consent label comes from the platform random source when there is one',
     run() {
-      const { randomHex, randomLogId } = require('../../.test-dist/lib/aiCoachLogId.js');
+      const { randomHex, randomLogId } = require('../../src/lib/aiCoachLogId');
       assert.match(randomLogId(), /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
 
       let asked = 0;

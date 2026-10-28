@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { createOnceReady } = require('../../.test-dist/lib/onceReady.js');
+const { createOnceReady } = require('../../src/lib/onceReady');
 
 // iPhone, G1-8: the audio mode was set fire-and-forget, so the first cue
 // started on iOS's default session and cut the user's music for a moment.
@@ -66,7 +66,7 @@ module.exports = [
   {
     name: 'cue gate: a cue released after its moment has passed is dropped, never stacked',
     async run() {
-      const { createCueGate } = require('../../.test-dist/lib/onceReady.js');
+      const { createCueGate } = require('../../src/lib/onceReady');
       let clock = 0;
       let release;
       const ready = () => new Promise((resolve) => (release = resolve));
@@ -86,7 +86,7 @@ module.exports = [
   {
     name: 'cue gate: a cue asked for after the mode is ready plays at once',
     async run() {
-      const { createCueGate } = require('../../.test-dist/lib/onceReady.js');
+      const { createCueGate } = require('../../src/lib/onceReady');
       const gate = createCueGate(() => Promise.resolve(), () => 0);
       const played = [];
       gate(() => played.push('go'));

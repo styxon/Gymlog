@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { t } = require('../../.test-dist/lib/i18n.js');
+const { t } = require('../../src/lib/i18n');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { between } = require('../helpers/sourceSlices.cjs');
 

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const { matchProgrammeToBrief } = require(path.join(DIST, 'lib', 'briefProgrammeMatch.js'));
 const { composeProgrammePreview, parseProgrammeBrief, resolveLiveProposal } = require(path.join(DIST, 'lib', 'programmeBrief.js'));
 const { buildProgramIntakeBrief } = require(path.join(DIST, 'lib', 'programIntake.js'));

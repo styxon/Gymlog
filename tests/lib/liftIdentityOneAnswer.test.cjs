@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const dist = '../../.test-dist/';
+const dist = '../../src/';
 const {
   bodyPartForExerciseName,
   holdsSameMovement,

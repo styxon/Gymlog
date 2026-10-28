@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { buildAiCoachProgramme, renderAiCoachProgramme } = require('../../.test-dist/lib/aiCoachProgramme.js');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
-const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
+const { buildAiCoachProgramme, renderAiCoachProgramme } = require('../../src/lib/aiCoachProgramme');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
+const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
 
 function card(overrides = {}) {
   return {

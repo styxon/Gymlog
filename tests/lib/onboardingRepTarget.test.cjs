@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { buildSavedOnboardingPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { buildComposedFallbackExercise } = require('../../.test-dist/lib/programDayComposer.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { collapseRepRange } = require('../../.test-dist/lib/singleRepTarget.js');
+const { buildSavedOnboardingPlan } = require('../../src/app/onboardingHandoff');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { buildComposedFallbackExercise } = require('../../src/lib/programDayComposer');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { collapseRepRange } = require('../../src/lib/singleRepTarget');
 
 /**
  * The programme onboarding saves has to read the same after a relaunch.

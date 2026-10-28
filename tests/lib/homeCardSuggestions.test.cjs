@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { suggestHomeStatCardKeys } = require('../../.test-dist/lib/homeCardSuggestions.js');
+const { suggestHomeStatCardKeys } = require('../../src/lib/homeCardSuggestions');
 
 const base = { focusAreas: [], goals: [], pinnedKeys: [], dismissedKeys: [] };
 

@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   buildAiCoachBodyState,
   buildAiTrainingContext,
-} = require('../../.test-dist/lib/aiTrainingContext.js');
+} = require('../../src/lib/aiTrainingContext');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
@@ -227,8 +227,8 @@ module.exports = [
     // a user did. A context with fields missing is repaired, not thrown on.
     name: 'a context with fields missing is normalized so the preview can answer it',
     run() {
-      const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
-      const { buildAiCoachPreviewAnswer } = require('../../.test-dist/lib/aiCoachPreview.js');
+      const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
+      const { buildAiCoachPreviewAnswer } = require('../../src/lib/aiCoachPreview');
       for (const raw of [{}, null, undefined, { trackedLifts: 'nonsense' }, { unitPreference: 'stone' }]) {
         const context = normalizeAiCoachTrainingContext(raw);
         assert.deepEqual(context.trackedLifts, []);
@@ -247,7 +247,7 @@ module.exports = [
   {
     name: 'history confidence is counted from the record, and both halves are needed for the top step',
     run() {
-      const { resolveHistoryConfidence } = require('../../.test-dist/lib/aiTrainingContext.js');
+      const { resolveHistoryConfidence } = require('../../src/lib/aiTrainingContext');
 
       // The bottom step is the rule the prompt already had: three sessions is
       // where a trend starts.
@@ -266,7 +266,7 @@ module.exports = [
   {
     name: 'a history from an older app is recounted, not called short',
     run() {
-      const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
+      const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
 
       // Defaulting a missing flag to 'low' would tell a reader with two
       // months of training that their record is too short to read.
@@ -292,8 +292,8 @@ module.exports = [
   {
     name: 'the coach hears the flagged areas: area and level from the phone, re-checked on the endpoint',
     run() {
-      const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext');
-      const { buildAiCoachContextText } = require('../../.test-dist/lib/aiCoachSystemContext');
+      const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
+      const { buildAiCoachContextText } = require('../../src/lib/aiCoachSystemContext');
       const base = {
         unitPreference: 'kg',
         activeWorkoutSummary: null,

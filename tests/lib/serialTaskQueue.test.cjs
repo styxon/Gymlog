@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { createSerialTaskQueue } = require('../../.test-dist/lib/serialTaskQueue.js');
+const { createSerialTaskQueue } = require('../../src/lib/serialTaskQueue');
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));

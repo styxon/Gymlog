@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { loadWithRetry, LOAD_ATTEMPTS } = require('../../.test-dist/storage/loadWithRetry.js');
+const { loadWithRetry, LOAD_ATTEMPTS } = require('../../src/storage/loadWithRetry');
 
 /**
  * Both providers wrote the same retry loop out in full; this is it, once.

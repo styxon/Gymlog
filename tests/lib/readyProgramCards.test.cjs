@@ -13,9 +13,9 @@ const assert = require('node:assert/strict');
  * That is what this file makes impossible to repeat. A new ready program with
  * no card fails here rather than shipping a card that looks almost right.
  */
-const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const { getReadyTemplatePresentation } = require('../../src/lib/templatePresentation');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { t } = require('../../src/lib/i18n');
 
 const LANGUAGES = ['en', 'fi'];
 /**

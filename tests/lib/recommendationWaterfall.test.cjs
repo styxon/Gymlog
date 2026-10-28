@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+const { selectWaterfallDecision } = require('../../src/lib/recommendationWaterfall');
+const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
 
 function input(overrides = {}) {
   return {

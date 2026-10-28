@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   MAX_DEFAULT_REST_SECONDS,
   normalizeDefaultRestSeconds,
-} = require('../../.test-dist/lib/restPreference.js');
+} = require('../../src/lib/restPreference');
 
 const FALLBACK = 90;
 

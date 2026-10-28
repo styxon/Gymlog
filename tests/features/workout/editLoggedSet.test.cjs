@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
-const { withNumberLanguage } = require('../../../.test-dist/lib/format.js');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
+const { withNumberLanguage } = require('../../../src/lib/format');
 
 /**
  * Correcting a set that is already logged.

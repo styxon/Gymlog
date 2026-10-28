@@ -11,7 +11,7 @@ const {
   joinStoredChunks,
   readChunkManifest,
   splitStoredText,
-} = require('../../.test-dist/lib/storageChunks');
+} = require('../../src/lib/storageChunks');
 
 const CURSOR_WINDOW_BYTES = 2 * 1024 * 1024;
 

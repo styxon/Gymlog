@@ -11,7 +11,7 @@ const read = (...parts) =>
  * next-step numbers, the coach context and the Progress chip say after a
  * session, held against the progression gate's own answer.
  */
-const L = '../../.test-dist/lib/';
+const L = '../../src/lib/';
 const { buildNextSessionAdvice, isNewestSession, readLiftProgramme } = require(L + 'nextSessionAdvice.js');
 const { buildCoachModules } = require(L + 'aiCoachModules.js');
 const {

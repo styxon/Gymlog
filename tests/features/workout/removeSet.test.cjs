@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
 
 /**
  * Taking a set back, the other half of adding one.

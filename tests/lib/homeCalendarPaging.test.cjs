@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { getHomeMonthCalendar } = require('../../.test-dist/lib/homeCalendar');
+const { getHomeMonthCalendar } = require('../../src/lib/homeCalendar');
 
 // Local noon keeps the assertions clear of timezone edges.
 const JAN_31 = new Date(2026, 0, 31, 12, 0, 0);

@@ -3,14 +3,14 @@ const assert = require('node:assert/strict');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   resolveFirstRunRecommendationWithTailoring,
-} = require('../../.test-dist/lib/firstRunSetup.js');
+} = require('../../src/lib/firstRunSetup');
 
 // The sweep drives the recommendation with no tailoring preferences. src used
 // to export a wrapper that did exactly this and had no other caller.
 const resolveFirstRunRecommendation = (selection) => resolveFirstRunRecommendationWithTailoring(selection, null);
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { isCatalogExercise, resolveCatalogBodyPart } = require('../../.test-dist/lib/catalogExercisePools.js');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { isCatalogExercise, resolveCatalogBodyPart } = require('../../src/lib/catalogExercisePools');
 
 /**
  * Every onboarding answer combination, put through recommendation and week
@@ -129,7 +129,7 @@ module.exports = [
   {
     name: 'sweep: no generated exercise is a bare category word',
     run() {
-      const { getDrillLibraryName } = require('../../.test-dist/lib/drillMedia.js');
+      const { getDrillLibraryName } = require('../../src/lib/drillMedia');
 
       // The app resolves an exercise name three ways: the catalog outright, the
       // media matcher's aliases, or the drill table that lets warmup and

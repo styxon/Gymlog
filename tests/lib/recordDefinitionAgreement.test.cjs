@@ -1,12 +1,12 @@
 const assert = require('node:assert/strict');
 
-const { buildCompletionCardsFromAdaptedSession } = require('../../.test-dist/app/workoutCompletionState.js');
+const { buildCompletionCardsFromAdaptedSession } = require('../../src/app/workoutCompletionState');
 const {
   buildExercisePrLookup,
   findLatestSessionPr,
-} = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { buildFreestyleFinish } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { resolveRecord } = require('../../.test-dist/lib/personalRecords.js');
+} = require('../../src/lib/workoutCompletionSummary');
+const { buildFreestyleFinish } = require('../../src/lib/emptyWorkoutSession');
+const { resolveRecord } = require('../../src/lib/personalRecords');
 
 /**
  * One record, everywhere.
@@ -198,8 +198,8 @@ module.exports = [
     // the exercise sheet's pill and the coach's line asked for a heavier bar.
     name: 'the same weight for more reps is a record everywhere',
     run() {
-      const { buildExerciseSheetHistory } = require('../../.test-dist/lib/exerciseSheetHistory.js');
-      const { buildCoachModules } = require('../../.test-dist/lib/aiCoachModules.js');
+      const { buildExerciseSheetHistory } = require('../../src/lib/exerciseSheetHistory');
+      const { buildCoachModules } = require('../../src/lib/aiCoachModules');
 
       const lookup = buildExercisePrLookup({
         exerciseLogs: [priorLog(PRIOR_SESSION.id, 100, 3)],
@@ -300,7 +300,7 @@ module.exports = [
         getTrackedExerciseProgress,
         getLiftProgress,
         getExerciseProgressSignal,
-      } = require('../../.test-dist/lib/progression.js');
+      } = require('../../src/lib/progression');
       let n = 0;
       const entry = (performedAt, weight, reps, tracked = true) => {
         n += 1;

@@ -5,15 +5,15 @@ const {
   getLatestLogForTemplateExercise,
   getRecentLogsForExercise,
   getTrackedExerciseProgress,
-} = require('../../.test-dist/lib/progression.js');
-const { buildExercisePrLookup } = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { buildLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
+} = require('../../src/lib/progression');
+const { buildExercisePrLookup } = require('../../src/lib/workoutCompletionSummary');
+const { buildLiftHistories } = require('../../src/lib/trainingHistory');
 const {
   buildWeeklyRead,
   pickCompletionLift,
   sessionBestPoints,
-} = require('../../.test-dist/lib/proInsights.js');
-const { getCombinedActivityMinutes } = require('../../.test-dist/lib/cardio.js');
+} = require('../../src/lib/proInsights');
+const { getCombinedActivityMinutes } = require('../../src/lib/cardio');
 
 function at(year, month, day) {
   return new Date(year, month - 1, day, 12, 0, 0, 0).toISOString();
@@ -123,8 +123,8 @@ module.exports = [
   {
     name: 'review: the calf-raise demo alias files no history, the single-leg name opens the single-leg raise',
     run() {
-      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const names = createSeedExerciseLibrary().map((item) => item.name);
       // The demo: the bodyweight raise.
       assert.equal(names[findGuidedLibraryIndex('Calf Raise', names)], 'Bodyweight Calf Raise');
@@ -139,7 +139,7 @@ module.exports = [
   {
     name: 'review: a run with an unparseable date does not break the lifetime week count',
     run() {
-      const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+      const { getLifetimeTrainingSummary } = require('../../src/lib/lifetimeSummary');
       const db = {
         workoutSessions: [
           { id: 's1', performedAt: '2026-09-22T08:00:00.000Z', status: 'completed', totalVolumeKg: 1000, exercises: [] },

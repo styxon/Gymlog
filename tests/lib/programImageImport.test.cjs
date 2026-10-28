@@ -6,8 +6,8 @@ const {
   isProgramImageMediaType,
   PROGRAM_TABLE_SCHEMA,
   PROGRAM_TABLE_RULES,
-} = require('../../.test-dist/lib/programImageImport.js');
-const { parseCsvProgram } = require('../../.test-dist/lib/csvProgramImport.js');
+} = require('../../src/lib/programImageImport');
+const { parseCsvProgram } = require('../../src/lib/csvProgramImport');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { between, functionBody } = require('../helpers/sourceSlices.cjs');
 
@@ -16,7 +16,7 @@ const { between, functionBody } = require('../helpers/sourceSlices.cjs');
  *
  * The test build compiles only src/**\/*.ts, so the .tsx factory that owns the
  * photo import is transpiled here, the way tests/helpers/apiModule.cjs loads
- * api/. Its relative imports are served from .test-dist — the code every
+ * api/. Its relative imports are served from src/ — the code every
  * other suite runs — except the ones named in `stubs`, which reach the native
  * side (the picker, haptics, Alert) or the network (the coach client).
  */
@@ -44,7 +44,10 @@ function loadOnboardingFinishes(stubs) {
     }
     assert.ok(id.startsWith('.'), `onboardingFinishes imports ${id}, which the test does not stub`);
     const source = path.join(path.dirname(file), id);
-    return require(path.join(root, '.test-dist', path.relative(path.join(root, 'src'), source)));
+    const target = path.join(root, 'src', path.relative(path.join(root, 'src'), source));
+    // A .tsx here would be the real component, not the stub the test meant.
+    assert.ok(!require.resolve(target).endsWith('.tsx'), `onboardingFinishes imports ${id}, a component the test does not stub`);
+    return require(target);
   };
   loaded._compile(outputText, file);
   return loaded.exports;
@@ -57,7 +60,7 @@ function loadOnboardingFinishes(stubs) {
  */
 function photoImportWorld(answer, overrides = {}) {
   const calls = [];
-  const ledger = overrides.ledger || require('../../.test-dist/lib/aiCoachQuota.js').createCoachQuotaLedger();
+  const ledger = overrides.ledger || require('../../src/lib/aiCoachQuota').createCoachQuotaLedger();
   const record = (name, value) => (...args) => {
     calls.push([name, ...args]);
     return value;
@@ -133,7 +136,7 @@ module.exports = [
   {
     name: 'photo import spends one coach question, only on a successful read, and none when spent',
     async run() {
-      const month = require('../../.test-dist/lib/aiCoachQuota.js').coachQuotaMonthStart();
+      const month = require('../../src/lib/aiCoachQuota').coachQuotaMonthStart();
       const accept = (buttons) => buttons.find((b) => b.style !== 'cancel').onPress();
       const rows = [{ day: 'Ma', exercise: 'Back Squat', sets: 3, reps: '5' }];
       const names = (calls) => calls.map((c) => c[0]);
@@ -164,7 +167,7 @@ module.exports = [
   {
     name: 'photo import: a build holding the last question refuses it, a refused charge gives no free read, a failure releases',
     async run() {
-      const { createCoachQuotaLedger, coachQuotaMonthStart } = require('../../.test-dist/lib/aiCoachQuota.js');
+      const { createCoachQuotaLedger, coachQuotaMonthStart } = require('../../src/lib/aiCoachQuota');
       const month = coachQuotaMonthStart();
       const accept = (buttons) => buttons.find((b) => b.style !== 'cancel').onPress();
       const rows = [{ day: 'Ma', exercise: 'Back Squat', sets: 3, reps: '5' }];

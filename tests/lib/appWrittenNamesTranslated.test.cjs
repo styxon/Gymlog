@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { localizeSessionName, localizeSessionFocus } = require('../../.test-dist/lib/sessionNameLabel.js');
-const { formatHomeSessionTitle } = require('../../.test-dist/app/homeSessionTitle.js');
-const { bodyPartLabel } = require('../../.test-dist/lib/i18n.js');
+const { localizeSessionName, localizeSessionFocus } = require('../../src/lib/sessionNameLabel');
+const { formatHomeSessionTitle } = require('../../src/app/homeSessionTitle');
+const { bodyPartLabel } = require('../../src/lib/i18n');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { between } = require('../helpers/sourceSlices.cjs');
 
@@ -62,7 +62,7 @@ module.exports = [
     // list read "Päivä 1. Päivä 1" and Home's week strip "PÄI", "PÄI", "PÄI".
     name: 'appWrittenNames: a Finnish default day name is still recognised as a placeholder',
     run() {
-      const { formatPlanSessionTitle } = require('../../.test-dist/lib/sessionNameLabel.js');
+      const { formatPlanSessionTitle } = require('../../src/lib/sessionNameLabel');
       // Placeholders read "Treeni N" on the day list since 2026-09-24 — the
       // word "Päivä" was taken off it — but they are still placeholders, not
       // names: "Päivä 1. Päivä 1" must not come back in any form.

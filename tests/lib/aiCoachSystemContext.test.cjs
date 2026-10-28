@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
-const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
+const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
 
 function history(overrides = {}) {
   return {

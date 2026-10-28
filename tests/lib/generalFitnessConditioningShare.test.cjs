@@ -45,7 +45,7 @@ const KNOWN_OUTSIDE = {
 const MIN_PCT = 30;
 const MAX_PCT = 50;
 
-const dist = path.join(__dirname, '..', '..', '.test-dist');
+const dist = path.join(__dirname, '..', '..', 'src');
 const lib = (name) => require(path.join(dist, 'lib', `${name}.js`));
 
 const HEAVY = ['Barbell & plates', 'Squat rack'];

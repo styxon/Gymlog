@@ -1,16 +1,16 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
-const { recordSetsOfExercise } = require('../../.test-dist/app/workoutCompletionState.js');
-const { narrowSwapAlternatives, swapSuggestionFilters } = require('../../.test-dist/lib/swapPickerLists.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { matchesExercisePickerFilters } = require('../../.test-dist/lib/exercisePicker.js');
-const { tidySessionTitle, buildRecoverySheet } = require('../../.test-dist/lib/recoverySheet.js');
-const { startKeepAwake } = require('../../.test-dist/lib/keepAwakeLifecycle.js');
-const { buildNotificationPlan } = require('../../.test-dist/lib/notificationPlan.js');
-const { weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { formatWeightInputValue } = require('../../.test-dist/lib/format.js');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { recordSetsOfExercise } = require('../../src/app/workoutCompletionState');
+const { narrowSwapAlternatives, swapSuggestionFilters } = require('../../src/lib/swapPickerLists');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { matchesExercisePickerFilters } = require('../../src/lib/exercisePicker');
+const { tidySessionTitle, buildRecoverySheet } = require('../../src/lib/recoverySheet');
+const { startKeepAwake } = require('../../src/lib/keepAwakeLifecycle');
+const { buildNotificationPlan } = require('../../src/lib/notificationPlan');
+const { weekdaySchedule } = require('../../src/lib/trainingSchedule');
+const { t } = require('../../src/lib/i18n');
+const { formatWeightInputValue } = require('../../src/lib/format');
 const {
   repsDeltaLabel,
   prMoreRepsLabel,
@@ -20,8 +20,8 @@ const {
   milestoneRepsTitle,
   milestoneRepsMeta,
   templateSetsRepsLabel,
-} = require('../../.test-dist/lib/repCountCopy.js');
-const { targetSetsAfterEmphasis, withSupersetPartners } = require('../../.test-dist/lib/setCountChanges.js');
+} = require('../../src/lib/repCountCopy');
+const { targetSetsAfterEmphasis, withSupersetPartners } = require('../../src/lib/setCountChanges');
 const { createCompletedSession } = require('../helpers/workoutFixtures.cjs');
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));

@@ -14,7 +14,7 @@ module.exports = [
   {
     name: 'coach decimals: a Finnish answer takes the comma, and dates, times and versions keep their dots',
     run() {
-      const { finnishDecimals } = require('../../.test-dist/lib/aiCoachAnswerDecimals.js');
+      const { finnishDecimals } = require('../../src/lib/aiCoachAnswerDecimals');
       const cases = [
         ['Top-sarjat 72.5 → 75 → 77.5 → 80 kg', 'Top-sarjat 72,5 → 75 → 77,5 → 80 kg'],
         ['Nousu 2.5 kg.', 'Nousu 2,5 kg.'],
@@ -39,7 +39,7 @@ module.exports = [
   {
     name: 'coach decimals: every text field of a Finnish answer is localized, English and the brief pass through',
     run() {
-      const { localizeAdviceDecimals } = require('../../.test-dist/lib/aiCoachAnswerDecimals.js');
+      const { localizeAdviceDecimals } = require('../../src/lib/aiCoachAnswerDecimals');
       const advice = {
         takeaway: 'Nousi 72.5 kg:sta',
         why: ['Top-sarjat 72.5 → 75'],
@@ -73,7 +73,7 @@ module.exports = [
   {
     name: 'coach decimals: the offline answer writes numbers in its own language, and the app\'s setting survives it',
     run() {
-      const format = require('../../.test-dist/lib/format.js');
+      const format = require('../../src/lib/format');
       const { withNumberLanguage } = format;
       assert.equal(typeof withNumberLanguage, 'function');
       format.setNumberLanguage('fi');

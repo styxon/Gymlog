@@ -113,7 +113,7 @@ module.exports = [
         /if \(liveSessionBlocksProgrammeDelete\(workout\.activeSession, workoutTemplateId\)\) \{[\s\S]*?showToast\(t\(preferences\.appLanguage, 'toast\.programDeleteWorkoutRunning'\)\);\s*return;\s*\}\s*(?:\/\/[^\n]*\n\s*)*try \{\s*await deleteWorkoutTemplate\(workoutTemplateId\);/,
         'the refusal must come before the delete',
       );
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       for (const language of ['en', 'fi']) {
         const text = t(language, 'toast.programDeleteWorkoutRunning');
         assert.ok(text && text !== 'toast.programDeleteWorkoutRunning', `${language} copy`);

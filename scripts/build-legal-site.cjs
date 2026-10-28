@@ -9,21 +9,15 @@
  * homepage exists, these pages move there and the Play listing's URL field
  * is updated — nothing here is load-bearing beyond serving that URL.
  *
- *   npx tsc -p tsconfig.test.json
  *   node scripts/build-legal-site.cjs        # writes dist-legal/
  */
+require('./registerTs.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const compiled = path.join(__dirname, '..', '.test-dist', 'lib', 'legalDocuments.js');
-if (!fs.existsSync(compiled)) {
-  console.error('Compile first: npx tsc -p tsconfig.test.json');
-  process.exit(1);
-}
-
-const { LEGAL_ENTITY, buildLegalDocument } = require(compiled);
-const { buildAccountDeletionPage } = require(path.join(__dirname, '..', '.test-dist', 'lib', 'accountDeletionPage.js'));
-const { WEB_DELETION_ENDPOINT } = require(path.join(__dirname, '..', '.test-dist', 'lib', 'webAccountDeletion.js'));
+const { LEGAL_ENTITY, buildLegalDocument } = require(path.join(__dirname, '..', 'src', 'lib', 'legalDocuments'));
+const { buildAccountDeletionPage } = require(path.join(__dirname, '..', 'src', 'lib', 'accountDeletionPage'));
+const { WEB_DELETION_ENDPOINT } = require(path.join(__dirname, '..', 'src', 'lib', 'webAccountDeletion'));
 
 // LEGAL_SITE_OUT_DIR: the tests build into a temporary directory.
 const outDir = process.env.LEGAL_SITE_OUT_DIR || path.join(__dirname, '..', 'dist-legal');

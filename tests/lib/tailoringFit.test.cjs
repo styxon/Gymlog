@@ -5,7 +5,7 @@ const {
   buildTailoringBadgeLabels,
   getPreferredReadyEquipmentFilter,
   rankProgramIdsByTailoring,
-} = require('../../.test-dist/lib/tailoringFit.js');
+} = require('../../src/lib/tailoringFit');
 
 module.exports = [
   {

@@ -3,21 +3,21 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
-const { reconcileCompletionDismissals, resolveCompletionCard } = require('../../.test-dist/lib/programCompletion.js');
-const { preferencesForRestore } = require('../../.test-dist/lib/accountBackup.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const { evaluateProgramAdoption } = require('../../.test-dist/lib/activeProgramSet.js');
-const { runningSetWithout } = require('../../.test-dist/lib/runningProgrammes.js');
+const { reconcileCompletionDismissals, resolveCompletionCard } = require('../../src/lib/programCompletion');
+const { preferencesForRestore } = require('../../src/lib/accountBackup');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { evaluateProgramAdoption } = require('../../src/lib/activeProgramSet');
+const { runningSetWithout } = require('../../src/lib/runningProgrammes');
 const {
   describeProgramCap,
   programLimitSheetCopy,
   runningCapRefusal,
   runningCapRefusalMessage,
-} = require('../../.test-dist/lib/programCapNotice.js');
-const { isSameRoute, popRoute, pushRoute } = require('../../.test-dist/navigation/routeHistory.js');
-const { ROOT_ROUTES } = require('../../.test-dist/navigation/routes.js');
-const { getBackRoute } = require('../../.test-dist/app/backRoute.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/programCapNotice');
+const { isSameRoute, popRoute, pushRoute } = require('../../src/navigation/routeHistory');
+const { ROOT_ROUTES } = require('../../src/navigation/routes');
+const { getBackRoute } = require('../../src/app/backRoute');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * Navigation and programme-lifecycle findings, hunt 10 (2026-10-09):

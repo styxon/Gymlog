@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { logRecordedWork, sessionRecordedWork } = require('../../.test-dist/lib/exerciseLog.js');
-const { getTrackedExerciseProgress } = require('../../.test-dist/lib/progression.js');
+const { logRecordedWork, sessionRecordedWork } = require('../../src/lib/exerciseLog');
+const { getTrackedExerciseProgress } = require('../../src/lib/progression');
 
 function set(reps, weight, status) {
   return { orderIndex: 0, weight, reps, kind: 'working', outcome: null, status, effort: null, completedAt: null, skippedReason: null };

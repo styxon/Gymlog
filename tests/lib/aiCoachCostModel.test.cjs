@@ -8,7 +8,7 @@ const {
   cacheBreakEvenQuestions,
   monthlyCost,
   grossMarginShare,
-} = require('../../.test-dist/lib/aiCoachCostModel.js');
+} = require('../../src/lib/aiCoachCostModel');
 
 function profile(overrides) {
   return {

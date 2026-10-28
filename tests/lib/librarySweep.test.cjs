@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const { exerciseMechanic } = require('../../.test-dist/lib/exerciseClassification.js');
-const { displayEquipmentValue } = require('../../.test-dist/lib/libraryLabel.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const { exerciseMechanic } = require('../../src/lib/exerciseClassification');
+const { displayEquipmentValue } = require('../../src/lib/libraryLabel');
 
 /**
  * Every library row's classification, swept by rule (#bugs 2026-10-06,

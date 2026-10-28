@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const {
   formatRecordWhenLabel,
-} = require('../../.test-dist/lib/profileOverview.js');
+} = require('../../src/lib/profileOverview');
 
 // A tracked-lift log as progression.ts hands it over: real sets plus the
 // session timestamp merged in.

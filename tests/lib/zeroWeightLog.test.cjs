@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { asksBeforeZeroWeightLog } = require('../../.test-dist/lib/zeroWeightLog.js');
-const { trackedLiftAmount } = require('../../.test-dist/lib/trackedLiftAmount.js');
-const { formatWeight } = require('../../.test-dist/lib/format.js');
+const { asksBeforeZeroWeightLog } = require('../../src/lib/zeroWeightLog');
+const { trackedLiftAmount } = require('../../src/lib/trackedLiftAmount');
+const { formatWeight } = require('../../src/lib/format');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
 const strip = (source) => source.replace(/\{\/\*[\s\S]*?\*\/\}/g, '').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

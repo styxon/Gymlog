@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { guidedClockHeld } = require('../../.test-dist/lib/guidedClockHold.js');
+const { guidedClockHeld } = require('../../src/lib/guidedClockHold');
 
 const NONE = {
   paused: false,

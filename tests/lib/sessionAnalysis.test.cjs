@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildSessionAnalysis, describeVolumeChange } = require('../../.test-dist/lib/sessionAnalysis.js');
+const { buildSessionAnalysis, describeVolumeChange } = require('../../src/lib/sessionAnalysis');
 
 function session(id, name, daysAgo, totalVolumeKg, durationMinutes) {
   return {

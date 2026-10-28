@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const { setNumberLanguage } = require('../../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../../src/lib/format');
 setNumberLanguage('en');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState');
-const { buildExerciseLogDraftsFromWorkoutSession } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-const { normalizeExerciseLog } = require('../../../.test-dist/lib/exerciseLog');
-const { buildPreviousTopSets, resolveMovement, buildWhatMoved } = require('../../../.test-dist/lib/sessionMovement');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { buildExerciseLogDraftsFromWorkoutSession } = require('../../../src/features/workout/workoutAppAdapter');
+const { normalizeExerciseLog } = require('../../../src/lib/exerciseLog');
+const { buildPreviousTopSets, resolveMovement, buildWhatMoved } = require('../../../src/lib/sessionMovement');
 
 /**
  * A warm-up is never last time's top set (bug hunt W4, 2026-10-05, after #321).

@@ -3,7 +3,7 @@ const ts = require('typescript');
 
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { createHookRuntime } = require('../helpers/hookHarness.cjs');
-const { ROOT_ROUTES } = require('../../.test-dist/navigation/routes');
+const { ROOT_ROUTES } = require('../../src/navigation/routes');
 
 /**
  * The finish machine's two route effects, run as written.

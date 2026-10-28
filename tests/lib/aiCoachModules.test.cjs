@@ -4,7 +4,7 @@ const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildCoachModules } = require('../../.test-dist/lib/aiCoachModules.js');
+const { buildCoachModules } = require('../../src/lib/aiCoachModules');
 
 function session(id, name, performedAt, totalVolumeKg) {
   return {

@@ -109,7 +109,7 @@ module.exports = [
         /reportPlanSaveFailed\('[^']+', error, preferences\.appLanguage, showToast\);/,
       );
 
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('en', 'toast.programDeleteFailed'), 'Could not delete the program — it is back in your list');
       assert.equal(t('fi', 'toast.programDeleteFailed'), 'Ohjelmaa ei voitu poistaa — se on taas listallasi');
     },

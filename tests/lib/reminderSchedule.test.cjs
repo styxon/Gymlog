@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { resolveReminderSchedule, reminderWeekdays } = require('../../.test-dist/lib/reminderSchedule.js');
-const { isScheduleKnown, trainsOn } = require('../../.test-dist/lib/trainingSchedule.js');
+const { resolveReminderSchedule, reminderWeekdays } = require('../../src/lib/reminderSchedule');
+const { isScheduleKnown, trainsOn } = require('../../src/lib/trainingSchedule');
 
 const ROOT = path.join(__dirname, '..', '..');
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
@@ -54,7 +54,7 @@ module.exports = [
   {
     name: 'reminder schedule: a three-session plan reminds three times, not on every free day',
     run() {
-      const { resolveDerivedTrainingDays, WEEKDAY_KEYS } = require('../../.test-dist/lib/programTrainingDays.js');
+      const { resolveDerivedTrainingDays, WEEKDAY_KEYS } = require('../../src/lib/programTrainingDays');
 
       // Free Monday to Friday, running a three-session programme whose days
       // are positional ("Day 1"), so the plan names no weekdays. This fired
@@ -122,7 +122,7 @@ module.exports = [
       // nothing on screen to say why (review of the 2026-10-04 bug hunt).
       const fs = require('node:fs');
       const path = require('node:path');
-      const { resolveDerivedTrainingDays, resolveProgramTrainingDays } = require('../../.test-dist/lib/programTrainingDays.js');
+      const { resolveDerivedTrainingDays, resolveProgramTrainingDays } = require('../../src/lib/programTrainingDays');
       assert.deepEqual(resolveDerivedTrainingDays([0, 1, 2, 3, 4], 3), [0, 2, 3]);
       assert.deepEqual(resolveDerivedTrainingDays([0, 1, 2, 3, 4, 5, 6], 2), [0, 4]);
       // A plan saved from now on stores the better-spread days instead.

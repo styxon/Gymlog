@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..', '..');
-const { familyForWeight, manropeOverride } = require('../../.test-dist/lib/manropeFamily.js');
+const { familyForWeight, manropeOverride } = require('../../src/lib/manropeFamily');
 
 module.exports = [
   {
@@ -87,7 +87,7 @@ module.exports = [
       const ts = require('typescript');
       const Module = require('node:module');
       const source = fs.readFileSync(path.join(root, 'src', 'components', 'AppText.tsx'), 'utf8');
-      const family = path.join(root, '.test-dist', 'lib', 'manropeFamily.js');
+      const family = path.join(root, 'src', 'lib', 'manropeFamily.js');
       const mock = { Platform: { OS: 'ios' } };
       const rn = {
         get Platform() { return mock.Platform; },
@@ -101,7 +101,7 @@ module.exports = [
         TextInput: function TextInput() {},
       };
       const js = ts.transpileModule(source, {
-        compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020 },
+        compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, target: ts.ScriptTarget.ES2020, esModuleInterop: true },
       }).outputText;
       let context;
       const originalLoad = Module._load;
@@ -115,7 +115,7 @@ module.exports = [
           };
         }
         if (request === '../lib/manropeFamily') return originalLoad.call(this, family, ...rest);
-        if (request === '../textScale') return require('../../.test-dist/textScale.js');
+        if (request === '../textScale') return require('../../src/textScale');
         return originalLoad.call(this, request, ...rest);
       };
       try {

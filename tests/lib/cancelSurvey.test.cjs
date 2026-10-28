@@ -4,7 +4,7 @@ const {
   CANCEL_REASON_KEYS,
   buildCancelSurveyAnswer,
   normalizeCancelSurveyAnswer,
-} = require('../../.test-dist/lib/cancelSurvey.js');
+} = require('../../src/lib/cancelSurvey');
 
 const AT = '2026-08-16T10:00:00.000Z';
 

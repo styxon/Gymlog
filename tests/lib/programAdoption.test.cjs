@@ -2,7 +2,7 @@ const {
   buildCustomProgramPlanId,
   buildProgramWorkoutPlan,
   buildReadyProgramPlanId,
-} = require('../../.test-dist/lib/programAdoption.js');
+} = require('../../src/lib/programAdoption');
 
 const NOW = '2026-08-11T09:00:00.000Z';
 

@@ -4,7 +4,7 @@ const {
   alignHistoryToCopiedDays,
   programmeHistoryIds,
   programmeOriginId,
-} = require('../../.test-dist/lib/programLineage.js');
+} = require('../../src/lib/programLineage');
 
 /**
  * The same programme, before and after the reader changed a lift in it

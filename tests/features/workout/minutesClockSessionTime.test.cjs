@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-const { elapsedSecondsOf, sessionLastActiveMs } = require('../../../.test-dist/lib/sessionClock.js');
-const { MINUTES_DIAL } = require('../../../.test-dist/lib/weightDial.js');
-const { stopwatchForSet } = require('../../../.test-dist/lib/minutesExercises.js');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../src/features/workout/workoutAppAdapter');
+const { elapsedSecondsOf, sessionLastActiveMs } = require('../../../src/lib/sessionClock');
+const { MINUTES_DIAL } = require('../../../src/lib/weightDial');
+const { stopwatchForSet } = require('../../../src/lib/minutesExercises');
 
 /**
  * The minutes clock against the rest of the session (hunt, 2026-10-07).

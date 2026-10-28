@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { statusCapInterpolation } = require('../../.test-dist/lib/statusCap.js');
+const { statusCapInterpolation } = require('../../src/lib/statusCap');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
 

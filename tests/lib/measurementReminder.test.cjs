@@ -7,7 +7,7 @@ const {
   isMeasurementReminderKind,
   isSetupWeekday,
   normalizeMeasurementReminder,
-} = require('../../.test-dist/lib/measurementReminder.js');
+} = require('../../src/lib/measurementReminder');
 
 const loader = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'storage', 'database.ts'),

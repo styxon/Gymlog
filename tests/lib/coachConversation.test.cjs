@@ -5,7 +5,7 @@ const path = require('node:path');
 const {
   appendCoachTurn,
   MAX_COACH_CONVERSATION_TURNS,
-} = require('../../.test-dist/lib/coachConversation.js');
+} = require('../../src/lib/coachConversation');
 
 module.exports = [
   {

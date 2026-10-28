@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 // workoutPersistence reaches storage/largeItem, which reads Platform from react-native.
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-const { elapsedSecondsOf } = require('../../../.test-dist/lib/sessionClock');
-const { normalizeWorkoutBundle } = require('../../../.test-dist/features/workout/workoutPersistence');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../src/features/workout/workoutAppAdapter');
+const { elapsedSecondsOf } = require('../../../src/lib/sessionClock');
+const { normalizeWorkoutBundle } = require('../../../src/features/workout/workoutPersistence');
 
 /**
  * Live-session audit, 2026-09-20: what the guided player does between Start

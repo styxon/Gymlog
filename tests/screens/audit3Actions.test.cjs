@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { resolveLiveProposal } = require('../../.test-dist/lib/programmeBrief.js');
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
+const { resolveLiveProposal } = require('../../src/lib/programmeBrief');
+const { createSeedDatabase } = require('../../src/data/seed');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');

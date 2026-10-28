@@ -2,12 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { resolveDueCoachDemoMoment } = require('../../.test-dist/lib/coachDemoMoments.js');
-const { resolveRecord, recordEntriesOfLogs } = require('../../.test-dist/lib/personalRecords.js');
-const { isRecordLocked } = require('../../.test-dist/lib/historyWindow.js');
-const { liftBestPerformedAt, isLiftBestLocked } = require('../../.test-dist/lib/liftBestGate.js');
-const { buildExerciseSheetHistory, gateExerciseSheetHistory } = require('../../.test-dist/lib/exerciseSheetHistory.js');
+const { t } = require('../../src/lib/i18n');
+const { resolveDueCoachDemoMoment } = require('../../src/lib/coachDemoMoments');
+const { resolveRecord, recordEntriesOfLogs } = require('../../src/lib/personalRecords');
+const { isRecordLocked } = require('../../src/lib/historyWindow');
+const { liftBestPerformedAt, isLiftBestLocked } = require('../../src/lib/liftBestGate');
+const { buildExerciseSheetHistory, gateExerciseSheetHistory } = require('../../src/lib/exerciseSheetHistory');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
 

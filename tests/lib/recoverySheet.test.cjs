@@ -15,16 +15,16 @@ const {
   recoveryWeek,
   withoutRestDay,
   withRestDay,
-} = require('../../.test-dist/lib/recoverySheet.js');
+} = require('../../src/lib/recoverySheet');
 const {
   sessionSlotOn,
   trainsOn,
   weekdaySchedule,
   cycleSchedule,
   withRestDays,
-} = require('../../.test-dist/lib/trainingSchedule.js');
-const { resolveReminderSchedule } = require('../../.test-dist/lib/reminderSchedule.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+} = require('../../src/lib/trainingSchedule');
+const { resolveReminderSchedule } = require('../../src/lib/reminderSchedule');
+const { setNumberLanguage } = require('../../src/lib/format');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const read = (...parts) =>

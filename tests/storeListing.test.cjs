@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.resolve(__dirname, '..');
-const dist = path.join(root, '.test-dist');
+const dist = path.join(root, 'src');
 
 /**
  * The Play listing in docs/store-listing.md is pasted into Play Console by

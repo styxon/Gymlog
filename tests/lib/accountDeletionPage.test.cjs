@@ -5,11 +5,11 @@ const os = require('node:os');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const { APPLE_DELETION_MARKER_DAYS, buildAccountDeletionPage } = require('../../.test-dist/lib/accountDeletionPage.js');
-const { ANALYTICS_RETENTION_MONTHS } = require('../../.test-dist/lib/analyticsRetention.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { LEGAL_ENTITY, buildLegalDocument } = require('../../.test-dist/lib/legalDocuments.js');
-const { WEB_DELETION_ENDPOINT } = require('../../.test-dist/lib/webAccountDeletion.js');
+const { APPLE_DELETION_MARKER_DAYS, buildAccountDeletionPage } = require('../../src/lib/accountDeletionPage');
+const { ANALYTICS_RETENTION_MONTHS } = require('../../src/lib/analyticsRetention');
+const { t } = require('../../src/lib/i18n');
+const { LEGAL_ENTITY, buildLegalDocument } = require('../../src/lib/legalDocuments');
+const { WEB_DELETION_ENDPOINT } = require('../../src/lib/webAccountDeletion');
 
 const root = path.join(__dirname, '..', '..');
 const LANGUAGES = ['fi', 'en'];

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { t, I18N_KEYS, SUPPORTED_LANGUAGES } = require('../../.test-dist/lib/i18n.js');
+const { t, I18N_KEYS, SUPPORTED_LANGUAGES } = require('../../src/lib/i18n');
 
 module.exports = [
   {

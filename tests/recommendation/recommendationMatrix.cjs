@@ -1,7 +1,6 @@
 /**
  * Recommendation accuracy matrix (hunt harness, not part of tests/run-tests.cjs).
  *
- *   npx tsc -p tsconfig.test.json
  *   node tests/hunt/recommendationMatrix.cjs [--extra N] [--json out.json] [--show N]
  *
  * Enumerates the onboarding answer space (equipment chips x goal x level x days
@@ -47,9 +46,10 @@
  *   ANY HARD  at least one HARD criterion fails
  *   BOTH2     both shown cards fail a HARD criterion
  */
+require('../../scripts/registerTs.cjs');
 const path = require('node:path');
 
-const dist = path.join(__dirname, '..', '..', '.test-dist');
+const dist = path.join(__dirname, '..', '..', 'src');
 const lib = (name) => require(path.join(dist, 'lib', `${name}.js`));
 
 const { resolveFirstRunRecommendationWithTailoring } = lib('firstRunSetup');

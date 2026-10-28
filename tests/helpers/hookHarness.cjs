@@ -133,7 +133,7 @@ function requireWithStubs(modulePath, stubs) {
     const file = specifier.startsWith('.') ? require.resolve(path.join(path.dirname(modulePath), specifier)) : require.resolve(specifier, from);
     put(file, { id: file, filename: file, loaded: true, exports });
   }
-  put(modulePath, null);
+  put(require.resolve(modulePath), null);
   try {
     return require(modulePath);
   } finally {

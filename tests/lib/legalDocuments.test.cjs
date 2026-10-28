@@ -8,8 +8,8 @@ const {
   LEGAL_VERSION,
   buildLegalDocument,
   renderLegalDocumentMarkdown,
-} = require('../../.test-dist/lib/legalDocuments.js');
-const { compareLegalVersions } = require('../../.test-dist/lib/legalAcceptance.js');
+} = require('../../src/lib/legalDocuments');
+const { compareLegalVersions } = require('../../src/lib/legalAcceptance');
 
 const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
@@ -631,9 +631,9 @@ module.exports = [
       // The terms say what Free is in numbers, so a reader knows what they
       // are buying out of. Each number is a constant in src/lib; change the
       // constant and this points at the two sentences to change with it.
-      const { FREE_CUSTOM_PROGRAM_LIMIT } = require('../../.test-dist/lib/programSlots.js');
-      const { FREE_ACTIVE_PROGRAM_CAP } = require('../../.test-dist/lib/activeProgramSet.js');
-      const { FREE_TREND_MONTHS } = require('../../.test-dist/lib/historyWindow.js');
+      const { FREE_CUSTOM_PROGRAM_LIMIT } = require('../../src/lib/programSlots');
+      const { FREE_ACTIVE_PROGRAM_CAP } = require('../../src/lib/activeProgramSet');
+      const { FREE_TREND_MONTHS } = require('../../src/lib/historyWindow');
       assert.equal(FREE_CUSTOM_PROGRAM_LIMIT, 3, 'the terms say "three programmes of your own" — update the Pro section in both languages');
       assert.equal(FREE_ACTIVE_PROGRAM_CAP, 2, 'the terms say "two in use at a time" — update the Pro section in both languages');
       assert.equal(FREE_TREND_MONTHS, 3, 'the terms say "the most recent three months" — update the Pro section in both languages');

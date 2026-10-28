@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { readableOn } = require('../../.test-dist/theming.js');
+const { readableOn } = require('../../src/theming');
 
 /**
  * The guided player's primary button paints itself `theme.ink` to mean "the

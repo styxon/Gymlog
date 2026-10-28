@@ -7,7 +7,7 @@ const { createHookRuntime, requireWithStubs } = require('../helpers/hookHarness.
 const { between } = require('../helpers/sourceSlices.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const dist = (file) => require(path.join(DIST, file));
 
 const format = dist('lib/format.js');

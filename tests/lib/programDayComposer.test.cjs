@@ -1,12 +1,12 @@
 const assert = require('node:assert/strict');
 
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { buildProgramFocusSplit } = require('../../.test-dist/lib/programFocusSplit');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { buildProgramFocusSplit } = require('../../src/lib/programFocusSplit');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
 const {
   WORKOUT_SUBSTITUTION_GROUPS,
   WORKOUT_TEMPLATES_V1,
-} = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/features/workout/workoutCatalog');
 
 function findTemplateWithDays(days) {
   const template = WORKOUT_TEMPLATES_V1.find((entry) => entry.daysPerWeek === days);

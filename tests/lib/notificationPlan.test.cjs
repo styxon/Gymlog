@@ -7,10 +7,10 @@ const assert = require('node:assert/strict');
  * wants points rather than commas has to say so — otherwise it passes or fails
  * on whichever suite ran before it.
  */
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
-const { cycleSchedule, weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+const { cycleSchedule, weekdaySchedule } = require('../../src/lib/trainingSchedule');
 const {
   buildNotificationPlan,
   parseReminderTime,
@@ -19,7 +19,7 @@ const {
   DAILY_CAP_BY_LEVEL,
   REMINDER_HORIZON_DAYS,
   activeWorkoutStartedAt,
-} = require('../../.test-dist/lib/notificationPlan.js');
+} = require('../../src/lib/notificationPlan');
 
 // Local wall-clock helper: every assertion below is built the same way the
 // planner builds its timestamps, so the suite passes in any timezone.

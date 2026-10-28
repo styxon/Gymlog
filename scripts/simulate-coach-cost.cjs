@@ -2,7 +2,6 @@
 /**
  * What running the AI Coach would actually cost.
  *
- *   npx tsc -p tsconfig.test.json
  *   node scripts/simulate-coach-cost.cjs
  *
  * Every token count below is measured, not assumed: the script builds real
@@ -11,14 +10,11 @@
  * how often a Pro user opens the sheet — and those are stated as ranges.
  */
 
+require('./registerTs.cjs');
 const path = require('node:path');
 const fs = require('node:fs');
 
-const DIST = path.join(__dirname, '..', '.test-dist', 'lib');
-if (!fs.existsSync(DIST)) {
-  console.error('Run `npx tsc -p tsconfig.test.json` first — this reads .test-dist.');
-  process.exit(1);
-}
+const DIST = path.join(__dirname, '..', 'src', 'lib');
 
 const { buildEvalContext } = require(path.join(DIST, 'aiCoachEvalCases.js'));
 const { buildAiCoachSystemContext } = require(path.join(DIST, 'aiCoachSystemContext.js'));

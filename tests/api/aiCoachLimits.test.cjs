@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const { callHandler, loadApiModule, withEnv } = require('../helpers/apiModule.cjs');
 const { heavyCoachContext } = require('../helpers/coachContextFixture.cjs');
-const { PROGRAM_IMAGE_MAX_BASE64_CHARS, PROGRAM_TABLE_TOOL_NAME } = require('../../.test-dist/lib/programImageImport.js');
+const { PROGRAM_IMAGE_MAX_BASE64_CHARS, PROGRAM_TABLE_TOOL_NAME } = require('../../src/lib/programImageImport');
 
 /**
  * The coach endpoint's size limits, run (server audit, 2026-09-21).
@@ -23,7 +23,7 @@ const LOG_ID = '0123abcd-0000-4000-8000-00000000000a';
  * switch it on for their run unless they say otherwise.
  */
 async function withCoach(env, scenario, { copiesKept = true } = {}) {
-  const logIdModule = require('../../.test-dist/lib/aiCoachLogId.js');
+  const logIdModule = require('../../src/lib/aiCoachLogId');
   const savedCopies = logIdModule.COACH_COPIES_KEPT;
   logIdModule.COACH_COPIES_KEPT = copiesKept;
   const kept = [];
@@ -79,7 +79,7 @@ module.exports = [
   {
     name: 'coach endpoint: with copies off nothing is kept, whatever an older app sends',
     async run() {
-      assert.equal(require('../../.test-dist/lib/aiCoachLogId.js').COACH_COPIES_KEPT, false);
+      assert.equal(require('../../src/lib/aiCoachLogId').COACH_COPIES_KEPT, false);
       await withCoach({}, async ({ post, kept, upstream }) => {
         const read = await post(photo(300_000));
         assert.equal(read.status, 200);

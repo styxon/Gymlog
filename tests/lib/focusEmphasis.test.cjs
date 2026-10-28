@@ -1,14 +1,14 @@
 const assert = require('node:assert/strict');
 
-const { buildFocusEmphasisAdditions, getFocusEmphasisCount } = require('../../.test-dist/lib/focusEmphasis');
-const { buildComposedFallbackExercise, composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { FOCUS_ACCESSORY_POOL } = require('../../.test-dist/lib/catalogExercisePools');
-const { isRepsStretchName } = require('../../.test-dist/lib/holdExercises');
-const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../.test-dist/lib/minutesExercises');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog');
-const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionExerciseFilter');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+const { buildFocusEmphasisAdditions, getFocusEmphasisCount } = require('../../src/lib/focusEmphasis');
+const { buildComposedFallbackExercise, composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { FOCUS_ACCESSORY_POOL } = require('../../src/lib/catalogExercisePools');
+const { isRepsStretchName } = require('../../src/lib/holdExercises');
+const { DEFAULT_MINUTES_PRESCRIPTION } = require('../../src/lib/minutesExercises');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { exerciseHitsCautionArea } = require('../../src/lib/cautionExerciseFilter');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function session(id, exerciseNames) {
   return {

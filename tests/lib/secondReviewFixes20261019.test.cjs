@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { startKeepAwake } = require('../../.test-dist/lib/keepAwakeLifecycle.js');
-const { parseMeasurementIntent, validMeasurementIntent } = require('../../.test-dist/lib/measurementIntent.js');
-const { removeTrailingZeros } = require('../../.test-dist/lib/format.js');
-const { buildHomeWidgetPayload } = require('../../.test-dist/lib/widgetPayload.js');
-const { weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+const { startKeepAwake } = require('../../src/lib/keepAwakeLifecycle');
+const { parseMeasurementIntent, validMeasurementIntent } = require('../../src/lib/measurementIntent');
+const { removeTrailingZeros } = require('../../src/lib/format');
+const { buildHomeWidgetPayload } = require('../../src/lib/widgetPayload');
+const { weekdaySchedule } = require('../../src/lib/trainingSchedule');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
 const root = path.join(__dirname, '..', '..');

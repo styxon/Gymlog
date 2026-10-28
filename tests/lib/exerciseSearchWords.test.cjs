@@ -6,10 +6,10 @@ const {
   normalizeSearchText,
   rankExerciseMatch,
   rankExerciseMatches,
-} = require('../../.test-dist/lib/exerciseSearch.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { buildSwapShortlist, sessionLiftsMatchingQuery } = require('../../.test-dist/lib/swapShortlist.js');
-const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+} = require('../../src/lib/exerciseSearch');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { buildSwapShortlist, sessionLiftsMatchingQuery } = require('../../src/lib/swapShortlist');
+const { buildSwapPickerLibrary } = require('../../src/lib/swapPickerLists');
 // Every swap sheet's library search since 2026-10-07: no chips, nothing being swapped.
 const swapSearch = (items, query, language, { excludeNames = [], popularOrder = new Map() } = {}) =>
   buildSwapPickerLibrary(items, {
@@ -21,8 +21,8 @@ const swapSearch = (items, query, language, { excludeNames = [], popularOrder = 
     excludeNames,
     popularOrder,
   });
-const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+const { getPopularExerciseLibraryOrder } = require('../../src/lib/exerciseSuggestions');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 // The phone, 2026-09-27 (#bugs): "Eikö ole yläpenkkiä?", "jokainen väli pitää
 // olla oikein muuten ei löydä", "voisiko lihasryhmittäin hakea",

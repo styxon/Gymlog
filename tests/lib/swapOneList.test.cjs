@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const swapLists = require('../../.test-dist/lib/swapPickerLists.js');
+const swapLists = require('../../src/lib/swapPickerLists');
 const { buildSwapPickerLibrary } = swapLists;
-const { movementHead, identityKey } = require('../../.test-dist/lib/swapShortlist.js');
-const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { effectiveSwapBodyPart, effectiveSwapCategory } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
-const { matchesExercisePickerFilters } = require('../../.test-dist/lib/exercisePicker.js');
-const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatch } = require('../../.test-dist/lib/exerciseSearch.js');
+const { movementHead, identityKey } = require('../../src/lib/swapShortlist');
+const { buildSwapOptionsForSlot } = require('../../src/lib/tailoringFit');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { effectiveSwapBodyPart, effectiveSwapCategory } = require('../../src/lib/swapBrowsePrefilter');
+const { matchesExercisePickerFilters } = require('../../src/lib/exercisePicker');
+const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatch } = require('../../src/lib/exerciseSearch');
 
 /**
  * One swap list, wherever the swap was opened (owner, 2026-10-07).

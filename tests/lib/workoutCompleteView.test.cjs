@@ -4,8 +4,8 @@ const {
   getTopSetLabel,
   buildMuscleFocus,
   getVolumeDeltaVsPrevious,
-} = require('../../.test-dist/lib/workoutCompleteView.js');
-const { bodyPartForExerciseName } = require('../../.test-dist/lib/catalogExercisePools.js');
+} = require('../../src/lib/workoutCompleteView');
+const { bodyPartForExerciseName } = require('../../src/lib/catalogExercisePools');
 
 const done = (weightKg, reps) => ({ status: 'completed', weightKg, reps });
 

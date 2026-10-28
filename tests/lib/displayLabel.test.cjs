@@ -4,7 +4,7 @@ const {
   buildDisplayCopyName,
   formatLiftDisplayLabel,
   formatWorkoutDisplayLabel,
-} = require('../../.test-dist/lib/displayLabel.js');
+} = require('../../src/lib/displayLabel');
 
 module.exports = [
   {

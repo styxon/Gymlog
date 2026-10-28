@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { describeProgramCap, programCapLineKey } = require('../../.test-dist/lib/programCapNotice.js');
+const { describeProgramCap, programCapLineKey } = require('../../src/lib/programCapNotice');
 const {
   FREE_ACTIVE_PROGRAM_CAP,
   PRO_ACTIVE_PROGRAM_CAP,
-} = require('../../.test-dist/lib/activeProgramSet.js');
+} = require('../../src/lib/activeProgramSet');
 
 module.exports = [
   {

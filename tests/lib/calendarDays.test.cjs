@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
-const calendarDays = require('../../.test-dist/lib/calendarDays.js');
-const completedSessions = require('../../.test-dist/lib/completedSessions.js');
-const recoverySheet = require('../../.test-dist/lib/recoverySheet.js');
+const calendarDays = require('../../src/lib/calendarDays');
+const completedSessions = require('../../src/lib/completedSessions');
+const recoverySheet = require('../../src/lib/recoverySheet');
 
 const { startOfLocalDay, dayStartPlus, addCalendarDays, localDateKey } = calendarDays;
 

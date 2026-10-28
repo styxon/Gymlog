@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const dist = '../../.test-dist/';
+const dist = '../../src/';
 const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require(dist + 'lib/firstRunSetup.js');
 const { composeProgramWeekForSelection } = require(dist + 'lib/programDayComposer.js');
 const { getRecommendationProgramDefinition } = require(dist + 'lib/recommendationCatalog.js');

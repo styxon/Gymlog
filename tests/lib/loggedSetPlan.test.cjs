@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { buildLoggedSetPlan, normalizeLoggedSetPlan } = require('../../.test-dist/lib/loggedSetPlan');
-const { normalizeExerciseLogDraft } = require('../../.test-dist/lib/exerciseLog');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState');
-const { buildExerciseLogDraftsFromWorkoutSession } = require('../../.test-dist/features/workout/workoutAppAdapter');
+const { buildLoggedSetPlan, normalizeLoggedSetPlan } = require('../../src/lib/loggedSetPlan');
+const { normalizeExerciseLogDraft } = require('../../src/lib/exerciseLog');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { buildExerciseLogDraftsFromWorkoutSession } = require('../../src/features/workout/workoutAppAdapter');
 
 const base = { plannedRepsMin: 6, plannedRepsMax: 8 };
 

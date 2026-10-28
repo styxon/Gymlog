@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 
 /**
  * Bug hunt, 2026-10-05 (app update over an old install).

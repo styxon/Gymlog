@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const DIST = '../../.test-dist';
+const DIST = '../../src';
 // Required per suite rather than at the top, so the two end-to-end suites
 // below also run — and fail on their own assertions — against a tree that
 // predates the module.

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { buildAiCoachPreviewAnswer } = require('../../.test-dist/lib/aiCoachPreview.js');
+const { buildAiCoachPreviewAnswer } = require('../../src/lib/aiCoachPreview');
 
 function baseContext(overrides = {}) {
   return {

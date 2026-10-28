@@ -14,7 +14,7 @@ function load(runtime, os, { visible = false, height = 0 } = {}) {
       return { remove: () => listeners.delete(type) };
     },
   };
-  const { useKeyboardOpen } = requireWithStubs(path.join(__dirname, '..', '..', '.test-dist', 'hooks', 'useKeyboardOpen.js'), {
+  const { useKeyboardOpen } = requireWithStubs(path.join(__dirname, '..', '..', 'src', 'hooks', 'useKeyboardOpen.js'), {
     react: runtime.react,
     'react-native': { Keyboard, Platform: { OS: os } },
   });

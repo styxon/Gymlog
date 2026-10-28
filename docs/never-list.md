@@ -60,7 +60,6 @@ rather than adding a parallel check.
 ## Running the workout lifecycle invariant
 
 ```powershell
-npx tsc -p tsconfig.test.json
 node tests/run-tests.cjs
 ```
 
@@ -74,7 +73,6 @@ fixed and held as invariants.
 ## Running the backup round-trip invariant
 
 ```powershell
-npx tsc -p tsconfig.test.json
 node tests/run-tests.cjs
 ```
 

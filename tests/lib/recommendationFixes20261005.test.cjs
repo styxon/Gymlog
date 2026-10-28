@@ -1,15 +1,15 @@
 const assert = require('node:assert/strict');
 
-const { applyCautionFlagsToExercises } = require('../../.test-dist/lib/cautionExerciseFilter.js');
-const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { buildProgramFocusSplit } = require('../../.test-dist/lib/programFocusSplit.js');
-const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching.js');
-const { programGearUse } = require('../../.test-dist/lib/programEquipmentFit.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../.test-dist/lib/firstRunSetup.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+const { applyCautionFlagsToExercises } = require('../../src/lib/cautionExerciseFilter');
+const { isExerciseAllowedWithEquipment, resolveAvailableEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { buildProgramFocusSplit } = require('../../src/lib/programFocusSplit');
+const { exerciseHitsCautionArea } = require('../../src/lib/cautionAreaMatching');
+const { programGearUse } = require('../../src/lib/programEquipmentFit');
+const { t } = require('../../src/lib/i18n');
+const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../src/lib/firstRunSetup');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { applyEquipmentToExercises } = require('../../src/lib/equipmentExerciseFilter');
 
 /**
  * The fixes behind the recommendation accuracy ceilings (2026-10-05), each
@@ -110,7 +110,7 @@ module.exports = [
   {
     name: 'recommendation fixes: a reader with only dumbbells who wants strength is featured a dumbbell strength programme',
     run() {
-      const dist = '../../.test-dist/lib/';
+      const dist = '../../src/lib/';
       const { recommendPrograms } = require(`${dist}recommendationScoring.js`);
       const { buildRecommendationInput } = require(`${dist}recommendationInput.js`);
       const { DEFAULT_FIRST_RUN_SELECTION } = require(`${dist}firstRunSetup.js`);
@@ -137,8 +137,8 @@ module.exports = [
   {
     name: 'recommendation fixes: the dumbbell strength programmes are strength — fives and sixes, one rep number, long rests',
     run() {
-      const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+      const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+      const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
       for (const id of ['tpl_home_dumbbell_strength_v1', 'tpl_home_dumbbell_strength_split_v1']) {
         const template = getWorkoutTemplateById(id);
         assert.ok(template, id);
@@ -271,7 +271,7 @@ module.exports = [
   {
     name: 'recommendation fixes: a reader who owns a barbell or dumbbells is not handed a week that leaves them unused',
     run() {
-      const { programIgnoresOwnedLoad } = require('../../.test-dist/lib/programEquipmentFit.js');
+      const { programIgnoresOwnedLoad } = require('../../src/lib/programEquipmentFit');
       const featured = (setup, goal, level, daysPerWeek) =>
         resolveFirstRunRecommendationWithTailoring(
           {

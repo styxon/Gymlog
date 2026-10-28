@@ -305,7 +305,7 @@ the `sub`, hence the blob, is the same.
   `aiLogId`, not the account); the page and the policy say so, and they expire
   with the 24-month prune.
 - Apple accounts: in the app only, until the plan in docs/ios-launch.md.
-- Publishing: `npx tsc -p tsconfig.test.json && node scripts/build-legal-site.cjs`
+- Publishing: `node scripts/build-legal-site.cjs`
   (reads `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` from `.env.local`), copy
   `dist-legal/` into the styxon.fi site, upload. The API change needs a Vercel
   deploy first, or the page's request is refused by the browser.

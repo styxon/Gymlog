@@ -14,8 +14,8 @@ const swapSearch = read('src', 'lib', 'swapPickerLists.ts');
 const swapHook = read('src', 'hooks', 'useSwapPickerLists.ts');
 const labels = read('src', 'lib', 'exerciseNameLabel.ts');
 
-const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+const { rankExerciseMatches } = require('../../src/lib/exerciseSearch');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
 
 /**
  * Slices between two anchors, failing loudly when one is missing.

@@ -4,9 +4,9 @@ const {
   exerciseNameLabel,
   PLAIN_EXERCISE_NAMES,
   TRANSLATED_EXERCISE_NAMES,
-} = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
+} = require('../../src/lib/exerciseNameLabel');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
 
 /**
  * English display names: the same lift, said the way a gym says it.
@@ -97,7 +97,7 @@ module.exports = [
      */
     name: 'plain names: no target lift reads like a database entry',
     run() {
-      const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
+      const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
       const clumsy = [];
       for (const preset of STRENGTH_GOAL_PRESETS) {
         const shown = exerciseNameLabel('en', preset.exerciseName);
@@ -130,7 +130,7 @@ module.exports = [
      */
     name: 'plain names: no lift a programme prescribes reads like a database entry',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const prescribed = new Set();
       JSON.stringify(WORKOUT_TEMPLATES_V1).replace(
         /"exerciseName":"([^"]+)"/g,

@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const {
   MEASUREMENT_KIND_ORDER,
   isMeasurementKind,
-} = require('../../.test-dist/lib/measurementKinds.js');
-const { MEASUREMENT_LABEL_KEYS } = require('../../.test-dist/lib/homeStatCards.js');
+} = require('../../src/lib/measurementKinds');
+const { MEASUREMENT_LABEL_KEYS } = require('../../src/lib/homeStatCards');
 
 module.exports = [
   {
@@ -63,7 +63,7 @@ module.exports = [
     run() {
       // "hauiksen kirjauksen oletusarvo on 90 cm" (walkthrough 2026-08-28):
       // one number served every kind. Each opens somewhere plausible now.
-      const { DEFAULT_MEASUREMENT_VALUE, MEASUREMENT_KIND_ORDER } = require('../../.test-dist/lib/measurementKinds.js');
+      const { DEFAULT_MEASUREMENT_VALUE, MEASUREMENT_KIND_ORDER } = require('../../src/lib/measurementKinds');
       for (const kind of MEASUREMENT_KIND_ORDER) {
         assert.ok(Number.isFinite(DEFAULT_MEASUREMENT_VALUE[kind]) && DEFAULT_MEASUREMENT_VALUE[kind] > 0, kind);
       }

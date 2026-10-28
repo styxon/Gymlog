@@ -6,9 +6,9 @@ const {
   FREE_CUSTOM_PROGRAM_LIMIT,
   ProgramLimitReachedError,
   resolveProgramSlots,
-} = require('../../.test-dist/lib/programSlots.js');
+} = require('../../src/lib/programSlots');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

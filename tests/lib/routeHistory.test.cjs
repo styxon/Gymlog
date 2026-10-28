@@ -6,7 +6,7 @@ const {
   popRoute,
   pushRoute,
   withoutTrailingRoute,
-} = require('../../.test-dist/navigation/routeHistory.js');
+} = require('../../src/navigation/routeHistory');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
 

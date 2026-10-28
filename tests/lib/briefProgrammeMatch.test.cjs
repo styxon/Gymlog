@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { matchProgrammeToBrief, shouldOfferCatalogInstead } = require('../../.test-dist/lib/briefProgrammeMatch.js');
-const { parseProgrammeBrief } = require('../../.test-dist/lib/programmeBrief.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
+const { matchProgrammeToBrief, shouldOfferCatalogInstead } = require('../../src/lib/briefProgrammeMatch');
+const { parseProgrammeBrief } = require('../../src/lib/programmeBrief');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { createSeedDatabase } = require('../../src/data/seed');
 
 const preferences = createSeedDatabase().preferences;
 

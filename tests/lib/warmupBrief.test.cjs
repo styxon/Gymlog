@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
-const { buildWarmupBrief } = require('../../.test-dist/lib/warmupBrief.js');
+const { buildWarmupBrief } = require('../../src/lib/warmupBrief');
 
 const lift = (exerciseName, bodyPart, extra = {}) => ({
   exerciseName,

@@ -70,7 +70,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  * prints what the cases reached.
  */
 
-const DIST = path.join(__dirname, '..', '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', '..', 'src');
 const ACCOUNT_DIR = path.join(DIST, 'features', 'account');
 const HOOK = path.join(ACCOUNT_DIR, 'useAccountBackup.js');
 const CORPUS_DIR = path.join(__dirname, '..', '..', 'fixtures', 'storage-history');
@@ -379,7 +379,7 @@ function googleAccountOf(sub) {
 function accountModuleFiles() {
   return fs
     .readdirSync(ACCOUNT_DIR)
-    .filter((entry) => entry.endsWith('.js'))
+    .filter((entry) => /[.]tsx?$/.test(entry) && !entry.endsWith('.d.ts'))
     .map((entry) => path.join(ACCOUNT_DIR, entry));
 }
 

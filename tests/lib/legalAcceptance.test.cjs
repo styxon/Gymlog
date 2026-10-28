@@ -6,8 +6,8 @@ const {
   acceptLegal,
   legalAcceptanceDue,
   normalizeLegalAcceptance,
-} = require('../../.test-dist/lib/legalAcceptance.js');
-const { LEGAL_LAST_UPDATED, LEGAL_VERSION, formatLegalDate } = require('../../.test-dist/lib/legalDocuments.js');
+} = require('../../src/lib/legalAcceptance');
+const { LEGAL_LAST_UPDATED, LEGAL_VERSION, formatLegalDate } = require('../../src/lib/legalDocuments');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 // Line endings normalised: a Windows checkout is CRLF.
@@ -56,7 +56,7 @@ module.exports = [
     // back on every launch; and '.10' sorted before '.9' as a string.
     name: 'legal acceptance: same-day suffixed versions are accepted and ordered by number',
     run() {
-      const { compareLegalVersions, laterLegalAcceptance } = require('../../.test-dist/lib/legalAcceptance.js');
+      const { compareLegalVersions, laterLegalAcceptance } = require('../../src/lib/legalAcceptance');
       const stamp = '2026-10-06T10:00:00.000Z';
       const suffixed = { version: '2026-10-06.1', acceptedAt: stamp };
       assert.deepEqual(normalizeLegalAcceptance(suffixed), suffixed);
@@ -97,7 +97,7 @@ module.exports = [
      */
     name: 'legal acceptance: a restore keeps the later acceptance, from either side',
     run() {
-      const { laterLegalAcceptance } = require('../../.test-dist/lib/legalAcceptance.js');
+      const { laterLegalAcceptance } = require('../../src/lib/legalAcceptance');
       const old = { version: '2026-09-04', acceptedAt: '2026-09-05T08:00:00.000Z' };
       const now = { version: '2026-09-16', acceptedAt: '2026-09-26T08:00:00.000Z' };
       const sameEarlier = { version: '2026-09-16', acceptedAt: '2026-09-20T08:00:00.000Z' };
@@ -108,8 +108,8 @@ module.exports = [
       assert.deepEqual(laterLegalAcceptance(now, old), now);
       assert.deepEqual(laterLegalAcceptance(now, sameEarlier), sameEarlier, 'the first tap for a version stands');
 
-      const { preferencesForRestore } = require('../../.test-dist/lib/accountBackup.js');
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+      const { preferencesForRestore } = require('../../src/lib/accountBackup');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       const base = createEmptyDatabase('fi').preferences;
       const restored = preferencesForRestore({ ...base, legalAcceptance: null }, { ...base, legalAcceptance: now }, []);
       assert.deepEqual(restored.legalAcceptance, now, 'the restore threw away the tick this phone just got');

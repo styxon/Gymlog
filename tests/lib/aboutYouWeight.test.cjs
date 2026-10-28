@@ -9,13 +9,13 @@ module.exports = [
     name: 'About you continues on gender and age alone; weight is optional',
     run() {
       const assert = require('node:assert/strict');
-      const { canContinueAboutYou } = require('../../.test-dist/lib/aboutYouRules.js');
+      const { canContinueAboutYou } = require('../../src/lib/aboutYouRules');
       assert.equal(canContinueAboutYou({ gender: 'male', ageRange: '19_25' }), true);
       assert.equal(canContinueAboutYou({ gender: null, ageRange: '19_25' }), false);
       assert.equal(canContinueAboutYou({ gender: 'female', ageRange: null }), false);
       // Skip in the gender sheet is an answer.
       assert.equal(canContinueAboutYou({ gender: 'unspecified', ageRange: '41_plus' }), true);
-      const { firstMissingAboutYou } = require('../../.test-dist/lib/aboutYouRules.js');
+      const { firstMissingAboutYou } = require('../../src/lib/aboutYouRules');
       assert.equal(firstMissingAboutYou({ gender: null, ageRange: null }), 'gender');
       assert.equal(firstMissingAboutYou({ gender: 'unspecified', ageRange: null }), 'age');
       assert.equal(firstMissingAboutYou({ gender: null, ageRange: '19_25' }), 'gender');
@@ -38,7 +38,7 @@ module.exports = [
     name: 'typed ruler values accept comma and dot, clamp, and land on a mark',
     run() {
       const assert = require('node:assert/strict');
-      const { parseTypedRulerValue } = require('../../.test-dist/lib/rulerValue.js');
+      const { parseTypedRulerValue } = require('../../src/lib/rulerValue');
       const kg = { min: 35, max: 220, step: 0.1 };
       assert.equal(parseTypedRulerValue('72,5', kg), 72.5);
       assert.equal(parseTypedRulerValue('72.5', kg), 72.5);

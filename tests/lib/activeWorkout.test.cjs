@@ -3,9 +3,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const { isWorkoutInProgress } = require('../../.test-dist/lib/activeWorkout.js');
-const { resolveHomeWidgetSessionTap } = require('../../.test-dist/lib/widgetPayload.js');
-const { selectHomeCustomProgram } = require('../../.test-dist/lib/homeProgramSelection.js');
+const { isWorkoutInProgress } = require('../../src/lib/activeWorkout');
+const { resolveHomeWidgetSessionTap } = require('../../src/lib/widgetPayload');
+const { selectHomeCustomProgram } = require('../../src/lib/homeProgramSelection');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');

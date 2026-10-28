@@ -10,13 +10,13 @@ const assert = require('node:assert/strict');
  * a translation that merges two steps into one loses a number the reader is
  * counting along with.
  */
-const { getExerciseInstructions, finnishInstructionTable, effectiveEnglishInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
-const { EXERCISE_INSTRUCTIONS_EN } = require('../../.test-dist/data/exerciseInstructionsEn.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
-const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { EQUIPMENT_FALLBACKS } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+const { getExerciseInstructions, finnishInstructionTable, effectiveEnglishInstructions } = require('../../src/lib/exerciseInstructions');
+const { EXERCISE_INSTRUCTIONS_EN } = require('../../src/data/exerciseInstructionsEn');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../src/features/workout/workoutCatalog');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { EQUIPMENT_FALLBACKS } = require('../../src/lib/equipmentExerciseFilter');
 
 // The extras are library entries too — they exist because the generated file
 // lacks them and `exercise:sync` would erase them. Reading only the generated
@@ -274,13 +274,13 @@ module.exports = [
       // use of the merged table does not hide a top-level import.
       const { spawnSync } = require('node:child_process');
       const path = require('node:path');
-      const dist = path.resolve(__dirname, '../../.test-dist/lib');
-      const dataDist = path.resolve(__dirname, '../../.test-dist/data');
+      const dist = path.resolve(__dirname, '../../src/lib');
+      const dataDist = path.resolve(__dirname, '../../src/data');
       const script = `
         const path = require('path');
         const dist = ${JSON.stringify(dist)};
         const dataDist = ${JSON.stringify(dataDist)};
-        const more = path.join(dataDist, 'exerciseInstructionsFiMore.js');
+        const more = require.resolve(path.join(dataDist, 'exerciseInstructionsFiMore'));
         const { getExerciseInstructions } = require(path.join(dist, 'exerciseInstructions.js'));
         const loaded = () => Boolean(require.cache[more]);
         const out = [];
@@ -293,7 +293,7 @@ module.exports = [
         out.push(loaded());
         console.log(JSON.stringify(out));
       `;
-      const result = spawnSync(process.execPath, ['-e', script], { encoding: 'utf8', timeout: 60_000 });
+      const result = spawnSync(process.execPath, ['-r', path.resolve(__dirname, '../../scripts/registerTs.cjs'), '-e', script], { encoding: 'utf8', timeout: 60_000 });
       assert.equal(result.status, 0, result.stderr);
       assert.deepEqual(
         JSON.parse(result.stdout.trim()),

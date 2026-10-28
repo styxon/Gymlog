@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const {
   orderExercisesBySelection,
-} = require('../../.test-dist/lib/exerciseSelectionOrder.js');
+} = require('../../src/lib/exerciseSelectionOrder');
 
 // Stands in for the library array whose order used to decide this. Deliberately
 // NOT sorted — the point is that whatever order this happens to be in must not

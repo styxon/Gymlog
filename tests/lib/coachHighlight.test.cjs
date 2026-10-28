@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { splitOnHighlights } = require('../../.test-dist/lib/coachHighlight.js');
+const { splitOnHighlights } = require('../../src/lib/coachHighlight');
 
 function joined(parts) {
   return parts.map((part) => part.value).join('');

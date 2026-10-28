@@ -5,9 +5,9 @@ const {
   planLabelsFromWeekdays,
   rotateLabelsForNextSession,
   weekdaysFromPlanLabels,
-} = require('../../.test-dist/lib/trainingWeekSync.js');
-const { buildSavedOnboardingWorkoutPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+} = require('../../src/lib/trainingWeekSync');
+const { buildSavedOnboardingWorkoutPlan } = require('../../src/app/onboardingHandoff');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
 
 module.exports = [
   {

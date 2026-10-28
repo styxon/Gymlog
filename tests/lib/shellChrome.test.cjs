@@ -3,7 +3,7 @@ module.exports = [
     name: 'shell chrome: the tab bar hides on every full-screen flow and nowhere else',
     run() {
       const assert = require('node:assert/strict');
-      const { resolveShellChrome } = require('../../.test-dist/lib/shellChrome.js');
+      const { resolveShellChrome } = require('../../src/lib/shellChrome');
       const chrome = (route, over = {}) =>
         resolveShellChrome({
           route,
@@ -45,7 +45,7 @@ module.exports = [
     name: 'shell chrome: the status-bar flags follow the route and the onboarding flags',
     run() {
       const assert = require('node:assert/strict');
-      const { resolveShellChrome } = require('../../.test-dist/lib/shellChrome.js');
+      const { resolveShellChrome } = require('../../src/lib/shellChrome');
       const base = { onboardingActive: false, entryFlowActive: false, setupHandoffActive: false };
 
       const setup = resolveShellChrome({ ...base, route: { tab: 'profile', screen: 'setup' } });

@@ -7,7 +7,7 @@ const {
   emptyRatingPromptState,
   recordRatingAsked,
   recordRatingCompleted,
-} = require('../../.test-dist/lib/ratingPrompt.js');
+} = require('../../src/lib/ratingPrompt');
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const NOW = Date.parse('2026-08-13T08:00:00.000Z');

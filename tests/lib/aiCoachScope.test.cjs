@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
-const { buildAiCoachPreviewAnswer } = require('../../.test-dist/lib/aiCoachPreview.js');
+const { classifyCoachScope } = require('../../src/lib/aiCoachScope');
+const { buildAiCoachPreviewAnswer } = require('../../src/lib/aiCoachPreview');
 
 /**
  * The coach answers training questions, hands two things on, and takes no

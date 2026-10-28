@@ -9,8 +9,8 @@ const {
   defaultPlanForTier,
   resolveTierCtaKey,
   resolveTierFineKey,
-} = require('../../.test-dist/lib/proTiers');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/lib/proTiers');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 const root = path.join(__dirname, '..', '..');
 const i18nSource = fs.readFileSync(path.join(root, 'src', 'lib', 'i18n.ts'), 'utf8');

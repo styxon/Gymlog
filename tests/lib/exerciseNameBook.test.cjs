@@ -5,8 +5,8 @@ const {
   lookupNameBook,
   rememberName,
   countKnownNames,
-} = require('../../.test-dist/lib/exerciseNameBook.js');
-const { parseCsvProgram } = require('../../.test-dist/lib/csvProgramImport.js');
+} = require('../../src/lib/exerciseNameBook');
+const { parseCsvProgram } = require('../../src/lib/csvProgramImport');
 
 /**
  * The reader's own names for lifts.

@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { resolveMissedRepsTarget } = require('../../.test-dist/lib/progressionGate.js');
-const { workoutReducer } = require('../../.test-dist/features/workout/workoutState');
-const { resolveGuidedSetTarget } = require('../../.test-dist/lib/guidedPlayer');
+const { resolveMissedRepsTarget } = require('../../src/lib/progressionGate');
+const { workoutReducer } = require('../../src/features/workout/workoutState');
+const { resolveGuidedSetTarget } = require('../../src/lib/guidedPlayer');
 
 // At the gym, 2026-09-09: 7 · 6 · 4 · 4 last time, and the app asked for
 // 4 × 12 at the same weight. The rule (user): "tee samalla painolla mutta yritä
@@ -155,7 +155,7 @@ module.exports = [
       assert.match(player, /return formatGuidedRepsLabel\(set, trackingMode\);/);
       assert.match(player, /const bounds = planRepsBounds\(planSet, lift\.trackingMode\);/);
       assert.match(player, /programme: walkPlan\.programme,/);
-      const guided = require('../../.test-dist/lib/guidedPlayer.js');
+      const guided = require('../../src/lib/guidedPlayer');
       assert.equal(guided.formatGuidedRepsLabel({ plannedRepsMin: 8, plannedRepsMax: 12, plannedTargetReps: 6 }), '6');
       const lowered = [0, 1].map((setIndex) => ({ setIndex, status: 'pending', plannedLoadKg: 60, plannedRepsMin: 8, plannedRepsMax: 12, plannedTargetReps: 6, draftLoadText: '60', draftRepsText: '' }));
       assert.deepEqual(guided.resolveGuidedWalkPlan(lowered, 'load_and_reps'), { kind: 'lowered', reps: [6], programme: '8–12' });
@@ -287,7 +287,7 @@ module.exports = [
   {
     name: 'the coach\'s example sees the lowered target: it previews the same start',
     run() {
-      const { previewNextSession } = require('../../.test-dist/features/workout/workoutState');
+      const { previewNextSession } = require('../../src/features/workout/workoutState');
       const { state } = session(EMPTY, [7, 6, 4, 4], 20);
       const preview = previewNextSession(TEMPLATE, {
         unitPreference: 'kg',
@@ -386,7 +386,7 @@ module.exports = [
     name: 'missed reps and the ramp: 90 calendar days is the same age across a clock change',
     run() {
       const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
-      const { resolveRampSetTarget } = require('../../.test-dist/lib/progressionGate.js');
+      const { resolveRampSetTarget } = require('../../src/lib/progressionGate');
       withHelsinkiClocks(() => {
         const at = (local, reps, loads) => {
           const iso = new Date(local).toISOString();

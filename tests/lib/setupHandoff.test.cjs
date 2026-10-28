@@ -6,7 +6,7 @@ const path = require('node:path');
 const {
   planSetupHandoff,
   resolveSetupTrackingOffer,
-} = require('../../.test-dist/lib/setupHandoff.js');
+} = require('../../src/lib/setupHandoff');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 module.exports = [
@@ -436,7 +436,7 @@ module.exports = [
       assert.match(overlays, /!onboardingActive && !setupHandoffShown\s*\? legalAcceptanceDue/);
       assert.match(overlays, /canOfferTheme: true,/);
 
-      const { normalizeDatabase } = require('../../.test-dist/storage/database.js');
+      const { normalizeDatabase } = require('../../src/storage/database');
       const old = normalizeDatabase({ preferences: { onboardingCompleted: false } });
       assert.equal(old.preferences.setupHandoffProSeen, false);
       assert.equal(

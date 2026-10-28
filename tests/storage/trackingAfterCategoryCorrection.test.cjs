@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const { GENERATED_EXERCISE_LIBRARY } = require(path.join(DIST, 'data', 'generatedExerciseLibrary.js'));
 const { createSeedDatabase, createSeedExerciseLibrary } = require(path.join(DIST, 'data', 'seed.js'));
 const { WORKOUT_TEMPLATES_V1 } = require(path.join(DIST, 'features', 'workout', 'workoutCatalog.js'));

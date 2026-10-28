@@ -7,11 +7,11 @@ const {
   CAUTION_TO_FOCUS_AREAS,
   AREA_CAREFUL_SWAPS,
   AREA_BODYWEIGHT_SWAPS,
-} = require('../../.test-dist/lib/cautionExerciseFilter');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
-const { trackingModeAfterSwap } = require('../../.test-dist/lib/catalogExercisePools');
+} = require('../../src/lib/cautionExerciseFilter');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { trackingModeAfterSwap } = require('../../src/lib/catalogExercisePools');
 
 function exercise(name, overrides = {}) {
   return {

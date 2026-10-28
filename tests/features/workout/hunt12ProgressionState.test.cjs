@@ -4,7 +4,7 @@ const { withHelsinkiClocks } = require('../../helpers/clockChange.cjs');
 // workoutPersistence reaches storage/largeItem, which reads Platform from react-native.
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const D = '../../../.test-dist/';
+const D = '../../../src/';
 const { workoutReducer, workoutInitialState } = require(D + 'features/workout/workoutState.js');
 const { normalizeWorkoutBundle } = require(D + 'features/workout/workoutPersistence.js');
 const { resolveGuidedSetTarget } = require(D + 'lib/guidedPlayer.js');

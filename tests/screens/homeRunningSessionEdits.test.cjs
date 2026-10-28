@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const activeWorkout = require('../../.test-dist/lib/activeWorkout.js');
+const activeWorkout = require('../../src/lib/activeWorkout');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 /**

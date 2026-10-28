@@ -5,8 +5,8 @@ const path = require('node:path');
 const {
   buildProgramFingerprint,
   fingerprintsMatch,
-} = require('../../.test-dist/lib/programFingerprint.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/lib/programFingerprint');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

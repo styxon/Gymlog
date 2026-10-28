@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { backfillRecommendations } = require('../../.test-dist/lib/recommendationBackfill.js');
+const { backfillRecommendations } = require('../../src/lib/recommendationBackfill');
 
 function tpl(id, goalType, level, daysPerWeek) {
   return { id, goalType, level, daysPerWeek, name: id, sessions: [] };

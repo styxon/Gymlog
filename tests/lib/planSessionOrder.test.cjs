@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { repointPlanEntrySessions, reorderPlanWeek } = require('../../.test-dist/lib/planSessionOrder.js');
-const { resolveNextPlanEntryIndex } = require('../../.test-dist/lib/planRotation.js');
+const { repointPlanEntrySessions, reorderPlanWeek } = require('../../src/lib/planSessionOrder');
+const { resolveNextPlanEntryIndex } = require('../../src/lib/planRotation');
 
 const plan = () => [
   { orderIndex: 0, label: 'mon', workoutTemplateSessionId: 'a' },

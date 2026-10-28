@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   buildHomeStatCardCatalog,
   groupHomeStatCards,
-} = require('../../.test-dist/lib/homeStatCards.js');
+} = require('../../src/lib/homeStatCards');
 
 const EMPTY = { bodyweightEntries: [], measurementEntries: [], trackedProgress: [] };
 

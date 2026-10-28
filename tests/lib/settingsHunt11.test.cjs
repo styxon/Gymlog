@@ -3,7 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..', '..');
-const dist = path.join(root, '.test-dist');
+const dist = path.join(root, 'src');
 const { createHookRuntime, requireWithStubs } = require('../helpers/hookHarness.cjs');
 const { attemptOnce } = require(path.join(dist, 'lib', 'attemptOnce.js'));
 const { characterCount, clampProfileName, profileInitials, splitCharacters, storedProfileName } = require(path.join(dist, 'lib', 'profileName.js'));

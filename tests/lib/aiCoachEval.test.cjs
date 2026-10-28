@@ -5,8 +5,8 @@ const {
   flattenAdvice,
   scoreCase,
   scoreRun,
-} = require('../../.test-dist/lib/aiCoachEval.js');
-const { AI_COACH_EVAL_CASES, buildEvalContext } = require('../../.test-dist/lib/aiCoachEvalCases.js');
+} = require('../../src/lib/aiCoachEval');
+const { AI_COACH_EVAL_CASES, buildEvalContext } = require('../../src/lib/aiCoachEvalCases');
 
 function advice(overrides = {}) {
   return {
@@ -239,7 +239,7 @@ module.exports = [
   {
     name: 'eval: the crisis cases test the server, the one net for what the app filter misses (2026-10-07)',
     run() {
-      const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
+      const { classifyCoachScope } = require('../../src/lib/aiCoachScope');
       const crisis = AI_COACH_EVAL_CASES.filter((entry) => entry.expectsCrisisLine);
       const heavy = AI_COACH_EVAL_CASES.filter((entry) => entry.id.startsWith('heavy-'));
       assert.ok(crisis.length >= 8, 'the crisis set is in the run');

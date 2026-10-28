@@ -2,16 +2,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
-const { buildReadyProgramDetail, readyProgramSessionMinutes } = require('../../.test-dist/lib/programDetails.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
+const { buildReadyProgramDetail, readyProgramSessionMinutes } = require('../../src/lib/programDetails');
 const {
   buildReadyDiscoveryItem,
   filterReadyDiscoveryItems,
   getReadyProgramTimeBucket,
-} = require('../../.test-dist/lib/workoutDiscovery.js');
-const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
-const { evaluateWorkoutContentFit } = require('../../.test-dist/lib/workoutContentFit.js');
+} = require('../../src/lib/workoutDiscovery');
+const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
+const { evaluateWorkoutContentFit } = require('../../src/lib/workoutContentFit');
 
 const ROOT = path.join(__dirname, '..', '..');
 

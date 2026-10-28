@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
-const { STORAGE_CHUNK_CHARS } = require('../../.test-dist/lib/storageChunks');
+const { STORAGE_CHUNK_CHARS } = require('../../src/lib/storageChunks');
 
 /**
  * Putting the workout bundle aside from the crash screen (2026-10-03).

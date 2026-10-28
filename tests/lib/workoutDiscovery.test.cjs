@@ -6,11 +6,11 @@ const {
   filterReadyDiscoveryItems,
   getReadyProgramEquipmentBucket,
   getReadyProgramTimeBucket,
-} = require('../../.test-dist/lib/workoutDiscovery.js');
-const { getPreferredReadyEquipmentFilter } = require('../../.test-dist/lib/tailoringFit.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
-const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
+} = require('../../src/lib/workoutDiscovery');
+const { getPreferredReadyEquipmentFilter } = require('../../src/lib/tailoringFit');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
+const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
 
 function createItem(templateId) {
   const template = getWorkoutTemplateById(templateId);

@@ -1,7 +1,8 @@
 // Dumps the recommendation catalog: days, tier, family, goals, levels, gear needed,
 // and the template's own "where your week goes" split.
+require('../registerTs.cjs');
 const path = require('node:path');
-const dist = path.join(__dirname, '..', '..', '.test-dist');
+const dist = path.join(__dirname, '..', '..', 'src');
 const cat = require(path.join(dist, 'lib', 'recommendationCatalog.js'));
 const wc = require(path.join(dist, 'features', 'workout', 'workoutCatalog.js'));
 const pe = require(path.join(dist, 'lib', 'programEquipment.js'));

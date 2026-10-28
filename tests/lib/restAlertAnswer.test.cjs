@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { restAlertMoment, restAlertsAnswered } = require('../../.test-dist/lib/restAlertAnswer.js');
+const { restAlertMoment, restAlertsAnswered } = require('../../src/lib/restAlertAnswer');
 
 const FRESH = {
   pushEnabled: false,

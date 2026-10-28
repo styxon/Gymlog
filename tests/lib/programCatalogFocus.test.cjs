@@ -4,8 +4,8 @@ const {
   CATALOG_FOCUS_OPTIONS,
   getProgramFocusTags,
   matchesCatalogFocus,
-} = require('../../.test-dist/lib/programCatalogFocus.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programCatalogFocus');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function templateById(id) {
   const template = WORKOUT_TEMPLATES_V1.find((entry) => entry.id === id);

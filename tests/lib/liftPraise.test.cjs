@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveLiftPraise } = require('../../.test-dist/lib/liftPraise.js');
+const { resolveLiftPraise } = require('../../src/lib/liftPraise');
 
 // At the gym, 2026-10-08: the bench had sat at 60 kg 6 · 6 · 6, the card said
 // it had not moved, and the next step was 3 × 7 — "jos käyttäjä tekee tämän
@@ -23,7 +23,7 @@ module.exports = [
   {
     name: 'lift praise: the banner is about the lift just logged, never the one walked up to',
     run() {
-      const { praisedSlotBeforeWalkUp } = require('../../.test-dist/lib/liftPraise.js');
+      const { praisedSlotBeforeWalkUp } = require('../../src/lib/liftPraise');
       const walkUp = { type: 'position', slotId: 'bench' };
       assert.equal(praisedSlotBeforeWalkUp({ type: 'set', slotId: 'squat' }, walkUp), 'squat');
       assert.equal(praisedSlotBeforeWalkUp({ type: 'set', slotId: 'bench' }, walkUp), null);
@@ -109,7 +109,7 @@ module.exports = [
       const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
       assert.match(screen, /resolveLiftPraise\(/);
       assert.match(screen, /'guided\.walk\.praise'/);
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(
         t('fi', 'guided.walk.praise', { name: 'Penkkipunnerrus', dose: '60 kg 3 × 7' }),
         'Loistavaa! Edellinen liike: Penkkipunnerrus 60 kg 3 × 7, enemmän kuin viimeksi.',
