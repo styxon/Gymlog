@@ -4,11 +4,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { AppShell } from './src/components/AppShell';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
 import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
-import { programmeStartSessionId } from './src/lib/programSessionList';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
-import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
-import { haptics } from './src/utils/haptics';
-import { reportPlanSaveFailed } from './src/app/planSaveFailure';
 import { useScheduledNotifications } from './src/hooks/useScheduledNotifications';
 import { activeWorkoutStartedAt } from './src/lib/notificationPlan';
 import { usePendingAiLogDeletions } from './src/hooks/usePendingAiLogDeletions';
@@ -25,21 +21,6 @@ import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { useReviewProAccount } from './src/app/useReviewProAccount';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
 import { useAccountOutcome } from './src/app/useAccountOutcome';
-import {
-  addActiveProgram,
-  evaluateProgramAdoption,
-} from './src/lib/activeProgramSet';
-import {
-  programCapFullMessage,
-  runningCapRefusal,
-  runningCapRefusalMessage,
-} from './src/lib/programCapNotice';
-import { runningSetWithout, type AdoptReadyOptions } from './src/lib/runningProgrammes';
-import {
-  buildReadyProgramPlanId,
-  buildCustomProgramPlanId,
-  buildProgramWorkoutPlan,
-} from './src/lib/programAdoption';
 import { useRecordsAndMilestones } from './src/app/useRecordsAndMilestones';
 import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
 import { useHomeActiveWorkoutSummary } from './src/app/useHomeActiveWorkoutSummary';
@@ -47,10 +28,8 @@ import { useHeldSessionAdaptations } from './src/app/useHeldSessionAdaptations';
 import { useOnboardingGate } from './src/app/useOnboardingGate';
 import { useRunningProgrammeViews } from './src/app/useRunningProgrammeViews';
 import { createActiveWorkoutDoor } from './src/app/activeWorkoutDoor';
-import { t } from './src/lib/i18n';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
-import { trackEvent } from './src/features/analytics/analyticsClient';
 
 import { CoachChatMemory } from './src/lib/coachChatMemory';
 import { CoachAdviceMemoryEntry } from './src/lib/coachAdviceMemory';
@@ -59,23 +38,11 @@ import type { ChatMessage } from './src/screens/AICoachChatScreen';
 import type { TemplateLeaveGuard } from './src/screens/CreateTemplateScreen';
 import { useProgramExerciseEdit } from './src/app/useProgramExerciseEdit';
 import { useRecoverySheet } from './src/app/useRecoverySheet';
-import {
-  planLabelsForProgramme,
-} from './src/lib/trainingWeekSync';
-import { findReadyProgrammeCopyId } from './src/lib/programmeCopyLink';
 import { useGoalFlow } from './src/app/useGoalFlow';
 import { SettingsImportSheet } from './src/app/SettingsImportSheet';
 import { LEGAL_OVER_CONSENT, LEGAL_OVER_HANDOFF, WEEKDAY_LABEL_KEYS } from './src/app/appConstants';
 
-import { buildCustomSessionRuntimeTemplate } from './src/lib/programDetails';
-import {
-  applySessionAdaptation,
-  moveHeldAdaptations,
-  NO_HELD_SESSION_ADAPTATIONS,
-  sessionHasNoExercises,
-  spendHeldAdaptation,
-} from './src/lib/sessionAdaptation';
-import { liveSessionBlocksProgrammeDelete } from './src/lib/programmeDeletion';
+import { moveHeldAdaptations, NO_HELD_SESSION_ADAPTATIONS } from './src/lib/sessionAdaptation';
 import { renderProfileTab } from './src/app/renderProfileTab';
 import { renderHomeScreens } from './src/app/renderHomeScreens';
 import { CoachQuotaLedger, createCoachQuotaLedger } from './src/lib/aiCoachQuota';
@@ -90,6 +57,8 @@ import { useNotificationRoute } from './src/app/useNotificationRoute';
 import { useCoachContext } from './src/app/useCoachContext';
 import { createProgrammeDayEdits } from './src/app/programmeDayEdits';
 import { createProgrammeStarts } from './src/app/programmeStarts';
+import { createProgrammeAdoption } from './src/app/programmeAdoption';
+import { createCustomProgrammePlanBuilder } from './src/app/customProgrammePlan';
 import { createProgrammePlanEdits } from './src/app/programmePlanEdits';
 import { createProgrammeSwitches } from './src/app/programmeSwitches';
 import { useProgramCapLine } from './src/app/useProgramCapLine';
@@ -140,7 +109,6 @@ import { setNumberLanguage } from './src/lib/format';
 import { VinhaSplashScreen } from './src/screens/VinhaSplashScreen';
 import { accountNameStep } from './src/lib/accountNameAdoption';
 import { WorkoutProvider, useWorkoutContext } from './src/features/workout/WorkoutProvider';
-import { getWorkoutTemplateById } from './src/features/workout/workoutCatalog';
 import { AppProvider, useAppContext } from './src/state/AppProvider';
 import { AppErrorBoundary } from './src/features/errorReporting/AppErrorBoundary';
 import { WorkoutAreaBoundary } from './src/features/errorReporting/WorkoutAreaBoundary';
@@ -605,313 +573,8 @@ function VinhaApp() {
     showToast,
   });
 
-  /**
-   * Take on a ready programme.
-   *
-   * It ADDS. Nothing here ever drops a programme the reader already has: a
-   * new programme is another commitment, not a replacement for the week they
-   * built.
-   * The only thing standing between them and a fourth is the cap, and the only
-   * thing that removes a programme is the reader asking for it.
-   *
-   * Before this existed, `activePlanId` was written by the two onboarding
-   * finishes and nowhere else, so a ready programme could be opened but never
-   * taken on.
-   */
-  /**
-   * Returns whether the programme is running when this resolves.
-   *
-   * The target flow is the caller that needs to know: it stores a target only
-   * if the programme behind it actually landed, and the cap can refuse. Every
-   * other caller ignores the value, which is why this can be added without
-   * touching them.
-   */
-  async function handleAdoptReadyProgram(
-    workoutTemplateId: string,
-    adoption?: AdoptReadyOptions,
-  ): Promise<boolean> {
-    const template = getWorkoutTemplateById(workoutTemplateId);
-    if (!template) {
-      return false;
-    }
-    // Taking a finished programme's place is taking its lead.
-    const options: AdoptReadyOptions = {
-      lead: Boolean(adoption?.lead || adoption?.replacingPlanId),
-      replacingPlanId: adoption?.replacingPlanId,
-    };
-
-    // Already running this programme under some other plan id (an onboarding
-    // pick, say) — joining again would spend a cap slot on a duplicate. But
-    // "already held" is not "already the one Home leads with", and this used to
-    // return on both: the only way to change the lead was to REMOVE the other
-    // programme, which is a destructive answer to a question about ordering.
-    if (activeProgramTemplateIds.includes(workoutTemplateId)) {
-      if (options.lead) {
-        await promoteHeldProgramToLead(workoutTemplateId, options.replacingPlanId);
-      }
-      // Already held is already running, which is what the caller asked for.
-      return true;
-    }
-
-    /*
-     * The reader's own version of this programme IS this programme.
-     *
-     * Onboarding hands most readers a copy of the recommended programme,
-     * fitted to their answers, and that copy is what they train. Adopting the
-     * catalog original beside it gave one programme two rows in the list, two
-     * plans, two slots of the running cap — and a Home offering a week the
-     * reader had never been shown (audit round 4, 2026-09-20). The copy is
-     * the answer: running already, or resumed through its own plan with its
-     * block intact. Only if it has no plan at all does the catalog version
-     * get built below.
-     */
-    const copyTemplateId = findReadyProgrammeCopyId(
-      workoutTemplateId,
-      database.workoutTemplates,
-      // Running first, then merely held: with two copies of one programme
-      // — possible on an install from before the link — resuming the one
-      // nothing points at would leave both running.
-      [
-        ...activeProgramTemplateIds,
-        ...database.workoutPlans
-          .map((plan) => plan.entries[0]?.workoutTemplateId)
-          .filter((id): id is string => typeof id === 'string'),
-      ],
-    );
-    if (copyTemplateId) {
-      if (activeProgramTemplateIds.includes(copyTemplateId)) {
-        if (options.lead) {
-          await promoteHeldProgramToLead(copyTemplateId, options.replacingPlanId);
-        }
-        return true;
-      }
-      // resumeHeldProgramme counts the adoption itself, once its write lands.
-      const resumedCopy = await resumeHeldProgramme(copyTemplateId, options);
-      if (resumedCopy !== null) {
-        return resumedCopy;
-      }
-    }
-
-    // Held but switched off: resumed, not rebuilt. Falling through here
-    // built a fresh plan over the same id, and its updatedAt is the block
-    // boundary — a programme at week 5, 12 of 24, came back from the goal
-    // flow or the completion card as week 1, 0 of 24, with its week dealt
-    // again while the rotation carried on (audit round 4, 2026-09-20).
-    // The Active switch already keeps the plan; this is the same path, and
-    // it is the same path the reader's own copy comes back through above.
-    const resumedHeld = await resumeHeldProgramme(workoutTemplateId, options);
-    if (resumedHeld !== null) {
-      return resumedHeld;
-    }
-    const planId = buildReadyProgramPlanId(workoutTemplateId);
-    // The cap counts what will be running: a finished programme this one
-    // replaces has already given up its slot (runningSetWithout).
-    const running = runningSetWithout({
-      activePlanId: preferences.activePlanId,
-      activePlanIds: preferences.activePlanIds,
-      plans: database.workoutPlans,
-      replacingPlanId: options.replacingPlanId,
-    });
-    const decision = evaluateProgramAdoption({
-      activePlanIds: running.activePlanIds,
-      targetPlanId: planId,
-      proUnlocked: resolveProEntitlement(preferences).unlocked,
-    });
-
-    if (decision.kind === 'already_active') {
-      return true;
-    }
-
-    if (decision.kind === 'blocked') {
-      // In the count running now, not the one without the finished programme
-      // it replaces (runningCapRefusal).
-      const refusal = runningCapRefusal(preferences.activePlanIds, decision);
-      // Full on the free tier is a sale; full on Pro is not, and sending a
-      // paying reader to the paywall would be selling them what they own.
-      if (decision.canUpgrade) {
-        // The wall first, on this screen, then Pro only if the reader asks —
-        // it used to jump straight to the paywall (user 2026-09-14).
-        setRunningCapSheet({ visible: true, ...refusal });
-        return false;
-      }
-      showToast(runningCapRefusalMessage(preferences.appLanguage, refusal));
-      return false;
-    }
-
-    // The programme's own week leads. This read availability alone and fell
-    // back to a three-day default, and the plan then dealt sessions round-robin
-    // across whatever labels it got — so a six-session programme ran on three
-    // days, twice over, and every programme became a three-day programme.
-    const dayLabels = planLabelsForProgramme(
-      template.sessions.length,
-      preferences.setupAvailableDays,
-      // Adopting is a moment, and the cycle starts from it.
-      new Date(),
-    );
-
-    const plan = buildProgramWorkoutPlan({
-      planId,
-      workoutTemplateId,
-      programName: formatWorkoutDisplayLabel(template.name),
-      sessionIds: template.sessions.map((session) => session.id),
-      dayLabels,
-      now: new Date().toISOString(),
-    });
-
-    await upsertWorkoutPlan(plan);
-    // One write: the finished programme leaves the running set as this one
-    // joins it, so the reader never holds both.
-    const nextActivePlanIds = addActiveProgram(running.activePlanIds, plan.id);
-    await updatePreferences({
-      activePlanIds: nextActivePlanIds,
-      // Adopting a programme must not quietly demote the one already at the
-      // top of Home — but stepping up FROM a finished programme is the reader
-      // explicitly choosing a new lead, so the completion flow passes `lead`.
-      activePlanId: options.lead ? plan.id : running.activePlanId ?? plan.id,
-    });
-    /*
-     * Counted where a programme has started running: after the write.
-     *
-     * This fired at the top of the handler, before every early return, and
-     * then (2026-09-20) above the cap check — "an attempt at one", so a free
-     * reader at the cap who looked at the sheet and said no was counted as
-     * having adopted a programme, and so was a write that failed. The row
-     * says a programme is in use; the cap sheet is not that (analytics
-     * audit, 2026-09-21).
-     */
-    trackEvent('plan_adopted');
-    return true;
-  }
-
-  const {
-    dismissCompletionCard,
-    handleCompletionStartNext,
-    handleSaveRhythm,
-    handleChangeTrainingDays,
-    handleSaveEmphasis,
-    handleCompletionRestart,
-  } = createProgrammePlanEdits({
-    database,
-    preferences,
-    updatePreferences,
-    upsertWorkoutPlan,
-    editWorkoutTemplateSessions,
-    showToast,
-    handleAdoptReadyProgram,
-    completedSessionsForTemplate,
-  });
-
   const { activeProgramTemplateIds, runningProgrammeTitle, homeOtherPrograms } =
     useRunningProgrammeViews({ database, preferences, workoutTemplates });
-
-  const {
-    promoteHeldProgramToLead,
-    handleStopProgram,
-    handleResumeProgram,
-    handleSwitchActiveProgram,
-    handleForgetHeldProgram,
-    handleRemoveActiveProgram,
-    handleStartReadyProgram,
-  } = createProgrammeSwitches({
-    database,
-    preferences,
-    updatePreferences,
-    upsertWorkoutPlan,
-    forgetHeldProgramme,
-    workout,
-    setRunningCapSheet,
-    buildCustomProgrammePlan,
-    leaveDeletedProgramme,
-    handleStartReadyProgramSession,
-    showToast,
-  });
-
-  function handleStartCustomProgramSession(workoutTemplateId: string, sessionId: string) {
-    const customTemplate = customWorkoutRuntimeMap[workoutTemplateId];
-    if (!customTemplate) {
-      return;
-    }
-
-    const selectedSession = customTemplate.sessions.find((session) => session.id === sessionId) ?? null;
-    if (!selectedSession?.exercises.length) {
-      showToast(t(preferences.appLanguage, 'toast.addExercisesSession'));
-      // To the day itself, where "Lisää liike" is. It went to the template
-      // editor, which a programme page no longer opens — and a day can be
-      // empty now on purpose, named first and filled after (2026-09-26).
-      if (selectedSession) {
-        navigate({ tab: 'workout', screen: 'programDay', programType: 'custom', workoutTemplateId, sessionId });
-      }
-      return;
-    }
-
-    // Same rule as the ready-programme start above.
-    if (navigateToActiveWorkout({ resume: isActiveSessionFor(workoutTemplateId, sessionId) })) {
-      return;
-    }
-
-    const sessionRef = { programId: workoutTemplateId, sessionId };
-    const runtimeTemplate = applySessionAdaptation(
-      buildCustomSessionRuntimeTemplate(customTemplate, sessionId),
-      sessionAdaptationFor(sessionRef),
-    );
-    // Every row left out for today: the same refusal as the ready start.
-    if (sessionHasNoExercises(runtimeTemplate)) {
-      showToast(t(preferences.appLanguage, 'toast.everyLiftDropped'));
-      return;
-    }
-
-    guardStrengthStartOverCardio(() => {
-      // Nor here: training leaves the active programme where it is, as on the
-      // ready path above.
-      void updatePreferences({ trainingFirstRunDismissed: true });
-      startProgrammeWorkout(runtimeTemplate, unitPreference);
-      setHeldSessionAdaptations((held) => spendHeldAdaptation(held, sessionRef));
-      navigateToGuidedWorkout(workoutTemplateId);
-    });
-  }
-
-  /**
-   * "Ota ohjelma käyttöön" on a program of the reader's own.
-   *
-   * The ready-program half of this was fixed and the custom half was not, which
-   * left a program the reader built or imported reachable only as a list of
-   * sessions to start one at a time. Reported by a reader who imported their own
-   * six-day program and could not get it onto the home screen by any route —
-   * Home offered the catalog and onboarding, and neither of those knows about a
-   * program that came from a spreadsheet.
-   *
-   * Adoption is the same act whatever the program's source, so this is
-   * `handleAdoptReadyProgram` with the template read from the reader's own
-   * templates and the plan id from the custom namespace.
-   */
-  /**
-   * "Today is legs, not upper."
-   *
-   * The rotation decides what comes next in the programme and is right nearly
-   * every day; what it cannot know is that the reader's day went differently.
-   * The pick is dated, so it answers for today and the rotation answers again
-   * tomorrow — nothing has to remember to clear it.
-   */
-  async function handlePickTodaySession(sessionId: string) {
-    const now = new Date();
-    try {
-      await updatePreferences({
-        todaySession: {
-          dayStart: new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime(),
-          sessionId,
-          // Session ids repeat across programmes; this says which one's day.
-          workoutTemplateId: homeActivePlanCard?.programId ?? null,
-          // The instant matters, not just the day: picking a session you already
-          // trained today is how you say "again", and without a timestamp it was
-          // indistinguishable from the stale pick left over from this morning.
-          pickedAt: now.getTime(),
-        },
-      });
-    } catch (error) {
-      // Wired as `void`: a refused write was a pick that sprang back unsaid.
-      reportPlanSaveFailed('Failed to save the picked session', error, preferences.appLanguage, showToast);
-    }
-  }
 
   const {
     handleRenameProgramSession,
@@ -932,6 +595,12 @@ function VinhaApp() {
     showToast,
   });
 
+  const {
+    programCapLine,
+  } = useProgramCapLine({
+    preferences,
+  });
+
   /**
    * Take one lift out of the programme for good, from wherever the reader is
    * looking at it.
@@ -948,12 +617,6 @@ function VinhaApp() {
    * programme slot: that is said before anything is written, because finding
    * out at a paywall mid-edit is the surprise the silence was meant to avoid.
    */
-  const {
-    programCapLine,
-  } = useProgramCapLine({
-    preferences,
-  });
-
   const { handleEditProgramExercise } = useProgramExerciseEdit({
     exerciseLibrary,
     preferences,
@@ -975,132 +638,6 @@ function VinhaApp() {
     moveHeldAdaptations: (moves) => setHeldSessionAdaptations((held) => moveHeldAdaptations(held, moves)),
     setProgramLimitVisible,
   });
-
-  /** Resolves true once the programme is running, false when it was not taken on. */
-  /**
-   * The plan that takes one of the reader's own programmes into use, or null
-   * when it has no lift to train. Shared by adoption and by switching the
-   * active programme off in its favour, so both build the same week.
-   */
-  function buildCustomProgrammePlan(workoutTemplateId: string) {
-    const template = customWorkoutRuntimeMap[workoutTemplateId];
-    const sessionIds = (template?.sessions ?? [])
-      .filter((session) => session.exercises.length > 0)
-      .map((session) => session.id);
-    if (sessionIds.length === 0) {
-      return null;
-    }
-    // The program's own session count leads, exactly as it does for a ready
-    // programme: an imported six-day week dealt across three chosen weekdays
-    // would run every session twice and call itself a three-day programme.
-    const dayLabels = planLabelsForProgramme(sessionIds.length, preferences.setupAvailableDays, new Date());
-    return buildProgramWorkoutPlan({
-      planId: buildCustomProgramPlanId(workoutTemplateId),
-      workoutTemplateId,
-      programName: formatWorkoutDisplayLabel(template?.name ?? ''),
-      sessionIds,
-      dayLabels,
-      now: new Date().toISOString(),
-    });
-  }
-
-  async function handleAdoptCustomProgram(workoutTemplateId: string, options?: { lead?: boolean }): Promise<boolean> {
-    const template = customWorkoutRuntimeMap[workoutTemplateId];
-    // An empty program is not a plan. Home would draw a card with no session
-    // behind it, so the editor is the honest destination.
-    const sessionIds = (template?.sessions ?? [])
-      .filter((session) => session.exercises.length > 0)
-      .map((session) => session.id);
-    if (sessionIds.length === 0) {
-      showToast(t(preferences.appLanguage, 'toast.addExercisesTemplate'));
-      navigate({ tab: 'workout', screen: 'template', workoutTemplateId });
-      return false;
-    }
-
-    if (activeProgramTemplateIds.includes(workoutTemplateId)) {
-      if (options?.lead) {
-        await promoteHeldProgramToLead(workoutTemplateId);
-      }
-      return true;
-    }
-
-    const planId = buildCustomProgramPlanId(workoutTemplateId);
-    const decision = evaluateProgramAdoption({
-      activePlanIds: preferences.activePlanIds,
-      targetPlanId: planId,
-      proUnlocked: resolveProEntitlement(preferences).unlocked,
-    });
-
-    if (decision.kind === 'already_active') {
-      return true;
-    }
-
-    if (decision.kind === 'blocked') {
-      if (decision.canUpgrade) {
-        setRunningCapSheet({ visible: true, used: decision.used, cap: decision.cap, replacingStop: null });
-        return false;
-      }
-      showToast(programCapFullMessage(preferences.appLanguage, decision.used, decision.cap));
-      return false;
-    }
-
-    const plan = buildCustomProgrammePlan(workoutTemplateId);
-    if (!plan) {
-      return false;
-    }
-
-    await upsertWorkoutPlan(plan);
-    await updatePreferences({
-      activePlanIds: addActiveProgram(preferences.activePlanIds, plan.id),
-      activePlanId: options?.lead ? plan.id : preferences.activePlanId ?? plan.id,
-    });
-    // The reader's own programme taken into use is an adoption like a ready
-    // one, and was never counted as one (analytics audit, 2026-09-21).
-    trackEvent('plan_adopted');
-    return true;
-  }
-
-  function handleStartCustomProgram(workoutTemplateId: string) {
-    const customTemplate = customWorkoutRuntimeMap[workoutTemplateId];
-    // The day Home offers when this programme leads, else its first day with
-    // lifts in it.
-    const firstSessionId = programmeStartSessionId(
-      (customTemplate?.sessions ?? []).map((session) => ({ id: session.id, exerciseCount: session.exercises.length })),
-      workoutTemplateId,
-      homeActivePlanCard,
-    );
-    if (!firstSessionId) {
-      showToast(t(preferences.appLanguage, 'toast.addExercisesTemplate'));
-      navigate({ tab: 'workout', screen: 'template', workoutTemplateId });
-      return;
-    }
-
-    handleStartCustomProgramSession(workoutTemplateId, firstSessionId);
-  }
-
-
-  async function handleDeleteCustomWorkout(workoutTemplateId: string) {
-    // Not while one of its days is running: the player would be routed to a
-    // programme that is gone, and the sets in it could never be saved.
-    if (liveSessionBlocksProgrammeDelete(workout.activeSession, workoutTemplateId)) {
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.programDeleteWorkoutRunning'));
-      return;
-    }
-    // A refused write rolls the delete back and rejects; the press is wired
-    // as `void`, so uncaught it was a programme that vanished and came back
-    // with no word (hunt 10, #37).
-    try {
-      await deleteWorkoutTemplate(workoutTemplateId);
-    } catch (error) {
-      console.error('Failed to delete the programme', error);
-      void haptics.error();
-      showToast(t(preferences.appLanguage, 'toast.programDeleteFailed'));
-      return;
-    }
-    void haptics.success();
-    leaveDeletedProgramme(workoutTemplateId);
-  }
 
   const {
     handleOnboardingPickReadyProgram,
@@ -1479,6 +1016,85 @@ function VinhaApp() {
     preferences,
     lifetimeSummary,
     unitPreference,
+  });
+
+  // Built here, below the hooks they read from (useCustomProgramViews, useHomeActivePlan)
+  // and above useGoalFlow, which takes handleAdoptReadyProgram: factories hold no
+  // hook, so where they are called changes nothing but what each can see.
+  const buildCustomProgrammePlan = createCustomProgrammePlanBuilder({ customWorkoutRuntimeMap, preferences });
+
+  const {
+    promoteHeldProgramToLead,
+    handleStopProgram,
+    handleResumeProgram,
+    handleSwitchActiveProgram,
+    handleForgetHeldProgram,
+    handleRemoveActiveProgram,
+    handleStartReadyProgram,
+  } = createProgrammeSwitches({
+    database,
+    preferences,
+    updatePreferences,
+    upsertWorkoutPlan,
+    forgetHeldProgramme,
+    workout,
+    setRunningCapSheet,
+    buildCustomProgrammePlan,
+    leaveDeletedProgramme,
+    handleStartReadyProgramSession,
+    showToast,
+  });
+
+  const {
+    handleAdoptReadyProgram,
+    handleAdoptCustomProgram,
+    handleStartCustomProgramSession,
+    handleStartCustomProgram,
+    handleDeleteCustomWorkout,
+    handlePickTodaySession,
+  } = createProgrammeAdoption({
+    database,
+    preferences,
+    unitPreference,
+    updatePreferences,
+    upsertWorkoutPlan,
+    deleteWorkoutTemplate,
+    workout,
+    customWorkoutRuntimeMap,
+    homeActivePlanCard,
+    activeProgramTemplateIds,
+    promoteHeldProgramToLead,
+    resumeHeldProgramme,
+    guardStrengthStartOverCardio,
+    startProgrammeWorkout,
+    buildCustomProgrammePlan,
+    leaveDeletedProgramme,
+    sessionAdaptationFor,
+    setHeldSessionAdaptations,
+    setRunningCapSheet,
+    navigate,
+    navigateToGuidedWorkout,
+    navigateToActiveWorkout,
+    isActiveSessionFor,
+    showToast,
+  });
+
+  const {
+    dismissCompletionCard,
+    handleCompletionStartNext,
+    handleSaveRhythm,
+    handleChangeTrainingDays,
+    handleSaveEmphasis,
+    handleCompletionRestart,
+  } = createProgrammePlanEdits({
+    database,
+    preferences,
+    updatePreferences,
+    upsertWorkoutPlan,
+    editWorkoutTemplateSessions,
+    showToast,
+    handleAdoptReadyProgram,
+    completedSessionsForTemplate,
   });
 
   const {

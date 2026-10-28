@@ -2,7 +2,6 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const appSource = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
 const homeSource = fs.readFileSync(
@@ -29,7 +28,7 @@ module.exports = [
       // src/app in phase C (2026-10-01). The adoptions calling it stay here.
       const promote = functionBody(readAppWiring(), 'async function promoteHeldProgramToLead(');
       assert.match(promote, /async function promoteHeldProgramToLead\(workoutTemplateId: string(, replacingPlanId\?: string)?\)/);
-      assert.match(appSource, /if \(options\?\.lead\) \{\s*\r?\n\s*await promoteHeldProgramToLead/);
+      assert.match(readAppWiring(), /if \(options\?\.lead\) \{\s*\r?\n\s*await promoteHeldProgramToLead/);
       // Matched on the template, because the same programme can be held under a
       // plan id minted by onboarding or by adoption.
       assert.match(promote, /entry\.entries\[0\]\?\.workoutTemplateId === workoutTemplateId/);
