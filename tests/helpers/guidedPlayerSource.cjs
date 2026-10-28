@@ -55,31 +55,11 @@ function readNormalised(file) {
   return fs.readFileSync(path.join(SCREENS, file), 'utf8').replace(/\r\n/g, '\n');
 }
 
-/**
- * Transitional, removed when GuidedPlayerViews.tsx lands: until then
- * FinishView and the sheets after it still live at the end of the main file,
- * but the original order put them AFTER SetStepView (and the editor). So the
- * modules that stood between the player and FinishView are spliced in at the
- * start of FinishView, which keeps "SetStepView to FinishView" a forward slice.
- */
-const AFTER_SPLICE_FILES = ['GuidedPlayerEditor.tsx', 'GuidedPlayerSetStep.tsx'];
-const TAIL_ANCHOR = '\nfunction FinishView(';
-
 function readGuidedPlayerSource() {
-  const viewsLanded = fs.existsSync(path.join(SCREENS, 'GuidedPlayerViews.tsx'));
   const parts = [];
   for (const { file, optional } of MANIFEST) {
     if (optional && !fs.existsSync(path.join(SCREENS, file))) continue;
-    if (!viewsLanded && AFTER_SPLICE_FILES.includes(file)) continue;
-    const text = readNormalised(file);
-    if (!viewsLanded && file === MAIN) {
-      const cut = text.indexOf(TAIL_ANCHOR);
-      if (cut < 0) throw new Error('FinishView anchor missing in the main file');
-      const spliced = AFTER_SPLICE_FILES.filter((name) => fs.existsSync(path.join(SCREENS, name))).map(readNormalised);
-      parts.push([text.slice(0, cut), ...spliced, text.slice(cut + 1)].join('\n'));
-      continue;
-    }
-    parts.push(text);
+    parts.push(readNormalised(file));
   }
   return parts.join('\n');
 }
