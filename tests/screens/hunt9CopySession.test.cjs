@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readSourceFile } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -87,7 +88,7 @@ module.exports = [
         ['src/screens/GuidedPlayerScreen.tsx', /total === 1 \? 'rest\.notify\.sessionBodyOne' : 'rest\.notify\.sessionBody'/],
       ];
       for (const [file, pattern] of pins) {
-        assert.match(read(file), pattern, file);
+        assert.match(readSourceFile(file), pattern, file);
       }
     },
   },

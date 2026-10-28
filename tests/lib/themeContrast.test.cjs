@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -107,7 +108,7 @@ module.exports = [
       for (const [name, theme] of THEMES) {
         atLeast(contrastRatio(theme.danger, theme.bg), WCAG_AA_TEXT, `${name} danger on bg`);
       }
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.match(player, /label="\+15s"\s+tint=\{theme\.greenInk\}/);
       assert.match(player, /icon=\{paused \? 'play' : 'pause'\}\s+tint=\{theme\.amberInk\}/);
     },

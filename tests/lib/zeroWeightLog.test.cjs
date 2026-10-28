@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -33,7 +34,7 @@ module.exports = [
   {
     name: 'zero weight: the guided player asks before it logs, says it in words, and forgets it on the next set',
     run() {
-      const player = strip(read('src', 'screens', 'GuidedPlayerScreen.tsx'));
+      const player = strip(readGuidedPlayerSource());
       const gate = player.search(
         /if \(\s*asksBeforeZeroWeightLog\(\{\s*carriesWeight: !bodyweight,\s*kg,\s*plannedKg: target\?\.loadKg \?\? null,\s*asked: zeroWeightAsked,\s*\}\)\s*\) \{\s*setZeroWeightAsked\(true\);\s*AccessibilityInfo\.announceForAccessibility\(t\(language, 'guided\.zeroWeightAsk'\)\);\s*return;\s*\}/,
       );

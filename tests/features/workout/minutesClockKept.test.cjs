@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -275,7 +276,7 @@ module.exports = [
   {
     name: 'minutes clock: the set screen reads the session clock and writes every start and pause; the idle nudge waits for the bout',
     run() {
-      const screen = fs.readFileSync(path.join(ROOT, 'src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const screen = readGuidedPlayerSource();
       assert.match(screen, /stopwatchForSet\(minutesClock,/, 'the screen opens on the session clock');
       assert.doesNotMatch(screen, /setWatch\(STOPPED_STOPWATCH\)/, 'a new step reads the session, not a fresh zero');
       assert.match(screen, /onMinutesClockChange=\{workout\.setMinutesClock\}/, 'the player hands starts and pauses to the session');

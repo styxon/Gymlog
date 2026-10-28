@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -175,7 +176,7 @@ module.exports = [
   {
     name: 'the screens read the gates: sheet history is gated in the player, the page asks isLiftBestLocked',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       // Every history the sheet is handed goes through the gate, closed or open.
       assert.equal((player.match(/gateExerciseSheetHistory\(/g) ?? []).length, 2);
       assert.doesNotMatch(player, /return buildExerciseSheetHistory\(/);

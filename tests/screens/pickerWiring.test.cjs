@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource, readSourceFile } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -46,12 +47,12 @@ module.exports = [
       // through one hook; the player derives its alternatives from the live
       // session.
       const hook = read('src/hooks/useSwapPickerLists.ts');
-      for (const source of [read('src/screens/GuidedPlayerScreen.tsx'), hook]) {
+      for (const source of [readGuidedPlayerSource(), hook]) {
         assert.match(source, /buildSwapPickerLibrary\(/);
         assert.match(source, /narrowSwapAlternatives\(/);
       }
       for (const screen of ['src/screens/GuidedPlayerScreen.tsx', 'src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx']) {
-        const source = read(screen);
+        const source = readSourceFile(screen);
         assert.match(source, /<ExercisePickerSheet\b[\s\S]{0,300}mode="swap"/, `${screen} has its own swap sheet`);
         assert.doesNotMatch(source, /<KitSearch\b|buildSwapLibraryMatches/, `${screen} keeps an old swap list`);
       }

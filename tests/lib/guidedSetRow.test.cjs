@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -11,8 +12,7 @@ const {
   guidedWindow,
 } = require('../../src/lib/guidedSetRow');
 
-const playerSource = fs
-  .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
+const playerSource = readGuidedPlayerSource()
   .replace(/\r\n/g, '\n');
 
 function set(setIndex, extra = {}) {

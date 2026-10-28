@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 /**
  * These assert English copy, so they assert English number formatting with it.
@@ -1352,7 +1353,7 @@ module.exports = [
       // The lock-screen card and the run sheet both read it.
       const fs = require('node:fs');
       const path = require('node:path');
-      const screen = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8');
+      const screen = readGuidedPlayerSource();
       assert.match(screen, /const \{ done, total \} = liveSetProgress\(session\.exercises\)/);
       assert.match(screen, /guided\.runSheet\.progress', \{ done: setProgress\.done, count: totalSets \}/);
       assert.match(screen, /const totalSets = setProgress\.total;/);

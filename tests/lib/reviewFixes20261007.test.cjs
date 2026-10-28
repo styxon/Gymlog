@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource, readSourceFile } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -237,7 +238,7 @@ module.exports = [
       // The default narrows the library, not the programme's own cards: a
       // core slot filed as a stretch (Vacuum) kept none of its four.
       for (const [file, pick] of [['src/hooks/useSwapPickerLists.ts', 'categoryPick'], ['src/screens/GuidedPlayerScreen.tsx', 'swapCategoryPick']]) {
-        const source = fs.readFileSync(path.join(__dirname, '../..', file), 'utf8');
+        const source = readSourceFile(file);
         assert.match(source, /category: effectiveSwapCategory\(/, `${file} does not open a stretch on stretches`);
         assert.ok(
           source.includes(`category: ${pick}`) && /swapSuggestionFilters\(/.test(source),
@@ -297,7 +298,7 @@ module.exports = [
       // The player asks when the set on screen changes — a move, not the
       // step a mount opens on, so a reopened session's clock keeps running
       // (#337).
-      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       const effect = player.slice(player.indexOf('const lastShownSetKeyRef = useRef(shownSetKey);'), player.indexOf('}, [shownSetKey]);'));
       assert.ok(effect.length > 0, 'the leave-pauses effect is gone');
       assert.match(effect, /if \(lastShownSetKeyRef\.current === shownSetKey\) \{\s*return;\s*\}/);

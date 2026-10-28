@@ -1,11 +1,12 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerModule, readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...segments) => fs.readFileSync(path.join(ROOT, ...segments), 'utf8');
 
-const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+const player = readGuidedPlayerSource();
 const home = read('src', 'screens', 'HomeScreen.tsx');
 const ruler = read('src', 'components', 'RulerPicker.tsx');
 const cardio = read('src', 'screens', 'CardioScreen.tsx');
@@ -136,7 +137,8 @@ module.exports = [
         freestyle,
         /accessibilityLabel=\{setFieldAccessibilityLabel\(\s*language,\s*'reps',\s*setIndex \+ 1,\s*exerciseNameLabel\(language, exercise\.displayName\),?\s*\)\}/,
       );
-      const editor = player.slice(player.indexOf('function LoggedSetEditor('), player.indexOf('function SetStepView('));
+      const editorModule = readGuidedPlayerModule('GuidedPlayerEditor.tsx');
+      const editor = editorModule.slice(editorModule.indexOf('function LoggedSetEditor('));
       assert.match(editor, /accessibilityLabel=\{setFieldAccessibilityLabel\(language, 'reps', setNumber\)\}/);
       assert.match(editor, /accessibilityLabel=\{setFieldAccessibilityLabel\(language, 'kg', setNumber\)\}/);
       assert.match(player, /setNumber=\{restEdit\.setIndex \+ 1\}/);

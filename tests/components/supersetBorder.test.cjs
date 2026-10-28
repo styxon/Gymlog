@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -6,7 +7,7 @@ const root = path.join(__dirname, '..', '..');
 const read = (relative) => fs.readFileSync(path.join(root, relative), 'utf8');
 
 const borderSource = read('src/components/SupersetBorder.tsx');
-const playerSource = read('src/screens/GuidedPlayerScreen.tsx');
+const playerSource = readGuidedPlayerSource();
 const i18nSource = read('src/lib/i18n.ts');
 const daySource = read('src/screens/ProgramDayScreen.tsx');
 const freestyleSource = read('src/screens/EmptyWorkoutScreen.tsx');

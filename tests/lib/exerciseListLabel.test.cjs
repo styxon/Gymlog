@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { exerciseListLabel, exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
 const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
@@ -101,7 +102,7 @@ module.exports = [
       }
       // A nested Text is flattened into its parent: the label goes on the
       // outer one, where a screen reader reads it.
-      const player = read('src/screens/GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const flow = player.slice(player.indexOf('style={styles.setSupersetFlow}'), player.indexOf("t(language, 'guided.superset.thenRest')"));
       assert.match(flow, /accessibilityLabel=\{\[/);
       // Domain logic writes sentences, the coach's context and search: none of

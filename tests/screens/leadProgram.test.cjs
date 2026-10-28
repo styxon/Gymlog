@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -8,10 +9,7 @@ const homeSource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'screens', 'HomeScreen.tsx'),
   'utf8',
 );
-const playerSource = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'),
-  'utf8',
-);
+const playerSource = readGuidedPlayerSource();
 
 /**
  * Four things a device walkthrough found on 2026-08-21, all of the same shape:

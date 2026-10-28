@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -88,10 +89,10 @@ const LEDGER = {
   'src/components/TrackChangeDialog.tsx': [{ in: 'TrackChangeDialog', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/components/sheetKit.tsx': [{ in: 'KitSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/screens/CardioScreen.tsx': [{ in: 'CardioSheet', closes: 'unmount', sequencing: 'opened-by-touch', why: 'The end sheet needs a running cardio session (player mode, from the exit button or Android\'s back key) and the conflict sheet is opened from the activity list, which is shown only without one. Choosing in either closes it and starts a different mode, which has no modal.' }],
-  'src/screens/GuidedPlayerScreen.tsx': [
-    { in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' },
+  'src/screens/GuidedPlayerEditor.tsx': [
     { in: 'LoggedSetEditor', closes: 'unmount', sequencing: 'opened-after-handoff' },
   ],
+  'src/screens/GuidedPlayerSheet.tsx': [{ in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/screens/HomeScreen.tsx': [{ in: 'HomeScreen', closes: 'visible', sequencing: 'deferred-open' }],
   'src/screens/MyDataScreen.tsx': [{ in: 'MyDataScreen', closes: 'visible', sequencing: 'opened-by-touch', why: 'The screen\'s only modal. A field row opens the editor, and Save or Cancel closes it.' }],
   'src/screens/OnboardingScreen.tsx': [{ in: 'OnboardingScreen', closes: 'visible', sequencing: 'never-opened' }],
@@ -428,7 +429,7 @@ module.exports = [
   {
     name: 'iOS modal sequencing: the guided player\'s rest-alerts ask is held back while the lift sheet is up',
     run() {
-      const guided = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const guided = readGuidedPlayerSource();
       assert.match(guided, /blocked: runSheetOpen \|\| setPanelsOpen,/);
     },
   },

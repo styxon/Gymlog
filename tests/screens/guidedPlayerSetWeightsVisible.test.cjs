@@ -1,11 +1,9 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const playerSource = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'),
-  'utf8',
-);
+const playerSource = readGuidedPlayerSource();
 
 /**
  * Each set's opening weight is deliberately carried from the SAME set index
@@ -55,10 +53,14 @@ module.exports = [
   {
     name: 'guided player: the ramp-visibility decision is a pure lib helper, not inline formatting',
     run() {
-      assert.match(
-        playerSource,
-        /import \{ formatLoadOrRange, summarizeHistoricalSetChips \} from '\.\.\/lib\/guidedSetWeightSummary';/,
-      );
+      // Each name is imported from the helper module somewhere in the player
+      // (the body formats the load, the set step summarises the chips).
+      for (const name of ['formatLoadOrRange', 'summarizeHistoricalSetChips']) {
+        assert.match(
+          playerSource,
+          new RegExp("import \\{[^}]*\\b" + name + "\\b[^}]*\\} from '\\.\\./lib/guidedSetWeightSummary';"),
+        );
+      }
     },
   },
   {

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -141,7 +142,7 @@ module.exports = [
         ['src', 'screens', 'NotificationsScreen.tsx'],
       ]) {
         assert.doesNotMatch(
-          strip(read(...file)),
+          strip(file[2] === 'GuidedPlayerScreen.tsx' ? readGuidedPlayerSource() : read(...file)),
           /getHours\(\)\)\.padStart\(2, '0'\)|padStart\(2, '0'\)\}:\$\{/,
           `${file.join('/')} writes a clock time by hand`,
         );
@@ -156,7 +157,7 @@ module.exports = [
       const empty = strip(read('src', 'screens', 'EmptyWorkoutScreen.tsx'));
       assert.doesNotMatch(empty, /function formatSessionClock/, 'the free workout read "75:30" past the hour');
       assert.match(empty, /formatClock\(elapsedSeconds\)/);
-      const guided = strip(read('src', 'screens', 'GuidedPlayerScreen.tsx'));
+      const guided = strip(readGuidedPlayerSource());
       assert.doesNotMatch(guided, /function formatSessionClock/);
       assert.match(guided, /const formatSessionClock = formatClock;/);
     },

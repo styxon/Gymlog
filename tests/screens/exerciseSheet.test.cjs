@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -8,10 +9,7 @@ const sheetSource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'components', 'ExerciseSheet.tsx'),
   'utf8',
 );
-const playerSource = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'),
-  'utf8',
-);
+const playerSource = readGuidedPlayerSource();
 const i18nSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'i18n.ts'), 'utf8');
 
 /**

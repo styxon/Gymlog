@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -17,7 +18,7 @@ const stripComments = (source) =>
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
 
-const player = stripComments(read('src/screens/GuidedPlayerScreen.tsx'));
+const player = stripComments(readGuidedPlayerSource());
 const layer = stripComments(read('src/components/FirstRunTour.tsx'));
 const reporter = stripComments(read('src/features/tour/GuidedTourReport.tsx'));
 const wiring = stripComments(readAppWiring().replace(/\r\n/g, '\n'));

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -137,7 +138,7 @@ module.exports = [
   {
     name: 'guided: moving on resumes a paused session, a logged set is not logged again, and a failed save says so',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const goTo = player.slice(player.indexOf('const goTo = useCallback('), player.indexOf('/** ±15s / +10s'));
       // Through `unpause`, and without asking first. This pinned
       // `if (workout.activeSession?.pausedAt) { workout.resumeWorkout(); }`,
@@ -232,7 +233,7 @@ module.exports = [
       // Removing the last set deletes it and the rest before it, so the list
       // shrinks under the index the reader is on and the same index becomes
       // the next lift's first set — its walk-up skipped (2026-09-16).
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const remove = player.slice(player.indexOf('const removable = block.every('), player.indexOf('panels={setPanelSource}'));
       assert.match(remove, /resyncTargetRef\.current = blockStart >= 0 \? blockStart : stepIndex;/);
       assert.ok(
@@ -271,7 +272,7 @@ module.exports = [
     run() {
       // A two-line name pushed the walk-up into a scroll (device,
       // 2026-09-16). The name holds one line and the type gives way instead.
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const walk = player.slice(player.indexOf("{t(language, 'guided.nextUp')}"), player.indexOf("t(language, 'guided.walk.today')"));
       assert.match(
         walk,
@@ -291,7 +292,7 @@ module.exports = [
       // logged set has its own pencil now, and the reader found the rest
       // standing still whenever they looked ahead (#bugs 2026-10-06). The
       // sheet is a list to read; reading it is what a rest is for.
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const { guidedClockHeld } = require('../../../src/lib/guidedClockHold');
       const none = {
         paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,

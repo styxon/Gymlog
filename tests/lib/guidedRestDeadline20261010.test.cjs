@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -19,8 +20,7 @@ const { extendRest } = require('../../src/lib/restSchedule');
  * "+60 s", the overview's Resume, a pause and the permission moment.
  */
 
-const screen = fs
-  .readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8')
+const screen = readGuidedPlayerSource()
   .replace(/\r\n/g, '\n');
 
 function plan() {

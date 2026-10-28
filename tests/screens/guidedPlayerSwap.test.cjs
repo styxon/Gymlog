@@ -1,11 +1,9 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerModule, readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const playerSource = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'),
-  'utf8',
-);
+const playerSource = readGuidedPlayerSource();
 const i18nSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'i18n.ts'), 'utf8');
 
 /**
@@ -608,10 +606,8 @@ module.exports = [
       // choice (a lone row would only repeat the title), each row selects
       // by its own setIndex, and the two detail strings — loaded and
       // unloaded — are both used.
-      const editorFn = source.slice(
-        source.indexOf('function LoggedSetEditor('),
-        source.indexOf('function SetStepView('),
-      );
+      const editorModule = readGuidedPlayerModule('GuidedPlayerEditor.tsx');
+      const editorFn = editorModule.slice(editorModule.indexOf('function LoggedSetEditor('));
       assert.match(editorFn, /sets\.length > 1 \? \(/);
       assert.match(editorFn, /onPress=\{\(\) => onSelectSet\(row\.setIndex\)\}/);
       assert.match(editorFn, /unloadedSetRowLabel\(row\.reps, language\)/);
@@ -644,10 +640,8 @@ module.exports = [
      */
     name: 'guided rest edit: each row reads its own trackingMode, not the sheet-wide unloaded flag',
     run() {
-      const editorFn = playerSource.slice(
-        playerSource.indexOf('function LoggedSetEditor('),
-        playerSource.indexOf('function SetStepView('),
-      );
+      const editorModule = readGuidedPlayerModule('GuidedPlayerEditor.tsx');
+      const editorFn = editorModule.slice(editorModule.indexOf('function LoggedSetEditor('));
       // The per-row detail string is decided from a value derived off
       // `row.trackingMode` — never straight off the sheet-wide `unloaded`
       // parameter, which is only correct for the one row it was computed

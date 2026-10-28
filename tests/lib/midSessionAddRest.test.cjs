@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -58,7 +59,7 @@ module.exports = [
     name: 'the player\'s mid-session add asks restSecondsForAddedLift for the rest, with the reader\'s default',
     run() {
       const source = stripComments(
-        fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8'),
+        readGuidedPlayerSource(),
       );
       const start = source.indexOf('const addMidWorkoutExercise = ');
       assert.ok(start >= 0);

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { fitRunPreview, hiddenWorkCount, isLastWorkItem } = require('../../src/lib/guidedRunPreview');
 
@@ -114,7 +115,7 @@ module.exports = [
       assert.equal(isLastWorkItem([]), false);
       const fs = require('node:fs');
       const path = require('node:path');
-      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       assert.match(player, /const walkLastLift = isLastWorkItem\(walkRunItems\);/);
       assert.match(player, /\{walkLastLift \? \(\s*<View style=\{styles\.walkRunRow\}>[\s\S]{0,160}t\(language, 'guided\.walk\.lastLift'\)/);
       const { t } = require('../../src/lib/i18n');
@@ -138,7 +139,7 @@ module.exports = [
       assert.equal(hiddenWorkCount([], 3), 0);
       const fs = require('node:fs');
       const path = require('node:path');
-      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       assert.match(player, /hiddenWorkCount\(walkRunItems, walkRunFit\.end\)/);
       assert.match(player, /\{walkHiddenLifts > 0 \? \([\s\S]{0,200}'guided\.walk\.contentMore', \{ count: walkHiddenLifts \}/);
       assert.doesNotMatch(player, /count: walkRunFit\.hidden/);

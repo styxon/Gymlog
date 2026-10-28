@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -578,7 +579,7 @@ module.exports = [
      */
     name: 'player: the set counter and the open dial follow the pressable accent, not brand violet',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
 
       for (const [name, style] of [
         ['the set counter', /setCounter: \{[^}]*color: theme\.highlight/],

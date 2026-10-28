@@ -1,9 +1,10 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8').replace(/\r\n/g, '\n');
-const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+const player = readGuidedPlayerSource();
 const alertHook = read('src', 'hooks', 'useRestEndAlert.ts');
 
 /** The text between two markers, so a guard looks at one function and not the whole screen. */

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -41,7 +42,7 @@ module.exports = [
     // rendered once with no session while the route moved to the summary.
     name: 'guided player: no session is decided before the player and its hooks mount',
     run() {
-      const source = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const source = readGuidedPlayerSource();
       const outer = source.slice(
         source.indexOf('export function GuidedPlayerScreen('),
         source.indexOf('function GuidedPlayer({'),
@@ -58,7 +59,7 @@ module.exports = [
     // disabled Pressable, which marks its children aria-disabled.
     name: 'guided splash: a choice splash is inert by having no onPress, not by being disabled',
     run() {
-      const source = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const source = readGuidedPlayerSource();
       assert.match(source, /onPress=\{splashCarriesChoice\(step\) \? undefined : advance\}/);
       // Disabled on native only: web marks a disabled wrapper's buttons aria-disabled.
       assert.match(source, /disabled=\{Platform\.OS === 'web' \? undefined : splashCarriesChoice\(step\)\}/);

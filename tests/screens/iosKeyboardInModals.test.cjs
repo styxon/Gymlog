@@ -87,14 +87,14 @@ module.exports = [
       assert.deepEqual(unlifted, [], `a sheet with a text field and no keyboard lift: ${unlifted.join(', ')}`);
       // The four the hunt found, by name.
       for (const file of [
-        'src/screens/GuidedPlayerScreen.tsx',
+        'src/screens/GuidedPlayerEditor.tsx',
         'src/components/AddExerciseSheet.tsx',
         'src/components/MeasureRulerSheet.tsx',
         'src/screens/MyDataScreen.tsx',
       ]) {
         assert.match(read(file), IOS_LIFT, file);
       }
-      const editor = read('src/screens/GuidedPlayerScreen.tsx');
+      const editor = read('src/screens/GuidedPlayerEditor.tsx');
       const loggedSetEditor = editor.slice(editor.indexOf('function LoggedSetEditor('), editor.indexOf('function LoggedSetEditorFields('));
       assert.match(loggedSetEditor, IOS_LIFT);
     },

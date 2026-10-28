@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -94,7 +95,7 @@ module.exports = [
   {
     name: 'minutes clock: the set step no longer ticks its own state, and logs what the clock says at the tap',
     run() {
-      const source = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const source = readGuidedPlayerSource();
       // The 500 ms state tick that re-rendered the whole step is gone.
       assert.doesNotMatch(source, /setInterval\(\(\) => setWatchNowMs\(Date\.now\(\)\), 500\)/);
       // It sleeps to the next change instead.

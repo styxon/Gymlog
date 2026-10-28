@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -31,7 +32,7 @@ module.exports = [
   {
     name: 'exerciseInitials: every screen that draws a missing picture asks it, with the shown name',
     run() {
-      const player = strip(read('src', 'screens', 'GuidedPlayerScreen.tsx'));
+      const player = strip(readGuidedPlayerSource());
       assert.match(player, /const initials = exerciseInitials\(exerciseNameLabel\(language, name\)\);/);
       assert.match(player, /initials: exerciseInitials\(exerciseNameLabel\(language, name\)\),/);
       assert.doesNotMatch(player, /\.slice\(0, 2\)\.toUpperCase\(\)/);
