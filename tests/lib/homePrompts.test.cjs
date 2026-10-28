@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   SIGN_IN_AFTER_SESSIONS,
   resolveHomePrompt,
-} = require('../../.test-dist/lib/homePrompts.js');
+} = require('../../src/lib/homePrompts');
 
 module.exports = [
   {

@@ -4,9 +4,9 @@ const {
   SET_LOG_SESSIONS,
   buildExerciseSetLog,
   formatSetLogSet,
-} = require('../../.test-dist/lib/exerciseSetLog.js');
-const { isSetLogLocked } = require('../../.test-dist/lib/historyWindow.js');
-const { PRO_LIVE_BENEFITS } = require('../../.test-dist/lib/proBenefits.js');
+} = require('../../src/lib/exerciseSetLog');
+const { isSetLogLocked } = require('../../src/lib/historyWindow');
+const { PRO_LIVE_BENEFITS } = require('../../src/lib/proBenefits');
 
 function at(year, month, day) {
   return new Date(year, month - 1, day, 12, 0, 0, 0).toISOString();
@@ -160,7 +160,7 @@ module.exports = [
   {
     name: 'a set reads as its count, in seconds for a hold, with the weight only when there was one',
     run() {
-      require('../../.test-dist/lib/format.js').setNumberLanguage('en');
+      require('../../src/lib/format').setNumberLanguage('en');
       const plank = buildExerciseSetLog(
         { key: 'plank', name: 'Plank', entries: [{ performedAt: at(2026, 8, 1), sets: [{ weight: 0, reps: 60 }] }] },
         { now: NOW },

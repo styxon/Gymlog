@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { t, I18N_KEYS } = require('../../.test-dist/lib/i18n.js');
+const { selectWaterfallDecision } = require('../../src/lib/recommendationWaterfall');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { getReadyTemplatePresentation } = require('../../src/lib/templatePresentation');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { t, I18N_KEYS } = require('../../src/lib/i18n');
 
 const GOALS = ['strength', 'muscle', 'general', 'run_mobility', 'lean_athletic', 'general_fitness'];
 const LEVELS = ['beginner', 'advanced', 'pro'];

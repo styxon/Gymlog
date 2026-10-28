@@ -10,7 +10,7 @@ const {
   buildWeightWindow,
   calculateBmi,
   collapseToLatestPerDay,
-} = require('../../.test-dist/lib/bodyweightCard.js');
+} = require('../../src/lib/bodyweightCard');
 
 function entry(recordedAt, weight) {
   return { id: `${recordedAt}-${weight}`, recordedAt, weight };
@@ -20,7 +20,7 @@ module.exports = [
   {
     name: 'value window: calendar days ending today, gaps keep their slots',
     run() {
-      const { buildValueWindow } = require('../../.test-dist/lib/bodyweightCard.js');
+      const { buildValueWindow } = require('../../src/lib/bodyweightCard');
       const now = new Date(2026, 7, 25, 12, 0).getTime(); // 25 Aug, local noon
 
       const window = buildValueWindow(
@@ -322,7 +322,7 @@ module.exports = [
     name: 'every gridline lands on a multiple of the step, not on the data average',
     run() {
       const assert = require('node:assert/strict');
-      const { buildWeightAxisTicks } = require('../../.test-dist/lib/bodyweightCard');
+      const { buildWeightAxisTicks } = require('../../src/lib/bodyweightCard');
 
       for (const values of [[68.9, 70.7], [75.4], [60, 95], [70.95, 71.2], [82.3, 82.35]]) {
         const ticks = buildWeightAxisTicks(values);
@@ -350,7 +350,7 @@ module.exports = [
     name: 'markers are drawn only while they have room to be separate dots',
     run() {
       const assert = require('node:assert/strict');
-      const { weightMarkersFit } = require('../../.test-dist/lib/bodyweightCard');
+      const { weightMarkersFit } = require('../../src/lib/bodyweightCard');
 
       const PLOT = 300;
       // A quarter of weekly weigh-ins, and a week of daily ones: room to spare.
@@ -417,7 +417,7 @@ module.exports = [
     name: 'labels: today is always labelled, a week labels every day, and no stride label sits under today',
     run() {
       const assert = require('node:assert/strict');
-      const { weightLabelIndexes, WEIGHT_LABEL_WIDTH } = require('../../.test-dist/lib/bodyweightCard.js');
+      const { weightLabelIndexes, WEIGHT_LABEL_WIDTH } = require('../../src/lib/bodyweightCard');
 
       // A week: every day, whatever the width.
       assert.deepEqual(weightLabelIndexes(7, 3, 300), [0, 1, 2, 3, 4, 5, 6]);
@@ -446,7 +446,7 @@ module.exports = [
       // summary hands entries newest first, and entries[0] anchored the
       // weight card at the latest weigh-in while the Trend grid used the
       // earliest (user 2026-09-03: the two axes disagreed).
-      const { earliestEntryMs } = require('../../.test-dist/lib/bodyweightCard.js');
+      const { earliestEntryMs } = require('../../src/lib/bodyweightCard');
       const newestFirst = ['2026-09-03T06:00:00Z', '2026-09-01T06:00:00Z', '2026-08-30T06:00:00Z'];
       assert.equal(earliestEntryMs(newestFirst), Date.parse('2026-08-30T06:00:00Z'));
       assert.equal(earliestEntryMs([...newestFirst].reverse()), Date.parse('2026-08-30T06:00:00Z'));
@@ -468,7 +468,7 @@ module.exports = [
     name: 'window: the history is counted in calendar days, not milliseconds',
     run() {
       const assert = require('node:assert/strict');
-      const { capRangeDays } = require('../../.test-dist/lib/bodyweightCard.js');
+      const { capRangeDays } = require('../../src/lib/bodyweightCard');
       const at = (y, m, d, h) => new Date(y, m - 1, d, h).getTime();
 
       // Time of day must not add a day. 8.8. 07:00 to 7.9. 21:00 is a 31-day
@@ -505,7 +505,7 @@ module.exports = [
     name: 'window: the range chip is a ceiling, the history sets the width, and today is always the edge',
     run() {
       const assert = require('node:assert/strict');
-      const { measureRangeDays, buildValueWindow, MIN_RANGE_DAYS } = require('../../.test-dist/lib/bodyweightCard.js');
+      const { measureRangeDays, buildValueWindow, MIN_RANGE_DAYS } = require('../../src/lib/bodyweightCard');
       const day = (y, m, d) => new Date(y, m - 1, d).getTime();
       const now = day(2026, 9, 2);
 

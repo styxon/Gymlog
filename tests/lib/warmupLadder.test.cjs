@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { warmupLadder, warmupOffer } = require('../../.test-dist/lib/warmupSets');
+const { warmupLadder, warmupOffer } = require('../../src/lib/warmupSets');
 
 /**
  * The "+ Warm-up set" ladder off a light working weight (bug hunt W10,

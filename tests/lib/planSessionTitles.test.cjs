@@ -5,7 +5,7 @@ const path = require('node:path');
 const {
   disambiguateSessionTitles,
   planSessionTitles,
-} = require('../../.test-dist/lib/sessionNameLabel.js');
+} = require('../../src/lib/sessionNameLabel');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
 const app = (name) => ({ name, readerNamed: false });

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { workoutSessionRepository } = require('../../.test-dist/storage/repositories.js');
+const { workoutSessionRepository } = require('../../src/storage/repositories');
 
 const historySource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'screens', 'HistoryScreen.tsx'),

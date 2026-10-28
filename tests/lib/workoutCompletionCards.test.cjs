@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { buildCompletionCardsFromAdaptedSession } = require('../../.test-dist/app/workoutCompletionState.js');
+const { buildCompletionCardsFromAdaptedSession } = require('../../src/app/workoutCompletionState');
 
 const exercise = (slotId, name, weightKg, reps) => ({
   slotId,

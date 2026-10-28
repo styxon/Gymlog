@@ -110,7 +110,7 @@ module.exports = [
   {
     name: 'recommendation accuracy: a reader with dumbbells at home is handed the dumbbell programme, not the no-equipment one',
     run() {
-      const dist = path.join(__dirname, '..', '..', '.test-dist', 'lib');
+      const dist = path.join(__dirname, '..', '..', 'src', 'lib');
       const { recommendPrograms } = require(path.join(dist, 'recommendationScoring.js'));
       const { buildRecommendationInput } = require(path.join(dist, 'recommendationInput.js'));
       const { DEFAULT_FIRST_RUN_SELECTION } = require(path.join(dist, 'firstRunSetup.js'));

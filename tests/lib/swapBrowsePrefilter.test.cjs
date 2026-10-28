@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveSwapBrowsePrefilter } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
+const { resolveSwapBrowsePrefilter } = require('../../src/lib/swapBrowsePrefilter');
 
 module.exports = [
   {
@@ -45,7 +45,7 @@ module.exports = [
      */
     name: 'the swap list puts the lift nearest the one being swapped first',
     run() {
-      const { orderSwapCandidates } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
+      const { orderSwapCandidates } = require('../../src/lib/swapBrowsePrefilter');
       const bench = { id: 'bench', category: 'compound', equipment: 'barbell' };
       const pool = [
         { id: 'kb-floor', category: 'compound', equipment: 'dumbbells', sourceEquipment: 'kettlebells' },
@@ -118,7 +118,7 @@ module.exports = [
      */
     name: 'a typed swap query searches the whole library unless the reader tapped a chip',
     run() {
-      const { effectiveSwapBodyPart } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
+      const { effectiveSwapBodyPart } = require('../../src/lib/swapBrowsePrefilter');
       // Unsearched: the lift's own body part, nearest first.
       assert.equal(effectiveSwapBodyPart(null, 'quadriceps', ''), 'quadriceps');
       assert.equal(effectiveSwapBodyPart(null, 'quadriceps', '   '), 'quadriceps');

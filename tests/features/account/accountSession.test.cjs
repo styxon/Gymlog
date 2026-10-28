@@ -5,7 +5,7 @@ const path = require('node:path');
 const { createClock, createHookRuntime, deferred, flush, requireWithStubs } = require('../../helpers/hookHarness.cjs');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const HOOK = path.join(DIST, 'features', 'account', 'useAccountBackup.js');
 const lib = require(path.join(DIST, 'lib', 'accountBackup.js'));
 const { createEmptyDatabase } = require(path.join(DIST, 'data', 'seed.js'));

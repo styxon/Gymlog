@@ -51,7 +51,8 @@ function walk(dir, exts, out = []) {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     // .claude holds worktree copies of the whole repo: a reference found there
     // is a reference to itself, and it hid five dead exports for a day.
-    if (['node_modules', '.test-dist', '.git', '.claude', 'android', 'ios', 'tests'].includes(entry.name)) {
+    // The old compiled test build, if one lingers on a disk, holds every export and would count as a caller of all of them.
+    if (['node_modules', ['.test', 'dist'].join('-'), '.git', '.claude', 'android', 'ios', 'tests'].includes(entry.name)) {
       continue;
     }
     const full = path.join(dir, entry.name);

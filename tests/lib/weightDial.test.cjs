@@ -9,7 +9,7 @@ const {
   stepDialReps,
   REPS_DIAL,
   HOLD_DIAL,
-} = require('../../.test-dist/lib/weightDial');
+} = require('../../src/lib/weightDial');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 module.exports = [
@@ -86,7 +86,7 @@ module.exports = [
 
       // And the field says whether it holds a loggable weight, so the log
       // button can wait rather than write the number the dial kept.
-      const { isLoggableTypedWeight } = require('../../.test-dist/lib/weightDial.js');
+      const { isLoggableTypedWeight } = require('../../src/lib/weightDial');
       assert.equal(isLoggableTypedWeight('82,5'), true);
       assert.equal(isLoggableTypedWeight('82.5'), true);
       assert.equal(isLoggableTypedWeight('0'), true);
@@ -172,7 +172,7 @@ module.exports = [
   {
     name: 'a 550 kg leg press set survives a load: the loader keeps what the dial and an import can write (bug hunt 2026-10-05)',
     run() {
-      const { normalizeExerciseSets } = require('../../.test-dist/lib/exerciseLog');
+      const { normalizeExerciseSets } = require('../../src/lib/exerciseLog');
       const kept = normalizeExerciseSets([
         { orderIndex: 0, weight: 550, reps: 10, status: 'completed' },
         { orderIndex: 1, weight: 600, reps: 8, status: 'completed' },

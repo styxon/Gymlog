@@ -21,10 +21,10 @@ const {
   planBackup,
   preferencesForRestore,
   syncCounts,
-} = require('../../.test-dist/lib/accountBackup.js');
-const { restoreQuestionCopy } = require('../../.test-dist/lib/accountBackupCopy.js');
-const { DEVICE_ONLY_PREFERENCE_FIELDS, resolveProEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+} = require('../../src/lib/accountBackup');
+const { restoreQuestionCopy } = require('../../src/lib/accountBackupCopy');
+const { DEVICE_ONLY_PREFERENCE_FIELDS, resolveProEntitlement } = require('../../src/lib/proEntitlement');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 function makeDatabase(overrides = {}) {
   return {
@@ -612,7 +612,7 @@ module.exports = [
     // Break round, 2026-09-28 (user decision: ask).
     name: 'account backup: a first backup needs a yes only when another account left its data on the phone',
     run() {
-      const { uploadNeedsConsent } = require('../../.test-dist/lib/accountBackup.js');
+      const { uploadNeedsConsent } = require('../../src/lib/accountBackup');
       assert.equal(uploadNeedsConsent({ signedOutSubs: ['a'], sub: 'b', localWorthKeeping: true }), true);
       assert.equal(uploadNeedsConsent({ signedOutSubs: ['a'], sub: 'a', localWorthKeeping: true }), false, 'the same account came back');
       assert.equal(uploadNeedsConsent({ signedOutSubs: [], sub: 'b', localWorthKeeping: true }), false, 'never signed in before');
@@ -625,7 +625,7 @@ module.exports = [
   {
     name: 'account backup: the switch question names what is on the phone and where it would go, in both languages',
     run() {
-      const { confirmUploadCopy } = require('../../.test-dist/lib/accountBackupCopy.js');
+      const { confirmUploadCopy } = require('../../src/lib/accountBackupCopy');
       const local = { workoutCount: 12, customProgramCount: 1, readyProgramCount: 0, cardioCount: 0, bodyweightCount: 0, measurementCount: 0, workoutInProgress: false };
       const fi = confirmUploadCopy({ email: 'toinen@example.com', local }, 'fi');
       assert.match(fi.body, /\(12 treeniä, 1 ohjelma\)/);
@@ -641,7 +641,7 @@ module.exports = [
     // is asked about, and the question has to show it: "0 workouts" beside a one-tap "Keep this phone" hid it.
     name: 'account backup: the question counts the lift names, strength goals and coach goals each side holds, in both languages',
     run() {
-      const { confirmUploadCopy } = require('../../.test-dist/lib/accountBackupCopy.js');
+      const { confirmUploadCopy } = require('../../src/lib/accountBackupCopy');
       const database = makeDatabase({
         exerciseNameBook: [{ alias: 'a' }, { alias: 'b' }],
         preferences: { appLanguage: 'fi', strengthGoals: [{ exerciseName: 'Deadlift', targetKg: 180 }], coachGoals: [{ id: 'g1' }, { id: 'g2' }, { id: 'g3' }] },

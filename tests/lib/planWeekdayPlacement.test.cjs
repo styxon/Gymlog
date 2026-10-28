@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { placeWeekdaysOnPlan } = require('../../.test-dist/lib/planWeekdayPlacement.js');
-const { planLabelsFromWeekdays } = require('../../.test-dist/lib/trainingWeekSync.js');
+const { placeWeekdaysOnPlan } = require('../../src/lib/planWeekdayPlacement');
+const { planLabelsFromWeekdays } = require('../../src/lib/trainingWeekSync');
 
 /**
  * Re-hunt, 2026-10-07: Profile's weekday picker counted every stored plan

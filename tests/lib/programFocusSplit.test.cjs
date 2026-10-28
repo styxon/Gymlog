@@ -4,7 +4,7 @@ const {
   buildProgramFocusSplit,
   estimateFocusExerciseSeconds,
   PROGRAM_FOCUS_COLORS,
-} = require('../../.test-dist/lib/programFocusSplit');
+} = require('../../src/lib/programFocusSplit');
 
 function session(name, exercises) {
   return {

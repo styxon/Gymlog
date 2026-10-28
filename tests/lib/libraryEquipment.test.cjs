@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { isUnloadedTrackingMode } = require('../../.test-dist/features/workout/workoutTypes.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { isUnloadedTrackingMode } = require('../../src/features/workout/workoutTypes');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
 const {
   FOCUS_ACCESSORY_POOL,
   SUPPLEMENTAL_DAY_POOL,
   getCatalogTrackingMode,
-} = require('../../.test-dist/lib/catalogExercisePools.js');
+} = require('../../src/lib/catalogExercisePools');
 
 const root = path.join(__dirname, '..', '..');
 const { overrides } = JSON.parse(
@@ -142,8 +142,8 @@ module.exports = [
       const {
         DEFAULT_FIRST_RUN_SELECTION,
         resolveFirstRunRecommendationWithTailoring,
-      } = require('../../.test-dist/lib/firstRunSetup.js');
-      const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
+      } = require('../../src/lib/firstRunSetup');
+      const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
       const loaded = new Set();
       for (const goal of ['strength', 'muscle', 'general', 'run_mobility', 'lean_athletic', 'general_fitness']) {
         for (const level of ['beginner', 'advanced', 'pro']) {
@@ -188,8 +188,8 @@ module.exports = [
      */
     name: 'library equipment: a farmer\'s walk with nothing to carry becomes a hold, not 40 reps',
     run() {
-      const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-      const { doseAfterSwap } = require('../../.test-dist/lib/swapDose.js');
+      const { applyEquipmentToExercises } = require('../../src/lib/equipmentExerciseFilter');
+      const { doseAfterSwap } = require('../../src/lib/swapDose');
       const carry = {
         id: 'carry',
         exerciseName: "Farmer's Walk",

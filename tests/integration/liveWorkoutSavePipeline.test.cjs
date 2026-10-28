@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { createSeedDatabase } = require('../../.test-dist/data/seed.js');
-const { getHomeSummary } = require('../../.test-dist/lib/dashboard.js');
-const { getSessionSummary, getTrackedExerciseProgress } = require('../../.test-dist/lib/progression.js');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../.test-dist/features/workout/workoutAppAdapter.js');
-const { persistCompletedWorkoutSessionToDatabase } = require('../../.test-dist/state/completedWorkoutPersistence.js');
+const { createSeedDatabase } = require('../../src/data/seed');
+const { getHomeSummary } = require('../../src/lib/dashboard');
+const { getSessionSummary, getTrackedExerciseProgress } = require('../../src/lib/progression');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../src/features/workout/workoutAppAdapter');
+const { persistCompletedWorkoutSessionToDatabase } = require('../../src/state/completedWorkoutPersistence');
 const { createCompletedSession, createExercise, createSet } = require('../helpers/workoutFixtures.cjs');
 
 module.exports = [

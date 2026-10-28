@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { parseIntervalScheme } = require('../../.test-dist/lib/intervalScheme.js');
-const { buildGuidedSteps } = require('../../.test-dist/lib/guidedPlayer.js');
+const { parseIntervalScheme } = require('../../src/lib/intervalScheme');
+const { buildGuidedSteps } = require('../../src/lib/guidedPlayer');
 
 function exercise(name, overrides = {}) {
   return {

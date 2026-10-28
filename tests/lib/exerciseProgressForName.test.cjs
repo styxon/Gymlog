@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { getExerciseProgressForName } = require('../../.test-dist/lib/progression.js');
+const { getExerciseProgressForName } = require('../../src/lib/progression');
 
 function workingSet(weight, reps) {
   return { orderIndex: 0, weight, reps, kind: 'working', status: 'completed', completedAt: '2026-01-01T00:00:00.000Z' };

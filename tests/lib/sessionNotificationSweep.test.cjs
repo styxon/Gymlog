@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { shouldSweepSessionNotifications } = require('../../.test-dist/lib/sessionNotificationSweep.js');
+const { shouldSweepSessionNotifications } = require('../../src/lib/sessionNotificationSweep');
 
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
 

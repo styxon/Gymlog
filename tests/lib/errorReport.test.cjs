@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const report = require('../../.test-dist/lib/errorReport.js');
+const report = require('../../src/lib/errorReport');
 const {
   ANALYTICS_EVENTS,
   MAX_APP_ERRORS_PER_BATCH,
@@ -10,7 +10,7 @@ const {
   acceptBatch,
   isValidEvent,
   takeBatch,
-} = require('../../.test-dist/lib/analytics.js');
+} = require('../../src/lib/analytics');
 
 const INSTALL = '12345678-1234-4123-8123-123456789abc';
 const AT = '2026-10-03T10:00:00.000Z';

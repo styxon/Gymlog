@@ -4,8 +4,8 @@ const path = require('node:path');
 const { between, functionBody } = require('../helpers/sourceSlices.cjs');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const { createTemplateLeaveGuard, releaseHeldLeave } = require('../../.test-dist/lib/templateLeaveGuard.js');
-const { pushRoute, popRoute, withoutTrailingRoute } = require('../../.test-dist/navigation/routeHistory.js');
+const { createTemplateLeaveGuard, releaseHeldLeave } = require('../../src/lib/templateLeaveGuard');
+const { pushRoute, popRoute, withoutTrailingRoute } = require('../../src/navigation/routeHistory');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '../..', ...parts), 'utf8').replace(/\r\n/g, '\n');
 

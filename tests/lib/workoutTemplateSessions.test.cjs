@@ -3,10 +3,10 @@
 const {
   buildLegacyTemplateSessions,
   buildWorkoutTemplateSessions,
-} = require('../../.test-dist/lib/workoutTemplateSessions.js');
+} = require('../../src/lib/workoutTemplateSessions');
 const {
   adaptLegacyWorkoutTemplateToRuntimeTemplate,
-} = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
+} = require('../../src/features/workout/customWorkoutAdapter');
 
 const exerciseLibrary = [
   { id: 'lib_bench', name: 'Bench Press', category: 'compound', bodyPart: 'chest', equipment: 'barbell' },

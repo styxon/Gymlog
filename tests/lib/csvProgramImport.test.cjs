@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { parseCsvProgram, buildDraftFromCsvPreview } = require('../../.test-dist/lib/csvProgramImport.js');
+const { parseCsvProgram, buildDraftFromCsvPreview } = require('../../src/lib/csvProgramImport');
 
 const LIBRARY = [
   { id: 'lib_bench', name: 'Bench Press' },
@@ -263,7 +263,7 @@ module.exports = [
       // Muscle Snatch was labelled Voimatempaus, Power Snatch's name, and
       // came first in the table: a written "Voimatempaus" would have imported
       // as the wrong lift, silently (review of the 2026-09-29 fix).
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
       const library = GENERATED_EXERCISE_LIBRARY.map((item) => ({ id: item.id, name: item.name }));
       const preview = parseCsvProgram('Day,Exercise,Sets,Reps\nPäivä 1,Voimatempaus,5,3', library, [], 'fi');
       assert.equal(preview.rows[0].matchedName, 'Power Snatch');
@@ -502,7 +502,7 @@ module.exports = [
 
       // What the app ships must survive an export and an import: the 500 m
       // row and the 300 s hold are in the ready catalog.
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const session of template.sessions) {
           for (const exercise of session.exercises) {
@@ -570,7 +570,7 @@ module.exports = [
       // the row's photo, history and swaps followed a different lift. In the
       // generated library alone, with no row of their own to be filed under,
       // they are offered for the reader to confirm.
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
       const generated = GENERATED_EXERCISE_LIBRARY.map((item) => ({
         id: item.id,
         name: item.name,
@@ -622,8 +622,8 @@ module.exports = [
   {
     name: "csv import: the app's own programme names come back as the lift the player files them under",
     run() {
-      const { findFiledLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { findFiledLibraryIndex } = require('../../src/lib/guidedPlayer');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const library = seedLibrary();
       const names = library.map((entry) => entry.name);
       const written = new Set();
@@ -680,7 +680,7 @@ module.exports = [
 
       // Four blocks of running get the rest the ready catalogue gives its own
       // multi-set minutes blocks, not 0.
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const blocks = WORKOUT_TEMPLATES_V1.flatMap((template) =>
         template.sessions.flatMap((session) =>
           session.exercises.filter((exercise) => exercise.trackingMode === 'duration_minutes' && exercise.sets > 1),
@@ -696,6 +696,6 @@ module.exports = [
 ];
 
 function seedLibrary() {
-  const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+  const { createSeedExerciseLibrary } = require('../../src/data/seed');
   return createSeedExerciseLibrary().map((item) => ({ id: item.id, name: item.name, sourceCategory: item.sourceCategory }));
 }

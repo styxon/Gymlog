@@ -18,7 +18,7 @@ const { flush, requireWithStubs } = require('../../helpers/hookHarness.cjs');
 
 const ROOT = path.join(__dirname, '..', '..', '..');
 const SRC = path.join(ROOT, 'src');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const STORAGE_KEY = '@vinha/analytics/v1';
 const URL = 'https://example.test/api/events';
 

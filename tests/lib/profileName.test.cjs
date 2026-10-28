@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const { clampProfileName, clipToCharacters, characterCount, MAX_PROFILE_NAME_LENGTH, profileInitials, storedProfileName } = require(path.join(DIST, 'lib', 'profileName.js'));
 const { accountNameStep } = require(path.join(DIST, 'lib', 'accountNameAdoption.js'));
 const { normalizeDatabase } = require(path.join(DIST, 'storage', 'database.js'));

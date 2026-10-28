@@ -4,10 +4,10 @@ const {
   parseQuickLayoutFocuses,
   quickLayoutLiftNames,
   resolveQuickLayoutExercises,
-} = require('../../.test-dist/lib/quickLayoutExercises.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { SPLIT_PRESETS } = require('../../.test-dist/lib/templateBuilderSteps.js');
-const libraryModule = require('../../.test-dist/data/generatedExerciseLibrary.js');
+} = require('../../src/lib/quickLayoutExercises');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const { SPLIT_PRESETS } = require('../../src/lib/templateBuilderSteps');
+const libraryModule = require('../../src/data/generatedExerciseLibrary');
 
 const LIBRARY = Object.values(libraryModule)[0];
 

@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter.js');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../src/features/workout/workoutAppAdapter');
 const { createCompletedSession, createExercise, createSet } = require('../../helpers/workoutFixtures.cjs');
 const {
   adaptLegacyWorkoutTemplateToRuntimeTemplate,
-} = require('../../../.test-dist/features/workout/customWorkoutAdapter.js');
+} = require('../../../src/features/workout/customWorkoutAdapter');
 
 module.exports = [
   {

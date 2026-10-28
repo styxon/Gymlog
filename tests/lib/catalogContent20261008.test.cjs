@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { estimateProgrammeSessionMinutesList } = require('../../.test-dist/lib/programmeMinutes.js');
+const { WORKOUT_TEMPLATES_V1, WORKOUT_SUBSTITUTION_GROUPS } = require('../../src/features/workout/workoutCatalog');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { estimateProgrammeSessionMinutesList } = require('../../src/lib/programmeMinutes');
 
 // Catalogue content found by the third persona sweep (2026-10-08). Each guard
 // is scoped to the defect it came from: the catalogue is not balanced

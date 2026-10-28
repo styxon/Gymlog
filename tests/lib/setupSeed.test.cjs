@@ -6,13 +6,13 @@ const {
   buildSetupPreferencePatch,
   buildSetupSeedKey,
   buildSetupSelectionFromPreferences,
-} = require('../../.test-dist/app/onboardingHandoff.js');
+} = require('../../src/app/onboardingHandoff');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   weekAfterCycleRemoved,
-} = require('../../.test-dist/lib/firstRunSetup.js');
-const { planLabelsForProgramme } = require('../../.test-dist/lib/trainingWeekSync.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/firstRunSetup');
+const { planLabelsForProgramme } = require('../../src/lib/trainingWeekSync');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 /**
  * How stored preferences become the questionnaire's seed, and back (audit

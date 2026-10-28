@@ -5,7 +5,7 @@ const assert = require('node:assert/strict');
  * finding; the wiring half of each lives in tests/screens/hunt9CopySession.
  */
 
-const DIST = '../../.test-dist';
+const DIST = '../../src';
 
 module.exports = [
   {

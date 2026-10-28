@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createHookRuntime, flush, requireWithStubs } = require('../helpers/hookHarness.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const {
   AI_LOG_RETRY_PACING,
   ANALYTICS_FLUSH_PACING,

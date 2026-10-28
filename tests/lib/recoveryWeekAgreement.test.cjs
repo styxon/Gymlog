@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildFatigueModel } = require('../../.test-dist/lib/fatigueModel.js');
-const { buildRecoverySheet, recoveryWeek } = require('../../.test-dist/lib/recoverySheet.js');
+const { buildFatigueModel } = require('../../src/lib/fatigueModel');
+const { buildRecoverySheet, recoveryWeek } = require('../../src/lib/recoverySheet');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...segments) => fs.readFileSync(path.join(root, ...segments), 'utf8').replace(/\r\n/g, '\n');

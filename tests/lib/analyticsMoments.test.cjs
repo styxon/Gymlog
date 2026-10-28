@@ -5,7 +5,7 @@ const {
   countsAsAppOpen,
   countsAsPaywallView,
   joinedRunningSet,
-} = require('../../.test-dist/lib/analyticsMoments.js');
+} = require('../../src/lib/analyticsMoments');
 
 const MINUTE = 60 * 1000;
 const LEFT = Date.UTC(2026, 8, 21, 9, 0);

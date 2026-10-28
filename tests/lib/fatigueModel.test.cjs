@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const { buildFatigueModel } = require('../../.test-dist/lib/fatigueModel.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { buildFatigueModel } = require('../../src/lib/fatigueModel');
 
 const NOW = new Date('2026-05-11T12:00:00.000Z');
 

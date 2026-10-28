@@ -2,31 +2,31 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { applyProgramSessionEdit } = require('../../.test-dist/lib/programSessionEdit.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { doseAfterSwap } = require('../../.test-dist/lib/swapDose.js');
+const { applyProgramSessionEdit } = require('../../src/lib/programSessionEdit');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { doseAfterSwap } = require('../../src/lib/swapDose');
 require('../helpers/reactNativeStub.cjs').installReactNativeStub();
-const { workoutReducer } = require('../../.test-dist/features/workout/workoutState.js');
+const { workoutReducer } = require('../../src/features/workout/workoutState');
 const {
   applySessionAdaptation,
   EMPTY_SESSION_ADAPTATION,
   hasSessionAdaptation,
   withSessionSwap,
-} = require('../../.test-dist/lib/sessionAdaptation.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildCustomProgramDetail, exerciseAfterSessionSwap } = require('../../.test-dist/lib/programDetails.js');
-const { prescriptionUnitOf } = require('../../.test-dist/features/workout/workoutTypes.js');
+} = require('../../src/lib/sessionAdaptation');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { buildCustomProgramDetail, exerciseAfterSessionSwap } = require('../../src/lib/programDetails');
+const { prescriptionUnitOf } = require('../../src/features/workout/workoutTypes');
 const {
   effectiveSwapBodyPart,
   effectiveSwapCategory,
   resolveSwapBrowsePrefilter,
-} = require('../../.test-dist/lib/swapBrowsePrefilter.js');
-const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
-const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { exerciseTypeOf } = require('../../.test-dist/lib/exerciseClassification.js');
-const { matchesBodyPartFilter } = require('../../.test-dist/lib/exerciseBrowseFilter.js');
+} = require('../../src/lib/swapBrowsePrefilter');
+const { buildSwapPickerLibrary } = require('../../src/lib/swapPickerLists');
+const { getPopularExerciseLibraryOrder } = require('../../src/lib/exerciseSuggestions');
+const { exerciseTypeOf } = require('../../src/lib/exerciseClassification');
+const { matchesBodyPartFilter } = require('../../src/lib/exerciseBrowseFilter');
 
 /**
  * The swap-sheet hunt of 2026-10-07 (group G2): a swap across units, the

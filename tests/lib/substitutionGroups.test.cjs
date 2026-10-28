@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const {
   WORKOUT_TEMPLATES_V1,
   WORKOUT_SUBSTITUTION_GROUPS,
-} = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { emphasisAreaForExercise } = require('../../.test-dist/lib/programEmphasis.js');
+} = require('../../src/features/workout/workoutCatalog');
+const { emphasisAreaForExercise } = require('../../src/lib/programEmphasis');
 
 // The swap groups used to include 57-name body-part buckets: a leg curl's
 // "alternatives" opened with a bench press, and 47% of all swap options were a

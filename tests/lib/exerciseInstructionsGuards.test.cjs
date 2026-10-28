@@ -15,9 +15,9 @@ const assert = require('node:assert/strict');
  * bottom, so a pattern that stopped matching fails this suite instead of passing
  * quietly. An allow-list entry needs the exercise, the step number and a reason.
  */
-const { finnishInstructionTable, effectiveEnglishInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
+const { finnishInstructionTable, effectiveEnglishInstructions } = require('../../src/lib/exerciseInstructions');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
 
 function englishRows() {
   const rows = [];

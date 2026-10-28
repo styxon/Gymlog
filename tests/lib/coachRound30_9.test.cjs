@@ -15,7 +15,7 @@ module.exports = [
   {
     name: 'coach chips: a Finnish question puts the lift name first instead of inflecting it',
     run() {
-      const { buildCoachNoticed, buildCoachOpeningLine, nameVars } = require('../../.test-dist/lib/coachChat.js');
+      const { buildCoachNoticed, buildCoachOpeningLine, nameVars } = require('../../src/lib/coachChat');
       assert.deepEqual(nameVars('subject', ' Jalkaprässi '), { subject: 'jalkaprässi', Subject: 'Jalkaprässi' });
 
       const row = { key: 'legpress', tone: 'amber', name: 'Jalkaprässi', status: 'paikallaan', meta: '215 kg', bars: [], locked: null };
@@ -52,8 +52,8 @@ module.exports = [
   {
     name: 'coach history: a four-day split keeps every lift, and one past the cap is named, not dropped',
     run() {
-      const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
-      const { buildAiCoachContextText } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+      const { buildAiTrainingContext, normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
+      const { buildAiCoachContextText } = require('../../src/lib/aiCoachSystemContext');
       const DAY = 86400000;
       const at = (daysAgo) => new Date(Date.now() - daysAgo * DAY).toISOString();
       const lifts = Array.from({ length: 26 }, (_, index) => `Lift ${String(index + 1).padStart(2, '0')}`);

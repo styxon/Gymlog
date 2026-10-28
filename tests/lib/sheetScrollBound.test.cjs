@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { sheetScrollMaxHeight } = require('../../.test-dist/lib/sheetScrollBound.js');
+const { sheetScrollMaxHeight } = require('../../src/lib/sheetScrollBound');
 
 module.exports = [
   {

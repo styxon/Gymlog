@@ -11,7 +11,7 @@ const { createFakeAsyncStorage } = require('../../storage/fakeAsyncStorage.cjs')
  * The account-safety invariant, run over random sequences (2026-10-02).
  *
  * Two phones (A and B) run the REAL client — useAccountBackup, accountAuth,
- * appleAuth, googleAuth, backupApi and accountStore, compiled in .test-dist —
+ * appleAuth, googleAuth, backupApi and accountStore, loaded from src/ —
  * against the REAL server handler (api/backup.ts, transpiled by the repo's
  * apiModule helper) over one shared in-memory blob store. A random sequence of
  * events — sign in (Google or Apple), sign out, log a workout, back up, the
@@ -76,7 +76,7 @@ const { createFakeAsyncStorage } = require('../../storage/fakeAsyncStorage.cjs')
  * ACCOUNT_SAFETY_STATS=1 prints what the sequences reached.
  */
 
-const DIST = path.join(__dirname, '..', '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', '..', 'src');
 const ACCOUNT_DIR = path.join(DIST, 'features', 'account');
 const HOOK = path.join(ACCOUNT_DIR, 'useAccountBackup.js');
 
@@ -480,7 +480,7 @@ const emptyHistory = () => ({ sessions: [], slotHistory: {}, lastSelectedTemplat
 function accountModuleFiles() {
   return fs
     .readdirSync(ACCOUNT_DIR)
-    .filter((entry) => entry.endsWith('.js'))
+    .filter((entry) => /[.]tsx?$/.test(entry) && !entry.endsWith('.d.ts'))
     .map((entry) => path.join(ACCOUNT_DIR, entry));
 }
 

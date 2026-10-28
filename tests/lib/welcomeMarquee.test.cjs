@@ -4,7 +4,7 @@ const {
   buildWelcomeMarqueeRows,
   marqueeDurationMs,
   WELCOME_TILE_SWATCHES,
-} = require('../../.test-dist/lib/welcomeMarquee');
+} = require('../../src/lib/welcomeMarquee');
 
 const CATALOG = [
   { id: 'gainer_huge_builder', title: 'HUGE Builder' },

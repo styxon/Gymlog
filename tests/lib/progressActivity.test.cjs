@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { getProgressActivityDayStatus } = require('../../.test-dist/lib/progressActivity.js');
-const { cycleSchedule, weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+const { getProgressActivityDayStatus } = require('../../src/lib/progressActivity');
+const { cycleSchedule, weekdaySchedule } = require('../../src/lib/trainingSchedule');
 
 // A fixed week so weekday maths is readable: 2026-07-20 is a Monday.
 function dayStart(dayOfMonth) {

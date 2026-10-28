@@ -9,15 +9,15 @@ const {
   detectPlateau,
   pickCompletionLift,
   recentLifts,
-} = require('../../.test-dist/lib/proInsights.js');
-const { buildLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
-const { buildFatigueModel } = require('../../.test-dist/lib/fatigueModel.js');
-const { buildRecoverySheet } = require('../../.test-dist/lib/recoverySheet.js');
-const { buildSessionAnalysis } = require('../../.test-dist/lib/sessionAnalysis.js');
-const { ALL_RANGE_CEILING_DAYS, buildValueWindow, measureRangeDays } = require('../../.test-dist/lib/bodyweightCard.js');
-const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+} = require('../../src/lib/proInsights');
+const { buildLiftHistories } = require('../../src/lib/trainingHistory');
+const { buildFatigueModel } = require('../../src/lib/fatigueModel');
+const { buildRecoverySheet } = require('../../src/lib/recoverySheet');
+const { buildSessionAnalysis } = require('../../src/lib/sessionAnalysis');
+const { ALL_RANGE_CEILING_DAYS, buildValueWindow, measureRangeDays } = require('../../src/lib/bodyweightCard');
+const { resolveSubscriptionView } = require('../../src/lib/subscriptionView');
+const { t } = require('../../src/lib/i18n');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 /**
  * Bug hunt 2026-10-09, the Pro-insights cluster: recency of the findings, what

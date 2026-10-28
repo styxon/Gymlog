@@ -6,8 +6,8 @@ const {
   lifetimeInYears,
   storePriceText,
   yearlySavingPercent,
-} = require('../../.test-dist/lib/storePrices.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/storePrices');
+const { t } = require('../../src/lib/i18n');
 
 const ROOT = path.join(__dirname, '..', '..');
 

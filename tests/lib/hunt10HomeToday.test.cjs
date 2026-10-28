@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const DIST = '../../.test-dist';
+const DIST = '../../src';
 
 const { getHomeDayView, getHomeCarouselCalendarDays, sessionForForecastDay } = require(`${DIST}/lib/homeCalendar.js`);
 const { forecastFromPick, weekdaySchedule, trainsOn } = require(`${DIST}/lib/trainingSchedule.js`);

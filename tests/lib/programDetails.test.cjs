@@ -6,8 +6,8 @@ const {
   buildReadyProgramDetail,
   buildReadySessionRuntimeTemplate,
   composedWeekMatchesPlan,
-} = require('../../.test-dist/lib/programDetails.js');
-const { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programDetails');
+const { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 module.exports = [
   {

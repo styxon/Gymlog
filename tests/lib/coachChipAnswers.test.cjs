@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildAiCoachPreviewAnswer } = require('../../.test-dist/lib/aiCoachPreview.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const { buildAiCoachPreviewAnswer } = require('../../src/lib/aiCoachPreview');
+const { t } = require('../../src/lib/i18n');
 
 function context(overrides = {}) {
   return {
@@ -36,7 +36,7 @@ const {
   COACH_QUICK_ASKS_ESTABLISHED,
   COACH_QUICK_ASKS_RETURNING,
   coachQuickAskKeys,
-} = require('../../.test-dist/lib/coachQuickAsks.js');
+} = require('../../src/lib/coachQuickAsks');
 
 /** A reader who has logged nothing — the one the first chips are for. */
 function emptyContext() {

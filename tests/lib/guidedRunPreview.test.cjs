@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { fitRunPreview, hiddenWorkCount, isLastWorkItem } = require('../../.test-dist/lib/guidedRunPreview.js');
+const { fitRunPreview, hiddenWorkCount, isLastWorkItem } = require('../../src/lib/guidedRunPreview');
 
 const ROW = 30;
 const HEAD = 28;
@@ -117,7 +117,7 @@ module.exports = [
       const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
       assert.match(player, /const walkLastLift = isLastWorkItem\(walkRunItems\);/);
       assert.match(player, /\{walkLastLift \? \(\s*<View style=\{styles\.walkRunRow\}>[\s\S]{0,160}t\(language, 'guided\.walk\.lastLift'\)/);
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('fi', 'guided.walk.lastLift'), 'Tämä on viimeinen liike');
     },
   },

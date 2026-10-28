@@ -1,19 +1,19 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { getWorkoutTemplateById } = require('../../../.test-dist/features/workout/workoutCatalog.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../../.test-dist/features/workout/customWorkoutAdapter.js');
-const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter.js');
-const { buildCustomSessionRuntimeTemplate, buildReadySessionRuntimeTemplate } = require('../../../.test-dist/lib/programDetails.js');
-const { applySessionAdaptation } = require('../../../.test-dist/lib/sessionAdaptation.js');
-const { persistCompletedWorkoutSessionToDatabase } = require('../../../.test-dist/state/completedWorkoutPersistence.js');
-const { getLiftHistoryByName, getTrackedExerciseProgress } = require('../../../.test-dist/lib/progression.js');
-const { normalizeExerciseLog } = require('../../../.test-dist/lib/exerciseLog.js');
-const { resolveGuidedSetTarget } = require('../../../.test-dist/lib/guidedPlayer.js');
-const { isUnloadedTrackingMode } = require('../../../.test-dist/features/workout/workoutTypes.js');
-const { createEmptyDatabase } = require('../../../.test-dist/data/seed.js');
-const { buildCompletionCardsFromAdaptedSession } = require('../../../.test-dist/app/workoutCompletionState.js');
-const { buildExercisePrLookup } = require('../../../.test-dist/lib/workoutCompletionSummary.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { getWorkoutTemplateById } = require('../../../src/features/workout/workoutCatalog');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../../src/features/workout/customWorkoutAdapter');
+const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../src/features/workout/workoutAppAdapter');
+const { buildCustomSessionRuntimeTemplate, buildReadySessionRuntimeTemplate } = require('../../../src/lib/programDetails');
+const { applySessionAdaptation } = require('../../../src/lib/sessionAdaptation');
+const { persistCompletedWorkoutSessionToDatabase } = require('../../../src/state/completedWorkoutPersistence');
+const { getLiftHistoryByName, getTrackedExerciseProgress } = require('../../../src/lib/progression');
+const { normalizeExerciseLog } = require('../../../src/lib/exerciseLog');
+const { resolveGuidedSetTarget } = require('../../../src/lib/guidedPlayer');
+const { isUnloadedTrackingMode } = require('../../../src/features/workout/workoutTypes');
+const { createEmptyDatabase } = require('../../../src/data/seed');
+const { buildCompletionCardsFromAdaptedSession } = require('../../../src/app/workoutCompletionState');
+const { buildExercisePrLookup } = require('../../../src/lib/workoutCompletionSummary');
 
 /**
  * The lift that was lifted is the lift that is saved (swap audit, 2026-09-21).
@@ -120,7 +120,7 @@ module.exports = [
       // sheet's library search hid the dial and saved 0 kg. The weighted
       // squat is loaded in the library now (2026-09-21), so the rule is held
       // to a lift it still files as bodyweight: a banded squat.
-      const { getCatalogTrackingMode } = require('../../../.test-dist/lib/catalogExercisePools.js');
+      const { getCatalogTrackingMode } = require('../../../src/lib/catalogExercisePools');
       assert.equal(getCatalogTrackingMode('Squats - With Bands'), 'bodyweight');
       let state = start(readyDay('tpl_3_day_full_body_v1', 0));
       const squat = state.activeSession.exercises[0];

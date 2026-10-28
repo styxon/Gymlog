@@ -9,7 +9,7 @@ const {
   markCoachDemoMomentUsed,
   pickDemoQuestion,
   resolveDueCoachDemoMoment,
-} = require('../../.test-dist/lib/coachDemoMoments.js');
+} = require('../../src/lib/coachDemoMoments');
 
 const root = path.join(__dirname, '..', '..');
 const i18nSource = fs.readFileSync(path.join(root, 'src', 'lib', 'i18n.ts'), 'utf8');

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { READY_PROGRAM_COLLECTIONS } = require('../../.test-dist/lib/readyProgramCollections.js');
+const { READY_PROGRAM_COLLECTIONS } = require('../../src/lib/readyProgramCollections');
 
 // src used to export a lookup for this. Every caller reads the table directly,
 // so the lookup went and the one line it was stayed here.

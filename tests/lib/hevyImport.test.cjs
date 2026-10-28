@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { isHevyHistoryCsv, parseHevyCsv } = require('../../.test-dist/lib/hevyImport.js');
+const { isHevyHistoryCsv, parseHevyCsv } = require('../../src/lib/hevyImport');
 const {
   persistCompletedWorkoutSessionToDatabase,
-} = require('../../.test-dist/state/completedWorkoutPersistence.js');
+} = require('../../src/state/completedWorkoutPersistence');
 
 const HEADER =
   'title,start_time,end_time,description,exercise_title,superset_id,exercise_notes,set_index,set_type,weight_kg,reps,distance_km,duration_seconds,rpe';

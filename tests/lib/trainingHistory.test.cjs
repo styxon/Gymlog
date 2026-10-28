@@ -9,7 +9,7 @@ const {
   comparableSessions,
   previousComparableSession,
   sessionVolumeKg,
-} = require('../../.test-dist/lib/trainingHistory.js');
+} = require('../../src/lib/trainingHistory');
 
 const DAY = 86400000;
 // A fixed Wednesday, so week bucketing is checkable rather than "whatever today is".
@@ -50,7 +50,7 @@ module.exports = [
   {
     name: 'a lift logged twice in one workout is one session for the stall count',
     run() {
-      const { stalledRunPoints } = require('../../.test-dist/lib/trainingHistory.js');
+      const { stalledRunPoints } = require('../../src/lib/trainingHistory');
       const sessions = [0, 1, 2].map((index) => session(`s${index}`, 'Push', at((2 - index) * 4), 3000));
       const twice = (sessionId) => [
         log(sessionId, 'Bench Press', 60, [8, 8, 8], { id: `${sessionId}-a` }),
@@ -83,7 +83,7 @@ module.exports = [
   {
     name: 'the stalled run holds only logs at the run weight, not a lighter log of its first session',
     run() {
-      const { stalledRunPoints } = require('../../.test-dist/lib/trainingHistory.js');
+      const { stalledRunPoints } = require('../../src/lib/trainingHistory');
       const sessions = [0, 1, 2].map((index) => session(`s${index}`, 'Push', at((2 - index) * 4), 3000));
       const lift = buildLiftHistories(sessions, [
         log('s0', 'Bench Press', 100, [10, 8, 6], { id: 's0-a' }),
@@ -479,8 +479,8 @@ module.exports = [
     // says when the next training day actually is.
     name: 'a cycle schedule reaches the coach as a rhythm and a next training day, not weekdays',
     run() {
-      const { cycleSchedule } = require('../../.test-dist/lib/trainingSchedule.js');
-      const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+      const { cycleSchedule } = require('../../src/lib/trainingSchedule');
+      const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
       const now = new Date(2026, 7, 23, 12).getTime(); // Sunday 23.8.2026
       // Anchored on Monday 24.8.: Mon+Tue on, Wed off, Thu+Fri on, ...
       const anchor = new Date(2026, 7, 24).getTime();
@@ -518,7 +518,7 @@ module.exports = [
       // This readout is a different question, and it lands in the coach's
       // system prompt as "3x/week on …". A programme adopted on a Sunday
       // described its own week as "Sun, Wed, Fri" until this sorted.
-      const { weekdaySchedule } = require("../../.test-dist/lib/trainingSchedule.js");
+      const { weekdaySchedule } = require("../../src/lib/trainingSchedule");
       const history = buildTrainingHistory({
         sessions: [session("s1", "Full Body", at(2), 1000)],
         logs: [log("s1", "Bench Press", 60, [8])],
@@ -608,7 +608,7 @@ module.exports = [
       const history = strip(fs.readFileSync(path.join(ROOT, 'src/lib/trainingHistory.ts'), 'utf8'));
       assert.match(history, /plannedPerWeek: [^\n]*cycleSessionsPerWeek\(onDays, length - onDays\)/);
       assert.doesNotMatch(history, /7 \* onDays/);
-      const { cycleSessionsPerWeek } = require('../../.test-dist/lib/trainingSchedule.js');
+      const { cycleSessionsPerWeek } = require('../../src/lib/trainingSchedule');
       assert.equal(Math.round(cycleSessionsPerWeek(2, 1) * 10) / 10, 4.7);
       // The decision is written where the block week is computed.
       const progress = fs.readFileSync(path.join(ROOT, 'src/lib/homePlanProgress.ts'), 'utf8');

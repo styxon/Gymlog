@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const tour = require('../../.test-dist/lib/firstRunTour');
+const tour = require('../../src/lib/firstRunTour');
 
 /**
  * The first-run tour's rules, tested where they are decided.

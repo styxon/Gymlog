@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { keyboardOpenBottomPadding } = require('../../.test-dist/lib/keyboardLift.js');
+const { keyboardOpenBottomPadding } = require('../../src/lib/keyboardLift');
 
 module.exports = [
   {

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const DIST = '../../.test-dist/';
+const DIST = '../../src/';
 const {
   buildProgramCsv,
   csvExportRowOfCatalogue,

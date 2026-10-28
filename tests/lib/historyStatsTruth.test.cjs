@@ -2,19 +2,19 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { getMilestoneFacts } = require('../../.test-dist/lib/milestoneFacts.js');
-const { recordSetsOfLog } = require('../../.test-dist/lib/personalRecords.js');
-const { buildRepsLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
-const { isHoldLogEntry } = require('../../.test-dist/lib/holdExercises.js');
-const { getWorkedLogSets } = require('../../.test-dist/lib/exerciseLog.js');
-const { getSessionTotals } = require('../../.test-dist/lib/sessionTotals.js');
-const { buildExercisePrLookup } = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { buildSessionAnalysis, describeVolumeChange } = require('../../.test-dist/lib/sessionAnalysis.js');
-const { buildHistorySessionViewModel } = require('../../.test-dist/lib/historyView.js');
-const { formatHomeStatValue } = require('../../.test-dist/lib/homeStatCards.js');
-const { getOverviewVolumeTicks, formatOverviewVolumeTick } = require('../../.test-dist/lib/progressChartTicks.js');
-const { buildWeightAxisTicks } = require('../../.test-dist/lib/bodyweightCard.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { getMilestoneFacts } = require('../../src/lib/milestoneFacts');
+const { recordSetsOfLog } = require('../../src/lib/personalRecords');
+const { buildRepsLiftHistories } = require('../../src/lib/trainingHistory');
+const { isHoldLogEntry } = require('../../src/lib/holdExercises');
+const { getWorkedLogSets } = require('../../src/lib/exerciseLog');
+const { getSessionTotals } = require('../../src/lib/sessionTotals');
+const { buildExercisePrLookup } = require('../../src/lib/workoutCompletionSummary');
+const { buildSessionAnalysis, describeVolumeChange } = require('../../src/lib/sessionAnalysis');
+const { buildHistorySessionViewModel } = require('../../src/lib/historyView');
+const { formatHomeStatValue } = require('../../src/lib/homeStatCards');
+const { getOverviewVolumeTicks, formatOverviewVolumeTick } = require('../../src/lib/progressChartTicks');
+const { buildWeightAxisTicks } = require('../../src/lib/bodyweightCard');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 /**
  * History and statistics numbers, bug hunt 9 (2026-10-09): what a count, a

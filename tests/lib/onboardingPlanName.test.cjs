@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { resolveOnboardingPlanName } = require('../../.test-dist/lib/onboardingPlanName.js');
-const { buildSavedOnboardingPlan, buildSavedOnboardingWorkoutPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-const { buildFirstRunCustomProgramName, DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation.js');
-const { buildTrackChangeExampleCard } = require('../../.test-dist/lib/trackChangeExample.js');
+const { resolveOnboardingPlanName } = require('../../src/lib/onboardingPlanName');
+const { buildSavedOnboardingPlan, buildSavedOnboardingWorkoutPlan } = require('../../src/app/onboardingHandoff');
+const { buildFirstRunCustomProgramName, DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { getReadyTemplatePresentation } = require('../../src/lib/templatePresentation');
+const { buildTrackChangeExampleCard } = require('../../src/lib/trackChangeExample');
 
 const selection = { ...DEFAULT_FIRST_RUN_SELECTION, focusAreas: ['quads'], level: 'amateur' };
 const FIT_LITE = 'tpl_3_day_upper_lower_lite_v1';
@@ -65,7 +65,7 @@ module.exports = [
   {
     name: 'the track-change example follows the site picked first, for every site',
     run() {
-      const { resolveTrackChangeExampleKind } = require('../../.test-dist/lib/trackChangeExample.js');
+      const { resolveTrackChangeExampleKind } = require('../../src/lib/trackChangeExample');
       const now = new Date(2026, 9, 12, 10);
       for (const kind of ['shoulders', 'chest', 'back', 'arms', 'waist', 'hips', 'thighs', 'calves', 'bodyfat']) {
         const card = buildTrackChangeExampleCard('fi', now, kind);

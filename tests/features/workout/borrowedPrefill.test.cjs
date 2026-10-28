@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const {
   workoutReducer,
   resolveInstanceBorrowRepWindow,
-} = require('../../../.test-dist/features/workout/workoutState');
-const { resolveLastTimeEntry } = require('../../../.test-dist/lib/exerciseHistoryLookup');
-const { isUnloadedTrackingMode } = require('../../../.test-dist/features/workout/workoutTypes');
-const { resolveGuidedSetTarget } = require('../../../.test-dist/lib/guidedPlayer');
+} = require('../../../src/features/workout/workoutState');
+const { resolveLastTimeEntry } = require('../../../src/lib/exerciseHistoryLookup');
+const { isUnloadedTrackingMode } = require('../../../src/features/workout/workoutTypes');
+const { resolveGuidedSetTarget } = require('../../../src/lib/guidedPlayer');
 
 /**
  * Two days of one programme doing the same lift, differently.

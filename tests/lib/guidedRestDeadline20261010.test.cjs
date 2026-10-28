@@ -11,8 +11,8 @@ const {
   guidedRestToExtend,
   withGuidedRestDeadline,
   withGuidedRestPaused,
-} = require('../../.test-dist/lib/guidedPlayer.js');
-const { extendRest } = require('../../.test-dist/lib/restSchedule.js');
+} = require('../../src/lib/guidedPlayer');
+const { extendRest } = require('../../src/lib/restSchedule');
 
 /**
  * Bug hunt 2026-10-10: the guided rest's deadline against the lock-screen

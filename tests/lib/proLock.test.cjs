@@ -214,7 +214,7 @@ module.exports = [
       // each other is what makes clearing extra.demoBuild a real release step
       // instead of a note someone has to remember: the moment they disagree,
       // this fails and names the other half.
-      const { DEMO_BUILD } = require('../../.test-dist/lib/demoMode');
+      const { DEMO_BUILD } = require('../../src/lib/demoMode');
       const appJson = JSON.parse(read('app.json'));
       assert.equal(
         DEMO_BUILD,
@@ -240,7 +240,7 @@ module.exports = [
   {
     name: 'proLock: a lapsed subscription cannot be resumed, and a plan change is a new purchase',
     run() {
-      const { canResumePurchase } = require('../../.test-dist/lib/proEntitlement.js');
+      const { canResumePurchase } = require('../../src/lib/proEntitlement');
       const NOW = new Date('2026-09-03T12:00:00.000Z');
       const prefs = (overrides) => ({
         promoProUntil: null,
@@ -295,7 +295,7 @@ module.exports = [
   {
     name: 'proLock: a period end is counted from the original purchase, so the month-end clamp cannot compound',
     run() {
-      const { addPeriods, currentPeriodEndAt, nextChargeAt } = require('../../.test-dist/lib/subscriptionTerm.js');
+      const { addPeriods, currentPeriodEndAt, nextChargeAt } = require('../../src/lib/subscriptionTerm');
       // Bought on the 31st: February clamps to the 28th, and March must come
       // back to the 31st. Chaining single steps left it on the 28th for good
       // (review 2026-09-03), costing that subscriber days of every period.
@@ -321,7 +321,7 @@ module.exports = [
     run() {
       // The loader imports AsyncStorage and cannot run under Node, so the
       // migration is a pure function it calls.
-      const { normalizePurchaseRecord } = require('../../.test-dist/lib/purchaseRecord.js');
+      const { normalizePurchaseRecord } = require('../../src/lib/purchaseRecord');
       const EMPTY = { mockSubscriptionPurchasedAt: null, mockSubscriptionCancelledAt: null };
       const normalizeDatabase = ({ preferences }) => ({ preferences: normalizePurchaseRecord(preferences, EMPTY) });
       const base = (preferences) => ({ preferences });

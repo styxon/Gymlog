@@ -148,7 +148,7 @@ function createFakeIosAsyncStorage() {
   return storage;
 }
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 
 /** Modules that capture AsyncStorage when required, so they load fresh per fake. */
 const STORAGE_MODULES = [
@@ -198,7 +198,7 @@ function loadAgainstFake(fake, load, options = {}) {
     put(file, { id: file, filename: file, loaded: true, exports });
   }
   for (const relative of STORAGE_MODULES) {
-    put(path.join(DIST, relative), null);
+    put(require.resolve(path.join(DIST, relative)), null);
   }
 
   try {

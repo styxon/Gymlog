@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DIST = '../../.test-dist';
+const DIST = '../../src';
 const { getCanonicalCompletedSessions, getCurrentWeekStreak, getMonthlyActivityCalendar } = require(`${DIST}/lib/completedSessions.js`);
 const { weeklyTrainingStreak } = require(`${DIST}/lib/trainingCalendar.js`);
 const { getMonthTrainingTotals } = require(`${DIST}/lib/dashboard.js`);

@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const { getExerciseInstructions } = require('../../.test-dist/lib/exerciseInstructions.js');
-const { getDrillLibraryName } = require('../../.test-dist/lib/drillMedia.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const { getExerciseInstructions } = require('../../src/lib/exerciseInstructions');
+const { getDrillLibraryName } = require('../../src/lib/drillMedia');
 
 /**
  * What a ready programme prescribes, the reader can read about.

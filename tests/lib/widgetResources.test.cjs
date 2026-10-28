@@ -16,8 +16,8 @@ const { widgetResources, applyWidgetReceivers, PROVIDERS } = require('../../plug
 const {
   HOME_WIDGET_PAYLOAD_VERSION,
   HOME_WIDGET_MONTH_ROWS,
-} = require('../../.test-dist/lib/widgetPayload.js');
-const { WIDGET_LINK_PREFIX } = require('../../.test-dist/lib/widgetDeepLink.js');
+} = require('../../src/lib/widgetPayload');
+const { WIDGET_LINK_PREFIX } = require('../../src/lib/widgetDeepLink');
 
 const FILES = widgetResources();
 const paths = Object.keys(FILES);

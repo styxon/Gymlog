@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 const { callHandler, loadApiModule, withEnv } = require('../helpers/apiModule.cjs');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * The server's crisis check, run rather than read (F1 crisis hunt, 2026-10-08).

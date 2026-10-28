@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { accountNameStep } = require('../../.test-dist/lib/accountNameAdoption.js');
+const { accountNameStep } = require('../../src/lib/accountNameAdoption');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
@@ -90,8 +90,8 @@ module.exports = [
     // (review, 2026-09-16).
     name: 'account name: re-running the questionnaire leaves the stored name alone',
     run() {
-      const { buildSetupPreferencePatch } = require('../../.test-dist/app/onboardingHandoff.js');
-      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { buildSetupPreferencePatch } = require('../../src/app/onboardingHandoff');
+      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
       for (const profileName of [null, undefined, '', '   ']) {
         const patch = buildSetupPreferencePatch({ ...DEFAULT_FIRST_RUN_SELECTION, profileName }, null);
         assert.equal('profileName' in patch, false, `an empty name (${JSON.stringify(profileName)}) is not written`);

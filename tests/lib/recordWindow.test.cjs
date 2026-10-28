@@ -4,8 +4,8 @@ const {
   FREE_RECORD_MONTHS,
   FREE_TREND_MONTHS,
   isRecordLocked,
-} = require('../../.test-dist/lib/historyWindow.js');
-const { PRO_LIVE_BENEFITS } = require('../../.test-dist/lib/proBenefits.js');
+} = require('../../src/lib/historyWindow');
+const { PRO_LIVE_BENEFITS } = require('../../src/lib/proBenefits');
 
 const NOW = new Date(2026, 7, 6, 12, 0, 0, 0);
 

@@ -4,18 +4,18 @@ const {
   exerciseNameLabel,
   TRANSLATED_EXERCISE_NAMES,
   PLAIN_EXERCISE_NAMES,
-} = require('../../.test-dist/lib/exerciseNameLabel');
+} = require('../../src/lib/exerciseNameLabel');
 const {
   WORKOUT_TEMPLATES_V1,
   WORKOUT_SUBSTITUTION_GROUPS,
-} = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/features/workout/workoutCatalog');
 const {
   FOCUS_ACCESSORY_POOL,
   SUPPLEMENTAL_DAY_POOL,
-} = require('../../.test-dist/lib/catalogExercisePools');
+} = require('../../src/lib/catalogExercisePools');
 const {
   GENERATED_EXERCISE_LIBRARY,
-} = require('../../.test-dist/data/generatedExerciseLibrary');
+} = require('../../src/data/generatedExerciseLibrary');
 
 function collectStrings(value, into) {
   if (typeof value === 'string') {

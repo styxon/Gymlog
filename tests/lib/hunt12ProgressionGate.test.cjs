@@ -9,7 +9,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const L = '../../.test-dist/lib/';
+const L = '../../src/lib/';
 const {
   evaluateProgression,
   resolveMissedRepsTarget,
@@ -18,7 +18,7 @@ const {
   resolveRampSetTarget,
 } = require(L + 'progressionGate.js');
 const { SAME_LOAD_TOLERANCE_KG, gatingSets, toWorkingHistoryEntry } = require(L + 'warmupSets.js');
-const { workoutReducer } = require('../../.test-dist/features/workout/workoutState.js');
+const { workoutReducer } = require('../../src/features/workout/workoutState');
 
 /** Runs `body` with the device clock in Helsinki, as the phone's is. */
 function inHelsinki(body) {

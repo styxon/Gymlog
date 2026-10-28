@@ -8,8 +8,8 @@ const {
   samePurchaseRecord,
   storePackageForPlan,
   termForStoreProduct,
-} = require('../../.test-dist/lib/storePurchase.js');
-const { resolveProEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
+} = require('../../src/lib/storePurchase');
+const { resolveProEntitlement } = require('../../src/lib/proEntitlement');
 
 /**
  * The store writes the purchase record in a release build (2026-10-08, demo

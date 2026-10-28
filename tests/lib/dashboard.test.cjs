@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
 const {
   getCalendarWeekStartBefore,
   getCalendarWeekStartTimestamp,
@@ -11,8 +11,8 @@ const {
   getRecentActivityStrip,
   getSessionsLast30Days,
   getSessionsThisWeek,
-} = require('../../.test-dist/lib/completedSessions.js');
-const dashboard = require('../../.test-dist/lib/dashboard.js');
+} = require('../../src/lib/completedSessions');
+const dashboard = require('../../src/lib/dashboard');
 const { getHomeSummary } = dashboard;
 
 function createSession(id, performedAt, workoutTemplateId = 'workout_upper', workoutNameSnapshot = 'Upper') {

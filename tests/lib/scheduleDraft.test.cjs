@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { scheduleDraftSave } = require('../../.test-dist/lib/scheduleDraft.js');
+const { scheduleDraftSave } = require('../../src/lib/scheduleDraft');
 
 const draft = (overrides) => ({ daysDirty: false, daysValid: true, cycleOn: false, cycleDirty: false, ...overrides });
 

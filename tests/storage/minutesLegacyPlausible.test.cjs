@@ -5,7 +5,7 @@ const path = require('node:path');
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require(path.join(DIST, 'features', 'workout', 'customWorkoutAdapter.js'));
 const {
   isMinutesLogEntry,

@@ -7,7 +7,7 @@ const {
   estimateSessionMinutes,
   estimateSessionSeconds,
   estimateWorkingSetSeconds,
-} = require('../../.test-dist/lib/sessionDuration.js');
+} = require('../../src/lib/sessionDuration');
 
 module.exports = [
   {

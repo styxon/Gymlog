@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { splitCsvRecords, collapseCellWhitespace } = require('../../.test-dist/lib/csvRecords.js');
+const { splitCsvRecords, collapseCellWhitespace } = require('../../src/lib/csvRecords');
 
 /**
  * The one record boundary both CSV importers share: a line break outside an

@@ -7,7 +7,7 @@ const {
   nextChargeAt,
   resolveSubscriptionView,
   showsMockBilling,
-} = require('../../.test-dist/lib/subscriptionView.js');
+} = require('../../src/lib/subscriptionView');
 
 const NONE = { unlocked: false, source: null, promoUntil: null };
 const PREVIEW = { unlocked: true, source: 'preview', promoUntil: null };
@@ -96,7 +96,7 @@ module.exports = [
 
       // The real entitlement gives the trial exactly this shape, so the two
       // cannot drift: the view reads the trial's date from promoUntil.
-      const { resolveProEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
+      const { resolveProEntitlement } = require('../../src/lib/proEntitlement');
       const entitlement = resolveProEntitlement(
         {
           promoProUntil: null,

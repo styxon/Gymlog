@@ -4,8 +4,8 @@ const path = require('node:path');
 const ts = require('typescript');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const { findSavedCardioRun, mergeContinuedCardioRun, settleSavedCardioRun } = require('../../.test-dist/lib/cardio.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
+const { findSavedCardioRun, mergeContinuedCardioRun, settleSavedCardioRun } = require('../../src/lib/cardio');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
 
 const ROOT = path.join(__dirname, '..', '..');
 

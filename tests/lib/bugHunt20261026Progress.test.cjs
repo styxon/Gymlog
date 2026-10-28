@@ -1,16 +1,16 @@
 const assert = require('node:assert/strict');
 
-const { getLiftProgress, getExerciseProgressSignal, getTrackedExerciseProgress } = require('../../.test-dist/lib/progression.js');
+const { getLiftProgress, getExerciseProgressSignal, getTrackedExerciseProgress } = require('../../src/lib/progression');
 const {
   announcesRecord,
   buildExercisePrLookup,
   findLatestSessionPr,
-} = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { buildCompletionCardsFromAdaptedSession } = require('../../.test-dist/app/workoutCompletionState.js');
-const { buildFreestyleFinish } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { buildLiftHistories, stalledRunPoints } = require('../../.test-dist/lib/trainingHistory.js');
-const { buildWeeklyRead, plateauEpisodeKey } = require('../../.test-dist/lib/proInsights.js');
-const { formatCompactVolume, withNumberLanguage } = require('../../.test-dist/lib/format.js');
+} = require('../../src/lib/workoutCompletionSummary');
+const { buildCompletionCardsFromAdaptedSession } = require('../../src/app/workoutCompletionState');
+const { buildFreestyleFinish } = require('../../src/lib/emptyWorkoutSession');
+const { buildLiftHistories, stalledRunPoints } = require('../../src/lib/trainingHistory');
+const { buildWeeklyRead, plateauEpisodeKey } = require('../../src/lib/proInsights');
+const { formatCompactVolume, withNumberLanguage } = require('../../src/lib/format');
 
 function at(month, day) {
   return new Date(2026, month - 1, day, 18, 0, 0, 0).toISOString();

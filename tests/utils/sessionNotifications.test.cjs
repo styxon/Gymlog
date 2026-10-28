@@ -17,7 +17,7 @@ const { readAppWiring } = require('../helpers/appWiringSource.cjs');
  * fixed ids the order is the whole correctness.
  */
 const ROOT = path.join(__dirname, '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 
 function createFakeNotifications() {
   const scheduled = new Map();
@@ -164,7 +164,7 @@ function loadAgainst(fake) {
     put(file, { id: file, filename: file, loaded: true, exports });
   }
   for (const relative of FRESH_MODULES) {
-    put(path.join(DIST, relative), null);
+    put(require.resolve(path.join(DIST, relative)), null);
   }
   try {
     return {

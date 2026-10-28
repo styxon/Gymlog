@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const { rankExerciseMatches } = require('../../src/lib/exerciseSearch');
 
 const library = createSeedExerciseLibrary();
 const names = (rows) => rows.map((item) => item.name);

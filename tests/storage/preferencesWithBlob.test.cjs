@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 /**
  * The preferences key lands with the database blob, or neither does.

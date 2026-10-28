@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { LEGAL_SITE_URL, legalWebUrl, splitLegalLinks } = require('../../.test-dist/lib/legalLinks.js');
-const { buildLegalDocument } = require('../../.test-dist/lib/legalDocuments.js');
+const { LEGAL_SITE_URL, legalWebUrl, splitLegalLinks } = require('../../src/lib/legalLinks');
+const { buildLegalDocument } = require('../../src/lib/legalDocuments');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8').replace(/\r\n/g, '\n');
@@ -137,7 +137,7 @@ module.exports = [
       assert.match(screen, /\{withLinks\(bullet\)\}/);
       // A failed open (no browser) is not an unhandled rejection.
       assert.match(screen, /Linking\.openURL\(url\)\.catch\(\(\) => undefined\)/);
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('fi', 'legal.readOnWeb'), 'Lue verkossa');
       assert.equal(t('en', 'legal.readOnWeb'), 'Read on the web');
     },

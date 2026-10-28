@@ -16,11 +16,11 @@ const {
   presetsForDayCount,
   previousTemplateBuilderStep,
   templateDraftSignature,
-} = require('../../.test-dist/lib/templateBuilderSteps.js');
-const { parseQuickLayoutFocuses, resolveQuickLayoutExercises } = require('../../.test-dist/lib/quickLayoutExercises.js');
-const { localizeWorkoutFocus } = require('../../.test-dist/lib/sessionNameLabel.js');
-const i18n = require('../../.test-dist/lib/i18n.js');
-const libraryModule = require('../../.test-dist/data/generatedExerciseLibrary.js');
+} = require('../../src/lib/templateBuilderSteps');
+const { parseQuickLayoutFocuses, resolveQuickLayoutExercises } = require('../../src/lib/quickLayoutExercises');
+const { localizeWorkoutFocus } = require('../../src/lib/sessionNameLabel');
+const i18n = require('../../src/lib/i18n');
+const libraryModule = require('../../src/data/generatedExerciseLibrary');
 
 const LIBRARY = Object.values(libraryModule)[0];
 

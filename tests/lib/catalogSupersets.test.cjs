@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
-const { buildSupersetRuns, normalizeSupersetGroups } = require('../../.test-dist/lib/supersetGrouping');
-const { parseIntervalScheme } = require('../../.test-dist/lib/intervalScheme');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { buildSupersetRuns, normalizeSupersetGroups } = require('../../src/lib/supersetGrouping');
+const { parseIntervalScheme } = require('../../src/lib/intervalScheme');
 
 /** Every superset the catalog prescribes, with the day it belongs to. */
 function catalogSupersets() {

@@ -2,16 +2,16 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const classification = require('../../.test-dist/lib/exerciseClassification.js');
-const { orderSwapCandidates, resolveSwapBrowsePrefilter } = require('../../.test-dist/lib/swapBrowsePrefilter.js');
-const { getPopularExerciseLibraryOrder, getSuggestedExerciseLibraryItems } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { displayEquipmentValue, libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
-const { rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const classification = require('../../src/lib/exerciseClassification');
+const { orderSwapCandidates, resolveSwapBrowsePrefilter } = require('../../src/lib/swapBrowsePrefilter');
+const { getPopularExerciseLibraryOrder, getSuggestedExerciseLibraryItems } = require('../../src/lib/exerciseSuggestions');
+const { displayEquipmentValue, libraryLabel } = require('../../src/lib/libraryLabel');
+const { rankExerciseMatches } = require('../../src/lib/exerciseSearch');
 
 /**
  * Every exercise filter, over the whole library (#bugs 2026-10-06: "kaikki
@@ -328,7 +328,7 @@ module.exports = [
       assert.match(swapLists, /listPickerExercises\(library, \{\s*query: typed,\s*filters,/);
 
       // One word on the chip and under the row, in both languages.
-      const { exercisePickerLabel } = require('../../.test-dist/lib/exercisePicker.js');
+      const { exercisePickerLabel } = require('../../src/lib/exercisePicker');
       assert.equal(exercisePickerLabel('specialty', 'fi'), 'Erikoisliike');
       assert.equal(exercisePickerLabel('specialty', 'en'), 'Specialty');
     },

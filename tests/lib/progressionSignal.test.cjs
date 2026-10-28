@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   getExerciseProgressSignal,
   getTrackedExerciseProgress,
-} = require('../../.test-dist/lib/progression.js');
+} = require('../../src/lib/progression');
 
 /**
  * The chip on the Kehitys list.

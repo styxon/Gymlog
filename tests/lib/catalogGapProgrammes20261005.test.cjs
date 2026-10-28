@@ -1,15 +1,15 @@
 const assert = require('node:assert/strict');
 
-const { programFitsEquipment } = require('../../.test-dist/lib/programEquipmentFit.js');
+const { programFitsEquipment } = require('../../src/lib/programEquipmentFit');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   resolveFirstRunRecommendationWithTailoring,
-} = require('../../.test-dist/lib/firstRunSetup.js');
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { buildProgramFocusSplit, liftingFocusPct } = require('../../.test-dist/lib/programFocusSplit.js');
-const { resolveProgramEquipment } = require('../../.test-dist/lib/programEquipment.js');
+} = require('../../src/lib/firstRunSetup');
+const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { applyEquipmentToExercises } = require('../../src/lib/equipmentExerciseFilter');
+const { buildProgramFocusSplit, liftingFocusPct } = require('../../src/lib/programFocusSplit');
+const { resolveProgramEquipment } = require('../../src/lib/programEquipment');
 
 /**
  * The two content gaps the recommendation matrix named on 2026-10-05, and the

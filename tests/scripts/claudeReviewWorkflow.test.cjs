@@ -355,7 +355,7 @@ module.exports = [
         // The run that must stay green: code the runner refuses to run.
         ['node -e "1"', false],
         ['npm run typecheck 2>&1 | tail -3', false],
-        ['npx tsc -p tsconfig.test.json', false],
+        ['node tests/run-tests.cjs', false],
         ['python3 -c "1"', false],
         ['rm -rf .ci-review/x', false],
         // Refused over its first part, not over the read behind it.

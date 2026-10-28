@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { liveSessionBlocksProgrammeDelete } = require('../../.test-dist/lib/programmeDeletion.js');
+const { liveSessionBlocksProgrammeDelete } = require('../../src/lib/programmeDeletion');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
 

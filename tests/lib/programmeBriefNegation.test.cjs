@@ -5,15 +5,15 @@ const {
   composeProgrammePreview,
   parseProgrammeBrief,
   resolveLiveProposal,
-} = require('../../.test-dist/lib/programmeBrief.js');
-const { matchProgrammeToBrief, shouldOfferCatalogInstead } = require('../../.test-dist/lib/briefProgrammeMatch.js');
-const { buildProgramIntakeBrief } = require('../../.test-dist/lib/programIntake.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { programFitsEquipment } = require('../../.test-dist/lib/programEquipmentFit.js');
-const { displayEquipmentValue } = require('../../.test-dist/lib/libraryLabel.js');
-const { localizeSessionName } = require('../../.test-dist/lib/sessionNameLabel.js');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
-const { createSeedDatabase, createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/programmeBrief');
+const { matchProgrammeToBrief, shouldOfferCatalogInstead } = require('../../src/lib/briefProgrammeMatch');
+const { buildProgramIntakeBrief } = require('../../src/lib/programIntake');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { programFitsEquipment } = require('../../src/lib/programEquipmentFit');
+const { displayEquipmentValue } = require('../../src/lib/libraryLabel');
+const { localizeSessionName } = require('../../src/lib/sessionNameLabel');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
+const { createSeedDatabase, createSeedExerciseLibrary } = require('../../src/data/seed');
 
 const preferences = createSeedDatabase().preferences;
 const library = createSeedExerciseLibrary();

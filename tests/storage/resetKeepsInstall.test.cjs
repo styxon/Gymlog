@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed');
-const { DEVICE_ONLY_PREFERENCE_FIELDS, canStartProTrial } = require('../../.test-dist/lib/proEntitlement');
+const { createEmptyDatabase } = require('../../src/data/seed');
+const { DEVICE_ONLY_PREFERENCE_FIELDS, canStartProTrial } = require('../../src/lib/proEntitlement');
 
 /**
  * Reset erases the reader's data. It is not a factory reset of what this

@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { getExerciseTemplateDefaults, restSecondsForAddedLift } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+const { getExerciseTemplateDefaults, restSecondsForAddedLift } = require('../../src/lib/exerciseSuggestions');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 /**
  * A lift added mid-session rests between its sets (re-hunt R4, 2026-10-07).

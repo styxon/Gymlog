@@ -7,13 +7,13 @@ const {
   ladderFor,
   tierFor,
   buildUpcomingMilestones,
-} = require('../../.test-dist/lib/profileMilestones.js');
-const { buildMilestoneLedger, getMilestoneFacts, totalsFromFacts } = require('../../.test-dist/lib/milestoneFacts.js');
+} = require('../../src/lib/profileMilestones');
+const { buildMilestoneLedger, getMilestoneFacts, totalsFromFacts } = require('../../src/lib/milestoneFacts');
 const { buildMilestoneLedgerRows, milestoneCardFooter, milestoneCardRows } = require(
-  '../../.test-dist/lib/profileMilestoneRows.js',
+  '../../src/lib/profileMilestoneRows',
 );
-const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { getLifetimeTrainingSummary } = require('../../src/lib/lifetimeSummary');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 /**
  * The milestone ladder (user 2026-09-03): enough rungs to last, in three
@@ -496,7 +496,7 @@ module.exports = [
       if (firstWeek) {
         assert.equal(firstWeek.meta, 'Best run so far: one week');
       }
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('en', 'profile.milestone.streak.metaOne'), 'Best run so far: one week');
       assert.equal(t('fi', 'profile.milestone.streak.metaOne'), 'Paras putki tähän asti: yksi viikko');
     },

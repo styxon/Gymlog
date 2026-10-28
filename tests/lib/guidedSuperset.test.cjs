@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 setNumberLanguage('en');
 
@@ -12,7 +12,7 @@ const {
   getGuidedNextName,
   getGuidedNextPreview,
   getGuidedStepPlanKey,
-} = require('../../.test-dist/lib/guidedPlayer');
+} = require('../../src/lib/guidedPlayer');
 
 function lift(slotId, name, overrides = {}) {
   return { slotId, name, restSeconds: 90, setCount: 3, skipped: false, supersetGroup: null, ...overrides };
@@ -56,7 +56,7 @@ module.exports = [
       // "KIERROS 2/2" was the superset's version of "1/6", and went with it
       // (#bugs 2026-09-30, "Otetaan toi 1/6 pois myös yläpalkista"). The
       // round stays on the step for the screens that name it.
-      const guided = require('../../.test-dist/lib/guidedPlayer.js');
+      const guided = require('../../src/lib/guidedPlayer');
       assert.equal(guided.getGuidedPhaseLabel, undefined);
       const i18n = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'i18n.ts'), 'utf8');
       assert.doesNotMatch(i18n, /'guided\.superset\.round'/);

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { CUT_BY_SIZE, cutCornerPath } = require('../../.test-dist/lib/cutCorner.js');
+const { CUT_BY_SIZE, cutCornerPath } = require('../../src/lib/cutCorner');
 
 module.exports = [
   {

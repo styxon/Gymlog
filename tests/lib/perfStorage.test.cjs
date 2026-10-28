@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { SINGLE_ROW_BYTES, fitsOneRow, splitStoredText } = require('../../.test-dist/lib/storageChunks.js');
+const { SINGLE_ROW_BYTES, fitsOneRow, splitStoredText } = require('../../src/lib/storageChunks');
 const {
   ACCOUNT_BACKUP_COMPRESS_ABOVE_CHARS,
   ACCOUNT_BACKUP_ENCODING,
@@ -11,9 +11,9 @@ const {
   decodeAccountBackupBody,
   encodeAccountBackupBody,
   encodeAccountBackupBodyAsync,
-} = require('../../.test-dist/lib/accountBackup.js');
-const { groupLogsBySession, logsOfSession } = require('../../.test-dist/lib/sessionLogIndex.js');
-const { exerciseLogRepository } = require('../../.test-dist/storage/repositories.js');
+} = require('../../src/lib/accountBackup');
+const { groupLogsBySession, logsOfSession } = require('../../src/lib/sessionLogIndex');
+const { exerciseLogRepository } = require('../../src/storage/repositories');
 
 /**
  * Three costs that grew with a long history, each pinned by what it does and

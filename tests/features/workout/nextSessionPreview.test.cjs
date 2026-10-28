@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, previewNextSession } = require('../../../.test-dist/features/workout/workoutState');
-const { resolveGuidedSetTarget } = require('../../../.test-dist/lib/guidedPlayer');
+const { workoutReducer, previewNextSession } = require('../../../src/features/workout/workoutState');
+const { resolveGuidedSetTarget } = require('../../../src/lib/guidedPlayer');
 
 /**
  * The coach's "Kehitysesimerkki" quotes what the set screen will open on next

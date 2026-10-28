@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { classifySessionFocus } = require('../../.test-dist/lib/homeSessionHero');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
-const { Vinha_WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/gainerProgramCatalog');
-const { localizeSessionName } = require('../../.test-dist/lib/sessionNameLabel');
+const { classifySessionFocus } = require('../../src/lib/homeSessionHero');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { Vinha_WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/gainerProgramCatalog');
+const { localizeSessionName } = require('../../src/lib/sessionNameLabel');
 
 const CATALOG_SESSIONS = [...WORKOUT_TEMPLATES_V1, ...Vinha_WORKOUT_TEMPLATES_V1].flatMap((template) =>
   template.sessions.map((session) => ({

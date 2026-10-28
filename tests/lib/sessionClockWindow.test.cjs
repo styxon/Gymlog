@@ -6,7 +6,7 @@ const {
   sessionHasBegun,
   settleSessionClock,
   workoutSecondsUntil,
-} = require('../../.test-dist/lib/sessionClock.js');
+} = require('../../src/lib/sessionClock');
 const { createCompletedSession, createExercise, createSet } = require('../helpers/workoutFixtures.cjs');
 
 /**

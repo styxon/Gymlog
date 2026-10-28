@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { AI_COACH_MAX_PROMPT_CHARS, DEFAULT_BUDGET_LIMITS, checkBudget, createBudgetState } = require('../../.test-dist/lib/aiCoachBudget.js');
-const { buildAiCoachContextText, buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+const { AI_COACH_MAX_PROMPT_CHARS, DEFAULT_BUDGET_LIMITS, checkBudget, createBudgetState } = require('../../src/lib/aiCoachBudget');
+const { buildAiCoachContextText, buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
 const {
   buildAiTrainingContext,
   fitAiCoachContextToCap,
   normalizeAiCoachTrainingContext,
-} = require('../../.test-dist/lib/aiTrainingContext.js');
+} = require('../../src/lib/aiTrainingContext');
 const { heavyCoachContext } = require('../helpers/coachContextFixture.cjs');
 
 /**

@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
 
 /**
  * Live-session audit, 2026-09-15: what the guided player does between Start
@@ -249,7 +249,7 @@ module.exports = [
       );
 
       // The rule it lands by is the one tests/lib/guidedPlayer covers.
-      const { rollPastLoggedWork } = require('../../../.test-dist/lib/guidedPlayer.js');
+      const { rollPastLoggedWork } = require('../../../src/lib/guidedPlayer');
       const steps = [
         { type: 'position', phase: 'work', slotId: 'a', exerciseName: 'A', seconds: 20, groupIndex: 0, exerciseIndex: 0, exerciseCount: 2 },
         { type: 'set', phase: 'work', slotId: 'a', setIndex: 0, exerciseName: 'A', groupIndex: 0 },
@@ -292,7 +292,7 @@ module.exports = [
       // standing still whenever they looked ahead (#bugs 2026-10-06). The
       // sheet is a list to read; reading it is what a rest is for.
       const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
-      const { guidedClockHeld } = require('../../../.test-dist/lib/guidedClockHold.js');
+      const { guidedClockHeld } = require('../../../src/lib/guidedClockHold');
       const none = {
         paused: false, howToOpen: false, exitOpen: false, pauseSheetOpen: false, swapOpen: false,
         addExerciseOpen: false, restEditOpen: false, runSheetOpen: false, ownBlockActive: false,
@@ -374,7 +374,7 @@ module.exports = [
       );
       assert.match(player, /  sheet: \{[^}]*flexShrink: 1,/);
       assert.doesNotMatch(player.match(/  sheet: \{[^}]*\}/)[0], /maxHeight/);
-      const { sheetScrollMaxHeight } = require('../../../.test-dist/lib/sheetScrollBound.js');
+      const { sheetScrollMaxHeight } = require('../../../src/lib/sheetScrollBound');
       // A 640 dp phone with a 48 dp button bar: 0.78 × 640 − 81 − 78.
       assert.equal(sheetScrollMaxHeight({ areaHeight: 640, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 340);
       // The inset is taken off: the list ends above the button bar.
@@ -385,7 +385,7 @@ module.exports = [
       // Unmeasured or absurd input cannot collapse the list.
       assert.equal(sheetScrollMaxHeight({ areaHeight: 0, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 120);
       assert.equal(sheetScrollMaxHeight({ areaHeight: Number.NaN, capFraction: 0.78, headHeight: 81, bottomPadding: 78 }), 120);
-      const { lightTheme, darkTheme } = require('../../../.test-dist/theming.js');
+      const { lightTheme, darkTheme } = require('../../../src/theming');
       assert.equal(darkTheme.orange, darkTheme.highlight, 'dark keeps the one action orange');
       assert.notEqual(lightTheme.orange, lightTheme.highlight, 'light is orange, not the brand violet');
     },

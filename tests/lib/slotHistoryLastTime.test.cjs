@@ -1,13 +1,13 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState');
-const { normalizeWorkoutBundle } = require('../../.test-dist/features/workout/workoutPersistence');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { normalizeWorkoutBundle } = require('../../src/features/workout/workoutPersistence');
 const {
   capSlotEntries,
   findLatestEntryForExerciseName,
   resolveLastTimeEntry,
   SLOT_HISTORY_LIMIT,
-} = require('../../.test-dist/lib/exerciseHistoryLookup');
+} = require('../../src/lib/exerciseHistoryLookup');
 
 /**
  * "Last time" — the weight a set opens on and the card that names it — read

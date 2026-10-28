@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
-const { AI_COACH_EVAL_CASES } = require('../../.test-dist/lib/aiCoachEvalCases.js');
+const { classifyCoachScope } = require('../../src/lib/aiCoachScope');
+const { AI_COACH_EVAL_CASES } = require('../../src/lib/aiCoachEvalCases');
 
 /**
  * The crisis filter, read against the sentences a hunt typed into it

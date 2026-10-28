@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const first = require('../../.test-dist/lib/firstRunSetup.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
+const first = require('../../src/lib/firstRunSetup');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
 
 /**
  * Persona hunt, 2026-10-08: a day named for a lift a caution flag took out
@@ -13,8 +13,8 @@ module.exports = [
   {
     name: 'caution day names: a day whose lift a flag took out is not named for it',
     run() {
-      const { localizeWorkoutFocus } = require('../../.test-dist/lib/sessionNameLabel.js');
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { localizeWorkoutFocus } = require('../../src/lib/sessionNameLabel');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
       for (const word of ['Lower', 'Upper', 'Push', 'Pull', 'Full Body']) {
         assert.notEqual(localizeWorkoutFocus(word, 'fi'), word, `${word} has a Finnish word`);

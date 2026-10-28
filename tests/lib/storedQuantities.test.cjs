@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 // workoutPersistence reaches storage/largeItem, which reads Platform from react-native.
 require('../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const D = '../../.test-dist/';
+const D = '../../src/';
 const limits = require(D + 'lib/weightLimits.js');
 const { HOLD_DIAL } = require(D + 'lib/weightDial.js');
 const { isIsoDateString } = require(D + 'lib/isoDate.js');

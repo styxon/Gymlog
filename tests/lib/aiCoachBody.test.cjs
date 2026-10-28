@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
-const { buildAiCoachBodyState, buildAiCoachGoals } = require('../../.test-dist/lib/aiTrainingContext.js');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
-const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
+const { buildAiCoachBodyState, buildAiCoachGoals } = require('../../src/lib/aiTrainingContext');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
+const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
 
 const NOW = new Date('2026-08-24T12:00:00.000Z');
 

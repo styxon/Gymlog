@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveTodaySessionPick } = require('../../.test-dist/lib/todaySessionPick.js');
+const { resolveTodaySessionPick } = require('../../src/lib/todaySessionPick');
 
 const TODAY = new Date(2026, 7, 26).getTime();
 const SESSIONS = [{ id: 'hiit' }, { id: 'legs' }];

@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { afterRateLimitedQuestion, withNotice } = require('../../.test-dist/lib/coachThread.js');
-const { createSingleFlight } = require('../../.test-dist/lib/singleFlight.js');
-const { accountAfterCloudCopyDeleted, visibleBackupPause } = require('../../.test-dist/lib/backupPause.js');
-const { membershipEndCancelled, resolveMembershipEndView } = require('../../.test-dist/lib/membershipEndView.js');
+const { afterRateLimitedQuestion, withNotice } = require('../../src/lib/coachThread');
+const { createSingleFlight } = require('../../src/lib/singleFlight');
+const { accountAfterCloudCopyDeleted, visibleBackupPause } = require('../../src/lib/backupPause');
+const { membershipEndCancelled, resolveMembershipEndView } = require('../../src/lib/membershipEndView');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');

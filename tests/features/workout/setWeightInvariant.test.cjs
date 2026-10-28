@@ -8,18 +8,18 @@ const {
   workoutInitialState,
   resolveInstanceBorrowRepWindow,
   getHistoryEntriesForExercise,
-} = require('../../../.test-dist/features/workout/workoutState.js');
-const { normalizeWorkoutBundle } = require('../../../.test-dist/features/workout/workoutPersistence.js');
-const { isUnloadedTrackingMode } = require('../../../.test-dist/features/workout/workoutTypes.js');
+} = require('../../../src/features/workout/workoutState');
+const { normalizeWorkoutBundle } = require('../../../src/features/workout/workoutPersistence');
+const { isUnloadedTrackingMode } = require('../../../src/features/workout/workoutTypes');
 const {
   resolveLastTimeEntry,
   findLatestEntryForExerciseName,
   selectLatestUsableEntry,
-} = require('../../../.test-dist/lib/exerciseHistoryLookup.js');
-const { resolveGuidedSetTarget, loggedSetsOf } = require('../../../.test-dist/lib/guidedPlayer.js');
-const { liftOfSet } = require('../../../.test-dist/lib/liftSegments.js');
-const { summarizeHistoricalSetChips, formatLoadOrRange } = require('../../../.test-dist/lib/guidedSetWeightSummary.js');
-const { removeTrailingZeros } = require('../../../.test-dist/lib/format.js');
+} = require('../../../src/lib/exerciseHistoryLookup');
+const { resolveGuidedSetTarget, loggedSetsOf } = require('../../../src/lib/guidedPlayer');
+const { liftOfSet } = require('../../../src/lib/liftSegments');
+const { summarizeHistoricalSetChips, formatLoadOrRange } = require('../../../src/lib/guidedSetWeightSummary');
+const { removeTrailingZeros } = require('../../../src/lib/format');
 
 /**
  * A seeded random-sequence invariant for how the app chooses, shows and
@@ -538,7 +538,7 @@ function runSequence(seed, steps) {
     const performedAt = new Date(advanceClock()).toISOString();
     log.push(`complete session at ${performedAt}`);
     const preExercises = current.activeSession.exercises;
-    const { splitExerciseByLift } = require('../../../.test-dist/lib/liftSegments.js');
+    const { splitExerciseByLift } = require('../../../src/lib/liftSegments');
     // A segment is filed when it has something to say: a completed set, an
     // explicit skip (the slot's current lift only), or the slot's warm-ups on
     // its first lift. A lift left pending files nothing (hunt, 2026-10-09).

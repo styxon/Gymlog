@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const L = '../../.test-dist/lib/';
+const L = '../../src/lib/';
 const { buildFatigueModel } = require(L + 'fatigueModel.js');
 const {
   evaluateProgression,
@@ -16,7 +16,7 @@ const { programmeSetCount, toWorkingHistoryEntry } = require(L + 'warmupSets.js'
 const { buildCompletionConclusion, buildNextSessionMoment } = require(L + 'proInsights.js');
 const { buildNextSessionAdvice } = require(L + 'nextSessionAdvice.js');
 const { buildLiftHistories } = require(L + 'trainingHistory.js');
-const { workoutReducer } = require('../../.test-dist/features/workout/workoutState.js');
+const { workoutReducer } = require('../../src/features/workout/workoutState');
 
 const read = (...parts) =>
   fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8').split('\r\n').join('\n');

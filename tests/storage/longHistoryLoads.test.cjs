@@ -86,7 +86,7 @@ module.exports = [
   {
     name: 'long history: a database past the cursor window loads back with every session',
     async run() {
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       const fake = createFakeAsyncStorage();
       const { database } = loadStorageModules(fake);
 
@@ -154,7 +154,7 @@ module.exports = [
   {
     name: 'long history: a database with a part missing is set aside like a corrupt one, not thrown',
     async run() {
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       const fake = createFakeAsyncStorage();
       const { database } = loadStorageModules(fake);
       await database.saveDatabase({ ...createEmptyDatabase('fi'), ...buildHistory(320) });
@@ -198,7 +198,7 @@ module.exports = [
   {
     name: 'long history: reset leaves no part of the old database behind',
     async run() {
-      const { createEmptyDatabase } = require('../../.test-dist/data/seed');
+      const { createEmptyDatabase } = require('../../src/data/seed');
       const fake = createFakeAsyncStorage();
       const { database, workout } = loadStorageModules(fake);
       const empty = createEmptyDatabase('fi');

@@ -8,7 +8,7 @@ const {
   PICK_TOP_CLEARANCE,
   PICK_TOP_PADDING,
   resolvePickSeam,
-} = require('../../.test-dist/lib/programPickSeam.js');
+} = require('../../src/lib/programPickSeam');
 
 /**
  * "Your programme is ready": the second programme's name went behind the

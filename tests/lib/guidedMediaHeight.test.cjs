@@ -7,7 +7,7 @@ const {
   WALK_MEDIA_MIN_DP,
   guidedDrillMediaHeight,
   guidedWalkMediaHeight,
-} = require('../../.test-dist/lib/guidedMediaHeight.js');
+} = require('../../src/lib/guidedMediaHeight');
 
 module.exports = [
   {

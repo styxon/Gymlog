@@ -3,13 +3,13 @@ const assert = require('node:assert/strict');
 const {
   getExerciseProgressSignal,
   getTrackedExerciseProgress,
-} = require('../../.test-dist/lib/progression.js');
-const { buildExercisePrLookup } = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { buildLiftHistories, sessionBestPoints } = require('../../.test-dist/lib/trainingHistory.js');
-const { buildCoachModules } = require('../../.test-dist/lib/aiCoachModules.js');
-const { pickDemoQuestion } = require('../../.test-dist/lib/coachDemoMoments.js');
-const { buildAiTrainingContext } = require('../../.test-dist/lib/aiTrainingContext.js');
-const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
+} = require('../../src/lib/progression');
+const { buildExercisePrLookup } = require('../../src/lib/workoutCompletionSummary');
+const { buildLiftHistories, sessionBestPoints } = require('../../src/lib/trainingHistory');
+const { buildCoachModules } = require('../../src/lib/aiCoachModules');
+const { pickDemoQuestion } = require('../../src/lib/coachDemoMoments');
+const { buildAiTrainingContext } = require('../../src/lib/aiTrainingContext');
+const { getLifetimeTrainingSummary } = require('../../src/lib/lifetimeSummary');
 
 function at(year, month, day) {
   return new Date(year, month - 1, day, 12, 0, 0, 0).toISOString();
@@ -166,8 +166,8 @@ module.exports = [
   {
     name: 'Walking Lunge and Glute Bridge Hold open bodyweight demos while history filing stays put (follow-up, 2026-10-04)',
     run() {
-      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer.js');
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { findFiledLibraryIndex, findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const library = createSeedExerciseLibrary();
       const names = library.map((item) => item.name);
       const demo = (name) => library[findGuidedLibraryIndex(name, names)];
@@ -186,7 +186,7 @@ module.exports = [
       assert.equal(filed('Barbell Walking Lunge'), 'Barbell Walking Lunge');
       assert.equal(filed('Glute Bridge'), 'Butt Lift (Bridge)');
       // The plain bridge is a rep exercise; borrowing its demo does not make it a hold.
-      const { isHoldExerciseName } = require('../../.test-dist/lib/holdExercises.js');
+      const { isHoldExerciseName } = require('../../src/lib/holdExercises');
       assert.equal(isHoldExerciseName('Glute Bridge Hold'), true);
       assert.equal(isHoldExerciseName('Butt Lift (Bridge)'), false);
     },

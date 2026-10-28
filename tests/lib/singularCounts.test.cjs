@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { exportLogMetaLabel, planSessionMetaLabel, templateSetsRepsLabel } = require('../../.test-dist/lib/repCountCopy.js');
+const { exportLogMetaLabel, planSessionMetaLabel, templateSetsRepsLabel } = require('../../src/lib/repCountCopy');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');
@@ -36,7 +36,7 @@ module.exports = [
       assert.equal(exportLogMetaLabel(2, 9, 'fi'), '2 treeniä · 9 sarjaa');
 
       // Set counts on their own: the recent-session row, the guided start card, the emphasis sheet (second re-check).
-      const { setCountLabel } = require('../../.test-dist/lib/repCountCopy.js');
+      const { setCountLabel } = require('../../src/lib/repCountCopy');
       assert.equal(setCountLabel(1, 'en'), '1 set');
       assert.equal(setCountLabel(1, 'fi'), '1 sarja');
       assert.equal(setCountLabel(12, 'fi'), '12 sarjaa');
@@ -49,7 +49,7 @@ module.exports = [
       assert.match(read('src', 'screens', 'ExportPlanScreen.tsx'), /exportLogMetaLabel\(logSummary\.sessions, logSummary\.sets, language\)/);
       // The coach's header line: "Reads your 1 logged session".
       assert.match(read('src', 'screens', 'AICoachChatScreen.tsx'), /sessionCount === 1\s*\? t\(language, 'coachChat\.subtitleOne'\)/);
-      const { t } = require('../../.test-dist/lib/i18n.js');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(t('en', 'coachChat.subtitleOne'), 'Reads your 1 logged session');
       assert.equal(t('fi', 'coachChat.subtitleOne'), 'Lukee 1 kirjatun treenisi');
       assert.equal(t('fi', 'coachChat.open.loggedOne'), '1 treeni kirjattu tällä viikolla. Kysy siitä mitä vain.');
@@ -64,7 +64,7 @@ module.exports = [
   {
     name: 'singular counts: training days, workouts, a recent row\'s exercises and programme counts of one (hunt 1.1.1 r2)',
     run() {
-      const { countLabel } = require('../../.test-dist/lib/repCountCopy.js');
+      const { countLabel } = require('../../src/lib/repCountCopy');
       // Missed by #440: "1 training days", "1 workouts", "1 exercises",
       // "1 days / week", "1 programs".
       const cases = [

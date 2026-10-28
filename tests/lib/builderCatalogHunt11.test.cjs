@@ -2,25 +2,25 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const eq = require('../../.test-dist/lib/equipmentExerciseFilter');
-const { buildSwapAlternatives } = require('../../.test-dist/lib/swapPickerLists');
-const { buildTailoredSwapOptions } = require('../../.test-dist/lib/tailoringFit');
-const { clampProgrammeName, PROGRAMME_NAME_MAX } = require('../../.test-dist/lib/templateBuilderSteps');
-const { buildFirstRunRecommendationReasons, DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup');
-const { buildProgramFocusSplit } = require('../../.test-dist/lib/programFocusSplit');
-const { isInCategory } = require('../../.test-dist/lib/programCategories');
-const { meetsMobilityFocus, getProgramFocusTags } = require('../../.test-dist/lib/programCatalogFocus');
-const { buildDuplicatedCustomProgramDraft } = require('../../.test-dist/lib/customProgramDuplication');
-const { formatPlanSessionTitle } = require('../../.test-dist/lib/sessionNameLabel');
-const { getReadyTemplatePresentation } = require('../../.test-dist/lib/templatePresentation');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary');
-const { displayEquipmentValue } = require('../../.test-dist/lib/libraryLabel');
+const eq = require('../../src/lib/equipmentExerciseFilter');
+const { buildSwapAlternatives } = require('../../src/lib/swapPickerLists');
+const { buildTailoredSwapOptions } = require('../../src/lib/tailoringFit');
+const { clampProgrammeName, PROGRAMME_NAME_MAX } = require('../../src/lib/templateBuilderSteps');
+const { buildFirstRunRecommendationReasons, DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { buildProgramFocusSplit } = require('../../src/lib/programFocusSplit');
+const { isInCategory } = require('../../src/lib/programCategories');
+const { meetsMobilityFocus, getProgramFocusTags } = require('../../src/lib/programCatalogFocus');
+const { buildDuplicatedCustomProgramDraft } = require('../../src/lib/customProgramDuplication');
+const { formatPlanSessionTitle } = require('../../src/lib/sessionNameLabel');
+const { getReadyTemplatePresentation } = require('../../src/lib/templatePresentation');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
+const { displayEquipmentValue } = require('../../src/lib/libraryLabel');
 const {
   WORKOUT_TEMPLATES_V1,
   WORKOUT_SUBSTITUTION_GROUPS,
   getWorkoutTemplateById,
-} = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/features/workout/workoutCatalog');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');
@@ -421,9 +421,9 @@ module.exports = [
   {
     name: 'hunt 11 review: "mobility leads this block" is printed only over a week where it does',
     run() {
-      const { reasonOverProgramme } = require('../../.test-dist/lib/recommendationWaterfall');
-      const { programLeadsWithMobility } = require('../../.test-dist/lib/recommendationWeekFit');
-      const { t } = require('../../.test-dist/lib/i18n');
+      const { reasonOverProgramme } = require('../../src/lib/recommendationWaterfall');
+      const { programLeadsWithMobility } = require('../../src/lib/recommendationWeekFit');
+      const { t } = require('../../src/lib/i18n');
       assert.equal(programLeadsWithMobility('tpl_gainer_joint_friendly_v1'), false);
       assert.equal(programLeadsWithMobility('tpl_2_day_mobility_reset_v1'), true);
       for (const key of ['wf.mobility_first.primary', 'wf.mobility_first.primaryGentle']) {

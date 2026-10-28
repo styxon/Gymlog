@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { createCoachQuotaLedger, coachQuotaMonthStart, PRO_COACH_QUESTIONS_PER_MONTH } = require('../../.test-dist/lib/aiCoachQuota.js');
+const { createCoachQuotaLedger, coachQuotaMonthStart, PRO_COACH_QUESTIONS_PER_MONTH } = require('../../src/lib/aiCoachQuota');
 
 /**
  * The monthly coach allowance is checked on a render-time snapshot and spent

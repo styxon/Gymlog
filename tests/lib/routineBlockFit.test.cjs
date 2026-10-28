@@ -6,15 +6,15 @@ const {
   getDefaultWarmup,
   listRoutineDrillOptions,
   routineDrillSlotKey,
-} = require('../../.test-dist/lib/homeSessionHero');
-const { avoidedCautionAreas, exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching');
-const { estimateRoutineBlockSeconds } = require('../../.test-dist/lib/guidedPlayer');
-const { getDrillLibraryName } = require('../../.test-dist/lib/drillMedia');
-const { estimateProgrammeSessionMinutesList } = require('../../.test-dist/lib/programmeMinutes');
-const { applyCautionFlagsToExercises } = require('../../.test-dist/lib/cautionExerciseFilter');
-const { WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog');
-const { Vinha_WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/gainerProgramCatalog');
-const { t } = require('../../.test-dist/lib/i18n');
+} = require('../../src/lib/homeSessionHero');
+const { avoidedCautionAreas, exerciseHitsCautionArea } = require('../../src/lib/cautionAreaMatching');
+const { estimateRoutineBlockSeconds } = require('../../src/lib/guidedPlayer');
+const { getDrillLibraryName } = require('../../src/lib/drillMedia');
+const { estimateProgrammeSessionMinutesList } = require('../../src/lib/programmeMinutes');
+const { applyCautionFlagsToExercises } = require('../../src/lib/cautionExerciseFilter');
+const { WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { Vinha_WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/gainerProgramCatalog');
+const { t } = require('../../src/lib/i18n');
 
 const FOCUS_KINDS = ['lower', 'push', 'pull', 'upper', 'general', 'easy'];
 const AREAS = ['shoulders', 'lower_back', 'knees', 'elbows', 'wrists', 'hips', 'neck', 'ankles'];

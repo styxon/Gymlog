@@ -4,7 +4,7 @@ const {
   isProUnlocked,
   resolveProEntitlement,
   resolveProgressionOptions,
-} = require('../../.test-dist/lib/proEntitlement.js');
+} = require('../../src/lib/proEntitlement');
 
 const NOW = new Date('2026-07-25T12:00:00.000Z');
 
@@ -221,7 +221,7 @@ module.exports = [
   {
     name: 'resume sees a paid, cancelled-but-running subscription under a trial or a promo (bug hunt 2026-10-05)',
     run() {
-      const { canResumePurchase } = require('../../.test-dist/lib/proEntitlement.js');
+      const { canResumePurchase } = require('../../src/lib/proEntitlement');
       const now = new Date('2026-10-05T12:00:00.000Z');
       const paidCancelled = {
         mockSubscriptionTerm: 'yearly',
@@ -255,7 +255,7 @@ module.exports = [
   {
     name: 'a store purchase that outlasts a running trial is the stated reason, and the page shows its plan (D6-5)',
     run() {
-      const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
+      const { resolveSubscriptionView } = require('../../src/lib/subscriptionView');
       const now = new Date('2026-10-19T07:00:00.000Z');
       const trial = { proTrialUntil: '2026-10-22T07:00:00.000Z' };
       const yearly = { mockSubscriptionPurchasedAt: '2026-10-19T07:00:00.000Z', mockSubscriptionTerm: 'yearly' };
@@ -297,8 +297,8 @@ module.exports = [
   {
     name: 'the trial-ending notice time is null when a purchase or a later promo keeps Pro on (D6-1)',
     run() {
-      const { trialEndingAtMs } = require('../../.test-dist/lib/proEntitlement.js');
-      const { buildNotificationPlan } = require('../../.test-dist/lib/notificationPlan.js');
+      const { trialEndingAtMs } = require('../../src/lib/proEntitlement');
+      const { buildNotificationPlan } = require('../../src/lib/notificationPlan');
       const trialEnd = '2026-10-22T07:00:00.000Z';
       const base = prefs({ proTrialUntil: trialEnd });
 
@@ -373,7 +373,7 @@ module.exports = [
   {
     name: 'a lifetime holder is offered no End membership, and an old cancellation stamp is not shown',
     run() {
-      const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
+      const { resolveSubscriptionView } = require('../../src/lib/subscriptionView');
       const entitlement = { unlocked: true, source: 'purchase', promoUntil: null, purchaseEndsAt: null };
       const view = resolveSubscriptionView({ entitlement, mockTerm: 'lifetime', mockCancelled: true, purchasedAt: '2026-07-01T09:00:00.000Z' });
       assert.equal(view.cancelled, false);

@@ -2,14 +2,14 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const first = require('../../.test-dist/lib/firstRunSetup.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildReadyProgramFitExplanation } = require('../../.test-dist/lib/readyProgramFit.js');
-const { buildCautionAdaptationLine } = require('../../.test-dist/lib/cautionAdaptationLine.js');
-const { buildRecommendationReasonLines } = require('../../.test-dist/lib/recommendationExplanation.js');
-const { buildReadyProgramDetail } = require('../../.test-dist/lib/programDetails.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const first = require('../../src/lib/firstRunSetup');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { buildReadyProgramFitExplanation } = require('../../src/lib/readyProgramFit');
+const { buildCautionAdaptationLine } = require('../../src/lib/cautionAdaptationLine');
+const { buildRecommendationReasonLines } = require('../../src/lib/recommendationExplanation');
+const { buildReadyProgramDetail } = require('../../src/lib/programDetails');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * Persona hunt, 2026-10-08 (copy surface): what the programme page and the

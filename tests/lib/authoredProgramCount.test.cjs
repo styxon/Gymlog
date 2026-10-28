@@ -4,7 +4,7 @@ const {
   FREE_CUSTOM_PROGRAM_LIMIT,
   countAuthoredPrograms,
   resolveProgramSlots,
-} = require('../../.test-dist/lib/programSlots.js');
+} = require('../../src/lib/programSlots');
 
 module.exports = [
   {

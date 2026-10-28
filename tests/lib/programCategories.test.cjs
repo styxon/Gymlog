@@ -7,8 +7,8 @@ const {
   countByCategory,
   filterByCategory,
   isInCategory,
-} = require('../../.test-dist/lib/programCategories.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/lib/programCategories');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');
@@ -70,9 +70,9 @@ module.exports = [
       // HIIT and five more at 25% or over; "Home" missed Fat Burn HIIT, RUN
       // and Mobility Flow (bug hunt, 2026-10-09). The tile now answers what
       // the Cardio chip and the equipment bucket answer, for every programme.
-      const { meetsCardioFocus } = require('../../.test-dist/lib/programCatalogFocus.js');
-      const { resolveProgramEquipmentBucket } = require('../../.test-dist/lib/programEquipment.js');
-      const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog.js');
+      const { meetsCardioFocus } = require('../../src/lib/programCatalogFocus');
+      const { resolveProgramEquipmentBucket } = require('../../src/lib/programEquipment');
+      const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
       const names = (template) => template.sessions.flatMap((session) => session.exercises.map((exercise) => exercise.exerciseName));
       const RUNNERS = new Set(['tpl_gainer_runners_strength_v1']);
       const drift = [];

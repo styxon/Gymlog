@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { buildRecommendationProfile } = require('../../.test-dist/lib/recommendationProfile.js');
+const { buildRecommendationProfile } = require('../../src/lib/recommendationProfile');
 
 const baseSelection = {
   gender: 'unspecified',

@@ -9,7 +9,7 @@ const {
   buildCoachReportBody,
   formatCoachReportForSlack,
   readCoachReport,
-} = require('../../.test-dist/lib/coachAnswerReport.js');
+} = require('../../src/lib/coachAnswerReport');
 
 // Play's AI-generated content policy: a reader can flag an answer without
 // leaving the app (project-play-readiness). The answer and a reason travel;

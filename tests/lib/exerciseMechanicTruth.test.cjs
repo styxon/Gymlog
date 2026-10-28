@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { getExerciseTemplateDefaults, getSuggestedExerciseLibraryItems } = require('../../.test-dist/lib/exerciseSuggestions.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-const { withLibraryCorrections, exerciseMechanic } = require('../../.test-dist/lib/exerciseClassification.js');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { getExerciseTemplateDefaults, getSuggestedExerciseLibraryItems } = require('../../src/lib/exerciseSuggestions');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+const { withLibraryCorrections, exerciseMechanic } = require('../../src/lib/exerciseClassification');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
 /**
@@ -126,7 +126,7 @@ module.exports = [
       // The copy writer reads the catalogue row's priority, not a flat false.
       assert.match(source, /trackedDefault: exercise\.progressionPriority !== 'low',/);
       assert.doesNotMatch(source, /trackedDefault: false,\s*\n\s*orderIndex: exerciseIndex/);
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const primaryCurls = [];
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const session of template.sessions) {
@@ -164,7 +164,7 @@ module.exports = [
       // differ the other way on a handful of low-priority curls and raises —
       // they keep the tracking they had, which is the rule ("no one's
       // progression changes"), not a disagreement to fix.
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const nameIndex = new Map();
       for (const item of library) {
         if (!nameIndex.has(item.name.trim().toLowerCase())) {

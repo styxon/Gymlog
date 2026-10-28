@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const dist = (relative) => require(path.join(DIST, relative));
 
 function loadNormalize() {

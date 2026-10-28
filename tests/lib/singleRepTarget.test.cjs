@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { collapseRepRange } = require('../../.test-dist/lib/singleRepTarget.js');
-const { intervalOffSeconds } = require('../../.test-dist/lib/intervalScheme.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { collapseRepRange } = require('../../src/lib/singleRepTarget');
+const { intervalOffSeconds } = require('../../src/lib/intervalScheme');
 
 /**
  * Every catalog exercise prescribes ONE rep number, not a range (user decision
@@ -90,7 +90,7 @@ module.exports = [
   {
     name: 'a row stored as a hold keeps its seconds bracket under any name (round 2, 2026-10-08)',
     run() {
-      const { savedPrescription } = require('../../.test-dist/lib/singleRepTarget.js');
+      const { savedPrescription } = require('../../src/lib/singleRepTarget');
       assert.deepEqual(
         savedPrescription({ name: 'Barbell Glute Bridge', repMin: 30, repMax: 45, restSeconds: 90, trackingMode: 'hold' }),
         { repMin: 30, repMax: 45, restSeconds: 90 },
@@ -106,7 +106,7 @@ module.exports = [
   {
     name: 'a saved row is written as the loader reads it: one rep number, an interval resting its off-phase',
     run() {
-      const { savedPrescription } = require('../../.test-dist/lib/singleRepTarget.js');
+      const { savedPrescription } = require('../../src/lib/singleRepTarget');
       // The editors' own defaults are ranges (getExerciseTemplateDefaults).
       assert.deepEqual(savedPrescription({ name: 'Bench Press', repMin: 6, repMax: 8, restSeconds: 120 }), {
         repMin: 8,

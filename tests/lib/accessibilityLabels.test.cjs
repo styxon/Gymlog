@@ -4,15 +4,15 @@ const {
   exerciseCardAccessibilityLabel,
   setFieldAccessibilityLabel,
   weightStepAccessibilityLabel,
-} = require('../../.test-dist/lib/accessibilityLabels.js');
-const { removeTrailingZeros, setNumberLanguage } = require('../../.test-dist/lib/format.js');
-const { WEIGHT_DIAL_STEP_KG } = require('../../.test-dist/lib/weightDial.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/accessibilityLabels');
+const { removeTrailingZeros, setNumberLanguage } = require('../../src/lib/format');
+const { WEIGHT_DIAL_STEP_KG } = require('../../src/lib/weightDial');
+const { t } = require('../../src/lib/i18n');
 const {
   rulerStepCount,
   rulerValueAt,
   stepRulerValue,
-} = require('../../.test-dist/lib/rulerValue.js');
+} = require('../../src/lib/rulerValue');
 
 /**
  * Screen-reader labels built from what a control shows (accessibility audit,
@@ -30,7 +30,7 @@ module.exports = [
     // label replaces its children for TalkBack: said in the label, after last time.
     name: "a11y: the set card says today's sets after last time's",
     run() {
-      const { exerciseCardAccessibilityLabel } = require('../../.test-dist/lib/accessibilityLabels.js');
+      const { exerciseCardAccessibilityLabel } = require('../../src/lib/accessibilityLabels');
       const lastTime = { sets: [{ loadKg: 35, reps: 12 }, { loadKg: 35, reps: 8 }], borrowed: false };
       const without = exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', lastTime);
       assert.equal(exerciseCardAccessibilityLabel('fi', 'Ojentajapushdown', lastTime, [10, 10, null]), `${without}. Tänään: 10, 10, –`);

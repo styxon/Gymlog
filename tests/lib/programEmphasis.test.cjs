@@ -1,13 +1,13 @@
 const assert = require('node:assert/strict');
 
-const { resolveProgramEmphasis } = require('../../.test-dist/lib/programEmphasis.js');
+const { resolveProgramEmphasis } = require('../../src/lib/programEmphasis');
 const {
   programCoverIndex,
   PROGRAM_COVER_STYLES,
   EMPHASIS_RAMP,
-} = require('../../.test-dist/lib/programVisualIdentity.js');
-const { EMPHASIS_AREA_KEYS } = require('../../.test-dist/lib/programEmphasis.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programVisualIdentity');
+const { EMPHASIS_AREA_KEYS } = require('../../src/lib/programEmphasis');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function toEmphasisSessions(template) {
   return template.sessions.map((session) => ({
@@ -69,7 +69,7 @@ module.exports = [
   {
     name: 'every exercise the catalog prescribes lands in a named area',
     run() {
-      const { emphasisAreaForExercise } = require('../../.test-dist/lib/programEmphasis.js');
+      const { emphasisAreaForExercise } = require('../../src/lib/programEmphasis');
       const unplaced = new Set();
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const session of template.sessions) {

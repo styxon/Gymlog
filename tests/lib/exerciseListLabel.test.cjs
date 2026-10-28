@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { exerciseListLabel, exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+const { exerciseListLabel, exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 // "Pitää keksiä joku sääntö tähän että nimet ei kasva niin pitkiksi"
 // (#bugs 2026-09-27) — abbreviations, the user's choice.
@@ -12,7 +12,7 @@ module.exports = [
     // name breaks on its syllables, and only where the line has to break.
     name: 'exercise card label: the list label with soft hyphens at its syllables, Finnish only',
     run() {
-      const { exerciseCardLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+      const { exerciseCardLabel } = require('../../src/lib/exerciseNameLabel');
       const SOFT = '­';
       const card = exerciseCardLabel('fi', 'Smith Machine Incline Bench Press');
       assert.equal(card.split(SOFT).join(''), exerciseListLabel('fi', 'Smith Machine Incline Bench Press'));
@@ -117,7 +117,7 @@ module.exports = [
   {
     name: 'what a row prints finds what it stands for',
     run() {
-      const { buildExerciseSearchHaystack, exerciseMatchesQuery } = require('../../.test-dist/lib/exerciseSearch.js');
+      const { buildExerciseSearchHaystack, exerciseMatchesQuery } = require('../../src/lib/exerciseSearch');
       const found = (query) =>
         library
           .filter((item) => exerciseMatchesQuery(buildExerciseSearchHaystack(item, 'fi'), query))

@@ -6,7 +6,7 @@ const {
   ANALYTICS_SINCE_PATTERN,
   inChunks,
   selectEventBatches,
-} = require('../../.test-dist/lib/analyticsRead.js');
+} = require('../../src/lib/analyticsRead');
 
 const blob = (day, time) => `events/${day}/${day}T${time}-000Z-abc123.json`;
 

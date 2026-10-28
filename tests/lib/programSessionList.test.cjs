@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { newProgramSessionName, removeProgramSession } = require('../../.test-dist/lib/programSessionList.js');
+const { newProgramSessionName, removeProgramSession } = require('../../src/lib/programSessionList');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 // Line endings normalised: a Windows checkout is CRLF.
@@ -57,7 +57,7 @@ module.exports = [
     run() {
       assert.equal(newProgramSessionName(5, 'fi'), 'Päivä 6');
       assert.equal(newProgramSessionName(0, 'en'), 'Day 1');
-      const { formatPlanSessionTitle } = require('../../.test-dist/lib/sessionNameLabel.js');
+      const { formatPlanSessionTitle } = require('../../src/lib/sessionNameLabel');
       assert.equal(formatPlanSessionTitle({ name: newProgramSessionName(5, 'fi') }, 5, 'Oma', 'fi'), 'Treeni 6');
     },
   },
@@ -102,7 +102,7 @@ module.exports = [
     // wrapping round; with nothing anywhere, nothing is offered.
     name: 'programme days: the rotation skips a day that is still empty',
     run() {
-      const { nextStartableSessionIndex } = require('../../.test-dist/lib/programSessionList.js');
+      const { nextStartableSessionIndex } = require('../../src/lib/programSessionList');
       assert.equal(nextStartableSessionIndex([4, 0, 5], 1), 2);
       assert.equal(nextStartableSessionIndex([4, 5, 0], 2), 0, 'wraps to the start');
       assert.equal(nextStartableSessionIndex([4, 5, 6], 1), 1, 'a filled day keeps its turn');
@@ -193,7 +193,7 @@ module.exports = [
   {
     name: 'dup13 D5-1: "next up" after a workout skips empty days, as Home does',
     run() {
-      const { guidedNextUpIndex } = require('../../.test-dist/lib/programSessionList.js');
+      const { guidedNextUpIndex } = require('../../src/lib/programSessionList');
       assert.equal(guidedNextUpIndex([2, 0, 2], 0), 2);
       assert.equal(guidedNextUpIndex([2, 0, 0], 0), null);
       assert.equal(guidedNextUpIndex([2, 2, 2], 2), 0);
@@ -208,7 +208,7 @@ module.exports = [
   {
     name: 'dup13 D5-2: a leading ready programme\'s Start runs the day Home offers, a pick included',
     run() {
-      const { programmeStartSessionId } = require('../../.test-dist/lib/programSessionList.js');
+      const { programmeStartSessionId } = require('../../src/lib/programSessionList');
       const sessions = ['A', 'B', 'C'].map((id) => ({ id, exerciseCount: 2 }));
       assert.equal(programmeStartSessionId(sessions, 'p', { programId: 'p', nextSession: { id: 'C' } }), 'C');
       const tab = read('src', 'app', 'renderWorkoutTab.tsx');

@@ -33,7 +33,7 @@ const PREFS_KEY = '@vinha/preferences/v1';
 const WK_KEY = '@vinha/workout/v1';
 const DB_CORRUPT = '@vinha/database/corrupt';
 const WK_CORRUPT = '@vinha/workout/corrupt';
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 
 const LEGACY_CYCLE = { pattern: [true, true, true, false], anchorDayStart: Date.UTC(2026, 8, 7, 21) };
 const OWN_CYCLE = { pattern: [true, false], anchorDayStart: Date.UTC(2026, 8, 1, 21) };

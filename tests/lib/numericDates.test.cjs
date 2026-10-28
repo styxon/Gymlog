@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { formatDayMonthNumeric, formatDateNumeric } = require('../../.test-dist/lib/format.js');
+const { formatDayMonthNumeric, formatDateNumeric } = require('../../src/lib/format');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8');

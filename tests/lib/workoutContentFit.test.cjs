@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { evaluateWorkoutContentFit } = require('../../.test-dist/lib/workoutContentFit.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { evaluateWorkoutContentFit } = require('../../src/lib/workoutContentFit');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 module.exports = [
   {

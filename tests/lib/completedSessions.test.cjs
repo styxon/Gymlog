@@ -6,7 +6,7 @@ const {
   getCalendarWeekStartBefore,
   getCalendarWeekStartTimestamp,
   getRollingWindowStart,
-} = require('../../.test-dist/lib/completedSessions.js');
+} = require('../../src/lib/completedSessions');
 
 module.exports = [
   {
@@ -88,7 +88,7 @@ module.exports = [
      */
     name: 'a session whose date does not parse is kept as written, not thrown on',
     run() {
-      const { getCanonicalCompletedSessions } = require('../../.test-dist/lib/completedSessions.js');
+      const { getCanonicalCompletedSessions } = require('../../src/lib/completedSessions');
       const database = {
         workoutSessions: [
           { id: 'ok', workoutTemplateId: 't', workoutTemplateSessionId: 'd1', workoutNameSnapshot: 'Upper', performedAt: '2026-09-20T10:00:00.000Z' },
@@ -113,9 +113,9 @@ module.exports = [
     // Three audits had made them match by hand. One walk now.
     name: 'one streak walk: fourteen weeks across the autumn clock change, from an empty current week',
     run() {
-      const { streakFromWeekStarts, getCurrentWeekStreak } = require('../../.test-dist/lib/completedSessions.js');
-      const { getLifetimeTrainingSummary } = require('../../.test-dist/lib/lifetimeSummary.js');
-      const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
+      const { streakFromWeekStarts, getCurrentWeekStreak } = require('../../src/lib/completedSessions');
+      const { getLifetimeTrainingSummary } = require('../../src/lib/lifetimeSummary');
+      const { weeklyTrainingStreak } = require('../../src/lib/trainingCalendar');
       withHelsinkiClocks(() => {
         // Fourteen consecutive Mondays ending 2 November 2026; 25 October is a
         // 25-hour Sunday inside the run.
@@ -204,7 +204,7 @@ module.exports = [
     // parse is day 0 (no moment due), where calendarDaysBetween gives NaN.
     name: 'one day count: the schedule, the body-weight axis and the coach demo ask calendarDaysBetween',
     run() {
-      const { daysSince } = require('../../.test-dist/lib/coachDemoMoments.js');
+      const { daysSince } = require('../../src/lib/coachDemoMoments');
       const now = new Date(2026, 10, 1, 12);
       assert.equal(daysSince('not-a-date', now), 0);
       withHelsinkiClocks(() => {

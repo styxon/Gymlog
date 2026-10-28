@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { getOnboardingFocusAreaPresentationOptions } = require('../../.test-dist/lib/focusAreaPresentation.js');
+const { getOnboardingFocusAreaPresentationOptions } = require('../../src/lib/focusAreaPresentation');
 
 module.exports = [
   {

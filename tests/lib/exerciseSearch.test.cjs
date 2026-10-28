@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatches } = require('../../.test-dist/lib/exerciseSearch.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const library = Object.values(require('../../.test-dist/data/generatedExerciseLibrary.js'))[0];
+const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatches } = require('../../src/lib/exerciseSearch');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
+const library = Object.values(require('../../src/data/generatedExerciseLibrary'))[0];
 
 function search(query, language = 'fi') {
   return library.filter((item) => exerciseMatchesQuery(buildExerciseSearchHaystack(item, language), query));
@@ -87,7 +87,7 @@ module.exports = [
       assert.equal(rankExerciseMatches(library, 'Barbell Full Squat', 'fi')[0].name, 'Barbell Full Squat');
       // Within a rank, popularity breaks the tie before length: "penkki" is
       // the bench press, not the bench dip that happens to be shorter.
-      const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
+      const { getPopularExerciseLibraryOrder } = require('../../src/lib/exerciseSuggestions');
       const order = getPopularExerciseLibraryOrder(library);
       const penkki = rankExerciseMatches(library, 'penkki', 'fi', (item) => order.get(item.id));
       assert.equal(exerciseNameLabel('fi', penkki[0].name), 'Penkkipunnerrus');

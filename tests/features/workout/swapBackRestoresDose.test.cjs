@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeAsyncStorage.cjs');
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { getWorkoutTemplateById } = require('../../../.test-dist/features/workout/workoutCatalog.js');
-const { buildReadySessionRuntimeTemplate } = require('../../../.test-dist/lib/programDetails.js');
-const { applySessionAdaptation } = require('../../../.test-dist/lib/sessionAdaptation.js');
-const { doseAfterSwap } = require('../../../.test-dist/lib/swapDose.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { getWorkoutTemplateById } = require('../../../src/features/workout/workoutCatalog');
+const { buildReadySessionRuntimeTemplate } = require('../../../src/lib/programDetails');
+const { applySessionAdaptation } = require('../../../src/lib/sessionAdaptation');
+const { doseAfterSwap } = require('../../../src/lib/swapDose');
 
 const persistence = loadAgainstFake(createFakeAsyncStorage(), (req) => req('features/workout/workoutPersistence.js'));
 

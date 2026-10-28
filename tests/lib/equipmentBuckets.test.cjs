@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { createSeedExerciseLibrary, createEmptyDatabase } = require('../../.test-dist/data/seed.js');
-const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
-const { displayEquipmentValue, libraryLabel } = require('../../.test-dist/lib/libraryLabel.js');
-const { isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { resolveProgramEquipment } = require('../../.test-dist/lib/programEquipment.js');
-const { buildAiCoachPlanSchema } = require('../../.test-dist/lib/aiCoachPlan.js');
-const { getCatalogTrackingMode } = require('../../.test-dist/lib/catalogExercisePools.js');
+const { createSeedExerciseLibrary, createEmptyDatabase } = require('../../src/data/seed');
+const browse = require('../../src/lib/exerciseBrowseFilter');
+const { displayEquipmentValue, libraryLabel } = require('../../src/lib/libraryLabel');
+const { isExerciseAllowedWithEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { resolveProgramEquipment } = require('../../src/lib/programEquipment');
+const { buildAiCoachPlanSchema } = require('../../src/lib/aiCoachPlan');
+const { getCatalogTrackingMode } = require('../../src/lib/catalogExercisePools');
 
 /**
  * "Kehonpaino" is what needs nothing in your hands (#bugs 2026-10-06). The
@@ -96,7 +96,7 @@ module.exports = [
       // says Kuminauha there too.
       const empty = fs.readFileSync(path.join(__dirname, '../../src/screens/EmptyWorkoutScreen.tsx'), 'utf8');
       assert.match(empty, /exercisePickerRowMeta\(item, language\)/);
-      const { exercisePickerRowMeta } = require('../../.test-dist/lib/exercisePicker.js');
+      const { exercisePickerRowMeta } = require('../../src/lib/exercisePicker');
       const bandRow = library.find((item) => displayEquipmentValue(item) === 'band' && browse.isBrowsableExercise(item));
       assert.ok(bandRow, 'no band row');
       assert.match(exercisePickerRowMeta(bandRow, 'fi'), /Kuminauha/);

@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { buildAiCoachSystemContext, buildAiCoachContextText } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+const { buildAiCoachSystemContext, buildAiCoachContextText } = require('../../src/lib/aiCoachSystemContext');
 const {
   buildAiCoachLastSession,
   normalizeAiCoachTrainingContext,
-} = require('../../.test-dist/lib/aiTrainingContext.js');
+} = require('../../src/lib/aiTrainingContext');
 
 // "Analysoi viime treenini" answered about the session before the last one,
 // in both languages, and in Finnish with the last one's date on it; the
@@ -311,7 +311,7 @@ module.exports = [
   {
     name: 'trimming a context to fit calls the last session cut only when it was',
     run() {
-      const { fitAiCoachContextToCap } = require('../../.test-dist/lib/aiTrainingContext.js');
+      const { fitAiCoachContextToCap } = require('../../src/lib/aiTrainingContext');
       const many = Array.from({ length: 9 }, (_, i) => ({ name: `Lift ${i}`, sets: [{ weightKg: 50, reps: 10 }] }));
       // A cap nothing fits under runs every shedding step, the one that trims
       // the last session included (PR review, 2026-09-27).
@@ -461,7 +461,7 @@ module.exports = [
   {
     name: 'next-time direction: lighter, mixed and empty say what they can and no more',
     run() {
-      const { nextTimeDirection } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+      const { nextTimeDirection } = require('../../src/lib/aiCoachSystemContext');
       const at = (weightKg, ...reps) => reps.map((r) => ({ weightKg, reps: r }));
       assert.equal(nextTimeDirection(at(100, 5, 5), { loadKg: 90, reps: [5, 5] }, false), "lighter than this session's 100 kg");
       // One set up, one down: no single direction to claim.

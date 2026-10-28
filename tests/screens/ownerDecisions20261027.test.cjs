@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { durationMinutesParts, formatDurationMinutes } = require('../../.test-dist/lib/format.js');
-const { formatLiftDisplayLabel } = require('../../.test-dist/lib/displayLabel.js');
-const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+const { durationMinutesParts, formatDurationMinutes } = require('../../src/lib/format');
+const { formatLiftDisplayLabel } = require('../../src/lib/displayLabel');
+const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
 
 function read(...parts) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8').replace(/\r\n/g, '\n');

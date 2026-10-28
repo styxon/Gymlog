@@ -9,9 +9,9 @@ const {
   planForTemplate,
   planTrainingCycle,
   withPlanTrainingCycle,
-} = require('../../.test-dist/lib/planTrainingCycle.js');
-const { workoutPlanRepository } = require('../../.test-dist/storage/repositories.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/planTrainingCycle');
+const { workoutPlanRepository } = require('../../src/storage/repositories');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 /**
  * A rhythm belongs to its programme (user 2026-10-07).

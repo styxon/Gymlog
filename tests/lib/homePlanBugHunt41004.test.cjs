@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { resolvablePlanEntries, weeklyMinutesLabel } = require('../../.test-dist/lib/planResolvableEntries.js');
-const { resolveNextPlanEntryIndex } = require('../../.test-dist/lib/planRotation.js');
-const { resolveTodaySessionPick } = require('../../.test-dist/lib/todaySessionPick.js');
-const { normalizeDatabase } = require('../../.test-dist/storage/database.js');
+const { resolvablePlanEntries, weeklyMinutesLabel } = require('../../src/lib/planResolvableEntries');
+const { resolveNextPlanEntryIndex } = require('../../src/lib/planRotation');
+const { resolveTodaySessionPick } = require('../../src/lib/todaySessionPick');
+const { normalizeDatabase } = require('../../src/storage/database');
 
 /**
  * Bug hunt, 2026-10-04: Home's active-plan card (B1 unresolvable entries,
@@ -126,9 +126,9 @@ module.exports = [
   {
     name: 'dead plan entry: the strip, the reminders and Home count the same entries and land on the same weekdays',
     run() {
-      const { livePlanEntries } = require('../../.test-dist/lib/planResolvableEntries.js');
-      const { planWeekdayIndexes, resolveDerivedTrainingDays, WEEKDAY_KEYS } = require('../../.test-dist/lib/programTrainingDays.js');
-      const { resolveReminderSchedule, reminderWeekdays } = require('../../.test-dist/lib/reminderSchedule.js');
+      const { livePlanEntries } = require('../../src/lib/planResolvableEntries');
+      const { planWeekdayIndexes, resolveDerivedTrainingDays, WEEKDAY_KEYS } = require('../../src/lib/programTrainingDays');
+      const { resolveReminderSchedule, reminderWeekdays } = require('../../src/lib/reminderSchedule');
       const sessionsFor = (id) => (id === 't' ? [{ id: 's0' }, { id: 's2' }, { id: 's3' }] : []);
       const entry = (sid, orderIndex, label) => ({ workoutTemplateId: 't', workoutTemplateSessionId: sid, orderIndex, label });
 
@@ -160,7 +160,7 @@ module.exports = [
   {
     name: 'dead plan entry: a template with no sessions to judge by keeps every entry',
     run() {
-      const { livePlanEntries } = require('../../.test-dist/lib/planResolvableEntries.js');
+      const { livePlanEntries } = require('../../src/lib/planResolvableEntries');
       const entries = [
         { workoutTemplateId: 'gone', workoutTemplateSessionId: 'a', orderIndex: 1, label: 'wed' },
         { workoutTemplateId: 'gone', workoutTemplateSessionId: 'b', orderIndex: 0, label: 'mon' },
@@ -172,7 +172,7 @@ module.exports = [
   {
     name: 'rhythm save: counts the entries the strip draws, relabels only those, and never returns silently',
     run() {
-      const { livePlanEntries } = require('../../.test-dist/lib/planResolvableEntries.js');
+      const { livePlanEntries } = require('../../src/lib/planResolvableEntries');
       const entries = [
         { workoutTemplateId: 't', workoutTemplateSessionId: 's0', orderIndex: 0, label: 'mon' },
         { workoutTemplateId: 't', workoutTemplateSessionId: 'dead', orderIndex: 1, label: 'tue' },
@@ -211,7 +211,7 @@ module.exports = [
   {
     name: 'resolveProgramTrainingDays: a count that is not a whole number behaves as the stride rule does',
     run() {
-      const { resolveProgramTrainingDays, resolveDerivedTrainingDays } = require('../../.test-dist/lib/programTrainingDays.js');
+      const { resolveProgramTrainingDays, resolveDerivedTrainingDays } = require('../../src/lib/programTrainingDays');
       const open = [0, 1, 2, 3, 4];
       for (const bad of [Number.NaN, undefined, 2.5, 0.5, Infinity]) {
         const days = resolveProgramTrainingDays(open, bad);

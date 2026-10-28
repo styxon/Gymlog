@@ -9,9 +9,9 @@ const {
   decodeAccountBackupBody,
   encodeAccountBackupBody,
   parseAccountBackupPayload,
-} = require('../../.test-dist/lib/accountBackup.js');
-const { base64ToBytes, bytesToBase64 } = require('../../.test-dist/lib/base64.js');
-const { utf8Encode, utf8EncodeFallback } = require('../../.test-dist/lib/utf8.js');
+} = require('../../src/lib/accountBackup');
+const { base64ToBytes, bytesToBase64 } = require('../../src/lib/base64');
+const { utf8Encode, utf8EncodeFallback } = require('../../src/lib/utf8');
 
 /**
  * A long history still backs up.

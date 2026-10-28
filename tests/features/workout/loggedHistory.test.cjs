@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer } = require('../../../.test-dist/features/workout/workoutState');
+const { workoutReducer } = require('../../../src/features/workout/workoutState');
 const {
   findLatestEntryForExerciseName,
-} = require('../../../.test-dist/lib/exerciseHistoryLookup');
+} = require('../../../src/lib/exerciseHistoryLookup');
 
 /**
  * A weight remembered from a workout that never went through the player.

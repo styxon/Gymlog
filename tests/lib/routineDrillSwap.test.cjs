@@ -5,7 +5,7 @@ const {
   getDefaultWarmup,
   listRoutineDrillOptions,
   routineDrillSlotKey,
-} = require('../../.test-dist/lib/homeSessionHero.js');
+} = require('../../src/lib/homeSessionHero');
 
 module.exports = [
   {

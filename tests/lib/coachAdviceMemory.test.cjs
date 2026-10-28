@@ -11,9 +11,9 @@ const {
   parseCoachAdviceLines,
   parseCoachAdviceMemory,
   rememberCoachAdvice,
-} = require('../../.test-dist/lib/coachAdviceMemory');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext');
-const { normalizeAiCoachTrainingContext } = require('../../.test-dist/lib/aiTrainingContext');
+} = require('../../src/lib/coachAdviceMemory');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
+const { normalizeAiCoachTrainingContext } = require('../../src/lib/aiTrainingContext');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 

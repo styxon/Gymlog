@@ -8,10 +8,10 @@ const {
   isCoachCrisisReply,
   isCoachCrisisTakeaway,
   withoutCoachCrisisTurns,
-} = require('../../.test-dist/lib/coachCrisisTurn.js');
-const { resumeCoachChat } = require('../../.test-dist/lib/coachChatMemory.js');
-const { buildAiCoachPreviewAnswer } = require('../../.test-dist/lib/aiCoachPreview.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/coachCrisisTurn');
+const { resumeCoachChat } = require('../../src/lib/coachChatMemory');
+const { buildAiCoachPreviewAnswer } = require('../../src/lib/aiCoachPreview');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * A crisis exchange never becomes history (F1 crisis hunt, 2026-10-08).
@@ -57,9 +57,9 @@ function loadLiveClient() {
     saved[key] = process.env[key];
     process.env[key] = value;
   }
-  const modulePath = path.join(root, '.test-dist', 'features', 'aiCoach', 'aiCoachClient.js');
+  const modulePath = require.resolve(path.join(root, 'src', 'features', 'aiCoach', 'aiCoachClient.js'));
   delete require.cache[modulePath];
-  delete require.cache[path.join(root, '.test-dist', 'lib', 'aiCoachLiveGate.js')];
+  delete require.cache[require.resolve(path.join(root, 'src', 'lib', 'aiCoachLiveGate.js'))];
   try {
     return require(modulePath);
   } finally {

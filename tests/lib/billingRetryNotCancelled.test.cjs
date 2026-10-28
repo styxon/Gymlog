@@ -4,11 +4,11 @@ const {
   STORE_PRO_ENTITLEMENT,
   purchaseRecordFromStore,
   samePurchaseRecord,
-} = require('../../.test-dist/lib/storePurchase.js');
-const { resolveProEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
-const { resolveMembershipEndView } = require('../../.test-dist/lib/membershipEndView.js');
-const { resolveSubscriptionView } = require('../../.test-dist/lib/subscriptionView.js');
-const { normalizePurchaseRecord } = require('../../.test-dist/lib/purchaseRecord.js');
+} = require('../../src/lib/storePurchase');
+const { resolveProEntitlement } = require('../../src/lib/proEntitlement');
+const { resolveMembershipEndView } = require('../../src/lib/membershipEndView');
+const { resolveSubscriptionView } = require('../../src/lib/subscriptionView');
+const { normalizePurchaseRecord } = require('../../src/lib/purchaseRecord');
 
 /**
  * A card the store could not charge leaves the entitlement active with

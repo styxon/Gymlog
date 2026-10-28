@@ -5,8 +5,8 @@ const {
   getHomeDayView,
   getHomeMiniCalendarDays,
   getHomeMonthCalendar,
-} = require('../../.test-dist/lib/homeCalendar.js');
-const { cycleSchedule, weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+} = require('../../src/lib/homeCalendar');
+const { cycleSchedule, weekdaySchedule } = require('../../src/lib/trainingSchedule');
 
 module.exports = [
   {

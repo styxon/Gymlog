@@ -16,8 +16,8 @@ const {
   HORIZON_DAYS,
   plateauEpisodeKey,
   findPlateauDetection,
-} = require('../../.test-dist/lib/proInsights.js');
-const { buildLiftHistories } = require('../../.test-dist/lib/trainingHistory.js');
+} = require('../../src/lib/proInsights');
+const { buildLiftHistories } = require('../../src/lib/trainingHistory');
 
 /**
  * These assert English copy, so they assert English number formatting with it.
@@ -26,7 +26,7 @@ const { buildLiftHistories } = require('../../.test-dist/lib/trainingHistory.js'
  * wants points rather than commas has to say so — otherwise it passes or fails
  * on whichever suite ran before it.
  */
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const DAY = 86400000;
@@ -233,7 +233,7 @@ module.exports = [
       assert.match(decliningFix.body, /later sets fade/);
       // Recovery says HOLD — the weight the reader is already at is correct here.
       assert.equal(decliningFix.body, 'Your later sets fade every session. Hold 82.5 kg and do one set fewer.');
-      const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+      const { setNumberLanguage } = require('../../src/lib/format');
       setNumberLanguage('fi');
       try {
         assert.equal(

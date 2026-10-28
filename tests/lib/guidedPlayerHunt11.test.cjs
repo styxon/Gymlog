@@ -1,10 +1,10 @@
 process.env.TZ = 'Europe/Helsinki';
 const assert = require('node:assert/strict');
 
-const { setsOfCurrentLift, splitExerciseByLift } = require('../../.test-dist/lib/liftSegments.js');
-const { buildExerciseSheetHistory, gateExerciseSheetHistory } = require('../../.test-dist/lib/exerciseSheetHistory.js');
-const { resolveGuidedSetPlan, buildGuidedSteps, getGuidedNextName } = require('../../.test-dist/lib/guidedPlayer.js');
-const { guidedTodayLoadKg } = require('../../.test-dist/lib/guidedSetRow.js');
+const { setsOfCurrentLift, splitExerciseByLift } = require('../../src/lib/liftSegments');
+const { buildExerciseSheetHistory, gateExerciseSheetHistory } = require('../../src/lib/exerciseSheetHistory');
+const { resolveGuidedSetPlan, buildGuidedSteps, getGuidedNextName } = require('../../src/lib/guidedPlayer');
+const { guidedTodayLoadKg } = require('../../src/lib/guidedSetRow');
 const {
   isLoggableTypedReps,
   isTypedRepsPossiblyValid,
@@ -12,10 +12,10 @@ const {
   HOLD_DIAL,
   MINUTES_DIAL,
   WARMUP_REPS_DIAL,
-} = require('../../.test-dist/lib/weightDial.js');
-const { exerciseCardAccessibilityLabel } = require('../../.test-dist/lib/accessibilityLabels.js');
-const { exerciseNameLabel, PLAIN_EXERCISE_NAMES } = require('../../.test-dist/lib/exerciseNameLabel.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
+} = require('../../src/lib/weightDial');
+const { exerciseCardAccessibilityLabel } = require('../../src/lib/accessibilityLabels');
+const { exerciseNameLabel, PLAIN_EXERCISE_NAMES } = require('../../src/lib/exerciseNameLabel');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
 
 // Programmed as Barbell Bench Press; set 0 done at 100 x 5, then swapped to
 // Dumbbell Bench Press; set 1 done at 32 x 8; set 2 still to do.

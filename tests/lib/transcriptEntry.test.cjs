@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { LOG_ID_PATTERN, randomLogId } = require('../../.test-dist/lib/aiCoachLogId.js');
+const { LOG_ID_PATTERN, randomLogId } = require('../../src/lib/aiCoachLogId');
 
 // The reader endpoint (api/transcripts.ts) and the helpers that shaped its
 // answers were removed before release (2026-10-09, docs/play-data-safety.md

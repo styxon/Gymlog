@@ -1,10 +1,10 @@
 const assert = require('node:assert/strict');
 
-const { cautionAreaLoadedBy, exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching.js');
-const { applyCautionFlagsToExercises } = require('../../.test-dist/lib/cautionExerciseFilter.js');
-const { GUIDED_LIBRARY_ALIASES } = require('../../.test-dist/lib/guidedPlayer.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
+const { cautionAreaLoadedBy, exerciseHitsCautionArea } = require('../../src/lib/cautionAreaMatching');
+const { applyCautionFlagsToExercises } = require('../../src/lib/cautionExerciseFilter');
+const { GUIDED_LIBRARY_ALIASES } = require('../../src/lib/guidedPlayer');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
 
 /** What the progression hold reads: the area a careful flag holds the lift for. */
 const held = (name, area) => cautionAreaLoadedBy(name, [{ area, level: 'careful', refinements: [] }]) === area;

@@ -7,7 +7,7 @@ const { createHookRuntime, deferred, flush } = require('../helpers/hookHarness.c
 const ROOT = path.join(__dirname, '..', '..');
 const SOURCE = path.join(ROOT, 'src', 'screens', 'EditProfileScreen.tsx');
 // .tsx is outside the test build; transpiled here, resolving its lib imports in the compiled tree.
-const DIST_SCREENS = path.join(ROOT, '.test-dist', 'screens');
+const DIST_SCREENS = path.join(ROOT, 'src', 'screens');
 
 /**
  * Edit profile: Back tapped while Save is in flight (hunt 1.1.1). Back popped
@@ -34,7 +34,13 @@ function loadScreen(runtime) {
     '../theme': { layout: new Proxy({}, { get: () => 0 }) },
   };
   // The pure lib modules are the compiled ones; everything React Native is a stub.
-  const load = (specifier) => (specifier in stubs ? stubs[specifier] : require(path.join(DIST_SCREENS, specifier)));
+  const load = (specifier) => {
+    if (specifier in stubs) return stubs[specifier];
+    const target = path.join(DIST_SCREENS, specifier);
+    // A .tsx here would be the real component, not a stub.
+    assert.ok(!require.resolve(target).endsWith('.tsx'), `${specifier} is a component the test does not stub`);
+    return require(target);
+  };
   const module = { exports: {} };
   new Function('require', 'module', 'exports', out)(load, module, module.exports);
   return module.exports.EditProfileScreen;

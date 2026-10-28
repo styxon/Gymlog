@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { DUOTONE_RAMPS, duotoneMatrix, srgbToLinear } = require('../../.test-dist/lib/duotone.js');
+const { DUOTONE_RAMPS, duotoneMatrix, srgbToLinear } = require('../../src/lib/duotone');
 
 /**
  * Owner's #11, iOS hunt 2026-10-17: the guided player's photos looked washed

@@ -29,7 +29,7 @@ const {
   SESSION_FEEL_LABEL_KEY,
   SESSION_FEEL_WINDOW,
   summariseSessionFeel,
-} = require('../../.test-dist/lib/sessionFeel');
+} = require('../../src/lib/sessionFeel');
 
 const s = (feel) => ({ feel });
 

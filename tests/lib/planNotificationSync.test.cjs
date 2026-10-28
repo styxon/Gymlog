@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const { planNotificationSync, shouldRearmPlan } = require(path.join(__dirname, '..', '..', '.test-dist', 'lib', 'planNotificationSync.js'));
+const { planNotificationSync, shouldRearmPlan } = require(path.join(__dirname, '..', '..', 'src', 'lib', 'planNotificationSync.js'));
 
 /**
  * The rule behind syncing the planned notifications (native audit,

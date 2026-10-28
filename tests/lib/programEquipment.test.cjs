@@ -4,8 +4,8 @@ const {
   EQUIPMENT_CHIP_KEYS,
   missingEquipment,
   resolveProgramEquipment,
-} = require('../../.test-dist/lib/programEquipment.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog');
+} = require('../../src/lib/programEquipment');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function gearFor(id) {
   const template = WORKOUT_TEMPLATES_V1.find((entry) => entry.id === id);
@@ -57,8 +57,8 @@ module.exports = [
       // Twenty of fifty-five shared one filler paragraph, and it was invisible
       // until the program screen started rendering the description. A test is
       // cheaper than noticing it on a device again.
-      const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent');
-      const { FALLBACK_READY_PROGRAM_CONTENT_FI } = require('../../.test-dist/lib/readyProgramContentFi');
+      const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
+      const { FALLBACK_READY_PROGRAM_CONTENT_FI } = require('../../src/lib/readyProgramContentFi');
       const placeholder = [];
       for (const template of WORKOUT_TEMPLATES_V1) {
         for (const language of ['en', 'fi']) {

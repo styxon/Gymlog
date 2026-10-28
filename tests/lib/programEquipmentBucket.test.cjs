@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 const {
   resolveProgramEquipmentBucket,
   resolveProgramEquipment,
-} = require('../../.test-dist/lib/programEquipment.js');
-const { getReadyProgramEquipmentBucket } = require('../../.test-dist/lib/workoutDiscovery.js');
+} = require('../../src/lib/programEquipment');
+const { getReadyProgramEquipmentBucket } = require('../../src/lib/workoutDiscovery');
 
 /**
  * Which programmes can be trained without a gym.

@@ -9,8 +9,8 @@ const {
   estimateTokens,
   readBudgetLimitsFromEnv,
   recordSpend,
-} = require('../../.test-dist/lib/aiCoachBudget.js');
-const { PROGRAM_IMAGE_MAX_BASE64_CHARS } = require('../../.test-dist/lib/programImageImport.js');
+} = require('../../src/lib/aiCoachBudget');
+const { PROGRAM_IMAGE_MAX_BASE64_CHARS } = require('../../src/lib/programImageImport');
 
 const NOW = 1_700_000_000_000;
 

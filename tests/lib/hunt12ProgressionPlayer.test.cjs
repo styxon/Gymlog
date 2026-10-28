@@ -2,9 +2,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const guided = require('../../.test-dist/lib/guidedPlayer.js');
-const row = require('../../.test-dist/lib/guidedSetRow.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+const guided = require('../../src/lib/guidedPlayer');
+const row = require('../../src/lib/guidedSetRow');
+const { t } = require('../../src/lib/i18n');
 
 const { resolveGuidedSetPlan, resolveGuidedSetTarget } = guided;
 
@@ -201,7 +201,7 @@ module.exports = [
   {
     name: 'hunt 12 A11-4: praise compares up to the programme\'s set count when last time had more sets',
     run() {
-      const { resolveLiftPraise } = require('../../.test-dist/lib/liftPraise.js');
+      const { resolveLiftPraise } = require('../../src/lib/liftPraise');
       const done = (count, extra = {}) =>
         Array.from({ length: count }, () => ({ status: 'completed', plannedLoadKg: 62.5, plannedRepsMax: 8, actualLoadKg: 62.5, actualReps: 8, ...extra }));
       const last = (loads) => loads.map((loadKg) => ({ loadKg, reps: 8 }));

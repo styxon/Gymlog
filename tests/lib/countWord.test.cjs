@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { countWord } = require('../../.test-dist/lib/countWord.js');
+const { countWord } = require('../../src/lib/countWord');
 
 module.exports = [
   {

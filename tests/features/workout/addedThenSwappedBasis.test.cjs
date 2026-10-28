@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { getWorkoutTemplateById } = require('../../../.test-dist/features/workout/workoutCatalog.js');
-const { buildReadySessionRuntimeTemplate } = require('../../../.test-dist/lib/programDetails.js');
-const { buildLoggedSetPlan } = require('../../../.test-dist/lib/loggedSetPlan.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { getWorkoutTemplateById } = require('../../../src/features/workout/workoutCatalog');
+const { buildReadySessionRuntimeTemplate } = require('../../../src/lib/programDetails');
+const { buildLoggedSetPlan } = require('../../../src/lib/loggedSetPlan');
 
 /**
  * A set the reader added and then swapped away is not "their own number"

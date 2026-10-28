@@ -9,21 +9,21 @@ const {
   addActiveProgram,
   placesToFree,
   resolveActiveProgramCap,
-} = require('../../.test-dist/lib/activeProgramSet.js');
-const { runningSetWithout } = require('../../.test-dist/lib/runningProgrammes.js');
+} = require('../../src/lib/activeProgramSet');
+const { runningSetWithout } = require('../../src/lib/runningProgrammes');
 const {
   carryCompletionDismissal,
   forgetCompletionDismissals,
   resolveCompletionCard,
-} = require('../../.test-dist/lib/programCompletion.js');
+} = require('../../src/lib/programCompletion');
 const {
   describeProgramCap,
   programCapFullMessage,
   programCapLineKey,
   programLimitSheetCopy,
-} = require('../../.test-dist/lib/programCapNotice.js');
-const { programSlotsLineKey, resolveProgramSlots } = require('../../.test-dist/lib/programSlots.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/programCapNotice');
+const { programSlotsLineKey, resolveProgramSlots } = require('../../src/lib/programSlots');
+const { t } = require('../../src/lib/i18n');
 
 /**
  * Three findings about a programme's life (hunt 9, 2026-10-09):

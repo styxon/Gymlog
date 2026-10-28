@@ -8,7 +8,7 @@ const {
   recordSuggestionAccepted,
   recordSuggestionRejected,
   SUGGESTION_COOLDOWN_DAYS,
-} = require('../../.test-dist/lib/coachSuggestions.js');
+} = require('../../src/lib/coachSuggestions');
 
 const NOW = new Date('2026-08-25T09:00:00.000Z');
 const daysAgo = (days) => new Date(NOW.getTime() - days * 24 * 60 * 60 * 1000);

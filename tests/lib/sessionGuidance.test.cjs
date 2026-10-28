@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { buildSessionGuidance: buildGuidanceWithMinutes } = require('../../.test-dist/lib/sessionGuidance.js');
-const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
+const { getWorkoutTemplateById, WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { buildSessionGuidance: buildGuidanceWithMinutes } = require('../../src/lib/sessionGuidance');
+const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
 
 // The duration is handed in (the programme page's own number), so these tests
 // hand it the card's, as the page does with no plan and no gear.

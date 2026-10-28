@@ -4,12 +4,12 @@ const {
   programFamilyFromTitle,
   programFamilyIdentity,
   programFamilyIdentityOrNull,
-} = require('../../.test-dist/lib/programFamilyIdentity.js');
+} = require('../../src/lib/programFamilyIdentity');
 const {
   PROGRAM_COVER_STYLES,
   programCoverStyle,
-} = require('../../.test-dist/lib/programVisualIdentity.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programVisualIdentity');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 module.exports = [
   {

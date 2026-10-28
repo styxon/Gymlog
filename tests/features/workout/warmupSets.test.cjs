@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const { workoutReducer, workoutInitialState, completeWorkoutSession } = require('../../../.test-dist/features/workout/workoutState');
-const { buildExerciseLogDraftsFromWorkoutSession } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-const { normalizeWorkoutBundle } = require('../../../.test-dist/features/workout/workoutPersistence');
-const { normalizeExerciseLog, getComparableLogSets } = require('../../../.test-dist/lib/exerciseLog');
-const { warmupOffer } = require('../../../.test-dist/lib/warmupSets');
+const { workoutReducer, workoutInitialState, completeWorkoutSession } = require('../../../src/features/workout/workoutState');
+const { buildExerciseLogDraftsFromWorkoutSession } = require('../../../src/features/workout/workoutAppAdapter');
+const { normalizeWorkoutBundle } = require('../../../src/features/workout/workoutPersistence');
+const { normalizeExerciseLog, getComparableLogSets } = require('../../../src/lib/exerciseLog');
+const { warmupOffer } = require('../../../src/lib/warmupSets');
 
 /**
  * "+ Warm-up set" (user, 2026-10-05): a warm-up is logged apart from the
@@ -250,7 +250,7 @@ module.exports = [
       });
       assert.deepEqual(getComparableLogSets(log), []);
 
-      const { buildWorkoutLogCsv } = require('../../../.test-dist/lib/workoutLogCsvExport');
+      const { buildWorkoutLogCsv } = require('../../../src/lib/workoutLogCsvExport');
       const csv = buildWorkoutLogCsv({
         sessions: [{ id: 's', workoutTemplateId: 't', workoutNameSnapshot: 'Push', performedAt: '2026-10-05T10:00:00.000Z' }],
         logs: [
@@ -275,9 +275,9 @@ module.exports = [
   {
     name: 'warm-up: a swap that drops the warm-ups takes them back, so a finish done again does not merge them back (hunt 2026-10-08)',
     run() {
-      const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-      const { persistCompletedWorkoutSessionToDatabase } = require('../../../.test-dist/state/completedWorkoutPersistence');
-      const { createEmptyDatabase } = require('../../../.test-dist/data/seed');
+      const { adaptCompletedWorkoutSessionForAppDatabase } = require('../../../src/features/workout/workoutAppAdapter');
+      const { persistCompletedWorkoutSessionToDatabase } = require('../../../src/state/completedWorkoutPersistence');
+      const { createEmptyDatabase } = require('../../../src/data/seed');
       const ROW = 'tpl:push_a:secondary_row_1';
       let state = started();
       // A second lift, so the first finish has work in it.

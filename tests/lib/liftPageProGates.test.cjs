@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const {
   buildExerciseSheetHistory,
   gateExerciseSheetHistory,
-} = require('../../.test-dist/lib/exerciseSheetHistory.js');
-const { isLiftBestLocked, liftBestPerformedAt } = require('../../.test-dist/lib/liftBestGate.js');
-const { isRecordLocked, isSetLogLocked } = require('../../.test-dist/lib/historyWindow.js');
+} = require('../../src/lib/exerciseSheetHistory');
+const { isLiftBestLocked, liftBestPerformedAt } = require('../../src/lib/liftBestGate');
+const { isRecordLocked, isSetLogLocked } = require('../../src/lib/historyWindow');
 
 /*
  * The exercise sheet's History tab and the exercise page read the lift's whole

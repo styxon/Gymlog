@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { buildRecommendationReasonLines } = require('../../.test-dist/lib/recommendationExplanation.js');
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
+const { buildRecommendationReasonLines } = require('../../src/lib/recommendationExplanation');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { recommendPrograms } = require('../../src/lib/recommendationScoring');
 
 module.exports = [
   {

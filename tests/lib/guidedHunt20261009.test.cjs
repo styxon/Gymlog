@@ -8,7 +8,7 @@ const {
   getGuidedStepAnchor,
   findGuidedStepIndexByAnchor,
   resolveGuidedResumeIndex,
-} = require('../../.test-dist/lib/guidedPlayer.js');
+} = require('../../src/lib/guidedPlayer');
 
 function restPlan(restSeconds) {
   return buildGuidedSteps({

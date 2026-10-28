@@ -9,7 +9,7 @@ const {
   acceptBatch,
   isFinalRefusal,
   isValidEvent,
-} = require('../../.test-dist/lib/analytics.js');
+} = require('../../src/lib/analytics');
 
 const INSTALL = '12345678-1234-4123-8123-123456789abc';
 const ok = (name, props) => ({ name, at: '2026-08-25T10:00:00.000Z', ...(props ? { props } : {}) });

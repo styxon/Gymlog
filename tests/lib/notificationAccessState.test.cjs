@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveNotificationAccessState } = require('../../.test-dist/lib/notificationAccessState.js');
+const { resolveNotificationAccessState } = require('../../src/lib/notificationAccessState');
 
 /**
  * The permission and a channel's own importance are two separate switches

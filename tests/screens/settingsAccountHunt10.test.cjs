@@ -5,7 +5,7 @@ const path = require('node:path');
 const root = path.join(__dirname, '..', '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8').replace(/\r\n/g, '\n');
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
-const { t } = require(path.join(root, '.test-dist', 'lib', 'i18n.js'));
+const { t } = require(path.join(root, 'src', 'lib', 'i18n.js'));
 
 /** The onResetAllData handler's body, comments removed. */
 function resetHandler() {

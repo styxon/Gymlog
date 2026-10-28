@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
-const { toWorkingHistoryEntry, gatingSets } = require('../../.test-dist/lib/warmupSets.js');
-const { isProgressionReadySession, resolveProgressedLoadKg } = require('../../.test-dist/lib/progressionGate.js');
+const { workoutReducer, workoutInitialState } = require('../../src/features/workout/workoutState');
+const { toWorkingHistoryEntry, gatingSets } = require('../../src/lib/warmupSets');
+const { isProgressionReadySession, resolveProgressedLoadKg } = require('../../src/lib/progressionGate');
 
 /**
  * Automated progression, set by set (user, 2026-10-05, "D + A").

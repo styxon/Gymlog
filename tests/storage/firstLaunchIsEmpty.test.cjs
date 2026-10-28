@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { createEmptyDatabase, createSeedDatabase } = require('../../.test-dist/data/seed');
+const { createEmptyDatabase, createSeedDatabase } = require('../../src/data/seed');
 
 const databaseSource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'storage', 'database.ts'),

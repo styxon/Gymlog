@@ -6,10 +6,10 @@ const {
   STORE_PRO_ENTITLEMENT,
   purchaseRecordFromStore,
   samePurchaseRecord,
-} = require('../../.test-dist/lib/storePurchase.js');
-const { resolveProEntitlement } = require('../../.test-dist/lib/proEntitlement.js');
-const { normalizePurchaseRecord } = require('../../.test-dist/lib/purchaseRecord.js');
-const { shouldRefreshStoreOnForeground } = require('../../.test-dist/lib/storeRefreshPolicy.js');
+} = require('../../src/lib/storePurchase');
+const { resolveProEntitlement } = require('../../src/lib/proEntitlement');
+const { normalizePurchaseRecord } = require('../../src/lib/purchaseRecord');
+const { shouldRefreshStoreOnForeground } = require('../../src/lib/storeRefreshPolicy');
 
 /**
  * Where Pro ends is the store's word (`expirationDate`), kept in

@@ -1,13 +1,13 @@
 const assert = require('node:assert/strict');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const {
   buildPreviousTopSets,
   buildWhatMoved,
   resolveMovement,
-} = require('../../.test-dist/lib/sessionMovement.js');
+} = require('../../src/lib/sessionMovement');
 
 const log = (sessionId, name, weight, reps = [8]) => ({
   sessionId,

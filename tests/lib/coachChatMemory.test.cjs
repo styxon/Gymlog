@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { COACH_CHAT_MEMORY_MS, resumeCoachChat } = require('../../.test-dist/lib/coachChatMemory');
+const { COACH_CHAT_MEMORY_MS, resumeCoachChat } = require('../../src/lib/coachChatMemory');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 function memory(lastActiveAt, messages = [{ id: 'm1', fromCoach: false, text: 'Säädä ohjelmaani' }]) {

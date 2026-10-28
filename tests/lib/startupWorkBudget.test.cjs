@@ -2,14 +2,14 @@ const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 
-const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../.test-dist/lib/firstRunSetup.js');
-const { describeGoalCoverage, rankProgrammesForLift } = require('../../.test-dist/lib/goalProgramme.js');
-const { buildTailoringPreferences } = require('../../.test-dist/lib/tailoringFit.js');
-const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
-const { resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { DEFAULT_FIRST_RUN_SELECTION, resolveFirstRunRecommendationWithTailoring } = require('../../src/lib/firstRunSetup');
+const { describeGoalCoverage, rankProgrammesForLift } = require('../../src/lib/goalProgramme');
+const { buildTailoringPreferences } = require('../../src/lib/tailoringFit');
+const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
+const { resolveAvailableEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 /**
  * The domain work every cold start does before the native splash can hide,
@@ -67,14 +67,33 @@ function assertWithin(label, ms, budgetMs) {
 }
 
 /**
- * Loads every compiled module in a fresh Node and prints each one's own
+ * Loads every module of src/ in a fresh Node and prints each one's own
  * evaluation time — its top-level code, without the modules it requires — as
  * JSON lines, slowest first.
+ *
+ * The child runs with the TypeScript hook (scripts/registerTs.cjs). Every
+ * file is transpiled into the hook's memory cache BEFORE the timer is
+ * patched in, so the walk measures evaluation only: transpile time is
+ * excluded, and the child asserts that nothing was transpiled during it.
  */
+const REGISTER_TS = path.resolve(__dirname, '../../scripts/registerTs.cjs');
+
 const MODULE_SELF_TIMES = `
 const Module = require('module');
 const fs = require('fs');
 const path = require('path');
+const registerTs = require(process.argv[2]);
+const root = process.argv[1];
+const sources = [];
+(function collect(dir) {
+  for (const name of fs.readdirSync(dir)) {
+    const file = path.join(dir, name);
+    if (fs.statSync(file).isDirectory()) collect(file);
+    else if (/[.]tsx?$/.test(file) && !file.endsWith('.d.ts')) sources.push(file);
+  }
+})(root);
+registerTs.warm(sources);
+const transpiledBefore = registerTs.stats.transpiled;
 const compile = Module.prototype._compile;
 const stack = [];
 const self = new Map();
@@ -90,16 +109,18 @@ Module.prototype._compile = function (content, filename) {
     self.set(filename, Number(total - children) / 1e6);
   }
 };
-const root = process.argv[1];
 (function walk(dir) {
   for (const name of fs.readdirSync(dir)) {
     const file = path.join(dir, name);
     if (fs.statSync(file).isDirectory()) walk(file);
-    else if (file.endsWith('.js')) {
+    else if (file.endsWith('.ts') && !file.endsWith('.d.ts')) {
       try { require(file); } catch {}
     }
   }
 })(root);
+if (registerTs.stats.transpiled !== transpiledBefore) {
+  throw new Error('transpile time leaked into the timed section');
+}
 for (const [file, ms] of [...self].filter(([file]) => file.startsWith(root)).sort((a, b) => b[1] - a[1])) {
   console.log(JSON.stringify({ file: path.relative(root, file), ms }));
 }
@@ -122,12 +143,12 @@ module.exports = [
      */
     name: 'startup budget: no module does heavy work when it loads',
     run() {
-      const root = path.resolve(__dirname, '../../.test-dist');
+      const root = path.resolve(__dirname, '../../src');
       const fastest = new Map();
       for (let load = 0; load < 3; load += 1) {
         // A module that leaves a timer running at load would keep the child
         // alive; the timeout fails the suite instead of hanging it.
-        const result = spawnSync(process.execPath, ['-e', MODULE_SELF_TIMES, root], { encoding: 'utf8', timeout: 60_000 });
+        const result = spawnSync(process.execPath, ['-r', REGISTER_TS, '-e', MODULE_SELF_TIMES, root, REGISTER_TS], { encoding: 'utf8', timeout: 60_000 });
         assert.equal(result.status, 0, result.error ? `module load child: ${result.error.message}` : result.stderr);
         for (const { file, ms } of result.stdout.trim().split('\n').map((line) => JSON.parse(line))) {
           fastest.set(file, Math.min(fastest.get(file) ?? Infinity, ms));

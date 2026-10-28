@@ -6,8 +6,8 @@ const {
   resolveCollectionProgress,
   pickLibraryCollection,
   EXERCISE_COLLECTION_TABLES,
-} = require('../../.test-dist/lib/exerciseCollections.js');
-const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/exerciseCollections');
+const { createSeedExerciseLibrary } = require('../../src/data/seed');
 
 /**
  * A collection names other exercises, which is the shape that has produced
@@ -240,7 +240,7 @@ module.exports = [
       const {
         LEGACY_LIBRARY_ID_TARGETS,
         buildRetiredLibraryIdRemap,
-      } = require('../../.test-dist/lib/legacyLibraryIds.js');
+      } = require('../../src/lib/legacyLibraryIds');
       const library = createSeedExerciseLibrary();
 
       const legacy = library.filter((item) => item.id.startsWith('lib_'));
@@ -296,8 +296,8 @@ module.exports = [
     name: 'the course line names lifts a beginner knows, by the names the library prints',
     run() {
       const assert = require('node:assert/strict');
-      const { getExerciseCollection } = require('../../.test-dist/lib/exerciseCollections.js');
-      const { exerciseNameLabel } = require('../../.test-dist/lib/exerciseNameLabel.js');
+      const { getExerciseCollection } = require('../../src/lib/exerciseCollections');
+      const { exerciseNameLabel } = require('../../src/lib/exerciseNameLabel');
       // "Sarana" and "tuenta" told a beginner nothing (owner, 2026-10-13).
       for (const language of ['fi', 'en']) {
         const course = getExerciseCollection('six_lifts', language);

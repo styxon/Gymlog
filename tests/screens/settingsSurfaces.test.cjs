@@ -197,8 +197,8 @@ module.exports = [
   {
     name: 'unlock moment: the back key goes to Profile, not to the paywall behind it',
     run() {
-      const { backSkipsHistory, getBackRoute } = require('../../.test-dist/app/backRoute.js');
-      const { ROOT_ROUTES } = require('../../.test-dist/navigation/routes.js');
+      const { backSkipsHistory, getBackRoute } = require('../../src/app/backRoute');
+      const { ROOT_ROUTES } = require('../../src/navigation/routes');
       const unlock = { tab: 'profile', screen: 'premium_unlock', plan: 'yearly' };
       assert.deepEqual(getBackRoute(unlock, ROOT_ROUTES.workout), ROOT_ROUTES.profile);
       assert.equal(backSkipsHistory(unlock), true);

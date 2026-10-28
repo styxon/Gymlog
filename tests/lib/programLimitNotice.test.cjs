@@ -2,12 +2,12 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { programSlotsLineKey, resolveProgramSlots } = require('../../.test-dist/lib/programSlots.js');
+const { programSlotsLineKey, resolveProgramSlots } = require('../../src/lib/programSlots');
 const {
   ONBOARDING_PLAN_PREFIX,
   findReplaceableOnboardingTemplateId,
-} = require('../../.test-dist/lib/activeProgramSet.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
+} = require('../../src/lib/activeProgramSet');
+const { t } = require('../../src/lib/i18n');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const { functionBody } = require('../helpers/sourceSlices.cjs');
 

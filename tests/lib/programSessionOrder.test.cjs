@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { reorderProgramSessions } = require('../../.test-dist/lib/programSessionOrder.js');
+const { reorderProgramSessions } = require('../../src/lib/programSessionOrder');
 
 const days = () => [
   { id: 'a', orderIndex: 0, name: 'Upper (Heavy)' },

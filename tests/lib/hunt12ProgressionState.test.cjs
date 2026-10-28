@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { evaluateProgression, isProgressionReadySession } = require('../../.test-dist/lib/progressionGate.js');
-const lookup = require('../../.test-dist/lib/exerciseHistoryLookup.js');
+const { evaluateProgression, isProgressionReadySession } = require('../../src/lib/progressionGate');
+const lookup = require('../../src/lib/exerciseHistoryLookup');
 
 /**
  * Automatic progression, the pure half of the stored state (hunt 12, fixer F2):
@@ -98,8 +98,8 @@ module.exports = [
   {
     name: 'hunt12 A8-1: an impossible load scrubbed from an open session takes the gate badges on that set with it',
     run() {
-      const { scrubImpossibleSessionLoads } = require('../../.test-dist/lib/impossibleLoads.js');
-      const { buildLoggedSetPlan } = require('../../.test-dist/lib/loggedSetPlan.js');
+      const { scrubImpossibleSessionLoads } = require('../../src/lib/impossibleLoads');
+      const { buildLoggedSetPlan } = require('../../src/lib/loggedSetPlan');
       const set = (i, extra) => ({ setIndex: i, plannedRepsMin: 8, plannedRepsMax: 12, draftLoadText: '60', draftRepsText: '', plannedLoadKg: 60, status: 'pending', edited: false, heldForFatigue: true, ...extra });
       const session = {
         exercises: [{ slotId: 's', sets: [
@@ -147,8 +147,8 @@ module.exports = [
   {
     name: 'hunt12 A14-2/A2-1/A2-2 catalog: every interval or distance row is a fixed dose, and loaded carries are not',
     run() {
-      const { isFixedDoseExercise } = require('../../.test-dist/lib/intervalScheme.js');
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+      const { isFixedDoseExercise } = require('../../src/lib/intervalScheme');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
       const rows = WORKOUT_TEMPLATES_V1.flatMap((template) => template.sessions.flatMap((session) => session.exercises));
       const fixed = rows.filter((row) => /\(\s*\d+\s*s\s/i.test(row.exerciseName) || /\d+\s*m\b/i.test(row.exerciseName));
       assert.ok(fixed.length >= 10, `the catalog has its interval and distance rows (${fixed.length})`);
@@ -169,7 +169,7 @@ module.exports = [
   {
     name: 'hunt12 A14-2 advice: a fixed-dose row gets no next-session advice, a lift beside it still does',
     run() {
-      const { buildNextSessionAdvice } = require('../../.test-dist/lib/nextSessionAdvice.js');
+      const { buildNextSessionAdvice } = require('../../src/lib/nextSessionAdvice');
       const sessions = [];
       const logs = [];
       [0, 7].forEach((day, index) => {
@@ -197,7 +197,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const { lighterSessionPlannedSets } = require('../../.test-dist/lib/warmupSets.js');
+      const { lighterSessionPlannedSets } = require('../../src/lib/warmupSets');
       const set = (extra = {}) => ({ programmeSets: 3, ...extra });
       // Stamped 2 of a programme's 3: the lighter session's count.
       assert.deepEqual(lighterSessionPlannedSets([set({ plannedSets: 2 }), set({ plannedSets: 2 })]), { plannedSets: 2 });

@@ -4,8 +4,8 @@ const {
   isPlanComplete,
   resolveCompletionCard,
   countSessionsSince,
-} = require('../../.test-dist/lib/programCompletion.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programCompletion');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 function template(id, goalType, level, daysPerWeek) {
   return { id, name: id, goalType, level, daysPerWeek, splitType: 'upper_lower', sessions: [] };

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { planTrainedOnDay, resolveNextPlanEntryIndex } = require('../../.test-dist/lib/planRotation.js');
+const { planTrainedOnDay, resolveNextPlanEntryIndex } = require('../../src/lib/planRotation');
 
 const ENTRIES = [
   { workoutTemplateId: 'tpl', workoutTemplateSessionId: 's1' },

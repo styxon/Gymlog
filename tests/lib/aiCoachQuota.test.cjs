@@ -6,7 +6,7 @@ const {
   coachQuotaReset,
   resolveCoachQuota,
   recordCoachQuestion,
-} = require('../../.test-dist/lib/aiCoachQuota.js');
+} = require('../../src/lib/aiCoachQuota');
 
 // Local dates on purpose: the window is the reader's calendar month, not UTC's.
 const MID_JULY = new Date(2026, 6, 15, 18, 30);

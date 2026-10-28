@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { resolveWorkoutLoggerFallbackRoute } = require('../../.test-dist/lib/workoutLoggerNavigation.js');
-const { ROOT_ROUTES } = require('../../.test-dist/navigation/routes.js');
+const { resolveWorkoutLoggerFallbackRoute } = require('../../src/lib/workoutLoggerNavigation');
+const { ROOT_ROUTES } = require('../../src/navigation/routes');
 
 module.exports = [
   {

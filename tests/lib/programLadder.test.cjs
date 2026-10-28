@@ -6,7 +6,7 @@ const {
   partitionByReaderWeek,
   sortProgramLadder,
   shouldShowLevelBadge,
-} = require('../../.test-dist/lib/programLadder.js');
+} = require('../../src/lib/programLadder');
 
 /**
  * A family of programmes read as a ladder.
@@ -46,7 +46,7 @@ module.exports = [
 
       // Through the same helper History, Progress, the celebration screen and
       // the widget use, so a duration reads the same everywhere in the app.
-      const { formatDurationMinutes } = require('../../.test-dist/lib/format.js');
+      const { formatDurationMinutes } = require('../../src/lib/format');
       assert.ok(formatWeeklyLoad(4, 55, 'en').includes(formatDurationMinutes(220)));
       assert.ok(formatWeeklyLoad(4, 60, 'en').includes(formatDurationMinutes(240)));
     },
@@ -210,10 +210,10 @@ module.exports = [
      */
     name: 'ladder: chips and the fitting group both appear and hide across the catalog',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { getReadyProgramBlockWeeks } = require('../../.test-dist/lib/readyProgramDuration.js');
-      const { PROGRAM_CATEGORIES, filterByCategory } = require('../../.test-dist/lib/programCategories.js');
-      const { catalogLevelForSetup } = require('../../.test-dist/lib/goalProgramme.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { getReadyProgramBlockWeeks } = require('../../src/lib/readyProgramDuration');
+      const { PROGRAM_CATEGORIES, filterByCategory } = require('../../src/lib/programCategories');
+      const { catalogLevelForSetup } = require('../../src/lib/goalProgramme');
 
       let views = 0;
       let lengthOffered = 0;

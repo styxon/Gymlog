@@ -22,7 +22,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  * step the invariants below are looked at. Nothing here asserts a path the code
  * takes; it asserts what must hold whichever path it takes.
  *
- * What is real (compiled in .test-dist, or lifted from source and run as
+ * What is real (loaded from src/, or lifted from source and run as
  * written):
  *  - workoutReducer with every WorkoutAction it is sent, the catalog (57
  *    programmes) and the custom-template adapter, session materialisation with
@@ -99,7 +99,7 @@ const { createFakeAsyncStorage, loadAgainstFake } = require('../../storage/fakeA
  */
 
 const ROOT = path.join(__dirname, '..', '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const SRC = path.join(ROOT, 'src');
 const dist = (relative) => require(path.join(DIST, relative));
 
@@ -341,7 +341,13 @@ const FINISH_SAVES = (() => {
     if (specifier.includes('errorReporter')) {
       return { reportOperationFailed() {} };
     }
-    return specifier.startsWith('.') ? require(path.join(DIST, 'app', specifier)) : require(specifier);
+    if (specifier.startsWith('.')) {
+      const target = path.join(DIST, 'app', specifier);
+      // A .tsx here would be the real component, not something the test meant to run.
+      assert.ok(!require.resolve(target).endsWith('.tsx'), `finishSaves imports ${specifier}, a component the test does not stub`);
+      return require(target);
+    }
+    return require(specifier);
   };
   new Function('require', 'module', 'exports', js)(localRequire, module_, module_.exports);
   return module_.exports.createFinishSaves;

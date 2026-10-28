@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { getDrillLibraryName } = require('../../.test-dist/lib/drillMedia');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-const { getDefaultCooldown, getDefaultWarmup } = require('../../.test-dist/lib/homeSessionHero');
+const { getDrillLibraryName } = require('../../src/lib/drillMedia');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { getDefaultCooldown, getDefaultWarmup } = require('../../src/lib/homeSessionHero');
 
 const FOCUS_KINDS = ['general', 'push', 'pull', 'upper', 'lower'];
 

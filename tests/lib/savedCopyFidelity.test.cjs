@@ -9,19 +9,19 @@ const assert = require('node:assert/strict');
  *    weighted lifts, because the library spells them its own way.
  */
 
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { buildSavedOnboardingPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
-const { savedPrescription, savedRestSeconds } = require('../../.test-dist/lib/singleRepTarget.js');
-const { estimateSessionMinutes } = require('../../.test-dist/lib/sessionDuration.js');
-const { classifySessionFocus, getDefaultWarmup, getDefaultCooldown } = require('../../.test-dist/lib/homeSessionHero.js');
-const { estimateRoutineBlockSeconds } = require('../../.test-dist/lib/guidedPlayer.js');
-const { resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { isTimedTrackingMode } = require('../../.test-dist/features/workout/workoutTypes.js');
-const { normalizeDatabase } = require('../../.test-dist/storage/database.js');
-const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-const { EXTRA_EXERCISE_LIBRARY } = require('../../.test-dist/data/extraExerciseLibrary.js');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { buildSavedOnboardingPlan } = require('../../src/app/onboardingHandoff');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
+const { savedPrescription, savedRestSeconds } = require('../../src/lib/singleRepTarget');
+const { estimateSessionMinutes } = require('../../src/lib/sessionDuration');
+const { classifySessionFocus, getDefaultWarmup, getDefaultCooldown } = require('../../src/lib/homeSessionHero');
+const { estimateRoutineBlockSeconds } = require('../../src/lib/guidedPlayer');
+const { resolveAvailableEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { isTimedTrackingMode } = require('../../src/features/workout/workoutTypes');
+const { normalizeDatabase } = require('../../src/storage/database');
+const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+const { EXTRA_EXERCISE_LIBRARY } = require('../../src/data/extraExerciseLibrary');
 
 // The writer's rule for a row's rest (AppProvider calls savedRestSeconds). The
 // fallback is the rule it replaced, so a tree without the helper fails on the

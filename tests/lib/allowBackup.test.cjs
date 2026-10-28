@@ -56,7 +56,7 @@ module.exports = [
     name: 'allowBackup: on iOS the iPhone backup keeps the data, as the policy says',
     run() {
       assert.equal(appConfig.expo.ios.infoPlist.RCTAsyncStorageExcludeFromBackup, false);
-      const { buildLegalDocument, renderLegalDocumentMarkdown } = require('../../.test-dist/lib/legalDocuments.js');
+      const { buildLegalDocument, renderLegalDocumentMarkdown } = require('../../src/lib/legalDocuments');
       const policy = renderLegalDocumentMarkdown(buildLegalDocument('privacy', 'en', 'ios'));
       assert.match(policy, /Vinha’s data goes into that backup/);
     },

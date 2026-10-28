@@ -7,10 +7,10 @@ const {
   liveExerciseTracked,
   parseProgrammeBrief,
   resolveLiveProposal,
-} = require('../../.test-dist/lib/programmeBrief.js');
-const { buildAiCoachPlanSchema } = require('../../.test-dist/lib/aiCoachPlan.js');
-const { createSeedDatabase, createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
-const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../.test-dist/features/workout/customWorkoutAdapter.js');
+} = require('../../src/lib/programmeBrief');
+const { buildAiCoachPlanSchema } = require('../../src/lib/aiCoachPlan');
+const { createSeedDatabase, createSeedExerciseLibrary } = require('../../src/data/seed');
+const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require('../../src/features/workout/customWorkoutAdapter');
 
 /**
  * A programme the AI coach builds stores the plan's tracking.
@@ -126,8 +126,8 @@ module.exports = [
   {
     name: 'coach programme tracking: the live rule over the whole library — compound always, isolation unless a stretch or a hold, core and cardio never',
     run() {
-      const { exerciseTypeOf } = require('../../.test-dist/lib/exerciseClassification.js');
-      const { isHoldExerciseName } = require('../../.test-dist/lib/holdExercises.js');
+      const { exerciseTypeOf } = require('../../src/lib/exerciseClassification');
+      const { isHoldExerciseName } = require('../../src/lib/holdExercises');
       for (const item of library) {
         const expected =
           item.category === 'compound' ||

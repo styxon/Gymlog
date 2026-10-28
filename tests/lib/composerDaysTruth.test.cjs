@@ -1,23 +1,23 @@
 const assert = require('node:assert/strict');
 
-const { buildFocusEmphasisAdditions } = require('../../.test-dist/lib/focusEmphasis');
+const { buildFocusEmphasisAdditions } = require('../../src/lib/focusEmphasis');
 const {
   FOCUS_ACCESSORY_POOL,
   isSameCatalogMovement,
   pickPoolVariant,
-} = require('../../.test-dist/lib/catalogExercisePools');
-const { isExerciseAllowedWithEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter');
-const { buildComposedFallbackExercise, composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer');
-const { isRepsStretchName } = require('../../.test-dist/lib/holdExercises');
-const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionExerciseFilter');
+} = require('../../src/lib/catalogExercisePools');
+const { isExerciseAllowedWithEquipment } = require('../../src/lib/equipmentExerciseFilter');
+const { buildComposedFallbackExercise, composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { isRepsStretchName } = require('../../src/lib/holdExercises');
+const { exerciseHitsCautionArea } = require('../../src/lib/cautionExerciseFilter');
 const {
   DEFAULT_FIRST_RUN_SELECTION,
   resolveFirstRunRecommendationWithTailoring,
-} = require('../../.test-dist/lib/firstRunSetup');
-const { buildRecommendationPlanReadyPayload } = require('../../.test-dist/lib/recommendationProgramme');
-const { readyProgramWeek } = require('../../.test-dist/lib/programDetails');
-const { WORKOUT_TEMPLATES_V1: ALL_TEMPLATES } = require('../../.test-dist/features/workout/workoutCatalog');
-const { RECOMMENDATION_PROGRAMS } = require('../../.test-dist/lib/recommendationCatalog');
+} = require('../../src/lib/firstRunSetup');
+const { buildRecommendationPlanReadyPayload } = require('../../src/lib/recommendationProgramme');
+const { readyProgramWeek } = require('../../src/lib/programDetails');
+const { WORKOUT_TEMPLATES_V1: ALL_TEMPLATES } = require('../../src/features/workout/workoutCatalog');
+const { RECOMMENDATION_PROGRAMS } = require('../../src/lib/recommendationCatalog');
 
 // Every programme onboarding can recommend (a season programme is not one).
 const RECOMMENDABLE = new Set(RECOMMENDATION_PROGRAMS.map((entry) => entry.programId));
@@ -336,9 +336,9 @@ module.exports = [
   {
     name: 'composer days: no accessory pool entry passes a lower-back, knee or shoulder flag when its library row loads that area',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-      const { SUPPLEMENTAL_DAY_POOL } = require('../../.test-dist/lib/catalogExercisePools');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { SUPPLEMENTAL_DAY_POOL } = require('../../src/lib/catalogExercisePools');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
       const libraryNames = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
 
       // Library primary muscle -> the flag that has to read the name. A stretch
@@ -373,8 +373,8 @@ module.exports = [
   {
     name: 'composer days: a lower-back flag leaves no lower-back extension in a back-focus accessory, for any programme, gear or flag level',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY } = require('../../.test-dist/data/generatedExerciseLibrary');
-      const { findGuidedLibraryIndex } = require('../../.test-dist/lib/guidedPlayer');
+      const { GENERATED_EXERCISE_LIBRARY } = require('../../src/data/generatedExerciseLibrary');
+      const { findGuidedLibraryIndex } = require('../../src/lib/guidedPlayer');
       const libraryNames = GENERATED_EXERCISE_LIBRARY.map((item) => item.name);
       const loadsLowerBack = (name) => {
         const index = findGuidedLibraryIndex(name, libraryNames);

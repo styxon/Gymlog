@@ -2,13 +2,13 @@ const assert = require('node:assert/strict');
 
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
-const { setNumberLanguage } = require('../../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../../src/lib/format');
 setNumberLanguage('en');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState');
-const { buildAdaptedCompletedWorkoutExercises } = require('../../../.test-dist/features/workout/workoutAppAdapter');
-const { buildSessionMovement } = require('../../../.test-dist/app/workoutCompletionState');
-const { buildWhatMoved } = require('../../../.test-dist/lib/sessionMovement');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { buildAdaptedCompletedWorkoutExercises } = require('../../../src/features/workout/workoutAppAdapter');
+const { buildSessionMovement } = require('../../../src/app/workoutCompletionState');
+const { buildWhatMoved } = require('../../../src/lib/sessionMovement');
 
 /**
  * WHAT MOVED asks for one rep more only below the programme's ceiling (bug

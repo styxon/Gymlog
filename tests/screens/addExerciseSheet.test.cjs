@@ -178,7 +178,7 @@ module.exports = [
       for (const list of ['BODY_PART_FILTERS', 'EXERCISE_TYPE_FILTERS', 'EQUIPMENT_FILTERS']) {
         assert.match(browser, new RegExp(`Options = ${list};`), list);
       }
-      const browse = require('../../.test-dist/lib/exerciseBrowseFilter.js');
+      const browse = require('../../src/lib/exerciseBrowseFilter');
       for (const list of [browse.BODY_PART_FILTERS, browse.EXERCISE_TYPE_FILTERS, browse.EQUIPMENT_FILTERS]) {
         assert.equal(list[0], 'all');
       }

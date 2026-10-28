@@ -6,9 +6,9 @@ const {
   resolveHomeWidgetSessionTap,
   HOME_WIDGET_PAYLOAD_VERSION,
   HOME_WIDGET_MONTH_ROWS,
-} = require('../../.test-dist/lib/widgetPayload.js');
-const { WIDGET_LINK_PREFIX, parseWidgetDeepLink } = require('../../.test-dist/lib/widgetDeepLink.js');
-const { cycleSchedule, weekdaySchedule } = require('../../.test-dist/lib/trainingSchedule.js');
+} = require('../../src/lib/widgetPayload');
+const { WIDGET_LINK_PREFIX, parseWidgetDeepLink } = require('../../src/lib/widgetDeepLink');
+const { cycleSchedule, weekdaySchedule } = require('../../src/lib/trainingSchedule');
 
 // Local wall-clock, built the same way the payload builds it, so the suite
 // passes in any timezone.

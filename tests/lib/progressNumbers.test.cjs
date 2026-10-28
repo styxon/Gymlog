@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { resolvePreviousExercisePr } = require('../../.test-dist/lib/workoutCompletionSummary.js');
-const { topSetOf } = require('../../.test-dist/lib/trainingHistory.js');
+const { resolvePreviousExercisePr } = require('../../src/lib/workoutCompletionSummary');
+const { topSetOf } = require('../../src/lib/trainingHistory');
 
 /**
  * Progress audit, 2026-09-15: numbers the reader reads about their own

@@ -6,7 +6,7 @@ const {
   loadAgainstFake,
   CURSOR_WINDOW_BYTES,
 } = require('./fakeAsyncStorage.cjs');
-const { STORAGE_CHUNK_CHARS } = require('../../.test-dist/lib/storageChunks');
+const { STORAGE_CHUNK_CHARS } = require('../../src/lib/storageChunks');
 
 /**
  * The splitting reader and writer against a storage that refuses big rows.

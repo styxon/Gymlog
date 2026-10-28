@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 const path = require('node:path');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const { localizeSessionFocus, localizeSessionName } = require(path.join(DIST, 'lib', 'sessionNameLabel.js'));
 const { formatWorkoutDisplayLabel } = require(path.join(DIST, 'lib', 'displayLabel.js'));
 const { t } = require(path.join(DIST, 'lib', 'i18n.js'));

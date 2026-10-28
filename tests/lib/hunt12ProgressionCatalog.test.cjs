@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { progressionRuleLabel } = require('../../.test-dist/lib/progressionRuleLabel.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { progressionRuleLabel } = require('../../src/lib/progressionRuleLabel');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 /**
  * Programme text against the gate (progression hunt 12, A14, 2026-10-11).

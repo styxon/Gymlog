@@ -12,7 +12,7 @@ const path = require('node:path');
  * pending reminder on every cold start before the stored data arrived.
  */
 const ROOT = path.join(__dirname, '..', '..');
-const DIST = path.join(ROOT, '.test-dist');
+const DIST = path.join(ROOT, 'src');
 const { createHookRuntime, requireWithStubs } = require('../helpers/hookHarness.cjs');
 
 const RealDate = Date;

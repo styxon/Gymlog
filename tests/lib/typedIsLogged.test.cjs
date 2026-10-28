@@ -2,10 +2,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { isCardioDistanceTextSavable, parseCardioDistanceKm } = require('../../.test-dist/lib/cardio.js');
-const { isLoggableFreestyleSet } = require('../../.test-dist/lib/emptyWorkoutSession.js');
-const { parseHevyCsv } = require('../../.test-dist/lib/hevyImport.js');
-const { parseCsvProgram } = require('../../.test-dist/lib/csvProgramImport.js');
+const { isCardioDistanceTextSavable, parseCardioDistanceKm } = require('../../src/lib/cardio');
+const { isLoggableFreestyleSet } = require('../../src/lib/emptyWorkoutSession');
+const { parseHevyCsv } = require('../../src/lib/hevyImport');
+const { parseCsvProgram } = require('../../src/lib/csvProgramImport');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...segments) => fs.readFileSync(path.join(root, ...segments), 'utf8');
@@ -127,7 +127,7 @@ module.exports = [
       const screen = strip(read('src', 'screens', 'ProgramDayScreen.tsx'));
       assert.match(screen, /: Number\.isInteger\(seconds \/ 60\)\s*\? `\$\{seconds \/ 60\} min`\s*: `\$\{formatClock\(seconds\)\} min`;/);
       assert.doesNotMatch(screen, /\(seconds \/ 60\)\.toFixed\(1\)/);
-      const { formatClock } = require('../../.test-dist/lib/restSchedule.js');
+      const { formatClock } = require('../../src/lib/restSchedule');
       assert.equal(formatClock(135), '2:15');
     },
   },

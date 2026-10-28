@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createFakeAsyncStorage, loadAgainstFake } = require('./fakeAsyncStorage.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', 'src');
 const { WORKOUT_TEMPLATES_V1 } = require(path.join(DIST, 'features', 'workout', 'workoutCatalog.js'));
 const { adaptLegacyWorkoutTemplateToRuntimeTemplate } = require(path.join(DIST, 'features', 'workout', 'customWorkoutAdapter.js'));
 const { MINUTES_EXERCISE_NAME_LIST } = require(path.join(DIST, 'lib', 'minutesExercises.js'));

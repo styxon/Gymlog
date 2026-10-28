@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const DIST = '../../.test-dist/';
+const DIST = '../../src/';
 const { createSeedExerciseLibrary } = require(`${DIST}data/seed.js`);
 const { exerciseMatchesQuery } = require(`${DIST}lib/exerciseSearch.js`);
 const { listPickerExercises } = require(`${DIST}lib/exercisePicker.js`);

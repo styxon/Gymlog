@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+const { createEmptyDatabase } = require('../../src/data/seed');
 const {
   buildCardioStatsLine,
   getCardioEndedAt,
@@ -9,22 +9,22 @@ const {
   pauseCardioSession,
   resumeCardioSession,
   startCardioSession,
-} = require('../../.test-dist/lib/cardio.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
-const { getLastActivityTimestamp, getLastWorkoutTimestamp } = require('../../.test-dist/lib/completedSessions.js');
-const { addCardioMinutesByDay, getMonthTrainingTotals } = require('../../.test-dist/lib/dashboard.js');
+} = require('../../src/lib/cardio');
+const { setNumberLanguage } = require('../../src/lib/format');
+const { getLastActivityTimestamp, getLastWorkoutTimestamp } = require('../../src/lib/completedSessions');
+const { addCardioMinutesByDay, getMonthTrainingTotals } = require('../../src/lib/dashboard');
 const {
   buildAiCoachCardio,
   buildAiTrainingContext,
   normalizeAiCoachTrainingContext,
-} = require('../../.test-dist/lib/aiTrainingContext.js');
-const { buildAiCoachSystemContext } = require('../../.test-dist/lib/aiCoachSystemContext.js');
+} = require('../../src/lib/aiTrainingContext');
+const { buildAiCoachSystemContext } = require('../../src/lib/aiCoachSystemContext');
 const {
   CARDIO_LOG_CSV_HEADER,
   WORKOUT_LOG_CSV_HEADER,
   buildWorkoutLogCsv,
   summarizeWorkoutLog,
-} = require('../../.test-dist/lib/workoutLogCsvExport.js');
+} = require('../../src/lib/workoutLogCsvExport');
 const { createFakeAsyncStorage, loadAgainstFake } = require('../storage/fakeAsyncStorage.cjs');
 
 /**

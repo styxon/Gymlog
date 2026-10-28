@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
-const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
+const { weeklyTrainingStreak } = require('../../src/lib/trainingCalendar');
 
 function createSession(id, performedAt) {
   return {

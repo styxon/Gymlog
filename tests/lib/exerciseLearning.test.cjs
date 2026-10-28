@@ -5,7 +5,7 @@ const {
   normalizeLearnedExerciseIds,
   toggleTechniqueStatement,
   countRemainingStatements,
-} = require('../../.test-dist/lib/exerciseLearning.js');
+} = require('../../src/lib/exerciseLearning');
 
 /**
  * The four rules behind the technique check and "Mark as learned".

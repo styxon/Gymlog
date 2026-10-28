@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { buildSwapShortlist, movementHead } = require('../../.test-dist/lib/swapShortlist.js');
-const { buildSwapOptionsForSlot } = require('../../.test-dist/lib/tailoringFit.js');
+const { buildSwapShortlist, movementHead } = require('../../src/lib/swapShortlist');
+const { buildSwapOptionsForSlot } = require('../../src/lib/tailoringFit');
 
 // Line endings normalised: a Windows checkout is CRLF, and the App.tsx anchor
 // below spans a line break.
@@ -181,12 +181,12 @@ module.exports = [
      */
     name: 'swap search: a typed name reaches the whole library, best answer first',
     run() {
-      const { GENERATED_EXERCISE_LIBRARY: library } = require('../../.test-dist/data/generatedExerciseLibrary.js');
-      const { getPopularExerciseLibraryOrder } = require('../../.test-dist/lib/exerciseSuggestions.js');
+      const { GENERATED_EXERCISE_LIBRARY: library } = require('../../src/data/generatedExerciseLibrary');
+      const { getPopularExerciseLibraryOrder } = require('../../src/lib/exerciseSuggestions');
       const popularOrder = getPopularExerciseLibraryOrder(library);
 
       // Every swap sheet's library list since 2026-10-07 (lib/swapPickerLists).
-      const { buildSwapPickerLibrary } = require('../../.test-dist/lib/swapPickerLists.js');
+      const { buildSwapPickerLibrary } = require('../../src/lib/swapPickerLists');
       const search = (query, language, excludeNames = []) =>
         buildSwapPickerLibrary(library, {
           query,

@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { selectHomeCustomProgram } = require('../../.test-dist/lib/homeProgramSelection.js');
+const { selectHomeCustomProgram } = require('../../src/lib/homeProgramSelection');
 
 const customWorkouts = [
   { id: 'custom_latest', name: 'Upper Split', exerciseCount: 4, updatedAt: '2026-03-20T12:00:00.000Z' },

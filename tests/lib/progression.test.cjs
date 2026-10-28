@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { getLiftHistoryByName } = require('../../.test-dist/lib/progression.js');
+const { getLiftHistoryByName } = require('../../src/lib/progression');
 
 function at(year, month, day) {
   return new Date(year, month - 1, day, 12, 0, 0, 0).toISOString();

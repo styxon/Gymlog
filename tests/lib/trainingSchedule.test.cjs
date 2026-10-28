@@ -11,9 +11,9 @@ const {
   UNKNOWN_SCHEDULE,
   weekdaySchedule,
   withRestDays,
-} = require('../../.test-dist/lib/trainingSchedule.js');
-const { planWeekdayIndexes } = require('../../.test-dist/lib/programTrainingDays.js');
-const { planLabelsForProgramme } = require('../../.test-dist/lib/trainingWeekSync.js');
+} = require('../../src/lib/trainingSchedule');
+const { planWeekdayIndexes } = require('../../src/lib/programTrainingDays');
+const { planLabelsForProgramme } = require('../../src/lib/trainingWeekSync');
 
 /** Local wall-clock, the way the schedule reads dates. */
 function on(year, month, day) {
@@ -284,7 +284,7 @@ module.exports = [
     // cycle on today while the save kept the old anchor.
     name: 'cycle anchor: an unchanged pattern keeps its anchor, a changed one starts today',
     run() {
-      const { resolveCycleAnchor } = require('../../.test-dist/lib/trainingSchedule.js');
+      const { resolveCycleAnchor } = require('../../src/lib/trainingSchedule');
       const now = new Date(2026, 9, 4, 15, 30);
       const todayStart = new Date(2026, 9, 4).getTime();
       const old = { pattern: [true, true, false], anchorDayStart: new Date(2026, 8, 1).getTime() };
@@ -304,8 +304,8 @@ module.exports = [
       assert.match(read('src/app/renderAppContent.tsx'), /renderSetupEditor\(\{\s*leadTrainingCycle,/);
 
       // And the saved plan, end to end.
-      const { buildSavedOnboardingWorkoutPlan } = require('../../.test-dist/app/onboardingHandoff.js');
-      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { buildSavedOnboardingWorkoutPlan } = require('../../src/app/onboardingHandoff');
+      const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
       const kept = buildSavedOnboardingWorkoutPlan(
         { ...DEFAULT_FIRST_RUN_SELECTION, trainingCyclePattern: [true, true, false] },
         'wt_1',

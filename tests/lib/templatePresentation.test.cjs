@@ -3,8 +3,8 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const { getReadyTemplatePresentation, runningProgrammeTitle } = require('../../.test-dist/lib/templatePresentation.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { getReadyTemplatePresentation, runningProgrammeTitle } = require('../../src/lib/templatePresentation');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
 
 const ROOT = path.join(__dirname, '..', '..');
 const strip = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

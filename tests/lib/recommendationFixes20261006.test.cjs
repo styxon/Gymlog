@@ -2,21 +2,21 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { selectWaterfallDecision } = require('../../.test-dist/lib/recommendationWaterfall.js');
+const { recommendPrograms } = require('../../src/lib/recommendationScoring');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { selectWaterfallDecision } = require('../../src/lib/recommendationWaterfall');
 const {
   getRecommendationProgramDefinition,
   isRecoveryOnlyProgram,
   readerAskedForRecovery,
   RECOMMENDATION_PROGRAMS,
-} = require('../../.test-dist/lib/recommendationCatalog.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { applyCautionFlagsToExercises, CAUTION_TO_FOCUS_AREAS } = require('../../.test-dist/lib/cautionExerciseFilter.js');
-const { applyEquipmentToExercises } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
-const { exerciseHitsCautionArea } = require('../../.test-dist/lib/cautionAreaMatching.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
+} = require('../../src/lib/recommendationCatalog');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { applyCautionFlagsToExercises, CAUTION_TO_FOCUS_AREAS } = require('../../src/lib/cautionExerciseFilter');
+const { applyEquipmentToExercises } = require('../../src/lib/equipmentExerciseFilter');
+const { exerciseHitsCautionArea } = require('../../src/lib/cautionAreaMatching');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
 
 /**
  * The recommender findings of the 2026-10-05 evening hunt, each held as an
@@ -441,9 +441,9 @@ module.exports = [
     // line worked the week out from the catalog's hand-written 50.
     name: 'recommendation fixes 10-06: a programme page quotes one session length, the badge and the "why it fits" line alike',
     run() {
-      const { buildReadyProgramDetail, readyProgramSessionMinutes } = require('../../.test-dist/lib/programDetails.js');
-      const { readyTemplateCardMinutes } = require('../../.test-dist/lib/programmeMinutes.js');
-      const { buildFirstRunRecommendationReasons } = require('../../.test-dist/lib/firstRunSetup.js');
+      const { buildReadyProgramDetail, readyProgramSessionMinutes } = require('../../src/lib/programDetails');
+      const { readyTemplateCardMinutes } = require('../../src/lib/programmeMinutes');
+      const { buildFirstRunRecommendationReasons } = require('../../src/lib/firstRunSetup');
       const gymSelection = { ...DEFAULT_FIRST_RUN_SELECTION, ...gymCard(GYM_ALL), weeklyMinutes: null, availableDays: [] };
       const optionsFor = [{ availableEquipment: null }, { availableEquipment: [] }, { availableEquipment: [D, B, R] }];
       const disagreements = [];

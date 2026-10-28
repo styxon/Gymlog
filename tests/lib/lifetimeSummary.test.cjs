@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { getLifetimeTrainingSummary, getLifetimeWorkoutCount } = require('../../.test-dist/lib/lifetimeSummary.js');
+const { getLifetimeTrainingSummary, getLifetimeWorkoutCount } = require('../../src/lib/lifetimeSummary');
 
 // Completed log with a single comparable working set so the session counts as
 // "completed" under getCanonicalCompletedSessions.

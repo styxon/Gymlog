@@ -8,7 +8,7 @@ const {
   isTrendRangeLocked,
   resolveMeasureRange,
   resolveTrendRange,
-} = require('../../.test-dist/lib/historyWindow.js');
+} = require('../../src/lib/historyWindow');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

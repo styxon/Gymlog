@@ -3,7 +3,7 @@ const path = require('node:path');
 
 const { createClock, createHookRuntime, deferred, flush, requireWithStubs } = require('../../helpers/hookHarness.cjs');
 
-const DIST = path.join(__dirname, '..', '..', '..', '.test-dist');
+const DIST = path.join(__dirname, '..', '..', '..', 'src');
 const HOOK = path.join(DIST, 'features', 'account', 'useAccountBackup.js');
 const GOOGLE_AUTH = path.join(DIST, 'features', 'account', 'googleAuth.js');
 const lib = require(path.join(DIST, 'lib', 'accountBackup.js'));

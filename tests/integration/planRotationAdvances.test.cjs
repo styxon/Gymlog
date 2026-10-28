@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
 
-const { resolveNextPlanEntryIndex } = require('../../.test-dist/lib/planRotation.js');
-const { buildProgramWorkoutPlan, buildReadyProgramPlanId } = require('../../.test-dist/lib/programAdoption.js');
-const { buildReadySessionRuntimeTemplate } = require('../../.test-dist/lib/programDetails.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { resolveNextPlanEntryIndex } = require('../../src/lib/planRotation');
+const { buildProgramWorkoutPlan, buildReadyProgramPlanId } = require('../../src/lib/programAdoption');
+const { buildReadySessionRuntimeTemplate } = require('../../src/lib/programDetails');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
 
 /**
  * The reported bug: after Monday's workout, Home offers Monday's workout again.

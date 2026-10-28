@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const { computePostSessionInsight } = require('../../.test-dist/lib/postSessionInsight.js');
+const { computePostSessionInsight } = require('../../src/lib/postSessionInsight');
 
 function session(id, performedAt, totalVolumeKg = 1000, setsCompleted = 3) {
   return { id, performedAt, totalVolumeKg, setsCompleted };

@@ -4,8 +4,8 @@ const {
   WORKOUT_SUBSTITUTION_GROUPS,
   WORKOUT_TEMPLATES_V1,
   getWorkoutTemplateById,
-} = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
+} = require('../../src/features/workout/workoutCatalog');
+const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
 
 module.exports = [
   {

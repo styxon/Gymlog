@@ -1,7 +1,7 @@
 const assert = require('node:assert/strict');
 
-const { resolveMembershipEndView } = require('../../.test-dist/lib/membershipEndView');
-const { resolveMembershipEndPlan } = require('../../.test-dist/lib/proBenefits');
+const { resolveMembershipEndView } = require('../../src/lib/membershipEndView');
+const { resolveMembershipEndPlan } = require('../../src/lib/proBenefits');
 
 module.exports = [
   {

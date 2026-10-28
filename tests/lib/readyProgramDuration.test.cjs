@@ -5,12 +5,12 @@ const {
   getReadyProgramBlockWeeks,
   READY_PROGRAM_MIN_BLOCK_WEEKS,
   READY_PROGRAM_MAX_BLOCK_WEEKS,
-} = require('../../.test-dist/lib/readyProgramDuration');
-const { WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog');
-const { buildHomePlanProgress } = require('../../.test-dist/lib/homePlanProgress');
-const { countSessionsSince, resolveCompletionCard } = require('../../.test-dist/lib/programCompletion');
-const { programmeHistoryIds } = require('../../.test-dist/lib/programLineage');
-const { READY_PROGRAM_COLLECTIONS } = require('../../.test-dist/lib/readyProgramCollections');
+} = require('../../src/lib/readyProgramDuration');
+const { WORKOUT_TEMPLATES_V1, getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
+const { buildHomePlanProgress } = require('../../src/lib/homePlanProgress');
+const { countSessionsSince, resolveCompletionCard } = require('../../src/lib/programCompletion');
+const { programmeHistoryIds } = require('../../src/lib/programLineage');
+const { READY_PROGRAM_COLLECTIONS } = require('../../src/lib/readyProgramCollections');
 
 const days = (count) => Array.from({ length: count }, (_, index) => ({ id: `s${index}` }));
 

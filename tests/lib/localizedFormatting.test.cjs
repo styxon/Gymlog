@@ -2,8 +2,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { formatHomeStatValue } = require('../../.test-dist/lib/homeStatCards.js');
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { formatHomeStatValue } = require('../../src/lib/homeStatCards');
+const { setNumberLanguage } = require('../../src/lib/format');
 
 const root = path.join(__dirname, '..', '..');
 

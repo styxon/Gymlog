@@ -5,7 +5,7 @@ const {
   REST_OVER_REPEAT_WINDOW_MS,
   createRestActionBus,
   isRepeatedRestOverExtend,
-} = require('../../.test-dist/lib/restActionBus.js');
+} = require('../../src/lib/restActionBus');
 
 function clock(start = 1000000) {
   let t = start;

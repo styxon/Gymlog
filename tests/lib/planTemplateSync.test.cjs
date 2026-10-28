@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { syncPlanEntriesToTemplate } = require('../../.test-dist/lib/planTemplateSync.js');
+const { syncPlanEntriesToTemplate } = require('../../src/lib/planTemplateSync');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const ROOT = path.join(__dirname, '..', '..');

@@ -4,11 +4,11 @@ const {
   completeWorkoutSession,
   workoutReducer,
   workoutInitialState,
-} = require('../../../.test-dist/features/workout/workoutState.js');
+} = require('../../../src/features/workout/workoutState');
 const { createCompletedSession, createExercise, createSet } = require('../../helpers/workoutFixtures.cjs');
 const {
   buildExerciseLogDraftsFromWorkoutSession,
-} = require('../../../.test-dist/features/workout/workoutAppAdapter.js');
+} = require('../../../src/features/workout/workoutAppAdapter');
 
 module.exports = [
   {
@@ -654,7 +654,7 @@ module.exports = [
      */
     name: 'a flagged area holds an earned jump on the lifts that load it, and the advisory says so',
     run() {
-      const { t } = require('../../../.test-dist/lib/i18n.js');
+      const { t } = require('../../../src/lib/i18n');
       const SLOT = 'primary_squat_1';
       const DAY_MS = 86400000;
       const now = Date.parse('2026-08-24T09:00:00.000Z');
@@ -754,7 +754,7 @@ module.exports = [
   {
     name: 'the freestyle draft rides in the bundle: hydrated, saved, cleared',
     run() {
-      const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
+      const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
       const snapshot = {
         exercises: [{ localKey: 'a', name: 'Bench', libraryItemId: null, imageUrl: null, repMin: 6, repMax: 8, restSeconds: 90, trackedDefault: true, sets: [{ localKey: 's', kg: '60', reps: '8', done: true }], supersetGroup: null, displayName: 'Bench', initials: 'BE', metaLabel: '', isBarbell: false }],
         startedAtMs: 1,

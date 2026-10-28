@@ -48,11 +48,13 @@ function libImportsOf(file, text) {
     if (/^\.\/[^/]+$/.test(spec) && !file.startsWith('src/lib/')) continue;
     names.add(spec.split('/').pop().replace(/\.(js|ts)$/, ''));
   }
-  // The cost simulations require the compiled module by a joined path:
-  // `require(path.join(DIST, 'aiCoachCostModel.js'))`. The file name is
-  // still a string literal, and a script that names it reaches it.
+  // Scripts require a module by a joined path, with or without the suffix:
+  // `require(path.join(DIST, 'aiCoachCostModel.js'))` or
+  // `path.join(__dirname, '..', 'src', 'lib', 'legalDocuments')`. The file
+  // name is still a string literal, and a script that names it reaches it.
   if (file.startsWith('scripts/')) {
     for (const m of text.matchAll(/['"]([A-Za-z0-9_]+)\.js['"]/g)) names.add(m[1]);
+    for (const m of text.matchAll(/['"]lib['"],\s*['"]([A-Za-z0-9_]+)['"]/g)) names.add(m[1]);
   }
   return names;
 }

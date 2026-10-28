@@ -39,7 +39,7 @@ function loadMoment(runtime, platform = 'android') {
     },
   };
   const { useRestAlertPermissionMoment } = requireWithStubs(
-    path.join(__dirname, '..', '..', '.test-dist', 'hooks', 'useRestAlertPermissionMoment.js'),
+    path.join(__dirname, '..', '..', 'src', 'hooks', 'useRestAlertPermissionMoment.js'),
     {
       react: runtime.react,
       'react-native': { AppState, Platform: { OS: platform } },

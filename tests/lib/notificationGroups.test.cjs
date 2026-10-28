@@ -7,10 +7,10 @@ const {
   readNotificationGroup,
   rememberNotificationGroup,
   toggleNotificationGroup,
-} = require('../../.test-dist/lib/notificationGroups.js');
-const { buildFeedbackMailto } = require('../../.test-dist/lib/feedbackLink.js');
-const { t } = require('../../.test-dist/lib/i18n.js');
-const { DAILY_CAP_BY_LEVEL } = require('../../.test-dist/lib/notificationPlan.js');
+} = require('../../src/lib/notificationGroups');
+const { buildFeedbackMailto } = require('../../src/lib/feedbackLink');
+const { t } = require('../../src/lib/i18n');
+const { DAILY_CAP_BY_LEVEL } = require('../../src/lib/notificationPlan');
 
 /**
  * Ten switches in two flat lists became three groups (design "Vinha —
@@ -255,7 +255,7 @@ module.exports = [
       }
       // And the note under them: no rest alert is scheduled by the planner, so
       // none of them is counted against the cap.
-      const planned = require('../../.test-dist/lib/notificationPlan.js');
+      const planned = require('../../src/lib/notificationPlan');
       const categories = ['record', 'comeback', 'reminder', 'weekly', 'weighIn', 'measure'];
       assert.equal(typeof planned.buildNotificationPlan, 'function');
       const source = require('node:fs').readFileSync(

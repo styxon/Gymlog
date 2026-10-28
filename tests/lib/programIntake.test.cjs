@@ -11,9 +11,9 @@ const {
   programIntakeOptions,
   programIntakePresetValue,
   startProgramIntake,
-} = require('../../.test-dist/lib/programIntake.js');
-const { parseProgrammeBrief } = require('../../.test-dist/lib/programmeBrief.js');
-const { shouldOfferCatalogInstead } = require('../../.test-dist/lib/briefProgrammeMatch.js');
+} = require('../../src/lib/programIntake');
+const { parseProgrammeBrief } = require('../../src/lib/programmeBrief');
+const { shouldOfferCatalogInstead } = require('../../src/lib/briefProgrammeMatch');
 
 const BLANK_PREFERENCES = {
   aiPlannerGoal: null,
@@ -248,7 +248,7 @@ module.exports = [
       assert.ok(answerAt !== -1, 'the intake has its own crisis answer row');
       const answerRow = handler.slice(answerAt, handler.indexOf(String.fromCharCode(10), answerAt));
       assert.match(answerRow, /crisis: true/, 'the crisis answer row is marked crisis');
-      const { classifyCoachScope } = require('../../.test-dist/lib/aiCoachScope.js');
+      const { classifyCoachScope } = require('../../src/lib/aiCoachScope');
       assert.equal(classifyCoachScope('mietin itsemurhaa'), 'crisis');
     },
   },

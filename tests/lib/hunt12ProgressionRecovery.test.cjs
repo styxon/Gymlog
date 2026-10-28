@@ -4,7 +4,7 @@ const path = require('node:path');
 
 const { withHelsinkiClocks } = require('../helpers/clockChange.cjs');
 
-const L = '../../.test-dist/lib/';
+const L = '../../src/lib/';
 const { buildFatigueModel } = require(L + 'fatigueModel.js');
 const { progressionFatigueSignalAt } = require(L + 'progressionGate.js');
 const { buildRecoverySheet, isLightenDue, isLightenPending, resolveProgrammeStart } = require(L + 'recoverySheet.js');

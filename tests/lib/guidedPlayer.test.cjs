@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
  * wants points rather than commas has to say so — otherwise it passes or fails
  * on whichever suite ran before it.
  */
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const {
@@ -39,7 +39,7 @@ const {
   loggedSetsOf,
   GUIDED_POSITION_SECONDS,
   guidedBlockLastSlotId,
-} = require('../../.test-dist/lib/guidedPlayer.js');
+} = require('../../src/lib/guidedPlayer');
 
 const WARMUP = [
   { name: 'Rowing machine', seconds: 180 },
@@ -449,7 +449,7 @@ module.exports = [
       const { steps } = buildPlan();
       // No top-bar label any more: the phase word went and then the "1/6"
       // with it, leaving the clock alone (#bugs 2026-09-30).
-      assert.equal(require('../../.test-dist/lib/guidedPlayer.js').getGuidedPhaseLabel, undefined);
+      assert.equal(require('../../src/lib/guidedPlayer').getGuidedPhaseLabel, undefined);
       assert.equal(getGuidedStepLabel(steps[9]), 'Bench Press set 2');
       // Every label this module returns is localized, including the lift's
       // name. The resume chip used to offer "Front Squat sarja 3" for a screen
@@ -1248,7 +1248,7 @@ module.exports = [
      */
     name: 'rollPastLoggedWork: lands past logged sets and the lead-ins to them',
     run() {
-      const { rollPastLoggedWork } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { rollPastLoggedWork } = require('../../src/lib/guidedPlayer');
       const done = new Set(['a:0', 'b:0', 'a:1']);
       const isDone = (slotId, setIndex) => done.has(`${slotId}:${setIndex}`);
       // Round 1 done, A's round-2 set done, then B skipped: the plan is A alone.
@@ -1297,7 +1297,7 @@ module.exports = [
     // block's last lift, so the second landed before the first.
     name: 'resolveWalkAddAnchor: a later add goes after the last lift already added from the intro',
     run() {
-      const { resolveWalkAddAnchor } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { resolveWalkAddAnchor } = require('../../src/lib/guidedPlayer');
       const order = ['bench', 'curl', 'pushdown', 'row'];
       // First add: the block on screen.
       assert.equal(resolveWalkAddAnchor('bench', 'bench', undefined, order), 'bench');
@@ -1317,7 +1317,7 @@ module.exports = [
   {
     name: 'recordWalkAddedSlot: the inserted slot is kept against its intro, in order, and feeds the next anchor',
     run() {
-      const { recordWalkAddedSlot, resolveWalkAddAnchor } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { recordWalkAddedSlot, resolveWalkAddAnchor } = require('../../src/lib/guidedPlayer');
       const order = ['bench', 'curl', 'pushdown', 'row'];
       const start = { bench: { names: ['Curl'], slotIds: [] } };
       const one = recordWalkAddedSlot(start, 'bench', 'curl');
@@ -1336,7 +1336,7 @@ module.exports = [
   {
     name: 'dup13 D1-8: one set count for the live session — skipped lifts and skipped sets are out',
     run() {
-      const { liveSetProgress } = require('../../.test-dist/lib/guidedPlayer.js');
+      const { liveSetProgress } = require('../../src/lib/guidedPlayer');
       const sets = (...statuses) => statuses.map((status) => ({ status }));
       const exercises = [
         { status: 'completed', sets: sets('completed', 'completed', 'completed') },

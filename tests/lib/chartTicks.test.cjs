@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const { niceTicks } = require('../../.test-dist/lib/chartTicks.js');
+const { niceTicks } = require('../../src/lib/chartTicks');
 
 module.exports = [
   {

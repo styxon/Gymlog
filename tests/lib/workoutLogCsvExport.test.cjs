@@ -6,7 +6,7 @@ const {
   WORKOUT_LOG_CSV_HEADER,
   buildWorkoutLogCsv,
   summarizeWorkoutLog,
-} = require('../../.test-dist/lib/workoutLogCsvExport.js');
+} = require('../../src/lib/workoutLogCsvExport');
 
 function read(...segments) {
   return fs.readFileSync(path.join(__dirname, '..', '..', ...segments), 'utf8');

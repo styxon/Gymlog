@@ -4,10 +4,10 @@ const {
   blockWeekOfSession,
   blockWeekTally,
   buildHomePlanProgress,
-} = require('../../.test-dist/lib/homePlanProgress.js');
-const { countSessionsSince } = require('../../.test-dist/lib/programCompletion.js');
-const { getCanonicalCompletedSessions } = require('../../.test-dist/lib/completedSessions.js');
-const { createEmptyDatabase } = require('../../.test-dist/data/seed.js');
+} = require('../../src/lib/homePlanProgress');
+const { countSessionsSince } = require('../../src/lib/programCompletion');
+const { getCanonicalCompletedSessions } = require('../../src/lib/completedSessions');
+const { createEmptyDatabase } = require('../../src/data/seed');
 
 module.exports = [
   {

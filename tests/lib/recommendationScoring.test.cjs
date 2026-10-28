@@ -1,12 +1,12 @@
 const assert = require('node:assert/strict');
 
-const { getReadyProgramBlockWeeks } = require('../../.test-dist/lib/readyProgramDuration.js');
-const { getWorkoutTemplateById } = require('../../.test-dist/features/workout/workoutCatalog.js');
+const { getReadyProgramBlockWeeks } = require('../../src/lib/readyProgramDuration');
+const { getWorkoutTemplateById } = require('../../src/features/workout/workoutCatalog');
 
-const { getRecommendationProgramDefinition } = require('../../.test-dist/lib/recommendationCatalog.js');
+const { getRecommendationProgramDefinition } = require('../../src/lib/recommendationCatalog');
 
-const { buildRecommendationInput } = require('../../.test-dist/lib/recommendationInput.js');
-const { recommendPrograms } = require('../../.test-dist/lib/recommendationScoring.js');
+const { buildRecommendationInput } = require('../../src/lib/recommendationInput');
+const { recommendPrograms } = require('../../src/lib/recommendationScoring');
 
 module.exports = [
   {

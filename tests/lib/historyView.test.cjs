@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const {
   buildHistorySessionViewModel,
   filterHistorySessionViewModels,
-} = require('../../.test-dist/lib/historyView.js');
+} = require('../../src/lib/historyView');
 
 function createLog(overrides = {}) {
   return {

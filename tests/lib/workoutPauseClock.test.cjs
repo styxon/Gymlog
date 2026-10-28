@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { elapsedSecondsOf } = require('../../.test-dist/features/workout/workoutState.js');
+const { elapsedSecondsOf } = require('../../src/features/workout/workoutState');
 
 /**
  * "Eikö tauko tarkoita että tauko treenistä ja sitten jatkuu kun valmis" —

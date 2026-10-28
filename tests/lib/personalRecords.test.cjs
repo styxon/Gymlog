@@ -6,8 +6,8 @@ const {
   resolveRecord,
   resolveRecords,
   firstRecordDates,
-} = require('../../.test-dist/lib/personalRecords.js');
-const { weeklyTrainingStreak } = require('../../.test-dist/lib/trainingCalendar.js');
+} = require('../../src/lib/personalRecords');
+const { weeklyTrainingStreak } = require('../../src/lib/trainingCalendar');
 
 function at(year, month, day) {
   return new Date(year, month - 1, day, 12, 0, 0, 0);

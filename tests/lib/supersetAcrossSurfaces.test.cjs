@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { applyProgramSessionEdit } = require('../../.test-dist/lib/programSessionEdit');
-const { estimateSessionSeconds } = require('../../.test-dist/lib/sessionDuration');
-const { freestyleRestSecondsForTick } = require('../../.test-dist/lib/emptyWorkoutSession');
+const { applyProgramSessionEdit } = require('../../src/lib/programSessionEdit');
+const { estimateSessionSeconds } = require('../../src/lib/sessionDuration');
+const { freestyleRestSecondsForTick } = require('../../src/lib/emptyWorkoutSession');
 
 function idFactory() {
   let next = 0;

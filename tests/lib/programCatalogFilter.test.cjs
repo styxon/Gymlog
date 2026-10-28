@@ -5,7 +5,7 @@ const {
   filterProgramCatalog,
   isCatalogQueryEmpty,
   matchesCatalogQuery,
-} = require('../../.test-dist/lib/programCatalogFilter.js');
+} = require('../../src/lib/programCatalogFilter');
 
 /**
  * The catalog screen's three narrowings.
@@ -161,9 +161,9 @@ module.exports = [
      */
     name: 'catalog filter: every chip the screen offers finds something in the real catalog',
     run() {
-      const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-      const { PROGRAM_CATEGORIES, isInCategory } = require('../../.test-dist/lib/programCategories.js');
-      const { getReadyProgramContent } = require('../../.test-dist/lib/readyProgramContent.js');
+      const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+      const { PROGRAM_CATEGORIES, isInCategory } = require('../../src/lib/programCategories');
+      const { getReadyProgramContent } = require('../../src/lib/readyProgramContent');
 
       const rows = WORKOUT_TEMPLATES_V1.map((template) => ({
         id: template.id,

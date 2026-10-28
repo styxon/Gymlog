@@ -1,12 +1,12 @@
 const assert = require('node:assert/strict');
 
-const { setNumberLanguage } = require('../../.test-dist/lib/format.js');
+const { setNumberLanguage } = require('../../src/lib/format');
 setNumberLanguage('en');
 
 const {
   SHEET_HISTORY_SESSIONS,
   buildExerciseSheetHistory,
-} = require('../../.test-dist/lib/exerciseSheetHistory.js');
+} = require('../../src/lib/exerciseSheetHistory');
 
 const session = (performedAt, sets) => ({
   performedAt,

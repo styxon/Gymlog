@@ -8,7 +8,7 @@ const {
   supersetPositions,
   supersetRoundOrder,
   supersetSetTargets,
-} = require('../../.test-dist/lib/supersetGrouping');
+} = require('../../src/lib/supersetGrouping');
 
 /** Deterministic ids, so a test can say which group a row ended up in. */
 function idFactory(prefix = 'g') {

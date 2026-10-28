@@ -1,8 +1,8 @@
 const assert = require('node:assert/strict');
 
-const { workoutReducer, workoutInitialState } = require('../../../.test-dist/features/workout/workoutState.js');
-const { resolveGuidedSetTarget } = require('../../../.test-dist/lib/guidedPlayer.js');
-const { doseAfterSwap } = require('../../../.test-dist/lib/swapDose.js');
+const { workoutReducer, workoutInitialState } = require('../../../src/features/workout/workoutState');
+const { resolveGuidedSetTarget } = require('../../../src/lib/guidedPlayer');
+const { doseAfterSwap } = require('../../../src/lib/swapDose');
 
 /**
  * A set logged before a swap and taken back is done again as the lift the

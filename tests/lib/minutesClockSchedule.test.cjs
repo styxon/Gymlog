@@ -9,7 +9,7 @@ const {
   pauseStopwatch,
   stopwatchElapsedMs,
   STOPPED_STOPWATCH,
-} = require('../../.test-dist/lib/minutesExercises.js');
+} = require('../../src/lib/minutesExercises');
 
 /**
  * The guided player's set step used to re-render twice a second to keep a

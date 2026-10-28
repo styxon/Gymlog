@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { classifyCoachKeyProbe, coachKeyAlertText } = require('../../.test-dist/lib/coachKeyHealth.js');
+const { classifyCoachKeyProbe, coachKeyAlertText } = require('../../src/lib/coachKeyHealth');
 
 const root = path.join(__dirname, '..', '..');
 const read = (...parts) => fs.readFileSync(path.join(root, ...parts), 'utf8').replace(/\r\n/g, '\n');

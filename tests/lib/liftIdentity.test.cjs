@@ -1,11 +1,11 @@
 const assert = require('node:assert/strict');
 
-const { isSameLiftByGroup, liftGroupOf, bestForLift } = require('../../.test-dist/lib/liftIdentity.js');
-const { isSameLift, rankProgrammesForLift } = require('../../.test-dist/lib/goalProgramme.js');
-const { resolveGoalProgress } = require('../../.test-dist/lib/strengthGoals.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
-const { STRENGTH_GOAL_PRESETS } = require('../../.test-dist/lib/strengthGoalPresets.js');
-const library = require('../../.test-dist/data/generatedExerciseLibrary.js');
+const { isSameLiftByGroup, liftGroupOf, bestForLift } = require('../../src/lib/liftIdentity');
+const { isSameLift, rankProgrammesForLift } = require('../../src/lib/goalProgramme');
+const { resolveGoalProgress } = require('../../src/lib/strengthGoals');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
+const { STRENGTH_GOAL_PRESETS } = require('../../src/lib/strengthGoalPresets');
+const library = require('../../src/data/generatedExerciseLibrary');
 
 const libraryNames = library[Object.keys(library).find((key) => Array.isArray(library[key]))].map(
   (entry) => entry.name,
@@ -121,7 +121,7 @@ module.exports = [
 
       // Every name is one the library actually has, or the row opens nothing
       // and the log can never match it.
-      const { createSeedExerciseLibrary } = require('../../.test-dist/data/seed.js');
+      const { createSeedExerciseLibrary } = require('../../src/data/seed');
       const reachable = new Set(createSeedExerciseLibrary().map((item) => item.name));
       const invented = STRENGTH_GOAL_PRESETS.map((preset) => preset.exerciseName).filter(
         (name) => !reachable.has(name),

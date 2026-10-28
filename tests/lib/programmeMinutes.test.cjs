@@ -2,15 +2,15 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { prescriptionUnitFromName, estimateSessionMinutes } = require('../../.test-dist/lib/sessionDuration.js');
+const { prescriptionUnitFromName, estimateSessionMinutes } = require('../../src/lib/sessionDuration');
 const {
   estimateProgrammeSessionMinutes,
   estimateProgrammeSessionMinutesList,
   readyTemplateCardMinutes,
-} = require('../../.test-dist/lib/programmeMinutes.js');
-const { composeProgramWeekForSelection } = require('../../.test-dist/lib/programDayComposer.js');
-const { DEFAULT_FIRST_RUN_SELECTION } = require('../../.test-dist/lib/firstRunSetup.js');
-const { WORKOUT_TEMPLATES_V1 } = require('../../.test-dist/features/workout/workoutCatalog.js');
+} = require('../../src/lib/programmeMinutes');
+const { composeProgramWeekForSelection } = require('../../src/lib/programDayComposer');
+const { DEFAULT_FIRST_RUN_SELECTION } = require('../../src/lib/firstRunSetup');
+const { WORKOUT_TEMPLATES_V1 } = require('../../src/features/workout/workoutCatalog');
 
 const root = path.join(__dirname, '..', '..');
 
@@ -214,7 +214,7 @@ module.exports = [
         { trainingEnvironment: 'home', equipmentItems: ['dumbbells', 'bench'] },
         { trainingEnvironment: 'gym', equipmentItems: [] },
       ];
-      const { resolveAvailableEquipment } = require('../../.test-dist/lib/equipmentExerciseFilter.js');
+      const { resolveAvailableEquipment } = require('../../src/lib/equipmentExerciseFilter');
       let differing = 0;
       let checked = 0;
       for (const gear of gearSets) {

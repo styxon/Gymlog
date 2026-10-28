@@ -11,7 +11,7 @@ const path = require('node:path');
  * storage/fakeAsyncStorage.cjs's loadAgainstFake({ platform }) instead.
  */
 function installReactNativeStub(os = 'android') {
-  const file = require.resolve('react-native', { paths: [path.join(__dirname, '..', '..', '.test-dist', 'storage')] });
+  const file = require.resolve('react-native', { paths: [path.join(__dirname, '..', '..', 'src', 'storage')] });
   if (!require.cache[file]) {
     require.cache[file] = {
       id: file,

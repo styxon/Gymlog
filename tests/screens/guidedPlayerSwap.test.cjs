@@ -886,7 +886,7 @@ module.exports = [
   {
     name: 'exercise sheet modes: title, card action and note follow the mode in both languages',
     run() {
-      const { exerciseSheetCopy } = require('../../.test-dist/lib/exerciseSheetMode.js');
+      const { exerciseSheetCopy } = require('../../src/lib/exerciseSheetMode');
       const fiSwap = exerciseSheetCopy('swap', 'fi', 'Barbell Bench Press - Medium Grip');
       assert.match(fiSwap.title, /^Vaihda /);
       assert.ok(fiSwap.title.length > 'Vaihda '.length, 'the swap title names the lift');
