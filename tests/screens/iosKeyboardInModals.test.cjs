@@ -1,5 +1,4 @@
 const assert = require('node:assert/strict');
-const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -88,14 +87,14 @@ module.exports = [
       assert.deepEqual(unlifted, [], `a sheet with a text field and no keyboard lift: ${unlifted.join(', ')}`);
       // The four the hunt found, by name.
       for (const file of [
-        'src/screens/GuidedPlayerScreen.tsx',
+        'src/screens/GuidedPlayerEditor.tsx',
         'src/components/AddExerciseSheet.tsx',
         'src/components/MeasureRulerSheet.tsx',
         'src/screens/MyDataScreen.tsx',
       ]) {
         assert.match(read(file), IOS_LIFT, file);
       }
-      const editor = readGuidedPlayerSource();
+      const editor = read('src/screens/GuidedPlayerEditor.tsx');
       const loggedSetEditor = editor.slice(editor.indexOf('function LoggedSetEditor('), editor.indexOf('function LoggedSetEditorFields('));
       assert.match(loggedSetEditor, IOS_LIFT);
     },

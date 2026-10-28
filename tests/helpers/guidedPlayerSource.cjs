@@ -46,7 +46,6 @@ const ANCHORS_IN_ORIGINAL_ORDER = [
   'function GPSheet',
   'export function GuidedPlayerScreen(',
   'function GuidedPlayer(',
-  'function LoggedSetEditor',
   'function SetStepView(',
   'function FinishView',
   'const makeStyles',
@@ -66,6 +65,15 @@ function readGuidedPlayerSource() {
 }
 
 /**
+ * One module of the player on its own, for a guard whose window is exactly that
+ * module (the logged-set editor ran from its declaration to SetStepView, which
+ * is the end of GuidedPlayerEditor.tsx).
+ */
+function readGuidedPlayerModule(file) {
+  return readNormalised(file);
+}
+
+/**
  * A source file by repo-relative path, with the player's own path answering
  * with the whole player. For the guards that loop over a list of files.
  */
@@ -80,6 +88,7 @@ module.exports = {
   MAIN,
   SCREENS,
   ANCHORS_IN_ORIGINAL_ORDER,
+  readGuidedPlayerModule,
   readGuidedPlayerSource,
   readSourceFile,
 };
