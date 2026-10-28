@@ -204,7 +204,7 @@ module.exports = [
 
       const appProvider = read('src', 'state', 'AppProvider.tsx');
       const restoreDb = appProvider.slice(appProvider.indexOf('function restoreDatabaseFromBackup'), appProvider.indexOf('const value = useMemo<AppContextValue>'));
-      assert.match(restoreDb, /await commit\(next\);\s*return next;/);
+      assert.match(restoreDb, /await commit\(next, \{ replaceAll: true \}\);\s*return next;/);
 
       const hook = read('src', 'features', 'account', 'useAccountBackup.ts');
       const apply = hook.slice(hook.indexOf('const applyRestore = useCallback('), hook.indexOf('const askRestoreOrKeep = useCallback('));

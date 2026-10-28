@@ -59,6 +59,7 @@ import {
   WorkoutTemplateSessionRecord,
 } from '../types/models';
 import { normalizeSeenNoticeIds } from '../lib/serverNotice';
+import { clearHistoryMirror } from './historyMirror';
 import { storedProfileName } from '../lib/profileName';
 
 const CAUTION_AREAS = ['neck', 'shoulders', 'elbows', 'wrists', 'lower_back', 'hips', 'knees', 'ankles'] as const;
@@ -1743,6 +1744,14 @@ export async function resetDatabase(
   // theme and "setup done" laid over the reset data by the next load
   // (recheck of #221, 2026-09-28). Overwritten with the reset preferences
   // instead, in the same write, so there is no gap to land in.
+  // The history mirror, if there is one, empties before the reset write for
+  // the same reason as the rest: a kill after it leaves the old data standing
+  // and the reset to be asked for again, and the mirror is rebuilt from the
+  // blob. With no mirror there is nothing to wait for.
+  const mirrorCleared = clearHistoryMirror();
+  if (mirrorCleared) {
+    await mirrorCleared;
+  }
   await saveDatabase(empty, { withPreferences: true });
   return empty;
 }

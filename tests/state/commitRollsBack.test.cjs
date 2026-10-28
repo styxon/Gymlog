@@ -37,7 +37,7 @@ module.exports = [
   {
     name: 'commitRollsBack: a commit whose write fails puts the previous database back and rethrows',
     run() {
-      const commit = functionBody(read('src', 'state', 'AppProvider.tsx'), 'async function commit(nextDatabase: AppDatabase)');
+      const commit = functionBody(read('src', 'state', 'AppProvider.tsx'), 'async function commit(nextDatabase: AppDatabase,');
       const snapshot = commit.indexOf('const previous = databaseRef.current;');
       const swap = commit.indexOf('databaseRef.current = nextDatabase;');
       assert.ok(snapshot >= 0 && snapshot < swap, 'the previous database is not held before memory moves');
