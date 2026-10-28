@@ -76,7 +76,7 @@ import {
   buildOverviewColumns,
   buildProgressionPill,
 } from '../lib/sessionOverviewRows';
-import { formatLastOwnBlock, OwnBlockPhase, OwnBlockStats } from '../lib/ownBlockHistory';
+import { formatLastOwnBlock } from '../lib/ownBlockHistory';
 import { buildWarmupBrief } from '../lib/warmupBrief';
 import {
   HOLD_DIAL,
@@ -114,7 +114,6 @@ import { getExerciseTeaching } from '../lib/exerciseTeaching';
 import { buildExerciseSheetHistory, gateExerciseSheetHistory, LastTimeView } from '../lib/exerciseSheetHistory';
 import { programmeSetCount, toWorkingHistoryEntry, warmupOffer } from '../lib/warmupSets';
 import { formatLoadOrRange, summarizeHistoricalSetChips } from '../lib/guidedSetWeightSummary';
-import type { LiftHistoryEntry } from '../lib/progression';
 import type { LoggedSetRow } from '../lib/guidedPlayer';
 import {
   GUIDED_CARD_CHIP_CAP,
@@ -125,7 +124,6 @@ import {
   guidedTodayLoadKg,
   guidedWindow,
 } from '../lib/guidedSetRow';
-import type { PlateauDetection } from '../lib/proInsights';
 import { GuidedTourReport, useTourTarget } from '../features/tour/GuidedTourReport';
 import { useKeyboardOpen } from '../hooks/useKeyboardOpen';
 import { consumeBackForTour } from '../features/tour/tourBack';
@@ -153,15 +151,14 @@ import { subscribeRestActions, useRestEndAlert } from '../hooks/useRestEndAlert'
 import { useRestAlertPermissionMoment } from '../hooks/useRestAlertPermissionMoment';
 import { useModalHandoff } from '../hooks/useModalHandoff';
 import { RestAlertsSheet } from '../components/RestAlertsSheet';
-import { RestAlertAskOutcome } from '../lib/restAlertAnswer';
 import { prepareCueSounds, sound, type CueSound } from '../utils/sound';
 import { readableOn, useTheme, useThemeName, useThemedStyles } from '../theming';
+import type { GuidedPlayerScreenProps } from './GuidedPlayerTypes';
 import { GPD, SET_DOT_GAP, SET_DOT_SIZE, WALK_RUN_HEAD, WALK_RUN_ROW, makeStyles } from './GuidedPlayerStyles';
-import { AppLanguage, ExerciseLibraryItem, SetupCautionFlag, UnitPreference } from '../types/models';
+import { AppLanguage, ExerciseLibraryItem, UnitPreference } from '../types/models';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { useWorkoutContext } from '../features/workout/WorkoutProvider';
 import { elapsedSecondsOf } from '../features/workout/workoutState';
-import { TailoringPreferencesInput } from '../lib/tailoringFit';
 import { sessionLiftsMatchingQuery } from '../lib/swapShortlist';
 import { getExerciseTemplateDefaults, getPopularExerciseLibraryOrder, restSecondsForAddedLift } from '../lib/exerciseSuggestions';
 import { getCatalogTrackingMode } from '../lib/catalogExercisePools';
@@ -242,133 +239,6 @@ function stepSeconds(target: GuidedStep): number {
     default:
       return 0;
   }
-}
-
-interface GuidedWeekProgress {
-  weekLabel: string;
-  done: number;
-  target: number;
-}
-
-interface GuidedNextUp {
-  name: string;
-  weekday: string;
-}
-
-interface GuidedPlayerScreenProps {
-  unitPreference: UnitPreference;
-  language?: AppLanguage;
-  /** Equipment chips the user actually has; null when the setup never said. */
-  availableEquipment?: string[] | null;
-  /**
-   * The reader's caution flags: an `avoid` area keeps its drills out of the
-   * warm-up and cool-down, the way it keeps its lifts out of the week.
-   */
-  cautionFlags?: readonly SetupCautionFlag[];
-  /**
-   * The reader's own warm-up / cool-down picks.
-   *
-   * Without these the player coached the drill they replaced: the swap showed
-   * on Home and in the day editor and never reached the one screen that
-   * actually runs it (found in review, 2026-08-31).
-   */
-  routineDrillOverrides?: Record<string, string>;
-  /** Ranks the swap list the same way the list logger does. */
-  tailoringPreferences?: TailoringPreferencesInput | null;
-  exerciseLibrary: ExerciseLibraryItem[];
-  /**
-   * The lift's whole logged history by name — every programme and free
-   * session, the rows the records tab reads. The sheet's History tab read
-   * only this slot's entries, so a bench pressed on 28.8. in another
-   * programme was "no entries yet" here while the records tab showed its
-   * 7 × 60 (#bugs 2026-09-20). The slot's own rows are added where the lift
-   * does not already have them — never replaced: the lift's list is every
-   * log by name, and a session whose database write failed, or one this
-   * install only has in slot history, is still this slot's past.
-   */
-  liftHistory?: (exerciseName: string) => readonly LiftHistoryEntry[] | null;
-  /**
-   * Whether the reader has Pro. The exercise sheet's History tab is the
-   * per-lift set log and carries records, so Free reads it through the same
-   * locks as Progress; without the flag the sheet is the Free one.
-   */
-  proUnlocked?: boolean;
-  /** The lock's way out: the Pro page. */
-  onOpenPro?: () => void;
-  /**
-   * Automated progression is on and paid for (lib/proEntitlement
-   * resolveProgressionOptions). Today's weight on the set card gets its arrow
-   * only then (#bugs 2026-10-10).
-   */
-  progressionOn?: boolean;
-  /**
-   * The plateau reminder for the lift being walked to, or null when it is
-   * not currently stalled. Same detection Home's card shows (lib/proInsights
-   * findPlateauDetection) — shown once here, on the beat where the lift is
-   * introduced, so the finding survives dismissing Home's card without a
-   * second rule to keep in sync (user 2026-09-29, "muistutus kun
-   * seuraavalla kerralla on sumo").
-   */
-  plateauNotice?: (exerciseName: string) => PlateauDetection | null;
-  soundCuesEnabled: boolean;
-  /** Keep the display on for the whole guided session. */
-  keepScreenAwake?: boolean;
-  /** The reader's default rest, for a lift added mid-session with no rest to inherit. */
-  defaultRestSeconds?: number;
-  onToggleSoundCues: (next: boolean) => void;
-  entryEyebrow: string;
-  /**
-   * Every finished session, so the overview can find the last run of this same
-   * day. Which one that is depends on the live session's template ids, which
-   * this screen holds and the caller does not.
-   */
-  /** How the reader's own warm-ups have gone — see lib/ownBlockHistory.ts. */
-  ownBlockStats?: OwnBlockStats;
-  /** One finished self-run block, for the "last time you took" line. */
-  onRecordOwnBlock?: (phase: OwnBlockPhase, seconds: number) => void;
-  /** The Learn section's own two facts, so the sheet can show and change them. */
-  learnedExerciseIds?: string[];
-  techniqueChecks?: Record<string, number[]>;
-  onToggleTechniqueStatement?: (libraryItemId: string, index: number) => void;
-  onToggleExerciseLearned?: (libraryItemId: string) => void;
-  weekProgress: GuidedWeekProgress | null;
-  nextUp: GuidedNextUp | null;
-  onLeave: () => void;
-  onEndSession: () => void;
-  onFinishSession: () => void;
-  isSavingWorkout: boolean;
-  /**
-   * The finish's save was refused. The finish step says so and offers the
-   * save again; it used to be an empty screen with the bar hidden and a toast
-   * that was gone in three seconds.
-   */
-  saveFailed?: boolean;
-  /** Rest & alerts settings (design: Background Timer). */
-  restAlerts?: { alerts: boolean; warning: boolean; ongoing: boolean; asked: boolean };
-  /** The first-rest permission sheet was answered — see restAlertsAnswered. */
-  onRestAlertsAnswered?: (outcome: RestAlertAskOutcome) => void;
-  /** The rest banner's "Turn on": the settings page that fixes the silence. */
-  onOpenSystemSettings?: () => void;
-  /**
-   * The reader asked to CONTINUE, not to open the session.
-   *
-   * Set by the paths whose own button already said "Resume workout" — Home's
-   * hero, the lock-screen card. Opening the overview after that is the app
-   * asking a question the reader has already answered.
-   */
-  autoResume?: boolean;
-  /** The first-run tour's target registry: the set and rest screens register what the tour rings. */
-  tourTargets?: TourTargetRegistry;
-  /** Where the player reports its plain set / rest to the shell, for the workout tour. */
-  onTourStep?: (step: WorkoutTourStep | null) => void;
-  /**
-   * A workout tour is up over the player. The step clock holds for it, so a
-   * rest cannot run out under the tour that is explaining it (#bugs
-   * 2026-10-17, "lepo ajastin ei voi kulua kun on opastus käynnissä").
-   */
-  tourRunning?: boolean;
-  /** What the tour's current beat is about (FirstRunTour onBeatChange). */
-  tourFocus?: TourTargetId | null;
 }
 
 /** The heaviest load in a session's sets, or 0 when there is none to show. */
