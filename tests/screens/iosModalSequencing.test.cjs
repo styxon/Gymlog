@@ -90,9 +90,9 @@ const LEDGER = {
   'src/components/sheetKit.tsx': [{ in: 'KitSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/screens/CardioScreen.tsx': [{ in: 'CardioSheet', closes: 'unmount', sequencing: 'opened-by-touch', why: 'The end sheet needs a running cardio session (player mode, from the exit button or Android\'s back key) and the conflict sheet is opened from the activity list, which is shown only without one. Choosing in either closes it and starts a different mode, which has no modal.' }],
   'src/screens/GuidedPlayerScreen.tsx': [
-    { in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' },
     { in: 'LoggedSetEditor', closes: 'unmount', sequencing: 'opened-after-handoff' },
   ],
+  'src/screens/GuidedPlayerSheet.tsx': [{ in: 'GPSheet', closes: 'visible', sequencing: 'reports-dismiss' }],
   'src/screens/HomeScreen.tsx': [{ in: 'HomeScreen', closes: 'visible', sequencing: 'deferred-open' }],
   'src/screens/MyDataScreen.tsx': [{ in: 'MyDataScreen', closes: 'visible', sequencing: 'opened-by-touch', why: 'The screen\'s only modal. A field row opens the editor, and Save or Cancel closes it.' }],
   'src/screens/OnboardingScreen.tsx': [{ in: 'OnboardingScreen', closes: 'visible', sequencing: 'never-opened' }],
