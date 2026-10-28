@@ -224,4 +224,48 @@ module.exports = [
       }
     },
   },
+  {
+    /*
+     * The SQLite mirror's modules are part of the app bundle (so every one is
+     * evaluated before the first render), but none may open a database or load
+     * a SQL engine when it is evaluated: the engine is opened by start(), after
+     * the first render, and the native module is required inside the driver's
+     * open() and nowhere else.
+     */
+    name: 'startup budget: loading the SQLite mirror modules opens no database and loads no SQL engine',
+    run() {
+      const nodeFs = require('node:fs');
+      const Module = require('node:module');
+      const dir = path.resolve(__dirname, '../../src/storage/sqlite');
+      const files = nodeFs.readdirSync(dir).filter((name) => name.endsWith('.ts'));
+      assert.ok(files.length >= 6, 'the mirror modules are where this expects them');
+
+      // 1. Nothing at the top of a file imports the native module or calls open().
+      for (const name of files) {
+        const text = nodeFs.readFileSync(path.join(dir, name), 'utf8');
+        assert.doesNotMatch(text, /^import(?!\s+type)[^\n]*['"]expo-sqlite['"]/m, `${name} imports expo-sqlite at the top`);
+        assert.doesNotMatch(text, /^(?:const|let|var)\s[^\n]*(?:require\(['"]expo-sqlite|\.open\(|openDatabase)/m, `${name} opens a database at the top`);
+      }
+
+      // 2. Evaluating them requests no SQL engine.
+      const asked = [];
+      const load = Module._load;
+      Module._load = function (request, ...rest) {
+        if (request === 'expo-sqlite' || request === 'node:sqlite' || request === 'sqlite') {
+          asked.push(request);
+        }
+        return load.call(this, request, ...rest);
+      };
+      try {
+        for (const name of files) {
+          const file = path.join(dir, name);
+          delete require.cache[file];
+          require(file);
+        }
+      } finally {
+        Module._load = load;
+      }
+      assert.deepEqual(asked, []);
+    },
+  },
 ];

@@ -222,6 +222,13 @@ module.exports = [
           '@vinha/database/corrupt',
           '@vinha/database/v1',
           '@vinha/preferences/v1',
+          // The crash guard of the SQLite history mirror: a few counters and
+          // flags (launches that died opening it, rebuilds that failed), no
+          // data of the reader's, so the policy has no line for it. The mirror
+          // is a copy of the training log already declared above; whether the
+          // policy and the store listings need a sentence about that copy is
+          // decided with the release that switches it on (the plan's PR 3).
+          '@vinha/sqlite/guard/v1',
           // The workout in progress, put aside from the crash screen when the
           // reader asks (2026-10-03); the same bookkeeping line names it.
           '@vinha/workout/aside',
