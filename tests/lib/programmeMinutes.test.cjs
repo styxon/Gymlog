@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readSourceFile } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -198,7 +199,7 @@ module.exports = [
       // Home, the player and the programme page hand the estimator the name,
       // or a 500 m row is 500 repetitions there again.
       for (const file of ['src/app/useHomeActivePlan.ts', 'src/screens/GuidedPlayerScreen.tsx', 'src/screens/ProgramDetailScreen.tsx']) {
-        assert.match(read(file), /\n\s+name: exercise\.(name|exerciseName),/, file);
+        assert.match(readSourceFile(file), /\n\s+name: exercise\.(name|exerciseName),/, file);
       }
     },
   },

@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const path = require('node:path');
 
 const root = path.join(__dirname, '..', '..');
@@ -65,7 +66,7 @@ module.exports = [
     name: 'iOS b5: typing a dial leaves only the lift name above the dials',
     run() {
       const assert = require('node:assert/strict');
-      const source = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const source = readGuidedPlayerSource();
       assert.match(source, /const typingKeys = dial !== null && keyboard\.open;/);
       // The card and the set row are hidden, not unmounted (the tour measures them).
       assert.match(source, /style=\{\[styles\.setTopScroll, typingKeys && styles\.hidden\]\}/);

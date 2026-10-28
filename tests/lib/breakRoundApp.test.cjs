@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -28,7 +29,7 @@ module.exports = [
       const { normalizeDatabase } = loadAgainstFake(fake, (requireDist) => requireDist('storage/database.js'));
       const loaded = normalizeDatabase({ preferences: { barChoiceByExercise: { 'sumo deadlift': 20 } } });
       assert.equal('barChoiceByExercise' in loaded.preferences, false);
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.doesNotMatch(player, /barChoice|switchBar|guided\.bar\./);
       assert.match(player, /const \[kg, setKg\] = useState\(target\?\.loadKg \?\? 0\);/, 'the dial opens on the target alone');
     },

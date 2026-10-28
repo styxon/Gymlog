@@ -1,11 +1,9 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const playerSource = fs.readFileSync(
-  path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'),
-  'utf8',
-);
+const playerSource = readGuidedPlayerSource();
 
 /**
  * Each set's opening weight is deliberately carried from the SAME set index

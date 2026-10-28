@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../../helpers/guidedPlayerSource.cjs');
 
 require('../../helpers/reactNativeStub.cjs').installReactNativeStub();
 
@@ -179,8 +180,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const screen = fs
-        .readFileSync(path.join(__dirname, '..', '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
+      const screen = readGuidedPlayerSource()
         .replace(/\r\n/g, '\n');
       const view = screen.slice(screen.indexOf('function SetStepView('), screen.indexOf('const makeStyles'));
       // Offered: first set, not yet logged, a lift with a load.

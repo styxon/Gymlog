@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -62,7 +63,7 @@ module.exports = [
   {
     name: 'duotone: the player asks for linear light on iOS and leaves Android\'s verified matrix alone',
     run() {
-      const player = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       assert.match(player, /const ramp = DUOTONE_RAMPS\[themeName\];/);
       assert.match(player, /values=\{duotoneMatrix\(ramp\.shadow, ramp\.light, Platform\.OS === 'ios' \? 'linear' : 'srgb'\)\}/);
       assert.doesNotMatch(player, /function duotoneMatrix|const LUMA/);

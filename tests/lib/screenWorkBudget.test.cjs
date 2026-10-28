@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -182,7 +183,7 @@ module.exports = [
       });
       assert.ok(builds <= 2, `${builds} formatters built for 400 sessions`);
       assert.ok(built.rows.length >= 8);
-      const player = source('src/screens/GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const memo = between(player, '  const sheetHistory = useMemo(() => {', '  /* ── rest screen');
       assert.match(memo, /if \(!setPanelsOpen\) \{\s*return gateExerciseSheetHistory\(buildExerciseSheetHistory\(\[\], null, language\), proUnlocked\);/, 'a closed sheet builds nothing');
       assert.match(memo, /\}, \[[^\]]*\bsetPanelsOpen\b[^\]]*\]\);/, 'the memo must be keyed on the sheet being open');

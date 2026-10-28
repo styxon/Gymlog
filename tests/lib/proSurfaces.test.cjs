@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -15,7 +16,7 @@ const premiumSource = read('src', 'screens', 'PremiumScreen.tsx');
 const homeSource = read('src', 'screens', 'HomeScreen.tsx');
 const i18nSource = read('src', 'lib', 'i18n.ts');
 const unlockSource = read('src', 'screens', 'PremiumUnlockScreen.tsx');
-const guidedSource = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+const guidedSource = readGuidedPlayerSource();
 
 /**
  * The Pro/Free audit (2026-07-28) found three ways the paid tier lied: a promo

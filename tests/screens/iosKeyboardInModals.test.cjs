@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -94,7 +95,7 @@ module.exports = [
       ]) {
         assert.match(read(file), IOS_LIFT, file);
       }
-      const editor = read('src/screens/GuidedPlayerScreen.tsx');
+      const editor = readGuidedPlayerSource();
       const loggedSetEditor = editor.slice(editor.indexOf('function LoggedSetEditor('), editor.indexOf('function LoggedSetEditorFields('));
       assert.match(loggedSetEditor, IOS_LIFT);
     },

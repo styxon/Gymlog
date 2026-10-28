@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { resolveGuidedSetPlan, resolveGuidedSetTarget } = require('../../src/lib/guidedPlayer');
 
@@ -64,7 +65,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const player = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       assert.match(player, /exercise && !minutesMode\s*\?\s*resolveGuidedSetPlan\(liftSets, step\.setIndex, exercise\.trackingMode, exercise\.swappedAfterSetIndex, exercise\)/);
       assert.match(player, /t\(language, 'guided\.card\.today'\)/);
       const { t } = require('../../src/lib/i18n');

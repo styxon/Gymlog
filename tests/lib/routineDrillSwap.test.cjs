@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const {
   getDefaultCooldown,
@@ -129,7 +130,7 @@ module.exports = [
         // (2026-09-30) moved VinhaApp's hooks into: a block built in a hook
         // without the picks is the same bug.
         ['App.tsx or src/app', readAppWiring()],
-        read('src', 'screens', 'GuidedPlayerScreen.tsx'),
+        ['src/screens/GuidedPlayerScreen.tsx', readGuidedPlayerSource()],
         read('src', 'screens', 'HomeScreen.tsx'),
         read('src', 'screens', 'ProgramDayScreen.tsx'),
       ];

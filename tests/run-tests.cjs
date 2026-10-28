@@ -370,6 +370,7 @@ const suites = [
   ...require('./screens/keyboardSingleLift.test.cjs'),
   ...require('./screens/keyboardOpenHook.test.cjs'),
   ...require('./screens/setScreenKeyboardLayout.test.cjs'),
+  ...require('./screens/guidedPlayerSource.test.cjs'),
   ...require('./screens/workoutSaveLock.test.cjs'),
   ...require('./lib/historyDelete.test.cjs'),
   ...require('./screens/guidedPlayerSwap.test.cjs'),

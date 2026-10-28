@@ -1,10 +1,11 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const read = (...parts) => fs.readFileSync(path.join(__dirname, '..', '..', ...parts), 'utf8');
 const empty = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
-const guided = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+const guided = readGuidedPlayerSource();
 const tab = read('src', 'app', 'renderWorkoutTab.tsx');
 const i18n = read('src', 'lib', 'i18n.ts');
 const strip = (source) => source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');

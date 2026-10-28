@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -55,7 +56,7 @@ module.exports = [
       assert.equal(t('fi', 'coachChat.open.loggedOne'), '1 treeni kirjattu tällä viikolla. Kysy siitä mitä vain.');
       assert.equal(t('en', 'coachPreview.lastSession.setsOne'), '1 set logged');
       for (const file of [['src', 'app', 'useRecentSessions.ts'], ['src', 'lib', 'guidedPlayer.ts'], ['src', 'screens', 'GuidedPlayerScreen.tsx'], ['src', 'components', 'EmphasisSheet.tsx']]) {
-        assert.match(read(...file), /setCountLabel\(/, file.join('/'));
+        assert.match(file[2] === 'GuidedPlayerScreen.tsx' ? readGuidedPlayerSource() : read(...file), /setCountLabel\(/, file.join('/'));
       }
       assert.match(read('src', 'lib', 'coachChat.ts'), /sessionsThisWeek === 1\s*\? t\(language, 'coachChat\.open\.loggedOne'\)/);
       assert.match(read('src', 'lib', 'aiCoachPreview.ts'), /setsCompleted === 1\s*\? t\(language, 'coachPreview\.lastSession\.setsOne'\)/);

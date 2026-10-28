@@ -1,9 +1,9 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const player = fs
-  .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
+const player = readGuidedPlayerSource()
   .replace(/\r\n/g, '\n');
 
 function style(name) {

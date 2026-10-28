@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -24,7 +25,7 @@ module.exports = [
   {
     name: 'guided player: a layer over the whole screen takes every touch while Finish saves, drawn last so nothing sits above it',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       const overlay = '{isSavingWorkout ? <View style={StyleSheet.absoluteFill} onStartShouldSetResponder={() => true} /> : null}';
       assert.equal(player.split(overlay).length - 1, 1, 'one touch-absorbing layer, keyed on isSavingWorkout');
       const at = player.indexOf(overlay);
@@ -38,7 +39,7 @@ module.exports = [
   {
     name: 'guided player: the hardware back does nothing while Finish saves, rather than opening the exit sheet and its discard',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.match(
         player,
         /BackHandler\.addEventListener\('hardwareBackPress', \(\) => \{(?:\s*\/\/[^\n]*)*\s*if \(isSavingWorkout\) \{\s*return true;\s*\}/,

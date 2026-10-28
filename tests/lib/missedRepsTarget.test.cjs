@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { resolveMissedRepsTarget } = require('../../src/lib/progressionGate');
 const { workoutReducer } = require('../../src/features/workout/workoutState');
@@ -148,7 +149,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const player = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8');
+      const player = readGuidedPlayerSource();
       // One number for one set across the player (review, 2026-09-28).
       // Since hunt 12 the decision is lib/guidedPlayer's (planRepsBounds,
       // resolveGuidedWalkPlan), tested there; the screen reads it.

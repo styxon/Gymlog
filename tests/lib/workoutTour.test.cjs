@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -407,7 +408,7 @@ module.exports = [
     run() {
       // The rest screen's buttons are -15s and +15s (not +60s: that is the
       // lock-screen alert) and Skip rest; the copy must say the same labels.
-      const player = read('src/screens/GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.match(player, /label="−15s"/);
       assert.match(player, /label="\+15s"/);
       const rest = copyOf('tour.workout.rest');

@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const {
   PENDING_REST_ACTION_TTL_MS,
@@ -140,7 +141,7 @@ module.exports = [
       assert.ok(timeoutAt > 0);
       assert.ok(app.indexOf("emitRestAction({ kind: 'extend', seconds: 30 }, sessionId)") < timeoutAt);
       assert.ok(app.indexOf("emitRestAction({ kind: 'skip' }, sessionId)") < timeoutAt);
-      const player = read('src/screens/GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.match(player, /subscribeRestActions\(\(action\) => \{[\s\S]*?\}, session\?\.sessionId \?\? null\)/);
     },
   },

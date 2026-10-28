@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -35,7 +36,7 @@ module.exports = [
   {
     name: 'live workout wiring: every way out of the player\'s pause resumes the session clock too',
     run() {
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const player = readGuidedPlayerSource();
       assert.match(
         player,
         /const unpause = useCallback\(\(\) => \{\s*setPaused\(false\);\s*workout\.resumeWorkout\(\);\s*\}, \[workout\]\);/,
@@ -90,7 +91,7 @@ module.exports = [
       // of its modes, and always says it did.
       // Line comments dropped first, so the pattern below needs no repeated
       // comment group (one nested in `\s*` backtracks exponentially).
-      const player = read('src', 'screens', 'GuidedPlayerScreen.tsx').replace(/^[ \t]*\/\/[^\n]*\n/gm, '');
+      const player = readGuidedPlayerSource().replace(/^[ \t]*\/\/[^\n]*\n/gm, '');
       assert.match(
         player,
         // The one new first line is the save lock: while Finish saves the player answers back and does nothing.

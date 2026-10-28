@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -29,7 +30,7 @@ module.exports = [
   {
     name: 'rest banner: the guided player draws the banner the hook decides, with a way to fix it',
     run() {
-      const player = strip(read('src', 'screens', 'GuidedPlayerScreen.tsx'));
+      const player = strip(readGuidedPlayerSource());
       assert.match(
         player,
         // Through the hook's turnOn, which asks first on an iPhone that never

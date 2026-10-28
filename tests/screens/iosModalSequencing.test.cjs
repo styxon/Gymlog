@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
@@ -428,7 +429,7 @@ module.exports = [
   {
     name: 'iOS modal sequencing: the guided player\'s rest-alerts ask is held back while the lift sheet is up',
     run() {
-      const guided = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+      const guided = readGuidedPlayerSource();
       assert.match(guided, /blocked: runSheetOpen \|\| setPanelsOpen,/);
     },
   },

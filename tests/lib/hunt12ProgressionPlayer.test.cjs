@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -8,8 +9,7 @@ const { t } = require('../../src/lib/i18n');
 
 const { resolveGuidedSetPlan, resolveGuidedSetTarget } = guided;
 
-const playerSource = fs
-  .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
+const playerSource = readGuidedPlayerSource()
   .replace(/\r\n/g, '\n');
 
 /** The text between two markers, so a guard looks at one function and not the whole screen. */

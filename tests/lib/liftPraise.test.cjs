@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { resolveLiftPraise } = require('../../src/lib/liftPraise');
 
@@ -106,7 +107,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const screen = fs.readFileSync(path.join(__dirname, '../../src/screens/GuidedPlayerScreen.tsx'), 'utf8');
+      const screen = readGuidedPlayerSource();
       assert.match(screen, /resolveLiftPraise\(/);
       assert.match(screen, /'guided\.walk\.praise'/);
       const { t } = require('../../src/lib/i18n');

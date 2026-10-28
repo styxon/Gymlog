@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
@@ -23,7 +24,9 @@ const { buildExerciseSearchHaystack, exerciseMatchesQuery, rankExerciseMatch } =
  * the related lifts, then the library — and a search that reaches any lift.
  */
 const ROOT = path.join(__dirname, '..', '..');
-const read = (...parts) => fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n');
+const read = (...parts) => (parts.join('/') === 'src/screens/GuidedPlayerScreen.tsx'
+  ? readGuidedPlayerSource()
+  : fs.readFileSync(path.join(ROOT, ...parts), 'utf8').replace(/\r\n/g, '\n'));
 
 const SCREENS = ['src/screens/GuidedPlayerScreen.tsx', 'src/screens/HomeScreen.tsx', 'src/screens/ProgramDayScreen.tsx'];
 

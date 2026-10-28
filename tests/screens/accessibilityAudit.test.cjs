@@ -1,11 +1,12 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
 const ROOT = path.join(__dirname, '..', '..');
 const read = (...segments) => fs.readFileSync(path.join(ROOT, ...segments), 'utf8');
 
-const player = read('src', 'screens', 'GuidedPlayerScreen.tsx');
+const player = readGuidedPlayerSource();
 const home = read('src', 'screens', 'HomeScreen.tsx');
 const ruler = read('src', 'components', 'RulerPicker.tsx');
 const cardio = read('src', 'screens', 'CardioScreen.tsx');

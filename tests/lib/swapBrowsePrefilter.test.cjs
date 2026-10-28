@@ -1,4 +1,5 @@
 const assert = require('node:assert/strict');
+const { readGuidedPlayerSource } = require('../helpers/guidedPlayerSource.cjs');
 
 const { resolveSwapBrowsePrefilter } = require('../../src/lib/swapBrowsePrefilter');
 
@@ -86,8 +87,7 @@ module.exports = [
     run() {
       const fs = require('node:fs');
       const path = require('node:path');
-      const player = fs
-        .readFileSync(path.join(__dirname, '..', '..', 'src', 'screens', 'GuidedPlayerScreen.tsx'), 'utf8')
+      const player = readGuidedPlayerSource()
         .replace(/\r\n/g, '\n');
       // Stretches and drills out until the reader types: the add sheet's one
       // list (lib/exercisePicker), with the sheet's chips.
