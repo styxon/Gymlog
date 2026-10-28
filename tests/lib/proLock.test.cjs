@@ -49,7 +49,7 @@ module.exports = [
         "'mockSubscriptionTerm'",
         "'mockSubscriptionCancelledAt'",
       ]) {
-        assert.match(entitlement, new RegExp(`\| ${field}`), `${field} is not in the pick`);
+        assert.match(entitlement, new RegExp(`\\| ${field}`), `${field} is not in the pick`);
       }
       // Four sources, no fifth. The trial is its own source rather than a
       // promo wearing a different label: only one of them may trigger "your
