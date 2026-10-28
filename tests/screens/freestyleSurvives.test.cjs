@@ -37,7 +37,7 @@ module.exports = [
       // The board the screen gets is the provider's draft less a saved workout's leftover, read once for the screen
       // and the restore question alike.
       assert.match(app, /const freestyleDraft = discardSavedFreestyleDraft\(workout\.freestyleDraft, database\);/);
-      assert.match(app, /\s+freestyleDraft,\s+saveFreestyleDraft: workout\.saveFreestyleDraft,\s+clearFreestyleDraft: workout\.clearFreestyleDraft,/);
+      assert.match(read('src', 'app', 'renderAppContent.tsx'), /\s+freestyleDraft,\s+saveFreestyleDraft: workout\.saveFreestyleDraft,\s+clearFreestyleDraft: workout\.clearFreestyleDraft,/);
 
       const screen = read('src', 'screens', 'EmptyWorkoutScreen.tsx');
       assert.match(screen, /useState<FreestyleExerciseState\[\]>\(\(\) => freestyleDraft\?\.exercises \?\? \[\]\)/, 'the lifts must start from the draft');

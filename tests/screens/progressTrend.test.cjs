@@ -223,7 +223,7 @@ module.exports = [
       const tab = read('src', 'app', 'renderProgressTab.tsx');
 
       // One source, shared with the flow.
-      assert.match(app, /targetLifts: goalFlowLifts,/);
+      assert.match(read('src', 'app', 'renderAppContent.tsx'), /targetLifts: goalFlowLifts,/);
       assert.match(tab, /targetLifts=\{targetLifts\}/);
       assert.match(screen, /const trackedRows = useMemo/);
       assert.match(screen, /targetLifts\.map\(\(lift\) => \(\{/);

@@ -301,7 +301,7 @@ module.exports = [
       // Both against the lead programme's rhythm, the one the questions replace.
       assert.match(read('src/app/renderOnboarding.tsx'), /existingTrainingCycle=\{leadTrainingCycle\}/);
       assert.match(read('App.tsx'), /const leadTrainingCycle = leadPlanTrainingCycle\(database\.workoutPlans, preferences\.activePlanId\);/);
-      assert.match(read('App.tsx'), /renderSetupEditor\(\{\s*leadTrainingCycle,/);
+      assert.match(read('src/app/renderAppContent.tsx'), /renderSetupEditor\(\{\s*leadTrainingCycle,/);
 
       // And the saved plan, end to end.
       const { buildSavedOnboardingWorkoutPlan } = require('../../.test-dist/app/onboardingHandoff.js');

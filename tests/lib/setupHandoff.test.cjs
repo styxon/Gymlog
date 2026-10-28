@@ -416,7 +416,8 @@ module.exports = [
       // Shown, not owed: aside on any Profile screen but the list, so the
       // Pro page's terms, policy and subscription links open, and the terms
       // sheet can ask over the Pro page before anything is bought.
-      const app = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
+      // The route-to-screen dispatch moved out of App.tsx into src/app/renderAppContent.tsx.
+      const app = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderAppContent.tsx'), 'utf8');
       assert.match(app, /\} else if \(\s*(\/\/[^\n]*\n\s*)*setupHandoffShown &&\s*setupHandoffPlan\s*\)/);
 
       const done = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'setupHandoffDone.tsx'), 'utf8');

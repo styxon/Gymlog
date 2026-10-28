@@ -55,7 +55,7 @@ module.exports = [
       const app = read('App.tsx');
       assert.match(app, /createCoachQuotaLedger\(\)/);
       assert.match(app, /createOnboardingFinishes\(\{\s*coachQuotaLedger,/);
-      assert.match(app, /renderHomeScreens\(\{\s*coachQuotaLedger,/);
+      assert.match(read('src', 'app', 'renderAppContent.tsx'), /renderHomeScreens\(\{\s*coachQuotaLedger,/);
     },
   },
   {

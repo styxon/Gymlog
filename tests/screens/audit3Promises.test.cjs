@@ -212,7 +212,7 @@ module.exports = [
 
       // The tab had no way to say anything at all.
       assert.match(tab, /showToast: \(message: string\) => void;/);
-      assert.match(strip(read('App.tsx')), /content = renderProgressTab\(\{[\s\S]{0,2000}showToast,/);
+      assert.match(strip(read('src', 'app', 'renderAppContent.tsx')), /content = renderProgressTab\(\{[\s\S]{0,2000}showToast,/);
     },
   },
   {

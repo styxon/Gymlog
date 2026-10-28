@@ -120,7 +120,7 @@ module.exports = [
       assert.equal(weeklyTrainingStreak(database.workoutSessions, [], now), 3);
 
       // App hands the tab the canonical list, and only that list.
-      const app = strip(read('App.tsx'));
+      const app = strip(read('src', 'app', 'renderAppContent.tsx'));
       // The list itself, found in the shell: it left App.tsx for
       // useRecentSessions in the phase-C split (2026-10-01).
       const shell = strip(readAppWiring().replace(/\r\n/g, '\n'));
