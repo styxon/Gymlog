@@ -697,6 +697,8 @@ function VinhaApp() {
     database,
     preferences,
   });
+  // Same equipment truth the composer filters exercises with, for the default
+  // warmup/cooldown drills: null = setup never said, [] = no equipment at all.
   const { availableEquipmentForDrills, routineBlockSeconds, routineSecondsForExercises } = useRoutineBlockCosts({
     preferences,
   });
@@ -741,8 +743,6 @@ function VinhaApp() {
     trackedProgress,
     preferences,
   });
-  // Same equipment truth the composer filters exercises with, for the default
-  // warmup/cooldown drills: null = setup never said, [] = no equipment at all.
   const {
     homeDoneThisWeekSessionIds,
     baseTrainingSchedule,
@@ -807,13 +807,6 @@ function VinhaApp() {
     requestPinHomeWidget,
   });
 
-  // Feeds the home-screen widget. The launcher redraws it on its own schedule,
-  // so all this has to do is keep the file current. Placed after the plan card
-  // and the picked days, because it is built from exactly what Home renders.
-  //
-  // The calendar reaches back two weeks, so the widget needs the days that were
-  // trained — not just this week's weekdays. 21 days covers two past weeks plus
-  // every day of the current one, whichever weekday today is.
   const {
     setupHandoffHeldRef,
     setSetupHandoffHeld,
@@ -867,7 +860,6 @@ function VinhaApp() {
    * cleared there, which the old "the profile has no name" rule filled straight
    * back in (2026-09-16).
    */
-  //
   // Not before the stored preferences have loaded. The account is a small key
   // and arrives first, while preferences are still the defaults and
   // profileName is null — so this wrote the DEFAULT preferences plus the name
@@ -915,6 +907,13 @@ function VinhaApp() {
     navigate: navigateNow,
   });
 
+  // Feeds the home-screen widget. The launcher redraws it on its own schedule,
+  // so all this has to do is keep the file current. Placed after the plan card
+  // and the picked days, because it is built from exactly what Home renders.
+  //
+  // The calendar reaches back two weeks, so the widget needs the days that were
+  // trained — not just this week's weekdays. 21 days covers two past weeks plus
+  // every day of the current one, whichever weekday today is.
   const { widgetCompletedWorkoutDayStarts } = useHomeWidgetFeed({
     appHydrated,
     preferences,

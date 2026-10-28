@@ -25,7 +25,6 @@ import { localizeSessionName } from '../lib/sessionNameLabel';
 import type { AppRoute } from '../navigation/routes';
 import type { useAppContext } from '../state/AppProvider';
 import { UnitPreference } from '../types/models';
-import type { useProInsights } from './useProInsights';
 
 type AppContextValue = ReturnType<typeof useAppContext>;
 
