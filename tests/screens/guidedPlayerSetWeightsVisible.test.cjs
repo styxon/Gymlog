@@ -53,10 +53,14 @@ module.exports = [
   {
     name: 'guided player: the ramp-visibility decision is a pure lib helper, not inline formatting',
     run() {
-      assert.match(
-        playerSource,
-        /import \{ formatLoadOrRange, summarizeHistoricalSetChips \} from '\.\.\/lib\/guidedSetWeightSummary';/,
-      );
+      // Each name is imported from the helper module somewhere in the player
+      // (the body formats the load, the set step summarises the chips).
+      for (const name of ['formatLoadOrRange', 'summarizeHistoricalSetChips']) {
+        assert.match(
+          playerSource,
+          new RegExp("import \\{[^}]*\\b" + name + "\\b[^}]*\\} from '\\.\\./lib/guidedSetWeightSummary';"),
+        );
+      }
     },
   },
   {
