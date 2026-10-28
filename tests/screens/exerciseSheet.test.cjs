@@ -298,7 +298,7 @@ module.exports = [
       assert.match(wiring, /const byName = getLiftHistoryByName\(database\);/, 'the lookup must be built from every log');
       // Any indent, but the deps object's own: `liftHistory,` sits at the
       // depth of the call's first property, not inside some nested object.
-      assert.match(appSource, /renderWorkoutTab\(\{\r?\n([ \t]+)[\s\S]{0,4000}\r?\n\1liftHistory,\r?\n/);
+      assert.match(fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'renderAppContent.tsx'), 'utf8'), /renderWorkoutTab\(\{\r?\n([ \t]+)[\s\S]{0,4000}\r?\n\1liftHistory,\r?\n/);
     },
   },
 ];

@@ -135,7 +135,7 @@ module.exports = [
           `${adopt} confirms before the write resolves, or leaves the page`,
         );
       }
-      assert.match(body(app, 'async function handleAdoptCustomProgram'), /return false;\s*\}\s*showToast\(programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)/);
+      assert.match(body(read('src', 'app', 'programmeAdoption.tsx'), 'async function handleAdoptCustomProgram'), /return false;\s*\}\s*showToast\(programCapFullMessage\(preferences\.appLanguage, decision\.used, decision\.cap\)/);
 
       const programs = read('src', 'screens', 'ProgramsHomeScreen.tsx');
       assert.match(programs, /\{ownProgramsLine \? <Text style=\{styles\.ownProgramsLine\}>\{ownProgramsLine\}<\/Text> : null\}/);

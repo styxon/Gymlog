@@ -68,7 +68,9 @@ module.exports = [
       // The ledger travels to the tab; the facts stop at it, because the card
       // no longer takes a second model of the same log.
       // Matched at any indent; lazy, so it ends at the first close after it.
-      const depsMatch = app.match(/lifetimeSummary,\n[ \t]*milestoneLedger,[\s\S]*?distinctRecordCount,\n[ \t]*\}\);/);
+      // The profile call itself: the dispatch bag lists the same names once more.
+      const profileCall = app.slice(app.indexOf('renderProfileTab({'));
+      const depsMatch = profileCall.match(/lifetimeSummary,\n[ \t]*milestoneLedger,[\s\S]*?distinctRecordCount,\n[ \t]*\}\);/);
       assert.ok(depsMatch, 'the deps block moved — recheck by hand');
       const deps = depsMatch[0];
       assert.ok(deps.length > 10 && deps.length < 400, 'the deps block moved — recheck by hand');

@@ -214,7 +214,7 @@ module.exports = [
         app,
         /const deletePendingAiLogs = usePendingAiLogDeletions\(\{\s*hydrated,\s*pending: preferences\.pendingAiLogDeletions,\s*clear: clearPendingAiLogDeletions,\s*\}\);/,
       );
-      assert.match(app, /resetAllData: handleResetAllData,\s*deletePendingAiLogs,/);
+      assert.match(code('src', 'app', 'renderAppContent.tsx'), /resetAllData: handleResetAllData,\s*deletePendingAiLogs,/);
 
       // The provider drops confirmed labels from the list as it is NOW, inside
       // the write queue — a retry older than a reset must not undo its filing.

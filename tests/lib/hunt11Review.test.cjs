@@ -287,7 +287,7 @@ module.exports = [
       // No site writes the three lines out itself any more, and each of the fifteen that did calls the helper
       // (fourteen since the season join went with the season feature, 2026-10-12).
       const sites = [
-        'App.tsx',
+        'src/app/programmeAdoption.tsx',
         'src/app/programmeDayEdits.tsx',
         'src/app/programmePlanEdits.tsx',
         'src/app/programmeSwitches.tsx',

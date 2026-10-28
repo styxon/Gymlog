@@ -313,7 +313,7 @@ module.exports = [
       // Every door that refuses uses the one message: programCapFullMessage,
       // or for a door that can replace a finished programme the refusal that
       // wraps it (runningCapRefusalMessage, hunt 10, #20).
-      for (const file of [['App.tsx'], ['src', 'app', 'programmeStarts.tsx'], ['src', 'app', 'programmeSwitches.tsx']]) {
+      for (const file of [['src', 'app', 'programmeAdoption.tsx'], ['src', 'app', 'programmeStarts.tsx'], ['src', 'app', 'programmeSwitches.tsx']]) {
         const source = read(...file);
         assert.doesNotMatch(source, /'programs\.cap\.full'/, `${file.join('/')} builds its own refusal toast`);
         assert.match(

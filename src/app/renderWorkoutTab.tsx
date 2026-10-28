@@ -36,7 +36,7 @@ import {
 } from '../lib/exerciseCollections';
 import { toggleTechniqueStatement } from '../lib/exerciseLearning';
 import type { ExerciseProgressSummary } from '../lib/progression';
-import { catalogLevelForSetup, isSameLift, isSameTargetLift } from '../lib/goalProgramme';
+import { catalogLevelForSetup, isSameTargetLift } from '../lib/goalProgramme';
 import { getReadyProgramContent } from '../lib/readyProgramContent';
 import { isWorkoutInProgressFor } from '../lib/activeWorkout';
 import { programmeSwitchedFrom, programmeToSwitchTo } from '../lib/runningProgrammes';
