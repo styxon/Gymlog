@@ -39,8 +39,5 @@ jobs:
       - name: Typecheck api/ as Vercel compiles it
         run: npm run typecheck:api
 
-      - name: Compile test build
-        run: npx tsc -p tsconfig.test.json
-
       - name: Unit tests
         run: node tests/run-tests.cjs

@@ -122,11 +122,10 @@ jobs:
           key: ${{ steps.app-cache.outputs.cache-primary-key }}
 
       # Answers the coach chat on the runner's localhost, which the simulator
-      # shares (scripts/store-screenshots/coach-stub.cjs). Built from the
-      # app's own lib, so it needs the test compile.
+      # shares (scripts/store-screenshots/coach-stub.cjs). Runs the app's own
+      # lib straight from src/ through the TypeScript hook.
       - name: Start the coach stub
         run: |
-          npx tsc -p tsconfig.test.json
           mkdir -p shots/raw
           nohup node scripts/store-screenshots/coach-stub.cjs 8787 > shots/raw/coach-stub.log 2>&1 &
           for i in $(seq 1 20); do

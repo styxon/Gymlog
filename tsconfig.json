@@ -3,5 +3,5 @@
   "compilerOptions": {
     "strict": true
   },
-  "exclude": ["Reference images", ".test-dist", "tests"]
+  "exclude": ["Reference images", "tests"]
 }

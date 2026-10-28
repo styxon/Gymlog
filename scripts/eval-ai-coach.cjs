@@ -2,7 +2,6 @@
 /**
  * Runs the coach evaluation set and prints one score (execution-plan A3).
  *
- *   npx tsc -p tsconfig.test.json
  *   node scripts/eval-ai-coach.cjs              # scores the offline preview
  *   node scripts/eval-ai-coach.cjs --live       # scores the deployed endpoint
  *
@@ -18,9 +17,10 @@
  * runs the cases whose id starts with one of the prefixes — the crisis set on
  * its own, after a change to the server's crisis rule.
  */
-const { AI_COACH_EVAL_CASES } = require('../.test-dist/lib/aiCoachEvalCases.js');
-const { scoreCase, scoreRun, formatRunReport } = require('../.test-dist/lib/aiCoachEval.js');
-const { buildAiCoachPreviewAnswer } = require('../.test-dist/lib/aiCoachPreview.js');
+require('./registerTs.cjs');
+const { AI_COACH_EVAL_CASES } = require('../src/lib/aiCoachEvalCases');
+const { scoreCase, scoreRun, formatRunReport } = require('../src/lib/aiCoachEval');
+const { buildAiCoachPreviewAnswer } = require('../src/lib/aiCoachPreview');
 
 const live = process.argv.includes('--live');
 const endpoint = process.env.AI_COACH_API_URL;

@@ -34,7 +34,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx tsc -p tsconfig.test.json
       # The account deletion page is served from styxon.fi only: it signs in
       # with Google, whose client allows that origin and not this one.
       - run: node scripts/build-legal-site.cjs

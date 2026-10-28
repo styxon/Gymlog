@@ -6,19 +6,13 @@
  * (src/lib/legalDocuments.ts), so they cannot drift. Run this after any edit to
  * that file and commit the output.
  *
- *   npx tsc -p tsconfig.test.json
  *   node scripts/export-legal.cjs
  */
+require('./registerTs.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const compiled = path.join(__dirname, '..', '.test-dist', 'lib', 'legalDocuments.js');
-if (!fs.existsSync(compiled)) {
-  console.error('Compile first: npx tsc -p tsconfig.test.json');
-  process.exit(1);
-}
-
-const { buildLegalDocument, renderLegalDocumentMarkdown } = require(compiled);
+const { buildLegalDocument, renderLegalDocumentMarkdown } = require(path.join(__dirname, '..', 'src', 'lib', 'legalDocuments'));
 
 const outDir = path.join(__dirname, '..', 'docs', 'legal');
 fs.mkdirSync(outDir, { recursive: true });

@@ -13,14 +13,15 @@
  * reader's seeded numbers, in the reader's language. Everything else it is
  * asked (the server notice at /api/notice) gets an empty answer.
  *
- * Needs the compiled lib: `npx tsc -p tsconfig.test.json` first.
+ * Loads src/lib through the TypeScript hook; nothing to compile first.
  *
  *   node scripts/store-screenshots/coach-stub.cjs [port]
  */
+require('../registerTs.cjs');
 const http = require('node:http');
 const path = require('node:path');
 
-const { buildAiCoachPreviewAnswer } = require(path.join(__dirname, '..', '..', '.test-dist', 'lib', 'aiCoachPreview.js'));
+const { buildAiCoachPreviewAnswer } = require(path.join(__dirname, '..', '..', 'src', 'lib', 'aiCoachPreview.js'));
 
 const port = Number(process.argv[2] || 8787);
 const MAX_BODY = 1024 * 1024;

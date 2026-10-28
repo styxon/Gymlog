@@ -3,7 +3,6 @@
  * Runs the coach scenario matrix against the live endpoint and saves every
  * answer for a person to read.
  *
- *   npx tsc -p tsconfig.test.json
  *   node scripts/eval-ai-coach-matrix.cjs --out coach-eval.jsonl
  *   node scripts/eval-ai-coach-matrix.cjs --out coach-eval.jsonl --report   # score saved answers, no calls
  *
@@ -21,10 +20,11 @@
  * Needs AI_COACH_API_URL and AI_COACH_APP_KEY; falls back to the
  * EXPO_PUBLIC_ pair in .env.local at the repo root.
  */
+require('./registerTs.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
-const { AI_COACH_EVAL_MATRIX, scoreMatrixCase } = require('../.test-dist/lib/aiCoachEvalMatrix.js');
-const { scoreRun, formatRunReport } = require('../.test-dist/lib/aiCoachEval.js');
+const { AI_COACH_EVAL_MATRIX, scoreMatrixCase } = require('../src/lib/aiCoachEvalMatrix');
+const { scoreRun, formatRunReport } = require('../src/lib/aiCoachEval');
 
 const COST_PER_CALL_USD = 0.04;
 
