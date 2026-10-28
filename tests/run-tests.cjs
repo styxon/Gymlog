@@ -665,6 +665,8 @@ const suites = [
   ...require('./features/workout/hunt12ProgressionState.test.cjs'),
   ...require('./features/workout/progressionInvariant.test.cjs'),
   ...require('./lib/hunt12ProgressionRecovery.test.cjs'),
+  ...require('./lib/historyFixture.test.cjs'),
+  ...require('./lib/historyIdScan.test.cjs'),
 ];
 
 (async () => {
