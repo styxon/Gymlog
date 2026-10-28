@@ -302,13 +302,13 @@ function liftFunction(source, header) {
 }
 
 const APP_PROVIDER = fs.readFileSync(path.join(SRC, 'state', 'AppProvider.tsx'), 'utf8').replace(/\r\n/g, '\n');
-const COMMIT_SOURCE = liftFunction(APP_PROVIDER, 'async function commit(nextDatabase: AppDatabase) {');
+const COMMIT_SOURCE = liftFunction(APP_PROVIDER, 'async function commit(nextDatabase: AppDatabase, options: { replaceAll?: boolean } = {}) {');
 const PERSIST_SOURCE = liftFunction(APP_PROVIDER, 'function persistCompletedWorkoutSession(input: PersistCompletedWorkoutInput) {');
 
 const compileAppProviderPart = (() => {
   const wrapped = [
     'function __part(__scope) {',
-    '  const { databaseRef, setDatabase, saveDatabase, runExclusive, persistCompletedWorkoutSessionToDatabase, createId } = __scope;',
+    '  const { databaseRef, setDatabase, saveDatabase, notifyHistoryMirror, runExclusive, persistCompletedWorkoutSessionToDatabase, createId } = __scope;',
     COMMIT_SOURCE,
     PERSIST_SOURCE,
     '  return { commit, persistCompletedWorkoutSession };',
@@ -510,6 +510,8 @@ async function launch(options = {}) {
     databaseRef: proc.dbRef,
     setDatabase: () => undefined,
     saveDatabase: modules.database.saveDatabase,
+    // The real seam, with no mirror installed: it does nothing.
+    notifyHistoryMirror: require(path.join(SRC, 'storage', 'historyMirror')).notifyHistoryMirror,
     runExclusive: proc.runExclusive,
     persistCompletedWorkoutSessionToDatabase,
     createId,

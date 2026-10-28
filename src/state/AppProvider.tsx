@@ -39,6 +39,7 @@ import {
   getTrackedExerciseProgress,
 } from '../lib/progression';
 import { loadDatabase, normalizeDatabase, resetDatabase, saveDatabase, savePreferences } from '../storage/database';
+import { notifyHistoryMirror } from '../storage/historyMirror';
 import { reportOperationFailed } from '../features/errorReporting/errorReporter';
 import { loadWithRetry } from '../storage/loadWithRetry';
 import {
@@ -470,7 +471,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
    * Every caller holds the serial queue, so nothing else has moved the ref in
    * between and putting the previous snapshot back cannot undo a newer write.
    */
-  async function commit(nextDatabase: AppDatabase) {
+  async function commit(nextDatabase: AppDatabase, options: { replaceAll?: boolean } = {}) {
     const previous = databaseRef.current;
     databaseRef.current = nextDatabase;
     setDatabase(nextDatabase);
@@ -493,6 +494,13 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       setDatabase(previous);
       throw error;
     }
+    // The blob is on disk: only now is the history mirror told, and nothing
+    // waits for it (storage/historyMirror). With no mirror installed this
+    // does nothing at all. `replaceAll` is a restore or its rollback, which
+    // swaps the whole database rather than changing a part of it.
+    notifyHistoryMirror((mirror) =>
+      options.replaceAll ? mirror.replaceAll(nextDatabase) : mirror.apply(previous, nextDatabase),
+    );
   }
 
   /**
@@ -1384,7 +1392,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         // terms acceptance were merged a second time with the ones the
         // failed restore had just written.
         const exact = input as AppDatabase;
-        await commit(exact);
+        await commit(exact, { replaceAll: true });
         return exact;
       }
       const restored = normalizeDatabase(input);
@@ -1401,7 +1409,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
         ...restored,
         preferences: preferencesForRestore(restored.preferences, databaseRef.current.preferences, restored.workoutPlans),
       });
-      await commit(next);
+      await commit(next, { replaceAll: true });
       return next;
     });
   }

@@ -50,7 +50,7 @@ module.exports = [
     name: 'commitSavesPreferences: a commit that changes preferences writes the key too',
     run() {
       const provider = read('src', 'state', 'AppProvider.tsx');
-      const commit = functionBody(provider, 'async function commit(nextDatabase: AppDatabase) {', '  ');
+      const commit = functionBody(provider, 'async function commit(nextDatabase: AppDatabase,', '  ');
       const previousAt = commit.indexOf('const previous = databaseRef.current;');
       const swapAt = commit.indexOf('databaseRef.current = nextDatabase;');
       assert.ok(previousAt >= 0 && previousAt < swapAt, 'the previous preferences are read before the swap');

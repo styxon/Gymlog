@@ -680,7 +680,7 @@ export function accountBackupFingerprint(database: AppDatabase, history: Workout
 }
 
 /** cyrb53, fed piece by piece so no multi-megabyte string is ever built. */
-function createHash() {
+export function createHash() {
   let h1 = 0xdeadbeef;
   let h2 = 0x41c6ce57;
   const feed = (code: number) => {

@@ -21,7 +21,11 @@ const ROOT = path.join(__dirname, '..', '..');
  * yet. Each entry names why; the guard fails if a parked module gains an
  * importer (take it off the list) or loses its file (same).
  */
-const PARKED = new Map([]);
+const PARKED = new Map([
+  ['historyDiff', 'Identity diff of the history collections for the SQLite mirror. PR 1 of the SQLite plan: pure and tested, written ahead of the row store that calls it in PR 2. PR 2 removes this entry when it wires the module.'],
+  ['historyContentHash', 'Content hash of the history rows for the mirror start-up check. PR 1 of the SQLite plan: pure and tested, written ahead of the row store that calls it in PR 2. PR 2 removes this entry when it wires the module.'],
+  ['historyRowCodec', 'Row encoding for the mirror. PR 1 of the SQLite plan: pure and tested, written ahead of the row store that calls it in PR 2. PR 2 removes this entry when it wires the module.'],
+]);
 
 function walk(dir) {
   const out = [];

@@ -2132,9 +2132,9 @@ function guardAgainstDrift() {
   assert.ok(
     app.includes('const restored = normalizeDatabase(input);') &&
       app.includes('preferencesForRestore(restored.preferences, databaseRef.current.preferences, restored.workoutPlans)') &&
-      app.includes('await commit(next);') &&
+      app.includes('await commit(next, { replaceAll: true });') &&
       app.includes('if (options.rollback) {') &&
-      app.includes('await commit(exact);'),
+      app.includes('await commit(exact, { replaceAll: true });'),
     'AppProvider.restoreDatabaseFromBackup changed: rebuild the phone model in props() from it',
   );
   assert.ok(readAppWiring().includes('liveSession: hasWorkoutInProgress({ ...workout, freestyleDraft }),'), 'App.tsx no longer tells the backup hook about a workout in progress through hasWorkoutInProgress');
