@@ -77,6 +77,7 @@ lists what iOS needs beyond it.
    `EXPO_PUBLIC_APP_STORE_URL` (app build: invite link, "Rate Vinha" row —
    hidden on iPhone until set) and `APP_STORE_URL_IOS` (server,
    docs/app-updates.md) to `https://apps.apple.com/app/id<ID>`.
+   `APP_STORE_URL_IOS` was set on 2026-10-28 (id 6823676706).
 7. Use "Manual release" in App Store Connect and press release the same
    moment the Play release goes to production.
 

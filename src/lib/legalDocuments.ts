@@ -7,11 +7,12 @@ import type { StorePlatform } from './storeLinks';
  * Two rules govern this file:
  *
  * 1. Every factual claim here is checked against the code. The app has exactly
- *    three outbound request sites — src/features/aiCoach/aiCoachClient.ts (the coach, the
+ *    four outbound request sites — src/features/aiCoach/aiCoachClient.ts (the coach, the
  *    programme composer and the photo import, only when
  *    EXPO_PUBLIC_AI_COACH_API_URL is set), src/features/account/backupApi.ts
- *    (the optional cloud backup, keyed by Google sign-in) and
- *    src/features/analytics/analyticsClient.ts (anonymous usage events) — and
+ *    (the optional cloud backup, keyed by Google or Apple sign-in),
+ *    src/features/analytics/analyticsClient.ts (anonymous usage events) and
+ *    src/features/serverNotice/serverNoticeClient.ts (the start-up notice check) — and
  *    no analytics or ad SDKs. If any of that changes, this file changes in the
  *    same commit; tests/lib/legalDocuments.test.cjs fails otherwise. The
  *    online-coach notice in i18n.ts (coachChat.online.body) is held to the
@@ -83,7 +84,7 @@ function publisher(language: AppLanguage): string {
  * show it. A real date, never ahead of the calendar (tests/lib/legalDocuments
  * holds it there).
  */
-export const LEGAL_LAST_UPDATED = '2026-10-17';
+export const LEGAL_LAST_UPDATED = '2026-10-28';
 
 /**
  * What an acceptance is stored against: a string that only ever grows, so a
@@ -101,7 +102,7 @@ export const LEGAL_LAST_UPDATED = '2026-10-17';
  * current value with a suffix ('2026-10-06.1', '.2', …), which still compares
  * as later.
  */
-export const LEGAL_VERSION = '2026-10-17.1';
+export const LEGAL_VERSION = '2026-10-28';
 
 export type LegalDocumentId = 'privacy' | 'terms';
 
@@ -184,7 +185,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
           heading: 'iPhone backup',
           body: [
             'On iPhone the app’s data is not left out of the phone’s own backup. If iCloud Backup is switched on, or you back the phone up to a computer, Vinha’s data goes into that backup together with the data of your other apps, and comes back with it when you set up a phone from it. That backup is made and kept by Apple or on your own computer, under Apple’s terms. We do not make it, cannot see it and cannot delete it.',
-            'If you would rather Vinha’s training log is not in it, you can leave Vinha out of an iCloud backup in your iPhone’s iCloud settings, or switch iCloud Backup off. The cloud backup below is separate: it is the only copy of your training log that we hold.',
+            'If you would rather Vinha’s training log is not in it, you can leave Vinha out of an iCloud backup in your iPhone’s iCloud settings, or switch iCloud Backup off. The cloud backup below is separate: it is the only copy of your training log that we hold, but not the only copy outside your phone — an iPhone backup is one more, kept by Apple or on your computer.',
           ],
         },
       ]
@@ -210,10 +211,9 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
       'The summary contains your recent workouts (exercise names, sets, reps, kilograms, dates, durations), your current programme and its week, your goals, your setup answers (goal, level, days per week, equipment, limitations), the coach’s own answers from the last three weeks in one sentence each, so it does not repeat advice you have already had, and — if you have logged them — your latest weight, tape measurements, height, age and gender.',
       'It does not contain your name, your email, your Google account or any identifier of your phone. The question cannot be tied to you. Our server sees the phone’s internet address, which it holds briefly in memory to limit how many requests one connection can make; it is not stored.',
       'Our server forwards the question to Anthropic, the company behind the Claude model, which writes the answer in the United States. Under Anthropic’s commercial terms the data is not used to train its models and is deleted within 30 days.',
-      'We keep no copy of our own unless you have said we may. The coach asks once, before your first question, in three separate lines: your questions and answers, the programmes you ask it to build, and the photos you import one from. Every line starts as no, each is its own answer, and none of them changes the answer you get. What you allow is kept for up to 24 months and then deleted automatically, and it is used for one thing: making the coach better at writing programmes.',
-      'You can take it back at any time in Settings, and taking it back deletes what was already kept. Turning any one line off removes every copy kept for you from our server — including those made under the lines you leave on — rather than only stopping new ones.',
+      'We keep no copy of our own. The coach does not store your questions and answers, the programmes you ask it to build or the photos you import one from; they are sent, answered from and dropped. An earlier test version could ask for permission to keep such copies. If you said yes there, the copies filed for you are deleted automatically within 24 months of the day they arrived, and you can delete them now: the permission shows in Settings only for someone who gave it, and switching it off removes every copy kept for you.',
       'The programme composer works the same way: when you ask the app to build a programme from a written brief, the brief and the same summary are sent along the same route.',
-      'Importing a programme from a photo also uses this route. The photo you picked is scaled down and sent so the table in it can be read; it is used for that one import and is not kept — unless you ticked the photos line above, in which case the photo and the table read from it are kept like any other allowed copy.',
+      'Importing a programme from a photo also uses this route. The photo you picked is scaled down and sent so the table in it can be read; it is used for that one import and is not kept by us.',
       'Under each answer the online coach writes there is a Report link. If you use it, the answer you reported and the reason you picked are sent to us so that a person can review it — not your question, and nothing that identifies you. The report reaches us through Slack, the messaging service we review reports in, and is deleted once it has been dealt with, at the latest after 24 months.',
     ],
   },
@@ -236,6 +236,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
       'The Pro page was viewed.',
       'A question was sent to the coach — the fact that one was sent, never the text.',
       'The app failed or something did not work: an error report, as described above.',
+      'The app checked the training history it keeps on your phone at start-up: how many records it counted and whether its two copies matched — never what the records contain.',
     ],
   },
   {
@@ -306,6 +307,9 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
     ],
     bullets: [
       'Notifications: asked the first time a rest timer needs to alert you, or when you switch notifications on in Settings. Refuse, and everything else keeps working.',
+      ...(p !== 'ios'
+        ? ['Alarms and reminders (Android 12 and newer): so the rest timer’s alert can ring on the second. Android may ask you to allow it in the phone’s settings; refuse, and the alert can arrive a few minutes late, nothing else changes.']
+        : []),
       'Photos: the phone’s own picker hands the app the one photo you chose. No permission to your photo library is asked.',
       'Internet: for the server features described in this policy — at present backup, coach, statistics and notices. Logging a workout never needs a connection.',
       'Keeping the screen on during a workout, if you switch that on in Settings.',
@@ -331,7 +335,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
         ios: 'Apple, through the App Store',
         both: 'Google Play on Android and by Apple through the App Store on iPhone',
       })}. We never see your card number, billing address or any payment detail. The app learns only whether Pro is active, which plan, and until when.`,
-      'The free trial costs nothing: starting it writes one date on your phone, Pro runs until that date and then stops on its own. Nothing is charged when it ends, nothing is sent anywhere, and no card is asked for. If you have notifications on, the app reminds you two days before it runs out; that reminder is written and shown by your phone, not by us.',
+      'The app has no free trial of its own. If a promo code or an earlier free trial still keeps Pro on, it stops on its own on the date shown in the app, nothing is charged when it ends and nothing is sent anywhere.',
     ],
   },
   {
@@ -369,7 +373,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
         : []),
       'Cloud backup: until you delete it in Settings, or ask us to.',
       'The marker left by Delete account on an Apple account: one scrambled marker with a date and a random number your phone made for the deletion request (used only to tell that phone its deletion went through), with no name, email or training data. The server’s routine clean-up removes it once 180 days have passed and it can no longer end anything. That clean-up runs when someone signs in with Apple, so it can take a little longer.',
-      'Coach questions, briefs and photos: not kept by us unless you allowed it, and then for up to 24 months or until you take the permission back, whichever comes first. Anthropic deletes its own copy within 30 days either way.',
+      'Coach questions, briefs and photos: not kept by us. If you gave permission in an earlier test version, up to 24 months or until you take the permission back, whichever comes first. Anthropic deletes its own copy within 30 days either way.',
       'Usage statistics, error reports included: up to 24 months, then deleted automatically.',
       'Feedback emails: as long as it takes to handle them.',
     ],
@@ -392,7 +396,7 @@ const privacyEn = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Children',
     body: [
-      'Vinha is not intended for children under 16, and we do not knowingly process their data. Because nothing reaches us with a name attached, we cannot tell a child’s data from anyone else’s — if you believe a child has signed in for the cloud backup, write to us and we will delete it.',
+      'Vinha is not intended for anyone under 18, and we do not knowingly process their data. Because nothing reaches us with a name attached, we cannot tell a child’s data from anyone else’s — if you believe a child has signed in for the cloud backup, write to us and we will delete it.',
     ],
   },
   {
@@ -454,7 +458,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
           heading: 'iPhonen varmuuskopio',
           body: [
             'iPhonella sovelluksen tietoja ei jätetä puhelimen oman varmuuskopion ulkopuolelle. Jos iCloud-varmuuskopiointi on päällä tai varmuuskopioit puhelimen tietokoneelle, Vinhan tiedot menevät siihen muiden sovellustesi tietojen mukana ja palautuvat sen mukana, kun otat puhelimen käyttöön siitä. Sen varmuuskopion tekee ja säilyttää Apple tai oma tietokoneesi Applen ehtojen mukaisesti. Emme tee sitä, emme näe sitä emmekä voi poistaa sitä.',
-            'Jos et halua treenilokiasi siihen, voit jättää Vinhan pois iCloud-varmuuskopiosta iPhonen iCloud-asetuksissa tai kytkeä iCloud-varmuuskopioinnin pois. Alla kuvattu pilvivarmuuskopio on erillinen: se on ainoa treenilokistasi meillä oleva kopio.',
+            'Jos et halua treenilokiasi siihen, voit jättää Vinhan pois iCloud-varmuuskopiosta iPhonen iCloud-asetuksissa tai kytkeä iCloud-varmuuskopioinnin pois. Alla kuvattu pilvivarmuuskopio on erillinen: se on ainoa treenilokistasi meillä oleva kopio, mutta ei ainoa puhelimen ulkopuolinen kopio — iPhonen varmuuskopio on toinen, ja sitä säilyttää Apple tai tietokoneesi.',
           ],
         },
       ]
@@ -480,10 +484,9 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
       'Yhteenvedossa ovat viimeaikaiset treenisi (liikkeiden nimet, sarjat, toistot, kilot, päivämäärät, kestot), nykyinen ohjelmasi ja sen viikko, tavoitteesi, käyttöönoton vastauksesi (tavoite, taso, treenipäivät viikossa, välineet, rajoitteet), valmentajan omat vastaukset viimeisiltä kolmelta viikolta yhtenä lauseena kukin, jottei se toista jo antamaansa neuvoa, sekä — jos olet kirjannut ne — viimeisin painosi, mittasi, pituutesi, ikäsi ja sukupuolesi.',
       'Siinä ei ole nimeäsi, sähköpostiasi, Google-tiliäsi eikä mitään puhelimesi tunnistetta. Kysymystä ei voi yhdistää sinuun. Palvelimemme näkee puhelimen internet-osoitteen, jota se pitää hetken muistissa rajoittaakseen, montako pyyntöä yksi yhteys voi tehdä; sitä ei tallenneta.',
       'Palvelimemme välittää kysymyksen Anthropicille, Claude-mallin kehittäjälle, joka kirjoittaa vastauksen Yhdysvalloissa. Anthropicin kaupallisten ehtojen mukaan tietoja ei käytetä sen mallien opettamiseen, ja ne poistetaan 30 päivän kuluessa.',
-      'Me emme säilytä omaa kopiotamme, ellet ole antanut siihen lupaa. Valmentaja kysyy sen kerran, ennen ensimmäistä kysymystäsi, kolmena erillisenä rivinä: kysymyksesi ja vastaukset, ohjelmat joita pyydät sen rakentamaan, ja valokuvat joista tuot ohjelman. Jokainen rivi alkaa ei-vastauksesta, jokainen on oma vastauksensa, eikä mikään niistä muuta sitä vastausta jonka saat. Sallimasi säilytetään enintään 24 kuukautta ja poistetaan sitten automaattisesti, ja sitä käytetään yhteen asiaan: valmentajan parantamiseen ohjelmien kirjoittajana.',
-      'Voit peruuttaa luvan milloin tahansa asetuksista, ja peruutus poistaa myös jo säilytetyn. Kun kytket yhdenkin rivin pois, jokainen sinulle säilytetty kopio poistetaan palvelimeltamme — myös päälle jätettyjen rivien nojalla tehdyt — eikä vain uusien kertyminen lopu.',
+      'Me emme säilytä omaa kopiotamme. Valmentaja ei tallenna kysymyksiäsi ja vastauksia, ohjelmia joita pyydät sen rakentamaan, eikä valokuvia joista tuot ohjelman: ne lähetetään, vastaus kirjoitetaan niiden pohjalta ja ne pudotetaan. Aiempi testiversio saattoi kysyä lupaa tällaisten kopioiden säilyttämiseen. Jos vastasit siinä kyllä, sinulle tallennetut kopiot poistetaan automaattisesti 24 kuukauden kuluessa niiden saapumisesta, ja voit poistaa ne heti: lupa näkyy asetuksissa vain sille, joka sen antoi, ja kun kytket sen pois, jokainen sinulle säilytetty kopio poistetaan.',
       'Ohjelmakoostaja toimii samalla tavalla: kun pyydät sovellusta rakentamaan ohjelman kirjoittamasi kuvauksen pohjalta, kuvaus ja sama yhteenveto lähetetään samaa reittiä.',
-      'Myös ohjelman tuonti valokuvasta käyttää tätä reittiä. Valitsemasi kuva pienennetään ja lähetetään, jotta siinä oleva taulukko voidaan lukea; sitä käytetään siihen yhteen tuontiin, eikä sitä säilytetä — paitsi jos rastitit yllä valokuvien rivin, jolloin kuva ja siitä luettu taulukko säilytetään kuten muutkin sallimasi kopiot.',
+      'Myös ohjelman tuonti valokuvasta käyttää tätä reittiä. Valitsemasi kuva pienennetään ja lähetetään, jotta siinä oleva taulukko voidaan lukea; sitä käytetään siihen yhteen tuontiin, emmekä säilytä sitä.',
       'Jokaisen verkkotilan valmentajan kirjoittaman vastauksen alla on Ilmoita-linkki. Jos käytät sitä, ilmoittamasi vastaus ja valitsemasi syy lähetetään meille, jotta ihminen voi tarkistaa sen — ei kysymystäsi eikä mitään, mikä yksilöisi sinut. Ilmoitus tulee meille Slackin kautta, viestipalvelun jossa käsittelemme ilmoitukset, ja se poistetaan, kun asia on käsitelty, viimeistään 24 kuukauden kuluttua.',
     ],
   },
@@ -506,6 +509,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
       'Pro-sivu avattiin.',
       'Valmentajalle lähetettiin kysymys — se, että kysymys lähti, ei koskaan sen tekstiä.',
       'Sovellus kaatui tai jokin ei onnistunut: virheraportti, kuten edellä kerrotaan.',
+      'Sovellus tarkisti käynnistyessään puhelimeen tallennetun treenihistorian: montako tietuetta se laski ja täsmäsivätkö sen kaksi kopiota — ei koskaan sitä, mitä tietueissa on.',
     ],
   },
   {
@@ -576,6 +580,9 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
     ],
     bullets: [
       'Ilmoitukset: kysytään, kun lepoajastin ensimmäisen kerran tarvitsee hälyttää, tai kun kytket ilmoitukset päälle asetuksista. Kieltäydy, ja kaikki muu toimii silti.',
+      ...(p !== 'ios'
+        ? ['Hälytykset ja muistutukset (Android 12 ja uudempi): jotta lepoajastimen hälytys soi sekunnilleen. Android voi pyytää sinua sallimaan sen puhelimen asetuksissa; kieltäydy, ja hälytys voi tulla muutaman minuutin myöhässä, muuta ei muutu.']
+        : []),
       'Kuvat: puhelimen oma valitsin antaa sovellukselle sen yhden kuvan, jonka valitsit. Lupaa kuvakirjastoosi ei pyydetä.',
       'Internet: tässä selosteessa kuvattuja palvelintoimintoja varten — tällä hetkellä varmuuskopio, valmentaja, tilastot ja tiedotteet. Treenin kirjaaminen ei koskaan tarvitse yhteyttä.',
       'Näytön pitäminen päällä treenin aikana, jos kytket sen päälle asetuksista.',
@@ -601,7 +608,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
         ios: 'Apple App Storen kautta',
         both: 'Androidilla Google Play ja iPhonella Apple App Storen kautta',
       })}. Emme koskaan näe korttinumeroasi, laskutusosoitettasi emmekä mitään maksutietoa. Sovellus saa tietää vain, onko Pro voimassa, mikä tilaus ja mihin asti.`,
-      'Ilmainen kokeilu ei maksa mitään: sen aloittaminen kirjoittaa puhelimeesi yhden päivämäärän, Pro on voimassa siihen asti ja päättyy sitten itsestään. Päättyminen ei veloita mitään, mitään ei lähetetä minnekään, eikä korttia kysytä. Jos ilmoitukset ovat päällä, sovellus muistuttaa kaksi päivää ennen loppua; sen muistutuksen kirjoittaa ja näyttää puhelimesi, emme me.',
+      'Sovelluksessa ei ole omaa ilmaista kokeilua. Jos kampanjakoodi tai aiempi ilmainen kokeilu pitää Pron yhä päällä, se päättyy itsestään sovelluksessa näkyvänä päivänä; päättyminen ei veloita mitään eikä mitään lähetetä minnekään.',
     ],
   },
   {
@@ -662,7 +669,7 @@ const privacyFi = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Lapset',
     body: [
-      'Vinhaa ei ole tarkoitettu alle 16-vuotiaille, emmekä tietoisesti käsittele heidän tietojaan. Koska meille ei tule mitään nimen kanssa, emme voi erottaa lapsen tietoja kenenkään muun tiedoista — jos uskot lapsen kirjautuneen pilvivarmuuskopioon, kirjoita meille, niin poistamme sen.',
+      'Vinhaa ei ole tarkoitettu alle 18-vuotiaille, emmekä tietoisesti käsittele heidän tietojaan. Koska meille ei tule mitään nimen kanssa, emme voi erottaa lapsen tietoja kenenkään muun tiedoista — jos uskot lapsen kirjautuneen pilvivarmuuskopioon, kirjoita meille, niin poistamme sen.',
     ],
   },
   {
@@ -690,7 +697,7 @@ const termsEn = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Age',
     body: [
-      'You must be at least 16 years old to use Vinha. The app is built around adult strength training and is not designed for children.',
+      'You must be at least 18 years old to use Vinha. The app is built around adult strength training and is not designed for children.',
     ],
   },
   {
@@ -828,7 +835,7 @@ const termsFi = (p: LegalPlatform): LegalSection[] => [
   {
     heading: 'Ikäraja',
     body: [
-      'Sinun on oltava vähintään 16-vuotias käyttääksesi Vinhaa. Sovellus on rakennettu aikuisten voimaharjoittelun ympärille, eikä sitä ole suunniteltu lapsille.',
+      'Sinun on oltava vähintään 18-vuotias käyttääksesi Vinhaa. Sovellus on rakennettu aikuisten voimaharjoittelun ympärille, eikä sitä ole suunniteltu lapsille.',
     ],
   },
   {

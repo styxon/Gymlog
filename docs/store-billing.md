@@ -53,11 +53,11 @@ store clears it.
 
 ## Before release: owner decisions
 
-- **The trial.** Decided 2026-10-08: the trial moves into Play, as a free-trial
-  offer on the `monthly` and `yearly` base plans, set up together with the
-  products. Until then the Pro page offers a 14-day local grant
-  (`PRO_TRIAL_ENABLED`) under the line "Then 79,90 € / year", and nothing
-  charges when the grant ends. With the offer live:
+- **The trial.** As of 1.1.0 neither store has a free-trial offer (owner,
+  2026-10-28), and the local 14-day grant is off (`PRO_TRIAL_ENABLED = false`
+  since 2026-10-13); a grant started earlier lapses on its own. The privacy
+  policy says the app has no trial of its own. If a store offer is added on
+  the `monthly` and `yearly` base plans:
   - the trial button buys the plan, and Play applies the offer;
   - the local grant goes (`PRO_TRIAL_ENABLED`, `canStartProTrial`);
   - a cancelled period ends on the store's `expirationDate`, not one full term

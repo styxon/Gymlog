@@ -51,6 +51,10 @@ const LEGAL_TEXT_VERSIONS = [
   { version: '2026-10-17', fingerprint: '98eb08696ba6d95a' },
   // Delete account ends the Sign in with Apple at Apple too (iOS hunt, D1-1).
   { version: '2026-10-17.1', fingerprint: '25fa6b3aefb41c67' },
+  // Docs review 2026-10-27: no coach keep-permission any more, no local trial,
+  // the exact-alarm permission, age 18, the iPhone backup as a second copy
+  // outside the phone, and the storage check among the usage events.
+  { version: '2026-10-28', fingerprint: '9ca53c4ff4b9c645' },
 ];
 
 const IDS = ['privacy', 'terms'];

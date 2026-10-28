@@ -1832,7 +1832,7 @@ const EN = {
   'account.confirmUpload.deleted.upload': 'Make a new copy',
   'account.prompt.title': 'Keep your training safe',
   'account.prompt.body':
-    'Sign in and your workouts survive a lost or new phone. Optional — everything works without it.',
+    'Sign in and your workouts survive a lost or new phone: your training and body data are kept on our server in the EU. Optional — everything works without it.',
   'account.prompt.kicker': 'Optional · takes a second',
   'account.prompt.google': 'Continue with Google',
   'account.prompt.dismiss': 'No thanks',
@@ -2147,7 +2147,7 @@ const EN = {
   'coachChat.online.body':
     'So the coach can help you, it is sent your recent workouts, your programme, your goals and setup answers, your latest weight and measurements, and your height, age and gender. The earlier messages of this conversation go with it, and the coach’s own answers from the last three weeks.',
   'coachChat.online.body2':
-    'We do not send your name, your email or any other personal details. The data is deleted after 30 days.',
+    'The answer is written by Anthropic in the United States. We do not send your name, your email or any other personal details. The data is deleted after 30 days.',
   'coachChat.online.ok': 'Got it',
   'coachChat.keep.title': 'May we keep a copy?',
   'coachChat.keep.body':
@@ -5292,7 +5292,7 @@ const FI: Record<I18nKey, string> = {
   'account.confirmUpload.deleted.upload': 'Tee uusi kopio',
   'account.prompt.title': 'Pidä treenisi tallessa',
   'account.prompt.body':
-    'Kirjaudu sisään, niin treenisi säilyvät vaikka puhelin katoaisi tai vaihtuisi. Vapaaehtoinen — kaikki toimii ilmankin.',
+    'Kirjaudu sisään, niin treenisi säilyvät vaikka puhelin katoaisi tai vaihtuisi: treeni- ja kehotietosi säilytetään palvelimellamme EU:ssa. Vapaaehtoinen — kaikki toimii ilmankin.',
   'account.prompt.kicker': 'Valinnainen · vie hetken',
   'account.prompt.google': 'Jatka Googlella',
   'account.prompt.dismiss': 'Ei kiitos',
@@ -5596,7 +5596,7 @@ const FI: Record<I18nKey, string> = {
   'coachChat.online.body':
     'Jotta valmentaja voi auttaa sinua, sille lähetetään turvallisesti viimeaikaiset treenisi, ohjelmasi, tavoitteesi ja käyttöönoton vastauksesi, viimeisin painosi ja mittasi sekä pituutesi, ikäsi ja sukupuolesi. Mukana kulkevat myös tämän keskustelun aiemmat viestit ja valmentajan omat vastaukset viimeisiltä kolmelta viikolta.',
   'coachChat.online.body2':
-    'Emme lähetä nimeäsi, sähköpostiosoitettasi tai muita henkilötietojasi. Tiedot poistetaan 30 päivän kuluttua.',
+    'Vastauksen kirjoittaa Anthropic Yhdysvalloissa. Emme lähetä nimeäsi, sähköpostiosoitettasi tai muita henkilötietojasi. Tiedot poistetaan 30 päivän kuluttua.',
   'coachChat.online.ok': 'Selvä',
   'coachChat.keep.title': 'Saammeko säilyttää kopion?',
   'coachChat.keep.body':

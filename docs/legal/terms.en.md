@@ -1,6 +1,6 @@
 # Terms of service
 
-*Updated 17 October 2026*
+*Updated 28 October 2026*
 
 The rules for using Vinha: the health warning, how Pro billing works, and what we promise.
 
@@ -16,7 +16,7 @@ Vinha is provided by Styxon Studio (sole trader Tatu Ylönen, business ID 332157
 
 ## Age
 
-You must be at least 16 years old to use Vinha. The app is built around adult strength training and is not designed for children.
+You must be at least 18 years old to use Vinha. The app is built around adult strength training and is not designed for children.
 
 ## Your licence to use the app
 

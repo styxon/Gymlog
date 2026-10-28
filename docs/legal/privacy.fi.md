@@ -1,6 +1,6 @@
 # Tietosuojaseloste
 
-*Päivitetty 17.10.2026*
+*Päivitetty 28.10.2026*
 
 Mitä Vinha tallentaa, mikä lähtee puhelimestasi ja mitä voit sille tehdä.
 
@@ -44,7 +44,7 @@ Uusi puhelin aloittaa siis tyhjästä, ellet käytä alla kuvattua pilvivarmuusk
 
 iPhonella sovelluksen tietoja ei jätetä puhelimen oman varmuuskopion ulkopuolelle. Jos iCloud-varmuuskopiointi on päällä tai varmuuskopioit puhelimen tietokoneelle, Vinhan tiedot menevät siihen muiden sovellustesi tietojen mukana ja palautuvat sen mukana, kun otat puhelimen käyttöön siitä. Sen varmuuskopion tekee ja säilyttää Apple tai oma tietokoneesi Applen ehtojen mukaisesti. Emme tee sitä, emme näe sitä emmekä voi poistaa sitä.
 
-Jos et halua treenilokiasi siihen, voit jättää Vinhan pois iCloud-varmuuskopiosta iPhonen iCloud-asetuksissa tai kytkeä iCloud-varmuuskopioinnin pois. Alla kuvattu pilvivarmuuskopio on erillinen: se on ainoa treenilokistasi meillä oleva kopio.
+Jos et halua treenilokiasi siihen, voit jättää Vinhan pois iCloud-varmuuskopiosta iPhonen iCloud-asetuksissa tai kytkeä iCloud-varmuuskopioinnin pois. Alla kuvattu pilvivarmuuskopio on erillinen: se on ainoa treenilokistasi meillä oleva kopio, mutta ei ainoa puhelimen ulkopuolinen kopio — iPhonen varmuuskopio on toinen, ja sitä säilyttää Apple tai tietokoneesi.
 
 ## Pilvivarmuuskopio (vapaaehtoinen)
 
@@ -76,13 +76,11 @@ Siinä ei ole nimeäsi, sähköpostiasi, Google-tiliäsi eikä mitään puhelime
 
 Palvelimemme välittää kysymyksen Anthropicille, Claude-mallin kehittäjälle, joka kirjoittaa vastauksen Yhdysvalloissa. Anthropicin kaupallisten ehtojen mukaan tietoja ei käytetä sen mallien opettamiseen, ja ne poistetaan 30 päivän kuluessa.
 
-Me emme säilytä omaa kopiotamme, ellet ole antanut siihen lupaa. Valmentaja kysyy sen kerran, ennen ensimmäistä kysymystäsi, kolmena erillisenä rivinä: kysymyksesi ja vastaukset, ohjelmat joita pyydät sen rakentamaan, ja valokuvat joista tuot ohjelman. Jokainen rivi alkaa ei-vastauksesta, jokainen on oma vastauksensa, eikä mikään niistä muuta sitä vastausta jonka saat. Sallimasi säilytetään enintään 24 kuukautta ja poistetaan sitten automaattisesti, ja sitä käytetään yhteen asiaan: valmentajan parantamiseen ohjelmien kirjoittajana.
-
-Voit peruuttaa luvan milloin tahansa asetuksista, ja peruutus poistaa myös jo säilytetyn. Kun kytket yhdenkin rivin pois, jokainen sinulle säilytetty kopio poistetaan palvelimeltamme — myös päälle jätettyjen rivien nojalla tehdyt — eikä vain uusien kertyminen lopu.
+Me emme säilytä omaa kopiotamme. Valmentaja ei tallenna kysymyksiäsi ja vastauksia, ohjelmia joita pyydät sen rakentamaan, eikä valokuvia joista tuot ohjelman: ne lähetetään, vastaus kirjoitetaan niiden pohjalta ja ne pudotetaan. Aiempi testiversio saattoi kysyä lupaa tällaisten kopioiden säilyttämiseen. Jos vastasit siinä kyllä, sinulle tallennetut kopiot poistetaan automaattisesti 24 kuukauden kuluessa niiden saapumisesta, ja voit poistaa ne heti: lupa näkyy asetuksissa vain sille, joka sen antoi, ja kun kytket sen pois, jokainen sinulle säilytetty kopio poistetaan.
 
 Ohjelmakoostaja toimii samalla tavalla: kun pyydät sovellusta rakentamaan ohjelman kirjoittamasi kuvauksen pohjalta, kuvaus ja sama yhteenveto lähetetään samaa reittiä.
 
-Myös ohjelman tuonti valokuvasta käyttää tätä reittiä. Valitsemasi kuva pienennetään ja lähetetään, jotta siinä oleva taulukko voidaan lukea; sitä käytetään siihen yhteen tuontiin, eikä sitä säilytetä — paitsi jos rastitit yllä valokuvien rivin, jolloin kuva ja siitä luettu taulukko säilytetään kuten muutkin sallimasi kopiot.
+Myös ohjelman tuonti valokuvasta käyttää tätä reittiä. Valitsemasi kuva pienennetään ja lähetetään, jotta siinä oleva taulukko voidaan lukea; sitä käytetään siihen yhteen tuontiin, emmekä säilytä sitä.
 
 Jokaisen verkkotilan valmentajan kirjoittaman vastauksen alla on Ilmoita-linkki. Jos käytät sitä, ilmoittamasi vastaus ja valitsemasi syy lähetetään meille, jotta ihminen voi tarkistaa sen — ei kysymystäsi eikä mitään, mikä yksilöisi sinut. Ilmoitus tulee meille Slackin kautta, viestipalvelun jossa käsittelemme ilmoitukset, ja se poistetaan, kun asia on käsitelty, viimeistään 24 kuukauden kuluttua.
 
@@ -107,6 +105,7 @@ Tapahtumat menevät omalle palvelimellemme eivätkä mihinkään muualle. Niitä
 - Pro-sivu avattiin.
 - Valmentajalle lähetettiin kysymys — se, että kysymys lähti, ei koskaan sen tekstiä.
 - Sovellus kaatui tai jokin ei onnistunut: virheraportti, kuten edellä kerrotaan.
+- Sovellus tarkisti käynnistyessään puhelimeen tallennetun treenihistorian: montako tietuetta se laski ja täsmäsivätkö sen kaksi kopiota — ei koskaan sitä, mitä tietueissa on.
 
 ## Ketkä auttavat meitä
 
@@ -148,6 +147,7 @@ Tietosuoja-asetus (GDPR) vaatii jokaiselle käsittelylle laillisen perusteen. Me
 Sovellus pyytää puhelimeltasi hyvin vähän. Tätä se käyttää:
 
 - Ilmoitukset: kysytään, kun lepoajastin ensimmäisen kerran tarvitsee hälyttää, tai kun kytket ilmoitukset päälle asetuksista. Kieltäydy, ja kaikki muu toimii silti.
+- Hälytykset ja muistutukset (Android 12 ja uudempi): jotta lepoajastimen hälytys soi sekunnilleen. Android voi pyytää sinua sallimaan sen puhelimen asetuksissa; kieltäydy, ja hälytys voi tulla muutaman minuutin myöhässä, muuta ei muutu.
 - Kuvat: puhelimen oma valitsin antaa sovellukselle sen yhden kuvan, jonka valitsit. Lupaa kuvakirjastoosi ei pyydetä.
 - Internet: tässä selosteessa kuvattuja palvelintoimintoja varten — tällä hetkellä varmuuskopio, valmentaja, tilastot ja tiedotteet. Treenin kirjaaminen ei koskaan tarvitse yhteyttä.
 - Näytön pitäminen päällä treenin aikana, jos kytket sen päälle asetuksista.
@@ -163,7 +163,7 @@ Kytke mikä tahansa ryhmä tai kaikki pois kohdasta Asetukset → Ilmoitukset ta
 
 Jos ostat Pron, maksun hoitaa kokonaan Androidilla Google Play ja iPhonella Apple App Storen kautta. Emme koskaan näe korttinumeroasi, laskutusosoitettasi emmekä mitään maksutietoa. Sovellus saa tietää vain, onko Pro voimassa, mikä tilaus ja mihin asti.
 
-Ilmainen kokeilu ei maksa mitään: sen aloittaminen kirjoittaa puhelimeesi yhden päivämäärän, Pro on voimassa siihen asti ja päättyy sitten itsestään. Päättyminen ei veloita mitään, mitään ei lähetetä minnekään, eikä korttia kysytä. Jos ilmoitukset ovat päällä, sovellus muistuttaa kaksi päivää ennen loppua; sen muistutuksen kirjoittaa ja näyttää puhelimesi, emme me.
+Sovelluksessa ei ole omaa ilmaista kokeilua. Jos kampanjakoodi tai aiempi ilmainen kokeilu pitää Pron yhä päällä, se päättyy itsestään sovelluksessa näkyvänä päivänä; päättyminen ei veloita mitään eikä mitään lähetetä minnekään.
 
 ## Palaute, arviointi ja jakaminen
 
@@ -205,7 +205,7 @@ Suurimman osan näistä teet itse sovelluksessa keneltäkään kysymättä. Muis
 
 ## Lapset
 
-Vinhaa ei ole tarkoitettu alle 16-vuotiaille, emmekä tietoisesti käsittele heidän tietojaan. Koska meille ei tule mitään nimen kanssa, emme voi erottaa lapsen tietoja kenenkään muun tiedoista — jos uskot lapsen kirjautuneen pilvivarmuuskopioon, kirjoita meille, niin poistamme sen.
+Vinhaa ei ole tarkoitettu alle 18-vuotiaille, emmekä tietoisesti käsittele heidän tietojaan. Koska meille ei tule mitään nimen kanssa, emme voi erottaa lapsen tietoja kenenkään muun tiedoista — jos uskot lapsen kirjautuneen pilvivarmuuskopioon, kirjoita meille, niin poistamme sen.
 
 ## Muutokset tähän selosteeseen
 

@@ -5,6 +5,14 @@ events and, since 2026-10-04, two error events (the vocabulary is
 `src/lib/analytics.ts`; the privacy policy lists every event). This page is the
 operator's view: where the data sits, how long, and what keeps that promise.
 
+**Coming with the SQLite history mirror (1.1.1):** one more event, the
+start-up check of the mirror against the stored database: counts and a
+status only (matched, rebuilt, and why), never record contents (owner
+decision S5, 2026-10-28). The privacy policy lists it from version
+`2026-10-28`; it joins `src/lib/analytics.ts` and `api/events.ts` in the
+mirror's PR, server first (see Deploy order below). Play Data safety
+(Diagnostics) and App Store App Privacy are updated in the same release.
+
 ## Error reports (`app_error`, `operation_failed`)
 
 Production failures ride the same pipe and the same switch — no third-party
