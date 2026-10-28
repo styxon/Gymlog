@@ -21,17 +21,33 @@ export interface HistoryContentHash {
   combined: string;
 }
 
-type CollectionHash = { count: number; hash: string };
+export type CollectionHash = { count: number; hash: string };
+
+/**
+ * A collection's digest, fed one row text at a time: a store read in pages
+ * hashes as it goes and never holds the whole table's text.
+ */
+export function createHistoryRowHasher() {
+  const hash = createHash();
+  let count = 0;
+  return {
+    add(text: string) {
+      hash.add(text);
+      count += 1;
+    },
+    finish(): CollectionHash {
+      return { count, hash: hash.digest() };
+    },
+  };
+}
 
 /** The digest of one collection's row texts, in order. */
 export function hashHistoryRowTexts(texts: Iterable<string>): CollectionHash {
-  const hash = createHash();
-  let count = 0;
+  const hasher = createHistoryRowHasher();
   for (const text of texts) {
-    hash.add(text);
-    count += 1;
+    hasher.add(text);
   }
-  return { count, hash: hash.digest() };
+  return hasher.finish();
 }
 
 export function hashHistoryCollection(items: readonly object[]): CollectionHash {

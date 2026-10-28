@@ -41,11 +41,7 @@ const ALLOWED = {
   GUIDED_LIBRARY_ALIASES: 'The alias table, exposed so a test can prove every target is a real library entry — a misspelled target resolves to nothing and says so nowhere.',
   getPlanWeekPhase: 'Plan phase wording, written ahead of the surface that will show it.',
   emptyRatingPromptState: 'The empty rating-prompt state, pinned by tests so its shape cannot drift; the rest of the state machine is wired in src/app/finishExits.ts.',
-  hashHistoryRowTexts: 'The store side of the mirror content check; wired by the SQLite row store in PR 2, pinned equal to the memory side by tests/lib/historyContentHash.test.cjs.',
-  historyContentHash: 'The memory side of the mirror content check; wired by the SQLite row store in PR 2.',
-  diffHistory: 'The mirror change detection; wired by the SQLite row store in PR 2.',
-  isHistoryDiffEmpty: 'Lets the mirror skip an empty commit; wired by the SQLite row store in PR 2.',
-  decodeHistoryRows: 'Reads rows back for the mirror verification; wired by the SQLite row store in PR 2.',
+  hashHistoryRowTexts: 'The array form of the store-side digest of the mirror rows; the mirror itself feeds createHistoryRowHasher page by page, and tests/lib/historyContentHash.test.cjs pins the two equal.',
   UNLISTED_READY_PROGRAMS:
     'A declaration, not a call: the programmes deliberately kept out of the browse collections, read only by the guard that fails when a template is in neither. Wiring it to a screen would give it behaviour it must not have — it exists so that "not browsable" is always a decision someone wrote down.',
 };
