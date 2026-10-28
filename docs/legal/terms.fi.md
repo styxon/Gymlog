@@ -1,6 +1,6 @@
 # Käyttöehdot
 
-*Päivitetty 17.10.2026*
+*Päivitetty 28.10.2026*
 
 Vinhan käytön säännöt: terveysvaroitus, miten Pro-laskutus toimii ja mitä lupaamme.
 
@@ -16,7 +16,7 @@ Vinhan tarjoaa Styxon Studio (toiminimi, haltija Tatu Ylönen, Y-tunnus 3321575-
 
 ## Ikäraja
 
-Sinun on oltava vähintään 16-vuotias käyttääksesi Vinhaa. Sovellus on rakennettu aikuisten voimaharjoittelun ympärille, eikä sitä ole suunniteltu lapsille.
+Sinun on oltava vähintään 18-vuotias käyttääksesi Vinhaa. Sovellus on rakennettu aikuisten voimaharjoittelun ympärille, eikä sitä ole suunniteltu lapsille.
 
 ## Käyttöoikeutesi
 

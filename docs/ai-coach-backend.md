@@ -30,16 +30,20 @@ Set these on the server / deployment platform:
   lock on the front door (public-repo readers, web pages, casual scripts), not
   a vault — Play Integrity is the stronger door. No CORS headers are sent: the
   only client is the app.
-- `AI_COACH_CLAUDE_MODEL=claude-haiku-4-5-20251001` (optional)
-- `AI_COACH_CLAUDE_MAX_TOKENS=700` (optional)
+- `AI_COACH_CLAUDE_MODEL` (optional; the code default is `claude-haiku-4-5-20251001`,
+  Production sets a Sonnet model. There is no second model to fall back to: a
+  failed call is answered by the local preview.)
+- `AI_COACH_CLAUDE_MAX_TOKENS=1200` (optional, the default)
 - `AI_COACH_RATE_LIMIT_MAX=12` (optional)
 - `AI_COACH_RATE_LIMIT_WINDOW_MS=600000` (optional)
-- `AI_COACH_CLAUDE_TIMEOUT_MS=12000` (optional)
+- `AI_COACH_CLAUDE_TIMEOUT_MS=30000` (optional, the default; the app waits 40 s)
 
 Spend-control variables are listed under **Tuning** below.
 
 ## Why this model, and what it costs
-Haiku 4.5 is the cheap tier, which is the right default: the reasoning here is
+Production runs Sonnet through `AI_COACH_CLAUDE_MODEL` (the variable is
+Sensitive; Anthropic Console → Usage shows which model served the requests).
+Haiku 4.5 is only the code default, the cheap tier: the reasoning here is
 light because `trainingHistory.ts` has already done the arithmetic. The request
 is mostly context, so the prompt cache does the heavy lifting — the rules and
 the training context sit in one cached prefix, and follow-up questions inside a

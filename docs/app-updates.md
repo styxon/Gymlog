@@ -22,7 +22,7 @@ redeploy — a changed variable applies to the next deploy only:
 |---|---|
 | `APP_MIN_VERSION_ANDROID` | Oldest Android version the server still serves, e.g. `1.2.0` |
 | `APP_MIN_VERSION_IOS` | The same for iOS |
-| `APP_STORE_URL_IOS` | The App Store page (`https://apps.apple.com/...`). Until it is set, an iOS build is told to update without a button to press. |
+| `APP_STORE_URL_IOS` | The App Store page (`https://apps.apple.com/...`). Until it is set, an iOS build is told to update without a button to press. Set in Production on 2026-10-28 to `https://apps.apple.com/fi/app/id6823676706`. |
 
 Unset, empty or unreadable means nobody is refused — a typo cannot lock every
 phone out. A refused build gets HTTP 426 with `{ ok: false, error:

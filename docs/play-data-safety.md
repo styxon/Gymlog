@@ -124,9 +124,11 @@ foreground only and picks photos from the library only. Now:
 
 ## 2. Form answers
 
-> **Status 2026-10-09:** the form has not been filled in anywhere yet — the Play
-> developer account waits for the D-U-N-S number. Fill it once, from this table,
-> the day the account exists. The App Store's App Privacy answers follow the same
+> **Status 2026-10-28:** submitted for 1.1.0. The public Data safety page
+> (play.google.com/store/apps/datasafety?id=app.vinha) shows the rows of this
+> table, checked 2026-10-28. Re-submit with the next release: the coach
+> keep-permission is gone from the policy, and the storage-check event (S5)
+> joins Diagnostics. The App Store's App Privacy answers follow the same
 > rows (Diagnostics → Crash Data, Other Diagnostic Data; Purchases → Purchase
 > History; nothing linked to the user except the backup's User ID, nothing used
 > for tracking).
@@ -145,7 +147,7 @@ on our behalf (Vercel, Anthropic) is *not* "sharing" under Play's definition.
 | Financial info → Purchase history | Yes, once billing ships (#344) | No | Yes (Pro is optional) | App functionality | RevenueCat, anonymous app user id, no attributes (§1). Google Play itself handles the payment; card details never reach the app, RevenueCat or us |
 | App activity → App interactions | Yes | No | Yes | Analytics | The eight usage events. Settings → Usage statistics switches them off; off drops the queue |
 | App info and performance → Crash logs | Yes (since 2026-10-04) | No | Yes | Analytics; App functionality | `app_error`: the error's class, up to five positions in the app's own code (`index.android.bundle:1:2345`), the screen, app version, platform. **No error message, no stack text beyond those positions, no user content.** Same random install id as the usage events, linked to no account; the same switch (Settings → Usage statistics) turns it off and drops the queue; same 24-month retention |
-| App info and performance → Diagnostics | Yes (since 2026-10-04) | No | Yes | Analytics; App functionality | `operation_failed`: which of save / backup / restore / load / account deletion / sign-in failed, and a short closed code (`NETWORK`, `STORAGE_FAILED`, …). Not linked to identity, not shared. Same switch and retention as above |
+| App info and performance → Diagnostics | Yes (since 2026-10-04) | No | Yes | Analytics; App functionality | `operation_failed`: which of save / backup / restore / load / account deletion / sign-in failed, and a short closed code (`NETWORK`, `STORAGE_FAILED`, …). From 1.1.1 also the start-up check of the history mirror: counts and a status, no contents. Not linked to identity, not shared. Same switch and retention as above |
 | Device or other IDs | Yes | No | Yes | Analytics; App functionality | Random ids, minted separately and linked to nothing — including to each other. The install id (analytics) resets on reinstall and is discarded when the switch is off. RevenueCat's anonymous app user id exists only once billing ships and only for purchases. `aiLogId` (the coach-log label) is no longer minted while copies are off; a reader who said yes before keeps theirs until they withdraw |
 | Location, Contacts, Audio, Files and docs, Calendar, Web browsing, Installed apps; Financial info other than Purchase history | No | No | — | — | — |
 
@@ -223,4 +225,4 @@ Open:
 - [ ] Privacy policy URL in Play Console points at the published policy, and the
   in-app text is the same version (`LEGAL_LAST_UPDATED`).
 - [ ] The public account-deletion URL is live and entered in the form (§2).
-- [ ] The store listing's target audience matches the policy's "not for under 16".
+- [ ] The store listing's target audience matches the policy's "not for under 18" (owner decision 2026-10-28: 18 in both stores; the PEGI 3 content rating is separate and stays).

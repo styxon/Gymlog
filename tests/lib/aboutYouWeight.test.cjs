@@ -53,11 +53,11 @@ module.exports = [
     },
   },
   {
-    name: 'copy: 16–18 uses an en dash, start-path and bodyweight texts are the agreed ones',
+    name: 'copy: the lowest age band reads 18 (the terms ask for 18), start-path and bodyweight texts are the agreed ones',
     run() {
       const assert = require('node:assert/strict');
       const i18n = read('src', 'lib', 'i18n.ts');
-      assert.equal((i18n.match(/'myData\.age\.under19': '16–18'/g) || []).length, 2);
+      assert.equal((i18n.match(/'myData\.age\.under19': '18'/g) || []).length, 2);
       assert.ok(i18n.includes("'startPath.build.body': 'Vain 6 vaihetta'"));
       assert.ok(i18n.includes("'startPath.ready.body': 'Yli 50 valmista ohjelmaa'"));
       assert.ok(i18n.includes("'startPath.ready.body': '50+ programs to pick'"));

@@ -1,6 +1,6 @@
 # Privacy policy
 
-*Updated 17 October 2026*
+*Updated 28 October 2026*
 
 What Vinha stores, what leaves your phone, and what you can do about it.
 
@@ -44,7 +44,7 @@ That means a new phone starts empty unless you use the cloud backup below, or ex
 
 On iPhone the app’s data is not left out of the phone’s own backup. If iCloud Backup is switched on, or you back the phone up to a computer, Vinha’s data goes into that backup together with the data of your other apps, and comes back with it when you set up a phone from it. That backup is made and kept by Apple or on your own computer, under Apple’s terms. We do not make it, cannot see it and cannot delete it.
 
-If you would rather Vinha’s training log is not in it, you can leave Vinha out of an iCloud backup in your iPhone’s iCloud settings, or switch iCloud Backup off. The cloud backup below is separate: it is the only copy of your training log that we hold.
+If you would rather Vinha’s training log is not in it, you can leave Vinha out of an iCloud backup in your iPhone’s iCloud settings, or switch iCloud Backup off. The cloud backup below is separate: it is the only copy of your training log that we hold, but not the only copy outside your phone — an iPhone backup is one more, kept by Apple or on your computer.
 
 ## Cloud backup (optional)
 
@@ -76,13 +76,11 @@ It does not contain your name, your email, your Google account or any identifier
 
 Our server forwards the question to Anthropic, the company behind the Claude model, which writes the answer in the United States. Under Anthropic’s commercial terms the data is not used to train its models and is deleted within 30 days.
 
-We keep no copy of our own unless you have said we may. The coach asks once, before your first question, in three separate lines: your questions and answers, the programmes you ask it to build, and the photos you import one from. Every line starts as no, each is its own answer, and none of them changes the answer you get. What you allow is kept for up to 24 months and then deleted automatically, and it is used for one thing: making the coach better at writing programmes.
-
-You can take it back at any time in Settings, and taking it back deletes what was already kept. Turning any one line off removes every copy kept for you from our server — including those made under the lines you leave on — rather than only stopping new ones.
+We keep no copy of our own. The coach does not store your questions and answers, the programmes you ask it to build or the photos you import one from; they are sent, answered from and dropped. An earlier test version could ask for permission to keep such copies. If you said yes there, the copies filed for you are deleted automatically within 24 months of the day they arrived, and you can delete them now: the permission shows in Settings only for someone who gave it, and switching it off removes every copy kept for you.
 
 The programme composer works the same way: when you ask the app to build a programme from a written brief, the brief and the same summary are sent along the same route.
 
-Importing a programme from a photo also uses this route. The photo you picked is scaled down and sent so the table in it can be read; it is used for that one import and is not kept — unless you ticked the photos line above, in which case the photo and the table read from it are kept like any other allowed copy.
+Importing a programme from a photo also uses this route. The photo you picked is scaled down and sent so the table in it can be read; it is used for that one import and is not kept by us.
 
 Under each answer the online coach writes there is a Report link. If you use it, the answer you reported and the reason you picked are sent to us so that a person can review it — not your question, and nothing that identifies you. The report reaches us through Slack, the messaging service we review reports in, and is deleted once it has been dealt with, at the latest after 24 months.
 
@@ -107,6 +105,7 @@ The events go to our own server and nowhere else. They are kept for up to 24 mon
 - The Pro page was viewed.
 - A question was sent to the coach — the fact that one was sent, never the text.
 - The app failed or something did not work: an error report, as described above.
+- The app checked the training history it keeps on your phone at start-up: how many records it counted and whether its two copies matched — never what the records contain.
 
 ## Who helps us run this
 
@@ -148,6 +147,7 @@ The GDPR requires a lawful basis for each kind of processing. These are ours.
 The app asks your phone for very little. What it does use:
 
 - Notifications: asked the first time a rest timer needs to alert you, or when you switch notifications on in Settings. Refuse, and everything else keeps working.
+- Alarms and reminders (Android 12 and newer): so the rest timer’s alert can ring on the second. Android may ask you to allow it in the phone’s settings; refuse, and the alert can arrive a few minutes late, nothing else changes.
 - Photos: the phone’s own picker hands the app the one photo you chose. No permission to your photo library is asked.
 - Internet: for the server features described in this policy — at present backup, coach, statistics and notices. Logging a workout never needs a connection.
 - Keeping the screen on during a workout, if you switch that on in Settings.
@@ -163,7 +163,7 @@ Turn any group, or all of them, off in Settings → Notifications, or in your ph
 
 If you buy Pro, the payment is handled entirely by Google Play on Android and by Apple through the App Store on iPhone. We never see your card number, billing address or any payment detail. The app learns only whether Pro is active, which plan, and until when.
 
-The free trial costs nothing: starting it writes one date on your phone, Pro runs until that date and then stops on its own. Nothing is charged when it ends, nothing is sent anywhere, and no card is asked for. If you have notifications on, the app reminds you two days before it runs out; that reminder is written and shown by your phone, not by us.
+The app has no free trial of its own. If a promo code or an earlier free trial still keeps Pro on, it stops on its own on the date shown in the app, nothing is charged when it ends and nothing is sent anywhere.
 
 ## Feedback, rating and sharing
 
@@ -186,7 +186,7 @@ On your phone, the app’s data is protected by the phone’s own lock and the s
 - iPhone backup: if iCloud Backup or a computer backup is switched on, the app’s data is kept in it for as long as Apple, or you, keep that backup — under Apple’s terms, not ours.
 - Cloud backup: until you delete it in Settings, or ask us to.
 - The marker left by Delete account on an Apple account: one scrambled marker with a date and a random number your phone made for the deletion request (used only to tell that phone its deletion went through), with no name, email or training data. The server’s routine clean-up removes it once 180 days have passed and it can no longer end anything. That clean-up runs when someone signs in with Apple, so it can take a little longer.
-- Coach questions, briefs and photos: not kept by us unless you allowed it, and then for up to 24 months or until you take the permission back, whichever comes first. Anthropic deletes its own copy within 30 days either way.
+- Coach questions, briefs and photos: not kept by us. If you gave permission in an earlier test version, up to 24 months or until you take the permission back, whichever comes first. Anthropic deletes its own copy within 30 days either way.
 - Usage statistics, error reports included: up to 24 months, then deleted automatically.
 - Feedback emails: as long as it takes to handle them.
 
@@ -205,7 +205,7 @@ Most of these you exercise yourself, inside the app, without asking anyone. For 
 
 ## Children
 
-Vinha is not intended for children under 16, and we do not knowingly process their data. Because nothing reaches us with a name attached, we cannot tell a child’s data from anyone else’s — if you believe a child has signed in for the cloud backup, write to us and we will delete it.
+Vinha is not intended for anyone under 18, and we do not knowingly process their data. Because nothing reaches us with a name attached, we cannot tell a child’s data from anyone else’s — if you believe a child has signed in for the cloud backup, write to us and we will delete it.
 
 ## Changes to this policy
 

@@ -21,4 +21,4 @@ node scripts/export-legal.cjs
 
 `tests/lib/legalDocuments.test.cjs` fails if the published Markdown and the
 in-app text drift apart, and re-derives the policy's factual claims from the
-code — four outbound request sites (coach, cloud backup, usage events, notice check), six storage keys, no third-party SDKs.
+code — four outbound request sites (coach, cloud backup, usage events, notice check), thirteen storage keys (and two pre-rename fallbacks), no analytics, advertising or crash-reporting SDKs.

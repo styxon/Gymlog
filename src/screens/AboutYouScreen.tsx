@@ -98,11 +98,11 @@ interface AboutYouScreenProps {
 /**
  * Oldest first would read as a ladder to decline; youngest first is the form's order.
  *
- * The lowest band starts at 16, not at "under 19" (user, 2026-09-09). The old
- * label covered thirteen-year-olds, and sixteen is the age at which no EU
- * member state asks for a guardian's consent — so the band the reader picks is
- * also the sentence the app is making about who it is for. The id stays '18':
- * renaming it would orphan every answer already stored.
+ * The lowest band is "18" alone (2026-10-28): the terms ask for 18 since then,
+ * so the band the reader picks is also the sentence the app is making about who
+ * it is for. It started at 16 from 2026-09-09 and covered thirteen-year-olds
+ * before that. The id stays '18': renaming it would orphan every answer already
+ * stored.
  */
 const AGE_RANGES: { id: SetupAgeRange; labelKey: I18nKey }[] = [
   { id: '18', labelKey: 'myData.age.under19' },
