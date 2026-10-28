@@ -23,7 +23,8 @@ runs after one warm-up:
 - **stringify**: `JSON.stringify` of the five history collections (where a
   content hash or a mirror write starts)
 - **save**: `saveDatabase` (stringify, split, write to the stub)
-- **load**: the whole `loadDatabase` path (read parts, parse, normalize,
+- **load** (understates a real install slightly: the fake has no separate
+  preferences key, so that overlay is near-free here): the whole `loadDatabase` path (read parts, parse, normalize,
   preferences overlay, reconcile)
 
 The fixture has about 6 logs per session, 3 to 4 sets each, bodyweight every
@@ -66,8 +67,9 @@ and whether the list runs newest-first. It never prints a row, an id or a note.
 
 It was run here only on generated files, to check the three input formats. It
 has **not** been run on the owner's export, so the plan's open question
-"does the corpus contain duplicate ids" is still open. To answer it: export a
-backup, then run the command on that file. The fixture history has none, so a
+"does the corpus contain duplicate ids" is still open. To answer it: the app has no
+user-facing file export, so take the cloud backup payload (the JSON the backup
+holds) and run the command on that file. The fixture history has none, so a
 non-zero count in the real file is real.
 
 ## Still needs the phone

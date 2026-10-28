@@ -3,7 +3,8 @@
  *
  *   npm run scan:history -- path/to/export.json
  *
- * Reads ONE LOCAL FILE you name: the app's own export of a backup, the
+ * Reads ONE LOCAL FILE you name: the cloud backup payload (the app has no
+ * user-facing file export, so this is the JSON the backup holds), a bare
  * AppDatabase JSON, or a gzip of either. Nothing is fetched, nothing is
  * written. For each collection (workout sessions, exercise logs, bodyweight,
  * measurements, cardio) it prints the count, duplicate ids, rows missing an
@@ -28,7 +29,7 @@ function fail(message) {
 
 const file = process.argv[2];
 if (!file || file.startsWith('-')) {
-  fail('Usage: node scripts/scan-history-ids.cjs <path to an exported backup or AppDatabase JSON>');
+  fail('Usage: node scripts/scan-history-ids.cjs <path to a cloud backup payload or AppDatabase JSON>');
 }
 
 let bytes;

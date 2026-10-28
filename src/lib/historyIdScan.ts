@@ -167,7 +167,7 @@ function resolveDatabase(input: unknown): { format: HistoryScan['format']; datab
   if (!isRecord(input)) {
     return { format: 'unknown', database: null, history: null };
   }
-  if (isRecord(input.database) && 'workoutHistory' in input) {
+  if (isRecord(input.database) && ('workoutHistory' in input || 'version' in input)) {
     return { format: 'accountBackup', database: input.database, history: input.workoutHistory };
   }
   if (SPECS.some((spec) => spec.name in input)) {

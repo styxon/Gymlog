@@ -90,6 +90,16 @@ module.exports = [
     },
   },
   {
+    name: 'historyIdScan: a backup payload with a database but no slot history is still read',
+    run() {
+      const h = buildHistoryFixture(4);
+      const scan = scanHistoryIds({ version: 1, exportedAt: 'x', database: { ...h, preferences: {} } });
+      assert.equal(scan.format, 'accountBackup');
+      assert.equal(byName(scan, 'workoutSessions').count, 4);
+      assert.equal(scan.collections.some((c) => c.name === 'workoutHistory.sessions'), false);
+    },
+  },
+  {
     name: 'historyIdScan: something else is unknown and prints no collections',
     run() {
       for (const input of [null, 'text', 5, [], {}, { hello: 'world' }]) {

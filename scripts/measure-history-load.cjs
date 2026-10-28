@@ -63,11 +63,14 @@ async function timed(fn) {
   return { ms: Number(process.hrtime.bigint() - start) / 1e6, result };
 }
 
-async function medianOf(runs, fn) {
-  await fn(); // warm-up: the first call pays for compiling the code, not the work
+async function medianOf(runs, fn, prepare = () => undefined) {
+  // `prepare` builds each run's input outside the timer (a fresh copy, so a
+  // function that mutates its input cannot time a different workload later).
+  await fn(prepare()); // warm-up: the first call pays for compiling the code, not the work
   const times = [];
   for (let run = 0; run < runs; run += 1) {
-    times.push((await timed(fn)).ms);
+    const input = prepare();
+    times.push((await timed(() => fn(input))).ms);
   }
   return median(times);
 }
@@ -100,7 +103,7 @@ async function measureSize(sessionCount, runs, modules) {
     blobBytes,
     blobParts: parts,
     parseMs: await medianOf(runs, () => JSON.parse(raw)),
-    normalizeMs: await medianOf(runs, () => database.normalizeDatabase(parsed)),
+    normalizeMs: await medianOf(runs, (input) => database.normalizeDatabase(input), () => structuredClone(parsed)),
     stringifyHistoryMs: await medianOf(runs, () =>
       JSON.stringify([
         history.workoutSessions,
@@ -111,6 +114,8 @@ async function measureSize(sessionCount, runs, modules) {
       ]),
     ),
     saveMs: await medianOf(runs, () => database.saveDatabase(stored)),
+    // The fake has no separate preferences key, so the preferences overlay in a real
+    // load is near-free here and a real install pays slightly more than this.
     loadMs: await medianOf(runs, () => database.loadDatabase()),
   };
 
