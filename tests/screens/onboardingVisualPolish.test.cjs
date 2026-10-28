@@ -3,7 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
-const appSource = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8');
+const appSource = readAppWiring();
 const appShellSource = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'components', 'AppShell.tsx'), 'utf8');
 const onboardingSource = fs.readFileSync(
   path.join(__dirname, '..', '..', 'src', 'screens', 'OnboardingScreen.tsx'),
@@ -16,7 +16,10 @@ module.exports = [
     name: 'onboarding plan-ready screen keeps safe-area background consistent and hero copy readable',
     run() {
       assert.match(appShellSource, /shellBackgroundColor\?: string/);
-      assert.match(appSource, /const onboardingScreenActive = onboardingActive \|\| setupOnboardingActive/);
+      assert.match(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'lib', 'shellChrome.ts'), 'utf8'),
+        /const onboardingScreenActive = onboardingActive \|\| setupOnboardingActive/,
+      );
       // Light shell: warm lavender behind onboarding; dark status-bar glyphs.
       // Onboarding no longer names its own shell colour — the shell defaults to
       // the palette background, which is what onboarding wanted all along.

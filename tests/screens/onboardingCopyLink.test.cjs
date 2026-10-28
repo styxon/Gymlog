@@ -87,7 +87,7 @@ module.exports = [
   {
     name: 'onboarding: adopting resumes the copy, and the row stops recommending a programme already being run',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const adopt = app.slice(
         app.indexOf('async function handleAdoptReadyProgram('),
         app.indexOf('const planId = buildReadyProgramPlanId(workoutTemplateId);'),

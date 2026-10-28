@@ -77,9 +77,13 @@ module.exports = [
       // catches this except looking at the phone.
       //
       // If you add a screen with a bottom-pinned action, add it here too.
-      const gate = appSource.slice(
-        appSource.indexOf('const showTabBar ='),
-        appSource.indexOf('const setupOnboardingActive'),
+      const chromeSource = require('node:fs').readFileSync(
+        require('node:path').join(__dirname, '..', '..', 'src', 'lib', 'shellChrome.ts'),
+        'utf8',
+      );
+      const gate = chromeSource.slice(
+        chromeSource.indexOf('const showTabBar ='),
+        chromeSource.indexOf('const setupOnboardingActive'),
       );
       assert.match(gate, /screen === 'premium'/);
       assert.match(gate, /screen === 'membership_end'/);

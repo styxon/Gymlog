@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8').replace(/\r\n/g, '\n');
 
@@ -40,7 +41,7 @@ module.exports = [
         /function leaveFinishedWorkout\(nextRoute: AppRoute\) \{\s*leaveFinishedScreen\(nextRoute\);\s*maybeAskForRating\(\);\s*\}/,
       );
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(app, /const \{ leaveFinishedWorkout, leaveFinishedScreen \} = createFinishExits\(/);
       assert.match(app, /useRouteBack\(\{[\s\S]*?leaveFinishedScreen,[\s\S]*?\}\);/);
     },

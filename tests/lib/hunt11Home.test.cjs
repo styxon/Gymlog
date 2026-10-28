@@ -33,7 +33,7 @@ module.exports = [
   {
     name: 'hunt 11 home #1: App.tsx starts a custom programme through the helper with the programme id and the Home card',
     run() {
-      const app = require('node:fs').readFileSync(require('node:path').join(__dirname, '../../App.tsx'), 'utf8').replace(/\r\n/g, '\n');
+      const app = require('../helpers/appWiringSource.cjs').readAppWiring().replace(/\r\n/g, '\n');
       const fn = app.slice(app.indexOf('function handleStartCustomProgram('));
       assert.match(fn.slice(0, 900), /programmeStartSessionId\(\n[^\n]*\n\s+workoutTemplateId,\n\s+homeActivePlanCard,\n/);
     },

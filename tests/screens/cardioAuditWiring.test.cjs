@@ -135,7 +135,7 @@ module.exports = [
       );
       const deps = app.slice(app.indexOf('}, [', listenerAt), app.indexOf(']);', listenerAt) + 3);
       assert.match(deps, /\bcardioRunActive\b/);
-      assert.match(code(read('App.tsx')), /const cardioRunActive = workout\.activeCardio !== null;/);
+      assert.match(code(readAppWiring()), /const cardioRunActive = workout\.activeCardio !== null;/);
       // And the screen it defers to answers back in the player.
       const screen = code(read('src', 'screens', 'CardioScreen.tsx'));
       assert.match(screen, /if \(mode === 'player'\) \{\s*setEndSheetOpen\(true\);\s*return true;\s*\}/);
@@ -149,7 +149,7 @@ module.exports = [
       assert.match(duration, /addCardioMinutesByDay\(/);
       assert.match(code(read('src', 'app', 'renderProgressTab.tsx')), /cardioSessions=\{cardioSessions\}/);
 
-      const app = code(read('App.tsx'));
+      const app = code(readAppWiring());
       const progressCall = slice(app, 'content = renderProgressTab({', '});');
       assert.match(progressCall, /\n\s*cardioSessions,\n/);
       // The coach's context is built in the shell's wiring: App.tsx, or the

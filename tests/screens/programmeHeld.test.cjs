@@ -5,7 +5,7 @@ const path = require('node:path');
 const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 const sourceSlices = require('../helpers/sourceSlices.cjs');
 
-const app = fs.readFileSync(path.join(__dirname, '..', '..', 'App.tsx'), 'utf8').replace(/\r\n/g, '\n');
+const app = readAppWiring().replace(/\r\n/g, '\n');
 // The fork (runProgramExerciseEdit) leaves VinhaApp for src/app in the
 // phase-B split (2026-09-30), so its pins read the whole shell: App.tsx first,
 // then every src/app module.

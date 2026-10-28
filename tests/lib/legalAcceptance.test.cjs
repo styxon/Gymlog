@@ -160,7 +160,7 @@ module.exports = [
       // The sheet has no visibility of its own to flip on the tap.
       assert.doesNotMatch(sheet, /setVisible|visible/);
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       // The terms' state, the tour's gate and the route-level back left App.tsx
       // for src/app hooks in the phase-C split (2026-10-01); the shell's JSX
       // that mounts the sheet is still App.tsx's own.
@@ -218,7 +218,7 @@ module.exports = [
       assert.match(handoff, /legalAccepted: legalChecked,/);
       assert.doesNotMatch(handoff, /handoff\.legal/);
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       // The handler left App.tsx for src/app in the phase-C split (2026-10-01).
       const shell = readAppWiring().split('\r\n').join('\n');
       const done = between(shell, 'const handleSetupHandoffDone = async', 'await updatePreferences(patch);');

@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const { isWorkoutInProgress } = require('../../.test-dist/lib/activeWorkout.js');
 const { resolveHomeWidgetSessionTap } = require('../../.test-dist/lib/widgetPayload.js');
@@ -78,11 +79,11 @@ module.exports = [
       assert.match(overlays, /isWorkoutInProgress\(workout\.activeSession\);/);
       assert.doesNotMatch(overlays, /workout\.activeSession !== null/);
 
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const door = app.slice(app.indexOf('function navigateToActiveWorkout('), app.indexOf('/** Whether the running session is the very one'));
       assert.match(door, /!isWorkoutInProgress\(workout\.activeSession\)/, 'the door and its callers cannot disagree');
       assert.doesNotMatch(door, /status === 'completed'/);
-      assert.match(app, /import \{ isWorkoutInProgress \} from '\.\/src\/lib\/activeWorkout';/);
+      assert.match(read('src', 'app', 'activeWorkoutDoor.ts'), /import \{ isWorkoutInProgress \} from '\.\.\/lib\/activeWorkout';/);
     },
   },
 ];

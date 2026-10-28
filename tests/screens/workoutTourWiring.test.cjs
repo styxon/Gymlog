@@ -198,8 +198,7 @@ module.exports = [
       assert.match(shell, /<View style=\{styles\.content\}>\{children\}<\/View>[\s\S]*\{tabBar\}\s*\{overlay\}/);
       assert.match(wiring, /legalConsentDue \? renderLegalConsent\(shellSafeAreaEdges\.includes\('bottom'\)\) : tourElement/);
       // The player route hides the bar, so the tour's bar measurement answers null and the band runs to the screen's floor.
-      const bar = between(wiring, 'const showTabBar =', 'return renderAppShell');
-      assert.match(bar, /route\.screen === 'guided'/);
+      assert.match(read('src/lib/shellChrome.ts'), /route\.screen === 'guided'/);
       // The layer reads its own origin, so the shell's safe-area padding does not offset the ring.
       assert.match(layer, /const measured = await measureNode\(rootRef\.current\);/);
       // The shield is the layer's: the workout adds no second one.

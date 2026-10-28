@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const read = (file) => fs.readFileSync(path.join(__dirname, '..', '..', file), 'utf8').replace(/\r\n/g, '\n');
 
@@ -13,7 +14,7 @@ module.exports = [
     name: 'hunt 9 #13: the ready programme\'s first edit moves today\'s holds and pick onto the copy, from the commit on',
     run() {
       const hook = read('src/app/useProgramExerciseEdit.tsx');
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(hook, /planHeldMovesToCopy\(\{/, 'the hook plans the move from the catalogue days to the copied ones');
       assert.match(hook, /moveHeldAdaptations\(moves\)/, 'and applies it');
       assert.match(hook, /movePickToCopy\(current\.todaySession, programId, workoutTemplateId, copiedDayIds\)/, 'and rewrites the pick');
@@ -31,7 +32,7 @@ module.exports = [
     name: 'hunt 9 #59: both programme starts refuse a session with every lift left out, before the cardio guard and before anything is spent',
     run() {
       const ready = read('src/app/programmeStarts.tsx');
-      const app = read('App.tsx');
+      const app = readAppWiring();
       for (const [name, source] of [['programmeStarts', ready], ['App', app]]) {
         const refuse = source.indexOf('if (sessionHasNoExercises(runtimeTemplate))');
         assert.ok(refuse > 0, `${name} checks the adapted session`);
@@ -47,7 +48,7 @@ module.exports = [
   {
     name: 'hunt 9 #60: a landed backup restore clears the held swaps and drops, as Reset does',
     run() {
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const restored = app.slice(app.indexOf('onRestored: async () => {'));
       const body = restored.slice(0, restored.indexOf('clearCoachAdviceMemory();'));
       assert.match(body, /setHeldSessionAdaptations\(NO_HELD_SESSION_ADAPTATIONS\);/);
@@ -57,7 +58,7 @@ module.exports = [
     name: 'hunt 9 #65: a free workout\'s board counts as a live strength session for the cardio conflict, both ways out of it',
     run() {
       const home = read('src/app/renderHomeScreens.tsx');
-      const app = read('App.tsx');
+      const app = readAppWiring();
       assert.match(home, /hasActiveStrengthSession=\{isWorkoutInProgress\(workout\.activeSession\) \|\| hasFreestyleBoard\}/);
       assert.match(home, /navigate\(\{ tab: 'workout', screen: 'empty' \}\)/, 'resume goes to the board');
       assert.match(home, /if \(hasFreestyleBoard\) \{\n\s+discardFreestyleBoard\(\);/, 'discard takes the board');

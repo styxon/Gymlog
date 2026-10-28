@@ -58,12 +58,12 @@ module.exports = [
     },
   },
   {
-    name: 'manrope family: every mapped family is loaded by App.tsx, and the override is a shared object',
+    name: 'manrope family: every mapped family is loaded at boot (src/app/useAppBoot.ts), and the override is a shared object',
     run() {
-      const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf8');
+      const app = fs.readFileSync(path.join(root, 'src', 'app', 'useAppBoot.ts'), 'utf8');
       const mapped = new Set(['normal', 'bold', '100', '500', '600', '700', '800'].map((w) => familyForWeight(w)));
       for (const family of mapped) {
-        assert.match(app, new RegExp(`'${family}': require\\('./assets/fonts/${family}\\.ttf'\\)`), family);
+        assert.match(app, new RegExp(`'${family}': require\\('../../assets/fonts/${family}\\.ttf'\\)`), family);
       }
       assert.equal(manropeOverride({ fontWeight: '800' }), manropeOverride({ fontWeight: 800 }));
     },

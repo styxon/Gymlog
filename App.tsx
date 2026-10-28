@@ -1,15 +1,10 @@
-import React, { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Font from 'expo-font';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { AppShell } from './src/components/AppShell';
-import { isWorkoutInProgress } from './src/lib/activeWorkout';
 import { discardSavedFreestyleDraft } from './src/lib/emptyWorkoutSession';
-import { settleSavedCardioRun } from './src/lib/cardio';
 import { leadPlanTrainingCycle } from './src/lib/planTrainingCycle';
 import { programmeStartSessionId } from './src/lib/programSessionList';
-import { formatTime, pluralize } from './src/lib/format';
 import { HistoryScrollMemory } from './src/lib/historyScrollMemory';
 import { formatWorkoutDisplayLabel } from './src/lib/displayLabel';
 import { haptics } from './src/utils/haptics';
@@ -24,24 +19,18 @@ import {
   refreshHomeWidget,
   requestPinHomeWidget,
 } from './modules/home-widget';
-import { createTourTargetRegistry } from './src/features/tour/tourTargets';
-import {
-  TourBarStop,
-  TourTargetId,
-  WorkoutTourStep,
-} from './src/lib/firstRunTour';
+import { useShellSheets } from './src/app/useShellSheets';
+import { useTourState } from './src/app/useTourState';
 import { useAccountBackup } from './src/features/account/useAccountBackup';
 import { useReviewProAccount } from './src/app/useReviewProAccount';
 import { hasWorkoutInProgress } from './src/lib/accountBackup';
 import { useAccountOutcome } from './src/app/useAccountOutcome';
-import { runningProgrammeTitle as runningProgrammeTitleOf } from './src/lib/templatePresentation';
 import {
   addActiveProgram,
   evaluateProgramAdoption,
 } from './src/lib/activeProgramSet';
 import {
   programCapFullMessage,
-  RunningCapRefusal,
   runningCapRefusal,
   runningCapRefusalMessage,
 } from './src/lib/programCapNotice';
@@ -53,14 +42,16 @@ import {
 } from './src/lib/programAdoption';
 import { useRecordsAndMilestones } from './src/app/useRecordsAndMilestones';
 import { useExerciseDetailHistory } from './src/app/useExerciseDetailHistory';
-import { useStableActiveWorkoutSummary } from './src/app/useStableActiveWorkoutSummary';
-import { I18nKey, t } from './src/lib/i18n';
-import { countLabel } from './src/lib/repCountCopy';
+import { useHomeActiveWorkoutSummary } from './src/app/useHomeActiveWorkoutSummary';
+import { useHeldSessionAdaptations } from './src/app/useHeldSessionAdaptations';
+import { useOnboardingGate } from './src/app/useOnboardingGate';
+import { useRunningProgrammeViews } from './src/app/useRunningProgrammeViews';
+import { createActiveWorkoutDoor } from './src/app/activeWorkoutDoor';
+import { t } from './src/lib/i18n';
 import { resolveProEntitlement } from './src/lib/proEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
 import { trackEvent } from './src/features/analytics/analyticsClient';
 
-import { resolveWorkoutLoggerFallbackRoute } from './src/lib/workoutLoggerNavigation';
 import { CoachChatMemory } from './src/lib/coachChatMemory';
 import { CoachAdviceMemoryEntry } from './src/lib/coachAdviceMemory';
 import { clearCoachAdviceMemory } from './src/storage/coachAdviceMemoryStore';
@@ -73,29 +64,18 @@ import {
 } from './src/lib/trainingWeekSync';
 import { findReadyProgrammeCopyId } from './src/lib/programmeCopyLink';
 import { useGoalFlow } from './src/app/useGoalFlow';
+import { SettingsImportSheet } from './src/app/SettingsImportSheet';
+import { LEGAL_OVER_CONSENT, LEGAL_OVER_HANDOFF, WEEKDAY_LABEL_KEYS } from './src/app/appConstants';
 
-/**
- * The listing, opened by every star. Not the in-app review API: Google's own
- * card must not be preceded by a custom prompt that asks for a rating, and the
- * sheet is exactly that.
- */
-const PLAY_LISTING_URL = 'https://play.google.com/store/apps/details?id=app.vinha';
 import { buildCustomSessionRuntimeTemplate } from './src/lib/programDetails';
 import {
-  AdaptedSessionRef,
   applySessionAdaptation,
-  HeldSessionAdaptations,
-  heldAdaptationFor,
   moveHeldAdaptations,
   NO_HELD_SESSION_ADAPTATIONS,
-  SessionAdaptation,
   sessionHasNoExercises,
   spendHeldAdaptation,
-  updateHeldAdaptation,
 } from './src/lib/sessionAdaptation';
-import { forgetRoutesForTemplate, popRoute, pushRoute, withoutTrailingRoute } from './src/navigation/routeHistory';
 import { liveSessionBlocksProgrammeDelete } from './src/lib/programmeDeletion';
-import { AppRoute, ROOT_ROUTES, RootTabKey, WORKOUT_PLAN_ROUTE } from './src/navigation/routes';
 import { renderProfileTab } from './src/app/renderProfileTab';
 import { renderHomeScreens } from './src/app/renderHomeScreens';
 import { CoachQuotaLedger, createCoachQuotaLedger } from './src/lib/aiCoachQuota';
@@ -118,6 +98,9 @@ import { useDeviceSwitches } from './src/app/useDeviceSwitches';
 import { useStoreBillingSync } from './src/app/useStoreBillingSync';
 import { useFunnelAnalytics } from './src/app/useFunnelAnalytics';
 import { useAttemptOnce } from './src/app/useAttemptOnce';
+import { useAppBoot, useSettleSavedCardio } from './src/app/useAppBoot';
+import { useAppNavigation } from './src/app/useAppNavigation';
+import { useToast } from './src/app/useToast';
 import { useInstallStamps } from './src/app/useInstallStamps';
 import { useSetupWeightSeed } from './src/app/useSetupWeightSeed';
 import { useTodayKey } from './src/app/useTodayKey';
@@ -143,9 +126,9 @@ import { useRouteBack } from './src/app/useRouteBack';
 import { useHomeWidgetPinState } from './src/app/useHomeWidgetPinState';
 import { useSetupHandoffOverlays } from './src/app/useSetupHandoffOverlays';
 import { createSetupHandoffDone } from './src/app/setupHandoffDone';
+import { resolveShellChrome } from './src/lib/shellChrome';
 import { useHomeWidgetFeed } from './src/app/useHomeWidgetFeed';
 import { useWidgetTaps } from './src/app/useWidgetTaps';
-import { AboutYouValues } from './src/screens/AboutYouScreen';
 import { useHomeActivePlan } from './src/app/useHomeActivePlan';
 import { useHomeTrainingSchedule } from './src/app/useHomeTrainingSchedule';
 import { usePlanReadouts } from './src/app/usePlanReadouts';
@@ -155,14 +138,12 @@ import { useProgramsCustomItems } from './src/app/useProgramsCustomItems';
 import { LaunchScreen } from './src/screens/LaunchScreen';
 import { setNumberLanguage } from './src/lib/format';
 import { VinhaSplashScreen } from './src/screens/VinhaSplashScreen';
-import { NewProgramSheet } from './src/components/NewProgramSheet';
 import { accountNameStep } from './src/lib/accountNameAdoption';
 import { WorkoutProvider, useWorkoutContext } from './src/features/workout/WorkoutProvider';
 import { getWorkoutTemplateById } from './src/features/workout/workoutCatalog';
 import { AppProvider, useAppContext } from './src/state/AppProvider';
 import { AppErrorBoundary } from './src/features/errorReporting/AppErrorBoundary';
 import { WorkoutAreaBoundary } from './src/features/errorReporting/WorkoutAreaBoundary';
-import { markingWorkoutFailures } from './src/features/errorReporting/workoutFailure';
 import { noteRenderedScreen } from './src/features/errorReporting/errorReporter';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {
@@ -179,27 +160,6 @@ void SplashScreen.preventAutoHideAsync().catch(() => {
  */
 const MINIMUM_SPLASH_MS = 1200;
 const splashFloorStartedAt = performance.now();
-
-interface NavigationState {
-  route: AppRoute;
-  history: AppRoute[];
-}
-
-/**
- * Reads the inset for NewProgramSheet's Modal.
- *
- * VinhaApp itself cannot call `useSafeAreaInsets` — it is the component that
- * RETURNS `<AppShell>`, so its own fiber sits above AppShell's
- * SafeAreaProvider, not inside it, and the hook throws with no provider to
- * read from. This wrapper is rendered as an AppShell child instead (in the
- * same spot NewProgramSheet used to sit), which puts it inside the provider,
- * and it renders no Modal of its own — the same shape as a screen that reads
- * insets and hands them to a sheet component (#bugs 2026-08-28 pattern).
- */
-function SettingsImportSheet(props: Omit<React.ComponentProps<typeof NewProgramSheet>, 'bottomInset'>) {
-  const insets = useSafeAreaInsets();
-  return <NewProgramSheet {...props} bottomInset={insets.bottom} />;
-}
 
 function VinhaApp() {
   const {
@@ -304,21 +264,6 @@ function VinhaApp() {
   });
 
   /**
-   * Where "back to the programmes" lands.
-   *
-   * Three routes used to stand in for this: the tab bar opened Programs home,
-   * the logger's fallback opened the exercise list, and deleting a programme —
-   * along with leaving a summary and every missing-template fallback — opened
-   * the pre-redesign catalog list, a screen nothing else in the app leads to.
-   * Delete a programme and you were somewhere you could not get back to.
-   * One answer now, and it is the same one the tab gives.
-   */
-  const workoutHomeRoute = useMemo<AppRoute>(
-    () => (preferences.programsTabEnabled ? { tab: 'workout', screen: 'programs_home' } : WORKOUT_PLAN_ROUTE),
-    [preferences.programsTabEnabled],
-  );
-
-  /**
    * Numbers follow the app language, not the device.
    *
    * Written during render, and placed above every hook that could format a
@@ -344,11 +289,26 @@ function VinhaApp() {
    */
   setNumberLanguage(preferences.appLanguage);
 
-  const [navigationState, setNavigationState] = useState<NavigationState>({
-    route: ROOT_ROUTES.home,
-    history: [],
-  });
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  // The programme builder's question before its draft is dropped. Set while
+  // the builder is open; the tab bar and the AI button ask it first.
+  const templateLeaveGuardRef = useRef<TemplateLeaveGuard | null>(null);
+  const {
+    route,
+    navigationState,
+    setNavigationState,
+    workoutHomeRoute,
+    navigate,
+    navigateNow,
+    replaceRoute,
+    resetToRoute,
+    navigateBack,
+    resolveTabRoute,
+    navigateToTab,
+    leaveThroughScreenGuard,
+    resetToRouteThroughGuard,
+    leaveDeletedProgramme,
+  } = useAppNavigation({ preferences, templateLeaveGuardRef });
+  const { toastMessage, showToast } = useToast();
   // Where Settings was scrolled when a sub-screen opened; the screen
   // unmounts on navigation, so the position survives here.
   const settingsScrollOffsetRef = useRef(0);
@@ -369,39 +329,23 @@ function VinhaApp() {
     setFinishSaveState,
   } = useFinishState();
   const [cardioSaving, setCardioSaving] = useState(false);
-  // Settings' "Import plan (CSV)" opens the same sheet the Programs tab uses,
-  // straight into its paste view. One importer, two doors.
-  const [settingsImportVisible, setSettingsImportVisible] = useState(false);
   // null = still asking Android, or the device cannot pin widgets at all.
   const [homeWidgetState, setHomeWidgetState] = useState<{ supported: boolean; added: boolean } | null>(
     null,
   );
-  const [minimumSplashElapsed, setMinimumSplashElapsed] = useState(false);
-  const [nativeSplashHidden, setNativeSplashHidden] = useState(false);
   // The brand animation plays once per cold start, after the native splash has
   // handed over. It is skipped entirely until the app is ready, so it never
   // becomes the thing hiding a slow start.
   const [brandSplashDone, setBrandSplashDone] = useState(false);
-  // The first-run tour's wiring: where its targets are, and which bar item
-  // its sweep is resting on. The registry is one object for the app's life.
-  const tourRegistry = useRef(createTourTargetRegistry()).current;
-  // The programme builder's question before its draft is dropped. Set while
-  // the builder is open; the tab bar and the AI button ask it first.
-  const templateLeaveGuardRef = useRef<TemplateLeaveGuard | null>(null);
-  const [tourSweep, setTourSweep] = useState<TourBarStop | null>(null);
-  /**
-   * Which section the tour is pointing at. Home reads it to shut its folds
-   * before the beat that rings one — the layer cannot reach into a screen's
-   * state, and should not, so it says where it is and the screen decides.
-   */
-  const [tourFocus, setTourFocus] = useState<TourTargetId | null>(null);
-  /**
-   * The guided player's plain set or rest, as the player reports it, for the
-   * workout tour. The route says only "the player"; which step it is on is the
-   * player's own state. Null on every other screen and every other step.
-   */
-  const [workoutTourStep, setWorkoutTourStep] = useState<WorkoutTourStep | null>(null);
-  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const {
+    tourRegistry,
+    tourSweep,
+    setTourSweep,
+    tourFocus,
+    setTourFocus,
+    workoutTourStep,
+    setWorkoutTourStep,
+  } = useTourState();
 
   useDeviceSwitches({ hydrated, preferences });
 
@@ -444,7 +388,6 @@ function VinhaApp() {
   const exerciseBrowserItems = exerciseLibrary;
   const { summaryExitRouteRef, summaryNavigationPendingRef, finishInFlightRef, completionCountedRef } = useFinishRefs();
   const workoutLogNavigationAllowedAtRef = useRef<number | null>(null);
-  const route = navigationState.route;
   const appHydrated = hydrated && workout.hydrated;
   // The coach-log deletes a reset could not confirm, retried on start and on
   // every return to the foreground; Reset uses the same runner for its own.
@@ -460,138 +403,19 @@ function VinhaApp() {
 
   useInstallStamps({ appHydrated, preferences, updatePreferences });
 
-  // A saved run that came back running (its pause and its clear both lost) is stopped where it was
-  // saved, once both stores have loaded, before its clock carries the hours the app was dead into the
-  // next Complete (lib/cardio settleSavedCardioRun).
-  const activeCardio = workout.activeCardio;
-  const settleCardio = workout.settleCardio;
-  useEffect(() => {
-    if (!hydrated || !workout.hydrated) {
-      return;
-    }
-    const settled = settleSavedCardioRun(activeCardio, cardioSessions);
-    if (settled) {
-      settleCardio(settled, activeCardio?.resumedAt ?? null);
-    }
-  }, [hydrated, workout.hydrated, activeCardio, cardioSessions, settleCardio]);
+  useSettleSavedCardio({
+    hydrated,
+    workoutHydrated: workout.hydrated,
+    activeCardio: workout.activeCardio,
+    cardioSessions,
+    settleCardio: workout.settleCardio,
+  });
 
-  useEffect(() => {
-    const remaining = MINIMUM_SPLASH_MS - (performance.now() - splashFloorStartedAt);
-    const timeout = setTimeout(
-      () => setMinimumSplashElapsed(true),
-      Math.min(MINIMUM_SPLASH_MS, Math.max(0, remaining)),
-    );
-    return () => clearTimeout(timeout);
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadFonts() {
-      await Font.loadAsync({
-        // Variable Manrope kept as a fallback; the static per-weight families
-        // below are what AppText.tsx maps fontWeight onto, because Android
-        // does not drive a variable font's weight axis (headings rendered at
-        // the ExtraLight default with a synthetic bold otherwise).
-        Manrope: require('./assets/fonts/Manrope.ttf'),
-        'Manrope-Regular': require('./assets/fonts/Manrope-Regular.ttf'),
-        'Manrope-Medium': require('./assets/fonts/Manrope-Medium.ttf'),
-        'Manrope-SemiBold': require('./assets/fonts/Manrope-SemiBold.ttf'),
-        'Manrope-Bold': require('./assets/fonts/Manrope-Bold.ttf'),
-        'Manrope-ExtraBold': require('./assets/fonts/Manrope-ExtraBold.ttf'),
-        // Sets × reps numerals on the Home agenda list (design: JetBrains Mono).
-        JetBrainsMono: require('./assets/fonts/JetBrainsMono.ttf'),
-      }).catch(() => {
-        // Keep the app usable if font loading fails in a dev host.
-      });
-
-      if (!cancelled) {
-        setFontsLoaded(true);
-      }
-    }
-
-    void loadFonts();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (nativeSplashHidden || !appHydrated || !fontsLoaded) {
-      return;
-    }
-
-    if (!minimumSplashElapsed) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function hideNativeSplash() {
-      await SplashScreen.hideAsync().catch(() => {
-        // Ignore host-level splash errors on warm reloads.
-      });
-
-      if (!cancelled) {
-        setNativeSplashHidden(true);
-      }
-    }
-
-    void hideNativeSplash();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [appHydrated, fontsLoaded, minimumSplashElapsed, nativeSplashHidden]);
-
-  function navigate(nextRoute: AppRoute) {
-    startTransition(() =>
-      setNavigationState((current) => ({
-        route: nextRoute,
-        history: pushRoute(current.history, current.route, nextRoute),
-      })),
-    );
-  }
-
-  /**
-   * navigate, without the transition: for a hop that has to land in the same
-   * render as a state write next to it.
-   *
-   * The hand-off's first half opens the Pro page and then records the Pro
-   * step. Through navigate the route waited in the transition lane while the
-   * Pro-step write rendered first, so for one commit the second half was due
-   * on the old route: its tracking dialog was presented and torn down again
-   * within the fade, which on iOS can leave an empty modal over the Pro page
-   * that takes every touch (iOS hunt, 2026-10-17).
-   */
-  function navigateNow(nextRoute: AppRoute) {
-    setNavigationState((current) => ({
-      route: nextRoute,
-      history: pushRoute(current.history, current.route, nextRoute),
-    }));
-  }
-
-  function replaceRoute(nextRoute: AppRoute) {
-    startTransition(() =>
-      setNavigationState((current) => ({
-        route: nextRoute,
-        // No copy of the landing left on top: a builder opened from a
-        // programme page saves back onto that page, and the first Back popped
-        // the page it was already on (hunt 11).
-        history: withoutTrailingRoute(current.history, nextRoute),
-      })),
-    );
-  }
-
-  function resetToRoute(nextRoute: AppRoute) {
-    startTransition(() =>
-      setNavigationState({
-        route: nextRoute,
-        history: [],
-      }),
-    );
-  }
+  const { nativeSplashHidden } = useAppBoot({
+    appHydrated,
+    splashFloorStartedAt,
+    minimumMs: MINIMUM_SPLASH_MS,
+  });
 
   const { leaveFinishedWorkout, leaveFinishedScreen } = createFinishExits({
     preferences,
@@ -603,109 +427,20 @@ function VinhaApp() {
     setRatingSheetVisible,
   });
 
-  /**
-   * Where a tab lands. Programs-tab redesign (flagged): the workout tab lands
-   * on the Programs home instead of the legacy exercise list.
-   *
-   * Separate from `navigateToTab` because the destination and the history are
-   * two decisions. The bar resets; a button inside a screen must not.
-   */
-  function resolveTabRoute(tab: RootTabKey): AppRoute {
-    if (tab === 'workout' && preferences.programsTabEnabled) {
-      return { tab: 'workout', screen: 'programs_home' };
-    }
-    return ROOT_ROUTES[tab];
-  }
-
-  function navigateToTab(tab: RootTabKey) {
-    resetToRoute(resolveTabRoute(tab));
-  }
-
-  /**
-   * The bar's ways out, past the open screen's own unsaved-work question. The
-   * builder asks it on Back; a tab or the AI button unmounted it without
-   * asking and the draft was gone (hunt 10, #7).
-   */
-  function leaveThroughScreenGuard(leave: () => void) {
-    if (templateLeaveGuardRef.current?.(leave)) {
-      return;
-    }
-    leave();
-  }
-
-  /**
-   * The same question for the exits that arrive from outside the screen: a
-   * widget tap, a notification tap, the lock screen's resume. They reset the
-   * route directly and unmounted an unsaved builder without asking. The
-   * question is answerable, so a resume is held for it, not blocked.
-   */
-  function resetToRouteThroughGuard(nextRoute: AppRoute) {
-    leaveThroughScreenGuard(() => resetToRoute(nextRoute));
-  }
-
-  function navigateToActiveWorkoutThroughGuard(options?: { message?: string; resume?: boolean }) {
-    leaveThroughScreenGuard(() => {
-      navigateToActiveWorkout(options);
-    });
-  }
-
-  /**
-   * Guided player (design_handoff_guided_player) is the only way to run a
-   * PROGRAMME session.
-   *
-   * The list logger itself is alive and shipping — an empty workout runs on
-   * it, and the editor route already seeds itself from a stored template. What
-   * was removed is the button from here to there (see the note on
-   * guided.exit.finishSave in i18n).
-   *
-   * The two are not interchangeable, and the difference is not layout. This
-   * screen drives WorkoutProvider, so its session is the only one written to
-   * @vinha/workout/v1 and the only one that survives the app being killed; the
-   * list logger holds its sets in component state until you finish. And its
-   * save is freestyle by construction (see finishLoggedWorkoutSave): no plan
-   * identity, so no previous-session comparison and no progression. Offering
-   * it for a programme day means giving it both, not adding a switch.
-   */
-  function navigateToGuidedWorkout(workoutTemplateId: string, options?: { resume?: boolean }) {
-    workoutLogNavigationAllowedAtRef.current = Date.now();
-    navigate({ tab: 'workout', screen: 'guided', workoutTemplateId, resume: options?.resume });
-  }
-
-  function navigateBack(fallback: AppRoute | null = null) {
-    startTransition(() =>
-      setNavigationState((current) => {
-        const previous = popRoute(current.history);
-        if (previous.route) {
-          return {
-            route: previous.route,
-            history: previous.history,
-          };
-        }
-
-        if (fallback) {
-          return {
-            route: fallback,
-            history: [],
-          };
-        }
-
-        return current;
-      }),
-    );
-  }
-
-  function showToast(message: string) {
-    setToastMessage(message);
-  }
-
-  useEffect(() => {
-    if (!toastMessage) {
-      return;
-    }
-
-    const timeout = setTimeout(() => setToastMessage(null), 2800);
-    return () => clearTimeout(timeout);
-  }, [toastMessage]);
+  const {
+    navigateToActiveWorkoutThroughGuard,
+    navigateToGuidedWorkout,
+    navigateToActiveWorkout,
+    isActiveSessionFor,
+    getWorkoutLoggerFallbackRoute,
+  } = createActiveWorkoutDoor({
+    workout,
+    preferences,
+    navigate,
+    showToast,
+    leaveThroughScreenGuard,
+    workoutLogNavigationAllowedAtRef,
+  });
 
   useFinishRouteGuard({
     finishSaveState,
@@ -724,30 +459,22 @@ function VinhaApp() {
     workoutSessions,
   });
 
-  const onboardingActive = !preferences.onboardingCompleted;
-  const entryFlowActive = onboardingActive && !preferences.entryFlowCompleted;
-  // Pre-questionnaire flow: after Welcome the user picks a path (01b); the
-  // build path then runs about-you (01e) before the questionnaire. The ready
-  // path exits onboarding to the catalog.
-  const [onboardingStep, setOnboardingStep] = useState<
-    'path' | 'about' | 'questionnaire' | 'ready_catalog'
-  >('path');
+  const {
+    onboardingActive,
+    entryFlowActive,
+    onboardingStep,
+    setOnboardingStep,
+    busySavingReadyPick,
+    setBusySavingReadyPick,
+    aboutYouValues,
+    setAboutYouValues,
+    setFullBleedReview,
+    fullBleedReview,
+  } = useOnboardingGate(preferences, route);
   useFunnelAnalytics({ hydrated, onboardingActive, entryFlowActive, onboardingStep, route, navigationState, preferences });
   // Which screen an error report names. In the render body on purpose: an
   // error thrown while drawing this route must name this route.
   noteRenderedScreen(onboardingActive, route);
-  const [busySavingReadyPick, setBusySavingReadyPick] = useState(false);
-
-  // The onboarding flow state lives in memory; when the gate closes (finished)
-  // or the app returns to the Welcome entry (e.g. after a data reset), start
-  // the next run from the path screen — never mid-questionnaire.
-  useEffect(() => {
-    if (preferences.onboardingCompleted || !preferences.entryFlowCompleted) {
-      setOnboardingStep('path');
-      setAboutYouValues(null);
-    }
-  }, [preferences.entryFlowCompleted, preferences.onboardingCompleted]);
-  const [aboutYouValues, setAboutYouValues] = useState<AboutYouValues | null>(null);
   const {
     handoffLegalDocument,
     setHandoffLegalDocument,
@@ -757,20 +484,8 @@ function VinhaApp() {
     handoffLegalOpenRef,
     setupHandoffActiveRef,
   } = useHandoffLegalHolders();
-  /**
-   * Today's swaps and left-out slots, chosen on Home or a programme's day page
-   * before the session exists — each held for the session it was made on, on
-   * the day it was made (lib/sessionAdaptation). Deliberately not persisted: it
-   * is an answer to "what am I doing today", and it is spent when that session
-   * starts.
-   */
-  const [heldSessionAdaptations, setHeldSessionAdaptations] =
-    useState<HeldSessionAdaptations>(NO_HELD_SESSION_ADAPTATIONS);
-  /** What is held for this session today — read by every screen that shows or starts it. */
-  const sessionAdaptationFor = (ref: AdaptedSessionRef | null | undefined): SessionAdaptation =>
-    heldAdaptationFor(heldSessionAdaptations, ref, todayStartMs);
-  const adaptSession = (ref: AdaptedSessionRef, change: (current: SessionAdaptation) => SessionAdaptation) =>
-    setHeldSessionAdaptations((held) => updateHeldAdaptation(held, ref, todayStartMs, change));
+  const { setHeldSessionAdaptations, sessionAdaptationFor, adaptSession } =
+    useHeldSessionAdaptations(todayStartMs);
   /**
    * The open coach conversation, held here because the chat screen unmounts.
    *
@@ -790,43 +505,16 @@ function VinhaApp() {
    * question of a cold start is answered without it rather than delayed by it.
    */
   const [coachAdviceMemory, setCoachAdviceMemory] = useState<CoachAdviceMemoryEntry[]>([]);
-  // Shown when a create is blocked, from wherever it was attempted. Not a
-  // route: the user was in the middle of something, and a screen change
-  // would lose the thing they were doing to a wall they may dismiss.
-  const [programLimitVisible, setProgramLimitVisible] = useState(false);
-  // The running-programme wall on the free tier. The numbers outlive `visible`
-  // so the title does not read 0/0 while the sheet fades out.
-  const [runningCapSheet, setRunningCapSheet] = useState<{ visible: boolean } & RunningCapRefusal>({
-    visible: false,
-    used: 0,
-    cap: 0,
-    replacingStop: null,
-  });
-  // Whether the update dialog is up. Home's sign-in dialog waits for it, with
-  // the walls above: iOS presents one modal at a time (iOS hunt 2026-10-17).
-  const [appUpdateShown, setAppUpdateShown] = useState(false);
-  /**
-   * The onboarding's last two steps are full-bleed: the program picker's
-   * diagonal and the paywall's hero both run to the top edge. The shell
-   * reserves and paints the status-bar strip for onboarding, which would cut a
-   * light band across either of them.
-   */
-  const [fullBleedReviewRaw, setFullBleedReview] = useState<'light' | 'dark' | null>(null);
-  /**
-   * Only meaningful while onboarding is on screen.
-   *
-   * OnboardingScreen reports this from an effect and had no cleanup, so
-   * finishing on the paywall left it at 'light' forever: the shell kept the
-   * full-bleed edges and the translucent status bar, and Home's greeting drew
-   * underneath the clock on the reader's very first screen. Reading it through
-   * onboardingActive means an unmount cannot leak, whatever the last stage
-   * happened to report.
-   */
-  const fullBleedReview =
-    onboardingActive || (route.tab === 'profile' && route.screen === 'setup')
-      ? fullBleedReviewRaw
-      : null;
-
+  const {
+    settingsImportVisible,
+    setSettingsImportVisible,
+    programLimitVisible,
+    setProgramLimitVisible,
+    runningCapSheet,
+    setRunningCapSheet,
+    appUpdateShown,
+    setAppUpdateShown,
+  } = useShellSheets();
   useSetupWeightSeed({ hydrated, preferences, database, addBodyweightEntry, updatePreferences });
 
   useRouteBack({
@@ -878,86 +566,13 @@ function VinhaApp() {
     todayKey,
     adviceTemplateLookup,
   });
-  // Read on every route, from the first render after the stored workout is loaded: a session the app cannot
-  // read fails here before any workout screen is drawn, and is marked as the workout's (errorReporting/workoutFailure).
-  const homeActiveWorkoutParts = useMemo(() => markingWorkoutFailures(() => {
-    if (!workout.activeSession || !isWorkoutInProgress(workout.activeSession)) {
-      return null;
-    }
-
-    const activeExercise =
-      workout.activeSession.exercises.find((exercise) => exercise.slotId === workout.activeSession?.ui.activeSlotId) ??
-      workout.activeSession.exercises.find(
-        (exercise) => exercise.status !== 'completed' && exercise.status !== 'skipped',
-      ) ??
-      null;
-    const remainingSets = workout.activeSession.exercises.reduce(
-      (sum, exercise) => sum + exercise.sets.filter((set) => set.status === 'pending').length,
-      0,
-    );
-
-    return {
-      title: workout.activeSession.templateName,
-      nextExercise: activeExercise?.exerciseName ?? null,
-      meta: `${pluralize(remainingSets, 'set')} left | Started ${formatTime(workout.activeSession.startedAt, preferences.appLanguage)}`,
-    };
-  }), [workout.activeSession, preferences.appLanguage]);
-  // The same three fields as a value that holds still: see useStableActiveWorkoutSummary.
-  const homeActiveWorkoutSummary = useStableActiveWorkoutSummary(homeActiveWorkoutParts);
-  /**
-   * Go to the session that is already running, if there is one.
-   *
-   * Two different intents come through here and they must not land the same
-   * way. Home's hero and the lock-screen card ask to CONTINUE, and get the set
-   * they left off on. But this is also the guard on "start a session": ask for
-   * Day 2 while Day 1 is running and you are redirected, which is not a resume
-   * at all — the app is telling you something, and dropping you mid-set in
-   * Day 1's player says it silently. That reader logs sets into the wrong day.
-   *
-   * So `resume` is the caller's claim about its own button, and the guards
-   * only make it when the running session IS the one that was asked for. The
-   * overview is what a redirect owes you: the session's name, at the top.
-   */
-  function navigateToActiveWorkout(options?: { message?: string; resume?: boolean }) {
-    // A finished session still held until its summary clears it is not a workout
-    // to go back to: Start has to start, not open yesterday's player.
-    if (!workout.activeSession || !isWorkoutInProgress(workout.activeSession)) {
-      return false;
-    }
-
-    if (options?.message) {
-      showToast(options.message);
-    }
-
-    workout.resumeWorkout();
-    navigateToGuidedWorkout(workout.activeSession.templateId, { resume: options?.resume === true });
-    return true;
-  }
-
-  /** Whether the running session is the very one a start button just asked for. */
-  function isActiveSessionFor(workoutTemplateId: string, sessionId: string) {
-    const active = workout.activeSession;
-    return (
-      active !== null
-      && active.templateId === workoutTemplateId
-      && active.templateSessionId === sessionId
-    );
-  }
-
+  const homeActiveWorkoutSummary = useHomeActiveWorkoutSummary(workout.activeSession, preferences.appLanguage);
   navigateToActiveWorkoutRef.current = () => navigateToActiveWorkoutThroughGuard({ resume: true });
   finishFromNotificationRef.current = () => {
     // "Finish workout" from the lock screen opens the session; ending it is a
     // confirmed step on that screen, not a silent write from a notification.
     navigateToActiveWorkoutThroughGuard({ resume: true });
   };
-
-  function getWorkoutLoggerFallbackRoute() {
-    return resolveWorkoutLoggerFallbackRoute({
-      activeWorkoutTemplateId: workout.activeSession?.templateId ?? null,
-      recommendedProgramId: preferences.recommendedProgramId,
-      setupCompleted: preferences.setupCompleted,
-    });
-  }
 
   const {
     handleDeleteCompletedSession,
@@ -1186,86 +801,8 @@ function VinhaApp() {
     completedSessionsForTemplate,
   });
 
-  /**
-   * Which programmes the active plans actually point at.
-   *
-   * Plan ids are not programme ids: onboarding writes onboarding_plan_<id> and
-   * adoption writes ready_plan_<id>, so a reader who picked a ready
-   * programme during onboarding holds a different plan id for the same
-   * programme. Membership has to be asked of the template, not the plan.
-   */
-  const activeProgramTemplateIds = useMemo(() => {
-    const byId = new Map(database.workoutPlans.map((plan) => [plan.id, plan]));
-    // The LEADER counts too. Several writers set `activePlanId` without
-    // adding it to `activePlanIds` (activating a held plan, among others),
-    // so the plan Home leads with could be missing from this set —
-    // and its own detail page then offered "Start this programme" for a
-    // programme that was already running (device, 2026-08-30).
-    return [...new Set([preferences.activePlanId, ...preferences.activePlanIds])]
-      .filter((planId): planId is string => Boolean(planId))
-      .map((planId) => byId.get(planId)?.entries[0]?.workoutTemplateId ?? null)
-      .filter((id): id is string => Boolean(id));
-  }, [database.workoutPlans, preferences.activePlanId, preferences.activePlanIds]);
-
-  /**
-   * What a RUNNING programme is called, wherever it is listed: the one rule in
-   * lib/templatePresentation (runningProgrammeTitleOf), which Home's hero and
-   * the coach read too. The Programs tab lists the same programmes Home does,
-   * so it has to reach the same answer.
-   */
-  const runningProgrammeTitle = useCallback(
-    (templateId: string | null, planName: string | null | undefined, days: number): string =>
-      runningProgrammeTitleOf(
-        templateId ? getWorkoutTemplateById(templateId) : null,
-        planName,
-        preferences.appLanguage,
-        days,
-      ),
-    [preferences.appLanguage],
-  );
-
-  /**
-   * The programmes running alongside the one Home leads with.
-   *
-   * Home's hero still belongs to a single plan; these are the rest, listed
-   * under it so a programme the reader added is visible rather than merely
-   * stored.
-   */
-  const homeOtherPrograms = useMemo(() => {
-    const byId = new Map(database.workoutPlans.map((plan) => [plan.id, plan]));
-    return preferences.activePlanIds
-      .filter((planId) => planId !== preferences.activePlanId)
-      .map((planId) => {
-        const plan = byId.get(planId);
-        const templateId = plan?.entries[0]?.workoutTemplateId ?? null;
-        const template = templateId ? getWorkoutTemplateById(templateId) : null;
-        if (!plan) {
-          return null;
-        }
-        const days = template?.daysPerWeek ?? plan.entries.length;
-        // The reader's own programme is named by its template, for the same
-        // reason the hero above is: the plan's copy of the name can be older
-        // than the last rename. A ready one is not in this map at all, and
-        // gets its presentation title from runningProgrammeTitle — the one
-        // helper every surface names a running programme with.
-        const ownTemplate = templateId
-          ? workoutTemplates.find((entry) => entry.id === templateId) ?? null
-          : null;
-        return {
-          planId,
-          title: runningProgrammeTitle(templateId, ownTemplate?.name || plan.name, days),
-          meta: countLabel(days, 'programs.card.daysOne', 'programs.card.days', preferences.appLanguage),
-        };
-      })
-      .filter((row): row is { planId: string; title: string; meta: string } => row !== null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    database.workoutPlans,
-    preferences.activePlanIds,
-    preferences.activePlanId,
-    preferences.appLanguage,
-    workoutTemplates,
-  ]);
+  const { activeProgramTemplateIds, runningProgrammeTitle, homeOtherPrograms } =
+    useRunningProgrammeViews({ database, preferences, workoutTemplates });
 
   const {
     promoteHeldProgramToLead,
@@ -1563,30 +1100,6 @@ function VinhaApp() {
     }
     void haptics.success();
     leaveDeletedProgramme(workoutTemplateId);
-  }
-
-  /**
-   * Off the page of a programme that no longer exists, and out of its pages.
-   *
-   * The programme's pages go with the programme. `navigate` pushes, so the
-   * page the reader deleted it from stayed in the back stack: Back returned
-   * to a programme that no longer exists, the route guard bounced them to
-   * the list, and Back read as broken (2026-09-16).
-   */
-  function leaveDeletedProgramme(workoutTemplateId: string) {
-    startTransition(() =>
-      setNavigationState((current) => ({
-        route: workoutHomeRoute,
-        // And no copy of the destination left on top of the stack: the
-        // programme was opened FROM this list, so without the second call the
-        // first Back press pops the duplicate and lands on the screen the
-        // reader is already looking at (PR #126 review).
-        history: withoutTrailingRoute(
-          forgetRoutesForTemplate(current.history, workoutTemplateId),
-          workoutHomeRoute,
-        ),
-      })),
-    );
   }
 
   const {
@@ -2406,55 +1919,14 @@ function VinhaApp() {
     });
   }
 
-  const showTabBar =
-    !onboardingActive &&
-    // The hand-off is the last step of onboarding wearing the app's clothes. A
-    // tab bar under it offers four ways out of a step that has one button.
-    !setupHandoffActive &&
-    !(
-      route.tab === 'workout' &&
-      (route.screen === 'detail' ||
-        route.screen === 'empty' ||
-        route.screen === 'guided' ||
-        route.screen === 'summary')
-    ) &&
-    !(route.tab === 'home' && route.screen === 'cardio') &&
-    // The setup editor is a full-screen flow — the floating bar was covering
-    // its footer Cancel/Back controls.
-    !(route.tab === 'profile' && route.screen === 'setup') &&
-    // The unlock moment is a full-screen takeover; a floating bar over it
-    // would say 'you are still in the app' at the one moment that should not.
-    !(route.tab === 'profile' && route.screen === 'premium_unlock') &&
-    // The Pro page ends in its own pinned CTA. The floating bar sat on top of
-    // it, so the page had to reserve a bar's worth of dead space under the
-    // button — on a paywall, the most expensive space on the screen. The
-    // membership screen has the same pinned footer, and there the bar covered
-    // the second button outright.
-    // Any new screen that pins a CTA to the bottom belongs on this list. The
-    // post-onboarding offer was the third entry until the screen was deleted
-    // (2026-08-25) — its bar covered the primary button outright.
-    !(route.tab === 'profile' && (route.screen === 'premium' || route.screen === 'membership_end'));
-  const setupOnboardingActive = route.tab === 'profile' && route.screen === 'setup';
-  const onboardingScreenActive = onboardingActive || setupOnboardingActive;
-  const welcomeActive = onboardingActive && entryFlowActive;
-  // Workout Complete opens on a full-bleed purple hero — the status bar joins it
-  // rather than sitting above it as a dark strip.
-  const workoutSummaryActive = route.tab === 'workout' && route.screen === 'summary';
-  /**
-   * The Pro page commits to one dark treatment in BOTH themes (theme.ts,
-   * PRO_TIER): the tier's colour is the only thing telling Free from Pro from
-   * Lifetime, and repainting it per reader would make that signal mean
-   * something different for each of them.
-   *
-   * The shell has to be told, or only the page obeys. v4 painted itself
-   * theme.bg and matched by accident; v6 paints itself black, and under the
-   * light theme the safe-area bands above and below it stayed light — two
-   * pale strips framing a black page.
-   */
-  const premiumActive = route.tab === 'profile' && route.screen === 'premium';
-  // The saved-session view opens on the same purple hero as Workout Complete,
-  // so the status bar joins it instead of sitting above it as a light strip.
-  const historySessionActive = route.tab === 'home' && route.screen === 'session';
+  const {
+    showTabBar,
+    onboardingScreenActive,
+    welcomeActive,
+    workoutSummaryActive,
+    premiumActive,
+    historySessionActive,
+  } = resolveShellChrome({ route, onboardingActive, entryFlowActive, setupHandoffActive });
 
   // The brand animation, once per cold start. It sits outside AppShell's
   // status-bar plumbing on purpose: it is a full-bleed field, and it must not
@@ -2513,7 +1985,6 @@ function VinhaApp() {
     setRunningCapSheet,
     ratingSheetVisible,
     setRatingSheetVisible,
-    PLAY_LISTING_URL,
   });
 }
 
@@ -2552,68 +2023,3 @@ export default function App() {
     </AppErrorBoundary>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/** Stored weekday codes → the display keys the rest of the app uses. */
-/**
- * The legal document, laid over the hand-off rather than swapped in for it.
- *
- * Its own background is opaque, so nothing of the screen underneath shows
- * through; what survives is that screen's state, which is the whole point.
- */
-const LEGAL_OVER_HANDOFF = { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 } as const;
-/** Above the consent sheet's zIndex/elevation (40). */
-const LEGAL_OVER_CONSENT = { ...LEGAL_OVER_HANDOFF, zIndex: 50, elevation: 50 } as const;
-
-const WEEKDAY_LABEL_KEYS: Record<string, I18nKey> = {
-  MON: 'setup.day.mon',
-  TUE: 'setup.day.tue',
-  WED: 'setup.day.wed',
-  THU: 'setup.day.thu',
-  FRI: 'setup.day.fri',
-  SAT: 'setup.day.sat',
-  SUN: 'setup.day.sun',
-};
-
-

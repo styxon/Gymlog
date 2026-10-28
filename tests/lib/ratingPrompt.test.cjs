@@ -160,7 +160,7 @@ module.exports = [
 
       // Every star opens the listing. No branch on the number: that is review
       // gating, and it is against Play policy.
-      assert.match(appSource, /const PLAY_LISTING_URL = 'https:\/\/play\.google\.com\/store\/apps\/details\?id=app\.vinha'/);
+      assert.match(read('src/lib/storeLinks.ts'), /export const PLAY_LISTING_URL = 'https:\/\/play\.google\.com\/store\/apps\/details\?id=app\.vinha'/);
       assert.match(appSource, /void Linking\.openURL\(PLAY_LISTING_URL\)/);
       assert.doesNotMatch(appSource, /onRate=\{\(rating\)/);
 

@@ -83,7 +83,7 @@ module.exports = [
         [['src', 'screens', 'ProgramDetailScreen.tsx'], /countLabel\(program\.daysPerWeek, 'detail\.trainingDaysOne'/],
         [['src', 'screens', 'ProgramDetailScreen.tsx'], /countLabel\(program\.sessions\.length, 'detail\.workoutCountOne'/],
         [['src', 'app', 'useRecentSessions.ts'], /countLabel\(completedExercises, 'tpl\.exerciseOne', 'recent\.exerciseCount'/],
-        [['App.tsx'], /countLabel\(days, 'programs\.card\.daysOne'/],
+        [['src', 'app', 'useRunningProgrammeViews.ts'], /countLabel\(days, 'programs\.card\.daysOne'/],
         [['src', 'app', 'useProgramsCustomItems.ts'], /countLabel\(template\.daysPerWeek, 'programs\.card\.daysOne'/],
         [['src', 'screens', 'ProgramsHomeScreen.tsx'], /countLabel\(item\.days, 'programs\.card\.daysOne'/],
         [['src', 'screens', 'ProgramsHomeScreen.tsx'], /countLabel\(items\.length, 'programs\.sheet\.countOne'/],

@@ -17,7 +17,7 @@ const read = (...parts) =>
 const screen = read('src', 'screens', 'MilestonesScreen.tsx');
 const profile = read('src', 'screens', 'ProfileScreen.tsx');
 const tab = read('src', 'app', 'renderProfileTab.tsx');
-const app = read('App.tsx');
+const app = readAppWiring();
 /** App.tsx and the src/app modules its blocks moved into, line endings normalised like read(). */
 const wiring = readAppWiring().split('\r\n').join('\n');
 const routes = read('src', 'navigation', 'routes.ts');

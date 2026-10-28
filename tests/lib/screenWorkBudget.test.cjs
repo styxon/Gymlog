@@ -1,6 +1,7 @@
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const { createHookRuntime, requireWithStubs } = require('../helpers/hookHarness.cjs');
 const { between } = require('../helpers/sourceSlices.cjs');
@@ -393,8 +394,12 @@ module.exports = [
       assert.equal(run(null), null);
       summaryRuntime.unmount();
 
-      const app = source('App.tsx');
-      assert.match(app, /const homeActiveWorkoutSummary = useStableActiveWorkoutSummary\(homeActiveWorkoutParts\);/);
+      const app = readAppWiring();
+      assert.match(app, /const homeActiveWorkoutSummary = useHomeActiveWorkoutSummary\(workout\.activeSession, preferences\.appLanguage\);/);
+      assert.match(
+        fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'app', 'useHomeActiveWorkoutSummary.ts'), 'utf8'),
+        /return useStableActiveWorkoutSummary\(homeActiveWorkoutParts\);/,
+      );
     },
   },
 ];

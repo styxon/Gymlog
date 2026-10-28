@@ -2,6 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
+const { readAppWiring } = require('../helpers/appWiringSource.cjs');
 
 const { findSavedCardioRun, mergeContinuedCardioRun, settleSavedCardioRun } = require('../../.test-dist/lib/cardio.js');
 const { workoutReducer, workoutInitialState } = require('../../.test-dist/features/workout/workoutState.js');
@@ -196,8 +197,8 @@ module.exports = [
       assert.deepEqual(state.activeCardio, settled);
 
       // App settles it once both stores have loaded.
-      const app = fs.readFileSync(path.join(ROOT, 'App.tsx'), 'utf8').replace(/\r\n/g, '\n');
-      assert.match(app, /if \(!hydrated \|\| !workout\.hydrated\) \{\s*return;\s*\}\s*const settled = settleSavedCardioRun\(activeCardio, cardioSessions\);\s*if \(settled\) \{\s*settleCardio\(settled, activeCardio\?\.resumedAt \?\? null\);/);
+      const app = readAppWiring().replace(/\r\n/g, '\n');
+      assert.match(app, /if \(!hydrated \|\| !workoutHydrated\) \{\s*return;\s*\}\s*const settled = settleSavedCardioRun\(activeCardio, cardioSessions\);\s*if \(settled\) \{\s*settleCardio\(settled, activeCardio\?\.resumedAt \?\? null\);/);
     },
   },
 ];

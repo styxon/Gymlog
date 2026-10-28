@@ -113,7 +113,7 @@ module.exports = [
       // Home offers through it, and passes over a pick of an empty day —
       // read across the shell, App.tsx and the src/app modules its blocks
       // moved into (phase-C split, 2026-10-01).
-      const app = read('App.tsx');
+      const app = readAppWiring();
       const shell = readAppWiring().split('\r\n').join('\n');
       assert.match(
         shell,
