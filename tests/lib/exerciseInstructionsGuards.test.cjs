@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
  * push the knees past the toes, lock the elbows out, train to failure, row to the
  * chin, rest the bar on the neck, load in pounds, and steps that were menu text
  * or marketing instead of coaching. The English comes from a public database and
- * the corrections live in exerciseInstructionsEn.ts, so this suite reads the
+ * the corrections live in src/data/exerciseInstructionsEn.ts, so this suite reads the
  * text the READER gets: the effective English (correction or library row) for
  * every library entry, and both Finnish tables.
  *

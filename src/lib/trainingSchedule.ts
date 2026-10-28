@@ -13,6 +13,7 @@
  * already had two truths and three editors before this, and a third truth would
  * have been the end of it.
  */
+import { startOfLocalDay as dayStartOf } from './calendarDays';
 import { calendarDaysBetween } from './completedSessions';
 
 /** Day-of-week indexes, Monday first, matching the rest of the app. */
@@ -44,10 +45,6 @@ export type TrainingSchedule = WeekdaySchedule | CycleSchedule;
 export const UNKNOWN_SCHEDULE: TrainingSchedule = { kind: 'weekdays', weekdayIndexes: [] };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-function dayStartOf(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-}
 
 /**
  * The local day start a stored day-start instant stands for.
