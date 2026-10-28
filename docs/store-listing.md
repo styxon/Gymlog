@@ -6,7 +6,8 @@ on the D-U-N-S number. App Store text comes later from the same facts (§6).
 
 Availability (2026-10-28): Google Play, Finland only. App Store, Finland only,
 approved but not yet on sale: the Digital Services Act trader status has been
-in review since 2026-10-16. The Play text matches §1–§2 as entered.
+in review since 2026-10-16. The Finnish Play text was compared with §2 on 2026-10-28 and matches; the
+English one was not checked.
 
 Every claim below was checked against the code on 2026-10-09 (main 2601d75f).
 The facts and their sources are in §5. When the app changes, change §5 first and

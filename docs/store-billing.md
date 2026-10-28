@@ -59,7 +59,9 @@ store clears it.
   policy says the app has no trial of its own. If a store offer is added on
   the `monthly` and `yearly` base plans:
   - the trial button buys the plan, and Play applies the offer;
-  - the local grant goes (`PRO_TRIAL_ENABLED`, `canStartProTrial`);
+  - the dead local-grant code can go (`PRO_TRIAL_ENABLED`, `canStartProTrial`);
+  - the policy's Payments paragraph changes back to a store-trial wording (a
+    store trial charges when it ends unless cancelled);
   - a cancelled period ends on the store's `expirationDate`, not one full term
     from the purchase (`purchaseRecordFromStore`, PR #344 review);
   - `releaseReadiness` checks the offer, not just the library.
