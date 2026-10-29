@@ -1692,3 +1692,4 @@ module.exports = function withHomeWidget(config) {
 module.exports.widgetResources = widgetResources;
 module.exports.applyWidgetReceivers = applyWidgetReceivers;
 module.exports.PROVIDERS = PROVIDERS;
+module.exports.PACKAGE = PACKAGE;

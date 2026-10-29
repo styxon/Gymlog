@@ -615,6 +615,7 @@ const suites = [
   ...require('./storage/crashGuard.test.cjs'),
   ...require('./storage/perfHistory.test.cjs'),
   ...require('./lib/storageSize.test.cjs'),
+  ...require('./lib/releaseMinify.test.cjs'),
   ...require('./lib/releaseSigning.test.cjs'),
   ...require('./lib/allowBackup.test.cjs'),
   ...require('./lib/iosPrivacyManifest.test.cjs'),
