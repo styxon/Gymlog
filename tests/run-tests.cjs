@@ -161,6 +161,7 @@ const suites = [
   ...require('./lib/runningProgrammes.test.cjs'),
   ...require('./lib/proSurfaces.test.cjs'),
   ...require('./lib/subscriptionView.test.cjs'),
+  ...require('./lib/renewingPeriodEnd.test.cjs'),
   ...require('./lib/cancelSurvey.test.cjs'),
   ...require('./lib/legalDocuments.test.cjs'),
   ...require('./lib/accountDeletionPage.test.cjs'),

@@ -381,9 +381,9 @@ module.exports = [
       // renewed — while the entitlement rolled forward. Both read the current
       // period's end now.
       const tab = read('src', 'app', 'renderProfileTab.tsx');
-      assert.match(tab, /periodEndsAt=\{\s*proEntitlement\.purchaseEndsAt \?\?\s*currentPeriodEndAt\(/);
+      assert.match(tab, /periodEndsAt=\{\s*proEntitlement\.purchaseEndsAt \?\?\s*renewingPeriodEndAt\(/);
       const view = read('src', 'lib', 'subscriptionView.ts');
-      assert.match(view, /const charge = currentPeriodEndAt\(mockTerm, chargedFrom, now\);/);
+      assert.match(view, /const charge = renewingPeriodEndAt\(mockTerm, chargedFrom, storedEndsAt, now\);/);
       assert.doesNotMatch(view, /const charge = nextChargeAt\(/);
     },
   },

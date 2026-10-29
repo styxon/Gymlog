@@ -94,3 +94,36 @@ export function currentPeriodEndAt(
   }
   return null;
 }
+
+/**
+ * The end of the current period of a subscription that is still renewing,
+ * as the screens name it ("next charge", "paid until").
+ *
+ * The store's own end (`mockSubscriptionEndsAt`, RevenueCat's
+ * `expirationDate`) when it is still ahead: the purchase date the store hands
+ * back is the latest renewal, not the original day, so counting a term from it
+ * let the month-end clamp compound after all — a subscription bought on 31
+ * January, renewed on 28 February, read "next charge 28 March" while Play
+ * charges on the 31st (bug hunt, 2026-10-29). A trial or grace period has its
+ * own length that no term can count either. A stored end already passed says
+ * nothing about the period now running (a renewal that landed while the app
+ * was closed), so the counted end stands in.
+ *
+ * Display only: whether Pro is on stays with the entitlement, which ignores
+ * this end for a renewing record.
+ */
+export function renewingPeriodEndAt(
+  term: SubscriptionTermKey,
+  purchasedAtIso: string,
+  storedEndsAtIso: string | null | undefined,
+  now: Date = new Date(),
+): string | null {
+  if (!TERM_RENEWS[term]) {
+    return null;
+  }
+  const storedEnd = storedEndsAtIso ? new Date(storedEndsAtIso).getTime() : Number.NaN;
+  if (Number.isFinite(storedEnd) && storedEnd > now.getTime()) {
+    return storedEndsAtIso as string;
+  }
+  return currentPeriodEndAt(term, purchasedAtIso, now);
+}
