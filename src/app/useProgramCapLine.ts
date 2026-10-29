@@ -1,7 +1,6 @@
 import { useMemo } from 'react';
 import { placesToFree } from '../lib/activeProgramSet';
 import { I18nKey, t } from '../lib/i18n';
-import { resolveProEntitlement } from '../lib/proEntitlement';
 import { describeProgramCap, programCapLineKey } from '../lib/programCapNotice';
 import type { AppPreferences } from '../types/models';
 
@@ -15,11 +14,18 @@ import type { AppPreferences } from '../types/models';
  */
 interface ProgramCapLineDeps {
   preferences: AppPreferences;
+  /**
+   * From `useProEntitlement`, which reads it again when Pro runs out. Resolved
+   * here inside a memo keyed on preferences alone, the line kept Pro's cap
+   * after Pro ended (bug hunt, 2026-10-29).
+   */
+  proUnlocked: boolean;
 }
 
 export function useProgramCapLine(deps: ProgramCapLineDeps) {
   const {
     preferences,
+    proUnlocked,
   } = deps;
 
   /**
@@ -38,7 +44,7 @@ export function useProgramCapLine(deps: ProgramCapLineDeps) {
   const programCapLine = useMemo(() => {
     const state = describeProgramCap({
       activePlanIds: preferences.activePlanIds,
-      proUnlocked: resolveProEntitlement(preferences).unlocked,
+      proUnlocked,
     });
     const key = programCapLineKey(state);
     return key
@@ -48,7 +54,7 @@ export function useProgramCapLine(deps: ProgramCapLineDeps) {
           count: placesToFree(state.used, state.cap),
         })
       : null;
-  }, [preferences]);
+  }, [preferences, proUnlocked]);
 
   return {
     programCapLine,

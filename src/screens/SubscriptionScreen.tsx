@@ -585,7 +585,7 @@ export function SubscriptionScreen({
                       title={t(language, storeTextKey('subs.row.play', STORE))}
                       sub={t(language, storeTextKey('subs.row.playSub', STORE))}
                       onPress={() =>
-                        void Linking.openURL(manageSubscriptionsUrl(STORE))
+                        void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                       }
                     />
                   )}
@@ -618,7 +618,7 @@ export function SubscriptionScreen({
                     title={t(language, 'subs.row.restore')}
                     sub={t(language, restorePending ? 'subs.restore.pending' : 'subs.row.restoreSub')}
                     onPress={
-                      restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE))
+                      restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                     }
                     divider
                   />
@@ -627,7 +627,7 @@ export function SubscriptionScreen({
                     title={t(language, storeTextKey('subs.row.play', STORE))}
                     sub={t(language, storeTextKey('subs.row.playSub', STORE))}
                     onPress={() =>
-                      void Linking.openURL(manageSubscriptionsUrl(STORE))
+                      void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                     }
                   />
                 </ListCard>
@@ -769,7 +769,7 @@ export function SubscriptionScreen({
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              void Linking.openURL(paymentMethodsUrl(STORE))
+              void Linking.openURL(paymentMethodsUrl(STORE)).catch(() => undefined)
             }
             style={({ pressed }) => [styles.addMethodRow, pressed && { opacity: 0.75 }]}
           >

@@ -7,6 +7,7 @@ import { findSavedCardioRun } from '../lib/cardio';
 import { isAiCoachLiveConfigured, isProgrammeCompositionCrisis, requestProgrammeComposition } from '../features/aiCoach/aiCoachClient';
 import { randomLogId } from '../lib/aiCoachLogId';
 import { CoachQuotaLedger, resolveCoachQuota } from '../lib/aiCoachQuota';
+import { resolveProEntitlement } from '../lib/proEntitlement';
 import { markCoachDemoMomentUsed } from '../lib/coachDemoMoments';
 import { buildProgrammeDraft, composeProgrammePreview, liveProposalOrPreview, resolveLiveProposal } from '../lib/programmeBrief';
 import { recordSuggestionAccepted, recordSuggestionRejected } from '../lib/coachSuggestions';
@@ -166,7 +167,11 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
     // The check and the claim are one synchronous step (the ledger): a second
     // build, or a photo read, started while this one waits on the model reads
     // the same stored count, and both used to pass on the last question.
-    if (!coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
+    //
+    // And no Pro: no call. The chat's gate reads the prop it was last drawn
+    // with, so a tap just past Pro's end still passed it (bug hunt,
+    // 2026-10-29); this reads the clock at the tap.
+    if (!resolveProEntitlement(preferences).unlocked || !coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
       return null;
     }
     let live: Awaited<ReturnType<typeof requestProgrammeComposition>>;

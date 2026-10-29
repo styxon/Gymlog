@@ -28,7 +28,7 @@ import { useHeldSessionAdaptations } from './src/app/useHeldSessionAdaptations';
 import { useOnboardingGate } from './src/app/useOnboardingGate';
 import { useRunningProgrammeViews } from './src/app/useRunningProgrammeViews';
 import { createActiveWorkoutDoor } from './src/app/activeWorkoutDoor';
-import { resolveProEntitlement } from './src/lib/proEntitlement';
+import { useProEntitlement } from './src/app/useProEntitlement';
 import { resolveThemeName } from './src/lib/themePreference';
 
 import { CoachChatMemory } from './src/lib/coachChatMemory';
@@ -588,10 +588,13 @@ function VinhaApp() {
     showToast,
   });
 
+  const { proEntitlement } = useProEntitlement(preferences);
+
   const {
     programCapLine,
   } = useProgramCapLine({
     preferences,
+    proUnlocked: proEntitlement.unlocked,
   });
 
   /**
@@ -673,7 +676,6 @@ function VinhaApp() {
     database,
     workout,
   });
-  const proEntitlement = resolveProEntitlement(preferences);
   const coachProUnlocked = proEntitlement.unlocked;
 
   const { coachDemoMoment, coachDemoQuestion } = useCoachDemoMoment({
