@@ -25,7 +25,7 @@ go-ahead; it ships when there is a larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
-- #PR Pro that runs out while the app is open now closes at that moment: the coach, the programme builder and the Programs cap line no longer keep Pro on until something else redraws (one more coach question could be spent). A lifetime purchase no longer reads "Already cancelled" on the membership page, and the Subscription page's store links no longer fail silently with an unhandled error when the store cannot open.
+- #472 Pro that runs out while the app is open now closes at that moment: the coach, the programme builder and the Programs cap line no longer keep Pro on until something else redraws (one more coach question could be spent). A lifetime purchase no longer reads "Already cancelled" on the membership page, and the Subscription page's store links no longer fail silently with an unhandled error when the store cannot open.
 
 - #471 Subscription and the membership end page: a renewing subscription's next payment / paid-until date is the store's own date. A monthly bought on the 31st showed the 28th after a February renewal, three days early.
 - #470 Membership end page (Subscription → Manage membership): one card with the date Pro runs to and one button. A renewing subscription lists what changes if you end it, with "Keep Vinha Pro" in the card and "End membership" as a red text line under it; an already cancelled one, a failed payment or a promo shows only the date and Back, without the list of what you lose.
