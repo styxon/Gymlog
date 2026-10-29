@@ -52,6 +52,39 @@ export function resolveMembershipEndView({
 }
 
 /**
+ * What the screen's one card says. Only a renewing purchase lists what Pro
+ * turns back into: once it is cancelled (or was never a purchase) that list is
+ * a reminder of a loss the reader cannot act on here, so the card is a date
+ * and a way back.
+ */
+type MembershipEndNotice = 'renewing' | 'cancelled' | 'billing' | 'promo' | 'nothing';
+
+export interface MembershipEndCard {
+  notice: MembershipEndNotice;
+  /** The before → after rows. */
+  showLosses: boolean;
+  /** "Your log, programmes and records stay" — only while there is Pro to lose. */
+  showKeeps: boolean;
+}
+
+export function resolveMembershipEndCard(
+  view: MembershipEndView,
+  lapsesOn: string | null,
+): MembershipEndCard {
+  const notice: MembershipEndNotice =
+    view.mode === 'decide'
+      ? 'renewing'
+      : view.billingIssue
+        ? 'billing'
+        : view.alreadyCancelled
+          ? 'cancelled'
+          : lapsesOn
+            ? 'promo'
+            : 'nothing';
+  return { notice, showLosses: notice === 'renewing', showKeeps: notice !== 'nothing' };
+}
+
+/**
  * The `cancelled` the screen is handed: true only when Pro is running as a
  * purchase and its cancellation stamp is set. The stamp survives a purchase
  * that ended, so reading it alone told a promo, trial or review user "already

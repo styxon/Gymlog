@@ -5,7 +5,6 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { PageHeader } from '../components/BackButton';
-import { countWord } from '../lib/countWord';
 import { formatDate } from '../lib/format';
 import { I18nKey, t } from '../lib/i18n';
 import {
@@ -14,9 +13,13 @@ import {
   PRO_UNLOCK_LIMIT_VARS,
   resolveMembershipEndPlan,
 } from '../lib/proBenefits';
-import { resolveMembershipEndView } from '../lib/membershipEndView';
+import {
+  MembershipEndCard,
+  resolveMembershipEndCard,
+  resolveMembershipEndView,
+} from '../lib/membershipEndView';
 import { CANCEL_REASON_KEYS, CancelReasonKey } from '../lib/cancelSurvey';
-import { layout } from '../theme';
+import { layout, radii } from '../theme';
 import { Theme, useTheme, useThemedStyles } from '../theming';
 import { AppLanguage } from '../types/models';
 import { queryReduceMotion } from '../utils/reduceMotion';
@@ -94,6 +97,8 @@ export function MembershipEndScreen({
 
   const endsAt = plan.lapsesOn ?? periodEndsAt;
   const view = resolveMembershipEndView({ canEndNow: plan.canEndNow, cancelled, billingIssue });
+  const card = resolveMembershipEndCard(view, plan.lapsesOn);
+  const copy = membershipEndCopy(language, card.notice, endsAt, plan.lapsesOn);
 
   return step === 'splash' ? (
     <EndSplash
@@ -121,110 +126,115 @@ export function MembershipEndScreen({
         backLabel={t(language, 'common.back')}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
-        {/* The same change rows as the unlock screen, run backwards: what you
-            have (violet, a state) → what it becomes (grey, also a state —
-            losing a feature is not an alarm). Design: GAINER Pro screens, 02. */}
-        {endsAt ? (
-          <View style={styles.paidBadge}>
-            <Text style={styles.paidBadgeText}>
-              {t(language, 'subs.end.paidUntil', { date: formatDate(endsAt, language) })}
-            </Text>
-          </View>
-        ) : null}
-        <Text style={styles.title}>{t(language, 'subs.end.title')}</Text>
-        <Text style={styles.lead}>
-          {endsAt
-            ? t(language, 'subs.end.lead', {
-                date: formatDate(endsAt, language),
-                count: countWord(PRO_UNLOCK_CARDS.length, language, 'inline'),
-              })
-            : t(language, 'membership.end.lead')}
-        </Text>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.body, { paddingBottom: insets.bottom + 24 }]}
+      >
+        {/* One card, one filled action (design: "Jäsenyyden päättymisruutu",
+            2026-10-29). Ending is a quiet red line under the card, so the
+            destructive choice never sits where the thumb lands. */}
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>{copy.title}</Text>
+          <Text style={styles.cardBody}>{copy.body}</Text>
 
-        <View style={styles.list}>
-          {PRO_UNLOCK_CARDS.map((card) => (
-            <View key={card.titleKey} style={styles.lossRow}>
-              <Text style={styles.lossTitle}>
-                {t(language, card.titleKey, vars(card.titleKey))}
-              </Text>
-              <View style={styles.lossDelta}>
-                {/* Now → was. The unlock screen runs this pair the other way. */}
-                <View style={styles.haveChip}>
-                  <Text style={styles.haveChipText}>{t(language, card.nowKey, vars(card.nowKey))}</Text>
+          {card.showLosses ? (
+            <View style={styles.list}>
+              {/* The same change rows as the unlock screen, run backwards: what
+                  you have (violet, a state) → what it becomes (grey, also a
+                  state — losing a feature is not an alarm). */}
+              {PRO_UNLOCK_CARDS.map((unlock, index) => (
+                <View
+                  key={unlock.titleKey}
+                  style={[styles.lossRow, index === PRO_UNLOCK_CARDS.length - 1 && styles.lossRowLast]}
+                >
+                  <Text style={styles.lossTitle}>
+                    {t(language, unlock.titleKey, vars(unlock.titleKey))}
+                  </Text>
+                  <View style={styles.lossDelta}>
+                    {/* Now → was. The unlock screen runs this pair the other way. */}
+                    <View style={styles.haveChip}>
+                      <Text style={styles.haveChipText}>{t(language, unlock.nowKey, vars(unlock.nowKey))}</Text>
+                    </View>
+                    <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                      <Path
+                        d="M5 12h13M13 7l5 5-5 5"
+                        stroke={theme.faint}
+                        strokeWidth={2.6}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </Svg>
+                    <View style={styles.becomesChip}>
+                      <Text style={styles.becomesChipText}>{t(language, unlock.wasKey, vars(unlock.wasKey))}</Text>
+                    </View>
+                  </View>
                 </View>
-                <Svg width={15} height={15} viewBox="0 0 24 24" fill="none">
-                  <Path
-                    d="M5 12h13M13 7l5 5-5 5"
-                    stroke={theme.faint}
-                    strokeWidth={2.6}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </Svg>
-                <View style={styles.becomesChip}>
-                  <Text style={styles.becomesChipText}>{t(language, card.wasKey, vars(card.wasKey))}</Text>
-                </View>
-              </View>
+              ))}
             </View>
-          ))}
+          ) : null}
+
+          {card.showKeeps ? <Text style={styles.keeps}>{t(language, 'subs.end.keeps')}</Text> : null}
+
+          {/* Nothing to decide outside a renewing purchase, so the one action
+              is back: a cancelled or promo membership is never asked to be
+              kept or ended again. */}
+          <Pressable
+            accessibilityRole="button"
+            onPress={view.mode === 'decide' ? onKeep : onBack}
+            style={({ pressed }) => [styles.keepButton, styles.cardAction, pressed && { opacity: 0.85 }]}
+          >
+            <Text style={styles.keepButtonText}>
+              {t(language, view.mode === 'decide' ? 'subs.end.keep' : 'common.back')}
+            </Text>
+          </Pressable>
         </View>
 
-        <Text style={styles.keeps}>{t(language, 'subs.end.keeps')}</Text>
-      </ScrollView>
-
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 12 }]}>
         {view.mode === 'decide' ? (
-          <>
-            {/* Keeping is the one filled button; ending is the outlined red
-                one under it, so the destructive choice never sits where the
-                thumb lands and is still visibly a button. */}
-            <Pressable
-              accessibilityRole="button"
-              onPress={onKeep}
-              style={({ pressed }) => [styles.keepButton, pressed && { opacity: 0.85 }]}
-            >
-              <Text style={styles.keepButtonText}>{t(language, 'subs.end.keep')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onEndInStore ?? (() => setStep('splash'))}
-              style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
-            >
-              <Text style={styles.endLinkText}>{t(language, 'subs.end.cta')}</Text>
-            </Pressable>
-          </>
-        ) : (
-          <>
-            {/* Nothing to decide, so one action: back. A cancelled or promo
-                membership is never asked to be kept or ended again. */}
-            <Text style={styles.noActionNote}>
-              {view.billingIssue
-                ? endsAt
-                  ? t(language, 'subs.end.billingNote', { date: formatDate(endsAt, language) })
-                  : t(language, 'subs.billingIssueNote')
-                : view.alreadyCancelled
-                ? endsAt
-                  ? t(language, 'subs.end.cancelledNote', { date: formatDate(endsAt, language) })
-                  : t(language, 'subs.cancelledNote')
-                : plan.lapsesOn
-                  ? t(language, 'membership.end.noActionPromo', {
-                      date: formatDate(plan.lapsesOn, language),
-                    })
-                  : t(language, 'membership.end.noAction')}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              onPress={onBack}
-              style={({ pressed }) => [styles.keepButton, pressed && { opacity: 0.85 }]}
-            >
-              <Text style={styles.keepButtonText}>{t(language, 'common.back')}</Text>
-            </Pressable>
-          </>
-        )}
-      </View>
+          <Pressable
+            accessibilityRole="button"
+            onPress={onEndInStore ?? (() => setStep('splash'))}
+            style={({ pressed }) => [styles.endLink, pressed && { opacity: 0.75 }]}
+          >
+            <Text style={styles.endLinkText}>{t(language, 'subs.end.cta')}</Text>
+          </Pressable>
+        ) : null}
+      </ScrollView>
     </View>
   );
+}
+
+/** The card's title and line for each notice. */
+function membershipEndCopy(
+  language: AppLanguage,
+  notice: MembershipEndCard['notice'],
+  endsAt: string | null,
+  lapsesOn: string | null,
+): { title: string; body: string } {
+  const date = (iso: string) => ({ date: formatDate(iso, language) });
+  switch (notice) {
+    case 'renewing':
+      return {
+        title: endsAt ? t(language, 'subs.end.paidUntil', date(endsAt)) : t(language, 'subs.end.active'),
+        body: t(language, 'subs.end.ifEnd'),
+      };
+    case 'cancelled':
+      return {
+        title: t(language, 'subs.end.cancelledTitle'),
+        body: endsAt ? t(language, 'subs.end.cancelledBody', date(endsAt)) : t(language, 'subs.cancelledNote'),
+      };
+    case 'billing':
+      return {
+        title: t(language, 'subs.end.billingTitle'),
+        body: endsAt ? t(language, 'subs.end.billingBody', date(endsAt)) : t(language, 'subs.end.billingBodyNoDate'),
+      };
+    case 'promo':
+      return {
+        title: t(language, 'membership.end.nothingTitle'),
+        body: lapsesOn ? t(language, 'membership.end.promoBody', date(lapsesOn)) : t(language, 'membership.end.nothingBody'),
+      };
+    default:
+      return { title: t(language, 'membership.end.nothingTitle'), body: t(language, 'membership.end.nothingBody') };
+  }
 }
 
 function vars(key: I18nKey) {
@@ -457,41 +467,53 @@ const makeStyles = (theme: Theme) =>
       paddingHorizontal: layout.screenGutter,
       paddingBottom: 24,
     },
-    title: {
-      color: theme.ink,
-      fontSize: 34,
-      fontWeight: '800',
-      letterSpacing: -1.2,
-      lineHeight: 37,
+    card: {
+      backgroundColor: theme.surface,
+      borderWidth: 1,
+      borderColor: theme.border,
+      borderRadius: radii.lg,
+      paddingTop: 22,
+      paddingHorizontal: 20,
+      paddingBottom: 20,
     },
-    lead: {
+    cardTitle: {
+      color: theme.ink,
+      fontSize: 26,
+      fontWeight: '800',
+      letterSpacing: -0.8,
+      lineHeight: 30,
+    },
+    cardBody: {
       color: theme.muted,
-      fontSize: 16.5,
+      fontSize: 15,
       fontWeight: '700',
-      lineHeight: 24,
-      marginTop: 14,
+      lineHeight: 21,
+      marginTop: 8,
     },
     list: {
-      marginTop: 24,
+      marginTop: 12,
       borderTopWidth: 1,
       borderTopColor: theme.border,
     },
     lossRow: {
-      paddingVertical: 15,
+      paddingVertical: 11,
       borderBottomWidth: 1,
       borderBottomColor: theme.border,
     },
+    lossRowLast: {
+      borderBottomWidth: 0,
+    },
     lossTitle: {
       color: theme.ink,
-      fontSize: 19,
+      fontSize: 15.5,
       fontWeight: '800',
-      letterSpacing: -0.48,
+      letterSpacing: -0.3,
     },
     lossDelta: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 9,
-      marginTop: 8,
+      gap: 7,
+      marginTop: 6,
       flexWrap: 'wrap',
     },
     // What you have: a violet state chip, the same one the unlock screen
@@ -518,26 +540,11 @@ const makeStyles = (theme: Theme) =>
       fontSize: 12.5,
       fontWeight: '800',
     },
-    paidBadge: {
-      alignSelf: 'flex-start',
-      backgroundColor: theme.purpleLight,
-      borderRadius: 999,
-      paddingVertical: 5,
-      paddingHorizontal: 11,
-      marginBottom: 14,
-    },
-    paidBadgeText: {
-      color: theme.purpleDark,
-      fontSize: 11.5,
-      fontWeight: '800',
-      letterSpacing: 0.9,
-      textTransform: 'uppercase',
-    },
     endLink: {
-      height: 54,
-      borderRadius: 16,
-      borderWidth: 1.5,
-      borderColor: theme.danger,
+      alignSelf: 'center',
+      minHeight: 44,
+      paddingHorizontal: 16,
+      marginTop: 14,
       alignItems: 'center',
       justifyContent: 'center',
     },
@@ -546,20 +553,23 @@ const makeStyles = (theme: Theme) =>
       // as text on the dark surface falls under 4:1. theme.danger stays
       // readable on both.
       color: theme.danger,
-      fontSize: 16.5,
+      fontSize: 15,
       fontWeight: '800',
     },
     keeps: {
       color: theme.faint,
-      fontSize: 14,
+      fontSize: 13,
       fontWeight: '600',
-      lineHeight: 21,
-      marginTop: 18,
+      lineHeight: 19,
+      marginTop: 12,
     },
     footer: {
       paddingHorizontal: 20,
       paddingTop: 13,
       gap: 10,
+    },
+    cardAction: {
+      marginTop: 18,
     },
     keepButton: {
       height: 54,
@@ -572,13 +582,6 @@ const makeStyles = (theme: Theme) =>
       color: theme.onHighlight,
       fontSize: 16.5,
       fontWeight: '800',
-    },
-    noActionNote: {
-      color: theme.faint,
-      fontSize: 12.5,
-      fontWeight: '600',
-      textAlign: 'center',
-      lineHeight: 18,
     },
     splash: {
       flex: 1,
