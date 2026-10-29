@@ -25,6 +25,7 @@ go-ahead; it ships when there is a larger update to carry, not for each fix.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #471 Subscription and the membership end page: a renewing subscription's next payment / paid-until date is the store's own date. A monthly bought on the 31st showed the 28th after a February renewal, three days early.
 - #470 Membership end page (Subscription → Manage membership): one card with the date Pro runs to and one button. A renewing subscription lists what changes if you end it, with "Keep Vinha Pro" in the card and "End membership" as a red text line under it; an already cancelled one, a failed payment or a promo shows only the date and Back, without the list of what you lose.
 
 - #468 Privacy policy and terms (version 2026-10-28, so every phone is asked to accept again): the coach no longer describes a keep-a-copy permission it does not ask for, the local free trial is gone from the text, Android's alarms permission is listed, the minimum age is 18 (the lowest age choice in setup and My data now reads "18" instead of "16–18"), the iPhone backup is named as a second copy outside the phone, and the storage check joins the usage events. The sign-in prompt says training and body data are kept on our server in the EU, and the coach notice says Anthropic writes the answer in the United States.

@@ -80,7 +80,7 @@ module.exports = [
       // the CURRENT period, rolled forward through renewals. One period after
       // the purchase was months in the past for a subscriber who had renewed
       // (review 2026-09-03).
-      assert.match(tab, /periodEndsAt=\{\s*proEntitlement\.purchaseEndsAt \?\?\s*currentPeriodEndAt\(\s*preferences\.mockSubscriptionTerm,\s*preferences\.mockSubscriptionPurchasedAt \?\? MOCK_BILLING\.lastChargedAt,\s*\)\s*\}/);
+      assert.match(tab, /periodEndsAt=\{\s*proEntitlement\.purchaseEndsAt \?\?\s*renewingPeriodEndAt\(\s*preferences\.mockSubscriptionTerm,\s*preferences\.mockSubscriptionPurchasedAt \?\? MOCK_BILLING\.lastChargedAt,\s*preferences\.mockSubscriptionEndsAt,\s*\)\s*\}/);
       assert.ok(i18n.includes("'subs.end.keeps': 'Your log, programmes and records stay.'"));
       for (const key of [
         'subs.end.paidUntil',

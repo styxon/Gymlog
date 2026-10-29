@@ -26,7 +26,7 @@ import { randomLogId } from '../lib/aiCoachLogId';
 import { localizeSessionFocus } from '../lib/sessionNameLabel';
 import { createSingleFlight } from '../lib/singleFlight';
 import { membershipEndCancelled } from '../lib/membershipEndView';
-import { MOCK_BILLING, currentPeriodEndAt, nextChargeAt } from '../lib/subscriptionView';
+import { MOCK_BILLING, nextChargeAt, renewingPeriodEndAt } from '../lib/subscriptionView';
 import { AppRoute, ROOT_ROUTES } from '../navigation/routes';
 import { remindersOptedIn } from '../lib/reminderOptIn';
 import { reminderWeekdays, resolveReminderSchedule } from '../lib/reminderSchedule';
@@ -446,6 +446,8 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
             mockSubscriptionTerm: plan,
             // A re-purchase after cancelling starts a fresh subscription.
             mockSubscriptionCancelledAt: null,
+            // An end left by an earlier store record is not this period's.
+            mockSubscriptionEndsAt: null,
           });
           if (purchased) {
             navigate({ tab: 'profile', screen: 'premium_unlock', plan });
@@ -650,6 +652,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         mockCancelled={preferences.mockSubscriptionCancelledAt !== null}
         mockBillingIssue={preferences.mockSubscriptionBillingIssue}
         purchasedAt={preferences.mockSubscriptionPurchasedAt}
+        storedEndsAt={preferences.mockSubscriptionEndsAt}
         onChangeMockTerm={(term) => {
           if (releaseBuild) {
             openStoreSubscriptions();
@@ -662,6 +665,7 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
             mockSubscriptionTerm: term,
             mockSubscriptionPurchasedAt: new Date().toISOString(),
             mockSubscriptionCancelledAt: null,
+            mockSubscriptionEndsAt: null,
           });
         }}
         onChangeMockCancelled={(cancelled) => {
@@ -711,9 +715,10 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // was months in the past for anyone who had renewed.
         periodEndsAt={
           proEntitlement.purchaseEndsAt ??
-          currentPeriodEndAt(
+          renewingPeriodEndAt(
             preferences.mockSubscriptionTerm,
             preferences.mockSubscriptionPurchasedAt ?? MOCK_BILLING.lastChargedAt,
+            preferences.mockSubscriptionEndsAt,
           )
         }
         onBack={() => navigateBack({ tab: 'profile', screen: 'subscription' })}
