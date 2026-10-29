@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 
-const { resolveMembershipEndView } = require('../../src/lib/membershipEndView');
+const { resolveMembershipEndCard, resolveMembershipEndView } = require('../../src/lib/membershipEndView');
 const { resolveMembershipEndPlan } = require('../../src/lib/proBenefits');
 
 module.exports = [
@@ -37,6 +37,36 @@ module.exports = [
           billingIssue: false,
         });
       }
+    },
+  },
+  {
+    name: 'card: only a renewing purchase lists the losses',
+    run() {
+      const card = (view, lapsesOn = null) => resolveMembershipEndCard(view, lapsesOn);
+      const renewing = resolveMembershipEndView({ canEndNow: true, cancelled: false });
+      assert.deepEqual(card(renewing, '2026-12-01'), { notice: 'renewing', showLosses: true, showKeeps: true });
+      // Cancellation is a moment, not a flag: afterwards the card does not
+      // remind the reader what they are about to lose.
+      const cancelled = resolveMembershipEndView({ canEndNow: true, cancelled: true });
+      assert.deepEqual(card(cancelled, '2026-12-01'), { notice: 'cancelled', showLosses: false, showKeeps: true });
+      const billing = resolveMembershipEndView({ canEndNow: true, cancelled: true, billingIssue: true });
+      assert.deepEqual(card(billing, '2026-12-01'), { notice: 'billing', showLosses: false, showKeeps: true });
+    },
+  },
+  {
+    name: 'card: a promo names its date, nothing to cancel says so without a keeps line',
+    run() {
+      const promo = resolveMembershipEndView({ canEndNow: false, cancelled: false });
+      assert.deepEqual(resolveMembershipEndCard(promo, '2026-12-01'), {
+        notice: 'promo',
+        showLosses: false,
+        showKeeps: true,
+      });
+      assert.deepEqual(resolveMembershipEndCard(promo, null), {
+        notice: 'nothing',
+        showLosses: false,
+        showKeeps: false,
+      });
     },
   },
 ];
