@@ -2546,8 +2546,11 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
   },
   // Back to ink (user 2026-08-25, same day it went orange — the accent is
   // busy enough on this screen, and the counter now shares the row).
+  // The family useAppBoot loads, with its weight: a 'JetBrainsMono-ExtraBold'
+  // family was never loaded and fell back to the system font (hunt C3).
   greetingDate: {
-    fontFamily: 'JetBrainsMono-ExtraBold',
+    fontFamily: 'JetBrainsMono',
+    fontWeight: '800',
     fontSize: 11.5,
     letterSpacing: 1.05,
     color: theme.ink,

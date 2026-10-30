@@ -68,7 +68,9 @@ export const HG = {
   onHighlight: '#FFFFFF',
   controlFill: '#FFFFFF',
   controlBorder: '#CDBEE6',
-  switchOff: '#B9A9DB',
+  // 3.6:1 on a white card, 3.0 on the page: a control's off state needs 3:1
+  // to be seen (#B9A9DB was 2.15, hunt build 6->7, C6).
+  switchOff: '#8F7EBD',
   blue: '#0A84FF',
   gold: '#E4B14C',
   // Deep enough to read as 13px text on white (about 5:1).

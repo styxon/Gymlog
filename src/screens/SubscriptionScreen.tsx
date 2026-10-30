@@ -298,6 +298,12 @@ export function SubscriptionScreen({
       return [proEnds, nothingScheduled];
     }
     if (model.cancelled) {
+      // A failed payment is not "none scheduled": the store is retrying the
+      // charge, which the status line and the note under the card both say
+      // (hunt build 6->7, C1). The row goes rather than contradict them.
+      if (model.billingIssue) {
+        return [proEnds, ...method];
+      }
       return [proEnds, { ...nothingScheduled, valueColor: statusAccent }, ...method];
     }
     if (lifetime) {

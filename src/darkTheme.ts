@@ -74,7 +74,8 @@ export const HG_DARK = {
   onHighlight: '#241203',
   controlFill: '#201A42',
   controlBorder: 'rgba(255, 255, 255, 0)',
-  switchOff: '#4A4470',
+  // 3.4:1 on the card, 3.1 on surfaceSoft (#4A4470 was 1.97, hunt C6).
+  switchOff: '#6C65A3',
   blue: '#4FA8FF',
   gold: '#E4B14C',
   orange: '#FF8A4C',

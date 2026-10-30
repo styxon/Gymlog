@@ -57,6 +57,7 @@ import {
   loggedSetsOf,
   guidedRestSeconds,
   guidedAdjustedMs,
+  guidedBeepMarkAfterAdjust,
   guidedRestCueDue,
   guidedRestOpeningMs,
   guidedRestToExtend,
@@ -967,6 +968,7 @@ function GuidedPlayer({
       floorMs,
     });
     remainingRef.current = next;
+    lastBeepSecondRef.current = guidedBeepMarkAfterAdjust(lastBeepSecondRef.current, next);
     if (endsAtRef.current !== null) {
       endsAtRef.current = Date.now() + next;
       persistRestDeadline(endsAtRef.current);

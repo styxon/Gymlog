@@ -206,7 +206,9 @@ export function formatRelativeDay(
   if (days < 7) {
     return t(language, 'common.daysAgo', { count: days });
   }
-  return formatShortDate(date.toISOString(), language);
+  // The list date: "19.10." this year, "19.10.2025" before it. A reading
+  // older than a year read "19. lokak." with no year (hunt build 6->7, C7).
+  return formatListDate(date, language, { now: new Date(now) });
 }
 
 /**

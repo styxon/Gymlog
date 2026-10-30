@@ -589,16 +589,18 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     paddingHorizontal: 9,
     paddingVertical: 3,
     borderRadius: 999,
-    backgroundColor: '#E4F6EA',
+    // The theme's green pair; the fixed light-theme hexes stayed pale in the
+    // dark theme (hunt build 6->7, C4).
+    backgroundColor: theme.greenSoft,
   },
   activeDot: {
     width: 7,
     height: 7,
     borderRadius: 4,
-    backgroundColor: '#1FA64E',
+    backgroundColor: theme.green,
   },
   activePillText: {
-    color: '#157A3A',
+    color: theme.greenInk,
     fontSize: 10.5,
     fontWeight: '800',
     letterSpacing: 0.6,

@@ -376,7 +376,7 @@ export function MyDataScreen({
                   ]}
                 >
                   <View style={[styles.limitTile, flag.level === 'avoid' ? styles.limitTileAvoid : styles.limitTileCareful]}>
-                    <ShieldIcon color={flag.level === 'avoid' ? '#C0392B' : '#B45309'} />
+                    <ShieldIcon color={flag.level === 'avoid' ? theme.danger : theme.amberInk} />
                   </View>
                   <Text style={[styles.limitText, flag.level === 'avoid' && styles.limitTextAvoid]}>
                     {limitationLabel(flag, language)}
@@ -589,15 +589,17 @@ const makeStyles = (theme: Theme) => StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  // Theme tokens, not the light theme's hexes: on the dark card those were
+  // a pale tile and #B45309 text at about 3.3:1 (hunt build 6->7, C4).
   limitTileCareful: {
-    backgroundColor: '#FBF0DD',
+    backgroundColor: theme.amberSoft,
   },
   limitTileAvoid: {
-    backgroundColor: '#FBEAE7',
+    backgroundColor: theme.dangerSoft,
   },
   limitText: {
     flex: 1,
-    color: '#B45309',
+    color: theme.amberInk,
     fontSize: 15,
     fontWeight: '800',
   },

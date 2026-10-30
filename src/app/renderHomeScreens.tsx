@@ -210,6 +210,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           // The charge did not land, so the week is not handed over: a refused
           // write must not be a free build. The chat says it failed.
           console.error('Failed to record the build against the coach allowance', error);
+          coachQuotaLedger.forget();
           return null;
         }
       }
@@ -406,7 +407,10 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           // is handed back so the chat holds its claim until the spend landed.
           updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }))
             .then(() => undefined)
-            .catch((error): void => console.error('Failed to record the coach question', error))
+            .catch((error): void => {
+              console.error('Failed to record the coach question', error);
+              coachQuotaLedger.forget();
+            })
         }
         onReserveQuestion={() => coachQuotaLedger.reserve(preferences.aiCoachProQuota)}
         onReleaseQuestion={() => coachQuotaLedger.release()}
