@@ -25,7 +25,7 @@ joins a later test build before the store build.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
-- #TBD "New best" on the Progress chip now matches Records: a first weighted session after bodyweight-only ones counts, holds and minutes lifts no longer get it from seconds read as reps, and a lift logged twice in one workout reads the same whatever the order. The weekly read ranks lifts by sessions, so a lift logged twice a workout no longer crowds out one that qualifies.
+- #476 "New best" on the Progress chip now matches Records: a first weighted session after bodyweight-only ones counts, holds and minutes lifts no longer get it from seconds read as reps, and a lift logged twice in one workout reads the same whatever the order. The weekly read ranks lifts by sessions, so a lift logged twice a workout no longer crowds out one that qualifies.
 
 - #472 Pro that runs out while the app is open now closes at that moment: the coach, the programme builder and the Programs cap line no longer keep Pro on until something else redraws (one more coach question could be spent). A lifetime purchase no longer reads "Already cancelled" on the membership page, and the Subscription page's store links no longer fail silently with an unhandled error when the store cannot open.
 
