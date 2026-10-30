@@ -107,6 +107,25 @@ export interface CoachQuotaLedger {
   held(): number;
 }
 
+/**
+ * A build that was refused where the request is made, as opposed to one that
+ * failed. `spent`: no question left (a photo read or a chat answer holds the
+ * last one, or a stale screen still showed one). `not_pro`: Pro ended since
+ * the screen was drawn. Nothing was built and nothing was charged, so the
+ * chat says why and keeps the offer instead of reading "could not build".
+ */
+export interface ComposeRefusal {
+  refused: 'spent' | 'not_pro';
+}
+
+export function isComposeRefusal(value: unknown): value is ComposeRefusal {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
+  const refused = (value as { refused?: unknown }).refused;
+  return refused === 'spent' || refused === 'not_pro';
+}
+
 export function createCoachQuotaLedger(): CoachQuotaLedger {
   let held = 0;
   let written: CoachQuotaState | null = null;
