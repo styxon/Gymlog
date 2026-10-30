@@ -55,7 +55,17 @@ interface NumberToken {
   notReading: boolean;
   /** "30.10." — a date when it comes before the measurement word. */
   dayMonth: boolean;
+  /** "30 päivää sitten", "30 days ago", "30 Oct": a count of time, not a reading. */
+  timeCount: boolean;
 }
+
+/**
+ * A word that makes the unitless number before it a duration, a count or a
+ * date ("painoni 30 päivää sitten oli 85", "weight 30 Oct 82"). "may" is left
+ * out on purpose: "weight 82 may vary" is a reading.
+ */
+const TIME_WORD_AFTER =
+  /^(?:päiv|pv\b|vk\b|vko|viikko|viikon|viikolla|kk\b|kuukau|vuo|vuos|tunti|kertaa|krt\b|sitten|aikana|days?\b|weeks?\b|wks?\b|months?\b|years?\b|yrs?\b|hours?\b|times\b|ago\b|(?:jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|tammi|helmi|maalis|huhti|touko|kesä|heinä|elo|syys|loka|marras|joulu)/i;
 
 function numberTokens(message: string): NumberToken[] {
   const tokens: NumberToken[] = [];
@@ -72,6 +82,7 @@ function numberTokens(message: string): NumberToken[] {
       end: index + match[0].length,
       unit,
       notReading: parts.length > 2 || CLOCK_BEFORE.test(before),
+      timeCount: unit === null && TIME_WORD_AFTER.test(message.slice(index + match[0].length)),
       dayMonth:
         parts.length === 2 &&
         raw.includes('.') &&
@@ -108,7 +119,10 @@ function readingToken(
   const before = usable.filter((token) => token.index < wordAt && !token.dayMonth);
   const after = usable.filter((token) => token.index > wordAt);
   const leading = before[before.length - 1];
-  const following = after.find((token, at) => !(token.dayMonth && at < after.length - 1));
+  // A duration or date ("30 päivää sitten", "30 Oct") is skipped; if nothing
+  // else follows, the number before the word is the fallback as ever.
+  const readings = after.filter((token) => !token.timeCount);
+  const following = readings.find((token, at) => !(token.dayMonth && at < readings.length - 1));
   const adjacent = leading !== undefined && message.slice(leading.end, wordAt).trim() === '';
   if (adjacent && (leading.unit !== null || !following || !plausible(following))) {
     return leading;

@@ -115,7 +115,7 @@ module.exports = [
       );
       assert.match(
         screen,
-        /if \(proUnlocked && !answer\.unanswered && result\.source !== 'preview'\) \{\s*onQuestionUsed\(\);/,
+        /if \(proUnlocked && !answer\.unanswered && result\.source !== 'preview'\) \{\s*(?:spending = )?onQuestionUsed\(\);/,
       );
     },
   },

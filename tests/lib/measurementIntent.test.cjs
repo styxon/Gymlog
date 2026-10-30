@@ -110,4 +110,20 @@ module.exports = [
       assert.deepEqual(parseMeasurementIntent('pohje 30.5.'), { kind: 'calves', value: 30.5, unit: 'cm' });
     },
   },
+  {
+    name: 'measurementIntent: a duration or date after the word is not the reading',
+    run() {
+      const kg = (value) => ({ kind: 'bodyweight', value, unit: 'kg' });
+      assert.deepEqual(parseMeasurementIntent('painoni 30 päivää sitten oli 85'), kg(85));
+      assert.deepEqual(parseMeasurementIntent('weight 30 days ago was 85', 'en'), kg(85));
+      assert.deepEqual(parseMeasurementIntent('painoni 60 päivän aikana 82'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('weight 30 Oct 82', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('vyötärö 30 päivää sitten 90 cm'), { kind: 'waist', value: 90, unit: 'cm' });
+      // Nothing else to read: the duration is still not offered as a weight.
+      assert.equal(parseMeasurementIntent('weight 30 days ago', 'en'), null);
+      // Plain readings are unchanged, including a word that only looks like a month.
+      assert.deepEqual(parseMeasurementIntent('painoni 85'), kg(85));
+      assert.deepEqual(parseMeasurementIntent('weight 82 may vary', 'en'), kg(82));
+    },
+  },
 ];
