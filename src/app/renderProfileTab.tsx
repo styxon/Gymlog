@@ -706,7 +706,11 @@ export function renderProfileTab(deps: ProfileTabDeps): React.ReactElement | nul
         // guess which of promo / demo switch is keeping Pro on.
         source={proEntitlement.source ?? 'none'}
         promoUntil={proEntitlement.promoUntil}
-        cancelled={membershipEndCancelled(proEntitlement.source, preferences.mockSubscriptionCancelledAt)}
+        cancelled={membershipEndCancelled(
+          proEntitlement.source,
+          preferences.mockSubscriptionCancelledAt,
+          preferences.mockSubscriptionTerm,
+        )}
         billingIssue={preferences.mockSubscriptionBillingIssue}
         // Counted from the same instant the subscription screen counts from,
         // or the two screens name different dates for the same period.

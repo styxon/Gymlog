@@ -89,10 +89,15 @@ export function resolveMembershipEndCard(
  * purchase and its cancellation stamp is set. The stamp survives a purchase
  * that ended, so reading it alone told a promo, trial or review user "already
  * cancelled" for a subscription they no longer have.
+ *
+ * Lifetime is one payment with nothing to cancel: the entitlement already
+ * ignores a stamp on it, so the page must too, or a lifetime holder reads
+ * "Already cancelled" with no date under it (bug hunt, 2026-10-29).
  */
 export function membershipEndCancelled(
   entitlementSource: string | null,
   cancelledAt: string | null,
+  term: string | null = null,
 ): boolean {
-  return entitlementSource === 'purchase' && cancelledAt !== null;
+  return entitlementSource === 'purchase' && cancelledAt !== null && term !== 'lifetime';
 }

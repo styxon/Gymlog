@@ -208,6 +208,43 @@ export function isProUnlocked(preferences: ProPreferences, now: Date = new Date(
 }
 
 /**
+ * The instant this entitlement stops on its own, in ms; null when nothing is
+ * scheduled (still renewing, lifetime, review, or locked already).
+ *
+ * The entitlement is read from the clock at render, and nothing renders at
+ * the moment it runs out: an app left open kept a promo, trial or cancelled
+ * purchase on past its end until something else drew, and the coach took one
+ * more billed question (bug hunt, 2026-10-29). The app sets a timer for this.
+ */
+export function proEntitlementEndsAtMs(entitlement: ProEntitlement): number | null {
+  const end =
+    entitlement.source === 'promo' || entitlement.source === 'trial'
+      ? entitlement.promoUntil
+      : entitlement.source === 'purchase'
+        ? entitlement.purchaseEndsAt
+        : null;
+  const ms = end ? new Date(end).getTime() : Number.NaN;
+  return Number.isFinite(ms) ? ms : null;
+}
+
+/** setTimeout's ceiling: a longer delay overflows and fires at once. */
+export const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
+/**
+ * How long to wait before reading the entitlement again; null for never.
+ *
+ * A second past the end, so the read lands after it. Capped at the timer's
+ * ceiling (about 24.8 days) — an end further out re-arms from the early fire
+ * rather than firing at once — and never under a second.
+ */
+export function entitlementRecheckDelayMs(endsAtMs: number | null, nowMs: number): number | null {
+  if (endsAtMs === null) {
+    return null;
+  }
+  return Math.min(MAX_TIMER_DELAY_MS, Math.max(1000, endsAtMs - nowMs + 1000));
+}
+
+/**
  * May the reader take a cancelled subscription back?
  *
  * Only while the period they paid for is still running — which is what
