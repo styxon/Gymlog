@@ -64,8 +64,14 @@ interface NumberToken {
  * date ("painoni 30 päivää sitten oli 85", "weight 30 Oct 82"). "may" is left
  * out on purpose: "weight 82 may vary" is a reading.
  */
-const TIME_WORD_AFTER =
-  /^(?:päiv|pv\b|vk\b|vko|viikko|viikon|viikolla|kk\b|kuukau|vuo|vuos|tunti|kertaa|krt\b|sitten|aikana|days?\b|weeks?\b|wks?\b|months?\b|years?\b|yrs?\b|hours?\b|times\b|ago\b|(?:jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\b|tammi|helmi|maalis|huhti|touko|kesä|heinä|elo|syys|loka|marras|joulu)/i;
+const TIME_WORD_AFTER = new RegExp(
+  '^(?:päiv(?:ä|än|ää|ien|iä|ina|inä)?|pv|vk|vko|viikko(?:a|n|lla)?|viikon|viikolla|kk|kuukau(?:si|den|tta|sia|sina)?|' +
+    'vuo(?:si|den|tta|sia|sina|teen)?|tunti(?:a|in|na)?|tunnin|kertaa|krt|sitten|aikana|' +
+    'days?|weeks?|wks?|months?|years?|yrs?|hours?|times|ago|' +
+    'jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?|' +
+    '(?:tammi|helmi|maalis|huhti|touko|kesä|heinä|elo|syys|loka|marras|joulu)(?:kuu[a-zäöå]*)?)(?![a-zäöå])',
+  'i',
+);
 
 function numberTokens(message: string): NumberToken[] {
   const tokens: NumberToken[] = [];

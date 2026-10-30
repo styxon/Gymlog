@@ -124,6 +124,12 @@ module.exports = [
       // Plain readings are unchanged, including a word that only looks like a month.
       assert.deepEqual(parseMeasurementIntent('painoni 85'), kg(85));
       assert.deepEqual(parseMeasurementIntent('weight 82 may vary', 'en'), kg(82));
+      // Words that only start like a time word are not time words.
+      assert.deepEqual(parseMeasurementIntent('weight 82 decreased', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('weight 82 marginally', 'en'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('paino 82 elossa'), kg(82));
+      assert.deepEqual(parseMeasurementIntent('painoni 82 kesällä'), kg(82));
+      assert.equal(parseMeasurementIntent('weight 30 December', 'en'), null);
     },
   },
 ];
