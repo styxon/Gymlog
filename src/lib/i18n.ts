@@ -561,6 +561,7 @@ const EN = {
   'catalog.focus.mobility': 'Mobility',
   'catalog.daysPill': '{days}d / wk',
   'catalog.metaDays': '{days} days',
+  'catalog.metaDayOne': '1 day',
   'catalog.metaMinutes': '~{minutes} min',
   'catalog.goal.home': 'Minimal kit',
   'catalog.goal.strong': 'Strength base',
@@ -580,6 +581,7 @@ const EN = {
   'catalog.a11y.days': '{count} days per week',
   'catalog.a11y.level': '{label} level',
   'catalog.a11y.card': '{program}, {days} days per week, {minutes} minutes, {level}',
+  'catalog.a11y.cardOne': '{program}, 1 day per week, {minutes} minutes, {level}',
 
   // ── Program catalog ────────────────────────────────────────────────────
   // Family names (STRONG, HUGE, FIT, HOME, RUN, RESET, POWERBUILD) are product
@@ -1551,6 +1553,7 @@ const EN = {
   // A superset's block is counted in rounds: three rounds of A1 + A2 is six
   // sets, and a row saying "3 sets" over two lifts states neither number.
   'guided.runSheet.rounds': '{count} rounds',
+  'guided.runSheet.roundOne': '1 round',
   'guided.runSheet.progress': '{done}/{count} sets',
   'guided.warmup.add': 'Warm-up set',
   'guided.warmup.title': 'Warm-up set {index}',
@@ -2047,6 +2050,7 @@ const EN = {
   'coachPreview.lastSession.nextPlateau': '{name} has not moved for three sessions. Hold the weight and chase the reps.',
   'coachPreview.lastSession.nextFatigue': 'The last weeks have been heavy. Repeat the weights rather than adding.',
   'coachPreview.lastSession.nextSwaps': 'You swapped {count} exercises. If the swap works, make it the default.',
+  'coachPreview.lastSession.nextSwapsOne': 'You swapped 1 exercise. If the swap works, make it the default.',
   'coachPreview.lastSession.plan1': 'Next session: same lifts, same weights, more reps.',
   'coachPreview.lastSession.plan2': 'The session after: add a step wherever every set was at the top.',
   'coachPreview.lastSession.noneTakeaway': 'There is no session to read yet.',
@@ -3235,6 +3239,9 @@ const EN = {
   'goalFlow.yourBest': 'Your best {kg} {unit}{ago}',
   'goalFlow.agoDays': '· {days} days ago',
   'goalFlow.agoWeeks': '· {weeks} weeks ago',
+  'goalFlow.agoToday': '· today',
+  'goalFlow.agoDayOne': '· yesterday',
+  'goalFlow.agoWeekOne': '· 1 week ago',
   'goalFlow.agoMonths': '· {months} months ago',
   'goalFlow.alreadyAiming': 'Aiming at {kg} {unit}',
   'goalFlow.neverLogged': 'Never logged — no rate to work from',
@@ -3301,6 +3308,9 @@ const EN = {
   'programs.affinity.sameGoalOtherSplit': 'Same goal, {days} days a week',
   'programs.affinity.sameDays': 'Fits your {days} days',
   'programs.affinity.lighterWeek': 'Lighter week: {days} days',
+  'programs.affinity.sameGoalOtherSplitOne': 'Same goal, 1 day a week',
+  'programs.affinity.sameDaysOne': 'Fits your 1 day',
+  'programs.affinity.lighterWeekOne': 'Lighter week: 1 day',
   // The switch sheet. This shipped in English inside a Finnish screen.
   // ── Program detail screen ─────────────────────────────────────────────
   'detail.level.beginner': 'AMATEUR',
@@ -4147,6 +4157,7 @@ const FI: Record<I18nKey, string> = {
   'catalog.focus.mobility': 'Liikkuvuus',
   'catalog.daysPill': '{days} pv / vk',
   'catalog.metaDays': '{days} päivää',
+  'catalog.metaDayOne': '1 päivä',
   'catalog.metaMinutes': '~{minutes} min',
   'catalog.goal.home': 'Vähällä välineellä',
   'catalog.goal.strong': 'Voiman perusta',
@@ -4166,6 +4177,7 @@ const FI: Record<I18nKey, string> = {
   'catalog.a11y.days': '{count} päivää viikossa',
   'catalog.a11y.level': 'Taso: {label}',
   'catalog.a11y.card': '{program}, {days} päivää viikossa, {minutes} minuuttia, {level}',
+  'catalog.a11y.cardOne': '{program}, 1 päivä viikossa, {minutes} minuuttia, {level}',
 
   'prog.tag.strength': 'Voima',
   'prog.tag.beginner': 'Amateur',
@@ -5058,6 +5070,7 @@ const FI: Record<I18nKey, string> = {
   'guided.runSheet.title': 'Treenin sisältö',
   'guided.runSheet.open': 'Näytä treenin sisältö',
   'guided.runSheet.rounds': '{count} kierrosta',
+  'guided.runSheet.roundOne': '1 kierros',
   'guided.runSheet.progress': '{done}/{count} sarjaa',
   'guided.warmup.add': 'Lämmittelysarja',
   'guided.warmup.title': 'Lämmittelysarja {index}',
@@ -5499,6 +5512,7 @@ const FI: Record<I18nKey, string> = {
   'coachPreview.lastSession.nextPlateau': '{name} ei ole liikkunut kolmeen treeniin. Pidä paino ja hae toistoja.',
   'coachPreview.lastSession.nextFatigue': 'Viime viikot ovat olleet kuormittavia. Toista painot sen sijaan että lisäät.',
   'coachPreview.lastSession.nextSwaps': 'Vaihdoit {count} liikettä. Jos vaihto toimi, tee siitä oletus.',
+  'coachPreview.lastSession.nextSwapsOne': 'Vaihdoit yhden liikkeen. Jos vaihto toimi, tee siitä oletus.',
   'coachPreview.lastSession.plan1': 'Seuraava treeni: samat liikkeet, samat painot, enemmän toistoja.',
   'coachPreview.lastSession.plan2': 'Sitä seuraava: askel lisää sinne missä jokainen sarja oli yläpäässä.',
   'coachPreview.lastSession.noneTakeaway': 'Luettavaa treeniä ei ole vielä.',
@@ -6599,6 +6613,9 @@ const FI: Record<I18nKey, string> = {
   'goalFlow.yourBest': 'Paras {kg} {unit}{ago}',
   'goalFlow.agoDays': '· {days} pv sitten',
   'goalFlow.agoWeeks': '· {weeks} vk sitten',
+  'goalFlow.agoToday': '· tänään',
+  'goalFlow.agoDayOne': '· eilen',
+  'goalFlow.agoWeekOne': '· 1 vk sitten',
   'goalFlow.agoMonths': '· {months} kk sitten',
   'goalFlow.alreadyAiming': 'Tavoitteena {kg} {unit}',
   'goalFlow.neverLogged': 'Ei kirjattu kertaakaan — ei tahtia mistä laskea',
@@ -6658,6 +6675,9 @@ const FI: Record<I18nKey, string> = {
   'programs.affinity.sameGoalOtherSplit': 'Sama tavoite, {days} päivää viikossa',
   'programs.affinity.sameDays': 'Sopii {days} päivään',
   'programs.affinity.lighterWeek': 'Kevyempi viikko: {days} päivää',
+  'programs.affinity.sameGoalOtherSplitOne': 'Sama tavoite, 1 päivä viikossa',
+  'programs.affinity.sameDaysOne': 'Sopii 1 päivään',
+  'programs.affinity.lighterWeekOne': 'Kevyempi viikko: 1 päivä',
   // ── Program detail screen ─────────────────────────────────────────────
   'detail.level.beginner': 'AMATEUR',
   'detail.level.intermediate': 'ADVANCED',

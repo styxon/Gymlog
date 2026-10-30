@@ -412,7 +412,11 @@ function buildPreviewAnswer(
           ? t(language, 'coachPreview.lastSession.nextFatigue')
           : t(language, 'coachPreview.lastSession.next2'),
         session.swappedExercises > 0
-          ? t(language, 'coachPreview.lastSession.nextSwaps', { count: session.swappedExercises })
+          ? t(
+              language,
+              session.swappedExercises === 1 ? 'coachPreview.lastSession.nextSwapsOne' : 'coachPreview.lastSession.nextSwaps',
+              { count: session.swappedExercises },
+            )
           : t(language, 'coachPreview.lastSession.next3'),
       ],
       plan: [

@@ -98,6 +98,9 @@ Since build 6 (`main` 2bbbab84); goes into 1.1.1.
   "how did it feel" or the Pro sheet if one is up or still closing (it waits,
   then appears); the other sheets are checked and need no change.
 - #400 Membership end screen: Keep Pro and End sit as two plain buttons with no box behind them; an already cancelled, promo or trial membership shows only "Back" and no longer offers to end or keep it.
+- #TBD Singular counts: one-day programs read "1 day" / "1 päivä" on the catalog card and in the "Lighter week" / "Same goal" reasons, a one-set superset says "1 round" / "1 kierros", one swapped exercise says "1 exercise" / "yhden liikkeen", and the strength-goal list says "today", "yesterday" and "1 week ago" instead of "0 days ago", "1 days ago" and "1 weeks ago".
+- #TBD Charts: the y-axis numbers shrink to fit instead of being cut to "10…" at large text size.
+- #TBD Subscription: a paid subscription is shown as the subscription, not as an old promo code that is still running.
 
 ## Server
 

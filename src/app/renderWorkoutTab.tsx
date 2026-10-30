@@ -15,7 +15,7 @@ import type { ProgramImageImportResult } from '../utils/programImagePicker';
 import { placesToFree } from '../lib/activeProgramSet';
 import { ProgramLimitReachedError, ProgramSlots, programSlotsLineKey } from '../lib/programSlots';
 import { createUnlessAtLimit } from './programLimitGuard';
-import { AFFINITY_REASON_KEYS, resolveProgramAffinity } from '../lib/programAffinity';
+import { affinityReasonKey, resolveProgramAffinity } from '../lib/programAffinity';
 import { findHeldReadyProgrammeCopyId } from '../lib/programmeCopyLink';
 import {
   buildCustomProgramDetail,
@@ -573,7 +573,7 @@ export function renderWorkoutTab(deps: WorkoutTabDeps): React.ReactElement | nul
                   8,
                 ).find((entry) => entry.templateId === readyTemplate.id);
                 return match
-                  ? t(preferences.appLanguage, AFFINITY_REASON_KEYS[match.reason], {
+                  ? t(preferences.appLanguage, affinityReasonKey(match.reason, readyTemplate.daysPerWeek), {
                       days: readyTemplate.daysPerWeek,
                     })
                   : null;

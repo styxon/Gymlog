@@ -169,7 +169,7 @@ module.exports = [
       assert.match(screen, /styles\.recFootValue/);
       assert.match(screen, /LEVEL_LABEL_KEYS\[item\.level\]/);
       assert.match(screen, /'programs\.weeksShort'/);
-      assert.match(app, /AFFINITY_REASON_KEYS\[match\.reason\]/);
+      assert.match(app, /affinityReasonKey\(match\.reason, readyTemplate\.daysPerWeek\)/);
 
       // No questionnaire is no longer an empty row. Choosing a ready program
       // off the catalog is a statement of intent every bit as strong as
