@@ -374,7 +374,7 @@ export function AboutYouScreen({
               accessibilityState={{ selected: gender === 'unspecified' }}
               accessibilityLabel={t(language, 'aboutYou.gender.skip')}
               onPress={() => pickGender('unspecified')}
-              style={({ pressed }) => [styles.skipButton, styles.skipSpaced, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
             >
               <Text style={[styles.skipText, { fontFamily }]}>{t(language, 'aboutYou.gender.skip')}</Text>
             </Pressable>
@@ -568,12 +568,11 @@ const makeStyles = (theme: Theme) => {
       justifyContent: 'center',
       paddingHorizontal: 18,
     },
-    // Skip and its rule sat close under the options (#bugs 2026-10-18).
+    // Skip and its rule sat close under the options (#bugs 2026-10-18), then
+    // 18 + 22 pt of air made Skip read as a bar of its own between two gaps
+    // (#bugs 2026-10-30). Its 44 pt touch height already spaces it.
     dividerLowered: {
-      marginTop: 18,
-    },
-    skipSpaced: {
-      marginTop: 22,
+      marginTop: 6,
     },
     skipText: {
       color: C.muted,

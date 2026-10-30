@@ -343,8 +343,10 @@ module.exports = [
       const full = { ...base, pinnedCardKeys: [], canOfferAccountBackup: true, canOfferWidget: true, canOfferTheme: true };
       assert.deepEqual(planSetupHandoff(full).pages, ['signin']);
       assert.deepEqual(planSetupHandoff({ ...full, proStepDone: true }).pages, ['offers', 'tracking', 'theme']);
-      // No Pro page to show (bought): no first half, and sign-in leads the second.
-      assert.deepEqual(planSetupHandoff({ ...full, canOfferPro: false }).pages, ['signin', 'offers', 'tracking', 'theme']);
+      // No Pro page to show (bought): no first half, and sign-in closes the
+      // second, so its press opens the account sheet then and there (#bugs
+      // 2026-10-30: it led, and the sheet came later over the Home tour).
+      assert.deepEqual(planSetupHandoff({ ...full, canOfferPro: false }).pages, ['offers', 'tracking', 'theme', 'signin']);
       // Bought on the Pro page: canOfferPro flips, and sign-in, already asked
       // in the first half, is not asked again.
       assert.deepEqual(

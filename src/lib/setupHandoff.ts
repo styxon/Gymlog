@@ -143,7 +143,8 @@ export interface SetupHandoffPlan {
   phase: SetupHandoffPhase;
   /**
    * The pages of this phase, in order: sign-in before the Pro page; the
-   * widget, the tracking dialog and the theme after it.
+   * widget, the tracking dialog and the theme after it. With no first half,
+   * sign-in closes the second, so its press opens the account sheet.
    *
    * The widget before the tracking dialog (user 2026-10-16): its Done opens
    * the system's pin dialog, and the tracking sheet waits for that to close,
@@ -225,10 +226,15 @@ export function planSetupHandoff(input: SetupHandoffInput): SetupHandoffPlan {
     phase === 'beforePro'
       ? [...(signInHere ? (['signin'] as const) : [])]
       : [
-          ...(signInHere ? (['signin'] as const) : []),
           ...(input.canOfferWidget ? (['offers'] as const) : []),
           ...(offerTrackedSites ? (['tracking'] as const) : []),
           ...(offerTheme ? (['theme'] as const) : []),
+          // Last, because its button is the sign-in: the press ends the
+          // hand-off and the account sheet opens at once. First, it only
+          // noted the answer and moved on to the dialogs; the sheet came
+          // minutes later over the Home tour, which took it away (#bugs
+          // 2026-10-30, both phones).
+          ...(signInHere ? (['signin'] as const) : []),
         ];
 
   return {

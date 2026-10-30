@@ -99,7 +99,12 @@ module.exports = [
       // and `finish` read the state of the render before: false. On a phone
       // where sign-in is the last page, the sign-in was skipped.
       const screen = strip(read('src', 'screens', 'SetupHandoffScreen.tsx'));
-      assert.match(screen, /setSignInForBackup\(true\);\s*advance\(true\);/);
+      // Both ways out pass the answer in: advance on an earlier page, finish
+      // on the last (signInWith, #bugs 2026-10-30).
+      assert.match(
+        screen,
+        /setSignInForBackup\(true\);\s*if \(pageIndex < pages\.length - 1\) \{\s*advance\(true\);\s*return;\s*\}\s*setSigningIn\(true\);\s*void Promise\.resolve\(finish\(addWidget, true\)\)/,
+      );
       assert.match(
         screen,
         /const advance = \(signIn = signInForBackup\) => \{\s*if \(pageIndex >= pages\.length - 1\) \{\s*finish\(addWidget, signIn\);/,

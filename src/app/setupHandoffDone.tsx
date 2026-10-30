@@ -78,6 +78,10 @@ export function createSetupHandoffDone(deps: SetupHandoffDoneDeps) {
     if (setupHandoffHeldRef.current) {
       return;
     }
+    const release = () => {
+      setupHandoffHeldRef.current = false;
+      setSetupHandoffHeld(false);
+    };
     setupHandoffHeldRef.current = true;
     setSetupHandoffHeld(true);
     try {
@@ -87,19 +91,27 @@ export function createSetupHandoffDone(deps: SetupHandoffDoneDeps) {
       // and says so; nothing below runs on a write that did not happen.
       console.error('Failed to finish the setup hand-off', error);
       showToast(t(preferences.appLanguage, 'toast.setupHandoffFailed'));
+      release();
       return;
+    }
+    // Still held: the hand-off stays the screen until the pin dialog and the
+    // account sheet have answered. Let go at the write, it gave way to Home
+    // and the first-run tour, which opened over the sign-in sheet and took it
+    // away with its Skip (#bugs 2026-10-30, both phones).
+    try {
+      // The system dialog last, so it is not racing a state write.
+      if (choices.addWidget) {
+        await requestPinHomeWidget();
+      }
+      // And sign-in after that: it opens its own sheet, and the reader asked
+      // for it — a cancel there is a change of mind, not an error.
+      if (choices.signInForBackup) {
+        await handleAccountSignIn(choices.signInProvider ?? undefined);
+      }
+    } catch (error) {
+      console.error('Setup hand-off sign-in did not finish', error);
     } finally {
-      setupHandoffHeldRef.current = false;
-      setSetupHandoffHeld(false);
-    }
-    // The system dialog last, so it is not racing a state write.
-    if (choices.addWidget) {
-      await requestPinHomeWidget();
-    }
-    // And sign-in after that: it opens its own sheet, and the reader asked for
-    // it — a cancel there is a change of mind, not an error.
-    if (choices.signInForBackup) {
-      await handleAccountSignIn(choices.signInProvider ?? undefined);
+      release();
     }
     // Pro last, and only if it was asked for. It is a page, not a sheet: it
     // takes the screen, so anything that had to happen first has happened.
