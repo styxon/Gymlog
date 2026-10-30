@@ -89,9 +89,10 @@ module.exports = [
     run() {
       const home = read('src', 'app', 'renderHomeScreens.tsx');
       const chat = read('src', 'screens', 'AICoachChatScreen.tsx');
-      assert.match(home, /!coachQuotaLedger\.reserve\(preferences\.aiCoachProQuota\)\) \{\s*return null;/);
+      assert.match(home, /!coachQuotaLedger\.reserve\(preferences\.aiCoachProQuota\)\) \{\s*return \{ refused: 'spent' \};/);
       assert.match(home, /if \(live && !isProgrammeCompositionCrisis\(live\)\) \{\s*try \{\s*await updatePreferences\(\(current\) => \(\{ aiCoachProQuota: coachQuotaLedger\.record/);
-      assert.match(chat, /if \(questionsRemaining <= 0\) \{[\s\S]{0,200}coachQuotaReset\(\)/);
+      assert.match(chat, /if \(questionsRemaining <= 0\) \{\s*showSpentNotice\(messageId\);/);
+      assert.match(chat, /const reset = coachQuotaReset\(\);/);
       assert.match(chat, /coachChat\.compose\.spent/);
     },
   },

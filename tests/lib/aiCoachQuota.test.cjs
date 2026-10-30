@@ -6,6 +6,8 @@ const {
   coachQuotaReset,
   resolveCoachQuota,
   recordCoachQuestion,
+  createCoachQuotaLedger,
+  isComposeRefusal,
 } = require('../../src/lib/aiCoachQuota');
 
 // Local dates on purpose: the window is the reader's calendar month, not UTC's.
@@ -14,6 +16,50 @@ const LAST_JULY = new Date(2026, 6, 31, 23, 59);
 const EARLY_AUG = new Date(2026, 7, 2, 8, 0);
 
 module.exports = [
+  {
+    name: 'coach quota: a chat question in flight holds the last question against a build',
+    run() {
+      const ledger = createCoachQuotaLedger();
+      const state = { monthStart: coachQuotaMonthStart(MID_JULY), used: PRO_COACH_QUESTIONS_PER_MONTH - 1 };
+      // The chat claims the last question before it leaves ...
+      assert.equal(ledger.reserve(state, MID_JULY), true);
+      // ... so a build beside it is refused instead of taking the same one.
+      assert.equal(ledger.reserve(state, MID_JULY), false);
+      // The chat's spend lands, then the claim is given back: still none left.
+      const after = ledger.record(state, MID_JULY);
+      ledger.release();
+      assert.equal(ledger.held(), 0);
+      assert.equal(ledger.reserve(after, MID_JULY), false);
+      assert.equal(resolveCoachQuota(after, MID_JULY).used, PRO_COACH_QUESTIONS_PER_MONTH);
+    },
+  },
+  {
+    name: 'coach quota: a failed chat question gives its claim back, and a refusal is not a failure',
+    run() {
+      const ledger = createCoachQuotaLedger();
+      const state = { monthStart: coachQuotaMonthStart(MID_JULY), used: PRO_COACH_QUESTIONS_PER_MONTH - 1 };
+      assert.equal(ledger.reserve(state, MID_JULY), true);
+      ledger.release();
+      assert.equal(ledger.reserve(state, MID_JULY), true);
+      assert.equal(isComposeRefusal({ refused: 'spent' }), true);
+      assert.equal(isComposeRefusal({ refused: 'not_pro' }), true);
+      assert.equal(isComposeRefusal(null), false);
+      assert.equal(isComposeRefusal({ sessions: [] }), false);
+
+      const fs = require('node:fs');
+      const path = require('node:path');
+      const root = path.join(__dirname, '..', '..');
+      const chat = fs.readFileSync(path.join(root, 'src', 'screens', 'AICoachChatScreen.tsx'), 'utf8');
+      const home = fs.readFileSync(path.join(root, 'src', 'app', 'renderHomeScreens.tsx'), 'utf8');
+      // send() claims before the request and gives the claim back in its finally.
+      assert.match(chat, /const claimed = proUnlocked \? onReserveQuestion\(\) : false;/);
+      assert.match(chat, /Every ending gives the claim back[\s\S]{0,400}onReleaseQuestion\(\)/);
+      // The build says refused, not failed, and the chat keeps the offer.
+      assert.match(home, /refused: 'not_pro'/);
+      assert.match(home, /refused: 'spent'/);
+      assert.match(chat, /if \(isComposeRefusal\(composed\)\)/);
+    },
+  },
   {
     name: 'coach quota: the window is the local calendar month',
     run() {
