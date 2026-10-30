@@ -7,9 +7,9 @@ write themselves when the next version ships.
 only) — iOS build 6 (`main` 46e4e963, tag `ios-v1.1.0`) and Android
 versionCode 6 (`main` 2bbbab84, tag `android-v1.1.0`, the same app code).
 
-**Next:** 1.1.1 (iOS build 7, Android versionCode 7) — not scheduled. Test
-builds (internal TestFlight, Play internal testing) wait for the owner's
-go-ahead; it ships when there is a larger update to carry, not for each fix.
+**Next:** 1.1.1 (iOS build 7, Android versionCode 7). Internal test builds
+(TestFlight internal, Play internal testing) started 2026-10-30; SQLite PR 3
+joins a later test build before the store build.
 
 ## How to keep this file
 
