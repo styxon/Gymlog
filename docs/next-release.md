@@ -25,6 +25,8 @@ joins a later test build before the store build.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #476 "New best" on the Progress chip now matches Records: a first weighted session after bodyweight-only ones counts, holds and minutes lifts no longer get it from seconds read as reps, and a lift logged twice in one workout reads the same whatever the order. The weekly read ranks lifts by sessions, so a lift logged twice a workout no longer crowds out one that qualifies.
+
 - #475 Coach: a chat question in flight now holds its place in the month's allowance, so tapping Build on an older offer beside it can no longer take the same last question (26 of 25). A build refused for no questions left or ended Pro now says so and keeps the offer, instead of "could not build". "Painoni 30 päivää sitten oli 85" / "weight 30 days ago was 85" now offers to log 85, not 30.
 
 - #474 Delete account on an Apple sign-in: when the answer to a delete was lost and the retry finds the account already gone, the app now shows the "remove Vinha in Settings → Sign in with Apple" guidance instead of a plain "deleted", and a delete cut off by the app being closed is still recognised on the next launch.
