@@ -36,9 +36,18 @@ export function normalizePurchaseRecord(
     !legacyStore && typeof stored?.mockSubscriptionPurchasedAt === 'string'
       ? stored.mockSubscriptionPurchasedAt
       : fallback.mockSubscriptionPurchasedAt;
+  // A stamp that is there but is not a date is still a cancellation, read as
+  // made at the purchase instant (the latest renewal, so it ends with the
+  // current period). Kept as written, the entitlement read it as renewing
+  // while the pages read "Already cancelled" (bug hunt, 2026-10-29); dropped,
+  // it would revive the subscription as never-ending. Not "now": that moves
+  // on every load until something saves, and rolls the period forward.
+  const storedCancelledAt = stored?.mockSubscriptionCancelledAt;
   const cancelledAt =
-    typeof stored?.mockSubscriptionCancelledAt === 'string'
-      ? stored.mockSubscriptionCancelledAt
+    typeof storedCancelledAt === 'string'
+      ? Number.isFinite(new Date(storedCancelledAt).getTime())
+        ? storedCancelledAt
+        : purchasedAt
       : stored?.mockSubscriptionCancelled === true
         ? now.toISOString()
         : fallback.mockSubscriptionCancelledAt;

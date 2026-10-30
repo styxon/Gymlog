@@ -1,6 +1,6 @@
 import { I18nKey } from './i18n';
 import { ProEntitlement } from './proEntitlement';
-import { SubscriptionTermKey, currentPeriodEndAt } from './subscriptionTerm';
+import { SubscriptionTermKey, renewingPeriodEndAt } from './subscriptionTerm';
 
 /**
  * What the subscription screen may say, and where each sentence comes from.
@@ -151,7 +151,7 @@ export const MOCK_BILLING = {
  * module hands ProEntitlement a type, so importing a value back would be a
  * runtime cycle. Re-exported because every caller imports them from here.
  */
-export { currentPeriodEndAt, isSubscriptionTermKey, nextChargeAt } from './subscriptionTerm';
+export { currentPeriodEndAt, isSubscriptionTermKey, nextChargeAt, renewingPeriodEndAt } from './subscriptionTerm';
 
 /** ── end mock billing ──────────────────────────────────────────────────────── */
 
@@ -216,6 +216,12 @@ export function resolveSubscriptionView(input: {
    * this.
    */
   purchasedAt?: string | null;
+  /**
+   * The store's end of the current period (`mockSubscriptionEndsAt`). While it
+   * is ahead it is the renewal date; the count from `purchasedAt` stands in
+   * otherwise (renewingPeriodEndAt).
+   */
+  storedEndsAt?: string | null;
   /** A promoProUntil that has already passed, if any. */
   lapsedPromoUntil?: string | null;
   /** A proTrialUntil that has already passed, if any. */
@@ -228,6 +234,7 @@ export function resolveSubscriptionView(input: {
     mockCancelled,
     mockBillingIssue = false,
     purchasedAt = null,
+    storedEndsAt = null,
     lapsedPromoUntil = null,
     lapsedTrialUntil = null,
     now = new Date(),
@@ -265,8 +272,9 @@ export function resolveSubscriptionView(input: {
     // The end of the CURRENT period, rolled forward through renewals. One
     // period after the original purchase was months in the past for anyone
     // who had renewed, and that was the date the End membership page printed
-    // as the day they keep it until.
-    const charge = currentPeriodEndAt(mockTerm, chargedFrom, now);
+    // as the day they keep it until. The store's own end comes first while it
+    // is ahead: the purchase date it hands back is the latest renewal.
+    const charge = renewingPeriodEndAt(mockTerm, chargedFrom, storedEndsAt, now);
     // A lifetime purchase cannot be cancelled (proEntitlement): a stamp left
     // by an older build is not a cancellation to show.
     const cancelled = mockCancelled && mockTerm !== 'lifetime';

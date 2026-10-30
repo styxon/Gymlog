@@ -41,6 +41,8 @@ interface SubscriptionScreenProps {
   mockBillingIssue?: boolean;
   /** When Pro was turned on, ISO. The renewal date is counted from it. */
   purchasedAt: string | null;
+  /** The store's end of the current period, ISO; null when it named none. */
+  storedEndsAt?: string | null;
   onChangeMockTerm: (term: SubscriptionTermKey) => void;
   onChangeMockCancelled: (cancelled: boolean) => void;
   /** False in a real release: every invented billing row disappears. */
@@ -120,6 +122,7 @@ export function SubscriptionScreen({
   mockCancelled,
   mockBillingIssue = false,
   purchasedAt,
+  storedEndsAt = null,
   onChangeMockTerm,
   onChangeMockCancelled,
   demoBuild,
@@ -164,6 +167,7 @@ export function SubscriptionScreen({
     mockCancelled,
     mockBillingIssue,
     purchasedAt,
+    storedEndsAt,
     lapsedPromoUntil,
     lapsedTrialUntil,
   });
@@ -581,7 +585,7 @@ export function SubscriptionScreen({
                       title={t(language, storeTextKey('subs.row.play', STORE))}
                       sub={t(language, storeTextKey('subs.row.playSub', STORE))}
                       onPress={() =>
-                        void Linking.openURL(manageSubscriptionsUrl(STORE))
+                        void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                       }
                     />
                   )}
@@ -614,7 +618,7 @@ export function SubscriptionScreen({
                     title={t(language, 'subs.row.restore')}
                     sub={t(language, restorePending ? 'subs.restore.pending' : 'subs.row.restoreSub')}
                     onPress={
-                      restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE))
+                      restore ? () => void restore() : () => void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                     }
                     divider
                   />
@@ -623,7 +627,7 @@ export function SubscriptionScreen({
                     title={t(language, storeTextKey('subs.row.play', STORE))}
                     sub={t(language, storeTextKey('subs.row.playSub', STORE))}
                     onPress={() =>
-                      void Linking.openURL(manageSubscriptionsUrl(STORE))
+                      void Linking.openURL(manageSubscriptionsUrl(STORE)).catch(() => undefined)
                     }
                   />
                 </ListCard>
@@ -765,7 +769,7 @@ export function SubscriptionScreen({
           <Pressable
             accessibilityRole="button"
             onPress={() =>
-              void Linking.openURL(paymentMethodsUrl(STORE))
+              void Linking.openURL(paymentMethodsUrl(STORE)).catch(() => undefined)
             }
             style={({ pressed }) => [styles.addMethodRow, pressed && { opacity: 0.75 }]}
           >

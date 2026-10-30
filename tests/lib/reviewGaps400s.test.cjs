@@ -159,7 +159,7 @@ module.exports = [
       const profile = read('src', 'app', 'renderProfileTab.tsx');
       assert.match(
         profile,
-        /cancelled=\{membershipEndCancelled\(proEntitlement\.source, preferences\.mockSubscriptionCancelledAt\)\}/,
+        /cancelled=\{membershipEndCancelled\(\s*proEntitlement\.source,\s*preferences\.mockSubscriptionCancelledAt,\s*preferences\.mockSubscriptionTerm,\s*\)\}/,
       );
       assert.doesNotMatch(profile, /<MembershipEndScreen[\s\S]{0,600}cancelled=\{preferences\.mockSubscriptionCancelledAt !== null\}/);
     },
