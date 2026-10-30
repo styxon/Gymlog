@@ -1473,7 +1473,11 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
           current.sub.startsWith(APPLE_ACCOUNT_PREFIX);
         await signOutAfterDelete();
         if (ownDeleteWentThrough) {
-          return 'done';
+          // The cloud copy is gone, but whether the server got as far as
+          // Apple's revoke on that lost try is not known, and this retry
+          // carries no authorization code to do it now: never the plain
+          // "deleted", always the Settings guidance.
+          return 'done_apple_kept';
         }
         throw new SessionEnded();
       }
@@ -1507,6 +1511,10 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         ...(accountRef.current ?? current),
         deleteAccountPendingAt: new Date().toISOString(),
         deleteRequestId: requestId,
+        // Assumed delivered until an answer says otherwise: a process killed
+        // mid-request never gets to write it afterwards, and a delete that
+        // went through must not read as a plain "sign-in ended" next launch.
+        deleteMayHaveReached: true,
       });
       ensureCurrent(generation);
       const answer = await deleteBackup(token.idToken, {
@@ -1536,9 +1544,13 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
         // record alone could not tell a lost delete from one another phone made
         // after this phone's try never arrived.
         await signOutAfterDelete();
-        return answer.error === SESSION_REVOKED
-          ? revokedDeleteOutcome({ pendingBefore: triedBefore, ownRequestId: requestId, answerRequestId: answer.deleteRequestId })
-          : 'ended';
+        if (answer.error !== SESSION_REVOKED) {
+          return 'ended';
+        }
+        const revoked = revokedDeleteOutcome({ pendingBefore: triedBefore, ownRequestId: requestId, answerRequestId: answer.deleteRequestId });
+        // This phone's own earlier try, answer lost: the server may have
+        // stopped before Apple's revoke and this retry has no code. Not "done".
+        return revoked === 'done' ? 'done_apple_kept' : revoked;
       }
       if (answer.definite) {
         // The server said no: nothing was deleted by this request, so there is
@@ -1549,11 +1561,21 @@ export function useAccountBackup(input: AccountBackupInput): AccountBackupApi {
           await persistAccount({ ...latest, deleteAccountPendingAt: null, deleteRequestId: null, deleteMayHaveReached: false });
         }
       } else if (answer.mayHaveReached) {
-        // A 5xx or a timeout: this try may have gone through. Remembered, so a
-        // later retry that finds the account gone knows it can be its own.
+        // A 5xx or a timeout: this try may have gone through. Remembered (it
+        // was written before sending), so a later retry that finds the
+        // account gone knows it can be its own.
         const latest = accountRef.current;
         if (latest && !latest.deleteMayHaveReached) {
           await persistAccount({ ...latest, deleteMayHaveReached: true });
+        }
+      } else {
+        // Never left the phone (offline): the assumption made before sending
+        // does not hold, so the record no longer claims the try may have
+        // reached the server. Unless an EARLIER try already may have: a later
+        // offline retry does not take that mark back.
+        const latest = accountRef.current;
+        if (latest && latest.deleteMayHaveReached && !triedBefore) {
+          await persistAccount({ ...latest, deleteMayHaveReached: false });
         }
       }
       reportOperationFailed('account_delete', answer.error);

@@ -15,7 +15,8 @@ import { CoachReportReason } from '../lib/coachAnswerReport';
 import { trackEvent } from '../features/analytics/analyticsClient';
 import { buildAiCoachPreviewAnswer } from '../lib/aiCoachPreview';
 import { classifyCoachScope } from '../lib/aiCoachScope';
-import { PRO_COACH_QUESTIONS_PER_MONTH, coachQuotaReset } from '../lib/aiCoachQuota';
+import { PRO_COACH_QUESTIONS_PER_MONTH, coachQuotaReset, isComposeRefusal } from '../lib/aiCoachQuota';
+import type { ComposeRefusal } from '../lib/aiCoachQuota';
 import { AI_COACH_MAX_PROMPT_CHARS } from '../lib/aiCoachBudget';
 import { fitAiCoachContextToCap } from '../lib/aiTrainingContext';
 import { formatShortDate, removeTrailingZeros } from '../lib/format';
@@ -105,7 +106,19 @@ interface AICoachChatScreenProps {
   logId: string | null;
   /** Questions left in this month. Meaningful only while proUnlocked. */
   questionsRemaining: number;
-  onQuestionUsed: () => void;
+  /**
+   * Records the spend. May return the write's promise: the chat keeps its claim
+   * on the ledger until that write has landed, so the count it leaves behind
+   * is already in the stored allowance when the claim is given back.
+   */
+  onQuestionUsed: () => void | Promise<void>;
+  /**
+   * Claims one question on the shared ledger before a billed chat request
+   * starts. False when a build or photo read already holds the last one.
+   */
+  onReserveQuestion: () => boolean;
+  /** Gives the claim back, after the spend is written or when nothing was spent. */
+  onReleaseQuestion: () => void;
   /**
    * A question the app is asking on the reader’s behalf, arriving from a
    * coach demo moment. It is sent once, for real, and bypasses the quota:
@@ -190,7 +203,10 @@ interface AICoachChatScreenProps {
    * rather than a shortcut. A brief read as a crisis comes back as the
    * crisis answer, to be said here instead of a week.
    */
-  onComposeProgramme: (brief: string, signal?: AbortSignal) => Promise<ProgrammeProposal | ProgrammeCompositionCrisis | null>;
+  onComposeProgramme: (
+    brief: string,
+    signal?: AbortSignal,
+  ) => Promise<ProgrammeProposal | ProgrammeCompositionCrisis | ComposeRefusal | null>;
   /** Saves a proposal as a programme of the reader's own. */
   onSaveProgramme: (proposal: ProgrammeProposal) => Promise<void>;
   /**
@@ -350,6 +366,8 @@ export function AICoachChatScreen({
   logId,
   questionsRemaining,
   onQuestionUsed,
+  onReserveQuestion,
+  onReleaseQuestion,
   demoQuestion = null,
   demoMomentKey = null,
   onDemoQuestionSent,
@@ -701,6 +719,32 @@ export function AICoachChatScreen({
     [formatReading, language, measurementLabel],
   );
 
+  /** The "out of questions until <date>" line under a build offer, which stays. */
+  const showSpentNotice = useCallback(
+    (messageId: string) => {
+      const reset = coachQuotaReset();
+      // Replaced, not appended: each tap used to add another bubble with
+      // the same id, which is a duplicate React key and a stack of the
+      // same line.
+      setMessages((current) =>
+        withNotice(current, {
+          id: `${messageId}:spent`,
+          fromCoach: true,
+          text: [
+            t(language, 'coachChat.compose.spent'),
+            reset.inDays === 1
+              ? t(language, 'coachChat.quotaResetTomorrow')
+              : t(language, 'coachChat.quotaResetIn', {
+                  date: formatShortDate(reset.at.toISOString(), language),
+                  count: reset.inDays,
+                }),
+          ].join(' '),
+        }),
+      );
+    },
+    [language],
+  );
+
   const resolveOffer = useCallback(
     async (
       messageId: string,
@@ -772,25 +816,7 @@ export function AICoachChatScreen({
         // out of this month's, it does not start. The offer stays, for next
         // month, and the thread says why.
         if (questionsRemaining <= 0) {
-          const reset = coachQuotaReset();
-          // Replaced, not appended: each tap used to add another bubble with
-          // the same id, which is a duplicate React key and a stack of the
-          // same line.
-          setMessages((current) =>
-            withNotice(current, {
-              id: `${messageId}:spent`,
-              fromCoach: true,
-              text: [
-                t(language, 'coachChat.compose.spent'),
-                reset.inDays === 1
-                  ? t(language, 'coachChat.quotaResetTomorrow')
-                  : t(language, 'coachChat.quotaResetIn', {
-                      date: formatShortDate(reset.at.toISOString(), language),
-                      count: reset.inDays,
-                    }),
-              ].join(' '),
-            }),
-          );
+          showSpentNotice(messageId);
           return;
         }
         // Two quick taps both read the same unspent quota and the same empty
@@ -811,7 +837,7 @@ export function AICoachChatScreen({
         setComposingIds((current) => (current.includes(messageId) ? current : [...current, messageId]));
         const controller = new AbortController();
         composeControllersRef.current.set(messageId, controller);
-        let composed: ProgrammeProposal | ProgrammeCompositionCrisis | null = null;
+        let composed: ProgrammeProposal | ProgrammeCompositionCrisis | ComposeRefusal | null = null;
         try {
           composed = await onComposeProgramme(offer.brief, controller.signal);
         } finally {
@@ -820,6 +846,17 @@ export function AICoachChatScreen({
           setComposingIds((current) => current.filter((id) => id !== messageId));
           composeControllersRef.current.delete(messageId);
           composeGate.current.delete(messageId);
+        }
+        // Refused where the request is made (the last question went to a photo
+        // read or a chat answer, or Pro ended since this was drawn): nothing
+        // was built, so it is not "could not build". Say why, keep the offer.
+        if (isComposeRefusal(composed)) {
+          if (composed.refused === 'spent') {
+            showSpentNotice(messageId);
+          } else {
+            onOpenPremium();
+          }
+          return;
         }
         // A brief read as a crisis, by this build's filter or the server's:
         // the offer becomes the crisis answer, drawn as send() draws its own,
@@ -944,6 +981,7 @@ export function AICoachChatScreen({
       proUnlocked,
       pinnedStatCardKeys,
       questionsRemaining,
+      showSpentNotice,
     ],
   );
 
@@ -1077,7 +1115,7 @@ export function AICoachChatScreen({
       // deterministic and costs nothing, so withholding it is a choice about
       // access, not about having something to say. Blurring a placeholder
       // instead would make the lock a bluff.
-      if (!canAsk && !force) {
+      const withholdAnswer = () => {
         const withheld = buildAiCoachPreviewAnswer(trimmed, trainingContext, language);
         setMessages((current) => [
           ...current,
@@ -1092,6 +1130,20 @@ export function AICoachChatScreen({
               .join(' '),
           },
         ]);
+      };
+      if (!canAsk && !force) {
+        withholdAnswer();
+        return;
+      }
+      // The question is claimed on the shared ledger before it leaves, like a
+      // build or a photo read claims one: a chat answer takes seconds, and a
+      // build tapped beside it used to read the same unspent count and take
+      // the same last question (26 of 25). The claim is given back in the
+      // finally below, once the spend is written or nothing was spent. A claim
+      // that cannot be had means a build or photo read holds the last question.
+      const claimed = proUnlocked ? onReserveQuestion() : false;
+      if (proUnlocked && !claimed && !force) {
+        withholdAnswer();
         return;
       }
 
@@ -1101,6 +1153,9 @@ export function AICoachChatScreen({
       trackEvent('coach_question_asked');
       const controller = new AbortController();
       pendingAskRef.current = { token, controller };
+      // The spend's write, awaited before the claim is given back so the
+      // stored count already includes it.
+      let spending: void | Promise<void> = undefined;
       try {
         const result = await requestAiCoachAdvice({
           prompt: trimmed,
@@ -1178,7 +1233,7 @@ export function AICoachChatScreen({
         // free on the same rule as the demo charge below — it is the canned
         // text, not the product the counter meters (PR #33 review).
         if (proUnlocked && !answer.unanswered && result.source !== 'preview') {
-          onQuestionUsed();
+          spending = onQuestionUsed();
         }
         // And the demo moment, on a different rule, because it meters a
         // different thing. The counter above meters VALUE, so a reply that
@@ -1355,7 +1410,7 @@ export function AICoachChatScreen({
         setAnsweredOffline(true);
         // An upstream failure still knocked: the call was made and it costs.
         if (proUnlocked) {
-          onQuestionUsed();
+          spending = onQuestionUsed();
         }
         setMessages((current) => [
           ...current,
@@ -1380,6 +1435,14 @@ export function AICoachChatScreen({
         if (token === askToken.current) {
           setAsking(false);
         }
+        if (claimed) {
+          // Every ending gives the claim back (a failure, a rate limit, a
+          // cancelled ask), after the spend, if there was one, has landed.
+          // Not awaited here: the reader is not kept waiting on a write.
+          void Promise.resolve(spending)
+            .catch(() => undefined)
+            .then(() => onReleaseQuestion());
+        }
       }
     },
     [
@@ -1389,6 +1452,8 @@ export function AICoachChatScreen({
       mustAcknowledgeOnline,
       onDemoQuestionAnswered,
       onQuestionUsed,
+      onReserveQuestion,
+      onReleaseQuestion,
       pinnedStatCardKeys,
       proUnlocked,
       sessionCount,

@@ -32,6 +32,7 @@ import type { PreferencesPatch } from '../state/AppProvider';
 import { coachQuickAskKeys } from '../lib/coachQuickAsks';
 
 type ChatScreenProps = React.ComponentProps<typeof AICoachChatScreen>;
+type ComposeResult = Awaited<ReturnType<ChatScreenProps['onComposeProgramme']>>;
 type CardioScreenProps = React.ComponentProps<typeof CardioScreen>;
 type HistoryScreenProps = React.ComponentProps<typeof HistoryScreen>;
 
@@ -160,7 +161,7 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
    * the same thing — two copies of this is how the chat ends up saving a
    * programme the composer would have refused.
    */
-  async function composeProgramme(brief: string, signal?: AbortSignal) {
+  async function composeProgramme(brief: string, signal?: AbortSignal): Promise<ComposeResult> {
     // No questions left: no call. The chat checks first and says why; this is
     // the same rule where the request is made, so a stale tap cannot bill.
     //
@@ -171,8 +172,14 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
     // And no Pro: no call. The chat's gate reads the prop it was last drawn
     // with, so a tap just past Pro's end still passed it (bug hunt,
     // 2026-10-29); this reads the clock at the tap.
-    if (!resolveProEntitlement(preferences).unlocked || !coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
-      return null;
+    //
+    // Refused is not failed: the chat shows "no questions left" or the paywall
+    // and keeps the offer, instead of "could not build" over a lost offer.
+    if (!resolveProEntitlement(preferences).unlocked) {
+      return { refused: 'not_pro' };
+    }
+    if (!coachQuotaLedger.reserve(preferences.aiCoachProQuota)) {
+      return { refused: 'spent' };
     }
     let live: Awaited<ReturnType<typeof requestProgrammeComposition>>;
     try {
@@ -393,13 +400,16 @@ export function renderHomeScreens(deps: HomeScreensDeps): React.ReactElement | n
           });
         }}
         questionsRemaining={resolveCoachQuota(preferences.aiCoachProQuota).remaining}
-        onQuestionUsed={() => {
+        onQuestionUsed={() =>
           // The answer is already on screen, so a refused write cannot unsay
-          // it; it is caught so it is not an unhandled rejection.
-          updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) })).catch(
-            (error) => console.error('Failed to record the coach question', error),
-          );
-        }}
+          // it; it is caught so it is not an unhandled rejection. The promise
+          // is handed back so the chat holds its claim until the spend landed.
+          updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }))
+            .then(() => undefined)
+            .catch((error): void => console.error('Failed to record the coach question', error))
+        }
+        onReserveQuestion={() => coachQuotaLedger.reserve(preferences.aiCoachProQuota)}
+        onReleaseQuestion={() => coachQuotaLedger.release()}
         demoQuestion={route.demoQuestion ?? null}
         demoMomentKey={route.demoMomentKey ?? null}
         onDemoQuestionSent={() => {

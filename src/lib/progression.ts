@@ -146,13 +146,21 @@ function getTopComparableWeight(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' |
   return heaviestOfSets(sets)?.weight ?? 0;
 }
 
-function topSetOf(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>): WeightedSet | null {
+type TopSetLog = Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
+  Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>;
+
+function topSetOf(log: TopSetLog): WeightedSet | null {
+  // A hold or minutes lift counts seconds or minutes where a lift counts
+  // reps; Records and the finish screen leave them out, so the chip does too.
+  if (isDoseLog(log)) {
+    return null;
+  }
   const top = heaviestOfSets(getComparableLogSets(log));
   return top ? { weight: top.weight, reps: top.reps } : null;
 }
 
 /** The best top set of the logs, by the Records rule (beatsBest). */
-function bestTopSetOf(logs: readonly Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>[]): WeightedSet | null {
+function bestTopSetOf(logs: readonly TopSetLog[]): WeightedSet | null {
   return logs.reduce<WeightedSet | null>((best, log) => {
     const top = topSetOf(log);
     return top && beatsBest(top, best) ? top : best;
@@ -169,7 +177,14 @@ function getComparableReps(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'set
  * session — 12/12 after 12/12/12, one set fewer on a recovery day — read
  * "Below last" (hunt, 2026-10-11). Null when no set had reps.
  */
-function repsPerSetValue(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>): number | null {
+function repsPerSetValue(
+  log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
+): number | null {
+  // Seconds or minutes are not reps: a hold at 0 kg must not read as a rep best.
+  if (isDoseLog(log)) {
+    return null;
+  }
   const reps = getComparableReps(log).filter((count) => count > 0);
   return reps.length > 0 ? getTotalReps(reps) / reps.length : null;
 }
@@ -257,7 +272,12 @@ function finalizeExerciseSummary(
     (left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime(),
   );
   const latestLog = sortedLogs[0];
-  const previousLog = sortedLogs[1];
+  // The newest log of another session, never the latest session's own second log.
+  const previousLog = latestLog ? sortedLogs.find((log) => log.sessionId !== latestLog.sessionId) : undefined;
+  // The latest session's logs, however many (a lift added twice): the chip
+  // reads the session, and "before" is every other session.
+  const latestSessionLogs = latestLog ? sortedLogs.filter((log) => log.sessionId === latestLog.sessionId) : [];
+  const logsBeforeLatest = latestLog ? sortedLogs.filter((log) => log.sessionId !== latestLog.sessionId) : [];
   const bestWeight = sortedLogs.reduce<number | null>((best, log) => {
     const topWeight = getTopComparableWeight(log);
     if (topWeight === null) {
@@ -292,6 +312,15 @@ function finalizeExerciseSummary(
     return repsPerSetValue(log);
   };
 
+  // A session's number is its best log's, so a lift logged twice in one
+  // session reads the same in either order.
+  const sessionValueOf = (sessionLogs: readonly ExerciseLogWithSession[]): number | null =>
+    sessionLogs.reduce<number | null>((best, log) => {
+      const value = valueOf(log);
+      return value !== null && (best === null || value > best) ? value : best;
+    }, null);
+  const previousSessionLogs = previousLog ? logsBeforeLatest.filter((log) => log.sessionId === previousLog.sessionId) : [];
+
   return {
     key,
     name,
@@ -304,18 +333,18 @@ function finalizeExerciseSummary(
     latestReps: latestLog ? getComparableReps(latestLog).join(',') : '-',
     bestWeight,
     bestReps,
-    latestValue: valueOf(latestLog),
-    previousValue: valueOf(previousLog),
+    latestValue: sessionValueOf(latestSessionLogs),
+    previousValue: sessionValueOf(previousSessionLogs),
     // Newest first, so the history is everything after the first entry.
-    bestValueBefore: sortedLogs.slice(1).reduce<number | null>((best, log) => {
+    bestValueBefore: logsBeforeLatest.reduce<number | null>((best, log) => {
       const value = valueOf(log);
       if (value === null) {
         return best;
       }
       return best === null || value > best ? value : best;
     }, null),
-    latestTopSet: !byReps && latestLog ? topSetOf(latestLog) : null,
-    bestTopSetBefore: byReps ? null : bestTopSetOf(sortedLogs.slice(1)),
+    latestTopSet: !byReps && latestLog ? bestTopSetOf(latestSessionLogs) : null,
+    bestTopSetBefore: byReps ? null : bestTopSetOf(logsBeforeLatest),
   };
 }
 
@@ -615,12 +644,12 @@ export function getTrackedExerciseProgress(database: AppDatabase): ExerciseProgr
 /** The trend summary, with its bests and its "best before" read from every performed set. */
 function withBestsFrom(trend: ExerciseProgressSummary, everything: ExerciseProgressSummary): ExerciseProgressSummary {
   const byReps = trend.bestWeight === null || trend.bestWeight <= 0;
-  const latestId = trend.latestLog?.id ?? null;
+  const latestSessionId = trend.latestLog?.sessionId ?? null;
   const latestTime = trend.latestLog ? new Date(trend.latestLog.performedAt).getTime() : null;
   // "Before" means before: a lighter set logged AFTER the latest session
   // must not make the latest look like a new best.
   const logsBefore = everything.logs.filter(
-    (log) => log.id !== latestId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime),
+    (log) => log.sessionId !== latestSessionId && (latestTime === null || new Date(log.performedAt).getTime() <= latestTime),
   );
   const bestValueBefore = logsBefore.reduce<number | null>((best, log) => {
       const value = byReps ? repsPerSetValue(log) : getTopComparableWeight(log);
@@ -673,7 +702,11 @@ export function getExerciseProgressSignal(
    */
   const beaten =
     summary.latestTopSet !== undefined && summary.bestTopSetBefore !== undefined && summary.latestTopSet !== null
-      ? summary.bestTopSetBefore !== null && beatsBest(summary.latestTopSet, summary.bestTopSetBefore)
+      ? summary.bestTopSetBefore !== null
+        ? beatsBest(summary.latestTopSet, summary.bestTopSetBefore)
+        : // No earlier weighted set: bodyweight-only history is beaten by any
+          // load (weight beat 0); no earlier session at all is just a start.
+          summary.bestValueBefore !== null
       : summary.latestValue !== null &&
         summary.bestValueBefore !== null &&
         summary.latestValue - summary.bestValueBefore > 0.0001;

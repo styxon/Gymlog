@@ -115,6 +115,7 @@ const suites = [
   ...require('./lib/lifetimeSummary.test.cjs'),
   ...require('./lib/bugHunt20261004Records.test.cjs'),
   ...require('./lib/bugHunt20261026Progress.test.cjs'),
+  ...require('./lib/bugHunt67NewBest.test.cjs'),
   ...require('./lib/bugHunt20261004Followups.test.cjs'),
   ...require('./lib/profileOverview.test.cjs'),
   ...require('./lib/homeStatCards.test.cjs'),

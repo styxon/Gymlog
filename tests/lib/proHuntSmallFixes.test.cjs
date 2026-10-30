@@ -81,7 +81,7 @@ module.exports = [
       assert.match(cap, /\}, \[preferences, proUnlocked\]\);/);
 
       const home = read('src', 'app', 'renderHomeScreens.tsx');
-      assert.match(home, /if \(!resolveProEntitlement\(preferences\)\.unlocked \|\| !coachQuotaLedger\.reserve\(/);
+      assert.match(home, /if \(!resolveProEntitlement\(preferences\)\.unlocked\) \{\s*return \{ refused: 'not_pro' \};\s*\}\s*if \(!coachQuotaLedger\.reserve\(/);
     },
   },
   {

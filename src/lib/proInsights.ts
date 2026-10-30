@@ -569,10 +569,13 @@ export function buildWeeklyRead(
 ): WeeklyReadRow[] {
   const rows: WeeklyReadRow[] = [];
 
-  for (const lift of lifts.slice(0, 2)) {
-    if (sessionBestPoints(lift).length < 3) {
-      continue;
-    }
+  // Rank by sessions, not logs: a lift logged twice a workout has twice the
+  // points and must not take a slot it cannot fill. Stable, so ties keep the
+  // incoming (most recent first) order.
+  const readable = lifts
+    .filter((lift) => sessionBestPoints(lift).length >= 3)
+    .sort((left, right) => sessionBestPoints(right).length - sessionBestPoints(left).length);
+  for (const lift of readable.slice(0, 2)) {
     const bars = normalizedBars(lastBars(sessionBestPoints(lift).map((point) => point.topSetWeightKg)));
     const name = exerciseNameLabel(language, lift.name);
     // A lift held for a flagged area is not "stalled" and gets no "move up"
