@@ -27,6 +27,8 @@ Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
 - #475 Coach: a chat question in flight now holds its place in the month's allowance, so tapping Build on an older offer beside it can no longer take the same last question (26 of 25). A build refused for no questions left or ended Pro now says so and keeps the offer, instead of "could not build". "Painoni 30 päivää sitten oli 85" / "weight 30 days ago was 85" now offers to log 85, not 30.
 
+- #474 Delete account on an Apple sign-in: when the answer to a delete was lost and the retry finds the account already gone, the app now shows the "remove Vinha in Settings → Sign in with Apple" guidance instead of a plain "deleted", and a delete cut off by the app being closed is still recognised on the next launch.
+
 - #472 Pro that runs out while the app is open now closes at that moment: the coach, the programme builder and the Programs cap line no longer keep Pro on until something else redraws (one more coach question could be spent). A lifetime purchase no longer reads "Already cancelled" on the membership page, and the Subscription page's store links no longer fail silently with an unhandled error when the store cannot open.
 
 - #471 Subscription and the membership end page: a renewing subscription's next payment / paid-until date is the store's own date. A monthly bought on the 31st showed the 28th after a February renewal, three days early.

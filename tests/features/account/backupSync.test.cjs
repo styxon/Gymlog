@@ -573,7 +573,7 @@ module.exports = [
       await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
         const id = await lostFirst(env);
         env.server.deleteAnswerId = id;
-        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept');
         assert.equal(env.calls.deleteOptions[1].requestId, id, 'the retry sent a new id and could not recognise the first');
         await env.settle();
         assert.equal(env.store.account, null);
@@ -589,7 +589,7 @@ module.exports = [
       // An older server sends no id: the pending record decides, as before.
       await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
         await lostFirst(env);
-        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept');
       });
       await withHook({ local, stored: syncedAccount(local), cloud: cloudCopy(local) }, async (env) => {
         env.google.silent = apple;
