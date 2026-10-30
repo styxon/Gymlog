@@ -107,7 +107,8 @@
       "./plugins/withBuildArchitectures.js",
       "./plugins/withStorageSize.js",
       "./plugins/withDataExtractionRules.js",
-      "./plugins/withReleaseSigning.js"
+      "./plugins/withReleaseSigning.js",
+      "./plugins/withReleaseMinify.js"
     ]
   }
 }
