@@ -79,7 +79,7 @@ module.exports = [
     },
   },
   {
-    name: 'iOS b5: About you colours the gender row as its sheet does, and Skip sits lower',
+    name: 'iOS b5: About you colours the gender row as its sheet does, and Skip sits lower without a gap either side',
     run() {
       const assert = require('node:assert/strict');
       const about = read('src', 'screens', 'AboutYouScreen.tsx');
@@ -87,8 +87,11 @@ module.exports = [
       assert.match(about, /accent: gender === 'male' \|\| gender === 'female' \? GENDER_ACCENT\[gender\] : undefined/);
       assert.match(about, /row\.accent \? \{ color: row\.accent \} : null/);
       assert.match(about, /<View style=\{\[styles\.divider, styles\.dividerLowered\]\} \/>/);
-      assert.match(about, /dividerLowered: \{\s*marginTop: 18,/);
-      assert.match(about, /skipSpaced: \{\s*marginTop: 22,/);
+      // Lowered, but not into a bar of its own: 18 + 22 pt read as one between
+      // two gaps (#bugs 2026-10-30), so the rule keeps 6 and Skip its 44 pt.
+      assert.match(about, /dividerLowered: \{\s*marginTop: 6,/);
+      assert.doesNotMatch(about, /skipSpaced/);
+      assert.match(about, /skipButton: \{[^}]*minHeight: 44,/);
     },
   },
 ];

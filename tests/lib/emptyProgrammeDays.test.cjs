@@ -167,8 +167,11 @@ module.exports = [
       );
       assert.match(
         app,
-        /setSetupHandoffHeld\(true\);\s*try \{\s*await updatePreferences\(patch\);\s*\} catch \(error\) \{[\s\S]{0,200}showToast\(t\(preferences\.appLanguage, 'toast\.setupHandoffFailed'\)\);\s*return;\s*\} finally \{\s*setupHandoffHeldRef\.current = false;\s*setSetupHandoffHeld\(false\);/,
+        /setSetupHandoffHeld\(true\);\s*try \{\s*await updatePreferences\(patch\);\s*\} catch \(error\) \{[\s\S]{0,200}showToast\(t\(preferences\.appLanguage, 'toast\.setupHandoffFailed'\)\);\s*release\(\);\s*return;\s*\}/,
       );
+      // Released after the pin dialog and the sign-in sheet, not at the write
+      // (#bugs 2026-10-30); setupHandoffSignInHold.test.cjs runs the order.
+      assert.match(app, /await handleAccountSignIn\(choices\.signInProvider \?\? undefined\);[\s\S]{0,200}\} finally \{\s*release\(\);/);
     },
   },
   {

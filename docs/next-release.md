@@ -25,6 +25,8 @@ joins a later test build before the store build.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #478 First run, signing in at the end of setup: "Continue with Apple" / "Continue with Google" now opens the sign-in sheet at once, and the Home tour waits until it is answered. The sign-in page used to come before the measurement and theme questions, and the sheet appeared minutes later over the tour, whose Skip closed it without signing in. The About you gender sheet's Skip sits closer under the options instead of floating between two gaps.
+
 - #476 "New best" on the Progress chip now matches Records: a first weighted session after bodyweight-only ones counts, holds and minutes lifts no longer get it from seconds read as reps, and a lift logged twice in one workout reads the same whatever the order. The weekly read ranks lifts by sessions, so a lift logged twice a workout no longer crowds out one that qualifies.
 
 - #475 Coach: a chat question in flight now holds its place in the month's allowance, so tapping Build on an older offer beside it can no longer take the same last question (26 of 25). A build refused for no questions left or ended Pro now says so and keeps the offer, instead of "could not build". "Painoni 30 päivää sitten oli 85" / "weight 30 days ago was 85" now offers to log 85, not 30.

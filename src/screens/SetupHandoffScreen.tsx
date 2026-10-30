@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
 import { Text } from '../components/AppText';
 import Svg, { Path } from 'react-native-svg';
 
@@ -238,6 +238,28 @@ export function SetupHandoffScreen({
   };
 
   /**
+   * The sign-in buttons. On the last page the press is the hand-off's Done,
+   * and the shell holds this page up until the account sheet has answered and
+   * the first backup has been read (#bugs 2026-10-30) — up to two network
+   * round trips after the sheet closes. The page says it is working in that
+   * time; before, its buttons stayed lit and every tap was dropped.
+   */
+  const [signingIn, setSigningIn] = useState(false);
+  const signInWith = (provider: SignInProvider) => {
+    if (signingIn) {
+      return;
+    }
+    signInProviderRef.current = provider;
+    setSignInForBackup(true);
+    if (pageIndex < pages.length - 1) {
+      advance(true);
+      return;
+    }
+    setSigningIn(true);
+    void Promise.resolve(finish(addWidget, true)).finally(() => setSigningIn(false));
+  };
+
+  /**
    * Done on the tracking or the theme dialog: close it, and only then move on.
    *
    * Both are Modals beside each other, and moving to the next page in the same
@@ -347,31 +369,27 @@ export function SetupHandoffScreen({
             <AppleSignInButton
               variant="whiteOutline"
               height={54}
-              disabled={!legalReady}
+              disabled={!legalReady || signingIn}
               style={!legalAlreadyAccepted && styles.afterConsent}
-              onPress={() => {
-                signInProviderRef.current = 'apple';
-                setSignInForBackup(true);
-                advance(true);
-              }}
+              onPress={() => signInWith('apple')}
             />
           ) : null}
           {signInProviders.includes('google') ? (
             <GoogleSignInButton
               label={t(language, 'handoff.signin.cta')}
               height={54}
-              disabled={!legalReady}
+              disabled={!legalReady || signingIn}
               style={!legalAlreadyAccepted && styles.afterConsent}
-              onPress={() => {
-                signInProviderRef.current = 'google';
-                setSignInForBackup(true);
-                advance(true);
-              }}
+              onPress={() => signInWith('google')}
             />
           ) : null}
-          <Pressable accessibilityRole="button" onPress={() => advance()} style={({ pressed }) => pressed && styles.pressed}>
-            <Text style={styles.pageSkip}>{t(language, 'handoff.signin.skip')}</Text>
-          </Pressable>
+          {signingIn ? (
+            <ActivityIndicator color={theme.muted} style={styles.signingIn} />
+          ) : (
+            <Pressable accessibilityRole="button" onPress={() => advance()} style={({ pressed }) => pressed && styles.pressed}>
+              <Text style={styles.pageSkip}>{t(language, 'handoff.signin.skip')}</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     );
@@ -668,6 +686,10 @@ const makeStyles = (theme: Theme) =>
       fontSize: 14,
       fontWeight: '700',
       textAlign: 'center',
+      paddingVertical: spacing.sm,
+    },
+    // In Skip's place while the sign-in runs, at about its height.
+    signingIn: {
       paddingVertical: spacing.sm,
     },
     /** Room between the terms box and the button under it. */
