@@ -131,7 +131,7 @@ module.exports = [
     },
   },
   {
-    name: 'an active promo wins over a purchase as the stated reason',
+    name: 'a purchase that outlasts a running promo is the stated reason; a promo that outlasts the purchase stays',
     run() {
       const entitlement = resolveProEntitlement(
         prefs({
@@ -140,7 +140,17 @@ module.exports = [
         }),
         NOW,
       );
-      assert.equal(entitlement.source, 'promo');
+      assert.equal(entitlement.source, 'purchase');
+      const outlasted = resolveProEntitlement(
+        prefs({
+          promoProUntil: '2027-08-24T12:00:00.000Z',
+          mockSubscriptionPurchasedAt: '2026-07-01T09:00:00.000Z',
+          mockSubscriptionCancelledAt: '2026-07-10T09:00:00.000Z',
+          mockSubscriptionTerm: 'monthly',
+        }),
+        NOW,
+      );
+      assert.equal(outlasted.source, 'promo');
     },
   },
   {
@@ -241,11 +251,11 @@ module.exports = [
         resolveProEntitlement(prefs({ ...paidCancelled, proTrialUntil: '2026-10-10T00:00:00.000Z' }), now).source,
         'purchase',
       );
-      // A promo still names itself (no owner decision moved it; nothing has
-      // written a promo since 2026-09-15).
+      // The same rule for a leftover promo: the purchase runs to 2027-10-01,
+      // past the promo's 2026-12-01, so the purchase is the reason.
       assert.equal(
         resolveProEntitlement(prefs({ ...paidCancelled, promoProUntil: '2026-12-01T00:00:00.000Z' }), now).source,
-        'promo',
+        'purchase',
       );
       // A lapsed purchase is still not resumable, grant or not.
       const lapsed = prefs({ ...paidCancelled, mockSubscriptionTerm: 'monthly', mockSubscriptionPurchasedAt: '2026-01-01T00:00:00.000Z', mockSubscriptionCancelledAt: '2026-01-02T00:00:00.000Z', proTrialUntil: '2026-10-10T00:00:00.000Z' });

@@ -117,11 +117,20 @@ function describeRecency(language: AppLanguage, days: number | null): string {
   if (days === null || !Number.isFinite(days) || days < 0) {
     return '';
   }
+  if (days === 0) {
+    return ` ${t(language, 'goalFlow.agoToday')}`;
+  }
+  if (days === 1) {
+    return ` ${t(language, 'goalFlow.agoDayOne')}`;
+  }
   if (days <= 14) {
     return ` ${t(language, 'goalFlow.agoDays', { days })}`;
   }
   if (days <= 90) {
-    return ` ${t(language, 'goalFlow.agoWeeks', { weeks: Math.round(days / 7) })}`;
+    const weeks = Math.round(days / 7);
+    return weeks === 1
+      ? ` ${t(language, 'goalFlow.agoWeekOne')}`
+      : ` ${t(language, 'goalFlow.agoWeeks', { weeks })}`;
   }
   return ` ${t(language, 'goalFlow.agoMonths', { months: Math.round(days / 30) })}`;
 }

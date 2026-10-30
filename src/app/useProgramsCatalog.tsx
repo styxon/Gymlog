@@ -4,6 +4,7 @@ import type { WORKOUT_TEMPLATES_V1 } from '../features/workout/workoutCatalog';
 import { formatWorkoutDisplayLabel } from '../lib/displayLabel';
 import type { FirstRunSetupSelection, resolveFirstRunRecommendationWithTailoring } from '../lib/firstRunSetup';
 import { t, type I18nKey } from '../lib/i18n';
+import { singularAffinityKey } from '../lib/programAffinity';
 import {
   countByCategory,
   filterByCategory,
@@ -250,7 +251,7 @@ export function useProgramsCatalog(deps: ProgramsCatalogDeps) {
             name: formatWorkoutDisplayLabel(template.name),
             goal: formatGoalLabel(template.goalType, preferences.appLanguage),
             blurb: getReadyProgramContent(template.id, preferences.appLanguage)?.summary ?? '',
-            why: t(preferences.appLanguage, slot.whyKey, { days: week.days }),
+            why: t(preferences.appLanguage, singularAffinityKey(slot.whyKey, week.days), { days: week.days }),
             days: week.days,
             minutes: week.minutes,
             cover: programCoverStyle(template.id, template.name),

@@ -2932,7 +2932,7 @@ function GuidedPlayer({
                       const isSuperset = item.members.length > 1;
                       const plan = isSuperset
                         ? item.setCount
-                          ? t(language, 'guided.runSheet.rounds', { count: item.setCount })
+                          ? t(language, item.setCount === 1 ? 'guided.runSheet.roundOne' : 'guided.runSheet.rounds', { count: item.setCount })
                           : ''
                         : runPlanLine(item.members[0]?.slotId ?? null);
                       return (
@@ -3801,7 +3801,7 @@ function GuidedPlayer({
               </View>
               {item.setCount && item.members.length > 1 ? (
                 <Text style={styles.runMeta}>
-                  {t(language, 'guided.runSheet.rounds', { count: item.setCount })}
+                  {t(language, item.setCount === 1 ? 'guided.runSheet.roundOne' : 'guided.runSheet.rounds', { count: item.setCount })}
                 </Text>
               ) : null}
             </View>

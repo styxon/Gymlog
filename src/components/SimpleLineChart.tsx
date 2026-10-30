@@ -118,7 +118,13 @@ export function SimpleLineChart({
               <>
                 <View pointerEvents="none" style={styles.axisLabels}>
                   {yTicks.map((tick) => (
-                    <Text key={`${tick.value}`} numberOfLines={1} style={[styles.valueLabel, { top: tick.y - 8 }]}>
+                    <Text
+                      key={`${tick.value}`}
+                      numberOfLines={1}
+                      adjustsFontSizeToFit
+                      minimumFontScale={0.6}
+                      style={[styles.valueLabel, { top: tick.y - 8 }]}
+                    >
                       {formatValueLabel
                         ? formatValueLabel(tick.value, unitLabel)
                         : unitOnCaption

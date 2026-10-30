@@ -384,7 +384,7 @@ export function OnboardingReadyCatalogScreen({
                     key={template.id}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={t(language, 'catalog.a11y.card', {
+                    accessibilityLabel={t(language, template.daysPerWeek === 1 ? 'catalog.a11y.cardOne' : 'catalog.a11y.card', {
                       program: presentation.title,
                       days: template.daysPerWeek,
                       minutes: readyTemplateCardMinutes(template),
@@ -417,7 +417,9 @@ export function OnboardingReadyCatalogScreen({
 
                     <View style={styles.metaRow}>
                       <Text style={[styles.metaText, { fontFamily }]}>
-                        {t(language, 'catalog.metaDays', { days: template.daysPerWeek })}
+                        {template.daysPerWeek === 1
+                          ? t(language, 'catalog.metaDayOne')
+                          : t(language, 'catalog.metaDays', { days: template.daysPerWeek })}
                       </Text>
                       <MetaDot />
                       <Text style={[styles.metaText, { fontFamily }]}>

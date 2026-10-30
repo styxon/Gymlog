@@ -43,6 +43,23 @@ export const AFFINITY_REASON_KEYS: Record<AffinityReason, I18nKey> = {
   lighterWeek: 'programs.affinity.lighterWeek',
 };
 
+/**
+ * The key to say a reason with: its own singular sentence when the candidate
+ * trains one day ("Lighter week: 1 day"), the plain key otherwise.
+ */
+export function affinityReasonKey(reason: AffinityReason, days: number): I18nKey {
+  return singularAffinityKey(AFFINITY_REASON_KEYS[reason], days);
+}
+
+/** The same, for a key already chosen (the browse row carries keys, not reasons). */
+export function singularAffinityKey(key: I18nKey, days: number): I18nKey {
+  const carriesDays =
+    key === AFFINITY_REASON_KEYS.sameGoalOtherSplit ||
+    key === AFFINITY_REASON_KEYS.sameDays ||
+    key === AFFINITY_REASON_KEYS.lighterWeek;
+  return days === 1 && carriesDays ? (`${key}One` as I18nKey) : key;
+}
+
 const LEVEL_ORDER = ['beginner', 'intermediate', 'advanced'] as const;
 
 function levelIndex(level: string | undefined): number {

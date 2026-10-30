@@ -466,7 +466,7 @@ module.exports = [
       // A superset's block is counted in rounds — three rounds of A1 + A2
       // under the word "sets" would state neither number — and rounds are now
       // the only thing that column carries, so the set-count key is gone.
-      assert.match(playerSource, /t\(language, 'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
+      assert.match(playerSource, /'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
       assert.equal((i18nSource.match(/'guided\.runSheet\.rounds': '[^']+'/g) ?? []).length, 2);
       assert.equal(i18nSource.includes("'guided.runSheet.sets'"), false);
     },
@@ -940,7 +940,7 @@ module.exports = [
       // The contents sheet's rows: its builder, its plan line, its rounds.
       assert.match(source, /const walkRunItems = step\.type === 'position' \? buildGuidedRunSheet\(stepPlan, stepIndex\) : \[\];/);
       assert.match(walk, /runPlanLine\(item\.members\[0\]\?\.slotId \?\? null\)/);
-      assert.match(walk, /t\(language, 'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
+      assert.match(walk, /'guided\.runSheet\.rounds', \{ count: item\.setCount \}\)/);
       // The lifts that did not fit are counted (not the stretches), and the
       // whole sheet is one tap away.
       assert.match(walk, /t\(language, 'guided\.walk\.contentMore', \{ count: walkHiddenLifts \}\)/);

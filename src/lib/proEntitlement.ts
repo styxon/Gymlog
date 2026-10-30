@@ -85,6 +85,12 @@ export function resolveProEntitlement(
   const promoUntil = preferences.promoProUntil;
   const promoTime = promoUntil ? new Date(promoUntil).getTime() : Number.NaN;
   if (Number.isFinite(promoTime) && promoTime > now.getTime()) {
+    // Same rule as the trial below: a paid purchase that keeps Pro on at least
+    // as long as the leftover promo is the stated reason, or the Subscription
+    // page says "promo" and shows no way to manage what the store charges.
+    if (purchaseKeepsProAt(preferences, promoTime)) {
+      return resolvePurchaseEntitlement(preferences, now);
+    }
     return { unlocked: true, source: 'promo', promoUntil, purchaseEndsAt: null };
   }
 

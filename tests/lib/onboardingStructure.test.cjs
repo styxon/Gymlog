@@ -908,7 +908,7 @@ module.exports = [
       const app = require('../helpers/appWiringSource.cjs').readAppWiring();
       assert.match(app, /whyKey: waterfall\.whyPrimary/);
       assert.match(app, /whyKey: waterfall\.whyAlternative/);
-      assert.match(app, /t\(preferences\.appLanguage, slot\.whyKey/);
+      assert.match(app, /t\(preferences\.appLanguage, singularAffinityKey\(slot\.whyKey/);
       // And the strings they name are still shipped.
       assert.match(i18nSource, /'wf\.strength\.primary':/);
       assert.match(i18nSource, /'wf\.home_equipment\.primary':/);
