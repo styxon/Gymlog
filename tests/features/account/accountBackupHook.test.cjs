@@ -338,7 +338,7 @@ module.exports = [
       const gone = { status: 'signed_out' };
       await withHook({ local, stored: appleAccount({ deleteAccountPendingAt: '2026-10-02T08:00:00.000Z', deleteMayHaveReached: true }), cloud: cloudCopy(local) }, async (env) => {
         env.google.silent = gone;
-        assert.equal(await env.api.deleteAccount(), 'done', 'this phone’s own delete, answer lost, read as deleted elsewhere');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept', 'this phone’s own delete, answer lost, read as deleted elsewhere');
         await env.settle();
         assert.equal(env.store.account, null);
         assert.equal(env.calls.signedOut, 1);
@@ -390,7 +390,7 @@ module.exports = [
         await env.settle();
         assert.equal(env.store.account.deleteMayHaveReached, true);
         env.google.silent = gone;
-        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept');
       });
 
       // The server refusing a try for certain drops the mark with the record.
@@ -432,7 +432,7 @@ module.exports = [
           try {
             env.google.silent = gone;
             env.store.clearError = new Error('disk full');
-            assert.equal(await env.api.deleteAccount(), 'done', 'a sign-out write error after Apple ended the session read as failed');
+            assert.equal(await env.api.deleteAccount(), 'done_apple_kept', 'a sign-out write error after Apple ended the session read as failed');
           } finally {
             console.error = realError;
           }
@@ -447,7 +447,7 @@ module.exports = [
           env.google.silent = { status: 'ok', idToken: 'vs1.session.mac' };
           env.server.deleteError = 'SESSION_REVOKED';
           env.store.clearError = new Error('disk full');
-          assert.equal(await env.api.deleteAccount(), 'done', 'a sign-out write error after a revoked session read as failed');
+          assert.equal(await env.api.deleteAccount(), 'done_apple_kept', 'a sign-out write error after a revoked session read as failed');
         } finally {
           console.error = realError;
         }
@@ -1191,6 +1191,23 @@ module.exports = [
     },
   },
   {
+    name: 'account hook: a Delete account request in flight is already remembered as possibly delivered (a killed app loses nothing)',
+    async run() {
+      const local = database({ workoutSessions: [workout('a')] });
+      const apple = { status: 'ok', idToken: 'vs1.session.mac' };
+      await withHook({ local, stored: syncedAccount(local, { sub: 'apple:001234.abc' }), cloud: cloudCopy(local) }, async (env) => {
+        env.google.silent = apple;
+        env.server.gates.delete = deferred();
+        const pending = env.api.deleteAccount();
+        await env.settle();
+        assert.equal(env.calls.delete, 1);
+        assert.equal(env.store.account.deleteMayHaveReached, true, 'the flag was written only after an answer');
+        env.server.gates.delete.resolve();
+        await pending;
+      });
+    },
+  },
+  {
     name: 'account hook: a Delete account whose answer was lost reads as done on retry — and another phone is told only that the account was deleted elsewhere',
     async run() {
       const local = database({ workoutSessions: [workout('a')] });
@@ -1209,7 +1226,7 @@ module.exports = [
         // The retry meets the session the server has by now ended.
         env.server.deleteLost = false;
         env.server.deleteError = 'SESSION_REVOKED';
-        assert.equal(await env.api.deleteAccount(), 'done', 'the phone that did delete was not told so');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept', 'the phone that did delete was not told so');
         await env.settle();
         assert.equal(env.api.state.status, 'signed_out');
         assert.equal(env.calls.signedOut, 1);
@@ -1224,7 +1241,7 @@ module.exports = [
         await env.settle();
         assert.equal(typeof env.store.account.deleteAccountPendingAt, 'string', 'a 5xx cleared the record');
         env.server.deleteError = 'SESSION_REVOKED';
-        assert.equal(await env.api.deleteAccount(), 'done');
+        assert.equal(await env.api.deleteAccount(), 'done_apple_kept');
       });
 
       // Phone B never sent one. The account was deleted by A, who may have signed in again and backed up:
