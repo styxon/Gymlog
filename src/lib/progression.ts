@@ -177,7 +177,14 @@ function getComparableReps(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'set
  * session — 12/12 after 12/12/12, one set fewer on a recovery day — read
  * "Below last" (hunt, 2026-10-11). Null when no set had reps.
  */
-function repsPerSetValue(log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'>): number | null {
+function repsPerSetValue(
+  log: Pick<ExerciseLog, 'weight' | 'repsPerSet' | 'sets' | 'skipped'> &
+    Pick<Partial<ExerciseLog>, 'repsUnit' | 'exerciseNameSnapshot'>,
+): number | null {
+  // Seconds or minutes are not reps: a hold at 0 kg must not read as a rep best.
+  if (isDoseLog(log)) {
+    return null;
+  }
   const reps = getComparableReps(log).filter((count) => count > 0);
   return reps.length > 0 ? getTotalReps(reps) / reps.length : null;
 }
@@ -265,7 +272,8 @@ function finalizeExerciseSummary(
     (left, right) => new Date(right.performedAt).getTime() - new Date(left.performedAt).getTime(),
   );
   const latestLog = sortedLogs[0];
-  const previousLog = sortedLogs[1];
+  // The newest log of another session, never the latest session's own second log.
+  const previousLog = latestLog ? sortedLogs.find((log) => log.sessionId !== latestLog.sessionId) : undefined;
   // The latest session's logs, however many (a lift added twice): the chip
   // reads the session, and "before" is every other session.
   const latestSessionLogs = latestLog ? sortedLogs.filter((log) => log.sessionId === latestLog.sessionId) : [];
@@ -304,6 +312,15 @@ function finalizeExerciseSummary(
     return repsPerSetValue(log);
   };
 
+  // A session's number is its best log's, so a lift logged twice in one
+  // session reads the same in either order.
+  const sessionValueOf = (sessionLogs: readonly ExerciseLogWithSession[]): number | null =>
+    sessionLogs.reduce<number | null>((best, log) => {
+      const value = valueOf(log);
+      return value !== null && (best === null || value > best) ? value : best;
+    }, null);
+  const previousSessionLogs = previousLog ? logsBeforeLatest.filter((log) => log.sessionId === previousLog.sessionId) : [];
+
   return {
     key,
     name,
@@ -316,8 +333,8 @@ function finalizeExerciseSummary(
     latestReps: latestLog ? getComparableReps(latestLog).join(',') : '-',
     bestWeight,
     bestReps,
-    latestValue: valueOf(latestLog),
-    previousValue: valueOf(previousLog),
+    latestValue: sessionValueOf(latestSessionLogs),
+    previousValue: sessionValueOf(previousSessionLogs),
     // Newest first, so the history is everything after the first entry.
     bestValueBefore: logsBeforeLatest.reduce<number | null>((best, log) => {
       const value = valueOf(log);

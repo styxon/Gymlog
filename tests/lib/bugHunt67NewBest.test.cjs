@@ -107,4 +107,23 @@ module.exports = [
       assert.deepEqual(names, ['Curl', 'Row']);
     },
   },
+  {
+    name: 'holds and minutes at 0 kg do not get new best either',
+    run() {
+      const two = (name, extra) =>
+        db([['s1', at(10, 1)], ['s2', at(10, 8)]], [log('l1', 's1', name, 0, [45], extra), log('l2', 's2', name, 0, [60], extra)]);
+      assert.notEqual(signalOf(two('Plank', {})), 'new_best');
+      assert.notEqual(signalOf(two('Bike', { repsUnit: 'minutes' })), 'new_best');
+    },
+  },
+  {
+    name: 'a bodyweight lift twice in one session reads the same in either order',
+    run() {
+      const sessions = [['s1', at(10, 1)], ['s2', at(10, 8)]];
+      const a = db(sessions, [log('l1', 's1', 'Pull-Up', 0, [8]), log('l2', 's2', 'Pull-Up', 0, [5]), log('l3', 's2', 'Pull-Up', 0, [10])]);
+      const b = db(sessions, [log('l1', 's1', 'Pull-Up', 0, [8]), log('l2', 's2', 'Pull-Up', 0, [10]), log('l3', 's2', 'Pull-Up', 0, [5])]);
+      assert.equal(signalOf(a), signalOf(b));
+      assert.equal(signalOf(a), 'new_best');
+    },
+  },
 ];
