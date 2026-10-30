@@ -180,6 +180,7 @@ const suites = [
   ...require('./lib/programCsvRoundTrip.test.cjs'),
   ...require('./lib/setupHandoff.test.cjs'),
   ...require('./lib/setupHandoffSignInHold.test.cjs'),
+  ...require('./lib/huntBuild7Cosmetics.test.cjs'),
   ...require('./lib/quickLayoutExercises.test.cjs'),
   ...require('./lib/templateBuilderSteps.test.cjs'),
   ...require('./lib/programmeBuilderHunt10.test.cjs'),

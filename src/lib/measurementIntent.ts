@@ -42,6 +42,13 @@ export const KIND_WORDS: Array<{ kind: MeasurementIntentKind; pattern: RegExp }>
 const NUMBER_TOKEN = /(?<![\d.,])(?<!\d:)(\d+(?:[.,]\d+)*)(\.?)(?!\d|:\d)\s*(cm|kg|%|lbs?\b|pounds?\b|inch(?:es)?\b|in(?=\s*(?:$|[.,!;)]))|")?/gi;
 /** A reading as a person types one: up to three digits, at most two decimals. */
 const READING = /^\d{1,3}(?:[.,]\d{1,2})?$/;
+/**
+ * A number written with a space between thousands, "100 000": the parts
+ * are one number, never a reading. The first part was read as 100 kg
+ * (hunt build 6->7, C8). Plain, no-break and narrow no-break spaces.
+ */
+const THOUSANDS_GROUP = /^[ \u00a0\u202f]\d{3}(?!\d|[.,]\d)/;
+const THOUSANDS_TAIL = /\d[ \u00a0\u202f]$/;
 /** Said just before a clock time: "klo 22.30", "kello 7". */
 const CLOCK_BEFORE = /(?:\bklo|\bkello|@)\s*$/i;
 
@@ -87,7 +94,7 @@ function numberTokens(message: string): NumberToken[] {
       index,
       end: index + match[0].length,
       unit,
-      notReading: parts.length > 2 || CLOCK_BEFORE.test(before),
+      notReading: parts.length > 2 || CLOCK_BEFORE.test(before) || THOUSANDS_GROUP.test(message.slice(index + raw.length)) || THOUSANDS_TAIL.test(before),
       timeCount: unit === null && TIME_WORD_AFTER.test(message.slice(index + match[0].length)),
       dayMonth:
         parts.length === 2 &&

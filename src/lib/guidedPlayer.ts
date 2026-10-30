@@ -1150,6 +1150,22 @@ export function guidedAdjustedMs(input: {
 }
 
 /**
+ * The last 3·2·1 second already beeped, after the time left was changed.
+ *
+ * A rest extended inside its last three seconds counts down through them
+ * again, and the second it had beeped stayed marked: at 2.5 s, "+10 s" played
+ * 2 and 1 on the way back down but not 3 (hunt build 6->7, C2). A change
+ * that lifts the clock above the marked second clears it; one that lowers it
+ * keeps it, so "-15 s" does not repeat a beep already heard.
+ */
+export function guidedBeepMarkAfterAdjust(lastBeepSecond: number | null, nextRemainingMs: number): number | null {
+  if (lastBeepSecond === null) {
+    return null;
+  }
+  return Math.ceil(Math.max(nextRemainingMs, 0) / 1000) > lastBeepSecond ? null : lastBeepSecond;
+}
+
+/**
  * Whether "+60 s" on the lock screen reaches back to a rest that has just run
  * out into its set. The reader cannot tell the alert from the player's own
  * advance: coming back to the app settles the clock before, or after, the tap

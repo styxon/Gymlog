@@ -305,6 +305,7 @@ export function createOnboardingFinishes(deps: OnboardingFinishesDeps) {
         await updatePreferences((current) => ({ aiCoachProQuota: coachQuotaLedger.record(current.aiCoachProQuota) }));
       } catch (error) {
         console.error('Failed to record the photo read against the coach allowance', error);
+        coachQuotaLedger.forget();
         return { status: 'failed' };
       }
       return { status: 'read', csv: programTableToCsv(rows) };

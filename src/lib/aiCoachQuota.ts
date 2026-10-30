@@ -103,6 +103,14 @@ export interface CoachQuotaLedger {
   note(written: CoachQuotaState): void;
   /** recordCoachQuestion, with the result noted: the updater every spend writes through. */
   record(state: CoachQuotaState | null | undefined, now?: Date): CoachQuotaState;
+  /**
+   * Takes back the last `record` when its write was refused. `record` notes
+   * the spend inside the updater, before the disk has it, so a refused write
+   * left the note one question ahead of what is stored: `reserve` read the
+   * lower of the two and the reader was a question short until the app was
+   * restarted (hunt build 6->7, C9). Only if nothing was noted since.
+   */
+  forget(): void;
   /** Claims held now. */
   held(): number;
 }
@@ -129,6 +137,9 @@ export function isComposeRefusal(value: unknown): value is ComposeRefusal {
 export function createCoachQuotaLedger(): CoachQuotaLedger {
   let held = 0;
   let written: CoachQuotaState | null = null;
+  // The last record and what was noted before it, for `forget`.
+  let recorded: CoachQuotaState | null = null;
+  let beforeRecorded: CoachQuotaState | null = null;
   return {
     reserve(state, now) {
       const passed = resolveCoachQuota(state, now);
@@ -149,8 +160,16 @@ export function createCoachQuotaLedger(): CoachQuotaLedger {
     },
     record(state, now) {
       const next = recordCoachQuestion(state, now);
+      beforeRecorded = written;
+      recorded = next;
       written = next;
       return next;
+    },
+    forget() {
+      if (recorded !== null && written === recorded) {
+        written = beforeRecorded;
+      }
+      recorded = null;
     },
     held: () => held,
   };

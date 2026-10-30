@@ -25,6 +25,8 @@ joins a later test build before the store build.
 
 Since build 6 (`main` 2bbbab84); goes into 1.1.1.
 
+- #479 Small fixes from the build 7 hunt: a failed payment no longer shows "Next charge: none scheduled" on Subscription; a rest extended in its last three seconds beeps 3 again on the way down; Home's date uses the app's mono font instead of the system font; My data's limit badges and the Training plan's Active pill are readable in the dark theme; the sheet grip and option rows show in the light theme; a switch that is off is easier to see; a date over a year old shows its year ("19.10.2025"); the coach no longer offers "100 000" as 100 kg; and a coach question whose save failed is no longer counted until the app restarts.
+
 - #478 First run, signing in at the end of setup: "Continue with Apple" / "Continue with Google" now opens the sign-in sheet at once, and the Home tour waits until it is answered. The sign-in page used to come before the measurement and theme questions, and the sheet appeared minutes later over the tour, whose Skip closed it without signing in. The About you gender sheet's Skip sits closer under the options instead of floating between two gaps.
 
 - #476 "New best" on the Progress chip now matches Records: a first weighted session after bodyweight-only ones counts, holds and minutes lifts no longer get it from seconds read as reps, and a lift logged twice in one workout reads the same whatever the order. The weekly read ranks lifts by sessions, so a lift logged twice a workout no longer crowds out one that qualifies.

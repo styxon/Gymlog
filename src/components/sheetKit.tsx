@@ -528,7 +528,9 @@ const makeStyles = (theme: Theme) =>
       width: 38,
       height: 4,
       borderRadius: 99,
-      backgroundColor: 'rgba(255,255,255,0.2)',
+      // From the theme: a white tint was invisible on the light sheet's white
+      // (hunt build 6->7, C5). The switch's off track is the same quiet mark.
+      backgroundColor: theme.switchOff,
       alignSelf: 'center',
       marginBottom: 12,
     },
@@ -649,7 +651,11 @@ const makeStyles = (theme: Theme) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
-      backgroundColor: 'rgba(255,255,255,0.035)',
+      // The theme's control fill: a raised step on the dark sheet, white with
+      // its border on the light one, where a 3.5 % white tint did nothing
+      // (C5). Not surfaceSoft: on the light sheet that is the current row's
+      // lavender, and the current row would no longer stand out.
+      backgroundColor: theme.controlFill,
       borderWidth: 1,
       borderColor: theme.border,
       borderRadius: 14,
